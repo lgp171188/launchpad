@@ -15,7 +15,7 @@ class TestSnappyDistroSeriesVocabulary(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestSnappyDistroSeriesVocabulary, self).setUp()
+        super().setUp()
         self.vocab = SnappyDistroSeriesVocabulary()
 
     def test_getTermByToken(self):

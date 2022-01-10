@@ -238,7 +238,7 @@ class SnapStoreChannelVocabulary(SimpleVocabulary):
                 for name in context_channels:
                     if name not in known_names:
                         terms.append(self.createTerm(name, name, name))
-        super(SnapStoreChannelVocabulary, self).__init__(terms)
+        super().__init__(terms)
 
     @classmethod
     def createTerm(cls, *args):

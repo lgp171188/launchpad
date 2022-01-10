@@ -20,7 +20,6 @@ from lazr.restful.interface import (
     copy_field,
     use_template,
     )
-import six
 from six.moves.urllib.parse import urlencode
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
@@ -184,9 +183,9 @@ class SnapFormMixin:
         widget = self.widgets.get('vcs')
         if widget is not None:
             current_value = widget._getFormValue()
-            self.vcs_bzr_radio, self.vcs_git_radio = [
+            self.vcs_bzr_radio, self.vcs_git_radio = (
                 render_radio_widget_part(widget, value, current_value)
-                for value in (VCSType.BZR, VCSType.GIT)]
+                for value in (VCSType.BZR, VCSType.GIT))
 
 
 class SnapInformationTypeMixin:
@@ -565,7 +564,7 @@ class SnapAddView(SnapAuthorizeMixin, EnableProcessorsMixin,
 
     def initialize(self):
         """See `LaunchpadView`."""
-        super(SnapAddView, self).initialize()
+        super().initialize()
 
         # Once initialized, if the private_snap flag is disabled, it
         # prevents snap creation for private contexts.
@@ -580,7 +579,7 @@ class SnapAddView(SnapAuthorizeMixin, EnableProcessorsMixin,
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
-        super(SnapAddView, self).setUpFields()
+        super().setUpFields()
         self.form_fields += self.createEnabledProcessors(
             getUtility(IProcessorSet).getAll(),
             "The architectures that this snap package builds for. Some "
@@ -589,7 +588,7 @@ class SnapAddView(SnapAuthorizeMixin, EnableProcessorsMixin,
 
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
-        super(SnapAddView, self).setUpWidgets()
+        super().setUpWidgets()
         self.widgets['processors'].widget_class = 'processors'
         if self.is_project_context:
             # If we are on Project:+new-snap page, we know which information
@@ -654,23 +653,23 @@ class SnapAddView(SnapAuthorizeMixin, EnableProcessorsMixin,
     def validate_widgets(self, data, names=None):
         """See `LaunchpadFormView`."""
         if self.widgets.get('vcs') is not None:
-            super(SnapAddView, self).validate_widgets(data, ['vcs'])
+            super().validate_widgets(data, ['vcs'])
             self.validateVCSWidgets(SnapAddView, data)
         if self.widgets.get('auto_build') is not None:
             # Set widgets as required or optional depending on the
             # auto_build field.
-            super(SnapAddView, self).validate_widgets(data, ['auto_build'])
+            super().validate_widgets(data, ['auto_build'])
             auto_build = data.get('auto_build', False)
             self.widgets['auto_build_archive'].context.required = auto_build
             self.widgets['auto_build_pocket'].context.required = auto_build
         if self.widgets.get('store_upload') is not None:
             # Set widgets as required or optional depending on the
             # store_upload field.
-            super(SnapAddView, self).validate_widgets(data, ['store_upload'])
+            super().validate_widgets(data, ['store_upload'])
             store_upload = data.get('store_upload', False)
             self.widgets['store_name'].context.required = store_upload
             self.widgets['store_channels'].context.required = store_upload
-        super(SnapAddView, self).validate_widgets(data, names=names)
+        super().validate_widgets(data, names=names)
 
     @action('Create snap package', name='create')
     def create_action(self, action, data):
@@ -709,7 +708,7 @@ class SnapAddView(SnapAuthorizeMixin, EnableProcessorsMixin,
             self.next_url = canonical_url(snap)
 
     def validate(self, data):
-        super(SnapAddView, self).validate(data)
+        super().validate(data)
         owner = data.get('owner', None)
         name = data.get('name', None)
         if owner and name:
@@ -732,7 +731,7 @@ class BaseSnapEditView(SnapAuthorizeMixin, SnapInformationTypeMixin,
 
     def setUpWidgets(self, context=None):
         """See `LaunchpadFormView`."""
-        super(BaseSnapEditView, self).setUpWidgets()
+        super().setUpWidgets()
         self.setUpVCSWidgets()
 
     @property
@@ -742,28 +741,26 @@ class BaseSnapEditView(SnapAuthorizeMixin, SnapInformationTypeMixin,
     def validate_widgets(self, data, names=None):
         """See `LaunchpadFormView`."""
         if self.widgets.get('vcs') is not None:
-            super(BaseSnapEditView, self).validate_widgets(data, ['vcs'])
+            super().validate_widgets(data, ['vcs'])
             self.validateVCSWidgets(BaseSnapEditView, data)
         if self.widgets.get('auto_build') is not None:
             # Set widgets as required or optional depending on the
             # auto_build field.
-            super(BaseSnapEditView, self).validate_widgets(
-                data, ['auto_build'])
+            super().validate_widgets(data, ['auto_build'])
             auto_build = data.get('auto_build', False)
             self.widgets['auto_build_archive'].context.required = auto_build
             self.widgets['auto_build_pocket'].context.required = auto_build
         if self.widgets.get('store_upload') is not None:
             # Set widgets as required or optional depending on the
             # store_upload field.
-            super(BaseSnapEditView, self).validate_widgets(
-                data, ['store_upload'])
+            super().validate_widgets(data, ['store_upload'])
             store_upload = data.get('store_upload', False)
             self.widgets['store_name'].context.required = store_upload
             self.widgets['store_channels'].context.required = store_upload
-        super(BaseSnapEditView, self).validate_widgets(data, names=names)
+        super().validate_widgets(data, names=names)
 
     def validate(self, data):
-        super(BaseSnapEditView, self).validate(data)
+        super().validate(data)
         info_type = data.get('information_type', self.context.information_type)
         editing_info_type = 'information_type' in data
         private = info_type in PRIVATE_INFORMATION_TYPES
@@ -876,8 +873,7 @@ class SnapAdminView(BaseSnapEditView):
         if 'project' in data:
             project = data.pop('project')
             self.context.setProject(project)
-        super(SnapAdminView, self).updateContextFromData(
-            data, context, notify_modified)
+        super().updateContextFromData(data, context, notify_modified)
 
 
 class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
@@ -926,7 +922,7 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
-        super(SnapEditView, self).setUpFields()
+        super().setUpFields()
         self.form_fields += self.createEnabledProcessors(
             self.context.available_processors,
             "The architectures that this snap package builds for. Some "
@@ -934,7 +930,7 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
             "disabled by administrators.")
 
     def setUpWidgets(self, context=None):
-        super(SnapEditView, self).setUpWidgets(context)
+        super().setUpWidgets(context)
         info_type_widget = self.widgets['information_type']
         info_type_widget.vocabulary = InformationTypeVocabulary(
             types=self.getPossibleInformationTypes(self.context, self.user))
@@ -957,7 +953,7 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
         return initial_values
 
     def validate(self, data):
-        super(SnapEditView, self).validate(data)
+        super().validate(data)
         owner = data.get('owner', None)
         name = data.get('name', None)
         if owner and name:
@@ -988,8 +984,7 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
         if 'project' in data:
             project = data.pop('project')
             self.context.setProject(project)
-        super(SnapEditView, self).updateContextFromData(
-            data, context, notify_modified)
+        super().updateContextFromData(data, context, notify_modified)
 
 
 class SnapAuthorizeView(LaunchpadEditFormView):
@@ -1029,7 +1024,7 @@ class SnapAuthorizeView(LaunchpadEditFormView):
                 ])
             return login_url
         except CannotAuthorizeStoreUploads as e:
-            request.response.addInfoNotification(six.text_type(e))
+            request.response.addInfoNotification(str(e))
             request.response.redirect(canonical_url(snap))
             return
 

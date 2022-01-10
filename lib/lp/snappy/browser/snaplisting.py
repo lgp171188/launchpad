@@ -39,7 +39,7 @@ class SnapListingView(LaunchpadView, FeedsMixin):
             'displayname': self.context.displayname}
 
     def initialize(self):
-        super(SnapListingView, self).initialize()
+        super().initialize()
         snaps = getUtility(ISnapSet).findByContext(
             self.context, visible_by_user=self.user)
         loader = partial(
@@ -56,7 +56,7 @@ class BranchSnapListingView(SnapListingView):
     source_enabled = False
 
     def initialize(self):
-        super(BranchSnapListingView, self).initialize()
+        super().initialize()
         # Replace our context with a decorated branch, if it is not already
         # decorated.
         if not isinstance(self.context, DecoratedBranch):

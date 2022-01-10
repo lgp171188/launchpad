@@ -236,7 +236,7 @@ class TestSnapBuildOperations(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSnapBuildOperations, self).setUp()
+        super().setUp()
         self.useFixture(FakeLogger())
         self.build = self.factory.makeSnapBuild()
         self.build_url = canonical_url(self.build)

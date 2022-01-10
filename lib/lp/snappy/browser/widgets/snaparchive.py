@@ -137,7 +137,7 @@ class SnapArchiveWidget(BrowserWidget, InputWidget):
                 self.getInputValue()
         except InputErrors as error:
             self._error = error
-        return super(SnapArchiveWidget, self).error()
+        return super().error()
 
     def __call__(self):
         """See `IBrowserWidget`."""

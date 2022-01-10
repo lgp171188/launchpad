@@ -60,7 +60,7 @@ class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
         ]
 
     def setUp(self):
-        super(TestSnapArchiveWidget, self).setUp()
+        super().setUp()
         self.distroseries = self.factory.makeDistroSeries()
         field = Reference(__name__="archive", schema=IArchive, title="Archive")
         self.context = self.context_factory(self)

@@ -213,7 +213,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestSnapStoreClient, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.pushConfig(
             "snappy", store_url="http://sca.example/",
@@ -769,7 +769,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
     @responses.activate
     def test_listChannels_disable_search(self):
         self.useFixture(
-            FeatureFixture({u"snap.disable_channel_search": u"on"}))
+            FeatureFixture({"snap.disable_channel_search": "on"}))
         expected_channels = [
             {"name": "candidate", "display_name": "Candidate"},
             {"name": "edge", "display_name": "Edge"},

@@ -31,7 +31,7 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestStoreChannelsWidget, self).setUp()
+        super().setUp()
         field = List(__name__="channels", title="Store channels")
         self.context = self.factory.makeSnap()
         field = field.bind(self.context)

@@ -43,7 +43,7 @@ class TestSnappySeries(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestSnappySeries, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_implements_interface(self):
@@ -108,7 +108,7 @@ class TestSnappySeriesSet(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestSnappySeriesSet, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_getByName(self):
@@ -132,7 +132,7 @@ class TestSnappySeriesWebservice(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSnappySeriesWebservice, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_new_unpriv(self):
@@ -234,7 +234,7 @@ class TestSnappyDistroSeriesSet(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestSnappyDistroSeriesSet, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_getByBothSeries(self):
