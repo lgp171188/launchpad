@@ -3,6 +3,11 @@ Sprints / Meetings
 
 Sprints or meetings can be coordinated using Launchpad.
 
+    >>> from datetime import (
+    ...     datetime,
+    ...     timedelta,
+    ...     )
+    >>> import pytz
     >>> from zope.component import getUtility
     >>> from lp.blueprints.interfaces.sprint import ISprintSet
     >>> from lp.registry.interfaces.person import IPersonSet
@@ -26,36 +31,46 @@ properties which give us the sprints relevant to them.
     >>> ubuntu = distroset.getByName('ubuntu')
     >>> mozilla = projectset.getByName('mozilla')
 
+Make a new sprint and add some relevant specifications to it.
+
+    >>> futurista = factory.makeSprint(
+    ...     name='futurista',
+    ...     time_starts=datetime.now(pytz.UTC) + timedelta(days=1))
+    >>> firefox_spec = firefox.specifications(futurista.owner)[0]
+    >>> _ = firefox_spec.linkSprint(futurista, futurista.owner)
+    >>> ubuntu_spec = ubuntu.specifications(futurista.owner)[0]
+    >>> _ = ubuntu_spec.linkSprint(futurista, futurista.owner)
+
 We have coming_sprints, giving us up to 5 relevant events that are up-
 and-coming (sorted by the starting date):
 
     >>> for sprint in firefox.coming_sprints:
     ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
-    futurista 2025-08-16
+    futurista ...-...-...
 
     >>> for sprint in ubuntu.coming_sprints:
     ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
-    futurista 2025-08-16
+    futurista ...-...-...
 
     >>> for sprint in mozilla.coming_sprints:
     ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
-    futurista 2025-08-16
+    futurista ...-...-...
 
 And we have sprints, giving us all sprints relevant to that pillar
 (sorted descending by the starting date):
 
     >>> for sprint in firefox.sprints:
     ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
-    futurista 2025-08-16
+    futurista ...-...-...
     ubz 2005-10-07
 
     >>> for sprint in ubuntu.sprints:
     ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
-    futurista 2025-08-16
+    futurista ...-...-...
 
     >>> for sprint in mozilla.sprints:
     ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
-    futurista 2025-08-16
+    futurista ...-...-...
     ubz 2005-10-07
 
 We also have past_sprints, giving all sprints relevant to that pillar
@@ -218,13 +233,9 @@ Sprint attendance
 
 The sprint attend() method adds a user's attendance to a sprint.
 
-    >>> import datetime
-    >>> import pytz
-
     >>> person = factory.makePerson(name='mustard')
-    >>> UTC = pytz.timezone('UTC')
-    >>> time_starts = datetime.datetime(2005, 10, 7, 9, 0, 0, 0, UTC)
-    >>> time_ends = datetime.datetime(2005, 10, 17, 19, 5, 0, 0, UTC)
+    >>> time_starts = datetime(2005, 10, 7, 9, 0, 0, 0, pytz.UTC)
+    >>> time_ends = datetime(2005, 10, 17, 19, 5, 0, 0, pytz.UTC)
     >>> sprint_attendance = ubz.attend(person, time_starts, time_ends, True)
 
 The attend() method can update a user's attendance if there is already a
@@ -242,8 +253,8 @@ ISprintAttendance for the user.
     >>> print(sprint_attendance.is_physical)
     True
 
-    >>> time_starts = datetime.datetime(2005, 10, 8, 9, 0, 0, 0, UTC)
-    >>> time_ends = datetime.datetime(2005, 10, 16, 19, 5, 0, 0, UTC)
+    >>> time_starts = datetime(2005, 10, 8, 9, 0, 0, 0, pytz.UTC)
+    >>> time_ends = datetime(2005, 10, 16, 19, 5, 0, 0, pytz.UTC)
     >>> new_attendance = ubz.attend(person, time_starts, time_ends, False)
     >>> print(new_attendance.attendee.name)
     mustard

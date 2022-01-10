@@ -178,6 +178,18 @@ From a sprint
 
 Starting from the Future Mega Meeting sprint page:
 
+    >>> from datetime import (
+    ...     datetime,
+    ...     timedelta,
+    ...     )
+    >>> import pytz
+
+    >>> login('test@canonical.com')
+    >>> _ = factory.makeSprint(
+    ...     name='futurista', title='Future Mega Meeting',
+    ...     time_starts=datetime.now(pytz.UTC) + timedelta(days=1))
+    >>> logout()
+
     >>> user_browser.open(
     ...     'http://blueprints.launchpad.test/sprints/futurista')
 
@@ -586,15 +598,13 @@ When registering a blueprint, users can specify the ''sprint'' field to
 propose the blueprint as a topic for discussion at the sprint. If the user has
 permission, the blueprint will be automatically added to the sprint agenda:
 
-    >>> import datetime as dt
-    >>> from pytz import UTC
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> login('test@canonical.com')
     >>> rome_sprint = factory.makeSprint(name='rome')
     >>> logout()
     >>> ignored = login_person(rome_sprint.owner)
-    >>> rome_sprint.time_ends = dt.datetime.now(UTC) + dt.timedelta(30)
-    >>> rome_sprint.time_starts = dt.datetime.now(UTC) + dt.timedelta(20)
+    >>> rome_sprint.time_ends = datetime.now(pytz.UTC) + timedelta(30)
+    >>> rome_sprint.time_starts = datetime.now(pytz.UTC) + timedelta(20)
     >>> sample_person = getUtility(IPersonSet).getByName('name12')
     >>> rome_sprint.driver = sample_person
     >>> logout()
