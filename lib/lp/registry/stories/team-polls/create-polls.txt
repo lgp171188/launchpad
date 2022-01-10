@@ -85,8 +85,17 @@ We're redirected to the newly created poll page.
     >>> team_admin_browser.url
     'http://launchpad.test/~ubuntu-team/+poll/election-2100'
 
-Create a new poll that starts in 2025-06-04 and will last until 2035.
+Create a new poll that starts tomorrow and will last for ten years.
 
+    >>> from datetime import (
+    ...     datetime,
+    ...     timedelta,
+    ...     )
+    >>> import pytz
+
+    >>> tomorrow = (datetime.now(pytz.UTC) + timedelta(days=1)).isoformat()
+    >>> ten_years_from_now = (
+    ...     datetime.now(pytz.UTC) + timedelta(days=3560)).isoformat()
     >>> team_admin_browser.open(
     ...     'http://launchpad.test/~ubuntu-team/+newpoll')
     >>> team_admin_browser.getControl(
@@ -99,10 +108,9 @@ Create a new poll that starts in 2025-06-04 and will last until 2035.
     ...     "The proposition that is going to be voted").value = proposition
     >>> team_admin_browser.getControl(
     ...     "Users can spoil their votes?").selected = True
+    >>> team_admin_browser.getControl(name='field.dateopens').value = tomorrow
     >>> team_admin_browser.getControl(
-    ...     name='field.dateopens').value = '2025-06-04 02:00:00+00:00'
-    >>> team_admin_browser.getControl(
-    ...     name='field.datecloses').value = '2035-06-04 02:00:00+00:00'
+    ...     name='field.datecloses').value = ten_years_from_now
     >>> team_admin_browser.getControl('Continue').click()
 
 We're redirected to the newly created poll
@@ -141,10 +149,9 @@ Now lets try to insert a poll with the name of a existing one.
     ...     "The proposition that is going to be voted").value = proposition
     >>> team_admin_browser.getControl(
     ...     "Users can spoil their votes?").selected = True
+    >>> team_admin_browser.getControl(name='field.dateopens').value = tomorrow
     >>> team_admin_browser.getControl(
-    ...     name='field.dateopens').value = '2025-06-04 02:00:00+00:00'
-    >>> team_admin_browser.getControl(
-    ...     name='field.datecloses').value = '2035-06-04 02:00:00+00:00'
+    ...     name='field.datecloses').value = ten_years_from_now
     >>> team_admin_browser.getControl('Continue').click()
 
     >>> print_feedback_messages(team_admin_browser.contents)
@@ -156,7 +163,6 @@ now, so that the user creating it has a chance to add some options before
 the poll opens -- at that point new options cannot be added.
 
     >>> team_admin_browser.getControl('The unique name').value = 'today'
-    >>> from datetime import datetime
     >>> today = datetime.today().strftime('%Y-%m-%d')
     >>> team_admin_browser.getControl(name='field.dateopens').value = today
     >>> team_admin_browser.getControl('Continue').click()

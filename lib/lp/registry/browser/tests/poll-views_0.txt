@@ -3,12 +3,14 @@ Poll Pages
 
 First import some stuff and setup some things we'll use in this test.
 
+    >>> from datetime import datetime, timedelta
+    >>> import pytz
     >>> from zope.component import getUtility, getMultiAdapter
     >>> from zope.publisher.browser import TestRequest
-    >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.poll import IPollSet
-    >>> from datetime import datetime, timedelta
+    >>> from lp.services.webapp.servers import LaunchpadTestRequest
+
     >>> login("test@canonical.com")
     >>> ubuntu_team = getUtility(IPersonSet).getByName('ubuntu-team')
 
@@ -25,6 +27,8 @@ with a proper explanation of why it failed.
     >>> eleven_hours_from_now = datetime.now() + timedelta(hours=11)
     >>> eleven_hours_from_now = eleven_hours_from_now.strftime(
     ...     '%Y-%m-%d %H:%M:%S')
+    >>> one_year_from_now = (
+    ...     datetime.now(pytz.UTC) + timedelta(days=365)).strftime('%Y-%m-%d')
     >>> form = {
     ...     'field.name': 'test-poll',
     ...     'field.title': 'test-poll',
@@ -32,7 +36,7 @@ with a proper explanation of why it failed.
     ...     'field.allowspoilt': '1',
     ...     'field.secrecy': 'SECRET',
     ...     'field.dateopens': eleven_hours_from_now,
-    ...     'field.datecloses': '2025-06-04',
+    ...     'field.datecloses': one_year_from_now,
     ...     'field.actions.continue': 'Continue'}
     >>> request = LaunchpadTestRequest(method='POST', form=form)
     >>> new_poll = getMultiAdapter((ubuntu_team, request), name="+newpoll")

@@ -50,6 +50,11 @@ Now we create a new poll on this team.
     ...     u"leader-election", title, proposition, opendate,
     ...     closedate, secrecy, allowspoilt, type)
 
+We also create a new poll that hasn't yet been opened, which we'll use later.
+    >>> _ = factory.makePoll(
+    ...     team, 'not-yet-opened', 'A public poll that has not opened yet',
+    ...     'Whatever proposition.')
+
 Now we test the if the poll is open or closed in some specific dates.
     >>> poll.isOpen(when=opendate)
     True
