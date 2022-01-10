@@ -251,7 +251,9 @@ class ArchiveGPGSigningKey(SignableArchive):
         # Always generate signing keys for the default PPA, even if it
         # was not specifically requested. The default PPA signing key
         # is then propagated to the context named-ppa.
-        default_ppa = self.archive.owner.archive
+        default_ppa = (
+            self.archive.owner.archive if self.archive.is_ppa
+            else self.archive)
         if self.archive != default_ppa:
             def propagate_key(_):
                 self.archive.signing_key_owner = default_ppa.signing_key_owner
@@ -274,8 +276,15 @@ class ArchiveGPGSigningKey(SignableArchive):
                 propagate_key(None)
                 return
 
-        key_displayname = (
-            "Launchpad PPA for %s" % self.archive.owner.displayname)
+        # XXX cjwatson 2021-12-17: If we need key generation for other
+        # archive purposes (PRIMARY/PARTNER) then we should extend this, and
+        # perhaps push it down to a property of the archive.
+        if self.archive.is_copy:
+            key_displayname = (
+                "Launchpad copy archive %s" % self.archive.reference)
+        else:
+            key_displayname = (
+                "Launchpad PPA for %s" % self.archive.owner.displayname)
         if getFeatureFlag(PUBLISHER_GPG_USES_SIGNING_SERVICE):
             try:
                 signing_key = getUtility(ISigningKeySet).generate(

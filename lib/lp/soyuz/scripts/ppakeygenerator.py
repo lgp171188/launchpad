@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -14,6 +14,7 @@ from lp.services.scripts.base import (
     LaunchpadCronScript,
     LaunchpadScriptFailure,
     )
+from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.archive import IArchiveSet
 
 
@@ -26,6 +27,9 @@ class PPAKeyGenerator(LaunchpadCronScript):
         self.parser.add_option(
             "-A", "--archive",
             help="The reference of the archive whose key should be generated.")
+        self.parser.add_option(
+            "--copy-archives", action="store_true", default=False,
+            help="Run only over COPY archives.")
 
     def generateKey(self, archive):
         """Generate a signing key for the given archive."""
@@ -38,9 +42,9 @@ class PPAKeyGenerator(LaunchpadCronScript):
 
     def main(self):
         """Generate signing keys for the selected PPAs."""
+        archive_set = getUtility(IArchiveSet)
         if self.options.archive is not None:
-            archive = getUtility(IArchiveSet).getByReference(
-                self.options.archive)
+            archive = archive_set.getByReference(self.options.archive)
             if archive is None:
                 raise LaunchpadScriptFailure(
                     "No archive named '%s' could be found."
@@ -51,9 +55,11 @@ class PPAKeyGenerator(LaunchpadCronScript):
                     % (archive.reference, archive.displayname,
                        archive.signing_key_fingerprint))
             archives = [archive]
+        elif self.options.copy_archives:
+            archives = list(archive_set.getArchivesPendingSigningKey(
+                purpose=ArchivePurpose.COPY))
         else:
-            archive_set = getUtility(IArchiveSet)
-            archives = list(archive_set.getPPAsPendingSigningKey())
+            archives = list(archive_set.getArchivesPendingSigningKey())
 
         for archive in archives:
             self.generateKey(archive)

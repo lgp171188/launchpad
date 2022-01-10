@@ -2416,10 +2416,12 @@ class IArchiveSet(Interface):
     def getPPADistributionsForUser(user):
         """Return the `Distribution`s of all PPAs for the given user."""
 
-    def getPPAsPendingSigningKey():
-        """Return all PPAs pending signing key generation.
+    def getArchivesPendingSigningKey(purpose=ArchivePurpose.PPA):
+        """Return all archives with `purpose` pending signing key generation.
 
         The result is ordered by archive creation date.
+
+        :param purpose: Only return archives with this `ArchivePurpose`.
         """
 
     def getLatestPPASourcePublicationsForDistribution(distribution):
