@@ -1,5 +1,18 @@
 Any logged in user can propose specs to be discussed in a sprint.
 
+    >>> from datetime import (
+    ...     datetime,
+    ...     timedelta,
+    ...     )
+    >>> import pytz
+
+    >>> login('test@canonical.com')
+    >>> _ = factory.makeSprint(
+    ...     name='uds-guacamole', title='Ubuntu DevSummit Guacamole',
+    ...     time_starts=datetime.now(pytz.UTC) + timedelta(days=1))
+    >>> transaction.commit()
+    >>> logout()
+
     >>> user_browser.open(
     ...     'http://blueprints.launchpad.test/ubuntu/'
     ...     '+spec/media-integrity-check/+linksprint')

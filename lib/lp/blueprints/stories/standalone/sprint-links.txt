@@ -6,6 +6,18 @@ agenda, and then it is approved. If, however, the person nominating the spec
 also has permission to approve it, then it should be approved automatically
 for the agenda.
 
+    >>> from datetime import (
+    ...     datetime,
+    ...     timedelta,
+    ...     )
+    >>> import pytz
+
+    >>> login('test@canonical.com')
+    >>> _ = factory.makeSprint(
+    ...     name='uds-guacamole',
+    ...     time_starts=datetime.now(pytz.UTC) + timedelta(days=1))
+    >>> logout()
+
 First we open the page for the spec on Support <canvas> objects from the
 sample data. We will use Sample Person, who has no special privileges.
 
