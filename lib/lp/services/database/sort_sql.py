@@ -1,4 +1,4 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Sort SQL dumps.
@@ -20,10 +20,10 @@ class Parser:
     >>> p.feed("INSERT INTO foo (id, x) VALUES (2, 34);\n")
     >>> for line in p.lines:
     ...     print(repr(line))
-    (None, "UPDATE foo SET bar='baz';")
-    (None, '')
-    (1, 'INSERT INTO foo (id, x) VALUES (1, 23);')
-    (2, 'INSERT INTO foo (id, x) VALUES (2, 34);')
+    ((0, None), "UPDATE foo SET bar='baz';")
+    ((0, None), '')
+    ((1, 1), 'INSERT INTO foo (id, x) VALUES (1, 23);')
+    ((1, 2), 'INSERT INTO foo (id, x) VALUES (2, 34);')
     """
 
     def __init__(self):
@@ -89,12 +89,12 @@ class Parser:
         Something that's not an INSERT.
 
         >>> p.parse_line('''UPDATE foo SET bar = 42;\n''')
-        (None, 'UPDATE foo SET bar = 42;\n')
+        ((0, None), 'UPDATE foo SET bar = 42;\n')
 
         A simple INSERT.
 
         >>> p.parse_line('''INSERT INTO foo (id, x) VALUES (2, 'foo');\n''')
-        (2, "INSERT INTO foo (id, x) VALUES (2, 'foo');\n")
+        ((1, 2), "INSERT INTO foo (id, x) VALUES (2, 'foo');\n")
 
         Something trickier: multiple lines, and a ');' in the middle.
 
@@ -103,11 +103,19 @@ class Parser:
         ... b);
         ... b');
         ... ''')
-        (3, "INSERT INTO foo (id, x) VALUES (3, 'b',\n'b\nb);\nb');\n")
+        ((1, 3), "INSERT INTO foo (id, x) VALUES (3, 'b',\n'b\nb);\nb');\n")
+
+        Something that doesn't have an id integer field and hence doesn't
+        match the insert pattern.
+
+        >>> p.parse_line('''INSERT INTO foo (name)
+        ... VALUES ('Foo');\n''')  # doctest: +NORMALIZE_WHITESPACE
+        ((2, "INSERT INTO foo (name)\nVALUES ('Foo');\n"),
+        "INSERT INTO foo (name)\nVALUES ('Foo');\n")
         """
 
         if not line.startswith('INSERT '):
-            return (None, line)
+            return (0, None), line
 
         if not self.is_complete_insert_statement(line):
             raise ValueError("Incomplete line")
@@ -118,9 +126,9 @@ class Parser:
         match = insert_pattern.match(line)
 
         if match:
-            return int(match.group(1)), line
+            return (1, int(match.group(1))), line
         else:
-            return line, line
+            return (2, line), line
 
     def feed(self, s):
         """Give the parser some text to parse."""
@@ -146,13 +154,16 @@ def print_lines_sorted(file, lines):
     Sorting only occurs within blocks of statements.
 
     >>> lines = [
-    ...     (10, "INSERT INTO foo (id, x) VALUES (10, 'data');"),
-    ...     (4, "INSERT INTO foo (id, x) VALUES (4, 'data\nmore\nmore');"),
-    ...     (7, "INSERT INTO foo (id, x) VALUES (7, 'data');"),
-    ...     (1, "INSERT INTO foo (id, x) VALUES (1, 'data');"),
-    ...     (None, ""),
-    ...     (2, "INSERT INTO baz (id, x) VALUES (2, 'data');"),
-    ...     (1, "INSERT INTO baz (id, x) VALUES (1, 'data');"),
+    ...     ((1, 10), "INSERT INTO foo (id, x) VALUES (10, 'data');"),
+    ...     ((1, 4),
+    ...      "INSERT INTO foo (id, x) VALUES (4, 'data\nmore\nmore');"),
+    ...     ((1, 7), "INSERT INTO foo (id, x) VALUES (7, 'data');"),
+    ...     ((1, 1), "INSERT INTO foo (id, x) VALUES (1, 'data');"),
+    ...     ((0, None), ""),
+    ...     ((1, 2), "INSERT INTO baz (id, x) VALUES (2, 'data');"),
+    ...     ((1, 1), "INSERT INTO baz (id, x) VALUES (1, 'data');"),
+    ...     ((2, "INSERT INTO f (name) VALUES ('a');"),
+    ...      "INSERT INTO f (name) values ('a');")
     ...     ]
     >>> import sys
     >>> print_lines_sorted(sys.stdout, lines)
@@ -165,6 +176,7 @@ def print_lines_sorted(file, lines):
     <BLANKLINE>
     INSERT INTO baz (id, x) VALUES (1, 'data');
     INSERT INTO baz (id, x) VALUES (2, 'data');
+    INSERT INTO f (name) values ('a');
 
     """
 
