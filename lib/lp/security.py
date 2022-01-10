@@ -1666,18 +1666,6 @@ class EditCodeImportMachine(OnlyBazaarExpertsAndAdmins):
     usedfor = ICodeImportMachine
 
 
-class AdminSourcePackageRecipeBuilds(AuthorizationBase):
-    """Control who can edit SourcePackageRecipeBuilds.
-
-    Access is restricted to Buildd Admins.
-    """
-    permission = 'launchpad.Admin'
-    usedfor = ISourcePackageRecipeBuild
-
-    def checkAuthenticated(self, user):
-        return user.in_buildd_admin
-
-
 class AdminDistributionTranslations(AuthorizationBase):
     """Class for deciding who can administer distribution translations.
 

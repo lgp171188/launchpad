@@ -5,6 +5,7 @@
 
 __all__ = [
     'IPackageBuild',
+    'IPackageBuildView',
     ]
 
 
@@ -18,7 +19,10 @@ from zope.schema import (
     )
 
 from lp import _
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
+from lp.buildmaster.interfaces.buildfarmjob import (
+    IBuildFarmJob,
+    IBuildFarmJobView,
+    )
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -26,8 +30,8 @@ from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.soyuz.interfaces.archive import IArchive
 
 
-class IPackageBuild(IBuildFarmJob):
-    """Attributes and operations specific to package build jobs."""
+class IPackageBuildView(IBuildFarmJobView):
+    """`IPackageBuild` methods that require launchpad.View."""
 
     archive = exported(
         Reference(
@@ -95,3 +99,7 @@ class IPackageBuild(IBuildFarmJob):
 
         :param changes: Changes file from the upload.
         """
+
+
+class IPackageBuild(IPackageBuildView, IBuildFarmJob):
+    """Attributes and operations specific to package build jobs."""

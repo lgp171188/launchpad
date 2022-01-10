@@ -263,31 +263,7 @@ class SourcePackageRecipeBuild(SpecificBuildFarmJobSourceMixin,
                     builds.append(build)
         return builds
 
-    @property
-    def can_be_rescored(self):
-        """See `IBuild`."""
-        return self.status is BuildStatus.NEEDSBUILD
-
-    @property
-    def can_be_cancelled(self):
-        """See `ISourcePackageRecipeBuild`."""
-        if not self.buildqueue_record:
-            return False
-
-        cancellable_statuses = [
-            BuildStatus.BUILDING,
-            BuildStatus.NEEDSBUILD,
-            ]
-        return self.status in cancellable_statuses
-
-    def cancel(self):
-        """See `ISourcePackageRecipeBuild`."""
-        if not self.can_be_cancelled:
-            return
-        # BuildQueue.cancel() will decide whether to go straight to
-        # CANCELLED, or go through CANCELLING to let buildd-manager
-        # clean up the slave.
-        self.buildqueue_record.cancel()
+    can_be_retried = False
 
     def destroySelf(self):
         if self.buildqueue_record is not None:

@@ -11,6 +11,7 @@ import transaction
 from zope.component import getUtility
 
 from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.interfaces.buildfarmjob import CannotBeRescored
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
@@ -20,10 +21,7 @@ from lp.soyuz.enums import (
     PackagePublishingPriority,
     PackageUploadStatus,
     )
-from lp.soyuz.interfaces.binarypackagebuild import (
-    CannotBeRescored,
-    IBinaryPackageBuildSet,
-    )
+from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.publishing import PackagePublishingStatus
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher

@@ -35,6 +35,7 @@ class TestPackageBuildMixin(TestCaseWithFactory):
 
     def test_providesInterface(self):
         # PackageBuild provides IPackageBuild
+        login('admin@canonical.com')
         self.assertProvides(self.package_build, IPackageBuild)
 
     def test_updateStatus_MANUALDEPWAIT_sets_dependencies(self):

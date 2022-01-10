@@ -205,10 +205,9 @@ As can cprov who owns the PPA for the build:
     ...     cprov, permission=OAuthPermission.WRITE_PUBLIC)
     >>> print(cprov_webservice.named_post(
     ...     a_build['self_link'], 'retry'))
-    HTTP/1.1 500 Internal Server Error
+    HTTP/1.1 400 Bad Request
     ...
-    AssertionError: Build ... cannot be retried
-    <BLANKLINE>
+    Build ... cannot be retried.
 
 but in this case, although he has permission to retry the build, it
 failed because it was already retried by an admin.  This is reflected in the
@@ -265,4 +264,4 @@ alter the buildstate to one that cannot be retried:
     ...     a_build['self_link'], 'rescore', score=1000))
     HTTP/1.1 400 Bad Request
     ...
-    Build cannot be rescored.
+    Build ... cannot be rescored.

@@ -742,8 +742,6 @@ patch_entry_explicit_version(IArchiveSubscriber, 'beta')
 
 # IBinaryPackageBuild
 patch_entry_explicit_version(IBinaryPackageBuild, 'beta')
-patch_operations_explicit_version(
-    IBinaryPackageBuild, 'beta', "rescore", "retry")
 
 # IBinaryPackagePublishingHistory
 patch_entry_explicit_version(IBinaryPackagePublishingHistory, 'beta')

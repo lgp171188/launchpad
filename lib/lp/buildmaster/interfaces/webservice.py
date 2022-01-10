@@ -10,6 +10,8 @@ which tells `lazr.restful` that it should look for webservice exports here.
 """
 
 __all__ = [
+    'CannotBeRescored',
+    'CannotBeRetried',
     'IBuilder',
     'IBuilderSet',
     'IBuildFarmJob',
@@ -21,7 +23,11 @@ from lp.buildmaster.interfaces.builder import (
     IBuilder,
     IBuilderSet,
     )
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
+from lp.buildmaster.interfaces.buildfarmjob import (
+    CannotBeRescored,
+    CannotBeRetried,
+    IBuildFarmJob,
+    )
 from lp.buildmaster.interfaces.processor import (
     IProcessor,
     IProcessorSet,
