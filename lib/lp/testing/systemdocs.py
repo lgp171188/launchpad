@@ -211,7 +211,7 @@ def stop():
         sys.stdout = old_stdout
 
 
-class PrettyPrinter(pprint.PrettyPrinter, object):
+class PrettyPrinter(pprint.PrettyPrinter):
     """A pretty-printer that formats text in the Python 3 style.
 
     This should only be used when the resulting ambiguities between str and
@@ -220,20 +220,19 @@ class PrettyPrinter(pprint.PrettyPrinter, object):
     """
 
     def format(self, obj, contexts, maxlevels, level):
-        if isinstance(obj, six.text_type):
+        if isinstance(obj, str):
             obj = obj.encode('unicode_escape').decode('ASCII')
             if "'" in obj and '"' not in obj:
                 return '"%s"' % obj, True, False
             else:
                 return "'%s'" % obj.replace("'", "\\'"), True, False
         else:
-            return super(PrettyPrinter, self).format(
-                obj, contexts, maxlevels, level)
+            return super().format(obj, contexts, maxlevels, level)
 
     # Disable wrapping of long strings on Python >= 3.5, which is unhelpful
     # in doctests.  There seems to be no reasonable public API for this.
     _dispatch = dict(pprint.PrettyPrinter._dispatch)
-    del _dispatch[six.text_type.__repr__]
+    del _dispatch[str.__repr__]
     del _dispatch[bytes.__repr__]
     del _dispatch[bytearray.__repr__]
 

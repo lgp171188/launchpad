@@ -23,7 +23,7 @@ from lp.services.webapp.interaction import (
 from lp.testing.pages import http
 
 
-class _FakeSocket(object):
+class _FakeSocket:
     """Pretend to be a socket that has a makefile method.
 
     This is used because it is what http.client.HTTPResponse expects.

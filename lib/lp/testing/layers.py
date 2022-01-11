@@ -977,8 +977,7 @@ class TransactionMiddleware:
 
     def __call__(self, environ, start_response):
         transaction.commit()
-        for entry in self.app(environ, start_response):
-            yield entry
+        yield from self.app(environ, start_response)
 
 
 class RemoteAddrMiddleware:
@@ -1026,7 +1025,7 @@ class _FunctionalBrowserLayer(zope.testbrowser.wsgi.Layer, ZCMLFileLayer):
     fake_db = object()
 
     def __init__(self, *args, **kwargs):
-        super(_FunctionalBrowserLayer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.middlewares = [
             AuthorizationMiddleware,
             RemoteAddrMiddleware,
@@ -1036,7 +1035,7 @@ class _FunctionalBrowserLayer(zope.testbrowser.wsgi.Layer, ZCMLFileLayer):
             ]
 
     def setUp(self):
-        super(_FunctionalBrowserLayer, self).setUp()
+        super().setUp()
         # We don't use ZODB, but the webapp subscribes to IDatabaseOpened to
         # perform some post-configuration tasks, so emit that event
         # manually.

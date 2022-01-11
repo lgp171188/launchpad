@@ -21,13 +21,13 @@ class SampleDataTestCase(TestCase):
     layer = DatabaseLayer
 
     def setUp(self):
-        super(SampleDataTestCase, self).setUp()
+        super().setUp()
         self.pg_fixture = PgTestSetup(template='template1')
         self.pg_fixture.setUp()
 
     def tearDown(self):
         self.pg_fixture.tearDown()
-        super(SampleDataTestCase, self).tearDown()
+        super().tearDown()
 
     def test_testSampledata(self):
         """Test the sample data used by the test suite."""

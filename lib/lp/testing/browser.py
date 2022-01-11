@@ -49,7 +49,7 @@ class Browser(_Browser):
             wsgi_app = AuthorizationMiddleware(
                 TransactionMiddleware(
                     TransparentProxy(client=client)))
-        super(Browser, self).__init__(url=url, wsgi_app=wsgi_app)
+        super().__init__(url=url, wsgi_app=wsgi_app)
 
     @property
     def vhost(self):

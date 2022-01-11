@@ -23,7 +23,7 @@ class ITestOpenIDApplication(ILaunchpadApplication):
 
 
 class ITestOpenIDLoginForm(Interface):
-    email = TextLine(title=u'What is your email address?', required=True)
+    email = TextLine(title='What is your email address?', required=True)
 
 
 class ITestOpenIDPersistentIdentity(IOpenIDPersistentIdentity):

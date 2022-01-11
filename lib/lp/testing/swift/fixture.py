@@ -32,7 +32,7 @@ class SwiftFixture(TacTestFixture):
     daemon_port = None
 
     def __init__(self, old_instance=False):
-        super(SwiftFixture, self).__init__()
+        super().__init__()
         self.old_instance = old_instance
 
     def _getConfig(self, key):
@@ -53,7 +53,7 @@ class SwiftFixture(TacTestFixture):
                 config.root, 'logs', 'fakeswift-%s.pid' % self.daemon_port)
         assert self.daemon_port is not None
 
-        super(SwiftFixture, self).setUp(
+        super().setUp(
             spew, umask,
             os.path.join(config.root, 'bin', 'py'),
             os.path.join(config.root, 'bin', 'twistd'))

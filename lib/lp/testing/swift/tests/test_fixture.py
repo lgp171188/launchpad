@@ -30,7 +30,7 @@ class TestSwiftFixture(TestCase):
     layer = BaseLayer
 
     def setUp(self):
-        super(TestSwiftFixture, self).setUp()
+        super().setUp()
         self.swift_fixture = SwiftFixture()
         self.useFixture(self.swift_fixture)
         self.factory = ObjectFactory()
