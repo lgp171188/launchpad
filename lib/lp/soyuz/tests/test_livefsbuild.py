@@ -110,7 +110,7 @@ class TestLiveFSBuild(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestLiveFSBuild, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         self.build = self.factory.makeLiveFSBuild()
 
@@ -375,7 +375,7 @@ class TestLiveFSBuildSet(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestLiveFSBuildSet, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
 
     def test_getByBuildFarmJob_works(self):
@@ -407,7 +407,7 @@ class TestLiveFSBuildWebservice(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestLiveFSBuildWebservice, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         self.person = self.factory.makePerson()
         self.webservice = webservice_for_person(
@@ -599,7 +599,7 @@ class TestLiveFSBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestLiveFSBuildMacaroonIssuer, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret")

@@ -84,8 +84,8 @@ class TestPackageLocation(TestCaseWithFactory):
         self.assertEqual([], location.packagesets)
 
     def testSetupLocationWithPackagesets(self):
-        packageset_name1 = u"foo-packageset"
-        packageset_name2 = u"bar-packageset"
+        packageset_name1 = "foo-packageset"
+        packageset_name2 = "bar-packageset"
         packageset1 = self.factory.makePackageset(name=packageset_name1)
         packageset2 = self.factory.makePackageset(name=packageset_name2)
         location = self.getPackageLocation(
@@ -138,17 +138,17 @@ class TestPackageLocation(TestCaseWithFactory):
             PackageLocationError,
             self.getPackageLocation,
             distribution_name='debian',
-            packageset_names=[u"unknown"])
+            packageset_names=["unknown"])
 
     def test_build_package_location_when_one_packageset_unknown(self):
         """Test that with one of two packagesets unknown."""
-        packageset_name = u"foo-packageset"
+        packageset_name = "foo-packageset"
         self.factory.makePackageset(name=packageset_name)
         self.assertRaises(
             PackageLocationError,
             self.getPackageLocation,
             distribution_name='debian',
-            packageset_names=[packageset_name, u"unknown"])
+            packageset_names=[packageset_name, "unknown"])
 
     def testSetupLocationPPANotMatchingDistribution(self):
         """`PackageLocationError` is raised when PPA does not match the
@@ -247,9 +247,9 @@ class TestPackageLocation(TestCaseWithFactory):
         self.assertEqual(
             str(location_ubuntu_partner), 'ubuntu/partner: hoary-RELEASE')
 
-        self.factory.makePackageset(name=u"foo-packageset")
+        self.factory.makePackageset(name="foo-packageset")
         location_ubuntu_packageset = self.getPackageLocation(
-            packageset_names=[u"foo-packageset"])
+            packageset_names=["foo-packageset"])
         self.assertEqual(
             str(location_ubuntu_packageset),
             'ubuntu: hoary-RELEASE [foo-packageset]')

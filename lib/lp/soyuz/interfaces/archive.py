@@ -118,7 +118,7 @@ from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.interfaces.component import IComponent
 
 
-NAMED_AUTH_TOKEN_FEATURE_FLAG = u"soyuz.named_auth_token.allow_new"
+NAMED_AUTH_TOKEN_FEATURE_FLAG = "soyuz.named_auth_token.allow_new"
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -209,7 +209,7 @@ class CannotUploadToArchive(Exception):
 
     def __init__(self, **args):
         """Construct a `CannotUploadToArchive`."""
-        super(CannotUploadToArchive, self).__init__(self._fmt % args)
+        super().__init__(self._fmt % args)
 
 
 class InvalidPocketForPartnerArchive(CannotUploadToArchive):
@@ -223,7 +223,7 @@ class CannotUploadToPocket(Exception):
     """Returned when a pocket is closed for uploads."""
 
     def __init__(self, distroseries, pocket):
-        super(CannotUploadToPocket, self).__init__(
+        super().__init__(
             "Not permitted to upload to the %s pocket in a series in the "
             "'%s' state." % (pocket.name, distroseries.status.name))
 
@@ -271,7 +271,7 @@ class NoRightsForComponent(CannotUploadToArchive):
         "Signer is not permitted to upload to the component '%(component)s'.")
 
     def __init__(self, component):
-        super(NoRightsForComponent, self).__init__(component=component.name)
+        super().__init__(component=component.name)
 
 
 class InvalidPocketForPPA(CannotUploadToArchive):
@@ -286,7 +286,7 @@ class ArchiveDisabled(CannotUploadToArchive):
     _fmt = ("%(archive_name)s is disabled.")
 
     def __init__(self, archive_name):
-        super(ArchiveDisabled, self).__init__(archive_name=archive_name)
+        super().__init__(archive_name=archive_name)
 
 
 class CannotUploadToSeries(CannotUploadToArchive):
@@ -295,8 +295,7 @@ class CannotUploadToSeries(CannotUploadToArchive):
     _fmt = ("%(distroseries)s is obsolete and will not accept new uploads.")
 
     def __init__(self, distroseries):
-        super(CannotUploadToSeries, self).__init__(
-            distroseries=distroseries.name)
+        super().__init__(distroseries=distroseries.name)
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -318,8 +317,7 @@ class CannotModifyArchiveProcessor(Exception):
         'by administrators.')
 
     def __init__(self, processor):
-        super(CannotModifyArchiveProcessor, self).__init__(
-            self._fmt % {'processor': processor.name})
+        super().__init__(self._fmt % {'processor': processor.name})
 
 
 @error_status(http.client.CONFLICT)
@@ -333,7 +331,7 @@ class NamedAuthTokenFeatureDisabled(Unauthorized):
     """Only certain users can create named authorization tokens."""
 
     def __init__(self):
-        super(NamedAuthTokenFeatureDisabled, self).__init__(
+        super().__init__(
             "You do not have permission to create named authorization tokens")
 
 

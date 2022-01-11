@@ -65,7 +65,7 @@ class TestAcceptRejectQueueUploads(TestCaseWithFactory):
     def setUp(self):
         """Create two new uploads in the new state and a person with
         permission to upload to the partner archive."""
-        super(TestAcceptRejectQueueUploads, self).setUp()
+        super().setUp()
         login('admin@canonical.com')
         self.test_publisher = SoyuzTestPublisher()
         self.test_publisher.prepareBreezyAutotest()

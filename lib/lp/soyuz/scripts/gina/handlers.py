@@ -22,7 +22,6 @@ import io
 import os
 import re
 
-import six
 from storm.exceptions import NotOneError
 from storm.expr import (
     Cast,
@@ -504,8 +503,7 @@ class SourcePackageHandler:
             sp_version, sp_component))
         dsc_contents = parse_tagfile(dsc_path)
         dsc_contents = {
-            name.lower(): value for
-            (name, value) in six.iteritems(dsc_contents)}
+            name.lower(): value for (name, value) in dsc_contents.items()}
 
         # Since the dsc doesn't know, we add in the directory, package
         # component and section

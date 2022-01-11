@@ -92,7 +92,7 @@ class BinaryPackageRelease(SQLBase):
             kwargs['_user_defined_fields'] = simplejson.dumps(
                 kwargs['user_defined_fields'])
             del kwargs['user_defined_fields']
-        super(BinaryPackageRelease, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @cachedproperty
     def built_using_references(self):
@@ -183,7 +183,7 @@ class BinaryPackageReleaseDownloadCount(Storm):
     count = Int(allow_none=False)
 
     def __init__(self, archive, binary_package_release, day, country, count):
-        super(BinaryPackageReleaseDownloadCount, self).__init__()
+        super().__init__()
         self.archive = archive
         self.binary_package_release = binary_package_release
         self.day = day

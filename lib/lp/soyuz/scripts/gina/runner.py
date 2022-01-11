@@ -165,7 +165,7 @@ def import_sourcepackages(distro, packages_map, package_root,
 
 def do_one_sourcepackage(distro, source, package_root, importer_handler):
     source_data = SourcePackageData(**source)
-    skip_key = u'%s/%s/%s' % (distro, source_data.package, source_data.version)
+    skip_key = '%s/%s/%s' % (distro, source_data.package, source_data.version)
     skip_list = getFeatureFlag('soyuz.gina.skip_source_versions')
     if skip_list is not None and skip_key in skip_list.split():
         log.info(

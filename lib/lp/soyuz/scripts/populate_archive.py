@@ -36,7 +36,7 @@ def specified(option):
     """
     if option is None:
         return False
-    if isinstance(option, six.string_types) and option.strip() == '':
+    if isinstance(option, str) and option.strip() == '':
         return False
     return True
 

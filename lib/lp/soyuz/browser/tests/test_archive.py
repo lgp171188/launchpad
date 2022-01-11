@@ -58,7 +58,7 @@ class TestArchiveEditView(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestArchiveEditView, self).setUp()
+        super().setUp()
         # None of the Ubuntu series in sampledata have amd64.  Add it to
         # breezy so that it shows up in the list of available processors.
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu

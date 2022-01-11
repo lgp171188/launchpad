@@ -41,7 +41,7 @@ class TestPublishingSet(BaseTestCaseWithThreeBuilds):
 
     def setUp(self):
         """Use `SoyuzTestPublisher` to publish some sources in archives."""
-        super(TestPublishingSet, self).setUp()
+        super().setUp()
 
         # Ensure all the builds have been built.
         for build in self.builds:

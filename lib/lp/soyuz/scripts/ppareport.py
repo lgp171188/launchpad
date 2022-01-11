@@ -186,7 +186,7 @@ class PPAReportScript(LaunchpadScript):
         sorted_people_to_email = sorted(
             people_to_email, key=operator.attrgetter('name'))
         for user in sorted_people_to_email:
-            line = u"%s | %s | %s\n" % (
+            line = "%s | %s | %s\n" % (
                 user.name, user.displayname, user.preferredemail.email)
             self.output.write(six.ensure_str(line))
         self.output.write('\n')

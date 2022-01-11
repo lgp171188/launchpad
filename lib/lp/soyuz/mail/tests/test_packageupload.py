@@ -48,14 +48,14 @@ class TestNotificationRequiringLibrarian(TestCaseWithFactory):
     def test_mail_from_unicode_names(self):
         # People with unicode in their names should appear correctly in the
         # email and not get smashed to ASCII or otherwise transliterated.
-        creator = self.factory.makePerson(displayname=u"Loïc")
+        creator = self.factory.makePerson(displayname="Loïc")
         spr = self.factory.makeSourcePackageRelease(creator=creator)
         self.factory.makeSourcePackageReleaseFile(sourcepackagerelease=spr)
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
         pocket = PackagePublishingPocket.RELEASE
         distroseries = self.factory.makeDistroSeries()
         distroseries.changeslist = "blah@example.com"
-        blamer = self.factory.makePerson(displayname=u"Stéphane")
+        blamer = self.factory.makePerson(displayname="Stéphane")
         mailer = PackageUploadMailer.forAction(
             "accepted", blamer, spr, [], [], archive, distroseries, pocket)
         mailer.sendAll()
@@ -63,8 +63,8 @@ class TestNotificationRequiringLibrarian(TestCaseWithFactory):
         self.assertEqual(2, len(notifications))
         msg = notifications[1].get_payload(0)
         body = six.ensure_text(msg.get_payload(decode=True))
-        self.assertIn(u"Changed-By: Loïc", body)
-        self.assertIn(u"Signed-By: Stéphane", body)
+        self.assertIn("Changed-By: Loïc", body)
+        self.assertIn("Signed-By: Stéphane", body)
 
     def test_calculate_subject_customfile(self):
         lfa = self.factory.makeLibraryFileAlias()
@@ -143,7 +143,7 @@ class TestNotificationRequiringLibrarian(TestCaseWithFactory):
         distroseries.changeslist = "blah@example.com"
         blamer = self.factory.makePerson()
         from_person = self.factory.makePerson(
-            email="loic@example.com", displayname=u"Loïc Motörhead")
+            email="loic@example.com", displayname="Loïc Motörhead")
         mailer = PackageUploadMailer.forAction(
             "accepted", blamer, spr, [], [], archive, distroseries, pocket,
             announce_from_person=from_person)
@@ -215,7 +215,7 @@ class TestNotificationRequiringLibrarian(TestCaseWithFactory):
         pocket = self.factory.getAnyPocket()
         distroseries = self.factory.makeDistroSeries()
         person = self.factory.makePerson(
-            displayname=u'Blamer', email='blamer@example.com')
+            displayname='Blamer', email='blamer@example.com')
         mailer = PackageUploadMailer.forAction(
             "rejected", person, None, [bpr], [], archive, distroseries, pocket,
             summary_text="Rejected by archive administrator.")
@@ -262,7 +262,7 @@ class TestNotification(TestCaseWithFactory):
             info['maintainer'],
             ]
         for field in fields:
-            self.assertEqual((u'Foo Bar', u'foo.bar@example.com'), field)
+            self.assertEqual(('Foo Bar', 'foo.bar@example.com'), field)
         self.assertFalse(info['notify_changed_by'])
 
     def test_fetch_information_changes_notify_changed_by(self):
@@ -281,21 +281,21 @@ class TestNotification(TestCaseWithFactory):
             info['maintainer'],
             ]
         for field in fields:
-            self.assertEqual((u'Foo Bar', u'foo.bar@example.com'), field)
+            self.assertEqual(('Foo Bar', 'foo.bar@example.com'), field)
         self.assertTrue(info['notify_changed_by'])
 
     def test_fetch_information_spr(self):
-        creator = self.factory.makePerson(displayname=u"foø")
-        maintainer = self.factory.makePerson(displayname=u"bær")
+        creator = self.factory.makePerson(displayname="foø")
+        maintainer = self.factory.makePerson(displayname="bær")
         spr = self.factory.makeSourcePackageRelease(
             creator=creator, maintainer=maintainer)
         info = fetch_information(spr, None, None)
         self.assertEqual(info['date'], spr.dateuploaded)
         self.assertEqual(info['changelog'], spr.changelog_entry)
         self.assertEqual(
-            (u"foø", spr.creator.preferredemail.email), info['changedby'])
+            ("foø", spr.creator.preferredemail.email), info['changedby'])
         self.assertEqual(
-            (u"bær", spr.maintainer.preferredemail.email), info['maintainer'])
+            ("bær", spr.maintainer.preferredemail.email), info['maintainer'])
         self.assertFalse(info['notify_changed_by'])
 
     def test_fetch_information_bprs(self):

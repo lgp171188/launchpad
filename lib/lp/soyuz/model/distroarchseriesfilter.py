@@ -69,7 +69,7 @@ class DistroArchSeriesFilter(Storm):
     def __init__(self, distroarchseries, packageset, sense, creator,
             date_created=DEFAULT):
         """Construct a `DistroArchSeriesFilter`."""
-        super(DistroArchSeriesFilter, self).__init__()
+        super().__init__()
         self.distroarchseries = distroarchseries
         self.packageset = packageset
         self.sense = sense

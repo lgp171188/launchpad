@@ -149,7 +149,7 @@ class ArchiveSubscribersView(LaunchpadFormView):
                 canonical_url(self.context))
             return
 
-        super(ArchiveSubscribersView, self).initialize()
+        super().initialize()
         subscription_set = getUtility(IArchiveSubscriberSet)
         self.subscriptions = subscription_set.getByArchive(self.context)
         self.batchnav = BatchNavigator(
@@ -207,7 +207,7 @@ class ArchiveSubscribersView(LaunchpadFormView):
                 self.setFieldError('date_expires',
                     "The expiry date must be in the future.")
 
-    @action(u"Add", name="add",
+    @action("Add", name="add",
             validator="validate_new_subscription")
     def create_subscription(self, action, data):
         """Create a subscription for the supplied user."""
@@ -272,7 +272,7 @@ class ArchiveSubscriptionEditView(LaunchpadEditFormView):
                     "The expiry date must be in the future.")
 
     @action(
-        u'Save', name='update', validator="validate_update_subscription")
+        'Save', name='update', validator="validate_update_subscription")
     def update_subscription(self, action, data):
         """Update the context subscription with the new data."""
         # As we present a date selection to the user for expiry, we
@@ -292,7 +292,7 @@ class ArchiveSubscriptionEditView(LaunchpadEditFormView):
             self.context.subscriber.displayname)
         self.request.response.addNotification(notification)
 
-    @action(u'Revoke access', name='cancel')
+    @action('Revoke access', name='cancel')
     def cancel_subscription(self, action, data):
         """Cancel the context subscription."""
         self.context.cancel(self.user)
@@ -371,7 +371,7 @@ class PersonArchiveSubscriptionView(LaunchpadView, SourcesListEntriesWidget):
 
     def initialize(self):
         """Process any posted actions."""
-        super(PersonArchiveSubscriptionView, self).initialize()
+        super().initialize()
         # Set properties for SourcesListEntriesWidget.
         self.archive = self.context.archive
         self.sources_list_user = self.context.subscriber

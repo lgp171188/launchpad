@@ -133,7 +133,7 @@ class LiveFS(Storm, WebhookTargetMixin):
         """Construct a `LiveFS`."""
         if not getFeatureFlag(LIVEFS_FEATURE_FLAG):
             raise LiveFSFeatureDisabled
-        super(LiveFS, self).__init__()
+        super().__init__()
         self.registrant = registrant
         self.owner = owner
         self.distro_series = distro_series

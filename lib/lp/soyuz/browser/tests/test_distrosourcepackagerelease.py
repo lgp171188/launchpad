@@ -21,7 +21,7 @@ class TestDistroSourcePackageReleaseFiles(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestDistroSourcePackageReleaseFiles, self).setUp()
+        super().setUp()
         # The package must be published for the page to render.
         stp = SoyuzTestPublisher()
         distroseries = stp.setUpDefaultDistroSeries()

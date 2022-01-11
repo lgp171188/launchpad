@@ -81,8 +81,7 @@ class PackageUploadRecipientReason(RecipientReason):
         return cls(recipient, recipient, "Announcement", "")
 
     def _getTemplateValues(self):
-        template_values = super(
-            PackageUploadRecipientReason, self)._getTemplateValues()
+        template_values = super()._getTemplateValues()
         template_values["lc_entity_has"] = "you have"
         if self.recipient != self.subscriber or self.subscriber.is_team:
             template_values["lc_entity_has"] = (
@@ -92,7 +91,7 @@ class PackageUploadRecipientReason(RecipientReason):
     def getReason(self):
         """See `RecipientReason`."""
         return MailWrapper(width=72).format(
-            super(PackageUploadRecipientReason, self).getReason())
+            super().getReason())
 
 
 def debug(logger, msg, *args, **kwargs):
@@ -110,7 +109,7 @@ def sanitize_string(s):
         'ascii' codec can't decode byte 0xc4 in position 21: ordinal
         not in range(128)
     """
-    if isinstance(s, six.text_type):
+    if isinstance(s, str):
         return s
     else:
         return guess_encoding(s)
@@ -447,7 +446,7 @@ class PackageUploadMailer(BaseMailer):
                  distroseries, pocket, summary_text=None, changes=None,
                  changesfile_content=None, announce_from_address=None,
                  previous_version=None, logger=None):
-        super(PackageUploadMailer, self).__init__(
+        super().__init__(
             subject, template_name, recipients, from_address,
             notification_type="package-upload")
         self.action = action
@@ -480,19 +479,17 @@ class PackageUploadMailer(BaseMailer):
                 self.announce_from_address is not None):
             return self.announce_from_address
         else:
-            return super(PackageUploadMailer, self)._getFromAddress(
-                email, recipient)
+            return super()._getFromAddress(email, recipient)
 
     def _getHeaders(self, email, recipient):
         """See `BaseMailer`."""
-        headers = super(PackageUploadMailer, self)._getHeaders(
-            email, recipient)
+        headers = super()._getHeaders(email, recipient)
         headers['X-Katie'] = 'Launchpad actually'
         headers['X-Launchpad-Archive'] = self.archive.reference
 
         # The deprecated PPA reference header is included for Ubuntu PPAs to
         # avoid breaking existing consumers.
-        if self.archive.is_ppa and self.archive.distribution.name == u'ubuntu':
+        if self.archive.is_ppa and self.archive.distribution.name == 'ubuntu':
             headers['X-Launchpad-PPA'] = get_ppa_reference(self.archive)
 
         # Include a 'X-Launchpad-Component' header with the component and
@@ -541,8 +538,7 @@ class PackageUploadMailer(BaseMailer):
 
     def _getTemplateParams(self, email, recipient):
         """See `BaseMailer`."""
-        params = super(PackageUploadMailer, self)._getTemplateParams(
-            email, recipient)
+        params = super()._getTemplateParams(email, recipient)
         params.update({
             'STATUS': ACTION_DESCRIPTIONS[self.action],
             'SUMMARY': self.summarystring,
@@ -612,7 +608,7 @@ class PackageUploadMailer(BaseMailer):
 
     def generateEmail(self, email, recipient, force_no_attachments=False):
         """See `BaseMailer`."""
-        ctrl = super(PackageUploadMailer, self).generateEmail(
+        ctrl = super().generateEmail(
             email, recipient, force_no_attachments=force_no_attachments)
         debug(self.logger, "Sent a mail:")
         debug(self.logger, "  Subject: %s" % ctrl.subject)

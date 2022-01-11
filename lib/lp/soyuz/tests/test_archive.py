@@ -15,7 +15,6 @@ import os.path
 from aptsources.sourceslist import SourceEntry
 from pytz import UTC
 import responses
-import six
 from six.moves.urllib.parse import urlsplit
 from storm.store import Store
 from testtools.matchers import (
@@ -1048,7 +1047,7 @@ class TestUpdatePackageDownloadCount(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestUpdatePackageDownloadCount, self).setUp()
+        super().setUp()
         self.publisher = SoyuzTestPublisher()
         self.publisher.prepareBreezyAutotest()
 
@@ -1155,7 +1154,7 @@ class TestProcessors(TestCaseWithFactory):
 
     def setUp(self):
         """Setup an archive with relevant publications."""
-        super(TestProcessors, self).setUp(user='foo.bar@canonical.com')
+        super().setUp(user='foo.bar@canonical.com')
         self.publisher = SoyuzTestPublisher()
         self.publisher.prepareBreezyAutotest()
         self.archive = self.factory.makeArchive()
@@ -1287,7 +1286,7 @@ class TestArchiveTokens(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestArchiveTokens, self).setUp()
+        super().setUp()
         owner = self.factory.makePerson()
         self.private_ppa = self.factory.makeArchive(owner=owner, private=True)
         self.joe = self.factory.makePerson(name='joe')
@@ -1454,7 +1453,7 @@ class TestGetBinaryPackageRelease(TestCaseWithFactory):
 
     def setUp(self):
         """Setup an archive with relevant publications."""
-        super(TestGetBinaryPackageRelease, self).setUp()
+        super().setUp()
         self.publisher = SoyuzTestPublisher()
         self.publisher.prepareBreezyAutotest()
 
@@ -1549,7 +1548,7 @@ class TestGetBinaryPackageReleaseByFileName(TestCaseWithFactory):
 
     def setUp(self):
         """Setup an archive with relevant publications."""
-        super(TestGetBinaryPackageReleaseByFileName, self).setUp()
+        super().setUp()
         self.publisher = SoyuzTestPublisher()
         self.publisher.prepareBreezyAutotest()
 
@@ -1730,7 +1729,7 @@ class TestBuildDebugSymbols(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBuildDebugSymbols, self).setUp()
+        super().setUp()
         self.archive = self.factory.makeArchive()
 
     def test_build_debug_symbols_is_public(self):
@@ -1887,7 +1886,7 @@ class TestFindDepCandidates(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestFindDepCandidates, self).setUp()
+        super().setUp()
         self.archive = self.factory.makeArchive()
         self.publisher = SoyuzTestPublisher()
         login('admin@canonical.com')
@@ -2052,12 +2051,12 @@ class TestOverlays(TestCaseWithFactory):
                    overlay=True, arch_tag='i386',
                    publish_base_url='http://archive.launchpad.test/'):
         # Helper to create a parent/child relationship.
-        if isinstance(parent_distro, six.string_types):
+        if isinstance(parent_distro, str):
             depdistro = self.factory.makeDistribution(parent_distro,
                 publish_base_url=publish_base_url)
         else:
             depdistro = parent_distro
-        if isinstance(parent_series, six.string_types):
+        if isinstance(parent_series, str):
             depseries = self.factory.makeDistroSeries(
                 name=parent_series, distribution=depdistro)
             self.factory.makeDistroArchSeries(
@@ -2195,7 +2194,7 @@ class TestValidatePPA(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestValidatePPA, self).setUp()
+        super().setUp()
         self.ubuntu = getUtility(IDistributionSet)['ubuntu']
         self.ubuntutest = getUtility(IDistributionSet)['ubuntutest']
         with admin_logged_in():
@@ -2324,7 +2323,7 @@ class TestGetComponentsForSeries(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetComponentsForSeries, self).setUp()
+        super().setUp()
         self.series = self.factory.makeDistroSeries()
         self.comp1 = self.factory.makeComponent()
         self.comp2 = self.factory.makeComponent()
@@ -2401,7 +2400,7 @@ class TestGetFileByName(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestGetFileByName, self).setUp()
+        super().setUp()
         self.archive = self.factory.makeArchive()
 
     def test_unknown_file_is_not_found(self):
@@ -2510,7 +2509,7 @@ class TestGetSourceFileByName(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestGetSourceFileByName, self).setUp()
+        super().setUp()
         self.archive = self.factory.makeArchive()
 
     def test_source_file_is_found(self):
@@ -3701,7 +3700,7 @@ class TestGetPPAOwnedByPerson(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetPPAOwnedByPerson, self).setUp()
+        super().setUp()
         self.set = getUtility(IArchiveSet)
 
     def test_person(self):
@@ -3758,7 +3757,7 @@ class TestPPALookup(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPPALookup, self).setUp()
+        super().setUp()
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.notbuntu = self.factory.makeDistribution()
         self.person = self.factory.makePerson()
@@ -3847,7 +3846,7 @@ class TestArchiveSetGetByReference(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestArchiveSetGetByReference, self).setUp()
+        super().setUp()
         self.set = getUtility(IArchiveSet)
 
     def test_ppa(self):
@@ -4206,7 +4205,7 @@ class TestArchiveGetOverridePolicy(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestArchiveGetOverridePolicy, self).setUp()
+        super().setUp()
         self.series = self.factory.makeDistroSeries()
         with admin_logged_in():
             self.series.nominatedarchindep = self.amd64 = (

@@ -73,8 +73,8 @@ from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 
-LIVEFS_FEATURE_FLAG = u"soyuz.livefs.allow_new"
-LIVEFS_WEBHOOKS_FEATURE_FLAG = u"soyuz.livefs.webhooks.enabled"
+LIVEFS_FEATURE_FLAG = "soyuz.livefs.allow_new"
+LIVEFS_WEBHOOKS_FEATURE_FLAG = "soyuz.livefs.webhooks.enabled"
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -82,7 +82,7 @@ class LiveFSBuildAlreadyPending(Exception):
     """A build was requested when an identical build was already pending."""
 
     def __init__(self):
-        super(LiveFSBuildAlreadyPending, self).__init__(
+        super().__init__(
             "An identical build of this live filesystem image is already "
             "pending.")
 
@@ -100,7 +100,7 @@ class LiveFSBuildArchiveOwnerMismatch(Forbidden):
     """
 
     def __init__(self):
-        super(LiveFSBuildArchiveOwnerMismatch, self).__init__(
+        super().__init__(
             "Live filesystem builds against private archives are only "
             "allowed if the live filesystem owner and the archive owner are "
             "equal.")
@@ -111,7 +111,7 @@ class LiveFSFeatureDisabled(Unauthorized):
     """Only certain users can create new LiveFS-related objects."""
 
     def __init__(self):
-        super(LiveFSFeatureDisabled, self).__init__(
+        super().__init__(
             "You do not have permission to create new live filesystems or "
             "new live filesystem builds.")
 
@@ -121,7 +121,7 @@ class DuplicateLiveFSName(Exception):
     """Raised for live filesystems with duplicate name/owner/distroseries."""
 
     def __init__(self):
-        super(DuplicateLiveFSName, self).__init__(
+        super().__init__(
             "There is already a live filesystem with the same name, owner, "
             "and distroseries.")
 

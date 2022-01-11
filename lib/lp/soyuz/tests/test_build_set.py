@@ -42,7 +42,7 @@ class TestBuildSet(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBuildSet, self).setUp()
+        super().setUp()
         self.admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         self.processor_one = self.factory.makeProcessor(
             supports_virtualized=True)
@@ -269,7 +269,7 @@ class TestGetAllowedArchitectures(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestGetAllowedArchitectures, self).setUp()
+        super().setUp()
         self.avr = self.factory.makeProcessor(
             name="avr2001", supports_virtualized=True)
         self.sparc = self.factory.makeProcessor(
@@ -347,7 +347,7 @@ class BuildRecordCreationTests(TestNativePublishingBase):
     """Test the creation of build records."""
 
     def setUp(self):
-        super(BuildRecordCreationTests, self).setUp()
+        super().setUp()
         self.distro = self.factory.makeDistribution()
         self.avr = self.factory.makeProcessor(
             name="avr2001", supports_virtualized=True)
@@ -386,7 +386,7 @@ class BuildRecordCreationTests(TestNativePublishingBase):
         :param architecturehintlist: Architecture hint list
             (e.g. "i386 amd64")
         """
-        return super(BuildRecordCreationTests, self).getPubSource(
+        return super().getPubSource(
             archive=self.factory.makeArchive(), distroseries=self.distroseries,
             architecturehintlist=architecturehintlist)
 
@@ -588,7 +588,7 @@ class TestFindBuiltOrPublishedBySourceAndArchive(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestFindBuiltOrPublishedBySourceAndArchive, self).setUp()
+        super().setUp()
         self.bpbs = getUtility(IBinaryPackageBuildSet)
 
     def test_trivial(self):

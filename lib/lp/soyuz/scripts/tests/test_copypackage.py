@@ -440,7 +440,7 @@ class CopyCheckerQueries(TestCaseWithFactory,
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(CopyCheckerQueries, self).setUp()
+        super().setUp()
         self.test_publisher = SoyuzTestPublisher()
         self.test_publisher.prepareBreezyAutotest()
         self.source = self.test_publisher.getPubSource()
@@ -458,8 +458,8 @@ class CopyCheckerQueries(TestCaseWithFactory,
         sources = []
         for i in range(nb_of_sources):
             source = self.test_publisher.getPubSource(
-                version=u'%d' % self.factory.getUniqueInteger(),
-                sourcename=u'name-%d' % self.factory.getUniqueInteger())
+                version='%d' % self.factory.getUniqueInteger(),
+                sourcename='name-%d' % self.factory.getUniqueInteger())
             sources.append(source)
         return sources
 
@@ -486,7 +486,7 @@ class CopyCheckerQueries(TestCaseWithFactory,
         recorder0 = self._recordCopyCheck(0, self.person, True)
         self.addDetail(
             "statement-count-0-sources",
-            text_content(u"%d" % recorder0.count))
+            text_content("%d" % recorder0.count))
         self.assertThat(recorder0, HasQueryCount(Equals(0)))
 
         # Compare the number of queries issued by calling checkCopy with
@@ -495,12 +495,12 @@ class CopyCheckerQueries(TestCaseWithFactory,
         recorder1 = self._recordCopyCheck(nb_of_sources, self.person, True)
         self.addDetail(
             "statement-count-%d-sources" % nb_of_sources,
-            text_content(u"%d" % recorder1.count))
+            text_content("%d" % recorder1.count))
         recorder2 = self._recordCopyCheck(
             nb_of_sources + 1, self.person, True)
         self.addDetail(
             "statement-count-%d-sources" % (nb_of_sources + 1),
-            text_content(u"%d" % recorder2.count))
+            text_content("%d" % recorder2.count))
 
         statement_count_per_source = 13
         self.assertThat(
@@ -518,7 +518,7 @@ class CopyCheckerQueries(TestCaseWithFactory,
             (recorder2.count - recorder1.count) / float(nb_of_sources))
         self.addDetail(
             "added-statement-count-perm-check",
-            text_content(u"%.3f" % added_statement_count_per_source))
+            text_content("%.3f" % added_statement_count_per_source))
 
         perm_check_statement_count = 3
         self.assertThat(
@@ -531,7 +531,7 @@ class CopyCheckerSameArchiveHarness(TestCaseWithFactory,
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(CopyCheckerSameArchiveHarness, self).setUp()
+        super().setUp()
         self.test_publisher = SoyuzTestPublisher()
         self.test_publisher.prepareBreezyAutotest()
         self.source = self.test_publisher.getPubSource()
@@ -609,7 +609,7 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(CopyCheckerDifferentArchiveHarness, self).setUp()
+        super().setUp()
         self.test_publisher = SoyuzTestPublisher()
         self.test_publisher.prepareBreezyAutotest()
         self.source = self.test_publisher.getPubSource()
@@ -825,7 +825,7 @@ class CopyCheckerTestCase(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(CopyCheckerTestCase, self).setUp()
+        super().setUp()
         self.test_publisher = SoyuzTestPublisher()
         self.test_publisher.prepareBreezyAutotest()
 
@@ -1051,7 +1051,7 @@ class BaseDoCopyTests:
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(BaseDoCopyTests, self).setUp()
+        super().setUp()
         for arch in ('i386', 'hppa'):
             self.factory.makeProcessor(name='my_%s' % arch)
 
@@ -1130,14 +1130,14 @@ class BaseDoCopyTests:
 class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
 
     def setUp(self):
-        super(TestDoDirectCopy, self).setUp()
+        super().setUp()
         self.test_publisher = SoyuzTestPublisher()
         self.test_publisher.prepareBreezyAutotest()
 
     def assertCopied(self, copies, series, arch_tags):
         self.assertEqual(
-            [u'foo 666 in %s' % series.name] +
-            [u'foo-bin 666 in %s %s' % (series.name, arch_tag)
+            ['foo 666 in %s' % series.name] +
+            ['foo-bin 666 in %s %s' % (series.name, arch_tag)
              for arch_tag in arch_tags],
             [copy.displayname for copy in copies])
 
@@ -1782,7 +1782,7 @@ class TestCopyBuildRecords(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestCopyBuildRecords, self).setUp()
+        super().setUp()
         self.test_publisher = SoyuzTestPublisher()
         self.test_publisher.prepareBreezyAutotest()
         self.primary = self.test_publisher.ubuntutest.main_archive
@@ -2047,7 +2047,7 @@ class TestCopyClosesBugs(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestCopyClosesBugs, self).setUp()
+        super().setUp()
         self.test_publisher = SoyuzTestPublisher()
         self.test_publisher.prepareBreezyAutotest()
         self.ubuntutest = self.test_publisher.ubuntutest

@@ -17,7 +17,7 @@ from lp.testing.fixture import CaptureTimeline
 class TestDpkgArchitectureCache(TestCase):
 
     def setUp(self):
-        super(TestDpkgArchitectureCache, self).setUp()
+        super().setUp()
         self.timeline = self.useFixture(CaptureTimeline()).timeline
 
     def assertTimeline(self, expected_details):

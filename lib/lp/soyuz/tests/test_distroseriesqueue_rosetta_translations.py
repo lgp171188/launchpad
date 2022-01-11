@@ -51,7 +51,7 @@ class TestDistroSeriesQueueRosettaTranslationsTarball(
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestDistroSeriesQueueRosettaTranslationsTarball, self).setUp()
+        super().setUp()
         import_public_test_keys()
         self.logger = DevNullLogger()
         self.absolutely_anything_policy = getPolicy(

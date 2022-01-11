@@ -33,7 +33,7 @@ class RetryDepwaitTunableLoop(TunableLoop):
     maximum_chunk_size = 5000
 
     def __init__(self, log, dry_run, abort_time=None):
-        super(RetryDepwaitTunableLoop, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.dry_run = dry_run
         self.start_at = 1
         self.store = IStore(BinaryPackageBuild)

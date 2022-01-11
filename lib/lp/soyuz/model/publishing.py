@@ -20,7 +20,6 @@ import os
 import sys
 
 import pytz
-import six
 from storm.expr import (
     And,
     Cast,
@@ -485,11 +484,11 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
         # Check there is a change to make
         if new_component is None:
             new_component = self.component
-        elif isinstance(new_component, six.string_types):
+        elif isinstance(new_component, str):
             new_component = getUtility(IComponentSet)[new_component]
         if new_section is None:
             new_section = self.section
-        elif isinstance(new_section, six.string_types):
+        elif isinstance(new_section, str):
             new_section = getUtility(ISectionSet)[new_section]
 
         if new_component == self.component and new_section == self.section:
@@ -754,7 +753,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         if self.is_debug and not self.archive.publish_debug_symbols:
             self.setPublished()
         else:
-            super(BinaryPackagePublishingHistory, self).publish(diskpool, log)
+            super().publish(diskpool, log)
 
     def getOtherPublications(self):
         """See `IBinaryPackagePublishingHistory`."""
@@ -843,15 +842,15 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         # Check there is a change to make
         if new_component is None:
             new_component = self.component
-        elif isinstance(new_component, six.string_types):
+        elif isinstance(new_component, str):
             new_component = getUtility(IComponentSet)[new_component]
         if new_section is None:
             new_section = self.section
-        elif isinstance(new_section, six.string_types):
+        elif isinstance(new_section, str):
             new_section = getUtility(ISectionSet)[new_section]
         if new_priority is None:
             new_priority = self.priority
-        elif isinstance(new_priority, six.string_types):
+        elif isinstance(new_priority, str):
             new_priority = name_priority_map[new_priority]
         if new_phased_update_percentage is None:
             new_phased_update_percentage = self.phased_update_percentage
@@ -1031,7 +1030,7 @@ def expand_binary_requests(distroseries, binaries):
     arch_map = {arch.architecturetag: arch for arch in archs}
 
     expanded = []
-    for bpr, overrides in six.iteritems(binaries):
+    for bpr, overrides in binaries.items():
         if bpr.architecturespecific:
             # Find the DAS in this series corresponding to the original
             # build arch tag. If it does not exist or is disabled, we should

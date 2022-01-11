@@ -58,14 +58,14 @@ class SourcePublicationURL(PublicationURLBase):
     """Dynamic URL declaration for `ISourcePackagePublishingHistory`"""
     @property
     def path(self):
-        return u"+sourcepub/%s" % self.context.id
+        return "+sourcepub/%s" % self.context.id
 
 
 class BinaryPublicationURL(PublicationURLBase):
     """Dynamic URL declaration for `IBinaryPackagePublishingHistory`"""
     @property
     def path(self):
-        return u"+binarypub/%s" % self.context.id
+        return "+binarypub/%s" % self.context.id
 
 
 class SourcePackagePublishingHistoryNavigation(Navigation,
@@ -188,7 +188,7 @@ class BasePublishingRecordView(LaunchpadView):
         """Return the removal comment or 'None provided'."""
         removal_comment = self.context.removal_comment
         if removal_comment is None or not removal_comment.strip():
-            removal_comment = u'None provided.'
+            removal_comment = 'None provided.'
 
         return removal_comment
 
@@ -197,8 +197,8 @@ class BasePublishingRecordView(LaunchpadView):
         """Return the formatted phased update percentage, or empty."""
         if (self.is_binary and
             self.context.phased_update_percentage is not None):
-            return u"%d%% of users" % self.context.phased_update_percentage
-        return u""
+            return "%d%% of users" % self.context.phased_update_percentage
+        return ""
 
     @property
     def linkify_copied_from_archive(self):

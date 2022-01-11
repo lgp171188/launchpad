@@ -58,5 +58,4 @@ class BinaryAndSourcePackageNameVocabulary(NamedStormHugeVocabulary):
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
         # package names are always lowercase.
-        super_class = super(BinaryAndSourcePackageNameVocabulary, self)
-        return super_class.getTermByToken(token.lower())
+        return super().getTermByToken(token.lower())

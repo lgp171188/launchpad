@@ -16,7 +16,6 @@ from itertools import chain
 from operator import attrgetter
 
 import pytz
-import six
 from storm.expr import Cast
 from storm.locals import (
     And,
@@ -206,7 +205,7 @@ class PackageUpload(SQLBase):
                               joinColumn='packageupload')
 
     def __init__(self, *args, **kwargs):
-        super(PackageUpload, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # searchable_{name,version}s are set for the other cases when
         # add{Source,Build,Custom} are called.
         if self.package_copy_job:
@@ -973,7 +972,7 @@ class PackageUpload(SQLBase):
     def _nameToComponent(self, component):
         """Helper to convert a possible string component to IComponent."""
         try:
-            if isinstance(component, six.string_types):
+            if isinstance(component, str):
                 component = getUtility(IComponentSet)[component]
             return component
         except NotFoundError:
@@ -982,7 +981,7 @@ class PackageUpload(SQLBase):
     def _nameToSection(self, section):
         """Helper to convert a possible string section to ISection."""
         try:
-            if isinstance(section, six.string_types):
+            if isinstance(section, str):
                 section = getUtility(ISectionSet)[section]
             return section
         except NotFoundError:
@@ -991,7 +990,7 @@ class PackageUpload(SQLBase):
     def _nameToPriority(self, priority):
         """Helper to convert a possible string priority to its enum."""
         try:
-            if isinstance(priority, six.string_types):
+            if isinstance(priority, str):
                 priority = name_priority_map[priority]
             return priority
         except KeyError:

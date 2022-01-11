@@ -150,7 +150,7 @@ class LiveFSBuildRescoreView(LaunchpadFormView):
 
     def __call__(self):
         if self.context.can_be_rescored:
-            return super(LiveFSBuildRescoreView, self).__call__()
+            return super().__call__()
         self.request.response.addWarningNotification(
             "Cannot rescore this build because it is not queued.")
         self.request.response.redirect(canonical_url(self.context))

@@ -607,7 +607,7 @@ class TestDistroSeriesDifferenceJobEndToEnd(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestDistroSeriesDifferenceJobEndToEnd, self).setUp()
+        super().setUp()
         self.store = IMasterStore(DistroSeriesDifference)
 
     def getJobSource(self):

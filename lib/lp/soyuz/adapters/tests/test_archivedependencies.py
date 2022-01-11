@@ -139,7 +139,7 @@ class TestSourcesList(TestCaseWithFactory):
         }
 
     def setUp(self):
-        super(TestSourcesList, self).setUp()
+        super().setUp()
         self.publisher = SoyuzTestPublisher()
         self.ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
         self.hoary = self.ubuntu.getSeries("hoary")

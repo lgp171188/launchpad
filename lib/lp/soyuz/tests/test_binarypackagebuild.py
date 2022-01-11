@@ -77,7 +77,7 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestBinaryPackageBuild, self).setUp()
+        super().setUp()
         self.build = self.factory.makeBinaryPackageBuild(
             archive=self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY))
 
@@ -404,7 +404,7 @@ class BaseTestCaseWithThreeBuilds(TestCaseWithFactory):
 
     def setUp(self):
         """Publish some builds for the test archive."""
-        super(BaseTestCaseWithThreeBuilds, self).setUp()
+        super().setUp()
         self.ds = self.factory.makeDistroSeries()
         i386_das = self.factory.makeDistroArchSeries(
             distroseries=self.ds, architecturetag='i386')
@@ -457,7 +457,7 @@ class TestBuildSetGetBuildsForArchive(BaseTestCaseWithThreeBuilds):
 
     def setUp(self):
         """Publish some builds for the test archive."""
-        super(TestBuildSetGetBuildsForArchive, self).setUp()
+        super().setUp()
 
         # Short-cuts for our tests.
         self.archive = self.ds.main_archive
@@ -479,7 +479,7 @@ class TestBuildSetGetBuildsForArchive(BaseTestCaseWithThreeBuilds):
 class TestBuildSetGetBuildsForBuilder(BaseTestCaseWithThreeBuilds):
 
     def setUp(self):
-        super(TestBuildSetGetBuildsForBuilder, self).setUp()
+        super().setUp()
 
         # Short-cuts for our tests.
         self.build_set = getUtility(IBinaryPackageBuildSet)
@@ -524,7 +524,7 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBinaryPackageBuildWebservice, self).setUp()
+        super().setUp()
         self.ppa = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
         self.build = self.factory.makeBinaryPackageBuild(archive=self.ppa)
         self.webservice = webservice_for_person(
@@ -929,7 +929,7 @@ class TestBinaryPackageBuildMacaroonIssuer(
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestBinaryPackageBuildMacaroonIssuer, self).setUp()
+        super().setUp()
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret")
 

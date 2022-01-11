@@ -44,7 +44,7 @@ class TestArchiveSubscriptions(TestCaseWithFactory):
 
     def setUp(self):
         """Create a test archive."""
-        super(TestArchiveSubscriptions, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson()
         self.private_team = self.factory.makeTeam(
             visibility=PersonVisibility.PRIVATE,
@@ -136,7 +136,7 @@ class PrivateArtifactsViewTestCase(BrowserTestCase):
 
     def setUp(self):
         """Create a test archive."""
-        super(PrivateArtifactsViewTestCase, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson()
         self.private_team = self.factory.makeTeam(
             visibility=PersonVisibility.PRIVATE,

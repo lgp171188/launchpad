@@ -145,7 +145,7 @@ class SourcePackageRelease(SQLBase):
         # loaded every time. Set it separately.
         if 'copyright' in kwargs:
             copyright = kwargs.pop('copyright')
-        super(SourcePackageRelease, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # PostgresSQL text columns can't contain null
         # characters, so remove them as this is only
         # used for display

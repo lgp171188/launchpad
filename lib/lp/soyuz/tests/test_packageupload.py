@@ -85,11 +85,11 @@ class PackageUploadTestCase(TestCaseWithFactory):
     dbuser = config.uploadqueue.dbuser
 
     def setUp(self):
-        super(PackageUploadTestCase, self).setUp()
+        super().setUp()
         self.test_publisher = SoyuzTestPublisher()
 
     def tearDown(self):
-        super(PackageUploadTestCase, self).tearDown()
+        super().tearDown()
         if os.path.exists(config.personalpackagearchive.root):
             shutil.rmtree(config.personalpackagearchive.root)
 
@@ -692,7 +692,7 @@ class TestPackageUploadSet(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestPackageUploadSet, self).setUp()
+        super().setUp()
         self.upload_set = getUtility(IPackageUploadSet)
 
     def test_PackageUploadSet_implements_IPackageUploadSet(self):
@@ -1013,7 +1013,7 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestPackageUploadWebservice, self).setUp()
+        super().setUp()
         self.webservice = None
         self.distroseries = self.factory.makeDistroSeries()
         self.main = self.factory.makeComponent("main")

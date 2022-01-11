@@ -248,7 +248,7 @@ class TestSourcePackageData(TestCaseWithFactory):
             # called in such a way as to cope with non-UTF-8 file names on
             # Python 2.  See
             # https://bugs.launchpad.net/launchpad/+bug/1917449.
-            orig_tar.add_file(u"íslenska.alias", b"Non-UTF-8 file name")
+            orig_tar.add_file("íslenska.alias", b"Non-UTF-8 file name")
             orig_tar.close()
             buffer.seek(0)
             orig_tar_contents = buffer.read()
@@ -309,7 +309,7 @@ class TestSourcePackageData(TestCaseWithFactory):
             # called in such a way as to cope with non-UTF-8 file names on
             # Python 2.  See
             # https://bugs.launchpad.net/launchpad/+bug/1917449.
-            orig_tar.add_file(u"íslenska.alias", b"Non-UTF-8 file name")
+            orig_tar.add_file("íslenska.alias", b"Non-UTF-8 file name")
             orig_tar.close()
             buffer.seek(0)
             orig_tar_contents = buffer.read()

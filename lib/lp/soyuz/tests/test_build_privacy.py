@@ -20,7 +20,7 @@ class TestBuildPrivacy(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBuildPrivacy, self).setUp()
+        super().setUp()
         # Add everything we need to create builds.
         self.admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         processor = self.factory.makeProcessor(supports_virtualized=True)
