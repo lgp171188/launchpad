@@ -13,8 +13,6 @@ __all__ = [
 
 from operator import attrgetter
 
-import six
-
 from lp.archivepublisher.ddtp_tarball import DdtpTarballUpload
 from lp.archivepublisher.debian_installer import DebianInstallerUpload
 from lp.archivepublisher.dist_upgrader import DistUpgraderUpload
@@ -164,7 +162,7 @@ class CustomUploadsCopier:
             self.target_series, source_pocket=self.target_pocket)
         source_uploads = self.getLatestUploads(
             source_series, source_pocket=source_pocket)
-        for upload in six.itervalues(source_uploads):
+        for upload in source_uploads.values():
             if (not self.isObsolete(upload, target_uploads) and
                 self.isForValidDAS(upload)):
                 self.copyUpload(upload)

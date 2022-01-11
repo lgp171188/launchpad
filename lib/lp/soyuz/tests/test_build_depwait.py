@@ -25,7 +25,7 @@ class TestBuildDepWait(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBuildDepWait, self).setUp()
+        super().setUp()
         self.admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         # Create everything we need to create builds, such as a
         # DistroArchSeries and a builder.

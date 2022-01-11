@@ -218,7 +218,7 @@ class DistributionArchiveURL:
 
     @property
     def path(self):
-        return u"+archive/%s" % self.context.name
+        return "+archive/%s" % self.context.name
 
 
 @implementer(ICanonicalUrlData)
@@ -235,7 +235,7 @@ class PPAURL:
 
     @property
     def path(self):
-        return u"+archive/%s/%s" % (
+        return "+archive/%s/%s" % (
             self.context.distribution.name, self.context.name)
 
 
@@ -651,7 +651,7 @@ class ArchiveViewBase(LaunchpadView, SourcesListEntriesWidget):
                     " Since this archive is private, no builds are "
                     "being dispatched.")
             self.request.response.addNotification(structured(notification))
-        super(ArchiveViewBase, self).initialize()
+        super().initialize()
         # Set properties for SourcesListEntriesWidget.
         self.archive = self.context
         self.sources_list_user = self.user
@@ -948,7 +948,7 @@ class ArchiveView(ArchiveSourcePackageListViewBase):
             self.request.response.redirect(
                 canonical_url(self.context.distribution))
             return
-        super(ArchiveView, self).initialize()
+        super().initialize()
 
     @property
     def displayname_edit_widget(self):
@@ -1150,7 +1150,7 @@ class ArchiveSourceSelectionFormView(ArchiveSourcePackageListViewBase):
         # batched_sources) but this itself requires the current values of
         # the filtering widgets. So we setup the widgets, then add the
         # extra field and create its widget too.
-        super(ArchiveSourceSelectionFormView, self).setUpWidgets()
+        super().setUpWidgets()
 
         self.form_fields += self.createSelectedSourcesField()
 
@@ -2116,12 +2116,12 @@ class ArchiveEditView(BaseArchiveEditView, EnableProcessorsMixin):
 
         See `createEnabledProcessors` method.
         """
-        super(ArchiveEditView, self).setUpFields()
+        super().setUpFields()
         self.form_fields += self.createEnabledProcessors(
             self.context.available_processors,
-            u"The architectures on which the archive can build. Some "
-            u"architectures are restricted and may only be enabled or "
-            u"disabled by administrators.")
+            "The architectures on which the archive can build. Some "
+            "architectures are restricted and may only be enabled or "
+            "disabled by administrators.")
 
     def validate(self, data):
         if 'processors' in data:
@@ -2161,7 +2161,7 @@ class ArchiveAdminView(BaseArchiveEditView, EnableProcessorsMixin):
 
     def validate_save(self, action, data):
         """Validate the save action on ArchiveAdminView."""
-        super(ArchiveAdminView, self).validate_save(action, data)
+        super().validate_save(action, data)
 
         if data.get('private') != self.context.private:
             # The privacy is being switched.

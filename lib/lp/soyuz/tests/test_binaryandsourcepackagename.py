@@ -18,7 +18,7 @@ class TestBinaryAndSourcePackageNameVocabulary(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBinaryAndSourcePackageNameVocabulary, self).setUp()
+        super().setUp()
         self.vocabulary = BinaryAndSourcePackageNameVocabulary()
         spn = self.factory.makeSourcePackageName(name='bedbugs')
         self.bspn = Store.of(spn).find(

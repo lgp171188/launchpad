@@ -592,12 +592,12 @@ class TestNativePublishingBase(TestCaseWithFactory, SoyuzTestPublisher):
     dbuser = config.archivepublisher.dbuser
 
     def __init__(self, methodName='runTest'):
-        super(TestNativePublishingBase, self).__init__(methodName=methodName)
+        super().__init__(methodName=methodName)
         SoyuzTestPublisher.__init__(self)
 
     def setUp(self):
         """Setup a pool dir, the librarian, and instantiate the DiskPool."""
-        super(TestNativePublishingBase, self).setUp()
+        super().setUp()
         switch_dbuser(config.archivepublisher.dbuser)
         self.prepareBreezyAutotest()
         self.config = getPubConfig(self.ubuntutest.main_archive)
@@ -609,7 +609,7 @@ class TestNativePublishingBase(TestCaseWithFactory, SoyuzTestPublisher):
 
     def tearDown(self):
         """Tear down blows the pool dirs away."""
-        super(TestNativePublishingBase, self).tearDown()
+        super().tearDown()
         for root in (
                 self.config.distroroot,
                 config.personalpackagearchive.root,
@@ -862,7 +862,7 @@ class PublishingSetTests(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(PublishingSetTests, self).setUp()
+        super().setUp()
         self.distroseries = self.factory.makeDistroSeries()
         self.archive = self.factory.makeArchive(
             distribution=self.distroseries.distribution)
@@ -919,7 +919,7 @@ class TestPublishingSetLite(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestPublishingSetLite, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
 
     def test_requestDeletion_marks_SPPHs_deleted(self):

@@ -145,7 +145,7 @@ class PackageCopyJob(StormBase):
     def __init__(self, source_archive, target_archive, target_distroseries,
                  job_type, metadata, requester, package_name=None,
                  copy_policy=None):
-        super(PackageCopyJob, self).__init__()
+        super().__init__()
         self.job = Job()
         self.job.requester = requester
         self.job_type = job_type
@@ -228,7 +228,7 @@ class PackageCopyJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
-        vars = super(PackageCopyJobDerived, self).getOopsVars()
+        vars = super().getOopsVars()
         vars.extend([
             ('source_archive_id', self.context.source_archive_id),
             ('target_archive_id', self.context.target_archive_id),
@@ -581,7 +581,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
                 " package.  It was logged with id %s.  Sorry for the"
                 " inconvenience." % oops["id"])
             transaction.commit()
-        super(PlainPackageCopyJob, self).notifyOops(oops)
+        super().notifyOops(oops)
 
     @property
     def _advisory_lock_id(self):
@@ -624,7 +624,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
             target_archive_purpose = self.target_archive.purpose
             self.logger.info("Job:\n%s\nraised CannotCopy:\n%s" % (self, e))
             self.abort()  # Abort the txn.
-            self.reportFailure(six.text_type(e))
+            self.reportFailure(str(e))
 
             # If there is an associated PackageUpload we need to reject it,
             # else it will sit in ACCEPTED forever.
@@ -663,7 +663,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
             person=self.requester)
         if reason:
             # Wrap any forbidden-pocket error in CannotCopy.
-            raise CannotCopy(six.text_type(reason))
+            raise CannotCopy(str(reason))
 
         if self.silent and not self.requester_can_admin_target:
             raise CannotCopy(

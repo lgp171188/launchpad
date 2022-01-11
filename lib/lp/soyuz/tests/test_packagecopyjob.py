@@ -185,7 +185,7 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(PlainPackageCopyJobTests, self).setUp()
+        super().setUp()
         self.publisher = SoyuzTestPublisher()
         self.publisher.prepareBreezyAutotest()
         self.distroseries = self.publisher.breezy_autotest
@@ -1803,7 +1803,7 @@ class TestViaCelery(TestCaseWithFactory):
     layer = CeleryJobLayer
 
     def setUp(self):
-        super(TestViaCelery, self).setUp()
+        super().setUp()
         # Turn on Celery handling of PCJs and the resulting notification jobs.
         self.useFixture(FeatureFixture({
             'jobs.celery.enabled_classes':
@@ -1811,7 +1811,7 @@ class TestViaCelery(TestCaseWithFactory):
         }))
 
     def tearDown(self):
-        super(TestViaCelery, self).tearDown()
+        super().tearDown()
         pop_remote_notifications()
 
     def test_run(self):

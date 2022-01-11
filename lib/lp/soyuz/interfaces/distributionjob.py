@@ -84,7 +84,7 @@ class InitializationPending(Exception):
     """
 
     def __init__(self, job):
-        super(InitializationPending, self).__init__()
+        super().__init__()
         self.job = job
 
 
@@ -95,7 +95,7 @@ class InitializationCompleted(Exception):
     """
 
     def __init__(self, job):
-        super(InitializationCompleted, self).__init__()
+        super().__init__()
         self.job = job
 
 

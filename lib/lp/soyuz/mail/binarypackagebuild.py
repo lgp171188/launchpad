@@ -61,8 +61,7 @@ class BinaryPackageBuildRecipientReason(RecipientReason):
 
     def getReason(self):
         """See `RecipientReason`."""
-        return MailWrapper(width=72).format(
-            super(BinaryPackageBuildRecipientReason, self).getReason())
+        return MailWrapper(width=72).format(super().getReason())
 
 
 class BinaryPackageBuildMailer(BaseMailer):
@@ -143,7 +142,7 @@ class BinaryPackageBuildMailer(BaseMailer):
 
     def __init__(self, subject, template_name, recipients, from_address,
                  build, extra_info=None):
-        super(BinaryPackageBuildMailer, self).__init__(
+        super().__init__(
             subject, template_name, recipients, from_address,
             notification_type="package-build-status")
         self.build = build
@@ -151,8 +150,7 @@ class BinaryPackageBuildMailer(BaseMailer):
 
     def _getHeaders(self, email, recipient):
         """See `BaseMailer`."""
-        headers = super(BinaryPackageBuildMailer, self)._getHeaders(
-            email, recipient)
+        headers = super()._getHeaders(email, recipient)
         build = self.build
         headers.update({
             "X-Launchpad-Archive": build.archive.reference,
@@ -169,13 +167,12 @@ class BinaryPackageBuildMailer(BaseMailer):
         # The deprecated PPA reference header is included for Ubuntu PPAs to
         # avoid breaking existing consumers.
         if (build.archive.is_ppa and
-                build.archive.distribution.name == u'ubuntu'):
+                build.archive.distribution.name == 'ubuntu'):
             headers["X-Launchpad-PPA"] = get_ppa_reference(build.archive)
         return headers
 
     def _getTemplateParams(self, email, recipient):
-        params = super(BinaryPackageBuildMailer, self)._getTemplateParams(
-            email, recipient)
+        params = super()._getTemplateParams(email, recipient)
         build = self.build
         extra_info = self.extra_info
 

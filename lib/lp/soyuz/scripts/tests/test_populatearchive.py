@@ -46,14 +46,14 @@ class TestPopulateArchiveScript(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
     expected_build_spns = [
-        u'alsa-utils', u'cnews', u'evolution', u'libstdc++',
-        u'linux-source-2.6.15', u'netapplet']
+        'alsa-utils', 'cnews', 'evolution', 'libstdc++',
+        'linux-source-2.6.15', 'netapplet']
     expected_src_names = [
-        u'alsa-utils 1.0.9a-4ubuntu1 in hoary',
-        u'cnews cr.g7-37 in hoary', u'evolution 1.0 in hoary',
-        u'libstdc++ b8p in hoary',
-        u'linux-source-2.6.15 2.6.15.3 in hoary',
-        u'netapplet 1.0-1 in hoary', u'pmount 0.1-2 in hoary']
+        'alsa-utils 1.0.9a-4ubuntu1 in hoary',
+        'cnews cr.g7-37 in hoary', 'evolution 1.0 in hoary',
+        'libstdc++ b8p in hoary',
+        'linux-source-2.6.15 2.6.15.3 in hoary',
+        'netapplet 1.0-1 in hoary', 'pmount 0.1-2 in hoary']
     pending_statuses = (
         PackagePublishingStatus.PENDING,
         PackagePublishingStatus.PUBLISHED)
@@ -675,7 +675,7 @@ class TestPopulateArchiveScript(TestCaseWithFactory):
             archive=ubuntu.main_archive)
         sources = ubuntu.main_archive.getPublishedSources(
             distroseries=hoary, status=self.pending_statuses,
-            name=u'alsa-utils')
+            name='alsa-utils')
         for src in sources:
             if src.source_package_version != '2.0':
                 src.supersede()

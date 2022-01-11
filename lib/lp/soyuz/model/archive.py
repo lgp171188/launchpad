@@ -230,10 +230,10 @@ from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
 
 ARCHIVE_REFERENCE_TEMPLATES = {
-    ArchivePurpose.PRIMARY: u'%(distribution)s',
-    ArchivePurpose.PPA: u'~%(owner)s/%(distribution)s/%(archive)s',
-    ArchivePurpose.PARTNER: u'%(distribution)s/%(archive)s',
-    ArchivePurpose.COPY: u'%(distribution)s/%(archive)s',
+    ArchivePurpose.PRIMARY: '%(distribution)s',
+    ArchivePurpose.PPA: '~%(owner)s/%(distribution)s/%(archive)s',
+    ArchivePurpose.PARTNER: '%(distribution)s/%(archive)s',
+    ArchivePurpose.COPY: '%(distribution)s/%(archive)s',
     }
 
 
@@ -617,7 +617,7 @@ class Archive(SQLBase):
                     SourcePackageName.id)
 
         if name is not None:
-            if isinstance(name, six.string_types):
+            if isinstance(name, str):
                 if exact_match:
                     clauses.append(SourcePackageName.name == name)
                 else:
@@ -1162,7 +1162,7 @@ class Archive(SQLBase):
 
     def _addArchiveDependency(self, dependency, pocket, component=None):
         """See `IArchive`."""
-        if isinstance(component, six.string_types):
+        if isinstance(component, str):
             try:
                 component = getUtility(IComponentSet)[component]
             except NotFoundError as e:
@@ -1417,9 +1417,9 @@ class Archive(SQLBase):
     def _checkUpload(self, person, distroseries, sourcepackagename, component,
                     pocket, strict_component=True):
         """See `IArchive`."""
-        if isinstance(component, six.string_types):
+        if isinstance(component, str):
             component = getUtility(IComponentSet)[component]
-        if isinstance(sourcepackagename, six.string_types):
+        if isinstance(sourcepackagename, str):
             sourcepackagename = getUtility(
                 ISourcePackageNameSet)[sourcepackagename]
         reason = self.checkUpload(person, distroseries, sourcepackagename,
@@ -1534,7 +1534,7 @@ class Archive(SQLBase):
         if self.is_ppa:
             if IComponent.providedBy(component_name):
                 name = component_name.name
-            elif isinstance(component_name, six.string_types):
+            elif isinstance(component_name, str):
                 name = component_name
             else:
                 name = None
@@ -1970,7 +1970,7 @@ class Archive(SQLBase):
         reason = self.checkUploadToPocket(series, pocket, person=person)
         if reason:
             # Wrap any forbidden-pocket error in CannotCopy.
-            raise CannotCopy(six.text_type(reason))
+            raise CannotCopy(str(reason))
 
         # Perform the copy, may raise CannotCopy. Don't do any further
         # permission checking: this method is protected by
@@ -2536,14 +2536,14 @@ class ArchiveSet:
         """See `IArchiveSet`."""
         from lp.registry.interfaces.distribution import IDistributionSet
 
-        bits = reference.split(u'/')
+        bits = reference.split('/')
         if len(bits) < 1:
             return None
-        if bits[0].startswith(u'~') or bits[0].startswith(u'ppa:'):
+        if bits[0].startswith('~') or bits[0].startswith('ppa:'):
             # PPA reference (~OWNER/DISTRO/ARCHIVE or ppa:OWNER/DISTRO/ARCHIVE)
             if len(bits) != 3:
                 return None
-            if bits[0].startswith(u'~'):
+            if bits[0].startswith('~'):
                 first_bit = bits[0][1:]
             else:
                 # ppa:OWNER

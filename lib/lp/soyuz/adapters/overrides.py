@@ -127,7 +127,7 @@ class BinaryOverride(Override):
     def __init__(self, component=None, section=None, priority=None,
                  phased_update_percentage=None, version=None, new=None,
                  source_override=None):
-        super(BinaryOverride, self).__init__(
+        super().__init__(
             component=component, section=section, version=version, new=new)
         self.priority = priority
         self.phased_update_percentage = phased_update_percentage
@@ -201,7 +201,7 @@ class BaseOverridePolicy:
 
     def __init__(self, archive, distroseries, pocket,
                  phased_update_percentage=None):
-        super(BaseOverridePolicy, self).__init__()
+        super().__init__()
         self.archive = archive
         self.distroseries = distroseries
         self.pocket = pocket
@@ -226,7 +226,7 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
     def __init__(self, *args, **kwargs):
         self.any_arch = kwargs.pop('any_arch', False)
         self.include_deleted = kwargs.pop('include_deleted', False)
-        super(FromExistingOverridePolicy, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def getExistingPublishingStatuses(self, include_deleted):
         status = list(active_publishing_status)

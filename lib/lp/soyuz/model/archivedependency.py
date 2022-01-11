@@ -53,7 +53,7 @@ class ArchiveDependency(StormBase):
     component = Reference(component_id, 'Component.id')
 
     def __init__(self, parent, dependency, pocket, component=None):
-        super(ArchiveDependency, self).__init__()
+        super().__init__()
         self.parent = parent
         self.dependency = dependency
         self.pocket = pocket

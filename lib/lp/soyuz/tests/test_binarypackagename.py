@@ -17,7 +17,7 @@ class TestBinaryPackageNameSet(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBinaryPackageNameSet, self).setUp()
+        super().setUp()
         self.name_set = getUtility(IBinaryPackageNameSet)
 
     def test___getitem__found(self):

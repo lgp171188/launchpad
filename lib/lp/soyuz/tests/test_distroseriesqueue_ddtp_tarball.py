@@ -34,7 +34,7 @@ from lp.testing.gpgkeys import import_public_test_keys
 class TestDistroSeriesQueueDdtpTarball(TestNativePublishingBase):
 
     def setUp(self):
-        super(TestDistroSeriesQueueDdtpTarball, self).setUp()
+        super().setUp()
         import_public_test_keys()
         # CustomUpload.installFiles requires a umask of 0o022.
         old_umask = os.umask(0o022)

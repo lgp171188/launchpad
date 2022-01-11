@@ -66,7 +66,7 @@ class TestLiveFSNavigation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestLiveFSNavigation, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
 
     def test_canonical_url(self):
@@ -138,7 +138,7 @@ class TestLiveFSAddView(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestLiveFSAddView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         self.useFixture(FakeLogger())
         self.person = self.factory.makePerson(
@@ -217,7 +217,7 @@ class TestLiveFSAdminView(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestLiveFSAdminView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         self.useFixture(FakeLogger())
         self.person = self.factory.makePerson(
@@ -272,7 +272,7 @@ class TestLiveFSEditView(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestLiveFSEditView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         self.useFixture(FakeLogger())
         self.person = self.factory.makePerson(
@@ -352,7 +352,7 @@ class TestLiveFSDeleteView(BrowserTestCase):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestLiveFSDeleteView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         self.person = self.factory.makePerson(
             name="test-person", displayname="Test Person")
@@ -402,7 +402,7 @@ class TestLiveFSView(BrowserTestCase):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestLiveFSView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(

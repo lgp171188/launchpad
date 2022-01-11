@@ -194,10 +194,10 @@ class InitializationHelperTestCase(TestCaseWithFactory):
         # Setup the environment for testing the packaging links
         self.parent, self.parent_das = self.setupParent()
         test1 = getUtility(IPackagesetSet).new(
-            u'test1', u'test 1 packageset', self.parent.owner,
+            'test1', 'test 1 packageset', self.parent.owner,
             distroseries=self.parent)
         test2 = getUtility(IPackagesetSet).new(
-            u'test2', u'test 2 packageset', self.parent.owner,
+            'test2', 'test 2 packageset', self.parent.owner,
             distroseries=self.parent)
         packages_test1 = ['udev', 'chromium', 'libc6']
         packages_test2 = ['postgresql', 'vim']
@@ -351,9 +351,9 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # packagesets selected for the copy will make the queue check fail.
         parent, parent_das = self.setupParent()
         p1, packageset1, unsed = self.createPackageInPackageset(
-            parent, u'p1', u'packageset1', True)
+            parent, 'p1', 'packageset1', True)
         p2, packageset2, unsed = self.createPackageInPackageset(
-            parent, u'p2', u'packageset2', False)
+            parent, 'p2', 'packageset2', False)
 
         child = self.factory.makeDistroSeries(
             distribution=parent.distribution, previous_series=parent)
@@ -371,9 +371,9 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # packagesets selected for the copy won't make the queue check fail.
         parent, parent_das = self.setupParent()
         p1, packageset1, unused = self.createPackageInPackageset(
-            parent, u'p1', u'packageset1', True)
+            parent, 'p1', 'packageset1', True)
         p2, packageset2, unused = self.createPackageInPackageset(
-            parent, u'p2', u'packageset2', False)
+            parent, 'p2', 'packageset2', False)
 
         child = self.factory.makeDistroSeries(
             distribution=parent.distribution, previous_series=parent)
@@ -596,9 +596,9 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # initialize.
         parent, parent_das = self.setupParent()
         p1, packageset1, spr1 = self.createPackageInPackageset(
-            parent, u'p1', u'packageset1', False)
+            parent, 'p1', 'packageset1', False)
         p2, packageset2, spr2 = self.createPackageInPackageset(
-            parent, u'p2', u'packageset2', False)
+            parent, 'p2', 'packageset2', False)
 
         # Create a binary package upload for the package 'p2' inside
         # packageset 'packageset2'.
@@ -622,7 +622,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # initialize.
         parent, parent_das = self.setupParent()
         p1, packageset1, spr1 = self.createPackageInPackageset(
-            parent, u'p1', u'packageset1', False)
+            parent, 'p1', 'packageset1', False)
 
         # Create a binary package upload for the package 'p2' inside
         # packageset 'packageset2'.
@@ -648,31 +648,31 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
             child_pocket=PackagePublishingPocket.RELEASE):
         # Check that 'udev' has been copied correctly.
         parent_udev_pubs = parent.main_archive.getPublishedSources(
-            u'udev', distroseries=parent)
+            'udev', distroseries=parent)
         child_udev_pubs = child.main_archive.getPublishedSources(
-            u'udev', distroseries=child)
+            'udev', distroseries=child)
         self.assertEqual(
             parent_udev_pubs.count(), child_udev_pubs.count())
         self.assertEqual(
             {child_pocket}, {pub.pocket for pub in child_udev_pubs})
         parent_arch_udev_pubs = parent.main_archive.getAllPublishedBinaries(
-            distroarchseries=parent[parent_das.architecturetag], name=u'udev')
+            distroarchseries=parent[parent_das.architecturetag], name='udev')
         child_arch_udev_pubs = child.main_archive.getAllPublishedBinaries(
-            distroarchseries=child[parent_das.architecturetag], name=u'udev')
+            distroarchseries=child[parent_das.architecturetag], name='udev')
         self.assertEqual(
             parent_arch_udev_pubs.count(), child_arch_udev_pubs.count())
         self.assertEqual(
             {child_pocket}, {pub.pocket for pub in child_arch_udev_pubs})
         # And the binary package, and linked source package look fine too.
         udev_bin = child_arch_udev_pubs[0].binarypackagerelease
-        self.assertEqual(udev_bin.title, u'udev-0.1-1')
+        self.assertEqual(udev_bin.title, 'udev-0.1-1')
         self.assertEqual(
             udev_bin.build.title,
-            u'%s build of udev 0.1-1 in %s %s RELEASE' % (
+            '%s build of udev 0.1-1 in %s %s RELEASE' % (
                 parent_das.architecturetag, parent.parent.name,
                 parent.name))
         udev_src = udev_bin.build.source_package_release
-        self.assertEqual(udev_src.title, u'udev - 0.1-1')
+        self.assertEqual(udev_src.title, 'udev - 0.1-1')
         # The build of udev 0.1-1 has been copied across.
         bpbs = getUtility(IBinaryPackageBuildSet)
         child_udev = bpbs.findBuiltOrPublishedBySourceAndArchive(
@@ -721,22 +721,22 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         self.parent, self.parent_das = self.setupParent()
         uploader = self.factory.makePerson()
         test1 = getUtility(IPackagesetSet).new(
-            u'test1', u'test 1 packageset', self.parent.owner,
+            'test1', 'test 1 packageset', self.parent.owner,
             distroseries=self.parent)
         test2 = getUtility(IPackagesetSet).new(
-            u'test2', u'test 2 packageset', self.parent.owner,
+            'test2', 'test 2 packageset', self.parent.owner,
             distroseries=self.parent)
         test3 = getUtility(IPackagesetSet).new(
-            u'test3', u'test 3 packageset', self.parent.owner,
+            'test3', 'test 3 packageset', self.parent.owner,
             distroseries=self.parent, related_set=test2)
         test1.addSources('udev')
         getUtility(IArchivePermissionSet).newPackagesetUploader(
             self.parent.main_archive, uploader, test1)
         child = self._fullInitialize([self.parent])
         # We can fetch the copied sets from the child.
-        child_test1 = getUtility(IPackagesetSet).getByName(child, u'test1')
-        child_test2 = getUtility(IPackagesetSet).getByName(child, u'test2')
-        child_test3 = getUtility(IPackagesetSet).getByName(child, u'test3')
+        child_test1 = getUtility(IPackagesetSet).getByName(child, 'test1')
+        child_test2 = getUtility(IPackagesetSet).getByName(child, 'test2')
+        child_test3 = getUtility(IPackagesetSet).getByName(child, 'test3')
         # And we can see they are exact copies, with the related_set for the
         # copies pointing to the packageset in the parent.
         self.assertEqual(test1.description, child_test1.description)
@@ -765,7 +765,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
             packages={'firefox': '3.1'})
         uploader = self.factory.makePerson()
         test1 = getUtility(IPackagesetSet).new(
-            u'test1', u'test 1 packageset', self.parent1.owner,
+            'test1', 'test 1 packageset', self.parent1.owner,
             distroseries=self.parent1)
         test1.addSources('udev')
         test1.addSources('firefox')
@@ -782,7 +782,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
               s.sourcepackagerelease.version)
                 for s in published_sources)
         self.assertContentEqual(
-            [(u'udev', u'0.1-1'), (u'firefox', u'2.1')],
+            [('udev', '0.1-1'), ('firefox', '2.1')],
             pub_sources)
 
     def test_copying_packagesets_no_duplication(self):
@@ -792,7 +792,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         parent = self._fullInitialize([previous_parent])
         self.factory.makeSourcePackagePublishingHistory(distroseries=parent)
         p1, parent_packageset, _ = self.createPackageInPackageset(
-            parent, u"p1", u"packageset")
+            parent, "p1", "packageset")
         uploader1 = self.factory.makePerson()
         getUtility(IArchivePermissionSet).newPackagesetUploader(
             parent.main_archive, uploader1, parent_packageset)
@@ -802,8 +802,8 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # Make sure the child's packageset has disjoint packages and
         # permissions.
         p2, child_packageset, _ = self.createPackageInPackageset(
-            child, u"p2", u"packageset")
-        child_packageset.removeSources([u"p1"])
+            child, "p2", "packageset")
+        child_packageset.removeSources(["p1"])
         uploader2 = self.factory.makePerson()
         getUtility(IArchivePermissionSet).newPackagesetUploader(
             child.main_archive, uploader2, child_packageset)
@@ -834,7 +834,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         uploader = self.factory.makePerson()
         releaser = self.factory.makePerson()
         test1 = self.factory.makePackageset(
-            u'test1', u'test 1 packageset', parent.owner,
+            'test1', 'test 1 packageset', parent.owner,
             distroseries=parent)
         #test1 = getUtility(IPackagesetSet).new(
         #    u'test1', u'test 1 packageset', self.parent.owner,
@@ -876,7 +876,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         uploader = self.factory.makePerson()
         releaser = self.factory.makePerson()
         test1 = getUtility(IPackagesetSet).new(
-            u'test1', u'test 1 packageset', self.parent.owner,
+            'test1', 'test 1 packageset', self.parent.owner,
             distroseries=self.parent)
         test1.addSources('udev')
         archive_permset = getUtility(IArchivePermissionSet)
@@ -1030,10 +1030,10 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         self.parent, self.parent_das = self.setupParent(packages={})
         ps_owner = self.factory.makePerson()
         getUtility(IPackagesetSet).new(
-            u'ps', u'packageset', ps_owner, distroseries=self.parent)
+            'ps', 'packageset', ps_owner, distroseries=self.parent)
         child = self._fullInitialize(
             [self.parent], distribution=self.parent.distribution)
-        child_ps = getUtility(IPackagesetSet).getByName(child, u'ps')
+        child_ps = getUtility(IPackagesetSet).getByName(child, 'ps')
         self.assertEqual(ps_owner, child_ps.owner)
 
     def test_packageset_owner_not_preserved_cross_distro(self):
@@ -1041,10 +1041,10 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # packagesets are owned by the new distro owner.
         self.parent, self.parent_das = self.setupParent()
         getUtility(IPackagesetSet).new(
-            u'ps', u'packageset', self.factory.makePerson(),
+            'ps', 'packageset', self.factory.makePerson(),
             distroseries=self.parent)
         child = self._fullInitialize([self.parent])
-        child_ps = getUtility(IPackagesetSet).getByName(child, u'ps')
+        child_ps = getUtility(IPackagesetSet).getByName(child, 'ps')
         self.assertEqual(child.owner, child_ps.owner)
 
     def test_copy_limit_packagesets(self):
@@ -1052,23 +1052,23 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # want to copy.
         self.parent, self.parent_das = self.setupParent()
         test1 = getUtility(IPackagesetSet).new(
-            u'test1', u'test 1 packageset', self.parent.owner,
+            'test1', 'test 1 packageset', self.parent.owner,
             distroseries=self.parent)
         getUtility(IPackagesetSet).new(
-            u'test2', u'test 2 packageset', self.parent.owner,
+            'test2', 'test 2 packageset', self.parent.owner,
             distroseries=self.parent)
         packages = ('udev', 'chromium', 'libc6')
         for pkg in packages:
             test1.addSources(pkg)
         packageset1 = getUtility(IPackagesetSet).getByName(
-            self.parent, u'test1')
+            self.parent, 'test1')
         child = self._fullInitialize(
             [self.parent], packagesets=(str(packageset1.id),))
-        child_test1 = getUtility(IPackagesetSet).getByName(child, u'test1')
+        child_test1 = getUtility(IPackagesetSet).getByName(child, 'test1')
         self.assertEqual(test1.description, child_test1.description)
         self.assertRaises(
             NoSuchPackageSet, getUtility(IPackagesetSet).getByName,
-            child, u'test2')
+            child, 'test2')
         parent_srcs = test1.getSourcesIncluded(direct_inclusion=True)
         child_srcs = child_test1.getSourcesIncluded(
             direct_inclusion=True)
@@ -1081,10 +1081,10 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # If a parent series has packagesets, we don't want to copy any of them
         self.parent, self.parent_das = self.setupParent()
         test1 = getUtility(IPackagesetSet).new(
-            u'test1', u'test 1 packageset', self.parent.owner,
+            'test1', 'test 1 packageset', self.parent.owner,
             distroseries=self.parent)
         getUtility(IPackagesetSet).new(
-            u'test2', u'test 2 packageset', self.parent.owner,
+            'test2', 'test 2 packageset', self.parent.owner,
             distroseries=self.parent)
         packages = ('udev', 'chromium', 'libc6')
         for pkg in packages:
@@ -1093,10 +1093,10 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
             [self.parent], packagesets=[])
         self.assertRaises(
             NoSuchPackageSet, getUtility(IPackagesetSet).getByName,
-            child, u'test1')
+            child, 'test1')
         self.assertRaises(
             NoSuchPackageSet, getUtility(IPackagesetSet).getByName,
-            child, u'test2')
+            child, 'test2')
         self.assertEqual(child.sourcecount, 0)
         self.assertEqual(child.binarycount, 0)
 
@@ -1104,10 +1104,10 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # If a parent series has packagesets, we want to copy all of them
         self.parent, self.parent_das = self.setupParent()
         test1 = getUtility(IPackagesetSet).new(
-            u'test1', u'test 1 packageset', self.parent.owner,
+            'test1', 'test 1 packageset', self.parent.owner,
             distroseries=self.parent)
         test2 = getUtility(IPackagesetSet).new(
-            u'test2', u'test 2 packageset', self.parent.owner,
+            'test2', 'test 2 packageset', self.parent.owner,
             distroseries=self.parent)
         packages_test1 = ('udev', 'chromium', 'libc6')
         packages_test2 = ('postgresql', 'vim')
@@ -1117,8 +1117,8 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
             test2.addSources(pkg)
         child = self._fullInitialize(
             [self.parent], packagesets=None)
-        child_test1 = getUtility(IPackagesetSet).getByName(child, u'test1')
-        child_test2 = getUtility(IPackagesetSet).getByName(child, u'test2')
+        child_test1 = getUtility(IPackagesetSet).getByName(child, 'test1')
+        child_test2 = getUtility(IPackagesetSet).getByName(child, 'test2')
         self.assertEqual(test1.description, child_test1.description)
         self.assertEqual(test2.description, child_test2.description)
         parent_srcs_test1 = test1.getSourcesIncluded(direct_inclusion=True)
@@ -1139,7 +1139,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # the packaging links for the copied packages are copied.
         packages_test1, packages_test2 = self.setupPackagingTesting()
         packageset1 = getUtility(IPackagesetSet).getByName(
-            self.parent, u'test1')
+            self.parent, 'test1')
         child = self._fullInitialize(
             [self.parent], packagesets=(str(packageset1.id),))
         packagings = child.getMostRecentlyLinkedPackagings()
@@ -1197,10 +1197,10 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # for the copied source will be created.
         self.parent, self.parent_das = self.setupParent()
         test1 = getUtility(IPackagesetSet).new(
-            u'test1', u'test 1 packageset', self.parent.owner,
+            'test1', 'test 1 packageset', self.parent.owner,
             distroseries=self.parent)
         getUtility(IPackagesetSet).new(
-            u'test2', u'test 2 packageset', self.parent.owner,
+            'test2', 'test 2 packageset', self.parent.owner,
             distroseries=self.parent)
         packages = ('udev', 'chromium')
         for pkg in packages:
@@ -1331,10 +1331,10 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         uploader1 = self.factory.makePerson()
         uploader2 = self.factory.makePerson()
         test1_parent1 = getUtility(IPackagesetSet).new(
-            u'test1', u'test 1 packageset', self.parent1.owner,
+            'test1', 'test 1 packageset', self.parent1.owner,
             distroseries=self.parent1)
         test1_parent2 = getUtility(IPackagesetSet).new(
-            u'test1', u'test 1 packageset', self.parent2.owner,
+            'test1', 'test 1 packageset', self.parent2.owner,
             distroseries=self.parent2)
         test1_parent1.addSources('chromium')
         test1_parent1.addSources('udev')
@@ -1347,7 +1347,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         child = self._fullInitialize([self.parent1, self.parent2])
 
         # In the child, the identical packagesets are merged into one.
-        child_test1 = getUtility(IPackagesetSet).getByName(child, u'test1')
+        child_test1 = getUtility(IPackagesetSet).getByName(child, 'test1')
         child_srcs = child_test1.getSourcesIncluded(
             direct_inclusion=True)
         parent1_srcs = test1_parent1.getSourcesIncluded(direct_inclusion=True)
@@ -1449,8 +1449,8 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # If the series to be initialized is in a distribution with
         # initialized series, the series is *derived* from
         # the previous_series' parents.
-        previous_parent1, unused = self.setupParent(packages={u'p1': u'1.2'})
-        previous_parent2, unused = self.setupParent(packages={u'p2': u'1.5'})
+        previous_parent1, unused = self.setupParent(packages={'p1': '1.2'})
+        previous_parent2, unused = self.setupParent(packages={'p2': '1.5'})
         child = self.setUpSeriesWithPreviousSeries(
             previous_parents=[previous_parent1, previous_parent2])
         parent, unused = self.setupParent()
@@ -1471,14 +1471,14 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
               s.sourcepackagerelease.version)
                 for s in published_sources)
         self.assertEqual(
-            [(u'p1', u'1.2'), (u'p2', u'1.5')],
+            [('p1', '1.2'), ('p2', '1.5')],
             pub_sources)
 
     def test_derive_from_previous_parents_empty_parents(self):
         # If an empty list is passed to InitializeDistroSeries, the
         # parents of the previous series are used as parents.
-        previous_parent1, unused = self.setupParent(packages={u'p1': u'1.2'})
-        previous_parent2, unused = self.setupParent(packages={u'p2': u'1.5'})
+        previous_parent1, unused = self.setupParent(packages={'p1': '1.2'})
+        previous_parent2, unused = self.setupParent(packages={'p2': '1.5'})
         child = self.setUpSeriesWithPreviousSeries(
             previous_parents=[previous_parent1, previous_parent2])
         # Initialize from an empty list of parents.
@@ -1491,7 +1491,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
     def test_derive_empty_parents_distribution_not_initialized(self):
         # Initializing a series with an empty parent list if the series'
         # distribution has no initialized series triggers an error.
-        previous_parent1, unused = self.setupParent(packages={u'p1': u'1.2'})
+        previous_parent1, unused = self.setupParent(packages={'p1': '1.2'})
         child = self.setUpSeriesWithPreviousSeries(
             previous_parents=[previous_parent1],
             publish_in_distribution=False,
@@ -1601,7 +1601,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # The new publishings, copied over from the parents, have their
         # 'creator' field set to None.  This tests that behaviour when
         # the cloner is used to perform the initialization.
-        parent, unused = self.setupParent(packages={u'p1': u'1.2'})
+        parent, unused = self.setupParent(packages={'p1': '1.2'})
         child = self.setUpSeriesWithPreviousSeries(previous_parents=[parent])
         self.factory.makeSourcePackagePublishingHistory(distroseries=child)
         self._fullInitialize([parent], child=child)
@@ -1614,7 +1614,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # The new publishings, copied over from the parents, have their
         # 'creator' field set to None.  This tests that behaviour when
         # the copier is used to perform the initialization.
-        parent, unused = self.setupParent(packages={u'p1': u'1.2'})
+        parent, unused = self.setupParent(packages={'p1': '1.2'})
         child = self.setUpSeriesWithPreviousSeries(previous_parents=[parent])
         self._fullInitialize([parent], child=child)
 
@@ -1626,8 +1626,8 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # IDS._has_same_parents_as_previous_series returns True if the
         # parents for the series to be initialized are the same as
         # previous_series' parents.
-        prev_parent1, unused = self.setupParent(packages={u'p1': u'1.2'})
-        prev_parent2, unused = self.setupParent(packages={u'p2': u'1.5'})
+        prev_parent1, unused = self.setupParent(packages={'p1': '1.2'})
+        prev_parent2, unused = self.setupParent(packages={'p2': '1.5'})
         child = self.setUpSeriesWithPreviousSeries(
             previous_parents=[prev_parent1, prev_parent2])
         # The same parents can be explicitely set.
@@ -1640,8 +1640,8 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # IDS._has_same_parents_as_previous_series returns True if the
         # parents for the series to be initialized are the same as
         # previous_series' parents.
-        prev_parent1, unused = self.setupParent(packages={u'p1': u'1.2'})
-        prev_parent2, unused = self.setupParent(packages={u'p2': u'1.5'})
+        prev_parent1, unused = self.setupParent(packages={'p1': '1.2'})
+        prev_parent2, unused = self.setupParent(packages={'p2': '1.5'})
         child = self.setUpSeriesWithPreviousSeries(
             previous_parents=[prev_parent1, prev_parent2])
         # If no parents are provided, the parents from previous_series
@@ -1654,8 +1654,8 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # IDS._has_same_parents_as_previous_series returns False if the
         # parents for the series to be initialized are *not* the same as
         # previous_series' parents.
-        prev_parent1, unused = self.setupParent(packages={u'p1': u'1.2'})
-        prev_parent2, unused = self.setupParent(packages={u'p2': u'1.5'})
+        prev_parent1, unused = self.setupParent(packages={'p1': '1.2'})
+        prev_parent2, unused = self.setupParent(packages={'p2': '1.5'})
         child = self.setUpSeriesWithPreviousSeries(
             previous_parents=[prev_parent1, prev_parent2])
         parent3 = self.factory.makeDistroSeries()
@@ -1668,24 +1668,24 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # Post-first initialization of a series with the same parents
         # than those of the previous_series causes a copy of
         # previous_series' DSDs.
-        prev_parent1, unused = self.setupParent(packages={u'p1': u'1.2'})
-        prev_parent2, unused = self.setupParent(packages={u'p2': u'1.5'})
+        prev_parent1, unused = self.setupParent(packages={'p1': '1.2'})
+        prev_parent2, unused = self.setupParent(packages={'p2': '1.5'})
         child = self.setUpSeriesWithPreviousSeries(
             previous_parents=[prev_parent1, prev_parent2])
         self.factory.makeDistroSeriesDifference()
         self.factory.makeDistroSeriesDifference(
             derived_series=child.previous_series,
-            source_package_name_str=u'p1')
+            source_package_name_str='p1')
         self.factory.makeDistroSeriesDifference(
             derived_series=child.previous_series,
-            source_package_name_str=u'p2')
+            source_package_name_str='p2')
         dsd_source = getUtility(IDistroSeriesDifferenceSource)
         # No DSDs for the child yet.
         self.assertEqual(0, dsd_source.getForDistroSeries(child).count())
         self._fullInitialize([], child=child)
 
         self.assertContentEqual(
-            [u'p1', u'p2'],
+            ['p1', 'p2'],
             [
                 diff.source_package_name.name
                 for diff in dsd_source.getForDistroSeries(child)])
@@ -1704,8 +1704,8 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
     def test_initialization_first_deriv_create_dsdjs(self):
         # A first initialization of a series creates the creation
         # of the DSDJs with all the parents.
-        parent1, unused = self.setupParent(packages={u'p1': u'1.2'})
-        parent2, unused = self.setupParent(packages={u'p2': u'1.5'})
+        parent1, unused = self.setupParent(packages={'p1': '1.2'})
+        parent2, unused = self.setupParent(packages={'p2': '1.5'})
         child = self._fullInitialize([parent1, parent2])
 
         self.assertNotEqual([], self.getWaitingJobs(child, 'p1', parent1))
@@ -1715,12 +1715,12 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # Post-first initialization of a series with different parents
         # than those of the previous_series creates the DSDJs to
         # compute the DSDs with the parents.
-        prev_parent1, unused = self.setupParent(packages={u'p1': u'1.2'})
-        prev_parent2, unused = self.setupParent(packages={u'p2': u'1.5'})
+        prev_parent1, unused = self.setupParent(packages={'p1': '1.2'})
+        prev_parent2, unused = self.setupParent(packages={'p2': '1.5'})
         child = self.setUpSeriesWithPreviousSeries(
             previous_parents=[prev_parent1, prev_parent2])
         parent3, unused = self.setupParent(
-            packages={u'p2': u'2.5', u'p3': u'1.1'})
+            packages={'p2': '2.5', 'p3': '1.1'})
         self._fullInitialize(
             [prev_parent1, prev_parent2, parent3], child=child)
 
@@ -1736,16 +1736,16 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # packagesets creates the DSDJs for the packages inside these
         # packagesets.
         prev_parent1, unused = self.setupParent(
-            packages={u'p1': u'1.2', u'p11': u'3.1'})
-        prev_parent2, unused = self.setupParent(packages={u'p2': u'1.5'})
+            packages={'p1': '1.2', 'p11': '3.1'})
+        prev_parent2, unused = self.setupParent(packages={'p2': '1.5'})
         child = self.setUpSeriesWithPreviousSeries(
             previous_parents=[prev_parent1, prev_parent2])
         test1 = getUtility(IPackagesetSet).new(
-            u'test1', u'test 1 packageset', child.previous_series.owner,
+            'test1', 'test 1 packageset', child.previous_series.owner,
             distroseries=child.previous_series)
         test1.addSources('p1')
         parent3, unused = self.setupParent(
-            packages={u'p1': u'2.5', u'p3': u'4.4'})
+            packages={'p1': '2.5', 'p3': '4.4'})
         self._fullInitialize(
             [prev_parent1, prev_parent2, parent3], child=child,
             packagesets=(str(test1.id),))

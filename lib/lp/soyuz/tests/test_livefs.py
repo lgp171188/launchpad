@@ -89,7 +89,7 @@ class TestLiveFS(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestLiveFS, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
 
     def test_implements_interfaces(self):
@@ -455,7 +455,7 @@ class TestLiveFSSet(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestLiveFSSet, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
 
     def test_class_implements_interfaces(self):
@@ -550,7 +550,7 @@ class TestLiveFSWebservice(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestLiveFSWebservice, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         self.person = self.factory.makePerson(displayname="Test Person")
         self.webservice = webservice_for_person(

@@ -65,7 +65,7 @@ class TestLiveFSBuildBehaviourBase(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestLiveFSBuildBehaviourBase, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
 
     def makeJob(self, archive=None, pocket=PackagePublishingPocket.RELEASE,

@@ -238,7 +238,7 @@ class ProcessAcceptedBugsJob(StormBase, BaseRunnableJob):
         self.distroseries = distroseries
         self.sourcepackagerelease = sourcepackagerelease
         self.metadata = {"bug_ids": list(bug_ids)}
-        super(ProcessAcceptedBugsJob, self).__init__()
+        super().__init__()
 
     @property
     def bug_ids(self):

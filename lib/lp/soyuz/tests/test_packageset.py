@@ -35,7 +35,7 @@ class TestPackagesetSet(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestPackagesetSet, self).setUp()
+        super().setUp()
         self.ps_set = getUtility(IPackagesetSet)
 
     def getUbuntu(self):
@@ -223,7 +223,7 @@ class TestPackagesetSetPermissions(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPackagesetSetPermissions, self).setUp()
+        super().setUp()
         self.ps_set = getUtility(IPackagesetSet)
 
     def test_create_packageset_as_user(self):
@@ -256,7 +256,7 @@ class TestPackageset(TestCaseWithFactory):
 
     def setUp(self):
         """Setup a distribution with multiple distroseries."""
-        super(TestPackageset, self).setUp()
+        super().setUp()
         self.distribution = getUtility(IDistributionSet).getByName(
             'ubuntu')
         self.distroseries_current = self.distribution.currentseries
@@ -664,7 +664,7 @@ class TestPackagesetPermissions(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPackagesetPermissions, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
         self.person2 = self.factory.makePerson()
         self.packageset = self.factory.makePackageset(owner=self.person)
@@ -723,7 +723,7 @@ class TestArchivePermissionSet(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestArchivePermissionSet, self).setUp()
+        super().setUp()
         self.ap_set = getUtility(IArchivePermissionSet)
         self.archive = self.factory.makeArchive()
         self.packageset = self.factory.makePackageset()

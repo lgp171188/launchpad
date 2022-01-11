@@ -54,7 +54,7 @@ class TestP3APackages(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestP3APackages, self).setUp()
+        super().setUp()
         self.private_ppa = self.factory.makeArchive(description='Foo')
         login('admin@canonical.com')
         self.private_ppa.private = True
@@ -333,7 +333,7 @@ class TestPPAPackagesJobNotifications(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestPPAPackagesJobNotifications, self).setUp()
+        super().setUp()
         self.ws_version = 'devel'
         self.person = self.factory.makePerson()
         self.archive = self.factory.makeArchive(owner=self.person)
@@ -494,7 +494,7 @@ class TestP3APackagesQueryCount(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestP3APackagesQueryCount, self).setUp()
+        super().setUp()
         self.team = self.factory.makeTeam()
         login_person(self.team.teamowner)
         self.person = self.factory.makePerson()

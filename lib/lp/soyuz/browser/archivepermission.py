@@ -56,4 +56,4 @@ class ArchivePermissionURL:
                 "One of component, sourcepackagename or package set should "
                 "be set")
 
-        return u"%s/%s?%s" % (perm_type, username, item)
+        return "%s/%s?%s" % (perm_type, username, item)

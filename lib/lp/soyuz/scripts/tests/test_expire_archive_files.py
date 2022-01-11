@@ -28,7 +28,7 @@ class ArchiveExpiryTestBase(TestCaseWithFactory):
 
     def setUp(self):
         """Set up some test publications."""
-        super(ArchiveExpiryTestBase, self).setUp()
+        super().setUp()
         # Configure the test publisher.
         switch_dbuser("launchpad")
         self.stp = SoyuzTestPublisher()
@@ -100,7 +100,7 @@ class ArchiveExpiryTestBase(TestCaseWithFactory):
             "lfa.expires should be None, but it's not.")
 
 
-class ArchiveExpiryCommonTests(object):
+class ArchiveExpiryCommonTests:
     """Common source/binary expiration test cases.
 
     These will be shared irrespective of archive type (ppa/partner).
@@ -233,7 +233,7 @@ class TestPPAExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):
 
     def setUp(self):
         """Set up some test publications."""
-        super(TestPPAExpiry, self).setUp()
+        super().setUp()
         # Prepare two PPAs for the tests to use.
         self.archive = self.factory.makeArchive(
             distribution=getUtility(IDistributionSet)['ubuntutest'])
@@ -287,7 +287,7 @@ class TestPartnerExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):
 
     def setUp(self):
         """Set up the partner archives under test."""
-        super(TestPartnerExpiry, self).setUp()
+        super().setUp()
         # Prepare two partner archives for the tests to use.
         self.archive = getUtility(IDistributionSet)[
             'ubuntutest'].getArchiveByComponent('partner')

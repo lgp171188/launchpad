@@ -30,7 +30,7 @@ class TestBinarySourceReference(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBinarySourceReference, self).setUp()
+        super().setUp()
         self.reference_set = getUtility(IBinarySourceReferenceSet)
 
     def test_createFromRelationship_empty(self):

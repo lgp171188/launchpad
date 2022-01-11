@@ -22,7 +22,7 @@ class TestArchiveAPI(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestArchiveAPI, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({NAMED_AUTH_TOKEN_FEATURE_FLAG: "on"}))
         self.archive_api = ArchiveAPI(None, None)
         self.pushConfig(

@@ -54,7 +54,7 @@ class DistributionJob(StormBase):
     metadata = JSON('json_data')
 
     def __init__(self, distribution, distroseries, job_type, metadata):
-        super(DistributionJob, self).__init__()
+        super().__init__()
         self.job = Job()
         self.distribution = distribution
         self.distroseries = distroseries
@@ -100,7 +100,7 @@ class DistributionJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
-        vars = super(DistributionJobDerived, self).getOopsVars()
+        vars = super().getOopsVars()
         vars.extend([
             ('distribution_id', self.context.distribution.id),
             ('distroseries_id', self.context.distroseries.id),

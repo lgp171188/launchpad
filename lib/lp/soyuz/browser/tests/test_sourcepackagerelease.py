@@ -18,7 +18,7 @@ class TestSourcePackageReleaseView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSourcePackageReleaseView, self).setUp()
+        super().setUp()
         self.source_package_release = self.factory.makeSourcePackageRelease()
 
     def test_highlighted_copyright_is_None(self):

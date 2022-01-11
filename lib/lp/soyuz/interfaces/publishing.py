@@ -570,8 +570,8 @@ class ISourcePackagePublishingHistoryEdit(IPublishingEdit):
     # _schema_circular_imports.py.
     @operation_returns_entry(Interface)
     @operation_parameters(
-        new_component=TextLine(title=u"The new component name."),
-        new_section=TextLine(title=u"The new section name."))
+        new_component=TextLine(title="The new component name."),
+        new_section=TextLine(title="The new section name."))
     @export_write_operation()
     @call_with(creator=REQUEST_USER)
     @operation_for_version("devel")
@@ -870,15 +870,15 @@ class IBinaryPackagePublishingHistoryEdit(IPublishingEdit):
     # _schema_circular_imports.py.
     @operation_returns_entry(Interface)
     @operation_parameters(
-        new_component=TextLine(title=u"The new component name."),
-        new_section=TextLine(title=u"The new section name."),
+        new_component=TextLine(title="The new component name."),
+        new_section=TextLine(title="The new section name."),
         # XXX cjwatson 20120619: It would be nice to use copy_field here to
         # save manually looking up the priority name, but it doesn't work in
         # this case: the title is wrong, and tests fail when a string value
         # is passed over the webservice.
-        new_priority=TextLine(title=u"The new priority name."),
+        new_priority=TextLine(title="The new priority name."),
         new_phased_update_percentage=Int(
-            title=u"The new phased update percentage."))
+            title="The new phased update percentage."))
     @export_write_operation()
     @call_with(creator=REQUEST_USER)
     @operation_for_version("devel")
