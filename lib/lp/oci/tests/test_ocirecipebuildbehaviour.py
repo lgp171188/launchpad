@@ -61,11 +61,11 @@ from lp.buildmaster.tests.builderproxy import (
     ProxyURLMatcher,
     RevocationEndpointMatcher,
     )
-from lp.buildmaster.tests.mock_slaves import (
+from lp.buildmaster.tests.mock_workers import (
     MockBuilder,
-    OkSlave,
-    SlaveTestHelpers,
-    WaitingSlave,
+    OkWorker,
+    WaitingWorker,
+    WorkerTestHelpers,
     )
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
@@ -122,9 +122,9 @@ class MakeOCIBuildMixin:
         job = IBuildFarmJobBehaviour(build)
         builder = MockBuilder()
         builder.processor = job.build.processor
-        slave = self.useFixture(SlaveTestHelpers()).getClientSlave()
-        job.setBuilder(builder, slave)
-        self.addCleanup(slave.pool.closeCachedConnections)
+        worker = self.useFixture(WorkerTestHelpers()).getClientWorker()
+        job.setBuilder(builder, worker)
+        self.addCleanup(worker.pool.closeCachedConnections)
         self.addCleanup(shut_down_default_process_pool)
 
         # Taken from test_archivedependencies.py
@@ -591,8 +591,8 @@ class TestAsyncOCIRecipeBuildBehaviour(
         job = self.makeJob(git_ref=ref, allow_internet=False)
         builder = MockBuilder()
         builder.processor = job.build.processor
-        slave = OkSlave()
-        job.setBuilder(builder, slave)
+        worker = OkWorker()
+        job.setBuilder(builder, worker)
         chroot_lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(
             chroot_lfa, image_type=BuildBaseImageType.CHROOT)
@@ -601,7 +601,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
             lxd_lfa, image_type=BuildBaseImageType.LXD)
         yield job.dispatchBuildToSlave(DevNullLogger())
         self.assertEqual(
-            ('ensurepresent', lxd_lfa.http_url, '', ''), slave.call_log[0])
+            ('ensurepresent', lxd_lfa.http_url, '', ''), worker.call_log[0])
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
@@ -616,14 +616,14 @@ class TestAsyncOCIRecipeBuildBehaviour(
         job = self.makeJob(git_ref=ref, allow_internet=False)
         builder = MockBuilder()
         builder.processor = job.build.processor
-        slave = OkSlave()
-        job.setBuilder(builder, slave)
+        worker = OkWorker()
+        job.setBuilder(builder, worker)
         chroot_lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(
             chroot_lfa, image_type=BuildBaseImageType.CHROOT)
         yield job.dispatchBuildToSlave(DevNullLogger())
         self.assertEqual(
-            ('ensurepresent', chroot_lfa.http_url, '', ''), slave.call_log[0])
+            ('ensurepresent', chroot_lfa.http_url, '', ''), worker.call_log[0])
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_oci_feature_flag_enabled(self):
@@ -646,8 +646,8 @@ class TestAsyncOCIRecipeBuildBehaviour(
         job = self.makeJob(git_ref=ref, build=build)
         builder = MockBuilder()
         builder.processor = job.build.processor
-        slave = OkSlave()
-        job.setBuilder(builder, slave)
+        worker = OkWorker()
+        job.setBuilder(builder, worker)
         chroot_lfa = self.factory.makeLibraryFileAlias(db_only=True)
 
         job.build.distro_arch_series.addOrUpdateChroot(
@@ -659,11 +659,10 @@ class TestAsyncOCIRecipeBuildBehaviour(
         self.assertEqual(distroseries.name,
             job.build.distro_arch_series.distroseries.name)
         self.assertEqual(
-            ('ensurepresent', lxd_lfa.http_url, '', ''), slave.call_log[0])
-        # grab the build method log from the OKMockSlave
-        # and check inside the arguments dict that we build
-        # for Distro series
-        self.assertEqual(distroseries.name, slave.call_log[1][5]['series'])
+            ('ensurepresent', lxd_lfa.http_url, '', ''), worker.call_log[0])
+        # grab the build method log from the OKWorker and check inside the
+        # arguments dict that we build for distro series
+        self.assertEqual(distroseries.name, worker.call_log[1][5]['series'])
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_disallow_internet(self):
@@ -693,7 +692,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         path = os.path.join(self.test_files_dir, name)
         with open(path, 'wb') as fp:
             fp.write(six.ensure_binary(content))
-        self.slave.valid_files[hash] = path
+        self.worker.valid_files[hash] = path
 
     def setUp(self):
         super().setUp()
@@ -701,14 +700,14 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         self.build = self.makeBuild()
         # For the moment, we require a builder for the build so that
-        # handleStatus_OK can get a reference to the slave.
+        # handleStatus_OK can get a reference to the worker.
         self.builder = self.factory.makeBuilder()
         self.build.buildqueue_record.markAsBuilding(self.builder)
-        self.slave = WaitingSlave('BuildStatus.OK')
-        self.slave.valid_files['test_file_hash'] = ''
+        self.worker = WaitingWorker('BuildStatus.OK')
+        self.worker.valid_files['test_file_hash'] = ''
         self.interactor = BuilderInteractor()
         self.behaviour = self.interactor.getBuildBehaviour(
-            self.build.buildqueue_record, self.builder, self.slave)
+            self.build.buildqueue_record, self.builder, self.worker)
         self.addCleanup(shut_down_default_process_pool)
 
         # We overwrite the buildmaster root to use a temp directory.
@@ -786,9 +785,9 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         self.assertEqual(
             ['buildlog', 'manifest_hash', 'digests_hash', 'config_1_hash',
              'layer_2_hash'],
-            self.slave._got_file_record)
+            self.worker._got_file_record)
         # This hash should not appear as it is already in the librarian
-        self.assertNotIn('layer_1_hash', self.slave._got_file_record)
+        self.assertNotIn('layer_1_hash', self.worker._got_file_record)
         self.assertEqual(BuildStatus.UPLOADING, self.build.status)
         self.assertResultCount(1, "incoming")
 
@@ -825,10 +824,10 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
                 {'filemap': self.filemap})
         self.assertEqual(
             ['buildlog', 'manifest_hash', 'digests_hash', 'config_1_hash'],
-            self.slave._got_file_record)
+            self.worker._got_file_record)
         # This hash should not appear as it is already in the librarian
-        self.assertNotIn('layer_1_hash', self.slave._got_file_record)
-        self.assertNotIn('layer_2_hash', self.slave._got_file_record)
+        self.assertNotIn('layer_1_hash', self.worker._got_file_record)
+        self.assertNotIn('layer_2_hash', self.worker._got_file_record)
 
         # layer_2 should have been retrieved from the librarian
         layer_2_path = os.path.join(
@@ -909,7 +908,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
     def test_handleStatus_ABORTED_illegal_when_building(self):
         self.builder.vm_host = "fake_vm_host"
         self.behaviour = self.interactor.getBuildBehaviour(
-            self.build.buildqueue_record, self.builder, self.slave)
+            self.build.buildqueue_record, self.builder, self.worker)
         with dbuser(config.builddmaster.dbuser):
             self.build.updateStatus(BuildStatus.BUILDING)
             with ExpectedException(

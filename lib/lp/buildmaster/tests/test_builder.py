@@ -18,7 +18,7 @@ from lp.buildmaster.interfaces.builder import (
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.buildqueue import BuildQueue
-from lp.buildmaster.tests.mock_slaves import make_publisher
+from lp.buildmaster.tests.mock_workers import make_publisher
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.features.testing import FeatureFixture
