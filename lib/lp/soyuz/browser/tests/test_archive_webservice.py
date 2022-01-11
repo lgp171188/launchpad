@@ -49,7 +49,7 @@ class TestArchiveWebservice(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestArchiveWebservice, self).setUp()
+        super().setUp()
         with admin_logged_in() as _admin:
             admin = _admin
             self.archive = self.factory.makeArchive(
@@ -682,7 +682,7 @@ class TestGetPublishedBinaries(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetPublishedBinaries, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
         self.archive = self.factory.makeArchive()
         self.person_url = api_url(self.person)
@@ -817,7 +817,7 @@ class TestRemoveCopyNotification(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestRemoveCopyNotification, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
         self.archive = self.factory.makeArchive(owner=self.person)
         self.archive_url = api_url(self.archive)

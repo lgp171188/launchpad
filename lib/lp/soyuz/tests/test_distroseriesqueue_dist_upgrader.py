@@ -30,7 +30,7 @@ from lp.testing.gpgkeys import import_public_test_keys
 class TestDistroSeriesQueueDistUpgrader(TestNativePublishingBase):
 
     def setUp(self):
-        super(TestDistroSeriesQueueDistUpgrader, self).setUp()
+        super().setUp()
         import_public_test_keys()
         # CustomUpload.installFiles requires a umask of 0o022.
         old_umask = os.umask(0o022)
@@ -42,7 +42,7 @@ class TestDistroSeriesQueueDistUpgrader(TestNativePublishingBase):
         self.logger = DevNullLogger()
 
     def tearDown(self):
-        super(TestDistroSeriesQueueDistUpgrader, self).tearDown()
+        super().tearDown()
         if os.path.exists(config.personalpackagearchive.root):
             shutil.rmtree(config.personalpackagearchive.root)
 

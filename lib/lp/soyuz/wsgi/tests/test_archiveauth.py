@@ -26,7 +26,7 @@ class TestWSGIArchiveAuth(TestCaseWithFactory):
     layer = ZopelessAppServerLayer
 
     def setUp(self):
-        super(TestWSGIArchiveAuth, self).setUp()
+        super().setUp()
         self.now = time.time()
         self.useFixture(MonkeyPatch("time.time", lambda: self.now))
         self.memcache_fixture = self.useFixture(MemcacheFixture())

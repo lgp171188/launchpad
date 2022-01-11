@@ -29,7 +29,7 @@ class TestArchiveSubscribersView(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestArchiveSubscribersView, self).setUp()
+        super().setUp()
         self.p3a_owner = self.factory.makePerson()
         admin = getUtility(IPersonSet).getByEmail('admin@canonical.com')
         with person_logged_in(admin):

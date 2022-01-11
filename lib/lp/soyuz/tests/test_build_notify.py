@@ -46,7 +46,7 @@ class TestBuildNotify(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestBuildNotify, self).setUp()
+        super().setUp()
         self.admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         # Create all of the items we need to create builds
         self.processor = self.factory.makeProcessor(supports_virtualized=True)

@@ -259,8 +259,7 @@ class CopyChecker:
     def getCheckedCopies(self):
         """Return a list of copies allowed to be performed."""
         for copies in self._inventory.values():
-            for copy in copies:
-                yield copy
+            yield from copies
 
     def getConflicts(self, candidate):
         """Conflicting `CheckedCopy` objects in the inventory.

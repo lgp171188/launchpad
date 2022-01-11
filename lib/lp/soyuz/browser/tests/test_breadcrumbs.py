@@ -16,7 +16,7 @@ from lp.testing.breadcrumbs import BaseBreadcrumbTestCase
 class TestDistroArchSeriesBreadcrumb(BaseBreadcrumbTestCase):
 
     def setUp(self):
-        super(TestDistroArchSeriesBreadcrumb, self).setUp()
+        super().setUp()
         self.ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
         self.hoary = self.ubuntu.getSeries('hoary')
         self.hoary_i386 = self.hoary['i386']
@@ -46,7 +46,7 @@ class TestDistroArchSeriesBreadcrumb(BaseBreadcrumbTestCase):
 class TestArchiveSubscriptionBreadcrumb(BaseBreadcrumbTestCase):
 
     def setUp(self):
-        super(TestArchiveSubscriptionBreadcrumb, self).setUp()
+        super().setUp()
 
         # Create a private ppa
         self.ppa = self.factory.makeArchive()

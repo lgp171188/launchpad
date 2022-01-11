@@ -71,7 +71,7 @@ class TestScriptRunning(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestScriptRunning, self).setUp()
+        super().setUp()
         self.publisher = SoyuzTestPublisher()
         self.publisher.prepareBreezyAutotest()
 

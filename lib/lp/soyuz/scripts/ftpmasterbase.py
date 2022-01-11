@@ -11,8 +11,6 @@ __all__ = [
     'SoyuzScript',
     ]
 
-from six.moves import input
-
 from lp.services.scripts.base import (
     LaunchpadScript,
     LaunchpadScriptFailure,

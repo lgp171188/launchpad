@@ -191,12 +191,12 @@ class ILiveFSEditSchema(Interface):
         'keep_binary_files_days',
         ])
     distro_series = Choice(
-        vocabulary='BuildableDistroSeries', title=u'Distribution series')
+        vocabulary='BuildableDistroSeries', title='Distribution series')
     metadata = Text(
-        title=u'Live filesystem build metadata',
+        title='Live filesystem build metadata',
         description=(
-            u'A JSON dictionary of data about the image.  Entries here will '
-             'be passed to the builder.'))
+            'A JSON dictionary of data about the image.  Entries here will '
+            'be passed to the builder.'))
 
 
 class LiveFSMetadataValidatorMixin:
@@ -223,7 +223,7 @@ class LiveFSAddView(LiveFSMetadataValidatorMixin, LaunchpadFormView):
         """See `LaunchpadView`."""
         if not getFeatureFlag(LIVEFS_FEATURE_FLAG):
             raise LiveFSFeatureDisabled
-        super(LiveFSAddView, self).initialize()
+        super().initialize()
 
     @property
     def initial_values(self):
@@ -249,7 +249,7 @@ class LiveFSAddView(LiveFSMetadataValidatorMixin, LaunchpadFormView):
         self.next_url = canonical_url(livefs)
 
     def validate(self, data):
-        super(LiveFSAddView, self).validate(data)
+        super().validate(data)
         owner = data.get('owner', None)
         distro_series = data['distro_series']
         name = data.get('name', None)
@@ -330,11 +330,11 @@ class LiveFSEditView(LiveFSMetadataValidatorMixin, BaseLiveFSEditView):
         """See `LaunchpadEditFormView`."""
         if 'metadata' in data:
             data['metadata'] = json.loads(data['metadata'])
-        super(LiveFSEditView, self).updateContextFromData(
+        super().updateContextFromData(
             data, context=context, notify_modified=notify_modified)
 
     def validate(self, data):
-        super(LiveFSEditView, self).validate(data)
+        super().validate(data)
         owner = data.get('owner', None)
         distro_series = data['distro_series']
         name = data.get('name', None)

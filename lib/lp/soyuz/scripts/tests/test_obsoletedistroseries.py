@@ -71,7 +71,7 @@ class TestObsoleteDistroseries(TestCaseWithFactory):
 
     def setUp(self):
         """Set up test data common to all test cases."""
-        super(TestObsoleteDistroseries, self).setUp()
+        super().setUp()
         self.warty = getUtility(IDistributionSet)['ubuntu']['warty']
 
         # Re-process the returned list otherwise it ends up being a list

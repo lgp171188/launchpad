@@ -17,7 +17,7 @@ class TestArchivePrivacySwitchingView(TestCaseWithFactory):
 
     def setUp(self):
         """Create a ppa for the tests and login as an admin."""
-        super(TestArchivePrivacySwitchingView, self).setUp()
+        super().setUp()
         self.ppa = self.factory.makeArchive()
         # Login as an admin to ensure access to the view's context
         # object.

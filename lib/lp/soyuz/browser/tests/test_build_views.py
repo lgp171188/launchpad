@@ -45,7 +45,7 @@ class TestBuildViews(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBuildViews, self).setUp()
+        super().setUp()
         self.empty_request = LaunchpadTestRequest(form={})
         self.admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
 

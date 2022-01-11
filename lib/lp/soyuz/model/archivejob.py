@@ -66,7 +66,7 @@ class ArchiveJob(StormBase):
         :param metadata: the type-specific variables, as a json-compatible
             dict.
         """
-        super(ArchiveJob, self).__init__()
+        super().__init__()
         self.job = Job()
         self.archive = archive
         self.job_type = job_type
@@ -103,7 +103,7 @@ class ArchiveJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
-        vars = super(ArchiveJobDerived, self).getOopsVars()
+        vars = super().getOopsVars()
         vars.extend([
             ('archive_id', self.context.archive.id),
             ('archive_job_id', self.context.id),
@@ -128,12 +128,11 @@ class PackageUploadNotificationJob(ArchiveJobDerived):
             'packageupload_status': packageupload.status.title,
             'summary_text': summary_text,
             }
-        return super(PackageUploadNotificationJob, cls).create(
-            packageupload.archive, metadata)
+        return super().create(packageupload.archive, metadata)
 
     def getOopsVars(self):
         """See `ArchiveJobDerived`."""
-        vars = super(PackageUploadNotificationJob, self).getOopsVars()
+        vars = super().getOopsVars()
         vars.extend([
             ('packageupload_id', self.metadata['packageupload_id']),
             ('packageupload_status', self.metadata['packageupload_status']),

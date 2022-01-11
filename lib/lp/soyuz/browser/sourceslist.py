@@ -41,7 +41,7 @@ class SourcesListEntriesView(LaunchpadView):
         comment=None):
         self._initially_without_selection = initially_without_selection
         self.comment = comment
-        super(SourcesListEntriesView, self).__init__(context, request)
+        super().__init__(context, request)
 
     def initialize(self):
         self.terms = []

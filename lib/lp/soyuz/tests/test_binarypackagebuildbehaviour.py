@@ -94,7 +94,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         timeout=30)
 
     def setUp(self):
-        super(TestBinaryBuildPackageBehaviour, self).setUp()
+        super().setUp()
         switch_dbuser('testadmin')
         self.setUpStats()
 
@@ -534,7 +534,7 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             shutil.rmtree(config.builddmaster.root)
 
     def setUp(self):
-        super(TestBinaryBuildPackageBehaviourBuildCollection, self).setUp()
+        super().setUp()
         switch_dbuser('testadmin')
 
         self.builder = self.factory.makeBuilder()

@@ -32,7 +32,7 @@ class TestDistroSeriesBinaryPackage(TestCaseWithFactory):
 
     def setUp(self):
         """Create a distroseriesbinarypackage to play with."""
-        super(TestDistroSeriesBinaryPackage, self).setUp()
+        super().setUp()
         self.publisher = SoyuzTestPublisher()
         self.publisher.prepareBreezyAutotest()
         self.distroseries = self.publisher.distroseries

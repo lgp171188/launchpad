@@ -29,7 +29,7 @@ class TestBuildStartEstimation(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBuildStartEstimation, self).setUp()
+        super().setUp()
         self.admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         with person_logged_in(self.admin):
             self.publisher = SoyuzTestPublisher()

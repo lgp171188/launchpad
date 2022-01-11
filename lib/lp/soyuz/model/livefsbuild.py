@@ -92,7 +92,7 @@ class LiveFSFile(Storm):
 
     def __init__(self, livefsbuild, libraryfile):
         """Construct a `LiveFSFile`."""
-        super(LiveFSFile, self).__init__()
+        super().__init__()
         self.livefsbuild = livefsbuild
         self.libraryfile = libraryfile
 
@@ -163,7 +163,7 @@ class LiveFSBuild(PackageBuildMixin, Storm):
         """Construct a `LiveFSBuild`."""
         if not getFeatureFlag(LIVEFS_FEATURE_FLAG):
             raise LiveFSFeatureDisabled
-        super(LiveFSBuild, self).__init__()
+        super().__init__()
         self.build_farm_job = build_farm_job
         self.requester = requester
         self.livefs = livefs
@@ -334,7 +334,7 @@ class LiveFSBuild(PackageBuildMixin, Storm):
 
         edited_fields = set()
         with notify_modified(self, edited_fields) as previous_obj:
-            super(LiveFSBuild, self).updateStatus(
+            super().updateStatus(
                 status, builder=builder, slave_status=slave_status,
                 date_started=date_started, date_finished=date_finished,
                 force_invalid_transition=force_invalid_transition)

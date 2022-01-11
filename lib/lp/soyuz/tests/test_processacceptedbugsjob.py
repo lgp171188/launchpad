@@ -56,7 +56,7 @@ class TestBugIDsFromChangesFile(TestCaseWithFactory):
     dbuser = config.uploadqueue.dbuser
 
     def setUp(self):
-        super(TestBugIDsFromChangesFile, self).setUp()
+        super().setUp()
         self.changes = Changes({
             'Format': '1.8',
             'Source': 'swat',
@@ -260,7 +260,7 @@ class TestCloseBugIDsForSourcePackageRelease(TestCaseWithFactory):
     dbuser = config.IProcessAcceptedBugsJobSource.dbuser
 
     def setUp(self):
-        super(TestCloseBugIDsForSourcePackageRelease, self).setUp()
+        super().setUp()
         # Create a distribution with two series, two source package names,
         # and an SPR and a bug task for all combinations of those.
         self.distro = self.factory.makeDistribution()
@@ -324,7 +324,7 @@ class TestProcessAcceptedBugsJob(TestCaseWithFactory):
     dbuser = config.IProcessAcceptedBugsJobSource.dbuser
 
     def setUp(self):
-        super(TestProcessAcceptedBugsJob, self).setUp()
+        super().setUp()
         self.publisher = SoyuzTestPublisher()
         self.publisher.prepareBreezyAutotest()
         self.distroseries = self.publisher.breezy_autotest

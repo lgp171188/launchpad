@@ -17,7 +17,7 @@ class TestDistroArchSeriesView(TestCaseWithFactory):
 
     def setUp(self):
         """Create a distroarchseries for the tests and login as an admin."""
-        super(TestDistroArchSeriesView, self).setUp()
+        super().setUp()
         self.das = self.factory.makeDistroArchSeries()
         # Login as an admin to ensure access to the view's context
         # object.

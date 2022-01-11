@@ -23,7 +23,7 @@ class TestRetryDepwait(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestRetryDepwait, self).setUp()
+        super().setUp()
         self.chroot = getUtility(ILibraryFileAliasSet)[1]
         self.build = removeSecurityProxy(
             self.factory.makeBinaryPackageBuild(
@@ -48,7 +48,7 @@ class TestRetryDepwait(TestCaseWithFactory):
         # Builds with unsatisfied dependencies are not retried.
         self.build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': u'something'})
+            slave_status={'dependencies': 'something'})
         self.assertStatusAfterLoop(BuildStatus.MANUALDEPWAIT)
         self.assertEqual(1, self.build.updateDependencies.call_count)
 

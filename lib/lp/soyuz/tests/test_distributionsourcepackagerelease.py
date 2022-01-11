@@ -29,7 +29,7 @@ class TestDistributionSourcePackageRelease(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionSourcePackageRelease, self).setUp()
+        super().setUp()
         self.sourcepackagerelease = self.factory.makeSourcePackageRelease()
         self.distroarchseries = self.factory.makeDistroArchSeries(
             distroseries=self.sourcepackagerelease.upload_distroseries)
@@ -159,7 +159,7 @@ class TestGetBinariesForSeries(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetBinariesForSeries, self).setUp()
+        super().setUp()
         self.sourcepackagerelease = self.factory.makeSourcePackageRelease()
         self.distroarchseries = self.factory.makeDistroArchSeries(
             distroseries=self.sourcepackagerelease.upload_distroseries)

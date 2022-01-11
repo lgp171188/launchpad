@@ -25,7 +25,6 @@ from lp.soyuz.interfaces.binarypackagename import (
 from lp.soyuz.interfaces.publishing import active_publishing_status
 
 
-@six.python_2_unicode_compatible
 @implementer(IBinaryPackageName)
 class BinaryPackageName(SQLBase):
     _table = 'BinaryPackageName'

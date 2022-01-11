@@ -5,7 +5,6 @@ __all__ = [
     "InitializeDistroSeriesJob",
 ]
 
-import six
 from zope.interface import (
     implementer,
     provider,
@@ -216,12 +215,12 @@ class InitializeDistroSeriesJob(DistributionJobDerived):
         """
         # This method is called when error is an instance of
         # self.user_error_types.
-        super(InitializeDistroSeriesJob, self).notifyUserError(error)
+        super().notifyUserError(error)
         self.metadata = dict(
-            self.metadata, error_description=six.text_type(error))
+            self.metadata, error_description=str(error))
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
-        vars = super(InitializeDistroSeriesJob, self).getOopsVars()
+        vars = super().getOopsVars()
         vars.append(('parent_distroseries_ids', self.metadata.get("parents")))
         return vars

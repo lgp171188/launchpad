@@ -475,8 +475,8 @@ class IPackageUpload(Interface):
         """
 
     @operation_parameters(
-        new_component=TextLine(title=u"The new component name."),
-        new_section=TextLine(title=u"The new section name."))
+        new_component=TextLine(title="The new component name."),
+        new_section=TextLine(title="The new section name."))
     @call_with(allowed_components=None, user=REQUEST_USER)
     @export_write_operation()
     @operation_for_version('devel')
@@ -505,9 +505,9 @@ class IPackageUpload(Interface):
 
     @operation_parameters(
         changes=List(
-            title=u"A sequence of changes to apply.",
+            title="A sequence of changes to apply.",
             description=(
-                u"Each item may have a 'name' item which specifies the binary "
+                "Each item may have a 'name' item which specifies the binary "
                 "package name to override; otherwise, the change applies to "
                 "all binaries in the upload. It may also have 'component', "
                 "'section', and 'priority' items which replace the "

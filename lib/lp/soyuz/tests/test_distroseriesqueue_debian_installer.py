@@ -27,7 +27,7 @@ from lp.testing.gpgkeys import import_public_test_keys
 class TestDistroSeriesQueueDebianInstaller(TestNativePublishingBase):
 
     def setUp(self):
-        super(TestDistroSeriesQueueDebianInstaller, self).setUp()
+        super().setUp()
         import_public_test_keys()
         # CustomUpload.installFiles requires a umask of 0o022.
         old_umask = os.umask(0o022)

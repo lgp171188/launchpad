@@ -33,22 +33,21 @@ class LiveFSBuildMailer(BaseMailer):
 
     def __init__(self, subject, template_name, recipients, from_address,
                  build):
-        super(LiveFSBuildMailer, self).__init__(
+        super().__init__(
             subject, template_name, recipients, from_address,
             notification_type="livefs-build-status")
         self.build = build
 
     def _getHeaders(self, email, recipient):
         """See `BaseMailer`."""
-        headers = super(LiveFSBuildMailer, self)._getHeaders(email, recipient)
+        headers = super()._getHeaders(email, recipient)
         headers["X-Launchpad-Build-State"] = self.build.status.name
         return headers
 
     def _getTemplateParams(self, email, recipient):
         """See `BaseMailer`."""
         build = self.build
-        params = super(LiveFSBuildMailer, self)._getTemplateParams(
-            email, recipient)
+        params = super()._getTemplateParams(email, recipient)
         params.update({
             "archive_tag": build.archive.reference,
             "build_id": build.id,

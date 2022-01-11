@@ -53,7 +53,7 @@ class BinarySourceReference(StormBase):
     def __init__(self, binary_package_release, source_package_release,
                  reference_type):
         """Construct a `BinarySourceReference`."""
-        super(BinarySourceReference, self).__init__()
+        super().__init__()
         self.binary_package_release = binary_package_release
         self.source_package_release = source_package_release
         self.reference_type = reference_type

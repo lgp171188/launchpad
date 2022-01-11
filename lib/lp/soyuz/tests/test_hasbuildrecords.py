@@ -45,7 +45,7 @@ class TestHasBuildRecordsInterface(BaseTestCaseWithThreeBuilds):
 
     def setUp(self):
         """Use `SoyuzTestPublisher` to publish some sources in archives."""
-        super(TestHasBuildRecordsInterface, self).setUp()
+        super().setUp()
         self.context = self.ds.distribution
 
     def testProvidesHasBuildRecords(self):
@@ -73,7 +73,7 @@ class TestDistributionHasBuildRecords(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestDistributionHasBuildRecords, self).setUp()
+        super().setUp()
         self.admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         # Create the machinery we need to create builds, such as
         # DistroArchSeries and builders.
@@ -127,7 +127,7 @@ class TestDistroSeriesHasBuildRecords(TestHasBuildRecordsInterface):
     """Test the DistroSeries implementation of IHasBuildRecords."""
 
     def setUp(self):
-        super(TestDistroSeriesHasBuildRecords, self).setUp()
+        super().setUp()
         self.context = self.ds
 
 
@@ -137,7 +137,7 @@ class TestDistroArchSeriesHasBuildRecords(TestDistributionHasBuildRecords):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestDistroArchSeriesHasBuildRecords, self).setUp()
+        super().setUp()
 
     def test_distroarchseries(self):
         # We can fetch builds records from a DistroArchSeries.
@@ -161,7 +161,7 @@ class TestArchiveHasBuildRecords(TestHasBuildRecordsInterface):
     """Test the Archive implementation of IHasBuildRecords."""
 
     def setUp(self):
-        super(TestArchiveHasBuildRecords, self).setUp()
+        super().setUp()
 
         self.context = self.ds.main_archive
 
@@ -191,7 +191,7 @@ class TestBuilderHasBuildRecords(TestHasBuildRecordsInterface):
     """Test the Builder implementation of IHasBuildRecords."""
 
     def setUp(self):
-        super(TestBuilderHasBuildRecords, self).setUp()
+        super().setUp()
 
         # Create a 386 builder
         self.context = self.factory.makeBuilder()
@@ -237,7 +237,7 @@ class TestSourcePackageHasBuildRecords(TestHasBuildRecordsInterface):
     """Test the SourcePackage implementation of IHasBuildRecords."""
 
     def setUp(self):
-        super(TestSourcePackageHasBuildRecords, self).setUp()
+        super().setUp()
         gedit_name = self.builds[0].source_package_release.sourcepackagename
         self.context = SourcePackage(
             gedit_name, self.builds[0].distro_arch_series.distroseries)

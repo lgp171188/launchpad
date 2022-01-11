@@ -121,7 +121,7 @@ class BuildUrl:
 
     @property
     def path(self):
-        return u"+build/%d" % self.context.id
+        return "+build/%d" % self.context.id
 
 
 class BuildNavigation(GetitemNavigation, FileNavigationMixin):

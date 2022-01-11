@@ -66,7 +66,7 @@ class TestDistributionSourcePackageReleaseFiles(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionSourcePackageReleaseFiles, self).setUp()
+        super().setUp()
         # SourcePackageRelease itself is contextless, so wrap it in DSPR
         # to give it a URL.
         spr = self.factory.makeSourcePackageRelease()

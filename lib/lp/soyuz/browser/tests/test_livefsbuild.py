@@ -43,7 +43,7 @@ class TestCanonicalUrlForLiveFSBuild(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCanonicalUrlForLiveFSBuild, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
 
     def test_canonical_url(self):
@@ -68,7 +68,7 @@ class TestLiveFSBuildView(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestLiveFSBuildView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
 
     def test_files(self):
@@ -111,7 +111,7 @@ class TestLiveFSBuildOperations(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestLiveFSBuildOperations, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         self.useFixture(FakeLogger())
         self.build = self.factory.makeLiveFSBuild()

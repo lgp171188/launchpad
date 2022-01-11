@@ -66,7 +66,7 @@ class ArchiveFile(Storm):
 
     def __init__(self, archive, container, path, library_file):
         """Construct an `ArchiveFile`."""
-        super(ArchiveFile, self).__init__()
+        super().__init__()
         self.archive = archive
         self.container = container
         self.path = path
