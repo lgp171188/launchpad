@@ -1,7 +1,7 @@
 # Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Tests for the renovated slave scanner aka BuilddManager."""
+"""Tests for the renovated worker scanner aka BuilddManager."""
 
 import os
 import signal
@@ -48,7 +48,7 @@ from lp.buildmaster.manager import (
     judge_failure,
     PrefetchedBuilderFactory,
     recover_failure,
-    SlaveScanner,
+    WorkerScanner,
     )
 from lp.buildmaster.tests.harness import BuilddManagerTestSetup
 from lp.buildmaster.tests.mock_workers import (
@@ -92,8 +92,8 @@ from lp.testing.matchers import HasQueryCount
 from lp.testing.sampledata import BOB_THE_BUILDER_NAME
 
 
-class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
-    """Tests `SlaveScanner.scan` method.
+class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
+    """Tests `WorkerScanner.scan` method.
 
     This method uses the old framework for scanning and dispatching builds.
     """
@@ -140,7 +140,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
         self.assertEqual(job.logtail, logtail)
 
     def _getScanner(self, builder_name=None, clock=None, builder_factory=None):
-        """Instantiate a SlaveScanner object.
+        """Instantiate a WorkerScanner object.
 
         Replace its default logging handler by a testing version.
         """
@@ -150,10 +150,10 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
             builder_factory = BuilderFactory()
         manager = BuilddManager(builder_factory=builder_factory, clock=clock)
         manager.logger = BufferLogger()
-        scanner = SlaveScanner(
+        scanner = WorkerScanner(
             builder_name, builder_factory, manager, BufferLogger(),
             clock=clock)
-        scanner.logger.name = 'slave-scanner'
+        scanner.logger.name = 'worker-scanner'
 
         return scanner
 
@@ -184,7 +184,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
         self.assertTrue(builder.currentjob is None)
 
     def _checkJobRescued(self, builder, job):
-        """`SlaveScanner.scan` rescued the job.
+        """`WorkerScanner.scan` rescued the job.
 
         Nothing gets dispatched,  the 'broken' builder remained disabled
         and the 'rescued' job is ready to be dispatched.
@@ -224,7 +224,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
         self._checkJobRescued(builder, job)
 
     def _checkJobUpdated(self, builder, job, logtail='This is a build log: 0'):
-        """`SlaveScanner.scan` updates legitimate jobs.
+        """`WorkerScanner.scan` updates legitimate jobs.
 
         Job is kept assigned to the active builder and its 'logtail' is
         updated.
@@ -238,7 +238,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
     @defer.inlineCallbacks
     def testScanUpdatesBuildingJobs(self):
         # Enable sampledata builder attached to an appropriate testing
-        # slave. It will respond as if it was building the sampledata job.
+        # worker. It will respond as if it was building the sampledata job.
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
 
         login('foo.bar@canonical.com')
@@ -366,14 +366,14 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
 
     @defer.inlineCallbacks
     def test_scan_calls_builder_factory_prescanUpdate(self):
-        # SlaveScanner.scan() starts by calling
+        # WorkerScanner.scan() starts by calling
         # BuilderFactory.prescanUpdate() to eg. perform necessary
         # transaction management.
         bf = BuilderFactory()
         bf.prescanUpdate = FakeMethod()
         scanner = self._getScanner(builder_factory=bf)
 
-        # Disable the builder so we don't try to use the slave. It's not
+        # Disable the builder so we don't try to use the worker. It's not
         # relevant for this test.
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         builder.builderok = False
@@ -657,14 +657,14 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
         # Advance past the timeout.  The build state should be cancelled and
         # we should have also called the resume() method on the worker that
         # resets the virtual machine.
-        clock.advance(SlaveScanner.CANCEL_TIMEOUT)
+        clock.advance(WorkerScanner.CANCEL_TIMEOUT)
         yield scanner.singleCycle()
         self.assertEqual(1, worker.call_log.count("abort"))
         self.assertEqual(BuilderCleanStatus.DIRTY, builder.clean_status)
         self.assertEqual(BuildStatus.CANCELLED, build.status)
 
 
-class TestSlaveScannerWithLibrarian(TestCaseWithFactory):
+class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
@@ -675,7 +675,7 @@ class TestSlaveScannerWithLibrarian(TestCaseWithFactory):
 
     @defer.inlineCallbacks
     def test_end_to_end(self):
-        # Test that SlaveScanner.scan() successfully finds, dispatches,
+        # Test that WorkerScanner.scan() successfully finds, dispatches,
         # collects and cleans a build, and then makes a reasonable start on
         # a second build.
         build = self.factory.makeBinaryPackageBuild()
@@ -699,15 +699,15 @@ class TestSlaveScannerWithLibrarian(TestCaseWithFactory):
         self.patch(
             BinaryPackageBuildBehaviour, 'handleSuccess', handleSuccess)
 
-        # And create a SlaveScanner with a slave and a clock that we
+        # And create a WorkerScanner with a worker and a clock that we
         # control.
         get_worker = FakeMethod(OkWorker())
         clock = task.Clock()
         manager = BuilddManager(clock=clock)
         manager.logger = BufferLogger()
-        scanner = SlaveScanner(
+        scanner = WorkerScanner(
             builder.name, BuilderFactory(), manager, BufferLogger(),
-            slave_factory=get_worker, clock=clock)
+            worker_factory=get_worker, clock=clock)
 
         # The worker is idle and dirty, so the first scan will clean it
         # with a reset.
@@ -923,7 +923,7 @@ class FakeBuilddManager:
         self.pending_logtails[build_queue_id] = logtail
 
 
-class TestSlaveScannerWithoutDB(TestCase):
+class TestWorkerScannerWithoutDB(TestCase):
 
     layer = ZopelessDatabaseLayer
     run_tests_with = AsynchronousDeferredRunTest
@@ -944,15 +944,15 @@ class TestSlaveScannerWithoutDB(TestCase):
             worker = OkWorker()
         if behaviour is None:
             behaviour = TrivialBehaviour()
-        return SlaveScanner(
+        return WorkerScanner(
             'mock', builder_factory, FakeBuilddManager(), BufferLogger(),
             interactor_factory=FakeMethod(interactor),
-            slave_factory=FakeMethod(worker),
+            worker_factory=FakeMethod(worker),
             behaviour_factory=FakeMethod(behaviour))
 
     @defer.inlineCallbacks
     def test_scan_with_job(self):
-        # SlaveScanner.scan calls updateBuild() when a job is building.
+        # WorkerScanner.scan calls updateBuild() when a job is building.
         worker = BuildingWorker('trivial')
         bq = FakeBuildQueue('trivial')
         scanner = self.getScanner(
@@ -967,7 +967,7 @@ class TestSlaveScannerWithoutDB(TestCase):
 
     @defer.inlineCallbacks
     def test_scan_recovers_lost_worker_with_job(self):
-        # SlaveScanner.scan identifies workers that aren't building what
+        # WorkerScanner.scan identifies workers that aren't building what
         # they should be, resets the jobs, and then aborts the workers.
         worker = BuildingWorker('nontrivial')
         bq = FakeBuildQueue('trivial')
@@ -993,7 +993,7 @@ class TestSlaveScannerWithoutDB(TestCase):
 
     @defer.inlineCallbacks
     def test_scan_recovers_lost_worker_when_idle(self):
-        # SlaveScanner.scan identifies workers that are building when
+        # WorkerScanner.scan identifies workers that are building when
         # they shouldn't be and aborts them.
         worker = BuildingWorker()
         scanner = self.getScanner(worker=worker)
@@ -1037,10 +1037,10 @@ class TestSlaveScannerWithoutDB(TestCase):
         bf = MockBuilderFactory(MockBuilder(), bq)
         manager = BuilddManager()
         manager.logger = BufferLogger()
-        scanner = SlaveScanner(
+        scanner = WorkerScanner(
             'mock', bf, manager, BufferLogger(),
             interactor_factory=FakeMethod(None),
-            slave_factory=FakeMethod(None),
+            worker_factory=FakeMethod(None),
             behaviour_factory=FakeMethod(TrivialBehaviour()))
 
         # The first call retrieves the cookie from the BuildQueue.
@@ -1136,9 +1136,9 @@ class TestCancellationChecking(TestCaseWithFactory):
     def _getScanner(self, clock=None):
         manager = BuilddManager(clock=clock)
         manager.logger = BufferLogger()
-        scanner = SlaveScanner(
+        scanner = WorkerScanner(
             None, BuilderFactory(), manager, BufferLogger(), clock=clock)
-        scanner.logger.name = 'slave-scanner'
+        scanner.logger.name = 'worker-scanner'
         return scanner
 
     def test_ignores_build_not_cancelling(self):
@@ -1177,7 +1177,7 @@ class TestCancellationChecking(TestCaseWithFactory):
         self.assertEqual(["abort"], worker.call_log)
         self.assertEqual(BuildStatus.CANCELLING, build.status)
 
-        clock.advance(SlaveScanner.CANCEL_TIMEOUT)
+        clock.advance(WorkerScanner.CANCEL_TIMEOUT)
         with ExpectedException(
                 BuildSlaveFailure, "Timeout waiting for .* to cancel"):
             yield scanner.checkCancellation(self.vitals, worker)
@@ -1200,10 +1200,10 @@ class TestBuilddManager(TestCase):
     def _stub_out_scheduleNextScanCycle(self):
         # stub out the code that adds a callLater, so that later tests
         # don't get surprises.
-        self.patch(SlaveScanner, 'startCycle', FakeMethod())
+        self.patch(WorkerScanner, 'startCycle', FakeMethod())
 
     def test_addScanForBuilders(self):
-        # Test that addScanForBuilders generates SlaveScanner objects.
+        # Test that addScanForBuilders generates WorkerScanner objects.
         self._stub_out_scheduleNextScanCycle()
 
         manager = BuilddManager()

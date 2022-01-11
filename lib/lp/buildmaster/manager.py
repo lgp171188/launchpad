@@ -1,13 +1,13 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Soyuz buildd slave manager logic."""
+"""Soyuz buildd worker manager logic."""
 
 __all__ = [
     'BuilddManager',
     'BUILDD_MANAGER_LOG_NAME',
     'PrefetchedBuilderFactory',
-    'SlaveScanner',
+    'WorkerScanner',
     ]
 
 from collections import defaultdict
@@ -63,7 +63,7 @@ from lp.services.propertycache import get_property_cache
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
 
-BUILDD_MANAGER_LOG_NAME = "slave-scanner"
+BUILDD_MANAGER_LOG_NAME = "worker-scanner"
 
 
 # The number of times a builder can consecutively fail before we
@@ -410,7 +410,7 @@ def recover_failure(logger, vitals, builder, retry, exception):
         builder.setCleanStatus(BuilderCleanStatus.DIRTY)
 
 
-class SlaveScanner:
+class WorkerScanner:
     """A manager for a single builder."""
 
     # The interval between each poll cycle, in seconds.  We'd ideally
@@ -431,14 +431,14 @@ class SlaveScanner:
 
     def __init__(self, builder_name, builder_factory, manager, logger,
                  clock=None, interactor_factory=BuilderInteractor,
-                 slave_factory=BuilderInteractor.makeSlaveFromVitals,
+                 worker_factory=BuilderInteractor.makeSlaveFromVitals,
                  behaviour_factory=BuilderInteractor.getBuildBehaviour):
         self.builder_name = builder_name
         self.builder_factory = builder_factory
         self.manager = manager
         self.logger = logger
         self.interactor_factory = interactor_factory
-        self.slave_factory = slave_factory
+        self.worker_factory = worker_factory
         self.behaviour_factory = behaviour_factory
         # Use the clock if provided, so that tests can advance it.  Use the
         # reactor by default.
@@ -606,7 +606,7 @@ class SlaveScanner:
         self.builder_factory.prescanUpdate()
         vitals = self.builder_factory.getVitals(self.builder_name)
         interactor = self.interactor_factory()
-        slave = self.slave_factory(vitals)
+        slave = self.worker_factory(vitals)
 
         if vitals.build_queue is not None:
             if vitals.clean_status != BuilderCleanStatus.DIRTY:
@@ -709,7 +709,7 @@ class BuilddManager(service.Service):
         if clock is None:
             clock = reactor
         self._clock = clock
-        self.builder_slaves = []
+        self.workers = []
         self.builder_factory = builder_factory or PrefetchedBuilderFactory()
         self.logger = self._setupLogger()
         self.current_builders = []
@@ -717,7 +717,7 @@ class BuilddManager(service.Service):
         self.statsd_client = getUtility(IStatsdClient)
 
     def _setupLogger(self):
-        """Set up a 'slave-scanner' logger that redirects to twisted.
+        """Set up a 'worker-scanner' logger that redirects to twisted.
 
         Make it less verbose to avoid messing too much with the old code.
         """
@@ -796,7 +796,7 @@ class BuilddManager(service.Service):
 
     def startService(self):
         """Service entry point, called when the application starts."""
-        # Add and start SlaveScanners for each current builder, and any
+        # Add and start WorkerScanners for each current builder, and any
         # added in the future.
         self.scan_builders_loop, self.scan_builders_deferred = (
             self._startLoop(self.SCAN_BUILDERS_INTERVAL, self.scanBuilders))
@@ -807,15 +807,15 @@ class BuilddManager(service.Service):
     def stopService(self):
         """Callback for when we need to shut down."""
         # XXX: lacks unit tests
-        # All the SlaveScanner objects need to be halted gracefully.
-        deferreds = [slave.stopping_deferred for slave in self.builder_slaves]
+        # All the WorkerScanner objects need to be halted gracefully.
+        deferreds = [worker.stopping_deferred for worker in self.workers]
         deferreds.append(self.scan_builders_deferred)
         deferreds.append(self.flush_logtails_deferred)
 
         self.flush_logtails_loop.stop()
         self.scan_builders_loop.stop()
-        for slave in self.builder_slaves:
-            slave.stopCycle()
+        for worker in self.workers:
+            worker.stopCycle()
 
         # The 'stopping_deferred's are called back when the loops are
         # stopped, so we can wait on them all at once here before
@@ -826,10 +826,10 @@ class BuilddManager(service.Service):
     def addScanForBuilders(self, builders):
         """Set up scanner objects for the builders specified."""
         for builder in builders:
-            slave_scanner = SlaveScanner(
+            worker_scanner = WorkerScanner(
                 builder, self.builder_factory, self, self.logger)
-            self.builder_slaves.append(slave_scanner)
-            slave_scanner.startCycle()
+            self.workers.append(worker_scanner)
+            worker_scanner.startCycle()
 
-        # Return the slave list for the benefit of tests.
-        return self.builder_slaves
+        # Return the worker list for the benefit of tests.
+        return self.workers

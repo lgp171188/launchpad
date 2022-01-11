@@ -290,13 +290,13 @@ class BuildQueueSet:
             get_property_cache(build).buildqueue_record = bq
         return bqs
 
-    def _getSlaveScannerLogger(self):
-        """Return the logger instance from buildd-slave-scanner.py."""
+    def _getWorkerScannerLogger(self):
+        """Return the logger instance from lp.buildmaster.manager."""
         # XXX cprov 20071120: Ideally the Launchpad logging system
         # should be able to configure the root-logger instead of creating
         # a new object, then the logger lookups won't require the specific
         # name argument anymore. See bug 164203.
-        logger = logging.getLogger('slave-scanner')
+        logger = logging.getLogger('worker-scanner')
         return logger
 
     def findBuildCandidates(self, processor, virtualized, limit):
@@ -304,7 +304,7 @@ class BuildQueueSet:
         # Circular import.
         from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 
-        logger = self._getSlaveScannerLogger()
+        logger = self._getWorkerScannerLogger()
 
         job_type_conditions = []
         job_sources = specific_build_farm_job_sources()
