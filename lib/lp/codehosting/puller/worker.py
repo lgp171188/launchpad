@@ -181,7 +181,7 @@ class BranchMirrorer:
     """A `BranchMirrorer` safely makes mirrors of branches.
 
     A `BranchMirrorer` has a `BranchOpenPolicy` to tell it which URLs are safe
-    to accesss and whether or not to follow branch references.
+    to access and whether or not to follow branch references.
 
     The mirrorer knows how to follow branch references, create new mirrors,
     update existing mirrors, determine stacked-on branches and the like.
