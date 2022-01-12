@@ -519,7 +519,7 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
     various scenarios.
     """
 
-    # XXX: These tests replace part of the old buildd-slavescanner.txt
+    # XXX: These tests replace part of an old doctest.
     # It was checking that each call to updateBuild was sending 3 (!)
     # emails but this behaviour is so ill-defined and dependent on the
     # sample data that I've not replicated that here.  We need to

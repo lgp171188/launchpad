@@ -475,10 +475,10 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
     @property
     def can_be_retried(self):
         """See `IBuildFarmJob`."""
-        # First check that the slave scanner would pick up the build record
+        # First check that the worker scanner would pick up the build record
         # if we reset it.
         if not self.archive.canModifySuite(self.distro_series, self.pocket):
-            # The slave scanner would not pick this up, so it cannot be
+            # The worker scanner would not pick this up, so it cannot be
             # re-tried.
             return False
         return super().can_be_retried

@@ -563,14 +563,14 @@ Build creation is done based on the SourcePackageRelease object, step 5:
 
 We have just created a pending build record for hoary/i386.
 
-Now we also assume that the build was dispatched by the slave-scanner
+Now we also assume that the build was dispatched by the worker-scanner
 script, step 6.
 
-On step 7, the slave-scanner collects the files generated on builders
+On step 7, the worker-scanner collects the files generated on builders
 and organises them as an ordinary binary upload having a changesfile
 and the collection of DEB files produced.
 
-At this point slave-scanner moves the upload to the appropriate path
+At this point worker-scanner moves the upload to the appropriate path
 (/srv/launchpad.net/builddmaster). A cron job invokes process-upload.py
 with the 'buildd' upload policy and processes all files in that directory.
 
@@ -608,7 +608,7 @@ Also the build record was updated to FULLYBUILT in nascentupload domain.
     'FULLYBUILT'
 
 After certifying that the build record is marked as FULLYBUILT the
-slave-scanner can safely update the build information (buildlog,
+worker-scanner can safely update the build information (buildlog,
 duration, etc) and clean the builder for anther job.
 
 If the build record was not marked as FULLYBUILT during the
@@ -617,7 +617,7 @@ results for later processing.
 
 Updating the build record as part of the upload processing avoids possible
 inconsistencies when a binary upload was not processed correctly, then
-was not stored in Launchpad database. The slave-scanner has no way to
+was not stored in Launchpad database. The worker-scanner has no way to
 recognise such situations easily, since process-upload exits with
 success even when the upload is rejected. See bug #32261 for further info.
 
