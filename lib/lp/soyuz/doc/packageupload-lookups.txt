@@ -1,7 +1,7 @@
 Retrieving upload information
 =============================
 
-We can retrive the original upload information in the form of a
+We can retrieve the original upload information in the form of a
 `PackageUpload` object for all `SourcePackageRelease` or `Build`
 objects uploaded to system.
 
