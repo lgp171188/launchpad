@@ -612,7 +612,7 @@ class PymeKey:
     def _buildFromFingerprint(self, fingerprint):
         """Build key information from a fingerprint."""
         context = get_gpgme_context()
-        # retrive additional key information
+        # retrieve additional key information
         try:
             with gpgme_timeline("get-key", fingerprint):
                 key = context.get_key(fingerprint, False)

@@ -325,7 +325,7 @@ First up, construct an upload of just the ed source...
 SourcePackageRelease Details
 ............................
 
-Retrive the just-inserted SourcePackageRelease correspondent to 'ed'
+Retrieve the just-inserted SourcePackageRelease correspondent to 'ed'
 
     >>> ed_spr = ed_src.queue_root.sources[0].sourcepackagerelease
 
