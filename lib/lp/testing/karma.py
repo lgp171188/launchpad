@@ -111,7 +111,7 @@ class KarmaAssignedEventListener(KarmaRecorder):
     """
 
     def __init__(self, show_person=False):
-        super(KarmaAssignedEventListener, self).__init__()
+        super().__init__()
         self.added_karma_actions = set()
         self.show_person = show_person
 

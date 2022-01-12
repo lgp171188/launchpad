@@ -78,7 +78,7 @@ class BrowserTestCase(TestCase):
     """Verify Browser methods."""
 
     def setUp(self):
-        super(BrowserTestCase, self).setUp()
+        super().setUp()
         self.file = NamedTemporaryFile(
             mode='w+', prefix='html5browser_', suffix='.html')
         self.addCleanup(self.file.close)

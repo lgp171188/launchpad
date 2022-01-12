@@ -31,18 +31,18 @@ class TestFeatureFlags(TestCase):
         # test (other tests will re-add it). This prevents weird
         # interactions in a parallel test environment.
         uninstall_feature_controller()
-        self.assertRaises(AssertionError, set_feature_flag, u'name', u'value')
+        self.assertRaises(AssertionError, set_feature_flag, 'name', 'value')
 
     def test_flags_set_within_feature_flags_context(self):
         """In the feature_flags context, set/get works."""
         self.useContext(feature_flags())
-        set_feature_flag(u'name', u'value')
+        set_feature_flag('name', 'value')
         self.assertEqual('value', getFeatureFlag('name'))
 
     def test_flags_unset_outside_feature_flags_context(self):
         """get fails when used outside the feature_flags context."""
         with feature_flags():
-            set_feature_flag(u'name', u'value')
+            set_feature_flag('name', 'value')
         self.assertIs(None, getFeatureFlag('name'))
 
 

@@ -67,7 +67,7 @@ class Browser(WebKit.WebView):
     INCREMENTAL_TIMEOUT = None
 
     def __init__(self, show_window=False, hide_console_messages=True):
-        super(Browser, self).__init__()
+        super().__init__()
         self.show_window = show_window
         self.hide_console_messages = hide_console_messages
         self.browser_window = None

@@ -21,7 +21,6 @@ __all__ = [
     ]
 
 from lazr.lifecycle.snapshot import Snapshot
-import six
 from testtools import matchers
 from testtools.content import text_content
 from testtools.matchers import (
@@ -119,7 +118,7 @@ class DoesNotCorrectlyProvide(DoesNotProvide):
         :param extra: any extra information about the mismatch as a string,
             or None
         """
-        super(DoesNotCorrectlyProvide, self).__init__(obj, interface)
+        super().__init__(obj, interface)
         self.extra = extra
 
     def describe(self):
@@ -209,12 +208,12 @@ class _MismatchedQueryCount(Mismatch):
         result = []
         for query in collector.queries:
             start, stop, dbname, statement, backtrace = query
-            result.append(u'%d-%d@%s %s' % (
+            result.append('%d-%d@%s %s' % (
                 start, stop, dbname, statement.rstrip()))
-            result.append(u'-' * 70)
+            result.append('-' * 70)
             if backtrace is not None:
                 result.append(backtrace.rstrip())
-                result.append(u'.' * 70)
+                result.append('.' * 70)
         return text_content('\n'.join(result))
 
     def get_details(self):
@@ -402,7 +401,7 @@ class SoupMismatch(Mismatch):
         self.soup_content = soup_content
 
     def get_details(self):
-        return {'content': text_content(six.text_type(self.soup_content))}
+        return {'content': text_content(str(self.soup_content))}
 
 
 class MissingElement(SoupMismatch):
@@ -474,14 +473,14 @@ class EqualsIgnoringWhitespace(Equals):
     """
 
     def __init__(self, expected):
-        if isinstance(expected, (bytes, six.text_type)):
+        if isinstance(expected, (bytes, str)):
             expected = normalize_whitespace(expected)
-        super(EqualsIgnoringWhitespace, self).__init__(expected)
+        super().__init__(expected)
 
     def match(self, observed):
-        if isinstance(observed, (bytes, six.text_type)):
+        if isinstance(observed, (bytes, str)):
             observed = normalize_whitespace(observed)
-        return super(EqualsIgnoringWhitespace, self).match(observed)
+        return super().match(observed)
 
 
 class FileContainsBytes(FileContains):

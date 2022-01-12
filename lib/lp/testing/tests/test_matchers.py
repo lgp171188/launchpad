@@ -378,14 +378,14 @@ class EqualsIgnoringWhitespaceTests(TestCase):
             mismatch.describe())
 
     def test_match_unicode(self):
-        matcher = EqualsIgnoringWhitespace(u"one \t two \n \u1234  ")
-        self.assertIs(None, matcher.match(u" one \r two     \u1234 "))
+        matcher = EqualsIgnoringWhitespace("one \t two \n \u1234  ")
+        self.assertIs(None, matcher.match(" one \r two     \u1234 "))
 
     def test_mismatch_unicode(self):
-        matcher = EqualsIgnoringWhitespace(u"one \t two \n \u1234  ")
-        mismatch = matcher.match(u" one \r \u1234 ")
+        matcher = EqualsIgnoringWhitespace("one \t two \n \u1234  ")
+        mismatch = matcher.match(" one \r \u1234 ")
         self.assertEqual(
-            u"%r != %r" % (u"one \u1234", u"one two \u1234"),
+            "%r != %r" % ("one \u1234", "one two \u1234"),
             mismatch.describe())
 
     def test_match_non_string(self):

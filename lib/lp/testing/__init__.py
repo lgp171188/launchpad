@@ -681,7 +681,7 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
         The config values will be restored during test tearDown.
         """
         name = self.factory.getUniqueString()
-        body = '\n'.join("%s: %s" % (k, v) for k, v in six.iteritems(kwargs))
+        body = '\n'.join("%s: %s" % (k, v) for k, v in kwargs.items())
         config.push(name, "\n[%s]\n%s\n" % (section, body))
         self.addCleanup(config.pop, name)
 
@@ -703,7 +703,7 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
             self.addDetail('librarian-log', content)
 
     def setUp(self):
-        super(TestCase, self).setUp()
+        super().setUp()
         # Circular imports.
         from lp.testing.factory import ObjectFactory
         from lp.testing.layers import LibrarianLayer
@@ -822,7 +822,7 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
 class TestCaseWithFactory(TestCase):
 
     def setUp(self, user=ANONYMOUS):
-        super(TestCaseWithFactory, self).setUp()
+        super().setUp()
         login(user)
         self.addCleanup(logout)
         from lp.testing.factory import LaunchpadObjectFactory
@@ -870,7 +870,7 @@ class TestCaseWithFactory(TestCase):
         :param branch_url: The URL to create the branch at.
         :param format: The format of branch to create.
         """
-        if format is not None and isinstance(format, six.string_types):
+        if format is not None and isinstance(format, str):
             format = format_registry.get(format)()
         return ControlDir.create_branch_convenience(branch_url, format=format)
 
@@ -958,7 +958,7 @@ class BrowserTestCase(TestCaseWithFactory):
 
     def setUp(self):
         """Provide useful defaults."""
-        super(BrowserTestCase, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
 
     def getViewBrowser(self, context, view_name=None, no_login=False,
@@ -1010,7 +1010,7 @@ class WebServiceTestCase(TestCaseWithFactory):
         return AppServerLayer
 
     def setUp(self):
-        super(WebServiceTestCase, self).setUp()
+        super().setUp()
         self.ws_version = 'devel'
         self.service = self.factory.makeLaunchpadService(
             version=self.ws_version)
@@ -1057,14 +1057,14 @@ class AbstractYUITestCase(TestCase):
             methodName = self._testMethodName
         else:
             assert methodName == self._testMethodName
-        super(AbstractYUITestCase, self).__init__(methodName)
+        super().__init__(methodName)
 
     def id(self):
         """Return an ID for this test based on the file path."""
         return os.path.relpath(self.test_path, config.root)
 
     def setUp(self):
-        super(AbstractYUITestCase, self).setUp()
+        super().setUp()
         # html5browser imports from the gir/pygtk stack which causes
         # twisted tests to break because of gtk's initialize.
         from lp.testing import html5browser
@@ -1227,8 +1227,7 @@ class RunIsolatedTest(testtools.RunTest):
             fdwrite = os.fdopen(pwrite, 'wb', 1)
             # Send results to the subunit stream client so that the parent
             # process can obtain the result.
-            super(RunIsolatedTest, self).run(
-                subunit.TestProtocolClient(fdwrite))
+            super().run(subunit.TestProtocolClient(fdwrite))
             fdwrite.flush()
             # See note above about flushing.
             sys.__stdout__.flush()
@@ -1373,7 +1372,7 @@ def normalize_whitespace(string):
     # whitespace is roughly 6 times faster than using an uncompiled
     # regex (for the expression \s+), and 4 times faster than a
     # compiled regex.
-    joiner = b" " if isinstance(string, bytes) else u" "
+    joiner = b" " if isinstance(string, bytes) else " "
     return joiner.join(string.split())
 
 
@@ -1403,7 +1402,7 @@ def map_branch_contents(branch):
     return contents
 
 
-def set_feature_flag(name, value, scope=u'default', priority=1):
+def set_feature_flag(name, value, scope='default', priority=1):
     """Set a feature flag to the specified value.
 
     In order to access the flag, use the feature_flags context manager or
@@ -1442,13 +1441,13 @@ def monkey_patch(context, **kwargs):
     """
     old_values = {}
     not_set = object()
-    for name, value in six.iteritems(kwargs):
+    for name, value in kwargs.items():
         old_values[name] = getattr(context, name, not_set)
         setattr(context, name, value)
     try:
         yield
     finally:
-        for name, value in six.iteritems(old_values):
+        for name, value in old_values.items():
             if value is not_set:
                 delattr(context, name)
             else:
@@ -1472,13 +1471,12 @@ class ExpectedException(TTExpectedException):
     """An ExpectedException that provides access to the caught exception."""
 
     def __init__(self, exc_type, value_re):
-        super(ExpectedException, self).__init__(exc_type, value_re)
+        super().__init__(exc_type, value_re)
         self.caught_exc = None
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.caught_exc = exc_value
-        return super(ExpectedException, self).__exit__(
-            exc_type, exc_value, traceback)
+        return super().__exit__(exc_type, exc_value, traceback)
 
 
 def extract_lp_cache(text):

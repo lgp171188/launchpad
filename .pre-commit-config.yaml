@@ -57,6 +57,9 @@ repos:
             |services
             |snappy
             |soyuz
+            |testing
+            |testopenid
+            |tests
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2

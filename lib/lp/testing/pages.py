@@ -87,9 +87,9 @@ from lp.testing.systemdocs import (
 
 
 SAMPLEDATA_ACCESS_SECRETS = {
-    u'salgado-read-nonprivate': u'secret',
-    u'salgado-change-anything': u'test',
-    u'nopriv-read-nonprivate': u'mystery',
+    'salgado-read-nonprivate': 'secret',
+    'salgado-change-anything': 'test',
+    'nopriv-read-nonprivate': 'mystery',
     }
 
 
@@ -141,7 +141,7 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
         if oauth_consumer_key is not None and oauth_access_key is not None:
             if oauth_access_secret is None:
                 oauth_access_secret = SAMPLEDATA_ACCESS_SECRETS.get(
-                    oauth_access_key, u'')
+                    oauth_access_key, '')
             self.oauth_client = oauth1.Client(
                 oauth_consumer_key,
                 resource_owner_key=oauth_access_key,
@@ -343,11 +343,11 @@ ELEMENTS_INTRODUCING_NEWLINE = [
     'address', 'li', 'dt', 'dd', 'th', 'td', 'caption', 'br']
 
 
-NEWLINES_RE = re.compile(u'\n+')
+NEWLINES_RE = re.compile('\n+')
 LEADING_AND_TRAILING_SPACES_RE = re.compile(
-    u'(^[ \t]+)|([ \t]$)', re.MULTILINE)
-TABS_AND_SPACES_RE = re.compile(u'[ \t]+')
-NBSP_RE = re.compile(u'&nbsp;|&#160;|\xa0')
+    '(^[ \t]+)|([ \t]$)', re.MULTILINE)
+TABS_AND_SPACES_RE = re.compile('[ \t]+')
+NBSP_RE = re.compile('&nbsp;|&#160;|\xa0')
 
 
 def extract_link_from_tag(tag, base=None):
@@ -390,7 +390,7 @@ def extract_text(content, extract_image_text=False, skip_tags=None,
         if type(node) in IGNORED_ELEMENTS:
             continue
         elif isinstance(node, CData):
-            result.append(six.text_type(node))
+            result.append(str(node))
         elif isinstance(node, NavigableString):
             result.append(node.format_string(node, formatter=formatter))
         else:
@@ -401,7 +401,7 @@ def extract_text(content, extract_image_text=False, skip_tags=None,
                 elif getattr(node, 'name', '') in skip_tags:
                     continue
                 if node.name.lower() in ELEMENTS_INTRODUCING_NEWLINE:
-                    result.append(u'\n')
+                    result.append('\n')
 
                 # If extract_image_text is True and the node is an
                 # image, try to find its title or alt attributes.
@@ -416,7 +416,7 @@ def extract_text(content, extract_image_text=False, skip_tags=None,
             # Process this node's children next.
             nodes[0:0] = list(node)
 
-    text = u''.join(result)
+    text = ''.join(result)
     text = NBSP_RE.sub(' ', text)
     text = TABS_AND_SPACES_RE.sub(' ', text)
     text = LEADING_AND_TRAILING_SPACES_RE.sub('', text)
@@ -647,8 +647,7 @@ class Browser(_Browser):
 
     def addHeader(self, key, value):
         """Make sure headers are native strings."""
-        super(Browser, self).addHeader(
-            wsgi_native_string(key), wsgi_native_string(value))
+        super().addHeader(wsgi_native_string(key), wsgi_native_string(value))
 
     def _getText(self, element):
         def get_strings(elem):
@@ -656,10 +655,10 @@ class Browser(_Browser):
                 if isinstance(descendant, (NavigableString, CData)):
                     yield descendant
                 elif isinstance(descendant, Tag) and descendant.name == 'img':
-                    yield u'%s[%s]' % (
-                        descendant.get('alt', u''), descendant.name.upper())
+                    yield '%s[%s]' % (
+                        descendant.get('alt', ''), descendant.name.upper())
 
-        return u''.join(list(get_strings(element)))
+        return ''.join(list(get_strings(element)))
 
     def getLink(self, text=None, url=None, id=None, index=0):
         """Search for both text nodes and image alt attributes."""
@@ -738,7 +737,7 @@ def safe_canonical_url(*args, **kwargs):
     return str(canonical_url(*args, **kwargs))
 
 
-def webservice_for_person(person, consumer_key=u'launchpad-library',
+def webservice_for_person(person, consumer_key='launchpad-library',
                           permission=OAuthPermission.READ_PUBLIC,
                           context=None, default_api_version=None):
     """Return a valid LaunchpadWebServiceCaller for the person.

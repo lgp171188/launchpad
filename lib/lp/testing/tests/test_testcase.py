@@ -112,7 +112,7 @@ class TestRemoveLoggingHandlers(TestCase):
         self.logger.addHandler(logging.Handler())
         self.logger.addHandler(logging.Handler())
         # `TestCase.setUp()` removes the handlers just added.
-        super(TestRemoveLoggingHandlers, self).setUp()
+        super().setUp()
 
     def test_handlers_list_is_empty(self):
         # Ensure `TestCase.setUp()` correctly removed all logging handlers.
