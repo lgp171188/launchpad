@@ -903,6 +903,26 @@ class IRevisionStatusReportEdit(Interface):
         :param log_data: The contents (in bytes) of the log.
         """
 
+    @operation_parameters(
+        title=TextLine(title=_("A short title for the report."),
+                       required=False),
+        url=TextLine(title=_("The external link of the status report."),
+                     required=False),
+        result_summary=TextLine(title=_("A short summary of the result."),
+                                required=False),
+        result=Choice(vocabulary=RevisionStatusResult, required=False))
+    @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
+    @export_write_operation()
+    @operation_for_version("devel")
+    def updateStatusReport(title, url, result_summary, result):
+        """Updates a status report.
+
+        :param title: The name of the new report.
+        :param url: The external link of the status report.
+        :param result_summary: The description of the new report.
+        :param result: The result of the new report.
+        """
+
 
 @exported_as_webservice_entry(as_of="beta")
 class IRevisionStatusReport(IRevisionStatusReportView,

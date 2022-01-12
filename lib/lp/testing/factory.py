@@ -1860,9 +1860,11 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             user = git_repository.owner
         if commit_sha1 is None:
             commit_sha1 = hashlib.sha1(self.getUniqueBytes()).hexdigest()
+        if result_summary is None:
+            result_summary = self.getUniqueUnicode()
         return getUtility(IRevisionStatusReportSet).new(
-            user, title, git_repository, commit_sha1, result_summary,
-            url, result)
+            user, title, git_repository, commit_sha1, url,
+            result_summary, result)
 
     def makeRevisionStatusArtifact(self, lfa=None, report=None):
         """Create a new RevisionStatusArtifact."""

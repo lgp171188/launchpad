@@ -5037,14 +5037,14 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
         super().setUp()
         self.repository = self.factory.makeGitRepository()
         self.requester = self.repository.owner
-        title = self.factory.getUniqueUnicode('report-title')
-        commit_sha1 = hashlib.sha1(b"Some content").hexdigest()
-        result_summary = "120/120 tests passed"
+        self.title = self.factory.getUniqueUnicode('report-title')
+        self.commit_sha1 = hashlib.sha1(b"Some content").hexdigest()
+        self.result_summary = "120/120 tests passed"
 
         self.report = self.factory.makeRevisionStatusReport(
             user=self.repository.owner, git_repository=self.repository,
-            title=title, commit_sha1=commit_sha1,
-            result_summary=result_summary,
+            title=self.title, commit_sha1=self.commit_sha1,
+            result_summary=self.result_summary,
             result=RevisionStatusResult.SUCCEEDED)
 
         self.webservice = webservice_for_person(
@@ -5082,6 +5082,17 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
             self.assertIn(sha1, sha1_of_all_artifacts)
             self.assertIn(md5, md5_of_all_artifacts)
             self.assertIn(filesize, filesizes_of_all_artifacts)
+
+    def test_updateStatusReport(self):
+        response = self.webservice.named_post(
+            self.report_url, "updateStatusReport",
+            headers=self.header,
+            title='updated-report-title')
+        self.assertEqual(200, response.status)
+        with person_logged_in(self.requester):
+            self.assertEqual(self.report.title, 'updated-report-title')
+            self.assertEqual(self.report.commit_sha1, self.commit_sha1)
+            self.assertEqual(self.report.result_summary, self.result_summary)
 
 
 class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):

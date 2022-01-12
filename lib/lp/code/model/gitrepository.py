@@ -364,6 +364,17 @@ class RevisionStatusReport(StormBase):
             self.date_finished = UTC_NOW
         self.result = result
 
+    def updateStatusReport(self, title=None, url=None,
+                           result_summary=None, result=None):
+        if title:
+            self.title = title
+        if url:
+            self.url = url
+        if result_summary:
+            self.result_summary = result_summary
+        if result:
+            self.result = result
+
 
 @implementer(IRevisionStatusReportSet)
 class RevisionStatusReportSet:
