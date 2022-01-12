@@ -32,7 +32,7 @@ from lp.buildmaster.enums import (
     BuilderCleanStatus,
     BuilderResetProtocol,
     )
-from lp.buildmaster.interactor import BuilderSlave
+from lp.buildmaster.interactor import BuilderWorker
 from lp.buildmaster.interfaces.builder import CannotFetchFile
 from lp.services.config import config
 from lp.services.daemons.tachandler import twistd_script
@@ -80,7 +80,7 @@ class MockBuilder:
 
 
 # XXX: It would be *really* nice to run some set of tests against the real
-# BuilderSlave and this one to prevent interface skew.
+# BuilderWorker and this one to prevent interface skew.
 class OkWorker:
     """An idle mock worker that prints information about itself.
 
@@ -132,8 +132,8 @@ class OkWorker:
         return defer.succeed(("", "", 0))
 
     @defer.inlineCallbacks
-    def sendFileToSlave(self, sha1, url, username="", password="",
-                        logger=None):
+    def sendFileToWorker(self, sha1, url, username="", password="",
+                         logger=None):
         present, info = yield self.ensurepresent(sha1, url, username, password)
         if not present:
             raise CannotFetchFile(url, info)
@@ -312,11 +312,11 @@ class WorkerTestHelpers(fixtures.Fixture):
 
     def getClientWorker(self, reactor=None, proxy=None,
                         pool=None, process_pool=None):
-        """Return a `BuilderSlave` for use in testing.
+        """Return a `BuilderWorker` for use in testing.
 
         Points to a fixed URL that is also used by `BuilddSlaveTestSetup`.
         """
-        return BuilderSlave.makeBuilderSlave(
+        return BuilderWorker.makeBuilderWorker(
             self.base_url, 'vmhost', config.builddmaster.socket_timeout,
             reactor=reactor, proxy=proxy, pool=pool, process_pool=process_pool)
 
@@ -337,7 +337,7 @@ class WorkerTestHelpers(fixtures.Fixture):
     def triggerGoodBuild(self, worker, build_id=None):
         """Trigger a good build on 'worker'.
 
-        :param worker: A `BuilderSlave` instance to trigger the build on.
+        :param worker: A `BuilderWorker` instance to trigger the build on.
         :param build_id: The build identifier. If not specified, defaults to
             an arbitrary string.
         :type build_id: str
@@ -359,6 +359,6 @@ class WorkerTestHelpers(fixtures.Fixture):
         return worker.build(
             build_id, 'binarypackage', chroot_file,
             # Although a single-element dict obviously has stable ordering,
-            # we use an OrderedDict anyway to test that BuilderSlave
+            # we use an OrderedDict anyway to test that BuilderWorker
             # serializes it correctly over XML-RPC.
             OrderedDict([('.dsc', dsc_file)]), extra_args)

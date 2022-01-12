@@ -123,8 +123,8 @@ def shut_down_default_process_pool():
         _default_process_pool_shutdown = None
 
 
-class BuilderSlave:
-    """Add in a few useful methods for the XMLRPC slave.
+class BuilderWorker:
+    """Add in a few useful methods for the XMLRPC worker.
 
     :ivar url: The URL of the actual builder. The XML-RPC resource and
         the filecache live beneath this.
@@ -137,7 +137,7 @@ class BuilderSlave:
 
     def __init__(self, proxy, builder_url, vm_host, timeout, reactor,
                  pool=None, process_pool=None):
-        """Initialize a BuilderSlave.
+        """Initialize a BuilderWorker.
 
         :param proxy: An XML-RPC proxy, implementing 'callRemote'. It must
             support passing and returning None objects.
@@ -160,13 +160,13 @@ class BuilderSlave:
         self.process_pool = process_pool
 
     @classmethod
-    def makeBuilderSlave(cls, builder_url, vm_host, timeout, reactor=None,
-                         proxy=None, pool=None, process_pool=None):
-        """Create and return a `BuilderSlave`.
+    def makeBuilderWorker(cls, builder_url, vm_host, timeout, reactor=None,
+                          proxy=None, pool=None, process_pool=None):
+        """Create and return a `BuilderWorker`.
 
-        :param builder_url: The URL of the slave buildd machine,
+        :param builder_url: The URL of the worker buildd machine,
             e.g. http://localhost:8221
-        :param vm_host: If the slave is virtual, specify its host machine
+        :param vm_host: If the worker is virtual, specify its host machine
             here.
         :param reactor: Used by tests to override the Twisted reactor.
         :param proxy: Used By tests to override the xmlrpc.Proxy.
@@ -193,7 +193,7 @@ class BuilderSlave:
         return self._with_timeout(self._server.callRemote('abort'))
 
     def clean(self):
-        """Clean up the waiting files and reset the slave's internal state."""
+        """Clean up the waiting files and reset the worker's internal state."""
         return self._with_timeout(self._server.callRemote('clean'))
 
     def echo(self, *args):
@@ -294,8 +294,8 @@ class BuilderSlave:
         return d
 
     @defer.inlineCallbacks
-    def sendFileToSlave(self, sha1, url, username="", password="",
-                        logger=None):
+    def sendFileToWorker(self, sha1, url, username="", password="",
+                         logger=None):
         """Helper to send the file at 'url' with 'sha1' to this builder."""
         if logger is not None:
             logger.info(
@@ -306,7 +306,7 @@ class BuilderSlave:
             raise CannotFetchFile(url, info)
 
     def build(self, buildid, builder_type, chroot_sha1, filemap, args):
-        """Build a thing on this build slave.
+        """Build a thing on this build worker.
 
         :param buildid: A string identifying this build.
         :param builder_type: The type of builder needed.
@@ -350,7 +350,7 @@ class BuilderInteractor:
             timeout = config.builddmaster.virtualized_socket_timeout
         else:
             timeout = config.builddmaster.socket_timeout
-        return BuilderSlave.makeBuilderSlave(
+        return BuilderWorker.makeBuilderWorker(
             vitals.url, vitals.vm_host, timeout)
 
     @staticmethod
@@ -529,7 +529,7 @@ class BuilderInteractor:
     def extractBuildStatus(slave_status):
         """Read build status name.
 
-        :param slave_status: build status dict from BuilderSlave.status.
+        :param slave_status: build status dict from BuilderWorker.status.
         :return: the unqualified status name, e.g. "OK".
         """
         status_string = slave_status['build_status']
@@ -542,7 +542,7 @@ class BuilderInteractor:
     def extractLogTail(slave_status):
         """Extract the log tail from a builder status response.
 
-        :param slave_status: build status dict from BuilderSlave.status.
+        :param slave_status: build status dict from BuilderWorker.status.
         :return: a text string representing the tail of the build log, or
             None if the log tail is unavailable and should be left
             unchanged.

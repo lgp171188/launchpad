@@ -36,7 +36,7 @@ from lp.buildmaster.enums import (
     )
 from lp.buildmaster.interactor import (
     BuilderInteractor,
-    BuilderSlave,
+    BuilderWorker,
     extract_vitals_from_db,
     make_download_process_pool,
     shut_down_default_process_pool,
@@ -173,7 +173,7 @@ class TestBuilderInteractor(TestCase):
         return assert_fails_with(d, CannotResumeHost)
 
     def test_makeSlaveFromVitals(self):
-        # Builder.slave is a BuilderSlave that points at the actual Builder.
+        # Builder.slave is a BuilderWorker that points at the actual Builder.
         # The Builder is only ever used in scripts that run outside of the
         # security context.
         builder = MockBuilder(virtualized=False)
@@ -297,8 +297,8 @@ class TestBuilderInteractorCleanSlave(TestCase):
             self.fail("abort() should crash.")
 
 
-class TestBuilderSlaveStatus(TestCase):
-    # Verify what BuilderSlave.status returns with slaves in different
+class TestBuilderWorkerStatus(TestCase):
+    # Verify what BuilderWorker.status returns with workers in different
     # states.
 
     run_tests_with = AsynchronousDeferredRunTest
@@ -379,7 +379,7 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         builder = self.factory.makeBuilder(
             processors=[processor], virtualized=True, vm_host="bladh")
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkWorker()))
+        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
         distroseries = self.factory.makeDistroSeries()
         das = self.factory.makeDistroArchSeries(
             distroseries=distroseries, architecturetag="i386",
@@ -498,7 +498,7 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
 
 class TestWorker(TestCase):
     """
-    Integration tests for BuilderSlave that verify how it works against a
+    Integration tests for BuilderWorker that verify how it works against a
     real worker server.
     """
 
@@ -603,18 +603,18 @@ class TestWorker(TestCase):
         response = yield worker.ensurepresent('blahblah', None, None, None)
         self.assertEqual([True, 'No URL'], response)
 
-    def test_sendFileToSlave_not_there(self):
+    def test_sendFileToWorker_not_there(self):
         self.worker_helper.getServerWorker()
         worker = self.worker_helper.getClientWorker()
-        d = worker.sendFileToSlave('blahblah', None, None, None)
+        d = worker.sendFileToWorker('blahblah', None, None, None)
         return assert_fails_with(d, CannotFetchFile)
 
     @defer.inlineCallbacks
-    def test_sendFileToSlave_actually_there(self):
+    def test_sendFileToWorker_actually_there(self):
         tachandler = self.worker_helper.getServerWorker()
         worker = self.worker_helper.getClientWorker()
         self.worker_helper.makeCacheFile(tachandler, 'blahblah')
-        yield worker.sendFileToSlave('blahblah', None, None, None)
+        yield worker.sendFileToWorker('blahblah', None, None, None)
         response = yield worker.ensurepresent('blahblah', None, None, None)
         self.assertEqual([True, 'No URL'], response)
 
@@ -819,7 +819,7 @@ class TestWorkerWithLibrarian(TestCaseWithFactory):
         self.assertEqual(content, got_content)
 
     def test_getFiles(self):
-        # Test BuilderSlave.getFiles().
+        # Test BuilderWorker.getFiles().
         # It also implicitly tests getFile() - I don't want to test that
         # separately because it increases test run time and it's going
         # away at some point anyway, in favour of getFiles().
