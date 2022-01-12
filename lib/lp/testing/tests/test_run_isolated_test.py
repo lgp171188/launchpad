@@ -101,13 +101,13 @@ class TestRunIsolatedTest(TestCase):
     @record_pid
     def __init__(self, method_name='runTest'):
         # Runs in the parent process.
-        super(TestRunIsolatedTest, self).__init__(method_name)
+        super().__init__(method_name)
         self.layer = TestRunIsolatedTestLayer()
 
     @record_pid
     def setUp(self):
         # Runs in the child process.
-        super(TestRunIsolatedTest, self).setUp()
+        super().setUp()
         self.assertNotEqual(
             self.layer.pid_in___init__, self.pid_in_setUp,
             "setUp() called in parent process.")
@@ -122,7 +122,7 @@ class TestRunIsolatedTest(TestCase):
     @record_pid
     def tearDown(self):
         # Runs in the child process.
-        super(TestRunIsolatedTest, self).tearDown()
+        super().tearDown()
         self.assertEqual(
             self.pid_in_setUp, self.pid_in_tearDown,
             "tearDown() not run in same process as setUp().")

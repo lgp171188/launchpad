@@ -123,7 +123,7 @@ class TestZopeAdapterFixture(TestCase):
 
 
 @implementer(IMailDelivery)
-class DummyMailer(object):
+class DummyMailer:
 
     pass
 
@@ -332,7 +332,7 @@ class TestDisableTriggerFixture(TestCase):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestDisableTriggerFixture, self).setUp()
+        super().setUp()
         con_str = dbconfig.rw_main_primary + ' user=launchpad_main'
         con = psycopg2.connect(con_str)
         con.set_isolation_level(0)

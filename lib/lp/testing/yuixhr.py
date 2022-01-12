@@ -249,7 +249,7 @@ class YUITestFixtureControllerView(LaunchpadView):
         """)
 
     def __init__(self, context, request):
-        super(YUITestFixtureControllerView, self).__init__(context, request)
+        super().__init__(context, request)
         self.names = []
         self.action = None
         self.fixtures = []
@@ -486,13 +486,13 @@ class YUIAppServerTestCase(AbstractYUITestCase):
         self.facet = facet
         # This needs to be done early so the "id" is set correctly.
         self.test_path = self.module_name.replace('.', '/')
-        super(YUIAppServerTestCase, self).__init__()
+        super().__init__()
 
     def setUp(self):
         config = LayerProcessController.appserver_config
         root_url = config.appserver_root_url(self.facet)
         self.html_uri = '%s/+yuitest/%s' % (root_url, self.test_path)
-        super(YUIAppServerTestCase, self).setUp()
+        super().setUp()
 
     runTest = AbstractYUITestCase.checkResults
 

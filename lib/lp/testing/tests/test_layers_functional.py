@@ -66,7 +66,7 @@ class BaseLayerIsolator(Fixture):
         :param with_persistent: If True LP_PERSISTENT_TEST_SERVICES will
             be enabled during setUp.
         """
-        super(BaseLayerIsolator, self).__init__()
+        super().__init__()
         self.with_persistent = with_persistent
 
     def _setUp(self):
@@ -92,7 +92,7 @@ class LayerFixture(Fixture):
 
         :param layer: The layer to use.
         """
-        super(LayerFixture, self).__init__()
+        super().__init__()
         self.layer = layer
 
     def _setUp(self):
@@ -198,7 +198,7 @@ class BaseTestCase(TestCase):
                     self.want_librarian_running,
                     'Librarian should not be running.'
                     )
-        except IOError:
+        except OSError:
             self.assertFalse(
                     self.want_librarian_running,
                     'Librarian should be running.'
@@ -496,7 +496,7 @@ class LayerProcessControllerTestCase(TestCase):
     layer = DatabaseLayer
 
     def tearDown(self):
-        super(LayerProcessControllerTestCase, self).tearDown()
+        super().tearDown()
         # Stop the app server.  It's okay if it isn't running.
         LayerProcessController.stopAppServer()
 

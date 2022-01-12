@@ -68,7 +68,7 @@ class PGBouncerFixture(pgbouncer.fixture.PGBouncerFixture):
     """
 
     def __init__(self):
-        super(PGBouncerFixture, self).__init__()
+        super().__init__()
 
         # Known databases
         from lp.testing.layers import DatabaseLayer
@@ -97,7 +97,7 @@ class PGBouncerFixture(pgbouncer.fixture.PGBouncerFixture):
         self.admin_users = ['launchpad', 'pgbouncer', os.environ['USER']]
 
     def setUp(self):
-        super(PGBouncerFixture, self).setUp()
+        super().setUp()
 
         # reconnect_store cleanup added first so it is run last, after
         # the environment variables have been reset.
@@ -130,11 +130,11 @@ class PGBouncerFixture(pgbouncer.fixture.PGBouncerFixture):
     def start(self, retries=20, sleep=0.5):
         """Start PGBouncer, waiting for it to accept connections if neccesary.
         """
-        super(PGBouncerFixture, self).start()
+        super().start()
         for i in range(retries):
             try:
                 socket.create_connection((self.host, self.port))
-            except socket.error:
+            except OSError:
                 # Try again.
                 pass
             else:
@@ -147,8 +147,8 @@ class PGBouncerFixture(pgbouncer.fixture.PGBouncerFixture):
 class ZopeAdapterFixture(Fixture):
     """A fixture to register and unregister an adapter."""
 
-    def __init__(self, factory, required=None, provided=None, name=u"",
-                 info=u"", event=True):
+    def __init__(self, factory, required=None, provided=None, name="",
+                 info="", event=True):
         # We use some private functions from here since we need them to work
         # out how to query for existing adapters.  We could copy and paste
         # the code instead, but it doesn't seem worth it.
@@ -181,7 +181,7 @@ class ZopeEventHandlerFixture(Fixture):
     """A fixture that provides and then unprovides a Zope event handler."""
 
     def __init__(self, handler, required=None):
-        super(ZopeEventHandlerFixture, self).__init__()
+        super().__init__()
         self._handler = handler
         self._required = required
 
@@ -201,7 +201,7 @@ class ZopeViewReplacementFixture(Fixture):
     def __init__(self, name, context_interface,
                  request_interface=IDefaultBrowserLayer,
                  replacement=None):
-        super(ZopeViewReplacementFixture, self).__init__()
+        super().__init__()
         self.name = name
         self.context_interface = context_interface
         self.request_interface = request_interface
@@ -270,7 +270,7 @@ class CapturedOutput(Fixture):
     """A fixture that captures output to stdout and stderr."""
 
     def __init__(self):
-        super(CapturedOutput, self).__init__()
+        super().__init__()
         self.stdout = six.StringIO()
         self.stderr = six.StringIO()
 

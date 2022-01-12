@@ -58,15 +58,15 @@ def oauth_access_token_for(consumer_name, person, permission, context=None):
 
     :return: A tuple of an OAuthAccessToken object and its secret.
     """
-    if isinstance(person, six.string_types):
+    if isinstance(person, str):
         # Look up a person by name.
         person = getUtility(IPersonSet).getByName(person)
-    if isinstance(context, six.string_types):
+    if isinstance(context, str):
         # Turn an OAuth context string into the corresponding object.
         # Avoid an import loop by importing from launchpad.browser here.
         from lp.services.oauth.browser import lookup_oauth_context
         context = lookup_oauth_context(context)
-    if isinstance(permission, six.string_types):
+    if isinstance(permission, str):
         # Look up a permission by its token string.
         permission = OAuthPermission.items[permission]
 

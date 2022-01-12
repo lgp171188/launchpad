@@ -19,7 +19,6 @@ import os.path
 import time
 import uuid
 
-import six
 from twisted.web import (
     http,
     resource,
@@ -75,7 +74,7 @@ class FakeKeystone(resource.Resource):
             if token is not None and self._isValidToken(token, tenant_name):
                 return token
         else:
-            for id, token in six.iteritems(self.tokens):
+            for id, token in self.tokens.items():
                 if self._isValidToken(token, tenant_name):
                     return token
 
@@ -353,8 +352,7 @@ class SwiftContainer(resource.Resource):
 
     def iter_children(self):
         """Iterator that returns each child object."""
-        for key, val in self.container_children.items():
-            yield key, val
+        yield from self.container_children.items()
 
     def getChild(self, name, request):
         """Get the next object down the chain."""

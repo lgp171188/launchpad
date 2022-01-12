@@ -134,7 +134,7 @@ class OpenIDMixin:
     openid_request = None
 
     def __init__(self, context, request):
-        super(OpenIDMixin, self).__init__(context, request)
+        super().__init__(context, request)
         self.server_url = get_server_url()
         self.openid_server = Server(get_openid_store(), self.server_url)
 
@@ -304,7 +304,7 @@ class TestOpenIDLoginView(OpenIDMixin, LaunchpadFormView):
 
     def initialize(self):
         self.restoreRequestFromSession()
-        super(TestOpenIDLoginView, self).initialize()
+        super().initialize()
 
     def validate(self, data):
         """Check that the email address is valid for login."""

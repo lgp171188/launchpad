@@ -628,20 +628,20 @@ class TestFactory(TestCaseWithFactory):
 
     # makeCVE
     def test_makeCVE_returns_cve(self):
-        cve = self.factory.makeCVE(sequence=u'2000-1234')
+        cve = self.factory.makeCVE(sequence='2000-1234')
         self.assertThat(cve, ProvidesAndIsProxied(ICve))
 
     def test_makeCVE_uses_sequence(self):
-        cve = self.factory.makeCVE(sequence=u'2000-1234')
-        self.assertEqual(u'2000-1234', cve.sequence)
+        cve = self.factory.makeCVE(sequence='2000-1234')
+        self.assertEqual('2000-1234', cve.sequence)
 
     def test_makeCVE_uses_description(self):
-        cve = self.factory.makeCVE(sequence=u'2000-1234', description=u'foo')
-        self.assertEqual(u'foo', cve.description)
+        cve = self.factory.makeCVE(sequence='2000-1234', description='foo')
+        self.assertEqual('foo', cve.description)
 
     def test_makeCVE_uses_cve_status(self):
         cve = self.factory.makeCVE(
-            sequence=u'2000-1234', cvestate=CveStatus.DEPRECATED)
+            sequence='2000-1234', cvestate=CveStatus.DEPRECATED)
         self.assertEqual(CveStatus.DEPRECATED, cve.status)
 
     # dir() support.
@@ -890,7 +890,7 @@ class IsSecurityProxiedOrHarmlessTests(TestCaseWithFactory):
     def test_is_security_proxied_or_harmless__unicode(self):
         # is_security_proxied_or_harmless() considers unicode objects
         # to be harmless.
-        self.assertTrue(is_security_proxied_or_harmless(u'abc'))
+        self.assertTrue(is_security_proxied_or_harmless('abc'))
 
     def test_is_security_proxied_or_harmless__proxied_object(self):
         # is_security_proxied_or_harmless() treats security proxied

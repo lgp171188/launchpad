@@ -30,10 +30,10 @@ class EchoView(LaunchpadView):
 
     def render(self):
         out = io.StringIO()
-        print(u'Request method: %s' % self.request.method, file=out)
+        print('Request method: %s' % self.request.method, file=out)
         keys = sorted(self.request.form.keys())
         for key in keys:
-            print(u'%s:%s' % (key, self.request.form[key]), file=out)
+            print('%s:%s' % (key, self.request.form[key]), file=out)
         return out.getvalue()
 
 
