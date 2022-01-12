@@ -200,7 +200,7 @@ class ImporterHandler:
         self.ztm.abort()
 
     def ensure_arch(self, archtag):
-        """Append retrived distroarchseries info to a dict."""
+        """Append retrieved distroarchseries info to a dict."""
         if archtag in self.arch_map:
             return
 

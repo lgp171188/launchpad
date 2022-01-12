@@ -20,7 +20,7 @@ collected) the BuildQueue record representing it is removed.
 
 Get an instance of Builder from the current sampledata using the
 IBuildQueueSet zope utility. The zope utility itself will be
-documented later on this document, we are only using it to retrive an
+documented later on this document, we are only using it to retrieve an
 IBuildQueue record with the security proxies in place:
 
     >>> bq = getUtility(IBuildQueueSet).get(1)

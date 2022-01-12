@@ -496,7 +496,7 @@ given remote bug from the remote server.
     >>> verifyObject(ISupportsBackLinking, bugzilla)
     True
 
-The getLaunchpadBugId() method is used to retrive the current Launchpad
+The getLaunchpadBugId() method is used to retrieve the current Launchpad
 bug ID for a given remote bug.
 
     >>> launchpad_bug_id = bugzilla.getLaunchpadBugId(1)
