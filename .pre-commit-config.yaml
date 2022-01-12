@@ -60,6 +60,7 @@ repos:
             |testing
             |testopenid
             |tests
+            |translations/browser
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2

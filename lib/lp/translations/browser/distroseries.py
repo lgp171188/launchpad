@@ -102,7 +102,7 @@ class DistroSeriesLanguagePackView(LaunchpadEditFormView):
             self.field_names = ['language_pack_full_export_requested']
         else:
             self.field_names = []
-        super(DistroSeriesLanguagePackView, self).initialize()
+        super().initialize()
         self.displayname = '%s %s' % (
             self.context.distribution.displayname,
             self.context.version)
@@ -194,8 +194,7 @@ class DistroSeriesTemplatesView(BaseSeriesTemplatesView):
     """Show a list of all templates for the DistroSeries."""
 
     def initialize(self):
-        super(DistroSeriesTemplatesView, self).initialize(
-            series=self.context, is_distroseries=True)
+        super().initialize(series=self.context, is_distroseries=True)
 
     def constructTemplateURL(self, template):
         """See `BaseSeriesTemplatesView`."""

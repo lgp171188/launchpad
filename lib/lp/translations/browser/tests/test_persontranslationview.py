@@ -26,7 +26,7 @@ class TestPersonTranslationView(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestPersonTranslationView, self).setUp()
+        super().setUp()
         person = removeSecurityProxy(self.factory.makePerson())
         self.view = PersonTranslationView(person, LaunchpadTestRequest())
         self.translationgroup = None
@@ -388,7 +388,7 @@ class TestPersonTranslationViewPermissions(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonTranslationViewPermissions, self).setUp()
+        super().setUp()
         self.context = self.factory.makePerson()
         self.language = self.factory.makeLanguage()
         with person_logged_in(self.context):

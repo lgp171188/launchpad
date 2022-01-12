@@ -467,7 +467,7 @@ class SettingsRadioWidget(LaunchpadRadioWidgetWithDescription):
     """Remove the confusing hint under the widget."""
 
     def __init__(self, field, vocabulary, request):
-        super(SettingsRadioWidget, self).__init__(field, vocabulary, request)
+        super().__init__(field, vocabulary, request)
         self.hint = None
 
 
@@ -485,7 +485,7 @@ class ProductSeriesTranslationsSettingsView(ReturnToReferrerMixin,
     field_names = ['translations_autoimport_mode']
     custom_widget_translations_autoimport_mode = SettingsRadioWidget
 
-    @action(u"Save settings", name="save_settings")
+    @action("Save settings", name="save_settings")
     def change_settings_action(self, action, data):
         """Change the translation settings."""
         if (self.context.translations_autoimport_mode !=
@@ -522,7 +522,7 @@ class ProductSeriesTranslationsBzrImportView(LaunchpadFormView,
             self.addError(
                 "Please set the official Bazaar branch first.")
 
-    @action(u"Request one-time import", name="request_import")
+    @action("Request one-time import", name="request_import")
     def request_import_action(self, action, data):
         """ Request an upload of translation files. """
         job = getUtility(IRosettaUploadJobSource).create(
@@ -539,8 +539,7 @@ class ProductSeriesTemplatesView(BaseSeriesTemplatesView):
     """Show a list of all templates for the ProductSeries."""
 
     def initialize(self):
-        super(ProductSeriesTemplatesView, self).initialize(
-            series=self.context, is_distroseries=False)
+        super().initialize(series=self.context, is_distroseries=False)
 
     def constructTemplateURL(self, template):
         """See `BaseSeriesTemplatesView`."""

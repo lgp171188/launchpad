@@ -116,7 +116,7 @@ class SourcePackageTranslationSharingDetailsView(LaunchpadView):
         return check_permission('launchpad.Edit', self.context.productseries)
 
     def initialize(self):
-        super(SourcePackageTranslationSharingDetailsView, self).initialize()
+        super().initialize()
         if self.is_configuration_complete and not self.is_sharing():
             self.request.response.addInfoNotification(
                 structured(

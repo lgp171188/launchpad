@@ -86,7 +86,7 @@ class TestRobotsProduct(BrowserTestCase, TestRobotsMixin):
     """Test noindex,nofollow for products."""
 
     def setUp(self):
-        super(TestRobotsProduct, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct()
         self.factory.makePOTemplate(
             productseries=self.target.development_focus)
@@ -97,7 +97,7 @@ class TestRobotsProjectGroup(BrowserTestCase, TestRobotsMixin):
     """Test noindex,nofollow for project groups."""
 
     def setUp(self):
-        super(TestRobotsProjectGroup, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProject()
         self.product = self.factory.makeProduct()
         self.factory.makePOTemplate(
@@ -110,7 +110,7 @@ class TestRobotsProductSeries(BrowserTestCase, TestRobotsMixin):
     """Test noindex,nofollow for product series."""
 
     def setUp(self):
-        super(TestRobotsProductSeries, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         self.target = self.product.development_focus
         self.factory.makePOTemplate(
@@ -122,7 +122,7 @@ class TestRobotsDistroSeries(BrowserTestCase, TestRobotsMixin):
     """Test noindex,nofollow for distro series."""
 
     def setUp(self):
-        super(TestRobotsDistroSeries, self).setUp()
+        super().setUp()
         login_person(self.user)
         self.distro = self.factory.makeDistribution(
             name="whobuntu", owner=self.user)
@@ -140,7 +140,7 @@ class TestRobotsDistro(BrowserTestCase, TestRobotsMixin):
     """Test noindex,nofollow for distro."""
 
     def setUp(self):
-        super(TestRobotsDistro, self).setUp()
+        super().setUp()
         login_person(self.user)
         self.target = self.factory.makeDistribution(
             name="whobuntu", owner=self.user)

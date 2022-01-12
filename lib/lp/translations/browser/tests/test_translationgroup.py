@@ -23,7 +23,7 @@ class TestTranslationGroupView(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestTranslationGroupView, self).setUp()
+        super().setUp()
 
     def _makeView(self, group, name=None):
         """Create a view for self.group."""

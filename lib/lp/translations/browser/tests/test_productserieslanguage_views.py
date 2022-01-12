@@ -28,7 +28,7 @@ class TestProductSeriesView(TestCaseWithFactory):
 
     def setUp(self):
         # Create a productseries that uses translations.
-        super(TestProductSeriesView, self).setUp()
+        super().setUp()
         self.productseries = self.factory.makeProductSeries()
         self.product = self.productseries.product
 
@@ -67,7 +67,7 @@ class TestProductSeriesView(TestCaseWithFactory):
         # After adding a translation group with a documentation URL lets
         # `has_translation_documentation` be True.
         self.product.translationgroup = self.factory.makeTranslationGroup(
-            self.productseries.product.owner, url=u'http://something')
+            self.productseries.product.owner, url='http://something')
         view = self._createView()
         self.assertTrue(view.has_translation_documentation)
 
@@ -162,7 +162,7 @@ class TestProductSeriesViewBzrUsage(TestCaseWithFactory):
     def setUp(self):
         # Create a productseries that uses translations.
         # Strip off the security proxy to allow customization.
-        super(TestProductSeriesViewBzrUsage, self).setUp()
+        super().setUp()
         self.secured_productseries = self.factory.makeProductSeries()
         self.productseries = removeSecurityProxy(self.secured_productseries)
 
@@ -251,7 +251,7 @@ class TestProductSeriesLanguageView(TestCaseWithFactory):
 
     def setUp(self):
         # Create a productseries that uses translations.
-        super(TestProductSeriesLanguageView, self).setUp()
+        super().setUp()
         self.productseries = self.factory.makeProductSeries()
         self.language = self.factory.makeLanguage()
         potemplate = self.factory.makePOTemplate(

@@ -42,7 +42,7 @@ class TestPOTEmplateExportView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPOTEmplateExportView, self).setUp()
+        super().setUp()
         self.potemplate = self.factory.makePOTemplate()
         # All exports can be requested by an unprivileged user.
         self.translator = self.factory.makePerson()
