@@ -47,18 +47,18 @@ class PackageBuildMixin(BuildFarmJobMixin):
         """See `IBuildFarmJob`"""
         return self.archive.private
 
-    def updateStatus(self, status, builder=None, slave_status=None,
+    def updateStatus(self, status, builder=None, worker_status=None,
                      date_started=None, date_finished=None,
                      force_invalid_transition=False):
         super().updateStatus(
-            status, builder=builder, slave_status=slave_status,
+            status, builder=builder, worker_status=worker_status,
             date_started=date_started, date_finished=date_finished,
             force_invalid_transition=force_invalid_transition)
 
-        if (status == BuildStatus.MANUALDEPWAIT and slave_status is not None
-            and slave_status.get('dependencies') is not None):
+        if (status == BuildStatus.MANUALDEPWAIT and worker_status is not None
+            and worker_status.get('dependencies') is not None):
             self.dependencies = six.ensure_text(
-                slave_status.get('dependencies'))
+                worker_status.get('dependencies'))
         else:
             self.dependencies = None
 

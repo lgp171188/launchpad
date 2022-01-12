@@ -81,7 +81,7 @@ class TestSnapBuildView(TestCaseWithFactory):
     def test_revision_id(self):
         build = self.factory.makeSnapBuild()
         build.updateStatus(
-            BuildStatus.FULLYBUILT, slave_status={"revision_id": "dummy"})
+            BuildStatus.FULLYBUILT, worker_status={"revision_id": "dummy"})
         build_view = create_initialized_view(build, "+index")
         self.assertThat(build_view(), soupmatchers.HTMLContains(
             soupmatchers.Tag(

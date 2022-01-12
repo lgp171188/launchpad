@@ -97,10 +97,10 @@ class OkWorker:
 
     def status(self):
         self.call_log.append('status')
-        slave_status = {'builder_status': 'BuilderStatus.IDLE'}
+        worker_status = {'builder_status': 'BuilderStatus.IDLE'}
         if self.version is not None:
-            slave_status['builder_version'] = self.version
-        return defer.succeed(slave_status)
+            worker_status['builder_version'] = self.version
+        return defer.succeed(worker_status)
 
     def ensurepresent(self, sha1, url, user=None, password=None):
         self.call_log.append(('ensurepresent', url, user, password))

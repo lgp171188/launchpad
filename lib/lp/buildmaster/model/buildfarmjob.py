@@ -193,7 +193,7 @@ class BuildFarmJobMixin:
         labels.update(extra)
         getUtility(IStatsdClient).incr("build.%s" % metric_name, labels=labels)
 
-    def updateStatus(self, status, builder=None, slave_status=None,
+    def updateStatus(self, status, builder=None, worker_status=None,
                      date_started=None, date_finished=None,
                      force_invalid_transition=False):
         """See `IBuildFarmJob`."""

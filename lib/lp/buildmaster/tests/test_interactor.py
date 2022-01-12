@@ -124,16 +124,17 @@ class TestBuilderInteractor(TestCase):
     def test_extractBuildStatus_baseline(self):
         # extractBuildStatus picks the name of the build status out of a
         # dict describing the slave's status.
-        slave_status = {'build_status': 'BuildStatus.BUILDING'}
+        worker_status = {'build_status': 'BuildStatus.BUILDING'}
         self.assertEqual(
-            'BUILDING', BuilderInteractor.extractBuildStatus(slave_status))
+            'BUILDING', BuilderInteractor.extractBuildStatus(worker_status))
 
     def test_extractBuildStatus_malformed(self):
         # extractBuildStatus errors out when the status string is not
         # of the form it expects.
-        slave_status = {'build_status': 'BUILDING'}
+        worker_status = {'build_status': 'BUILDING'}
         self.assertRaises(
-            AssertionError, BuilderInteractor.extractBuildStatus, slave_status)
+            AssertionError, BuilderInteractor.extractBuildStatus,
+            worker_status)
 
     def resumeSlaveHost(self, builder):
         vitals = extract_vitals_from_db(builder)

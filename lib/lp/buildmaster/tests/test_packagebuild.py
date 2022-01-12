@@ -41,17 +41,17 @@ class TestPackageBuildMixin(TestCaseWithFactory):
     def test_updateStatus_MANUALDEPWAIT_sets_dependencies(self):
         # updateStatus sets dependencies for a MANUALDEPWAIT build.
         self.package_build.updateStatus(
-            BuildStatus.MANUALDEPWAIT, slave_status={'dependencies': 'deps'})
+            BuildStatus.MANUALDEPWAIT, worker_status={'dependencies': 'deps'})
         self.assertEqual('deps', self.package_build.dependencies)
         self.package_build.updateStatus(
-            BuildStatus.MANUALDEPWAIT, slave_status={})
+            BuildStatus.MANUALDEPWAIT, worker_status={})
         self.assertEqual(None, self.package_build.dependencies)
 
     def test_updateStatus_unsets_dependencies_for_other_statuses(self):
         # updateStatus unsets existing dependencies when transitioning
         # to another state.
         self.package_build.updateStatus(
-            BuildStatus.MANUALDEPWAIT, slave_status={'dependencies': 'deps'})
+            BuildStatus.MANUALDEPWAIT, worker_status={'dependencies': 'deps'})
         self.assertEqual('deps', self.package_build.dependencies)
         self.package_build.updateStatus(BuildStatus.NEEDSBUILD)
         self.assertEqual(None, self.package_build.dependencies)

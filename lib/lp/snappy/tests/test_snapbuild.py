@@ -317,10 +317,10 @@ class TestSnapBuild(TestCaseWithFactory):
     def test_updateStatus_stores_revision_id(self):
         # If the builder reports a revision_id, updateStatus saves it.
         self.assertIsNone(self.build.revision_id)
-        self.build.updateStatus(BuildStatus.BUILDING, slave_status={})
+        self.build.updateStatus(BuildStatus.BUILDING, worker_status={})
         self.assertIsNone(self.build.revision_id)
         self.build.updateStatus(
-            BuildStatus.BUILDING, slave_status={"revision_id": "dummy"})
+            BuildStatus.BUILDING, worker_status={"revision_id": "dummy"})
         self.assertEqual("dummy", self.build.revision_id)
 
     def test_updateStatus_triggers_webhooks(self):
@@ -372,7 +372,7 @@ class TestSnapBuild(TestCaseWithFactory):
         self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
         self.build.updateStatus(
             BuildStatus.BUILDING, builder=builder,
-            slave_status={"revision_id": "1"})
+            worker_status={"revision_id": "1"})
         self.assertEqual(1, hook.deliveries.count())
         self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
         self.build.updateStatus(BuildStatus.UPLOADING)

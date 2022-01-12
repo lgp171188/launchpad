@@ -210,7 +210,7 @@ class IBuildFarmJobView(Interface):
         :param extra: Extra labels to attach to the metric.
         """
 
-    def updateStatus(status, builder=None, slave_status=None,
+    def updateStatus(status, builder=None, worker_status=None,
                      date_started=None, date_finished=None,
                      force_invalid_transition=False):
         """Update job metadata when the build status changes.

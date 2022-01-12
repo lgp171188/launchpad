@@ -100,11 +100,11 @@ class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
                 approver_factory=TranslationBuildApprover)
 
     @defer.inlineCallbacks
-    def handleSuccess(self, slave_status, logger):
+    def handleSuccess(self, worker_status, logger):
         """Deal with a finished build job.
 
-        Retrieves tarball and logs from the slave, then cleans up the
-        slave so it's ready for a next job and destroys the queue item.
+        Retrieves tarball and logs from the worker, then cleans up the
+        worker so it's ready for a next job and destroys the queue item.
 
         If this fails for whatever unforeseen reason, a future run will
         retry it.
@@ -114,7 +114,7 @@ class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
             builder=self.build.buildqueue_record.builder)
         transaction.commit()
         logger.debug("Processing successful templates build.")
-        filemap = slave_status.get('filemap')
+        filemap = worker_status.get('filemap')
         filename = yield self._readTarball(
             self.build.buildqueue_record, filemap, logger)
 
