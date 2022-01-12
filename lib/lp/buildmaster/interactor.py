@@ -487,7 +487,7 @@ class BuilderInteractor:
         builder.setCleanStatus(BuilderCleanStatus.DIRTY)
         transaction.commit()
 
-        yield behaviour.dispatchBuildToSlave(logger)
+        yield behaviour.dispatchBuildToWorker(logger)
 
     @classmethod
     @defer.inlineCallbacks

@@ -373,7 +373,7 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         behaviour = BuilderInteractor.getBuildBehaviour(bq, builder, worker)
         self.assertIsInstance(behaviour, BinaryPackageBuildBehaviour)
         self.assertEqual(behaviour._builder, builder)
-        self.assertEqual(behaviour._slave, worker)
+        self.assertEqual(behaviour._worker, worker)
 
     def _setupBuilder(self):
         processor = self.factory.makeProcessor(name="i386")
