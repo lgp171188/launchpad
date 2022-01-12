@@ -48,7 +48,7 @@ build_new_sampledata=./fti.py --null -d ${1} -q && \
     echo -n "-- Created using " >> $(2) && \
     pg_dump --version >> $(2) && \
     pg_dump --schema=public --disable-triggers -a --column-inserts -O ${1} \
-    | grep -v "\( TOC \|INSERT INTO launchpaddatabase\|sessiondata\|sessionpkgdata\|SELECT pg_catalog\.setval\|^--\| fticache \|'fticache'\|ALTER TABLE secret\|INSERT INTO secret\)" \
+    | grep -v "\( TOC \|INSERT INTO public\.launchpaddatabase\|ALTER TABLE public\.launchpaddatabase\|sessiondata\|sessionpkgdata\|SELECT pg_catalog\.setval\|^--\| fticache \|'fticache'\|ALTER TABLE public\.secret\|INSERT INTO public\.secret\)" \
     | ./sort_sql.py >> $(2) && \
     ./fti.py --live-rebuild -d ${1} -q
 
@@ -157,4 +157,3 @@ lintdata:
 	$(call build_new_sampledata,${TEMPLATE_WITH_DEV_SAMPLEDATA},${LINTDATA_DEV})
 
 .PHONY: default test dev create check all doc diagram newsampledata_test newsampledata_dev newsampledata lintdata
-
