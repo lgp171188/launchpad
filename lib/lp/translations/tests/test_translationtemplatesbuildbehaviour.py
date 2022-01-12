@@ -1,4 +1,4 @@
-# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for TranslationTemplatesBuildBehaviour."""
@@ -14,7 +14,6 @@ from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interactor import BuilderInteractor
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
@@ -164,11 +163,7 @@ class TestTranslationTemplatesBuildBehaviour(
         d = worker.status()
 
         def got_status(status):
-            return (
-                behaviour.handleStatus(
-                    queue_item, BuilderInteractor.extractBuildStatus(status),
-                    status),
-                worker.call_log)
+            return behaviour.handleStatus(queue_item, status), worker.call_log
 
         def build_updated(ignored):
             self.assertEqual(BuildStatus.FULLYBUILT, behaviour.build.status)
@@ -193,10 +188,7 @@ class TestTranslationTemplatesBuildBehaviour(
 
         def got_status(status):
             del status['filemap']
-            return behaviour.handleStatus(
-                queue_item,
-                BuilderInteractor.extractBuildStatus(status),
-                status),
+            return behaviour.handleStatus(queue_item, status),
 
         def build_updated(ignored):
             self.assertEqual(BuildStatus.FAILEDTOBUILD, behaviour.build.status)
@@ -222,10 +214,7 @@ class TestTranslationTemplatesBuildBehaviour(
 
         def got_status(status):
             del status['filemap']
-            return behaviour.handleStatus(
-                queue_item,
-                BuilderInteractor.extractBuildStatus(status),
-                status),
+            return behaviour.handleStatus(queue_item, status),
 
         def build_updated(ignored):
             self.assertEqual(BuildStatus.FULLYBUILT, behaviour.build.status)
@@ -257,10 +246,7 @@ class TestTranslationTemplatesBuildBehaviour(
         d = worker.status()
 
         def got_status(status):
-            return behaviour.handleStatus(
-                queue_item,
-                BuilderInteractor.extractBuildStatus(status),
-                status),
+            return behaviour.handleStatus(queue_item, status),
 
         def build_updated(ignored):
             self.assertEqual(BuildStatus.FULLYBUILT, behaviour.build.status)

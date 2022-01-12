@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test BuilderInteractor features."""
@@ -120,21 +120,6 @@ class TestBuilderInteractor(TestCase):
     def setUp(self):
         super().setUp()
         self.addCleanup(shut_down_default_process_pool)
-
-    def test_extractBuildStatus_baseline(self):
-        # extractBuildStatus picks the name of the build status out of a
-        # dict describing the worker's status.
-        worker_status = {'build_status': 'BuildStatus.BUILDING'}
-        self.assertEqual(
-            'BUILDING', BuilderInteractor.extractBuildStatus(worker_status))
-
-    def test_extractBuildStatus_malformed(self):
-        # extractBuildStatus errors out when the status string is not
-        # of the form it expects.
-        worker_status = {'build_status': 'BUILDING'}
-        self.assertRaises(
-            AssertionError, BuilderInteractor.extractBuildStatus,
-            worker_status)
 
     def resumeWorkerHost(self, builder):
         vitals = extract_vitals_from_db(builder)

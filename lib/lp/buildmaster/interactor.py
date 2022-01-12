@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -526,19 +526,6 @@ class BuilderInteractor:
         return candidate
 
     @staticmethod
-    def extractBuildStatus(worker_status):
-        """Read build status name.
-
-        :param worker_status: build status dict from BuilderWorker.status.
-        :return: the unqualified status name, e.g. "OK".
-        """
-        status_string = worker_status['build_status']
-        lead_string = 'BuildStatus.'
-        assert status_string.startswith(lead_string), (
-            "Malformed status string: '%s'" % status_string)
-        return status_string[len(lead_string):]
-
-    @staticmethod
     def extractLogTail(worker_status):
         """Extract the log tail from a builder status response.
 
@@ -580,24 +567,20 @@ class BuilderInteractor:
         # matches the DB, and this method isn't called unless the DB
         # says there's a job.
         builder_status = worker_status['builder_status']
+        if builder_status not in (
+                'BuilderStatus.BUILDING', 'BuilderStatus.ABORTING',
+                'BuilderStatus.WAITING'):
+            raise AssertionError("Unknown status %s" % builder_status)
+        builder = builder_factory[vitals.name]
+        behaviour = behaviour_factory(vitals.build_queue, builder, worker)
         if builder_status in (
                 'BuilderStatus.BUILDING', 'BuilderStatus.ABORTING'):
             logtail = cls.extractLogTail(worker_status)
             if logtail is not None:
                 manager.addLogTail(vitals.build_queue.id, logtail)
-            vitals.build_queue.specific_build.updateStatus(
-                vitals.build_queue.specific_build.status,
-                worker_status=worker_status)
-            transaction.commit()
-        elif builder_status == 'BuilderStatus.WAITING':
-            # Build has finished. Delegate handling to the build itself.
-            builder = builder_factory[vitals.name]
-            behaviour = behaviour_factory(vitals.build_queue, builder, worker)
-            yield behaviour.handleStatus(
-                vitals.build_queue, cls.extractBuildStatus(worker_status),
-                worker_status)
-        else:
-            raise AssertionError("Unknown status %s" % builder_status)
+        # Delegate the remaining handling to the build behaviour, which will
+        # commit the transaction.
+        yield behaviour.handleStatus(vitals.build_queue, worker_status)
 
     @staticmethod
     def _getWorkerScannerLogger():
