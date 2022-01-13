@@ -1862,6 +1862,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             commit_sha1 = hashlib.sha1(self.getUniqueBytes()).hexdigest()
         if result_summary is None:
             result_summary = self.getUniqueUnicode()
+        if result is None:
+            result = 'Running'
         return getUtility(IRevisionStatusReportSet).new(
             user, title, git_repository, commit_sha1, url,
             result_summary, result)

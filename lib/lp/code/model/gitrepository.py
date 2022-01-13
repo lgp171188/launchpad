@@ -344,8 +344,8 @@ class RevisionStatusReport(StormBase):
         self.commit_sha1 = commit_sha1
         self.url = url
         self.result_summary = result_summary
-        self.result = result
         self.date_created = UTC_NOW
+        self.transitionToNewResult(result)
 
     def api_setLog(self, log_data):
         filename = '%s-%s.txt' % (self.title, self.commit_sha1)
@@ -364,7 +364,7 @@ class RevisionStatusReport(StormBase):
             self.date_finished = UTC_NOW
         self.result = result
 
-    def updateStatusReport(self, title=None, url=None,
+    def update(self, title=None, url=None,
                            result_summary=None, result=None):
         if title:
             self.title = title
@@ -373,7 +373,7 @@ class RevisionStatusReport(StormBase):
         if result_summary:
             self.result_summary = result_summary
         if result:
-            self.result = result
+            self.transitionToNewResult(result)
 
 
 @implementer(IRevisionStatusReportSet)

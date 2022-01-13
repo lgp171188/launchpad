@@ -856,7 +856,8 @@ class IRevisionStatusReportEditableAttributes(Interface):
     """
 
     title = exported(TextLine(
-        title=_("A short title for the report."), required=True))
+        title=_("A short title for the report."), required=True,
+        readonly=False))
 
     git_repository = exported(Reference(
         title=_("The Git repository for which this report is built."),
@@ -867,11 +868,12 @@ class IRevisionStatusReportEditableAttributes(Interface):
         title=_("The Git commit for which this report is built."),
         required=True, readonly=True))
 
-    url = exported(URIField(title=_("URL"), required=False, readonly=True,
+    url = exported(URIField(title=_("URL"), required=False, readonly=False,
                             description=_("The external url of the report.")))
 
     result_summary = exported(TextLine(
-        title=_("A short summary of the result."), required=False))
+        title=_("A short summary of the result."), required=False,
+        readonly=False))
 
     result = exported(Choice(
         title=_('Result of the report'),  readonly=True,
@@ -914,13 +916,13 @@ class IRevisionStatusReportEdit(Interface):
     @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
     @export_write_operation()
     @operation_for_version("devel")
-    def updateStatusReport(title, url, result_summary, result):
+    def update(title, url, result_summary, result):
         """Updates a status report.
 
-        :param title: The name of the new report.
-        :param url: The external link of the status report.
-        :param result_summary: The description of the new report.
-        :param result: The result of the new report.
+        :param title: A short title for the report.
+        :param url: The external url of the report.
+        :param result_summary: A short summary of the result.
+        :param result: The result of the report.
         """
 
 

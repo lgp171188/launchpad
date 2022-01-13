@@ -5045,7 +5045,7 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
             user=self.repository.owner, git_repository=self.repository,
             title=self.title, commit_sha1=self.commit_sha1,
             result_summary=self.result_summary,
-            result=RevisionStatusResult.SUCCEEDED)
+            result=RevisionStatusResult.FAILED)
 
         self.webservice = webservice_for_person(
             None, default_api_version="devel")
@@ -5085,14 +5085,29 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
 
     def test_updateStatusReport(self):
         response = self.webservice.named_post(
-            self.report_url, "updateStatusReport",
+            self.report_url, "update",
             headers=self.header,
             title='updated-report-title')
         self.assertEqual(200, response.status)
         with person_logged_in(self.requester):
-            self.assertEqual(self.report.title, 'updated-report-title')
-            self.assertEqual(self.report.commit_sha1, self.commit_sha1)
-            self.assertEqual(self.report.result_summary, self.result_summary)
+            self.assertEqual('updated-report-title', self.report.title)
+            self.assertEqual(self.commit_sha1, self.report.commit_sha1)
+            self.assertEqual(self.result_summary, self.report.result_summary)
+            self.assertEqual(RevisionStatusResult.FAILED, self.report.result)
+            date_finished_before_update = self.report.date_finished
+        response = self.webservice.named_post(
+            self.report_url, "update",
+            headers=self.header,
+            result='Succeeded')
+        self.assertEqual(200, response.status)
+        with person_logged_in(self.requester):
+            self.assertEqual('updated-report-title', self.report.title)
+            self.assertEqual(self.commit_sha1, self.report.commit_sha1)
+            self.assertEqual(self.result_summary, self.report.result_summary)
+            self.assertEqual(RevisionStatusResult.SUCCEEDED,
+                             self.report.result)
+            self.assertGreater(self.report.date_finished,
+                               date_finished_before_update)
 
 
 class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
