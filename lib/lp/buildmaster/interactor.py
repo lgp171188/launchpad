@@ -381,7 +381,7 @@ class BuilderInteractor:
         if not vitals.vm_host:
             return defer.fail(CannotResumeHost('Undefined vm_host.'))
 
-        logger = cls._getSlaveScannerLogger()
+        logger = cls._getWorkerScannerLogger()
         logger.info("Resuming %s (%s)" % (vitals.name, vitals.url))
 
         d = slave.resume()
@@ -435,7 +435,7 @@ class BuilderInteractor:
                     builder_factory[vitals.name].setCleanStatus(
                         BuilderCleanStatus.CLEANING)
                     transaction.commit()
-                    logger = cls._getSlaveScannerLogger()
+                    logger = cls._getWorkerScannerLogger()
                     logger.info("%s is being cleaned.", vitals.name)
                 return False
             raise CannotResumeHost(
@@ -497,7 +497,7 @@ class BuilderInteractor:
         :return: A Deferred whose value is the `IBuildQueue` instance
             found or None if no job was found.
         """
-        logger = cls._getSlaveScannerLogger()
+        logger = cls._getWorkerScannerLogger()
         # Try a few candidates so that we make reasonable progress if we
         # have only a few idle builders but lots of candidates that fail
         # postprocessing due to old source publications or similar.  The
@@ -600,11 +600,11 @@ class BuilderInteractor:
             raise AssertionError("Unknown status %s" % builder_status)
 
     @staticmethod
-    def _getSlaveScannerLogger():
-        """Return the logger instance from buildd-slave-scanner.py."""
+    def _getWorkerScannerLogger():
+        """Return the logger instance from lp.buildmaster.manager."""
         # XXX cprov 20071120: Ideally the Launchpad logging system
         # should be able to configure the root-logger instead of creating
         # a new object, then the logger lookups won't require the specific
         # name argument anymore. See bug 164203.
-        logger = logging.getLogger('slave-scanner')
+        logger = logging.getLogger('worker-scanner')
         return logger

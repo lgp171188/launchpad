@@ -59,8 +59,7 @@ currently processing this job:
 
 'logtail' is a text field which stores up to 1 Kbyte of the last
 logged actions during the build process, it is updated according to the
-frequency set in buildd-slavescanner, normally 10 seconds, see
-buildd-slavescanner.txt for further information:
+frequency set in lp.buildmaster.manager.BuilddManager, normally 15 seconds:
 
     >>> print(bq.logtail)
     Dummy sampledata entry, not processing
