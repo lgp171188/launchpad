@@ -15,7 +15,7 @@ FAILEDTOUPLOAD email notification
 ---------------------------------
 
 Once a build result is recognised as FAILEDTOUPLOAD by the
-buildmaster/slave-scanner code, an build notification will be issued.
+buildmaster/worker-scanner code, an build notification will be issued.
 See more information in build-notification.txt file.
 
     >>> from lp.soyuz.interfaces.binarypackagebuild import (

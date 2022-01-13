@@ -197,7 +197,7 @@ class Builder(StormBase):
         """See IBuilder"""
         # XXX cprov 2007-04-17: ideally we should be able to notify the
         # the buildd-admins about FAILED builders. One alternative is to
-        # make the buildd_cronscript (slave-scanner, in this case) to exit
+        # make the buildd_cronscript (worker-scanner, in this case) to exit
         # with error, for those cases buildd-sequencer automatically sends
         # an email to admins with the script output.
         self.builderok = False

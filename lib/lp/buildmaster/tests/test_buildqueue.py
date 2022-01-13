@@ -72,8 +72,8 @@ class TestBuildCancellation(TestCaseWithFactory):
 
     def test_buildqueue_cancel_running(self):
         # Cancelling a RUNNING BuildQueue leaves it around but sets the
-        # status to CANCELLING. SlaveScanner will destroy it and set the
-        # build status to CANCELLED when the slave cancellation has
+        # status to CANCELLING. WorkerScanner will destroy it and set the
+        # build status to CANCELLED when the worker cancellation has
         # completed.
         build = self.factory.makeBinaryPackageBuild()
         bq = build.queueBuild()
