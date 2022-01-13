@@ -144,7 +144,7 @@ class DistroSeriesLanguageView(BaseSeriesLanguageView):
 
     def initialize(self):
         series = self.context.distroseries
-        super(DistroSeriesLanguageView, self).initialize(
+        super().initialize(
             series=series,
             translationgroup=series.distribution.translationgroup)
         self.parent = self.series.distribution
@@ -155,7 +155,7 @@ class ProductSeriesLanguageView(BaseSeriesLanguageView):
 
     def initialize(self):
         series = self.context.productseries
-        super(ProductSeriesLanguageView, self).initialize(
+        super().initialize(
             series=series,
             translationgroup=series.product.translationgroup)
         self.context.recalculateCounts()

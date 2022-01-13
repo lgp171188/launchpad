@@ -183,8 +183,7 @@ class POTemplateMenu(NavigationMenu):
 class POTemplateSubsetView(RedirectionView):
 
     def __init__(self, context, request):
-        super(POTemplateSubsetView, self).__init__(
-            '../+translations', request)
+        super().__init__('../+translations', request)
 
 
 class POTemplateView(LaunchpadView,

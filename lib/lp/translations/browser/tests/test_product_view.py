@@ -96,13 +96,13 @@ class TestProduct(TestCaseWithFactory):
         # include obsolete series.
         series_names = [series.name for series in view.untranslatable_series]
         self.assertEqual([
-            u'evo-current',
-            u'evo-development',
-            u'evo-experimental',
-            u'evo-frozen',
-            u'evo-future',
-            u'evo-supported',
-            u'trunk'], series_names)
+            'evo-current',
+            'evo-development',
+            'evo-experimental',
+            'evo-frozen',
+            'evo-future',
+            'evo-supported',
+            'trunk'], series_names)
 
 
 class TestCanConfigureTranslations(TestCaseWithFactory):

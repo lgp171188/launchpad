@@ -48,7 +48,7 @@ class TestTranslationLinksAggregator(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestTranslationLinksAggregator, self).setUp()
+        super().setUp()
         self.aggregator = DumbAggregator()
 
     def test_circumscribe_single_pofile(self):

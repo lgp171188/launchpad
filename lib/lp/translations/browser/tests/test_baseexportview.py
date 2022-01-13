@@ -35,7 +35,7 @@ class BaseExportViewMixin(TestCaseWithFactory):
     def setUp(self):
         # Create a product with two series and a shared POTemplate
         # in different series ('devel' and 'stable').
-        super(BaseExportViewMixin, self).setUp()
+        super().setUp()
 
     def createTranslationTemplate(self, name, priority=0):
         """Attaches a template to appropriate container."""
@@ -142,7 +142,7 @@ class TestProductSeries(BaseExportViewMixin):
         return potemplate
 
     def setUp(self):
-        super(TestProductSeries, self).setUp()
+        super().setUp()
         self.container = self.factory.makeProductSeries()
         self.view = ProductSeriesTranslationsExportView(
             self.container, LaunchpadTestRequest())
@@ -159,7 +159,7 @@ class TestSourcePackage(BaseExportViewMixin):
         return potemplate
 
     def setUp(self):
-        super(TestSourcePackage, self).setUp()
+        super().setUp()
         self.container = self.factory.makeSourcePackage()
         self.view = SourcePackageTranslationsExportView(
             self.container, LaunchpadTestRequest())
@@ -170,7 +170,7 @@ class TestPOExportQueueStatusDescriptions(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestPOExportQueueStatusDescriptions, self).setUp()
+        super().setUp()
         self.container = self.factory.makeProductSeries()
         self.view = ProductSeriesTranslationsExportView(
             self.container, LaunchpadTestRequest())

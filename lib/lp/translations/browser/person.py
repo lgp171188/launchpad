@@ -204,7 +204,7 @@ class PersonTranslationView(LaunchpadView):
     reviews_to_show = 10
 
     def __init__(self, *args, **kwargs):
-        super(PersonTranslationView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         now = datetime.now(pytz.timezone('UTC'))
         # Down-to-the-second detail isn't important so the hope is that this
         # will result in faster queries (cache effects).

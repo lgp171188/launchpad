@@ -104,7 +104,7 @@ class TestTranslationGroupsBreadcrumbs(BaseBreadcrumbTestCase):
 class TestSeriesLanguageBreadcrumbs(BaseBreadcrumbTestCase):
 
     def setUp(self):
-        super(TestSeriesLanguageBreadcrumbs, self).setUp()
+        super().setUp()
         self.language = getUtility(ILanguageSet)['sr']
 
     def test_distroserieslanguage(self):
@@ -175,7 +175,7 @@ class TestPOTemplateBreadcrumbs(BaseBreadcrumbTestCase):
 class TestPOFileBreadcrumbs(BaseBreadcrumbTestCase):
 
     def setUp(self):
-        super(TestPOFileBreadcrumbs, self).setUp()
+        super().setUp()
 
     def test_pofiletranslate(self):
         product = self.factory.makeProduct(

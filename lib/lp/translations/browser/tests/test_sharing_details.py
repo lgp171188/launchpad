@@ -90,7 +90,7 @@ class TestSourcePackageTranslationSharingDetailsView(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSourcePackageTranslationSharingDetailsView, self).setUp()
+        super().setUp()
         distroseries = self.factory.makeUbuntuDistroSeries()
         self.sourcepackage = self.factory.makeSourcePackage(
             distroseries=distroseries)

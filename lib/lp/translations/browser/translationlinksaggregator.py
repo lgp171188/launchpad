@@ -5,8 +5,6 @@ __all__ = [
     'TranslationLinksAggregator',
     ]
 
-import six
-
 from lp.services.webapp import canonical_url
 from lp.translations.interfaces.pofile import IPOFile
 from lp.translations.model.productserieslanguage import ProductSeriesLanguage
@@ -177,10 +175,10 @@ class TranslationLinksAggregator:
             returns for the sensible chunks.
         """
         links = []
-        for target, sheets in six.iteritems(self._bundle(sheets)):
+        for target, sheets in self._bundle(sheets).items():
             assert sheets, "Translation target has no POFiles or templates."
             links_and_sheets = self._circumscribe(sheets)
-            for link, covered_sheets in six.iteritems(links_and_sheets):
+            for link, covered_sheets in links_and_sheets.items():
                 links.append(self.describe(target, link, covered_sheets))
 
         return links

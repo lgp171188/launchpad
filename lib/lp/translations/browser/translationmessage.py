@@ -21,7 +21,6 @@ import operator
 import re
 
 import pytz
-import six
 from six.moves.urllib.parse import (
     parse_qsl,
     urlencode,
@@ -95,11 +94,11 @@ def revert_unselected_translations(translations, current_message,
         original_translations = dict(enumerate(current_message.translations))
 
     output = {}
-    for plural_form, translation in six.iteritems(translations):
+    for plural_form, translation in translations.items():
         if plural_form in plural_indices_to_store:
             output[plural_form] = translation
         elif original_translations.get(plural_form) is None:
-            output[plural_form] = u''
+            output[plural_form] = ''
         else:
             output[plural_form] = original_translations[plural_form]
 
@@ -112,7 +111,7 @@ def contains_translations(translations):
     :param translations: a dict mapping plural forms to their respective
         translation strings.
     """
-    for text in six.itervalues(translations):
+    for text in translations.values():
         if text is not None and len(text) != 0:
             return True
     return False
@@ -219,8 +218,7 @@ class CurrentTranslationMessageIndexView(RedirectionView):
 
     def __init__(self, context, request):
         target = canonical_url(context, view_name='+translate')
-        super(CurrentTranslationMessageIndexView, self).__init__(
-            target, request)
+        super().__init__(target, request)
 
 
 def _getSuggestionFromFormId(form_id):
@@ -358,7 +356,7 @@ class BaseTranslationView(LaunchpadView):
         """
         try:
             return zope_datetime.parseDatetimetz(
-                self.request.form.get('lock_timestamp', u''))
+                self.request.form.get('lock_timestamp', ''))
         except zope_datetime.DateTimeError:
             # invalid format. Either we don't have the timestamp in the
             # submitted form or it has the wrong format.
@@ -439,7 +437,7 @@ class BaseTranslationView(LaunchpadView):
         try:
             self._storeTranslations(potmsgset)
         except GettextValidationError as e:
-            return six.text_type(e)
+            return str(e)
         except TranslationConflict:
             # The translations are demoted to suggestions, but they may
             # still affect the "messages with new suggestions" filter.
@@ -644,7 +642,7 @@ class BaseTranslationView(LaunchpadView):
                     editlanguages_url = canonical_url(
                         self.user, view_name="+editlanguages")
                     self.request.response.addInfoNotification(structured(
-                        u"Not showing suggestions from selected alternative "
+                        "Not showing suggestions from selected alternative "
                         "language %(alternative)s.  If you wish to see "
                         "suggestions from this language, "
                         '<a href="%(editlanguages_url)s">'
@@ -791,7 +789,7 @@ class BaseTranslationView(LaunchpadView):
                     else:
                         # Current translation is None, this code expects u''
                         # when there is no translation.
-                        value = u''
+                        value = ''
                 # Current user is an official translator and the radio button
                 # for 'New translation' is selected, so we are sure we want to
                 # store this submission.
@@ -1167,7 +1165,7 @@ class CurrentTranslationMessageView(LaunchpadView):
             if self.message_must_be_hidden:
                 # We must hide the translation because it may have private
                 # info that we don't want to show to anonymous users.
-                translation_entry['current_translation'] = u'''
+                translation_entry['current_translation'] = '''
                     To prevent privacy issues, this translation is not
                     available to anonymous users,<br />
                     if you want to see it, please, <a href="+login">log in</a>
@@ -1668,7 +1666,7 @@ def convert_translationmessage_to_submission(
     submission.legal_warning = legal_warning_needed and (
         message.origin == RosettaTranslationOrigin.SCM)
     submission.suggestion_html_id = (
-        current_message.potmsgset.makeHTMLID(u'%s_suggestion_%s_%s' % (
+        current_message.potmsgset.makeHTMLID('%s_suggestion_%s_%s' % (
             message.language.code, message.id,
             plural_form)))
     if other_side:
@@ -1679,14 +1677,13 @@ def convert_translationmessage_to_submission(
         submission.row_html_id = ''
         submission.origin_html_id = submission.suggestion_html_id + '_origin'
     submission.translation_html_id = (
-        current_message.makeHTMLID(
-            u'translation_%s' % (plural_form)))
+        current_message.makeHTMLID('translation_%s' % (plural_form)))
 
     suggestion_dismissable_class = message.potmsgset.makeHTMLID(
-        u'dismissable_button')
+        'dismissable_button')
     if submission.is_local_to_pofile:
-        suggestion_dismissable_class += u' ' + message.potmsgset.makeHTMLID(
-            u'dismissable')
+        suggestion_dismissable_class += ' ' + message.potmsgset.makeHTMLID(
+            'dismissable')
     submission.suggestion_dismissable_class = suggestion_dismissable_class
 
     return submission

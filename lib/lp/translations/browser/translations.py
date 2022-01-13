@@ -153,8 +153,7 @@ class TranslationsRedirectView(RedirectionView):
     def __init__(self, context, request):
         target = canonical_url(
             context, rootsite='translations', view_name='+translations')
-        super(TranslationsRedirectView, self).__init__(
-            target, request, status=301)
+        super().__init__(target, request, status=301)
 
 
 class TranslationsLanguageBreadcrumb(Breadcrumb):
