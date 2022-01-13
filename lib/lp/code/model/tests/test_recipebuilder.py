@@ -23,10 +23,10 @@ from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
 from lp.buildmaster.interfaces.processor import IProcessorSet
-from lp.buildmaster.tests.mock_slaves import (
+from lp.buildmaster.tests.mock_workers import (
     MockBuilder,
-    OkSlave,
-    WaitingSlave,
+    OkWorker,
+    WaitingWorker,
     )
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
@@ -127,7 +127,7 @@ class TestRecipeBuilder(TestRecipeBuilderBase):
         # valid builder set.
         job = self.makeJob()
         builder = MockBuilder("bob-de-bouwer")
-        job.setBuilder(builder, OkSlave())
+        job.setBuilder(builder, OkWorker())
         logger = BufferLogger()
         job.verifyBuildRequest(logger)
         self.assertEqual("", logger.getLogBuffer())
@@ -137,7 +137,7 @@ class TestRecipeBuilder(TestRecipeBuilderBase):
         job = self.makeJob()
         builder = MockBuilder('non-virtual builder')
         builder.virtualized = False
-        job.setBuilder(builder, OkSlave())
+        job.setBuilder(builder, OkWorker())
         logger = BufferLogger()
         e = self.assertRaises(AssertionError, job.verifyBuildRequest, logger)
         self.assertEqual(
@@ -148,7 +148,7 @@ class TestRecipeBuilder(TestRecipeBuilderBase):
         build = self.factory.makeSourcePackageRecipeBuild(
             pocket=PackagePublishingPocket.SECURITY)
         job = IBuildFarmJobBehaviour(build)
-        job.setBuilder(MockBuilder("bob-de-bouwer"), OkSlave())
+        job.setBuilder(MockBuilder("bob-de-bouwer"), OkWorker())
         e = self.assertRaises(
             AssertionError, job.verifyBuildRequest, BufferLogger())
         self.assertIn('invalid pocket due to the series status of', str(e))
@@ -413,9 +413,9 @@ class TestBuildNotifications(TestCaseWithFactory):
             config.push('tmp_builddmaster_root', tmp_builddmaster_root)
             self.addCleanup(config.pop, 'tmp_builddmaster_root')
         self.queue_record.builder = self.factory.makeBuilder()
-        slave = WaitingSlave('BuildStatus.OK')
+        worker = WaitingWorker('BuildStatus.OK')
         return BuilderInteractor.getBuildBehaviour(
-            self.queue_record, self.queue_record.builder, slave)
+            self.queue_record, self.queue_record.builder, worker)
 
     def assertDeferredNotifyCount(self, status, behaviour, expected_count):
         d = behaviour.handleStatus(self.queue_record, status, {'filemap': {}})

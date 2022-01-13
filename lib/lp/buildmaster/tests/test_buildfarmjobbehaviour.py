@@ -34,10 +34,10 @@ from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
     )
-from lp.buildmaster.tests.mock_slaves import (
+from lp.buildmaster.tests.mock_workers import (
     MockBuilder,
-    OkSlave,
-    WaitingSlave,
+    OkWorker,
+    WaitingWorker,
     )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
@@ -209,13 +209,13 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
     def test_dispatchBuildToSlave(self):
         behaviour = self.makeBehaviour(FakeDistroArchSeries())
         builder = MockBuilder()
-        slave = OkSlave()
+        worker = OkWorker()
         logger = BufferLogger()
-        behaviour.setBuilder(builder, slave)
+        behaviour.setBuilder(builder, worker)
         yield behaviour.dispatchBuildToSlave(logger)
 
         self.assertDispatched(
-            slave, logger, 'chroot-fooix-bar-y86.tar.gz', 'chroot')
+            worker, logger, 'chroot-fooix-bar-y86.tar.gz', 'chroot')
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_with_other_image_available(self):
@@ -225,13 +225,13 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
         das.images[BuildBaseImageType.LXD] = 'lxd-fooix-bar-y86.tar.gz'
         behaviour = self.makeBehaviour(das)
         builder = MockBuilder()
-        slave = OkSlave()
+        worker = OkWorker()
         logger = BufferLogger()
-        behaviour.setBuilder(builder, slave)
+        behaviour.setBuilder(builder, worker)
         yield behaviour.dispatchBuildToSlave(logger)
 
         self.assertDispatched(
-            slave, logger, 'chroot-fooix-bar-y86.tar.gz', 'chroot')
+            worker, logger, 'chroot-fooix-bar-y86.tar.gz', 'chroot')
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_lxd(self):
@@ -241,12 +241,13 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
         behaviour.image_types = [
             BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
         builder = MockBuilder()
-        slave = OkSlave()
+        worker = OkWorker()
         logger = BufferLogger()
-        behaviour.setBuilder(builder, slave)
+        behaviour.setBuilder(builder, worker)
         yield behaviour.dispatchBuildToSlave(logger)
 
-        self.assertDispatched(slave, logger, 'lxd-fooix-bar-y86.tar.gz', 'lxd')
+        self.assertDispatched(
+            worker, logger, 'lxd-fooix-bar-y86.tar.gz', 'lxd')
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_fallback(self):
@@ -254,22 +255,22 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
         behaviour.image_types = [
             BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
         builder = MockBuilder()
-        slave = OkSlave()
+        worker = OkWorker()
         logger = BufferLogger()
-        behaviour.setBuilder(builder, slave)
+        behaviour.setBuilder(builder, worker)
         yield behaviour.dispatchBuildToSlave(logger)
 
         self.assertDispatched(
-            slave, logger, 'chroot-fooix-bar-y86.tar.gz', 'chroot')
+            worker, logger, 'chroot-fooix-bar-y86.tar.gz', 'chroot')
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_stats(self):
         self.setUpStats()
         behaviour = self.makeBehaviour(FakeDistroArchSeries())
         builder = MockBuilder()
-        slave = OkSlave()
+        worker = OkWorker()
         logger = BufferLogger()
-        behaviour.setBuilder(builder, slave)
+        behaviour.setBuilder(builder, worker)
         yield behaviour.dispatchBuildToSlave(logger)
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
@@ -351,14 +352,14 @@ class TestHandleStatusMixin:
         self.factory = LaunchpadObjectFactory()
         self.build = self.makeBuild()
         # For the moment, we require a builder for the build so that
-        # handleStatus_OK can get a reference to the slave.
+        # handleStatus_OK can get a reference to the worker.
         self.builder = self.factory.makeBuilder()
         self.build.buildqueue_record.markAsBuilding(self.builder)
-        self.slave = WaitingSlave('BuildStatus.OK')
-        self.slave.valid_files['test_file_hash'] = ''
+        self.worker = WaitingWorker('BuildStatus.OK')
+        self.worker.valid_files['test_file_hash'] = ''
         self.interactor = BuilderInteractor()
         self.behaviour = self.interactor.getBuildBehaviour(
-            self.build.buildqueue_record, self.builder, self.slave)
+            self.build.buildqueue_record, self.builder, self.worker)
         self.addCleanup(shut_down_default_process_pool)
 
         # We overwrite the buildmaster root to use a temp directory.
@@ -385,7 +386,7 @@ class TestHandleStatusMixin:
     def test_handleStatus_OK_normal_file(self):
         # A filemap with plain filenames should not cause a problem.
         # The call to handleStatus will attempt to get the file from
-        # the slave resulting in a URL error in this test case.
+        # the worker resulting in a URL error in this test case.
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
                 self.build.buildqueue_record, 'OK',
@@ -467,7 +468,7 @@ class TestHandleStatusMixin:
     def test_handleStatus_ABORTED_illegal_when_building(self):
         self.builder.vm_host = "fake_vm_host"
         self.behaviour = self.interactor.getBuildBehaviour(
-            self.build.buildqueue_record, self.builder, self.slave)
+            self.build.buildqueue_record, self.builder, self.worker)
         with dbuser(config.builddmaster.dbuser):
             self.build.updateStatus(BuildStatus.BUILDING)
             with ExpectedException(

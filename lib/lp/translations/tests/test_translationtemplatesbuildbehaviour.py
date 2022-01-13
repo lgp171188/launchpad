@@ -18,9 +18,9 @@ from lp.buildmaster.interactor import BuilderInteractor
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
-from lp.buildmaster.tests.mock_slaves import (
-    SlaveTestHelpers,
-    WaitingSlave,
+from lp.buildmaster.tests.mock_workers import (
+    WaitingWorker,
+    WorkerTestHelpers,
     )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
@@ -59,13 +59,13 @@ class MakeBehaviourMixin(object):
     def makeBehaviour(self, branch=None, use_fake_chroot=True, **kwargs):
         """Create a TranslationTemplatesBuildBehaviour.
 
-        Anything that might communicate with build slaves and such
+        Anything that might communicate with build workers and such
         (which we can't really do here) is mocked up.
         """
         build = self.factory.makeTranslationTemplatesBuild(branch=branch)
         behaviour = IBuildFarmJobBehaviour(build)
-        slave = WaitingSlave(**kwargs)
-        behaviour.setBuilder(self.factory.makeBuilder(), slave)
+        worker = WaitingWorker(**kwargs)
+        behaviour.setBuilder(self.factory.makeBuilder(), worker)
         if use_fake_chroot:
             behaviour.distro_arch_series.addOrUpdateChroot(
                 self.factory.makeLibraryFileAlias(db_only=True))
@@ -91,7 +91,7 @@ class TestTranslationTemplatesBuildBehaviour(
 
     def setUp(self):
         super(TestTranslationTemplatesBuildBehaviour, self).setUp()
-        self.slave_helper = self.useFixture(SlaveTestHelpers())
+        self.worker_helper = self.useFixture(WorkerTestHelpers())
 
     def test_getLogFileName(self):
         # Each job has a unique log file name.

@@ -50,15 +50,15 @@ from lp.buildmaster.manager import (
     BaseBuilderFactory,
     PrefetchedBuilderFactory,
     )
-from lp.buildmaster.tests.mock_slaves import (
-    AbortingSlave,
-    BuildingSlave,
+from lp.buildmaster.tests.mock_workers import (
+    AbortingWorker,
+    BuildingWorker,
     DeadProxy,
-    LostBuildingBrokenSlave,
+    LostBuildingBrokenWorker,
     MockBuilder,
-    OkSlave,
-    SlaveTestHelpers,
-    WaitingSlave,
+    OkWorker,
+    WaitingWorker,
+    WorkerTestHelpers,
     )
 from lp.services.config import config
 from lp.services.twistedsupport.testing import TReqFixture
@@ -193,12 +193,12 @@ class TestBuilderInteractorCleanSlave(TestCase):
     run_tests_with = AsynchronousDeferredRunTest
 
     @defer.inlineCallbacks
-    def assertCleanCalls(self, builder, slave, calls, done):
+    def assertCleanCalls(self, builder, worker, calls, done):
         actually_done = yield BuilderInteractor.cleanSlave(
-            extract_vitals_from_db(builder), slave,
+            extract_vitals_from_db(builder), worker,
             MockBuilderFactory(builder, None))
         self.assertEqual(done, actually_done)
-        self.assertEqual(calls, slave.method_log)
+        self.assertEqual(calls, worker.method_log)
 
     @defer.inlineCallbacks
     def test_virtual_1_1(self):
@@ -208,7 +208,7 @@ class TestBuilderInteractorCleanSlave(TestCase):
             virtualized=True, clean_status=BuilderCleanStatus.DIRTY,
             vm_host='lol', vm_reset_protocol=BuilderResetProtocol.PROTO_1_1)
         yield self.assertCleanCalls(
-            builder, OkSlave(), ['resume', 'echo'], True)
+            builder, OkWorker(), ['resume', 'echo'], True)
 
     @defer.inlineCallbacks
     def test_virtual_2_0_dirty(self):
@@ -218,7 +218,7 @@ class TestBuilderInteractorCleanSlave(TestCase):
         builder = MockBuilder(
             virtualized=True, clean_status=BuilderCleanStatus.DIRTY,
             vm_host='lol', vm_reset_protocol=BuilderResetProtocol.PROTO_2_0)
-        yield self.assertCleanCalls(builder, OkSlave(), ['resume'], False)
+        yield self.assertCleanCalls(builder, OkWorker(), ['resume'], False)
         self.assertEqual(BuilderCleanStatus.CLEANING, builder.clean_status)
 
     @defer.inlineCallbacks
@@ -229,7 +229,7 @@ class TestBuilderInteractorCleanSlave(TestCase):
         builder = MockBuilder(
             virtualized=True, clean_status=BuilderCleanStatus.CLEANING,
             vm_host='lol', vm_reset_protocol=BuilderResetProtocol.PROTO_2_0)
-        yield self.assertCleanCalls(builder, OkSlave(), [], False)
+        yield self.assertCleanCalls(builder, OkWorker(), [], False)
         self.assertEqual(BuilderCleanStatus.CLEANING, builder.clean_status)
 
     @defer.inlineCallbacks
@@ -243,42 +243,42 @@ class TestBuilderInteractorCleanSlave(TestCase):
         with ExpectedException(
                 CannotResumeHost, "Invalid vm_reset_protocol: None"):
             yield BuilderInteractor.cleanSlave(
-                extract_vitals_from_db(builder), OkSlave(),
+                extract_vitals_from_db(builder), OkWorker(),
                 MockBuilderFactory(builder, None))
 
     @defer.inlineCallbacks
     def test_nonvirtual_idle(self):
-        # An IDLE non-virtual slave is already as clean as we can get it.
+        # An IDLE non-virtual worker is already as clean as we can get it.
         yield self.assertCleanCalls(
             MockBuilder(
                 virtualized=False, clean_status=BuilderCleanStatus.DIRTY),
-            OkSlave(), ['status'], True)
+            OkWorker(), ['status'], True)
 
     @defer.inlineCallbacks
     def test_nonvirtual_building(self):
-        # A BUILDING non-virtual slave needs to be aborted. It'll go
+        # A BUILDING non-virtual worker needs to be aborted. It'll go
         # through ABORTING and eventually be picked up from WAITING.
         yield self.assertCleanCalls(
             MockBuilder(
                 virtualized=False, clean_status=BuilderCleanStatus.DIRTY),
-            BuildingSlave(), ['status', 'abort'], False)
+            BuildingWorker(), ['status', 'abort'], False)
 
     @defer.inlineCallbacks
     def test_nonvirtual_aborting(self):
-        # An ABORTING non-virtual slave must be waited out. It should
+        # An ABORTING non-virtual worker must be waited out. It should
         # hit WAITING eventually.
         yield self.assertCleanCalls(
             MockBuilder(
                 virtualized=False, clean_status=BuilderCleanStatus.DIRTY),
-            AbortingSlave(), ['status'], False)
+            AbortingWorker(), ['status'], False)
 
     @defer.inlineCallbacks
     def test_nonvirtual_waiting(self):
-        # A WAITING non-virtual slave just needs clean() called.
+        # A WAITING non-virtual worker just needs clean() called.
         yield self.assertCleanCalls(
             MockBuilder(
                 virtualized=False, clean_status=BuilderCleanStatus.DIRTY),
-            WaitingSlave(), ['status', 'clean'], True)
+            WaitingWorker(), ['status', 'clean'], True)
 
     @defer.inlineCallbacks
     def test_nonvirtual_broken(self):
@@ -287,12 +287,12 @@ class TestBuilderInteractorCleanSlave(TestCase):
         builder = MockBuilder(
             virtualized=False, clean_status=BuilderCleanStatus.DIRTY)
         vitals = extract_vitals_from_db(builder)
-        slave = LostBuildingBrokenSlave()
+        worker = LostBuildingBrokenWorker()
         try:
             yield BuilderInteractor.cleanSlave(
-                vitals, slave, MockBuilderFactory(builder, None))
+                vitals, worker, MockBuilderFactory(builder, None))
         except xmlrpc.client.Fault:
-            self.assertEqual(['status', 'abort'], slave.call_log)
+            self.assertEqual(['status', 'abort'], worker.call_log)
         else:
             self.fail("abort() should crash.")
 
@@ -304,10 +304,10 @@ class TestBuilderSlaveStatus(TestCase):
     run_tests_with = AsynchronousDeferredRunTest
 
     @defer.inlineCallbacks
-    def assertStatus(self, slave, builder_status=None, build_status=None,
+    def assertStatus(self, worker, builder_status=None, build_status=None,
                      build_id=False, logtail=False, filemap=None,
                      dependencies=None):
-        status = yield slave.status()
+        status = yield worker.status()
 
         expected = {}
         if builder_status is not None:
@@ -329,22 +329,22 @@ class TestBuilderSlaveStatus(TestCase):
 
         self.assertEqual(expected, status)
 
-    def test_status_idle_slave(self):
-        self.assertStatus(OkSlave(), builder_status='BuilderStatus.IDLE')
+    def test_status_idle_worker(self):
+        self.assertStatus(OkWorker(), builder_status='BuilderStatus.IDLE')
 
-    def test_status_building_slave(self):
+    def test_status_building_worker(self):
         self.assertStatus(
-            BuildingSlave(), builder_status='BuilderStatus.BUILDING',
+            BuildingWorker(), builder_status='BuilderStatus.BUILDING',
             build_id=True, logtail=True)
 
-    def test_status_waiting_slave(self):
+    def test_status_waiting_worker(self):
         self.assertStatus(
-            WaitingSlave(), builder_status='BuilderStatus.WAITING',
+            WaitingWorker(), builder_status='BuilderStatus.WAITING',
             build_status='BuildStatus.OK', build_id=True, filemap={})
 
-    def test_status_aborting_slave(self):
+    def test_status_aborting_worker(self):
         self.assertStatus(
-            AbortingSlave(), builder_status='BuilderStatus.ABORTING',
+            AbortingWorker(), builder_status='BuilderStatus.ABORTING',
             build_id=True)
 
 
@@ -365,21 +365,21 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         # Set the builder attribute on the buildqueue record so that our
         # builder will think it has a current build.
         builder = self.factory.makeBuilder(name='builder')
-        slave = BuildingSlave()
+        worker = BuildingWorker()
         build = self.factory.makeBinaryPackageBuild()
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
-        behaviour = BuilderInteractor.getBuildBehaviour(bq, builder, slave)
+        behaviour = BuilderInteractor.getBuildBehaviour(bq, builder, worker)
         self.assertIsInstance(behaviour, BinaryPackageBuildBehaviour)
         self.assertEqual(behaviour._builder, builder)
-        self.assertEqual(behaviour._slave, slave)
+        self.assertEqual(behaviour._slave, worker)
 
     def _setupBuilder(self):
         processor = self.factory.makeProcessor(name="i386")
         builder = self.factory.makeBuilder(
             processors=[processor], virtualized=True, vm_host="bladh")
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkSlave()))
+        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkWorker()))
         distroseries = self.factory.makeDistroSeries()
         das = self.factory.makeDistroArchSeries(
             distroseries=distroseries, architecturetag="i386",
@@ -416,7 +416,7 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         builder_factory.findBuildCandidate = FakeMethod(result=candidate)
         vitals = extract_vitals_from_db(builder)
         d = BuilderInteractor.findAndStartJob(
-            vitals, builder, OkSlave(), builder_factory)
+            vitals, builder, OkWorker(), builder_factory)
         return d.addCallback(self.assertEqual, candidate)
 
     @defer.inlineCallbacks
@@ -443,7 +443,7 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         # Starting a job selects a non-superseded candidate, and supersedes
         # the candidates that have superseded source packages.
         candidate = yield BuilderInteractor.findAndStartJob(
-            vitals, builder, OkSlave(), builder_factory)
+            vitals, builder, OkWorker(), builder_factory)
         self.assertEqual(candidates[2], candidate)
         self.assertEqual(
             [BuildStatus.SUPERSEDED, BuildStatus.SUPERSEDED,
@@ -460,7 +460,7 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         builder_factory.findBuildCandidate = FakeMethod(result=candidate)
         vitals = extract_vitals_from_db(builder)
         d = BuilderInteractor.findAndStartJob(
-            vitals, builder, OkSlave(), builder_factory)
+            vitals, builder, OkWorker(), builder_factory)
 
         def check_build_started(candidate):
             self.assertEqual(candidate.builder, builder)
@@ -481,7 +481,7 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
                 BuildDaemonIsolationError,
                 "Attempted to start build on a dirty slave."):
             yield BuilderInteractor.findAndStartJob(
-                vitals, builder, OkSlave(), builder_factory)
+                vitals, builder, OkWorker(), builder_factory)
 
     @defer.inlineCallbacks
     def test_findAndStartJob_dirties_slave(self):
@@ -492,31 +492,31 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         builder_factory.findBuildCandidate = FakeMethod(result=candidate)
         vitals = extract_vitals_from_db(builder)
         yield BuilderInteractor.findAndStartJob(
-            vitals, builder, OkSlave(), builder_factory)
+            vitals, builder, OkWorker(), builder_factory)
         self.assertEqual(BuilderCleanStatus.DIRTY, builder.clean_status)
 
 
-class TestSlave(TestCase):
+class TestWorker(TestCase):
     """
     Integration tests for BuilderSlave that verify how it works against a
-    real slave server.
+    real worker server.
     """
 
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
         super().setUp()
-        self.slave_helper = self.useFixture(SlaveTestHelpers())
+        self.worker_helper = self.useFixture(WorkerTestHelpers())
         self.addCleanup(shut_down_default_process_pool)
 
     @defer.inlineCallbacks
     def test_abort(self):
-        slave = self.slave_helper.getClientSlave()
+        worker = self.worker_helper.getClientWorker()
         # We need to be in a BUILDING state before we can abort.
         build_id = 'some-id'
-        response = yield self.slave_helper.triggerGoodBuild(slave, build_id)
+        response = yield self.worker_helper.triggerGoodBuild(worker, build_id)
         self.assertEqual([BuilderStatus.BUILDING, build_id], response)
-        response = yield slave.abort()
+        response = yield worker.abort()
         self.assertEqual(BuilderStatus.ABORTING, response)
 
     @defer.inlineCallbacks
@@ -525,36 +525,36 @@ class TestSlave(TestCase):
         # valid chroot & filemaps works and returns a BuilderStatus of
         # BUILDING.
         build_id = 'some-id'
-        slave = self.slave_helper.getClientSlave()
-        response = yield self.slave_helper.triggerGoodBuild(slave, build_id)
+        worker = self.worker_helper.getClientWorker()
+        response = yield self.worker_helper.triggerGoodBuild(worker, build_id)
         self.assertEqual([BuilderStatus.BUILDING, build_id], response)
 
     def test_clean(self):
-        slave = self.slave_helper.getClientSlave()
-        # XXX: JonathanLange 2010-09-21: Calling clean() on the slave requires
+        worker = self.worker_helper.getClientWorker()
+        # XXX: JonathanLange 2010-09-21: Calling clean() on the worker requires
         # it to be in either the WAITING or ABORTED states, and both of these
         # states are very difficult to achieve in a test environment. For the
         # time being, we'll just assert that a clean attribute exists.
-        self.assertNotEqual(getattr(slave, 'clean', None), None)
+        self.assertNotEqual(getattr(worker, 'clean', None), None)
 
     @defer.inlineCallbacks
     def test_echo(self):
         # Calling 'echo' contacts the server which returns the arguments we
         # gave it.
-        self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave()
-        response = yield slave.echo('foo', 'bar', 42)
+        self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
+        response = yield worker.echo('foo', 'bar', 42)
         self.assertEqual(['foo', 'bar', 42], response)
 
     @defer.inlineCallbacks
     def test_info(self):
-        # Calling 'info' gets some information about the slave.
-        self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave()
-        info = yield slave.info()
+        # Calling 'info' gets some information about the worker.
+        self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
+        info = yield worker.info()
         # We're testing the hard-coded values, since the version is hard-coded
-        # into the remote slave, the supported build managers are hard-coded
-        # into the tac file for the remote slave and config is returned from
+        # into the remote worker, the supported build managers are hard-coded
+        # into the tac file for the remote worker and config is returned from
         # the configuration file.
         self.assertEqual(3, len(info))
         self.assertEqual(['1.0', 'i386'], info[:2])
@@ -566,22 +566,22 @@ class TestSlave(TestCase):
 
     @defer.inlineCallbacks
     def test_initial_status(self):
-        # Calling 'status' returns the current status of the slave. The
+        # Calling 'status' returns the current status of the worker. The
         # initial status is IDLE.
-        self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave()
-        status = yield slave.status()
+        self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
+        status = yield worker.status()
         self.assertEqual(BuilderStatus.IDLE, status['builder_status'])
 
     @defer.inlineCallbacks
     def test_status_after_build(self):
-        # Calling 'status' returns the current status of the slave.  After a
+        # Calling 'status' returns the current status of the worker.  After a
         # build has been triggered, the status is BUILDING.
-        slave = self.slave_helper.getClientSlave()
+        worker = self.worker_helper.getClientWorker()
         build_id = 'status-build-id'
-        response = yield self.slave_helper.triggerGoodBuild(slave, build_id)
+        response = yield self.worker_helper.triggerGoodBuild(worker, build_id)
         self.assertEqual([BuilderStatus.BUILDING, build_id], response)
-        status = yield slave.status()
+        status = yield worker.status()
         self.assertEqual(BuilderStatus.BUILDING, status['builder_status'])
         self.assertEqual(build_id, status['build_id'])
         self.assertIsInstance(status['logtail'], xmlrpc.client.Binary)
@@ -589,58 +589,58 @@ class TestSlave(TestCase):
     @defer.inlineCallbacks
     def test_ensurepresent_not_there(self):
         # ensurepresent checks to see if a file is there.
-        self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave()
-        response = yield slave.ensurepresent('blahblah', None, None, None)
+        self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
+        response = yield worker.ensurepresent('blahblah', None, None, None)
         self.assertEqual([False, 'No URL'], response)
 
     @defer.inlineCallbacks
     def test_ensurepresent_actually_there(self):
         # ensurepresent checks to see if a file is there.
-        tachandler = self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave()
-        self.slave_helper.makeCacheFile(tachandler, 'blahblah')
-        response = yield slave.ensurepresent('blahblah', None, None, None)
+        tachandler = self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
+        self.worker_helper.makeCacheFile(tachandler, 'blahblah')
+        response = yield worker.ensurepresent('blahblah', None, None, None)
         self.assertEqual([True, 'No URL'], response)
 
     def test_sendFileToSlave_not_there(self):
-        self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave()
-        d = slave.sendFileToSlave('blahblah', None, None, None)
+        self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
+        d = worker.sendFileToSlave('blahblah', None, None, None)
         return assert_fails_with(d, CannotFetchFile)
 
     @defer.inlineCallbacks
     def test_sendFileToSlave_actually_there(self):
-        tachandler = self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave()
-        self.slave_helper.makeCacheFile(tachandler, 'blahblah')
-        yield slave.sendFileToSlave('blahblah', None, None, None)
-        response = yield slave.ensurepresent('blahblah', None, None, None)
+        tachandler = self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
+        self.worker_helper.makeCacheFile(tachandler, 'blahblah')
+        yield worker.sendFileToSlave('blahblah', None, None, None)
+        response = yield worker.ensurepresent('blahblah', None, None, None)
         self.assertEqual([True, 'No URL'], response)
 
     @defer.inlineCallbacks
     def test_resumeHost_success(self):
         # On a successful resume resume() fires the returned deferred
         # callback with (stdout, stderr, subprocess exit code).
-        self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave()
+        self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
 
         # The configuration testing command-line.
         self.assertEqual(
             'echo %(vm_host)s', config.builddmaster.vm_resume_command)
 
-        out, err, code = yield slave.resume()
+        out, err, code = yield worker.resume()
         self.assertEqual(os.EX_OK, code)
         # XXX: JonathanLange 2010-09-23: We should instead pass the
-        # expected vm_host into the client slave. Not doing this now,
-        # since the SlaveHelper is being moved around.
-        self.assertEqual("%s\n" % slave._vm_host, six.ensure_str(out))
+        # expected vm_host into the client worker. Not doing this now,
+        # since the WorkerHelper is being moved around.
+        self.assertEqual("%s\n" % worker._vm_host, six.ensure_str(out))
 
     def test_resumeHost_failure(self):
         # On a failed resume, 'resumeHost' fires the returned deferred
         # errorback with the `ProcessTerminated` failure.
-        self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave()
+        self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
 
         # Override the configuration command-line with one that will fail.
         failed_config = """
@@ -656,7 +656,7 @@ class TestSlave(TestCase):
             out, err, code = failure.value
             # The process will exit with a return code of "1".
             self.assertEqual(code, 1)
-        d = slave.resume()
+        d = worker.resume()
         d.addBoth(check_resume_failure)
         return d
 
@@ -673,8 +673,8 @@ class TestSlave(TestCase):
         config.push('timeout_resume_command', timeout_config)
         self.addCleanup(config.pop, 'timeout_resume_command')
 
-        self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave()
+        self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
 
         # On timeouts, the response is a twisted `Failure` object containing
         # a `TimeoutError` error.
@@ -683,7 +683,7 @@ class TestSlave(TestCase):
             out, err, code = failure.value
             self.assertEqual(code, signal.SIGKILL)
         clock = Clock()
-        d = slave.resume(clock=clock)
+        d = worker.resume(clock=clock)
         # Move the clock beyond the socket_timeout but earlier than the
         # sleep 5.  This stops the test having to wait for the timeout.
         # Fast tests FTW!
@@ -692,7 +692,7 @@ class TestSlave(TestCase):
         return d
 
 
-class TestSlaveTimeouts(TestCase):
+class TestWorkerTimeouts(TestCase):
     # Testing that the methods that call callRemote() all time out
     # as required.
 
@@ -701,10 +701,10 @@ class TestSlaveTimeouts(TestCase):
 
     def setUp(self):
         super().setUp()
-        self.slave_helper = self.useFixture(SlaveTestHelpers())
+        self.worker_helper = self.useFixture(WorkerTestHelpers())
         self.clock = Clock()
         self.proxy = DeadProxy(b"url")
-        self.slave = self.slave_helper.getClientSlave(
+        self.worker = self.worker_helper.getClientWorker(
             reactor=self.clock, proxy=self.proxy)
         self.addCleanup(shut_down_default_process_pool)
 
@@ -713,31 +713,31 @@ class TestSlaveTimeouts(TestCase):
         return assert_fails_with(d, defer.CancelledError)
 
     def test_timeout_abort(self):
-        return self.assertCancelled(self.slave.abort())
+        return self.assertCancelled(self.worker.abort())
 
     def test_timeout_clean(self):
-        return self.assertCancelled(self.slave.clean())
+        return self.assertCancelled(self.worker.clean())
 
     def test_timeout_echo(self):
-        return self.assertCancelled(self.slave.echo())
+        return self.assertCancelled(self.worker.echo())
 
     def test_timeout_info(self):
-        return self.assertCancelled(self.slave.info())
+        return self.assertCancelled(self.worker.info())
 
     def test_timeout_status(self):
-        return self.assertCancelled(self.slave.status())
+        return self.assertCancelled(self.worker.status())
 
     def test_timeout_ensurepresent(self):
         return self.assertCancelled(
-            self.slave.ensurepresent(None, None, None, None),
+            self.worker.ensurepresent(None, None, None, None),
             config.builddmaster.socket_timeout * 5)
 
     def test_timeout_build(self):
         return self.assertCancelled(
-            self.slave.build(None, None, None, None, None))
+            self.worker.build(None, None, None, None, None))
 
 
-class TestSlaveConnectionTimeouts(TestCase):
+class TestWorkerConnectionTimeouts(TestCase):
     # Testing that we can override the default 30 second connection
     # timeout.
 
@@ -748,7 +748,7 @@ class TestSlaveConnectionTimeouts(TestCase):
 
     def setUp(self):
         super().setUp()
-        self.slave_helper = self.useFixture(SlaveTestHelpers())
+        self.worker_helper = self.useFixture(WorkerTestHelpers())
         self.clock = Clock()
         self.addCleanup(shut_down_default_process_pool)
 
@@ -757,8 +757,8 @@ class TestSlaveConnectionTimeouts(TestCase):
         # only the config value should.
         self.pushConfig('builddmaster', socket_timeout=180)
 
-        slave = self.slave_helper.getClientSlave(reactor=self.clock)
-        d = slave.echo()
+        worker = self.worker_helper.getClientWorker(reactor=self.clock)
+        d = worker.echo()
         # Advance past the 30 second timeout.  The real reactor will
         # never call connectTCP() since we're not spinning it up.  This
         # avoids "connection refused" errors and simulates an
@@ -771,7 +771,7 @@ class TestSlaveConnectionTimeouts(TestCase):
         return assert_fails_with(d, defer.CancelledError)
 
 
-class TestSlaveWithLibrarian(TestCaseWithFactory):
+class TestWorkerWithLibrarian(TestCaseWithFactory):
     """Tests that need more of Launchpad to run."""
 
     layer = LaunchpadZopelessLayer
@@ -780,7 +780,7 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.slave_helper = self.useFixture(SlaveTestHelpers())
+        self.worker_helper = self.useFixture(WorkerTestHelpers())
         self.addCleanup(shut_down_default_process_pool)
 
     def test_ensurepresent_librarian(self):
@@ -792,15 +792,15 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
         lf = self.factory.makeLibraryFileAlias(
             'HelloWorld.txt', content="Hello World")
         self.layer.txn.commit()
-        self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave()
-        d = slave.ensurepresent(lf.content.sha1, lf.http_url, "", "")
+        self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
+        d = worker.ensurepresent(lf.content.sha1, lf.http_url, "", "")
         d.addCallback(self.assertEqual, [True, 'Download'])
         return d
 
     @defer.inlineCallbacks
     def test_retrieve_files_from_filecache(self):
-        # Files that are present on the slave can be downloaded with a
+        # Files that are present on the worker can be downloaded with a
         # filename made from the sha1 of the content underneath the
         # 'filecache' directory.
         from twisted.internet import reactor
@@ -809,10 +809,10 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
             'HelloWorld.txt', content=content)
         self.layer.txn.commit()
         expected_url = '%s/filecache/%s' % (
-            self.slave_helper.base_url, lf.content.sha1)
-        self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave()
-        yield slave.ensurepresent(lf.content.sha1, lf.http_url, "", "")
+            self.worker_helper.base_url, lf.content.sha1)
+        self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
+        yield worker.ensurepresent(lf.content.sha1, lf.http_url, "", "")
         client = self.useFixture(TReqFixture(reactor)).client
         response = yield client.get(expected_url).addCallback(check_status)
         got_content = yield treq.content(response)
@@ -824,8 +824,8 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
         # separately because it increases test run time and it's going
         # away at some point anyway, in favour of getFiles().
         contents = ["content1", "content2", "content3"]
-        self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave()
+        self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
         files = []
         content_map = {}
 
@@ -837,7 +837,7 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
                     self.assertEqual(content_map[sha1], f.read())
 
         def finished_uploading(ignored):
-            d = slave.getFiles(files)
+            d = worker.getFiles(files)
             return d.addCallback(got_files)
 
         # Set up some files on the builder and store details in
@@ -854,7 +854,7 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
             files.append((lf.content.sha1, tempfile.mkstemp()[1]))
             self.addCleanup(os.remove, files[-1][1])
             self.layer.txn.commit()
-            d = slave.ensurepresent(lf.content.sha1, lf.http_url, "", "")
+            d = worker.ensurepresent(lf.content.sha1, lf.http_url, "", "")
             dl.append(d)
 
         return defer.DeferredList(dl).addCallback(finished_uploading)
@@ -863,11 +863,11 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
         # getFiles honours the configured limit on active download
         # connections.
         contents = [self.factory.getUniqueString() for _ in range(10)]
-        self.slave_helper.getServerSlave()
+        self.worker_helper.getServerWorker()
         process_pool = make_download_process_pool(min=1, max=2)
         process_pool.start()
         self.addCleanup(process_pool.stop)
-        slave = self.slave_helper.getClientSlave(process_pool=process_pool)
+        worker = self.worker_helper.getClientWorker(process_pool=process_pool)
         files = []
         content_map = {}
 
@@ -881,7 +881,7 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
             self.assertEqual(2, len(process_pool.processes))
 
         def finished_uploading(ignored):
-            d = slave.getFiles(files)
+            d = worker.getFiles(files)
             return d.addCallback(got_files)
 
         # Set up some files on the builder and store details in
@@ -894,7 +894,7 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
             files.append((lf.content.sha1, tempfile.mkstemp()[1]))
             self.addCleanup(os.remove, files[-1][1])
             self.layer.txn.commit()
-            d = slave.ensurepresent(lf.content.sha1, lf.http_url, "", "")
+            d = worker.ensurepresent(lf.content.sha1, lf.http_url, "", "")
             dl.append(d)
 
         return defer.DeferredList(dl).addCallback(finished_uploading)
@@ -902,12 +902,12 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
     @defer.inlineCallbacks
     def test_getFiles_with_empty_file(self):
         # getFiles works with zero-length files.
-        tachandler = self.slave_helper.getServerSlave()
-        slave = self.slave_helper.getClientSlave()
+        tachandler = self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
         temp_fd, temp_name = tempfile.mkstemp()
         self.addCleanup(os.remove, temp_name)
         empty_sha1 = hashlib.sha1(b'').hexdigest()
-        self.slave_helper.makeCacheFile(tachandler, empty_sha1, contents=b'')
-        yield slave.getFiles([(empty_sha1, temp_name)])
+        self.worker_helper.makeCacheFile(tachandler, empty_sha1, contents=b'')
+        yield worker.getFiles([(empty_sha1, temp_name)])
         with open(temp_name, 'rb') as f:
             self.assertEqual(b'', f.read())
