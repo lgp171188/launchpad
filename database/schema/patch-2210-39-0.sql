@@ -26,7 +26,7 @@ CREATE TRIGGER karmacache_sync_id_t
 
 /*
 -- STEP 2, HOT
--- Backfill KarmaCache._id, but do so in small batches.
+-- Backfill KarmaCache._id.
 UPDATE KarmaCache SET _id=id WHERE _id IS NULL;
 
 
