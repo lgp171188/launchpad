@@ -4,7 +4,8 @@
 SET client_min_messages=ERROR;
 
 ALTER TABLE Bug
-    ADD COLUMN lock_status INTEGER;
+    ADD COLUMN lock_status integer,
+    ADD COLUMN lock_reason text;
 
 -- ALTER COLUMN ... SET DEFAULT doesn't trigger a table rewrite,
 -- while ADD COLUMN ... DEFAULT xx does. In pg <11 this operation is slow.
@@ -17,5 +18,7 @@ ALTER TABLE Bug
     SET DEFAULT 0;
 
 COMMENT ON COLUMN Bug.lock_status IS 'The current lock status of this bug.';
+
+COMMENT ON COLUMN Bug.lock_reason IS 'The reason for locking this bug.';
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 38, 0);
