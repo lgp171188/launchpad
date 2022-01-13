@@ -49,7 +49,7 @@ class TestCurrentTranslationMessage_can_dismiss(TestCaseWithFactory):
             now += timedelta(milliseconds=1)
 
     def setUp(self):
-        super(TestCurrentTranslationMessage_can_dismiss, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson()
         self.potemplate = self.factory.makePOTemplate(owner=self.owner)
         self.pofile = self.factory.makePOFile(potemplate=self.potemplate)
@@ -155,7 +155,7 @@ class TestCurrentTranslationMessage_can_dismiss(TestCaseWithFactory):
         # in yet a different place.
         self.potmsgset = self.factory.makePOTMsgSet(
             self.potemplate,
-            singular=u"msgid_singular", plural=u"msgid_plural")
+            singular="msgid_singular", plural="msgid_plural")
         message = self._makeTranslation(["singular_trans", "plural_trans"])
         self._makeTranslation(
             ["singular_sugg", "plural_sugg"], suggestion=True)
@@ -182,7 +182,7 @@ class TestCurrentTranslationMessage_can_dismiss(TestCaseWithFactory):
         # in yet a different place.
         self.potmsgset = self.factory.makePOTMsgSet(
             self.potemplate,
-            singular=u"msgid_singular", plural=u"msgid_plural")
+            singular="msgid_singular", plural="msgid_plural")
         message = self._makeTranslation(["singular_trans", "plural_trans"])
         self._makeTranslation(["singular_new", "plural_new"], is_other=True)
         self._createView(message)
@@ -218,7 +218,7 @@ class TestResetTranslations(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestResetTranslations, self).setUp()
+        super().setUp()
         package = self.factory.makeSourcePackage()
         template = self.factory.makePOTemplate(
             distroseries=package.distroseries,
@@ -246,7 +246,7 @@ class TestResetTranslations(TestCaseWithFactory):
 
     def submitForcedEmptySuggestion(self):
         """Submit an empty suggestion for `self.current_translation`."""
-        empty_translation = u''
+        empty_translation = ''
 
         msgset_id = 'msgset_' + str(self.current_translation.potmsgset.id)
         msgset_id_lang = msgset_id + '_' + self.pofile.language.code
@@ -310,13 +310,13 @@ class TestCurrentTranslationMessagePageView(TestCaseWithFactory):
         form = {}
         if with_form:
             msgset_id_field = 'msgset_%d' % potmsgset.id
-            form[msgset_id_field] = u'poit'
+            form[msgset_id_field] = 'poit'
             base_field_name = 'msgset_%d_%s_translation_' % (
                 message.potmsgset.id, pofile.language.code)
             # Add the expected plural forms fields.
             for plural_form in range(TranslationConstants.MAX_PLURAL_FORMS):
                 field_name = '%s%d_new' % (base_field_name, plural_form)
-                form[field_name] = u'snarf'
+                form[field_name] = 'snarf'
         url = '/%s/%s/%s/+translate' % (
             canonical_url(potemplate), pofile.language.code, 1)
         request = LaunchpadTestRequest(SERVER_URL=url, form=form)
@@ -326,7 +326,7 @@ class TestCurrentTranslationMessagePageView(TestCaseWithFactory):
 
     def test_extractLockTimestamp(self):
         view = self._makeView()
-        view.request.form['lock_timestamp'] = u'2010-01-01 00:00:00 UTC'
+        view.request.form['lock_timestamp'] = '2010-01-01 00:00:00 UTC'
         self.assertEqual(
             datetime(2010, 1, 1, tzinfo=pytz.utc),
             view._extractLockTimestamp())
@@ -337,7 +337,7 @@ class TestCurrentTranslationMessagePageView(TestCaseWithFactory):
 
     def test_extractLockTimestamp_returns_None_for_bogus_timestamp(self):
         view = self._makeView()
-        view.request.form['lock_timestamp'] = u'Hi mom!'
+        view.request.form['lock_timestamp'] = 'Hi mom!'
         self.assertIs(None, view._extractLockTimestamp())
 
     def test_checkSubmitConditions_passes(self):
@@ -383,7 +383,7 @@ class TestCurrentTranslationMessagePageView(TestCaseWithFactory):
         field_name = 'msgset_%d_%s_translation_%d_new' % (
             view.context.potmsgset.id, view.pofile.language.code,
             TranslationConstants.MAX_PLURAL_FORMS)
-        view.request.form[field_name] = u'snarf'
+        view.request.form[field_name] = 'snarf'
         self.assertRaises(AssertionError,
             view._extractFormPostedTranslations, view.context.potmsgset)
 
@@ -401,7 +401,7 @@ class TestHelpers(TestCaseWithFactory):
                 contains_translations({plural_form: self.getUniqueString()}))
 
     def test_contains_translations_ignores_empty_strings(self):
-        self.assertFalse(contains_translations({0: u''}))
+        self.assertFalse(contains_translations({0: ''}))
 
     def test_contains_translations_ignores_nones(self):
         self.assertFalse(contains_translations({0: None}))
@@ -436,7 +436,7 @@ class TestHelpers(TestCaseWithFactory):
             translations, None, [0])
         self.assertEqual(translations[0], resulting_translations[0])
         self.assertNotEqual(translations[1], resulting_translations[1])
-        self.assertEqual(u'', resulting_translations[1])
+        self.assertEqual('', resulting_translations[1])
 
     def test_revert_unselected_translations_ignores_untranslated_form(self):
         translations = {0: self.getUniqueString()}
@@ -461,7 +461,7 @@ class TestHelpers(TestCaseWithFactory):
         # plural_indices_to_store is set to the empty string.
         translations = {0: self.getUniqueString()}
         self.assertEqual(
-            {0: u''}, revert_unselected_translations(translations, None, []))
+            {0: ''}, revert_unselected_translations(translations, None, []))
 
     def test_revert_unselected_translations_handles_missing_plurals(self):
         # When reverting based on a current message that does not
@@ -472,7 +472,7 @@ class TestHelpers(TestCaseWithFactory):
         current_message = self.factory.makeCurrentTranslationMessage(
             translations=original_translations)
         self.assertEqual(
-            {1: u''},
+            {1: ''},
             revert_unselected_translations(
                 new_translations, current_message, []))
 

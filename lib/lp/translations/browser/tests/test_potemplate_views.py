@@ -29,13 +29,11 @@ class TestPOTemplateEditViewValidation(WithScenarios, TestCaseWithFactory):
 
     scenarios = [
         ("spn_picker", {"features": {}}),
-        ("dsp_picker", {
-            "features": {u"disclosure.dsp_picker.enabled": u"on"},
-            }),
+        ("dsp_picker", {"features": {"disclosure.dsp_picker.enabled": "on"}}),
         ]
 
     def setUp(self):
-        super(TestPOTemplateEditViewValidation, self).setUp()
+        super().setUp()
         if self.features:
             self.useFixture(FeatureFixture(self.features))
 
@@ -84,9 +82,9 @@ class TestPOTemplateEditViewValidation(WithScenarios, TestCaseWithFactory):
         view.validate(data)
         self.assertEqual(
             [html_escape(
-                u'Template name can only start with lowercase letters a-z '
-                u'or digits 0-9, and other than those characters, can only '
-                u'contain "-", "+" and "." characters.')],
+                'Template name can only start with lowercase letters a-z '
+                'or digits 0-9, and other than those characters, can only '
+                'contain "-", "+" and "." characters.')],
             view.errors)
 
     def test_detects_name_clash_on_name_change(self):
@@ -99,7 +97,7 @@ class TestPOTemplateEditViewValidation(WithScenarios, TestCaseWithFactory):
         view = POTemplateEditView(potemplate, LaunchpadTestRequest())
         data = self._makeData(potemplate, name=existing_name)
         view.validate(data)
-        self.assertEqual([u'Name is already in use.'], view.errors)
+        self.assertEqual(['Name is already in use.'], view.errors)
 
     def test_detects_domain_clash_on_domain_change(self):
         # A translation domain may not already be used.
@@ -112,7 +110,7 @@ class TestPOTemplateEditViewValidation(WithScenarios, TestCaseWithFactory):
         view = POTemplateEditView(potemplate, LaunchpadTestRequest())
         data = self._makeData(potemplate, translation_domain=existing_domain)
         view.validate(data)
-        self.assertEqual([u'Domain is already in use.'], view.errors)
+        self.assertEqual(['Domain is already in use.'], view.errors)
 
     def test_detects_name_clash_on_sourcepackage_change(self):
         # Detect changing to a source package that already has a template of
@@ -129,7 +127,7 @@ class TestPOTemplateEditViewValidation(WithScenarios, TestCaseWithFactory):
             potemplate, sourcepackagename=sourcepackage.sourcepackagename)
         view.validate(data)
         self.assertEqual(
-            [u'Source package already has a template with that same name.'],
+            ['Source package already has a template with that same name.'],
             view.errors)
 
     def test_detects_domain_clash_on_sourcepackage_change(self):
@@ -147,7 +145,7 @@ class TestPOTemplateEditViewValidation(WithScenarios, TestCaseWithFactory):
             potemplate, sourcepackagename=sourcepackage.sourcepackagename)
         view.validate(data)
         self.assertEqual(
-            [u'Source package already has a template with that same domain.'],
+            ['Source package already has a template with that same domain.'],
             view.errors)
 
     def test_change_sourcepackage(self):
@@ -182,7 +180,7 @@ class TestPOTemplateAdminViewValidation(TestPOTemplateEditViewValidation):
         data = self._makeData(potemplate, productseries=new_series)
         view.validate(data)
         self.assertEqual(
-            [u'Series already has a template with that same name.'],
+            ['Series already has a template with that same name.'],
             view.errors)
 
     def test_detects_domain_clash_on_productseries_change(self):
@@ -199,7 +197,7 @@ class TestPOTemplateAdminViewValidation(TestPOTemplateEditViewValidation):
         data = self._makeData(potemplate, productseries=new_series)
         view.validate(data)
         self.assertEqual(
-            [u'Series already has a template with that same domain.'],
+            ['Series already has a template with that same domain.'],
             view.errors)
 
     def test_detects_no_sourcepackage_or_productseries(self):
@@ -212,8 +210,8 @@ class TestPOTemplateAdminViewValidation(TestPOTemplateEditViewValidation):
             distroseries=None, sourcepackagename=None, productseries=None)
         view.validate(data)
         self.assertEqual(
-            [u'Choose either a distribution release series or a project '
-             u'release series.'], view.errors)
+            ['Choose either a distribution release series or a project '
+             'release series.'], view.errors)
 
     def test_detects_sourcepackage_and_productseries(self):
         # Detect if no source package or productseries was selected.
@@ -228,8 +226,8 @@ class TestPOTemplateAdminViewValidation(TestPOTemplateEditViewValidation):
             productseries=potemplate.productseries)
         view.validate(data)
         self.assertEqual(
-            [u'Choose a distribution release series or a project '
-             u'release series, but not both.'], view.errors)
+            ['Choose a distribution release series or a project '
+             'release series, but not both.'], view.errors)
 
     def test_change_from_sourcepackage(self):
         # Changing the source package the template comes from is honoured.

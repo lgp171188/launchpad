@@ -15,8 +15,6 @@ __all__ = [
 from math import ceil
 import re
 
-import six
-
 from lp.services import helpers
 from lp.services.webapp.escaping import html_escape
 from lp.translations.interfaces.translations import TranslationConstants
@@ -30,20 +28,20 @@ def contract_rosetta_escapes(text):
     """Replace Rosetta escape sequences with the real characters."""
     return helpers.text_replaced(text, {'[tab]': '\t',
                                         r'\[tab]': '[tab]',
-                                        '[nbsp]': u'\u00a0',
+                                        '[nbsp]': '\u00a0',
                                         r'\[nbsp]': '[nbsp]',
-                                        '[nnbsp]': u'\u202f',
+                                        '[nnbsp]': '\u202f',
                                         r'\[nnbsp]': '[nnbsp]'})
 
 
 def expand_rosetta_escapes(unicode_text):
     """Replace characters needing a Rosetta escape sequences."""
-    escapes = {u'\t': TranslationConstants.TAB_CHAR,
-               u'[tab]': TranslationConstants.TAB_CHAR_ESCAPED,
-               u'\u00a0': TranslationConstants.NO_BREAK_SPACE_CHAR,
-               u'[nbsp]': TranslationConstants.NO_BREAK_SPACE_CHAR_ESCAPED,
-               u'\u202f': TranslationConstants.NARROW_NO_BREAK_SPACE_CHAR,
-               u'[nnbsp]':
+    escapes = {'\t': TranslationConstants.TAB_CHAR,
+               '[tab]': TranslationConstants.TAB_CHAR_ESCAPED,
+               '\u00a0': TranslationConstants.NO_BREAK_SPACE_CHAR,
+               '[nbsp]': TranslationConstants.NO_BREAK_SPACE_CHAR_ESCAPED,
+               '\u202f': TranslationConstants.NARROW_NO_BREAK_SPACE_CHAR,
+               '[nnbsp]':
     TranslationConstants.NARROW_NO_BREAK_SPACE_CHAR_ESCAPED}
     return helpers.text_replaced(unicode_text, escapes)
 
@@ -56,12 +54,12 @@ def text_to_html(text, flags, space=TranslationConstants.SPACE_CHAR,
 
     markup_lines = []
     # Replace leading and trailing spaces on each line with special markup.
-    if u'\r\n' in text:
-        newline_chars = u'\r\n'
-    elif u'\r' in text:
-        newline_chars = u'\r'
+    if '\r\n' in text:
+        newline_chars = '\r\n'
+    elif '\r' in text:
+        newline_chars = '\r'
     else:
-        newline_chars = u'\n'
+        newline_chars = '\n'
     for line in text.split(newline_chars):
         # Pattern:
         # - group 1: zero or more spaces: leading whitespace
@@ -69,7 +67,7 @@ def text_to_html(text, flags, space=TranslationConstants.SPACE_CHAR,
         #   more spaces followed by one or more non-spaces): maximal string
         #   which doesn't begin or end with whitespace
         # - group 3: zero or more spaces: trailing whitespace
-        match = re.match(u'^( *)((?: *[^ ]+)*)( *)$', line)
+        match = re.match('^( *)((?: *[^ ]+)*)( *)$', line)
 
         if match:
             format_segments = None
@@ -84,7 +82,7 @@ def text_to_html(text, flags, space=TranslationConstants.SPACE_CHAR,
                     type, content = segment
 
                     if type == 'interpolation':
-                        markup += (u'<code>%s</code>' % html_escape(content))
+                        markup += ('<code>%s</code>' % html_escape(content))
                     elif type == 'string':
                         markup += html_escape(content)
             else:
@@ -109,18 +107,18 @@ def convert_newlines_to_web_form(unicode_text):
     if unicode_text is None:
         return None
 
-    assert isinstance(unicode_text, six.text_type), (
+    assert isinstance(unicode_text, str), (
         "The given text must be unicode instead of %s" % type(unicode_text))
 
     if unicode_text is None:
         return None
-    elif u'\r\n' in unicode_text:
+    elif '\r\n' in unicode_text:
         # The text is already using the windows newline chars
         return unicode_text
-    elif u'\n' in unicode_text:
-        return helpers.text_replaced(unicode_text, {u'\n': u'\r\n'})
+    elif '\n' in unicode_text:
+        return helpers.text_replaced(unicode_text, {'\n': '\r\n'})
     else:
-        return helpers.text_replaced(unicode_text, {u'\r': u'\r\n'})
+        return helpers.text_replaced(unicode_text, {'\r': '\r\n'})
 
 
 def count_lines(text):
@@ -135,7 +133,7 @@ def count_lines(text):
     CHARACTERS_PER_LINE = 60
     count = 0
 
-    for line in text.split(u'\n'):
+    for line in text.split('\n'):
         if len(line) == 0:
             count += 1
         else:

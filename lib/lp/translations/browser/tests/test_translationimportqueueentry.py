@@ -36,14 +36,11 @@ class TestTranslationImportQueueEntryView(WithScenarios, TestCaseWithFactory):
 
     scenarios = [
         ("spn_picker", {"features": {}}),
-        ("dsp_picker", {
-            "features": {u"disclosure.dsp_picker.enabled": u"on"},
-            }),
+        ("dsp_picker", {"features": {"disclosure.dsp_picker.enabled": "on"}}),
         ]
 
     def setUp(self):
-        super(TestTranslationImportQueueEntryView, self).setUp(
-            'foo.bar@canonical.com')
+        super().setUp('foo.bar@canonical.com')
         if self.features:
             self.useFixture(FeatureFixture(self.features))
         self.queue = getUtility(ITranslationImportQueue)

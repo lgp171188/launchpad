@@ -32,13 +32,13 @@ class TestPOTemplateEditSourcePackageNameWidget(
             "interface": IPOTemplate,
             }),
         ("dsp_picker", {
-            "features": {u"disclosure.dsp_picker.enabled": u"on"},
+            "features": {"disclosure.dsp_picker.enabled": "on"},
             "interface": IPOTemplateEditForm,
             }),
         ]
 
     def setUp(self):
-        super(TestPOTemplateEditSourcePackageNameWidget, self).setUp()
+        super().setUp()
         if self.features:
             self.useFixture(FeatureFixture(self.features))
 
@@ -75,13 +75,13 @@ class TestPOTemplateAdminSourcePackageNameWidget(
             "interface": IPOTemplate,
             }),
         ("dsp_picker", {
-            "features": {u"disclosure.dsp_picker.enabled": u"on"},
+            "features": {"disclosure.dsp_picker.enabled": "on"},
             "interface": IPOTemplateEditForm,
             }),
         ]
 
     def setUp(self):
-        super(TestPOTemplateAdminSourcePackageNameWidget, self).setUp()
+        super().setUp()
         if self.features:
             self.useFixture(FeatureFixture(self.features))
 

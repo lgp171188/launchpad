@@ -53,7 +53,7 @@ class TranslationGroupSetNavigation(GetitemNavigation):
 
 class TranslationGroupSetBreadcrumb(Breadcrumb):
     """Builds a breadcrumb for an `ITranslationGroupSet`."""
-    text = u"Translation groups"
+    text = "Translation groups"
 
 
 class TranslationGroupSetView(LaunchpadView):
@@ -65,7 +65,7 @@ class TranslationGroupSetView(LaunchpadView):
 class TranslationGroupView(LaunchpadView):
 
     def __init__(self, context, request):
-        super(TranslationGroupView, self).__init__(context, request)
+        super().__init__(context, request)
         self.context = context
         self.request = request
         self.translation_groups = getUtility(ITranslationGroupSet)

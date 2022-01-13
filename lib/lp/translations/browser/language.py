@@ -75,7 +75,7 @@ class LanguageSetNavigation(GetitemNavigation):
 
 class LanguageSetBreadcrumb(Breadcrumb):
     """`Breadcrumb` for `ILanguageSet`."""
-    text = u"Languages"
+    text = "Languages"
 
 
 class LanguageSetContextMenu(ContextMenu):
@@ -108,7 +108,7 @@ class ILanguageSetSearch(Interface):
     """The collection of languages."""
 
     search_lang = TextLine(
-        title=u'Name of the language to search for.',
+        title='Name of the language to search for.',
         required=True)
 
 

@@ -582,7 +582,7 @@ class POFileTranslateView(BaseTranslationView, POFileMetadataViewMixin):
         self.start_offset = 0
 
         self._initializeShowOption()
-        super(POFileTranslateView, self).initialize()
+        super().initialize()
 
     #
     # BaseTranslationView API

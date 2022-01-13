@@ -167,7 +167,7 @@ class TranslationImportQueueEntryView(LaunchpadFormView):
                 # as its filename. We try to get it to use as a suggestion.
                 language_set = getUtility(ILanguageSet)
                 filename = os.path.basename(self.context.path)
-                guessed_language, file_ext = filename.split(u'.', 1)
+                guessed_language, file_ext = filename.split('.', 1)
                 language = language_set.getLanguageByCode(guessed_language)
                 if language is not None:
                     field_values['language'] = language
@@ -596,7 +596,7 @@ class TranslationImportQueueView(HasTranslationImportsView):
 
     def initialize(self):
         """Useful initialization for this view class."""
-        super(TranslationImportQueueView, self).initialize()
+        super().initialize()
         target_filter = self.widgets['filter_target']
         if target_filter.hasInput() and not target_filter.hasValidInput():
             raise UnexpectedFormData("Unknown target.")

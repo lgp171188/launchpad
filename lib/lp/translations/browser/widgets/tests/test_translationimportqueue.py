@@ -34,15 +34,13 @@ class TestTranslationImportQueueEntrySourcePackageNameWidget(
             "interface": IEditTranslationImportQueueEntry,
             }),
         ("dsp_picker", {
-            "features": {u"disclosure.dsp_picker.enabled": u"on"},
+            "features": {"disclosure.dsp_picker.enabled": "on"},
             "interface": IEditTranslationImportQueueEntryDSP,
             }),
         ]
 
     def setUp(self):
-        super(
-            TestTranslationImportQueueEntrySourcePackageNameWidget,
-            self).setUp()
+        super().setUp()
         if self.features:
             self.useFixture(FeatureFixture(self.features))
 
