@@ -4,17 +4,17 @@
 """Mock Build objects for tests soyuz buildd-system."""
 
 __all__ = [
-    'AbortingSlave',
-    'BrokenSlave',
-    'BuildingSlave',
+    'AbortingWorker',
+    'BrokenWorker',
+    'BuildingWorker',
     'DeadProxy',
-    'LostBuildingBrokenSlave',
+    'LostBuildingBrokenWorker',
     'make_publisher',
     'MockBuilder',
-    'OkSlave',
-    'SlaveTestHelpers',
+    'OkWorker',
     'TrivialBehaviour',
-    'WaitingSlave',
+    'WaitingWorker',
+    'WorkerTestHelpers',
     ]
 
 from collections import OrderedDict
@@ -81,8 +81,8 @@ class MockBuilder:
 
 # XXX: It would be *really* nice to run some set of tests against the real
 # BuilderSlave and this one to prevent interface skew.
-class OkSlave:
-    """An idle mock slave that prints information about itself.
+class OkWorker:
+    """An idle mock worker that prints information about itself.
 
     The architecture tag can be customised during initialization."""
 
@@ -149,8 +149,8 @@ class OkSlave:
         return dl
 
 
-class BuildingSlave(OkSlave):
-    """A mock slave that looks like it's currently building."""
+class BuildingWorker(OkWorker):
+    """A mock worker that looks like it's currently building."""
 
     def __init__(self, build_id='1-1'):
         super().__init__()
@@ -178,8 +178,8 @@ class BuildingSlave(OkSlave):
         return defer.succeed(None)
 
 
-class WaitingSlave(OkSlave):
-    """A mock slave that looks like it's currently waiting."""
+class WaitingWorker(OkWorker):
+    """A mock worker that looks like it's currently waiting."""
 
     def __init__(self, state='BuildStatus.OK', dependencies=None,
                  build_id='1-1', filemap=None):
@@ -192,7 +192,7 @@ class WaitingSlave(OkSlave):
         else:
             self.filemap = filemap
 
-        # By default, the slave only has a buildlog, but callsites
+        # By default, the worker only has a buildlog, but callsites
         # can update this list as needed.
         self.valid_files = {'buildlog': ''}
         self._got_file_record = []
@@ -223,8 +223,8 @@ class WaitingSlave(OkSlave):
         return defer.succeed(None)
 
 
-class AbortingSlave(OkSlave):
-    """A mock slave that looks like it's in the process of aborting."""
+class AbortingWorker(OkWorker):
+    """A mock worker that looks like it's in the process of aborting."""
 
     def status(self):
         self.call_log.append('status')
@@ -234,8 +234,8 @@ class AbortingSlave(OkSlave):
             })
 
 
-class LostBuildingBrokenSlave:
-    """A mock slave building bogus Build/BuildQueue IDs that can't be aborted.
+class LostBuildingBrokenWorker:
+    """A mock worker building bogus Build/BuildQueue IDs that can't be aborted.
 
     When 'aborted' it raises an xmlrpc.client.Fault(8002, 'Could not abort')
     """
@@ -259,15 +259,15 @@ class LostBuildingBrokenSlave:
         return defer.succeed(("", "", 0))
 
 
-class BrokenSlave:
-    """A mock slave that reports that it is broken."""
+class BrokenWorker:
+    """A mock worker that reports that it is broken."""
 
     def __init__(self):
         self.call_log = []
 
     def status(self):
         self.call_log.append('status')
-        return defer.fail(xmlrpc.client.Fault(8001, "Broken slave"))
+        return defer.fail(xmlrpc.client.Fault(8001, "Broken worker"))
 
 
 class TrivialBehaviour:
@@ -293,15 +293,15 @@ class LPBuilddSlaveTestSetup(BuilddSlaveTestSetup):
             twistd_script=twistd_script)
 
 
-class SlaveTestHelpers(fixtures.Fixture):
+class WorkerTestHelpers(fixtures.Fixture):
 
     @property
     def base_url(self):
         """The URL for the XML-RPC service set up by `BuilddSlaveTestSetup`."""
         return 'http://localhost:%d' % LPBuilddSlaveTestSetup().daemon_port
 
-    def getServerSlave(self):
-        """Set up a test build slave server.
+    def getServerWorker(self):
+        """Set up a test build worker server.
 
         :return: A `BuilddSlaveTestSetup` object.
         """
@@ -310,8 +310,8 @@ class SlaveTestHelpers(fixtures.Fixture):
             self, tachandler.logfile, name='xmlrpc-log-file', buffer_now=False)
         return tachandler
 
-    def getClientSlave(self, reactor=None, proxy=None,
-                       pool=None, process_pool=None):
+    def getClientWorker(self, reactor=None, proxy=None,
+                        pool=None, process_pool=None):
         """Return a `BuilderSlave` for use in testing.
 
         Points to a fixed URL that is also used by `BuilddSlaveTestSetup`.
@@ -321,10 +321,10 @@ class SlaveTestHelpers(fixtures.Fixture):
             reactor=reactor, proxy=proxy, pool=pool, process_pool=process_pool)
 
     def makeCacheFile(self, tachandler, filename, contents=b'something'):
-        """Make a cache file available on the remote slave.
+        """Make a cache file available on the remote worker.
 
         :param tachandler: The TacTestSetup object used to start the remote
-            slave.
+            worker.
         :param filename: The name of the file to create in the file cache
             area.
         :param contents: Bytes to write to the file.
@@ -334,18 +334,18 @@ class SlaveTestHelpers(fixtures.Fixture):
             fd.write(contents)
         self.addCleanup(os.unlink, path)
 
-    def triggerGoodBuild(self, slave, build_id=None):
-        """Trigger a good build on 'slave'.
+    def triggerGoodBuild(self, worker, build_id=None):
+        """Trigger a good build on 'worker'.
 
-        :param slave: A `BuilderSlave` instance to trigger the build on.
+        :param worker: A `BuilderSlave` instance to trigger the build on.
         :param build_id: The build identifier. If not specified, defaults to
             an arbitrary string.
         :type build_id: str
-        :return: The build id returned by the slave.
+        :return: The build id returned by the worker.
         """
         if build_id is None:
             build_id = 'random-build-id'
-        tachandler = self.getServerSlave()
+        tachandler = self.getServerWorker()
         chroot_file = 'fake-chroot'
         dsc_file = 'thing'
         self.makeCacheFile(tachandler, chroot_file)
@@ -356,7 +356,7 @@ class SlaveTestHelpers(fixtures.Fixture):
             'suite': 'precise',
             'ogrecomponent': 'main',
             }
-        return slave.build(
+        return worker.build(
             build_id, 'binarypackage', chroot_file,
             # Although a single-element dict obviously has stable ordering,
             # we use an OrderedDict anyway to test that BuilderSlave

@@ -55,10 +55,10 @@ from lp.buildmaster.tests.builderproxy import (
     ProxyURLMatcher,
     RevocationEndpointMatcher,
     )
-from lp.buildmaster.tests.mock_slaves import (
+from lp.buildmaster.tests.mock_workers import (
     MockBuilder,
-    OkSlave,
-    SlaveTestHelpers,
+    OkWorker,
+    WorkerTestHelpers,
     )
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
@@ -174,7 +174,7 @@ class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         transaction.commit()
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder()
-        job.setBuilder(builder, OkSlave())
+        job.setBuilder(builder, OkWorker())
         logger = BufferLogger()
         job.verifyBuildRequest(logger)
         self.assertEqual("", logger.getLogBuffer())
@@ -187,7 +187,7 @@ class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         transaction.commit()
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder(virtualized=False)
-        job.setBuilder(builder, OkSlave())
+        job.setBuilder(builder, OkWorker())
         logger = BufferLogger()
         e = self.assertRaises(AssertionError, job.verifyBuildRequest, logger)
         self.assertEqual(
@@ -201,7 +201,7 @@ class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         transaction.commit()
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder()
-        job.setBuilder(builder, OkSlave())
+        job.setBuilder(builder, OkWorker())
         logger = BufferLogger()
         e = self.assertRaises(ArchiveDisabled, job.verifyBuildRequest, logger)
         self.assertEqual("Disabled Archive is disabled.", str(e))
@@ -214,7 +214,7 @@ class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         transaction.commit()
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder()
-        job.setBuilder(builder, OkSlave())
+        job.setBuilder(builder, OkWorker())
         logger = BufferLogger()
         job.verifyBuildRequest(logger)
         self.assertEqual("", logger.getLogBuffer())
@@ -226,7 +226,7 @@ class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         transaction.commit()
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder()
-        job.setBuilder(builder, OkSlave())
+        job.setBuilder(builder, OkWorker())
         logger = BufferLogger()
         e = self.assertRaises(
             SnapBuildArchiveOwnerMismatch, job.verifyBuildRequest, logger)
@@ -239,7 +239,7 @@ class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         # verifyBuildRequest raises when the DAS has no chroot.
         job = self.makeJob()
         builder = MockBuilder()
-        job.setBuilder(builder, OkSlave())
+        job.setBuilder(builder, OkWorker())
         logger = BufferLogger()
         e = self.assertRaises(CannotBuild, job.verifyBuildRequest, logger)
         self.assertIn("Missing chroot", str(e))
@@ -271,14 +271,14 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         self.setUpStats()
 
     def makeJob(self, **kwargs):
-        # We need a builder slave in these tests, in order that requesting a
-        # proxy token can piggyback on its reactor and pool.
+        # We need a builder worker in these tests, in order that requesting
+        # a proxy token can piggyback on its reactor and pool.
         job = super().makeJob(**kwargs)
         builder = MockBuilder()
         builder.processor = job.build.processor
-        slave = self.useFixture(SlaveTestHelpers()).getClientSlave()
-        job.setBuilder(builder, slave)
-        self.addCleanup(slave.pool.closeCachedConnections)
+        worker = self.useFixture(WorkerTestHelpers()).getClientWorker()
+        job.setBuilder(builder, worker)
+        self.addCleanup(worker.pool.closeCachedConnections)
         return job
 
     @defer.inlineCallbacks
@@ -971,8 +971,8 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(allow_internet=False)
         builder = MockBuilder()
         builder.processor = job.build.processor
-        slave = OkSlave()
-        job.setBuilder(builder, slave)
+        worker = OkWorker()
+        job.setBuilder(builder, worker)
         chroot_lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(
             chroot_lfa, image_type=BuildBaseImageType.CHROOT)
@@ -981,7 +981,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
             lxd_lfa, image_type=BuildBaseImageType.LXD)
         yield job.dispatchBuildToSlave(DevNullLogger())
         self.assertEqual(
-            ('ensurepresent', lxd_lfa.http_url, '', ''), slave.call_log[0])
+            ('ensurepresent', lxd_lfa.http_url, '', ''), worker.call_log[0])
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
@@ -993,14 +993,14 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(allow_internet=False)
         builder = MockBuilder()
         builder.processor = job.build.processor
-        slave = OkSlave()
-        job.setBuilder(builder, slave)
+        worker = OkWorker()
+        job.setBuilder(builder, worker)
         chroot_lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(
             chroot_lfa, image_type=BuildBaseImageType.CHROOT)
         yield job.dispatchBuildToSlave(DevNullLogger())
         self.assertEqual(
-            ('ensurepresent', chroot_lfa.http_url, '', ''), slave.call_log[0])
+            ('ensurepresent', chroot_lfa.http_url, '', ''), worker.call_log[0])
 
 
 class MakeSnapBuildMixin:

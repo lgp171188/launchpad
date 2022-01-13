@@ -39,11 +39,11 @@ from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
 from lp.buildmaster.manager import BuilddManager
-from lp.buildmaster.tests.mock_slaves import (
-    AbortingSlave,
-    BuildingSlave,
-    OkSlave,
-    WaitingSlave,
+from lp.buildmaster.tests.mock_workers import (
+    AbortingWorker,
+    BuildingWorker,
+    OkWorker,
+    WaitingWorker,
     )
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
@@ -177,7 +177,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         # purpose is "PRIMARY" because this ensures that the package mangling
         # tools will run over the built packages.
         archive = self.factory.makeArchive(virtualized=False)
-        slave = OkSlave()
+        worker = OkWorker()
         builder = self.factory.makeBuilder(virtualized=False)
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
         vitals = extract_vitals_from_db(builder)
@@ -189,11 +189,11 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
         interactor = BuilderInteractor()
-        behaviour = interactor.getBuildBehaviour(bq, builder, slave)
+        behaviour = interactor.getBuildBehaviour(bq, builder, worker)
         yield interactor._startBuild(
-            bq, vitals, builder, slave, behaviour, BufferLogger())
+            bq, vitals, builder, worker, behaviour, BufferLogger())
         yield self.assertExpectedInteraction(
-            slave.call_log, builder, build, behaviour, lf, archive,
+            worker.call_log, builder, build, behaviour, lf, archive,
             ArchivePurpose.PRIMARY, 'universe')
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
@@ -207,7 +207,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         # If there is a primary component override, it is honoured for
         # non-virtual PPA builds too.
         archive = self.factory.makeArchive(virtualized=False)
-        slave = OkSlave()
+        worker = OkWorker()
         builder = self.factory.makeBuilder(virtualized=False)
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
         vitals = extract_vitals_from_db(builder)
@@ -224,17 +224,17 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
         interactor = BuilderInteractor()
-        behaviour = interactor.getBuildBehaviour(bq, builder, slave)
+        behaviour = interactor.getBuildBehaviour(bq, builder, worker)
         yield interactor._startBuild(
-            bq, vitals, builder, slave, behaviour, BufferLogger())
+            bq, vitals, builder, worker, behaviour, BufferLogger())
         yield self.assertExpectedInteraction(
-            slave.call_log, builder, build, behaviour, lf, archive,
+            worker.call_log, builder, build, behaviour, lf, archive,
             ArchivePurpose.PRIMARY, 'main')
 
     @defer.inlineCallbacks
     def test_virtual_ppa_dispatch(self):
         archive = self.factory.makeArchive(virtualized=True)
-        slave = OkSlave()
+        worker = OkWorker()
         builder = self.factory.makeBuilder(
             virtualized=True, vm_host="foohost")
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
@@ -247,11 +247,11 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
         interactor = BuilderInteractor()
-        behaviour = interactor.getBuildBehaviour(bq, builder, slave)
+        behaviour = interactor.getBuildBehaviour(bq, builder, worker)
         yield interactor._startBuild(
-            bq, vitals, builder, slave, behaviour, BufferLogger())
+            bq, vitals, builder, worker, behaviour, BufferLogger())
         yield self.assertExpectedInteraction(
-            slave.call_log, builder, build, behaviour, lf, archive,
+            worker.call_log, builder, build, behaviour, lf, archive,
             ArchivePurpose.PPA)
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
@@ -266,7 +266,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret")
         archive = self.factory.makeArchive(private=True)
-        slave = OkSlave()
+        worker = OkWorker()
         builder = self.factory.makeBuilder()
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
         vitals = extract_vitals_from_db(builder)
@@ -288,11 +288,11 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
         interactor = BuilderInteractor()
-        behaviour = interactor.getBuildBehaviour(bq, builder, slave)
+        behaviour = interactor.getBuildBehaviour(bq, builder, worker)
         yield interactor._startBuild(
-            bq, vitals, builder, slave, behaviour, BufferLogger())
+            bq, vitals, builder, worker, behaviour, BufferLogger())
         yield self.assertExpectedInteraction(
-            slave.call_log, builder, build, behaviour, lf, archive,
+            worker.call_log, builder, build, behaviour, lf, archive,
             ArchivePurpose.PPA,
             extra_uploads=[
                 (Equals(sprf_url),
@@ -304,7 +304,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
     def test_partner_dispatch_no_publishing_history(self):
         archive = self.factory.makeArchive(
             virtualized=False, purpose=ArchivePurpose.PARTNER)
-        slave = OkSlave()
+        worker = OkWorker()
         builder = self.factory.makeBuilder(virtualized=False)
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
         vitals = extract_vitals_from_db(builder)
@@ -316,11 +316,11 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
         interactor = BuilderInteractor()
-        behaviour = interactor.getBuildBehaviour(bq, builder, slave)
+        behaviour = interactor.getBuildBehaviour(bq, builder, worker)
         yield interactor._startBuild(
-            bq, vitals, builder, slave, behaviour, BufferLogger())
+            bq, vitals, builder, worker, behaviour, BufferLogger())
         yield self.assertExpectedInteraction(
-            slave.call_log, builder, build, behaviour, lf, archive,
+            worker.call_log, builder, build, behaviour, lf, archive,
             ArchivePurpose.PARTNER)
 
     def test_dont_dispatch_release_builds(self):
@@ -515,7 +515,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
 class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
     """Tests for the BinaryPackageBuildBehaviour.
 
-    Using various mock slaves, we check how updateBuild() behaves in
+    Using various mock workers, we check how updateBuild() behaves in
     various scenarios.
     """
 
@@ -576,7 +576,7 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             self.assertEqual(BuildStatus.FAILEDTOBUILD, self.build.status)
 
         d = self.updateBuild(
-            self.candidate, WaitingSlave('BuildStatus.PACKAGEFAIL'))
+            self.candidate, WaitingWorker('BuildStatus.PACKAGEFAIL'))
         return d.addCallback(got_update)
 
     def test_depwait_collection(self):
@@ -589,7 +589,7 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             self.assertEqual(DEPENDENCIES, self.build.dependencies)
 
         d = self.updateBuild(
-            self.candidate, WaitingSlave('BuildStatus.DEPFAIL', DEPENDENCIES))
+            self.candidate, WaitingWorker('BuildStatus.DEPFAIL', DEPENDENCIES))
         return d.addCallback(got_update)
 
     def test_chrootfail_collection(self):
@@ -599,16 +599,16 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             self.assertEqual(BuildStatus.CHROOTWAIT, self.build.status)
 
         d = self.updateBuild(
-            self.candidate, WaitingSlave('BuildStatus.CHROOTFAIL'))
+            self.candidate, WaitingWorker('BuildStatus.CHROOTFAIL'))
         return d.addCallback(got_update)
 
     def test_building_collection(self):
         # The builder is still building the package.
         def got_update(ignored):
-            # The fake log is returned from the BuildingSlave() mock.
+            # The fake log is returned from the BuildingWorker() mock.
             self.assertEqual("This is a build log: 0", self.candidate.logtail)
 
-        d = self.updateBuild(self.candidate, BuildingSlave())
+        d = self.updateBuild(self.candidate, BuildingWorker())
         return d.addCallback(got_update)
 
     def test_aborting_collection(self):
@@ -618,7 +618,7 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
                 "Waiting for slave process to be terminated",
                 self.candidate.logtail)
 
-        d = self.updateBuild(self.candidate, AbortingSlave())
+        d = self.updateBuild(self.candidate, AbortingWorker())
         return d.addCallback(got_update)
 
     def test_collection_for_deleted_source(self):
@@ -633,7 +633,7 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             self.assertEqual(
                 BuildStatus.SUPERSEDED, self.build.status)
 
-        d = self.updateBuild(self.candidate, WaitingSlave('BuildStatus.OK'))
+        d = self.updateBuild(self.candidate, WaitingWorker('BuildStatus.OK'))
         return d.addCallback(got_update)
 
     def test_uploading_collection(self):
@@ -644,14 +644,14 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             # upload processing succeeded.
             self.assertIs(None, self.build.upload_log)
 
-        d = self.updateBuild(self.candidate, WaitingSlave('BuildStatus.OK'))
+        d = self.updateBuild(self.candidate, WaitingWorker('BuildStatus.OK'))
         return d.addCallback(got_update)
 
     def test_log_file_collection(self):
         self.build.updateStatus(BuildStatus.FULLYBUILT)
         old_tmps = sorted(os.listdir('/tmp'))
 
-        slave = WaitingSlave('BuildStatus.OK')
+        worker = WaitingWorker('BuildStatus.OK')
 
         def got_log(logfile_lfa_id):
             # Grabbing logs should not leave new files in /tmp (bug #172798)
@@ -681,18 +681,18 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             fd, tmp_orig_file_name = tempfile.mkstemp()
             self.addCleanup(os.remove, tmp_orig_file_name)
 
-            # Check that the original file from the slave matches the
+            # Check that the original file from the worker matches the
             # uncompressed file in the librarian.
             def got_orig_log(ignored):
                 orig_file_content = open(tmp_orig_file_name, 'rb').read()
                 self.assertEqual(orig_file_content, uncompressed_file)
 
-            d = removeSecurityProxy(slave).getFile(
+            d = removeSecurityProxy(worker).getFile(
                 'buildlog', tmp_orig_file_name)
             return d.addCallback(got_orig_log)
 
         behaviour = IBuildFarmJobBehaviour(self.build)
-        behaviour.setBuilder(self.builder, slave)
+        behaviour.setBuilder(self.builder, worker)
         d = behaviour.getLogFromSlave(self.build.buildqueue_record)
         return d.addCallback(got_log)
 
@@ -713,7 +713,7 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             self.layer.txn.commit()
             self.assertTrue(self.build.log.restricted)
 
-        d = self.updateBuild(self.candidate, WaitingSlave('BuildStatus.OK'))
+        d = self.updateBuild(self.candidate, WaitingWorker('BuildStatus.OK'))
         return d.addCallback(got_update)
 
 
