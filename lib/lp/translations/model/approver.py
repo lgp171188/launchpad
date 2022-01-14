@@ -32,7 +32,7 @@ def get_product_name(productseries):
         return productseries.product.name
 
 
-class TranslationNullApprover(object):
+class TranslationNullApprover:
     """Does not approve any files."""
 
     def __init__(self, *args, **kwargs):
@@ -43,7 +43,7 @@ class TranslationNullApprover(object):
         return entry
 
 
-class TranslationBranchApprover(object):
+class TranslationBranchApprover:
     """Automatic approval of template files uploaded from bzr branches."""
 
     def __init__(self, files, productseries=None,
@@ -161,7 +161,7 @@ class TranslationBranchApprover(object):
         return entry
 
 
-class TranslationBuildApprover(object):
+class TranslationBuildApprover:
     """Automatic approval of automatically build translation templates."""
 
     def __init__(

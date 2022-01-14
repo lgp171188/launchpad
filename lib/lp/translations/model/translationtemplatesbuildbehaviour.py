@@ -68,8 +68,7 @@ class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
         return PackagePublishingPocket.RELEASE
 
     def extraBuildArgs(self, logger=None):
-        args = super(TranslationTemplatesBuildBehaviour, self).extraBuildArgs(
-            logger=logger)
+        args = super().extraBuildArgs(logger=logger)
         args["branch_url"] = self.build.branch.composePublicURL()
         return args
 

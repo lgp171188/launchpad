@@ -132,12 +132,13 @@ from lp.code.interfaces.gitref import (
     IGitRef,
     IGitRefRemoteSet,
     )
-from lp.code.interfaces.gitrepository import (
-    IGitRepository,
-    IRevisionStatusArtifactSet,
-    )
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.code.interfaces.linkedbranch import ICanHasLinkedBranch
 from lp.code.interfaces.revision import IRevisionSet
+from lp.code.interfaces.revisionstatus import (
+    IRevisionStatusArtifactSet,
+    IRevisionStatusReportSet,
+    )
 from lp.code.interfaces.sourcepackagerecipe import (
     ISourcePackageRecipeSource,
     MINIMAL_RECIPE_TEXT_BZR,
@@ -150,7 +151,6 @@ from lp.code.model.diff import (
     Diff,
     PreviewDiff,
     )
-from lp.code.model.gitrepository import IRevisionStatusReportSet
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet

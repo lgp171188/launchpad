@@ -18,7 +18,6 @@ import tarfile
 from textwrap import dedent
 
 import pytz
-import six
 from storm.expr import (
     Alias,
     And,
@@ -1485,8 +1484,7 @@ class TranslationImportQueue:
         """
         now = datetime.datetime.now(pytz.UTC)
         deletion_clauses = []
-        for status, max_age in six.iteritems(
-                translation_import_queue_entry_age):
+        for status, max_age in translation_import_queue_entry_age.items():
             cutoff = now - max_age
             deletion_clauses.append(And(
                 TranslationImportQueueEntry.status == status,
@@ -1499,7 +1497,7 @@ class TranslationImportQueue:
         deletion_clauses.append(And(
             TranslationImportQueueEntry.distroseries_id != None,
             TranslationImportQueueEntry.date_status_changed < blocked_cutoff,
-            TranslationImportQueueEntry.path.like(u'%.po')))
+            TranslationImportQueueEntry.path.like('%.po')))
 
         entries = store.find(
             TranslationImportQueueEntry, Or(*deletion_clauses))

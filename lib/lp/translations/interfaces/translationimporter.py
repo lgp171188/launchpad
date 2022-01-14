@@ -13,7 +13,6 @@ __all__ = [
     'TranslationFormatInvalidInputError',
     ]
 
-import six
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -82,10 +81,9 @@ class TranslationFormatBaseError(TranslationImportExportBaseException):
         else:
             text = default_message
 
-        return u"%s%s" % (location_prefix, text)
+        return "%s%s" % (location_prefix, text)
 
 
-@six.python_2_unicode_compatible
 class TranslationFormatSyntaxError(TranslationFormatBaseError):
     """A syntax error occurred while parsing a translation file."""
 
@@ -93,7 +91,6 @@ class TranslationFormatSyntaxError(TranslationFormatBaseError):
         return self.represent("Unknown syntax error")
 
 
-@six.python_2_unicode_compatible
 class TranslationFormatInvalidInputError(TranslationFormatBaseError):
     """Some fields in the parsed file contain bad content."""
 
@@ -105,14 +102,14 @@ class ITranslationImporter(Interface):
     """Importer of translation files."""
 
     supported_file_extensions = List(
-        title=u'List of file extensions we have imports for.',
+        title='List of file extensions we have imports for.',
         required=True, readonly=True)
 
     # Filename suffixes that identify templates.  These do not have to be
     # CP/M-style "filename extensions" separated from the base file name by a
     # dot; any suffix will do.
     template_suffixes = TextLine(
-        title=u'Filename endings that identify templates.', required=True,
+        title='Filename endings that identify templates.', required=True,
         readonly=True)
 
     def isTemplateName(path):
@@ -193,8 +190,8 @@ class ITranslationFormatImporter(Interface):
         """
 
     priority = Int(
-        title=u'Priority among importers for the same file extension.',
-        description=u'''
+        title='Priority among importers for the same file extension.',
+        description='''
             Priority an `ITranslationFormatImporter` has if there are
             multiple importers for the same file extension.
 
@@ -206,16 +203,16 @@ class ITranslationFormatImporter(Interface):
         )
 
     content_type = TextLine(
-        title=u'Content type string for this file format.',
+        title='Content type string for this file format.',
         required=True, readonly=True)
 
     file_extensions = List(
-        title=u'File extensions handable by this importer.',
+        title='File extensions handable by this importer.',
         required=True, readonly=True)
 
     uses_source_string_msgids = Bool(
-        title=u'A flag indicating whether uses source string as the id',
-        description=u'''
+        title='A flag indicating whether uses source string as the id',
+        description='''
             A flag indicating whether this file format importer uses source
             string msgids as the English strings.
             ''',

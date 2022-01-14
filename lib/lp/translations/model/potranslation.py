@@ -26,7 +26,7 @@ class POTranslation(StormBase):
     translation = Unicode(name='translation', allow_none=False)
 
     def __init__(self, translation):
-        super(POTranslation, self).__init__()
+        super().__init__()
         self.translation = translation
 
     @classmethod

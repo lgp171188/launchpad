@@ -24,7 +24,7 @@ from lp.translations.model.potemplate import POTemplate
 
 
 @implementer(IPOFilesByPOTemplates)
-class POFilesByPOTemplates(object):
+class POFilesByPOTemplates:
     """See `IPOFilesByPOTemplates`."""
 
     def __init__(self, templates_collection, language):
@@ -65,8 +65,7 @@ class POFilesByPOTemplates(object):
 
     def __iter__(self):
         resultset = self._getPOTemplatesAndPOFilesResultSet()
-        for pofile in self._getPOFilesForResultSet(resultset):
-            yield pofile
+        yield from self._getPOFilesForResultSet(resultset)
 
     def __len__(self):
         return self.templates_collection.select(POTemplate).count()
@@ -76,7 +75,7 @@ class POFilesByPOTemplates(object):
 
 
 @implementer(ITranslatedLanguage)
-class TranslatedLanguageMixin(object):
+class TranslatedLanguageMixin:
     """See `ITranslatedLanguage`."""
 
     language = None

@@ -67,10 +67,10 @@ from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import (
     IGitRepository,
     IGitRepositorySet,
-    IRevisionStatusReport,
     )
 from lp.code.interfaces.gitsubscription import IGitSubscription
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
+from lp.code.interfaces.revisionstatus import IRevisionStatusReport
 from lp.code.interfaces.sourcepackagerecipe import ISourcePackageRecipe
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
