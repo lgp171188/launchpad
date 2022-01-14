@@ -64,10 +64,7 @@ from lp.code.interfaces.codereviewcomment import ICodeReviewComment
 from lp.code.interfaces.codereviewvote import ICodeReviewVoteReference
 from lp.code.interfaces.diff import IPreviewDiff
 from lp.code.interfaces.gitref import IGitRef
-from lp.code.interfaces.gitrepository import (
-    IGitRepository,
-    IRevisionStatusReport,
-    )
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.code.interfaces.gitrule import (
     IGitNascentRule,
     IGitNascentRuleGrant,
@@ -80,6 +77,7 @@ from lp.code.interfaces.hasbranches import (
     IHasRequestedReviews,
     )
 from lp.code.interfaces.hasrecipes import IHasRecipes
+from lp.code.interfaces.revisionstatus import IRevisionStatusReport
 from lp.code.interfaces.sourcepackagerecipe import ISourcePackageRecipe
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
