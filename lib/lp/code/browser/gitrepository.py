@@ -105,8 +105,8 @@ from lp.code.interfaces.gitrepository import (
     ContributorGitIdentity,
     IGitRepository,
     IGitRepositorySet,
-    IRevisionStatusReportSet,
     )
+from lp.code.interfaces.revisionstatus import IRevisionStatusReportSet
 from lp.code.vocabularies.gitrule import GitPermissionsVocabulary
 from lp.registry.interfaces.person import (
     IPerson,

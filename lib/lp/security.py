@@ -99,13 +99,15 @@ from lp.code.interfaces.gitcollection import IGitCollection
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import (
     IGitRepository,
-    IRevisionStatusArtifact,
-    IRevisionStatusReport,
     user_has_special_git_repository_access,
     )
 from lp.code.interfaces.gitrule import (
     IGitRule,
     IGitRuleGrant,
+    )
+from lp.code.interfaces.revisionstatus import (
+    IRevisionStatusArtifact,
+    IRevisionStatusReport,
     )
 from lp.code.interfaces.sourcepackagerecipe import ISourcePackageRecipe
 from lp.code.interfaces.sourcepackagerecipebuild import (
