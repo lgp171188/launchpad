@@ -9,6 +9,7 @@ import io
 from testtools.matchers import (
     AnyMatch,
     Equals,
+    GreaterThan,
     MatchesSetwise,
     MatchesStructure,
     )
@@ -121,68 +122,60 @@ class TestRevisionStatusReport(TestCaseWithFactory):
 class TestRevisionStatusReportWebservice(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
-    def setUp(self):
-        super().setUp()
-        self.repository = self.factory.makeGitRepository()
-        self.requester = self.repository.owner
-        self.title = self.factory.getUniqueUnicode('report-title')
-        self.commit_sha1 = hashlib.sha1(b"Some content").hexdigest()
-        self.result_summary = "120/120 tests passed"
-
-        self.report = self.factory.makeRevisionStatusReport(
-            user=self.repository.owner, git_repository=self.repository,
-            title=self.title, commit_sha1=self.commit_sha1,
-            result_summary=self.result_summary,
-            result=RevisionStatusResult.FAILED)
-
-        with person_logged_in(self.requester):
-            self.report_url = api_url(self.report)
-
-            secret, _ = self.factory.makeAccessToken(
-                owner=self.requester, target=self.repository,
-                scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
-        self.webservice = webservice_for_person(
-            self.requester, default_api_version="devel",
-            access_token_secret=secret)
+    def getWebservice(self, person, repository):
+        secret, _ = self.factory.makeAccessToken(
+            owner=person, target=repository,
+            scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+        return webservice_for_person(
+            person, default_api_version="devel", access_token_secret=secret)
 
     def test_setLog(self):
+        report = self.factory.makeRevisionStatusReport()
+        requester = report.creator
+        repository = report.git_repository
+        report_url = api_url(report)
+        webservice = self.getWebservice(requester, repository)
         content = b'log_content_data'
-        response = self.webservice.named_post(
-            self.report_url, "setLog", log_data=io.BytesIO(content))
+        response = webservice.named_post(
+            report_url, "setLog", log_data=io.BytesIO(content))
         self.assertEqual(200, response.status)
 
         # A report may have multiple artifacts.
         # We verify that the content we just submitted via API now
         # matches one of the artifacts in the DB for the report.
-        with person_logged_in(self.requester):
+        with person_logged_in(requester):
             artifacts = list(getUtility(
-                IRevisionStatusArtifactSet).findByReport(self.report))
+                IRevisionStatusArtifactSet).findByReport(report))
             self.assertThat(artifacts, AnyMatch(
                 MatchesStructure(
-                    report=Equals(self.report),
+                    report=Equals(report),
                     library_file=MatchesStructure(
                         content=MatchesStructure.byEquality(
                             sha256=hashlib.sha256(content).hexdigest()),
                         filename=Equals(
-                            "%s-%s.txt" % (self.title, self.commit_sha1)),
+                            "%s-%s.txt" % (report.title, report.commit_sha1)),
                         mimetype=Equals("text/plain")),
                     artifact_type=Equals(RevisionStatusArtifactType.LOG))))
 
     def test_attach(self):
+        report = self.factory.makeRevisionStatusReport()
+        requester = report.creator
+        repository = report.git_repository
+        report_url = api_url(report)
+        webservice = self.getWebservice(requester, repository)
         filenames = ["artifact-1", "artifact-2"]
         contents = [b"artifact 1", b"artifact 2"]
         for filename, content in zip(filenames, contents):
-            response = self.webservice.named_post(
-                self.report_url, "attach", name=filename,
-                data=io.BytesIO(content))
+            response = webservice.named_post(
+                report_url, "attach", name=filename, data=io.BytesIO(content))
             self.assertEqual(200, response.status)
 
-        with person_logged_in(self.requester):
+        with person_logged_in(requester):
             artifacts = list(getUtility(
-                IRevisionStatusArtifactSet).findByReport(self.report))
+                IRevisionStatusArtifactSet).findByReport(report))
             self.assertThat(artifacts, MatchesSetwise(*(
                 MatchesStructure(
-                    report=Equals(self.report),
+                    report=Equals(report),
                     library_file=MatchesStructure(
                         content=MatchesStructure.byEquality(
                             sha256=hashlib.sha256(content).hexdigest()),
@@ -192,23 +185,31 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
                 for filename, content in zip(filenames, contents))))
 
     def test_update(self):
-        response = self.webservice.named_post(
-            self.report_url, "update", title="updated-report-title")
+        report = self.factory.makeRevisionStatusReport(
+            result=RevisionStatusResult.FAILED)
+        requester = report.creator
+        repository = report.git_repository
+        initial_commit_sha1 = report.commit_sha1
+        initial_result_summary = report.result_summary
+        report_url = api_url(report)
+        webservice = self.getWebservice(requester, repository)
+        response = webservice.named_post(
+            report_url, "update", title="updated-report-title")
         self.assertEqual(200, response.status)
-        with person_logged_in(self.requester):
-            self.assertEqual('updated-report-title', self.report.title)
-            self.assertEqual(self.commit_sha1, self.report.commit_sha1)
-            self.assertEqual(self.result_summary, self.report.result_summary)
-            self.assertEqual(RevisionStatusResult.FAILED, self.report.result)
-            date_finished_before_update = self.report.date_finished
-        response = self.webservice.named_post(
-            self.report_url, "update", result="Succeeded")
+        with person_logged_in(requester):
+            self.assertThat(report, MatchesStructure.byEquality(
+                title="updated-report-title",
+                commit_sha1=initial_commit_sha1,
+                result_summary=initial_result_summary,
+                result=RevisionStatusResult.FAILED))
+            date_finished_before_update = report.date_finished
+        response = webservice.named_post(
+            report_url, "update", result="Succeeded")
         self.assertEqual(200, response.status)
-        with person_logged_in(self.requester):
-            self.assertEqual('updated-report-title', self.report.title)
-            self.assertEqual(self.commit_sha1, self.report.commit_sha1)
-            self.assertEqual(self.result_summary, self.report.result_summary)
-            self.assertEqual(RevisionStatusResult.SUCCEEDED,
-                             self.report.result)
-            self.assertGreater(self.report.date_finished,
-                               date_finished_before_update)
+        with person_logged_in(requester):
+            self.assertThat(report, MatchesStructure(
+                title=Equals("updated-report-title"),
+                commit_sha1=Equals(initial_commit_sha1),
+                result_summary=Equals(initial_result_summary),
+                result=Equals(RevisionStatusResult.SUCCEEDED),
+                date_finished=GreaterThan(date_finished_before_update)))
