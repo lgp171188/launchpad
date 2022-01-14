@@ -14,19 +14,108 @@ from testtools.matchers import (
     )
 from zope.component import getUtility
 
+from lp.app.enums import InformationType
 from lp.code.enums import (
     RevisionStatusArtifactType,
     RevisionStatusResult,
     )
 from lp.code.interfaces.revisionstatus import IRevisionStatusArtifactSet
 from lp.services.auth.enums import AccessTokenScope
+from lp.services.webapp.authorization import check_permission
 from lp.testing import (
+    anonymous_logged_in,
     api_url,
     person_logged_in,
     TestCaseWithFactory,
     )
-from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.testing.layers import (
+    DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
+    )
 from lp.testing.pages import webservice_for_person
+
+
+class TestRevisionStatusReport(TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def makeRevisionStatusArtifact(self, report):
+        # We don't need to upload files to the librarian in this test suite.
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        return self.factory.makeRevisionStatusArtifact(lfa=lfa, report=report)
+
+    def test_owner_public(self):
+        # The owner of a public repository can view and edit its reports and
+        # artifacts.
+        report = self.factory.makeRevisionStatusReport()
+        artifact = self.makeRevisionStatusArtifact(report=report)
+        with person_logged_in(report.git_repository.owner):
+            self.assertTrue(check_permission("launchpad.View", report))
+            self.assertTrue(check_permission("launchpad.View", artifact))
+            self.assertTrue(check_permission("launchpad.Edit", report))
+            self.assertTrue(check_permission("launchpad.Edit", artifact))
+
+    def test_owner_private(self):
+        # The owner of a private repository can view and edit its reports
+        # and artifacts.
+        with person_logged_in(self.factory.makePerson()) as owner:
+            report = self.factory.makeRevisionStatusReport(
+                git_repository=self.factory.makeGitRepository(
+                    owner=owner, information_type=InformationType.USERDATA))
+            artifact = self.makeRevisionStatusArtifact(report=report)
+            self.assertTrue(check_permission("launchpad.View", report))
+            self.assertTrue(check_permission("launchpad.View", artifact))
+            self.assertTrue(check_permission("launchpad.Edit", report))
+            self.assertTrue(check_permission("launchpad.Edit", artifact))
+
+    def test_random_public(self):
+        # An unrelated user can view but not edit reports and artifacts in
+        # public repositories.
+        report = self.factory.makeRevisionStatusReport()
+        artifact = self.makeRevisionStatusArtifact(report=report)
+        with person_logged_in(self.factory.makePerson()):
+            self.assertTrue(check_permission("launchpad.View", report))
+            self.assertTrue(check_permission("launchpad.View", artifact))
+            self.assertFalse(check_permission("launchpad.Edit", report))
+            self.assertFalse(check_permission("launchpad.Edit", artifact))
+
+    def test_random_private(self):
+        # An unrelated user can neither view nor edit reports and artifacts
+        # in private repositories.
+        with person_logged_in(self.factory.makePerson()) as owner:
+            report = self.factory.makeRevisionStatusReport(
+                git_repository=self.factory.makeGitRepository(
+                    owner=owner, information_type=InformationType.USERDATA))
+            artifact = self.makeRevisionStatusArtifact(report=report)
+        with person_logged_in(self.factory.makePerson()):
+            self.assertFalse(check_permission("launchpad.View", report))
+            self.assertFalse(check_permission("launchpad.View", artifact))
+            self.assertFalse(check_permission("launchpad.Edit", report))
+            self.assertFalse(check_permission("launchpad.Edit", artifact))
+
+    def test_anonymous_public(self):
+        # Anonymous users can view but not edit reports and artifacts in
+        # public repositories.
+        report = self.factory.makeRevisionStatusReport()
+        artifact = self.makeRevisionStatusArtifact(report=report)
+        with anonymous_logged_in():
+            self.assertTrue(check_permission("launchpad.View", report))
+            self.assertTrue(check_permission("launchpad.View", artifact))
+            self.assertFalse(check_permission("launchpad.Edit", report))
+            self.assertFalse(check_permission("launchpad.Edit", artifact))
+
+    def test_anonymous_private(self):
+        # Anonymous users can neither view nor edit reports and artifacts in
+        # private repositories.
+        with person_logged_in(self.factory.makePerson()) as owner:
+            report = self.factory.makeRevisionStatusReport(
+                git_repository=self.factory.makeGitRepository(
+                    owner=owner, information_type=InformationType.USERDATA))
+            artifact = self.makeRevisionStatusArtifact(report=report)
+        with anonymous_logged_in():
+            self.assertFalse(check_permission("launchpad.View", report))
+            self.assertFalse(check_permission("launchpad.View", artifact))
+            self.assertFalse(check_permission("launchpad.Edit", report))
+            self.assertFalse(check_permission("launchpad.Edit", artifact))
 
 
 class TestRevisionStatusReportWebservice(TestCaseWithFactory):

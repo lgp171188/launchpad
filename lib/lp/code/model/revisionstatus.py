@@ -23,6 +23,7 @@ from lp.code.enums import (
     RevisionStatusResult,
     )
 from lp.code.interfaces.revisionstatus import (
+    IRevisionStatusArtifact,
     IRevisionStatusArtifactSet,
     IRevisionStatusReport,
     IRevisionStatusReportSet,
@@ -160,6 +161,7 @@ class RevisionStatusReportSet:
         self.findByRepository(repository).remove()
 
 
+@implementer(IRevisionStatusArtifact)
 class RevisionStatusArtifact(StormBase):
     __storm_table__ = 'RevisionStatusArtifact'
 
