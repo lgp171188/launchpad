@@ -5083,7 +5083,7 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
             self.assertIn(md5, md5_of_all_artifacts)
             self.assertIn(filesize, filesizes_of_all_artifacts)
 
-    def test_updateStatusReport(self):
+    def test_update(self):
         response = self.webservice.named_post(
             self.report_url, "update",
             headers=self.header,

@@ -365,14 +365,14 @@ class RevisionStatusReport(StormBase):
         self.result = result
 
     def update(self, title=None, url=None,
-                           result_summary=None, result=None):
-        if title:
+               result_summary=None, result=None):
+        if title is not None:
             self.title = title
-        if url:
+        if url is not None:
             self.url = url
-        if result_summary:
+        if result_summary is not None:
             self.result_summary = result_summary
-        if result:
+        if result is not None:
             self.transitionToNewResult(result)
 
 

@@ -117,6 +117,7 @@ from lp.code.enums import (
     GitObjectType,
     GitRepositoryType,
     RevisionControlSystems,
+    RevisionStatusResult,
     TargetRevisionControlSystems,
     )
 from lp.code.errors import UnknownBranchTypeError
@@ -1863,7 +1864,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if result_summary is None:
             result_summary = self.getUniqueUnicode()
         if result is None:
-            result = 'Running'
+            result = RevisionStatusResult.RUNNING
         return getUtility(IRevisionStatusReportSet).new(
             user, title, git_repository, commit_sha1, url,
             result_summary, result)
