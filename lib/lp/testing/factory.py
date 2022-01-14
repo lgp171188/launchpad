@@ -117,6 +117,7 @@ from lp.code.enums import (
     GitObjectType,
     GitRepositoryType,
     RevisionControlSystems,
+    RevisionStatusArtifactType,
     RevisionStatusResult,
     TargetRevisionControlSystems,
     )
@@ -1869,13 +1870,16 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             user, title, git_repository, commit_sha1, url,
             result_summary, result)
 
-    def makeRevisionStatusArtifact(self, lfa=None, report=None):
+    def makeRevisionStatusArtifact(
+            self, lfa=None, report=None,
+            artifact_type=RevisionStatusArtifactType.LOG):
         """Create a new RevisionStatusArtifact."""
         if lfa is None:
             lfa = self.makeLibraryFileAlias()
         if report is None:
             report = self.makeRevisionStatusReport()
-        return getUtility(IRevisionStatusArtifactSet).new(lfa, report)
+        return getUtility(IRevisionStatusArtifactSet).new(
+            lfa, report, artifact_type)
 
     def makeBug(self, target=None, owner=None, bug_watch_url=None,
                 information_type=None, date_closed=None, title=None,

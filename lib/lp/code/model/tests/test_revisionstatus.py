@@ -9,6 +9,7 @@ import io
 from testtools.matchers import (
     AnyMatch,
     Equals,
+    MatchesSetwise,
     MatchesStructure,
     )
 from zope.component import getUtility
@@ -79,6 +80,29 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
                             "%s-%s.txt" % (self.title, self.commit_sha1)),
                         mimetype=Equals("text/plain")),
                     artifact_type=Equals(RevisionStatusArtifactType.LOG))))
+
+    def test_attach(self):
+        filenames = ["artifact-1", "artifact-2"]
+        contents = [b"artifact 1", b"artifact 2"]
+        for filename, content in zip(filenames, contents):
+            response = self.webservice.named_post(
+                self.report_url, "attach", headers=self.header,
+                name=filename, data=io.BytesIO(content))
+            self.assertEqual(200, response.status)
+
+        with person_logged_in(self.requester):
+            artifacts = list(getUtility(
+                IRevisionStatusArtifactSet).findByReport(self.report))
+            self.assertThat(artifacts, MatchesSetwise(*(
+                MatchesStructure(
+                    report=Equals(self.report),
+                    library_file=MatchesStructure(
+                        content=MatchesStructure.byEquality(
+                            sha256=hashlib.sha256(content).hexdigest()),
+                        filename=Equals(filename),
+                        mimetype=Equals("application/octet-stream")),
+                    artifact_type=Equals(RevisionStatusArtifactType.BINARY))
+                for filename, content in zip(filenames, contents))))
 
     def test_update(self):
         response = self.webservice.named_post(

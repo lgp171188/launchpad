@@ -126,6 +126,26 @@ class IRevisionStatusReportEdit(Interface):
         :param log_data: The contents (in bytes) of the log.
         """
 
+    # XXX cjwatson 2022-01-14: artifact_type isn't currently exported, but
+    # if RevisionStatusArtifactType gains more items (e.g. detailed test
+    # output in subunit format or similar?) then it may make sense to do so.
+    @operation_parameters(
+        name=TextLine(title=_("The name of the artifact.")),
+        data=Bytes(
+            title=_("The content of the artifact in bytes."),
+            constraint=attachment_size_constraint))
+    @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
+    @export_write_operation()
+    @operation_for_version("devel")
+    def attach(name, data, artifact_type=RevisionStatusArtifactType.BINARY):
+        """Attach a new artifact to an existing status report.
+
+        :param data: The contents (in bytes) of the artifact.
+        :param artifact_type: The type of the artifact.  This may currently
+            only be `RevisionStatusArtifactType.BINARY`, but more types may
+            be added in future.
+        """
+
     @operation_parameters(
         title=TextLine(title=_("A short title for the report."),
                        required=False),
@@ -192,12 +212,13 @@ class IRevisionStatusReportSet(Interface):
 class IRevisionStatusArtifactSet(Interface):
     """The set of all revision status artifacts."""
 
-    def new(lfa, report):
+    def new(lfa, report, artifact_type):
         """Return a new revision status artifact.
 
         :param lfa: An `ILibraryFileAlias`.
         :param report: An `IRevisionStatusReport` for which the
             artifact is being created.
+        :param artifact_type: A `RevisionStatusArtifactType`.
         """
 
     def getByID(id):
