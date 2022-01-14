@@ -10,6 +10,7 @@ from testtools.matchers import (
     AnyMatch,
     Equals,
     GreaterThan,
+    Is,
     MatchesSetwise,
     MatchesStructure,
     )
@@ -123,17 +124,23 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def getWebservice(self, person, repository):
-        secret, _ = self.factory.makeAccessToken(
-            owner=person, target=repository,
-            scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+        with person_logged_in(person):
+            secret, _ = self.factory.makeAccessToken(
+                owner=person, target=repository,
+                scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
         return webservice_for_person(
             person, default_api_version="devel", access_token_secret=secret)
 
-    def test_setLog(self):
-        report = self.factory.makeRevisionStatusReport()
-        requester = report.creator
-        repository = report.git_repository
-        report_url = api_url(report)
+    def _test_setLog(self, private):
+        requester = self.factory.makePerson()
+        with person_logged_in(requester):
+            kwargs = {"owner": requester}
+            if private:
+                kwargs["information_type"] = InformationType.USERDATA
+            repository = self.factory.makeGitRepository(**kwargs)
+            report = self.factory.makeRevisionStatusReport(
+                git_repository=repository)
+            report_url = api_url(report)
         webservice = self.getWebservice(requester, repository)
         content = b'log_content_data'
         response = webservice.named_post(
@@ -154,14 +161,26 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
                             sha256=hashlib.sha256(content).hexdigest()),
                         filename=Equals(
                             "%s-%s.txt" % (report.title, report.commit_sha1)),
-                        mimetype=Equals("text/plain")),
+                        mimetype=Equals("text/plain"),
+                        restricted=Is(private)),
                     artifact_type=Equals(RevisionStatusArtifactType.LOG))))
 
-    def test_attach(self):
-        report = self.factory.makeRevisionStatusReport()
-        requester = report.creator
-        repository = report.git_repository
-        report_url = api_url(report)
+    def test_setLog(self):
+        self._test_setLog(private=False)
+
+    def test_setLog_private(self):
+        self._test_setLog(private=True)
+
+    def _test_attach(self, private):
+        requester = self.factory.makePerson()
+        with person_logged_in(requester):
+            kwargs = {"owner": requester}
+            if private:
+                kwargs["information_type"] = InformationType.USERDATA
+            repository = self.factory.makeGitRepository(**kwargs)
+            report = self.factory.makeRevisionStatusReport(
+                git_repository=repository)
+            report_url = api_url(report)
         webservice = self.getWebservice(requester, repository)
         filenames = ["artifact-1", "artifact-2"]
         contents = [b"artifact 1", b"artifact 2"]
@@ -180,9 +199,16 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
                         content=MatchesStructure.byEquality(
                             sha256=hashlib.sha256(content).hexdigest()),
                         filename=Equals(filename),
-                        mimetype=Equals("application/octet-stream")),
+                        mimetype=Equals("application/octet-stream"),
+                        restricted=Is(private)),
                     artifact_type=Equals(RevisionStatusArtifactType.BINARY))
                 for filename, content in zip(filenames, contents))))
+
+    def test_attach(self):
+        self._test_attach(private=False)
+
+    def test_attach_private(self):
+        self._test_attach(private=True)
 
     def test_update(self):
         report = self.factory.makeRevisionStatusReport(
