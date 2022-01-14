@@ -42,7 +42,6 @@ from lp.translations.utilities.translation_common_format import (
     )
 
 
-@six.python_2_unicode_compatible
 class POSyntaxWarning(Warning):
     """Syntax warning in a PO file."""
     def __init__(self, message, line_number=None):
@@ -151,7 +150,7 @@ class POHeader:
 
     def _emitSyntaxWarning(self, message):
         """Issue syntax warning, add to warnings list."""
-        self.syntax_warnings.append(six.text_type(POSyntaxWarning(message)))
+        self.syntax_warnings.append(str(POSyntaxWarning(message)))
 
     def _getHeaderDict(self, raw_header):
         """Return dictionary with all keys in raw_header.
@@ -184,7 +183,7 @@ class POHeader:
         return header_dictionary
 
     def _decode(self, text):
-        if text is None or isinstance(text, six.text_type):
+        if text is None or isinstance(text, str):
             # There is noo need to do anything.
             return text
         charset = self.charset
@@ -231,7 +230,7 @@ class POHeader:
 
     def _parseHeaderFields(self):
         """Return plural form values based on the parsed header."""
-        for key, value in six.iteritems(self._header_dictionary):
+        for key, value in self._header_dictionary.items():
             if key == 'plural-forms':
                 parts = self._parseAssignments(value)
                 nplurals = parts.get('nplurals')
@@ -363,14 +362,14 @@ class POHeader:
                 raise AssertionError('key %s is not being handled!' % value)
 
         # Now, we copy any other header information in the original .po file.
-        for key, value in six.iteritems(self._header_dictionary):
+        for key, value in self._header_dictionary.items():
             if key in self._handled_keys_mapping:
                 # It's already handled, skip it.
                 continue
 
             raw_content_list.append('%s: %s\n' % (key, value.strip()))
 
-        return u''.join(raw_content_list)
+        return ''.join(raw_content_list)
 
     def updateFromTemplateHeader(self, template_header):
         """See `ITranslationHeaderData`."""
@@ -410,8 +409,8 @@ class POHeader:
         assert email is not None, 'Email address cannot be None'
 
         if name is None:
-            name = u''
-        self._last_translator = u'%s <%s>' % (name, email)
+            name = ''
+        self._last_translator = '%s <%s>' % (name, email)
 
     def _renderDate(self, date, default=None):
         """Return string representation of `date`, or `default`."""
@@ -441,7 +440,7 @@ ESCAPE_MAP = {
 STRAIGHT_TEXT_RUN = re.compile('[^"\\\\]*')
 
 
-class POParser(object):
+class POParser:
     """Parser class for Gettext files."""
 
     def __init__(self, plural_formula=None):
@@ -459,8 +458,7 @@ class POParser(object):
     def _emitSyntaxWarning(self, message):
         warning = POSyntaxWarning(message, line_number=self._lineno)
         if self._translation_file:
-            self._translation_file.syntax_warnings.append(
-                six.text_type(warning))
+            self._translation_file.syntax_warnings.append(str(warning))
 
     def _decode(self):
         # is there anything to convert?
@@ -522,14 +520,14 @@ class POParser(object):
         self._translation_file = TranslationFileData()
         self._messageids = set()
         self._pending_chars = content_bytes
-        self._pending_unichars = u''
+        self._pending_unichars = ''
         self._lineno = 0
         # Message specific variables.
         self._message = TranslationMessageData()
         self._message_lineno = self._lineno
         self._section = None
         self._plural_case = None
-        self._parsed_content = u''
+        self._parsed_content = ''
 
         # First thing to do is to get the charset used in the content_bytes.
         charset = parse_charset(content_bytes)
@@ -611,7 +609,7 @@ class POParser(object):
                 # Fill the others with an empty string.
                 for index in range(
                     len(self._message.translations), number_plural_forms):
-                    self._message.addTranslation(index, u'')
+                    self._message.addTranslation(index, '')
 
             self._translation_file.messages.append(self._message)
             self._messageids.add(msgkey)
@@ -886,7 +884,7 @@ class POParser(object):
         else:
             raise AssertionError('Unknown section %s' % self._section)
 
-        self._parsed_content = u''
+        self._parsed_content = ''
 
     def _parseFreshLine(self, line, original_line):
         """Parse a new line (not a continuation after escaped newline).
@@ -933,7 +931,7 @@ class POParser(object):
             self._message_lineno = self._lineno
             self._section = None
             self._plural_case = None
-            self._parsed_content = u''
+            self._parsed_content = ''
 
         if self._message is not None:
             # Record whether the message is obsolete.

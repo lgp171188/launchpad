@@ -44,7 +44,7 @@ class XpiHeader:
                 raise TranslationFormatInvalidInputError(
                     "XPI header is not encoded in %s." % self.charset)
         else:
-            assert isinstance(header_content, six.text_type), (
+            assert isinstance(header_content, str), (
                 "XPI header text is neither bytes nor unicode.")
             self._text = header_content
 

@@ -21,7 +21,7 @@ class TestMigrateCurrentFlag(TestCaseWithFactory):
         # TranslationMessages) but it also needs to set up test conditions
         # which requires other privileges.
         switch_dbuser('postgres')
-        super(TestMigrateCurrentFlag, self).setUp(user='mark@example.com')
+        super().setUp(user='mark@example.com')
         self.migrate_process = MigrateCurrentFlagProcess(self.layer.txn)
 
     def test_getProductsWithTemplates_sampledata(self):
@@ -112,7 +112,7 @@ class TestUpdaterLoop(TestCaseWithFactory):
         # TranslationMessages) but it also needs to set up test conditions
         # which requires other privileges.
         switch_dbuser('postgres')
-        super(TestUpdaterLoop, self).setUp(user='mark@example.com')
+        super().setUp(user='mark@example.com')
         self.logger = logging.getLogger("migrate-current-flag")
         self.migrate_loop = TranslationMessageImportedFlagUpdater(
             self.layer.txn, self.logger, [])

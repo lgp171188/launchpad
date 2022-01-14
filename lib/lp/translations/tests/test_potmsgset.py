@@ -44,8 +44,7 @@ class TestTranslationSharedPOTMsgSets(TestCaseWithFactory):
         """Set up context to test in."""
         # Create a product with two series and a shared POTemplate
         # in different series ('devel' and 'stable').
-        super(TestTranslationSharedPOTMsgSets, self).setUp(
-            'carlos@canonical.com')
+        super().setUp('carlos@canonical.com')
         self.foo = self.factory.makeProduct(
             translations_usage=ServiceUsage.LAUNCHPAD)
         self.foo_devel = self.factory.makeProductSeries(
@@ -501,7 +500,7 @@ class TestTranslationSharedPOTMsgSets(TestCaseWithFactory):
         """Test that translation credits are correctly set as translated."""
         sr_pofile = self.factory.makePOFile('sr', self.devel_potemplate)
         credits_potmsgset = self.factory.makePOTMsgSet(
-            self.devel_potemplate, singular=u'translator-credits')
+            self.devel_potemplate, singular='translator-credits')
         credits_potmsgset.setTranslationCreditsToTranslated(sr_pofile)
         current = credits_potmsgset.getCurrentTranslation(
             self.devel_potemplate, sr_pofile.language,
@@ -514,7 +513,7 @@ class TestTranslationSharedPOTMsgSets(TestCaseWithFactory):
         """Test that translation credits don't change."""
         sr_pofile = self.factory.makePOFile('sr', self.devel_potemplate)
         credits_potmsgset = self.factory.makePOTMsgSet(
-            self.devel_potemplate, singular=u'translator-credits')
+            self.devel_potemplate, singular='translator-credits')
         old_credits = credits_potmsgset.setCurrentTranslation(
             sr_pofile, sr_pofile.potemplate.owner, {0: 'credits'},
             RosettaTranslationOrigin.SCM, share_with_other_side=True)
@@ -528,7 +527,7 @@ class TestTranslationSharedPOTMsgSets(TestCaseWithFactory):
         """Test that translation doesn't change on a non-credits message."""
         sr_pofile = self.factory.makePOFile('sr', self.devel_potemplate)
         not_credits_potmsgset = self.factory.makePOTMsgSet(
-            self.devel_potemplate, singular=u'non-credit message')
+            self.devel_potemplate, singular='non-credit message')
         not_credits_potmsgset.setTranslationCreditsToTranslated(sr_pofile)
         current = not_credits_potmsgset.getCurrentTranslation(
             self.devel_potemplate, sr_pofile.language,
@@ -540,7 +539,7 @@ class TestTranslationSharedPOTMsgSets(TestCaseWithFactory):
         # we should provide an automatic shared translation instead.
         sr_pofile = self.factory.makePOFile('sr', self.devel_potemplate)
         credits_potmsgset = self.factory.makePOTMsgSet(
-            self.devel_potemplate, singular=u'translator-credits')
+            self.devel_potemplate, singular='translator-credits')
         diverged_credits = self.factory.makeCurrentTranslationMessage(
             sr_pofile, credits_potmsgset)
         # Since translation credits are special, we can't easily create
@@ -572,7 +571,7 @@ class TestTranslationSharedPOTMsgSets(TestCaseWithFactory):
         sr_pofile.lasttranslator = translator
         sr_pofile.owner = translator
         credits_potmsgset = self.factory.makePOTMsgSet(
-            self.devel_potemplate, singular=u'translator-credits')
+            self.devel_potemplate, singular='translator-credits')
         current = credits_potmsgset.getCurrentTranslation(
             self.devel_potemplate, sr_pofile.language,
             TranslationSide.UPSTREAM)
@@ -604,7 +603,7 @@ class TestPOTMsgSetSuggestions(TestCaseWithFactory):
     def setUp(self):
         # Create a product with all the boilerplate objects to be able to
         # create TranslationMessage objects.
-        super(TestPOTMsgSetSuggestions, self).setUp('carlos@canonical.com')
+        super().setUp('carlos@canonical.com')
         self.now = partial(next, self.gen_now())
         self.foo = self.factory.makeProduct(
             translations_usage=ServiceUsage.LAUNCHPAD)
@@ -619,13 +618,13 @@ class TestPOTMsgSetSuggestions(TestCaseWithFactory):
         # changed in the tests.
         self.translation = self.factory.makeCurrentTranslationMessage(
             removeSecurityProxy(self.pofile), self.potmsgset,
-            translations=[u'trans1'], reviewer=self.factory.makePerson(),
+            translations=['trans1'], reviewer=self.factory.makePerson(),
             current_other=True, date_created=self.now())
         self.suggestion1 = self.factory.makeSuggestion(
-            self.pofile, self.potmsgset, translations=[u'sugg1'],
+            self.pofile, self.potmsgset, translations=['sugg1'],
             date_created=self.now())
         self.suggestion2 = self.factory.makeSuggestion(
-            self.pofile, self.potmsgset, translations=[u'sugg2'],
+            self.pofile, self.potmsgset, translations=['sugg2'],
             date_created=self.now())
         self._setDateCreated(self.suggestion2)
 
@@ -801,8 +800,7 @@ class TestPOTMsgSetResetTranslation(TestCaseWithFactory):
     def setUp(self):
         # Create a product with all the boilerplate objects to be able to
         # create TranslationMessage objects.
-        super(TestPOTMsgSetResetTranslation, self).setUp(
-            'carlos@canonical.com')
+        super().setUp('carlos@canonical.com')
         self.now = partial(next, self.gen_now())
         self.foo = self.factory.makeProduct(
             translations_usage=ServiceUsage.LAUNCHPAD)
@@ -968,8 +966,7 @@ class TestPOTMsgSetTranslationCredits(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPOTMsgSetTranslationCredits, self).setUp(
-            'carlos@canonical.com')
+        super().setUp('carlos@canonical.com')
         self.potemplate = self.factory.makePOTemplate()
 
     def test_creation_credits(self):
@@ -979,7 +976,7 @@ class TestPOTMsgSetTranslationCredits(TestCaseWithFactory):
         sr_pofile = self.factory.makePOFile('sr', potemplate=self.potemplate)
 
         credits = self.factory.makePOTMsgSet(
-            self.potemplate, u'translator-credits')
+            self.potemplate, 'translator-credits')
 
         eo_translation = credits.getCurrentTranslation(
             self.potemplate, eo_pofile.language,
@@ -1008,10 +1005,10 @@ class TestPOTMsgSetTranslationCredits(TestCaseWithFactory):
         # Dummy translation for translation credits are not created as
         # imported and can therefore be overwritten by later imports.
         eo_pofile = self.factory.makePOFile('eo', potemplate=self.potemplate)
-        imported_credits = u'Imported credits.'
+        imported_credits = 'Imported credits.'
 
         credits = self.factory.makePOTMsgSet(
-            self.potemplate, u'translator-credits')
+            self.potemplate, 'translator-credits')
         self.factory.makeCurrentTranslationMessage(
             eo_pofile, credits, translations=[imported_credits],
             current_other=True)
@@ -1027,7 +1024,7 @@ class TestPOTMsgSetTranslationCredits(TestCaseWithFactory):
         # all translation credits messages.
 
         credits = self.factory.makePOTMsgSet(
-            self.potemplate, u'translator-credits')
+            self.potemplate, 'translator-credits')
         eo_pofile = self.factory.makePOFile('eo', potemplate=self.potemplate)
 
         eo_translation = credits.getCurrentTranslation(
@@ -1040,9 +1037,9 @@ class TestPOTMsgSetTranslationCredits(TestCaseWithFactory):
     def test_translation_credits_gnome(self):
         # Detect all known variations of Gnome translator credits.
         gnome_credits = [
-            u'translator-credits',
-            u'translator_credits',
-            u'translation-credits',
+            'translator-credits',
+            'translator_credits',
+            'translation-credits',
         ]
         for sequence, credits_string in enumerate(gnome_credits):
             credits = self.factory.makePOTMsgSet(
@@ -1054,9 +1051,9 @@ class TestPOTMsgSetTranslationCredits(TestCaseWithFactory):
     def test_translation_credits_kde(self):
         # Detect all known variations of KDE translator credits.
         kde_credits = [
-            (u'Your emails', u'EMAIL OF TRANSLATORS',
+            ('Your emails', 'EMAIL OF TRANSLATORS',
              TranslationCreditsType.KDE_EMAILS),
-            (u'Your names', u'NAME OF TRANSLATORS',
+            ('Your names', 'NAME OF TRANSLATORS',
              TranslationCreditsType.KDE_NAMES),
         ]
         sequence = 0
@@ -1071,7 +1068,7 @@ class TestPOTMsgSetTranslationCredits(TestCaseWithFactory):
             # Old KDE style.
             sequence += 1
             credits = self.factory.makePOTMsgSet(
-                self.potemplate, u'_: %s\n%s' % (context, credits_string),
+                self.potemplate, '_: %s\n%s' % (context, credits_string),
                 sequence=sequence)
             self.assertTrue(credits.is_translation_credit)
             self.assertEqual(credits_type, credits.translation_credits_type)
@@ -1253,7 +1250,7 @@ class TestPOTMsgSet_submitSuggestion(TestCaseWithFactory):
     def test_credits_message(self):
         # Suggestions for translation-credits messages are ignored.
         pofile, potmsgset = self._makePOFileAndPOTMsgSet(
-            msgid=u'translator-credits')
+            msgid='translator-credits')
         self.assertTrue(potmsgset.is_translation_credit)
         owner = pofile.potemplate.owner
         translation = {0: self.factory.getUniqueString()}
@@ -1265,7 +1262,7 @@ class TestPOTMsgSet_submitSuggestion(TestCaseWithFactory):
     def test_credits_karma(self):
         # No karma is assigned for suggestions on translation credits.
         pofile, potmsgset = self._makePOFileAndPOTMsgSet(
-            msgid=u'translator-credits')
+            msgid='translator-credits')
         self.assertTrue(potmsgset.is_translation_credit)
         owner = pofile.potemplate.owner
         translation = {0: self.factory.getUniqueString()}
@@ -1303,7 +1300,7 @@ class TestSetCurrentTranslation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSetCurrentTranslation, self).setUp('carlos@canonical.com')
+        super().setUp('carlos@canonical.com')
 
     def _makePOFileAndPOTMsgSet(self):
         pofile = self.factory.makePOFile('nl')
@@ -1381,7 +1378,7 @@ class TestSetCurrentTranslation(TestCaseWithFactory):
             lock_timestamp=lock_timestamp)
 
 
-class BaseTestGetCurrentTranslation(object):
+class BaseTestGetCurrentTranslation:
     layer = DatabaseFunctionalLayer
 
     def test_no_translation(self):
@@ -1518,8 +1515,7 @@ class TestGetCurrentTranslationForUpstreams(BaseTestGetCurrentTranslation,
     """getCurrentTranslation working on an upstream POFile."""
 
     def setUp(self):
-        super(TestGetCurrentTranslationForUpstreams, self).setUp(
-            'carlos@canonical.com')
+        super().setUp('carlos@canonical.com')
         self.this_side = TranslationSide.UPSTREAM
         self.other_side = TranslationSide.UBUNTU
 
@@ -1545,8 +1541,7 @@ class TestGetCurrentTranslationForUbuntu(BaseTestGetCurrentTranslation,
     """getCurrentTranslation working on an Ubuntu POFile."""
 
     def setUp(self):
-        super(TestGetCurrentTranslationForUbuntu, self).setUp(
-            'carlos@canonical.com')
+        super().setUp('carlos@canonical.com')
         self.this_side = TranslationSide.UBUNTU
         self.other_side = TranslationSide.UPSTREAM
 

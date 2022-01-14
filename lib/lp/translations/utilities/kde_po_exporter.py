@@ -35,7 +35,7 @@ class KdePOExporter(GettextPOExporter):
     format = TranslationFileFormat.KDEPO
 
     def __init__(self, context=None):
-        super(KdePOExporter, self).__init__(context=context)
+        super().__init__(context=context)
         # See GettextPOExporter.__init__ for explanation of `context`.
         self.format = TranslationFileFormat.KDEPO
         # KdePOExporter is also able to export `TranslationFileFormat.PO`,
@@ -48,7 +48,7 @@ class KdePOExporter(GettextPOExporter):
         # Special handling of context and plural forms.
         if translation_message.context is not None:
             # Let's turn context messages into legacy KDE context.
-            translation_message.msgid_singular = u"_: %s\n%s" % (
+            translation_message.msgid_singular = "_: %s\n%s" % (
                 translation_message.context,
                 translation_message.msgid_singular)
             translation_message.context = None
@@ -59,7 +59,7 @@ class KdePOExporter(GettextPOExporter):
                 if translations[pluralform_index] is None:
                     translations[pluralform_index] = ''
             translation_message._translations = ["\n".join(translations)]
-            translation_message.msgid_singular = u"_n: %s\n%s" % (
+            translation_message.msgid_singular = "_n: %s\n%s" % (
                 translation_message.msgid_singular,
                 translation_message.msgid_plural)
             translation_message.msgid_plural = None

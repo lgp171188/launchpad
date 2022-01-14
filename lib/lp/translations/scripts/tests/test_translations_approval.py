@@ -19,7 +19,7 @@ class TestTranslationsImportApproval(TestCaseWithFactory):
     layer = LaunchpadScriptLayer
 
     def setUp(self):
-        super(TestTranslationsImportApproval, self).setUp()
+        super().setUp()
         self.queue = TranslationImportQueue()
         self.script = ImportQueueGardener(
             'translations-import-queue-gardener',

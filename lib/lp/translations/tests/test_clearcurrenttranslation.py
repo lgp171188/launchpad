@@ -267,8 +267,7 @@ class TestClearCurrentTranslationUpstream(TestCaseWithFactory,
     makeOtherPOTemplate = ScenarioMixin.makeUbuntuTemplate
 
     def setUp(self):
-        super(TestClearCurrentTranslationUpstream, self).setUp(
-            'carlos@canonical.com')
+        super().setUp('carlos@canonical.com')
 
 
 class TestClearCurrentTranslationUbuntu(TestCaseWithFactory,
@@ -278,5 +277,4 @@ class TestClearCurrentTranslationUbuntu(TestCaseWithFactory,
     makeOtherPOTemplate = ScenarioMixin.makeUpstreamTemplate
 
     def setUp(self):
-        super(TestClearCurrentTranslationUbuntu, self).setUp(
-            'carlos@canonical.com')
+        super().setUp('carlos@canonical.com')

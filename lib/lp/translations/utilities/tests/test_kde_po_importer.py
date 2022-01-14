@@ -143,7 +143,7 @@ class KdePOImporterTestCase(unittest.TestCase):
         singular = message.msgid_singular
         plural = message.msgid_plural
         self.assertTrue(
-            (singular == u'%1 foo' and plural == u'%1 foos'),
+            (singular == '%1 foo' and plural == '%1 foos'),
             "KdePOImporter didn't import KDE plural forms correctly.")
 
     def testTranslationPlurals(self):
@@ -152,9 +152,9 @@ class KdePOImporterTestCase(unittest.TestCase):
         message = self.translation_file.messages[0]
         translations = message.translations
         self.assertTrue(
-            (translations[0] == u'1st plural form %1' and
-             translations[1] == u'2nd plural form %1' and
-             translations[2] == u'3rd plural form %1'),
+            (translations[0] == '1st plural form %1' and
+             translations[1] == '2nd plural form %1' and
+             translations[2] == '3rd plural form %1'),
             "KdePOImporter didn't import translated KDE plural forms "
             "correctly.")
 
@@ -164,7 +164,7 @@ class KdePOImporterTestCase(unittest.TestCase):
         singular = message.msgid_singular
         context = message.context
         self.assertTrue(
-            (singular == u'Message' and context == u'Context'),
+            (singular == 'Message' and context == 'Context'),
             "KdePOImporter didn't import KDE context correctly.")
 
     def testTranslationContext(self):
@@ -174,6 +174,6 @@ class KdePOImporterTestCase(unittest.TestCase):
         context = message.context
         translations = message.translations
         self.assertTrue(
-            (singular == u'Message' and context == u'Context' and
-             translations[0] == u'Contextual translation'),
+            (singular == 'Message' and context == 'Context' and
+             translations[0] == 'Contextual translation'),
             "KdePOImporter didn't import translated KDE context correctly.")

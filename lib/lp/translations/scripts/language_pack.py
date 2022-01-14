@@ -52,8 +52,7 @@ def iter_sourcepackage_translationdomain_mapping(series):
         ORDER BY SourcePackageName.name, POTemplate.translation_domain
         """ % sqlvalues(series))
 
-    for (sourcepackagename, translationdomain,) in cur.fetchall():
-        yield (sourcepackagename, translationdomain)
+    yield from cur.fetchall()
 
 
 def export(distroseries, component, update, force_utf8, logger):

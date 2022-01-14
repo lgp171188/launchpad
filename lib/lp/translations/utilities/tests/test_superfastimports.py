@@ -19,7 +19,7 @@ class TestSuperFastImports(TestCaseWithFactory):
     def setUp(self):
         # Set up a single POFile in the database to be cached and
         # examined.
-        super(TestSuperFastImports, self).setUp()
+        super().setUp()
 
     def getTranslationMessageData(self, translationmessage):
         # Convert a TranslationMessage to TranslationMessageData object,

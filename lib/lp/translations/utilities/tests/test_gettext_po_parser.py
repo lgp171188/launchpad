@@ -288,18 +288,18 @@ class POBasicTestCase(unittest.TestCase):
         translation_file.header.plural_form_expression = 'random()'
         lines = translation_file.header.getRawContent().split('\n')
         expected = [
-            u'Project-Id-Version: PACKAGE VERSION',
-            u'Report-Msgid-Bugs-To:  ',
-            u'POT-Creation-Date: ...',
-            u'PO-Revision-Date: ...',
-            u'Last-Translator: FULL NAME <EMAIL@ADDRESS>',
-            u'Language-Team: LANGUAGE <LL@li.org>',
-            u'MIME-Version: 1.0',
-            u'Content-Type: text/plain; charset=UTF-8',
-            u'Content-Transfer-Encoding: 8bit',
-            u'X-Launchpad-Export-Date: ...',
-            u'X-Generator: Launchpad (build ...)',
-            u'foo: bar'
+            'Project-Id-Version: PACKAGE VERSION',
+            'Report-Msgid-Bugs-To:  ',
+            'POT-Creation-Date: ...',
+            'PO-Revision-Date: ...',
+            'Last-Translator: FULL NAME <EMAIL@ADDRESS>',
+            'Language-Team: LANGUAGE <LL@li.org>',
+            'MIME-Version: 1.0',
+            'Content-Type: text/plain; charset=UTF-8',
+            'Content-Transfer-Encoding: 8bit',
+            'X-Launchpad-Export-Date: ...',
+            'X-Generator: Launchpad (build ...)',
+            'foo: bar'
             ]
         for index in range(len(expected)):
             if lines[index].startswith('POT-Creation-Date'):

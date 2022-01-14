@@ -180,7 +180,7 @@ class FileImporterTestCase(TestCaseWithFactory):
         return FileImporter(template_entry, GettextPOImporter(), None)
 
     def setUp(self):
-        super(FileImporterTestCase, self).setUp()
+        super().setUp()
         self.fake_librarian = self.useFixture(FakeLibrarian())
         self.translation_import_queue = getUtility(ITranslationImportQueue)
         self.importer_person = self.factory.makePerson()
@@ -242,7 +242,7 @@ class FileImporterTestCase(TestCaseWithFactory):
 
         # Empty message to import.
         message = TranslationMessageData()
-        message.addTranslation(0, u'')
+        message.addTranslation(0, '')
 
         potmsgset = self.factory.makePOTMsgSet(
             potemplate=importer.potemplate, sequence=50)
@@ -425,7 +425,7 @@ class FileImporterTestCase(TestCaseWithFactory):
             "export timestamp (update conflict).")
         self.assertTrue(
             errors[0]['error-message'].find(
-                u"updated by someone else after you") != -1,
+                "updated by someone else after you") != -1,
             "importFile() failed to detect a message update conflict.")
 
     def test_FileImporter_importFile_error(self):
@@ -444,8 +444,8 @@ class FileImporterTestCase(TestCaseWithFactory):
             "No error detected when importing a pofile with mismatched "
             "format specifiers.")
         self.assertTrue(errors[0]['error-message'].find(
-                u"format specifications in 'msgid' and 'msgstr' "
-                u"for argument 1 are not the same") != -1,
+                "format specifications in 'msgid' and 'msgstr' "
+                "for argument 1 are not the same") != -1,
             "importFile() failed to detect mismatched format specifiers "
             "when importing a pofile.")
         # Although the message has an error, it should still be stored
@@ -523,7 +523,7 @@ class CreateFileImporterTestCase(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(CreateFileImporterTestCase, self).setUp()
+        super().setUp()
         self.fake_librarian = self.useFixture(FakeLibrarian())
         self.translation_import_queue = getUtility(ITranslationImportQueue)
         self.importer_person = self.factory.makePerson()
@@ -580,7 +580,7 @@ class FileImporterSharingTest(TestCaseWithFactory):
         """)
 
     def setUp(self):
-        super(FileImporterSharingTest, self).setUp()
+        super().setUp()
         # Create the upstream series and template with a translator.
         self.language = self.factory.makeLanguage()
         self.translator = self.factory.makeTranslator(self.language.code)

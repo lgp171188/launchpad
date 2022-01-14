@@ -65,9 +65,9 @@ class TestPOTMsgSetMerging(TestCaseWithFactory, TranslatableProductMixin):
         # This test needs the privileges of rosettaadmin (to delete
         # POTMsgSets) but it also needs to set up test conditions which
         # requires other privileges.
-        super(TestPOTMsgSetMerging, self).setUp(user=ADMIN_EMAIL)
+        super().setUp(user=ADMIN_EMAIL)
         self.becomeDbUser('postgres')
-        super(TestPOTMsgSetMerging, self).setUpProduct()
+        super().setUpProduct()
 
     def test_matchedPOTMsgSetsShare(self):
         # Two identically-keyed POTMsgSets will share.  Where two
@@ -145,7 +145,7 @@ class TranslatedProductMixin(TranslatableProductMixin):
     """
 
     def setUpProduct(self):
-        super(TranslatedProductMixin, self).setUpProduct()
+        super().setUpProduct()
 
         self.trunk_potmsgset = self.factory.makePOTMsgSet(
             self.trunk_template, singular='foo')
@@ -254,10 +254,9 @@ class TestPOTMsgSetMergingAndTranslations(TestCaseWithFactory,
         The matching POTMsgSets will be merged by the mergePOTMsgSets
         call.
         """
-        super(TestPOTMsgSetMergingAndTranslations, self).setUp(
-            user=ADMIN_EMAIL)
+        super().setUp(user=ADMIN_EMAIL)
         self.becomeDbUser('postgres')
-        super(TestPOTMsgSetMergingAndTranslations, self).setUpProduct()
+        super().setUpProduct()
 
     def test_sharingDivergedMessages(self):
         # Diverged TranslationMessages stay with their respective
@@ -375,9 +374,9 @@ class TestTranslationMessageNonMerging(TestCaseWithFactory,
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestTranslationMessageNonMerging, self).setUp(user=ADMIN_EMAIL)
+        super().setUp(user=ADMIN_EMAIL)
         self.becomeDbUser('postgres')
-        super(TestTranslationMessageNonMerging, self).setUpProduct()
+        super().setUpProduct()
 
     def test_MessagesAreNotSharedAcrossPOTMsgSets(self):
         # Merging TranslationMessages does not merge messages that
@@ -402,9 +401,9 @@ class TestTranslationMessageMerging(TestCaseWithFactory,
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestTranslationMessageMerging, self).setUp(user=ADMIN_EMAIL)
+        super().setUp(user=ADMIN_EMAIL)
         self.becomeDbUser('postgres')
-        super(TestTranslationMessageMerging, self).setUpProduct()
+        super().setUpProduct()
 
     def test_messagesCanStayDiverged(self):
         # When POTMsgSets with diverged translations are merged, the
@@ -512,9 +511,9 @@ class TestRemoveDuplicates(TestCaseWithFactory, TranslatedProductMixin):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestRemoveDuplicates, self).setUp(user=ADMIN_EMAIL)
+        super().setUp(user=ADMIN_EMAIL)
         self.becomeDbUser('postgres')
-        super(TestRemoveDuplicates, self).setUpProduct()
+        super().setUpProduct()
 
     def test_duplicatesAreCleanedUp(self):
         # The duplicates removal function cleans up any duplicate
@@ -684,9 +683,9 @@ class TestSharingMigrationPerformance(TestCaseWithFactory,
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestSharingMigrationPerformance, self).setUp()
+        super().setUp()
         self.becomeDbUser('postgres')
-        super(TestSharingMigrationPerformance, self).setUpProduct()
+        super().setUpProduct()
 
     def _flushDbObjects(self):
         """Flush ORM-backed objects from memory as much as possible.
@@ -756,7 +755,7 @@ class TestFindMergablePackagings(TestCaseWithFactory):
 
     def setUp(self):
         """Remove sample data to simplify tests."""
-        super(TestFindMergablePackagings, self).setUp()
+        super().setUp()
         for packaging in set(TranslationMerger.findMergeablePackagings()):
             with person_logged_in(packaging.owner):
                 packaging.destroySelf()

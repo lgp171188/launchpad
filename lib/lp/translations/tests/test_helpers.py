@@ -18,7 +18,7 @@ class TestTranslationMessageHelpers(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestTranslationMessageHelpers, self).setUp()
+        super().setUp()
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         new_series = self.factory.makeDistroSeries(distribution=ubuntu)
         sourcepackagename = self.factory.makeSourcePackageName()
@@ -33,7 +33,7 @@ class TestTranslationMessageHelpers(TestCaseWithFactory):
             language_code=self.pofile.language.code)
 
     def test_make_translationmessage(self):
-        translations = [u"testing"]
+        translations = ["testing"]
         tm = make_translationmessage(self.factory, pofile=self.pofile,
                                      potmsgset=self.potmsgset,
                                      translations=translations)

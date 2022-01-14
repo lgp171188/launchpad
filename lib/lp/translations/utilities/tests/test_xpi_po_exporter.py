@@ -50,7 +50,7 @@ from lp.translations.utilities.xpi_po_exporter import XPIPOExporter
 # Hardcoded representations of what used to be found in
 # lib/lp/translations/utilities/tests/firefox-data/.  We no longer have real
 # XPI import code, so we pre-parse the messages.
-test_xpi_header = dedent(u'''\
+test_xpi_header = dedent('''\
     <?xml version="1.0"?>
     <RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
          xmlns:em="http://www.mozilla.org/2004/em-rdf#">
@@ -74,12 +74,12 @@ test_xpi_header = dedent(u'''\
     </RDF>
 ''')  # noqa: E501
 test_xpi_messages = [
-    (u'foozilla.menu.title', u'main/subdir/test2.dtd',
-     u'jar:chrome/en-US.jar!/subdir/test2.dtd', u'MENU',
-     u' This is a DTD file inside a subdirectory\n'),
-    (u'foozilla.menu.accesskey', u'main/subdir/test2.dtd',
-     u'jar:chrome/en-US.jar!/subdir/test2.dtd', u'M',
-     dedent(u'''\
+    ('foozilla.menu.title', 'main/subdir/test2.dtd',
+     'jar:chrome/en-US.jar!/subdir/test2.dtd', 'MENU',
+     ' This is a DTD file inside a subdirectory\n'),
+    ('foozilla.menu.accesskey', 'main/subdir/test2.dtd',
+     'jar:chrome/en-US.jar!/subdir/test2.dtd', 'M',
+     dedent('''\
         Select the access key that you want to use. These have
         to be translated in a way that the selected character is
         present in the translated string of the label being
@@ -89,9 +89,9 @@ test_xpi_messages = [
         context of the key from the end of the 'Located in' text
         below.
         ''')),
-    (u'foozilla.menu.commandkey', u'main/subdir/test2.dtd',
-     u'jar:chrome/en-US.jar!/subdir/test2.dtd', u'm',
-     dedent(u'''\
+    ('foozilla.menu.commandkey', 'main/subdir/test2.dtd',
+     'jar:chrome/en-US.jar!/subdir/test2.dtd', 'm',
+     dedent('''\
         Select the shortcut key that you want to use. It
         should be translated, but often shortcut keys (for
         example Ctrl + KEY) are not changed from the original. If
@@ -99,33 +99,33 @@ test_xpi_messages = [
         you are not sure about it. Please find the context of
         the key from the end of the 'Located in' text below.
         ''')),
-    (u'foozilla_something', u'main/subdir/test2.properties',
-     u'jar:chrome/en-US.jar!/subdir/test2.properties:6', u'SomeZilla',
-     dedent(u'''\
+    ('foozilla_something', 'main/subdir/test2.properties',
+     'jar:chrome/en-US.jar!/subdir/test2.properties:6', 'SomeZilla',
+     dedent('''\
         Translators, what you are seeing now is a lovely,
         awesome, multiline comment aimed at you directly
         from the streets of a .properties file
         ''')),
-    (u'foozilla.name', u'main/test1.dtd',
-     u'jar:chrome/en-US.jar!/test1.dtd', u'FooZilla!', None),
-    (u'foozilla.play.fire', u'main/test1.dtd',
-     u'jar:chrome/en-US.jar!/test1.dtd', u'Do you want to play with fire?',
-     u" Translators, don't play with fire!\n"),
-    (u'foozilla.play.ice', u'main/test1.dtd',
-     u'jar:chrome/en-US.jar!/test1.dtd', u'Play with ice?',
-     u' This is just a comment, not a comment for translators\n'),
-    (u'foozilla.title', u'main/test1.properties',
-     u'jar:chrome/en-US.jar!/test1.properties:1', u'FooZilla Zilla Thingy',
+    ('foozilla.name', 'main/test1.dtd',
+     'jar:chrome/en-US.jar!/test1.dtd', 'FooZilla!', None),
+    ('foozilla.play.fire', 'main/test1.dtd',
+     'jar:chrome/en-US.jar!/test1.dtd', 'Do you want to play with fire?',
+     " Translators, don't play with fire!\n"),
+    ('foozilla.play.ice', 'main/test1.dtd',
+     'jar:chrome/en-US.jar!/test1.dtd', 'Play with ice?',
+     ' This is just a comment, not a comment for translators\n'),
+    ('foozilla.title', 'main/test1.properties',
+     'jar:chrome/en-US.jar!/test1.properties:1', 'FooZilla Zilla Thingy',
      None),
-    (u'foozilla.happytitle', u'main/test1.properties',
-     u'jar:chrome/en-US.jar!/test1.properties:3',
-     u'http://foozillingy.happy.net/',
-     u"Translators, if you're older than six, don't translate this\n"),
-    (u'foozilla.nocomment', u'main/test1.properties',
-     u'jar:chrome/en-US.jar!/test1.properties:4', u'No Comment',
-     u'(Except this one)\n'),
-    (u'foozilla.utf8', u'main/test1.properties',
-     u'jar:chrome/en-US.jar!/test1.properties:5', u'\u0414\u0430\u043d=Day',
+    ('foozilla.happytitle', 'main/test1.properties',
+     'jar:chrome/en-US.jar!/test1.properties:3',
+     'http://foozillingy.happy.net/',
+     "Translators, if you're older than six, don't translate this\n"),
+    ('foozilla.nocomment', 'main/test1.properties',
+     'jar:chrome/en-US.jar!/test1.properties:4', 'No Comment',
+     '(Except this one)\n'),
+    ('foozilla.utf8', 'main/test1.properties',
+     'jar:chrome/en-US.jar!/test1.properties:5', '\u0414\u0430\u043d=Day',
      None),
     ]
 
@@ -134,7 +134,7 @@ class FakeXPIMessage(TranslationMessageData):
     """Simulate an XPI translation message."""
 
     def __init__(self, key, chrome_path, file_and_line, value, last_comment):
-        super(FakeXPIMessage, self).__init__()
+        super().__init__()
         self.msgid_singular = key
         self.context = chrome_path
         self.file_references = '%s(%s)' % (file_and_line, key)
@@ -184,7 +184,7 @@ class XPIPOExporterTestCase(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(XPIPOExporterTestCase, self).setUp()
+        super().setUp()
 
         self.translation_exporter = XPIPOExporter()
 
@@ -273,7 +273,7 @@ class XPIPOExporterTestCase(TestCase):
         self.translation_exporter.exportTranslationFile(
             translation_file_data, storage)
 
-        expected_template = dedent(u'''
+        expected_template = dedent('''
             #, fuzzy
             msgid ""
             msgstr ""

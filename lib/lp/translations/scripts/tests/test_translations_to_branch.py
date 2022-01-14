@@ -73,7 +73,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
             path='po/messages.pot')
         template = removeSecurityProxy(template)
         potmsgset = self.factory.makePOTMsgSet(
-            template, singular=u'Hello World', sequence=1)
+            template, singular='Hello World', sequence=1)
         pofile = self.factory.makePOFile(
             'nl', potemplate=template, owner=product.owner)
         self.factory.makeCurrentTranslationMessage(
@@ -126,7 +126,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         missing_filenames = expected_filenames - branch_filenames
         self.assertEqual(set(), missing_filenames)
 
-        for filename, expected in six.iteritems(expected_contents):
+        for filename, expected in expected_contents.items():
             contents = branch_contents[filename].lstrip(b'\n')
             pattern = dedent(expected.lstrip('\n')).encode('UTF-8')
             if not re.match(pattern, contents, re.MULTILINE):
@@ -182,7 +182,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         productseries = self.factory.makeProductSeries()
         exporter = ExportTranslationsToBranch(test_args=[])
         exporter.logger = BufferLogger()
-        boom = u'\u2639'
+        boom = '\u2639'
         exporter._exportToBranch = FakeMethod(failure=GruesomeException(boom))
 
         self.becomeDbUser('translationstobranch')

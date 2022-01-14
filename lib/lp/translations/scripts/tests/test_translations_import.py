@@ -33,7 +33,7 @@ class TestTranslationsImport(TestCaseWithFactory):
     layer = LaunchpadScriptLayer
 
     def setUp(self):
-        super(TestTranslationsImport, self).setUp()
+        super().setUp()
         self.queue = TranslationImportQueue()
         self.script = TranslationsImport('poimport', test_args=[])
         self.script.logger.setLevel(logging.FATAL)

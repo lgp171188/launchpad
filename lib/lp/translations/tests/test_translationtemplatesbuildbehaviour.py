@@ -53,7 +53,7 @@ class FakeBuildQueue:
         self.destroySelf = FakeMethod()
 
 
-class MakeBehaviourMixin(object):
+class MakeBehaviourMixin:
     """Provide common test methods."""
 
     def makeBehaviour(self, branch=None, use_fake_chroot=True, **kwargs):
@@ -90,7 +90,7 @@ class TestTranslationTemplatesBuildBehaviour(
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):
-        super(TestTranslationTemplatesBuildBehaviour, self).setUp()
+        super().setUp()
         self.worker_helper = self.useFixture(WorkerTestHelpers())
 
     def test_getLogFileName(self):
@@ -141,7 +141,7 @@ class TestTranslationTemplatesBuildBehaviour(
         behaviour._slave.valid_files[path] = ''
 
         def got_tarball(filename):
-            tarball = open(filename, 'r')
+            tarball = open(filename)
             try:
                 self.assertEqual(
                     "This is a %s" % path, tarball.read())
@@ -287,7 +287,7 @@ class TestTTBuildBehaviourTranslationsQueue(
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestTTBuildBehaviourTranslationsQueue, self).setUp()
+        super().setUp()
 
         self.queue = getUtility(ITranslationImportQueue)
         self.dummy_tar = os.path.join(

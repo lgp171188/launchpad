@@ -8,7 +8,6 @@ from datetime import (
     timedelta,
     )
 
-import six
 from storm.locals import SQL
 from zope.security.proxy import removeSecurityProxy
 
@@ -103,7 +102,7 @@ class GettextCheckMessages(LaunchpadScript):
                 msgstrs, potmsgset.flags)
         except GettextValidationError as error:
             self._error_count += 1
-            return six.text_type(error)
+            return str(error)
 
         return None
 
