@@ -4324,18 +4324,17 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
     def test_newRevisionStatusReport_featureFlagDisabled(self):
         repository = self.factory.makeGitRepository()
         requester = repository.owner
-        webservice = webservice_for_person(None, default_api_version="devel")
         with person_logged_in(requester):
             repository_url = api_url(repository)
-
             secret, _ = self.factory.makeAccessToken(
                 owner=requester, target=repository,
                 scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
-            header = {'Authorization': 'Token %s' % secret}
+        webservice = webservice_for_person(
+            requester, default_api_version="devel", access_token_secret=secret)
 
         response = webservice.named_post(
             repository_url, "newStatusReport",
-            headers=header, title="CI",
+            title="CI",
             commit_sha1=hashlib.sha1(
                 self.factory.getUniqueBytes()).hexdigest(),
             url='https://launchpad.net/',
@@ -4350,21 +4349,20 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
     def test_newRevisionStatusReport(self):
         repository = self.factory.makeGitRepository()
         requester = repository.owner
-        webservice = webservice_for_person(None, default_api_version="devel")
         with person_logged_in(requester):
             repository_url = api_url(repository)
-
             secret, _ = self.factory.makeAccessToken(
                 owner=requester, target=repository,
                 scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
-            header = {'Authorization': 'Token %s' % secret}
+        webservice = webservice_for_person(
+            requester, default_api_version="devel", access_token_secret=secret)
 
         self.useFixture(FeatureFixture(
             {REVISION_STATUS_REPORT_ALLOW_CREATE: "on"}))
 
         response = webservice.named_post(
             repository_url, "newStatusReport",
-            headers=header, title="CI",
+            title="CI",
             commit_sha1=hashlib.sha1(
                 self.factory.getUniqueBytes()).hexdigest(),
             url='https://launchpad.net/',
@@ -4417,21 +4415,19 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             result_summary=result_summary2,
             result=RevisionStatusResult.FAILED)
 
-        webservice = webservice_for_person(None, default_api_version="devel")
         with person_logged_in(requester):
             repository_url = api_url(repository)
-
             secret, _ = self.factory.makeAccessToken(
                 owner=requester, target=repository,
                 scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
-            header = {'Authorization': 'Token %s' % secret}
+        webservice = webservice_for_person(
+            requester, default_api_version="devel", access_token_secret=secret)
 
         self.useFixture(FeatureFixture(
             {REVISION_STATUS_REPORT_ALLOW_CREATE: "on"}))
 
         response = webservice.named_get(
             repository_url, "getStatusReports",
-            headers=header,
             commit_sha1=commit_sha1s[0])
         self.assertEqual(200, response.status)
         with person_logged_in(requester):
