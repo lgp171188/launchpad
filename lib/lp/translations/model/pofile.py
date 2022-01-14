@@ -14,7 +14,6 @@ __all__ = [
 import datetime
 
 import pytz
-import six
 from storm.expr import (
     And,
     Cast,
@@ -198,8 +197,8 @@ class POFileMixIn(RosettaStats):
                             distinct=True)),
                         Like(
                             POTranslation.translation,
-                            u"%" + text.translate(like_escape) + u"%",
-                            u"!", case_sensitive=False))))))
+                            "%" + text.translate(like_escape) + "%",
+                            "!", case_sensitive=False))))))
 
     def _getTemplateSearchQuery(self, text):
         """Query for finding `text` in msgids of this POFile.
@@ -239,8 +238,8 @@ class POFileMixIn(RosettaStats):
                                     TranslationTemplateItem.sequence > 0))),
                             Like(
                                 POMsgID.msgid,
-                                u"%" + text.translate(like_escape) + u"%",
-                                u"!", case_sensitive=False))))))
+                                "%" + text.translate(like_escape) + "%",
+                                "!", case_sensitive=False))))))
 
         return Union(
             select_potmsgsets("msgid_singular"),
@@ -435,8 +434,8 @@ class POFile(SQLBase, POFileMixIn):
 
     def prepareTranslationCredits(self, potmsgset):
         """See `IPOFile`."""
-        LP_CREDIT_HEADER = u'Launchpad Contributions:'
-        SPACE = u' '
+        LP_CREDIT_HEADER = 'Launchpad Contributions:'
+        SPACE = ' '
         credits_type = potmsgset.translation_credits_type
         assert credits_type != TranslationCreditsType.NOT_CREDITS, (
             "Calling prepareTranslationCredits on a message with "
@@ -457,7 +456,7 @@ class POFile(SQLBase, POFileMixIn):
 
             # Add two empty email fields to make formatting nicer.
             # See bug #133817 for details.
-            emails.extend([u'', u''])
+            emails.extend(['', ''])
 
             for contributor in self.contributors:
                 preferred_email = contributor.preferredemail
@@ -466,12 +465,12 @@ class POFile(SQLBase, POFileMixIn):
                     emails.append('')
                 else:
                     emails.append(preferred_email.email)
-            return u','.join(emails)
+            return ','.join(emails)
         elif credits_type == TranslationCreditsType.KDE_NAMES:
             names = []
 
             if text is not None:
-                if text == u'':
+                if text == '':
                     text = SPACE
                 names.append(text)
             # Add an empty name as a separator, and 'Launchpad
@@ -480,18 +479,18 @@ class POFile(SQLBase, POFileMixIn):
             names.extend([
                 contributor.displayname
                 for contributor in self.contributors])
-            return u','.join(names)
+            return ','.join(names)
         elif credits_type == TranslationCreditsType.GNOME:
             if len(list(self.contributors)):
                 if text is None:
-                    text = u''
+                    text = ''
                 else:
                     # Strip existing Launchpad contribution lists.
                     header_index = text.find(LP_CREDIT_HEADER)
                     if header_index != -1:
                         text = text[:header_index]
                     else:
-                        text += u'\n\n'
+                        text += '\n\n'
 
                 text += LP_CREDIT_HEADER
                 for contributor in self.contributors:
@@ -640,7 +639,7 @@ class POFile(SQLBase, POFileMixIn):
                 getattr(Shared, flag_name),
                 Shared.potemplateID == None))
 
-        beginning_of_time = Cast(u'1970-01-01 00:00:00', 'timestamp')
+        beginning_of_time = Cast('1970-01-01 00:00:00', 'timestamp')
         clauses.append(
             TranslationMessage.date_created >
                 Coalesce(
@@ -971,7 +970,7 @@ class POFile(SQLBase, POFileMixIn):
             template_mail = 'poimport-not-exported-from-rosetta.txt'
             import_rejected = True
             entry_to_import.setErrorOutput(
-                u"File was not exported from Launchpad.")
+                "File was not exported from Launchpad.")
         except (MixedNewlineMarkersError, TranslationFormatSyntaxError,
                 TranslationFormatInvalidInputError,
                 UnicodeDecodeError) as exception:
@@ -985,7 +984,7 @@ class POFile(SQLBase, POFileMixIn):
             else:
                 template_mail = 'poimport-syntax-error.txt'
             import_rejected = True
-            error_text = six.text_type(exception)
+            error_text = str(exception)
             entry_to_import.setErrorOutput(error_text)
             needs_notification_for_imported = True
         except OutdatedTranslationError as exception:
@@ -995,15 +994,15 @@ class POFile(SQLBase, POFileMixIn):
                 logger.info('Got an old version for %s' % self.title)
             template_mail = 'poimport-got-old-version.txt'
             import_rejected = True
-            error_text = six.text_type(exception)
+            error_text = str(exception)
             entry_to_import.setErrorOutput(
-                u"Outdated translation.  " + error_text)
+                "Outdated translation.  " + error_text)
         except TooManyPluralFormsError:
             if logger:
                 logger.warning("Too many plural forms.")
             template_mail = 'poimport-too-many-plural-forms.txt'
             import_rejected = True
-            entry_to_import.setErrorOutput(u"Too many plural forms.")
+            entry_to_import.setErrorOutput("Too many plural forms.")
         else:
             # The import succeeded.  There may still be non-fatal errors
             # or warnings for individual messages (kept as a list in
@@ -1037,7 +1036,7 @@ class POFile(SQLBase, POFileMixIn):
             data = self._prepare_pomessage_error_message(errors, replacements)
             subject, template_mail, errorsdetails = data
             entry_to_import.setErrorOutput(
-                u"Imported, but with errors:\n" + errorsdetails)
+                "Imported, but with errors:\n" + errorsdetails)
         else:
             # The import was successful.
             template_mail = 'poimport-confirmation.txt'
@@ -1252,7 +1251,7 @@ class DummyPOFile(POFileMixIn):
         # privileges.
         self.owner = owner
 
-        self.path = u'unknown'
+        self.path = 'unknown'
         self.datecreated = datetime.datetime.now(UTC)
         self.last_touched_pomsgset = None
         self.contributors = []

@@ -93,11 +93,11 @@ class TranslationTemplatesBuild(SpecificBuildFarmJobSourceMixin,
 
     @property
     def title(self):
-        return u'Translation template build for %s' % (
+        return 'Translation template build for %s' % (
             self.branch.displayname)
 
     def __init__(self, build_farm_job, branch, processor):
-        super(TranslationTemplatesBuild, self).__init__()
+        super().__init__()
         self.build_farm_job = build_farm_job
         self.branch = branch
         self.status = BuildStatus.NEEDSBUILD

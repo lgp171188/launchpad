@@ -345,9 +345,9 @@ class IPOFileAlternativeLanguage(Interface):
     """A PO File's alternative language."""
 
     alternative_language = Choice(
-        title=u'Alternative language',
-        description=(u'Language from where we could get alternative'
-                     u' translations for this PO file.'),
+        title='Alternative language',
+        description=('Language from where we could get alternative'
+                     ' translations for this PO file.'),
         source=AlternativeLanguageVocabularyFactory(),
         required=False)
 

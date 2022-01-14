@@ -25,15 +25,15 @@ class IPOFileTranslator(Interface):
     id = Int(title=_("ID"), readonly=True, required=True)
 
     person = Object(
-        title=_(u"The `Person` whose contribution this record represents."),
+        title=_("The `Person` whose contribution this record represents."),
         required=True, readonly=True, schema=IPerson)
 
     pofile = Object(
-        title=_(u"The `POFile` modified by the translator."), required=True,
+        title=_("The `POFile` modified by the translator."), required=True,
         readonly=True, schema=IPOFile)
 
     date_last_touched = Datetime(
-        title=_(u"When the latest translation message was added."),
+        title=_("When the latest translation message was added."),
         required=True, readonly=True)
 
 

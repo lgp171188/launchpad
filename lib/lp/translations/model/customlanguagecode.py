@@ -49,7 +49,7 @@ class CustomLanguageCode(StormBase):
     language = Reference(language_id, 'Language.id')
 
     def __init__(self, translation_target, language_code, language=None):
-        super(CustomLanguageCode, self).__init__()
+        super().__init__()
         self.product = None
         self.distribution = None
         self.sourcepackagename = None

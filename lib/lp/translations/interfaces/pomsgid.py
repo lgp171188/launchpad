@@ -21,4 +21,4 @@ class IPOMsgID(Interface):
         readonly=True, required=True)
 
     msgid = Text(
-        title=_(u"A msgid string."))
+        title=_("A msgid string."))

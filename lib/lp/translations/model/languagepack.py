@@ -49,7 +49,7 @@ class LanguagePack(StormBase):
     updates = Reference(updates_id, 'LanguagePack.id')
 
     def __init__(self, file, date_exported, distroseries, type, updates=None):
-        super(LanguagePack, self).__init__()
+        super().__init__()
         self.file = file
         self.date_exported = date_exported
         self.distroseries = distroseries

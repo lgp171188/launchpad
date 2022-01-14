@@ -26,7 +26,7 @@ class POMsgID(StormBase):
     msgid = Unicode(name='msgid', allow_none=False)
 
     def __init__(self, msgid):
-        super(POMsgID, self).__init__()
+        super().__init__()
         self.msgid = msgid
 
     @classmethod

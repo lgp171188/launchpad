@@ -18,7 +18,6 @@ import operator
 import os
 
 from psycopg2.extensions import TransactionRollbackError
-import six
 from storm.expr import (
     And,
     Desc,
@@ -261,7 +260,7 @@ class POTemplate(SQLBase, RosettaStats):
             return result
 
     def __storm_invalidated__(self):
-        super(POTemplate, self).__storm_invalidated__()
+        super().__storm_invalidated__()
         self.clearPOFileCache()
         self._uses_english_msgids = None
 
@@ -294,8 +293,7 @@ class POTemplate(SQLBase, RosettaStats):
 
     def __iter__(self):
         """See `IPOTemplate`."""
-        for potmsgset in self.getPOTMsgSets():
-            yield potmsgset
+        yield from self.getPOTMsgSets()
 
     def __getitem__(self, key):
         """See `IPOTemplate`."""
@@ -537,7 +535,7 @@ class POTemplate(SQLBase, RosettaStats):
         return Store.of(self).find(
             Language,
             POFile.languageID == Language.id,
-            Language.code != u'en',
+            Language.code != 'en',
             POFile.potemplateID == self.id).config(distinct=True)
 
     def getPOFileByPath(self, path):
@@ -944,7 +942,7 @@ class POTemplate(SQLBase, RosettaStats):
                 template_mail = 'poimport-syntax-error.txt'
             entry_to_import.setStatus(RosettaImportStatus.FAILED,
                                       rosetta_experts)
-            error_text = six.text_type(exception)
+            error_text = str(exception)
             entry_to_import.setErrorOutput(error_text)
         else:
             error_text = None
@@ -1003,7 +1001,7 @@ class POTemplate(SQLBase, RosettaStats):
                     if logger:
                         logger.warning(
                             "Statistics update failed: %s" %
-                            six.text_type(error))
+                            str(error))
 
         if template_mail is not None:
             template = get_email_template(
@@ -1131,8 +1129,7 @@ class POTemplateSubset:
 
     def __iter__(self):
         """See `IPOTemplateSubset`."""
-        for potemplate in self._build_query():
-            yield potemplate
+        yield from self._build_query()
 
     def __len__(self):
         """See `IPOTemplateSubset`."""
@@ -1265,7 +1262,7 @@ class POTemplateSubset:
         result = self._build_query(
             Or(
                 POTemplate.path == filename,
-                POTemplate.path.endswith(u'/%s' % filename)),
+                POTemplate.path.endswith('/%s' % filename)),
             ordered=False)
         candidates = list(result.config(limit=2))
 
@@ -1281,8 +1278,7 @@ class POTemplateSet:
 
     def __iter__(self):
         """See `IPOTemplateSet`."""
-        for potemplate in IStore(POTemplate).find(POTemplate):
-            yield potemplate
+        yield from IStore(POTemplate).find(POTemplate)
 
     def getAllByName(self, name):
         """See `IPOTemplateSet`."""
@@ -1413,7 +1409,7 @@ class POTemplateSet:
 
 
 @implementer(IPOTemplateSharingSubset)
-class POTemplateSharingSubset(object):
+class POTemplateSharingSubset:
 
     distribution = None
     sourcepackagename = None
@@ -1551,7 +1547,7 @@ class POTemplateSharingSubset(object):
                 equivalents[key] = []
             equivalents[key].append(template)
 
-        for equivalence_list in six.itervalues(equivalents):
+        for equivalence_list in equivalents.values():
             # Sort potemplates from "most representative" to "least
             # representative."
             equivalence_list.sort(key=POTemplate.sharingKey, reverse=True)

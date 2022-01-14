@@ -57,7 +57,7 @@ class IPOTemplate(IRosettaStats):
     """A translation template."""
 
     id = exported(Int(
-        title=u"The translation template id.",
+        title="The translation template id.",
         required=True, readonly=True))
 
     name = exported(TextLine(
@@ -132,7 +132,7 @@ class IPOTemplate(IRosettaStats):
         readonly=True)
 
     sourcepackage = Reference(
-        ISourcePackage, title=u"Source package this template is for, if any.",
+        ISourcePackage, title="Source package this template is for, if any.",
         required=False, readonly=True)
 
     from_sourcepackagename = Choice(
