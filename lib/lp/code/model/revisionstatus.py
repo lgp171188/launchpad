@@ -77,7 +77,7 @@ class RevisionStatusReport(StormBase):
         self.date_created = UTC_NOW
         self.transitionToNewResult(result)
 
-    def api_setLog(self, log_data):
+    def setLog(self, log_data):
         filename = '%s-%s.txt' % (self.title, self.commit_sha1)
 
         lfa = getUtility(ILibraryFileAliasSet).create(

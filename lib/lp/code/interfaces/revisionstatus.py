@@ -16,7 +16,6 @@ import http.client
 
 from lazr.restful.declarations import (
     error_status,
-    export_operation_as,
     export_write_operation,
     exported,
     exported_as_webservice_entry,
@@ -120,9 +119,8 @@ class IRevisionStatusReportEdit(Interface):
                        constraint=attachment_size_constraint))
     @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
     @export_write_operation()
-    @export_operation_as(name="setLog")
     @operation_for_version("devel")
-    def api_setLog(log_data):
+    def setLog(log_data):
         """Set a new log on an existing status report.
 
         :param log_data: The contents (in bytes) of the log.
