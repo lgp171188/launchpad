@@ -23,7 +23,7 @@ from lp.translations.interfaces.translationfileformat import (
 
 class IPOExportRequestSet(Interface):
     entry_count = Int(
-        title=u'Number of entries waiting in the queue.',
+        title='Number of entries waiting in the queue.',
         required=True, readonly=True)
 
     def estimateBacklog():
@@ -62,16 +62,16 @@ class IPOExportRequestSet(Interface):
 
 class IPOExportRequest(Interface):
     person = Object(
-        title=u'The person who made the request.',
+        title='The person who made the request.',
         required=True, readonly=True, schema=IPerson)
 
     date_created = Datetime(
-        title=u"Request's creation timestamp.", required=True, readonly=True)
+        title="Request's creation timestamp.", required=True, readonly=True)
 
     potemplate = Object(
-        title=u'The translation template to which the requested file belong.',
+        title='The translation template to which the requested file belong.',
         required=True, readonly=True, schema=IPOTemplate)
 
     pofile = Object(
-        title=u'The translation file requested, if any.',
+        title='The translation file requested, if any.',
         required=True, readonly=True, schema=IPOFile)

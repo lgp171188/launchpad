@@ -73,7 +73,7 @@ class TranslationPackagingJob(TranslationSharingJobDerived, BaseRunnableJob):
         """See `IJobSource`."""
         clause = TranslationSharingJob.job_type.is_in(
             cls._translation_packaging_job_types)
-        return super(TranslationPackagingJob, cls).iterReady([clause])
+        return super().iterReady([clause])
 
 
 @implementer(IRunnableJob)

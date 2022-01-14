@@ -13,7 +13,6 @@ from collections import (
 import logging
 import re
 
-import six
 from storm.expr import (
     And,
     Coalesce,
@@ -91,26 +90,26 @@ from lp.translations.utilities.validate import validate_translation
 # contexts and type.
 credits_message_info = {
     # Regular gettext credits messages.
-    u'translation-credits': (None, TranslationCreditsType.GNOME),
-    u'translator-credits': (None, TranslationCreditsType.GNOME),
-    u'translator_credits': (None, TranslationCreditsType.GNOME),
+    'translation-credits': (None, TranslationCreditsType.GNOME),
+    'translator-credits': (None, TranslationCreditsType.GNOME),
+    'translator_credits': (None, TranslationCreditsType.GNOME),
 
     # KDE credits messages.
-    u'Your emails':
-        (u'EMAIL OF TRANSLATORS', TranslationCreditsType.KDE_EMAILS),
-    u'Your names':
-        (u'NAME OF TRANSLATORS', TranslationCreditsType.KDE_NAMES),
+    'Your emails':
+        ('EMAIL OF TRANSLATORS', TranslationCreditsType.KDE_EMAILS),
+    'Your names':
+        ('NAME OF TRANSLATORS', TranslationCreditsType.KDE_NAMES),
 
     # Old KDE credits messages.
-    u'_: EMAIL OF TRANSLATORS\nYour emails':
+    '_: EMAIL OF TRANSLATORS\nYour emails':
         (None, TranslationCreditsType.KDE_EMAILS),
-    u'_: NAME OF TRANSLATORS\nYour names':
+    '_: NAME OF TRANSLATORS\nYour names':
         (None, TranslationCreditsType.KDE_NAMES),
     }
 
 # String to be used as msgstr for translation credits messages.
-credits_message_str = (u'This is a dummy translation so that the '
-                       u'credits are counted as translated.')
+credits_message_str = ('This is a dummy translation so that the '
+                       'credits are counted as translated.')
 
 
 # Marker for "no incumbent message found yet."
@@ -131,7 +130,7 @@ def dictify_translations(translations):
     # Filter out None values.
     return {
         form: translation
-        for form, translation in six.iteritems(translations)
+        for form, translation in translations.items()
         if translation is not None}
 
 
@@ -627,7 +626,7 @@ class POTMsgSet(SQLBase):
 
         forms = {
             'msgstr%d' % form: potranslation
-            for form, potranslation in six.iteritems(potranslations)}
+            for form, potranslation in potranslations.items()}
 
         if from_import:
             origin = RosettaTranslationOrigin.SCM
@@ -764,7 +763,7 @@ class POTMsgSet(SQLBase):
 
         translation_args = {
             'msgstr%d' % form: translation
-            for form, translation in six.iteritems(translations)}
+            for form, translation in translations.items()}
 
         return TranslationMessage(
             potmsgset=self,

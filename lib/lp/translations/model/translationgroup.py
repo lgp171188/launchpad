@@ -262,11 +262,10 @@ class TranslationGroupSet:
         # group names from their respective celebrities.  For now,
         # just hard-code them so they show up at the top of the
         # listing of all translation groups.
-        for group in IStore(TranslationGroup).find(TranslationGroup).order_by(
-                Desc(TranslationGroup.name.is_in((
-                    'launchpad-translators', 'ubuntu-translators'))),
-                TranslationGroup.title):
-            yield group
+        yield from IStore(TranslationGroup).find(TranslationGroup).order_by(
+            Desc(TranslationGroup.name.is_in((
+                'launchpad-translators', 'ubuntu-translators'))),
+            TranslationGroup.title)
 
     def __getitem__(self, name):
         """See ITranslationGroupSet."""

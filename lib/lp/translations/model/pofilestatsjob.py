@@ -57,7 +57,7 @@ class POFileStatsJob(StormBase, BaseRunnableJob):
     def __init__(self, pofile):
         self.job = Job()
         self.pofile = pofile
-        super(POFileStatsJob, self).__init__()
+        super().__init__()
 
     def getOperationDescription(self):
         """See `IRunnableJob`."""

@@ -14,7 +14,6 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
-import six
 from storm.locals import (
     Int,
     Reference,
@@ -167,7 +166,7 @@ class TranslationSharingJobDerived(metaclass=EnumeratedSubclass):
             for.
         :param event: The event itself.
         """
-        for event_type, job_classes in six.iteritems(cls._event_types):
+        for event_type, job_classes in cls._event_types.items():
             if not event_type.providedBy(event):
                 continue
             for job_class in job_classes:
@@ -188,7 +187,7 @@ class TranslationSharingJobDerived(metaclass=EnumeratedSubclass):
             # Ignore changes to POTemplates that are neither renames,
             # nor moves to a different package/project.
             return
-        for event_type, job_classes in six.iteritems(cls._event_types):
+        for event_type, job_classes in cls._event_types.items():
             if not event_type.providedBy(event):
                 continue
             for job_class in job_classes:

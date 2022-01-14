@@ -50,65 +50,65 @@ class IVPOExport(Interface):
     """Shorthand of translation messages for efficient exports."""
 
     pofile = Object(
-        title=u"Translation file",
+        title="Translation file",
         required=True, readonly=True, schema=IPOFile)
 
     diverged = Text(
-        title=u"Message divergence.",
-        description=u"A POTemplate this is a divergence for, or None.",
+        title="Message divergence.",
+        description="A POTemplate this is a divergence for, or None.",
         required=False, readonly=True)
 
     potmsgset = Object(
-        title=u"See `IPOTMsgSet`.",
+        title="See `IPOTMsgSet`.",
         required=True, readonly=True, schema=IPOTMsgSet)
 
     sequence = Int(
-        title=u"Message sequence number",
-        description=u"As in IPOTMsgSet.",
+        title="Message sequence number",
+        description="As in IPOTMsgSet.",
         required=True, readonly=True)
 
     comment = Text(
-        title=u"Comment for translated message",
-        description=u"Same as IPOTMsgSet.commenttext.",
+        title="Comment for translated message",
+        description="Same as IPOTMsgSet.commenttext.",
         required=False, readonly=True)
 
     source_comment = Text(
-        title=u"Comment for original message",
-        description=u"Same as IPOTMsgSet.sourcecomment.",
+        title="Comment for original message",
+        description="Same as IPOTMsgSet.sourcecomment.",
         required=False, readonly=True)
 
     file_references = Text(
-        title=u"Message's source location",
-        description=u"Same as IPOTMsgSet.filereferences.",
+        title="Message's source location",
+        description="Same as IPOTMsgSet.filereferences.",
         required=False, readonly=True)
 
     flags_comment = Text(
-        title=u"Message flags",
-        description=u"Same as IPOTMsgSet.flagscomment.",
+        title="Message flags",
+        description="Same as IPOTMsgSet.flagscomment.",
         required=False, readonly=True)
 
     context = Text(
-        title=u"Message context",
-        description=u"As in IPOTMsgSet.", readonly=True, required=False)
+        title="Message context",
+        description="As in IPOTMsgSet.", readonly=True, required=False)
 
     msgid_singular = Text(
-        title=u"Message identifier (singular)",
-        description=u"See IPOMsgID.pomsgid.",
+        title="Message identifier (singular)",
+        description="See IPOMsgID.pomsgid.",
         required=True, readonly=True)
 
     msgid_plural = Text(
-        title=u"Message identifier (plural)",
-        description=u"See IPOMsgID.pomsgid.",
+        title="Message identifier (plural)",
+        description="See IPOMsgID.pomsgid.",
         required=False, readonly=True)
 
     is_current_ubuntu = Bool(
         title=_("Whether this message is currently used in Launchpad"),
-        description=u"As in ITranslationMessage.",
+        description="As in ITranslationMessage.",
         readonly=True, required=True)
 
     is_current_upstream = Bool(
         title=_("Whether this message was imported"),
-        description=u"As in ITranslationMessage.",
+        description="As in ITranslationMessage.",
         readonly=True, required=True)
 
     assert TranslationConstants.MAX_PLURAL_FORMS == 6, (
@@ -116,31 +116,31 @@ class IVPOExport(Interface):
         % TranslationConstants.MAX_PLURAL_FORMS)
 
     translation0 = Text(
-        title=u"Translation in plural form 0",
-        description=u"As in ITranslationMessage.",
+        title="Translation in plural form 0",
+        description="As in ITranslationMessage.",
         readonly=True, required=False)
 
     translation1 = Text(
-        title=u"Translation in plural form 1",
-        description=u"As in ITranslationMessage.",
+        title="Translation in plural form 1",
+        description="As in ITranslationMessage.",
         readonly=True, required=False)
 
     translation2 = Text(
-        title=u"Translation in plural form 2",
-        description=u"As in ITranslationMessage.",
+        title="Translation in plural form 2",
+        description="As in ITranslationMessage.",
         readonly=True, required=False)
 
     translation3 = Text(
-        title=u"Translation in plural form 3",
-        description=u"As in ITranslationMessage.",
+        title="Translation in plural form 3",
+        description="As in ITranslationMessage.",
         readonly=True, required=False)
 
     translation4 = Text(
-        title=u"Translation in plural form 4",
-        description=u"As in ITranslationMessage.",
+        title="Translation in plural form 4",
+        description="As in ITranslationMessage.",
         readonly=True, required=False)
 
     translation5 = Text(
-        title=u"Translation in plural form 5",
-        description=u"As in ITranslationMessage.",
+        title="Translation in plural form 5",
+        description="As in ITranslationMessage.",
         readonly=True, required=False)

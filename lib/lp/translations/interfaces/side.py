@@ -39,13 +39,13 @@ class ITranslationSideTraits(Interface):
     """
     side = Attribute("This TranslationSide")
     other_side_traits = Reference(
-        Interface, title=u"Traits for other side.", required=True,
+        Interface, title="Traits for other side.", required=True,
         readonly=True)
     flag_name = TextLine(
-        title=u"The TranslationMessage flag for this side",
+        title="The TranslationMessage flag for this side",
         required=True, readonly=True)
     displayname = TextLine(
-        title=u"Display name for this side", required=True, readonly=True)
+        title="Display name for this side", required=True, readonly=True)
 
     def getCurrentMessage(potemplate, potmsgset, language):
         """Find the current message on this side, if any."""

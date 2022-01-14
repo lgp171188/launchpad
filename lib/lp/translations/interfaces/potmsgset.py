@@ -73,7 +73,7 @@ class IPOTMsgSet(Interface):
         readonly=True, required=True)
 
     context = Text(
-        title=u"String used to disambiguate messages with identical msgids.")
+        title="String used to disambiguate messages with identical msgids.")
 
     msgid_singular = Object(
         title=_("The singular msgid for this message."),
@@ -83,10 +83,10 @@ class IPOTMsgSet(Interface):
             """), readonly=True, required=True, schema=IPOMsgID)
 
     msgid_plural = Object(
-        title=u"The plural msgid for this message.",
-        description=(u"Provides a plural msgid for the message. "
-                     u"If it's not a plural form message, this value"
-                     u"should be None."),
+        title="The plural msgid for this message.",
+        description=("Provides a plural msgid for the message. "
+                     "If it's not a plural form message, this value"
+                     "should be None."),
         required=True,
         readonly=True,
         schema=IPOMsgID)
@@ -334,7 +334,7 @@ class IPOTMsgSet(Interface):
         """Whether this is a message set for crediting translators.""")
 
     translation_credits_type = Choice(
-        title=u"The type of translation credit of this message.",
+        title="The type of translation credit of this message.",
         required=True,
         vocabulary=TranslationCreditsType)
 

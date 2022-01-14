@@ -72,7 +72,7 @@ class DistroSeriesLanguage(StormBase, RosettaStats):
         name='dateupdated', tzinfo=pytz.UTC, default=DEFAULT)
 
     def __init__(self, distroseries, language):
-        super(DistroSeriesLanguage, self).__init__()
+        super().__init__()
         self.distroseries = distroseries
         self.language = language
 
@@ -171,7 +171,7 @@ class DummyDistroSeriesLanguage(RosettaStats):
         assert 'en' != language.code, (
             'English is not a translatable language.')
 
-        super(DummyDistroSeriesLanguage, self).__init__()
+        super().__init__()
 
         self.id = None
         self.language = language

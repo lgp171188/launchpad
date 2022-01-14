@@ -20,45 +20,45 @@ class IVPOTExport(Interface):
     """Database view for efficient POT exports."""
 
     potemplate = Object(
-        title=u"See IPOTemplate",
+        title="See IPOTemplate",
         required=True, readonly=True, schema=IPOTemplate)
 
     template_header = Text(
-        title=u"See IPOTemplate.header",
+        title="See IPOTemplate.header",
         required=True, readonly=True)
 
     potmsgset = Object(
-        title=u"See `IPOTMsgSet`.",
+        title="See `IPOTMsgSet`.",
         required=True, readonly=True, schema=IPOTMsgSet)
 
     sequence = Int(
-        title=u"See `IPOTMsgSet`.sequence",
+        title="See `IPOTMsgSet`.sequence",
         required=False, readonly=True)
 
     comment = Text(
-        title=u"See `IPOTMsgSet`.commenttext",
+        title="See `IPOTMsgSet`.commenttext",
         required=False, readonly=True)
 
     source_comment = Text(
-        title=u"See `IPOTMsgSet`.sourcecomment",
+        title="See `IPOTMsgSet`.sourcecomment",
         required=False, readonly=True)
 
     file_references = Text(
-        title=u"See `IPOTMsgSet.filereferences`",
+        title="See `IPOTMsgSet.filereferences`",
         required=False, readonly=True)
 
     flags_comment = Text(
-        title=u"See `IPOTMsgSet`.flagscomment",
+        title="See `IPOTMsgSet`.flagscomment",
         required=False, readonly=True)
 
     context = Text(
-        title=u"See `IPOTMsgSet`.context",
+        title="See `IPOTMsgSet`.context",
         required=False, readonly=True)
 
     msgid_singular = Text(
-        title=u"See `IPOMsgID`.pomsgid",
+        title="See `IPOMsgID`.pomsgid",
         required=True, readonly=True)
 
     msgid_plural = Text(
-        title=u"See `IPOMsgID`.pomsgid",
+        title="See `IPOMsgID`.pomsgid",
         required=False, readonly=True)
