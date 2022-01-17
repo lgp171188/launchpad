@@ -46,7 +46,10 @@ from lp.code.enums import (
     RevisionStatusResult,
     )
 from lp.services.auth.enums import AccessTokenScope
-from lp.services.fields import URIField
+from lp.services.fields import (
+    PublicPersonChoice,
+    URIField,
+    )
 
 
 @error_status(http.client.UNAUTHORIZED)
@@ -62,6 +65,11 @@ class IRevisionStatusReportView(Interface):
     """`IRevisionStatusReport` attributes that require launchpad.View."""
 
     id = Int(title=_("ID"), required=True, readonly=True)
+
+    creator = PublicPersonChoice(
+        title=_("Creator"), required=True, readonly=True,
+        vocabulary="ValidPersonOrTeam",
+        description=_("The person who created this report."))
 
     date_created = exported(Datetime(
         title=_("When the report was created."), required=True, readonly=True))
