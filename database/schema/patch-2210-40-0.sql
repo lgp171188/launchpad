@@ -5,9 +5,7 @@ SET client_min_messages=ERROR;
 
 CREATE TABLE CIBuild (
     id serial PRIMARY KEY,
-    -- Nullable in order to allow detaching build jobs from repositories
-    -- when deleting them.
-    git_repository integer REFERENCES gitrepository,
+    git_repository integer NOT NULL REFERENCES gitrepository,
     commit_sha1 character(40) NOT NULL,
     distro_arch_series integer NOT NULL REFERENCES distroarchseries,
     processor integer NOT NULL REFERENCES processor,
@@ -52,16 +50,14 @@ CREATE INDEX cibuild__build_farm_job__idx
 
 -- CIBuildSet.requestBuild
 CREATE INDEX cibuild__commit__das__status__idx
-    ON CIBuild (git_repository, commit_sha1, distro_arch_series, status)
-    WHERE git_repository IS NOT NULL;
+    ON CIBuild (git_repository, commit_sha1, distro_arch_series, status);
 
 -- builds listings
 CREATE INDEX cibuild__commit__status__started__finished__created__id__idx
     ON CIBuild (
         git_repository, commit_sha1, status,
         GREATEST(date_started, date_finished) DESC NULLS LAST,
-        date_created DESC, id DESC)
-    WHERE git_repository IS NOT NULL;
+        date_created DESC, id DESC);
 
 -- CIBuild.getMedianBuildDuration
 CREATE INDEX cibuild__git_repository__das__status__finished__idx
