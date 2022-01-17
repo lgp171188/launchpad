@@ -158,7 +158,7 @@ class TestReviewableProductTranslationFiles(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestReviewableProductTranslationFiles, self).setUp()
+        super().setUp()
         ReviewTestMixin.setUpMixin(self, for_product=True)
 
     def test_getReviewableTranslationFiles_project_deactivated(self):
@@ -176,5 +176,5 @@ class TestReviewableDistroTranslationFiles(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestReviewableDistroTranslationFiles, self).setUp()
+        super().setUp()
         ReviewTestMixin.setUpMixin(self, for_product=False)

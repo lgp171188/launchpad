@@ -44,9 +44,9 @@ class TranslationMessageData:
         self.plural_text = None
         self.context = None
         self._translations = []
-        self.comment = u''
-        self.source_comment = u''
-        self.file_references = u''
+        self.comment = ''
+        self.source_comment = ''
+        self.file_references = ''
         self.flags = set()
         self.is_obsolete = False
 

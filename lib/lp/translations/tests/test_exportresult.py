@@ -35,7 +35,7 @@ class TestExportResult(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestExportResult, self).setUp()
+        super().setUp()
         # In development mode, the librarian is normally configured to
         # generate HTTP URLs.  Enable HTTPS URLs so that we can test that
         # ExportResult uses them.

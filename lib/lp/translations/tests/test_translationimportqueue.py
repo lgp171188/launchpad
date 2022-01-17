@@ -51,7 +51,7 @@ class TestCanSetStatusBase:
 
     def setUp(self):
         """Set up context to test in."""
-        super(TestCanSetStatusBase, self).setUp()
+        super().setUp()
 
         self.queue = getUtility(ITranslationImportQueue)
         self.rosetta_experts = (
@@ -187,7 +187,7 @@ class TestCanSetStatusPOTemplate(TestCanSetStatusBase, TestCaseWithFactory):
 
     def setUp(self):
         """Create the entry to test on."""
-        super(TestCanSetStatusPOTemplate, self).setUp()
+        super().setUp()
 
         self.potemplate = self.factory.makePOTemplate(
             productseries=self.productseries)
@@ -201,7 +201,7 @@ class TestCanSetStatusPOFile(TestCanSetStatusBase, TestCaseWithFactory):
 
     def setUp(self):
         """Create the entry to test on."""
-        super(TestCanSetStatusPOFile, self).setUp()
+        super().setUp()
 
         self.potemplate = self.factory.makePOTemplate(
             productseries=self.productseries)
@@ -245,7 +245,7 @@ class TestGetGuessedPOFile(TestCaseWithFactory):
 
     def setUp(self):
         """Set up context to test in."""
-        super(TestGetGuessedPOFile, self).setUp()
+        super().setUp()
         self.queue = getUtility(ITranslationImportQueue)
         self.factory = LaunchpadObjectFactory()
         self.distribution = self.factory.makeDistribution('boohoo')
@@ -340,7 +340,7 @@ class TestProductOwnerEntryImporter(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestProductOwnerEntryImporter, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         self.old_owner = self.product.owner
         self.new_owner = self.factory.makePerson()
@@ -352,7 +352,7 @@ class TestProductOwnerEntryImporter(TestCaseWithFactory):
         # Changing the Product owner also updates the importer of the entry.
         with person_logged_in(self.old_owner):
             entry = self.import_queue.addOrUpdateEntry(
-                u'po/sr.po', b'foo', True, self.old_owner,
+                'po/sr.po', b'foo', True, self.old_owner,
                 productseries=self.product.series[0])
             self.product.owner = self.new_owner
         self.assertEqual(self.new_owner, entry.importer)
@@ -363,11 +363,11 @@ class TestProductOwnerEntryImporter(TestCaseWithFactory):
         # cause an non-unique key for the entry.
         with person_logged_in(self.new_owner):
             self.import_queue.addOrUpdateEntry(
-                u'po/sr.po', b'foo', True, self.new_owner,
+                'po/sr.po', b'foo', True, self.new_owner,
                 productseries=self.product.series[0])
         with person_logged_in(self.old_owner):
             old_entry = self.import_queue.addOrUpdateEntry(
-                u'po/sr.po', b'foo', True, self.old_owner,
+                'po/sr.po', b'foo', True, self.old_owner,
                 productseries=self.product.series[0])
             self.product.owner = self.new_owner
         self.assertEqual(self.old_owner, old_entry.importer)
@@ -379,7 +379,7 @@ class TestTranslationImportQueue(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestTranslationImportQueue, self).setUp()
+        super().setUp()
         self.productseries = self.factory.makeProductSeries()
         self.importer = self.factory.makePerson()
         self.import_queue = getUtility(ITranslationImportQueue)

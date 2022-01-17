@@ -1120,7 +1120,7 @@ class TestSetCurrentTranslation_Ubuntu(SetCurrentTranslationTestMixin,
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestSetCurrentTranslation_Ubuntu, self).setUp()
+        super().setUp()
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         sourcepackagename = self.factory.makeSourcePackageName()
         potemplate = self.factory.makePOTemplate(
@@ -1158,7 +1158,7 @@ class TestSetCurrentTranslation_Upstream(SetCurrentTranslationTestMixin,
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestSetCurrentTranslation_Upstream, self).setUp()
+        super().setUp()
         series = self.factory.makeProductSeries()
         sharing_series = self.factory.makeProductSeries(
             product=series.product)

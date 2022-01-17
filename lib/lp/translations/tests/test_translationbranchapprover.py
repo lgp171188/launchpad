@@ -26,7 +26,7 @@ class TestTranslationBranchApprover(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestTranslationBranchApprover, self).setUp()
+        super().setUp()
         self.useFixture(FakeLibrarian())
         self.queue = getUtility(ITranslationImportQueue)
         self.series = self.factory.makeProductSeries()
@@ -56,7 +56,7 @@ class TestTranslationBranchApprover(TestCaseWithFactory):
 
     def test_new_template_approved(self):
         # The approver puts new entries in the Approved state.
-        template_path = self.factory.getUniqueUnicode() + u'.pot'
+        template_path = self.factory.getUniqueUnicode() + '.pot'
         entry = self._upload_file(template_path)
         self.assertEqual(RosettaImportStatus.NEEDS_REVIEW, entry.status)
         self._createApprover(template_path).approve(entry)
@@ -66,7 +66,7 @@ class TestTranslationBranchApprover(TestCaseWithFactory):
         # When a template upload for a project has a generic path, it
         # can still be approved.  The template will have a name and
         # domain based on the project's name.
-        template_path = u'messages.pot'
+        template_path = 'messages.pot'
         entry = self._upload_file(template_path)
         self._createApprover(template_path).approve(entry)
         self.assertEqual(RosettaImportStatus.APPROVED, entry.status)
@@ -94,7 +94,7 @@ class TestTranslationBranchApprover(TestCaseWithFactory):
 
     def test_new_template_not_a_template(self):
         # Only template files will be approved currently.
-        path = u'eo.po'
+        path = 'eo.po'
         entry = self._upload_file(path)
         self._createApprover(path).approve(entry)
         self.assertEqual(RosettaImportStatus.NEEDS_REVIEW, entry.status)
@@ -103,7 +103,7 @@ class TestTranslationBranchApprover(TestCaseWithFactory):
         # The approver gets the translation domain for the entry from the
         # file path if possible.
         translation_domain = self.factory.getUniqueUnicode()
-        template_path = translation_domain + u'.pot'
+        template_path = translation_domain + '.pot'
         entry = self._upload_file(template_path)
         self._createApprover(template_path).approve(entry)
         self.assertEqual(
@@ -111,18 +111,18 @@ class TestTranslationBranchApprover(TestCaseWithFactory):
 
     def test_template_name(self):
         # The name is derived from the file name and must be a valid name.
-        translation_domain = (u'Invalid-Name_with illegal#Characters')
-        template_path = translation_domain + u'.pot'
+        translation_domain = ('Invalid-Name_with illegal#Characters')
+        template_path = translation_domain + '.pot'
         entry = self._upload_file(template_path)
         self._createApprover(template_path).approve(entry)
         self.assertTrue(valid_name(entry.potemplate.name))
-        self.assertEqual(u'invalid-name-withillegalcharacters',
+        self.assertEqual('invalid-name-withillegalcharacters',
                          entry.potemplate.name)
 
     def test_replace_existing_approved(self):
         # Template files that replace existing entries are approved.
         translation_domain = self.factory.getUniqueUnicode()
-        template_path = translation_domain + u'.pot'
+        template_path = translation_domain + '.pot'
         self._createTemplate(template_path, translation_domain)
         entry = self._upload_file(template_path)
         self._createApprover(template_path).approve(entry)
@@ -132,7 +132,7 @@ class TestTranslationBranchApprover(TestCaseWithFactory):
         # When replacing an existing template, the queue entry is linked
         # to that existing entry.
         translation_domain = self.factory.getUniqueUnicode()
-        template_path = translation_domain + u'.pot'
+        template_path = translation_domain + '.pot'
         potemplate = self._createTemplate(template_path, translation_domain)
         entry = self._upload_file(template_path)
         self._createApprover(template_path).approve(entry)
@@ -142,7 +142,7 @@ class TestTranslationBranchApprover(TestCaseWithFactory):
         # When replacing an existing inactive template, the entry is not
         # approved and no template is created for it.
         translation_domain = self.factory.getUniqueUnicode()
-        template_path = translation_domain + u'.pot'
+        template_path = translation_domain + '.pot'
         potemplate = self._createTemplate(template_path, translation_domain)
         potemplate.setActive(False)
         entry = self._upload_file(template_path)
@@ -154,9 +154,9 @@ class TestTranslationBranchApprover(TestCaseWithFactory):
         # If just one template file is found in the tree and just one
         # POTemplate is in the database, the upload is always approved.
         existing_domain = self.factory.getUniqueUnicode()
-        existing_path = existing_domain + u'.pot'
+        existing_path = existing_domain + '.pot'
         potemplate = self._createTemplate(existing_path, existing_domain)
-        template_path = self.factory.getUniqueUnicode() + u'.pot'
+        template_path = self.factory.getUniqueUnicode() + '.pot'
         entry = self._upload_file(template_path)
         self._createApprover(template_path).approve(entry)
         self.assertEqual(RosettaImportStatus.APPROVED, entry.status)
@@ -167,7 +167,7 @@ class TestTranslationBranchApprover(TestCaseWithFactory):
         # translation domain, it is still approved if an entry with the
         # same file name exists.
         translation_domain = self.factory.getUniqueUnicode()
-        generic_path = u'po/messages.pot'
+        generic_path = 'po/messages.pot'
         self._createTemplate(generic_path, translation_domain)
         entry = self._upload_file(generic_path)
         self._createApprover(generic_path).approve(entry)
@@ -179,7 +179,7 @@ class TestTranslationBranchApprover(TestCaseWithFactory):
         # but matches that of an existing template, even though the
         # entry gets approved for import into that template, the
         # existing template's domain name stays as it was.
-        generic_path = u'po/messages.pot'
+        generic_path = 'po/messages.pot'
 
         package = self.factory.makeSourcePackage()
         package_kwargs = {
@@ -200,10 +200,10 @@ class TestTranslationBranchApprover(TestCaseWithFactory):
         # When adding a template to an existing one it is approved if the
         # approver is told about both template files in the tree.
         existing_domain = self.factory.getUniqueUnicode()
-        existing_path = u"%s/%s.pot" % (existing_domain, existing_domain)
+        existing_path = "%s/%s.pot" % (existing_domain, existing_domain)
         self._createTemplate(existing_path, existing_domain)
         new_domain = self.factory.getUniqueUnicode()
-        new_path = u"%s/%s.pot" % (new_domain, new_domain)
+        new_path = "%s/%s.pot" % (new_domain, new_domain)
         entry = self._upload_file(new_path)
         self._createApprover((existing_path, new_path)).approve(entry)
         self.assertEqual(RosettaImportStatus.APPROVED, entry.status)

@@ -3,7 +3,6 @@
 
 from operator import methodcaller
 
-import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -121,10 +120,10 @@ class TestPOTemplate(TestCaseWithFactory):
         # getTranslationCredits returns only translation credits.
         self.factory.makePOTMsgSet(self.potemplate, sequence=1)
         gnome_credits = self.factory.makePOTMsgSet(
-            self.potemplate, sequence=2, singular=u"translator-credits")
+            self.potemplate, sequence=2, singular="translator-credits")
         kde_credits = self.factory.makePOTMsgSet(
             self.potemplate, sequence=3,
-            singular=u"Your emails", context=u"EMAIL OF TRANSLATORS")
+            singular="Your emails", context="EMAIL OF TRANSLATORS")
         self.factory.makePOTMsgSet(self.potemplate, sequence=4)
 
         self.assertContentEqual([gnome_credits, kde_credits],
@@ -193,7 +192,7 @@ class EquivalenceClassTestMixin:
         A separate test looks at ordering.
         """
         self.assertEqual(set(actual), set(expected))
-        for key, value in six.iteritems(actual):
+        for key, value in actual.items():
             self.assertEqual(set(value), set(expected[key]))
 
 
@@ -203,7 +202,7 @@ class TestProductTemplateEquivalenceClasses(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductTemplateEquivalenceClasses, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         self.trunk = self.product.getSeries('trunk')
         self.stable = self.factory.makeProductSeries(
@@ -276,7 +275,7 @@ class TestDistroTemplateEquivalenceClasses(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistroTemplateEquivalenceClasses, self).setUp()
+        super().setUp()
         self.ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
         self.hoary = self.ubuntu['hoary']
         self.warty = self.ubuntu['warty']
@@ -358,7 +357,7 @@ class TestDistroTemplateEquivalenceClasses(TestCaseWithFactory,
         subset = getUtility(IPOTemplateSet).getSharingSubset(
             distribution=self.ubuntu, sourcepackagename=self.package)
         classes = subset.groupEquivalentPOTemplates(
-            name_pattern=u'krungthepmahanakorn.*-etc')
+            name_pattern='krungthepmahanakorn.*-etc')
 
         expected = {
             (unique_name, self.package.name): [bangkok_template],
@@ -408,7 +407,7 @@ class TestTemplatePrecedence(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestTemplatePrecedence, self).setUp(user='mark@example.com')
+        super().setUp(user='mark@example.com')
         self.product = self.factory.makeProduct(
             translations_usage=ServiceUsage.LAUNCHPAD)
         self.trunk = self.product.getSeries('trunk')
@@ -589,7 +588,7 @@ class TestGetPOFilesFor(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetPOFilesFor, self).setUp()
+        super().setUp()
         self.potemplate = self.factory.makePOTemplate()
         self.greek = getUtility(ILanguageSet).getLanguageByCode('el')
 
@@ -675,7 +674,7 @@ class TestPOTemplateUbuntuSharing(TestCaseWithFactory,
     """Test sharing on Ubuntu side."""
 
     def setUp(self):
-        super(TestPOTemplateUbuntuSharing, self).setUp()
+        super().setUp()
         self.createData()
 
     def makeThisSidePOTemplate(self):
@@ -692,7 +691,7 @@ class TestPOTemplateUpstreamSharing(TestCaseWithFactory,
     """Test sharing on upstream side."""
 
     def setUp(self):
-        super(TestPOTemplateUpstreamSharing, self).setUp()
+        super().setUp()
         self.createData()
 
     def makeThisSidePOTemplate(self):
@@ -715,7 +714,7 @@ class TestPOTemplateSharingSubset(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPOTemplateSharingSubset, self).setUp()
+        super().setUp()
         self.p1 = self.factory.makeProduct()
         self.p1s1 = self.factory.makeProductSeries(product=self.p1)
         self.p1s2 = self.factory.makeProductSeries(product=self.p1)

@@ -54,7 +54,7 @@ from lp.translations.model.translationimportqueue import (
     )
 
 
-class GardenerDbUserMixin(object):
+class GardenerDbUserMixin:
     """Switch to the translations import queue gardener database role.
 
     Admittedly, this might be a little over-engineered but it looks good. ;)
@@ -78,7 +78,7 @@ class TestCustomLanguageCode(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestCustomLanguageCode, self).setUp()
+        super().setUp()
         self.product_codes = {}
         self.package_codes = {}
 
@@ -173,7 +173,7 @@ class TestGuessPOFileCustomLanguageCode(TestCaseWithFactory,
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestGuessPOFileCustomLanguageCode, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         self.series = self.factory.makeProductSeries(product=self.product)
         self.queue = TranslationImportQueue()
@@ -309,7 +309,7 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestTemplateGuess, self).setUp()
+        super().setUp()
         self.useFixture(FakeLogger())
         self.templateset = POTemplateSet()
 
@@ -760,7 +760,7 @@ class TestKdePOFileGuess(TestCaseWithFactory, GardenerDbUserMixin):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestKdePOFileGuess, self).setUp()
+        super().setUp()
         self.queue = TranslationImportQueue()
 
         self.distroseries = self.factory.makeDistroSeries()
@@ -822,7 +822,7 @@ class TestGetPOFileFromLanguage(TestCaseWithFactory, GardenerDbUserMixin):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestGetPOFileFromLanguage, self).setUp()
+        super().setUp()
         self.queue = TranslationImportQueue()
 
     def test_get_pofile_from_language_feeds_enabled_template(self):
@@ -887,7 +887,7 @@ class TestCleanup(TestCaseWithFactory, GardenerDbUserMixin):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestCleanup, self).setUp()
+        super().setUp()
         self.queue = TranslationImportQueue()
         self.store = IMasterStore(TranslationImportQueueEntry)
 
@@ -1094,7 +1094,7 @@ class TestAutoApprovalNewPOFile(TestCaseWithFactory, GardenerDbUserMixin):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestAutoApprovalNewPOFile, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         self.queue = TranslationImportQueue()
         self.language = getUtility(ILanguageSet).getLanguageByCode('nl')
@@ -1151,7 +1151,7 @@ class TestAutoBlocking(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestAutoBlocking, self).setUp()
+        super().setUp()
         self.queue = TranslationImportQueue()
         # Our test queue operates on the master store instead of the
         # slave store so we don't have to synchronize stores.

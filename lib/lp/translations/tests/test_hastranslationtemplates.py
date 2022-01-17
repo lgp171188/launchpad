@@ -21,7 +21,7 @@ class HasTranslationTemplatesTestMixin:
     def setUp(self):
         # Create a product with two series and a shared POTemplate
         # in different series ('devel' and 'stable').
-        super(HasTranslationTemplatesTestMixin, self).setUp()
+        super().setUp()
 
     def createTranslationTemplate(self, name=None, priority=0):
         """Attaches a template to appropriate container."""
@@ -296,7 +296,7 @@ class TestProductSeriesHasTranslationTemplates(
             sourcepackage=self.packaging.sourcepackage)
 
     def setUp(self):
-        super(TestProductSeriesHasTranslationTemplates, self).setUp()
+        super().setUp()
         self.container = self.factory.makeProductSeries()
 
 
@@ -328,7 +328,7 @@ class TestSourcePackageHasTranslationTemplates(
             productseries=self.packaging.productseries)
 
     def setUp(self):
-        super(TestSourcePackageHasTranslationTemplates, self).setUp()
+        super().setUp()
         self.container = self.factory.makeSourcePackage()
 
 
@@ -364,7 +364,7 @@ class TestDistroSeriesHasTranslationTemplates(
             productseries=self.packaging.productseries)
 
     def setUp(self):
-        super(TestDistroSeriesHasTranslationTemplates, self).setUp()
+        super().setUp()
         self.container = self.factory.makeDistroSeries()
 
     def test_has_sharing_translation_templates__templates(self):

@@ -54,8 +54,7 @@ class TranslatableLanguageVocabulary(LanguageVocabulary):
             "left operand, got %s instead." % type(language))
         if language.code == 'en':
             return False
-        return language.visible == True and super(
-            TranslatableLanguageVocabulary, self).__contains__(language)
+        return language.visible == True and super().__contains__(language)
 
     def __iter__(self):
         """See `IVocabulary`.
@@ -72,8 +71,7 @@ class TranslatableLanguageVocabulary(LanguageVocabulary):
         """See `IVocabulary`."""
         if token == 'en':
             raise LookupError(token)
-        term = super(TranslatableLanguageVocabulary, self).getTermByToken(
-            token)
+        term = super().getTermByToken(token)
         if not term.value.visible:
             raise LookupError(token)
         return term
@@ -116,7 +114,7 @@ class TranslationTemplateVocabulary(SQLObjectVocabularyBase):
                 POTemplate.iscurrent == True,
                 POTemplate.distroseries == context.distroseries,
                 POTemplate.sourcepackagename == context.sourcepackagename)
-        super(TranslationTemplateVocabulary, self).__init__(context)
+        super().__init__(context)
 
     def toTerm(self, obj):
         return SimpleTerm(obj, obj.id, obj.name)
@@ -132,7 +130,7 @@ class FilteredLanguagePackVocabularyBase(StormVocabularyBase):
             raise AssertionError(
                 "%s is only useful from a DistroSeries context." %
                 self.__class__.__name__)
-        super(FilteredLanguagePackVocabularyBase, self).__init__(context)
+        super().__init__(context)
 
     def toTerm(self, obj):
         return SimpleTerm(
@@ -149,9 +147,7 @@ class FilteredFullLanguagePackVocabulary(FilteredLanguagePackVocabularyBase):
 
     @property
     def _clauses(self):
-        return (
-            super(FilteredFullLanguagePackVocabulary, self)._clauses +
-            [LanguagePack.type == LanguagePackType.FULL])
+        return super()._clauses + [LanguagePack.type == LanguagePackType.FULL]
 
 
 class FilteredDeltaLanguagePackVocabulary(FilteredLanguagePackVocabularyBase):
@@ -161,7 +157,7 @@ class FilteredDeltaLanguagePackVocabulary(FilteredLanguagePackVocabularyBase):
     @property
     def _clauses(self):
         return (
-            super(FilteredDeltaLanguagePackVocabulary, self)._clauses +
+            super()._clauses +
             [LanguagePack.type == LanguagePackType.DELTA,
              LanguagePack.updates == self.context.language_pack_base])
 
@@ -190,4 +186,4 @@ class FilteredLanguagePackVocabulary(FilteredLanguagePackVocabularyBase):
         clauses.append(Or(
             LanguagePack.updates == None,
             LanguagePack.updates == self.context.language_pack_base))
-        return super(FilteredLanguagePackVocabulary, self)._clauses + clauses
+        return super()._clauses + clauses

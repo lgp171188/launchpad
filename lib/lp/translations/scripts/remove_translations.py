@@ -15,7 +15,6 @@ from optparse import (
     OptionValueError,
     )
 
-import six
 from zope.component import getUtility
 
 from lp.registry.interfaces.person import IPersonSet
@@ -64,7 +63,7 @@ def get_id(identifier, lookup_function=None):
     """
     if identifier is None or identifier == '':
         return None
-    elif isinstance(identifier, six.string_types) and identifier == '':
+    elif isinstance(identifier, str) and identifier == '':
         return None
     elif isinstance(identifier, int):
         return identifier

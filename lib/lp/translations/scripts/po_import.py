@@ -44,7 +44,7 @@ class TranslationsImport(LaunchpadCronScript):
     failures = None
 
     def __init__(self, *args, **kwargs):
-        super(TranslationsImport, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.failures = {}
 
     def _describeEntry(self, entry):
@@ -77,7 +77,7 @@ class TranslationsImport(LaunchpadCronScript):
         """Note that a queue entry is unusable in some way."""
         reason_text = (
             six.ensure_text(reason) if reason is bytes
-            else six.text_type(reason))
+            else str(reason))
         entry.setStatus(RosettaImportStatus.FAILED,
                         getUtility(ILaunchpadCelebrities).rosetta_experts)
         entry.setErrorOutput(reason_text)
@@ -209,5 +209,5 @@ class TranslationsImport(LaunchpadCronScript):
 
     def _reportFailures(self):
         """Bulk-report deferred failures as oopses."""
-        for reason, entries in six.iteritems(self.failures):
+        for reason, entries in self.failures.items():
             self._reportOops(reason, entries)

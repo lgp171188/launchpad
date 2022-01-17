@@ -17,7 +17,7 @@ class TestSuggestivePOTemplatesCache(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestSuggestivePOTemplatesCache, self).setUp()
+        super().setUp()
         self.utility = getUtility(IPOTemplateSet)
 
     def _refreshCache(self):

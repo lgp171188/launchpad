@@ -54,22 +54,22 @@ def comments_text_representation(translation_message):
         for line in unparsed_comment.split('\n'):
             if line.startswith('|'):
                 if translation_message.is_obsolete:
-                    comment_prefix = u'#~'
+                    comment_prefix = '#~'
                 else:
-                    comment_prefix = u'#'
+                    comment_prefix = '#'
                 comment_lines_previous_msgids.append(comment_prefix + line)
             else:
-                comment_lines.append(u'#' + line)
+                comment_lines.append('#' + line)
     if not translation_message.is_obsolete:
         # Source comments are only exported if it's not an obsolete entry.
         if translation_message.source_comment:
             unparsed_comment = (
                 strip_last_newline(translation_message.source_comment))
             for line in unparsed_comment.split('\n'):
-                comment_lines.append(u'#. ' + line)
+                comment_lines.append('#. ' + line)
         if translation_message.file_references:
             for line in translation_message.file_references.split('\n'):
-                comment_lines.append(u'#: ' + line)
+                comment_lines.append('#: ' + line)
     if translation_message.flags:
         flags = sorted(translation_message.flags)
         if 'fuzzy' in flags:
@@ -77,9 +77,9 @@ def comments_text_representation(translation_message):
             # tools do.
             flags.remove('fuzzy')
             flags.insert(0, 'fuzzy')
-        comment_lines.append(u'#, %s' % u', '.join(flags))
+        comment_lines.append('#, %s' % ', '.join(flags))
 
-    return u'\n'.join(comment_lines + comment_lines_previous_msgids)
+    return '\n'.join(comment_lines + comment_lines_previous_msgids)
 
 
 def wrap_text(text, prefix, wrap_width):
@@ -105,11 +105,11 @@ def wrap_text(text, prefix, wrap_width):
     """
 
     def local_escape(text):
-        ret = text.replace(u'\\', u'\\\\')
-        ret = ret.replace(u'"', u'\\"')
-        ret = ret.replace(u'\t', u'\\t')
-        ret = ret.replace(u'\r', u'\\r')
-        return ret.replace(u'\n', u'\\n')
+        ret = text.replace('\\', '\\\\')
+        ret = ret.replace('"', '\\"')
+        ret = ret.replace('\t', '\\t')
+        ret = ret.replace('\r', '\\r')
+        return ret.replace('\n', '\\n')
 
     # Quickly get escaped character byte widths using
     #   escaped_length.get(char, 1).
@@ -126,12 +126,12 @@ def wrap_text(text, prefix, wrap_width):
 
     if wrap_width is None:
         raise AssertionError('wrap_width should not be None')
-    wrapped_lines = [u'%s%s' % (prefix, u' ""')]
+    wrapped_lines = ['%s%s' % (prefix, ' ""')]
     if not text:
         return wrapped_lines
     if '\n' not in text[:-1]:
         # Either there are no new-lines, or it's at the end of string.
-        unwrapped_line = u'%s "%s"' % (prefix, local_escape(text))
+        unwrapped_line = '%s "%s"' % (prefix, local_escape(text))
         if len(unwrapped_line) <= wrap_width:
             return [unwrapped_line]
         del unwrapped_line
@@ -147,9 +147,9 @@ def wrap_text(text, prefix, wrap_width):
         if len(local_escape(paragraph)) <= wrap_width:
             wrapped_line = [paragraph]
         else:
-            line = u''
+            line = ''
             escaped_line_len = 0
-            new_block = u''
+            new_block = ''
             escaped_new_block_len = 0
             wrapped_line = []
             for char in paragraph:
@@ -157,10 +157,10 @@ def wrap_text(text, prefix, wrap_width):
                 if (escaped_line_len + escaped_new_block_len
                     + escaped_char_len <= wrap_width):
                     if char in wrap_at:
-                        line += u'%s%s' % (new_block, char)
+                        line += '%s%s' % (new_block, char)
                         escaped_line_len += (escaped_new_block_len
                                              + escaped_char_len)
-                        new_block = u''
+                        new_block = ''
                         escaped_new_block_len = 0
                     else:
                         new_block += char
@@ -181,14 +181,14 @@ def wrap_text(text, prefix, wrap_width):
                         new_block = new_block[line_len:]
                         escaped_new_block_len -= escaped_line_len
                     wrapped_line.append(line)
-                    line = u''
+                    line = ''
                     escaped_line_len = 0
                     new_block += char
                     escaped_new_block_len += escaped_char_len
             if line or new_block:
-                wrapped_line.append(u'%s%s' % (line, new_block))
+                wrapped_line.append('%s%s' % (line, new_block))
         for line in wrapped_line:
-            wrapped_lines.append(u'"%s"' % (local_escape(line)))
+            wrapped_lines.append('"%s"' % (local_escape(line)))
     return wrapped_lines
 
 
@@ -202,19 +202,19 @@ def msgid_text_representation(translation_message, wrap_width):
     text = []
     if translation_message.context is not None:
         text.extend(
-            wrap_text(translation_message.context, u'msgctxt', wrap_width))
+            wrap_text(translation_message.context, 'msgctxt', wrap_width))
     text.extend(
-        wrap_text(translation_message.msgid_singular, u'msgid', wrap_width))
+        wrap_text(translation_message.msgid_singular, 'msgid', wrap_width))
     if translation_message.msgid_plural:
         # This message has a plural form that we must export.
         text.extend(
             wrap_text(
-                translation_message.msgid_plural, u'msgid_plural',
+                translation_message.msgid_plural, 'msgid_plural',
                 wrap_width))
     if translation_message.is_obsolete:
         text = ['#~ ' + line for line in text]
 
-    return u'\n'.join(text)
+    return '\n'.join(text)
 
 
 def translation_text_representation(translation_message, wrap_width):
@@ -228,30 +228,30 @@ def translation_text_representation(translation_message, wrap_width):
     if translation_message.msgid_plural:
         # It's a message with plural forms.
         for i, translation in enumerate(translation_message.translations):
-            text.extend(wrap_text(translation, u'msgstr[%s]' % i, wrap_width))
+            text.extend(wrap_text(translation, 'msgstr[%s]' % i, wrap_width))
 
         if len(text) == 0:
             # We don't have any translation for it.
-            text = [u'msgstr[0] ""', u'msgstr[1] ""']
+            text = ['msgstr[0] ""', 'msgstr[1] ""']
     else:
         # It's a message without plural form.
         if translation_message.translations:
             translation = translation_message.translations[
                 TranslationConstants.SINGULAR_FORM]
-            text = wrap_text(translation, u'msgstr', wrap_width)
+            text = wrap_text(translation, 'msgstr', wrap_width)
         else:
-            text = [u'msgstr ""']
+            text = ['msgstr ""']
 
     if translation_message.is_obsolete:
         text = ['#~ ' + line for line in text]
 
-    return u'\n'.join(text)
+    return '\n'.join(text)
 
 
 def export_translation_message(translation_message, wrap_width=77):
     """Return a text representing translation_message.
     """
-    return u'\n'.join([
+    return '\n'.join([
         comments_text_representation(translation_message),
         msgid_text_representation(translation_message, wrap_width),
         translation_text_representation(translation_message, wrap_width),
@@ -290,7 +290,7 @@ class GettextPOExporterBase:
         """Try to encode the file using the charset given in the header."""
         file_content = (
             self._makeExportedHeader(translation_file) +
-            u'\n\n' +
+            '\n\n' +
             exported_content)
         encoded_file_content = file_content.encode(
             translation_file.header.charset)
@@ -343,7 +343,7 @@ class GettextPOExporterBase:
             chunks.append(self.exportTranslationMessageData(message))
 
         # Gettext .po files are supposed to end with a new line.
-        exported_file_content = u'\n\n'.join(chunks) + u'\n'
+        exported_file_content = '\n\n'.join(chunks) + '\n'
 
         # Try to encode the file
         if force_utf8:
@@ -411,12 +411,12 @@ class GettextPOChangedExporter(GettextPOExporterBase):
     """Support class to export changed Gettext .po files."""
 
     exported_header = (
-        u"# IMPORTANT: This file does NOT contain a complete PO file "
-            u"structure.\n"
-        u"# DO NOT attempt to import this file back into Launchpad.\n\n"
-        u"# This file is a partial export from Launchpad.net.\n"
-        u"# See https://help.launchpad.net/Translations/PartialPOExport\n"
-        u"# for more information.")
+        "# IMPORTANT: This file does NOT contain a complete PO file "
+            "structure.\n"
+        "# DO NOT attempt to import this file back into Launchpad.\n\n"
+        "# This file is a partial export from Launchpad.net.\n"
+        "# See https://help.launchpad.net/Translations/PartialPOExport\n"
+        "# for more information.")
 
     def __init__(self, context=None):
         # 'context' is ignored because it's only required by the way the

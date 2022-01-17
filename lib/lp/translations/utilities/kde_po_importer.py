@@ -62,8 +62,8 @@ class KdePOImporter(GettextPOImporter):
         translation_file = GettextPOImporter.parse(
             self, translation_import_queue_entry)
 
-        plural_prefix = u'_n: '
-        context_prefix = u'_: '
+        plural_prefix = '_n: '
+        context_prefix = '_: '
 
         for message in translation_file.messages:
             msgid = message.msgid_singular

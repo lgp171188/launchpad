@@ -10,7 +10,7 @@ from lp.translations.interfaces.rosettastats import IRosettaStats
 # This code should be change to be an adaptor.
 
 @implementer(IRosettaStats)
-class RosettaStats(object):
+class RosettaStats:
 
     def testStatistics(self):
         """See IRosettaStats."""

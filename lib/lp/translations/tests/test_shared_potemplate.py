@@ -21,7 +21,7 @@ class TestTranslationSharingPOTemplate(TestCaseWithFactory):
         """Set up context to test in."""
         # Create a product with two series and sharing POTemplates
         # in different series ('devel' and 'stable').
-        super(TestTranslationSharingPOTemplate, self).setUp()
+        super().setUp()
         self.foo = self.factory.makeProduct(
             translations_usage=ServiceUsage.LAUNCHPAD)
         self.foo_devel = self.factory.makeProductSeries(
@@ -224,7 +224,7 @@ class TestSharingPOTemplatesByRegex(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestSharingPOTemplatesByRegex, self).setUp()
+        super().setUp()
 
     def _makeAndFind(self, names, name_pattern=None):
         product = self.factory.makeProduct()
@@ -240,13 +240,13 @@ class TestSharingPOTemplatesByRegex(TestCaseWithFactory):
         # Baseline test.
         self.assertContentEqual(
             ['foo', 'foo-bar', 'foo-two'],
-            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], u'foo.*'))
+            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], 'foo.*'))
 
     def test_getSharingPOTemplatesByRegex_not_all(self):
         # A template may not match.
         self.assertContentEqual(
             ['foo-bar', 'foo-two'],
-            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], u'foo-.*'))
+            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], 'foo-.*'))
 
     def test_getSharingPOTemplatesByRegex_all(self):
         # Not passing a pattern returns all templates.
@@ -258,19 +258,19 @@ class TestSharingPOTemplatesByRegex(TestCaseWithFactory):
         # A not matching pattern returns no templates.
         self.assertContentEqual(
             [],
-            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], u"doo.+dle"))
+            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], "doo.+dle"))
 
     def test_getSharingPOTemplatesByRegex_robustness_single_quotes(self):
         # Single quotes do not confuse the regex match.
         self.assertContentEqual(
             [],
-            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], u"'"))
+            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], "'"))
 
     def test_getSharingPOTemplatesByRegex_robustness_double_quotes(self):
         # Double quotes do not confuse the regex match.
         self.assertContentEqual(
             [],
-            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], u'"'))
+            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], '"'))
 
     def test_getSharingPOTemplatesByRegex_robustness_backslash(self):
         # A backslash at the end could escape enclosing quotes without
@@ -280,7 +280,7 @@ class TestSharingPOTemplatesByRegex(TestCaseWithFactory):
         product = self.factory.makeProduct()
         subset = getUtility(IPOTemplateSet).getSharingSubset(product=product)
         self.assertRaises(
-            DataError, list, subset.getSharingPOTemplatesByRegex(u"foo.*\\"))
+            DataError, list, subset.getSharingPOTemplatesByRegex("foo.*\\"))
 
 
 class TestMessageSharingProductPackage(TestCaseWithFactory):
@@ -295,7 +295,7 @@ class TestMessageSharingProductPackage(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestMessageSharingProductPackage, self).setUp()
+        super().setUp()
 
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.hoary = self.ubuntu['hoary']

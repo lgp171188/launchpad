@@ -9,7 +9,6 @@ import io
 import re
 import tarfile
 
-import six
 import transaction
 from zope.security.proxy import removeSecurityProxy
 
@@ -60,7 +59,7 @@ def upload_tarball(translation_files):
     """
     buf = io.BytesIO()
     tarball = tarfile.open('', 'w:gz', buf)
-    for name, contents in six.iteritems(translation_files):
+    for name, contents in translation_files.items():
         pseudofile = io.BytesIO(contents)
         tarinfo = tarfile.TarInfo()
         tarinfo.name = name
@@ -92,7 +91,7 @@ def filter_paths(files_dict):
         applied to each file's path, and non-Ubuntu files left out.
     """
     filtered_dict = {}
-    for original_path, content in six.iteritems(files_dict):
+    for original_path, content in files_dict.items():
         new_path = _filter_ubuntu_translation_file(original_path)
         if new_path:
             filtered_dict[new_path] = content
@@ -105,7 +104,7 @@ class TestReuploadPackageTranslations(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestReuploadPackageTranslations, self).setUp()
+        super().setUp()
         sourcepackagename = self.factory.makeSourcePackageName()
         distroseries = self.factory.makeDistroSeries()
         self.sourcepackage = SourcePackage(sourcepackagename, distroseries)
@@ -175,7 +174,7 @@ class TestReuploadScript(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestReuploadScript, self).setUp()
+        super().setUp()
         self.distroseries = self.factory.makeDistroSeries()
         self.sourcepackagename1 = self.factory.makeSourcePackageName()
         self.sourcepackagename2 = self.factory.makeSourcePackageName()

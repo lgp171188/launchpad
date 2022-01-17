@@ -42,8 +42,7 @@ class TranslationsBrowserRequest(LaunchpadBrowserRequest):
     """Instances of TranslationsBrowserRequest provide `TranslationsLayer`."""
 
     def __init__(self, body_instream, environ, response=None):
-        super(TranslationsBrowserRequest, self).__init__(
-            body_instream, environ, response)
+        super().__init__(body_instream, environ, response)
         # Many of the responses from Translations vary based on language.
         self.response.setHeader(
             'Vary', 'Cookie, Authorization, Accept-Language')

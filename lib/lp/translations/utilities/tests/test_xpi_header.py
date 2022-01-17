@@ -122,6 +122,6 @@ class XpiHeaderTestCase(unittest.TestCase):
     def test_NonAsciiContributor(self):
         # Contributor names don't have to be in ASCII.
         header = self._produceHeader([
-            u"\u0e40\u0e2d\u0e4b <eai@example.com>"])
+            "\u0e40\u0e2d\u0e4b <eai@example.com>"])
         self.assertEqual(header.getLastTranslator(),
-            (u"\u0e40\u0e2d\u0e4b", 'eai@example.com'))
+            ("\u0e40\u0e2d\u0e4b", 'eai@example.com'))
