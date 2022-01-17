@@ -23,7 +23,7 @@ from lp.buildmaster.enums import (
     BuilderCleanStatus,
     BuildStatus,
     )
-from lp.buildmaster.interactor import BuilderSlave
+from lp.buildmaster.interactor import BuilderWorker
 from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.buildqueue import BuildQueue
@@ -56,7 +56,7 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
     def test_single_processor_counts(self):
         builder = self.factory.makeBuilder()
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkWorker()))
+        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
         transaction.commit()
         clock = task.Clock()
         manager = NumberCruncher(clock=clock)
@@ -89,7 +89,7 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
                 )]
         for builder in builders:
             builder.setCleanStatus(BuilderCleanStatus.CLEAN)
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkWorker()))
+        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
         transaction.commit()
         clock = task.Clock()
         manager = NumberCruncher(clock=clock)
@@ -141,7 +141,7 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
             build.queueBuild()
             build.buildqueue_record.markAsBuilding(builder=building_builder)
             builds.append(build)
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkWorker()))
+        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
         transaction.commit()
         clock = task.Clock()
         manager = NumberCruncher(clock=clock)
@@ -201,7 +201,7 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         builder.setCleanStatus(BuilderCleanStatus.CLEANING)
         build = self.factory.makeSnapBuild()
         build.queueBuild()
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkWorker()))
+        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
         transaction.commit()
         clock = task.Clock()
         manager = NumberCruncher(clock=clock)

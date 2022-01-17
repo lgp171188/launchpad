@@ -23,6 +23,7 @@ from lp.code.enums import (
     RevisionStatusResult,
     )
 from lp.code.interfaces.revisionstatus import (
+    IRevisionStatusArtifact,
     IRevisionStatusArtifactSet,
     IRevisionStatusReport,
     IRevisionStatusReportSet,
@@ -82,7 +83,8 @@ class RevisionStatusReport(StormBase):
 
         lfa = getUtility(ILibraryFileAliasSet).create(
             name=filename, size=len(log_data),
-            file=io.BytesIO(log_data), contentType='text/plain')
+            file=io.BytesIO(log_data), contentType='text/plain',
+            restricted=self.git_repository.private)
 
         getUtility(IRevisionStatusArtifactSet).new(
             lfa, self, RevisionStatusArtifactType.LOG)
@@ -92,7 +94,8 @@ class RevisionStatusReport(StormBase):
         """See `IRevisionStatusReport`."""
         lfa = getUtility(ILibraryFileAliasSet).create(
             name=name, size=len(data), file=io.BytesIO(data),
-            contentType='application/octet-stream')
+            contentType='application/octet-stream',
+            restricted=self.git_repository.private)
         getUtility(IRevisionStatusArtifactSet).new(lfa, self, artifact_type)
 
     def transitionToNewResult(self, result):
@@ -160,6 +163,7 @@ class RevisionStatusReportSet:
         self.findByRepository(repository).remove()
 
 
+@implementer(IRevisionStatusArtifact)
 class RevisionStatusArtifact(StormBase):
     __storm_table__ = 'RevisionStatusArtifact'
 

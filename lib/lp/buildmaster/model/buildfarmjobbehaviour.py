@@ -139,11 +139,11 @@ class BuildFarmJobBehaviourBase:
 
         filename_to_sha1 = OrderedDict()
         dl = []
-        dl.append(self._slave.sendFileToSlave(
+        dl.append(self._slave.sendFileToWorker(
             logger=logger, url=chroot.http_url, sha1=chroot.content.sha1))
         for filename, params in files.items():
             filename_to_sha1[filename] = params['sha1']
-            dl.append(self._slave.sendFileToSlave(logger=logger, **params))
+            dl.append(self._slave.sendFileToWorker(logger=logger, **params))
         yield defer.gatherResults(dl)
 
         combined_args = {

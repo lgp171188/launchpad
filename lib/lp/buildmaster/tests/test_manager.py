@@ -30,7 +30,7 @@ from lp.buildmaster.enums import (
     )
 from lp.buildmaster.interactor import (
     BuilderInteractor,
-    BuilderSlave,
+    BuilderWorker,
     extract_vitals_from_db,
     shut_down_default_process_pool,
     )
@@ -164,7 +164,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # Reset sampledata builder.
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         self._resetBuilder(builder)
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkWorker()))
+        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
         # Set this to 1 here so that _checkDispatch can make sure it's
         # reset to 0 after a successful dispatch.
         builder.failure_count = 1
@@ -204,7 +204,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # Sampledata builder is enabled and is assigned to an active job.
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         self.patch(
-            BuilderSlave, 'makeBuilderSlave',
+            BuilderWorker, 'makeBuilderWorker',
             FakeMethod(BuildingWorker(build_id='PACKAGEBUILD-8')))
         self.assertTrue(builder.builderok)
         job = builder.currentjob
@@ -243,7 +243,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
 
         login('foo.bar@canonical.com')
         builder.builderok = True
-        self.patch(BuilderSlave, 'makeBuilderSlave',
+        self.patch(BuilderWorker, 'makeBuilderWorker',
                    FakeMethod(BuildingWorker(build_id='PACKAGEBUILD-8')))
         transaction.commit()
         login(ANONYMOUS)
@@ -263,7 +263,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         factory = LaunchpadObjectFactory()
         builder = factory.makeBuilder()
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkWorker()))
+        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
         transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
         yield scanner.scan()
@@ -274,7 +274,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # Reset sampledata builder.
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         self._resetBuilder(builder)
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkWorker()))
+        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
         builder.manual = True
         transaction.commit()
         scanner = self._getScanner()
@@ -286,7 +286,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # Reset sampledata builder.
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         self._resetBuilder(builder)
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(OkWorker()))
+        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
         builder.builderok = False
         transaction.commit()
         scanner = self._getScanner()
@@ -295,11 +295,11 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         self.assertIsNone(builder.currentjob)
 
     @defer.inlineCallbacks
-    def test_scan_of_broken_slave(self):
+    def test_scan_of_broken_worker(self):
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         self._resetBuilder(builder)
         self.patch(
-            BuilderSlave, 'makeBuilderSlave', FakeMethod(BrokenWorker()))
+            BuilderWorker, 'makeBuilderWorker', FakeMethod(BrokenWorker()))
         builder.failure_count = 0
         transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
@@ -321,7 +321,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         login('foo.bar@canonical.com')
         builder.builderok = True
         self.patch(
-            BuilderSlave, 'makeBuilderSlave',
+            BuilderWorker, 'makeBuilderWorker',
             FakeMethod(BrokenUTF8Worker(build_id='PACKAGEBUILD-8')))
         transaction.commit()
         login(ANONYMOUS)
@@ -350,7 +350,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         login('foo.bar@canonical.com')
         builder.builderok = True
         self.patch(
-            BuilderSlave, 'makeBuilderSlave',
+            BuilderWorker, 'makeBuilderWorker',
             FakeMethod(NULWorker(build_id='PACKAGEBUILD-8')))
         transaction.commit()
         login(ANONYMOUS)
@@ -434,7 +434,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
             processors=[job.processor], vm_host="fake_vm_host")
         job.markAsBuilding(builder)
         worker = SnapBuildingWorker(build_id="SNAPBUILD-%d" % build.id)
-        self.patch(BuilderSlave, "makeBuilderSlave", FakeMethod(worker))
+        self.patch(BuilderWorker, "makeBuilderWorker", FakeMethod(worker))
         transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
         yield scanner.scan()
@@ -553,7 +553,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         builder.setCleanStatus(BuilderCleanStatus.DIRTY)
         builder.virtualized = True
         self.assertEqual(0, builder.failure_count)
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(worker))
+        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(worker))
         builder.vm_host = "fake_vm_host"
         transaction.commit()
 
@@ -594,7 +594,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         builder.version = "99"
         self._resetBuilder(builder)
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(worker))
+        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(worker))
         scanner = self._getScanner()
         yield scanner.scan()
         self.assertEqual("100", builder.version)
@@ -627,7 +627,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # For now, we can only cancel virtual builds.
         builder.virtualized = True
         builder.vm_host = "fake_vm_host"
-        self.patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(worker))
+        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(worker))
         transaction.commit()
         login(ANONYMOUS)
         buildqueue = builder.currentjob

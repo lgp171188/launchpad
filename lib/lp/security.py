@@ -687,6 +687,15 @@ class EditSpecificationByRelatedPeople(AuthorizationBase):
                     self.obj, ['owner', 'drafter', 'assignee', 'approver']))
 
 
+class ViewRevisionStatusReport(DelegatedAuthorization):
+    """Anyone who can see a Git repository can see its status reports."""
+    permission = 'launchpad.View'
+    usedfor = IRevisionStatusReport
+
+    def __init__(self, obj):
+        super().__init__(obj, obj.git_repository, 'launchpad.View')
+
+
 class EditRevisionStatusReport(AuthorizationBase):
     """The owner of a Git repository can edit its status reports."""
     permission = 'launchpad.Edit'
@@ -694,6 +703,14 @@ class EditRevisionStatusReport(AuthorizationBase):
 
     def checkAuthenticated(self, user):
         return user.isOwner(self.obj.git_repository)
+
+
+class ViewRevisionStatusArtifact(DelegatedAuthorization):
+    permission = 'launchpad.View'
+    usedfor = IRevisionStatusArtifact
+
+    def __init__(self, obj):
+        super().__init__(obj, obj.report, 'launchpad.View')
 
 
 class EditRevisionStatusArtifact(DelegatedAuthorization):
