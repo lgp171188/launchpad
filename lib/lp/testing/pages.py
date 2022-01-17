@@ -126,18 +126,23 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
     """A class for making calls to Launchpad web services."""
 
     def __init__(self, oauth_consumer_key=None, oauth_access_key=None,
-                 oauth_access_secret=None, handle_errors=True,
+                 oauth_access_secret=None, access_token_secret=None,
+                 handle_errors=True,
                  domain='api.launchpad.test', protocol='http',
                  default_api_version=None):
         """Create a LaunchpadWebServiceCaller.
         :param oauth_consumer_key: The OAuth consumer key to use.
         :param oauth_access_key: The OAuth access key to use for the request.
+        :param access_token_secret: The `AccessToken` secret to use for the
+            request (mutually exclusive with OAuth).
         :param handle_errors: Should errors raise exception or be handled by
             the publisher. Default is to let the publisher handle them.
 
         Other parameters are passed to the WebServiceCaller used to make the
         calls.
         """
+        self.oauth_client = None
+        self.access_token_secret = None
         if oauth_consumer_key is not None and oauth_access_key is not None:
             if oauth_access_secret is None:
                 oauth_access_secret = SAMPLEDATA_ACCESS_SECRETS.get(
@@ -148,8 +153,8 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
                 resource_owner_secret=oauth_access_secret,
                 signature_method=oauth1.SIGNATURE_PLAINTEXT)
             logout()
-        else:
-            self.oauth_client = None
+        elif access_token_secret is not None:
+            self.access_token_secret = access_token_secret
         self.handle_errors = handle_errors
         if default_api_version is not None:
             self.default_api_version = default_api_version
@@ -164,6 +169,9 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
             full_headers.update({
                 wsgi_native_string(key): wsgi_native_string(value)
                 for key, value in oauth_headers.items()})
+        elif self.access_token_secret is not None:
+            full_headers['Authorization'] = (
+                'Token %s' % self.access_token_secret)
         if not self.handle_errors:
             full_headers['X_Zope_handle_errors'] = 'False'
 
@@ -739,7 +747,8 @@ def safe_canonical_url(*args, **kwargs):
 
 def webservice_for_person(person, consumer_key='launchpad-library',
                           permission=OAuthPermission.READ_PUBLIC,
-                          context=None, default_api_version=None):
+                          context=None, default_api_version=None,
+                          access_token_secret=None):
     """Return a valid LaunchpadWebServiceCaller for the person.
 
     Use this method to create a way to test the webservice that doesn't depend
@@ -750,16 +759,19 @@ def webservice_for_person(person, consumer_key='launchpad-library',
         if person.is_team:
             raise AssertionError('This cannot be used with teams.')
         login(ANONYMOUS)
-        oacs = getUtility(IOAuthConsumerSet)
-        consumer = oacs.getByKey(consumer_key)
-        if consumer is None:
-            consumer = oacs.new(consumer_key)
-        request_token, _ = consumer.newRequestToken()
-        request_token.review(person, permission, context)
-        access_token, access_secret = request_token.createAccessToken()
-        kwargs['oauth_consumer_key'] = consumer_key
-        kwargs['oauth_access_key'] = access_token.key
-        kwargs['oauth_access_secret'] = access_secret
+        if access_token_secret is None:
+            oacs = getUtility(IOAuthConsumerSet)
+            consumer = oacs.getByKey(consumer_key)
+            if consumer is None:
+                consumer = oacs.new(consumer_key)
+            request_token, _ = consumer.newRequestToken()
+            request_token.review(person, permission, context)
+            access_token, access_secret = request_token.createAccessToken()
+            kwargs['oauth_consumer_key'] = consumer_key
+            kwargs['oauth_access_key'] = access_token.key
+            kwargs['oauth_access_secret'] = access_secret
+        else:
+            kwargs['access_token_secret'] = access_token_secret
     kwargs['default_api_version'] = default_api_version
     logout()
     service = LaunchpadWebServiceCaller(**kwargs)

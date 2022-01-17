@@ -46,22 +46,20 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
             result_summary=self.result_summary,
             result=RevisionStatusResult.FAILED)
 
-        self.webservice = webservice_for_person(
-            None, default_api_version="devel")
         with person_logged_in(self.requester):
             self.report_url = api_url(self.report)
 
             secret, _ = self.factory.makeAccessToken(
                 owner=self.requester, target=self.repository,
                 scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
-            self.header = {'Authorization': 'Token %s' % secret}
+        self.webservice = webservice_for_person(
+            self.requester, default_api_version="devel",
+            access_token_secret=secret)
 
     def test_setLog(self):
         content = b'log_content_data'
         response = self.webservice.named_post(
-            self.report_url, "setLog",
-            headers=self.header,
-            log_data=io.BytesIO(content))
+            self.report_url, "setLog", log_data=io.BytesIO(content))
         self.assertEqual(200, response.status)
 
         # A report may have multiple artifacts.
@@ -86,8 +84,8 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
         contents = [b"artifact 1", b"artifact 2"]
         for filename, content in zip(filenames, contents):
             response = self.webservice.named_post(
-                self.report_url, "attach", headers=self.header,
-                name=filename, data=io.BytesIO(content))
+                self.report_url, "attach", name=filename,
+                data=io.BytesIO(content))
             self.assertEqual(200, response.status)
 
         with person_logged_in(self.requester):
@@ -106,9 +104,7 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
 
     def test_update(self):
         response = self.webservice.named_post(
-            self.report_url, "update",
-            headers=self.header,
-            title='updated-report-title')
+            self.report_url, "update", title="updated-report-title")
         self.assertEqual(200, response.status)
         with person_logged_in(self.requester):
             self.assertEqual('updated-report-title', self.report.title)
@@ -117,9 +113,7 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
             self.assertEqual(RevisionStatusResult.FAILED, self.report.result)
             date_finished_before_update = self.report.date_finished
         response = self.webservice.named_post(
-            self.report_url, "update",
-            headers=self.header,
-            result='Succeeded')
+            self.report_url, "update", result="Succeeded")
         self.assertEqual(200, response.status)
         with person_logged_in(self.requester):
             self.assertEqual('updated-report-title', self.report.title)
