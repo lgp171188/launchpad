@@ -30,7 +30,7 @@ from lp.registry.interfaces.teammembership import ACTIVE_STATES
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.interfaces import (
     IMasterStore,
-    ISlaveStore,
+    IStandbyStore,
     )
 from lp.services.database.sqlbase import (
     quote,
@@ -52,7 +52,7 @@ def check_teamparticipation_circular(log):
            AND tp.person = tp2.team
            AND tp.id != tp2.id;
         """
-    circular_references = list(ISlaveStore(TeamParticipation).execute(query))
+    circular_references = list(IStandbyStore(TeamParticipation).execute(query))
     if len(circular_references) > 0:
         raise LaunchpadScriptFailure(
             "Circular references found: %s" % circular_references)
@@ -93,7 +93,7 @@ def execute_long_query(store, log, interval, query):
 def fetch_team_participation_info(log):
     """Fetch people, teams, memberships and participations."""
     slurp = partial(
-        execute_long_query, ISlaveStore(TeamParticipation), log, 10000)
+        execute_long_query, IStandbyStore(TeamParticipation), log, 10000)
 
     people = dict(
         slurp(

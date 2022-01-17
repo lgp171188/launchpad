@@ -68,7 +68,7 @@ class OAuthBase:
         """Return the correct store for this class.
 
         We want all OAuth classes to be retrieved from the master flavour.  If
-        they are retrieved from the slave, there will be problems in the
+        they are retrieved from the standby, there will be problems in the
         authorization exchange, since it will be done across applications that
         won't share the session cookies.
         """

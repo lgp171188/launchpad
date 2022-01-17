@@ -172,7 +172,7 @@ class IPOTMsgSet(Interface):
         `POTMsgSet` that are actually used (i.e. current or imported) in
         other templates.
 
-        The suggestions are read-only; they come from the slave store.
+        The suggestions are read-only; they come from the standby store.
 
         :param language: language we want translations for.
         """
@@ -184,7 +184,7 @@ class IPOTMsgSet(Interface):
         `POTMsgSet` that were entered in another context, but for the
         same English text, and are not in actual use.
 
-        The suggestions are read-only; they come from the slave store.
+        The suggestions are read-only; they come from the standby store.
 
         :param language: language we want translations for.
         """

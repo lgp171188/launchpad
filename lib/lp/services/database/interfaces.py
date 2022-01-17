@@ -9,8 +9,8 @@ __all__ = [
     'IMasterObject',
     'IMasterStore',
     'IRequestExpired',
-    'ISlaveStore',
     'ISQLBase',
+    'IStandbyStore',
     'IStore',
     'IStoreSelector',
     'MAIN_STORE',
@@ -153,7 +153,7 @@ class IMasterStore(IStore):
     """A writeable Storm Stores."""
 
 
-class ISlaveStore(IStore):
+class IStandbyStore(IStore):
     """A read-only Storm Store."""
 
 

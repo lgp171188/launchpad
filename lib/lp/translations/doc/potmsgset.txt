@@ -4,7 +4,7 @@ POTMsgSet tests
 POTMsgSet represents messages to translate that a POTemplate file has.
 
 In this test we'll be committing a lot to let changes replicate to the
-slave database.
+standby database.
 
     >>> import transaction
 

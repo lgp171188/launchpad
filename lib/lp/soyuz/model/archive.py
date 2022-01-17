@@ -105,7 +105,7 @@ from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
-    ISlaveStore,
+    IStandbyStore,
     IStore,
     )
 from lp.services.database.sqlbase import (
@@ -1097,7 +1097,7 @@ class Archive(SQLBase):
             Component.name.is_in(components))
             for (archive, not_used, pocket, components) in deps])
 
-        return ISlaveStore(BinaryPackagePublishingHistory).find(
+        return IStandbyStore(BinaryPackagePublishingHistory).find(
             BinaryPackagePublishingHistory,
             BinaryPackageName.name == dep_name,
             BinaryPackagePublishingHistory.binarypackagename ==

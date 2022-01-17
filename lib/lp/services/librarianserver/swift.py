@@ -24,7 +24,7 @@ from six.moves.urllib.parse import quote
 from swiftclient import client as swiftclient
 
 from lp.services.config import config
-from lp.services.database.interfaces import ISlaveStore
+from lp.services.database.interfaces import IStandbyStore
 from lp.services.librarian.model import LibraryFileContent
 
 
@@ -143,7 +143,7 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None,
 
             log.debug('Found {} ({})'.format(lfc, filename))
 
-            if ISlaveStore(LibraryFileContent).get(
+            if IStandbyStore(LibraryFileContent).get(
                     LibraryFileContent, lfc) is None:
                 log.info("{} exists on disk but not in the db".format(
                     lfc))
@@ -205,7 +205,7 @@ def _put(log, swift_connection, lfc_id, container, obj_name, fs_path):
     fs_size = os.path.getsize(fs_path)
     fs_file = HashStream(open(fs_path, 'rb'))
 
-    db_md5_hash = ISlaveStore(LibraryFileContent).get(
+    db_md5_hash = IStandbyStore(LibraryFileContent).get(
         LibraryFileContent, lfc_id).md5
 
     assert hasattr(fs_file, 'tell') and hasattr(fs_file, 'seek'), '''

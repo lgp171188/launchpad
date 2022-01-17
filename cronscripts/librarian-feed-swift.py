@@ -11,7 +11,7 @@ import os
 
 import six
 
-from lp.services.database.interfaces import ISlaveStore
+from lp.services.database.interfaces import IStandbyStore
 from lp.services.librarian.model import LibraryFileContent
 from lp.services.librarianserver import swift
 from lp.services.scripts.base import LaunchpadCronScript
@@ -75,14 +75,14 @@ class LibrarianFeedSwift(LaunchpadCronScript):
             remove = None
 
         if self.options.start_since:
-            self.options.start = ISlaveStore(LibraryFileContent).execute("""
+            self.options.start = IStandbyStore(LibraryFileContent).execute("""
                 SELECT MAX(id) FROM LibraryFileContent
                 WHERE datecreated < current_timestamp at time zone 'UTC'
                     - CAST(%s AS INTERVAL)
                 """, (six.text_type(self.options.start_since),)).get_one()[0]
 
         if self.options.end_at:
-            self.options.end = ISlaveStore(LibraryFileContent).execute("""
+            self.options.end = IStandbyStore(LibraryFileContent).execute("""
                 SELECT MAX(id) FROM LibraryFileContent
                 WHERE datecreated < current_timestamp at time zone 'UTC'
                     - CAST(%s AS INTERVAL)

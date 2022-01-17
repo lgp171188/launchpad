@@ -5,7 +5,7 @@ traversed to from a PRIMARY_FLAVOR store.
 Because our development environment is not replicated, we use database
 permissions to ensure that tables we should not be writing to cannot
 be written to. The same permissions structure is also used on production,
-so the Slony-I triggers blocking writes to some tables will never
+so the Slony-I triggers blocking writes to replicated tables will never
 actually be invoked.
 
     >>> from lp.registry.model.person import Person

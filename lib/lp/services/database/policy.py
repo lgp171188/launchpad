@@ -44,7 +44,7 @@ from lp.services.database.interfaces import (
     DisallowedStore,
     IDatabasePolicy,
     IMasterStore,
-    ISlaveStore,
+    IStandbyStore,
     IStoreSelector,
     MAIN_STORE,
     PRIMARY_FLAVOR,
@@ -158,7 +158,7 @@ class BaseDatabasePolicy:
             if flavor == PRIMARY_FLAVOR:
                 alsoProvides(store, IMasterStore)
             else:
-                alsoProvides(store, ISlaveStore)
+                alsoProvides(store, IStandbyStore)
 
             store._lp_store_initialized = True
 

@@ -33,7 +33,7 @@ Our user requests the Catalan and Czech translations of a template.
 
 Now we request that the queue be processed.
 
-(Commits are needed to make the test requests seep through to the slave
+(Commits are needed to make the test requests seep through to the standby
 database).
 
     >>> import transaction

@@ -25,7 +25,7 @@ import transaction
 
 from lp.services.config import config
 from lp.services.daemons.tachandler import TacTestSetup
-from lp.services.database.interfaces import ISlaveStore
+from lp.services.database.interfaces import IStandbyStore
 from lp.services.database.policy import StandbyDatabasePolicy
 from lp.services.database.sqlbase import block_implicit_flushes
 from lp.services.librarian import client as client_module
@@ -299,7 +299,7 @@ class LibrarianClientTestCase(TestCase):
         # standby store and try to add a file, verifying that the primary
         # is used.
         client = LibrarianClient()
-        ISlaveStore(LibraryFileAlias).close()
+        IStandbyStore(LibraryFileAlias).close()
         with StandbyDatabasePolicy():
             alias_id = client.addFile(
                 'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
