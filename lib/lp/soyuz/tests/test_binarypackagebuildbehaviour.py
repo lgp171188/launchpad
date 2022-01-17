@@ -84,7 +84,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
 
     In particular, these tests are about how the BinaryPackageBuildBehaviour
     interacts with the build slave.  We test this by using a test double that
-    implements the same interface as `BuilderSlave` but instead of actually
+    implements the same interface as `BuilderWorker` but instead of actually
     making XML-RPC calls, just records any method invocations along with
     interesting parameters.
     """

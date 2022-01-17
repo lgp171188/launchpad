@@ -69,7 +69,7 @@ class IBuildFarmJobBehaviour(Interface):
         :return: A tuple of (
             "builder type", `DistroArchSeries` to build against,
             `PackagePublishingPocket` to build against,
-            {filename: `sendFileToSlave` arguments}, {extra build arguments}),
+            {filename: `sendFileToWorker` arguments}, {extra build arguments}),
             or a Deferred resulting in the same.
         """
 
@@ -93,5 +93,5 @@ class IBuildFarmJobBehaviour(Interface):
 
         :param bq: The `BuildQueue` currently being processed.
         :param status: The tail of the BuildStatus (eg. OK or PACKAGEFAIL).
-        :param slave_status: Slave status dict from `BuilderSlave.status`.
+        :param slave_status: Slave status dict from `BuilderWorker.status`.
         """

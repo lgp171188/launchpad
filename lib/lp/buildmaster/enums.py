@@ -215,19 +215,19 @@ class BuilderCleanStatus(DBEnumeratedType):
     CLEAN = DBItem(0, """
         Clean
 
-        The builder slave is ready for use.
+        The builder is ready for use.
         """)
 
     DIRTY = DBItem(1, """
         Dirty
 
-        The builder slave is dirty and needs to be cleaned before use.
+        The builder is dirty and needs to be cleaned before use.
         """)
 
     CLEANING = DBItem(2, """
         Cleaning
 
-        The builder slave is being cleaned.
+        The builder is being cleaned.
         """)
 
 

@@ -13,7 +13,7 @@ Create a builder working on a TranslationTemplatesBuild for a branch.
     >>> from zope.component import getUtility
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> from lp.app.enums import ServiceUsage
-    >>> from lp.buildmaster.interactor import BuilderSlave
+    >>> from lp.buildmaster.interactor import BuilderWorker
     >>> from lp.services.librarian.interfaces import (
     ...     ILibraryFileAliasSet)
     >>> from lp.testing.factory import (
@@ -22,10 +22,10 @@ Create a builder working on a TranslationTemplatesBuild for a branch.
     >>> from lp.translations.interfaces.translations import (
     ...     TranslationsBranchImportMode)
 
-    >>> class FakeSlave:
+    >>> class FakeWorker:
     ...     resume = FakeMethod(result=('stdout', 'stderr', 0))
     ...     build = FakeMethod()
-    ...     sendFileToSlave = FakeMethod()
+    ...     sendFileToWorker = FakeMethod()
 
     >>> login(ANONYMOUS)
     >>> owner_email = factory.getUniqueString() + '@example.com'
@@ -52,7 +52,8 @@ Create a builder working on a TranslationTemplatesBuild for a branch.
     ...     fake_chroot)
 
     >>> builder = factory.makeBuilder(vm_host=factory.getUniqueUnicode())
-    >>> _ = patch(BuilderSlave, 'makeBuilderSlave', FakeMethod(FakeSlave()))
+    >>> _ = patch(
+    ...     BuilderWorker, 'makeBuilderWorker', FakeMethod(FakeWorker()))
     >>> buildqueue.markAsBuilding(builder)
 
     >>> builder_page = canonical_url(builder)
