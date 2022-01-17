@@ -128,7 +128,7 @@ class TestWSGI(TestCaseWithFactory):
     layer = AppServerLayer
 
     def setUp(self):
-        super(TestWSGI, self).setUp()
+        super().setUp()
         self.useBzrBranches()
         loggerhead_fixture = self.useFixture(LoggerheadFixture())
 
@@ -136,7 +136,7 @@ class TestWSGI(TestCaseWithFactory):
             try:
                 with open(loggerhead_fixture.logfile, "rb") as logfile:
                     return [logfile.read()]
-            except IOError:
+            except OSError:
                 return [b""]
 
         self.addDetail(

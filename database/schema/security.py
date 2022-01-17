@@ -12,8 +12,6 @@ import os
 import re
 import sys
 
-import six
-
 from fti import quote_identifier
 from lp.services.database.sqlbase import connect
 from lp.services.scripts import (
@@ -117,7 +115,7 @@ def list_role_members(cur, roles):
     return members
 
 
-class DbObject(object):
+class DbObject:
 
     def __init__(
         self, schema, name, type_, owner, acl, arguments=None, language=None):
@@ -151,7 +149,7 @@ class DbObject(object):
 
 class DbSchema(dict):
     def __init__(self, con):
-        super(DbSchema, self).__init__()
+        super().__init__()
         cur = con.cursor()
         log.debug("Getting relation metadata")
         cur.execute('''
@@ -223,7 +221,7 @@ class DbSchema(dict):
             for r in cur.fetchall()}
 
 
-class CursorWrapper(object):
+class CursorWrapper:
 
     def __init__(self, cursor):
         self.__dict__['_cursor'] = cursor
@@ -306,8 +304,8 @@ class PermissionGatherer:
             to grant or revoke for.  Each is a string.
         """
         result = []
-        for permission, parties in six.iteritems(self.permissions):
-            for principal, entities in six.iteritems(parties):
+        for permission, parties in self.permissions.items():
+            for principal, entities in parties.items():
                 result.append(
                     (permission, ", ".join(entities), principal))
         return result
@@ -319,8 +317,8 @@ class PermissionGatherer:
     def countEntities(self):
         """Count the number of different entities."""
         entities = set()
-        for entities_and_entities in six.itervalues(self.permissions):
-            for extra_entities in six.itervalues(entities_and_entities):
+        for entities_and_entities in self.permissions.values():
+            for extra_entities in entities_and_entities.values():
                 entities.update(extra_entities)
         return len(entities)
 
@@ -328,7 +326,7 @@ class PermissionGatherer:
         """Count the number of different principals."""
         return len(set(sum((
             list(principals)
-            for principals in six.itervalues(self.permissions)), [])))
+            for principals in self.permissions.values()), [])))
 
     def grant(self, cur):
         """Grant all gathered permissions.
@@ -484,7 +482,7 @@ def reset_permissions(con, config, options):
 
     log.debug('Updating group memberships')
     existing_memberships = list_role_members(cur, list(memberships))
-    for group, users in six.iteritems(memberships):
+    for group, users in memberships.items():
         cur_users = managed_roles.intersection(existing_memberships[group])
         to_grant = users - cur_users
         if to_grant:
@@ -622,7 +620,7 @@ def reset_permissions(con, config, options):
             new = desired_permissions[obj][role]
             old_privs = obj.acl.get(role, {})
             old = set(old_privs)
-            if any(six.itervalues(old_privs)):
+            if any(old_privs.values()):
                 log.warning("%s has grant option on %s", role, obj.fullname)
             if new == old:
                 continue

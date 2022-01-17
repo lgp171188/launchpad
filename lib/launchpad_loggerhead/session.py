@@ -21,7 +21,7 @@ class LaunchpadSecureCookie(SecureCookie):
     hash_method = staticmethod(hashlib.sha256)
 
     # The OpenID consumer stores non-JSON-encodable objects in the session.
-    class serialization_method(object):
+    class serialization_method:
 
         @classmethod
         def dumps(cls, value):
@@ -33,7 +33,7 @@ class LaunchpadSecureCookie(SecureCookie):
             return pickle.loads(value)
 
 
-class SessionHandler(object):
+class SessionHandler:
     """Middleware that provides a cookie-based session.
 
     The session dict is stored, pickled (and HMACed), in a cookie, so don't

@@ -47,7 +47,7 @@ class AccessTokenGenerator(LaunchpadScript):
         username = self.args[0]
 
         key = six.ensure_text(self.options.consumer_name)
-        consumer = getUtility(IOAuthConsumerSet).new(key, u'')
+        consumer = getUtility(IOAuthConsumerSet).new(key, '')
         request_token, _ = consumer.newRequestToken()
 
         # review by username

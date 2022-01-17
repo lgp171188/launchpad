@@ -8,7 +8,6 @@ from breezy import (
     osutils,
     tests,
     )
-import six
 
 from lp.codehosting import (
     get_brz_path,
@@ -43,11 +42,11 @@ class TestCaseWithSubprocess(tests.TestCaseWithTransport):
         old_env = {}
 
         def cleanup_environment():
-            for env_var, value in six.iteritems(env_changes):
+            for env_var, value in env_changes.items():
                 old_env[env_var] = osutils.set_or_unset_env(env_var, value)
 
         def restore_environment():
-            for env_var, value in six.iteritems(old_env):
+            for env_var, value in old_env.items():
                 osutils.set_or_unset_env(env_var, value)
 
         cwd = None

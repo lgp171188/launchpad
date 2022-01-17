@@ -26,8 +26,6 @@ from itertools import chain
 from optparse import OptionParser
 import sys
 
-import six
-
 from lp.bugs.externalbugtracker import BUG_TRACKER_CLASSES
 
 
@@ -87,7 +85,7 @@ def generate_table(typ, cls):
 
 def generate_documentable_classes():
     """Yield each class that has a mapping table defined."""
-    for typ, cls in six.iteritems(BUG_TRACKER_CLASSES):
+    for typ, cls in BUG_TRACKER_CLASSES.items():
         if getattr(cls, '_status_lookup', None) is not None:
             yield typ, cls
 
