@@ -52,13 +52,13 @@ class TranslationFormatInvalidInputErrorTest(TestCase):
 
         # Here's one with a Thai "r" character in its message.
         exception = TranslationFormatInvalidInputError(
-            filename=u"ror-rua", line_number=2, message=u"r\u0e23")
+            filename="ror-rua", line_number=2, message="r\u0e23")
         representation = str(exception)
         self.assertEqual(representation, "ror-rua, line 2: r\\u0e23")
 
         # And here's one with the Khmer equivalent in its filename.
         exception = TranslationFormatInvalidInputError(
-            filename=u"ro-\u179a", message=u"hok baay heuy?")
+            filename="ro-\u179a", message="hok baay heuy?")
         representation = str(exception)
         self.assertEqual(representation, "ro-\\u179a: hok baay heuy?")
 
@@ -78,8 +78,8 @@ class TranslationFormatSyntaxErrorTest(TestCase):
 
     def testNonAsciiSyntaxError(self):
         # Test against non-ascii characters.
-        exception = TranslationFormatSyntaxError(filename=u"khor-khai-\u0e01",
-            line_number=4, message=u"khor-khai-\u0e02")
+        exception = TranslationFormatSyntaxError(filename="khor-khai-\u0e01",
+            line_number=4, message="khor-khai-\u0e02")
         self.assertEqual(str(exception),
             "khor-khai-\\u0e01, line 4: khor-khai-\\u0e02")
 

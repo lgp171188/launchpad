@@ -35,7 +35,7 @@ class TestTranslationPolicy(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestTranslationPolicy, self).setUp()
+        super().setUp()
         self.policy = TranslationPolicyImplementation()
 
     def _makeParentPolicy(self):
@@ -328,7 +328,7 @@ class TestTranslationsOwners(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestTranslationsOwners, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson()
 
     def isTranslationsOwnerOf(self, pillar):
@@ -372,7 +372,7 @@ class TestSharingPolicy(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestSharingPolicy, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         self.language = self.factory.makeLanguage()
 

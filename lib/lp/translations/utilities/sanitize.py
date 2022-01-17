@@ -16,16 +16,16 @@ class MixedNewlineMarkersError(ValueError):
     """
 
 
-class Sanitizer(object):
+class Sanitizer:
     """Provide a function to sanitize a translation text."""
 
     # There are three different kinds of newlines:
-    windows_style = u'\r\n'
-    mac_style = u'\r'
-    unix_style = u'\n'
+    windows_style = '\r\n'
+    mac_style = '\r'
+    unix_style = '\n'
     mixed_style = object()
 
-    dot_char = u'\u2022'
+    dot_char = '\u2022'
 
     def __init__(self, english_singular):
         """Extract information from the English singular."""
@@ -54,7 +54,7 @@ class Sanitizer(object):
         # unix with the two-character windows one, remove the windows-style
         # newlines from the text and use that text to search for the other
         # two.
-        stripped_text = text.replace(cls.windows_style, u'')
+        stripped_text = text.replace(cls.windows_style, '')
         if text != stripped_text:
             # Text contains windows style new lines.
             style = cls.windows_style
@@ -109,7 +109,7 @@ class Sanitizer(object):
         if self.has_dots or self.dot_char not in translation_text:
             return translation_text
 
-        return translation_text.replace(u'\u2022', ' ')
+        return translation_text.replace('\u2022', ' ')
 
     def normalizeWhitespace(self, translation_text):
         """Return 'translation_text' with the same trailing and leading

@@ -3,7 +3,6 @@
 
 """Test `TranslationSide` and friends."""
 
-import six
 from zope.component import getUtility
 from zope.interface.verify import verifyObject
 
@@ -22,7 +21,7 @@ class TestTranslationSideTraitsSet(TestCaseWithFactory):
     def test_baseline(self):
         utility = getUtility(ITranslationSideTraitsSet)
         self.assertTrue(verifyObject(ITranslationSideTraitsSet, utility))
-        for traits in six.itervalues(utility.getAllTraits()):
+        for traits in utility.getAllTraits().values():
             self.assertTrue(verifyObject(ITranslationSideTraits, traits))
 
     def test_other_sides(self):
@@ -63,7 +62,7 @@ class TestTranslationSideTraitsSet(TestCaseWithFactory):
             [TranslationSide.UPSTREAM, TranslationSide.UBUNTU],
             traits_dict.keys())
 
-        for side, traits in six.iteritems(traits_dict):
+        for side, traits in traits_dict.items():
             self.assertEqual(side, traits.side)
             self.assertEqual(traits, utility.getTraits(side))
 

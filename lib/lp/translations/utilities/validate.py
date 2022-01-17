@@ -7,7 +7,6 @@ __all__ = [
     ]
 
 import gettextpo
-import six
 
 
 class GettextValidationError(ValueError):
@@ -36,7 +35,7 @@ def validate_translation(original_singular, original_plural,
     else:
         # Message with plural forms.
         msg.set_msgid_plural(original_plural)
-        for form, translation in six.iteritems(translations):
+        for form, translation in translations.items():
             msg.set_msgstr_plural(form, translation)
 
     for flag in flags:
@@ -47,4 +46,4 @@ def validate_translation(original_singular, original_plural,
         msg.check_format()
     except gettextpo.error as e:
         # Wrap gettextpo.error in GettextValidationError.
-        raise GettextValidationError(six.text_type(e))
+        raise GettextValidationError(str(e))

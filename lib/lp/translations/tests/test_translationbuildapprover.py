@@ -21,7 +21,7 @@ class TestTranslationBuildApprover(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestTranslationBuildApprover, self).setUp()
+        super().setUp()
         self.queue = getUtility(ITranslationImportQueue)
         self.uploader = self.factory.makePerson()
 

@@ -12,7 +12,6 @@ from optparse import (
     )
 from unittest import TestLoader
 
-import six
 from storm.store import Store
 from testtools.matchers import MatchesStructure
 from zope.component import getUtility
@@ -44,7 +43,7 @@ from lp.translations.scripts.remove_translations import (
 
 def make_script(args=None):
     """Create a `RemoveTranslations` script with given options."""
-    if isinstance(args, six.string_types):
+    if isinstance(args, str):
         args = [args]
     script = RemoveTranslations(
         'remove-translations-test', test_args=args, logger=DevNullLogger())
@@ -56,7 +55,7 @@ class TestRemoveTranslationsConstraints(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestRemoveTranslationsConstraints, self).setUp()
+        super().setUp()
         # Acquire privileges to delete TranslationMessages.  We won't
         # actually do that here, but we'll go through all the motions.
         switch_dbuser('postgres')
@@ -156,7 +155,7 @@ class OptionChecker(OptionParser):
 
 def parse_opts(opts):
     """Simulate options being parsed by `LaunchpadScript`."""
-    if isinstance(opts, six.string_types):
+    if isinstance(opts, str):
         opts = [opts]
 
     parser = OptionChecker()
@@ -171,7 +170,7 @@ class TestRemoveTranslationsOptionsHandling(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestRemoveTranslationsOptionsHandling, self).setUp()
+        super().setUp()
         self.factory = LaunchpadObjectFactory()
 
     def test_WithNativeArgs(self):
@@ -240,7 +239,7 @@ class TestRemoveTranslations(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestRemoveTranslations, self).setUp()
+        super().setUp()
         # Acquire privileges to delete TranslationMessages.  That's not
         # something we normally do.  Actually we should test under
         # rosettaadmin, but that user does not have all the privileges
@@ -586,7 +585,7 @@ class TestRemoveTranslationsUnmasking(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestRemoveTranslationsUnmasking, self).setUp()
+        super().setUp()
         switch_dbuser('postgres')
 
         # Set up a template with a Laotian translation file.  There's

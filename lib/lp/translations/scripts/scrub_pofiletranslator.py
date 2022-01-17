@@ -258,7 +258,7 @@ class ScrubPOFileTranslator(TunableLoop):
     maximum_chunk_size = 500
 
     def __init__(self, *args, **kwargs):
-        super(ScrubPOFileTranslator, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.pofile_ids = tuple(get_pofile_ids())
         self.next_offset = 0
 

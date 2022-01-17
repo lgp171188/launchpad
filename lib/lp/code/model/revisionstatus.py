@@ -77,14 +77,23 @@ class RevisionStatusReport(StormBase):
         self.date_created = UTC_NOW
         self.transitionToNewResult(result)
 
-    def api_setLog(self, log_data):
+    def setLog(self, log_data):
         filename = '%s-%s.txt' % (self.title, self.commit_sha1)
 
         lfa = getUtility(ILibraryFileAliasSet).create(
             name=filename, size=len(log_data),
             file=io.BytesIO(log_data), contentType='text/plain')
 
-        getUtility(IRevisionStatusArtifactSet).new(lfa, self)
+        getUtility(IRevisionStatusArtifactSet).new(
+            lfa, self, RevisionStatusArtifactType.LOG)
+
+    def attach(self, name, data,
+               artifact_type=RevisionStatusArtifactType.BINARY):
+        """See `IRevisionStatusReport`."""
+        lfa = getUtility(ILibraryFileAliasSet).create(
+            name=name, size=len(data), file=io.BytesIO(data),
+            contentType='application/octet-stream')
+        getUtility(IRevisionStatusArtifactSet).new(lfa, self, artifact_type)
 
     def transitionToNewResult(self, result):
         if self.result == RevisionStatusResult.WAITING:
@@ -165,20 +174,20 @@ class RevisionStatusArtifact(StormBase):
     artifact_type = DBEnum(name='type', allow_none=False,
                            enum=RevisionStatusArtifactType)
 
-    def __init__(self, library_file, report):
+    def __init__(self, library_file, report, artifact_type):
         super().__init__()
         self.library_file = library_file
         self.report = report
-        self.artifact_type = RevisionStatusArtifactType.LOG
+        self.artifact_type = artifact_type
 
 
 @implementer(IRevisionStatusArtifactSet)
 class RevisionStatusArtifactSet:
 
-    def new(self, lfa, report):
+    def new(self, lfa, report, artifact_type):
         """See `IRevisionStatusArtifactSet`."""
         store = IStore(RevisionStatusArtifact)
-        artifact = RevisionStatusArtifact(lfa, report)
+        artifact = RevisionStatusArtifact(lfa, report, artifact_type)
         store.add(artifact)
         return artifact
 

@@ -273,7 +273,7 @@ class TranslationImporter:
         """See `ITranslationImporter`."""
         file_extensions = []
 
-        for importer in six.itervalues(importers):
+        for importer in importers.values():
             file_extensions.extend(importer.file_extensions)
 
         return sorted(set(file_extensions))
@@ -289,7 +289,7 @@ class TranslationImporter:
 
     def isTemplateName(self, path):
         """See `ITranslationImporter`."""
-        for importer in six.itervalues(importers):
+        for importer in importers.values():
             if path.endswith(importer.template_suffix):
                 return True
         return False
@@ -354,7 +354,7 @@ class TranslationImporter:
         return file_importer.importFile()
 
 
-class FileImporter(object):
+class FileImporter:
     """Base class for importing translations or translation templates.
 
     This class is meant to be subclassed for the specialised tasks of
@@ -464,7 +464,7 @@ class FileImporter(object):
                 potmsgset.singular_text, potmsgset.plural_text,
                 translations, potmsgset.flags)
         except GettextValidationError as e:
-            self._addUpdateError(message_data, potmsgset, six.text_type(e))
+            self._addUpdateError(message_data, potmsgset, str(e))
             message.validation_status = (
                 TranslationValidationStatus.UNKNOWNERROR)
             return False
@@ -631,8 +631,7 @@ class POTFileImporter(FileImporter):
             "Pofile must be None when importing a template.")
 
         # Call base constructor
-        super(POTFileImporter, self).__init__(
-             translation_import_queue_entry, importer, logger)
+        super().__init__(translation_import_queue_entry, importer, logger)
 
         self.pofile = None
         self.potemplate = translation_import_queue_entry.potemplate
@@ -675,9 +674,9 @@ class POTFileImporter(FileImporter):
             message._translations = None
 
         if len(message.flags) > 0:
-            flags_comment = u", " + u", ".join(message.flags)
+            flags_comment = ", " + ", ".join(message.flags)
         else:
-            flags_comment = u""
+            flags_comment = ""
 
         potmsgset = self.getOrCreatePOTMsgSet(message)
         potmsgset.setSequence(self.potemplate, self.count)
@@ -707,8 +706,7 @@ class POFileImporter(FileImporter):
             "Pofile must not be None when importing a translation.")
 
         # Call base constructor
-        super(POFileImporter, self).__init__(
-             translation_import_queue_entry, importer, logger)
+        super().__init__(translation_import_queue_entry, importer, logger)
 
         self.pofile = translation_import_queue_entry.pofile
         self.potemplate = self.pofile.potemplate

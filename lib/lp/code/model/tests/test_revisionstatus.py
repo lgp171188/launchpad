@@ -6,9 +6,18 @@
 import hashlib
 import io
 
+from testtools.matchers import (
+    AnyMatch,
+    Equals,
+    MatchesSetwise,
+    MatchesStructure,
+    )
 from zope.component import getUtility
 
-from lp.code.enums import RevisionStatusResult
+from lp.code.enums import (
+    RevisionStatusArtifactType,
+    RevisionStatusResult,
+    )
 from lp.code.interfaces.revisionstatus import IRevisionStatusArtifactSet
 from lp.services.auth.enums import AccessTokenScope
 from lp.testing import (
@@ -47,11 +56,8 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
                 scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
             self.header = {'Authorization': 'Token %s' % secret}
 
-    def test_setLogOnRevisionStatusReport(self):
+    def test_setLog(self):
         content = b'log_content_data'
-        filesize = len(content)
-        sha1 = hashlib.sha1(content).hexdigest()
-        md5 = hashlib.md5(content).hexdigest()
         response = self.webservice.named_post(
             self.report_url, "setLog",
             headers=self.header,
@@ -64,14 +70,39 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
         with person_logged_in(self.requester):
             artifacts = list(getUtility(
                 IRevisionStatusArtifactSet).findByReport(self.report))
-            lfcs = [artifact.library_file.content for artifact in artifacts]
-            sha1_of_all_artifacts = [lfc.sha1 for lfc in lfcs]
-            md5_of_all_artifacts = [lfc.md5 for lfc in lfcs]
-            filesizes_of_all_artifacts = [lfc.filesize for lfc in lfcs]
+            self.assertThat(artifacts, AnyMatch(
+                MatchesStructure(
+                    report=Equals(self.report),
+                    library_file=MatchesStructure(
+                        content=MatchesStructure.byEquality(
+                            sha256=hashlib.sha256(content).hexdigest()),
+                        filename=Equals(
+                            "%s-%s.txt" % (self.title, self.commit_sha1)),
+                        mimetype=Equals("text/plain")),
+                    artifact_type=Equals(RevisionStatusArtifactType.LOG))))
 
-            self.assertIn(sha1, sha1_of_all_artifacts)
-            self.assertIn(md5, md5_of_all_artifacts)
-            self.assertIn(filesize, filesizes_of_all_artifacts)
+    def test_attach(self):
+        filenames = ["artifact-1", "artifact-2"]
+        contents = [b"artifact 1", b"artifact 2"]
+        for filename, content in zip(filenames, contents):
+            response = self.webservice.named_post(
+                self.report_url, "attach", headers=self.header,
+                name=filename, data=io.BytesIO(content))
+            self.assertEqual(200, response.status)
+
+        with person_logged_in(self.requester):
+            artifacts = list(getUtility(
+                IRevisionStatusArtifactSet).findByReport(self.report))
+            self.assertThat(artifacts, MatchesSetwise(*(
+                MatchesStructure(
+                    report=Equals(self.report),
+                    library_file=MatchesStructure(
+                        content=MatchesStructure.byEquality(
+                            sha256=hashlib.sha256(content).hexdigest()),
+                        filename=Equals(filename),
+                        mimetype=Equals("application/octet-stream")),
+                    artifact_type=Equals(RevisionStatusArtifactType.BINARY))
+                for filename, content in zip(filenames, contents))))
 
     def test_update(self):
         response = self.webservice.named_post(

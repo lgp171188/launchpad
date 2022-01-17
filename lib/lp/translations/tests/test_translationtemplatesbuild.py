@@ -60,13 +60,13 @@ class TestTranslationTemplatesBuild(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestTranslationTemplatesBuild, self).setUp()
+        super().setUp()
         self.jobsource = FakeTranslationTemplatesSource
         self.jobsource.fake_pottery_compabitility = None
 
     def tearDown(self):
         self._fakePotteryCompatibleSetup(compatible=None)
-        super(TestTranslationTemplatesBuild, self).tearDown()
+        super().tearDown()
 
     def _makeTranslationBranch(self, fake_pottery_compatible=None):
         """Create a branch that provides translations for a productseries."""

@@ -26,7 +26,7 @@ class TestTranslationSuggestions(TestCaseWithFactory):
 
     def setUp(self):
         """Set up context to test in."""
-        super(TestTranslationSuggestions, self).setUp()
+        super().setUp()
 
         # Pretend we have two products Foo and Bar being translated.
         # Translations used or suggested in the one may show up as

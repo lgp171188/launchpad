@@ -431,7 +431,7 @@ class TestAcceptFromUpstreamImportOnPackage(TestCaseWithFactory):
 
     def setUp(self):
         """Every test needs a `POFile` and a `POTMsgSet`."""
-        super(TestAcceptFromUpstreamImportOnPackage, self).setUp()
+        super().setUp()
         self.pofile, self.potmsgset = self.factory.makePOFileAndPOTMsgSet(
             side=TranslationSide.UBUNTU)
 
@@ -829,7 +829,7 @@ class TestTranslationMessageFindIdenticalMessage(TestCaseWithFactory):
         translation message in various ways and then try to find it by
         calling findIdenticalMessage on the first one.
         """
-        super(TestTranslationMessageFindIdenticalMessage, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         self.trunk = self.product.getSeries('trunk')
         self.template = self.factory.makePOTemplate(

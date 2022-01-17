@@ -261,6 +261,13 @@ class RevisionStatusArtifactType(DBEnumeratedType):
         The log produced by the check job.
         """)
 
+    BINARY = DBItem(1, """
+        Binary
+
+        A binary file attached to a check job.  This artifact type is made
+        available for download, but is not otherwise interpreted in any way.
+        """)
+
 
 class RevisionStatusResult(DBEnumeratedType):
     """Revision Status Result"""

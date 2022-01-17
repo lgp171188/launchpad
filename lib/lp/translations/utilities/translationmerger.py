@@ -437,7 +437,7 @@ class TranslationMerger:
 
         self.tm.endTransaction(intermediate=True)
 
-        for representative_id in six.itervalues(representatives):
+        for representative_id in representatives.values():
             representative = POTMsgSet.get(representative_id)
             self._scrubPOTMsgSetTranslations(representative)
             self.tm.endTransaction(intermediate=True)
@@ -492,7 +492,7 @@ class TranslationMerger:
         num_representatives = len(subordinates)
         representative_num = 0
 
-        for representative, potmsgsets in six.iteritems(subordinates):
+        for representative, potmsgsets in subordinates.items():
             representative_num += 1
             log.debug("Message %d/%d: %d subordinate(s)." % (
                 representative_num, num_representatives, len(potmsgsets)))
