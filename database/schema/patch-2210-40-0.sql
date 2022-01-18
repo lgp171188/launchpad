@@ -18,6 +18,7 @@ CREATE TABLE CIBuild (
     status integer NOT NULL,
     log integer REFERENCES libraryfilealias,
     upload_log integer REFERENCES libraryfilealias,
+    dependencies text,
     failure_count integer DEFAULT 0 NOT NULL,
     build_farm_job integer NOT NULL REFERENCES buildfarmjob
 );
