@@ -48,7 +48,7 @@ class TestRetryDepwait(TestCaseWithFactory):
         # Builds with unsatisfied dependencies are not retried.
         self.build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': 'something'})
+            worker_status={'dependencies': 'something'})
         self.assertStatusAfterLoop(BuildStatus.MANUALDEPWAIT)
         self.assertEqual(1, self.build.updateDependencies.call_count)
 
@@ -101,7 +101,7 @@ class TestRetryDepwait(TestCaseWithFactory):
         self.assertEqual(BuildStatus.MANUALDEPWAIT, self.build.status)
         bpn = self.factory.getUniqueUnicode()
         self.build.updateStatus(
-            BuildStatus.MANUALDEPWAIT, slave_status={'dependencies': bpn})
+            BuildStatus.MANUALDEPWAIT, worker_status={'dependencies': bpn})
 
         # With no binary to satisfy the dependency, running the script
         # does nothing.

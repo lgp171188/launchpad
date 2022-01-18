@@ -38,7 +38,7 @@ from lp.services.utils import sanitise_urls
 from lp.services.webapp import canonical_url
 
 
-SLAVE_LOG_FILENAME = 'buildlog'
+WORKER_LOG_FILENAME = 'buildlog'
 
 
 class BuildFarmJobBehaviourBase:
@@ -78,10 +78,10 @@ class BuildFarmJobBehaviourBase:
         else:
             return PackagePublishingPocket.RELEASE
 
-    def setBuilder(self, builder, slave):
+    def setBuilder(self, builder, worker):
         """The builder should be set once and not changed."""
         self._builder = builder
-        self._slave = slave
+        self._worker = worker
 
     def determineFilesToSend(self):
         """The default behaviour is to send no files."""
@@ -114,7 +114,7 @@ class BuildFarmJobBehaviourBase:
         pass
 
     @defer.inlineCallbacks
-    def dispatchBuildToSlave(self, logger):
+    def dispatchBuildToWorker(self, logger):
         """See `IBuildFarmJobBehaviour`."""
         cookie = self.build.build_cookie
         logger.info(
@@ -139,11 +139,11 @@ class BuildFarmJobBehaviourBase:
 
         filename_to_sha1 = OrderedDict()
         dl = []
-        dl.append(self._slave.sendFileToWorker(
+        dl.append(self._worker.sendFileToWorker(
             logger=logger, url=chroot.http_url, sha1=chroot.content.sha1))
         for filename, params in files.items():
             filename_to_sha1[filename] = params['sha1']
-            dl.append(self._slave.sendFileToWorker(logger=logger, **params))
+            dl.append(self._worker.sendFileToWorker(logger=logger, **params))
         yield defer.gatherResults(dl)
 
         combined_args = {
@@ -154,7 +154,7 @@ class BuildFarmJobBehaviourBase:
             % (cookie, self.build.title, self._builder.url,
                sanitise_urls(repr(combined_args))))
 
-        (status, info) = yield self._slave.build(
+        (status, info) = yield self._worker.build(
             cookie, builder_type, chroot.content.sha1, filename_to_sha1, args)
 
         # Update stats
@@ -179,11 +179,11 @@ class BuildFarmJobBehaviourBase:
         timestamp = now.strftime("%Y%m%d-%H%M%S")
         return '%s-%s' % (timestamp, build_cookie)
 
-    def transferSlaveFileToLibrarian(self, file_sha1, filename, private):
-        """Transfer a file from the slave to the librarian.
+    def transferWorkerFileToLibrarian(self, file_sha1, filename, private):
+        """Transfer a file from the worker to the librarian.
 
         :param file_sha1: The file's sha1, which is how the file is addressed
-            in the slave XMLRPC protocol. Specially, the file_sha1 'buildlog'
+            in the worker XMLRPC protocol. Specially, the file_sha1 'buildlog'
             will cause the build log to be retrieved and gzipped.
         :param filename: The name of the file to be given to the librarian
             file alias.
@@ -222,7 +222,7 @@ class BuildFarmJobBehaviourBase:
 
             return library_file.id
 
-        d = self._slave.getFile(file_sha1, out_file_name)
+        d = self._worker.getFile(file_sha1, out_file_name)
         d.addCallback(got_file, filename, out_file_name)
         return d
 
@@ -230,16 +230,16 @@ class BuildFarmJobBehaviourBase:
         """Return the preferred file name for this job's log."""
         return 'buildlog.txt'
 
-    def getLogFromSlave(self, queue_item):
+    def getLogFromWorker(self, queue_item):
         """Return a Deferred which fires when the log is in the librarian."""
-        d = self.transferSlaveFileToLibrarian(
-            SLAVE_LOG_FILENAME, self.getLogFileName(), self.build.is_private)
+        d = self.transferWorkerFileToLibrarian(
+            WORKER_LOG_FILENAME, self.getLogFileName(), self.build.is_private)
         return d
 
     @defer.inlineCallbacks
-    def storeLogFromSlave(self, build_queue=None):
+    def storeLogFromWorker(self, build_queue=None):
         """See `IBuildFarmJob`."""
-        lfa_id = yield self.getLogFromSlave(
+        lfa_id = yield self.getLogFromWorker(
             build_queue or self.build.buildqueue_record)
         self.build.setLog(lfa_id)
         transaction.commit()
@@ -262,7 +262,7 @@ class BuildFarmJobBehaviourBase:
     ALLOWED_STATUS_NOTIFICATIONS = ['PACKAGEFAIL', 'CHROOTFAIL']
 
     @defer.inlineCallbacks
-    def handleStatus(self, bq, status, slave_status):
+    def handleStatus(self, bq, status, worker_status):
         """See `IBuildFarmJobBehaviour`."""
         if bq != self.build.buildqueue_record:
             raise AssertionError(
@@ -284,17 +284,17 @@ class BuildFarmJobBehaviourBase:
                self.build.buildqueue_record.builder.name, status))
         build_status = None
         if status == 'OK':
-            yield self.storeLogFromSlave()
+            yield self.storeLogFromWorker()
             # handleSuccess will sometimes perform write operations
             # outside the database transaction, so a failure between
             # here and the commit can cause duplicated results. For
             # example, a BinaryPackageBuild will end up in the upload
             # queue twice if notify() crashes.
-            build_status = yield self.handleSuccess(slave_status, logger)
+            build_status = yield self.handleSuccess(worker_status, logger)
         elif status in fail_status_map:
             # XXX wgrant: The builder should be set long before here, but
             # currently isn't.
-            yield self.storeLogFromSlave()
+            yield self.storeLogFromWorker()
             build_status = fail_status_map[status]
         else:
             raise BuildDaemonError(
@@ -309,7 +309,7 @@ class BuildFarmJobBehaviourBase:
         self.build.updateStatus(
             build_status,
             builder=self.build.buildqueue_record.builder,
-            slave_status=slave_status)
+            worker_status=worker_status)
         if notify:
             self.build.notify()
         self.build.buildqueue_record.destroySelf()
@@ -320,7 +320,7 @@ class BuildFarmJobBehaviourBase:
         filenames_to_download = []
         for filename, sha1 in filemap.items():
             logger.info("Grabbing file: %s (%s)" % (
-                filename, self._slave.getURL(sha1)))
+                filename, self._worker.getURL(sha1)))
             out_file_name = os.path.join(upload_path, filename)
             # If the evaluated output file name is not within our
             # upload path, then we don't try to copy this or any
@@ -329,10 +329,10 @@ class BuildFarmJobBehaviourBase:
                 raise BuildDaemonError(
                     "Build returned a file named '%s'." % filename)
             filenames_to_download.append((sha1, out_file_name))
-        yield self._slave.getFiles(filenames_to_download, logger=logger)
+        yield self._worker.getFiles(filenames_to_download, logger=logger)
 
     @defer.inlineCallbacks
-    def handleSuccess(self, slave_status, logger):
+    def handleSuccess(self, worker_status, logger):
         """Handle a package that built successfully.
 
         Once built successfully, we pull the files, store them in a
@@ -340,7 +340,7 @@ class BuildFarmJobBehaviourBase:
         uploader.
         """
         build = self.build
-        filemap = slave_status['filemap']
+        filemap = worker_status['filemap']
 
         # If this is a binary package build, discard it if its source is
         # no longer published.

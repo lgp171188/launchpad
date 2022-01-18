@@ -245,7 +245,7 @@ class DistroArchSeries(SQLBase):
             # This is disallowed partly because files that act as base
             # images for other builds (including public ones) ought to be
             # public on principle, and partly because
-            # BuildFarmJobBehaviourBase.dispatchBuildToSlave doesn't
+            # BuildFarmJobBehaviourBase.dispatchBuildToWorker doesn't
             # currently support sending a token that would allow builders to
             # fetch private URLs.  If we ever need to change this (perhaps
             # for the sake of short-lived security fixes in base images?),

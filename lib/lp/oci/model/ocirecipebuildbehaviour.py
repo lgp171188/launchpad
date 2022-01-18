@@ -3,7 +3,7 @@
 
 """An `IBuildFarmJobBehaviour` for `OCIRecipeBuild`.
 
-Dispatches OCI image build jobs to build-farm slaves.
+Dispatches OCI image build jobs to build-farm workers.
 """
 
 __all__ = [
@@ -123,7 +123,7 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None):
         """
-        Return the extra arguments required by the slave for the given build.
+        Return the extra arguments required by the worker for the given build.
         """
         build = self.build
         args = yield super().extraBuildArgs(logger=logger)
@@ -183,7 +183,7 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         file_hash = filemap[name]
         file_path = os.path.join(upload_path, name)
         self._ensureFilePath(name, file_path, upload_path)
-        yield self._slave.getFile(file_hash, file_path)
+        yield self._worker.getFile(file_hash, file_path)
 
         with open(file_path) as file_fp:
             return json.load(file_fp)
@@ -240,7 +240,7 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         files_to_download = [
             self._convertToRetrievableFile(upload_path, filename, filemap)
             for filename in files]
-        yield self._slave.getFiles(files_to_download, logger=logger)
+        yield self._worker.getFiles(files_to_download, logger=logger)
 
     def verifySuccessfulBuild(self):
         """See `IBuildFarmJobBehaviour`."""

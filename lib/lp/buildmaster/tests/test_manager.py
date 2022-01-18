@@ -694,7 +694,7 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
 
         # Mock out the build behaviour's handleSuccess so it doesn't
         # try to upload things to the librarian or queue.
-        def handleSuccess(self, slave_status, logger):
+        def handleSuccess(self, worker_status, logger):
             return BuildStatus.UPLOADING
         self.patch(
             BinaryPackageBuildBehaviour, 'handleSuccess', handleSuccess)
@@ -1027,7 +1027,7 @@ class TestWorkerScannerWithoutDB(TestCase):
 
         with ExpectedException(
                 BuildDaemonIsolationError,
-                r"Allegedly clean slave not idle \(%r instead\)" %
+                r"Allegedly clean worker not idle \(%r instead\)" %
                 'BuilderStatus.BUILDING'):
             yield scanner.scan()
         self.assertEqual(['status'], worker.call_log)

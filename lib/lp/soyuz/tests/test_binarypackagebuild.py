@@ -247,7 +247,7 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
         [depwait_build] = depwait_source.createMissingBuilds()
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': 'dep-bin'})
+            worker_status={'dependencies': 'dep-bin'})
         return depwait_build
 
     def testUpdateDependenciesWorks(self):
@@ -261,7 +261,7 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
     def assertRaisesUnparsableDependencies(self, depwait_build, dependencies):
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': dependencies})
+            worker_status={'dependencies': dependencies})
         self.assertRaises(
             UnparsableDependencies, depwait_build.updateDependencies)
 
@@ -311,12 +311,12 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
 
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': 'dep-bin (>> 666)'})
+            worker_status={'dependencies': 'dep-bin (>> 666)'})
         depwait_build.updateDependencies()
         self.assertEqual(depwait_build.dependencies, 'dep-bin (>> 666)')
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': 'dep-bin (>= 666)'})
+            worker_status={'dependencies': 'dep-bin (>= 666)'})
         depwait_build.updateDependencies()
         self.assertEqual(depwait_build.dependencies, '')
 
@@ -334,12 +334,12 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
 
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': 'dep-bin (= 666)'})
+            worker_status={'dependencies': 'dep-bin (= 666)'})
         depwait_build.updateDependencies()
         self.assertEqual(depwait_build.dependencies, '')
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': 'dep-bin (= 999)'})
+            worker_status={'dependencies': 'dep-bin (= 999)'})
         depwait_build.updateDependencies()
         self.assertEqual(depwait_build.dependencies, '')
 
@@ -354,7 +354,7 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
                 ('dep-bin (>> 888)', 'dep-bin (>> 888)'),
                 ):
             depwait_build.updateStatus(
-                BuildStatus.MANUALDEPWAIT, slave_status={'dependencies': dep})
+                BuildStatus.MANUALDEPWAIT, worker_status={'dependencies': dep})
             depwait_build.updateDependencies()
             self.assertEqual(expected, depwait_build.dependencies)
 
@@ -366,7 +366,7 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
 
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={
+            worker_status={
                 'dependencies': 'dep-bin (>= 999) | alt-bin, dep-tools'})
         depwait_build.updateDependencies()
         self.assertEqual(
@@ -388,12 +388,12 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
 
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': 'dep-bin (> 666), dep-bin (< 777)'})
+            worker_status={'dependencies': 'dep-bin (> 666), dep-bin (< 777)'})
         depwait_build.updateDependencies()
         self.assertEqual(depwait_build.dependencies, 'dep-bin (> 666)')
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': 'dep-bin (> 665)'})
+            worker_status={'dependencies': 'dep-bin (> 665)'})
         depwait_build.updateDependencies()
         self.assertEqual(depwait_build.dependencies, '')
 

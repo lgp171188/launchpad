@@ -155,7 +155,7 @@ class TestBuildFarmJobBehaviourBase(TestCaseWithFactory):
         self.assertIs(False, behaviour.extraBuildArgs()["fast_cleanup"])
 
 
-class TestDispatchBuildToSlave(StatsMixin, TestCase):
+class TestDispatchBuildToWorker(StatsMixin, TestCase):
 
     layer = ZopelessLayer
     run_tests_with = AsynchronousDeferredRunTest
@@ -174,8 +174,8 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
              {'some': 'arg', 'archives': ['http://admin:sekrit@blah/']}))
         return behaviour
 
-    def assertDispatched(self, slave, logger, chroot_filename, image_type):
-        # The slave's been asked to cache the chroot and both source
+    def assertDispatched(self, worker, logger, chroot_filename, image_type):
+        # The worker's been asked to cache the chroot and both source
         # files, and then to start the build.
         expected_calls = [
             ('ensurepresent',
@@ -188,7 +188,7 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
              {'archives': ['http://admin:sekrit@blah/'],
               'image_type': image_type,
               'some': 'arg'})]
-        self.assertEqual(expected_calls, slave.call_log)
+        self.assertEqual(expected_calls, worker.call_log)
 
         # And details have been logged, including the build arguments
         # with credentials redacted.
@@ -206,19 +206,19 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
             "http://fake:0000: BuildStatus.BUILDING PACKAGEBUILD-1\n")
 
     @defer.inlineCallbacks
-    def test_dispatchBuildToSlave(self):
+    def test_dispatchBuildToWorker(self):
         behaviour = self.makeBehaviour(FakeDistroArchSeries())
         builder = MockBuilder()
         worker = OkWorker()
         logger = BufferLogger()
         behaviour.setBuilder(builder, worker)
-        yield behaviour.dispatchBuildToSlave(logger)
+        yield behaviour.dispatchBuildToWorker(logger)
 
         self.assertDispatched(
             worker, logger, 'chroot-fooix-bar-y86.tar.gz', 'chroot')
 
     @defer.inlineCallbacks
-    def test_dispatchBuildToSlave_with_other_image_available(self):
+    def test_dispatchBuildToWorker_with_other_image_available(self):
         # If a base image is available but isn't in the behaviour's image
         # types, it isn't used.
         das = FakeDistroArchSeries()
@@ -228,13 +228,13 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
         worker = OkWorker()
         logger = BufferLogger()
         behaviour.setBuilder(builder, worker)
-        yield behaviour.dispatchBuildToSlave(logger)
+        yield behaviour.dispatchBuildToWorker(logger)
 
         self.assertDispatched(
             worker, logger, 'chroot-fooix-bar-y86.tar.gz', 'chroot')
 
     @defer.inlineCallbacks
-    def test_dispatchBuildToSlave_lxd(self):
+    def test_dispatchBuildToWorker_lxd(self):
         das = FakeDistroArchSeries()
         das.images[BuildBaseImageType.LXD] = 'lxd-fooix-bar-y86.tar.gz'
         behaviour = self.makeBehaviour(das)
@@ -244,13 +244,13 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
         worker = OkWorker()
         logger = BufferLogger()
         behaviour.setBuilder(builder, worker)
-        yield behaviour.dispatchBuildToSlave(logger)
+        yield behaviour.dispatchBuildToWorker(logger)
 
         self.assertDispatched(
             worker, logger, 'lxd-fooix-bar-y86.tar.gz', 'lxd')
 
     @defer.inlineCallbacks
-    def test_dispatchBuildToSlave_fallback(self):
+    def test_dispatchBuildToWorker_fallback(self):
         behaviour = self.makeBehaviour(FakeDistroArchSeries())
         behaviour.image_types = [
             BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
@@ -258,20 +258,20 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
         worker = OkWorker()
         logger = BufferLogger()
         behaviour.setBuilder(builder, worker)
-        yield behaviour.dispatchBuildToSlave(logger)
+        yield behaviour.dispatchBuildToWorker(logger)
 
         self.assertDispatched(
             worker, logger, 'chroot-fooix-bar-y86.tar.gz', 'chroot')
 
     @defer.inlineCallbacks
-    def test_dispatchBuildToSlave_stats(self):
+    def test_dispatchBuildToWorker_stats(self):
         self.setUpStats()
         behaviour = self.makeBehaviour(FakeDistroArchSeries())
         builder = MockBuilder()
         worker = OkWorker()
         logger = BufferLogger()
         behaviour.setBuilder(builder, worker)
-        yield behaviour.dispatchBuildToSlave(logger)
+        yield behaviour.dispatchBuildToWorker(logger)
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],

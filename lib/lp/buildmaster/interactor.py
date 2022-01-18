@@ -345,7 +345,7 @@ def extract_vitals_from_db(builder, build_queue=_BQ_UNSPECIFIED):
 class BuilderInteractor:
 
     @staticmethod
-    def makeSlaveFromVitals(vitals):
+    def makeWorkerFromVitals(vitals):
         if vitals.virtualized:
             timeout = config.builddmaster.virtualized_socket_timeout
         else:
@@ -354,19 +354,19 @@ class BuilderInteractor:
             vitals.url, vitals.vm_host, timeout)
 
     @staticmethod
-    def getBuildBehaviour(queue_item, builder, slave):
+    def getBuildBehaviour(queue_item, builder, worker):
         if queue_item is None:
             return None
         behaviour = IBuildFarmJobBehaviour(queue_item.specific_build)
-        behaviour.setBuilder(builder, slave)
+        behaviour.setBuilder(builder, worker)
         return behaviour
 
     @classmethod
-    def resumeSlaveHost(cls, vitals, slave):
-        """Resume the slave host to a known good condition.
+    def resumeWorkerHost(cls, vitals, worker):
+        """Resume the worker host to a known good condition.
 
         Issues 'builddmaster.vm_resume_command' specified in the configuration
-        to resume the slave.
+        to resume the worker.
 
         :raises: CannotResumeHost: if builder is not virtual or if the
             configuration command has failed.
@@ -384,7 +384,7 @@ class BuilderInteractor:
         logger = cls._getWorkerScannerLogger()
         logger.info("Resuming %s (%s)" % (vitals.name, vitals.url))
 
-        d = slave.resume()
+        d = worker.resume()
 
         def got_resume_ok(args):
             stdout, stderr, returncode = args
@@ -400,38 +400,38 @@ class BuilderInteractor:
 
     @classmethod
     @defer.inlineCallbacks
-    def cleanSlave(cls, vitals, slave, builder_factory):
-        """Prepare a slave for a new build.
+    def cleanWorker(cls, vitals, worker, builder_factory):
+        """Prepare a worker for a new build.
 
         :return: A Deferred that fires when this stage of the resume
-            operations finishes. If the value is True, the slave is now clean.
+            operations finishes. If the value is True, the worker is now clean.
             If it's False, the clean is still in progress and this must be
             called again later.
         """
         if vitals.virtualized:
             if vitals.vm_reset_protocol == BuilderResetProtocol.PROTO_1_1:
                 # In protocol 1.1 the reset trigger is synchronous, so
-                # once resumeSlaveHost returns the slave should be
+                # once resumeWorkerHost returns the worker should be
                 # running.
                 builder_factory[vitals.name].setCleanStatus(
                     BuilderCleanStatus.CLEANING)
                 transaction.commit()
-                yield cls.resumeSlaveHost(vitals, slave)
-                # We ping the resumed slave before we try to do anything
+                yield cls.resumeWorkerHost(vitals, worker)
+                # We ping the resumed worker before we try to do anything
                 # useful with it. This is to ensure it's accepting
                 # packets from the outside world, because testing has
                 # shown that the first packet will randomly fail for no
                 # apparent reason.  This could be a quirk of the Xen
                 # guest, we're not sure. See bug 586359.
-                yield slave.echo("ping")
+                yield worker.echo("ping")
                 return True
             elif vitals.vm_reset_protocol == BuilderResetProtocol.PROTO_2_0:
                 # In protocol 2.0 the reset trigger is asynchronous.
-                # If the trigger succeeds we'll leave the slave in
-                # CLEANING, and the non-LP slave management code will
+                # If the trigger succeeds we'll leave the worker in
+                # CLEANING, and the non-LP worker management code will
                 # set it back to CLEAN later using the webservice.
                 if vitals.clean_status == BuilderCleanStatus.DIRTY:
-                    yield cls.resumeSlaveHost(vitals, slave)
+                    yield cls.resumeWorkerHost(vitals, worker)
                     builder_factory[vitals.name].setCleanStatus(
                         BuilderCleanStatus.CLEANING)
                     transaction.commit()
@@ -441,28 +441,28 @@ class BuilderInteractor:
             raise CannotResumeHost(
                 "Invalid vm_reset_protocol: %r" % vitals.vm_reset_protocol)
         else:
-            slave_status = yield slave.status()
-            status = slave_status.get('builder_status', None)
+            worker_status = yield worker.status()
+            status = worker_status.get('builder_status', None)
             if status == 'BuilderStatus.IDLE':
                 # This is as clean as we can get it.
                 return True
             elif status == 'BuilderStatus.BUILDING':
-                # Asynchronously abort() the slave and wait until WAITING.
-                yield slave.abort()
+                # Asynchronously abort() the worker and wait until WAITING.
+                yield worker.abort()
                 return False
             elif status == 'BuilderStatus.ABORTING':
                 # Wait it out until WAITING.
                 return False
             elif status == 'BuilderStatus.WAITING':
                 # Just a synchronous clean() call and we'll be idle.
-                yield slave.clean()
+                yield worker.clean()
                 return True
             raise BuildDaemonError(
                 "Invalid status during clean: %r" % status)
 
     @classmethod
     @defer.inlineCallbacks
-    def _startBuild(cls, build_queue_item, vitals, builder, slave, behaviour,
+    def _startBuild(cls, build_queue_item, vitals, builder, worker, behaviour,
                     logger):
         """Start a build on this builder.
 
@@ -482,17 +482,17 @@ class BuilderInteractor:
 
         if builder.clean_status != BuilderCleanStatus.CLEAN:
             raise BuildDaemonIsolationError(
-                "Attempted to start build on a dirty slave.")
+                "Attempted to start build on a dirty worker.")
 
         builder.setCleanStatus(BuilderCleanStatus.DIRTY)
         transaction.commit()
 
-        yield behaviour.dispatchBuildToSlave(logger)
+        yield behaviour.dispatchBuildToWorker(logger)
 
     @classmethod
     @defer.inlineCallbacks
-    def findAndStartJob(cls, vitals, builder, slave, builder_factory):
-        """Find a job to run and send it to the buildd slave.
+    def findAndStartJob(cls, vitals, builder, worker, builder_factory):
+        """Find a job to run and send it to the buildd worker.
 
         :return: A Deferred whose value is the `IBuildQueue` instance
             found or None if no job was found.
@@ -514,7 +514,7 @@ class BuilderInteractor:
             logger.debug("No build candidates available for builder.")
             return None
 
-        new_behaviour = cls.getBuildBehaviour(candidate, builder, slave)
+        new_behaviour = cls.getBuildBehaviour(candidate, builder, worker)
         needed_bfjb = type(removeSecurityProxy(
             IBuildFarmJobBehaviour(candidate.specific_build)))
         if not zope_isinstance(new_behaviour, needed_bfjb):
@@ -522,40 +522,40 @@ class BuilderInteractor:
                 "Inappropriate IBuildFarmJobBehaviour: %r is not a %r" %
                 (new_behaviour, needed_bfjb))
         yield cls._startBuild(
-            candidate, vitals, builder, slave, new_behaviour, logger)
+            candidate, vitals, builder, worker, new_behaviour, logger)
         return candidate
 
     @staticmethod
-    def extractBuildStatus(slave_status):
+    def extractBuildStatus(worker_status):
         """Read build status name.
 
-        :param slave_status: build status dict from BuilderWorker.status.
+        :param worker_status: build status dict from BuilderWorker.status.
         :return: the unqualified status name, e.g. "OK".
         """
-        status_string = slave_status['build_status']
+        status_string = worker_status['build_status']
         lead_string = 'BuildStatus.'
         assert status_string.startswith(lead_string), (
             "Malformed status string: '%s'" % status_string)
         return status_string[len(lead_string):]
 
     @staticmethod
-    def extractLogTail(slave_status):
+    def extractLogTail(worker_status):
         """Extract the log tail from a builder status response.
 
-        :param slave_status: build status dict from BuilderWorker.status.
+        :param worker_status: build status dict from BuilderWorker.status.
         :return: a text string representing the tail of the build log, or
             None if the log tail is unavailable and should be left
             unchanged.
         """
-        builder_status = slave_status["builder_status"]
+        builder_status = worker_status["builder_status"]
         if builder_status == "BuilderStatus.ABORTING":
-            logtail = "Waiting for slave process to be terminated"
-        elif slave_status.get("logtail") is not None:
-            # slave_status["logtail"] is an xmlrpc.client.Binary instance,
+            logtail = "Waiting for worker process to be terminated"
+        elif worker_status.get("logtail") is not None:
+            # worker_status["logtail"] is an xmlrpc.client.Binary instance,
             # and the contents might include invalid UTF-8 due to being a
             # fixed number of bytes from the tail of the log.  Turn it into
             # Unicode as best we can.
-            logtail = slave_status.get("logtail").data.decode(
+            logtail = worker_status.get("logtail").data.decode(
                 "UTF-8", errors="replace")
             # PostgreSQL text columns can't contain \0 characters, and since
             # we only use this for web UI display purposes there's no point
@@ -567,35 +567,35 @@ class BuilderInteractor:
 
     @classmethod
     @defer.inlineCallbacks
-    def updateBuild(cls, vitals, slave, slave_status, builder_factory,
+    def updateBuild(cls, vitals, worker, worker_status, builder_factory,
                     behaviour_factory, manager):
         """Verify the current build job status.
 
         Perform the required actions for each state.
 
-        :return: A Deferred that fires when the slave dialog is finished.
+        :return: A Deferred that fires when the worker dialog is finished.
         """
         # IDLE is deliberately not handled here, because it should be
-        # impossible to get past the cookie check unless the slave
+        # impossible to get past the cookie check unless the worker
         # matches the DB, and this method isn't called unless the DB
         # says there's a job.
-        builder_status = slave_status['builder_status']
+        builder_status = worker_status['builder_status']
         if builder_status in (
                 'BuilderStatus.BUILDING', 'BuilderStatus.ABORTING'):
-            logtail = cls.extractLogTail(slave_status)
+            logtail = cls.extractLogTail(worker_status)
             if logtail is not None:
                 manager.addLogTail(vitals.build_queue.id, logtail)
             vitals.build_queue.specific_build.updateStatus(
                 vitals.build_queue.specific_build.status,
-                slave_status=slave_status)
+                worker_status=worker_status)
             transaction.commit()
         elif builder_status == 'BuilderStatus.WAITING':
             # Build has finished. Delegate handling to the build itself.
             builder = builder_factory[vitals.name]
-            behaviour = behaviour_factory(vitals.build_queue, builder, slave)
+            behaviour = behaviour_factory(vitals.build_queue, builder, worker)
             yield behaviour.handleStatus(
-                vitals.build_queue, cls.extractBuildStatus(slave_status),
-                slave_status)
+                vitals.build_queue, cls.extractBuildStatus(worker_status),
+                worker_status)
         else:
             raise AssertionError("Unknown status %s" % builder_status)
 

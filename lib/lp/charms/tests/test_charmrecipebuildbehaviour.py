@@ -419,7 +419,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
             yield job.composeBuildRequest(None)
 
     @defer.inlineCallbacks
-    def test_dispatchBuildToSlave_prefers_lxd(self):
+    def test_dispatchBuildToWorker_prefers_lxd(self):
         self.pushConfig("builddmaster", builder_proxy_host=None)
         job = self.makeJob()
         builder = MockBuilder()
@@ -432,7 +432,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
         lxd_lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(
             lxd_lfa, image_type=BuildBaseImageType.LXD)
-        yield job.dispatchBuildToSlave(DevNullLogger())
+        yield job.dispatchBuildToWorker(DevNullLogger())
         self.assertEqual(
             ("ensurepresent", lxd_lfa.http_url, "", ""), worker.call_log[0])
         self.assertEqual(1, self.stats_client.incr.call_count)
@@ -442,7 +442,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
              "job_type=CHARMRECIPEBUILD".format(builder.name),))
 
     @defer.inlineCallbacks
-    def test_dispatchBuildToSlave_falls_back_to_chroot(self):
+    def test_dispatchBuildToWorker_falls_back_to_chroot(self):
         self.pushConfig("builddmaster", builder_proxy_host=None)
         job = self.makeJob()
         builder = MockBuilder()
@@ -452,7 +452,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
         chroot_lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(
             chroot_lfa, image_type=BuildBaseImageType.CHROOT)
-        yield job.dispatchBuildToSlave(DevNullLogger())
+        yield job.dispatchBuildToWorker(DevNullLogger())
         self.assertEqual(
             ("ensurepresent", chroot_lfa.http_url, "", ""), worker.call_log[0])
 

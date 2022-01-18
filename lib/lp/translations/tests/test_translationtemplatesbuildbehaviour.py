@@ -137,8 +137,8 @@ class TestTranslationTemplatesBuildBehaviour(
         behaviour = self.makeBehaviour()
         buildqueue = FakeBuildQueue(behaviour)
         path = behaviour.templates_tarball_path
-        # Poke the file we're expecting into the mock slave.
-        behaviour._slave.valid_files[path] = ''
+        # Poke the file we're expecting into the mock worker.
+        behaviour._worker.valid_files[path] = ''
 
         def got_tarball(filename):
             tarball = open(filename)
@@ -159,16 +159,16 @@ class TestTranslationTemplatesBuildBehaviour(
         behaviour._uploadTarball = FakeMethod()
         queue_item = behaviour.build.queueBuild()
         queue_item.markAsBuilding(self.factory.makeBuilder())
-        slave = behaviour._slave
+        worker = behaviour._worker
 
-        d = slave.status()
+        d = worker.status()
 
         def got_status(status):
             return (
                 behaviour.handleStatus(
                     queue_item, BuilderInteractor.extractBuildStatus(status),
                     status),
-                slave.call_log)
+                worker.call_log)
 
         def build_updated(ignored):
             self.assertEqual(BuildStatus.FULLYBUILT, behaviour.build.status)
@@ -187,9 +187,9 @@ class TestTranslationTemplatesBuildBehaviour(
         behaviour._uploadTarball = FakeMethod()
         queue_item = behaviour.build.queueBuild()
         queue_item.markAsBuilding(self.factory.makeBuilder())
-        slave = behaviour._slave
+        worker = behaviour._worker
 
-        d = slave.status()
+        d = worker.status()
 
         def got_status(status):
             del status['filemap']
@@ -216,9 +216,9 @@ class TestTranslationTemplatesBuildBehaviour(
         behaviour._uploadTarball = FakeMethod()
         queue_item = behaviour.build.queueBuild()
         queue_item.markAsBuilding(self.factory.makeBuilder())
-        slave = behaviour._slave
+        worker = behaviour._worker
 
-        d = slave.status()
+        d = worker.status()
 
         def got_status(status):
             del status['filemap']
@@ -243,7 +243,7 @@ class TestTranslationTemplatesBuildBehaviour(
             branch=branch, filemap={'translation-templates.tar.gz': 'foo'})
         queue_item = behaviour.build.queueBuild()
         queue_item.markAsBuilding(self.factory.makeBuilder())
-        slave = behaviour._slave
+        worker = behaviour._worker
 
         def fake_getFile(sum, path):
             dummy_tar = os.path.join(
@@ -253,8 +253,8 @@ class TestTranslationTemplatesBuildBehaviour(
                 copy_and_close(tar_file, f)
             return defer.succeed(None)
 
-        slave.getFile = fake_getFile
-        d = slave.status()
+        worker.getFile = fake_getFile
+        d = worker.status()
 
         def got_status(status):
             return behaviour.handleStatus(

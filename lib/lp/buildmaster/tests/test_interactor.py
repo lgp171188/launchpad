@@ -123,32 +123,33 @@ class TestBuilderInteractor(TestCase):
 
     def test_extractBuildStatus_baseline(self):
         # extractBuildStatus picks the name of the build status out of a
-        # dict describing the slave's status.
-        slave_status = {'build_status': 'BuildStatus.BUILDING'}
+        # dict describing the worker's status.
+        worker_status = {'build_status': 'BuildStatus.BUILDING'}
         self.assertEqual(
-            'BUILDING', BuilderInteractor.extractBuildStatus(slave_status))
+            'BUILDING', BuilderInteractor.extractBuildStatus(worker_status))
 
     def test_extractBuildStatus_malformed(self):
         # extractBuildStatus errors out when the status string is not
         # of the form it expects.
-        slave_status = {'build_status': 'BUILDING'}
+        worker_status = {'build_status': 'BUILDING'}
         self.assertRaises(
-            AssertionError, BuilderInteractor.extractBuildStatus, slave_status)
+            AssertionError, BuilderInteractor.extractBuildStatus,
+            worker_status)
 
-    def resumeSlaveHost(self, builder):
+    def resumeWorkerHost(self, builder):
         vitals = extract_vitals_from_db(builder)
-        return BuilderInteractor.resumeSlaveHost(
-            vitals, BuilderInteractor.makeSlaveFromVitals(vitals))
+        return BuilderInteractor.resumeWorkerHost(
+            vitals, BuilderInteractor.makeWorkerFromVitals(vitals))
 
-    def test_resumeSlaveHost_nonvirtual(self):
-        d = self.resumeSlaveHost(MockBuilder(virtualized=False))
+    def test_resumeWorkerHost_nonvirtual(self):
+        d = self.resumeWorkerHost(MockBuilder(virtualized=False))
         return assert_fails_with(d, CannotResumeHost)
 
-    def test_resumeSlaveHost_no_vmhost(self):
-        d = self.resumeSlaveHost(MockBuilder(virtualized=False, vm_host=None))
+    def test_resumeWorkerHost_no_vmhost(self):
+        d = self.resumeWorkerHost(MockBuilder(virtualized=False, vm_host=None))
         return assert_fails_with(d, CannotResumeHost)
 
-    def test_resumeSlaveHost_success(self):
+    def test_resumeWorkerHost_success(self):
         reset_config = """
             [builddmaster]
             vm_resume_command: /bin/echo -n snap %(buildd_name)s %(vm_host)s
@@ -156,45 +157,45 @@ class TestBuilderInteractor(TestCase):
         config.push('reset', reset_config)
         self.addCleanup(config.pop, 'reset')
 
-        d = self.resumeSlaveHost(MockBuilder(
+        d = self.resumeWorkerHost(MockBuilder(
             url="http://crackle.ppa/", virtualized=True, vm_host="pop"))
 
         def got_resume(output):
             self.assertEqual((b'snap crackle pop', b''), output)
         return d.addCallback(got_resume)
 
-    def test_resumeSlaveHost_command_failed(self):
+    def test_resumeWorkerHost_command_failed(self):
         reset_fail_config = """
             [builddmaster]
             vm_resume_command: /bin/false"""
         config.push('reset fail', reset_fail_config)
         self.addCleanup(config.pop, 'reset fail')
-        d = self.resumeSlaveHost(MockBuilder(virtualized=True, vm_host="pop"))
+        d = self.resumeWorkerHost(MockBuilder(virtualized=True, vm_host="pop"))
         return assert_fails_with(d, CannotResumeHost)
 
-    def test_makeSlaveFromVitals(self):
-        # Builder.slave is a BuilderWorker that points at the actual Builder.
-        # The Builder is only ever used in scripts that run outside of the
-        # security context.
+    def test_makeWorkerFromVitals(self):
+        # BuilderInteractor.makeWorkerFromVitals returns a BuilderWorker
+        # that points at the actual Builder.  The Builder is only ever used
+        # in scripts that run outside of the security context.
         builder = MockBuilder(virtualized=False)
         vitals = extract_vitals_from_db(builder)
-        slave = BuilderInteractor.makeSlaveFromVitals(vitals)
-        self.assertEqual(builder.url, slave.url)
-        self.assertEqual(10, slave.timeout)
+        worker = BuilderInteractor.makeWorkerFromVitals(vitals)
+        self.assertEqual(builder.url, worker.url)
+        self.assertEqual(10, worker.timeout)
 
         builder = MockBuilder(virtualized=True)
         vitals = extract_vitals_from_db(builder)
-        slave = BuilderInteractor.makeSlaveFromVitals(vitals)
-        self.assertEqual(5, slave.timeout)
+        worker = BuilderInteractor.makeWorkerFromVitals(vitals)
+        self.assertEqual(5, worker.timeout)
 
 
-class TestBuilderInteractorCleanSlave(TestCase):
+class TestBuilderInteractorCleanWorker(TestCase):
 
     run_tests_with = AsynchronousDeferredRunTest
 
     @defer.inlineCallbacks
     def assertCleanCalls(self, builder, worker, calls, done):
-        actually_done = yield BuilderInteractor.cleanSlave(
+        actually_done = yield BuilderInteractor.cleanWorker(
             extract_vitals_from_db(builder), worker,
             MockBuilderFactory(builder, None))
         self.assertEqual(done, actually_done)
@@ -242,7 +243,7 @@ class TestBuilderInteractorCleanSlave(TestCase):
         builder.vm_reset_protocol = None
         with ExpectedException(
                 CannotResumeHost, "Invalid vm_reset_protocol: None"):
-            yield BuilderInteractor.cleanSlave(
+            yield BuilderInteractor.cleanWorker(
                 extract_vitals_from_db(builder), OkWorker(),
                 MockBuilderFactory(builder, None))
 
@@ -289,7 +290,7 @@ class TestBuilderInteractorCleanSlave(TestCase):
         vitals = extract_vitals_from_db(builder)
         worker = LostBuildingBrokenWorker()
         try:
-            yield BuilderInteractor.cleanSlave(
+            yield BuilderInteractor.cleanWorker(
                 vitals, worker, MockBuilderFactory(builder, None))
         except xmlrpc.client.Fault:
             self.assertEqual(['status', 'abort'], worker.call_log)
@@ -372,7 +373,7 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         behaviour = BuilderInteractor.getBuildBehaviour(bq, builder, worker)
         self.assertIsInstance(behaviour, BinaryPackageBuildBehaviour)
         self.assertEqual(behaviour._builder, builder)
-        self.assertEqual(behaviour._slave, worker)
+        self.assertEqual(behaviour._worker, worker)
 
     def _setupBuilder(self):
         processor = self.factory.makeProcessor(name="i386")
@@ -469,8 +470,8 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         return d.addCallback(check_build_started)
 
     @defer.inlineCallbacks
-    def test_findAndStartJob_requires_clean_slave(self):
-        # findAndStartJob ensures that its slave starts CLEAN.
+    def test_findAndStartJob_requires_clean_worker(self):
+        # findAndStartJob ensures that its worker starts CLEAN.
         builder, build = self._setupBinaryBuildAndBuilder()
         builder.setCleanStatus(BuilderCleanStatus.DIRTY)
         candidate = build.queueBuild()
@@ -479,12 +480,12 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         vitals = extract_vitals_from_db(builder)
         with ExpectedException(
                 BuildDaemonIsolationError,
-                "Attempted to start build on a dirty slave."):
+                "Attempted to start build on a dirty worker."):
             yield BuilderInteractor.findAndStartJob(
                 vitals, builder, OkWorker(), builder_factory)
 
     @defer.inlineCallbacks
-    def test_findAndStartJob_dirties_slave(self):
+    def test_findAndStartJob_dirties_worker(self):
         # findAndStartJob marks its builder DIRTY before dispatching.
         builder, build = self._setupBinaryBuildAndBuilder()
         candidate = build.queueBuild()

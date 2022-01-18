@@ -31,8 +31,8 @@ class IBuildFarmJobBehaviour(Interface):
 
     pocket = Attribute("The `PackagePublishingPocket` to build against.")
 
-    def setBuilder(builder, slave):
-        """Sets the associated builder and slave for this instance."""
+    def setBuilder(builder, worker):
+        """Sets the associated builder and worker for this instance."""
 
     def determineFilesToSend():
         """Work out which files to send to the builder.
@@ -63,7 +63,7 @@ class IBuildFarmJobBehaviour(Interface):
         """
 
     def composeBuildRequest(logger):
-        """Compose parameters for a slave build request.
+        """Compose parameters for a worker build request.
 
         :param logger: A logger to be used to log diagnostic information.
         :return: A tuple of (
@@ -73,8 +73,8 @@ class IBuildFarmJobBehaviour(Interface):
             or a Deferred resulting in the same.
         """
 
-    def dispatchBuildToSlave(logger):
-        """Dispatch a specific build to the slave.
+    def dispatchBuildToWorker(logger):
+        """Dispatch a specific build to the worker.
 
         :param logger: A logger to be used to log diagnostic information.
         """
@@ -88,10 +88,10 @@ class IBuildFarmJobBehaviour(Interface):
     def verifySuccessfulBuild():
         """Check that we are allowed to collect this successful build."""
 
-    def handleStatus(bq, status, slave_status):
-        """Update the build from a WAITING slave result.
+    def handleStatus(bq, status, worker_status):
+        """Update the build from a WAITING worker result.
 
         :param bq: The `BuildQueue` currently being processed.
         :param status: The tail of the BuildStatus (eg. OK or PACKAGEFAIL).
-        :param slave_status: Slave status dict from `BuilderWorker.status`.
+        :param worker_status: Worker status dict from `BuilderWorker.status`.
         """

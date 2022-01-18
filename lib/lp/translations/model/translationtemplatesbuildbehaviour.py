@@ -3,7 +3,7 @@
 
 """An `IBuildFarmJobBehaviour` for `TranslationTemplatesBuild`.
 
-Dispatches translation template build jobs to build-farm slaves.
+Dispatches translation template build jobs to build-farm workers.
 """
 
 __all__ = [
@@ -37,11 +37,11 @@ from lp.translations.model.approver import TranslationBuildApprover
 
 @implementer(IBuildFarmJobBehaviour)
 class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
-    """Dispatches `TranslationTemplateBuildJob`s to slaves."""
+    """Dispatches `TranslationTemplateBuildJob`s to workers."""
 
     builder_type = "translation-templates"
 
-    # Filename for the tarball of templates that the slave builds.
+    # Filename for the tarball of templates that the worker builds.
     templates_tarball_path = 'translation-templates.tar.gz'
 
     unsafe_chars = '[^a-zA-Z0-9_+-]'
@@ -73,19 +73,19 @@ class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
         return args
 
     def _readTarball(self, buildqueue, filemap, logger):
-        """Read tarball with generated translation templates from slave."""
+        """Read tarball with generated translation templates from worker."""
         if filemap is None:
             logger.error("Slave returned no filemap.")
             return defer.succeed(None)
 
-        slave_filename = filemap.get(self.templates_tarball_path)
-        if slave_filename is None:
-            logger.error("Did not find templates tarball in slave output.")
+        worker_filename = filemap.get(self.templates_tarball_path)
+        if worker_filename is None:
+            logger.error("Did not find templates tarball in worker output.")
             return defer.succeed(None)
 
         fd, fname = tempfile.mkstemp()
         os.close(fd)
-        d = self._slave.getFile(slave_filename, fname)
+        d = self._worker.getFile(worker_filename, fname)
         return d.addCallback(lambda ignored: fname)
 
     def _uploadTarball(self, branch, tarball, logger):
@@ -100,11 +100,11 @@ class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
                 approver_factory=TranslationBuildApprover)
 
     @defer.inlineCallbacks
-    def handleSuccess(self, slave_status, logger):
+    def handleSuccess(self, worker_status, logger):
         """Deal with a finished build job.
 
-        Retrieves tarball and logs from the slave, then cleans up the
-        slave so it's ready for a next job and destroys the queue item.
+        Retrieves tarball and logs from the worker, then cleans up the
+        worker so it's ready for a next job and destroys the queue item.
 
         If this fails for whatever unforeseen reason, a future run will
         retry it.
@@ -114,7 +114,7 @@ class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
             builder=self.build.buildqueue_record.builder)
         transaction.commit()
         logger.debug("Processing successful templates build.")
-        filemap = slave_status.get('filemap')
+        filemap = worker_status.get('filemap')
         filename = yield self._readTarball(
             self.build.buildqueue_record, filemap, logger)
 

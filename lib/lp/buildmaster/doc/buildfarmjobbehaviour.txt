@@ -17,7 +17,7 @@ Creating a new behaviour
 
 A new behaviour should implement the `IBuildFarmJobBehaviour` interface
 and extend BuildFarmJobBehaviourBase. A new behaviour will only be required
-to define one method - dispatchBuildToSlave() - to correctly implement
+to define one method - dispatchBuildToWorker() - to correctly implement
 the interface, but will usually want to customise the other properties and
 methods as well.
 
@@ -31,7 +31,7 @@ methods as well.
     ... class MyNewBuildBehaviour(BuildFarmJobBehaviourBase):
     ...     """A custom build behaviour for building blah."""
     ...
-    ...     def dispatchBuildToSlave(self, logger):
+    ...     def dispatchBuildToWorker(self, logger):
     ...         print("Did something special to dispatch MySpecialBuild.")
 
 For this documentation, we'll also need a dummy new build farm job.
