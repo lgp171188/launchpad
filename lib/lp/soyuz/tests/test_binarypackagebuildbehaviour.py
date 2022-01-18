@@ -693,7 +693,7 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
 
         behaviour = IBuildFarmJobBehaviour(self.build)
         behaviour.setBuilder(self.builder, worker)
-        d = behaviour.getLogFromSlave(self.build.buildqueue_record)
+        d = behaviour.getLogFromWorker(self.build.buildqueue_record)
         return d.addCallback(got_log)
 
     def test_private_build_log_storage(self):

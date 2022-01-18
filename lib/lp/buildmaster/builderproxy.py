@@ -70,7 +70,7 @@ class BuilderProxyMixin:
         auth_string = '{}:{}'.format(admin_username, secret).strip()
         auth_header = b'Basic ' + base64.b64encode(auth_string.encode('ASCII'))
 
-        token = yield self._slave.process_pool.doWork(
+        token = yield self._worker.process_pool.doWork(
             RequestProxyTokenCommand,
             url=url, auth_header=auth_header,
             proxy_username=proxy_username)
