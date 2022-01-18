@@ -59,9 +59,11 @@ function hide_git_commit(id) {
                  tal:attributes="id string:git-ref-${repeat/ref/index};
                                  onmouseover string:hide_commit(${repeat/ref/index});">
               <p>
-                <strong>Author:</strong>
-                <tal:author replace="structure ref/author/fmt:link" />
-                <br />
+                <tal:has-author condition="ref/author">
+                  <strong>Author:</strong>
+                  <tal:author replace="structure ref/author/fmt:link" />
+                  <br />
+                </tal:has-author>
                 <strong>Author Date:</strong>
                 <tal:author replace="structure ref/author_date/fmt:datetime" />
               </p>

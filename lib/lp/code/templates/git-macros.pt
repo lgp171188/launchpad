@@ -200,17 +200,19 @@
   <dt class="commit-details"
       tal:define="
         sha1 python:commit_info['sha1'];
-        author python:commit_info['author'];
+        author python:commit_info.get('author');
         author_date python:commit_info['author_date']">
     <a tal:attributes="href python: ref.getCodebrowseUrlForRevision(sha1)"
        tal:content="sha1/fmt:shorten/10" />
-    by
-    <tal:known-person condition="author/person">
-      <tal:person-link replace="structure author/person/fmt:link" />
-    </tal:known-person>
-    <tal:unknown-person condition="not: author/person">
-      <strong tal:content="author/name/fmt:obfuscate-email" />
-    </tal:unknown-person>
+    <tal:has-author condition="author">
+      by
+      <tal:known-person condition="author/person">
+        <tal:person-link replace="structure author/person/fmt:link" />
+      </tal:known-person>
+      <tal:unknown-person condition="not: author/person">
+        <strong tal:content="author/name/fmt:obfuscate-email" />
+      </tal:unknown-person>
+    </tal:has-author>
     <tal:author-date replace="structure author_date/fmt:displaydatetitle" />
   </dt>
   <dd class="subordinate commit-message"

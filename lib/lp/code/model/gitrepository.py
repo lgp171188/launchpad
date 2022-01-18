@@ -258,20 +258,34 @@ def parse_git_commits(commits):
                 info["author_date"] = datetime.fromtimestamp(
                     author["time"], tz=pytz.UTC)
             if "name" in author and "email" in author:
-                author_addr = email.utils.formataddr(
-                    (author["name"], author["email"]))
-                info["author_addr"] = author_addr
-                authors_to_acquire.append(author_addr)
+                try:
+                    author_addr = email.utils.formataddr(
+                        (author["name"], author["email"]))
+                except UnicodeEncodeError:
+                    # Addresses must be ASCII; formataddr raises
+                    # UnicodeEncodeError if they aren't.  Just skip the
+                    # author in that case.
+                    pass
+                else:
+                    info["author_addr"] = author_addr
+                    authors_to_acquire.append(author_addr)
         committer = commit.get("committer")
         if committer is not None:
             if "time" in committer:
                 info["committer_date"] = datetime.fromtimestamp(
                     committer["time"], tz=pytz.UTC)
             if "name" in committer and "email" in committer:
-                committer_addr = email.utils.formataddr(
-                    (committer["name"], committer["email"]))
-                info["committer_addr"] = committer_addr
-                committers_to_acquire.append(committer_addr)
+                try:
+                    committer_addr = email.utils.formataddr(
+                        (committer["name"], committer["email"]))
+                except UnicodeEncodeError:
+                    # Addresses must be ASCII; formataddr raises
+                    # UnicodeEncodeError if they aren't.  Just skip the
+                    # committer in that case.
+                    pass
+                else:
+                    info["committer_addr"] = committer_addr
+                    committers_to_acquire.append(committer_addr)
         if "message" in commit:
             info["commit_message"] = commit["message"]
         parsed[commit["sha1"]] = info
