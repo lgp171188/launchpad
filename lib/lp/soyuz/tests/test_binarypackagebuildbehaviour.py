@@ -615,7 +615,7 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
         # The builder is in the process of aborting.
         def got_update(ignored):
             self.assertEqual(
-                "Waiting for slave process to be terminated",
+                "Waiting for worker process to be terminated",
                 self.candidate.logtail)
 
         d = self.updateBuild(self.candidate, AbortingWorker())

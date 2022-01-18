@@ -431,7 +431,7 @@ class WorkerScanner:
 
     def __init__(self, builder_name, builder_factory, manager, logger,
                  clock=None, interactor_factory=BuilderInteractor,
-                 worker_factory=BuilderInteractor.makeSlaveFromVitals,
+                 worker_factory=BuilderInteractor.makeWorkerFromVitals,
                  behaviour_factory=BuilderInteractor.getBuildBehaviour):
         self.builder_name = builder_name
         self.builder_factory = builder_factory
@@ -681,11 +681,11 @@ class WorkerScanner:
                     builder.resetFailureCount()
                     transaction.commit()
             else:
-                # Ask the BuilderInteractor to clean the slave. It might
+                # Ask the BuilderInteractor to clean the worker. It might
                 # be immediately cleaned on return, in which case we go
                 # straight back to CLEAN, or we might have to spin
                 # through another few cycles.
-                done = yield interactor.cleanSlave(
+                done = yield interactor.cleanWorker(
                     vitals, slave, self.builder_factory)
                 if done:
                     builder = self.builder_factory[self.builder_name]
