@@ -554,9 +554,9 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
     @defer.inlineCallbacks
     def updateBuild(self, candidate, slave):
         bf = MockBuilderFactory(self.builder, candidate)
-        slave_status = yield slave.status()
+        worker_status = yield slave.status()
         yield self.interactor.updateBuild(
-            bf.getVitals('foo'), slave, slave_status, bf,
+            bf.getVitals('foo'), slave, worker_status, bf,
             self.interactor.getBuildBehaviour, self.manager)
         self.manager.flushLogTails()
 

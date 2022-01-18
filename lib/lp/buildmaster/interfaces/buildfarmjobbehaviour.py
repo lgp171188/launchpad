@@ -88,10 +88,10 @@ class IBuildFarmJobBehaviour(Interface):
     def verifySuccessfulBuild():
         """Check that we are allowed to collect this successful build."""
 
-    def handleStatus(bq, status, slave_status):
+    def handleStatus(bq, status, worker_status):
         """Update the build from a WAITING slave result.
 
         :param bq: The `BuildQueue` currently being processed.
         :param status: The tail of the BuildStatus (eg. OK or PACKAGEFAIL).
-        :param slave_status: Slave status dict from `BuilderWorker.status`.
+        :param worker_status: Worker status dict from `BuilderWorker.status`.
         """

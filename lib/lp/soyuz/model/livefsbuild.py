@@ -296,7 +296,7 @@ class LiveFSBuild(PackageBuildMixin, Storm):
         """See `IPackageBuild`."""
         return not self.getFiles().is_empty()
 
-    def updateStatus(self, status, builder=None, slave_status=None,
+    def updateStatus(self, status, builder=None, worker_status=None,
                      date_started=None, date_finished=None,
                      force_invalid_transition=False):
         """See `IBuildFarmJob`."""
@@ -304,7 +304,7 @@ class LiveFSBuild(PackageBuildMixin, Storm):
         edited_fields = set()
         with notify_modified(self, edited_fields) as previous_obj:
             super().updateStatus(
-                status, builder=builder, slave_status=slave_status,
+                status, builder=builder, worker_status=worker_status,
                 date_started=date_started, date_finished=date_finished,
                 force_invalid_transition=force_invalid_transition)
             if self.status != previous_obj.status:

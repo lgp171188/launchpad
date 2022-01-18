@@ -262,7 +262,7 @@ class BuildFarmJobBehaviourBase:
     ALLOWED_STATUS_NOTIFICATIONS = ['PACKAGEFAIL', 'CHROOTFAIL']
 
     @defer.inlineCallbacks
-    def handleStatus(self, bq, status, slave_status):
+    def handleStatus(self, bq, status, worker_status):
         """See `IBuildFarmJobBehaviour`."""
         if bq != self.build.buildqueue_record:
             raise AssertionError(
@@ -290,7 +290,7 @@ class BuildFarmJobBehaviourBase:
             # here and the commit can cause duplicated results. For
             # example, a BinaryPackageBuild will end up in the upload
             # queue twice if notify() crashes.
-            build_status = yield self.handleSuccess(slave_status, logger)
+            build_status = yield self.handleSuccess(worker_status, logger)
         elif status in fail_status_map:
             # XXX wgrant: The builder should be set long before here, but
             # currently isn't.
@@ -309,7 +309,7 @@ class BuildFarmJobBehaviourBase:
         self.build.updateStatus(
             build_status,
             builder=self.build.buildqueue_record.builder,
-            slave_status=slave_status)
+            worker_status=worker_status)
         if notify:
             self.build.notify()
         self.build.buildqueue_record.destroySelf()
@@ -332,7 +332,7 @@ class BuildFarmJobBehaviourBase:
         yield self._slave.getFiles(filenames_to_download, logger=logger)
 
     @defer.inlineCallbacks
-    def handleSuccess(self, slave_status, logger):
+    def handleSuccess(self, worker_status, logger):
         """Handle a package that built successfully.
 
         Once built successfully, we pull the files, store them in a
@@ -340,7 +340,7 @@ class BuildFarmJobBehaviourBase:
         uploader.
         """
         build = self.build
-        filemap = slave_status['filemap']
+        filemap = worker_status['filemap']
 
         # If this is a binary package build, discard it if its source is
         # no longer published.

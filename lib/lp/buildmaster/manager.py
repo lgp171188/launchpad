@@ -588,9 +588,9 @@ class WorkerScanner:
             self._cached_build_queue = vitals.build_queue
         return self._cached_build_cookie
 
-    def updateVersion(self, vitals, slave_status):
-        """Update the DB's record of the slave version if necessary."""
-        version = slave_status.get("builder_version")
+    def updateVersion(self, vitals, worker_status):
+        """Update the DB's record of the worker version if necessary."""
+        version = worker_status.get("builder_version")
         if version is not None:
             version = six.ensure_text(version)
         if version != vitals.version:
@@ -619,15 +619,15 @@ class WorkerScanner:
             if not vitals.builderok:
                 lost_reason = '%s is disabled' % vitals.name
             else:
-                slave_status = yield slave.status()
+                worker_status = yield slave.status()
                 # Ensure that the slave has the job that we think it
                 # should.
-                slave_cookie = slave_status.get('build_id')
+                worker_cookie = worker_status.get('build_id')
                 expected_cookie = self.getExpectedCookie(vitals)
-                if slave_cookie != expected_cookie:
+                if worker_cookie != expected_cookie:
                     lost_reason = (
                         '%s is lost (expected %r, got %r)' % (
-                            vitals.name, expected_cookie, slave_cookie))
+                            vitals.name, expected_cookie, worker_cookie))
 
             if lost_reason is not None:
                 # The slave is either confused or disabled, so reset and
@@ -645,9 +645,9 @@ class WorkerScanner:
             # The slave and DB agree on the builder's state.  Scan the
             # slave and get the logtail, or collect the build if it's
             # ready.  Yes, "updateBuild" is a bad name.
-            assert slave_status is not None
+            assert worker_status is not None
             yield interactor.updateBuild(
-                vitals, slave, slave_status, self.builder_factory,
+                vitals, slave, worker_status, self.builder_factory,
                 self.behaviour_factory, self.manager)
         else:
             if not vitals.builderok:
@@ -655,12 +655,12 @@ class WorkerScanner:
             # We think the builder is idle. If it's clean, dispatch. If
             # it's dirty, clean.
             if vitals.clean_status == BuilderCleanStatus.CLEAN:
-                slave_status = yield slave.status()
-                if slave_status.get('builder_status') != 'BuilderStatus.IDLE':
+                worker_status = yield slave.status()
+                if worker_status.get('builder_status') != 'BuilderStatus.IDLE':
                     raise BuildDaemonIsolationError(
-                        'Allegedly clean slave not idle (%r instead)'
-                        % slave_status.get('builder_status'))
-                self.updateVersion(vitals, slave_status)
+                        'Allegedly clean worker not idle (%r instead)'
+                        % worker_status.get('builder_status'))
+                self.updateVersion(vitals, worker_status)
                 if vitals.manual:
                     # If the builder is in manual mode, don't dispatch
                     # anything.

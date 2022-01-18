@@ -441,8 +441,8 @@ class BuilderInteractor:
             raise CannotResumeHost(
                 "Invalid vm_reset_protocol: %r" % vitals.vm_reset_protocol)
         else:
-            slave_status = yield slave.status()
-            status = slave_status.get('builder_status', None)
+            worker_status = yield slave.status()
+            status = worker_status.get('builder_status', None)
             if status == 'BuilderStatus.IDLE':
                 # This is as clean as we can get it.
                 return True
@@ -526,36 +526,36 @@ class BuilderInteractor:
         return candidate
 
     @staticmethod
-    def extractBuildStatus(slave_status):
+    def extractBuildStatus(worker_status):
         """Read build status name.
 
-        :param slave_status: build status dict from BuilderWorker.status.
+        :param worker_status: build status dict from BuilderWorker.status.
         :return: the unqualified status name, e.g. "OK".
         """
-        status_string = slave_status['build_status']
+        status_string = worker_status['build_status']
         lead_string = 'BuildStatus.'
         assert status_string.startswith(lead_string), (
             "Malformed status string: '%s'" % status_string)
         return status_string[len(lead_string):]
 
     @staticmethod
-    def extractLogTail(slave_status):
+    def extractLogTail(worker_status):
         """Extract the log tail from a builder status response.
 
-        :param slave_status: build status dict from BuilderWorker.status.
+        :param worker_status: build status dict from BuilderWorker.status.
         :return: a text string representing the tail of the build log, or
             None if the log tail is unavailable and should be left
             unchanged.
         """
-        builder_status = slave_status["builder_status"]
+        builder_status = worker_status["builder_status"]
         if builder_status == "BuilderStatus.ABORTING":
             logtail = "Waiting for slave process to be terminated"
-        elif slave_status.get("logtail") is not None:
-            # slave_status["logtail"] is an xmlrpc.client.Binary instance,
+        elif worker_status.get("logtail") is not None:
+            # worker_status["logtail"] is an xmlrpc.client.Binary instance,
             # and the contents might include invalid UTF-8 due to being a
             # fixed number of bytes from the tail of the log.  Turn it into
             # Unicode as best we can.
-            logtail = slave_status.get("logtail").data.decode(
+            logtail = worker_status.get("logtail").data.decode(
                 "UTF-8", errors="replace")
             # PostgreSQL text columns can't contain \0 characters, and since
             # we only use this for web UI display purposes there's no point
@@ -567,7 +567,7 @@ class BuilderInteractor:
 
     @classmethod
     @defer.inlineCallbacks
-    def updateBuild(cls, vitals, slave, slave_status, builder_factory,
+    def updateBuild(cls, vitals, slave, worker_status, builder_factory,
                     behaviour_factory, manager):
         """Verify the current build job status.
 
@@ -579,23 +579,23 @@ class BuilderInteractor:
         # impossible to get past the cookie check unless the slave
         # matches the DB, and this method isn't called unless the DB
         # says there's a job.
-        builder_status = slave_status['builder_status']
+        builder_status = worker_status['builder_status']
         if builder_status in (
                 'BuilderStatus.BUILDING', 'BuilderStatus.ABORTING'):
-            logtail = cls.extractLogTail(slave_status)
+            logtail = cls.extractLogTail(worker_status)
             if logtail is not None:
                 manager.addLogTail(vitals.build_queue.id, logtail)
             vitals.build_queue.specific_build.updateStatus(
                 vitals.build_queue.specific_build.status,
-                slave_status=slave_status)
+                worker_status=worker_status)
             transaction.commit()
         elif builder_status == 'BuilderStatus.WAITING':
             # Build has finished. Delegate handling to the build itself.
             builder = builder_factory[vitals.name]
             behaviour = behaviour_factory(vitals.build_queue, builder, slave)
             yield behaviour.handleStatus(
-                vitals.build_queue, cls.extractBuildStatus(slave_status),
-                slave_status)
+                vitals.build_queue, cls.extractBuildStatus(worker_status),
+                worker_status)
         else:
             raise AssertionError("Unknown status %s" % builder_status)
 
