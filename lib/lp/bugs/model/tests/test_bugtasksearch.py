@@ -2272,7 +2272,7 @@ class TestBugTaskSearch(TestCaseWithFactory):
         # on the bug that would normally trigger lazy evaluation for security
         # checking.  Note that the 'id' attribute does not trigger a check.
         with StormStatementRecorder() as recorder:
-            [task.getConjoinedMaster for task in tasks]
+            [task.getConjoinedPrimary for task in tasks]
             self.assertThat(recorder, has_expected_queries)
 
     def test_omit_targeted_default_is_false(self):

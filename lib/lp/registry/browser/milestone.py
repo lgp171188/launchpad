@@ -218,22 +218,22 @@ class MilestoneViewMixin:
         """The list of non-conjoined bugtasks targeted to this milestone."""
         # Put the results in a list so that iterating over it multiple
         # times in this method does not make multiple queries.
-        non_conjoined_slaves = self.context.bugtasks(self.user)
+        non_conjoined_replicas = self.context.bugtasks(self.user)
         # Checking bug permissions is expensive. We know from the query that
         # the user has at least launchpad.View on the bugtasks and their bugs.
         # NB: this is in principle unneeded due to injection of permission in
         # the model layer now.
         precache_permission_for_objects(
-            self.request, 'launchpad.View', non_conjoined_slaves)
+            self.request, 'launchpad.View', non_conjoined_replicas)
         precache_permission_for_objects(
             self.request, 'launchpad.View',
-            [task.bug for task in non_conjoined_slaves])
+            [task.bug for task in non_conjoined_replicas])
         # We want the assignees loaded as we show them in the milestone home
         # page.
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-            [bug.assignee_id for bug in non_conjoined_slaves],
+            [bug.assignee_id for bug in non_conjoined_replicas],
             need_validity=True))
-        return non_conjoined_slaves
+        return non_conjoined_replicas
 
     @cachedproperty
     def _bug_badge_properties(self):

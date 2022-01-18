@@ -91,7 +91,7 @@ that no bug tasks can be expired.
     ...     'test@canonical.com')
 
     # A expirable bugtask. It will be expired because its conjoined
-    # master can be expired.
+    # primary can be expired.
     >>> from lp.bugs.tests.bug import create_old_bug
     >>> ubuntu_bugtask = create_old_bug('expirable_distro', 351, ubuntu)
     >>> ubuntu_bugtask.bug.permits_expiration
@@ -100,10 +100,10 @@ that no bug tasks can be expired.
     True
 
     # An expirable bugtask, a distroseries. The ubuntu bugtask is its
-    # conjoined slave.
+    # conjoined replica.
     >>> hoary_bugtask = bugtaskset.createTask(
     ...     ubuntu_bugtask.bug, sample_person, ubuntu.currentseries)
-    >>> ubuntu_bugtask.conjoined_master == hoary_bugtask
+    >>> ubuntu_bugtask.conjoined_primary == hoary_bugtask
     True
     >>> ubuntu_bugtask.bug.permits_expiration
     True
@@ -318,13 +318,13 @@ will be expirable.
     ubuntu       True    351  Incomplete  False     False  False  False
     hoary        True    351  Incomplete  False     False  False  False
 
-The ubuntu bugtask is never returned; it is a conjoined slave to the
-hoary bugtask. Slave bugtasks cannot be directly expired, so they are
+The ubuntu bugtask is never returned; it is a conjoined replica to the
+hoary bugtask. Replica bugtasks cannot be directly expired, so they are
 not returned by findExpirableBugTasks().
 
     >>> ubuntu_bugtask.status.title
     'Incomplete'
-    >>> ubuntu_bugtask.conjoined_master == hoary_bugtask
+    >>> ubuntu_bugtask.conjoined_primary == hoary_bugtask
     True
 
 Reducing the age to 60 days old, both hoary and jokosher bugtasks
@@ -531,7 +531,7 @@ After the script has run
 
 There are three Expired bugtasks. Jokosher, hoary and ubuntu were
 expired by the expiration process. Although ubuntu was never returned
-by findExpirableBugTasks(), it was expired because its master (hoary)
+by findExpirableBugTasks(), it was expired because its primary (hoary)
 was expired. The remaining bugtasks are unchanged.
 
     >>> summarize_bugtasks(bugtasks)
@@ -551,7 +551,7 @@ was expired. The remaining bugtasks are unchanged.
 
 The message explaining the reason for the expiration was posted by the
 Launchpad Janitor celebrity. Only one message was created for when the
-master and slave bugtasks were expired.
+primary and replica bugtasks were expired.
 
     >>> starting_bug_messages_count
     2

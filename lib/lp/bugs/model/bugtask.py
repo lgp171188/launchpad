@@ -281,25 +281,25 @@ class PassthroughValue:
 
 @block_implicit_flushes
 def validate_conjoined_attribute(self, attr, value):
-    # If this is a conjoined slave then call setattr on the master.
-    # Effectively this means that making a change to the slave will
-    # actually make the change to the master (which will then be passed
-    # down to the slave, of course). This helps to prevent OOPSes when
-    # people try to update the conjoined slave via the API.
+    # If this is a conjoined replica then call setattr on the primary.
+    # Effectively this means that making a change to the replica will
+    # actually make the change to the primary (which will then be passed
+    # down to the replica, of course). This helps to prevent OOPSes when
+    # people try to update the conjoined replica via the API.
 
     # If the value has been wrapped in a _PassthroughValue instance,
-    # then we are being updated by our conjoined master: pass the
+    # then we are being updated by our conjoined primary: pass the
     # value through without any checking.
     if isinstance(value, PassthroughValue):
         return value.value
 
-    conjoined_master = self.conjoined_master
-    if conjoined_master is not None:
-        setattr(conjoined_master, attr, value)
+    conjoined_primary = self.conjoined_primary
+    if conjoined_primary is not None:
+        setattr(conjoined_primary, attr, value)
         return value
 
-    # If there is a conjoined slave, update that.
-    conjoined_bugtask = self.conjoined_slave
+    # If there is a conjoined replica, update that.
+    conjoined_bugtask = self.conjoined_replica
     if conjoined_bugtask:
         setattr(conjoined_bugtask, attr, PassthroughValue(value))
 
@@ -727,26 +727,26 @@ class BugTask(StormBase):
         result['pillar_name'] = self.pillar.displayname
         return result
 
-    def getConjoinedMaster(self, bugtasks, bugtasks_by_package=None):
+    def getConjoinedPrimary(self, bugtasks, bugtasks_by_package=None):
         """See `IBugTask`."""
-        conjoined_master = None
+        conjoined_primary = None
         if self.distribution:
             if bugtasks_by_package is None:
                 bugtasks_by_package = (
                     self.bug.getBugTasksByPackageName(bugtasks))
             bugtasks = bugtasks_by_package[self.sourcepackagename]
-            possible_masters = [
+            possible_primaries = [
                 bugtask for bugtask in bugtasks
                 if (bugtask.distroseries is not None and
                     bugtask.sourcepackagename == self.sourcepackagename)]
             # Return early, so that we don't have to get currentseries,
             # which is expensive.
-            if len(possible_masters) == 0:
+            if len(possible_primaries) == 0:
                 return None
             current_series = self.distribution.currentseries
-            for bugtask in possible_masters:
+            for bugtask in possible_primaries:
                 if bugtask.distroseries == current_series:
-                    conjoined_master = bugtask
+                    conjoined_primary = bugtask
                     break
         elif self.product:
             assert self.product.development_focusID is not None, (
@@ -754,26 +754,26 @@ class BugTask(StormBase):
             devel_focusID = self.product.development_focusID
             for bugtask in bugtasks:
                 if bugtask.productseries_id == devel_focusID:
-                    conjoined_master = bugtask
+                    conjoined_primary = bugtask
                     break
 
-        if (conjoined_master is not None and
-            conjoined_master.status in self._NON_CONJOINED_STATUSES):
-            conjoined_master = None
-        return conjoined_master
+        if (conjoined_primary is not None and
+            conjoined_primary.status in self._NON_CONJOINED_STATUSES):
+            conjoined_primary = None
+        return conjoined_primary
 
     def _get_shortlisted_bugtasks(self):
         return shortlist(self.bug.bugtasks, longest_expected=200)
 
     @property
-    def conjoined_master(self):
+    def conjoined_primary(self):
         """See `IBugTask`."""
-        return self.getConjoinedMaster(self._get_shortlisted_bugtasks())
+        return self.getConjoinedPrimary(self._get_shortlisted_bugtasks())
 
     @property
-    def conjoined_slave(self):
+    def conjoined_replica(self):
         """See `IBugTask`."""
-        conjoined_slave = None
+        conjoined_replica = None
         if self.distroseries:
             distribution = self.distroseries.distribution
             if self.distroseries != distribution.currentseries:
@@ -782,7 +782,7 @@ class BugTask(StormBase):
             for bugtask in self._get_shortlisted_bugtasks():
                 if (bugtask.distribution == distribution and
                     bugtask.sourcepackagename == self.sourcepackagename):
-                    conjoined_slave = bugtask
+                    conjoined_replica = bugtask
                     break
         elif self.productseries:
             product = self.productseries.product
@@ -791,29 +791,29 @@ class BugTask(StormBase):
                 return None
             for bugtask in self._get_shortlisted_bugtasks():
                 if bugtask.product == product:
-                    conjoined_slave = bugtask
+                    conjoined_replica = bugtask
                     break
 
-        if (conjoined_slave is not None and
+        if (conjoined_replica is not None and
             self.status in self._NON_CONJOINED_STATUSES):
-            conjoined_slave = None
-        return conjoined_slave
+            conjoined_replica = None
+        return conjoined_replica
 
-    def _syncFromConjoinedSlave(self):
-        """Ensure the conjoined master is synched from its slave.
+    def _syncFromConjoinedReplica(self):
+        """Ensure the conjoined primary is synched from its replica.
 
         This method should be used only directly after when the
-        conjoined master has been created after the slave, to ensure
+        conjoined primary has been created after the replica, to ensure
         that they are in sync from the beginning.
         """
-        conjoined_slave = self.conjoined_slave
+        conjoined_replica = self.conjoined_replica
 
         for synched_attr in self._CONJOINED_ATTRIBUTES:
-            slave_attr_value = getattr(conjoined_slave, synched_attr)
+            replica_attr_value = getattr(conjoined_replica, synched_attr)
             # Bypass our checks that prevent setting attributes on
-            # conjoined masters by calling the underlying sqlobject
+            # conjoined primaries by calling the underlying sqlobject
             # setter methods directly.
-            setattr(self, synched_attr, PassthroughValue(slave_attr_value))
+            setattr(self, synched_attr, PassthroughValue(replica_attr_value))
 
     def transitionToMilestone(self, new_milestone, user):
         """See `IBugTask`."""
@@ -1643,8 +1643,8 @@ class BugTaskSet:
         del get_property_cache(bug).bugtasks
         for bugtask in tasks:
             bugtask.updateTargetNameCache()
-            if bugtask.conjoined_slave:
-                bugtask._syncFromConjoinedSlave()
+            if bugtask.conjoined_replica:
+                bugtask._syncFromConjoinedReplica()
             else:
                 # Set date_* properties, if we're not conjoined.
                 bugtask._setStatusDateProperties(
@@ -1739,11 +1739,11 @@ class BugTaskSet:
         Bugtasks cannot transition to Invalid automatically unless they meet
         all the rules stated above.
 
-        This implementation returns the master of the master-slave conjoined
-        pairs of bugtasks. Slave conjoined bugtasks are not included in the
-        list because they can only be expired by calling the master bugtask's
-        transitionToStatus() method. See 'Conjoined Bug Tasks' in
-        c.l.doc/bugtasks.txt.
+        This implementation returns the primary of the primary-replica
+        conjoined pairs of bugtasks. Replica conjoined bugtasks are not
+        included in the list because they can only be expired by calling the
+        primary bugtask's transitionToStatus() method. See
+        lp.bugs.model.tests.test_bugtask.TestConjoinedBugTasks.
 
         Only bugtasks the specified user has permission to view are
         returned. The Janitor celebrity has permission to view all bugs.

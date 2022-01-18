@@ -578,7 +578,7 @@ class IBugView(Interface):
         """Return a mapping from `ISourcePackageName` to its bug tasks.
 
         This mapping is suitable to pass as the bugtasks_by_package
-        cache to getConjoinedMaster().
+        cache to getConjoinedPrimary().
 
         The mapping is from a `ISourcePackageName` to all the bug tasks
         that are targeted to such a package name, no matter which
@@ -750,7 +750,7 @@ class IBugAppend(Interface):
         to questions. This is also true for bugs that are being developed.
 
         The `IQuestionTarget` is provided by the `IBugTask` that is not
-        Invalid and is not a conjoined slave. Only one question can be
+        Invalid and is not a conjoined replica. Only one question can be
         made from a bug.
 
         An AssertionError is raised if the bug has zero or many BugTasks

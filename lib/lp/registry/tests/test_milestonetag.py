@@ -161,7 +161,7 @@ class ProjectGroupMilestoneTagTest(TestCaseWithFactory):
                 target=self.project_group, tags=tags)
         return items, milestonetag
 
-    # Add a test similar to TestProjectExcludeConjoinedMasterSearch in
+    # Add a test similar to TestProjectExcludeConjoinedPrimarySearch in
     # lp.bugs.tests.test_bugsearch_conjoined.
 
     def test_bugtask_retrieve_single_milestone(self):
