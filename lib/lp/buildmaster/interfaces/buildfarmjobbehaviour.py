@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interface for build farm job behaviours."""
@@ -88,10 +88,9 @@ class IBuildFarmJobBehaviour(Interface):
     def verifySuccessfulBuild():
         """Check that we are allowed to collect this successful build."""
 
-    def handleStatus(bq, status, worker_status):
-        """Update the build from a WAITING worker result.
+    def handleStatus(bq, worker_status):
+        """Update the build from a worker's status response.
 
         :param bq: The `BuildQueue` currently being processed.
-        :param status: The tail of the BuildStatus (eg. OK or PACKAGEFAIL).
         :param worker_status: Worker status dict from `BuilderWorker.status`.
         """
