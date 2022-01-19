@@ -6,6 +6,7 @@
 import hashlib
 import io
 
+import requests
 from testtools.matchers import (
     AnyMatch,
     Equals,
@@ -40,10 +41,11 @@ from lp.testing.pages import webservice_for_person
 class TestRevisionStatusReport(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
-    def makeRevisionStatusArtifact(self, report):
+    def makeRevisionStatusArtifact(self, report, artifact_type=None):
         # We don't need to upload files to the librarian in this test suite.
         lfa = self.factory.makeLibraryFileAlias(db_only=True)
-        return self.factory.makeRevisionStatusArtifact(lfa=lfa, report=report)
+        return self.factory.makeRevisionStatusArtifact(
+            lfa=lfa, report=report, artifact_type=artifact_type)
 
     def test_owner_public(self):
         # The owner of a public repository can view and edit its reports and
@@ -239,3 +241,40 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
                 result_summary=Equals(initial_result_summary),
                 result=Equals(RevisionStatusResult.SUCCEEDED),
                 date_finished=GreaterThan(date_finished_before_update)))
+
+    def test_getArtifactsURLs(self):
+        report = self.factory.makeRevisionStatusReport()
+        artifact_log = self.factory.makeRevisionStatusArtifact(
+            report=report, artifact_type=RevisionStatusArtifactType.LOG,
+            content=b'log_data')
+        log_url = artifact_log.library_file.http_url
+        artifact_binary = self.factory.makeRevisionStatusArtifact(
+            report=report, artifact_type=RevisionStatusArtifactType.BINARY,
+            content=b'binary_data')
+        binary_url = artifact_binary.library_file.http_url
+        requester = report.creator
+        repository = report.git_repository
+        report_url = api_url(report)
+        webservice = self.getWebservice(requester, repository)
+        response = webservice.named_get(
+            report_url, "getArtifactsURLs", artifact_type="Log")
+        self.assertEqual(200, response.status)
+        with person_logged_in(requester):
+            self.assertIn(log_url, response.jsonBody())
+            self.assertNotIn(binary_url, response.jsonBody())
+            file = requests.get(response.jsonBody()[0])
+            self.assertEqual(b'log_data', file.content)
+        response = webservice.named_get(
+            report_url, "getArtifactsURLs", artifact_type="Binary")
+        self.assertEqual(200, response.status)
+        with person_logged_in(requester):
+            self.assertNotIn(log_url, response.jsonBody())
+            self.assertIn(binary_url, response.jsonBody())
+            file = requests.get(response.jsonBody()[0])
+            self.assertEqual(b'binary_data', file.content)
+        response = webservice.named_get(
+            report_url, "getArtifactsURLs")
+        self.assertEqual(200, response.status)
+        with person_logged_in(requester):
+            self.assertIn(log_url, response.jsonBody())
+            self.assertIn(binary_url, response.jsonBody())
