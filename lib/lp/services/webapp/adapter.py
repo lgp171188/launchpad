@@ -750,7 +750,7 @@ class StoreSelector:
 
 
 # We want to be able to adapt a Storm class to an IStore, IMasterStore or
-# ISlaveStore. Unfortunately, the component architecture provides no
+# IStandbyStore. Unfortunately, the component architecture provides no
 # way for us to declare that a class, and all its subclasses, provides
 # a given interface. This means we need to use an global adapter.
 
@@ -768,8 +768,8 @@ def get_master_store(storm_class):
     return get_store(storm_class, PRIMARY_FLAVOR)
 
 
-def get_slave_store(storm_class):
-    """Return the master Store for the given database class."""
+def get_standby_store(storm_class):
+    """Return the standby Store for the given database class."""
     return get_store(storm_class, STANDBY_FLAVOR)
 
 

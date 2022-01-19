@@ -126,6 +126,7 @@ from lp.code.model.gitrepository import (
     DeletionCallable,
     DeletionOperation,
     GitRepository,
+    parse_git_commits,
     REVISION_STATUS_REPORT_ALLOW_CREATE,
     )
 from lp.code.tests.helpers import GitHostingFixture
@@ -199,6 +200,124 @@ from lp.testing.matchers import (
 from lp.testing.pages import webservice_for_person
 from lp.xmlrpc import faults
 from lp.xmlrpc.interfaces import IPrivateApplication
+
+
+class TestParseGitCommits(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
+
+    def test_valid(self):
+        master_sha1 = hashlib.sha1(b"refs/heads/master").hexdigest()
+        author = self.factory.makePerson()
+        with person_logged_in(author):
+            author_email = author.preferredemail.email
+        author_date = datetime(2015, 1, 1, tzinfo=pytz.UTC)
+        committer_date = datetime(2015, 1, 2, tzinfo=pytz.UTC)
+        commits = [
+            {
+                "sha1": master_sha1,
+                "message": "tip of master",
+                "author": {
+                    "name": author.displayname,
+                    "email": author_email,
+                    "time": int(seconds_since_epoch(author_date)),
+                    },
+                "committer": {
+                    "name": "New Person",
+                    "email": "new-person@example.org",
+                    "time": int(seconds_since_epoch(committer_date)),
+                    },
+                },
+            ]
+        parsed_commits = parse_git_commits(commits)
+        expected_author_addr = "%s <%s>" % (author.displayname, author_email)
+        [expected_author] = getUtility(IRevisionSet).acquireRevisionAuthors(
+            [expected_author_addr]).values()
+        expected_committer_addr = "New Person <new-person@example.org>"
+        [expected_committer] = getUtility(IRevisionSet).acquireRevisionAuthors(
+            ["New Person <new-person@example.org>"]).values()
+        self.assertEqual(
+            {
+                master_sha1: {
+                    "sha1": master_sha1,
+                    "author": expected_author,
+                    "author_addr": expected_author_addr,
+                    "author_date": author_date,
+                    "committer": expected_committer,
+                    "committer_addr": expected_committer_addr,
+                    "committer_date": committer_date,
+                    "commit_message": "tip of master",
+                    },
+                },
+            parsed_commits)
+
+    def test_invalid_author_address(self):
+        master_sha1 = hashlib.sha1(b"refs/heads/master").hexdigest()
+        author_date = datetime(2022, 1, 1, tzinfo=pytz.UTC)
+        commits = [
+            {
+                "sha1": master_sha1,
+                "author": {
+                    "name": "New Person",
+                    "email": "“accidental-quotes@example.org”",
+                    "time": int(seconds_since_epoch(author_date)),
+                    },
+                "committer": {
+                    "name": "New Person",
+                    "email": "accidental-quotes@example.org",
+                    "time": int(seconds_since_epoch(author_date)),
+                    },
+                }
+            ]
+        parsed_commits = parse_git_commits(commits)
+        [expected_author] = getUtility(IRevisionSet).acquireRevisionAuthors(
+            ["New Person <accidental-quotes@example.org>"]).values()
+        self.assertEqual(
+            {
+                master_sha1: {
+                    "sha1": master_sha1,
+                    "author_date": author_date,
+                    "committer": expected_author,
+                    "committer_addr": (
+                        "New Person <accidental-quotes@example.org>"),
+                    "committer_date": author_date,
+                    },
+                },
+            parsed_commits)
+
+    def test_invalid_committer_address(self):
+        master_sha1 = hashlib.sha1(b"refs/heads/master").hexdigest()
+        author_date = datetime(2022, 1, 1, tzinfo=pytz.UTC)
+        commits = [
+            {
+                "sha1": master_sha1,
+                "author": {
+                    "name": "New Person",
+                    "email": "accidental-quotes@example.org",
+                    "time": int(seconds_since_epoch(author_date)),
+                    },
+                "committer": {
+                    "name": "New Person",
+                    "email": "“accidental-quotes@example.org”",
+                    "time": int(seconds_since_epoch(author_date)),
+                    },
+                }
+            ]
+        parsed_commits = parse_git_commits(commits)
+        [expected_author] = getUtility(IRevisionSet).acquireRevisionAuthors(
+            ["New Person <accidental-quotes@example.org>"]).values()
+        self.assertEqual(
+            {
+                master_sha1: {
+                    "sha1": master_sha1,
+                    "author": expected_author,
+                    "author_addr": (
+                        "New Person <accidental-quotes@example.org>"),
+                    "author_date": author_date,
+                    "committer_date": author_date,
+                    },
+                },
+            parsed_commits)
 
 
 class TestGitRepository(TestCaseWithFactory):

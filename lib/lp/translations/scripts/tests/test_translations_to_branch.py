@@ -22,7 +22,7 @@ from lp.registry.interfaces.teammembership import (
     )
 from lp.registry.model.productseries import ProductSeries
 from lp.services.config import config
-from lp.services.database.interfaces import ISlaveStore
+from lp.services.database.interfaces import IStandbyStore
 from lp.services.log.logger import BufferLogger
 from lp.services.scripts.tests import run_script
 from lp.testing import (
@@ -162,11 +162,11 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         self.assertNotEqual(
             db_branch.last_mirrored_id,
             six.ensure_text(tree.branch.last_revision()))
-        # The export code works on a Branch from the slave store.  It
+        # The export code works on a Branch from the standby store.  It
         # shouldn't stop the scan request.
-        slave_series = ISlaveStore(productseries).get(
+        standby_series = IStandbyStore(productseries).get(
             ProductSeries, productseries.id)
-        exporter._exportToBranch(slave_series)
+        exporter._exportToBranch(standby_series)
         self.assertEqual(
             db_branch.last_mirrored_id,
             six.ensure_text(tree.branch.last_revision()))

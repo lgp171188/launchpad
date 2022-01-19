@@ -703,7 +703,7 @@ class LaunchpadBrowserPublication(
                 return False
 
             # If we get a LookupError and the default database being
-            # used is a replica, raise a Retry exception instead of
+            # used is a standby, raise a Retry exception instead of
             # returning the 404 error page. We do this in case the
             # LookupError is caused by replication lag. Our database
             # policy forces the use of the primary database for retries.

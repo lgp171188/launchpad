@@ -5,7 +5,7 @@
 
 from lp.services.database.interfaces import (
     IMasterStore,
-    ISlaveStore,
+    IStandbyStore,
     IStore,
     )
 from lp.services.session.model import (
@@ -20,7 +20,7 @@ class TestSessionModelAdapters(TestCase):
     layer = DatabaseFunctionalLayer
 
     def test_adapters(self):
-        for adapter in [IMasterStore, ISlaveStore, IStore]:
+        for adapter in [IMasterStore, IStandbyStore, IStore]:
             for cls in [SessionData, SessionPkgData]:
                 for obj in [cls, cls()]:
                     store = adapter(obj)

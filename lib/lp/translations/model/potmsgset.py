@@ -374,7 +374,7 @@ class POTMsgSet(SQLBase):
         A message is used if it's either imported or current, and unused
         otherwise.
 
-        Suggestions are read-only, so these objects come from the slave
+        Suggestions are read-only, so these objects come from the standby
         store.
 
         :param suggested_languages: Languages that suggestions should be found

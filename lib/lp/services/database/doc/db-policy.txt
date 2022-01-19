@@ -31,8 +31,8 @@ of the primary, the better the overall performance of Launchpad will be.
 We can distribute this load over many standby databases but are limited to
 a single primary.
 
-    >>> from lp.services.database.interfaces import ISlaveStore
-    >>> ro_janitor = ISlaveStore(Person).find(
+    >>> from lp.services.database.interfaces import IStandbyStore
+    >>> ro_janitor = IStandbyStore(Person).find(
     ...     Person, Person.name == 'janitor').one()
     >>> ro_janitor is writable_janitor
     False

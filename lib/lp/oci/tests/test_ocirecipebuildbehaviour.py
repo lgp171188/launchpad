@@ -1,4 +1,4 @@
-# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `OCIRecipeBuildBehaviour`."""
@@ -55,6 +55,7 @@ from lp.buildmaster.interfaces.builder import (
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
+from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.tests.builderproxy import (
     InProcessProxyAuthAPIFixture,
@@ -773,15 +774,40 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
             1, len(os.listdir(os.path.join(self.upload_root, result))))
 
     @defer.inlineCallbacks
-    def test_handleStatus_OK_normal_image(self):
+    def test_handleStatus_BUILDING(self):
+        # If the builder is BUILDING (or any status other than WAITING),
+        # then the behaviour calls updateStatus but doesn't do anything
+        # else.
+        initial_status = self.build.status
+        bq_id = self.build.buildqueue_record.id
+        worker_status = {"builder_status": "BuilderStatus.BUILDING"}
+        removeSecurityProxy(self.build).updateStatus = FakeMethod()
+        with dbuser(config.builddmaster.dbuser):
+            yield self.behaviour.handleStatus(
+                self.build.buildqueue_record, worker_status)
+        self.assertEqual(None, self.build.log)
+        self.assertEqual(0, len(os.listdir(self.upload_root)))
+        self.assertEqual(
+            [((initial_status,),
+              {"builder": self.builder, "worker_status": worker_status})],
+            removeSecurityProxy(self.build).updateStatus.calls)
+        self.assertEqual(0, len(pop_notifications()), "Notifications received")
+        self.assertEqual(
+            self.build.buildqueue_record,
+            getUtility(IBuildQueueSet).get(bq_id))
+
+    @defer.inlineCallbacks
+    def test_handleStatus_WAITING_OK_normal_image(self):
         now = datetime.now()
         mock_datetime = self.useFixture(MockPatch(
             'lp.buildmaster.model.buildfarmjobbehaviour.datetime')).mock
         mock_datetime.now = lambda: now
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
-                self.build.buildqueue_record, 'OK',
-                {'filemap': self.filemap})
+                self.build.buildqueue_record,
+                {'builder_status': 'BuilderStatus.WAITING',
+                 'build_status': 'BuildStatus.OK',
+                 'filemap': self.filemap})
         self.assertEqual(
             ['buildlog', 'manifest_hash', 'digests_hash', 'config_1_hash',
              'layer_2_hash'],
@@ -805,7 +831,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
             self.assertEqual(contents, b'retrieved from librarian')
 
     @defer.inlineCallbacks
-    def test_handleStatus_OK_reuse_from_other_build(self):
+    def test_handleStatus_WAITING_OK_reuse_from_other_build(self):
         """We should be able to reuse a layer file from a separate build."""
         oci_file = self.factory.makeOCIFile(
             layer_file_digest='digest_2',
@@ -820,8 +846,10 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         mock_oci_datetime.now = lambda tzinfo=None: now
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
-                self.build.buildqueue_record, 'OK',
-                {'filemap': self.filemap})
+                self.build.buildqueue_record,
+                {'builder_status': 'BuilderStatus.WAITING',
+                 'build_status': 'BuildStatus.OK',
+                 'filemap': self.filemap})
         self.assertEqual(
             ['buildlog', 'manifest_hash', 'digests_hash', 'config_1_hash'],
             self.worker._got_file_record)
@@ -844,7 +872,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         self.assertEqual(now, oci_file.date_last_used)
 
     @defer.inlineCallbacks
-    def test_handleStatus_OK_absolute_filepath(self):
+    def test_handleStatus_WAITING_OK_absolute_filepath(self):
 
         self._createTestFile(
             'manifest.json',
@@ -862,11 +890,13 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
                 "'/notvalid/config_file_1.json'."):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
-                    self.build.buildqueue_record, 'OK',
-                    {'filemap': self.filemap})
+                    self.build.buildqueue_record,
+                    {'builder_status': 'BuilderStatus.WAITING',
+                     'build_status': 'BuildStatus.OK',
+                     'filemap': self.filemap})
 
     @defer.inlineCallbacks
-    def test_handleStatus_OK_relative_filepath(self):
+    def test_handleStatus_WAITING_OK_relative_filepath(self):
 
         self._createTestFile(
             'manifest.json',
@@ -882,30 +912,36 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
                 "Build returned a file named '../config_file_1.json'."):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
-                    self.build.buildqueue_record, 'OK',
-                    {'filemap': self.filemap})
+                    self.build.buildqueue_record,
+                    {'builder_status': 'BuilderStatus.WAITING',
+                     'build_status': 'BuildStatus.OK',
+                     'filemap': self.filemap})
 
     @defer.inlineCallbacks
-    def test_handleStatus_OK_sets_build_log(self):
+    def test_handleStatus_WAITING_OK_sets_build_log(self):
         # The build log is set during handleStatus.
         self.assertEqual(None, self.build.log)
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
-                self.build.buildqueue_record, 'OK',
-                {'filemap': self.filemap})
+                self.build.buildqueue_record,
+                {'builder_status': 'BuilderStatus.WAITING',
+                 'build_status': 'BuildStatus.OK',
+                 'filemap': self.filemap})
         self.assertNotEqual(None, self.build.log)
 
     @defer.inlineCallbacks
-    def test_handleStatus_ABORTED_cancels_cancelling(self):
+    def test_handleStatus_WAITING_ABORTED_cancels_cancelling(self):
         with dbuser(config.builddmaster.dbuser):
             self.build.updateStatus(BuildStatus.CANCELLING)
             yield self.behaviour.handleStatus(
-                self.build.buildqueue_record, "ABORTED", {})
+                self.build.buildqueue_record,
+                {"builder_status": "BuilderStatus.WAITING",
+                 "build_status": "BuildStatus.ABORTED"})
         self.assertEqual(0, len(pop_notifications()), "Notifications received")
         self.assertEqual(BuildStatus.CANCELLED, self.build.status)
 
     @defer.inlineCallbacks
-    def test_handleStatus_ABORTED_illegal_when_building(self):
+    def test_handleStatus_WAITING_ABORTED_illegal_when_building(self):
         self.builder.vm_host = "fake_vm_host"
         self.behaviour = self.interactor.getBuildBehaviour(
             self.build.buildqueue_record, self.builder, self.worker)
@@ -915,16 +951,20 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
                     BuildDaemonError,
                     "Build returned unexpected status: %r" % 'ABORTED'):
                 yield self.behaviour.handleStatus(
-                    self.build.buildqueue_record, "ABORTED", {})
+                    self.build.buildqueue_record,
+                    {"builder_status": "BuilderStatus.WAITING",
+                     "build_status": "BuildStatus.ABORTED"})
 
     @defer.inlineCallbacks
-    def test_handleStatus_ABORTED_cancelling_sets_build_log(self):
+    def test_handleStatus_WAITING_ABORTED_cancelling_sets_build_log(self):
         # If a build is intentionally cancelled, the build log is set.
         self.assertEqual(None, self.build.log)
         with dbuser(config.builddmaster.dbuser):
             self.build.updateStatus(BuildStatus.CANCELLING)
             yield self.behaviour.handleStatus(
-                self.build.buildqueue_record, "ABORTED", {})
+                self.build.buildqueue_record,
+                {"builder_status": "BuilderStatus.WAITING",
+                 "build_status": "BuildStatus.ABORTED"})
         self.assertNotEqual(None, self.build.log)
 
     @defer.inlineCallbacks
@@ -933,8 +973,10 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         self.assertEqual(None, self.build.date_finished)
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
-                self.build.buildqueue_record, 'OK',
-                {'filemap': self.filemap})
+                self.build.buildqueue_record,
+                {'builder_status': 'BuilderStatus.WAITING',
+                 'build_status': 'BuildStatus.OK',
+                 'filemap': self.filemap})
         self.assertNotEqual(None, self.build.date_finished)
 
     @defer.inlineCallbacks
@@ -944,7 +986,9 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
                 "Build returned unexpected status: %r" % 'GIVENBACK'):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
-                    self.build.buildqueue_record, "GIVENBACK", {})
+                    self.build.buildqueue_record,
+                    {"builder_status": "BuilderStatus.WAITING",
+                     "build_status": "BuildStatus.GIVENBACK"})
 
     @defer.inlineCallbacks
     def test_builderfail_collection(self):
@@ -953,7 +997,9 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
                 "Build returned unexpected status: %r" % 'BUILDERFAIL'):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
-                    self.build.buildqueue_record, "BUILDERFAIL", {})
+                    self.build.buildqueue_record,
+                    {"builder_status": "BuilderStatus.WAITING",
+                     "build_status": "BuildStatus.BUILDERFAIL"})
 
     @defer.inlineCallbacks
     def test_invalid_status_collection(self):
@@ -962,7 +1008,9 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
                 "Build returned unexpected status: %r" % 'BORKED'):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
-                    self.build.buildqueue_record, "BORKED", {})
+                    self.build.buildqueue_record,
+                    {"builder_status": "BuilderStatus.WAITING",
+                     "build_status": "BuildStatus.BORKED"})
 
 
 class TestGetUploadMethodsForOCIRecipeBuild(

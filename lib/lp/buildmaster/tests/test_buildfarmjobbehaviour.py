@@ -1,4 +1,4 @@
-# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for BuildFarmJobBehaviourBase."""
@@ -30,6 +30,7 @@ from lp.buildmaster.interfaces.builder import BuildDaemonError
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
+from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
@@ -153,6 +154,22 @@ class TestBuildFarmJobBehaviourBase(TestCaseWithFactory):
         behaviour = self._makeBehaviour(self._makeBuild())
         behaviour.setBuilder(self.factory.makeBuilder(virtualized=False), None)
         self.assertIs(False, behaviour.extraBuildArgs()["fast_cleanup"])
+
+    def test_extractBuildStatus_baseline(self):
+        # extractBuildStatus picks the name of the build status out of a
+        # dict describing the worker's status.
+        worker_status = {"build_status": "BuildStatus.BUILDING"}
+        self.assertEqual(
+            "BUILDING",
+            BuildFarmJobBehaviourBase.extractBuildStatus(worker_status))
+
+    def test_extractBuildStatus_malformed(self):
+        # extractBuildStatus errors out when the status string is not
+        # of the form it expects.
+        worker_status = {"build_status": "BUILDING"}
+        self.assertRaises(
+            AssertionError, BuildFarmJobBehaviourBase.extractBuildStatus,
+            worker_status)
 
 
 class TestDispatchBuildToWorker(StatsMixin, TestCase):
@@ -383,19 +400,44 @@ class TestHandleStatusMixin:
             1, len(os.listdir(os.path.join(self.upload_root, result))))
 
     @defer.inlineCallbacks
-    def test_handleStatus_OK_normal_file(self):
+    def test_handleStatus_BUILDING(self):
+        # If the builder is BUILDING (or any status other than WAITING),
+        # then the behaviour calls updateStatus but doesn't do anything
+        # else.
+        initial_status = self.build.status
+        bq_id = self.build.buildqueue_record.id
+        worker_status = {"builder_status": "BuilderStatus.BUILDING"}
+        removeSecurityProxy(self.build).updateStatus = FakeMethod()
+        with dbuser(config.builddmaster.dbuser):
+            yield self.behaviour.handleStatus(
+                self.build.buildqueue_record, worker_status)
+        self.assertEqual(None, self.build.log)
+        self.assertEqual(0, len(os.listdir(self.upload_root)))
+        self.assertEqual(
+            [((initial_status,),
+              {"builder": self.builder, "worker_status": worker_status})],
+            removeSecurityProxy(self.build).updateStatus.calls)
+        self.assertEqual(0, len(pop_notifications()), "Notifications received")
+        self.assertEqual(
+            self.build.buildqueue_record,
+            getUtility(IBuildQueueSet).get(bq_id))
+
+    @defer.inlineCallbacks
+    def test_handleStatus_WAITING_OK_normal_file(self):
         # A filemap with plain filenames should not cause a problem.
         # The call to handleStatus will attempt to get the file from
         # the worker resulting in a URL error in this test case.
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
-                self.build.buildqueue_record, 'OK',
-                {'filemap': {'myfile.py': 'test_file_hash'}})
+                self.build.buildqueue_record,
+                {'builder_status': 'BuilderStatus.WAITING',
+                 'build_status': 'BuildStatus.OK',
+                 'filemap': {'myfile.py': 'test_file_hash'}})
         self.assertEqual(BuildStatus.UPLOADING, self.build.status)
         self.assertResultCount(1, "incoming")
 
     @defer.inlineCallbacks
-    def test_handleStatus_OK_absolute_filepath(self):
+    def test_handleStatus_WAITING_OK_absolute_filepath(self):
         # A filemap that tries to write to files outside of the upload
         # directory will not be collected.
         with ExpectedException(
@@ -403,11 +445,13 @@ class TestHandleStatusMixin:
                 "Build returned a file named '/tmp/myfile.py'."):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
-                    self.build.buildqueue_record, 'OK',
-                    {'filemap': {'/tmp/myfile.py': 'test_file_hash'}})
+                    self.build.buildqueue_record,
+                    {'builder_status': 'BuilderStatus.WAITING',
+                     'build_status': 'BuildStatus.OK',
+                     'filemap': {'/tmp/myfile.py': 'test_file_hash'}})
 
     @defer.inlineCallbacks
-    def test_handleStatus_OK_relative_filepath(self):
+    def test_handleStatus_WAITING_OK_relative_filepath(self):
         # A filemap that tries to write to files outside of
         # the upload directory will not be collected.
         with ExpectedException(
@@ -415,21 +459,25 @@ class TestHandleStatusMixin:
                 "Build returned a file named '../myfile.py'."):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
-                    self.build.buildqueue_record, 'OK',
-                    {'filemap': {'../myfile.py': 'test_file_hash'}})
+                    self.build.buildqueue_record,
+                    {'builder_status': 'BuilderStatus.WAITING',
+                     'build_status': 'BuildStatus.OK',
+                     'filemap': {'../myfile.py': 'test_file_hash'}})
 
     @defer.inlineCallbacks
-    def test_handleStatus_OK_sets_build_log(self):
+    def test_handleStatus_WAITING_OK_sets_build_log(self):
         # The build log is set during handleStatus.
         self.assertEqual(None, self.build.log)
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
-                self.build.buildqueue_record, 'OK',
-                {'filemap': {'myfile.py': 'test_file_hash'}})
+                self.build.buildqueue_record,
+                {'builder_status': 'BuilderStatus.WAITING',
+                 'build_status': 'BuildStatus.OK',
+                 'filemap': {'myfile.py': 'test_file_hash'}})
         self.assertNotEqual(None, self.build.log)
 
     @defer.inlineCallbacks
-    def _test_handleStatus_notifies(self, status):
+    def _test_handleStatus_WAITING_notifies(self, status):
         # An email notification is sent for a given build status if
         # notifications are allowed for that status.
         expected_notification = (
@@ -437,7 +485,9 @@ class TestHandleStatusMixin:
 
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
-                self.build.buildqueue_record, status, {})
+                self.build.buildqueue_record,
+                {'builder_status': 'BuilderStatus.WAITING',
+                 'build_status': 'BuildStatus.%s' % status})
 
         if expected_notification:
             self.assertNotEqual(
@@ -446,26 +496,28 @@ class TestHandleStatusMixin:
             self.assertEqual(
                 0, len(pop_notifications()), "Notifications received")
 
-    def test_handleStatus_DEPFAIL_notifies(self):
-        return self._test_handleStatus_notifies("DEPFAIL")
+    def test_handleStatus_WAITING_DEPFAIL_notifies(self):
+        return self._test_handleStatus_WAITING_notifies("DEPFAIL")
 
-    def test_handleStatus_CHROOTFAIL_notifies(self):
-        return self._test_handleStatus_notifies("CHROOTFAIL")
+    def test_handleStatus_WAITING_CHROOTFAIL_notifies(self):
+        return self._test_handleStatus_WAITING_notifies("CHROOTFAIL")
 
-    def test_handleStatus_PACKAGEFAIL_notifies(self):
-        return self._test_handleStatus_notifies("PACKAGEFAIL")
+    def test_handleStatus_WAITING_PACKAGEFAIL_notifies(self):
+        return self._test_handleStatus_WAITING_notifies("PACKAGEFAIL")
 
     @defer.inlineCallbacks
-    def test_handleStatus_ABORTED_cancels_cancelling(self):
+    def test_handleStatus_WAITING_ABORTED_cancels_cancelling(self):
         with dbuser(config.builddmaster.dbuser):
             self.build.updateStatus(BuildStatus.CANCELLING)
             yield self.behaviour.handleStatus(
-                self.build.buildqueue_record, "ABORTED", {})
+                self.build.buildqueue_record,
+                {"builder_status": "BuilderStatus.WAITING",
+                 "build_status": "BuildStatus.ABORTED"})
         self.assertEqual(0, len(pop_notifications()), "Notifications received")
         self.assertEqual(BuildStatus.CANCELLED, self.build.status)
 
     @defer.inlineCallbacks
-    def test_handleStatus_ABORTED_illegal_when_building(self):
+    def test_handleStatus_WAITING_ABORTED_illegal_when_building(self):
         self.builder.vm_host = "fake_vm_host"
         self.behaviour = self.interactor.getBuildBehaviour(
             self.build.buildqueue_record, self.builder, self.worker)
@@ -475,16 +527,20 @@ class TestHandleStatusMixin:
                     BuildDaemonError,
                     "Build returned unexpected status: %r" % 'ABORTED'):
                 yield self.behaviour.handleStatus(
-                    self.build.buildqueue_record, "ABORTED", {})
+                    self.build.buildqueue_record,
+                    {"builder_status": "BuilderStatus.WAITING",
+                     "build_status": "BuildStatus.ABORTED"})
 
     @defer.inlineCallbacks
-    def test_handleStatus_ABORTED_cancelling_sets_build_log(self):
+    def test_handleStatus_WAITING_ABORTED_cancelling_sets_build_log(self):
         # If a build is intentionally cancelled, the build log is set.
         self.assertEqual(None, self.build.log)
         with dbuser(config.builddmaster.dbuser):
             self.build.updateStatus(BuildStatus.CANCELLING)
             yield self.behaviour.handleStatus(
-                self.build.buildqueue_record, "ABORTED", {})
+                self.build.buildqueue_record,
+                {"builder_status": "BuilderStatus.WAITING",
+                 "build_status": "BuildStatus.ABORTED"})
         self.assertNotEqual(None, self.build.log)
 
     @defer.inlineCallbacks
@@ -493,8 +549,10 @@ class TestHandleStatusMixin:
         self.assertEqual(None, self.build.date_finished)
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
-                self.build.buildqueue_record, 'OK',
-                {'filemap': {'myfile.py': 'test_file_hash'}})
+                self.build.buildqueue_record,
+                {'builder_status': 'BuilderStatus.WAITING',
+                 'build_status': 'BuildStatus.OK',
+                 'filemap': {'myfile.py': 'test_file_hash'}})
         self.assertNotEqual(None, self.build.date_finished)
 
     @defer.inlineCallbacks
@@ -504,7 +562,9 @@ class TestHandleStatusMixin:
                 "Build returned unexpected status: %r" % 'GIVENBACK'):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
-                    self.build.buildqueue_record, "GIVENBACK", {})
+                    self.build.buildqueue_record,
+                    {"builder_status": "BuilderStatus.WAITING",
+                     "build_status": "BuildStatus.GIVENBACK"})
 
     @defer.inlineCallbacks
     def test_builderfail_collection(self):
@@ -513,7 +573,9 @@ class TestHandleStatusMixin:
                 "Build returned unexpected status: %r" % 'BUILDERFAIL'):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
-                    self.build.buildqueue_record, "BUILDERFAIL", {})
+                    self.build.buildqueue_record,
+                    {"builder_status": "BuilderStatus.WAITING",
+                     "build_status": "BuildStatus.BUILDERFAIL"})
 
     @defer.inlineCallbacks
     def test_invalid_status_collection(self):
@@ -522,4 +584,6 @@ class TestHandleStatusMixin:
                 "Build returned unexpected status: %r" % 'BORKED'):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
-                    self.build.buildqueue_record, "BORKED", {})
+                    self.build.buildqueue_record,
+                    {"builder_status": "BuilderStatus.WAITING",
+                     "build_status": "BuildStatus.BORKED"})

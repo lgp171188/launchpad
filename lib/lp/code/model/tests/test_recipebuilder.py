@@ -1,4 +1,4 @@
-# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test RecipeBuildBehaviour."""
@@ -418,7 +418,11 @@ class TestBuildNotifications(TestCaseWithFactory):
             self.queue_record, self.queue_record.builder, worker)
 
     def assertDeferredNotifyCount(self, status, behaviour, expected_count):
-        d = behaviour.handleStatus(self.queue_record, status, {'filemap': {}})
+        d = behaviour.handleStatus(
+            self.queue_record,
+            {'builder_status': 'BuilderStatus.WAITING',
+             'build_status': 'BuildStatus.%s' % status,
+             'filemap': {}})
 
         def cb(result):
             self.assertEqual(expected_count, len(pop_notifications()))

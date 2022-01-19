@@ -39,7 +39,7 @@ from lp.codehosting.vfs import get_rw_server
 from lp.services.config import config
 from lp.services.database.interfaces import (
     IMasterStore,
-    ISlaveStore,
+    IStandbyStore,
     )
 from lp.services.helpers import shortlist
 from lp.services.mail.helpers import (
@@ -312,7 +312,7 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
 
         self.logger.info("Exporting to translations branches.")
 
-        self.store = ISlaveStore(Product)
+        self.store = IStandbyStore(Product)
 
         product_join = Join(
             ProductSeries, Product, ProductSeries.product == Product.id)

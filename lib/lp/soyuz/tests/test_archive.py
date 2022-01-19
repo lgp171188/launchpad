@@ -1901,7 +1901,7 @@ class TestFindDepCandidates(TestCaseWithFactory):
         archive, and compares it to the given expected value.
         The archive defaults to self.archive.
 
-        Also commits, since findDepCandidates uses the slave store.
+        Also commits, since findDepCandidates uses the standby store.
         """
         transaction.commit()
 

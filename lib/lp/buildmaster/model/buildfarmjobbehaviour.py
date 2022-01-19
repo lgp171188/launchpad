@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Base and idle BuildFarmJobBehaviour classes."""
@@ -33,6 +33,7 @@ from lp.services.config import config
 from lp.services.helpers import filenameToContentType
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.utils import copy_and_close
+from lp.services.propertycache import cachedproperty
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 from lp.services.utils import sanitise_urls
 from lp.services.webapp import canonical_url
@@ -53,7 +54,10 @@ class BuildFarmJobBehaviourBase:
         """Store a reference to the job_type with which we were created."""
         self.build = build
         self._builder = None
-        self._authserver = xmlrpc.Proxy(
+
+    @cachedproperty
+    def _authserver(self):
+        return xmlrpc.Proxy(
             config.builddmaster.authentication_endpoint.encode('UTF-8'),
             connectTimeout=config.builddmaster.authentication_timeout)
 
@@ -255,6 +259,19 @@ class BuildFarmJobBehaviourBase:
                 "%s (%s) can not be built for pocket %s in %s: illegal status"
                 % (build.title, build.id, build.pocket.name, build.archive))
 
+    @staticmethod
+    def extractBuildStatus(worker_status):
+        """Read build status name.
+
+        :param worker_status: build status dict from BuilderWorker.status.
+        :return: the unqualified status name, e.g. "OK".
+        """
+        status_string = worker_status['build_status']
+        lead_string = 'BuildStatus.'
+        assert status_string.startswith(lead_string), (
+            "Malformed status string: '%s'" % status_string)
+        return status_string[len(lead_string):]
+
     # The list of build status values for which email notifications are
     # allowed to be sent. It is up to each callback as to whether it will
     # consider sending a notification but it won't do so if the status is not
@@ -262,57 +279,65 @@ class BuildFarmJobBehaviourBase:
     ALLOWED_STATUS_NOTIFICATIONS = ['PACKAGEFAIL', 'CHROOTFAIL']
 
     @defer.inlineCallbacks
-    def handleStatus(self, bq, status, worker_status):
+    def handleStatus(self, bq, worker_status):
         """See `IBuildFarmJobBehaviour`."""
         if bq != self.build.buildqueue_record:
             raise AssertionError(
                 "%r != %r" % (bq, self.build.buildqueue_record))
         from lp.buildmaster.manager import BUILDD_MANAGER_LOG_NAME
         logger = logging.getLogger(BUILDD_MANAGER_LOG_NAME)
-        notify = status in self.ALLOWED_STATUS_NOTIFICATIONS
-        fail_status_map = {
-            'PACKAGEFAIL': BuildStatus.FAILEDTOBUILD,
-            'DEPFAIL': BuildStatus.MANUALDEPWAIT,
-            'CHROOTFAIL': BuildStatus.CHROOTWAIT,
-            }
-        if self.build.status == BuildStatus.CANCELLING:
-            fail_status_map['ABORTED'] = BuildStatus.CANCELLED
+        builder_status = worker_status["builder_status"]
 
-        logger.info(
-            'Processing finished job %s (%s) from builder %s: %s'
-            % (self.build.build_cookie, self.build.title,
-               self.build.buildqueue_record.builder.name, status))
-        build_status = None
-        if status == 'OK':
-            yield self.storeLogFromWorker()
-            # handleSuccess will sometimes perform write operations
-            # outside the database transaction, so a failure between
-            # here and the commit can cause duplicated results. For
-            # example, a BinaryPackageBuild will end up in the upload
-            # queue twice if notify() crashes.
-            build_status = yield self.handleSuccess(worker_status, logger)
-        elif status in fail_status_map:
-            # XXX wgrant: The builder should be set long before here, but
-            # currently isn't.
-            yield self.storeLogFromWorker()
-            build_status = fail_status_map[status]
+        if builder_status == "BuilderStatus.WAITING":
+            # Build has finished.
+            status = self.extractBuildStatus(worker_status)
+            notify = status in self.ALLOWED_STATUS_NOTIFICATIONS
+            fail_status_map = {
+                'PACKAGEFAIL': BuildStatus.FAILEDTOBUILD,
+                'DEPFAIL': BuildStatus.MANUALDEPWAIT,
+                'CHROOTFAIL': BuildStatus.CHROOTWAIT,
+                }
+            if self.build.status == BuildStatus.CANCELLING:
+                fail_status_map['ABORTED'] = BuildStatus.CANCELLED
+
+            logger.info(
+                'Processing finished job %s (%s) from builder %s: %s'
+                % (self.build.build_cookie, self.build.title,
+                   self.build.buildqueue_record.builder.name, status))
+            build_status = None
+            if status == 'OK':
+                yield self.storeLogFromWorker()
+                # handleSuccess will sometimes perform write operations
+                # outside the database transaction, so a failure between
+                # here and the commit can cause duplicated results. For
+                # example, a BinaryPackageBuild will end up in the upload
+                # queue twice if notify() crashes.
+                build_status = yield self.handleSuccess(worker_status, logger)
+            elif status in fail_status_map:
+                yield self.storeLogFromWorker()
+                build_status = fail_status_map[status]
+            else:
+                raise BuildDaemonError(
+                    "Build returned unexpected status: %r" % status)
         else:
-            raise BuildDaemonError(
-                "Build returned unexpected status: %r" % status)
+            # The build status remains unchanged.
+            build_status = bq.specific_build.status
 
-        # Set the status and dequeue the build atomically. Setting the
-        # status to UPLOADING constitutes handoff to process-upload, so
-        # doing that before we've removed the BuildQueue causes races.
+        # Set the status and (if the build has finished) dequeue the build
+        # atomically.  Setting the status to UPLOADING constitutes handoff to
+        # process-upload, so doing that before we've removed the BuildQueue
+        # causes races.
 
         # XXX wgrant: The builder should be set long before here, but
         # currently isn't.
         self.build.updateStatus(
-            build_status,
-            builder=self.build.buildqueue_record.builder,
-            worker_status=worker_status)
-        if notify:
-            self.build.notify()
-        self.build.buildqueue_record.destroySelf()
+            build_status, builder=bq.builder, worker_status=worker_status)
+
+        if builder_status == "BuilderStatus.WAITING":
+            if notify:
+                self.build.notify()
+            self.build.buildqueue_record.destroySelf()
+
         transaction.commit()
 
     @defer.inlineCallbacks

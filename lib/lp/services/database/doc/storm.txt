@@ -4,7 +4,7 @@ back into the main replication set as part of login server separation.
 -- StuartBishop 20100222
 
 In addition to what Storm provides, we also have some Launchpad
-specific Storm tools to cope with our master and slave store arrangement.
+specific Storm tools to cope with our master and standby store arrangement.
 
     >>> from lp.services.identity.interfaces.emailaddress import (
     ...     EmailAddressStatus,
@@ -13,7 +13,7 @@ specific Storm tools to cope with our master and slave store arrangement.
     >>> from lp.services.database.interfaces import (
     ...     IMasterObject,
     ...     IMasterStore,
-    ...     ISlaveStore,
+    ...     IStandbyStore,
     ...     IStore,
     ...     )
     >>> from lp.services.identity.model.emailaddress import EmailAddress
@@ -33,33 +33,33 @@ provides.
 
     >>> IMasterStore.providedBy(main_master)
     True
-    >>> ISlaveStore.providedBy(main_master)
+    >>> IStandbyStore.providedBy(main_master)
     False
 
 
-Changes to the slave Stores will lag behind the master Stores. If
+Changes to the standby Stores will lag behind the master Stores. If
 you only need to read an object but require it to be in sync with the
 master, you should use the default Store. Launchpad will give you the
-slave store if it is sure all your recent changes have been replicated.
+standby store if it is sure all your recent changes have been replicated.
 Otherwise, it gives you the master. See IStoreSelector for details.
 
     >>> main_default = IStore(Person)
-    >>> main_slave = ISlaveStore(Person)
+    >>> main_standby = IStandbyStore(Person)
     >>> main_default is main_master
     True
-    >>> main_default is main_slave
+    >>> main_default is main_standby
     False
 
 
 You can also adapt database object instances to Stores, although
 this is less generally useful.
 
-    >>> janitor = ISlaveStore(Person).find(Person, name='janitor').one()
-    >>> ISlaveStore(janitor) is ISlaveStore(Person)
+    >>> janitor = IStandbyStore(Person).find(Person, name='janitor').one()
+    >>> IStandbyStore(janitor) is IStandbyStore(Person)
     True
     >>> IMasterStore(janitor) is IMasterStore(Person)
     True
-    >>> IMasterStore(janitor) is ISlaveStore(Person)
+    >>> IMasterStore(janitor) is IStandbyStore(Person)
     False
 
 
@@ -68,9 +68,9 @@ Good defensive programming is to use this adapter if you want to make
 changes to an object, just in case you have been passed an instance
 from a store other than the correct Master.
 
-    >>> main_slave = ISlaveStore(Person)
+    >>> main_standby = IStandbyStore(Person)
     >>> t = transaction.begin()
-    >>> person = main_slave.find(Person, name='mark').one()
+    >>> person = main_standby.find(Person, name='mark').one()
     >>> person.display_name = 'Cannot change'
     >>> transaction.commit()
     Traceback (most recent call last):
@@ -79,7 +79,7 @@ from a store other than the correct Master.
 
     >>> transaction.abort()
     >>> t = transaction.begin()
-    >>> person = main_slave.find(Person, name='mark').one()
+    >>> person = main_standby.find(Person, name='mark').one()
     >>> IMasterObject(person).display_name = 'Can change'
     >>> transaction.commit()
 
@@ -121,14 +121,14 @@ stores.
     >>> master_email = IMasterStore(EmailAddress).find(
     ...     EmailAddress, Person.name == 'janitor',
     ...     EmailAddress.person==Person.id).one()
-    >>> slave_email = ISlaveStore(EmailAddress).find(
+    >>> standby_email = IStandbyStore(EmailAddress).find(
     ...     EmailAddress, Person.name == 'janitor',
     ...     EmailAddress.person==Person.id).one()
-    >>> master_email is slave_email
+    >>> master_email is standby_email
     False
-    >>> master_email == slave_email
+    >>> master_email == standby_email
     True
-    >>> master_email != slave_email
+    >>> master_email != standby_email
     False
 
 Comparison works for security wrapped objects too.

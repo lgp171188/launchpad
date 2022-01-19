@@ -60,7 +60,7 @@ from lp.services.database.constants import (
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
-    ISlaveStore,
+    IStandbyStore,
     IStore,
     )
 from lp.services.database.sqlbase import quote
@@ -1388,13 +1388,13 @@ class TranslationImportQueue:
 
         return approved_entries
 
-    def _getSlaveStore(self):
-        """Return the slave store for the import queue.
+    def _getStandbyStore(self):
+        """Return the standby store for the import queue.
 
         Tests can override this to avoid unnecessary synchronization
         issues.
         """
-        return ISlaveStore(TranslationImportQueueEntry)
+        return IStandbyStore(TranslationImportQueueEntry)
 
     def _getBlockableDirectories(self):
         """Describe all directories where uploads are to be blocked.
@@ -1415,7 +1415,7 @@ class TranslationImportQueue:
         """
         importer = getUtility(ITranslationImporter)
 
-        store = self._getSlaveStore()
+        store = self._getStandbyStore()
         TIQE = TranslationImportQueueEntry
         result = store.find(
             (TIQE.distroseries_id, TIQE.sourcepackagename_id,
