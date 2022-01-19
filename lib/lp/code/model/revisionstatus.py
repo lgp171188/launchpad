@@ -18,7 +18,6 @@ from storm.locals import (
 from zope.component import getUtility
 from zope.interface import implementer
 
-from lp.app.errors import NotFoundError
 from lp.code.enums import (
     RevisionStatusArtifactType,
     RevisionStatusResult,
@@ -36,7 +35,6 @@ from lp.services.database.sqlbase import convert_storm_clause_to_string
 from lp.services.database.stormbase import StormBase
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
-from lp.services.librarian.model import LibraryFileAlias
 
 
 @implementer(IRevisionStatusReport)
@@ -202,18 +200,12 @@ class RevisionStatusArtifact(StormBase):
         self.artifact_type = artifact_type
 
     def downloadUrl(self):
-        url = ProxiedLibraryFileAlias(self.library_file, self.report).http_url
+        if self.library_file.restricted:
+            url = ProxiedLibraryFileAlias(
+                self.library_file, self.report).http_url
+        else:
+            url = self.library_file.http_url
         return url
-
-    def getFileByName(self, filename):
-        file_object = IStore(RevisionStatusArtifact).find(
-            LibraryFileAlias,
-            RevisionStatusArtifact.id == self.id,
-            LibraryFileAlias.id == RevisionStatusArtifact.library_file_id,
-            LibraryFileAlias.filename == filename).one()
-        if file_object is not None and file_object.filename == filename:
-            return file_object
-        raise NotFoundError(filename)
 
 
 @implementer(IRevisionStatusArtifactSet)
@@ -241,9 +233,5 @@ class RevisionStatusArtifactSet:
             RevisionStatusArtifact, *clauses)
         urls = []
         for artifact in list(artifacts):
-            if artifact.library_file.restricted:
-                url = artifact.downloadUrl()
-            else:
-                url = artifact.library_file.http_url
-            urls.append(url)
+            urls.append(artifact.downloadUrl())
         return urls

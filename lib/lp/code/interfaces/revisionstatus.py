@@ -271,6 +271,3 @@ class IRevisionStatusArtifact(Interface):
 
         :return: A URL for downloading this artifact.
         """
-
-    def getFileByName(self, report, filename):
-        """Returns an artifact by name."""
