@@ -26,7 +26,7 @@ from lp.registry.model.karma import (
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
-    ISlaveStore,
+    IStandbyStore,
     IStore,
     )
 from lp.services.database.sqlbase import SQLBase
@@ -292,7 +292,7 @@ class LanguageSet:
         """See `ILanguageSet`."""
         if text:
             text = six.ensure_text(text).lower()
-            results = ISlaveStore(Language).find(
+            results = IStandbyStore(Language).find(
                 Language, Or(
                     Language.code.lower().contains_string(text),
                     Language.englishname.lower().contains_string(

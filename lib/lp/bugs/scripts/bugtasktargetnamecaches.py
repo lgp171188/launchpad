@@ -21,7 +21,7 @@ from lp.registry.model.productseries import ProductSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.interfaces import (
     IMasterStore,
-    ISlaveStore,
+    IStandbyStore,
     )
 from lp.services.looptuner import (
     ITunableLoop,
@@ -62,7 +62,7 @@ class BugTaskTargetNameCachesTunableLoop:
         Returns a list of (target, set_of_cached_names) pairs, where target is
         a tuple of IDs from the columns in target_columns.
         """
-        store = ISlaveStore(BugTask)
+        store = IStandbyStore(BugTask)
         candidate_set = store.find(target_columns).config(distinct=True)
         candidates = defaultdict(set)
         for candidate in candidate_set:

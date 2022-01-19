@@ -27,7 +27,7 @@ from optparse import OptionParser
 
 from storm.locals import Not
 
-from lp.services.database.interfaces import ISlaveStore
+from lp.services.database.interfaces import IStandbyStore
 from lp.services.scripts import execute_zcml_for_scripts
 
 
@@ -35,7 +35,7 @@ def get_stacked_branches():
     """Iterate over all branches that, according to the db, are stacked."""
     # Avoiding circular import.
     from lp.code.model.branch import Branch
-    return ISlaveStore(Branch).find(Branch, Not(Branch.stacked_on == None))
+    return IStandbyStore(Branch).find(Branch, Not(Branch.stacked_on == None))
 
 
 def main():

@@ -1154,9 +1154,9 @@ class TestAutoBlocking(TestCaseWithFactory):
         super().setUp()
         self.queue = TranslationImportQueue()
         # Our test queue operates on the master store instead of the
-        # slave store so we don't have to synchronize stores.
+        # standby store so we don't have to synchronize stores.
         master_store = IMasterStore(TranslationImportQueueEntry)
-        self.queue._getSlaveStore = FakeMethod(result=master_store)
+        self.queue._getStandbyStore = FakeMethod(result=master_store)
 
     def _copyTargetFromEntry(self, entry):
         """Return a dict representing `entry`'s translation target.

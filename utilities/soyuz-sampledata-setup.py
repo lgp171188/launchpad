@@ -40,7 +40,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.codeofconduct import SignedCodeOfConduct
 from lp.services.database.interfaces import (
     IMasterStore,
-    ISlaveStore,
+    IStandbyStore,
     )
 from lp.services.scripts.base import LaunchpadScript
 from lp.soyuz.enums import SourcePackageFormat
@@ -78,7 +78,7 @@ def check_preconditions(options):
     This script must not run on a production server, or anything
     remotely like it.
     """
-    store = ISlaveStore(ComponentSelection)
+    store = IStandbyStore(ComponentSelection)
 
     # Just a guess, but dev systems aren't likely to have ids this high
     # in this table.  Production data does.

@@ -20,7 +20,7 @@ from lp.services.database.constants import DEFAULT
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
-    ISlaveStore,
+    IStandbyStore,
     IStore,
     )
 from lp.services.database.sqlbase import quote
@@ -121,7 +121,7 @@ class POExportRequestSet:
         """Return the oldest live request on the master store.
 
         Due to replication lag, the master store is always a little
-        ahead of the slave store that exports come from.
+        ahead of the standby store that exports come from.
         """
         master_store = IMasterStore(POExportRequest)
         sorted_by_id = master_store.find(POExportRequest).order_by(
@@ -130,7 +130,7 @@ class POExportRequestSet:
 
     def _getHeadRequest(self):
         """Return oldest request on the queue."""
-        # Due to replication lag, it's possible that the slave store
+        # Due to replication lag, it's possible that the standby store
         # still has copies of requests that have already been completed
         # and deleted from the master store.  So first get the oldest
         # request that is "live," i.e. still present on the master
@@ -139,21 +139,21 @@ class POExportRequestSet:
         if oldest_live is None:
             return None
         else:
-            return ISlaveStore(POExportRequest).find(
+            return IStandbyStore(POExportRequest).find(
                 POExportRequest,
                 POExportRequest.id == oldest_live.id).one()
 
     def getRequest(self):
         """See `IPOExportRequestSet`."""
-        # Exports happen off the slave store.  To ensure that export
+        # Exports happen off the standby store.  To ensure that export
         # does not happen until requests have been replicated to the
-        # slave, they are read primarily from the slave even though they
+        # standby, they are read primarily from the standby even though they
         # are deleted on the master afterwards.
         head = self._getHeadRequest()
         if head is None:
             return None, None, None, None
 
-        requests = ISlaveStore(POExportRequest).find(
+        requests = IStandbyStore(POExportRequest).find(
             POExportRequest,
             POExportRequest.person == head.person,
             POExportRequest.format == head.format,

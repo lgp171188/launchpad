@@ -397,7 +397,7 @@ def default_master_store(func):
 
     In some cases, such as in the middle of a page test story,
     we might be calling factory methods with the default Store set
-    to the slave which breaks stuff. For instance, if we set an account's
+    to the standby which breaks stuff. For instance, if we set an account's
     password that needs to happen on the master store and this is forced.
     However, if we then read it back the default Store has to be used.
     """

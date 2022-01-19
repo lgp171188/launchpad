@@ -25,7 +25,7 @@ from lp.services.database.constants import DEFAULT
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import (
-    ISlaveStore,
+    IStandbyStore,
     IStore,
     )
 from lp.services.database.sqlbase import SQLBase
@@ -219,7 +219,7 @@ class TranslationGroup(SQLBase):
             LibraryFileAlias,
             LibraryFileContent,
             )
-        project_data = ISlaveStore(ProjectGroup).using(*using).find(
+        project_data = IStandbyStore(ProjectGroup).using(*using).find(
             tables,
             ProjectGroup.translationgroupID == self.id,
             ProjectGroup.active == True).order_by(ProjectGroup.display_name)
@@ -244,7 +244,7 @@ class TranslationGroup(SQLBase):
             LibraryFileAlias,
             LibraryFileContent,
             )
-        distro_data = ISlaveStore(Distribution).using(*using).find(
+        distro_data = IStandbyStore(Distribution).using(*using).find(
             tables, Distribution.translationgroupID == self.id).order_by(
             Distribution.display_name)
 

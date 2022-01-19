@@ -36,7 +36,7 @@ from zope.security.proxy import (
 from lp.app.browser.launchpad import iter_view_registrations
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.interfaces import ISlaveStore
+from lp.services.database.interfaces import IStandbyStore
 from lp.services.database.sqlbase import (
     convert_storm_clause_to_string,
     sqlvalues,
@@ -621,7 +621,7 @@ class StormRangeFactory:
         select = removeSecurityProxy(self.plain_resultset).get_select_expr(
             *columns)
         explain = 'EXPLAIN ' + convert_storm_clause_to_string(select)
-        result = ISlaveStore(LibraryFileAlias).execute(explain)
+        result = IStandbyStore(LibraryFileAlias).execute(explain)
         _rows_re = re.compile(r"rows=(\d+)\swidth=")
         first_line = result.get_one()[0]
         match = _rows_re.search(first_line)

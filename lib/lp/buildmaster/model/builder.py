@@ -50,7 +50,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
-    ISlaveStore,
+    IStandbyStore,
     IStore,
     )
 from lp.services.database.stormbase import StormBase
@@ -300,7 +300,7 @@ class BuilderSet:
 
     def getBuildQueueSizes(self):
         """See `IBuilderSet`."""
-        results = ISlaveStore(BuildQueue).find((
+        results = IStandbyStore(BuildQueue).find((
             Count(),
             Sum(BuildQueue.estimated_duration),
             Processor,
