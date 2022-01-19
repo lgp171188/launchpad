@@ -278,3 +278,27 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
         with person_logged_in(requester):
             self.assertIn(log_url, response.jsonBody())
             self.assertIn(binary_url, response.jsonBody())
+
+    def test_getArtifactsURLs_restricted(self):
+        requester = self.factory.makePerson()
+        with person_logged_in(requester):
+            kwargs = {"owner": requester}
+            kwargs["information_type"] = InformationType.USERDATA
+            repository = self.factory.makeGitRepository(**kwargs)
+            report = self.factory.makeRevisionStatusReport(
+                git_repository=repository)
+            report_url = api_url(report)
+            artifact = self.factory.makeRevisionStatusArtifact(
+                report=report, artifact_type=RevisionStatusArtifactType.LOG,
+                content=b'log_data', restricted=True)
+            log_url = 'http://code.launchpad.test/%s/+status/%s/+files/%s' % (
+                repository.unique_name, report.id,
+                artifact.library_file.filename)
+
+        webservice = self.getWebservice(requester, repository)
+        response = webservice.named_get(
+            report_url, "getArtifactsURLs", artifact_type="Log")
+        self.assertEqual(200, response.status)
+
+        with person_logged_in(requester):
+            self.assertIn(log_url, response.jsonBody())

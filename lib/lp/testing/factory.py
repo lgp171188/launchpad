@@ -1872,10 +1872,11 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
     def makeRevisionStatusArtifact(
             self, lfa=None, content=None, report=None,
-            artifact_type=None):
+            artifact_type=None, restricted=False):
         """Create a new RevisionStatusArtifact."""
         if lfa is None:
-            lfa = self.makeLibraryFileAlias(content=content)
+            lfa = self.makeLibraryFileAlias(
+                content=content, restricted=restricted)
         if report is None:
             report = self.makeRevisionStatusReport()
         if artifact_type is None:
