@@ -630,6 +630,34 @@ class TestGitRefView(BrowserTestCase):
         self.assertThat(
             contents, Not(soupmatchers.HTMLContains(MissingCommitsNote())))
 
+    def test_recent_commits_with_invalid_author_email(self):
+        # If an author's email address is syntactically invalid, then we
+        # ignore the authorship information for that commit and do our best
+        # to render what we have.
+        [ref] = self.factory.makeGitRefs(paths=["refs/heads/branch"])
+        log = self.makeCommitLog()
+        log[4]["author"]["email"] = "“%s”" % log[4]["author"]["email"]
+        self.hosting_fixture.getLog.result = list(reversed(log))
+        self.scanRef(ref, log[-1])
+        view = create_initialized_view(ref, "+index")
+        contents = view()
+        expected_texts = ["%.7s...\non 2015-01-05" % log[4]["sha1"]]
+        expected_texts.extend(reversed([
+            "%.7s...\nby\n%s\non 2015-01-%02d" % (
+                log[i]["sha1"], log[i]["author"]["name"], i + 1)
+            for i in range(4)]))
+        details = find_tags_by_class(contents, "commit-details")
+        self.assertEqual(
+            expected_texts, [extract_text(detail) for detail in details])
+        expected_urls = list(reversed([
+            "https://git.launchpad.test/%s/commit/?id=%s" % (
+                ref.repository.shortened_path, log[i]["sha1"])
+            for i in range(5)]))
+        self.assertEqual(
+            expected_urls, [detail.a["href"] for detail in details])
+        self.assertThat(
+            contents, Not(soupmatchers.HTMLContains(MissingCommitsNote())))
+
     def test_show_merge_link_for_personal_repo(self):
         person = self.factory.makePerson()
         repo = self.factory.makeGitRepository(
