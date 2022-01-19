@@ -119,7 +119,7 @@ def validate_cvs_module(cvsmodule):
 
 @exported_as_webservice_entry()
 class ICodeImport(Interface):
-    """A code import to a Bazaar Branch."""
+    """A code import to a Bazaar branch or Git repository."""
 
     id = Int(readonly=True, required=True)
     date_created = Datetime(
