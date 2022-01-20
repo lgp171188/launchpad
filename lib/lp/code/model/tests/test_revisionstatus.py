@@ -256,24 +256,30 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
         repository = report.git_repository
         report_url = api_url(report)
         webservice = self.getWebservice(requester, repository)
+
         response = webservice.named_get(
             report_url, "getArtifactsURLs", artifact_type="Log")
+
         self.assertEqual(200, response.status)
         with person_logged_in(requester):
             self.assertIn(log_url, response.jsonBody())
             self.assertNotIn(binary_url, response.jsonBody())
             file = requests.get(response.jsonBody()[0])
             self.assertEqual(b'log_data', file.content)
+
         response = webservice.named_get(
             report_url, "getArtifactsURLs", artifact_type="Binary")
+
         self.assertEqual(200, response.status)
         with person_logged_in(requester):
             self.assertNotIn(log_url, response.jsonBody())
             self.assertIn(binary_url, response.jsonBody())
             file = requests.get(response.jsonBody()[0])
             self.assertEqual(b'binary_data', file.content)
+
         response = webservice.named_get(
             report_url, "getArtifactsURLs")
+
         self.assertEqual(200, response.status)
         with person_logged_in(requester):
             self.assertIn(log_url, response.jsonBody())
@@ -294,11 +300,11 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
             log_url = 'http://code.launchpad.test/%s/+status/%s/+files/%s' % (
                 repository.unique_name, report.id,
                 artifact.library_file.filename)
-
         webservice = self.getWebservice(requester, repository)
+
         response = webservice.named_get(
             report_url, "getArtifactsURLs", artifact_type="Log")
-        self.assertEqual(200, response.status)
 
+        self.assertEqual(200, response.status)
         with person_logged_in(requester):
             self.assertIn(log_url, response.jsonBody())
