@@ -51,8 +51,7 @@ class LPScriptWriter(ScriptWriter):
                 "module_name": ep.module_name,
                 })
             args = cls._get_script_args("console", name, header, script_text)
-            for res in args:
-                yield res
+            yield from args
 
 
 class lp_develop(develop):

@@ -322,7 +322,7 @@ def sign_code_of_conduct(person, log):
         fake_gpg_key = LaunchpadObjectFactory().makeGPGKey(person)
         Store.of(person).add(SignedCodeOfConduct(
             owner=person, signing_key_fingerprint=fake_gpg_key.fingerprint,
-            signedcode=u"Normally a signed CoC would go here.", active=True))
+            signedcode="Normally a signed CoC would go here.", active=True))
 
 
 def create_ppa_user(username, options, approver, log):

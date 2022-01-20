@@ -42,7 +42,7 @@ class TestXMLRPCSelfTest(TestCaseWithFactory):
         """
         selftestview = SelfTest('somecontext', 'somerequest')
         self.assertTrue(verifyObject(ISelfTest, selftestview))
-        self.assertEqual(u'foo bar', selftestview.concatenate('foo', 'bar'))
+        self.assertEqual('foo bar', selftestview.concatenate('foo', 'bar'))
         fault = selftestview.make_fault()
         self.assertEqual("<Fault 666: 'Yoghurt and spanners.'>", str(fault))
 

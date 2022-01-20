@@ -92,7 +92,7 @@ def log_request_start_and_stop(app):
 class LoggerheadLogger(Logger):
 
     def setup(self, cfg):
-        super(LoggerheadLogger, self).setup(cfg)
+        super().setup(cfg)
         formatter = LaunchpadFormatter(datefmt=None)
         for handler in self.error_log.handlers:
             handler.setFormatter(formatter)
@@ -120,7 +120,7 @@ class LoggerheadApplication(Application):
 
     def __init__(self, **kwargs):
         self.options = kwargs
-        super(LoggerheadApplication, self).__init__()
+        super().__init__()
 
     def init(self, parser, opts, args):
         top = os.path.abspath(os.path.join(

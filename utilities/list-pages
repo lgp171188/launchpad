@@ -47,7 +47,6 @@ import _pythonpath  # noqa: F401
 from inspect import getmro
 import os
 
-import six
 from zope.app.wsgi.testlayer import BrowserLayer
 from zope.browserpage.simpleviewclass import simple
 from zope.component import (
@@ -177,7 +176,7 @@ def format_page_adapter(a):
 _BLACKLIST = [
     '__conform__',
     ]
-class Whatever(object):
+class Whatever:
 
     def __init__(self, name, interface=None):
         self._name = name
@@ -196,7 +195,7 @@ class Whatever(object):
 
     def __call__(self, *args, **kwargs):
         args = map(repr, args)
-        args.extend('%s=%r' % (k, v) for k, v in six.iteritems(kwargs))
+        args.extend('%s=%r' % (k, v) for k, v in kwargs.items())
         # If we're being called with no args, assume this is part of crazy
         # TALES stuff:
         #   webapp/metazcml.py(365)path()
@@ -224,7 +223,7 @@ class Whatever(object):
 
 @implementer(ICanonicalUrlData)
 @adapter(object)
-class DefaultCanonicalUrlData(object):
+class DefaultCanonicalUrlData:
     def __init__(self, name):
         self.path = '[[%s]]' % (name,)
         self.rootsite = None

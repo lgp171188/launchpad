@@ -9,8 +9,6 @@ import _pythonpath  # noqa: F401
 
 import os
 
-import six
-
 from lp.services.database.interfaces import IStandbyStore
 from lp.services.librarian.model import LibraryFileContent
 from lp.services.librarianserver import swift
@@ -79,14 +77,14 @@ class LibrarianFeedSwift(LaunchpadCronScript):
                 SELECT MAX(id) FROM LibraryFileContent
                 WHERE datecreated < current_timestamp at time zone 'UTC'
                     - CAST(%s AS INTERVAL)
-                """, (six.text_type(self.options.start_since),)).get_one()[0]
+                """, (str(self.options.start_since),)).get_one()[0]
 
         if self.options.end_at:
             self.options.end = IStandbyStore(LibraryFileContent).execute("""
                 SELECT MAX(id) FROM LibraryFileContent
                 WHERE datecreated < current_timestamp at time zone 'UTC'
                     - CAST(%s AS INTERVAL)
-                """, (six.text_type(self.options.end_at),)).get_one()[0]
+                """, (str(self.options.end_at),)).get_one()[0]
 
         if ((self.options.instance_id is None) !=
                 (self.options.num_instances is None)):

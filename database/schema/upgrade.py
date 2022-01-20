@@ -180,7 +180,7 @@ def get_patchlist(con):
             log.fatal('Invalid patch filename %s' % repr(patch_file))
             raise SystemExit(1)
 
-        major, minor, patch = [int(i) for i in m.groups()]
+        major, minor, patch = (int(i) for i in m.groups())
         if (major, minor, patch) in dbpatches:
             continue  # This patch has already been applied
         log.debug("Found patch %d.%d.%d -- %s" % (

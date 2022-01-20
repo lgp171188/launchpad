@@ -40,7 +40,7 @@ class MailingListImport(LaunchpadScript):
 
     def __init__(self, name, dbuser=None):
         self.usage = textwrap.dedent(self.__doc__)
-        super(MailingListImport, self).__init__(name, dbuser)
+        super().__init__(name, dbuser)
 
     def add_my_options(self):
         """See `LaunchpadScript`."""

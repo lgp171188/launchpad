@@ -315,7 +315,7 @@ class WebServiceApplication(ServiceRootResource):
         if self.__class__.cached_wadl is None:
             # The cache has been disabled for testing
             # purposes. Generate the WADL.
-            return super(WebServiceApplication, self).toWADL()
+            return super().toWADL()
         if  version not in self.__class__.cached_wadl:
             # It's not cached. Look for it on disk.
             _wadl_filename = self.cachedWADLPath(
@@ -327,9 +327,9 @@ class WebServiceApplication(ServiceRootResource):
                     wadl = _wadl_fd.read()
                 finally:
                     _wadl_fd.close()
-            except IOError:
+            except OSError:
                 # It's not on disk; generate it.
-                wadl = super(WebServiceApplication, self).toWADL()
+                wadl = super().toWADL()
             del _wadl_fd
             self.__class__.cached_wadl[version] = wadl
         return self.__class__.cached_wadl[version]
