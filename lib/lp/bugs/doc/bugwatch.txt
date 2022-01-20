@@ -417,15 +417,15 @@ The Bug Watch Updater can transition a bug to any status or importance:
     ...     debian_bugwatch.updateImportance(u'nothing', importance)
 
 
-BugWatches against BugTasks with conjoined masters
---------------------------------------------------
+BugWatches against BugTasks with conjoined primaries
+----------------------------------------------------
 
-A conjoined bugtask involves a master and slave in in a conjoined
-relationship. The slave is a generic product or distribution task; the
-master is a series-specific task. If a BugWatch is linked to a BugTask
-with a conjoined master, that bug task will not be updated when the
+A conjoined bugtask involves a primary and replica in a conjoined
+relationship. The replica is a generic product or distribution task; the
+primary is a series-specific task. If a BugWatch is linked to a BugTask
+with a conjoined primary, that bug task will not be updated when the
 BugWatch's status or importance are updated. We can demonstrate this by
-creating a bug task with a conjoined master.
+creating a bug task with a conjoined primary.
 
     >>> from zope.component import getUtility
     >>> from lp.services.database.sqlbase import flush_database_updates
@@ -441,15 +441,15 @@ creating a bug task with a conjoined master.
     >>> firefox = ubuntu.getSourcePackage('mozilla-firefox')
     >>> bug = firefox.createBug(CreateBugParams(
     ...     owner=sample_person, title='Yet another test bug',
-    ...     comment="A sample bug for conjoined master tests."))
+    ...     comment="A sample bug for conjoined primary tests."))
 
     >>> targeted_bugtask = getUtility(IBugTaskSet).createTask(
     ...     bug, sample_person, firefox.development_version)
 
-    >>> targeted_bugtask.conjoined_master is None
+    >>> targeted_bugtask.conjoined_primary is None
     True
 
-    >>> targeted_bugtask.conjoined_slave == bug.bugtasks[0]
+    >>> targeted_bugtask.conjoined_replica == bug.bugtasks[0]
     True
 
 We use ensureBugTracker() to populate in the parameters that we don't
@@ -467,8 +467,8 @@ specifiy, such as the bug tracker's name.
 Now that we have our conjoined bug tasks we can use a test
 implementation of the Roundup ExternalBugTracker to try and update
 them. In fact, updating the bug watch will do nothing to the bug task to
-which it is linked since that bug task is a conjoined slave. Conjoined
-slaves must be updated through their conjoined master.
+which it is linked since that bug task is a conjoined replica. Conjoined
+replicas must be updated through their conjoined primary.
 
     >>> bug.bugtasks[0].status.title
     'New'

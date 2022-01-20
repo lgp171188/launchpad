@@ -826,7 +826,7 @@ class TestBugWatch:
     def updateStatus(self, new_remote_status, new_malone_status):
         """See `IBugWatch`."""
         for bugtask in self.bug.bugtasks:
-            if bugtask.conjoined_master is not None:
+            if bugtask.conjoined_primary is not None:
                 continue
             bugtask = removeSecurityProxy(bugtask)
             bugtask._status = new_malone_status

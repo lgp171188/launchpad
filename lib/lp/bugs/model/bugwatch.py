@@ -148,8 +148,8 @@ class BugWatch(SQLBase):
         """Yield the bug tasks that are eligible for update."""
         for bugtask in self.bugtasks:
             # We don't update conjoined bug tasks; they must be
-            # updated through their conjoined masters.
-            if bugtask.conjoined_master is not None:
+            # updated through their conjoined primaries.
+            if bugtask.conjoined_primary is not None:
                 continue
             # We don't update tasks of duplicate bugs.
             if bugtask.bug.duplicateof is not None:
