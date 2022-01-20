@@ -1532,11 +1532,11 @@ class Person(
         bulk.load_related(Milestone, tasks, ['milestone_id'])
 
         for task in tasks:
-            # We skip masters (instead of slaves) from conjoined relationships
-            # because we can do that without hittind the DB, which would not
-            # be possible if we wanted to skip the slaves. The simple (but
-            # expensive) way to skip the slaves would be to skip any tasks
-            # that have a non-None .conjoined_master.
+            # We skip primaries (instead of replicas) from conjoined
+            # relationships because we can do that without hitting the DB,
+            # which would not be possible if we wanted to skip the replicas.
+            # The simple (but expensive) way to skip the replicas would be
+            # to skip any tasks that have a non-None .conjoined_primary.
             productseries = task.productseries
             distroseries = task.distroseries
             if productseries is not None and task.product is None:
@@ -1546,10 +1546,11 @@ class Person(
                     continue
             elif distroseries is not None:
                 candidate = None
-                for possible_slave in tasks:
-                    sourcepackagename_id = possible_slave.sourcepackagename_id
+                for possible_replica in tasks:
+                    sourcepackagename_id = (
+                        possible_replica.sourcepackagename_id)
                     if sourcepackagename_id == task.sourcepackagename_id:
-                        candidate = possible_slave
+                        candidate = possible_replica
                 # Distribution.currentseries is expensive to run for every
                 # bugtask (as it goes through every series of that
                 # distribution), but it's a cached property and there's only
@@ -2258,10 +2259,10 @@ class Person(
             coc.active = False
         params = BugTaskSearchParams(self, assignee=self)
         for bug_task in self.searchTasks(params):
-            # If the bugtask has a conjoined master we don't try to
+            # If the bugtask has a conjoined primary we don't try to
             # update it, since we will update it correctly when we
-            # update its conjoined master (see bug 193983).
-            if bug_task.conjoined_master is not None:
+            # update its conjoined primary (see bug 193983).
+            if bug_task.conjoined_primary is not None:
                 continue
 
             # XXX flacoste 2007-11-26 bug=164635 The comparison using id in

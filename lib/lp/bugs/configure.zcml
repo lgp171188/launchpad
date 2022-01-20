@@ -226,10 +226,10 @@
                     getDelta
                     pillar
                     bugtask_branches
-                    conjoined_master
-                    conjoined_slave
+                    conjoined_primary
+                    conjoined_replica
                     subscribe
-                    getConjoinedMaster
+                    getConjoinedPrimary
                     findSimilarBugs
                     getContributorInfo"/>
             <require

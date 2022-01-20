@@ -1484,18 +1484,18 @@ class Bug(SQLBase, InformationTypeMixin):
 
         The bugtask is selected by these rules:
         1. It's status is not Invalid.
-        2. It is not a conjoined slave.
+        2. It is not a conjoined replica.
         Only one bugtask must meet both conditions to be return. When
         zero or many bugtasks match, None is returned.
         """
-        # We may want to removed the bugtask.conjoined_master check
+        # We may want to removed the bugtask.conjoined_primary check
         # below. It is used to simplify the task of converting
-        # conjoined bugtasks to question--since slaves cannot be
+        # conjoined bugtasks to question--since replicas cannot be
         # directly updated anyway.
         non_invalid_bugtasks = [
             bugtask for bugtask in self.bugtasks
             if (bugtask.status != BugTaskStatus.INVALID
-                and bugtask.conjoined_master is None)]
+                and bugtask.conjoined_primary is None)]
         if len(non_invalid_bugtasks) != 1:
             return None
         [valid_bugtask] = non_invalid_bugtasks
@@ -1755,8 +1755,8 @@ class Bug(SQLBase, InformationTypeMixin):
         if bugtask is None:
             return None
 
-        if bugtask.conjoined_master is not None:
-            bugtask = bugtask.conjoined_master
+        if bugtask.conjoined_primary is not None:
+            bugtask = bugtask.conjoined_primary
 
         if bugtask.status == status:
             return None

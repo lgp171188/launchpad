@@ -931,38 +931,38 @@ def _build_status_clause(col, status):
 
 
 def _build_exclude_conjoined_clause(milestone):
-    """Exclude bugtasks with a conjoined master.
+    """Exclude bugtasks with a conjoined primary.
 
     This search option only makes sense when searching for bugtasks
     for a milestone.  Only bugtasks for a project or a distribution
-    can have a conjoined master bugtask, which is a bugtask on the
+    can have a conjoined primary bugtask, which is a bugtask on the
     project's development focus series or the distribution's
     currentseries. The project bugtask or the distribution bugtask
-    will always have the same milestone set as its conjoined master
+    will always have the same milestone set as its conjoined primary
     bugtask, if it exists on the bug. Therefore, this prevents a lot
     of bugs having two bugtasks listed in the results. However, it
     is ok if a bug has multiple bugtasks in the results as long as
     those other bugtasks are on other series.
     """
     # XXX: EdwinGrubbs 2010-12-15 bug=682989
-    # (ConjoinedMaster.bug == X) produces the wrong sql, but
-    # (ConjoinedMaster.bugID == X) works right. This bug applies to
+    # (ConjoinedPrimary.bug == X) produces the wrong sql, but
+    # (ConjoinedPrimary.bugID == X) works right. This bug applies to
     # all foreign keys on the ClassAlias.
 
-    # Perform a LEFT JOIN to the conjoined master bugtask.  If the
-    # conjoined master is not null, it gets filtered out.
-    ConjoinedMaster = ClassAlias(BugTask, 'ConjoinedMaster')
-    extra_clauses = [ConjoinedMaster.id == None]
+    # Perform a LEFT JOIN to the conjoined primary bugtask.  If the
+    # conjoined primary is not null, it gets filtered out.
+    ConjoinedPrimary = ClassAlias(BugTask, 'ConjoinedPrimary')
+    extra_clauses = [ConjoinedPrimary.id == None]
     if milestone.distribution is not None:
         current_series = milestone.distribution.currentseries
         join = LeftJoin(
-            ConjoinedMaster,
-            And(ConjoinedMaster.bug_id == BugTaskFlat.bug_id,
+            ConjoinedPrimary,
+            And(ConjoinedPrimary.bug_id == BugTaskFlat.bug_id,
                 BugTaskFlat.distribution_id == milestone.distribution.id,
-                ConjoinedMaster.distroseries_id == current_series.id,
-                Not(ConjoinedMaster._status.is_in(
+                ConjoinedPrimary.distroseries_id == current_series.id,
+                Not(ConjoinedPrimary._status.is_in(
                         BugTask._NON_CONJOINED_STATUSES))))
-        join_tables = [(ConjoinedMaster, join)]
+        join_tables = [(ConjoinedPrimary, join)]
     else:
         if IProjectGroupMilestone.providedBy(milestone):
             # Since an IProjectGroupMilestone could have bugs with
@@ -973,11 +973,11 @@ def _build_exclude_conjoined_clause(milestone):
                 Join(Milestone, BugTaskFlat.milestone_id == Milestone.id),
                 LeftJoin(Product, BugTaskFlat.product_id == Product.id),
                 LeftJoin(
-                    ConjoinedMaster,
-                    And(ConjoinedMaster.bug_id == BugTaskFlat.bug_id,
-                        ConjoinedMaster.productseries_id
+                    ConjoinedPrimary,
+                    And(ConjoinedPrimary.bug_id == BugTaskFlat.bug_id,
+                        ConjoinedPrimary.productseries_id
                             == Product.development_focusID,
-                        Not(ConjoinedMaster._status.is_in(
+                        Not(ConjoinedPrimary._status.is_in(
                                 BugTask._NON_CONJOINED_STATUSES)))),
                 ]
             # join.right is the table name.
@@ -986,13 +986,13 @@ def _build_exclude_conjoined_clause(milestone):
             dev_focus_id = (
                 milestone.product.development_focusID)
             join = LeftJoin(
-                ConjoinedMaster,
-                And(ConjoinedMaster.bug_id == BugTaskFlat.bug_id,
+                ConjoinedPrimary,
+                And(ConjoinedPrimary.bug_id == BugTaskFlat.bug_id,
                     BugTaskFlat.product_id == milestone.product.id,
-                    ConjoinedMaster.productseries_id == dev_focus_id,
-                    Not(ConjoinedMaster._status.is_in(
+                    ConjoinedPrimary.productseries_id == dev_focus_id,
+                    Not(ConjoinedPrimary._status.is_in(
                             BugTask._NON_CONJOINED_STATUSES))))
-            join_tables = [(ConjoinedMaster, join)]
+            join_tables = [(ConjoinedPrimary, join)]
         else:
             raise AssertionError(
                 "A milestone must always have either a project, "

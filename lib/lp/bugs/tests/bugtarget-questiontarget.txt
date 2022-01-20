@@ -205,7 +205,7 @@ provided
 
     >>> evo_bugtask.transitionToStatus(BugTaskStatus.INVALID, sample_person)
     >>> len([bt for bt in bugtasks
-    ...     if bt.status.title == 'New' and bt.conjoined_master is None])
+    ...     if bt.status.title == 'New' and bt.conjoined_primary is None])
     1
 
     >>> big_bug.canBeAQuestion()
