@@ -915,12 +915,6 @@
         name="+delete"
         template="../templates/gitrepository-delete.pt"/>
     <browser:page
-        for="lp.services.auth.interfaces.IAccessTokenTarget"
-        name="+access-tokens"
-        permission="launchpad.Edit"
-        class="lp.services.auth.browser.AccessTokensView"
-        template="../../services/auth/templates/accesstokentarget-access-tokens.pt" />
-    <browser:page
         for="lp.code.interfaces.gitrepository.IGitRepository"
         class="lp.code.browser.gitrepository.GitRepositoryActivityView"
         permission="launchpad.Edit"
