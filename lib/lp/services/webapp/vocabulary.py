@@ -239,8 +239,7 @@ class VocabularyFilterAll(VocabularyFilter):
     # A filter returning all objects.
 
     def __new__(cls):
-        return super(VocabularyFilter, cls).__new__(
-            cls, 'ALL', 'All', 'Display all search results')
+        return super().__new__(cls, 'ALL', 'All', 'Display all search results')
 
 
 class FilteredVocabularyBase:

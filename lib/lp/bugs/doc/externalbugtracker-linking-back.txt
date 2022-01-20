@@ -16,7 +16,7 @@ about the bug.
     ... class BackLinkingExternalBugTracker(TestExternalBugTracker):
     ...
     ...     def __init__(self, baseurl):
-    ...         super(BackLinkingExternalBugTracker, self).__init__(baseurl)
+    ...         super().__init__(baseurl)
     ...         self.last_launchpad_bug_id = None
     ...
     ...     def getLaunchpadBugId(self, remote_bug):
