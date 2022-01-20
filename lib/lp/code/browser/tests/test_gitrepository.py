@@ -2269,3 +2269,19 @@ class TestGitRepositoryForkView(BrowserTestCase):
                 "field.owner": invalid_person.name,
                 "field.actions.fork": "Fork it"})
             self.assertEqual(0, self.getReposOwnedBy(invalid_person).count())
+
+
+class TestGitRepositoryAccessTokensView(BrowserTestCase):
+    layer = DatabaseFunctionalLayer
+
+    def test_repository_access_tokens_link(self):
+        # Most tests are in lp/services/auth/tests/test_browser.py
+        # This is only testing that the view is now linked
+        # and accessible from the GitRepositoryEditMenu.
+        repository = self.factory.makeGitRepository()
+        tokens_url = canonical_url(
+            repository, view_name="+access-tokens", rootsite="code")
+        browser = self.getViewBrowser(
+            repository, "+index", rootsite="code", user=repository.owner)
+        tokens_link = browser.getLink("Edit access tokens")
+        self.assertEqual(tokens_url, tokens_link.url)

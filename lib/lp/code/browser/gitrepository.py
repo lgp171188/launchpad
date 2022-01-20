@@ -268,6 +268,7 @@ class GitRepositoryEditMenu(NavigationMenu):
         "activity",
         "webhooks",
         "delete",
+        "access_tokens",
         ]
 
     @enabled_with_permission("launchpad.Edit")
@@ -301,6 +302,11 @@ class GitRepositoryEditMenu(NavigationMenu):
     def delete(self):
         text = "Delete repository"
         return Link("+delete", text, icon="trash-icon")
+
+    @enabled_with_permission("launchpad.Edit")
+    def access_tokens(self):
+        text = "Edit access tokens"
+        return Link("+access-tokens", text, icon="edit")
 
 
 class GitRepositoryContextMenu(ContextMenu, HasRecipesMenuMixin):
