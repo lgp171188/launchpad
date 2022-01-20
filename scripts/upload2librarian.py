@@ -53,7 +53,7 @@ class LibrarianUploader(LaunchpadScript):
         """
         try:
             file = open(filepath)
-        except IOError:
+        except OSError:
             raise LaunchpadScriptFailure('Could not open: %s' % filepath)
 
         flen = os.stat(filepath).st_size

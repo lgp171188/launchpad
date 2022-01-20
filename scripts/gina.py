@@ -26,7 +26,7 @@ from lp.soyuz.scripts.gina.runner import run_gina
 class Gina(LaunchpadCronScript):
 
     def __init__(self):
-        super(Gina, self).__init__(name='gina', dbuser=config.gina.dbuser)
+        super().__init__(name='gina', dbuser=config.gina.dbuser)
 
     @property
     def usage(self):

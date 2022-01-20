@@ -32,36 +32,14 @@ repos:
     rev: v2.31.0
     hooks:
     -   id: pyupgrade
-        args: [--keep-percent-format]
-        exclude: ^lib/contrib/
-    -   id: pyupgrade
-        alias: pyupgrade-py3
-        name: pyupgrade (--py3-plus)
         args: [--keep-percent-format, --py3-plus]
-        files: |
-          (?x)^lib/lp/(
-            answers
-            |app
-            |archivepublisher
-            |archiveuploader
-            |blueprints
-            |bugs
-            |buildmaster
-            |charms
-            |code
-            |codehosting
-            |coop
-            |oci
-            |registry
-            |scripts
-            |services
-            |snappy
-            |soyuz
-            |testing
-            |testopenid
-            |tests
-            |translations
-          )/
+        exclude: |
+          (?x)^(
+            lib/contrib/.*
+            |lib/devscripts/.*
+            |utilities/community-contributions\.py
+            |utilities/update-sourcecode
+          )$
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
     hooks:

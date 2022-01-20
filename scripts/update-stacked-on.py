@@ -56,7 +56,7 @@ class UpdateStackedBranches(LaunchpadScript):
     """Update stacked branches so their stacked_on_location matches the db."""
 
     def __init__(self):
-        super(UpdateStackedBranches, self).__init__('update-stacked-on')
+        super().__init__('update-stacked-on')
 
     def add_my_options(self):
         self.parser.add_option(

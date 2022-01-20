@@ -468,7 +468,7 @@ class ViewAccount(EditAccountBySelfOrAdmin):
     def checkAuthenticated(self, user):
         """Extend permission to registry experts."""
         return (
-            super(ViewAccount, self).checkAuthenticated(user)
+            super().checkAuthenticated(user)
             or user.in_registry_experts)
 
 
@@ -544,7 +544,7 @@ class LimitedViewProduct(ViewProduct):
 
     def checkAuthenticated(self, user):
         return (
-            super(LimitedViewProduct, self).checkAuthenticated(user) or
+            super().checkAuthenticated(user) or
             self.obj.userCanLimitedView(user))
 
 
@@ -554,7 +554,7 @@ class EditProduct(EditByOwnersOrAdmins):
     def checkAuthenticated(self, user):
         # Commercial admins may help setup commercial projects.
         return (
-            super(EditProduct, self).checkAuthenticated(user)
+            super().checkAuthenticated(user)
             or is_commercial_case(self.obj, user)
             or False)
 
@@ -580,8 +580,7 @@ class ViewTimelineProductSeries(DelegatedAuthorization):
     usedfor = ITimelineProductSeries
 
     def __init__(self, obj):
-        super(ViewTimelineProductSeries, self).__init__(
-            obj, obj.product, 'launchpad.View')
+        super().__init__(obj, obj.product, 'launchpad.View')
 
 
 class ViewProductReleaseFile(AnonymousAuthorization):
@@ -798,7 +797,7 @@ class ModerateSprint(ModerateByRegistryExpertsOrAdmins):
 
     def checkAuthenticated(self, user):
         return (
-            super(ModerateSprint, self).checkAuthenticated(user) or
+            super().checkAuthenticated(user) or
             user.isOwner(self.obj))
 
 
@@ -867,8 +866,7 @@ class ViewProjectMilestone(DelegatedAuthorization):
     usedfor = IProjectGroupMilestone
 
     def __init__(self, obj):
-        super(ViewProjectMilestone, self).__init__(
-            obj, obj.product, 'launchpad.View')
+        super().__init__(obj, obj.product, 'launchpad.View')
 
 
 class EditProjectMilestoneNever(AuthorizationBase):
@@ -885,8 +883,7 @@ class LimitedViewMilestone(DelegatedAuthorization):
     usedfor = IMilestone
 
     def __init__(self, obj):
-        super(LimitedViewMilestone, self).__init__(
-            obj, obj.target, 'launchpad.LimitedView')
+        super().__init__(obj, obj.target, 'launchpad.LimitedView')
 
 
 class ViewMilestone(AuthorizationBase):
@@ -963,7 +960,7 @@ class ModerateTeam(ModerateByRegistryExpertsOrAdmins):
         registry experts, team admins, or the team owners.
         """
         return (
-            super(ModerateTeam, self).checkAuthenticated(user)
+            super().checkAuthenticated(user)
             or can_edit_team(self.obj, user))
 
 
@@ -1003,8 +1000,7 @@ class AdminByCommercialTeamOrAdminsOrPerson(AdminByCommercialTeamOrAdmins):
 
     def checkAuthenticated(self, user):
         """Users can manage their commericial data and admins can help."""
-        base = super(AdminByCommercialTeamOrAdminsOrPerson, self)
-        return self.obj.id == user.id or base.checkAuthenticated(user)
+        return self.obj.id == user.id or super().checkAuthenticated(user)
 
 
 class EditPersonBySelfOrAdmins(AuthorizationBase):
@@ -1451,7 +1447,7 @@ class EditDistroSeriesDifference(DelegatedAuthorization):
     usedfor = IDistroSeriesDifferenceEdit
 
     def __init__(self, obj):
-        super(EditDistroSeriesDifference, self).__init__(
+        super().__init__(
             obj, obj.derived_series.distribution, 'launchpad.View')
 
     def checkUnauthenticated(self):
@@ -1479,7 +1475,7 @@ class DriveProduct(SeriesDrivers):
     def checkAuthenticated(self, user):
         # Commercial admins may help setup commercial projects.
         return (
-            super(DriveProduct, self).checkAuthenticated(user)
+            super().checkAuthenticated(user)
             or is_commercial_case(self.obj, user)
             or False)
 
@@ -1489,8 +1485,7 @@ class LimitedViewProductSeries(DelegatedAuthorization):
     usedfor = IProductSeriesLimitedView
 
     def __init__(self, obj):
-        super(LimitedViewProductSeries, self).__init__(
-            obj, obj.product, 'launchpad.LimitedView')
+        super().__init__(obj, obj.product, 'launchpad.LimitedView')
 
 
 class ViewProductSeries(AuthorizationBase):
@@ -1541,8 +1536,7 @@ class ViewDistroArchSeriesFilter(DelegatedAuthorization):
     usedfor = IDistroArchSeriesFilter
 
     def __init__(self, obj):
-        super(ViewDistroArchSeriesFilter, self).__init__(
-            obj, obj.distroarchseries, 'launchpad.View')
+        super().__init__(obj, obj.distroarchseries, 'launchpad.View')
 
 
 class EditDistroArchSeriesFilter(DelegatedAuthorization):
@@ -1550,8 +1544,7 @@ class EditDistroArchSeriesFilter(DelegatedAuthorization):
     usedfor = IDistroArchSeriesFilter
 
     def __init__(self, obj):
-        super(EditDistroArchSeriesFilter, self).__init__(
-            obj, obj.distroarchseries, 'launchpad.Moderate')
+        super().__init__(obj, obj.distroarchseries, 'launchpad.Moderate')
 
 
 class ViewAnnouncement(AuthorizationBase):
@@ -1888,8 +1881,7 @@ class ViewProductRelease(DelegatedAuthorization):
     usedfor = IProductRelease
 
     def __init__(self, obj):
-        super(ViewProductRelease, self).__init__(
-            obj, obj.milestone, 'launchpad.View')
+        super().__init__(obj, obj.milestone, 'launchpad.View')
 
 
 class AdminTranslationImportQueueEntry(AuthorizationBase):
@@ -2002,7 +1994,7 @@ class ViewPackageUploadLog(DelegatedAuthorization):
     usedfor = IPackageUploadLog
 
     def __init__(self, obj):
-        super(ViewPackageUploadLog, self).__init__(obj, obj.package_upload)
+        super().__init__(obj, obj.package_upload)
 
 
 class EditPackageUpload(AdminByAdminsTeam):
@@ -2046,7 +2038,7 @@ class ModerateBuilder(EditBuilder):
 
     def checkAuthenticated(self, user):
         return (user.in_registry_experts or
-                super(ModerateBuilder, self).checkAuthenticated(user))
+                super().checkAuthenticated(user))
 
 
 class AdminBuildRecord(AdminByBuilddAdmin):
@@ -2154,8 +2146,7 @@ class ModerateBinaryPackageBuild(ViewBinaryPackageBuild):
         # administer the archive can already achieve the same effect by
         # setting Archive.external_dependencies.)
         return (
-            super(ModerateBinaryPackageBuild, self).checkAuthenticated(
-                user) and
+            super().checkAuthenticated(user) and
             AdminArchive(self.obj.archive).checkAuthenticated(user))
 
     def checkUnauthenticated(self, user):
@@ -2171,7 +2162,7 @@ class ViewTranslationTemplatesBuild(DelegatedAuthorization):
     usedfor = ITranslationTemplatesBuild
 
     def __init__(self, obj):
-        super(ViewTranslationTemplatesBuild, self).__init__(obj, obj.branch)
+        super().__init__(obj, obj.branch)
 
 
 class AdminQuestion(AuthorizationBase):
@@ -2389,7 +2380,7 @@ class ModerateBranch(EditBranch):
     permission = 'launchpad.Moderate'
 
     def checkAuthenticated(self, user):
-        if super(ModerateBranch, self).checkAuthenticated(user):
+        if super().checkAuthenticated(user):
             return True
         branch = self.obj
         if branch.product is not None and user.inTeam(branch.product.owner):
@@ -2464,7 +2455,7 @@ class ModerateGitRepository(EditGitRepository):
     permission = 'launchpad.Moderate'
 
     def checkAuthenticated(self, user):
-        if super(ModerateGitRepository, self).checkAuthenticated(user):
+        if super().checkAuthenticated(user):
             return True
         target = self.obj.target
         if (target is not None and IProduct.providedBy(target) and
@@ -2484,17 +2475,17 @@ class ViewGitRef(DelegatedAuthorization):
     usedfor = IGitRef
 
     def __init__(self, obj):
-        super(ViewGitRef, self).__init__(obj, obj.repository)
+        super().__init__(obj, obj.repository)
 
     def checkAuthenticated(self, user):
         if self.obj.repository is not None:
-            return super(ViewGitRef, self).checkAuthenticated(user)
+            return super().checkAuthenticated(user)
         else:
             return True
 
     def checkUnauthenticated(self):
         if self.obj.repository is not None:
-            return super(ViewGitRef, self).checkUnauthenticated()
+            return super().checkUnauthenticated()
         else:
             return True
 
@@ -2505,7 +2496,7 @@ class EditGitRef(DelegatedAuthorization):
     usedfor = IGitRef
 
     def __init__(self, obj):
-        super(EditGitRef, self).__init__(obj, obj.repository)
+        super().__init__(obj, obj.repository)
 
 
 class ViewGitRule(DelegatedAuthorization):
@@ -2514,7 +2505,7 @@ class ViewGitRule(DelegatedAuthorization):
     usedfor = IGitRule
 
     def __init__(self, obj):
-        super(ViewGitRule, self).__init__(obj, obj.repository)
+        super().__init__(obj, obj.repository)
 
 
 class EditGitRule(DelegatedAuthorization):
@@ -2523,7 +2514,7 @@ class EditGitRule(DelegatedAuthorization):
     usedfor = IGitRule
 
     def __init__(self, obj):
-        super(EditGitRule, self).__init__(obj, obj.repository)
+        super().__init__(obj, obj.repository)
 
 
 class ViewGitRuleGrant(DelegatedAuthorization):
@@ -2532,7 +2523,7 @@ class ViewGitRuleGrant(DelegatedAuthorization):
     usedfor = IGitRuleGrant
 
     def __init__(self, obj):
-        super(ViewGitRuleGrant, self).__init__(obj, obj.repository)
+        super().__init__(obj, obj.repository)
 
 
 class EditGitRuleGrant(DelegatedAuthorization):
@@ -2541,7 +2532,7 @@ class EditGitRuleGrant(DelegatedAuthorization):
     usedfor = IGitRuleGrant
 
     def __init__(self, obj):
-        super(EditGitRuleGrant, self).__init__(obj, obj.repository)
+        super().__init__(obj, obj.repository)
 
 
 class ViewGitActivity(DelegatedAuthorization):
@@ -2550,7 +2541,7 @@ class ViewGitActivity(DelegatedAuthorization):
     usedfor = IGitActivity
 
     def __init__(self, obj):
-        super(ViewGitActivity, self).__init__(obj, obj.repository)
+        super().__init__(obj, obj.repository)
 
 
 class AdminDistroSeriesTranslations(AuthorizationBase):
@@ -2573,8 +2564,7 @@ class AdminDistributionSourcePackageTranslations(DelegatedAuthorization):
     usedfor = IDistributionSourcePackage
 
     def __init__(self, obj):
-        super(AdminDistributionSourcePackageTranslations, self).__init__(
-            obj, obj.distribution)
+        super().__init__(obj, obj.distribution)
 
 
 class AdminProductSeriesTranslations(AuthorizationBase):
@@ -2643,7 +2633,7 @@ class PreviewDiffView(DelegatedAuthorization):
     usedfor = IPreviewDiff
 
     def __init__(self, obj):
-        super(PreviewDiffView, self).__init__(obj, obj.branch_merge_proposal)
+        super().__init__(obj, obj.branch_merge_proposal)
 
 
 class CodeReviewVoteReferenceView(DelegatedAuthorization):
@@ -2651,8 +2641,7 @@ class CodeReviewVoteReferenceView(DelegatedAuthorization):
     usedfor = ICodeReviewVoteReference
 
     def __init__(self, obj):
-        super(CodeReviewVoteReferenceView, self).__init__(
-            obj, obj.branch_merge_proposal)
+        super().__init__(obj, obj.branch_merge_proposal)
 
 
 class CodeReviewVoteReferenceEdit(DelegatedAuthorization):
@@ -2660,8 +2649,7 @@ class CodeReviewVoteReferenceEdit(DelegatedAuthorization):
     usedfor = ICodeReviewVoteReference
 
     def __init__(self, obj):
-        super(CodeReviewVoteReferenceEdit, self).__init__(
-            obj, obj.branch_merge_proposal.target_branch)
+        super().__init__(obj, obj.branch_merge_proposal.target_branch)
 
     def checkAuthenticated(self, user):
         """Only the affected teams may change the review request.
@@ -2675,8 +2663,7 @@ class CodeReviewVoteReferenceEdit(DelegatedAuthorization):
         """
         return (user.inTeam(self.obj.reviewer) or
                 user.inTeam(self.obj.registrant) or
-                super(CodeReviewVoteReferenceEdit, self).checkAuthenticated(
-                    user))
+                super().checkAuthenticated(user))
 
 
 class CodeReviewCommentView(DelegatedAuthorization):
@@ -2684,8 +2671,7 @@ class CodeReviewCommentView(DelegatedAuthorization):
     usedfor = ICodeReviewComment
 
     def __init__(self, obj):
-        super(CodeReviewCommentView, self).__init__(
-            obj, obj.branch_merge_proposal)
+        super().__init__(obj, obj.branch_merge_proposal)
 
 
 class CodeReviewCommentOwner(AuthorizationBase):
@@ -2702,8 +2688,7 @@ class CodeReviewCommentDelete(DelegatedAuthorization):
     usedfor = ICodeReviewCommentDeletion
 
     def __init__(self, obj):
-        super(CodeReviewCommentDelete, self).__init__(
-            obj, obj.branch_merge_proposal)
+        super().__init__(obj, obj.branch_merge_proposal)
 
 
 class BranchMergeProposalEdit(AuthorizationBase):
@@ -2804,7 +2789,7 @@ class SubscriberViewArchive(ViewArchive):
     def checkAuthenticated(self, user):
         if user.person in self.obj._known_subscribers:
             return True
-        if super(SubscriberViewArchive, self).checkAuthenticated(user):
+        if super().checkAuthenticated(user):
             return True
         filter = get_enabled_archive_filter(
             user.person, include_subscribed=True)
@@ -2854,7 +2839,7 @@ class DeleteArchive(EditArchive):
 
     def checkAuthenticated(self, user):
         return (
-            super(DeleteArchive, self).checkAuthenticated(user) or
+            super().checkAuthenticated(user) or
             (not self.obj.is_main and user.in_registry_experts))
 
 
@@ -2943,12 +2928,11 @@ class EditArchiveAuthToken(DelegatedAuthorization):
     usedfor = IArchiveAuthToken
 
     def __init__(self, obj):
-        super(EditArchiveAuthToken, self).__init__(
-            obj, obj.archive, 'launchpad.Append')
+        super().__init__(obj, obj.archive, 'launchpad.Append')
 
     def checkAuthenticated(self, user):
         return (user.in_admin or
-                super(EditArchiveAuthToken, self).checkAuthenticated(user))
+                super().checkAuthenticated(user))
 
 
 class ViewPersonalArchiveSubscription(DelegatedAuthorization):
@@ -2961,14 +2945,12 @@ class ViewPersonalArchiveSubscription(DelegatedAuthorization):
     usedfor = IPersonalArchiveSubscription
 
     def __init__(self, obj):
-        super(ViewPersonalArchiveSubscription, self).__init__(
-            obj, obj.archive, 'launchpad.Append')
+        super().__init__(obj, obj.archive, 'launchpad.Append')
 
     def checkAuthenticated(self, user):
         if user.person == self.obj.subscriber or user.in_admin:
             return True
-        return super(
-            ViewPersonalArchiveSubscription, self).checkAuthenticated(user)
+        return super().checkAuthenticated(user)
 
 
 class ViewArchiveSubscriber(DelegatedAuthorization):
@@ -2981,13 +2963,12 @@ class ViewArchiveSubscriber(DelegatedAuthorization):
     usedfor = IArchiveSubscriber
 
     def __init__(self, obj):
-        super(ViewArchiveSubscriber, self).__init__(
-            obj, obj, 'launchpad.Edit')
+        super().__init__(obj, obj, 'launchpad.Edit')
 
     def checkAuthenticated(self, user):
         return (user.inTeam(self.obj.subscriber) or
                 user.in_commercial_admin or
-                super(ViewArchiveSubscriber, self).checkAuthenticated(user))
+                super().checkAuthenticated(user))
 
 
 class EditArchiveSubscriber(DelegatedAuthorization):
@@ -2999,13 +2980,12 @@ class EditArchiveSubscriber(DelegatedAuthorization):
     usedfor = IArchiveSubscriber
 
     def __init__(self, obj):
-        super(EditArchiveSubscriber, self).__init__(
-            obj, obj.archive, 'launchpad.Append')
+        super().__init__(obj, obj.archive, 'launchpad.Append')
 
     def checkAuthenticated(self, user):
         return (user.in_admin or
                 user.in_commercial_admin or
-                super(EditArchiveSubscriber, self).checkAuthenticated(user))
+                super().checkAuthenticated(user))
 
 
 class AdminArchiveSubscriberSet(AdminByCommercialTeamOrAdmins):
@@ -3062,8 +3042,7 @@ class EditPublishing(DelegatedAuthorization):
     usedfor = IPublishingEdit
 
     def __init__(self, obj):
-        super(EditPublishing, self).__init__(
-            obj, obj.archive, 'launchpad.Append')
+        super().__init__(obj, obj.archive, 'launchpad.Append')
 
 
 class ViewBinaryPackagePublishingHistory(ViewSourcePackagePublishingHistory):
@@ -3148,7 +3127,7 @@ class EditEmailAddress(EditByOwnersOrAdmins):
         # Always allow users to see their own email addresses.
         if self.obj.person == user:
             return True
-        return super(EditEmailAddress, self).checkAuthenticated(user)
+        return super().checkAuthenticated(user)
 
 
 class ViewGPGKey(AnonymousAuthorization):
@@ -3258,8 +3237,7 @@ class EditMessageRevision(DelegatedAuthorization):
     usedfor = IMessageRevision
 
     def __init__(self, obj):
-        super(EditMessageRevision, self).__init__(
-            obj, obj.message, 'launchpad.Edit')
+        super().__init__(obj, obj.message, 'launchpad.Edit')
 
 
 class ViewPublisherConfig(AdminByAdminsTeam):
@@ -3287,7 +3265,7 @@ class ViewLiveFS(DelegatedAuthorization):
     usedfor = ILiveFS
 
     def __init__(self, obj):
-        super(ViewLiveFS, self).__init__(obj, obj.owner, 'launchpad.View')
+        super().__init__(obj, obj.owner, 'launchpad.View')
 
 
 class EditLiveFS(AuthorizationBase):
@@ -3346,7 +3324,7 @@ class EditLiveFSBuild(AdminByBuilddAdmin):
         auth_livefs = EditLiveFS(self.obj.livefs)
         if auth_livefs.checkAuthenticated(user):
             return True
-        return super(EditLiveFSBuild, self).checkAuthenticated(user)
+        return super().checkAuthenticated(user)
 
 
 class AdminLiveFSBuild(AdminByBuilddAdmin):
@@ -3371,8 +3349,7 @@ class ViewWebhookDeliveryJob(DelegatedAuthorization):
     usedfor = IWebhookDeliveryJob
 
     def __init__(self, obj):
-        super(ViewWebhookDeliveryJob, self).__init__(
-            obj, obj.webhook, 'launchpad.View')
+        super().__init__(obj, obj.webhook, 'launchpad.View')
 
 
 class ViewSnap(AuthorizationBase):
@@ -3451,8 +3428,7 @@ class ViewSnapBuildRequest(DelegatedAuthorization):
     usedfor = ISnapBuildRequest
 
     def __init__(self, obj):
-        super(ViewSnapBuildRequest, self).__init__(
-            obj, obj.snap, 'launchpad.View')
+        super().__init__(obj, obj.snap, 'launchpad.View')
 
 
 class ViewSnapBuild(DelegatedAuthorization):
@@ -3478,7 +3454,7 @@ class EditSnapBuild(AdminByBuilddAdmin):
         auth_snap = EditSnap(self.obj.snap)
         if auth_snap.checkAuthenticated(user):
             return True
-        return super(EditSnapBuild, self).checkAuthenticated(user)
+        return super().checkAuthenticated(user)
 
 
 class AdminSnapBuild(AdminByBuilddAdmin):
@@ -3532,7 +3508,7 @@ class EditOCIProjectSeries(DelegatedAuthorization):
     usedfor = IOCIProjectSeries
 
     def __init__(self, obj):
-        super(EditOCIProjectSeries, self).__init__(obj, obj.oci_project)
+        super().__init__(obj, obj.oci_project)
 
 
 class ViewOCIRecipeBuildRequest(DelegatedAuthorization):
@@ -3540,8 +3516,7 @@ class ViewOCIRecipeBuildRequest(DelegatedAuthorization):
     usedfor = IOCIRecipeBuildRequest
 
     def __init__(self, obj):
-        super(ViewOCIRecipeBuildRequest, self).__init__(
-            obj, obj.recipe, 'launchpad.View')
+        super().__init__(obj, obj.recipe, 'launchpad.View')
 
 
 class ViewOCIRecipe(AnonymousAuthorization):
@@ -3638,7 +3613,7 @@ class EditOCIRecipeBuild(AdminByBuilddAdmin):
         auth_recipe = EditOCIRecipe(self.obj.recipe)
         if auth_recipe.checkAuthenticated(user):
             return True
-        return super(EditOCIRecipeBuild, self).checkAuthenticated(user)
+        return super().checkAuthenticated(user)
 
 
 class AdminOCIRecipeBuild(AdminByBuilddAdmin):
@@ -3717,8 +3692,7 @@ class ViewCharmRecipeBuildRequest(DelegatedAuthorization):
     usedfor = ICharmRecipeBuildRequest
 
     def __init__(self, obj):
-        super(ViewCharmRecipeBuildRequest, self).__init__(
-            obj, obj.recipe, 'launchpad.View')
+        super().__init__(obj, obj.recipe, 'launchpad.View')
 
 
 class ViewCharmRecipeBuild(DelegatedAuthorization):
@@ -3743,7 +3717,7 @@ class EditCharmRecipeBuild(AdminByBuilddAdmin):
         auth_recipe = EditCharmRecipe(self.obj.recipe)
         if auth_recipe.checkAuthenticated(user):
             return True
-        return super(EditCharmRecipeBuild, self).checkAuthenticated(user)
+        return super().checkAuthenticated(user)
 
 
 class AdminCharmRecipeBuild(AdminByBuilddAdmin):

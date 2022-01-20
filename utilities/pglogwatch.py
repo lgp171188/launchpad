@@ -38,7 +38,7 @@ def generate_loglines(logfile):
         raise RuntimeError("tail returned %d" % cmd.returncode)
 
 
-class Process(object):
+class Process:
     statement = None
     duration = None
     connection = None
@@ -48,7 +48,7 @@ class Process(object):
         self.pid = pid
 
 
-class Watcher(object):
+class Watcher:
     _line_re = re.compile(r"""
         ^\d{4}-\d\d-\d\d \s \d\d:\d\d:\d\d \s
         \[(?P<pid>\d+)\] \s (?P<type>LOG|ERROR|DETAIL): \s+ (?P<rest>.*)$

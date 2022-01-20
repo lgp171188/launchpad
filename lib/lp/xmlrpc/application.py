@@ -109,7 +109,7 @@ class SelfTest(LaunchpadXMLRPCView):
 
     def concatenate(self, string1, string2):
         """Return the concatenation of the two given strings."""
-        return u'%s %s' % (string1, string2)
+        return '%s %s' % (string1, string2)
 
     def hello(self):
         """Return a greeting to the logged in user."""

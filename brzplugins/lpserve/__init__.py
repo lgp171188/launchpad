@@ -29,7 +29,6 @@ from breezy.transport import (
     get_transport,
     transport_server_registry,
     )
-import six
 
 
 class cmd_launchpad_server(Command):
@@ -56,7 +55,7 @@ class cmd_launchpad_server(Command):
             help=(
                 "upload branches to this directory. Defaults to "
                 "config.codehosting.hosted_branches_root."),
-            type=six.text_type),
+            type=str),
         Option(
             'mirror-directory',
             help=(
@@ -67,7 +66,7 @@ class cmd_launchpad_server(Command):
             help=(
                 "the url of the internal XML-RPC server. Defaults to "
                 "config.codehosting.codehosting_endpoint."),
-            type=six.text_type),
+            type=str),
         RegistryOption(
             'protocol', help="Protocol to serve.",
             lazy_registry=('breezy.transport', 'transport_server_registry'),
