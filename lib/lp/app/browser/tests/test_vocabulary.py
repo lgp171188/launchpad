@@ -474,8 +474,7 @@ class TestVocabularyFilter(VocabularyFilter):
     # A filter returning all objects.
 
     def __new__(cls):
-        return super(VocabularyFilter, cls).__new__(
-            cls, 'FILTER', 'Test Filter', 'Test')
+        return super().__new__(cls, 'FILTER', 'Test Filter', 'Test')
 
     @property
     def filter_terms(self):

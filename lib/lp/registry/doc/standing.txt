@@ -69,7 +69,7 @@ are not a member of, their message gets held for moderator approval.
     ...         switch_dbuser(config.standingupdater.dbuser)
     ...         self.txn = LaunchpadZopelessLayer.txn
     ...         self.logger = DevNullLogger()
-    ...         results = super(TestableScript, self).main()
+    ...         results = super().main()
     ...         switch_dbuser(launchpad_dbuser)
     ...         return results
     >>> script = TestableScript('update-standing', test_args=[])

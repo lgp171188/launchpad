@@ -48,8 +48,7 @@ line.
     >>> class TestCheckWatchesCronScript(CheckWatchesCronScript):
     ...
     ...     def __init__(self, name, dbuser=None, test_args=None):
-    ...         super(TestCheckWatchesCronScript, self).__init__(
-    ...             name, dbuser, test_args)
+    ...         super().__init__(name, dbuser, test_args)
     ...         self.txn = transaction
     ...
     ...     def handle_options(self):
