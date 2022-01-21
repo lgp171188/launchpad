@@ -63,6 +63,9 @@ class RevisionStatusReport(StormBase):
 
     result = DBEnum(name='result', allow_none=True, enum=RevisionStatusResult)
 
+    ci_build_id = Int(name="ci_build", allow_none=True)
+    ci_build = Reference(ci_build_id, "CIBuild.id")
+
     date_created = DateTime(
         name='date_created', tzinfo=pytz.UTC, allow_none=False)
 
@@ -72,7 +75,7 @@ class RevisionStatusReport(StormBase):
                              allow_none=True)
 
     def __init__(self, git_repository, user, title, commit_sha1,
-                 url, result_summary, result):
+                 url, result_summary, result, ci_build=None):
         super().__init__()
         self.creator = user
         self.git_repository = git_repository
@@ -80,6 +83,7 @@ class RevisionStatusReport(StormBase):
         self.commit_sha1 = commit_sha1
         self.url = url
         self.result_summary = result_summary
+        self.ci_build = ci_build
         self.date_created = UTC_NOW
         self.transitionToNewResult(result)
 
@@ -139,12 +143,12 @@ class RevisionStatusReportSet:
 
     def new(self, creator, title, git_repository, commit_sha1,
             url=None, result_summary=None, result=None,
-            date_started=None, date_finished=None, log=None):
+            date_started=None, date_finished=None, log=None, ci_build=None):
         """See `IRevisionStatusReportSet`."""
         store = IStore(RevisionStatusReport)
         report = RevisionStatusReport(git_repository, creator, title,
                                       commit_sha1, url, result_summary,
-                                      result)
+                                      result, ci_build=ci_build)
         store.add(report)
         return report
 

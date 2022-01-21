@@ -174,6 +174,12 @@ class BuildFarmJobType(DBEnumeratedType):
         Build a charm from a recipe.
         """)
 
+    CIBUILD = DBItem(9, """
+        CI build
+
+        Run a continuous integration job on a code revision.
+        """)
+
 
 class BuildQueueStatus(DBEnumeratedType):
     """Build queue status.
