@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interface for communication with the Git hosting service."""
@@ -47,11 +47,14 @@ class IGitHostingClient(Interface):
             they point to.
         """
 
-    def getCommits(path, commit_oids, logger=None):
+    def getCommits(path, commit_oids, filter_paths=None, logger=None):
         """Get details of a list of commits.
 
         :param path: Physical path of the repository on the hosting service.
         :param commit_oids: A list of commit OIDs.
+        :param filter_paths: If given, only return commits that modify paths
+            in this list, and include the contents of the files at those
+            paths in the response.
         :param logger: An optional logger.
         :return: A list of dicts each of which represents one of the
             requested commits.  Non-existent commits will be omitted.

@@ -1,4 +1,4 @@
-# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git repository interfaces."""
@@ -354,13 +354,15 @@ class IGitRepositoryView(IHasRecipes):
             paths to remove.
         """
 
-    def fetchRefCommits(hosting_path, refs, logger=None):
+    def fetchRefCommits(refs, filter_paths=None, logger=None):
         """Fetch commit information from the hosting service for a set of refs.
 
-        :param hosting_path: A path on the hosting service.
         :param refs: A dict mapping ref paths to dictionaries of their
             fields; the field dictionaries will be updated with any detailed
             commit information that is available.
+        :param filter_paths: If given, only return commits that modify paths
+            in this list, and include the contents of the files at those
+            paths in the response.
         :param logger: An optional logger.
         """
 
