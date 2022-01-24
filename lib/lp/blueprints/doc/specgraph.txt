@@ -18,7 +18,7 @@ SpecGraph to keep track of the nodes that have been added.
     >>> g.url_pattern_for_testing = 'http://whatever/%s'
     >>> default_target = factory.makeProduct(name='fnord')
 
-    >>> class Spec(object):
+    >>> class Spec:
     ...
     ...     def __init__(self, name,
     ...             is_complete=False, title=None, assignee=None):

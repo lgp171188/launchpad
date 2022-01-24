@@ -136,7 +136,7 @@ particular need to differentiate these cases though:
     >>> from zope.publisher.interfaces.browser import IDefaultBrowserLayer
     >>> from lp.testing.fixture import ZopeAdapterFixture
 
-    >>> class ErrorView(object):
+    >>> class ErrorView:
     ...     """A broken view"""
     ...     def __call__(self, *args, **kw):
     ...         raise Exception('Oops')
