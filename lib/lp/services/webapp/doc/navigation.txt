@@ -72,7 +72,7 @@ interface, we'll define one here.
 
     >>> from zope.publisher.interfaces.browser import IBrowserRequest
 
-    >>> class Response(object):
+    >>> class Response:
     ...
     ...     redirected_to = None
     ...     status = None
@@ -105,7 +105,7 @@ interface, we'll define one here.
     ...             return None
 
     >>> @implementer(IBrowserRequest)
-    ... class Request(object):
+    ... class Request:
     ...
     ...     def __init__(self):
     ...         self.response = Response()
@@ -141,7 +141,7 @@ interface, we'll define one here.
     ...     value = Attribute('the value of the thing')
 
     >>> @implementer(IThing)
-    ... class Thing(object):
+    ... class Thing:
     ...
     ...     def __init__(self, value):
     ...         self.value = value
@@ -150,7 +150,7 @@ interface, we'll define one here.
     ...         return "<Thing '%s'>" % self.value
 
     >>> @implementer(IThingSet)
-    ... class ThingSet(object):
+    ... class ThingSet:
     ...
     ...     def getThing(self, name):
     ...         if name.startswith('t'):

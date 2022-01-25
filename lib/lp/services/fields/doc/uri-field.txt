@@ -201,7 +201,7 @@ This widget is registered as an input widget:
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
 
     >>> @implementer(IURIFieldTest)
-    ... class URIFieldTest(object):
+    ... class URIFieldTest:
     ...     field = None
 
     >>> context = URIFieldTest()

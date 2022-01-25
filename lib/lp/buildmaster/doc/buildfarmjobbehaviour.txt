@@ -40,7 +40,7 @@ For this documentation, we'll also need a dummy new build farm job.
     >>> class IMyNewBuildFarmJob(IBuildFarmJob):
     ...     "Normally defines job-type specific database fields."""
     >>> @implementer(IMyNewBuildFarmJob)
-    ... class MyNewBuildFarmJob(object):
+    ... class MyNewBuildFarmJob:
     ...     pass
 
 Custom behaviours are not normally instantiated directly, instead an adapter

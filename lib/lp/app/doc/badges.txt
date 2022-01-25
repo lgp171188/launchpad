@@ -170,7 +170,7 @@ determination methods to use the results of an alternative query.
 
     >>> from zope.interface import implementer
     >>> @implementer(IFoo)
-    ... class Foo(object):
+    ... class Foo:
     ...     @property
     ...     def bugs(self):
     ...         print("Foo.bugs")

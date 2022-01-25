@@ -11,7 +11,7 @@ Accessing that page gives us the OOPS error page.
     >>> from zope.publisher.interfaces.browser import IDefaultBrowserLayer
     >>> from lp.testing.fixture import ZopeAdapterFixture
 
-    >>> class ErrorView(object):
+    >>> class ErrorView:
     ...     """A broken view"""
     ...     def __call__(self, *args, **kw):
     ...         raise Exception('Oops')

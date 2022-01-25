@@ -14,7 +14,7 @@ and then returned each time it is asked for.
     >>> from itertools import count
     >>> counter = count(1)
 
-    >>> class Foo(object):
+    >>> class Foo:
     ...     @cachedproperty
     ...     def bar(self):
     ...         return next(counter)
@@ -123,7 +123,7 @@ A cached property can be declared with or without an explicit name. If
 not provided it will be derived from the decorated object. This name
 is the name under which values will be cached.
 
-    >>> class Foo(object):
+    >>> class Foo:
     ...     @cachedproperty("a_in_cache")
     ...     def a(self):
     ...         return 1234
