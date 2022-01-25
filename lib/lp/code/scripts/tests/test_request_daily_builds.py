@@ -1,4 +1,4 @@
-# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the request_daily_builds script."""
@@ -26,7 +26,10 @@ from lp.services.config.fixture import (
     )
 from lp.services.features.testing import FeatureFixture
 from lp.services.scripts.tests import run_script
-from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
+from lp.snappy.interfaces.snap import (
+    ISnap,
+    SNAP_TESTING_FLAGS,
+    )
 from lp.soyuz.enums import ArchivePurpose
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessAppServerLayer
@@ -295,11 +298,12 @@ class TestRequestDailyBuilds(TestCaseWithFactory):
         retcode, stdout, stderr = run_script(
             'cronscripts/request_daily_builds.py', [])
         self.assertIn('Requested 4 daily recipe builds.', stderr)
-        self.assertIn('Requested 4 automatic snap package builds.', stderr)
+        self.assertIn(
+            'Requested 4 sets of automatic snap package builds.', stderr)
         self.assertIn(
             'Requested 2 sets of automatic charm recipe builds.', stderr)
         for item in items:
-            if ICharmRecipe.providedBy(item):
+            if ISnap.providedBy(item) or ICharmRecipe.providedBy(item):
                 self.assertEqual(1, item.pending_build_requests.count())
             else:
                 self.assertEqual(1, item.pending_builds.count())
@@ -315,7 +319,8 @@ class TestRequestDailyBuilds(TestCaseWithFactory):
             'cronscripts/request_daily_builds.py', [])
         self.assertEqual(0, recipe.pending_builds.count())
         self.assertIn('Requested 0 daily recipe builds.', stderr)
-        self.assertIn('Requested 0 automatic snap package builds.', stderr)
+        self.assertIn(
+            'Requested 0 sets of automatic snap package builds.', stderr)
         self.assertIn(
             'Requested 0 sets of automatic charm recipe builds.', stderr)
         self.oops_capture.sync()
