@@ -73,6 +73,10 @@ from lp.code.model.revision import (
     RevisionAuthor,
     RevisionCache,
     )
+from lp.code.model.revisionstatus import (
+    RevisionStatusArtifact,
+    RevisionStatusReport,
+    )
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.model.person import Person
@@ -1762,6 +1766,52 @@ class PopulateSnapBuildStoreRevision(TunableLoop):
         transaction.commit()
 
 
+class RevisionStatusReportPruner(TunableLoop):
+    """Removes old revision status reports and their artifacts."""
+    minimum_chunk_size = 5
+    maximum_chunk_size = 100
+
+    def isDone(self):
+        """We are done when there are no old reports to delete."""
+        epoch = datetime.now(pytz.UTC) - timedelta(days=30)
+        store = IMasterStore(RevisionStatusReport)
+        results = store.find(
+            RevisionStatusReport, RevisionStatusReport.date_created < epoch)
+        return results.count() == 0
+
+    def __call__(self, chunk_size):
+        # Storm doesn't handle remove a limited result set,
+        # we limit to the chunk_size of the garbo job with the subquery
+        epoch = datetime.now(pytz.UTC) - timedelta(days=30)
+        subquery = Select(
+            [RevisionStatusReport.id, ],
+            where=[RevisionStatusReport.date_created < epoch, ],
+            limit=chunk_size)
+        clauses = [
+            RevisionStatusArtifact.report == RevisionStatusReport.id,
+            RevisionStatusReport.id.is_in(subquery), ]
+        where = convert_storm_clause_to_string(And(*clauses))
+
+        # Delete all artifacts for reports in the current batch
+        result = IMasterStore(RevisionStatusArtifact).execute("""
+            DELETE FROM RevisionStatusArtifact
+            USING RevisionStatusReport
+            WHERE """ + where)
+        self.log.info(
+            "Deleted %s status artifacts." % result.rowcount)
+
+        # Now delete reports in current batch
+        clauses = [RevisionStatusReport.id.is_in(subquery), ]
+        where = convert_storm_clause_to_string(*clauses)
+        result = IMasterStore(RevisionStatusArtifact).execute("""
+            DELETE FROM RevisionStatusReport WHERE """ + where)
+
+        self.log.info(
+            "Deleted %s status reports." % result.rowcount)
+
+        transaction.commit()
+
+
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
     """Abstract base class to run a collection of TunableLoops."""
     script_name = None  # Script name for locking and database user. Override.
@@ -2058,6 +2108,7 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         PreviewDiffPruner,
         ProductVCSPopulator,
         RevisionAuthorEmailLinker,
+        RevisionStatusReportPruner,
         ScrubPOFileTranslator,
         SnapBuildJobPruner,
         SnapFilePruner,
