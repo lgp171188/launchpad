@@ -7,7 +7,7 @@ doctest environement comes loaded with a bunch of predefined names that
 makes writing page test easy.
 
     >>> from lp.testing.pages import setUpGlobs
-    >>> class MockTest(object):
+    >>> class MockTest:
     ...     def __init__(self):
     ...         self.globs = {}
 

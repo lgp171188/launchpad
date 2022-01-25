@@ -27,7 +27,7 @@ Register a test page that generates HTTP 500 errors.
     >>> from zope.component import provideAdapter
     >>> from zope.interface import Interface
     >>> from zope.publisher.interfaces.browser import IDefaultBrowserLayer
-    >>> class ErrorView(object):
+    >>> class ErrorView:
     ...     """A broken view"""
     ...     def __init__(self, *args):
     ...         oops

@@ -21,7 +21,7 @@ important, so we just discard it.
 
     >>> import re, pprint
     >>> atre = re.compile(' at [0-9a-fA-Fx]+')
-    >>> class Context(object):
+    >>> class Context:
     ...    actions = ()
     ...    def action(self, discriminator, callable, args, kw=None):
     ...        self.actions += ((discriminator, callable, args), )

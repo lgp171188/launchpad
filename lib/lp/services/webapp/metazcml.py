@@ -458,7 +458,7 @@ def page(_context, name, permission, for_,
         if class_ is None:
             new_class = type('SimpleLaunchpadViewClass', (), cdict)
         else:
-            new_class = type(class_.__name__, (class_, object), cdict)
+            new_class = type(class_.__name__, (class_,), cdict)
 
     original_page(_context, name, permission, for_,
         layer=layer, template=template, class_=new_class,

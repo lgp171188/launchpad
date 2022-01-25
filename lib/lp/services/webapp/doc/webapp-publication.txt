@@ -608,7 +608,7 @@ Originally, this variable isn't set.
 It is set during the afterTraversal() hook. The pageid is made of the
 name of the context class and the view class name.
 
-    >>> class TestView(object):
+    >>> class TestView:
     ...     """A very simple view."""
     ...
     ...     def __init__(self, context, request):
@@ -618,7 +618,7 @@ name of the context class and the view class name.
     ...     def __call__(self):
     ...         return u"Result"
 
-    >>> class TestContext(object):
+    >>> class TestContext:
     ...     """Test context object."""
 
     >>> view = TestView(TestContext(), request)

@@ -105,7 +105,7 @@ class WidgetInputErrorView(Z3WidgetInputErrorView):
         >>> print(view.snippet())
         <b>Foo</b>
 
-        >>> class TooSmallError(object):
+        >>> class TooSmallError:
         ...     def doc(self):
         ...         return "Foo input < 1"
         >>> err = WidgetInputError("foo", "Foo", TooSmallError())

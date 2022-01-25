@@ -42,7 +42,7 @@ Add a view for Country/+map.
 
     >>> from zope.component import provideAdapter
     >>> from zope.publisher.interfaces.browser import IDefaultBrowserLayer
-    >>> class CountryMapView(object):
+    >>> class CountryMapView:
     ...     def __init__(self, country, request):
     ...         pass
     >>> provideAdapter(CountryMapView, (ICountry, IDefaultBrowserLayer),
