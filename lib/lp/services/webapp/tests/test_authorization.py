@@ -426,8 +426,7 @@ class TestCheckPermissionCaching(TestCase):
 class TestLaunchpadSecurityPolicy_getPrincipalsAccessLevel(TestCase):
 
     def setUp(self):
-        cls = TestLaunchpadSecurityPolicy_getPrincipalsAccessLevel
-        super(cls, self).setUp()
+        super().setUp()
         self.principal = LaunchpadPrincipal(
             'foo.bar@canonical.com', 'foo', 'foo', object())
         self.security = LaunchpadSecurityPolicy()

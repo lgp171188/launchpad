@@ -521,7 +521,7 @@ class VocabularyFilterPerson(VocabularyFilter):
     # A filter returning just persons.
 
     def __new__(cls):
-        return super(VocabularyFilter, cls).__new__(
+        return super().__new__(
             cls, 'PERSON', 'Person',
             'Display search results for people only')
 
@@ -534,7 +534,7 @@ class VocabularyFilterTeam(VocabularyFilter):
     # A filter returning just teams.
 
     def __new__(cls):
-        return super(VocabularyFilter, cls).__new__(
+        return super().__new__(
             cls, 'TEAM', 'Team',
             'Display search results for teams only')
 
@@ -1785,7 +1785,7 @@ class VocabularyFilterProject(VocabularyFilter):
     # A filter returning just projects.
 
     def __new__(cls):
-        return super(VocabularyFilter, cls).__new__(
+        return super().__new__(
             cls, 'PROJECT', 'Project',
             'Display search results associated with projects')
 
@@ -1798,7 +1798,7 @@ class VocabularyFilterProjectGroup(VocabularyFilter):
     # A filter returning just project groups.
 
     def __new__(cls):
-        return super(VocabularyFilter, cls).__new__(
+        return super().__new__(
             cls, 'PROJECTGROUP', 'Project Group',
             'Display search results associated with project groups')
 
@@ -1811,7 +1811,7 @@ class VocabularyFilterDistribution(VocabularyFilter):
     # A filter returning just distros.
 
     def __new__(cls):
-        return super(VocabularyFilter, cls).__new__(
+        return super().__new__(
             cls, 'DISTRO', 'Distribution',
             'Display search results associated with distributions')
 

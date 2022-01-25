@@ -68,6 +68,14 @@ class TestAccessTokenViewBase:
         view.initialize()
         return view
 
+    def test_access_tokens_link(self):
+        target_url = canonical_url(self.target, rootsite="code")
+        expected_tokens_url = canonical_url(
+            self.target, view_name="+access-tokens", rootsite="code")
+        browser = self.getUserBrowser(target_url, user=self.owner)
+        tokens_link = browser.getLink("Edit access tokens")
+        self.assertEqual(expected_tokens_url, tokens_link.url)
+
     def makeTokensAndMatchers(self, count):
         tokens = [
             self.factory.makeAccessToken(target=self.target)[1]

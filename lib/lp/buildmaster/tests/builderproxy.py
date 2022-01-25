@@ -69,7 +69,7 @@ class InProcessProxyAuthAPIFixture(fixtures.Fixture):
 
             @defer.inlineCallbacks
             def setUp(self):
-                super(TestSomething, self).setUp()
+                super().setUp()
                 yield self.useFixture(InProcessProxyAuthAPIFixture()).start()
     """
 

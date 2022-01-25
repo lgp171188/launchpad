@@ -43,7 +43,7 @@ class InProcessKeyServerFixture(Fixture):
 
             @defer.inlineCallbacks
             def setUp(self):
-                super(TestSomething, self).setUp()
+                super().setUp()
                 yield self.useFixture(InProcessKeyServerFixture()).start()
 
     Unlike other fixtures, `InProcessKeyServerFixture` should not be used as

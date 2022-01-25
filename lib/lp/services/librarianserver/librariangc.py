@@ -553,7 +553,9 @@ class UnreferencedContentPruner:
                             'Swift {}'.format(connection_pool.os_auth_url))
                     except swiftclient.ClientException as x:
                         if x.http_status != 404:
-                            raise
+                            log.exception(
+                                "Failed to delete (%s, %s) from Swift (%s)",
+                                container, name, connection_pool.os_auth_url)
 
         if removed:
             log.debug3(
@@ -868,12 +870,14 @@ def delete_unwanted_swift_files(con):
                 with swift.connection(connection_pool) as swift_connection:
                     try:
                         swift_connection.delete_object(container, name)
+                        log.debug3(
+                            'Deleted (%s, %s) from Swift (%s)',
+                            container, name, connection_pool.os_auth_url)
                     except swiftclient.ClientException as e:
                         if e.http_status != 404:
-                            raise
-                log.debug3(
-                    'Deleted (%s, %s) from Swift (%s)',
-                    container, name, connection_pool.os_auth_url)
+                            log.exception(
+                                "Failed to delete (%s, %s) from Swift (%s)",
+                                container, name, connection_pool.os_auth_url)
                 removed_count += 1
 
     if next_wanted_content_id == content_id:
