@@ -101,11 +101,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
 
     def setUp(self):
-        """Set up BuilddSlaveTest.
-
-        Also adjust the sampledata in a way a build can be dispatched to
-        'bob' builder.
-        """
+        """Make it possible to dispatch builds."""
         super().setUp()
         # Creating the required chroots needed for dispatching.
         self.test_publisher = make_publisher()

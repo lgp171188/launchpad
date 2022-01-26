@@ -23,7 +23,7 @@ import sys
 import xmlrpc.client
 
 import fixtures
-from lpbuildd.tests.harness import BuilddSlaveTestSetup
+from lpbuildd.tests.harness import BuilddTestSetup
 from testtools.content import attach_file
 from twisted.internet import defer
 from twisted.web.xmlrpc import Proxy
@@ -284,8 +284,8 @@ class DeadProxy(Proxy):
         return defer.Deferred()
 
 
-class LPBuilddSlaveTestSetup(BuilddSlaveTestSetup):
-    """A BuilddSlaveTestSetup that uses the LP virtualenv."""
+class LPBuilddTestSetup(BuilddTestSetup):
+    """A BuilddTestSetup that uses the LP virtualenv."""
 
     def setUp(self):
         super().setUp(
@@ -297,15 +297,15 @@ class WorkerTestHelpers(fixtures.Fixture):
 
     @property
     def base_url(self):
-        """The URL for the XML-RPC service set up by `BuilddSlaveTestSetup`."""
-        return 'http://localhost:%d' % LPBuilddSlaveTestSetup().daemon_port
+        """The URL for the XML-RPC service set up by `BuilddTestSetup`."""
+        return 'http://localhost:%d' % LPBuilddTestSetup().daemon_port
 
     def getServerWorker(self):
         """Set up a test build worker server.
 
-        :return: A `BuilddSlaveTestSetup` object.
+        :return: A `BuilddTestSetup` object.
         """
-        tachandler = self.useFixture(LPBuilddSlaveTestSetup())
+        tachandler = self.useFixture(LPBuilddTestSetup())
         attach_file(
             self, tachandler.logfile, name='xmlrpc-log-file', buffer_now=False)
         return tachandler
@@ -314,7 +314,7 @@ class WorkerTestHelpers(fixtures.Fixture):
                         pool=None, process_pool=None):
         """Return a `BuilderWorker` for use in testing.
 
-        Points to a fixed URL that is also used by `BuilddSlaveTestSetup`.
+        Points to a fixed URL that is also used by `BuilddTestSetup`.
         """
         return BuilderWorker.makeBuilderWorker(
             self.base_url, 'vmhost', config.builddmaster.socket_timeout,
