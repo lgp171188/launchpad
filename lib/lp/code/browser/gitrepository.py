@@ -266,9 +266,9 @@ class GitRepositoryEditMenu(NavigationMenu):
         "reviewer",
         "permissions",
         "activity",
+        "access_tokens",
         "webhooks",
         "delete",
-        "access_tokens",
         ]
 
     @enabled_with_permission("launchpad.Edit")
@@ -287,6 +287,16 @@ class GitRepositoryEditMenu(NavigationMenu):
         return Link("+permissions", text, icon="edit")
 
     @enabled_with_permission("launchpad.Edit")
+    def activity(self):
+        text = "View activity"
+        return Link("+activity", text, icon="info")
+
+    @enabled_with_permission("launchpad.Edit")
+    def access_tokens(self):
+        text = "Manage access tokens"
+        return Link("+access-tokens", text, icon="edit")
+
+    @enabled_with_permission("launchpad.Edit")
     def webhooks(self):
         text = "Manage webhooks"
         return Link(
@@ -294,19 +304,9 @@ class GitRepositoryEditMenu(NavigationMenu):
             enabled=bool(getFeatureFlag('webhooks.new.enabled')))
 
     @enabled_with_permission("launchpad.Edit")
-    def activity(self):
-        text = "View activity"
-        return Link("+activity", text, icon="info")
-
-    @enabled_with_permission("launchpad.Edit")
     def delete(self):
         text = "Delete repository"
         return Link("+delete", text, icon="trash-icon")
-
-    @enabled_with_permission("launchpad.Edit")
-    def access_tokens(self):
-        text = "Edit access tokens"
-        return Link("+access-tokens", text, icon="edit")
 
 
 class GitRepositoryContextMenu(ContextMenu, HasRecipesMenuMixin):
