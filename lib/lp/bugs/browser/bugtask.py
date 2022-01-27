@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """IBugTask-related browser views."""
@@ -110,6 +110,7 @@ from lp.bugs.browser.widgets.bugtask import (
     BugTaskTargetWidget,
     DBItemDisplayWidget,
     )
+from lp.bugs.enums import BugLockStatus
 from lp.bugs.interfaces.bug import (
     IBug,
     IBugSet,
@@ -591,7 +592,7 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
             activity = self.context.bug.activity
         bug_change_re = (
             'affects|description|security vulnerability|information type|'
-            'summary|tags|visibility|bug task deleted')
+            'summary|tags|visibility|bug task deleted|lock status|lock reason')
         bugtask_change_re = (
             r'[a-z0-9][a-z0-9\+\.\-]+( \([A-Za-z0-9\s]+\))?: '
             r'(assignee|importance|milestone|status)')
@@ -2540,6 +2541,29 @@ class BugActivityItem:
                 else:
                     return_dict[key] = html_escape(return_dict[key])
 
+        elif attribute == 'lock status':
+            if self.newvalue == str(BugLockStatus.COMMENT_ONLY):
+                reason = " "
+                detail = (
+                    'Metadata changes locked{}and '
+                    'limited to project staff'
+                )
+                if self.message:
+                    reason = " ({}) ".format(html_escape(self.message))
+                return detail.format(reason)
+            else:
+                return 'Metadata changes unlocked'
+        elif attribute == 'lock reason':
+            if self.newvalue != "unset" and self.oldvalue != "unset":
+                # return a proper message with old and new values
+                return "{} &rarr; {}".format(
+                    html_escape(self.oldvalue), html_escape(self.newvalue)
+                )
+                pass
+            elif self.newvalue != "unset":
+                return "{}".format(self.newvalue)
+            else:
+                return "Unset"
         elif attribute == 'milestone':
             for key in return_dict:
                 if return_dict[key] is None:

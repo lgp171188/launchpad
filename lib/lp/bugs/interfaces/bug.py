@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces related to bugs."""
@@ -66,7 +66,11 @@ from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import IPrivacy
 from lp.app.validators.attachment import attachment_size_constraint
 from lp.app.validators.name import bug_name_validator
-from lp.bugs.enums import BugNotificationLevel
+from lp.bugs.enums import (
+    BugLockedStatus,
+    BugLockStatus,
+    BugNotificationLevel,
+    )
 from lp.bugs.interfaces.bugactivity import IBugActivity
 from lp.bugs.interfaces.bugattachment import IBugAttachment
 from lp.bugs.interfaces.bugbranch import IBugBranch
@@ -382,6 +386,21 @@ class IBugView(Interface):
             readonly=True,
             value_type=Reference(schema=IMessage)),
         exported_as='messages'))
+    lock_status = exported(
+        Choice(
+            title=_('Lock Status'), vocabulary=BugLockStatus,
+            default=BugLockStatus.UNLOCKED,
+            description=_("The lock status of this bug."),
+            readonly=True,
+            required=False),
+        as_of="devel")
+    lock_reason = exported(
+        Text(
+            title=_('Lock Reason'),
+            description=_('The reason for locking this bug.'),
+            readonly=True,
+            required=False),
+        as_of="devel")
 
     def getSpecifications(user):
         """List of related specifications that the user can view."""
@@ -978,9 +997,54 @@ class IBugAppend(Interface):
         Return None if no bugtask was edited.
         """
 
+class IBugModerate(Interface):
+    """IBug attributes that require the launchpad.Moderate permission."""
+
+    @operation_parameters(
+        status=copy_field(
+            IBugView['lock_status'],
+            vocabulary=BugLockedStatus,
+        ),
+        reason=copy_field(IBugView['lock_reason'])
+    )
+    @export_write_operation()
+    @call_with(who=REQUEST_USER)
+    @operation_for_version("devel")
+    def lock(who, status, reason=None):
+        """
+        Lock the bug metadata edits to the relevant roles.
+
+        :param status: The lock status of the bug - one of the values
+                       in the BugLockStatus enum.
+        :param reason: The reason for locking this bug.
+        :param who: The IPerson who is making the change.
+        """
+
+    @export_write_operation()
+    @call_with(who=REQUEST_USER)
+    @operation_for_version("devel")
+    def unlock(who):
+        """
+        Unlock the bug metadata edits to the default roles.
+
+        :param who: The IPerson who is making the change.
+        """
+
+    @mutator_for(IBugView['lock_reason'])
+    @operation_parameters(reason=copy_field(IBugView['lock_reason']))
+    @export_write_operation()
+    @call_with(who=REQUEST_USER)
+    @operation_for_version("devel")
+    def setLockReason(reason, who):
+        """Set the lock reason.
+
+            :reason: The reason for locking the bug.
+            :who: The IPerson who is making the change.
+        """
+
 
 @exported_as_webservice_entry()
-class IBug(IBugPublic, IBugView, IBugAppend, IHasLinkedBranches):
+class IBug(IBugPublic, IBugView, IBugAppend, IBugModerate, IHasLinkedBranches):
     """The core bug entry."""
 
     linked_bugbranches = exported(

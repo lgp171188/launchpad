@@ -1,17 +1,22 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for lp.bugs.model.Bug."""
 
 from datetime import timedelta
+import json
 
 from lazr.lifecycle.snapshot import Snapshot
+from testtools.matchers import MatchesStructure
 from zope.component import getUtility
 from zope.interface import providedBy
 from zope.security.management import checkPermission
 from zope.security.proxy import removeSecurityProxy
 
-from lp.bugs.enums import BugNotificationLevel
+from lp.bugs.enums import (
+    BugLockStatus,
+    BugNotificationLevel,
+    )
 from lp.bugs.interfaces.bug import (
     CreateBugParams,
     IBugSet,
@@ -24,15 +29,23 @@ from lp.bugs.interfaces.bugtask import (
     UserCannotEditBugTaskImportance,
     UserCannotEditBugTaskMilestone,
     )
+from lp.bugs.model.bug import (
+    CannotLockBug,
+    CannotSetLockReason,
+    )
 from lp.registry.tests.test_person import KarmaTestMixin
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
     admin_logged_in,
+    ANONYMOUS,
+    api_url,
     celebrity_logged_in,
     person_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.pages import webservice_for_person
 
 
 class TestBug(TestCaseWithFactory):
@@ -410,3 +423,426 @@ class TestBugPermissions(TestCaseWithFactory, KarmaTestMixin):
             person)
         with person_logged_in(person):
             self.assertTrue(checkPermission('launchpad.Edit', self.bug))
+
+
+class TestBugLocking(TestCaseWithFactory):
+    """
+    Tests for the bug locking functionality.
+    """
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.person = self.factory.makePerson()
+        self.target = self.factory.makeProduct()
+
+    def test_bug_lock_status_lock_reason_default_values(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        self.assertEqual(BugLockStatus.UNLOCKED, bug.lock_status)
+        self.assertIsNone(bug.lock_reason)
+
+    def test_bug_locking_when_bug_already_locked(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        with person_logged_in(self.target.owner):
+            bug.lock(who=self.target.owner, status=BugLockStatus.COMMENT_ONLY)
+            self.assertEqual(BugLockStatus.COMMENT_ONLY, bug.lock_status)
+            self.assertRaises(
+                CannotLockBug,
+                bug.lock,
+                who=self.target.owner,
+                status=BugLockStatus.COMMENT_ONLY
+            )
+            self.assertEqual(BugLockStatus.COMMENT_ONLY, bug.lock_status)
+
+    def test_bug_locking_with_a_reason_works(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        with person_logged_in(self.target.owner):
+            bug.lock(
+                who=self.person,
+                status=BugLockStatus.COMMENT_ONLY,
+                reason='too hot',
+            )
+            self.assertEqual('too hot', bug.lock_reason)
+
+    def test_updating_bug_lock_reason_not_set_before(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        with person_logged_in(self.target.owner):
+            bug.lock(who=self.person, status=BugLockStatus.COMMENT_ONLY)
+            self.assertIsNone(bug.lock_reason)
+            bug.setLockReason('too hot', who=self.target.owner)
+            self.assertEqual('too hot', bug.lock_reason)
+
+    def test_updating_existing_bug_lock_reason_to_none(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        with person_logged_in(self.target.owner):
+            bug.lock(
+                who=self.person,
+                status=BugLockStatus.COMMENT_ONLY,
+                reason='too hot',
+            )
+            self.assertEqual('too hot', bug.lock_reason)
+            bug.setLockReason(None, who=self.target.owner)
+            self.assertIsNone(bug.lock_reason)
+
+    def test_bug_unlocking_clears_the_reason(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        with person_logged_in(self.target.owner):
+            bug.lock(
+                who=self.person,
+                status=BugLockStatus.COMMENT_ONLY,
+                reason='too hot',
+            )
+            bug.unlock(who=self.person)
+            self.assertIsNone(bug.lock_reason)
+
+    def test_bug_locking_unlocking_adds_bug_activity_entries(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        self.assertEqual(1, bug.activity.count())
+        with person_logged_in(self.target.owner):
+            bug.lock(
+                who=self.target.owner,
+                status=BugLockStatus.COMMENT_ONLY,
+                reason='too hot'
+            )
+            self.assertEqual(2, bug.activity.count())
+            self.assertThat(
+                bug.activity[1],
+                MatchesStructure.byEquality(
+                    person=self.target.owner,
+                    whatchanged='lock status',
+                    oldvalue=str(BugLockStatus.UNLOCKED),
+                    newvalue=str(BugLockStatus.COMMENT_ONLY),
+                )
+            )
+            bug.unlock(who=self.target.owner)
+            self.assertEqual(3, bug.activity.count())
+            self.assertThat(
+                bug.activity[2],
+                MatchesStructure.byEquality(
+                    person=self.target.owner,
+                    whatchanged='lock status',
+                    oldvalue=str(BugLockStatus.COMMENT_ONLY),
+                    newvalue=str(BugLockStatus.UNLOCKED),
+                )
+            )
+
+    def test_cannot_set_lock_reason_for_an_unlocked_bug(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        with person_logged_in(self.target.owner):
+            self.assertRaises(
+                CannotSetLockReason,
+                bug.setLockReason,
+                'too hot',
+                who=self.target.owner
+            )
+
+    def test_edit_permission_restrictions_when_a_bug_is_locked(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        another_person = self.factory.makePerson()
+
+        with person_logged_in(self.target.owner):
+            bug.lock(who=self.target.owner, status=BugLockStatus.COMMENT_ONLY)
+
+        self.assertEqual(BugLockStatus.COMMENT_ONLY, bug.lock_status)
+
+        # A user without the relevant role cannot edit a locked bug.
+        with person_logged_in(another_person):
+            self.assertFalse(checkPermission('launchpad.Edit', bug))
+
+        # The bug reporter cannot edit a locked bug.
+        with person_logged_in(self.person):
+            self.assertFalse(checkPermission('launchpad.Edit', bug))
+
+        # Target driver can edit a locked bug.
+        new_person = self.factory.makePerson()
+        removeSecurityProxy(bug.default_bugtask.target).driver = new_person
+        with person_logged_in(new_person):
+            self.assertTrue(checkPermission('launchpad.Edit', bug))
+
+        # Admins can edit a locked bug.
+        with admin_logged_in():
+            self.assertTrue(checkPermission('launchpad.Edit', bug))
+
+        # Commercial admins can edit a locked bug.
+        with celebrity_logged_in('commercial_admin'):
+            self.assertTrue(checkPermission('launchpad.Edit', bug))
+
+        # Registry experts can edit a locked bug.
+        with celebrity_logged_in('registry_experts'):
+            self.assertTrue(checkPermission('launchpad.Edit', bug))
+
+
+    def test_only_those_with_moderate_permission_can_lock_unlock_a_bug(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        another_person = self.factory.makePerson()
+
+        # Unauthenticated person cannot moderate a bug.
+        self.assertFalse(checkPermission('launchpad.Moderate', bug))
+
+        # A user without the relevant role cannot moderate a bug.
+        with person_logged_in(another_person):
+            self.assertFalse(checkPermission('launchpad.Moderate', bug))
+
+        # The bug reporter cannot moderate a bug.
+        with person_logged_in(self.person):
+            self.assertFalse(checkPermission('launchpad.Moderate', bug))
+
+        # Admins can moderate a bug.
+        with admin_logged_in():
+            self.assertTrue(checkPermission('launchpad.Moderate', bug))
+
+        # Commercial admins can moderate a bug.
+        with celebrity_logged_in('commercial_admin'):
+            self.assertTrue(checkPermission('launchpad.Moderate', bug))
+
+        # Registry experts can moderate a bug.
+        with celebrity_logged_in('registry_experts'):
+            self.assertTrue(checkPermission('launchpad.Moderate', bug))
+
+        # Target owner can moderate a bug.
+        with person_logged_in(
+                removeSecurityProxy(bug.default_bugtask.target).owner
+        ):
+            self.assertTrue(checkPermission('launchpad.Moderate', bug))
+
+        # Target driver can moderate a bug.
+        new_person = self.factory.makePerson()
+        removeSecurityProxy(bug.default_bugtask.target).driver = new_person
+        with person_logged_in(new_person):
+            self.assertTrue(checkPermission('launchpad.Moderate', bug))
+
+        yet_another_person = self.factory.makePerson()
+        removeSecurityProxy(
+            bug.default_bugtask.target
+        ).bug_supervisor = yet_another_person
+        with person_logged_in(yet_another_person):
+            self.assertTrue(checkPermission('launchpad.Moderate', bug))
+
+
+class TestBugLockingWebService(TestCaseWithFactory):
+    """Tests for the bug locking and unlocking web service methods."""
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.person = self.factory.makePerson()
+        self.target = self.factory.makeProduct()
+
+    def test_bug_lock_status_invalid_values(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        invalid_values_list = ["test", 1.23, 123, "Unlocked"]
+        webservice = webservice_for_person(
+            self.target.owner,
+            permission=OAuthPermission.WRITE_PRIVATE
+        )
+        bug_url = api_url(bug)
+        webservice.default_api_version = "devel"
+        for invalid_value in invalid_values_list:
+            response = webservice.named_post(
+                bug_url, 'lock', status=invalid_value
+            )
+            self.assertEqual(400, response.status)
+
+    def test_who_value_for_lock_is_correctly_set(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        self.assertEqual(bug.activity.count(), 1)
+        self.assertEqual(BugLockStatus.UNLOCKED, bug.lock_status)
+
+        bug_url = api_url(bug)
+        webservice = webservice_for_person(
+            self.target.owner,
+            permission=OAuthPermission.WRITE_PRIVATE
+        )
+        webservice.default_api_version = "devel"
+
+        response = webservice.named_post(
+            bug_url, 'lock', status="Comment-only",
+        )
+        self.assertEqual(200, response.status)
+
+        with person_logged_in(ANONYMOUS):
+            self.assertEqual(2, bug.activity.count())
+            self.assertThat(
+                bug.activity[1],
+                MatchesStructure.byEquality(
+                    person=self.target.owner,
+                    whatchanged='lock status',
+                    oldvalue=str(BugLockStatus.UNLOCKED),
+                    newvalue=str(BugLockStatus.COMMENT_ONLY)
+                )
+            )
+
+    def test_who_value_for_unlock_is_correctly_set(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        self.assertEqual(1, bug.activity.count())
+        with person_logged_in(self.target.owner):
+            bug.lock(who=self.target.owner, status=BugLockStatus.COMMENT_ONLY)
+        self.assertEqual(2, bug.activity.count())
+        bug_url = api_url(bug)
+        webservice = webservice_for_person(
+            self.target.owner,
+            permission=OAuthPermission.WRITE_PRIVATE
+        )
+        webservice.default_api_version = "devel"
+
+        response = webservice.named_post(
+            bug_url, 'unlock'
+        )
+        self.assertEqual(200, response.status)
+        with person_logged_in(ANONYMOUS):
+            self.assertEqual(3, bug.activity.count())
+            self.assertThat(
+                bug.activity[2],
+                MatchesStructure.byEquality(
+                    person=self.target.owner,
+                    whatchanged='lock status',
+                    oldvalue=str(BugLockStatus.COMMENT_ONLY),
+                    newvalue=str(BugLockStatus.UNLOCKED),
+                )
+            )
+
+    def test_lock_status_lock_reason_values_unlocked_bug(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        bug_url = api_url(bug)
+
+        webservice = webservice_for_person(
+            self.target.owner,
+            permission=OAuthPermission.WRITE_PRIVATE
+        )
+        webservice.default_api_version = 'devel'
+
+        response = webservice.get(bug_url)
+        self.assertEqual(200, response.status)
+        response_json = response.jsonBody()
+        self.assertEqual(
+            str(BugLockStatus.UNLOCKED),
+            response_json['lock_status']
+        )
+        self.assertIsNone(response_json['lock_reason'])
+
+    def test_lock_status_lock_reason_values_after_locking(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        bug_url = api_url(bug)
+
+        with person_logged_in(self.target.owner):
+            bug.lock(
+                who=self.target.owner,
+                status=BugLockStatus.COMMENT_ONLY,
+                reason='too hot'
+            )
+
+        webservice = webservice_for_person(
+            self.target.owner,
+            permission=OAuthPermission.WRITE_PRIVATE
+        )
+        webservice.default_api_version = 'devel'
+
+        response = webservice.get(bug_url)
+        self.assertEqual(200, response.status)
+        response_json = response.jsonBody()
+        self.assertEqual(
+            str(BugLockStatus.COMMENT_ONLY),
+            response_json['lock_status']
+        )
+        self.assertEqual(
+            response_json['lock_reason'],
+            'too hot'
+        )
+
+    def test_setting_lock_reason_for_an_unlocked_bug(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        bug_url = api_url(bug)
+        webservice = webservice_for_person(
+            self.target.owner,
+            permission=OAuthPermission.WRITE_PRIVATE
+        )
+        webservice.default_api_version = 'devel'
+
+        response = webservice.patch(
+            bug_url, "application/json",
+            json.dumps({'lock_reason': 'too hot'})
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=400,
+                body=b'Lock reason cannot be set for an unlocked bug.'
+            )
+        )
+
+    def test_setting_lock_reason_for_a_locked_bug_without_a_reason(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        with person_logged_in(self.target.owner):
+            bug.lock(who=self.target.owner, status=BugLockStatus.COMMENT_ONLY)
+
+        self.assertEqual(BugLockStatus.COMMENT_ONLY, bug.lock_status)
+        self.assertIsNone(bug.lock_reason)
+
+        bug_url = api_url(bug)
+        webservice = webservice_for_person(
+            self.target.owner,
+            permission=OAuthPermission.WRITE_PRIVATE
+        )
+        webservice.default_api_version = 'devel'
+
+        response = webservice.patch(
+            bug_url, "application/json",
+            json.dumps({'lock_reason': 'too hot'})
+        )
+        self.assertEqual(209, response.status)
+        self.assertEqual('too hot', response.jsonBody()['lock_reason'])
+
+
+    def test_setting_lock_reason_for_a_locked_bug_with_a_reason(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        with person_logged_in(self.target.owner):
+            bug.lock(
+                who=self.target.owner,
+                status=BugLockStatus.COMMENT_ONLY,
+                reason='too hot'
+            )
+
+        self.assertEqual(BugLockStatus.COMMENT_ONLY, bug.lock_status)
+        self.assertEqual('too hot', bug.lock_reason)
+
+        bug_url = api_url(bug)
+        webservice = webservice_for_person(
+            self.target.owner,
+            permission=OAuthPermission.WRITE_PRIVATE
+        )
+        webservice.default_api_version = 'devel'
+
+        response = webservice.patch(
+            bug_url, "application/json",
+            json.dumps({'lock_reason': 'too hot!'})
+        )
+        self.assertEqual(209, response.status)
+        self.assertEqual('too hot!', response.jsonBody()['lock_reason'])
+
+    def test_removing_lock_reason_for_a_locked_bug_with_a_reason(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        with person_logged_in(self.target.owner):
+            bug.lock(
+                who=self.target.owner,
+                status=BugLockStatus.COMMENT_ONLY,
+                reason='too hot'
+            )
+
+        self.assertEqual(BugLockStatus.COMMENT_ONLY, bug.lock_status)
+        self.assertEqual('too hot', bug.lock_reason)
+
+        bug_url = api_url(bug)
+        webservice = webservice_for_person(
+            self.target.owner,
+            permission=OAuthPermission.WRITE_PRIVATE
+        )
+        webservice.default_api_version = 'devel'
+
+        response = webservice.patch(
+            bug_url, "application/json",
+            json.dumps({'lock_reason': None})
+        )
+        self.assertEqual(209, response.status)
+        self.assertEqual(None, response.jsonBody()['lock_reason'])
