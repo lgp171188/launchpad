@@ -299,7 +299,7 @@ class TestDispatchBuildToWorker(StatsMixin, TestCase):
 class TestGetUploadMethodsMixin:
     """Tests for `IPackageBuild` that need objects from the rest of LP."""
 
-    layer = LaunchpadZopelessLayer
+    layer = ZopelessDatabaseLayer
 
     def makeBuild(self):
         """Allow classes to override the build with which the test runs."""
@@ -323,7 +323,7 @@ class TestGetUploadMethodsMixin:
 class TestVerifySuccessfulBuildMixin:
     """Tests for `IBuildFarmJobBehaviour`'s verifySuccessfulBuild method."""
 
-    layer = LaunchpadZopelessLayer
+    layer = ZopelessDatabaseLayer
 
     def makeBuild(self):
         """Allow classes to override the build with which the test runs."""
@@ -332,10 +332,6 @@ class TestVerifySuccessfulBuildMixin:
     def makeUnmodifiableBuild(self):
         """Allow classes to override the build with which the test runs."""
         raise NotImplementedError
-
-    def setUp(self):
-        super().setUp()
-        self.factory = LaunchpadObjectFactory()
 
     def test_verifySuccessfulBuild_allows_modifiable_suite(self):
         # verifySuccessfulBuild allows uploading to a suite that the archive

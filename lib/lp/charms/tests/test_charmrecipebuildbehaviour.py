@@ -25,7 +25,6 @@ from testtools.matchers import (
 from testtools.twistedsupport import (
     AsynchronousDeferredRunTestForBrokenTwisted,
     )
-import transaction
 from twisted.internet import defer
 from zope.component import getUtility
 from zope.proxy import isProxy
@@ -85,11 +84,12 @@ from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.keyserver import InProcessKeyServerFixture
-from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestCharmRecipeBuildBehaviourBase(TestCaseWithFactory):
-    layer = LaunchpadZopelessLayer
+
+    layer = ZopelessDatabaseLayer
 
     def setUp(self):
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
@@ -116,7 +116,6 @@ class TestCharmRecipeBuildBehaviourBase(TestCaseWithFactory):
 
 
 class TestCharmRecipeBuildBehaviour(TestCharmRecipeBuildBehaviourBase):
-    layer = LaunchpadZopelessLayer
 
     def test_provides_interface(self):
         # CharmRecipeBuildBehaviour provides IBuildFarmJobBehaviour.
@@ -133,8 +132,7 @@ class TestCharmRecipeBuildBehaviour(TestCharmRecipeBuildBehaviourBase):
         # verifyBuildRequest doesn't raise any exceptions when called with a
         # valid builder set.
         job = self.makeJob()
-        lfa = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder()
         job.setBuilder(builder, OkWorker())
@@ -146,8 +144,7 @@ class TestCharmRecipeBuildBehaviour(TestCharmRecipeBuildBehaviourBase):
         # verifyBuildRequest raises on an attempt to build a virtualized
         # build on a non-virtual builder.
         job = self.makeJob()
-        lfa = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder(virtualized=False)
         job.setBuilder(builder, OkWorker())

@@ -9,7 +9,6 @@ import os.path
 import pytz
 from testtools.matchers import MatchesListwise
 from testtools.twistedsupport import AsynchronousDeferredRunTest
-import transaction
 from twisted.internet import defer
 from zope.component import getUtility
 from zope.security.proxy import Proxy
@@ -57,12 +56,12 @@ from lp.soyuz.tests.soyuz import Base64KeyMatches
 from lp.testing import TestCaseWithFactory
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.keyserver import InProcessKeyServerFixture
-from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestLiveFSBuildBehaviourBase(TestCaseWithFactory):
 
-    layer = LaunchpadZopelessLayer
+    layer = ZopelessDatabaseLayer
 
     def setUp(self):
         super().setUp()
@@ -109,8 +108,7 @@ class TestLiveFSBuildBehaviour(TestLiveFSBuildBehaviourBase):
         # verifyBuildRequest doesn't raise any exceptions when called with a
         # valid builder set.
         job = self.makeJob()
-        lfa = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder()
         job.setBuilder(builder, OkWorker())
@@ -122,8 +120,7 @@ class TestLiveFSBuildBehaviour(TestLiveFSBuildBehaviourBase):
         # verifyBuildRequest raises on an attempt to build a virtualized
         # build on a non-virtual builder.
         job = self.makeJob()
-        lfa = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder(virtualized=False)
         job.setBuilder(builder, OkWorker())
@@ -136,8 +133,7 @@ class TestLiveFSBuildBehaviour(TestLiveFSBuildBehaviourBase):
         archive = self.factory.makeArchive(
             enabled=False, displayname="Disabled Archive")
         job = self.makeJob(archive=archive)
-        lfa = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder()
         job.setBuilder(builder, OkWorker())
@@ -149,8 +145,7 @@ class TestLiveFSBuildBehaviour(TestLiveFSBuildBehaviourBase):
         archive = self.factory.makeArchive(private=True)
         job = self.makeJob(
             archive=archive, registrant=archive.owner, owner=archive.owner)
-        lfa = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder()
         job.setBuilder(builder, OkWorker())
@@ -161,8 +156,7 @@ class TestLiveFSBuildBehaviour(TestLiveFSBuildBehaviourBase):
     def test_verifyBuildRequest_archive_private_owners_mismatch(self):
         archive = self.factory.makeArchive(private=True)
         job = self.makeJob(archive=archive)
-        lfa = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder()
         job.setBuilder(builder, OkWorker())

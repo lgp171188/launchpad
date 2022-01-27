@@ -56,13 +56,16 @@ from lp.testing import (
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.keyserver import InProcessKeyServerFixture
-from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.layers import (
+    LaunchpadZopelessLayer,
+    ZopelessDatabaseLayer,
+    )
 from lp.testing.mail_helpers import pop_notifications
 
 
 class TestRecipeBuilderBase(TestCaseWithFactory):
 
-    layer = LaunchpadZopelessLayer
+    layer = ZopelessDatabaseLayer
 
     def makeJob(self, recipe_registrant=None, recipe_owner=None,
                 archive=None, git=False, with_builder=False):
@@ -381,7 +384,7 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
     def test_composeBuildRequest(self):
         job = self.makeJob(with_builder=True)
         test_publisher = SoyuzTestPublisher()
-        test_publisher.addFakeChroots(job.build.distroseries)
+        test_publisher.addFakeChroots(job.build.distroseries, db_only=True)
         das = job.build.distroseries.nominatedarchindep
         build_request = yield job.composeBuildRequest(None)
         extra_args = yield job.extraBuildArgs()
