@@ -203,10 +203,10 @@ class MilestoneData:
         """The list of non-conjoined bugtasks targeted to this milestone."""
         # Put the results in a list so that iterating over it multiple
         # times in this method does not make multiple queries.
-        non_conjoined_slaves = list(
+        non_conjoined_replicas = list(
             getUtility(IBugTaskSet).getPrecachedNonConjoinedBugTasks(
                 user, self))
-        return non_conjoined_slaves
+        return non_conjoined_replicas
 
 
 @implementer(IHasBugs, IMilestone, IBugSummaryDimension)

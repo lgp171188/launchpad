@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """IBugTask-related browser views."""
@@ -110,6 +110,7 @@ from lp.bugs.browser.widgets.bugtask import (
     BugTaskTargetWidget,
     DBItemDisplayWidget,
     )
+from lp.bugs.enums import BugLockStatus
 from lp.bugs.interfaces.bug import (
     IBug,
     IBugSet,
@@ -591,7 +592,7 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
             activity = self.context.bug.activity
         bug_change_re = (
             'affects|description|security vulnerability|information type|'
-            'summary|tags|visibility|bug task deleted')
+            'summary|tags|visibility|bug task deleted|lock status|lock reason')
         bugtask_change_re = (
             r'[a-z0-9][a-z0-9\+\.\-]+( \([A-Za-z0-9\s]+\))?: '
             r'(assignee|importance|milestone|status)')
@@ -1937,17 +1938,17 @@ class BugTasksTableView(LaunchpadView):
                 ))
 
     def _getTableRowView(self, context, is_converted_to_question,
-                         is_conjoined_slave):
+                         is_conjoined_replica):
         """Get the view for the context, and initialize it.
 
-        The view's is_conjoined_slave and is_converted_to_question
+        The view's is_conjoined_replica and is_converted_to_question
         attributes are set, as well as the edit view.
         """
         view = getMultiAdapter(
             (context, self.request),
             name='+bugtasks-and-nominations-table-row')
         view.is_converted_to_question = is_converted_to_question
-        view.is_conjoined_slave = is_conjoined_slave
+        view.is_conjoined_replica = is_conjoined_replica
 
         view.edit_view = getMultiAdapter(
             (context, self.request), name='+edit-form')
@@ -1991,7 +1992,7 @@ class BugTasksTableView(LaunchpadView):
             list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
                 ids, need_validity=True))
 
-        # Build a cache we can pass on to getConjoinedMaster(), so that
+        # Build a cache we can pass on to getConjoinedPrimary(), so that
         # it doesn't have to iterate over all the bug tasks in each loop
         # iteration.
         bugtasks_by_package = bug.getBugTasksByPackageName(all_bugtasks)
@@ -2017,11 +2018,11 @@ class BugTasksTableView(LaunchpadView):
                         (parent, self.request),
                         name='+bugtasks-and-nominations-table-row'))
 
-            conjoined_master = bugtask.getConjoinedMaster(
+            conjoined_primary = bugtask.getConjoinedPrimary(
                 all_bugtasks, bugtasks_by_package)
             view = self._getTableRowView(
                 bugtask, is_converted_to_question,
-                conjoined_master is not None)
+                conjoined_primary is not None)
             bugtask_and_nomination_views.append(view)
             target = bugtask.product or bugtask.distribution
             if not target:
@@ -2042,7 +2043,7 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
                           BugTaskPrivilegeMixin):
     """Browser class for rendering a bugtask row on the bug page."""
 
-    is_conjoined_slave = None
+    is_conjoined_replica = None
     is_converted_to_question = None
     target_link_title = None
     many_bugtasks = False
@@ -2074,7 +2075,7 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
             # time.
             expandable=(not self.many_bugtasks and self.canSeeTaskDetails()),
             indent_task=ISeriesBugTarget.providedBy(self.context.target),
-            is_conjoined_slave=self.is_conjoined_slave,
+            is_conjoined_replica=self.is_conjoined_replica,
             task_link=task_link,
             edit_link=edit_link,
             can_edit=can_edit,
@@ -2112,13 +2113,13 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
         It is independent of whether they can *change* the status; you
         need to expand the details to see any milestone set.
         """
-        assert self.is_conjoined_slave is not None, (
-            'is_conjoined_slave should be set before rendering the page.')
+        assert self.is_conjoined_replica is not None, (
+            'is_conjoined_replica should be set before rendering the page.')
         assert self.is_converted_to_question is not None, (
             'is_converted_to_question should be set before rendering the'
             ' page.')
         return (self.displayEditForm() and
-                not self.is_conjoined_slave and
+                not self.is_conjoined_replica and
                 self.context.bug.duplicateof is None and
                 not self.is_converted_to_question)
 
@@ -2133,9 +2134,9 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
         """Get the series to which this task is targeted."""
         return self._getSeriesTargetNameHelper(self.context)
 
-    def getConjoinedMasterName(self):
-        """Get the conjoined master's name for displaying."""
-        return self._getSeriesTargetNameHelper(self.context.conjoined_master)
+    def getConjoinedPrimaryName(self):
+        """Get the conjoined primary's name for displaying."""
+        return self._getSeriesTargetNameHelper(self.context.conjoined_primary)
 
     @property
     def bugtask_icon(self):
@@ -2540,6 +2541,29 @@ class BugActivityItem:
                 else:
                     return_dict[key] = html_escape(return_dict[key])
 
+        elif attribute == 'lock status':
+            if self.newvalue == str(BugLockStatus.COMMENT_ONLY):
+                reason = " "
+                detail = (
+                    'Metadata changes locked{}and '
+                    'limited to project staff'
+                )
+                if self.message:
+                    reason = " ({}) ".format(html_escape(self.message))
+                return detail.format(reason)
+            else:
+                return 'Metadata changes unlocked'
+        elif attribute == 'lock reason':
+            if self.newvalue != "unset" and self.oldvalue != "unset":
+                # return a proper message with old and new values
+                return "{} &rarr; {}".format(
+                    html_escape(self.oldvalue), html_escape(self.newvalue)
+                )
+                pass
+            elif self.newvalue != "unset":
+                return "{}".format(self.newvalue)
+            else:
+                return "Unset"
         elif attribute == 'milestone':
             for key in return_dict:
                 if return_dict[key] is None:

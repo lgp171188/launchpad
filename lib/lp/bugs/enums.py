@@ -1,9 +1,11 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Enums for the Bugs app."""
 
 __all__ = [
+    'BugLockedStatus',
+    'BugLockStatus',
     'BugNotificationLevel',
     'BugNotificationStatus',
     ]
@@ -11,6 +13,7 @@ __all__ = [
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
+    use_template,
     )
 
 
@@ -74,3 +77,29 @@ class BugNotificationStatus(DBEnumeratedType):
         The notification is deferred.  The recipient list was not calculated
         at creation time but is done when processed.
         """)
+
+
+class BugLockStatus(DBEnumeratedType):
+    """
+    The lock status of a bug.
+    """
+
+    UNLOCKED = DBItem(0, """
+        Unlocked
+
+        The bug is unlocked and the usual permissions apply.
+        """)
+
+    COMMENT_ONLY = DBItem(1, """
+        Comment-only
+
+        The bug allows those without a relevant role to comment,
+        but not to edit metadata.
+        """)
+
+
+class BugLockedStatus(DBEnumeratedType):
+    """
+    The various locked status values of a bug.
+    """
+    use_template(BugLockStatus, exclude=('UNLOCKED',))

@@ -1770,7 +1770,7 @@ class Test_getAssignedBugTasksDueBefore(TestCaseWithFactory):
 
             self.assertEqual(private_bug2.bugtasks, bugtasks)
 
-    def test_skips_distroseries_task_that_is_a_conjoined_master(self):
+    def test_skips_distroseries_task_that_is_a_conjoined_primary(self):
         distroseries = self.factory.makeDistroSeries()
         sourcepackagename = self.factory.makeSourcePackageName()
         sp = distroseries.getSourcePackage(sourcepackagename.name)
@@ -1780,38 +1780,38 @@ class Test_getAssignedBugTasksDueBefore(TestCaseWithFactory):
             milestone=milestone, target=sp.distribution_sourcepackage)
         removeSecurityProxy(bug).addTask(bug.owner, sp)
         self.assertEqual(2, len(bug.bugtasks))
-        slave, master = bug.bugtasks
-        self._assignBugTaskToTeamOwner(master)
-        self.assertEqual(None, master.conjoined_master)
-        self.assertEqual(master, slave.conjoined_master)
-        self.assertEqual(slave.milestone, master.milestone)
-        self.assertEqual(slave.assignee, master.assignee)
+        replica, primary = bug.bugtasks
+        self._assignBugTaskToTeamOwner(primary)
+        self.assertEqual(None, primary.conjoined_primary)
+        self.assertEqual(primary, replica.conjoined_primary)
+        self.assertEqual(replica.milestone, primary.milestone)
+        self.assertEqual(replica.assignee, primary.assignee)
 
         bugtasks = list(self.team.getAssignedBugTasksDueBefore(
             self.today + timedelta(days=1), user=None))
 
-        self.assertEqual([slave], bugtasks)
+        self.assertEqual([replica], bugtasks)
 
-    def test_skips_productseries_task_that_is_a_conjoined_master(self):
+    def test_skips_productseries_task_that_is_a_conjoined_primary(self):
         milestone = self.factory.makeMilestone(dateexpected=self.today)
         removeSecurityProxy(milestone.product).development_focus = (
             milestone.productseries)
         bug = self.factory.makeBug(
             series=milestone.productseries, milestone=milestone)
         self.assertEqual(2, len(bug.bugtasks))
-        slave, master = bug.bugtasks
+        replica, primary = bug.bugtasks
 
         # This will cause the assignee to propagate to the other bugtask as
         # well since they're conjoined.
-        self._assignBugTaskToTeamOwner(slave)
-        self.assertEqual(master, slave.conjoined_master)
-        self.assertEqual(slave.milestone, master.milestone)
-        self.assertEqual(slave.assignee, master.assignee)
+        self._assignBugTaskToTeamOwner(replica)
+        self.assertEqual(primary, replica.conjoined_primary)
+        self.assertEqual(replica.milestone, primary.milestone)
+        self.assertEqual(replica.assignee, primary.assignee)
 
         bugtasks = list(self.team.getAssignedBugTasksDueBefore(
             self.today + timedelta(days=1), user=None))
 
-        self.assertEqual([slave], bugtasks)
+        self.assertEqual([replica], bugtasks)
 
     def _assignBugTaskToTeamOwnerAndSetMilestone(self, task, milestone):
         self._assignBugTaskToTeamOwner(task)

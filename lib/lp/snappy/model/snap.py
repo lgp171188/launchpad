@@ -1,4 +1,4 @@
-# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -297,9 +297,19 @@ class SnapBuildRequest:
         return self._job.builds
 
     @property
+    def requester(self):
+        """See `ISnapBuildRequest`."""
+        return self._job.requester
+
+    @property
     def archive(self):
         """See `ISnapBuildRequest`."""
         return self._job.archive
+
+    @property
+    def pocket(self):
+        """See `ISnapBuildRequest`."""
+        return self._job.pocket
 
     @property
     def channels(self):
@@ -1722,11 +1732,17 @@ class SnapSet:
     def makeAutoBuilds(cls, logger=None):
         """See `ISnapSet`."""
         snaps = cls._findStaleSnaps()
-        builds = []
+        build_requests = []
         for snap in snaps:
-            builds.extend(snap.requestAutoBuilds(
-                allow_failures=True, fetch_snapcraft_yaml=True, logger=logger))
-        return builds
+            snap.is_stale = False
+            if logger is not None:
+                logger.debug(
+                    "Scheduling builds of snap package %s/%s",
+                    snap.owner.name, snap.name)
+            build_requests.append(snap.requestBuilds(
+                snap.owner, snap.auto_build_archive, snap.auto_build_pocket,
+                channels=snap.auto_build_channels))
+        return build_requests
 
     def detachFromBranch(self, branch):
         """See `ISnapSet`."""

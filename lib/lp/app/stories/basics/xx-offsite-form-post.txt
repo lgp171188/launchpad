@@ -15,12 +15,11 @@ functionality:
     >>> class BrowserWithReferrer(Browser):
     ...     def __init__(self, referrer):
     ...         self._referrer = referrer
-    ...         super(BrowserWithReferrer, self).__init__()
+    ...         super().__init__()
     ...
     ...     @contextmanager
     ...     def _preparedRequest(self, url):
-    ...         with super(BrowserWithReferrer, self)._preparedRequest(
-    ...                 url) as reqargs:
+    ...         with super()._preparedRequest(url) as reqargs:
     ...             reqargs["headers"] = [
     ...                 (key, value) for key, value in reqargs["headers"]
     ...                 if key.lower() != "referer"]

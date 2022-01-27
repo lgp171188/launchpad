@@ -27,8 +27,10 @@ from six.moves.urllib.parse import urljoin
 from storm.store import Store
 from swiftclient import client as swiftclient
 from testtools.matchers import (
+    AnyMatch,
     Equals,
     MatchesListwise,
+    MatchesRegex,
     )
 import transaction
 
@@ -758,6 +760,28 @@ class TestSwiftLibrarianGarbageCollection(
                 except swiftclient.ClientException as x:
                     if x.http_status != 404:
                         raise
+
+    def test_DeleteUnreferencedContent_handles_timeout(self):
+        # If delete_unreferenced_content times out trying to delete a file
+        # from Swift, it logs an error and moves on.
+
+        # Merge the duplicates. This creates an
+        # unreferenced LibraryFileContent.
+        librariangc.merge_duplicates(self.con)
+
+        # Force a timeout from the Swift fixture.
+        self.pushConfig(
+            'librarian_server', os_username='timeout', swift_timeout=0.1)
+        swift.reconfigure_connection_pools()
+
+        # Delete unreferenced content.
+        librariangc.delete_unreferenced_content(self.con)
+
+        # We logged an error message.
+        self.assertThat(
+            librariangc.log.getLogBuffer().splitlines(),
+            AnyMatch(
+                MatchesRegex(r'^ERROR Failed to delete .* from Swift .*')))
 
     def test_delete_unwanted_files_handles_segments(self):
         # Large files are handled by Swift as multiple segments joined

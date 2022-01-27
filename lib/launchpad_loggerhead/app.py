@@ -120,8 +120,7 @@ class RootApp:
         """
         openid_request = self._make_consumer(environ).begin(
             config.launchpad.openid_provider_root)
-        openid_request.addExtension(
-            SRegRequest(required=[u'nickname']))
+        openid_request.addExtension(SRegRequest(required=['nickname']))
         back_to = construct_url(environ)
         raise HTTPMovedPermanently(openid_request.redirectURL(
             config.codehosting.secure_codebrowse_root,

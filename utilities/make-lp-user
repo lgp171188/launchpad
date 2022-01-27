@@ -103,12 +103,12 @@ def add_ssh_public_keys(person):
     key_set = getUtility(ISSHKeySet)
     for filename in ('id_rsa.pub', 'id_dsa.pub'):
         try:
-            public_key_file = open(os.path.join(ssh_dir, filename), 'r')
+            public_key_file = open(os.path.join(ssh_dir, filename))
             try:
                 public_key = public_key_file.read()
             finally:
                 public_key_file.close()
-        except (OSError, IOError):
+        except OSError:
             continue
         key_set.new(person, public_key)
         print('Registered SSH key: %s' % (filename,))

@@ -14,7 +14,7 @@ NS = "https://launchpad.net/xmlns/2006/bugs"
 def norm_text(elem):
     if elem is not None:
         if elem.text is None:
-            elem.text = u""
+            elem.text = ""
         else:
             elem.text = elem.text.strip()
 
@@ -26,7 +26,7 @@ def truncate(text, message=None):
             message = "[Truncated]"
         else:
             message = "[Truncated; %s]" % message
-        return u"%s...\n\n%s" % (
+        return "%s...\n\n%s" % (
             "\n".join(lines[:30]).strip(), message)
     else:
         return text
@@ -97,7 +97,7 @@ def massage(root, project_name, fix_nickname, tag_nickname):
 
         # Change the nickname.
         if nickname.text is None or fix_nickname:
-            nickname.text = u"%s-%s" % (project_name, bug.get('id'))
+            nickname.text = "%s-%s" % (project_name, bug.get('id'))
 
         # Resolve duplicateof, if it exists.
         if bug.get("id") in duplicates:
@@ -117,11 +117,11 @@ def massage(root, project_name, fix_nickname, tag_nickname):
             if first_comment_text is None:
                 problem_detail("No comments!")
                 problem_resolution("Setting description to '-'.")
-                description.text = u'-'
+                description.text = '-'
             elif len(first_comment_text.text) == 0:
                 problem_detail("First comment has no text!")
                 problem_resolution("Setting description to '-'.")
-                description.text = u'-'
+                description.text = '-'
             else:
                 problem_detail("First comment has text.")
                 problem_resolution("Removing description.")
@@ -159,7 +159,7 @@ def massage(root, project_name, fix_nickname, tag_nickname):
                 problem(
                     "Bug %s's first comment has no text." % bug.get('id'))
                 problem_resolution("Setting comment text to '-'.")
-                first_comment_text.text = u'-'
+                first_comment_text.text = '-'
                 problem_resolved()
             elif len(first_comment_text.text) > 50000:
                 problem(
@@ -170,12 +170,12 @@ def massage(root, project_name, fix_nickname, tag_nickname):
                 attachment = etree.SubElement(
                     first_comment, '{%s}attachment' % NS)
                 etree.SubElement(attachment, '{%s}filename' % NS).text = (
-                    u"%s-bug-%s-full-description.txt" % (
+                    "%s-bug-%s-full-description.txt" % (
                         project_name, bug.get('id')))
                 etree.SubElement(attachment, '{%s}title' % NS).text = (
-                    u"Full description (text/plain, utf-8)")
+                    "Full description (text/plain, utf-8)")
                 etree.SubElement(attachment, '{%s}mimetype' % NS).text = (
-                    u"text/plain")
+                    "text/plain")
                 etree.SubElement(attachment, '{%s}contents' % NS).text = (
                     standard_b64encode(
                         first_comment_text.text.encode('utf-8')

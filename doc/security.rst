@@ -80,3 +80,34 @@ In this example, the ``EditByOwner`` adapter's ``checkAuthenticated`` method
 will be called to determine if the currently authenticated user is
 authorized to access whatever is protected by ``launchpad.Edit`` on an
 ``IProduct``.
+
+The available permission directives are not well-documented by
+``zope.security``, so here's a summary:
+
+``<allow interface="..."/>``
+    The attributes and methods of this class that appear in the listed
+    interface may be publicly accessed.
+
+``<allow attributes="..."/>``
+    The named attributes and methods of this class may be publicly accessed.
+
+``<require permission="..." interface="..."/>``
+    The attributes and methods of this class that appear in the listed
+    interface may be accessed by users with the given permission.
+
+``<require permission="..." attributes="..."/>``
+    The named attributes and methods of this class may be accessed by users
+    with the given permission.
+
+``<require permission="..." set_schema="..."/>``
+    The attributes of this class that appear in the listed interface may be
+    modified by users with the given permission.
+
+``<require permission="..." set_attributes="..."/>``
+    The named attributes of this class may be modified by users with the
+    given permission.
+
+Note that "accessed" means ``getattr()``, while "modified" means
+``setattr()``.  The process of calling a method starts by using ``getattr()``
+to fetch the method from the object, so methods should be declared in
+``interface`` or ``attributes`` even if they modify the object.

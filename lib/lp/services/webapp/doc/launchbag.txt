@@ -11,19 +11,19 @@ First, we'll set up various imports and stub objects.
     >>> from lp.services.webapp.interfaces import \
     ...     CookieAuthPrincipalIdentifiedEvent
 
-    >>> class Principal(object):
+    >>> class Principal:
     ...     id = 23
 
     >>> principal = Principal()
-    >>> class Participation(object):
+    >>> class Participation:
     ...     principal = principal
     ...     interaction = None
 
-    >>> class Response(object):
+    >>> class Response:
     ...     def getCookie(self, name):
     ...         return None
 
-    >>> class Request(object):
+    >>> class Request:
     ...     principal = principal
     ...     response = Response()
     ...     cookies = {}

@@ -236,8 +236,8 @@ class RegistryDeleteViewMixin:
         # milestone, since it's still referenced.
         for bugtask in self._getBugtasks(milestone, ignore_privacy=True):
             nb = removeSecurityProxy(bugtask)
-            if nb.conjoined_master is not None:
-                Store.of(bugtask).remove(nb.conjoined_master)
+            if nb.conjoined_primary is not None:
+                Store.of(bugtask).remove(nb.conjoined_primary)
             else:
                 nb.milestone = None
         removeSecurityProxy(milestone.all_specifications).set(milestoneID=None)

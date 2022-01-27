@@ -1,4 +1,4 @@
-# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Snap package interfaces."""
@@ -343,10 +343,18 @@ class ISnapBuildRequest(Interface):
         value_type=Reference(schema=Interface),
         required=True, readonly=True))
 
+    requester = Reference(
+        title=_("The person requesting the builds."), schema=IPerson,
+        required=True, readonly=True)
+
     archive = Reference(
         IArchive,
         title="The source archive for builds produced by this request",
         required=True, readonly=True)
+
+    pocket = Choice(
+        title=_("The source pocket for builds produced by this request."),
+        vocabulary=PackagePublishingPocket, required=True, readonly=True)
 
     channels = Dict(
         title=_("Source snap channels for builds produced by this request"),
