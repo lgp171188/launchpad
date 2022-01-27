@@ -1274,6 +1274,11 @@
 
   <webservice:register module="lp.code.interfaces.webservice" />
 
+  <!-- LPCraftConfiguration -->
+  <class class="lp.code.model.lpcraft.LPCraftConfiguration">
+    <allow interface="lp.code.interfaces.lpcraft.ILPCraftConfiguration" />
+  </class>
+
   <adapter
     factory="lp.code.browser.sourcepackagerecipe.distroseries_renderer"
     name="distroseries"/>
