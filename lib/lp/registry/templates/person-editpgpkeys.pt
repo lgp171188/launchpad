@@ -163,6 +163,13 @@
         fingerprint</a>)
       </p>
 
+      <p>
+        At present, only keys compatible with GnuPG v1 are supported.
+        Elliptic curve keys are
+        <a href="https://bugs.launchpad.net/launchpad/+bug/1827369">not
+        yet supported</a>.
+      </p>
+
           <table class="form" id="launchpad-form-widgets">
             <tbody>
               <tr>
