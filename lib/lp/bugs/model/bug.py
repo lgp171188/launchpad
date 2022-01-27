@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Launchpad bug-related database table classes."""
@@ -10,6 +10,7 @@ __all__ = [
     'BugMute',
     'BugSet',
     'BugTag',
+    'CannotSetLockReason',
     'FileBugData',
     'generate_subscription_with',
     'get_also_notified_subscribers',
@@ -19,6 +20,7 @@ __all__ = [
 
 from email.utils import make_msgid
 from functools import wraps
+import http.client
 from io import BytesIO
 from itertools import chain
 import operator
@@ -26,6 +28,7 @@ import re
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.snapshot import Snapshot
+from lazr.restful.declarations import error_status
 import pytz
 from six.moves.collections_abc import (
     Iterable,
@@ -95,12 +98,18 @@ from lp.bugs.adapters.bugchange import (
     BranchUnlinkedFromBug,
     BugConvertedToQuestion,
     BugDuplicateChange,
+    BugLocked,
+    BugLockReasonSet,
+    BugUnlocked,
     BugWatchAdded,
     BugWatchRemoved,
     SeriesNominated,
     UnsubscribedFromBug,
     )
-from lp.bugs.enums import BugNotificationLevel
+from lp.bugs.enums import (
+    BugLockStatus,
+    BugNotificationLevel,
+    )
 from lp.bugs.errors import InvalidDuplicateValue
 from lp.bugs.interfaces.bug import (
     IBug,
@@ -236,6 +245,18 @@ from lp.services.webapp.publisher import (
 from lp.services.webapp.snapshot import notify_modified
 from lp.services.xref.interfaces import IXRefSet
 
+
+@error_status(http.client.BAD_REQUEST)
+class CannotSetLockReason(Exception):
+    """Raised when someone tries to set lock_reason for an unlocked bug."""
+
+
+@error_status(http.client.BAD_REQUEST)
+class CannotLockBug(Exception):
+    """
+    Raised when someone tries to lock a bug already locked
+    with the same reason.
+    """
 
 def snapshot_bug_params(bug_params):
     """Return a snapshot of a `CreateBugParams` object."""
@@ -387,6 +408,21 @@ class Bug(SQLBase, InformationTypeMixin):
     heat = IntCol(notNull=True, default=0)
     heat_last_updated = UtcDateTimeCol(default=None)
     latest_patch_uploaded = UtcDateTimeCol(default=None)
+    _lock_status = DBEnum(
+        name='lock_status', enum=BugLockStatus,
+        allow_none=True, default=BugLockStatus.UNLOCKED)
+    lock_reason = StringCol(notNull=False, default=None)
+
+    @property
+    def lock_status(self):
+        return (
+            BugLockStatus.UNLOCKED if self._lock_status is None
+            else self._lock_status
+        )
+
+    @lock_status.setter
+    def lock_status(self, value):
+        self._lock_status = value
 
     @property
     def linked_branches(self):
@@ -2198,6 +2234,63 @@ class Bug(SQLBase, InformationTypeMixin):
             BugActivity.datechanged <= end_date)
         return activity_in_range
 
+    def lock(self, who, status, reason=None):
+        """See `IBug`."""
+        if status == self.lock_status:
+            raise CannotLockBug(
+                "This bug is already locked "
+                "with the lock status '{}'.".format(
+                    status
+                )
+            )
+        else:
+            old_lock_status = self.lock_status
+            self.lock_status = BugLockStatus.items[status.value]
+            if reason:
+                self.lock_reason = reason
+
+            self.addChange(
+                BugLocked(
+                    when=UTC_NOW,
+                    person=who,
+                    old_status=old_lock_status,
+                    new_status=self.lock_status,
+                    reason=reason
+                )
+            )
+
+    def unlock(self, who):
+        """See `IBug`."""
+        if self.lock_status != BugLockStatus.UNLOCKED:
+            old_lock_status = self.lock_status
+            self.lock_status = BugLockStatus.UNLOCKED
+            self.lock_reason = None
+
+            self.addChange(
+                BugUnlocked(
+                    when=UTC_NOW,
+                    person=who,
+                    old_status=old_lock_status
+                )
+            )
+
+    def setLockReason(self, reason, who):
+        """See `IBug`."""
+        if self.lock_status == BugLockStatus.UNLOCKED:
+            raise CannotSetLockReason(
+                "Lock reason cannot be set for an unlocked bug."
+            )
+        if self.lock_reason != reason:
+            old_reason = self.lock_reason
+            self.lock_reason = reason
+            self.addChange(
+                BugLockReasonSet(
+                    when=UTC_NOW,
+                    person=who,
+                    old_reason=old_reason,
+                    new_reason=reason
+                )
+            )
 
 @ProxyFactory
 def get_also_notified_subscribers(

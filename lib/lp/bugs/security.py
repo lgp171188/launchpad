@@ -1,4 +1,4 @@
-# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Security adapters for the bugs module."""
@@ -10,6 +10,7 @@ from lp.app.security import (
     AuthorizationBase,
     DelegatedAuthorization,
     )
+from lp.bugs.enums import BugLockStatus
 from lp.bugs.interfaces.bug import IBug
 from lp.bugs.interfaces.bugactivity import IBugActivity
 from lp.bugs.interfaces.bugattachment import IBugAttachment
@@ -166,6 +167,19 @@ class EditBug(AuthorizationBase):
                 user, permission='launchpad.Append'):
             # The user cannot even see the bug.
             return False
+
+        def in_allowed_roles():
+            return (
+                # Users with relevant roles can edit the bug.
+                user.in_admin or
+                user.in_commercial_admin or
+                user.in_registry_experts or
+                _has_any_bug_role(user, self.obj.bugtasks)
+            )
+
+        if self.obj.lock_status == BugLockStatus.COMMENT_ONLY:
+            return in_allowed_roles()
+
         return (
             # If the bug is private, then we don't need more elaborate
             # checks as they must have been explicitly subscribed.
@@ -173,16 +187,36 @@ class EditBug(AuthorizationBase):
             # If the user seems generally legitimate, let them through.
             self.forwardCheckAuthenticated(
                 user, permission='launchpad.AnyLegitimatePerson') or
-            # The bug reporter can always edit their own bug.
+            # The bug reporter can edit their own bug if it is unlocked.
             user.inTeam(self.obj.owner) or
-            # Users with relevant roles can edit the bug.
-            user.in_admin or user.in_commercial_admin or
-            user.in_registry_experts or
-            _has_any_bug_role(user, self.obj.bugtasks))
+            in_allowed_roles())
 
     def checkUnauthenticated(self):
         """Never allow unauthenticated users to edit a bug."""
         return False
+
+
+class ModerateBug(AuthorizationBase):
+    """Security adapter for moderating bugs.
+
+    This is used for operations like locking and unlocking a bug to the
+    relevant roles.
+    """
+    permission = 'launchpad.Moderate'
+    usedfor = IBug
+
+    def checkAuthenticated(self, user):
+        if not self.forwardCheckAuthenticated(
+                user, permission='launchpad.Append'):
+            # The user cannot even see the bug.
+            return False
+
+        return (
+            user.in_admin or
+            user.in_commercial_admin or
+            user.in_registry_experts or
+            _has_any_bug_role(user, self.obj.bugtasks)
+        )
 
 
 class PublicToAllOrPrivateToExplicitSubscribersForBug(AuthorizationBase):

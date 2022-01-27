@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementations for bug changes."""
@@ -17,6 +17,8 @@ __all__ = [
     'BugDescriptionChange',
     'BugDuplicateChange',
     'BugInformationTypeChange',
+    'BugLocked',
+    'BugLockReasonSet',
     'BugTagsChange',
     'BugTaskAdded',
     'BugTaskAssigneeChange',
@@ -27,6 +29,7 @@ __all__ = [
     'BugTaskStatusChange',
     'BugTaskTargetChange',
     'BugTitleChange',
+    'BugUnlocked',
     'BugWatchAdded',
     'BugWatchRemoved',
     'CHANGED_DUPLICATE_MARKER',
@@ -52,7 +55,10 @@ from textwrap import dedent
 from zope.interface import implementer
 from zope.security.proxy import isinstance as zope_isinstance
 
-from lp.bugs.enums import BugNotificationLevel
+from lp.bugs.enums import (
+    BugLockStatus,
+    BugNotificationLevel,
+    )
 from lp.bugs.interfaces.bugchange import IBugChange
 from lp.bugs.interfaces.bugtask import (
     IBugTask,
@@ -733,6 +739,88 @@ class CveUnlinkedFromBug(BugChangeBase):
     def getBugNotification(self):
         """See `IBugChange`."""
         return {'text': "** CVE removed: %s" % self.cve.url}
+
+
+class BugLocked(BugChangeBase):
+    """Used to represent the locking of a bug."""
+
+    def __init__(self, when, person, old_status,
+                 new_status, reason, **kwargs):
+        super().__init__(when, person)
+        self.old_status = old_status
+        self.new_status = new_status
+        self.reason = reason
+
+    def getBugActivity(self):
+        """See `IBugChange'."""
+        activity = dict(
+            whatchanged='lock status',
+            oldvalue=str(self.old_status),
+            newvalue=str(self.new_status),
+        )
+        if self.reason:
+            activity['message'] = self.reason
+
+        return activity
+
+    def getBugNotification(self):
+        """See `IBugChange`."""
+        text = "** Bug metadata locked and limited to project staff"
+        if self.reason:
+            text = "{}: {}".format(text, self.reason)
+
+        return {
+            'text': text
+        }
+
+class BugUnlocked(BugChangeBase):
+    """Used to represent the unlocking of a bug."""
+
+    def __init__(self, when, person, old_status, **kwargs):
+        super().__init__(when, person)
+        self.old_status = old_status
+
+    def getBugActivity(self):
+        """See `IBugChange'."""
+        return dict(
+            whatchanged='lock status',
+            newvalue=str(BugLockStatus.UNLOCKED),
+            oldvalue=str(self.old_status),
+        )
+
+    def getBugNotification(self):
+        """See `IBugChange`."""
+        return {
+            'text': "** Bug unlocked"
+        }
+
+
+class BugLockReasonSet(BugChangeBase):
+    """Used to represent setting of the Bug.lock_reason field."""
+
+    def __init__(self, when, person, old_reason, new_reason, **kwargs):
+        super().__init__(when, person)
+        self.old_reason = old_reason
+        self.new_reason = new_reason
+
+    def getBugActivity(self):
+        """See `IBugChange`."""
+        return dict(
+            whatchanged='lock reason',
+            oldvalue=self.old_reason if self.old_reason else 'unset',
+            newvalue=self.new_reason if self.new_reason else 'unset',
+        )
+
+    def getBugNotification(self):
+        """See `IBugChange`."""
+        if self.new_reason is None:
+            text = "Bug lock reason unset"
+        else:
+            text = '** Bug lock reason changed: {}'.format(self.new_reason)
+
+        return {
+            'text': text
+        }
 
 
 class BugTaskAttributeChange(AttributeChange):

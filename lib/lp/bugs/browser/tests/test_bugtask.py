@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from datetime import (
@@ -42,7 +42,10 @@ from lp.bugs.browser.bugtask import (
     BugTasksNominationsView,
     BugTasksTableView,
     )
-from lp.bugs.enums import BugNotificationLevel
+from lp.bugs.enums import (
+    BugLockStatus,
+    BugNotificationLevel,
+    )
 from lp.bugs.feed.bug import PersonBugsFeed
 from lp.bugs.interfaces.bugactivity import IBugActivitySet
 from lp.bugs.interfaces.bugnomination import IBugNomination
@@ -1885,6 +1888,91 @@ class TestBugActivityItem(TestCaseWithFactory):
         self.assertEqual(
             "- foo<br />+ bar &amp;&lt;&gt;",
             BugActivityItem(bug.activity[-1]).change_details)
+
+    def test_change_details_bug_locked_with_reason(self):
+        target = self.factory.makeProduct()
+        bug = self.factory.makeBug(owner=target.owner, target=target)
+        with person_logged_in(target.owner):
+            bug.lock(
+                status=BugLockStatus.COMMENT_ONLY,
+                who=target.owner,
+                reason='too hot'
+            )
+        self.assertEqual(
+            'Metadata changes locked (too hot) and limited to project staff',
+            BugActivityItem(bug.activity[-1]).change_details
+        )
+
+    def test_change_details_bug_locked_without_reason(self):
+        target = self.factory.makeProduct()
+        bug = self.factory.makeBug(owner=target.owner, target=target)
+        with person_logged_in(target.owner):
+            bug.lock(
+                status=BugLockStatus.COMMENT_ONLY,
+                who=target.owner,
+            )
+        self.assertEqual(
+            'Metadata changes locked and limited to project staff',
+            BugActivityItem(bug.activity[-1]).change_details
+        )
+
+    def test_change_details_bug_unlocked(self):
+        target = self.factory.makeProduct()
+        bug = self.factory.makeBug(owner=target.owner, target=target)
+        with person_logged_in(target.owner):
+            bug.lock(
+                status=BugLockStatus.COMMENT_ONLY,
+                who=target.owner,
+            )
+            bug.unlock(who=target.owner)
+        self.assertEqual(
+            'Metadata changes unlocked',
+            BugActivityItem(bug.activity[-1]).change_details
+        )
+
+    def test_change_details_bug_lock_reason_set(self):
+        target = self.factory.makeProduct()
+        bug = self.factory.makeBug(owner=target.owner, target=target)
+        with person_logged_in(target.owner):
+            bug.lock(
+                status=BugLockStatus.COMMENT_ONLY,
+                who=target.owner,
+            )
+            bug.setLockReason('too hot', who=target.owner)
+        self.assertEqual(
+            'too hot',
+            BugActivityItem(bug.activity[-1]).change_details
+        )
+
+    def test_change_details_bug_lock_reason_updated(self):
+        target = self.factory.makeProduct()
+        bug = self.factory.makeBug(owner=target.owner, target=target)
+        with person_logged_in(target.owner):
+            bug.lock(
+                status=BugLockStatus.COMMENT_ONLY,
+                who=target.owner,
+                reason='too hot',
+            )
+            bug.setLockReason('too hot!', who=target.owner)
+        self.assertEqual(
+            'too hot &rarr; too hot!',
+            BugActivityItem(bug.activity[-1]).change_details
+        )
+
+    def test_change_details_bug_lock_reason_unset(self):
+        target = self.factory.makeProduct()
+        bug = self.factory.makeBug(owner=target.owner, target=target)
+        with person_logged_in(target.owner):
+            bug.lock(
+                status=BugLockStatus.COMMENT_ONLY,
+                who=target.owner,
+                reason='too hot',
+            )
+            bug.setLockReason(None, who=target.owner)
+        self.assertEqual(
+            'Unset',
+            BugActivityItem(bug.activity[-1]).change_details
+        )
 
 
 class TestCommentCollapseVisibility(TestCaseWithFactory):
