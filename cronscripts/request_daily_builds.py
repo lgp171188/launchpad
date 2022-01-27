@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -S
 #
-# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Request builds for stale daily build recipes and snap packages."""
@@ -36,9 +36,10 @@ class RequestDailyBuilds(LaunchpadCronScript):
         source = getUtility(ISourcePackageRecipeBuildSource)
         builds = source.makeDailyBuilds(self.logger)
         self.logger.info('Requested %d daily recipe builds.' % len(builds))
-        builds = getUtility(ISnapSet).makeAutoBuilds(self.logger)
+        build_requests = getUtility(ISnapSet).makeAutoBuilds(self.logger)
         self.logger.info(
-            'Requested %d automatic snap package builds.' % len(builds))
+            'Requested %d sets of automatic snap package builds.' %
+            len(build_requests))
         build_requests = getUtility(ICharmRecipeSet).makeAutoBuilds(
             self.logger)
         self.logger.info(
