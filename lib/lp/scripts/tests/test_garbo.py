@@ -59,6 +59,7 @@ from lp.code.bzr import (
 from lp.code.enums import (
     CodeImportResultStatus,
     GitRepositoryStatus,
+    RevisionStatusArtifactType,
     )
 from lp.code.interfaces.codeimportevent import ICodeImportEventSet
 from lp.code.interfaces.gitrepository import IGitRepositorySet
@@ -2061,16 +2062,22 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         report1.date_created = now - timedelta(days=60)
         repo1 = report1.git_repository
         repo2 = report2.git_repository
-        artifact1_1 = self.factory.makeRevisionStatusArtifact(report=report1)
-        artifact1_2 = self.factory.makeRevisionStatusArtifact(report=report1)
+        artifact1_1 = self.factory.makeRevisionStatusArtifact(
+            report=report1, artifact_type=RevisionStatusArtifactType.BINARY)
+        artifact1_2 = self.factory.makeRevisionStatusArtifact(
+            report=report1, artifact_type=RevisionStatusArtifactType.BINARY)
+        artifact1_3 = self.factory.makeRevisionStatusArtifact(
+            report=report1)
         for i in range(0, 5):
-            self.factory.makeRevisionStatusArtifact(report=report2)
+            self.factory.makeRevisionStatusArtifact(
+                report=report2,
+                artifact_type=RevisionStatusArtifactType.BINARY)
         reports_in_db = list(getUtility(
                 IRevisionStatusReportSet).findByRepository(repo1))
         self.assertEqual(1, len(reports_in_db))
         artifacts_db = list(getUtility(
             IRevisionStatusArtifactSet).findByReport(report1))
-        self.assertEqual(2, len(artifacts_db))
+        self.assertEqual(3, len(artifacts_db))
         self.assertTrue(artifact1_1, artifact1_2 in artifacts_db)
 
         self.runDaily()
@@ -2078,16 +2085,17 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         log = self.log_buffer.getvalue()
         self.assertIn(
             '[RevisionStatusReportPruner] '
-            'Deleted 2 status artifacts.',
-            log)
-        self.assertIn(
-            '[RevisionStatusReportPruner] Deleted 1 status reports.',
+            'RevisionStatusReportPruner completed successfully.',
             log)
         artifacts_db = list(getUtility(
             IRevisionStatusArtifactSet).findByReport(report1))
-        self.assertEqual(0, len(artifacts_db))
+        # artifact1_1 and artifact1_2 which were type Binary should be gone
+        # only artifact1_3 of type Log should have survived the garbo job
+        self.assertEqual(1, len(artifacts_db))
+        self.assertEqual([artifact1_3], artifacts_db)
+        # ensure the report is still be there
         self.assertEqual(
-            0,
+            1,
             len(list(getUtility(
                 IRevisionStatusReportSet).findByRepository(repo1))))
 

@@ -60,7 +60,10 @@ from lp.bugs.scripts.checkwatches.scheduler import (
     BugWatchScheduler,
     MAX_SAMPLE_SIZE,
     )
-from lp.code.enums import GitRepositoryStatus
+from lp.code.enums import (
+    GitRepositoryStatus,
+    RevisionStatusArtifactType,
+    )
 from lp.code.interfaces.revision import IRevisionSet
 from lp.code.model.codeimportevent import CodeImportEvent
 from lp.code.model.codeimportresult import CodeImportResult
@@ -73,10 +76,7 @@ from lp.code.model.revision import (
     RevisionAuthor,
     RevisionCache,
     )
-from lp.code.model.revisionstatus import (
-    RevisionStatusArtifact,
-    RevisionStatusReport,
-    )
+from lp.code.model.revisionstatus import RevisionStatusArtifact
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.model.person import Person
@@ -1766,50 +1766,25 @@ class PopulateSnapBuildStoreRevision(TunableLoop):
         transaction.commit()
 
 
-class RevisionStatusReportPruner(TunableLoop):
+class RevisionStatusReportPruner(BulkPruner):
     """Removes old revision status reports and their artifacts."""
-    minimum_chunk_size = 5
-    maximum_chunk_size = 100
-
-    def isDone(self):
-        """We are done when there are no old reports to delete."""
-        epoch = datetime.now(pytz.UTC) - timedelta(days=30)
-        store = IMasterStore(RevisionStatusReport)
-        results = store.find(
-            RevisionStatusReport, RevisionStatusReport.date_created < epoch)
-        return results.count() == 0
-
-    def __call__(self, chunk_size):
-        # Storm doesn't handle remove a limited result set,
-        # we limit to the chunk_size of the garbo job with the subquery
-        epoch = datetime.now(pytz.UTC) - timedelta(days=30)
-        subquery = Select(
-            [RevisionStatusReport.id, ],
-            where=[RevisionStatusReport.date_created < epoch, ],
-            limit=chunk_size)
-        clauses = [
-            RevisionStatusArtifact.report == RevisionStatusReport.id,
-            RevisionStatusReport.id.is_in(subquery), ]
-        where = convert_storm_clause_to_string(And(*clauses))
-
-        # Delete all artifacts for reports in the current batch
-        result = IMasterStore(RevisionStatusArtifact).execute("""
-            DELETE FROM RevisionStatusArtifact
-            USING RevisionStatusReport
-            WHERE """ + where)
-        self.log.info(
-            "Deleted %s status artifacts." % result.rowcount)
-
-        # Now delete reports in current batch
-        clauses = [RevisionStatusReport.id.is_in(subquery), ]
-        where = convert_storm_clause_to_string(*clauses)
-        result = IMasterStore(RevisionStatusArtifact).execute("""
-            DELETE FROM RevisionStatusReport WHERE """ + where)
-
-        self.log.info(
-            "Deleted %s status reports." % result.rowcount)
-
-        transaction.commit()
+    maximum_chunk_size = 10000
+    older_than = 30  # artifacts older than 30 days
+    target_table_class = RevisionStatusArtifact
+    ids_to_prune_query = """
+        SELECT DISTINCT RevisionStatusArtifact.id
+        FROM RevisionStatusArtifact, RevisionStatusReport
+        WHERE
+            RevisionStatusArtifact.report = RevisionStatusReport.id
+            AND RevisionStatusReport.date_created <
+            CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+                - CAST('%s days' AS INTERVAL)
+            AND RevisionStatusArtifact.type = %d
+        LIMIT %d
+        """ % (
+        older_than,
+        RevisionStatusArtifactType.BINARY.value,
+        int(maximum_chunk_size))
 
 
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
