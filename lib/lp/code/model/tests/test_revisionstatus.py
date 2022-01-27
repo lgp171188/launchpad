@@ -242,50 +242,61 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
                 result=Equals(RevisionStatusResult.SUCCEEDED),
                 date_finished=GreaterThan(date_finished_before_update)))
 
-    def test_getArtifactsURLs(self):
+    def test_getArtifactURLs(self):
         report = self.factory.makeRevisionStatusReport()
         artifact_log = self.factory.makeRevisionStatusArtifact(
             report=report, artifact_type=RevisionStatusArtifactType.LOG,
             content=b'log_data')
-        log_url = artifact_log.library_file.http_url
         artifact_binary = self.factory.makeRevisionStatusArtifact(
             report=report, artifact_type=RevisionStatusArtifactType.BINARY,
             content=b'binary_data')
-        binary_url = artifact_binary.library_file.http_url
         requester = report.creator
         repository = report.git_repository
         report_url = api_url(report)
+        log_url = 'http://code.launchpad.test/%s/+artifact/%s/+files/%s' % (
+            repository.unique_name, artifact_log.id,
+            artifact_log.library_file.filename)
+        binary_url = 'http://code.launchpad.test/%s/+artifact/%s/+files/%s' % (
+            repository.unique_name, artifact_binary.id,
+            artifact_binary.library_file.filename)
         webservice = self.getWebservice(requester, repository)
 
         response = webservice.named_get(
-            report_url, "getArtifactsURLs", artifact_type="Log")
+            report_url, "getArtifactURLs", artifact_type="Log")
 
         self.assertEqual(200, response.status)
         with person_logged_in(requester):
             self.assertIn(log_url, response.jsonBody())
             self.assertNotIn(binary_url, response.jsonBody())
-            file = requests.get(response.jsonBody()[0])
-            self.assertEqual(b'log_data', file.content)
+            # ensure the url works
+            https_url = ('https://code.launchpad.test/%s/'
+                         '+artifact/%s/+files/%s' % (
+                repository.unique_name,
+                artifact_log.id,
+                artifact_log.library_file.filename))
+
+        response = requests.get(log_url, allow_redirects=False)
+
+        self.assertEqual(301, response.status_code)
+        self.assertEqual(https_url, response.headers.get('Location'))
 
         response = webservice.named_get(
-            report_url, "getArtifactsURLs", artifact_type="Binary")
+            report_url, "getArtifactURLs", artifact_type="Binary")
 
         self.assertEqual(200, response.status)
         with person_logged_in(requester):
             self.assertNotIn(log_url, response.jsonBody())
             self.assertIn(binary_url, response.jsonBody())
-            file = requests.get(response.jsonBody()[0])
-            self.assertEqual(b'binary_data', file.content)
 
         response = webservice.named_get(
-            report_url, "getArtifactsURLs")
+            report_url, "getArtifactURLs")
 
         self.assertEqual(200, response.status)
         with person_logged_in(requester):
             self.assertIn(log_url, response.jsonBody())
             self.assertIn(binary_url, response.jsonBody())
 
-    def test_getArtifactsURLs_restricted(self):
+    def test_getArtifactURLs_restricted(self):
         requester = self.factory.makePerson()
         with person_logged_in(requester):
             kwargs = {"owner": requester}
@@ -297,14 +308,26 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
             artifact = self.factory.makeRevisionStatusArtifact(
                 report=report, artifact_type=RevisionStatusArtifactType.LOG,
                 content=b'log_data', restricted=True)
-            log_url = 'http://code.launchpad.test/%s/+status/%s/+files/%s' % (
-                repository.unique_name, report.id,
-                artifact.library_file.filename)
+            log_url = ('http://code.launchpad.test/%s/'
+                       '+artifact/%s/+files/%s' % (
+                repository.unique_name, artifact.id,
+                artifact.library_file.filename))
         webservice = self.getWebservice(requester, repository)
 
         response = webservice.named_get(
-            report_url, "getArtifactsURLs", artifact_type="Log")
+            report_url, "getArtifactURLs", artifact_type="Log")
 
         self.assertEqual(200, response.status)
         with person_logged_in(requester):
             self.assertIn(log_url, response.jsonBody())
+            # ensure the url works
+            https_url = ('https://code.launchpad.test/%s/'
+                         '+artifact/%s/+files/%s' % (
+                repository.unique_name,
+                artifact.id,
+                artifact.library_file.filename))
+
+        response = requests.get(log_url, allow_redirects=False)
+
+        self.assertEqual(301, response.status_code)
+        self.assertEqual(https_url, response.headers.get('Location'))

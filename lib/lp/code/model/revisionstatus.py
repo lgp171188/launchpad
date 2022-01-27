@@ -2,6 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
+    'RevisionStatusArtifactSet',
     'RevisionStatusReport',
     ]
 
@@ -18,6 +19,7 @@ from storm.locals import (
 from zope.component import getUtility
 from zope.interface import implementer
 
+from lp.app.errors import NotFoundError
 from lp.code.enums import (
     RevisionStatusArtifactType,
     RevisionStatusResult,
@@ -33,8 +35,13 @@ from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import convert_storm_clause_to_string
 from lp.services.database.stormbase import StormBase
-from lp.services.librarian.browser import ProxiedLibraryFileAlias
+from lp.services.librarian.browser import (
+    FileNavigationMixin,
+    ProxiedLibraryFileAlias,
+    )
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
+from lp.services.librarian.model import LibraryFileAlias
+from lp.services.webapp import Navigation
 
 
 @implementer(IRevisionStatusReport)
@@ -118,19 +125,17 @@ class RevisionStatusReport(StormBase):
         if result is not None:
             self.transitionToNewResult(result)
 
-    def getArtifactsURLs(self, artifact_type):
+    def getArtifactURLs(self, artifact_type):
         clauses = [
             RevisionStatusArtifact.report == self,
         ]
-        if artifact_type == RevisionStatusArtifactType.LOG:
-            clauses.extend([RevisionStatusArtifact.artifact_type ==
-                            RevisionStatusArtifactType.LOG, ])
-        elif artifact_type == RevisionStatusArtifactType.BINARY:
-            clauses.extend([RevisionStatusArtifact.artifact_type ==
-                            RevisionStatusArtifactType.BINARY, ])
+        if artifact_type:
+            clauses.extend(
+                [RevisionStatusArtifact.artifact_type == artifact_type, ]
+            )
 
         return getUtility(
-            IRevisionStatusArtifactSet).getArtifactDownloadUrls(clauses)
+            IRevisionStatusArtifactSet).getArtifactDownloadURLs(clauses)
 
 
 @implementer(IRevisionStatusReportSet)
@@ -199,13 +204,24 @@ class RevisionStatusArtifact(StormBase):
         self.report = report
         self.artifact_type = artifact_type
 
-    def downloadUrl(self):
-        if self.library_file.restricted:
-            url = ProxiedLibraryFileAlias(
-                self.library_file, self.report).http_url
-        else:
-            url = self.library_file.http_url
-        return url
+    @property
+    def download_url(self):
+        return ProxiedLibraryFileAlias(
+                self.library_file, self).http_url
+
+    def getFileByName(self, filename):
+        file_object = IStore(RevisionStatusArtifact).find(
+            LibraryFileAlias,
+            RevisionStatusArtifact.id == self.id,
+            LibraryFileAlias.id == RevisionStatusArtifact.library_file_id,
+            LibraryFileAlias.filename == filename).one()
+        if file_object is not None and file_object.filename == filename:
+            return file_object
+        raise NotFoundError(filename)
+
+    @property
+    def repository(self):
+        return self.report.git_repository
 
 
 @implementer(IRevisionStatusArtifactSet)
@@ -228,10 +244,19 @@ class RevisionStatusArtifactSet:
             RevisionStatusArtifact,
             RevisionStatusArtifact.report == report)
 
-    def getArtifactDownloadUrls(self, clauses):
+    def getArtifactDownloadURLs(self, clauses):
         artifacts = IStore(RevisionStatusArtifact).find(
             RevisionStatusArtifact, *clauses)
-        urls = []
-        for artifact in list(artifacts):
-            urls.append(artifact.downloadUrl())
-        return urls
+        return [artifact.download_url for artifact in artifacts]
+
+    def getByRepositoryAndID(self, repository, id):
+        artifact = self.getById(id)
+        if artifact.repository == repository:
+            return artifact
+        return None
+
+
+class RevisionStatusArtifactNavigation(Navigation, FileNavigationMixin):
+    """Traversal to +files/${filename}."""
+
+    usedfor = IRevisionStatusArtifact

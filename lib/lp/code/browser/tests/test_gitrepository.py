@@ -112,6 +112,12 @@ class TestGitRepositoryNavigation(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
+    def makeRevisionStatusArtifact(self, report, artifact_type=None):
+        # We don't need to upload files to the librarian in this test suite.
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        return self.factory.makeRevisionStatusArtifact(
+            lfa=lfa, report=report, artifact_type=artifact_type)
+
     def test_traverse_ref(self):
         [ref] = self.factory.makeGitRefs()
         url = "%s/+ref/%s" % (canonical_url(ref.repository), ref.path)
@@ -131,6 +137,17 @@ class TestGitRepositoryNavigation(TestCaseWithFactory):
         [ref] = self.factory.makeGitRefs(paths=["refs/heads/\N{SNOWMAN}"])
         url = "%s/+ref/%%E2%%98%%83" % canonical_url(ref.repository)
         self.assertEqual(ref, test_traverse(url)[0])
+
+    def test_traverse_artifact(self):
+        owner = self.factory.makePerson()
+        repo = self.factory.makeGitRepository(
+            owner=owner)
+        report = self.factory.makeRevisionStatusReport(
+            git_repository=repo)
+        artifact = self.makeRevisionStatusArtifact(report=report)
+        name = artifact.library_file.filename
+        url = '%s/+files/%s' % (canonical_url(artifact), name)
+        self.assertEqual(artifact, test_traverse(url)[0])
 
 
 class TestGitRepositoryView(BrowserTestCase):

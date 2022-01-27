@@ -106,7 +106,10 @@ from lp.code.interfaces.gitrepository import (
     IGitRepository,
     IGitRepositorySet,
     )
-from lp.code.interfaces.revisionstatus import IRevisionStatusReportSet
+from lp.code.interfaces.revisionstatus import (
+    IRevisionStatusArtifactSet,
+    IRevisionStatusReportSet,
+    )
 from lp.code.vocabularies.gitrule import GitPermissionsVocabulary
 from lp.registry.interfaces.person import (
     IPerson,
@@ -201,6 +204,19 @@ class GitRepositoryNavigation(WebhookTargetNavigationMixin, Navigation):
         if report is None:
             raise NotFoundError(report_id)
         return report
+
+    @stepthrough('+artifact')
+    def traverse_artifact(self, id):
+        try:
+            artifact_id = int(id)
+        except ValueError:
+            raise NotFoundError(artifact_id)
+        artifact = getUtility(
+            IRevisionStatusArtifactSet).getByRepositoryAndID(
+                self.context, artifact_id)
+        if artifact is None:
+            raise NotFoundError(artifact_id)
+        return artifact
 
     @stepto("+ref")
     def traverse_ref(self):

@@ -85,7 +85,7 @@ class IRevisionStatusReportView(Interface):
     @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
     @export_read_operation()
     @operation_for_version("devel")
-    def getArtifactsURLs(artifact_type):
+    def getArtifactURLs(artifact_type):
         """Retrieves the list of URLs for artifacts that exist for this report.
 
         :param artifact_type: The type of artifact for the report.
@@ -248,8 +248,11 @@ class IRevisionStatusArtifactSet(Interface):
     def findByReport(report):
         """Returns the set of artifacts for a given report."""
 
-    def getArtifactDownloadUrls(report, clauses):
+    def getArtifactDownloadURLs(report, clauses):
         """Returns download URLs for all artifacts under a given report."""
+
+    def getByRepositoryAndID(self, repository, id):
+        """Returns the artifact for a given repository and ID."""
 
 
 class IRevisionStatusArtifact(Interface):
@@ -266,8 +269,8 @@ class IRevisionStatusArtifact(Interface):
         title=_('The type of artifact, only log for now.'),
         vocabulary=RevisionStatusArtifactType)
 
-    def downloadUrl():
-        """URL for downloading the artifact.
+    def getFileByName(self, report, filename):
+        """Returns an artifact by name."""
 
-        :return: A URL for downloading this artifact.
-        """
+    def repository(self):
+        """Returns the repository for this artifact."""
