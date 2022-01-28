@@ -88,8 +88,16 @@ class ICIBuildSet(ISpecificBuildFarmJobSource):
             date_created=DEFAULT):
         """Create an `ICIBuild`."""
 
-    def deleteByGitRepository(repository):
+    def findByGitRepository(git_repository, commit_sha1s=None):
+        """Return all CI builds for the given Git repository.
+
+        :param git_repository: An `IGitRepository`.
+        :param commit_sha1s: If not None, only return CI builds for one of
+            these Git commit IDs.
+        """
+
+    def deleteByGitRepository(git_repository):
         """Delete all CI builds for the given Git repository.
 
-        :param repository: An `IGitRepository`.
+        :param git_repository: An `IGitRepository`.
         """

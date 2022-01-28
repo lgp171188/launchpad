@@ -312,6 +312,13 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
                 bfj.id for bfj in build_farm_jobs))
         return DecoratedResultSet(rows, pre_iter_hook=self.preloadBuildsData)
 
-    def deleteByGitRepository(self, repository):
+    def findByGitRepository(self, git_repository, commit_sha1s=None):
         """See `ICIBuildSet`."""
-        IMasterStore(CIBuild).find(CIBuild, git_repository=repository).remove()
+        clauses = [CIBuild.git_repository == git_repository]
+        if commit_sha1s is not None:
+            clauses.append(CIBuild.commit_sha1.is_in(commit_sha1s))
+        return IStore(CIBuild).find(CIBuild, *clauses)
+
+    def deleteByGitRepository(self, git_repository):
+        """See `ICIBuildSet`."""
+        self.findByGitRepository(git_repository).remove()

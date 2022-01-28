@@ -262,3 +262,30 @@ class TestCIBuildSet(TestCaseWithFactory):
         target = self.factory.makeCIBuild(
             distro_arch_series=distro_arch_series)
         self.assertTrue(target.virtualized)
+
+    def test_findByGitRepository(self):
+        repositories = [self.factory.makeGitRepository() for _ in range(2)]
+        builds = []
+        for repository in repositories:
+            builds.extend(
+                [self.factory.makeCIBuild(repository) for _ in range(2)])
+        ci_build_set = getUtility(ICIBuildSet)
+        self.assertContentEqual(
+            builds[:2], ci_build_set.findByGitRepository(repositories[0]))
+        self.assertContentEqual(
+            builds[2:], ci_build_set.findByGitRepository(repositories[1]))
+
+    def test_deleteByGitRepository(self):
+        repositories = [self.factory.makeGitRepository() for _ in range(2)]
+        builds = []
+        for repository in repositories:
+            builds.extend(
+                [self.factory.makeCIBuild(repository) for _ in range(2)])
+        ci_build_set = getUtility(ICIBuildSet)
+
+        ci_build_set.deleteByGitRepository(repositories[0])
+
+        self.assertContentEqual(
+            [], ci_build_set.findByGitRepository(repositories[0]))
+        self.assertContentEqual(
+            builds[2:], ci_build_set.findByGitRepository(repositories[1]))
