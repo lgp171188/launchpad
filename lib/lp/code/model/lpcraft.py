@@ -32,13 +32,16 @@ def _expand_job_values(values):
         for variant in values["matrix"]:
             variant_values = base_values.copy()
             variant_values.update(variant)
-            # normalize `architectures` into a list
-            architectures = variant_values.get("architectures")
-            if isinstance(architectures, str):
-                variant_values["architectures"] = [architectures]
             expanded_values.append(variant_values)
     else:
         expanded_values.append(values)
+
+    for variant_values in expanded_values:
+        # normalize `architectures` into a list
+        architectures = variant_values.get("architectures")
+        if isinstance(architectures, str):
+            variant_values["architectures"] = [architectures]
+
     return expanded_values
 
 
