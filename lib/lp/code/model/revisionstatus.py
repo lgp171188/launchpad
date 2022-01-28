@@ -3,6 +3,7 @@
 
 __all__ = [
     'RevisionStatusArtifact',
+    'RevisionStatusArtifactSet',
     'RevisionStatusReport',
     ]
 
@@ -19,6 +20,7 @@ from storm.locals import (
 from zope.component import getUtility
 from zope.interface import implementer
 
+from lp.app.errors import NotFoundError
 from lp.code.enums import (
     RevisionStatusArtifactType,
     RevisionStatusResult,
@@ -34,7 +36,9 @@ from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import convert_storm_clause_to_string
 from lp.services.database.stormbase import StormBase
+from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
+from lp.services.librarian.model import LibraryFileAlias
 
 
 @implementer(IRevisionStatusReport)
@@ -118,6 +122,17 @@ class RevisionStatusReport(StormBase):
         if result is not None:
             self.transitionToNewResult(result)
 
+    def getArtifactURLs(self, artifact_type):
+        clauses = [
+            RevisionStatusArtifact,
+            RevisionStatusArtifact.report == self,
+        ]
+        if artifact_type:
+            clauses.append(
+                RevisionStatusArtifact.artifact_type == artifact_type)
+        artifacts = IStore(RevisionStatusArtifact).find(*clauses)
+        return [artifact.download_url for artifact in artifacts]
+
 
 @implementer(IRevisionStatusReportSet)
 class RevisionStatusReportSet:
@@ -185,6 +200,25 @@ class RevisionStatusArtifact(StormBase):
         self.report = report
         self.artifact_type = artifact_type
 
+    @property
+    def download_url(self):
+        return ProxiedLibraryFileAlias(
+                self.library_file, self).http_url
+
+    def getFileByName(self, filename):
+        file_object = IStore(RevisionStatusArtifact).find(
+            LibraryFileAlias,
+            RevisionStatusArtifact.id == self.id,
+            LibraryFileAlias.id == RevisionStatusArtifact.library_file_id,
+            LibraryFileAlias.filename == filename).one()
+        if file_object is not None:
+            return file_object
+        raise NotFoundError(filename)
+
+    @property
+    def repository(self):
+        return self.report.git_repository
+
 
 @implementer(IRevisionStatusArtifactSet)
 class RevisionStatusArtifactSet:
@@ -205,3 +239,10 @@ class RevisionStatusArtifactSet:
         return IStore(RevisionStatusArtifact).find(
             RevisionStatusArtifact,
             RevisionStatusArtifact.report == report)
+
+    def getByRepositoryAndID(self, repository, id):
+        return IStore(RevisionStatusArtifact).find(
+            RevisionStatusArtifact,
+            RevisionStatusArtifact.id == id,
+            RevisionStatusArtifact.report == RevisionStatusReport.id,
+            RevisionStatusReport.git_repository == repository).one()

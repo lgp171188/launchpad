@@ -969,6 +969,16 @@
         attribute_to_parent="git_repository"
         rootsite="code"/>
 
+    <browser:url
+        for="lp.code.interfaces.revisionstatus.IRevisionStatusArtifact"
+        path_expression="string:+artifact/${id}"
+        attribute_to_parent="repository"
+        rootsite="code"/>
+
+    <browser:navigation
+        module="lp.code.browser.revisionstatus"
+        classes="RevisionStatusArtifactNavigation"/>
+
     <browser:defaultView
         for="lp.code.interfaces.gitref.IGitRef"
         name="+index"/>
