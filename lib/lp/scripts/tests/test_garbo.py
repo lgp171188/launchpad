@@ -2052,9 +2052,9 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertEqual(build1._store_upload_revision, 1)
 
     def test_RevisionStatusReportPruner(self):
-        # report1 and its artifacts are older than 30 days
-        # and we expect the gabo job to delete them.
-        # report2 and its artifact are newer then 30 days and
+        # Artifacts for report1 are older than 30 days
+        # and we expect the garbo job to delete them.
+        # Artifacts for report2 are newer then 30 days and
         # we expect them to survive the garbo job.
         switch_dbuser('testadmin')
         now = datetime.now(UTC)
@@ -2079,7 +2079,8 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         artifacts_db = list(getUtility(
             IRevisionStatusArtifactSet).findByReport(report1))
         self.assertEqual(3, len(artifacts_db))
-        self.assertTrue(artifact1_1, artifact1_2 in artifacts_db)
+        self.assertItemsEqual(
+            [artifact1_1, artifact1_2, artifact1_3], artifacts_db)
 
         self.runDaily()
 
@@ -2094,20 +2095,20 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # only artifact1_3 of type Log should have survived the garbo job
         self.assertEqual(1, len(artifacts_db))
         self.assertEqual([artifact1_3], artifacts_db)
-        # ensure the report is still be there
+        # ensure the report is still there
         self.assertEqual(
-            1,
-            len(list(getUtility(
-                IRevisionStatusReportSet).findByRepository(repo1))))
+            [report1],
+            list(getUtility(
+                IRevisionStatusReportSet).findByRepository(repo1)))
 
         # assert report2 and its artifacts remained intact
         artifacts_db = list(getUtility(
             IRevisionStatusArtifactSet).findByReport(report2))
         self.assertEqual(5, len(artifacts_db))
         self.assertEqual(
-            1,
-            len(list(getUtility(
-                IRevisionStatusReportSet).findByRepository(repo2))))
+            [report2],
+            list(getUtility(
+                IRevisionStatusReportSet).findByRepository(repo2)))
 
     def test_PopulateBugLockStatusDefaultUnlocked(self):
         switch_dbuser('testadmin')

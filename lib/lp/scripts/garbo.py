@@ -1769,7 +1769,6 @@ class PopulateSnapBuildStoreRevision(TunableLoop):
 
 class RevisionStatusReportPruner(BulkPruner):
     """Removes old revision status reports and their artifacts."""
-    maximum_chunk_size = 10000
     older_than = 30  # artifacts older than 30 days
     target_table_class = RevisionStatusArtifact
     ids_to_prune_query = """
@@ -1781,11 +1780,9 @@ class RevisionStatusReportPruner(BulkPruner):
             CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
                 - CAST('%s days' AS INTERVAL)
             AND RevisionStatusArtifact.type = %d
-        LIMIT %d
         """ % (
         older_than,
-        RevisionStatusArtifactType.BINARY.value,
-        int(maximum_chunk_size))
+        RevisionStatusArtifactType.BINARY.value)
 
 
 class PopulateBugLockStatusDefaultUnlocked(TunableLoop):
