@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for `GitHostingClient`.
@@ -206,6 +206,85 @@ class TestGitHostingClient(TestCase):
         self.assertEqual([{"sha1": "0"}], commits)
         self.assertRequest(
             "repo/123/commits", method="POST", json_data={"commits": ["0"]})
+
+    def test_getCommits_filter_paths(self):
+        commit_json = {
+            "sha1": "0",
+            "blobs": {
+                ".launchpad.yaml": b"foo",
+                "debian/.launchpad.yaml": b"bar",
+                },
+            }
+        encoded_commit_json = {
+            "sha1": "0",
+            "blobs": {
+                ".launchpad.yaml": {"size": 3, "data": "Zm9v"},
+                "debian/.launchpad.yaml": {"size": 3, "data": "YmFy"},
+                },
+            }
+        with self.mockRequests("POST", json=[encoded_commit_json]):
+            commits = self.client.getCommits(
+                "123", ["0"],
+                filter_paths=[".launchpad.yaml", "debian/.launchpad.yaml"])
+        self.assertEqual([commit_json], commits)
+        self.assertRequest(
+            "repo/123/commits", method="POST",
+            json_data={
+                "commits": ["0"],
+                "filter_paths": [".launchpad.yaml", "debian/.launchpad.yaml"],
+                })
+
+    def test_getCommits_filter_paths_no_data(self):
+        commit_json = {"sha1": "0", "blobs": {".launchpad.yaml": {"size": 1}}}
+        with self.mockRequests("POST", json=[commit_json]):
+            self.assertRaisesWithContent(
+                GitRepositoryScanFault,
+                "Failed to get file from Git repository: 'data'",
+                self.client.getCommits, "123", ["0"],
+                filter_paths=[".launchpad.yaml"])
+
+    def test_getCommits_filter_paths_no_size(self):
+        commit_json = {
+            "sha1": "0",
+            "blobs": {".launchpad.yaml": {"data": "data"}},
+            }
+        with self.mockRequests("POST", json=[commit_json]):
+            self.assertRaisesWithContent(
+                GitRepositoryScanFault,
+                "Failed to get file from Git repository: 'size'",
+                self.client.getCommits, "123", ["0"],
+                filter_paths=[".launchpad.yaml"])
+
+    def test_getCommits_filter_paths_bad_encoding(self):
+        commit_json = {
+            "sha1": "0",
+            "blobs": {".launchpad.yaml": {"data": "x", "size": 1}},
+            }
+        with self.mockRequests("POST", json=[commit_json]):
+            self.assertRaisesWithContent(
+                GitRepositoryScanFault,
+                "Failed to get file from Git repository: Incorrect padding",
+                self.client.getCommits, "123", ["0"],
+                filter_paths=[".launchpad.yaml"])
+
+    def test_getCommits_filter_paths_wrong_size(self):
+        blob = b"".join(bytes((i,)) for i in range(256))
+        commit_json = {
+            "sha1": "0",
+            "blobs": {
+                ".launchpad.yaml": {
+                    "data": base64.b64encode(blob).decode(),
+                    "size": 0,
+                    },
+                },
+            }
+        with self.mockRequests("POST", json=[commit_json]):
+            self.assertRaisesWithContent(
+                GitRepositoryScanFault,
+                "Failed to get file from Git repository: Unexpected size"
+                " (256 vs 0)",
+                self.client.getCommits, "123", ["0"],
+                filter_paths=[".launchpad.yaml"])
 
     def test_getCommits_failure(self):
         with self.mockRequests("POST", status=400):

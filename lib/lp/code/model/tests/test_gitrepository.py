@@ -1,4 +1,4 @@
-# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Git repositories."""
@@ -2058,6 +2058,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
     def test_fetchRefCommits(self):
         # fetchRefCommits fetches detailed tip commit metadata for the
         # requested refs.
+        repository = self.factory.makeGitRepository()
         master_sha1 = six.ensure_text(
             hashlib.sha1(b"refs/heads/master").hexdigest())
         foo_sha1 = six.ensure_text(hashlib.sha1(b"refs/heads/foo").hexdigest())
@@ -2093,11 +2094,14 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 "type": GitObjectType.COMMIT,
                 },
             }
-        GitRepository.fetchRefCommits("dummy", refs)
+        repository.fetchRefCommits(refs)
 
         expected_oids = [master_sha1, foo_sha1]
         [(_, observed_oids)] = hosting_fixture.getCommits.extract_args()
         self.assertContentEqual(expected_oids, observed_oids)
+        self.assertEqual(
+            [{"filter_paths": None, "logger": None}],
+            hosting_fixture.getCommits.extract_kwargs())
         expected_author_addr = "%s <%s>" % (author.displayname, author_email)
         [expected_author] = getUtility(IRevisionSet).acquireRevisionAuthors(
             [expected_author_addr]).values()
@@ -2126,9 +2130,73 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
     def test_fetchRefCommits_empty(self):
         # If given an empty refs dictionary, fetchRefCommits returns early
         # without contacting the hosting service.
+        repository = self.factory.makeGitRepository()
         hosting_fixture = self.useFixture(GitHostingFixture())
-        GitRepository.fetchRefCommits("dummy", {})
+        repository.fetchRefCommits({})
         self.assertEqual([], hosting_fixture.getCommits.calls)
+
+    def test_fetchRefCommits_filter_paths(self):
+        # fetchRefCommits can be asked to filter commits to include only
+        # those containing the specified paths, and to return the contents
+        # of those paths.
+        repository = self.factory.makeGitRepository()
+        master_sha1 = six.ensure_text(
+            hashlib.sha1(b"refs/heads/master").hexdigest())
+        foo_sha1 = six.ensure_text(hashlib.sha1(b"refs/heads/foo").hexdigest())
+        author = self.factory.makePerson()
+        with person_logged_in(author):
+            author_email = author.preferredemail.email
+        author_date = datetime(2015, 1, 1, tzinfo=pytz.UTC)
+        hosting_fixture = self.useFixture(GitHostingFixture(commits=[
+            {
+                "sha1": master_sha1,
+                "message": "tip of master",
+                "author": {
+                    "name": author.displayname,
+                    "email": author_email,
+                    "time": int(seconds_since_epoch(author_date)),
+                    },
+                "parents": [],
+                "tree": six.ensure_text(hashlib.sha1(b"").hexdigest()),
+                "blobs": {".launchpad.yaml": b"foo"},
+                }]))
+        refs = {
+            "refs/heads/master": {
+                "sha1": master_sha1,
+                "type": GitObjectType.COMMIT,
+                },
+            "refs/heads/foo": {
+                "sha1": foo_sha1,
+                "type": GitObjectType.COMMIT,
+                },
+            }
+        repository.fetchRefCommits(refs, filter_paths=[".launchpad.yaml"])
+
+        expected_oids = [master_sha1, foo_sha1]
+        [(_, observed_oids)] = hosting_fixture.getCommits.extract_args()
+        self.assertContentEqual(expected_oids, observed_oids)
+        self.assertEqual(
+            [{"filter_paths": [".launchpad.yaml"], "logger": None}],
+            hosting_fixture.getCommits.extract_kwargs())
+        expected_author_addr = "%s <%s>" % (author.displayname, author_email)
+        [expected_author] = getUtility(IRevisionSet).acquireRevisionAuthors(
+            [expected_author_addr]).values()
+        expected_refs = {
+            "refs/heads/master": {
+                "sha1": master_sha1,
+                "type": GitObjectType.COMMIT,
+                "author": expected_author,
+                "author_addr": expected_author_addr,
+                "author_date": author_date,
+                "commit_message": "tip of master",
+                "blobs": {".launchpad.yaml": b"foo"},
+                },
+            "refs/heads/foo": {
+                "sha1": foo_sha1,
+                "type": GitObjectType.COMMIT,
+                },
+            }
+        self.assertEqual(expected_refs, refs)
 
     def test_synchroniseRefs(self):
         # synchroniseRefs copes with synchronising a repository where some
