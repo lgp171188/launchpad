@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Communication with the Git hosting service."""
@@ -153,18 +153,42 @@ class GitHostingClient:
             raise GitRepositoryScanFault(
                 "Failed to get refs from Git repository: %s" % str(e))
 
-    def getCommits(self, path, commit_oids, logger=None):
+    def _decodeBlob(self, encoded_blob):
+        """Blobs are base64-decoded for transport.  Decode them."""
+        try:
+            blob = base64.b64decode(encoded_blob["data"].encode("UTF-8"))
+            if len(blob) != encoded_blob["size"]:
+                raise GitRepositoryScanFault(
+                    "Unexpected size (%s vs %s)" % (
+                        len(blob), encoded_blob["size"]))
+            return blob
+        except Exception as e:
+            raise GitRepositoryScanFault(
+                "Failed to get file from Git repository: %s" % str(e))
+
+    def getCommits(self, path, commit_oids, filter_paths=None, logger=None):
         """See `IGitHostingClient`."""
         commit_oids = list(commit_oids)
         try:
             if logger is not None:
-                logger.info("Requesting commit details for %s" % commit_oids)
-            return self._post(
-                "/repo/%s/commits" % path, json={"commits": commit_oids})
+                message = "Requesting commit details for %s" % commit_oids
+                if filter_paths:
+                    message += " (with paths: %s)" % filter_paths
+                logger.info(message)
+            json_data = {"commits": commit_oids}
+            if filter_paths:
+                json_data["filter_paths"] = filter_paths
+            response = self._post("/repo/%s/commits" % path, json=json_data)
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
                 "Failed to get commit details from Git repository: %s" %
                 str(e))
+        if filter_paths:
+            for commit in response:
+                blobs = commit.get("blobs", {})
+                for path, encoded_blob in blobs.items():
+                    blobs[path] = self._decodeBlob(encoded_blob)
+        return response
 
     def getLog(self, path, start, limit=None, stop=None, logger=None):
         """See `IGitHostingClient`."""
@@ -250,16 +274,7 @@ class GitHostingClient:
             else:
                 raise GitRepositoryScanFault(
                     "Failed to get file from Git repository: %s" % str(e))
-        try:
-            blob = base64.b64decode(response["data"].encode("UTF-8"))
-            if len(blob) != response["size"]:
-                raise GitRepositoryScanFault(
-                    "Unexpected size (%s vs %s)" % (
-                        len(blob), response["size"]))
-            return blob
-        except Exception as e:
-            raise GitRepositoryScanFault(
-                "Failed to get file from Git repository: %s" % str(e))
+        return self._decodeBlob(response)
 
     def copyRefs(self, path, operations, logger=None):
         """See `IGitHostingClient`."""

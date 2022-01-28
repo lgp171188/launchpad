@@ -1,4 +1,4 @@
-# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -242,8 +242,8 @@ def parse_git_commits(commits):
     :param commits: A list of turnip-formatted commit object dicts.
     :return: A dict mapping sha1 identifiers of commits to parsed commit
         dicts: keys may include "sha1", "author_date", "author_addr",
-        "author", "committer_date", "committer_addr", "committer", and
-        "commit_message".
+        "author", "committer_date", "committer_addr", "committer",
+        "commit_message", and "blobs".
     """
     parsed = {}
     authors_to_acquire = []
@@ -288,6 +288,8 @@ def parse_git_commits(commits):
                     committers_to_acquire.append(committer_addr)
         if "message" in commit:
             info["commit_message"] = commit["message"]
+        if "blobs" in commit:
+            info["blobs"] = commit["blobs"]
         parsed[commit["sha1"]] = info
     revision_authors = getUtility(IRevisionSet).acquireRevisionAuthors(
         authors_to_acquire + committers_to_acquire)
@@ -877,15 +879,15 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
         refs_to_remove = set(current_refs) - set(new_refs)
         return refs_to_upsert, refs_to_remove
 
-    @staticmethod
-    def fetchRefCommits(hosting_path, refs, logger=None):
+    def fetchRefCommits(self, refs, filter_paths=None, logger=None):
         """See `IGitRepository`."""
         oids = sorted({info["sha1"] for info in refs.values()})
         if not oids:
             return
         commits = parse_git_commits(
             getUtility(IGitHostingClient).getCommits(
-                hosting_path, oids, logger=logger))
+                self.getInternalPath(), oids, filter_paths=filter_paths,
+                logger=logger))
         for info in refs.values():
             commit = commits.get(info["sha1"])
             if commit is not None:
@@ -904,8 +906,7 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
         hosting_path = self.getInternalPath()
         refs_to_upsert, refs_to_remove = (
             self.planRefChanges(hosting_path, logger=log))
-        self.fetchRefCommits(
-            hosting_path, refs_to_upsert, logger=log)
+        self.fetchRefCommits(refs_to_upsert, logger=log)
         self.synchroniseRefs(
             refs_to_upsert, refs_to_remove, logger=log)
         props = getUtility(IGitHostingClient).getProperties(

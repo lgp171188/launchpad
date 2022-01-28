@@ -37,10 +37,13 @@ def _expand_job_values(values):
 
 
 def load_configuration(configuration_file):
-    """loads a `.launchpad.yaml` file into a `Configuration` object"""
+    """Loads a `.launchpad.yaml` file into a `Configuration` object.
+
+    :param configuration_file: Anything that you can pass to `yaml.safe_load`,
+        i.e. a stream or a string containing `.launchpad.yaml` content.
+    """
     # load yaml
-    with open(configuration_file) as stream:
-        content = yaml.safe_load(stream)
+    content = yaml.safe_load(configuration_file)
     # expand matrix
     expanded_values = content.copy()
     if expanded_values.get("jobs"):
