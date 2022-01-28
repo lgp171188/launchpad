@@ -35,13 +35,9 @@ from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import convert_storm_clause_to_string
 from lp.services.database.stormbase import StormBase
-from lp.services.librarian.browser import (
-    FileNavigationMixin,
-    ProxiedLibraryFileAlias,
-    )
+from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.model import LibraryFileAlias
-from lp.services.webapp import Navigation
 
 
 @implementer(IRevisionStatusReport)
@@ -127,15 +123,14 @@ class RevisionStatusReport(StormBase):
 
     def getArtifactURLs(self, artifact_type):
         clauses = [
+            RevisionStatusArtifact,
             RevisionStatusArtifact.report == self,
         ]
         if artifact_type:
-            clauses.extend(
-                [RevisionStatusArtifact.artifact_type == artifact_type, ]
-            )
-
-        return getUtility(
-            IRevisionStatusArtifactSet).getArtifactDownloadURLs(clauses)
+            clauses.append(
+                RevisionStatusArtifact.artifact_type == artifact_type)
+        artifacts = IStore(RevisionStatusArtifact).find(*clauses)
+        return [artifact.download_url for artifact in artifacts]
 
 
 @implementer(IRevisionStatusReportSet)
@@ -215,7 +210,7 @@ class RevisionStatusArtifact(StormBase):
             RevisionStatusArtifact.id == self.id,
             LibraryFileAlias.id == RevisionStatusArtifact.library_file_id,
             LibraryFileAlias.filename == filename).one()
-        if file_object is not None and file_object.filename == filename:
+        if file_object is not None:
             return file_object
         raise NotFoundError(filename)
 
@@ -244,19 +239,9 @@ class RevisionStatusArtifactSet:
             RevisionStatusArtifact,
             RevisionStatusArtifact.report == report)
 
-    def getArtifactDownloadURLs(self, clauses):
-        artifacts = IStore(RevisionStatusArtifact).find(
-            RevisionStatusArtifact, *clauses)
-        return [artifact.download_url for artifact in artifacts]
-
     def getByRepositoryAndID(self, repository, id):
-        artifact = self.getById(id)
-        if artifact.repository == repository:
-            return artifact
-        return None
-
-
-class RevisionStatusArtifactNavigation(Navigation, FileNavigationMixin):
-    """Traversal to +files/${filename}."""
-
-    usedfor = IRevisionStatusArtifact
+        return IStore(RevisionStatusArtifact).find(
+            RevisionStatusArtifact,
+            RevisionStatusArtifact.id == id,
+            RevisionStatusArtifact.report == RevisionStatusReport.id,
+            RevisionStatusReport.git_repository == repository).one()

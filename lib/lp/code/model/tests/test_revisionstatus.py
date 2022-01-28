@@ -6,6 +6,7 @@
 import hashlib
 import io
 
+from fixtures import FakeLogger
 import requests
 from testtools.matchers import (
     AnyMatch,
@@ -16,6 +17,7 @@ from testtools.matchers import (
     MatchesStructure,
     )
 from zope.component import getUtility
+from zope.security.interfaces import Unauthorized
 
 from lp.app.enums import InformationType
 from lp.code.enums import (
@@ -269,16 +271,14 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
             self.assertIn(log_url, response.jsonBody())
             self.assertNotIn(binary_url, response.jsonBody())
             # ensure the url works
-            https_url = ('https://code.launchpad.test/%s/'
-                         '+artifact/%s/+files/%s' % (
-                repository.unique_name,
-                artifact_log.id,
-                artifact_log.library_file.filename))
-
-        response = requests.get(log_url, allow_redirects=False)
-
-        self.assertEqual(301, response.status_code)
-        self.assertEqual(https_url, response.headers.get('Location'))
+            browser = self.getNonRedirectingBrowser()
+            browser.open(log_url)
+            self.assertEqual(
+                303,
+                int(browser.headers["Status"].split(" ", 1)[0]))
+            self.assertEqual(
+                b"log_data",
+                requests.get(browser.headers["Location"]).content)
 
         response = webservice.named_get(
             report_url, "getArtifactURLs", artifact_type="Binary")
@@ -297,6 +297,7 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
             self.assertIn(binary_url, response.jsonBody())
 
     def test_getArtifactURLs_restricted(self):
+        self.useFixture(FakeLogger())
         requester = self.factory.makePerson()
         with person_logged_in(requester):
             kwargs = {"owner": requester}
@@ -320,14 +321,19 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         with person_logged_in(requester):
             self.assertIn(log_url, response.jsonBody())
-            # ensure the url works
-            https_url = ('https://code.launchpad.test/%s/'
-                         '+artifact/%s/+files/%s' % (
-                repository.unique_name,
-                artifact.id,
-                artifact.library_file.filename))
+            # ensure the url works - we see failure here without authentication
+            browser = self.getNonRedirectingBrowser()
+            self.assertRaises(Unauthorized, browser.open, log_url)
 
-        response = requests.get(log_url, allow_redirects=False)
-
-        self.assertEqual(301, response.status_code)
-        self.assertEqual(https_url, response.headers.get('Location'))
+            # we should be redirected to librarian with authentication
+            browser = self.getNonRedirectingBrowser(user=requester)
+            browser.open(log_url)
+            self.assertEqual(
+                303,
+                int(browser.headers["Status"].split(" ", 1)[0]))
+            # Actually requesting files from the restricted librarian is
+            # cumbersome, but at least test that we're redirected to the
+            # restricted librarian with a suitable token.
+            self.assertRegex(
+                browser.headers["Location"],
+                r"^https://.*\.restricted\..*?token=.*")

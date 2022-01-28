@@ -248,10 +248,7 @@ class IRevisionStatusArtifactSet(Interface):
     def findByReport(report):
         """Returns the set of artifacts for a given report."""
 
-    def getArtifactDownloadURLs(report, clauses):
-        """Returns download URLs for all artifacts under a given report."""
-
-    def getByRepositoryAndID(self, repository, id):
+    def getByRepositoryAndID(repository, id):
         """Returns the artifact for a given repository and ID."""
 
 
@@ -269,8 +266,7 @@ class IRevisionStatusArtifact(Interface):
         title=_('The type of artifact, only log for now.'),
         vocabulary=RevisionStatusArtifactType)
 
-    def getFileByName(self, report, filename):
-        """Returns an artifact by name."""
+    repository = Attribute("The repository for this artifact.")
 
-    def repository(self):
-        """Returns the repository for this artifact."""
+    def getFileByName(filename):
+        """Returns an artifact by name."""

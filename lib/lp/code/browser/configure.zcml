@@ -976,7 +976,7 @@
         rootsite="code"/>
 
     <browser:navigation
-        module="lp.code.model.revisionstatus"
+        module="lp.code.browser.revisionstatus"
         classes="RevisionStatusArtifactNavigation"/>
 
     <browser:defaultView
