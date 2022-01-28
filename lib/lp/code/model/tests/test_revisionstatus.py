@@ -6,6 +6,8 @@
 import hashlib
 import io
 
+from fixtures import FakeLogger
+import requests
 from testtools.matchers import (
     AnyMatch,
     Equals,
@@ -15,6 +17,7 @@ from testtools.matchers import (
     MatchesStructure,
     )
 from zope.component import getUtility
+from zope.security.interfaces import Unauthorized
 
 from lp.app.enums import InformationType
 from lp.code.enums import (
@@ -40,10 +43,11 @@ from lp.testing.pages import webservice_for_person
 class TestRevisionStatusReport(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
-    def makeRevisionStatusArtifact(self, report):
+    def makeRevisionStatusArtifact(self, report, artifact_type=None):
         # We don't need to upload files to the librarian in this test suite.
         lfa = self.factory.makeLibraryFileAlias(db_only=True)
-        return self.factory.makeRevisionStatusArtifact(lfa=lfa, report=report)
+        return self.factory.makeRevisionStatusArtifact(
+            lfa=lfa, report=report, artifact_type=artifact_type)
 
     def test_owner_public(self):
         # The owner of a public repository can view and edit its reports and
@@ -239,3 +243,97 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
                 result_summary=Equals(initial_result_summary),
                 result=Equals(RevisionStatusResult.SUCCEEDED),
                 date_finished=GreaterThan(date_finished_before_update)))
+
+    def test_getArtifactURLs(self):
+        report = self.factory.makeRevisionStatusReport()
+        artifact_log = self.factory.makeRevisionStatusArtifact(
+            report=report, artifact_type=RevisionStatusArtifactType.LOG,
+            content=b'log_data')
+        artifact_binary = self.factory.makeRevisionStatusArtifact(
+            report=report, artifact_type=RevisionStatusArtifactType.BINARY,
+            content=b'binary_data')
+        requester = report.creator
+        repository = report.git_repository
+        report_url = api_url(report)
+        log_url = 'http://code.launchpad.test/%s/+artifact/%s/+files/%s' % (
+            repository.unique_name, artifact_log.id,
+            artifact_log.library_file.filename)
+        binary_url = 'http://code.launchpad.test/%s/+artifact/%s/+files/%s' % (
+            repository.unique_name, artifact_binary.id,
+            artifact_binary.library_file.filename)
+        webservice = self.getWebservice(requester, repository)
+
+        response = webservice.named_get(
+            report_url, "getArtifactURLs", artifact_type="Log")
+
+        self.assertEqual(200, response.status)
+        with person_logged_in(requester):
+            self.assertIn(log_url, response.jsonBody())
+            self.assertNotIn(binary_url, response.jsonBody())
+            # ensure the url works
+            browser = self.getNonRedirectingBrowser()
+            browser.open(log_url)
+            self.assertEqual(
+                303,
+                int(browser.headers["Status"].split(" ", 1)[0]))
+            self.assertEqual(
+                b"log_data",
+                requests.get(browser.headers["Location"]).content)
+
+        response = webservice.named_get(
+            report_url, "getArtifactURLs", artifact_type="Binary")
+
+        self.assertEqual(200, response.status)
+        with person_logged_in(requester):
+            self.assertNotIn(log_url, response.jsonBody())
+            self.assertIn(binary_url, response.jsonBody())
+
+        response = webservice.named_get(
+            report_url, "getArtifactURLs")
+
+        self.assertEqual(200, response.status)
+        with person_logged_in(requester):
+            self.assertIn(log_url, response.jsonBody())
+            self.assertIn(binary_url, response.jsonBody())
+
+    def test_getArtifactURLs_restricted(self):
+        self.useFixture(FakeLogger())
+        requester = self.factory.makePerson()
+        with person_logged_in(requester):
+            kwargs = {"owner": requester}
+            kwargs["information_type"] = InformationType.USERDATA
+            repository = self.factory.makeGitRepository(**kwargs)
+            report = self.factory.makeRevisionStatusReport(
+                git_repository=repository)
+            report_url = api_url(report)
+            artifact = self.factory.makeRevisionStatusArtifact(
+                report=report, artifact_type=RevisionStatusArtifactType.LOG,
+                content=b'log_data', restricted=True)
+            log_url = ('http://code.launchpad.test/%s/'
+                       '+artifact/%s/+files/%s' % (
+                repository.unique_name, artifact.id,
+                artifact.library_file.filename))
+        webservice = self.getWebservice(requester, repository)
+
+        response = webservice.named_get(
+            report_url, "getArtifactURLs", artifact_type="Log")
+
+        self.assertEqual(200, response.status)
+        with person_logged_in(requester):
+            self.assertIn(log_url, response.jsonBody())
+            # ensure the url works - we see failure here without authentication
+            browser = self.getNonRedirectingBrowser()
+            self.assertRaises(Unauthorized, browser.open, log_url)
+
+            # we should be redirected to librarian with authentication
+            browser = self.getNonRedirectingBrowser(user=requester)
+            browser.open(log_url)
+            self.assertEqual(
+                303,
+                int(browser.headers["Status"].split(" ", 1)[0]))
+            # Actually requesting files from the restricted librarian is
+            # cumbersome, but at least test that we're redirected to the
+            # restricted librarian with a suitable token.
+            self.assertRegex(
+                browser.headers["Location"],
+                r"^https://.*\.restricted\..*?token=.*")

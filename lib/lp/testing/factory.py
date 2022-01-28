@@ -1871,13 +1871,16 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             result_summary, result)
 
     def makeRevisionStatusArtifact(
-            self, lfa=None, report=None,
-            artifact_type=RevisionStatusArtifactType.LOG):
+            self, lfa=None, content=None, report=None,
+            artifact_type=None, restricted=False):
         """Create a new RevisionStatusArtifact."""
         if lfa is None:
-            lfa = self.makeLibraryFileAlias()
+            lfa = self.makeLibraryFileAlias(
+                content=content, restricted=restricted)
         if report is None:
             report = self.makeRevisionStatusReport()
+        if artifact_type is None:
+            artifact_type = RevisionStatusArtifactType.LOG
         return getUtility(IRevisionStatusArtifactSet).new(
             lfa, report, artifact_type)
 
