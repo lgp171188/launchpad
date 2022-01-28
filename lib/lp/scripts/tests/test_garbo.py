@@ -59,9 +59,14 @@ from lp.code.bzr import (
 from lp.code.enums import (
     CodeImportResultStatus,
     GitRepositoryStatus,
+    RevisionStatusArtifactType,
     )
 from lp.code.interfaces.codeimportevent import ICodeImportEventSet
 from lp.code.interfaces.gitrepository import IGitRepositorySet
+from lp.code.interfaces.revisionstatus import (
+    IRevisionStatusArtifactSet,
+    IRevisionStatusReportSet,
+    )
 from lp.code.model.branchjob import (
     BranchJob,
     BranchUpgradeJob,
@@ -2045,6 +2050,65 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.runDaily()
         switch_dbuser('testadmin')
         self.assertEqual(build1._store_upload_revision, 1)
+
+    def test_RevisionStatusReportPruner(self):
+        # Artifacts for report1 are older than 30 days
+        # and we expect the garbo job to delete them.
+        # Artifacts for report2 are newer then 30 days and
+        # we expect them to survive the garbo job.
+        switch_dbuser('testadmin')
+        now = datetime.now(UTC)
+        report1 = removeSecurityProxy(self.factory.makeRevisionStatusReport())
+        report2 = self.factory.makeRevisionStatusReport()
+        report1.date_created = now - timedelta(days=60)
+        repo1 = report1.git_repository
+        repo2 = report2.git_repository
+        artifact1_1 = self.factory.makeRevisionStatusArtifact(
+            report=report1, artifact_type=RevisionStatusArtifactType.BINARY)
+        artifact1_2 = self.factory.makeRevisionStatusArtifact(
+            report=report1, artifact_type=RevisionStatusArtifactType.BINARY)
+        artifact1_3 = self.factory.makeRevisionStatusArtifact(
+            report=report1)
+        for i in range(0, 5):
+            self.factory.makeRevisionStatusArtifact(
+                report=report2,
+                artifact_type=RevisionStatusArtifactType.BINARY)
+        reports_in_db = list(getUtility(
+                IRevisionStatusReportSet).findByRepository(repo1))
+        self.assertEqual(1, len(reports_in_db))
+        artifacts_db = list(getUtility(
+            IRevisionStatusArtifactSet).findByReport(report1))
+        self.assertEqual(3, len(artifacts_db))
+        self.assertItemsEqual(
+            [artifact1_1, artifact1_2, artifact1_3], artifacts_db)
+
+        self.runDaily()
+
+        log = self.log_buffer.getvalue()
+        self.assertIn(
+            '[RevisionStatusReportPruner] '
+            'RevisionStatusReportPruner completed successfully.',
+            log)
+        artifacts_db = list(getUtility(
+            IRevisionStatusArtifactSet).findByReport(report1))
+        # artifact1_1 and artifact1_2 which were type Binary should be gone
+        # only artifact1_3 of type Log should have survived the garbo job
+        self.assertEqual(1, len(artifacts_db))
+        self.assertEqual([artifact1_3], artifacts_db)
+        # ensure the report is still there
+        self.assertEqual(
+            [report1],
+            list(getUtility(
+                IRevisionStatusReportSet).findByRepository(repo1)))
+
+        # assert report2 and its artifacts remained intact
+        artifacts_db = list(getUtility(
+            IRevisionStatusArtifactSet).findByReport(report2))
+        self.assertEqual(5, len(artifacts_db))
+        self.assertEqual(
+            [report2],
+            list(getUtility(
+                IRevisionStatusReportSet).findByRepository(repo2)))
 
     def test_PopulateBugLockStatusDefaultUnlocked(self):
         switch_dbuser('testadmin')

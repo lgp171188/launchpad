@@ -61,7 +61,10 @@ from lp.bugs.scripts.checkwatches.scheduler import (
     BugWatchScheduler,
     MAX_SAMPLE_SIZE,
     )
-from lp.code.enums import GitRepositoryStatus
+from lp.code.enums import (
+    GitRepositoryStatus,
+    RevisionStatusArtifactType,
+    )
 from lp.code.interfaces.revision import IRevisionSet
 from lp.code.model.codeimportevent import CodeImportEvent
 from lp.code.model.codeimportresult import CodeImportResult
@@ -74,6 +77,7 @@ from lp.code.model.revision import (
     RevisionAuthor,
     RevisionCache,
     )
+from lp.code.model.revisionstatus import RevisionStatusArtifact
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.model.person import Person
@@ -1763,6 +1767,24 @@ class PopulateSnapBuildStoreRevision(TunableLoop):
         transaction.commit()
 
 
+class RevisionStatusReportPruner(BulkPruner):
+    """Removes old revision status reports and their artifacts."""
+    older_than = 30  # artifacts older than 30 days
+    target_table_class = RevisionStatusArtifact
+    ids_to_prune_query = """
+        SELECT DISTINCT RevisionStatusArtifact.id
+        FROM RevisionStatusArtifact, RevisionStatusReport
+        WHERE
+            RevisionStatusArtifact.report = RevisionStatusReport.id
+            AND RevisionStatusReport.date_created <
+            CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+                - CAST('%s days' AS INTERVAL)
+            AND RevisionStatusArtifact.type = %d
+        """ % (
+        older_than,
+        RevisionStatusArtifactType.BINARY.value)
+
+
 class PopulateBugLockStatusDefaultUnlocked(TunableLoop):
     """
     Populates Bug.lock_status to BugLockStatus.UNLOCKED if not set
@@ -2096,6 +2118,7 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         PreviewDiffPruner,
         ProductVCSPopulator,
         RevisionAuthorEmailLinker,
+        RevisionStatusReportPruner,
         ScrubPOFileTranslator,
         SnapBuildJobPruner,
         SnapFilePruner,
