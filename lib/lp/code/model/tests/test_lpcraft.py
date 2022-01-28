@@ -1,7 +1,6 @@
 # Copyright 2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import os
 from textwrap import dedent
 
 from lp.code.model.lpcraft import load_configuration
@@ -9,19 +8,13 @@ from lp.testing import TestCase
 
 
 class TestLoadConfiguration(TestCase):
-    def create_configuration_file(self, s):
-        path = os.path.join(self.makeTemporaryDirectory(), "launchpad.yaml")
-        with open(path, "w") as f:
-            f.write(s)
-        return path
-
     def test_load_configuration_with_pipeline(self):
         c = dedent("""\
         pipeline:
             - test
         """)
 
-        configuration = load_configuration(self.create_configuration_file(c))
+        configuration = load_configuration(c)
 
         self.assertEqual(
             ["test"], configuration.pipeline
@@ -43,7 +36,7 @@ class TestLoadConfiguration(TestCase):
                     focal
         """)
 
-        configuration = load_configuration(self.create_configuration_file(c))
+        configuration = load_configuration(c)
 
         self.assertEqual(
             ["test"], configuration.pipeline,
@@ -71,7 +64,7 @@ class TestLoadConfiguration(TestCase):
                       architectures: [amd64, s390x]
         """)
 
-        configuration = load_configuration(self.create_configuration_file(c))
+        configuration = load_configuration(c)
 
         self.assertEqual(
             ["test"], configuration.pipeline,
