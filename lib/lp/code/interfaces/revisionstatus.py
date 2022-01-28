@@ -16,6 +16,7 @@ import http.client
 
 from lazr.restful.declarations import (
     error_status,
+    export_read_operation,
     export_write_operation,
     exported,
     exported_as_webservice_entry,
@@ -77,6 +78,18 @@ class IRevisionStatusReportView(Interface):
         title=_("When the report was started.")), readonly=False)
     date_finished = exported(Datetime(
         title=_("When the report has finished.")), readonly=False)
+
+    @operation_parameters(
+        artifact_type=Choice(vocabulary=RevisionStatusArtifactType,
+                             required=False))
+    @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getArtifactURLs(artifact_type):
+        """Retrieves the list of URLs for artifacts that exist for this report.
+
+        :param artifact_type: The type of artifact for the report.
+        """
 
 
 class IRevisionStatusReportEditableAttributes(Interface):
@@ -235,6 +248,9 @@ class IRevisionStatusArtifactSet(Interface):
     def findByReport(report):
         """Returns the set of artifacts for a given report."""
 
+    def getByRepositoryAndID(repository, id):
+        """Returns the artifact for a given repository and ID."""
+
 
 class IRevisionStatusArtifact(Interface):
     id = Int(title=_("ID"), required=True, readonly=True)
@@ -249,3 +265,8 @@ class IRevisionStatusArtifact(Interface):
     artifact_type = Choice(
         title=_('The type of artifact, only log for now.'),
         vocabulary=RevisionStatusArtifactType)
+
+    repository = Attribute("The repository for this artifact.")
+
+    def getFileByName(filename):
+        """Returns an artifact by name."""
