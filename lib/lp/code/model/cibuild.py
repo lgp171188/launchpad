@@ -31,10 +31,18 @@ from lp.buildmaster.enums import (
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
 from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
+from lp.code.errors import (
+    GitRepositoryBlobNotFound,
+    GitRepositoryScanFault,
+    )
 from lp.code.interfaces.cibuild import (
+    CannotFetchConfiguration,
+    CannotParseConfiguration,
     ICIBuild,
     ICIBuildSet,
+    MissingConfiguration,
     )
+from lp.code.model.lpcraft import load_configuration
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distribution import Distribution
@@ -55,6 +63,16 @@ from lp.services.librarian.model import (
     )
 from lp.services.propertycache import cachedproperty
 from lp.soyuz.model.distroarchseries import DistroArchSeries
+
+
+def parse_configuration(git_repository, blob):
+    try:
+        return load_configuration(blob)
+    except Exception as e:
+        # Don't bother logging parsing errors from user-supplied YAML.
+        raise CannotParseConfiguration(
+            "Cannot parse .launchpad.yaml from %s: %s" %
+            (git_repository.unique_name, e))
 
 
 @implementer(ICIBuild)
@@ -257,6 +275,33 @@ class CIBuild(PackageBuildMixin, StormBase):
         if self.estimate:
             return self.eta
         return self.date_finished
+
+    def getConfiguration(self, logger=None):
+        """See `ICIBuild`."""
+        try:
+            paths = (
+                ".launchpad.yaml",
+                )
+            for path in paths:
+                try:
+                    blob = self.git_repository.getBlob(
+                        path, rev=self.commit_sha1)
+                    break
+                except GitRepositoryBlobNotFound:
+                    pass
+            else:
+                if logger is not None:
+                    logger.exception(
+                        "Cannot find .launchpad.yaml in %s" %
+                        self.git_repository.unique_name)
+                raise MissingConfiguration(self.git_repository.unique_name)
+        except GitRepositoryScanFault as e:
+            msg = "Failed to get .launchpad.yaml from %s"
+            if logger is not None:
+                logger.exception(msg, self.git_repository.unique_name)
+            raise CannotFetchConfiguration(
+                "%s: %s" % (msg % self.git_repository.unique_name, e))
+        return parse_configuration(self.git_repository, blob)
 
     def verifySuccessfulUpload(self):
         """See `IPackageBuild`."""

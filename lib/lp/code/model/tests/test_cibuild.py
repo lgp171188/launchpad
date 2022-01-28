@@ -7,9 +7,13 @@ from datetime import (
     datetime,
     timedelta,
     )
+from textwrap import dedent
 
 import pytz
-from testtools.matchers import Equals
+from testtools.matchers import (
+    Equals,
+    MatchesStructure,
+    )
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -17,10 +21,18 @@ from lp.app.enums import InformationType
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
+from lp.code.errors import (
+    GitRepositoryBlobNotFound,
+    GitRepositoryScanFault,
+    )
 from lp.code.interfaces.cibuild import (
+    CannotFetchConfiguration,
+    CannotParseConfiguration,
     ICIBuild,
     ICIBuildSet,
+    MissingConfiguration,
     )
+from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.propertycache import clear_property_cache
 from lp.testing import (
@@ -221,6 +233,55 @@ class TestCIBuild(TestCaseWithFactory):
         build.updateStatus(BuildStatus.FULLYBUILT)
         clear_property_cache(build)
         self.assertFalse(build.estimate)
+
+    def test_getConfiguration(self):
+        build = self.factory.makeCIBuild()
+        das = build.distro_arch_series
+        self.useFixture(GitHostingFixture(blob=dedent("""\
+            pipeline: [test]
+            jobs:
+                test:
+                    series: {}
+                    architectures: [{}]
+            """.format(das.distroseries.name, das.architecturetag)).encode()))
+        self.assertThat(
+            build.getConfiguration(),
+            MatchesStructure.byEquality(
+                pipeline=[["test"]],
+                jobs={
+                    "test": [{
+                        "series": das.distroseries.name,
+                        "architectures": [das.architecturetag],
+                        }]}))
+
+    def test_getConfiguration_not_found(self):
+        build = self.factory.makeCIBuild()
+        self.useFixture(GitHostingFixture()).getBlob.failure = (
+            GitRepositoryBlobNotFound(
+                build.git_repository.getInternalPath(), ".launchpad.yaml",
+                rev=build.commit_sha1))
+        self.assertRaisesWithContent(
+            MissingConfiguration,
+            "Cannot find .launchpad.yaml in %s" % (
+                build.git_repository.unique_name),
+            build.getConfiguration)
+
+    def test_getConfiguration_fetch_error(self):
+        build = self.factory.makeCIBuild()
+        self.useFixture(GitHostingFixture()).getBlob.failure = (
+            GitRepositoryScanFault("Boom"))
+        self.assertRaisesWithContent(
+            CannotFetchConfiguration,
+            "Failed to get .launchpad.yaml from %s: Boom" % (
+                build.git_repository.unique_name),
+            build.getConfiguration)
+
+    def test_getConfiguration_invalid_data(self):
+        build = self.factory.makeCIBuild()
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        for invalid_result in (None, 123, b"", b"[][]", b"#name:test", b"]"):
+            hosting_fixture.getBlob.result = invalid_result
+            self.assertRaises(CannotParseConfiguration, build.getConfiguration)
 
 
 class TestCIBuildSet(TestCaseWithFactory):

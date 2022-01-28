@@ -4,8 +4,11 @@
 """Interfaces for CI builds."""
 
 __all__ = [
+    "CannotFetchConfiguration",
+    "CannotParseConfiguration",
     "ICIBuild",
     "ICIBuildSet",
+    "MissingConfiguration",
     ]
 
 from lazr.restful.fields import Reference
@@ -29,6 +32,25 @@ from lp.buildmaster.interfaces.packagebuild import (
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.services.database.constants import DEFAULT
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
+
+
+class MissingConfiguration(Exception):
+    """The repository for this CI build does not have a .launchpad.yaml."""
+
+    def __init__(self, name):
+        super().__init__("Cannot find .launchpad.yaml in %s" % name)
+
+
+class CannotFetchConfiguration(Exception):
+    """Launchpad cannot fetch this CI build's .launchpad.yaml."""
+
+    def __init__(self, message, unsupported_remote=False):
+        super().__init__(message)
+        self.unsupported_remote = unsupported_remote
+
+
+class CannotParseConfiguration(Exception):
+    """Launchpad cannot parse this CI build's .launchpad.yaml."""
 
 
 class ICIBuildView(IPackageBuildView):
@@ -67,6 +89,21 @@ class ICIBuildView(IPackageBuildView):
         title=_(
             "The date when the build completed or is estimated to complete."),
         readonly=True)
+
+    def getConfiguration(logger=None):
+        """Fetch a CI build's .launchpad.yaml from code hosting, if possible.
+
+        :param logger: An optional logger.
+
+        :return: The build's parsed .launchpad.yaml.
+        :raises MissingConfiguration: if this package has no
+            .launchpad.yaml.
+        :raises CannotFetchConfiguration: if it was not possible to fetch
+            .launchpad.yaml from the code hosting backend for some other
+            reason.
+        :raises CannotParseConfiguration: if the fetched .launchpad.yaml
+            cannot be parsed.
+        """
 
 
 class ICIBuildEdit(IBuildFarmJobEdit):
