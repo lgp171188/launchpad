@@ -549,29 +549,40 @@ class TestBugLocking(TestCaseWithFactory):
         # A user without the relevant role cannot edit a locked bug.
         with person_logged_in(another_person):
             self.assertFalse(checkPermission('launchpad.Edit', bug))
+            self.assertFalse(
+                checkPermission('launchpad.Edit', bug.default_bugtask))
 
         # The bug reporter cannot edit a locked bug.
         with person_logged_in(self.person):
             self.assertFalse(checkPermission('launchpad.Edit', bug))
+            self.assertFalse(
+                checkPermission('launchpad.Edit', bug.default_bugtask))
 
         # Target driver can edit a locked bug.
         new_person = self.factory.makePerson()
         removeSecurityProxy(bug.default_bugtask.target).driver = new_person
         with person_logged_in(new_person):
             self.assertTrue(checkPermission('launchpad.Edit', bug))
+            self.assertTrue(
+                checkPermission('launchpad.Edit', bug.default_bugtask))
 
         # Admins can edit a locked bug.
         with admin_logged_in():
             self.assertTrue(checkPermission('launchpad.Edit', bug))
+            self.assertTrue(
+                checkPermission('launchpad.Edit', bug.default_bugtask))
 
         # Commercial admins can edit a locked bug.
         with celebrity_logged_in('commercial_admin'):
             self.assertTrue(checkPermission('launchpad.Edit', bug))
+            self.assertTrue(
+                checkPermission('launchpad.Edit', bug.default_bugtask))
 
         # Registry experts can edit a locked bug.
         with celebrity_logged_in('registry_experts'):
             self.assertTrue(checkPermission('launchpad.Edit', bug))
-
+            self.assertTrue(
+                checkPermission('launchpad.Edit', bug.default_bugtask))
 
     def test_only_those_with_moderate_permission_can_lock_unlock_a_bug(self):
         bug = self.factory.makeBug(owner=self.person, target=self.target)

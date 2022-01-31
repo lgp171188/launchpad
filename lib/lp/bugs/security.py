@@ -38,19 +38,16 @@ class EditBugNominationStatus(AuthorizationBase):
         return self.obj.canApprove(user.person)
 
 
-class EditBugTask(AuthorizationBase):
+class EditBugTask(DelegatedAuthorization):
     """Permission checker for editing objects linked to a bug.
 
-    Allow any logged-in user to edit objects linked to public
-    bugs. Allow only explicit subscribers to edit objects linked to
-    private bugs.
+    Allow people who can edit a bug to edit the tasks linked to it.
     """
     permission = 'launchpad.Edit'
     usedfor = IHasBug
 
-    def checkAuthenticated(self, user):
-        # Delegated entirely to the bug.
-        return self.obj.bug.userCanView(user)
+    def __init__(self, obj):
+        super().__init__(obj, obj.bug)
 
 
 class DeleteBugTask(AuthorizationBase):
