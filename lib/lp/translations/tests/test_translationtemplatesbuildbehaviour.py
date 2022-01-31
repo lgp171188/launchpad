@@ -68,7 +68,6 @@ class MakeBehaviourMixin:
         if use_fake_chroot:
             behaviour.distro_arch_series.addOrUpdateChroot(
                 self.factory.makeLibraryFileAlias(db_only=True))
-            self.layer.txn.commit()
         return behaviour
 
     def makeProductSeriesWithBranchForTranslation(self):

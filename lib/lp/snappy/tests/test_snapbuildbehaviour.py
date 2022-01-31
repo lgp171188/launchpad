@@ -30,7 +30,6 @@ from testtools.matchers import (
 from testtools.twistedsupport import (
     AsynchronousDeferredRunTestForBrokenTwisted,
     )
-import transaction
 from twisted.internet import defer
 from zope.component import getUtility
 from zope.proxy import isProxy
@@ -103,7 +102,7 @@ from lp.testing.gpgkeys import (
     import_public_key,
     )
 from lp.testing.keyserver import InProcessKeyServerFixture
-from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class FormatAsRfc3339TestCase(TestCase):
@@ -122,7 +121,8 @@ class FormatAsRfc3339TestCase(TestCase):
 
 
 class TestSnapBuildBehaviourBase(TestCaseWithFactory):
-    layer = LaunchpadZopelessLayer
+
+    layer = ZopelessDatabaseLayer
 
     def setUp(self):
         super().setUp()
@@ -153,7 +153,6 @@ class TestSnapBuildBehaviourBase(TestCaseWithFactory):
 
 
 class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
-    layer = LaunchpadZopelessLayer
 
     def test_provides_interface(self):
         # SnapBuildBehaviour provides IBuildFarmJobBehaviour.
@@ -170,8 +169,7 @@ class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         # verifyBuildRequest doesn't raise any exceptions when called with a
         # valid builder set.
         job = self.makeJob()
-        lfa = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder()
         job.setBuilder(builder, OkWorker())
@@ -183,8 +181,7 @@ class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         # verifyBuildRequest raises on an attempt to build a virtualized
         # build on a non-virtual builder.
         job = self.makeJob()
-        lfa = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder(virtualized=False)
         job.setBuilder(builder, OkWorker())
@@ -197,8 +194,7 @@ class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         archive = self.factory.makeArchive(
             enabled=False, displayname="Disabled Archive")
         job = self.makeJob(archive=archive)
-        lfa = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder()
         job.setBuilder(builder, OkWorker())
@@ -210,8 +206,7 @@ class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         archive = self.factory.makeArchive(private=True)
         job = self.makeJob(
             archive=archive, registrant=archive.owner, owner=archive.owner)
-        lfa = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder()
         job.setBuilder(builder, OkWorker())
@@ -222,8 +217,7 @@ class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
     def test_verifyBuildRequest_archive_private_owners_mismatch(self):
         archive = self.factory.makeArchive(private=True)
         job = self.makeJob(archive=archive)
-        lfa = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         builder = MockBuilder()
         job.setBuilder(builder, OkWorker())

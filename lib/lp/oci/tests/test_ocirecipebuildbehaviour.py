@@ -87,7 +87,10 @@ from lp.soyuz.adapters.archivedependencies import (
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
 from lp.testing.fakemethod import FakeMethod
-from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.layers import (
+    LaunchpadZopelessLayer,
+    ZopelessDatabaseLayer,
+    )
 from lp.testing.mail_helpers import pop_notifications
 
 
@@ -138,7 +141,7 @@ class MakeOCIBuildMixin:
 
 class TestOCIBuildBehaviour(TestCaseWithFactory):
 
-    layer = LaunchpadZopelessLayer
+    layer = ZopelessDatabaseLayer
 
     def setUp(self):
         super().setUp()
@@ -161,7 +164,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
 
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
         timeout=30)
-    layer = LaunchpadZopelessLayer
+    layer = ZopelessDatabaseLayer
 
     @defer.inlineCallbacks
     def setUp(self):
@@ -265,7 +268,8 @@ class TestAsyncOCIRecipeBuildBehaviour(
             distro = self.factory.makeDistroArchSeries(
                 distroseries=distroseries, architecturetag=proc_name,
                 processor=proc)
-            distro.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+            distro.addOrUpdateChroot(
+                self.factory.makeLibraryFileAlias(db_only=True))
             processors_list.append(proc)
         recipe.setProcessors(processors_list)
         return recipe

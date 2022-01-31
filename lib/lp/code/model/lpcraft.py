@@ -16,6 +16,12 @@ we are on Python 3.8
 __all__ = ["load_configuration"]
 
 import yaml
+from zope.interface import implementer
+
+from lp.code.interfaces.lpcraft import (
+    ILPCraftConfiguration,
+    LPCraftConfigurationError,
+    )
 
 
 def _expand_job_values(values):
@@ -26,13 +32,16 @@ def _expand_job_values(values):
         for variant in values["matrix"]:
             variant_values = base_values.copy()
             variant_values.update(variant)
-            # normalize `architectures` into a list
-            architectures = variant_values.get("architectures")
-            if isinstance(architectures, str):
-                variant_values["architectures"] = [architectures]
             expanded_values.append(variant_values)
     else:
         expanded_values.append(values)
+
+    for variant_values in expanded_values:
+        # normalize `architectures` into a list
+        architectures = variant_values.get("architectures")
+        if isinstance(architectures, str):
+            variant_values["architectures"] = [architectures]
+
     return expanded_values
 
 
@@ -44,18 +53,37 @@ def load_configuration(configuration_file):
     """
     # load yaml
     content = yaml.safe_load(configuration_file)
-    # expand matrix
+    if content is None:
+        raise LPCraftConfigurationError("Empty configuration file")
+    for required_key in "pipeline", "jobs":
+        if required_key not in content:
+            raise LPCraftConfigurationError(
+                "Configuration file does not declare '{}'".format(
+                    required_key))
+    # normalize each element of `pipeline` into a list
     expanded_values = content.copy()
-    if expanded_values.get("jobs"):
-        expanded_values["jobs"] = {
-            job_name: _expand_job_values(job_values)
-            for job_name, job_values in content["jobs"].items()
-        }
+    expanded_values["pipeline"] = [
+        [stage] if isinstance(stage, str) else stage
+        for stage in expanded_values["pipeline"]]
+    # expand matrix
+    expanded_values["jobs"] = {
+        job_name: _expand_job_values(job_values)
+        for job_name, job_values in content["jobs"].items()
+    }
+    for job_name, expanded_job_values in expanded_values["jobs"].items():
+        for i, job_values in enumerate(expanded_job_values):
+            for required_key in "series", "architectures":
+                if required_key not in job_values:
+                    raise LPCraftConfigurationError(
+                        "Job {}:{} does not declare '{}'".format(
+                            job_name, i, required_key))
     # create "data class"
-    return Configuration(expanded_values)
+    return LPCraftConfiguration(expanded_values)
 
 
-class Configuration:
-    """configuration object representation of a `.launchpad.yaml` file"""
+@implementer(ILPCraftConfiguration)
+class LPCraftConfiguration:
+    """See `ILPCraftConfiguration`."""
+
     def __init__(self, d):
         self.__dict__.update(d)

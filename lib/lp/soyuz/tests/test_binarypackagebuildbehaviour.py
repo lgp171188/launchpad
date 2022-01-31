@@ -17,7 +17,6 @@ from testtools.twistedsupport import (
     AsynchronousDeferredRunTest,
     AsynchronousDeferredRunTestForBrokenTwisted,
     )
-import transaction
 from twisted.internet import defer
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -76,7 +75,10 @@ from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.keyserver import InProcessKeyServerFixture
-from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.layers import (
+    LaunchpadZopelessLayer,
+    ZopelessDatabaseLayer,
+    )
 
 
 class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
@@ -89,7 +91,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
     interesting parameters.
     """
 
-    layer = LaunchpadZopelessLayer
+    layer = ZopelessDatabaseLayer
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
         timeout=30)
 
@@ -183,8 +185,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         vitals = extract_vitals_from_db(builder)
         build = self.factory.makeBinaryPackageBuild(
             builder=builder, archive=archive)
-        lf = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
@@ -218,8 +219,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
             archive=archive.distribution.main_archive,
             sourcepackagename=build.source_package_release.sourcepackagename,
             component='main')
-        lf = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
@@ -241,8 +241,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         vitals = extract_vitals_from_db(builder)
         build = self.factory.makeBinaryPackageBuild(
             builder=builder, archive=archive)
-        lf = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
@@ -282,8 +281,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
                    build.source_package_release.sourcepackagename.name,
                    'main'),
                sprf.libraryfile.filename))
-        lf = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
@@ -310,8 +308,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         vitals = extract_vitals_from_db(builder)
         build = self.factory.makeBinaryPackageBuild(
             builder=builder, archive=archive)
-        lf = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
@@ -334,8 +331,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
             builder=builder, archive=archive,
             distroarchseries=distro_arch_series,
             pocket=PackagePublishingPocket.RELEASE)
-        lf = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         behaviour = IBuildFarmJobBehaviour(build)
         behaviour.setBuilder(builder, None)
@@ -354,8 +350,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         build = self.factory.makeBinaryPackageBuild(
             builder=builder, archive=archive,
             pocket=PackagePublishingPocket.SECURITY)
-        lf = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         behaviour = IBuildFarmJobBehaviour(build)
         behaviour.setBuilder(builder, None)
@@ -488,8 +483,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         build = self.factory.makeBinaryPackageBuild(
             builder=builder, archive=archive,
             pocket=PackagePublishingPocket.RELEASE)
-        lf = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         behaviour = IBuildFarmJobBehaviour(build)
         behaviour.setBuilder(builder, None)
@@ -542,8 +536,7 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
         self.interactor = BuilderInteractor()
         self.build = self.factory.makeBinaryPackageBuild(
             builder=self.builder, pocket=PackagePublishingPocket.RELEASE)
-        lf = self.factory.makeLibraryFileAlias()
-        transaction.commit()
+        lf = self.factory.makeLibraryFileAlias(db_only=True)
         self.build.distro_arch_series.addOrUpdateChroot(lf)
         self.candidate = self.build.queueBuild()
         self.candidate.markAsBuilding(self.builder)
