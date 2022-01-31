@@ -64,7 +64,7 @@ jsautobuild==0.2
 keyring==0.6.2
 keystoneauth1==4.1.0
 kombu==4.6.11
-launchpad-buildd==193
+launchpad-buildd==206
 launchpadlib==1.10.14
 lazr.batchnavigator==1.3.1
 lazr.config==2.2.3
