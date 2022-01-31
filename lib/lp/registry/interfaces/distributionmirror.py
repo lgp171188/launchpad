@@ -167,6 +167,19 @@ class MirrorSpeed(DBEnumeratedType):
         The upstream link of this mirror can make up to 20 gigabits per second.
         """)
 
+    S50G = DBItem(130, """
+        50 Gbps
+
+        The upstream link of this mirror can make up to 50 gigabits per second.
+        """)
+
+    S100G = DBItem(140, """
+        100 Gbps
+
+        The upstream link of this mirror can make up to 100 gigabits per
+        second.
+        """)
+
 
 class MirrorFreshness(DBEnumeratedType):
     """The freshness of a given mirror's content."""

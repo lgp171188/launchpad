@@ -893,7 +893,7 @@ the possible mirror speeds.
     ...     a.speed = speed
     ...     mirrors.append(a)
     >>> print(view._sum_throughput(mirrors))
-    37 Gbps
+    187 Gbps
 
 
 Changing mirror owners

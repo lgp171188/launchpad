@@ -1262,6 +1262,10 @@ class DistributionMirrorsView(LaunchpadView):
                 throughput += 10000000
             elif mirror.speed == MirrorSpeed.S20G:
                 throughput += 20000000
+            elif mirror.speed == MirrorSpeed.S50G:
+                throughput += 50000000
+            elif mirror.speed == MirrorSpeed.S100G:
+                throughput += 100000000
             else:
                 # need to be made aware of new values in
                 # interfaces/distributionmirror.py MirrorSpeed
