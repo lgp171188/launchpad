@@ -132,8 +132,29 @@ class TestLoadConfiguration(TestCase):
             }, configuration.jobs,
         )
 
-    def test_expand_matrix(self):
+    def test_expand_architectures(self):
         # if `architectures` is a string, it will be converted into a list
+        c = dedent("""\
+        pipeline:
+            - [test]
+        jobs:
+            test:
+                series: focal
+                architectures: amd64
+        """)
+
+        configuration = load_configuration(c)
+
+        self.assertEqual(
+            [["test"]], configuration.pipeline,
+        )
+        self.assertEqual(
+            {
+                "test": [{'series': 'focal', 'architectures': ['amd64']}],
+            }, configuration.jobs,
+        )
+
+    def test_expand_matrix(self):
         c = dedent("""\
         pipeline:
             - [test]
