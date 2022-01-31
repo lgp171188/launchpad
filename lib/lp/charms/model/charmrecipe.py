@@ -1,4 +1,4 @@
-# Copyright 2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2021-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Charm recipes."""
@@ -737,7 +737,7 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
                 unbound_discharge_macaroon_raw, JsonSerializer())
         except Exception:
             raise CannotAuthorizeCharmhubUploads(
-                "discharge_macaroon_raw is invalid.")
+                "Discharge macaroon is invalid.")
         charmhub_client = getUtility(ICharmhubClient)
         exchanged_macaroon_raw = charmhub_client.exchangeMacaroons(
             self.store_secrets["root"], unbound_discharge_macaroon_raw)

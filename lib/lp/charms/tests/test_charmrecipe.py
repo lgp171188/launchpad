@@ -1,4 +1,4 @@
-# Copyright 2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2021-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test charm recipes."""
@@ -940,7 +940,7 @@ class TestCharmRecipeAuthorization(TestCaseWithFactory):
         with person_logged_in(recipe.registrant):
             self.assertRaisesWithContent(
                 CannotAuthorizeCharmhubUploads,
-                "discharge_macaroon_raw is invalid.",
+                "Discharge macaroon is invalid.",
                 recipe.completeAuthorization, "nonsense")
 
 
@@ -1415,6 +1415,9 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
             CHARM_RECIPE_BUILD_DISTRIBUTION: "ubuntu",
             CHARM_RECIPE_PRIVATE_FEATURE_FLAG: "on",
             }))
+        self.pushConfig("charms", charmhub_url="http://charmhub.example/")
+        self.pushConfig(
+            "launchpad", candid_service_root="https://candid.test/")
         self.person = self.factory.makePerson(displayname="Test Person")
         self.webservice = webservice_for_person(
             self.person, permission=OAuthPermission.WRITE_PUBLIC)
@@ -1611,6 +1614,167 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
             body=(
                 b"No such charm recipe with this owner and project: "
                 b"'nonexistent'.")))
+
+    @responses.activate
+    def assertBeginsAuthorization(self, recipe, **kwargs):
+        recipe_url = api_url(recipe)
+        root_macaroon = Macaroon(version=2)
+        root_macaroon.add_third_party_caveat(
+            "https://candid.test/", "", "identity")
+        root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
+        logout()
+        responses.add(
+            "POST", "http://charmhub.example/v1/tokens",
+            json={"macaroon": root_macaroon_raw})
+        response = self.webservice.named_post(
+            recipe_url, "beginAuthorization", **kwargs)
+        [call] = responses.calls
+        self.assertThat(call.request, MatchesStructure.byEquality(
+            url="http://charmhub.example/v1/tokens", method="POST"))
+        with person_logged_in(self.person):
+            expected_body = {
+                "description": (
+                    "{} for launchpad.test".format(recipe.store_name)),
+                "packages": [{"type": "charm", "name": recipe.store_name}],
+                "permissions": [
+                    "package-manage-releases",
+                    "package-manage-revisions",
+                    "package-view-revisions",
+                    ],
+                }
+            self.assertEqual(
+                expected_body, json.loads(call.request.body.decode("UTF-8")))
+            self.assertEqual({"root": root_macaroon_raw}, recipe.store_secrets)
+        return response, root_macaroon_raw
+
+    def test_beginAuthorization(self):
+        recipe = self.factory.makeCharmRecipe(
+            registrant=self.person, store_upload=True,
+            store_name=self.factory.getUniqueUnicode())
+        response, root_macaroon_raw = self.assertBeginsAuthorization(recipe)
+        self.assertEqual(root_macaroon_raw, response.jsonBody())
+
+    def test_beginAuthorization_unauthorized(self):
+        # A user without edit access cannot authorize charm recipe uploads.
+        recipe = self.factory.makeCharmRecipe(
+            registrant=self.person, store_upload=True,
+            store_name=self.factory.getUniqueUnicode())
+        recipe_url = api_url(recipe)
+        other_person = self.factory.makePerson()
+        other_webservice = webservice_for_person(
+            other_person, permission=OAuthPermission.WRITE_PUBLIC)
+        other_webservice.default_api_version = "devel"
+        response = other_webservice.named_post(
+            recipe_url, "beginAuthorization")
+        self.assertEqual(401, response.status)
+
+    @responses.activate
+    def test_completeAuthorization(self):
+        private_key = PrivateKey.generate()
+        self.pushConfig(
+            "charms",
+            charmhub_secrets_public_key=base64.b64encode(
+                bytes(private_key.public_key)).decode())
+        root_macaroon = Macaroon(version=2)
+        root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
+        unbound_discharge_macaroon = Macaroon(version=2)
+        unbound_discharge_macaroon_raw = unbound_discharge_macaroon.serialize(
+            JsonSerializer())
+        discharge_macaroon_raw = root_macaroon.prepare_for_request(
+            unbound_discharge_macaroon).serialize(JsonSerializer())
+        exchanged_macaroon = Macaroon(version=2)
+        exchanged_macaroon_raw = exchanged_macaroon.serialize(JsonSerializer())
+        responses.add(
+            "POST", "http://charmhub.example/v1/tokens/exchange",
+            json={"macaroon": exchanged_macaroon_raw})
+        recipe = self.factory.makeCharmRecipe(
+            registrant=self.person, store_upload=True,
+            store_name=self.factory.getUniqueUnicode(),
+            store_secrets={"root": root_macaroon_raw})
+        recipe_url = api_url(recipe)
+        logout()
+        response = self.webservice.named_post(
+            recipe_url, "completeAuthorization",
+            discharge_macaroon=json.dumps(unbound_discharge_macaroon_raw))
+        self.assertEqual(200, response.status)
+        self.pushConfig(
+            "charms",
+            charmhub_secrets_private_key=base64.b64encode(
+                bytes(private_key)).decode())
+        container = getUtility(IEncryptedContainer, "charmhub-secrets")
+        with person_logged_in(self.person):
+            self.assertThat(recipe.store_secrets, MatchesDict({
+                "exchanged_encrypted": AfterPreprocessing(
+                    lambda data: container.decrypt(data).decode(),
+                    Equals(exchanged_macaroon_raw)),
+                }))
+        self.assertThat(responses.calls, MatchesListwise([
+            MatchesStructure(
+                request=MatchesStructure(
+                    url=Equals("http://charmhub.example/v1/tokens/exchange"),
+                    method=Equals("POST"),
+                    headers=ContainsDict({
+                        "Macaroons": AfterPreprocessing(
+                            lambda v: json.loads(
+                                base64.b64decode(v.encode()).decode()),
+                            Equals([
+                                json.loads(m) for m in (
+                                    root_macaroon_raw,
+                                    discharge_macaroon_raw)])),
+                        }),
+                    body=AfterPreprocessing(
+                        lambda b: json.loads(b.decode()),
+                        Equals({})))),
+            ]))
+
+    def test_completeAuthorization_without_beginAuthorization(self):
+        recipe = self.factory.makeCharmRecipe(
+            registrant=self.person, store_upload=True,
+            store_name=self.factory.getUniqueUnicode())
+        recipe_url = api_url(recipe)
+        logout()
+        discharge_macaroon = Macaroon(version=2)
+        response = self.webservice.named_post(
+            recipe_url, "completeAuthorization",
+            discharge_macaroon=json.dumps(
+                discharge_macaroon.serialize(JsonSerializer())))
+        self.assertThat(response, MatchesStructure.byEquality(
+            status=400,
+            body=(
+                b"beginAuthorization must be called before "
+                b"completeAuthorization.")))
+
+    def test_completeAuthorization_unauthorized(self):
+        root_macaroon = Macaroon(version=2)
+        discharge_macaroon = Macaroon(version=2)
+        recipe = self.factory.makeCharmRecipe(
+            registrant=self.person, store_upload=True,
+            store_name=self.factory.getUniqueUnicode(),
+            store_secrets={"root": root_macaroon.serialize(JsonSerializer())})
+        recipe_url = api_url(recipe)
+        other_person = self.factory.makePerson()
+        other_webservice = webservice_for_person(
+            other_person, permission=OAuthPermission.WRITE_PUBLIC)
+        other_webservice.default_api_version = "devel"
+        response = other_webservice.named_post(
+            recipe_url, "completeAuthorization",
+            discharge_macaroon=json.dumps(
+                discharge_macaroon.serialize(JsonSerializer())))
+        self.assertEqual(401, response.status)
+
+    def test_completeAuthorization_malformed_discharge_macaroon(self):
+        root_macaroon = Macaroon(version=2)
+        recipe = self.factory.makeCharmRecipe(
+            registrant=self.person, store_upload=True,
+            store_name=self.factory.getUniqueUnicode(),
+            store_secrets={"root": root_macaroon.serialize(JsonSerializer())})
+        recipe_url = api_url(recipe)
+        logout()
+        response = self.webservice.named_post(
+            recipe_url, "completeAuthorization",
+            discharge_macaroon="nonsense")
+        self.assertThat(response, MatchesStructure.byEquality(
+            status=400, body=b"Discharge macaroon is invalid."))
 
     def makeBuildableDistroArchSeries(self, distroseries=None,
                                       architecturetag=None, processor=None,

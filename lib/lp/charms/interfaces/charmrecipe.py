@@ -1,4 +1,4 @@
-# Copyright 2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2021-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Charm recipe interfaces."""
@@ -44,6 +44,7 @@ from lazr.restful.declarations import (
     export_destructor_operation,
     export_factory_operation,
     export_read_operation,
+    export_write_operation,
     exported,
     exported_as_webservice_collection,
     exported_as_webservice_entry,
@@ -51,6 +52,7 @@ from lazr.restful.declarations import (
     operation_parameters,
     operation_returns_collection_of,
     operation_returns_entry,
+    rename_parameters_as,
     REQUEST_USER,
     )
 from lazr.restful.fields import (
@@ -427,6 +429,8 @@ class ICharmRecipeView(Interface):
 class ICharmRecipeEdit(IWebhookTarget):
     """`ICharmRecipe` methods that require launchpad.Edit permission."""
 
+    @export_write_operation()
+    @operation_for_version("devel")
     def beginAuthorization():
         """Begin authorizing uploads of this charm recipe to Charmhub.
 
@@ -442,6 +446,12 @@ class ICharmRecipeEdit(IWebhookTarget):
             and then call `completeAuthorization`.
         """
 
+    @rename_parameters_as(unbound_discharge_macaroon_raw="discharge_macaroon")
+    @operation_parameters(
+        unbound_discharge_macaroon_raw=TextLine(
+            title=_("Serialized discharge macaroon")))
+    @export_write_operation()
+    @operation_for_version("devel")
     def completeAuthorization(unbound_discharge_macaroon_raw):
         """Complete authorizing uploads of this charm recipe to Charmhub.
 
