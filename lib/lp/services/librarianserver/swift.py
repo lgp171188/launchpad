@@ -181,11 +181,13 @@ def _to_swift_file(log, swift_connection, lfc_id, fs_path):
         log.debug(
             "{} already exists in Swift({}, {})".format(
                 lfc_id, container, obj_name))
-        if ('X-Object-Manifest' not in headers and
-                int(headers['content-length'])
-                != os.path.getsize(fs_path)):
+        got_size = int(headers['content-length'])
+        expected_size = os.path.getsize(fs_path)
+        if 'X-Object-Manifest' not in headers and got_size != expected_size:
             raise AssertionError(
-                '{} has incorrect size in Swift'.format(lfc_id))
+                '{} has incorrect size in Swift '
+                '(got {} bytes, expected {} bytes)'.format(
+                    lfc_id, got_size, expected_size))
     except swiftclient.ClientException as x:
         if x.http_status != 404:
             raise
