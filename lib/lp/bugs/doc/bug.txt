@@ -183,7 +183,7 @@ private. A bug cannot be made private by an anonymous user.
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized:
-    (..., 'setPrivate', 'launchpad.Append')
+    (..., 'setPrivate', 'launchpad.Edit')
 
 We have to be logged in, so let's do that:
 

@@ -115,6 +115,7 @@ from lp.services.searchbuilder import (
 from lp.services.webapp import (
     canonical_url,
     ContextMenu,
+    enabled_with_permission,
     LaunchpadView,
     Link,
     Navigation,
@@ -225,25 +226,30 @@ class BugContextMenu(ContextMenu):
         ContextMenu.__init__(self, getUtility(ILaunchBag).bugtask)
 
     @cachedproperty
+    @enabled_with_permission('launchpad.Edit')
     def editdescription(self):
         """Return the 'Edit description/tags' Link."""
         text = 'Update description / tags'
         return Link('+edit', text, icon='edit')
 
+    @enabled_with_permission('launchpad.Edit')
     def visibility(self):
         """Return the 'Set privacy/security' Link."""
         text = 'Change privacy/security'
         return Link('+secrecy', text)
 
+    @enabled_with_permission('launchpad.Edit')
     def markduplicate(self):
         """Return the 'Mark as duplicate' Link."""
         return Link('+duplicate', 'Mark as duplicate')
 
+    @enabled_with_permission('launchpad.Edit')
     def addupstream(self):
-        """Return the 'lso affects project' Link."""
+        """Return the 'Also affects project' Link."""
         text = 'Also affects project'
         return Link('+choose-affected-product', text, icon='add')
 
+    @enabled_with_permission('launchpad.Edit')
     def adddistro(self):
         """Return the 'Also affects distribution/package' Link."""
         text = 'Also affects distribution/package'
@@ -318,16 +324,19 @@ class BugContextMenu(ContextMenu):
         else:
             return Link('+nominate', '', enabled=False, icon='milestone')
 
+    @enabled_with_permission('launchpad.Append')
     def addcomment(self):
         """Return the 'Comment or attach file' Link."""
         text = 'Add attachment or patch'
         return Link('+addcomment', text, icon='add')
 
+    @enabled_with_permission('launchpad.Edit')
     def addbranch(self):
         """Return the 'Add branch' Link."""
         text = 'Link a related branch'
         return Link('+addbranch', text, icon='add')
 
+    @enabled_with_permission('launchpad.Edit')
     def linktocve(self):
         """Return the 'Link to CVE' Link."""
         text = structured(
@@ -337,6 +346,7 @@ class BugContextMenu(ContextMenu):
             '</abbr>')
         return Link('+linkcve', text, icon='add')
 
+    @enabled_with_permission('launchpad.Edit')
     def unlinkcve(self):
         """Return 'Remove CVE link' Link."""
         enabled = self.context.bug.has_cves
@@ -347,12 +357,14 @@ class BugContextMenu(ContextMenu):
     def _bug_question(self):
         return self.context.bug.getQuestionCreatedFromBug()
 
+    @enabled_with_permission('launchpad.Edit')
     def createquestion(self):
         """Create a question from this bug."""
         text = 'Convert to a question'
         enabled = self._bug_question is None
         return Link('+create-question', text, enabled=enabled, icon='add')
 
+    @enabled_with_permission('launchpad.Edit')
     def removequestion(self):
         """Remove the created question from this bug."""
         text = 'Convert back to a bug'

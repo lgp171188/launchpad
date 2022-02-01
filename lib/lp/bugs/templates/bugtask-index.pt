@@ -179,14 +179,16 @@
                class="unofficial-tag"
                tal:attributes="href python: tag[1]">tag</a>
           </span>
-          <a href="+edit" title="Add tags" id="tags-trigger"
-            class="sprite add"
-            tal:condition="not: context/bug/tags">Add tags</a>
-          <a href="+edit" title="Edit tags" id="tags-trigger"
-            class="sprite edit action-icon"
-            tal:condition="context/bug/tags">Edit</a>
-          <a href="/+help-bugs/tag-help.html" target="help"
-            class="sprite maybe action-icon">Tag help</a>
+          <tal:can-edit condition="context/required:launchpad.Edit">
+            <a href="+edit" title="Add tags" id="tags-trigger"
+              class="sprite add"
+              tal:condition="not: context/bug/tags">Add tags</a>
+            <a href="+edit" title="Edit tags" id="tags-trigger"
+              class="sprite edit action-icon"
+              tal:condition="context/bug/tags">Edit</a>
+            <a href="/+help-bugs/tag-help.html" target="help"
+              class="sprite maybe action-icon">Tag help</a>
+          </tal:can-edit>
         </div>
 
         <script type="text/javascript">

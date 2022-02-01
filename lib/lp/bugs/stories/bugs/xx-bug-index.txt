@@ -154,9 +154,9 @@ initialization code if there's more than 10 bug tasks.
 
 On the bug page, for every bug task there's one expander.
 
-    >>> browser.open(bug_url)
+    >>> user_browser.open(bug_url)
     >>> print(len(find_tags_by_class(
-    ...     browser.contents, 'bugtask-expander')))
+    ...     user_browser.contents, 'bugtask-expander')))
     1
 
 We add four more tasks.
@@ -168,9 +168,9 @@ We add four more tasks.
 
 And the expander appears five times.
 
-    >>> browser.open(bug_url)
+    >>> user_browser.open(bug_url)
     >>> print(len(find_tags_by_class(
-    ...     browser.contents, 'bugtask-expander')))
+    ...     user_browser.contents, 'bugtask-expander')))
     5
 
 But on pages with more than ten bug tasks, we don't include the expander
@@ -181,8 +181,49 @@ at all.
     ...     _ = bug.addTask(bug.owner, factory.makeProduct())
     >>> logout()
 
-    >>> browser.open(bug_url)
+    >>> user_browser.open(bug_url)
     >>> print(len(find_tags_by_class(
-    ...     browser.contents, 'bugtask-expander')))
+    ...     user_browser.contents, 'bugtask-expander')))
     0
 
+We also don't include the expander for anonymous requests.
+
+    >>> anon_browser.open(bug_url)
+    >>> print(len(find_tags_by_class(
+    ...     anon_browser.contents, 'bugtask-expander')))
+    0
+
+
+Locked bugs
+-----------
+
+Unprivileged users viewing locked bugs don't see the bugtask expander, nor
+do they see any edit links.
+
+    >>> import re
+    >>> from lp.bugs.enums import BugLockStatus
+    >>> from lp.testing.pages import setupBrowserForUser
+
+    >>> login('foo.bar@canonical.com')
+    >>> locked_bug = factory.makeBug()
+    >>> target_owner = locked_bug.default_bugtask.target.owner
+    >>> locked_bug.lock(who=target_owner, status=BugLockStatus.COMMENT_ONLY)
+    >>> locked_bug_url = canonical_url(locked_bug)
+    >>> logout()
+
+    >>> target_owner_browser = setupBrowserForUser(target_owner)
+    >>> target_owner_browser.open(locked_bug_url)
+    >>> print(len(find_tags_by_class(
+    ...     target_owner_browser.contents, 'bugtask-expander')))
+    1
+    >>> len(find_main_content(target_owner_browser.contents).find_all(
+    ...     'a', href=re.compile(r'.*/\+edit.*')))
+    5
+
+    >>> user_browser.open(locked_bug_url)
+    >>> print(len(find_tags_by_class(
+    ...     user_browser.contents, 'bugtask-expander')))
+    0
+    >>> len(find_main_content(user_browser.contents).find_all(
+    ...     'a', href=re.compile(r'.*/\+edit.*')))
+    0
