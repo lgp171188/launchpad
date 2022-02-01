@@ -1418,6 +1418,11 @@
             factory="lp.code.browser.sourcepackagerecipe.SourcePackageRecipeBreadcrumb"
             permission="zope.Public"/>
 
+        <browser:url
+            for="lp.code.interfaces.cibuild.ICIBuild"
+            path_expression="string:+build/${id}"
+            attribute_to_parent="git_repository"/>
+
     </facet>
 
 </configure>

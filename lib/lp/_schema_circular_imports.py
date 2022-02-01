@@ -59,6 +59,7 @@ from lp.code.interfaces.branch import (
     )
 from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
 from lp.code.interfaces.branchsubscription import IBranchSubscription
+from lp.code.interfaces.cibuild import ICIBuild
 from lp.code.interfaces.codeimport import ICodeImport
 from lp.code.interfaces.codereviewcomment import ICodeReviewComment
 from lp.code.interfaces.codereviewvote import ICodeReviewVoteReference
@@ -534,6 +535,7 @@ patch_list_parameter_type(
 # IRevisionStatusReport
 patch_reference_property(
     IRevisionStatusReport, 'git_repository', IGitRepository)
+patch_reference_property(IRevisionStatusReport, 'ci_build', ICIBuild)
 
 # ILiveFSFile
 patch_reference_property(ILiveFSFile, 'livefsbuild', ILiveFSBuild)

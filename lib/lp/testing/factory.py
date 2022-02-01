@@ -124,6 +124,7 @@ from lp.code.enums import (
 from lp.code.errors import UnknownBranchTypeError
 from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.branchnamespace import get_branch_namespace
+from lp.code.interfaces.cibuild import ICIBuildSet
 from lp.code.interfaces.codeimport import ICodeImportSet
 from lp.code.interfaces.codeimportevent import ICodeImportEventSet
 from lp.code.interfaces.codeimportmachine import ICodeImportMachineSet
@@ -1852,23 +1853,30 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
     def makeRevisionStatusReport(self, user=None, title=None,
                                  git_repository=None, commit_sha1=None,
-                                 result_summary=None, url=None, result=None):
+                                 result_summary=None, url=None, result=None,
+                                 ci_build=None):
         """Create a new RevisionStatusReport."""
         if title is None:
             title = self.getUniqueUnicode()
         if git_repository is None:
-            git_repository = self.makeGitRepository()
+            if ci_build is not None:
+                git_repository = ci_build.git_repository
+            else:
+                git_repository = self.makeGitRepository()
         if user is None:
             user = git_repository.owner
         if commit_sha1 is None:
-            commit_sha1 = hashlib.sha1(self.getUniqueBytes()).hexdigest()
+            if ci_build is not None:
+                commit_sha1 = ci_build.commit_sha1
+            else:
+                commit_sha1 = hashlib.sha1(self.getUniqueBytes()).hexdigest()
         if result_summary is None:
             result_summary = self.getUniqueUnicode()
         if result is None:
             result = RevisionStatusResult.RUNNING
         return getUtility(IRevisionStatusReportSet).new(
             user, title, git_repository, commit_sha1, url,
-            result_summary, result)
+            result_summary, result, ci_build=ci_build)
 
     def makeRevisionStatusArtifact(
             self, lfa=None, content=None, report=None,
@@ -5270,6 +5278,32 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return getUtility(ICharmBaseSet).new(
             registrant, distro_series, build_snap_channels,
             processors=processors, date_created=date_created)
+
+    def makeCIBuild(self, git_repository=None, commit_sha1=None,
+                    distro_arch_series=None, date_created=DEFAULT,
+                    status=BuildStatus.NEEDSBUILD, builder=None,
+                    duration=None):
+        """Make a new `CIBuild`."""
+        if git_repository is None:
+            git_repository = self.makeGitRepository()
+        if commit_sha1 is None:
+            commit_sha1 = hashlib.sha1(self.getUniqueBytes()).hexdigest()
+        if distro_arch_series is None:
+            distro_arch_series = self.makeDistroArchSeries()
+        build = getUtility(ICIBuildSet).new(
+            git_repository, commit_sha1, distro_arch_series,
+            date_created=date_created)
+        if duration is not None:
+            removeSecurityProxy(build).updateStatus(
+                BuildStatus.BUILDING, builder=builder,
+                date_started=build.date_created)
+            removeSecurityProxy(build).updateStatus(
+                status, builder=builder,
+                date_finished=build.date_started + duration)
+        else:
+            removeSecurityProxy(build).updateStatus(status, builder=builder)
+        IStore(build).flush()
+        return build
 
 
 # Some factory methods return simple Python types. We don't add
