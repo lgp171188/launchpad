@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database class for table Archive."""
@@ -442,11 +442,11 @@ class Archive(SQLBase):
         # The explicit publish flag must be set.
         if not self.publish:
             return False
-        # In production configurations, PPAs can only be published once
-        # their signing key has been generated.
+        # In production configurations, PPAs and copy archives can only be
+        # published once their signing key has been generated.
         return (
             not config.personalpackagearchive.require_signing_keys or
-            not self.is_ppa or
+            (not self.is_ppa and not self.is_copy) or
             self.signing_key_fingerprint is not None)
 
     @property
