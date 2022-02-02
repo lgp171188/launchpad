@@ -220,11 +220,12 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         return (filemap[file_name], file_path)
 
     @defer.inlineCallbacks
-    def _downloadFiles(self, filemap, upload_path, logger):
+    def _downloadFiles(self, worker_status, upload_path, logger):
         """Download required artifact files."""
+        filemap = worker_status["filemap"]
+
         # We don't want to download all of the files that have been created,
         # just the ones that are mentioned in the manifest and config.
-
         manifest = yield self._fetchIntermediaryFile(
             'manifest.json', filemap, upload_path)
         digests = yield self._fetchIntermediaryFile(
