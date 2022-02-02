@@ -1705,10 +1705,17 @@ class BugTasksNominationsView(LaunchpadView):
         """Ensure we always have a bug context."""
         LaunchpadView.__init__(self, IBug(context), request)
 
+    def displayAffectedUsers(self):
+        """Return True if UI related to affected users should be displayed."""
+        # Hide this UI when the bug is viewed in a CVE context.
+        return self.request.getNearest(ICveSet) == (None, None)
+
     def displayAlsoAffectsLinks(self):
         """Return True if the Also Affects links should be displayed."""
-        # Hide the links when the bug is viewed in a CVE context
-        return self.request.getNearest(ICveSet) == (None, None)
+        return (
+            check_permission('launchpad.Edit', self.context) and
+            # Hide the links when the bug is viewed in a CVE context.
+            self.request.getNearest(ICveSet) == (None, None))
 
     @cachedproperty
     def current_user_affected_status(self):
@@ -2065,7 +2072,6 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
         task_link = edit_link = canonical_url(
                                     self.context, view_name='+editstatus')
         delete_link = canonical_url(self.context, view_name='+delete')
-        can_edit = check_permission('launchpad.Edit', self.context)
         bugtask_id = self.context.id
         launchbag = getUtility(ILaunchBag)
         is_primary = self.context.id == launchbag.bugtask.id
@@ -2073,12 +2079,15 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
             # Looking at many_bugtasks is an important optimization.  With
             # 150+ bugtasks, it can save three or four seconds of rendering
             # time.
-            expandable=(not self.many_bugtasks and self.canSeeTaskDetails()),
+            expandable=(
+                not self.many_bugtasks and
+                self.user_can_edit and
+                self.canSeeTaskDetails()),
             indent_task=ISeriesBugTarget.providedBy(self.context.target),
             is_conjoined_replica=self.is_conjoined_replica,
             task_link=task_link,
             edit_link=edit_link,
-            can_edit=can_edit,
+            can_edit=self.user_can_edit,
             link=link,
             id=bugtask_id,
             row_id='tasksummary%d' % bugtask_id,
@@ -2145,8 +2154,10 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
 
     def displayEditForm(self):
         """Return true if the BugTask edit form should be shown."""
-        # Hide the edit form when the bug is viewed in a CVE context
-        return self.request.getNearest(ICveSet) == (None, None)
+        return (
+            check_permission('launchpad.Edit', self.context) and
+            # Hide the edit form when the bug is viewed in a CVE context.
+            self.request.getNearest(ICveSet) == (None, None))
 
     @property
     def status_widget_items(self):
@@ -2224,12 +2235,20 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
         return canonical_url(self.context)
 
     @cachedproperty
+    def user_can_edit(self):
+        """Can the user edit the task at all?"""
+        return check_permission('launchpad.Edit', self.context)
+
+    @cachedproperty
     def user_can_edit_importance(self):
         """Can the user edit the Importance field?
 
         If yes, return True, otherwise return False.
         """
-        return self.user_can_edit_status and self.user_has_privileges
+        return (
+            self.user_can_edit and
+            self.user_can_edit_status and
+            self.user_has_privileges)
 
     @cachedproperty
     def user_can_edit_status(self):
@@ -2237,6 +2256,8 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
 
         If yes, return True, otherwise return False.
         """
+        if not self.user_can_edit:
+            return False
         bugtask = self.context
         edit_allowed = bugtask.pillar.official_malone or bugtask.bugwatch
         if bugtask.bugwatch:
@@ -2251,7 +2272,7 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
 
         If yes, return True, otherwise return False.
         """
-        return self.user is not None
+        return self.user is not None and self.user_can_edit
 
     @cachedproperty
     def user_can_delete_bugtask(self):

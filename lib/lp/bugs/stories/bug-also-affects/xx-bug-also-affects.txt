@@ -716,7 +716,7 @@ logged in.
       --> None
 
     >>> print_assigned_bugtasks(anon_browser)
-    GNOME Terminal ... -->
+    GNOME Terminal -->
       auto-dark-master-o-bugs
 
     >>> anon_browser.contents.count(

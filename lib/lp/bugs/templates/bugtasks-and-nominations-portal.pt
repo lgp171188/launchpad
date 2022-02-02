@@ -4,7 +4,7 @@
   omit-tag="">
 
 <tal:affects-me-too
-    tal:condition="view/displayAlsoAffectsLinks">
+    tal:condition="view/displayAffectedUsers">
   <tal:editable
       condition="context/menu:context/affectsmetoo/enabled">
     <div class="actions">

@@ -16,7 +16,14 @@ An anonymous user cannot create a question.
     >>> anon_browser.title
     'Bug #10 ... : Bugs : linux-source-2.6.15 package : Ubuntu'
 
-    >>> anon_browser.getLink('Convert to a question').click()
+    >>> anon_browser.getLink('Convert to a question')
+    Traceback (most recent call last):
+    ...
+    zope.testbrowser.browser.LinkNotFoundError
+
+    >>> anon_browser.open(
+    ...     'http://bugs.launchpad.test'
+    ...     '/ubuntu/+source/linux-source-2.6.15/+bug/10/+create-question')
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

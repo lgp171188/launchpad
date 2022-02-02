@@ -33,7 +33,8 @@
                                class context/target/image:sprite_css"
                tal:content="context/bugtargetdisplayname" />
         </span>
-        <button class="lazr-btn yui3-activator-act yui3-activator-hidden">
+        <button class="lazr-btn yui3-activator-act yui3-activator-hidden"
+                tal:condition="data/can_edit">
           Edit
         </button>
         <div class="yui3-activator-message-box yui3-activator-hidden"></div>
@@ -152,7 +153,8 @@
              tal:attributes="href data/edit_link">
             <img class="editicon" src="/@@/edit" />
           </a>
-          <button class="lazr-btn yui3-activator-act yui3-activator-hidden">
+          <button class="lazr-btn yui3-activator-act yui3-activator-hidden"
+                  tal:condition="view/user_can_edit_assignee">
             Edit
           </button>
           <div class="yui3-activator-message-box yui3-activator-hidden"></div>

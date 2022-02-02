@@ -94,3 +94,37 @@ Now, let's add 'new-tag' again, and confirm it this time.
     False
     >>> 'new-tag' in tags_div
     True
+
+
+Locked bugs
+-----------
+
+The metadata of a locked bug can only be edited by privileged users.
+
+    >>> from zope.component import getUtility
+    >>> from lp.bugs.enums import BugLockStatus
+    >>> from lp.bugs.interfaces.bug import IBugSet
+    >>> from lp.testing.pages import setupBrowserForUser
+
+    >>> login(ANONYMOUS)
+    >>> bug_1 = getUtility(IBugSet).get(1)
+    >>> target_owner = bug_1.default_bugtask.target.owner
+    >>> _ = login_person(target_owner)
+    >>> bug_1.lock(who=target_owner, status=BugLockStatus.COMMENT_ONLY)
+    >>> logout()
+
+    >>> target_owner_browser = setupBrowserForUser(target_owner)
+    >>> target_owner_browser.open('http://bugs.launchpad.test/firefox/+bug/1')
+    >>> target_owner_browser.getLink(url='+edit').click()
+    >>> target_owner_browser.getControl('Description').value = 'Now locked.'
+    >>> target_owner_browser.getControl('Change').click()
+
+    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/1')
+    >>> user_browser.getLink(url='+edit')
+    Traceback (most recent call last):
+    ...
+    zope.testbrowser.browser.LinkNotFoundError
+    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/1/+edit')
+    Traceback (most recent call last):
+    ...
+    zope.security.interfaces.Unauthorized: ...

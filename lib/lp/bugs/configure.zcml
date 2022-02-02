@@ -735,6 +735,7 @@
                     unlinkBranch"/>
             <require
                 permission="launchpad.Edit"
+                interface="lp.bugs.interfaces.bug.IBugEdit"
                 set_attributes="
                     name
                     tags

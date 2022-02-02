@@ -1,14 +1,14 @@
 Bug commenting and attaching files is done on the same form.
 
 When a comment is submitted, the attachment is optional. Accessing the
-comment form requires launchpad.Edit permission on the bugtask. In this
+comment form requires launchpad.Append permission on the bugtask. In this
 case, it means being logged in.
 
     >>> anon_browser.open(
     ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form")
     Traceback (most recent call last):
       ..
-    zope.security.interfaces.Unauthorized: ...launchpad.Edit...
+    zope.security.interfaces.Unauthorized: ...launchpad.Append...
 
 So let's login and add a comment.
 
