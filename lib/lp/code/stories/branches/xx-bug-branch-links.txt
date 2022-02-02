@@ -99,15 +99,18 @@ Sample person can see it...
 From the bug page
 =================
 
-The action link on the bug page is "Link a related branch".  Again this
-links to a page restricted with the launchpad.AnyPerson permission.
+The action link on the bug page is "Link a related branch".  This links to a
+page restricted with the launchpad.Edit permission.
 
-    >>> anon_browser.open(
-    ...     'http://launchpad.test/bugs/11')
-    >>> anon_browser.getLink('Link a related branch').click()
+    >>> anon_browser.open('http://launchpad.test/bugs/11')
+    >>> anon_browser.getLink('Link a related branch')
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: (...launchpad.AnyPerson')
+    zope.testbrowser.browser.LinkNotFoundError
+    >>> anon_browser.open('http://launchpad.test/jokosher/+bug/11/+addbranch')
+    Traceback (most recent call last):
+    ...
+    zope.security.interfaces.Unauthorized: (...launchpad.Edit')
 
     >>> browser.open(
     ...     'http://launchpad.test/bugs/11')
