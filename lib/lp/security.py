@@ -82,6 +82,7 @@ from lp.code.interfaces.branchcollection import (
     IBranchCollection,
     )
 from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
+from lp.code.interfaces.cibuild import ICIBuild
 from lp.code.interfaces.codeimport import ICodeImport
 from lp.code.interfaces.codeimportjob import (
     ICodeImportJobSet,
@@ -3735,3 +3736,27 @@ class EditCharmBase(EditByRegistryExpertsOrAdmins):
 
 class EditCharmBaseSet(EditByRegistryExpertsOrAdmins):
     usedfor = ICharmBaseSet
+
+
+class ViewCIBuild(DelegatedAuthorization):
+    permission = "launchpad.View"
+    usedfor = ICIBuild
+
+    def iter_objects(self):
+        yield self.obj.git_repository
+
+
+class EditCIBuild(AdminByBuilddAdmin):
+    permission = "launchpad.Edit"
+    usedfor = ICIBuild
+
+    def checkAuthenticated(self, user):
+        """Check edit access for CI builds.
+
+        Allow admins, buildd admins, and people who can edit the originating
+        Git repository.
+        """
+        auth_repository = EditGitRepository(self.obj.git_repository)
+        if auth_repository.checkAuthenticated(user):
+            return True
+        return super().checkAuthenticated(user)

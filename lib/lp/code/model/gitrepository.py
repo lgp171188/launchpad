@@ -114,6 +114,7 @@ from lp.code.event.git import GitRefsUpdatedEvent
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_FINAL_STATES,
     )
+from lp.code.interfaces.cibuild import ICIBuildSet
 from lp.code.interfaces.codeimport import ICodeImportSet
 from lp.code.interfaces.gitactivity import IGitActivitySet
 from lp.code.interfaces.gitcollection import (
@@ -1821,6 +1822,7 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
         self.grants.remove()
         self.rules.remove()
         getUtility(IRevisionStatusReportSet).deleteForRepository(self)
+        getUtility(ICIBuildSet).deleteByGitRepository(self)
 
         # Now destroy the repository.
         repository_name = self.unique_name

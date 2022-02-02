@@ -122,6 +122,11 @@ class IRevisionStatusReportEditableAttributes(Interface):
         title=_('Result of the report'),  readonly=True,
         required=False, vocabulary=RevisionStatusResult))
 
+    ci_build = Reference(
+        title=_("The CI build that produced this report."),
+        # Really ICIBuild, patched in _schema_circular_imports.py.
+        schema=Interface, required=False, readonly=True)
+
     @mutator_for(result)
     @operation_parameters(result=copy_field(result))
     @export_write_operation()

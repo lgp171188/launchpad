@@ -1170,6 +1170,15 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
             GitActivity, GitActivity.repository_id == repository_id)
         self.assertEqual([], list(activities))
 
+    def test_related_ci_builds_deleted(self):
+        # A repository that has a CI build can be deleted.
+        build = self.factory.makeCIBuild(git_repository=self.repository)
+        report = self.factory.makeRevisionStatusReport(ci_build=build)
+        self.repository.destroySelf()
+        transaction.commit()
+        self.assertRaises(LostObjectError, getattr, report, 'ci_build')
+        self.assertRaises(LostObjectError, getattr, build, 'git_repository')
+
 
 class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
     """Test determination and application of repository deletion
