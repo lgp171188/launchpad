@@ -38,6 +38,19 @@ class EditBugNominationStatus(AuthorizationBase):
         return self.obj.canApprove(user.person)
 
 
+class AppendBugTask(DelegatedAuthorization):
+    """Security adapter for appending to bug tasks.
+
+    This has the same semantics as `AppendBug`, but can be used where the
+    context is a bug task rather than a bug.
+    """
+    permission = 'launchpad.Append'
+    usedfor = IHasBug
+
+    def __init__(self, obj):
+        super().__init__(obj, obj.bug)
+
+
 class EditBugTask(DelegatedAuthorization):
     """Permission checker for editing objects linked to a bug.
 

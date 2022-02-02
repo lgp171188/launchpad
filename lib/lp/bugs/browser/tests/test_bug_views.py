@@ -24,11 +24,13 @@ from testtools.matchers import (
     Not,
     )
 from zope.component import getUtility
+from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.services import IService
 from lp.bugs.adapters.bugchange import BugAttachmentChange
+from lp.bugs.enums import BugLockStatus
 from lp.registry.enums import BugSharingPolicy
 from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyGrantSource,
@@ -560,6 +562,24 @@ class TestBugSecrecyViews(TestCaseWithFactory):
             contents = view.render()
             self.assertTrue(bug.title in contents)
 
+    def test_locked_target_owner(self):
+        # The target owner can change privacy of locked bugs.
+        bug = self.factory.makeBug()
+        target_owner = bug.default_bugtask.target.owner
+        with person_logged_in(target_owner):
+            bug.lock(who=target_owner, status=BugLockStatus.COMMENT_ONLY)
+        self.createInitializedSecrecyView(person=target_owner, bug=bug)
+        self.assertEqual(InformationType.USERDATA, bug.information_type)
+
+    def test_locked_unprivileged(self):
+        # Unprivileged users cannot change privacy of locked bugs.
+        bug = self.factory.makeBug()
+        target_owner = bug.default_bugtask.target.owner
+        with person_logged_in(target_owner):
+            bug.lock(who=target_owner, status=BugLockStatus.COMMENT_ONLY)
+        self.assertRaises(
+            Unauthorized, self.createInitializedSecrecyView, bug=bug)
+
 
 class TestBugTextViewPrivateTeams(TestCaseWithFactory):
     """ Test for rendering BugTextView with private team artifacts.
@@ -786,6 +806,36 @@ class TestBugMarkAsDuplicateView(TestCaseWithFactory):
             'table',
             {'id': 'affected-software', 'class': 'listing'})
         self.assertIsNotNone(table)
+
+    def test_locked_target_owner(self):
+        # The target owner can set a locked bug as a duplicate.
+        target_owner = self.bug.default_bugtask.target.owner
+        with person_logged_in(target_owner):
+            self.bug.lock(who=target_owner, status=BugLockStatus.COMMENT_ONLY)
+            form = {
+                "field.actions.change": "Set Duplicate",
+                "field.duplicateof": str(self.duplicate_bug.id),
+                }
+            create_initialized_view(
+                self.bug.default_bugtask, name="+duplicate",
+                principal=target_owner, form=form)
+        self.assertEqual(self.duplicate_bug, self.bug.duplicateof)
+
+    def test_locked_unprivileged(self):
+        # Unprivileged users (even the bug reporter) cannot set a locked bug
+        # as a duplicate.
+        target_owner = self.bug.default_bugtask.target.owner
+        with person_logged_in(target_owner):
+            self.bug.lock(who=target_owner, status=BugLockStatus.COMMENT_ONLY)
+        with person_logged_in(self.bug_owner):
+            form = {
+                "field.actions.change": "Set Duplicate",
+                "field.duplicateof": str(self.duplicate_bug.id),
+                }
+            self.assertRaises(
+                Unauthorized, create_initialized_view,
+                self.bug.default_bugtask, name="+duplicate",
+                principal=self.bug_owner, form=form)
 
 
 class TestBugActivityView(TestCaseWithFactory):

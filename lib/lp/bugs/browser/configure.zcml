@@ -522,7 +522,7 @@
             name="+duplicate"
             for="lp.bugs.interfaces.bugtask.IBugTask"
             class="lp.bugs.browser.bug.BugMarkAsDuplicateView"
-            permission="launchpad.AnyPerson"
+            permission="launchpad.Edit"
             template="../templates/bug-mark-as-duplicate.pt"/>
         <browser:page
             for="lp.bugs.interfaces.bugtask.IBugTask"
@@ -540,13 +540,13 @@
             name="+addcomment"
             for="lp.bugs.interfaces.bugtask.IBugTask"
             class="lp.bugs.browser.bugmessage.BugMessageAddFormView"
-            permission="launchpad.Edit"
+            permission="launchpad.Append"
             template="../templates/bug-comment-add.pt"/>
         <browser:page
             name="+addcomment-form"
             for="lp.bugs.interfaces.bugtask.IBugTask"
             class="lp.bugs.browser.bugmessage.BugMessageAddFormView"
-            permission="launchpad.Edit"
+            permission="launchpad.Append"
             template="../templates/bug-comment-add-form.pt"/>
         <browser:page
             name="+nominate"
@@ -558,7 +558,7 @@
             name="+addbranch"
             for="lp.bugs.interfaces.bugtask.IBugTask"
             class="lp.bugs.browser.bugbranch.BugBranchAddView"
-            permission="launchpad.AnyPerson"
+            permission="launchpad.Edit"
             template="../templates/bug-branch-add.pt"/>
         <browser:page
             name="+index"
@@ -576,18 +576,18 @@
             name="+choose-affected-product"
             for="lp.bugs.interfaces.bugtask.IBugTask"
             class="lp.bugs.browser.bugalsoaffects.BugAlsoAffectsProductMetaView"
-            permission="launchpad.AnyPerson"/>
+            permission="launchpad.Edit"/>
         <browser:page
             name="+affects-new-product"
             for="lp.bugs.interfaces.bugtask.IBugTask"
             class="lp.bugs.browser.bugalsoaffects.BugAlsoAffectsProductWithProductCreationView"
-            permission="launchpad.AnyPerson"
+            permission="launchpad.Edit"
             template="../templates/bugtask-affects-new-product.pt"/>
         <browser:page
             name="+distrotask"
             for="lp.bugs.interfaces.bugtask.IBugTask"
             class="lp.bugs.browser.bugalsoaffects.BugAlsoAffectsDistroMetaView"
-            permission="launchpad.AnyPerson"/>
+            permission="launchpad.Edit"/>
         <browser:page
             name="+editstatus"
             for="lp.bugs.interfaces.bugtask.IBugTask"
@@ -640,14 +640,14 @@
             name="+linkcve"
             for="lp.bugs.interfaces.bugtask.IBugTask"
             class="lp.bugs.browser.cve.CveLinkView"
-            permission="launchpad.AnyPerson"
+            permission="launchpad.Edit"
             template="../templates/bug-cve.pt">
                 </browser:page>
         <browser:page
             name="+unlinkcve"
             for="lp.bugs.interfaces.bugtask.IBugTask"
             class="lp.bugs.browser.cve.CveUnlinkView"
-            permission="launchpad.AnyPerson"
+            permission="launchpad.Edit"
             template="../templates/bug-removecve.pt">
                 </browser:page>
         <browser:page

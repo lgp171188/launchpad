@@ -11,6 +11,7 @@ __all__ = [
     'IBugAppend',
     'IBugBecameQuestionEvent',
     'IBugDelta',
+    'IBugEdit',
     'IBugMute',
     'IBugPublic',
     'IBugSet',
@@ -726,20 +727,6 @@ class IBugAppend(Interface):
         :param update_heat: Whether to update the bug heat.
         """
 
-    @operation_parameters(
-        target=Reference(schema=Interface, title=_('Target')))
-    @call_with(owner=REQUEST_USER)
-    @export_factory_operation(Interface, [])
-    def addNomination(owner, target):
-        """Nominate a bug for an IDistroSeries or IProductSeries.
-
-        :owner: An IPerson.
-        :target: An IDistroSeries or IProductSeries.
-
-        This method creates and returns a BugNomination. (See
-        lp.bugs.model.bugnomination.BugNomination.)
-        """
-
     @call_with(owner=REQUEST_USER)
     @rename_parameters_as(
         bugtracker='bug_tracker', remotebug='remote_bug')
@@ -752,33 +739,6 @@ class IBugAppend(Interface):
 
     def removeWatch(bug_watch, owner):
         """Remove a bug watch from the bug."""
-
-    @call_with(owner=REQUEST_USER)
-    @operation_parameters(target=copy_field(IBugTask['target']))
-    @export_factory_operation(IBugTask, [])
-    def addTask(owner, target):
-        """Create a new bug task on this bug.
-
-        :raises IllegalTarget: if the bug task cannot be added to the bug.
-        """
-
-    def convertToQuestion(person, comment=None):
-        """Create and return a Question from this Bug.
-
-        Bugs that are also in external bug trackers cannot be converted
-        to questions. This is also true for bugs that are being developed.
-
-        The `IQuestionTarget` is provided by the `IBugTask` that is not
-        Invalid and is not a conjoined replica. Only one question can be
-        made from a bug.
-
-        An AssertionError is raised if the bug has zero or many BugTasks
-        that can provide a QuestionTarget. It will also be raised if a
-        question was previously created from the bug.
-
-        :person: The `IPerson` creating a question from this bug
-        :comment: A string. An explanation of why the bug is a question.
-        """
 
     def expireNotifications():
         """Expire any pending notifications that have not been emailed.
@@ -809,6 +769,142 @@ class IBugAppend(Interface):
         FileBugViewBase.submit_bug_action, otherwise
         we may get inconsistent settings of bug.private and
         file_alias.restricted.
+        """
+
+    def linkMessage(message, bugwatch=None, user=None,
+                    remote_comment_id=None):
+        """Add a comment to this bug.
+
+            :param message: The `IMessage` to be used as a comment.
+            :param bugwatch: The `IBugWatch` of the bug this comment was
+                imported from, if it's an imported comment.
+            :param user: The `IPerson` adding the comment.
+            :param remote_comment_id: The id this comment has in the
+                remote bug tracker, if it's an imported comment.
+        """
+
+    @operation_parameters(
+        affected=Bool(
+            title=_("Does this bug affect you?"),
+            required=False, default=True))
+    @call_with(user=REQUEST_USER)
+    @export_write_operation()
+    def markUserAffected(user, affected=True):
+        """Mark :user: as affected by this bug."""
+
+    @operation_parameters(
+        comment_number=Int(
+            title=_('The number of the comment in the list of messages.'),
+            required=True),
+        visible=Bool(title=_('Show this comment?'), required=True))
+    @call_with(user=REQUEST_USER)
+    @export_write_operation()
+    def setCommentVisibility(user, comment_number, visible):
+        """Set the visible attribute on a bug comment.  This is restricted
+        to Launchpad admins, and will return a HTTP Error 401: Unauthorized
+        error for non-admin callers.
+        """
+
+    @operation_parameters(
+        person=Reference(IPerson, title=_('Person'), required=False))
+    @call_with(muted_by=REQUEST_USER)
+    @export_write_operation()
+    @operation_for_version('devel')
+    def mute(person, muted_by):
+        """Add a muted subscription for `person`."""
+
+    @operation_parameters(
+        person=Reference(IPerson, title=_('Person'), required=False))
+    @call_with(unmuted_by=REQUEST_USER)
+    @export_write_operation()
+    @operation_for_version('devel')
+    def unmute(person, unmuted_by):
+        """Remove a muted subscription for `person`.
+
+        Returns previously muted direct subscription, if any."""
+
+    @operation_parameters(
+        subject=optional_message_subject_field(),
+        content=copy_field(IMessage['content']))
+    @call_with(owner=REQUEST_USER)
+    @export_factory_operation(IMessage, [])
+    def newMessage(owner, subject, content):
+        """Create a new message, and link it to this object."""
+
+    @operation_parameters(
+        person=Reference(IPerson, title=_('Person'), required=True),
+        level=Choice(
+            vocabulary=BugNotificationLevel, required=False,
+            title=_('Level')))
+    @call_with(subscribed_by=REQUEST_USER, suppress_notify=False)
+    @export_write_operation()
+    def subscribe(person, subscribed_by, suppress_notify=True, level=None):
+        """Subscribe `person` to the bug.
+
+        :param person: the subscriber.
+        :param subscribed_by: the person who created the subscription.
+        :param suppress_notify: a flag to suppress notify call.
+        :param level: The BugNotificationLevel for the new subscription.
+        :return: an `IBugSubscription`.
+        """
+
+    @operation_parameters(
+        person=Reference(IPerson, title=_('Person'), required=False))
+    @call_with(unsubscribed_by=REQUEST_USER)
+    @export_write_operation()
+    def unsubscribe(person, unsubscribed_by):
+        """Remove this person's subscription to this bug."""
+
+    @operation_parameters(
+        person=Reference(IPerson, title=_('Person'), required=False))
+    @call_with(unsubscribed_by=REQUEST_USER)
+    @export_write_operation()
+    def unsubscribeFromDupes(person, unsubscribed_by):
+        """Remove this person's subscription from all dupes of this bug."""
+
+
+class IBugEdit(Interface):
+    """IBug attributes that require launchpad.Edit permission."""
+
+    @operation_parameters(
+        target=Reference(schema=Interface, title=_('Target')))
+    @call_with(owner=REQUEST_USER)
+    @export_factory_operation(Interface, [])
+    def addNomination(owner, target):
+        """Nominate a bug for an IDistroSeries or IProductSeries.
+
+        :owner: An IPerson.
+        :target: An IDistroSeries or IProductSeries.
+
+        This method creates and returns a BugNomination. (See
+        lp.bugs.model.bugnomination.BugNomination.)
+        """
+
+    @call_with(owner=REQUEST_USER)
+    @operation_parameters(target=copy_field(IBugTask['target']))
+    @export_factory_operation(IBugTask, [])
+    def addTask(owner, target):
+        """Create a new bug task on this bug.
+
+        :raises IllegalTarget: if the bug task cannot be added to the bug.
+        """
+
+    def convertToQuestion(person, comment=None):
+        """Create and return a Question from this Bug.
+
+        Bugs that are also in external bug trackers cannot be converted
+        to questions. This is also true for bugs that are being developed.
+
+        The `IQuestionTarget` is provided by the `IBugTask` that is not
+        Invalid and is not a conjoined replica. Only one question can be
+        made from a bug.
+
+        An AssertionError is raised if the bug has zero or many BugTasks
+        that can provide a QuestionTarget. It will also be raised if a
+        question was previously created from the bug.
+
+        :person: The `IPerson` creating a question from this bug
+        :comment: A string. An explanation of why the bug is a question.
         """
 
     @call_with(user=REQUEST_USER)
@@ -886,102 +982,11 @@ class IBugAppend(Interface):
         :who: The `IPerson` who is making the change.
         """
 
-    def linkMessage(message, bugwatch=None, user=None,
-                    remote_comment_id=None):
-        """Add a comment to this bug.
-
-            :param message: The `IMessage` to be used as a comment.
-            :param bugwatch: The `IBugWatch` of the bug this comment was
-                imported from, if it's an imported comment.
-            :param user: The `IPerson` adding the comment.
-            :param remote_comment_id: The id this comment has in the
-                remote bug tracker, if it's an imported comment.
-        """
-
-    @operation_parameters(
-        affected=Bool(
-            title=_("Does this bug affect you?"),
-            required=False, default=True))
-    @call_with(user=REQUEST_USER)
-    @export_write_operation()
-    def markUserAffected(user, affected=True):
-        """Mark :user: as affected by this bug."""
-
     @mutator_for(IBugView['duplicateof'])
     @operation_parameters(duplicate_of=copy_field(IBugView['duplicateof']))
     @export_write_operation()
     def markAsDuplicate(duplicate_of):
         """Mark this bug as a duplicate of another."""
-
-    @operation_parameters(
-        comment_number=Int(
-            title=_('The number of the comment in the list of messages.'),
-            required=True),
-        visible=Bool(title=_('Show this comment?'), required=True))
-    @call_with(user=REQUEST_USER)
-    @export_write_operation()
-    def setCommentVisibility(user, comment_number, visible):
-        """Set the visible attribute on a bug comment.  This is restricted
-        to Launchpad admins, and will return a HTTP Error 401: Unauthorized
-        error for non-admin callers.
-        """
-
-    @operation_parameters(
-        person=Reference(IPerson, title=_('Person'), required=False))
-    @call_with(muted_by=REQUEST_USER)
-    @export_write_operation()
-    @operation_for_version('devel')
-    def mute(person, muted_by):
-        """Add a muted subscription for `person`."""
-
-    @operation_parameters(
-        person=Reference(IPerson, title=_('Person'), required=False))
-    @call_with(unmuted_by=REQUEST_USER)
-    @export_write_operation()
-    @operation_for_version('devel')
-    def unmute(person, unmuted_by):
-        """Remove a muted subscription for `person`.
-
-        Returns previously muted direct subscription, if any."""
-
-    @operation_parameters(
-        subject=optional_message_subject_field(),
-        content=copy_field(IMessage['content']))
-    @call_with(owner=REQUEST_USER)
-    @export_factory_operation(IMessage, [])
-    def newMessage(owner, subject, content):
-        """Create a new message, and link it to this object."""
-
-    @operation_parameters(
-        person=Reference(IPerson, title=_('Person'), required=True),
-        level=Choice(
-            vocabulary=BugNotificationLevel, required=False,
-            title=_('Level')))
-    @call_with(subscribed_by=REQUEST_USER, suppress_notify=False)
-    @export_write_operation()
-    def subscribe(person, subscribed_by, suppress_notify=True, level=None):
-        """Subscribe `person` to the bug.
-
-        :param person: the subscriber.
-        :param subscribed_by: the person who created the subscription.
-        :param suppress_notify: a flag to suppress notify call.
-        :param level: The BugNotificationLevel for the new subscription.
-        :return: an `IBugSubscription`.
-        """
-
-    @operation_parameters(
-        person=Reference(IPerson, title=_('Person'), required=False))
-    @call_with(unsubscribed_by=REQUEST_USER)
-    @export_write_operation()
-    def unsubscribe(person, unsubscribed_by):
-        """Remove this person's subscription to this bug."""
-
-    @operation_parameters(
-        person=Reference(IPerson, title=_('Person'), required=False))
-    @call_with(unsubscribed_by=REQUEST_USER)
-    @export_write_operation()
-    def unsubscribeFromDupes(person, unsubscribed_by):
-        """Remove this person's subscription from all dupes of this bug."""
 
     def setStatus(target, status, user):
         """Set the status of the bugtask related to the specified target.
@@ -996,6 +1001,7 @@ class IBugAppend(Interface):
 
         Return None if no bugtask was edited.
         """
+
 
 class IBugModerate(Interface):
     """IBug attributes that require the launchpad.Moderate permission."""
@@ -1044,7 +1050,8 @@ class IBugModerate(Interface):
 
 
 @exported_as_webservice_entry()
-class IBug(IBugPublic, IBugView, IBugAppend, IBugModerate, IHasLinkedBranches):
+class IBug(IBugPublic, IBugView, IBugAppend, IBugEdit, IBugModerate,
+           IHasLinkedBranches):
     """The core bug entry."""
 
     linked_bugbranches = exported(
