@@ -341,7 +341,8 @@ class BuildFarmJobBehaviourBase:
         transaction.commit()
 
     @defer.inlineCallbacks
-    def _downloadFiles(self, filemap, upload_path, logger):
+    def _downloadFiles(self, worker_status, upload_path, logger):
+        filemap = worker_status["filemap"]
         filenames_to_download = []
         for filename, sha1 in filemap.items():
             logger.info("Grabbing file: %s (%s)" % (
@@ -365,7 +366,6 @@ class BuildFarmJobBehaviourBase:
         uploader.
         """
         build = self.build
-        filemap = worker_status['filemap']
 
         # If this is a binary package build, discard it if its source is
         # no longer published.
@@ -393,7 +393,7 @@ class BuildFarmJobBehaviourBase:
             grab_dir, str(build.archive.id), build.distribution.name)
         os.makedirs(upload_path)
 
-        yield self._downloadFiles(filemap, upload_path, logger)
+        yield self._downloadFiles(worker_status, upload_path, logger)
 
         transaction.commit()
 

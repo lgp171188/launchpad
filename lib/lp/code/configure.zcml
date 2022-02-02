@@ -1303,6 +1303,13 @@
     <allow interface="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource" />
   </securedutility>
 
+  <!-- CIBuildBehaviour -->
+  <adapter
+      for="lp.code.interfaces.cibuild.ICIBuild"
+      provides="lp.buildmaster.interfaces.buildfarmjobbehaviour.IBuildFarmJobBehaviour"
+      factory="lp.code.model.cibuildbehaviour.CIBuildBehaviour"
+      permission="zope.Public" />
+
   <webservice:register module="lp.code.interfaces.webservice" />
 
   <adapter
