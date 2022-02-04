@@ -1525,6 +1525,7 @@ class TestBugTaskEditView(WithScenarios, TestCaseWithFactory):
         with admin_logged_in():
             ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
             oci_distro = self.factory.makeDistribution()
+            oci_distro_name = oci_distro.name
             oci_distro.official_malone = True
             oci_distro.default_traversal_policy = (
                 DistributionDefaultTraversalPolicy.OCI_PROJECT)
@@ -1537,7 +1538,7 @@ class TestBugTaskEditView(WithScenarios, TestCaseWithFactory):
         browser = self.getUserBrowser(url, user=bug_task.owner)
         browser.getControl(name='ubuntu.target').value = 'package'
         browser.getControl(name='ubuntu.target.distribution').value = (
-            oci_distro.name)
+            oci_distro_name)
         browser.getControl(name='ubuntu.target.package').value = (
             oci_project_name)
         browser.getControl("Save Changes").click()
@@ -1563,7 +1564,7 @@ class TestBugTaskEditView(WithScenarios, TestCaseWithFactory):
         browser = self.getUserBrowser(url, user=bug_task.owner)
         browser.getControl(name='oci-distro.target').value = 'package'
         browser.getControl(name='oci-distro.target.distribution').value = (
-            ubuntu.name)
+            'ubuntu')
         browser.getControl(name='oci-distro.target.package').value = ''
         browser.getControl("Save Changes").click()
 
@@ -1590,7 +1591,7 @@ class TestBugTaskEditView(WithScenarios, TestCaseWithFactory):
         browser = self.getUserBrowser(url, user=bug_task.owner)
         browser.getControl(name='oci-distro.target').value = 'package'
         browser.getControl(name='oci-distro.target.distribution').value = (
-            ubuntu.name)
+            'ubuntu')
         browser.getControl(name='oci-distro.target.package').value = sp.name
         browser.getControl("Save Changes").click()
 

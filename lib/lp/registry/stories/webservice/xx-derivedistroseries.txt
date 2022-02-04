@@ -54,7 +54,9 @@ Calling
     >>> def ws_object(webservice, obj):
     ...     api_request = WebServiceTestRequest(
     ...         SERVER_URL=webservice.getAbsoluteUrl(""))
+    ...     login(ANONYMOUS)
     ...     obj_url = canonical_url(obj, request=api_request)
+    ...     logout()
     ...     return webservice.get(obj_url).jsonBody()
 
 We can't call .initDerivedDistroSeries() on a distroseries that already
