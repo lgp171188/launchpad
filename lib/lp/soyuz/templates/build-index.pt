@@ -125,14 +125,10 @@
       <span tal:attributes="
             class string:buildstatus${context/status/name};"
             tal:content="context/status/title">Fully built</span>
-      <tal:building condition="context/status/enumvalue:BUILDING">
-        on <a tal:content="view/buildqueue/builder/title"
-              tal:attributes="href view/buildqueue/builder/fmt:url"/>
-      </tal:building>
-      <tal:built condition="context/builder">
+      <tal:builder condition="context/builder">
         on <a tal:content="context/builder/title"
               tal:attributes="href context/builder/fmt:url"/>
-      </tal:built>
+      </tal:builder>
       <tal:retry define="link context/menu:context/retry"
                  condition="link/enabled"
                  replace="structure link/fmt:link" />
@@ -152,8 +148,8 @@
             replace="eta/fmt:approximatedate">in 3 hours</tal:eta>
         </li>
       </tal:pending>
-      <li tal:condition="view/buildqueue">
-        Build score:<span tal:replace="view/buildqueue/lastscore"/>
+      <li tal:condition="context/buildqueue_record">
+        Build score:<span tal:replace="context/buildqueue_record/lastscore"/>
           <tal:rescore define="link context/menu:context/rescore"
                        condition="link/enabled"
                        replace="structure link/fmt:icon" />
@@ -163,8 +159,8 @@
       <tal:building condition="context/status/enumvalue:BUILDING">
         <li>
           Started
-          <span tal:attributes="title view/buildqueue/date_started/fmt:datetime"
-                tal:content="view/buildqueue/date_started/fmt:approximatedate"
+          <span tal:attributes="title context/buildqueue_record/date_started/fmt:datetime"
+                tal:content="context/buildqueue_record/date_started/fmt:approximatedate"
             >5 minutes ago</span>
         </li>
       </tal:building>
