@@ -327,9 +327,6 @@ class BuildFarmJobBehaviourBase:
         # atomically.  Setting the status to UPLOADING constitutes handoff to
         # process-upload, so doing that before we've removed the BuildQueue
         # causes races.
-
-        # XXX wgrant: The builder should be set long before here, but
-        # currently isn't.
         self.build.updateStatus(
             build_status, builder=bq.builder, worker_status=worker_status)
 
