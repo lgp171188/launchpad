@@ -9,7 +9,6 @@
   <body>
     <metal:registering fill-slot="registering">
       Created by <a tal:replace="structure context/owner/fmt:link" />
-      on
       <tal:created
         replace="structure context/date_created/fmt:displaydatetitle" />
     </metal:registering>
@@ -31,7 +30,6 @@
             <dt>Last updated by:</dt>
             <dd>
               <a tal:replace="structure context/last_updated_by/fmt:link" />
-              on
               <tal:last-updated
                 replace="structure context/date_last_updated/fmt:displaydatetitle" />
             </dd>
