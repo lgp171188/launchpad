@@ -12,9 +12,17 @@ ALTER TABLE Distribution
     ADD CONSTRAINT distribution__valid_information_type CHECK (
         information_type = ANY(ARRAY[1, 5, 6]));
 
+COMMENT ON COLUMN Distribution.branch_sharing_policy IS 'Sharing policy for this distribution''s branches.';
+COMMENT ON COLUMN Distribution.bug_sharing_policy IS 'Sharing policy for this distribution''s bugs.';
+COMMENT ON COLUMN Distribution.specification_sharing_policy IS 'Sharing policy for this distribution''s specifications.';
+COMMENT ON COLUMN Distribution.information_type IS 'Enum describing what type of information is stored, such as type of private or security related data, and used to determine how to apply an access policy.';
+COMMENT ON COLUMN Distribution.access_policies IS 'Cache of AccessPolicy.ids that convey launchpad.LimitedView.';
+
 ALTER TABLE CommercialSubscription
     ADD COLUMN distribution integer REFERENCES distribution,
     ALTER COLUMN product DROP NOT NULL,
     ADD CONSTRAINT one_pillar CHECK (null_count(ARRAY[product, distribution]) = 1);
+
+COMMENT ON COLUMN CommercialSubscription.distribution IS 'The distribution this subscription enables.';
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 41, 0);
