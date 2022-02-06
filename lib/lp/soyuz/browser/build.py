@@ -249,10 +249,6 @@ class BuildView(LaunchpadView):
         return self.context.archive.is_ppa
 
     @cachedproperty
-    def buildqueue(self):
-        return self.context.buildqueue_record
-
-    @cachedproperty
     def component_name(self):
         # Production has some buggy historic builds without
         # source publications.

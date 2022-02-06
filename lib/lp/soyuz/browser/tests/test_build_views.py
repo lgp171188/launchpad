@@ -120,7 +120,7 @@ class TestBuildViews(TestCaseWithFactory):
         build_view = getMultiAdapter(
             (build, self.empty_request), name="+index")
         self.assertFalse(build_view.is_ppa)
-        self.assertEqual(build_view.buildqueue, None)
+        self.assertEqual(build.buildqueue_record, None)
         self.assertEqual(build_view.component_name, 'multiverse')
         self.assertFalse(build.can_be_retried)
         self.assertBuildMenuRetryIsExpected(build, build.archive.owner, False)

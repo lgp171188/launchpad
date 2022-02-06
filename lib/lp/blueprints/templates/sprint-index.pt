@@ -11,7 +11,6 @@
 
 <tal:registering metal:fill-slot="registering">
   Registered by <a tal:replace="structure context/owner/fmt:link" />
-  on
   <tal:created
     replace="structure context/datecreated/fmt:displaydatetitle" />
 </tal:registering>

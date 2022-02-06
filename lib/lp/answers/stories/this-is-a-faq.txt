@@ -318,7 +318,7 @@ The FAQ's original author and creation date appears in the header:
 
     >>> print(extract_text(
     ...     find_tag_by_id(owner_browser.contents, 'registration')))
-    Created by Sample Person on ...
+    Created by Sample Person ...
 
 A 'Related questions' portlet contains links to the question answered by
 the FAQ:
