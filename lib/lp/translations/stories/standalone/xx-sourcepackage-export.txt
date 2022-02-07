@@ -192,10 +192,12 @@ their native file format.
     >>> from lp.translations.model.potemplate import POTemplateSubset
     >>> from lp.translations.interfaces.translationfileformat import (
     ...     TranslationFileFormat)
+    >>> login(ANONYMOUS)
     >>> hoary = ubuntu.getSeries('hoary')
     >>> hoary_subset = POTemplateSubset(distroseries=hoary)
     >>> an_evolution_template = hoary_subset.getPOTemplateByPath(
     ...     'po/evolution-2.2.pot')
+    >>> logout()
 
 If the file format for one of these templates were different from the
 other's, a warning would appear on the export request form that wasn't

@@ -253,7 +253,8 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
         return response.jsonBody()
 
     def assertCanCreateOCIProject(self, distro, registrant):
-        url = api_url(distro)
+        with person_logged_in(self.person):
+            url = api_url(distro)
         obj = {"name": "someprojectname", "description": "My OCI project"}
         resp = self.webservice.named_post(url, "newOCIProject", **obj)
         self.assertEqual(201, resp.status, resp.body)

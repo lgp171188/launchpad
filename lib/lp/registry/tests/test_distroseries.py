@@ -634,6 +634,7 @@ class TestDistroSeriesWebservice(TestCaseWithFactory):
         # Somebody with only launchpad.TranslationsAdmin cannot request full
         # language pack exports.
         distroseries = self.factory.makeDistroSeries()
+        distroseries_url = api_url(distroseries)
         self.assertFalse(distroseries.language_pack_full_export_requested)
         group = self.factory.makeTranslationGroup()
         with admin_logged_in():
@@ -641,7 +642,7 @@ class TestDistroSeriesWebservice(TestCaseWithFactory):
         webservice = webservice_for_person(
             group.owner, permission=OAuthPermission.WRITE_PRIVATE)
         response = webservice.patch(
-            api_url(distroseries), "application/json",
+            distroseries_url, "application/json",
             json.dumps({"language_pack_full_export_requested": True}))
         self.assertEqual(401, response.status)
         self.assertFalse(distroseries.language_pack_full_export_requested)
@@ -650,13 +651,14 @@ class TestDistroSeriesWebservice(TestCaseWithFactory):
         # Somebody with launchpad.LanguagePacksAdmin can request full
         # language pack exports.
         distroseries = self.factory.makeDistroSeries()
+        distroseries_url = api_url(distroseries)
         self.assertFalse(distroseries.language_pack_full_export_requested)
         person = self.factory.makePerson(
             member_of=[getUtility(ILaunchpadCelebrities).rosetta_experts])
         webservice = webservice_for_person(
             person, permission=OAuthPermission.WRITE_PRIVATE)
         response = webservice.patch(
-            api_url(distroseries), "application/json",
+            distroseries_url, "application/json",
             json.dumps({"language_pack_full_export_requested": True}))
         self.assertEqual(209, response.status)
         self.assertTrue(distroseries.language_pack_full_export_requested)

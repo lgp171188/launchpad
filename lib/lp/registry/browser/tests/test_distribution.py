@@ -366,12 +366,12 @@ class TestDistributionPage(TestCaseWithFactory):
         # User can't see the +search-oci-project link if there are no
         # available OCI projects.
         admin = login_celebrity('admin')
-        browser = self.getUserBrowser(canonical_url(self.distro), user=admin)
+        distro_url = canonical_url(self.distro)
+        browser = self.getUserBrowser(distro_url, user=admin)
         matchers = Not(soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'link to search oci project', 'a',
-                attrs={'href': canonical_url(
-                    self.distro, view_name='+search-oci-project')},
+                attrs={'href': '%s/+search-oci-project' % distro_url},
                 text='Search for OCI project')))
         self.assertThat(browser.contents, matchers)
 
@@ -379,12 +379,12 @@ class TestDistributionPage(TestCaseWithFactory):
         # User can see the +search-oci-project link if there are OCI projects.
         self.factory.makeOCIProject(pillar=self.distro)
         admin = login_celebrity('admin')
-        browser = self.getUserBrowser(canonical_url(self.distro), user=admin)
+        distro_url = canonical_url(self.distro)
+        browser = self.getUserBrowser(distro_url, user=admin)
         matchers = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'link to search oci project', 'a',
-                attrs={'href': canonical_url(
-                    self.distro, view_name='+search-oci-project')},
+                attrs={'href': '%s/+search-oci-project' % distro_url},
                 text='Search for OCI project'))
         self.assertThat(browser.contents, matchers)
 
@@ -393,20 +393,19 @@ class TestDistributionPage(TestCaseWithFactory):
         # is disabled.
         self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: ''}))
         user = self.factory.makePerson()
-        browser = self.getUserBrowser(canonical_url(self.distro), user=user)
+        distro_url = canonical_url(self.distro)
+        browser = self.getUserBrowser(distro_url, user=user)
 
         self.assertThat(browser.contents, Not(soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'link to search oci project', 'a',
-                attrs={'href': canonical_url(
-                    self.distro, view_name='+search-oci-project')},
+                attrs={'href': '%s/+search-oci-project' % distro_url},
                 text='Search for OCI project'))))
 
         self.assertThat(browser.contents, Not(soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'link to create oci project', 'a',
-                attrs={'href': canonical_url(
-                    self.distro, view_name='+new-oci-project')},
+                attrs={'href': '%s/+new-oci-project' % distro_url},
                 text='Create an OCI project'))))
 
     def test_distributionpage_oci_links_for_user_no_permission(self):
@@ -414,22 +413,21 @@ class TestDistributionPage(TestCaseWithFactory):
         # doesn't have permission to create OCI projects.
         self.factory.makeOCIProject(pillar=self.distro)
         user = self.factory.makePerson()
-        browser = self.getUserBrowser(canonical_url(self.distro), user=user)
+        distro_url = canonical_url(self.distro)
+        browser = self.getUserBrowser(distro_url, user=user)
 
         # User can see search link
         self.assertThat(browser.contents, soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'link to search oci project', 'a',
-                attrs={'href': canonical_url(
-                    self.distro, view_name='+search-oci-project')},
+                attrs={'href': '%s/+search-oci-project' % distro_url},
                 text='Search for OCI project')))
 
         # User cannot see "new-oci-project" link.
         self.assertThat(browser.contents, Not(soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'link to create oci project', 'a',
-                attrs={'href': canonical_url(
-                    self.distro, view_name='+new-oci-project')},
+                attrs={'href': '%s/+new-oci-project' % distro_url},
                 text='Create an OCI project'))))
 
     def test_distributionpage_addseries_link_noadmin(self):

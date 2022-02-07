@@ -4061,10 +4061,12 @@ class TestSnapWebservice(TestCaseWithFactory):
         # requestAutoBuilds can be performed over the webservice.
         distroseries = self.factory.makeDistroSeries()
         dases = []
+        das_urls = []
         for _ in range(3):
             processor = self.factory.makeProcessor(supports_virtualized=True)
             dases.append(self.makeBuildableDistroArchSeries(
                 distroseries=distroseries, processor=processor))
+            das_urls.append(api_url(dases[-1]))
         archive = self.factory.makeArchive()
         snap = self.makeSnap(
             distroseries=distroseries,
@@ -4076,7 +4078,8 @@ class TestSnapWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         builds = response.jsonBody()
         self.assertContentEqual(
-            [self.getURL(das) for das in dases[:2]],
+            [self.webservice.getAbsoluteUrl(das_url)
+             for das_url in das_urls[:2]],
             [build["distro_arch_series_link"] for build in builds])
 
     def test_requestAutoBuilds_requires_auto_build_archive(self):
@@ -4151,7 +4154,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         builds = response.jsonBody()
         self.assertContentEqual(
-            [self.getURL(dases[1])],
+            [self.webservice.getAbsoluteUrl(das_urls[1])],
             [build["distro_arch_series_link"] for build in builds])
 
     def test_getBuilds(self):
