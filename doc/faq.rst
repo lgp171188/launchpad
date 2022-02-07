@@ -48,8 +48,15 @@ I have Launchpad running but mails are not sent...
 
 Development Launchpads don't send email to the outside world, for obvious
 reasons.  They connect to the local SMTP server and send to root.  To create
-new users, create a new account, and check the local mailbox, or use
-``utilities/make-lp-user``.
+new users, create a new account and check the local mailbox, or check
+:ref:`this FAQ <create-additional-user-accounts-dev-env>`.
+
+.. _create-additional-user-accounts-dev-env:
+
+How do I create additional user accounts in the dev environment?
+================================================================
+You can create a new account using the ``utilities/make-lp-user`` script and log
+in to that account at ``https://launchpad.test``.
 
 My database permissions keep getting deleted!
 =============================================
