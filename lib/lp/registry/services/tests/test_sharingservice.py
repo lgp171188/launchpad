@@ -195,19 +195,6 @@ class TestSharingService(TestCaseWithFactory, OCIConfigHelperMixin):
              BranchSharingPolicy.PROPRIETARY_OR_PUBLIC,
              BranchSharingPolicy.PROPRIETARY])
 
-    def test_getBugSharingPolicies_non_public_product(self):
-        # When the product is non-public the policy options are limited to
-        # only proprietary or embargoed/proprietary.
-        owner = self.factory.makePerson()
-        product = self.factory.makeProduct(
-            information_type=InformationType.PROPRIETARY,
-            owner=owner,
-        )
-        with person_logged_in(owner):
-            self._assert_getBugSharingPolicies(
-                product, [BugSharingPolicy.EMBARGOED_OR_PROPRIETARY,
-                          BugSharingPolicy.PROPRIETARY])
-
     def test_getBranchSharingPolicies_non_public_product(self):
         # When the product is non-public the policy options are limited to
         # only proprietary or embargoed/proprietary.
@@ -220,19 +207,6 @@ class TestSharingService(TestCaseWithFactory, OCIConfigHelperMixin):
             self._assert_getBranchSharingPolicies(
                 product, [BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY,
                           BranchSharingPolicy.PROPRIETARY])
-
-    def test_getSpecificationSharingPolicies_non_public_product(self):
-        # When the product is non-public the policy options are limited to
-        # only proprietary or embargoed/proprietary.
-        owner = self.factory.makePerson()
-        product = self.factory.makeProduct(
-            information_type=InformationType.PROPRIETARY,
-            owner=owner,
-        )
-        with person_logged_in(owner):
-            self._assert_getSpecificationSharingPolicies(
-                product, [SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY,
-                          SpecificationSharingPolicy.PROPRIETARY])
 
     def test_getBranchSharingPolicies_disallowed_policy(self):
         # getBranchSharingPolicies includes a pillar's current policy even if
@@ -289,6 +263,19 @@ class TestSharingService(TestCaseWithFactory, OCIConfigHelperMixin):
              SpecificationSharingPolicy.PROPRIETARY_OR_PUBLIC,
              SpecificationSharingPolicy.PROPRIETARY])
 
+    def test_getSpecificationSharingPolicies_non_public_product(self):
+        # When the product is non-public the policy options are limited to
+        # only proprietary or embargoed/proprietary.
+        owner = self.factory.makePerson()
+        product = self.factory.makeProduct(
+            information_type=InformationType.PROPRIETARY,
+            owner=owner,
+        )
+        with person_logged_in(owner):
+            self._assert_getSpecificationSharingPolicies(
+                product, [SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY,
+                          SpecificationSharingPolicy.PROPRIETARY])
+
     def test_getSpecificationSharingPolicies_product_with_embargoed(self):
         # The sharing policies will contain the product's sharing policy even
         # if it is not in the nominally allowed policy list.
@@ -330,6 +317,19 @@ class TestSharingService(TestCaseWithFactory, OCIConfigHelperMixin):
              BugSharingPolicy.PUBLIC_OR_PROPRIETARY,
              BugSharingPolicy.PROPRIETARY_OR_PUBLIC,
              BugSharingPolicy.PROPRIETARY])
+
+    def test_getBugSharingPolicies_non_public_product(self):
+        # When the product is non-public the policy options are limited to
+        # only proprietary or embargoed/proprietary.
+        owner = self.factory.makePerson()
+        product = self.factory.makeProduct(
+            information_type=InformationType.PROPRIETARY,
+            owner=owner,
+        )
+        with person_logged_in(owner):
+            self._assert_getBugSharingPolicies(
+                product, [BugSharingPolicy.EMBARGOED_OR_PROPRIETARY,
+                          BugSharingPolicy.PROPRIETARY])
 
     def test_getBugSharingPolicies_disallowed_policy(self):
         # getBugSharingPolicies includes a pillar's current policy even if it
