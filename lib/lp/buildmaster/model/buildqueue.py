@@ -188,7 +188,7 @@ class BuildQueue(StormBase):
         self.builder = builder
         self.status = BuildQueueStatus.RUNNING
         self.date_started = UTC_NOW
-        self.specific_build.updateStatus(BuildStatus.BUILDING)
+        self.specific_build.updateStatus(BuildStatus.BUILDING, builder=builder)
         if builder is not None:
             del get_property_cache(builder).currentjob
 
@@ -212,6 +212,7 @@ class BuildQueue(StormBase):
         self.status = BuildQueueStatus.WAITING
         self.date_started = None
         self.logtail = None
+        self.specific_build.clearBuilder()
         self.specific_build.updateStatus(BuildStatus.NEEDSBUILD)
         if builder is not None:
             del get_property_cache(builder).currentjob

@@ -1360,6 +1360,7 @@ class TestFailureAssessments(TestCaseWithFactory):
         self.assertIn("Requeueing job %s" % self.build.build_cookie, log)
         self.assertIn("Dirtying builder %s" % self.builder.name, log)
         self.assertIs(None, self.builder.currentjob)
+        self.assertIs(None, self.build.builder)
         self.assertEqual(BuilderCleanStatus.DIRTY, self.builder.clean_status)
         self.assertTrue(self.builder.builderok)
 
@@ -1371,6 +1372,7 @@ class TestFailureAssessments(TestCaseWithFactory):
         self.assertIn("Requeueing job", log)
         self.assertIn("Failing builder", log)
         self.assertIs(None, self.builder.currentjob)
+        self.assertIs(None, self.build.builder)
         self.assertEqual(BuilderCleanStatus.DIRTY, self.builder.clean_status)
         self.assertFalse(self.builder.builderok)
         self.assertEqual("failnotes", self.builder.failnotes)
