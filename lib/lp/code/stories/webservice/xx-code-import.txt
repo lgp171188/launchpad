@@ -223,9 +223,11 @@ We can create a Git-to-Git import.
 
 We can also create an import targetting a source package.
 
+    >>> login(ANONYMOUS)
     >>> source_package_url = (
     ...     '/' + distribution.name + '/' + distroseries.name + '/+source/'
     ...     + source_package.name)
+    >>> logout()
     >>> new_remote_url = factory.getUniqueURL()
     >>> response = import_webservice.named_post(source_package_url,
     ...    'newCodeImport', branch_name='new-import', rcs_type='Git',
@@ -256,8 +258,10 @@ We can also create an import targetting a source package.
 
 We can create a Git-to-Git import targetting a distribution source package.
 
+    >>> login(ANONYMOUS)
     >>> distro_source_package_url = (
     ...     '/' + distribution.name + '/+source/' + source_package.name)
+    >>> logout()
     >>> new_remote_url = factory.getUniqueURL()
     >>> with GitHostingFixture():
     ...     response = import_webservice.named_post(

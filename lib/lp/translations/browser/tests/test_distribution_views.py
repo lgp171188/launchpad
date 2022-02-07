@@ -40,9 +40,9 @@ class TestDistributionSettingsView(TestCaseWithFactory):
         self.useFixture(FakeLogger())
         unprivileged = self.factory.makePerson()
         distribution = self.factory.makeDistribution()
-        browser = self.getUserBrowser(user=unprivileged)
         url = canonical_url(distribution, view_name='+configure-translations',
                             rootsite='translations')
+        browser = self.getUserBrowser(user=unprivileged)
         self.assertRaises(Unauthorized, browser.open, url)
 
     def test_translation_group_owner(self):
@@ -53,9 +53,9 @@ class TestDistributionSettingsView(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         with person_logged_in(distribution.owner):
             distribution.translationgroup = group
-        browser = self.getUserBrowser(user=group.owner)
         url = canonical_url(distribution, view_name='+configure-translations',
                             rootsite='translations')
+        browser = self.getUserBrowser(user=group.owner)
         # No "Unauthorized" exception is thrown.
         browser.open(url)
 
@@ -64,8 +64,8 @@ class TestDistributionSettingsView(TestCaseWithFactory):
         # launchpad.TranslationsAdmin privileges on it, meaning they
         # can access Distribution:+configure-translations page.
         distribution = self.factory.makeDistribution()
-        browser = self.getUserBrowser(user=distribution.owner)
         url = canonical_url(distribution, view_name='+configure-translations',
                             rootsite='translations')
+        browser = self.getUserBrowser(user=distribution.owner)
         # No "Unauthorized" exception is thrown.
         browser.open(url)
