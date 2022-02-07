@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Functional tests for publish-distro.py script."""
@@ -336,6 +336,21 @@ class TestPublishDistro(TestNativePublishingBase):
         pub_source = self.loadPubSource(pub_source_id)
         self.assertEqual(pub_source.status, PackagePublishingStatus.PUBLISHED)
 
+    def testPublishCopyArchiveWithoutSigningKey(self):
+        """publish-distro skips copy archives without signing keys."""
+        self.setUpRequireSigningKeys()
+        ubuntutest = getUtility(IDistributionSet)['ubuntutest']
+        cprov = getUtility(IPersonSet).getByName('cprov')
+        copy_archive_name = 'test-copy-publish'
+        copy_archive = getUtility(IArchiveSet).new(
+            distribution=ubuntutest, owner=cprov, name=copy_archive_name,
+            purpose=ArchivePurpose.COPY, enabled=True)
+        removeSecurityProxy(copy_archive).publish = True
+        pub_source_id = self.getPubSource(archive=copy_archive).id
+        self.runPublishDistro(['--copy-archive'])
+        pub_source = self.loadPubSource(pub_source_id)
+        self.assertEqual(PackagePublishingStatus.PENDING, pub_source.status)
+
     def testPublishCopyArchive(self):
         """Run publish-distro in copy archive mode.
 
@@ -360,6 +375,13 @@ class TestPublishDistro(TestNativePublishingBase):
         # Save some test CPU cycles by avoiding logging in as the user
         # necessary to alter the publish flag.
         removeSecurityProxy(copy_archive).publish = True
+
+        # Set up signing key.
+        self.setUpRequireSigningKeys()
+        yield self.useFixture(InProcessKeyServerFixture()).start()
+        key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
+        yield IArchiveGPGSigningKey(copy_archive).setSigningKey(
+            key_path, async_keyserver=True)
 
         # Publish something.
         pub_source_id = self.getPubSource(
