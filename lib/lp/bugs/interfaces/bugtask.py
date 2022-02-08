@@ -224,6 +224,12 @@ class BugTaskStatus(DBEnumeratedType):
         The fix was released.
         """)
 
+    DOES_NOT_EXIST = DBItem(35, """
+        Does not exist
+
+        The package does not exist in this series.
+        """)
+
     UNKNOWN = DBItem(999, """
         Unknown
 
