@@ -132,6 +132,8 @@ to another build. The score value of the job is preserved.
     None
     >>> print(job.logtail)
     None
+    >>> print(build.builder)
+    None
     >>> print(build.status.name)
     NEEDSBUILD
     >>> print(job.lastscore)
