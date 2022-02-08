@@ -24,9 +24,9 @@ ALTER TABLE CommercialSubscription
     ADD CONSTRAINT one_pillar CHECK (null_count(ARRAY[product, distribution]) = 1);
 
 DROP INDEX commercialsubscription__product__idx;
-CREATE INDEX commercialsubscription__product__idx
+CREATE UNIQUE INDEX commercialsubscription__product__idx
     ON CommercialSubscription (product) WHERE product IS NOT NULL;
-CREATE INDEX commercialsubscription__distribution__idx
+CREATE UNIQUE INDEX commercialsubscription__distribution__idx
     ON CommercialSubscription (distribution) WHERE distribution IS NOT NULL;
 
 COMMENT ON COLUMN CommercialSubscription.distribution IS 'The distribution this subscription enables.';
