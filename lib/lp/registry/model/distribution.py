@@ -120,6 +120,7 @@ from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackagename import ISourcePackageName
 from lp.registry.model.announcement import MakesAnnouncements
+from lp.registry.model.commercialsubscription import CommercialSubscription
 from lp.registry.model.distributionmirror import (
     DistributionMirror,
     MirrorCDImageDistroSeries,
@@ -342,6 +343,11 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         """See `IHasSharingPolicies."""
         # Sharing policy for distributions is always PUBLIC.
         return SpecificationSharingPolicy.PUBLIC
+
+    @cachedproperty
+    def commercial_subscription(self):
+        return IStore(CommercialSubscription).find(
+            CommercialSubscription, distribution=self).one()
 
     @property
     def uploaders(self):

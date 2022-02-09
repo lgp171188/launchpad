@@ -429,6 +429,11 @@ patch_reference_property(IBuildFarmJob, 'buildqueue_record', IBuildQueue)
 # IComment
 patch_reference_property(IComment, 'comment_author', IPerson)
 
+# ICommercialSubscription
+patch_reference_property(ICommercialSubscription, 'product', IProduct)
+patch_reference_property(
+    ICommercialSubscription, 'distribution', IDistribution)
+
 # IDistribution
 patch_collection_property(IDistribution, 'series', IDistroSeries)
 patch_collection_property(IDistribution, 'derivatives', IDistroSeries)

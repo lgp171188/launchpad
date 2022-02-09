@@ -620,7 +620,7 @@ class TestProjectGitNamespacePrivacyWithInformationType(TestCaseWithFactory):
         if person is None:
             person = self.factory.makePerson()
         project = self.factory.makeProduct()
-        self.factory.makeCommercialSubscription(product=project)
+        self.factory.makeCommercialSubscription(pillar=project)
         with person_logged_in(project.owner):
             project.setBranchSharingPolicy(sharing_policy)
         namespace = ProjectGitNamespace(person, project)

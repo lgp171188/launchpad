@@ -985,7 +985,7 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
                 "Complimentary 30 day subscription. -- Launchpad %s" %
                 now.date().isoformat())
             subscription = CommercialSubscription(
-                product=self, date_starts=now, date_expires=date_expires,
+                pillar=self, date_starts=now, date_expires=date_expires,
                 registrant=lp_janitor, purchaser=lp_janitor,
                 sales_system_id=sales_system_id, whiteboard=whiteboard)
             get_property_cache(self).commercial_subscription = subscription

@@ -82,6 +82,9 @@ from lp.registry.enums import (
     VCSType,
     )
 from lp.registry.interfaces.announcement import IMakesAnnouncements
+from lp.registry.interfaces.commercialsubscription import (
+    ICommercialSubscription,
+    )
 from lp.registry.interfaces.distributionmirror import IDistributionMirror
 from lp.registry.interfaces.distroseries import DistroSeriesNameField
 from lp.registry.interfaces.karma import IKarmaContext
@@ -448,6 +451,13 @@ class IDistributionPublic(
             "If true, the default traversal is for migration and redirects "
             "to a different canonical URL."),
         readonly=False, required=False))
+
+    commercial_subscription = exported(Reference(
+        ICommercialSubscription,
+        title=_("Commercial subscriptions"),
+        description=_(
+            "An object which contains the timeframe and the voucher code of a "
+            "subscription.")))
 
     def getArchiveIDList(archive=None):
         """Return a list of archive IDs suitable for sqlvalues() or quote().
