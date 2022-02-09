@@ -196,6 +196,10 @@ class DistributionNavigation(
     def traverse_archive(self, name):
         return self.context.getArchive(name)
 
+    @stepthrough('+commercialsubscription')
+    def traverse_commercialsubscription(self, name):
+        return self.context.commercial_subscription
+
     def _resolveSeries(self, name):
         try:
             return self.context[name], False

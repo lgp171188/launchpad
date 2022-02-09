@@ -1225,7 +1225,7 @@ class TestBranchEditViewInformationTypes(TestCaseWithFactory):
         # proprietary allow only embargoed and proprietary types.
         owner = self.factory.makePerson()
         product = self.factory.makeProduct(owner=owner)
-        self.factory.makeCommercialSubscription(product=product)
+        self.factory.makeCommercialSubscription(pillar=product)
         with person_logged_in(owner):
             product.setBranchSharingPolicy(
                 BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY)
@@ -1240,7 +1240,7 @@ class TestBranchEditViewInformationTypes(TestCaseWithFactory):
         # allow only the proprietary type.
         owner = self.factory.makePerson()
         product = self.factory.makeProduct(owner=owner)
-        self.factory.makeCommercialSubscription(product=product)
+        self.factory.makeCommercialSubscription(pillar=product)
         with person_logged_in(owner):
             product.setBranchSharingPolicy(BranchSharingPolicy.PROPRIETARY)
             branch = self.factory.makeBranch(

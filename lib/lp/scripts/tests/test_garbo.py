@@ -1361,7 +1361,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # in use by artifacts or allowed by the project sharing policy.
         switch_dbuser('testadmin')
         product = self.factory.makeProduct()
-        self.factory.makeCommercialSubscription(product=product)
+        self.factory.makeCommercialSubscription(pillar=product)
         self.factory.makeAccessPolicy(product, InformationType.PROPRIETARY)
         naked_product = removeSecurityProxy(product)
         naked_product.bug_sharing_policy = BugSharingPolicy.PROPRIETARY

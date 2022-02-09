@@ -1237,7 +1237,7 @@ class TestProductBugInformationTypes(TestCaseWithFactory):
 
     def makeProductWithPolicy(self, bug_sharing_policy):
         product = self.factory.makeProduct()
-        self.factory.makeCommercialSubscription(product=product)
+        self.factory.makeCommercialSubscription(pillar=product)
         with person_logged_in(product.owner):
             product.setBugSharingPolicy(bug_sharing_policy)
         return product
@@ -1290,7 +1290,7 @@ class TestProductSpecificationPolicyAndInformationTypes(TestCaseWithFactory):
 
     def makeProductWithPolicy(self, specification_sharing_policy):
         product = self.factory.makeProduct()
-        self.factory.makeCommercialSubscription(product=product)
+        self.factory.makeCommercialSubscription(pillar=product)
         with person_logged_in(product.owner):
             product.setSpecificationSharingPolicy(
                 specification_sharing_policy)
@@ -1658,7 +1658,7 @@ class BaseSharingPolicyTests:
 
     def test_commercial_admin_can_set_policy(self):
         # Commercial admins can set sharing policies for commercial projects.
-        self.factory.makeCommercialSubscription(product=self.product)
+        self.factory.makeCommercialSubscription(pillar=self.product)
         self.setSharingPolicy(self.public_policy, self.commercial_admin)
         self.assertEqual(self.public_policy, self.getSharingPolicy())
 
@@ -1686,7 +1686,7 @@ class BaseSharingPolicyTests:
     def test_proprietary_allowed_with_commercial_sub(self):
         # All policies are valid when there's a current commercial
         # subscription.
-        self.factory.makeCommercialSubscription(product=self.product)
+        self.factory.makeCommercialSubscription(pillar=self.product)
         for policy in self.enum.items:
             self.setSharingPolicy(policy, self.commercial_admin)
             self.assertEqual(policy, self.getSharingPolicy())
@@ -1695,7 +1695,7 @@ class BaseSharingPolicyTests:
         # Setting a policy that allows Proprietary creates a
         # corresponding access policy and shares it with the the
         # maintainer.
-        self.factory.makeCommercialSubscription(product=self.product)
+        self.factory.makeCommercialSubscription(pillar=self.product)
         self.assertEqual(
             [InformationType.PRIVATESECURITY, InformationType.USERDATA],
             [policy.type for policy in
@@ -1730,7 +1730,7 @@ class BaseSharingPolicyTests:
                 for ap in ap_source.findByPillar([pillar])]
 
         # Now change the sharing policies to PROPRIETARY
-        self.factory.makeCommercialSubscription(product=product)
+        self.factory.makeCommercialSubscription(pillar=product)
         with person_logged_in(product.owner):
             product.setBugSharingPolicy(BugSharingPolicy.PROPRIETARY)
             # Just bug sharing policy has been changed so all previous policy
@@ -1817,7 +1817,7 @@ class ProductBranchSharingPolicyTestCase(BaseSharingPolicyTests,
         # Setting a policy that allows Embargoed creates a
         # corresponding access policy and shares it with the the
         # maintainer.
-        self.factory.makeCommercialSubscription(product=self.product)
+        self.factory.makeCommercialSubscription(pillar=self.product)
         self.assertEqual(
             [InformationType.PRIVATESECURITY, InformationType.USERDATA],
             [policy.type for policy in

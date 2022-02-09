@@ -1309,7 +1309,7 @@ class TestGitRepositoryEditViewInformationTypes(TestCaseWithFactory):
         # types.
         owner = self.factory.makePerson()
         project = self.factory.makeProduct(owner=owner)
-        self.factory.makeCommercialSubscription(product=project)
+        self.factory.makeCommercialSubscription(pillar=project)
         with person_logged_in(owner):
             project.setBranchSharingPolicy(
                 BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY)
@@ -1325,7 +1325,7 @@ class TestGitRepositoryEditViewInformationTypes(TestCaseWithFactory):
         # proprietary allow only the proprietary type.
         owner = self.factory.makePerson()
         product = self.factory.makeProduct(owner=owner)
-        self.factory.makeCommercialSubscription(product=product)
+        self.factory.makeCommercialSubscription(pillar=product)
         with person_logged_in(owner):
             product.setBranchSharingPolicy(BranchSharingPolicy.PROPRIETARY)
             repository = self.factory.makeGitRepository(

@@ -385,7 +385,7 @@ class TestFileBugViewBase(FileBugViewMixin, TestCaseWithFactory):
         if bug_sharing_policy:
             if not IProduct.providedBy(target):
                 raise ValueError("Only Product supports this.")
-            self.factory.makeCommercialSubscription(product=target)
+            self.factory.makeCommercialSubscription(pillar=target)
             with person_logged_in(owner):
                 target.setBugSharingPolicy(bug_sharing_policy)
         with person_logged_in(owner):
@@ -476,7 +476,7 @@ class TestFileBugViewBase(FileBugViewMixin, TestCaseWithFactory):
         # The vocabulary for information_type when filing a bug is created
         # correctly for a project with a proprietary sharing policy.
         product = self.factory.makeProduct(official_malone=True)
-        self.factory.makeCommercialSubscription(product=product)
+        self.factory.makeCommercialSubscription(pillar=product)
         with person_logged_in(product.owner):
             product.setBugSharingPolicy(BugSharingPolicy.PROPRIETARY)
             view = create_initialized_view(
@@ -777,7 +777,7 @@ class TestFileBugForNonBugSupervisors(TestCaseWithFactory):
         }
         product = self.factory.makeProduct(official_malone=True)
         if bug_sharing_policy:
-            self.factory.makeCommercialSubscription(product=product)
+            self.factory.makeCommercialSubscription(pillar=product)
             with person_logged_in(product.owner):
                 product.setBugSharingPolicy(bug_sharing_policy)
         anyone = self.factory.makePerson()

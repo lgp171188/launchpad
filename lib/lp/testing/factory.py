@@ -4691,26 +4691,32 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             }
         return fileupload
 
-    def makeCommercialSubscription(self, product, expired=False,
+    def makeCommercialSubscription(self, pillar, expired=False,
                                    voucher_id='new'):
-        """Create a commercial subscription for the given product."""
+        """Create a commercial subscription for the given pillar."""
+        if IProduct.providedBy(pillar):
+            find_kwargs = {"product": pillar}
+        elif IDistribution.providedBy(pillar):
+            find_kwargs = {"distribution": pillar}
+        else:
+            raise AssertionError("Unknown pillar: %r" % pillar)
         if IStore(CommercialSubscription).find(
-                CommercialSubscription, product=product).one() is not None:
+                CommercialSubscription, **find_kwargs).one() is not None:
             raise AssertionError(
-                "The product under test already has a CommercialSubscription.")
+                "The pillar under test already has a CommercialSubscription.")
         if expired:
             expiry = datetime.now(pytz.UTC) - timedelta(days=1)
         else:
             expiry = datetime.now(pytz.UTC) + timedelta(days=30)
         commercial_subscription = CommercialSubscription(
-            product=product,
+            pillar=pillar,
             date_starts=datetime.now(pytz.UTC) - timedelta(days=90),
             date_expires=expiry,
-            registrant=product.owner,
-            purchaser=product.owner,
+            registrant=pillar.owner,
+            purchaser=pillar.owner,
             sales_system_id=voucher_id,
             whiteboard='')
-        del get_property_cache(product).commercial_subscription
+        del get_property_cache(pillar).commercial_subscription
         return commercial_subscription
 
     def grantCommercialSubscription(self, person):
