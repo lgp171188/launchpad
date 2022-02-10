@@ -1229,7 +1229,7 @@ class TestBugTaskEditViewStatusField(TestCaseWithFactory):
         self.assertEqual(
             ['New', 'Incomplete', 'Opinion', 'Invalid', 'Confirmed',
              'In Progress', 'Fix Committed', 'Fix Released',
-             'Does not exist'],
+             'Does Not Exist'],
             self.getWidgetOptionTitles(view.form_fields['status']))
 
     def test_status_field_privileged_persons(self):
@@ -1245,7 +1245,7 @@ class TestBugTaskEditViewStatusField(TestCaseWithFactory):
             self.assertEqual(
                 ['New', 'Incomplete', 'Opinion', 'Invalid', "Won't Fix",
                  'Confirmed', 'Triaged', 'In Progress', 'Fix Committed',
-                 'Fix Released', 'Does not exist'],
+                 'Fix Released', 'Does Not Exist'],
                 self.getWidgetOptionTitles(view.form_fields['status']),
                 'Unexpected set of settable status options for %s'
                 % user.name)
@@ -1263,7 +1263,7 @@ class TestBugTaskEditViewStatusField(TestCaseWithFactory):
         view.initialize()
         self.assertEqual(
             ['New', 'Incomplete', 'Opinion', 'Invalid', 'Confirmed',
-             'In Progress', 'Fix Committed', 'Fix Released', 'Does not exist',
+             'In Progress', 'Fix Committed', 'Fix Released', 'Does Not Exist',
              'Unknown'],
             self.getWidgetOptionTitles(view.form_fields['status']))
 
@@ -1279,7 +1279,7 @@ class TestBugTaskEditViewStatusField(TestCaseWithFactory):
         self.assertEqual(
             ['New', 'Incomplete', 'Opinion', 'Invalid', 'Expired',
              'Confirmed', 'In Progress', 'Fix Committed', 'Fix Released',
-             'Does not exist'],
+             'Does Not Exist'],
             self.getWidgetOptionTitles(view.form_fields['status']))
 
 

@@ -225,9 +225,9 @@ class BugTaskStatus(DBEnumeratedType):
         """)
 
     DOES_NOT_EXIST = DBItem(35, """
-        Does not exist
+        Does Not Exist
 
-        The package does not exist in this series.
+        Nothing is published for this bug target.
         """)
 
     UNKNOWN = DBItem(999, """

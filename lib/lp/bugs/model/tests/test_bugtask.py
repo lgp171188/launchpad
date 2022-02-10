@@ -340,30 +340,6 @@ class TestBugTaskCreationPackageComponent(TestCaseWithFactory):
         self.assertEqual(distro_series_sp_task.getPackageComponent().name,
                          'main')
 
-    def test_does_not_exist(self):
-        """DNE is assigned to a task when we've considered a possible bug
-        target and determined that the package didn't exist in that series.
-        """
-        bugtaskset = getUtility(IBugTaskSet)
-        mark = getUtility(IPersonSet).getByEmail('mark@example.com')
-        sourcepackage = self.factory.makeSourcePackage()
-        series = sourcepackage.distroseries
-        bug = self.factory.makeBug(target=series.distribution)
-        distro_series_task = bugtaskset.createTask(
-            bug, mark, series, importance=BugTaskImportance.MEDIUM)
-
-        self.assertEqual(distro_series_task.status, BugTaskStatus.NEW)
-
-        mint = self.factory.makeDistribution(name='mint')
-        self.factory.makeDistroSeries(
-            distribution=mint, version='1.0', name='dev')
-        dsp = self.factory.makeDistributionSourcePackage('choc', mint)
-
-        distro_series_task = bugtaskset.createTask(
-            bug, mark, dsp, importance=BugTaskImportance.MEDIUM)
-        self.assertEqual(distro_series_task.status,
-                         BugTaskStatus.DOES_NOT_EXIST)
-
 
 class TestBugTaskTargets(TestCase):
     """Verify we handle various bugtask targets correctly"""

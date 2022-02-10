@@ -358,8 +358,8 @@ def validate_target(bug, target, retarget_existing=True,
             try:
                 target.distribution.guessPublishedSourcePackageName(
                     target.sourcepackagename.name)
-            except NotFoundError:
-                return BugTaskStatus.DOES_NOT_EXIST
+            except NotFoundError as e:
+                raise IllegalTarget(e.args[0])
 
     legal_types = target.pillar.getAllowedBugInformationTypes()
     new_pillar = target.pillar not in bug.affected_pillars
@@ -416,10 +416,9 @@ def validate_new_target(bug, target, check_source_package=True):
                 "specified. You should fill in a package name for "
                 "the existing bug." % target.distribution.displayname)
 
-    status = validate_target(
+    validate_target(
         bug, target, retarget_existing=False,
         check_source_package=check_source_package)
-    return status
 
 
 @implementer(IBugTask)
@@ -1623,9 +1622,7 @@ class BugTaskSet:
         pillars = set()
         for target in targets:
             if validate_target:
-                does_not_exist = validate_new_target(bug, target)
-                if does_not_exist:
-                    status = does_not_exist
+                validate_new_target(bug, target)
             pillars.add(target.pillar)
             target_keys.append(bug_target_to_key(target))
 
