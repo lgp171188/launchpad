@@ -654,7 +654,7 @@
     <browser:url
         for="lp.registry.interfaces.commercialsubscription.ICommercialSubscription"
         path_expression="string:+commercialsubscription/${id}"
-        attribute_to_parent="product"
+        attribute_to_parent="pillar"
         />
     <browser:url
         for="lp.registry.interfaces.jabber.IJabberID"

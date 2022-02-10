@@ -74,6 +74,14 @@ class TestRetryDepwait(TestCaseWithFactory):
         self.setChroot()
         self.assertStatusAfterLoop(BuildStatus.NEEDSBUILD)
 
+    def test_ignores_when_das_is_disabled(self):
+        # Builds for a disabled distroarchseries are not retried.
+        self.build.distro_arch_series.enabled = False
+        self.assertStatusAfterLoop(BuildStatus.MANUALDEPWAIT)
+
+        self.build.distro_arch_series.enabled = True
+        self.assertStatusAfterLoop(BuildStatus.NEEDSBUILD)
+
     def test_dry_run_aborts(self):
         # Changes are thrown away when in dry run mode.
         self.assertStatusAfterLoop(BuildStatus.MANUALDEPWAIT, dry_run=True)

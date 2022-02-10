@@ -60,10 +60,11 @@ class RetryDepwaitTunableLoop(TunableLoop):
             PocketChroot.chroot != None)
         chroot_series = {chroot.distroarchseriesID for chroot in chroots}
         for build in bpbs:
-            if (build.distro_arch_series.distroseries.status ==
-                    SeriesStatus.OBSOLETE
-                or not build.can_be_retried
-                or build.distro_arch_series_id not in chroot_series):
+            das = build.distro_arch_series
+            if (das.distroseries.status == SeriesStatus.OBSOLETE
+                    or not build.can_be_retried
+                    or das.id not in chroot_series
+                    or not das.enabled):
                 continue
             try:
                 build.updateDependencies()

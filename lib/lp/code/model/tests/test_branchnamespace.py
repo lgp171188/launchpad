@@ -391,7 +391,7 @@ class TestProjectBranchNamespacePrivacyWithInformationType(
         if person is None:
             person = self.factory.makePerson()
         product = self.factory.makeProduct()
-        self.factory.makeCommercialSubscription(product=product)
+        self.factory.makeCommercialSubscription(pillar=product)
         with person_logged_in(product.owner):
             product.setBranchSharingPolicy(sharing_policy)
         namespace = ProjectBranchNamespace(person, product)
