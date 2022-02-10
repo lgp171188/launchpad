@@ -1,4 +1,4 @@
-<!-- Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2010-2022 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -506,6 +506,12 @@
             class="lp.bugs.browser.bug.BugEditView"
             template="../../app/templates/generic-edit.pt"
             permission="launchpad.Edit"/>
+        <browser:page
+            name="+lock-status"
+            for="lp.bugs.interfaces.bug.IBugTask"
+            class="lp.bugs.browser.bug.BugLockStatusEditView"
+            template="../../app/templates/generic-edit.pt"
+            permission="launchpad.Moderate"/>
         <browser:page
             name="+delete"
             for="lp.bugs.interfaces.bugtask.IBugTask"

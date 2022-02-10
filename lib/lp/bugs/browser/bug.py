@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """IBug related view classes."""
@@ -8,6 +8,7 @@ __all__ = [
     'BugContextMenu',
     'BugEditView',
     'BugInformationTypePortletView',
+    'BugLockStatusEditView',
     'BugMarkAsAffectingUserView',
     'BugMarkAsDuplicateView',
     'BugNavigation',
@@ -76,7 +77,10 @@ from lp.app.widgets.product import GhostCheckBoxWidget
 from lp.app.widgets.project import ProjectScopeWidget
 from lp.bugs.browser.bugsubscription import BugPortletSubscribersWithDetails
 from lp.bugs.browser.widgets.bug import BugTagsWidget
-from lp.bugs.enums import BugNotificationLevel
+from lp.bugs.enums import (
+    BugLockStatus,
+    BugNotificationLevel,
+    )
 from lp.bugs.interfaces.bug import (
     IBug,
     IBugSet,
@@ -218,7 +222,7 @@ class BugContextMenu(ContextMenu):
         'adddistro', 'subscription', 'addsubscriber', 'editsubscriptions',
         'addcomment', 'nominate', 'addbranch', 'linktocve', 'unlinkcve',
         'createquestion', 'mute_subscription', 'removequestion',
-        'activitylog', 'affectsmetoo']
+        'activitylog', 'affectsmetoo', 'change_lock_status']
 
     def __init__(self, context):
         # Always force the context to be the current bugtask, so that we don't
@@ -237,6 +241,12 @@ class BugContextMenu(ContextMenu):
         """Return the 'Set privacy/security' Link."""
         text = 'Change privacy/security'
         return Link('+secrecy', text)
+
+    @enabled_with_permission('launchpad.Moderate')
+    def change_lock_status(self):
+        """Return the 'Change lock status' Link."""
+        text = 'Change lock status'
+        return Link('+lock-status', text, icon='edit')
 
     @enabled_with_permission('launchpad.Edit')
     def markduplicate(self):
@@ -764,6 +774,73 @@ class BugEditView(BugEditViewBase):
     def change_action(self, action, data):
         """Update the bug with submitted changes."""
         self.updateBugFromData(data)
+
+
+class BugLockStatusEditView(LaunchpadEditFormView):
+    """The view for editing the bug lock status and lock reason."""
+
+    class schema(Interface):
+        # Duplicating the fields is necessary because these fields are
+        # read-only in `IBug`.
+        lock_status = copy_field(IBug['lock_status'], readonly=False)
+        lock_reason = copy_field(IBug['lock_reason'], readonly=False)
+
+    @property
+    def adapters(self):
+        """See `LaunchpadFormView`."""
+        return {self.schema: self.context.bug}
+
+    field_names = ['lock_status', 'lock_reason']
+
+    custom_widget_lock_status = LaunchpadRadioWidgetWithDescription
+    custom_widget_lock_reason = CustomWidgetFactory(
+        TextWidget,
+        displayWidth=30
+    )
+
+    def initialize(self):
+        super().initialize()
+        lock_status_widget = self.widgets['lock_status']
+        lock_status_widget._displayItemForMissingValue = False
+
+    @property
+    def label(self):
+        """The form label."""
+        return (
+            "Edit the lock status and reason for bug #%d" % self.context.bug.id
+        )
+
+    page_title = label
+
+    @action('Change', name='change')
+    def change_action(self, action, data):
+        """Update the bug lock status and reason with submitted changes."""
+        bug = self.context.bug
+        if bug.lock_status != data['lock_status']:
+            locked_states = (
+                BugLockStatus.COMMENT_ONLY,
+            )
+            if data['lock_status'] in locked_states:
+                bug.lock(
+                    status=data['lock_status'],
+                    reason=data['lock_reason'],
+                    who=self.user
+                )
+            else:
+                bug.unlock(who=self.user)
+
+        elif (bug.lock_status != BugLockStatus.UNLOCKED and
+              bug.lock_reason != data['lock_reason']):
+            bug.setLockReason(data['lock_reason'], who=self.user)
+
+    @property
+    def next_url(self):
+        """Return the next URL to call when this call completes."""
+        if not self.request.is_ajax:
+            return canonical_url(self.context)
+        return None
+
+    cancel_url = next_url
 
 
 class BugMarkAsDuplicateView(BugEditViewBase):
