@@ -1158,6 +1158,7 @@ class Person(
         from lp.registry.model.commercialsubscription import (
             CommercialSubscription,
             )
+        from lp.registry.model.distribution import Distribution
         from lp.registry.model.person import Person
         from lp.registry.model.product import Product
         from lp.registry.model.teammembership import TeamParticipation
@@ -1166,11 +1167,16 @@ class Person(
             Join(
                 TeamParticipation,
                 Person.id == TeamParticipation.personID),
-            Join(
+            LeftJoin(
                 Product, TeamParticipation.teamID == Product._ownerID),
+            LeftJoin(
+                Distribution,
+                TeamParticipation.teamID == Distribution.ownerID),
             Join(
                 CommercialSubscription,
-                CommercialSubscription.product_id == Product.id)
+                Or(
+                    CommercialSubscription.product_id == Product.id,
+                    CommercialSubscription.distribution_id == Distribution.id))
             ).find(
                 Person,
                 CommercialSubscription.date_expires > datetime.now(
