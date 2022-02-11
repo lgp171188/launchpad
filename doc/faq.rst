@@ -53,11 +53,6 @@ new users, create a new account and check the local mailbox, or check
 
 .. _create-additional-user-accounts-dev-env:
 
-How do I create additional user accounts in the dev environment?
-================================================================
-You can create a new account using the ``utilities/make-lp-user`` script and log
-in to that account at ``https://launchpad.test``.
-
 My database permissions keep getting deleted!
 =============================================
 
