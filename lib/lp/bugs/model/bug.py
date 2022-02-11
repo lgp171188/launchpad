@@ -408,21 +408,10 @@ class Bug(SQLBase, InformationTypeMixin):
     heat = IntCol(notNull=True, default=0)
     heat_last_updated = UtcDateTimeCol(default=None)
     latest_patch_uploaded = UtcDateTimeCol(default=None)
-    _lock_status = DBEnum(
+    lock_status = DBEnum(
         name='lock_status', enum=BugLockStatus,
-        allow_none=True, default=BugLockStatus.UNLOCKED)
+        allow_none=False, default=BugLockStatus.UNLOCKED)
     lock_reason = StringCol(notNull=False, default=None)
-
-    @property
-    def lock_status(self):
-        return (
-            BugLockStatus.UNLOCKED if self._lock_status is None
-            else self._lock_status
-        )
-
-    @lock_status.setter
-    def lock_status(self, value):
-        self._lock_status = value
 
     @property
     def linked_branches(self):

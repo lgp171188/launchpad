@@ -101,7 +101,6 @@ from lp.scripts.garbo import (
     load_garbo_job_state,
     LoginTokenPruner,
     OpenIDConsumerAssociationPruner,
-    PopulateBugLockStatusDefaultUnlocked,
     PopulateSnapBuildStoreRevision,
     ProductVCSPopulator,
     save_garbo_job_state,
@@ -2109,21 +2108,6 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             [report2],
             list(getUtility(
                 IRevisionStatusReportSet).findByRepository(repo2)))
-
-    def test_PopulateBugLockStatusDefaultUnlocked(self):
-        switch_dbuser('testadmin')
-        populator = PopulateBugLockStatusDefaultUnlocked(log=None)
-        for _ in range(5):
-            bug = self.factory.makeBug()
-            removeSecurityProxy(bug).lock_status = None
-
-        result_set = populator.findBugsLockStatusNone()
-        self.assertGreater(result_set.count(), 0)
-
-        self.runDaily()
-
-        result_set = populator.findBugsLockStatusNone()
-        self.assertTrue(result_set.is_empty())
 
 
 class TestGarboTasks(TestCaseWithFactory):
