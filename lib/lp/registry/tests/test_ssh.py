@@ -61,6 +61,13 @@ class TestSSHKey(TestCaseWithFactory):
         expected = "ecdsa-sha2-nistp521 %s %s" % (key.keytext, key.comment)
         self.assertEqual(expected, key.getFullKeyText())
 
+    def test_getFullKeyText_for_ed25519_key(self):
+        person = self.factory.makePerson()
+        with person_logged_in(person):
+            key = self.factory.makeSSHKey(person, "ssh-ed25519")
+        expected = "ssh-ed25519 %s %s" % (key.keytext, key.comment)
+        self.assertEqual(expected, key.getFullKeyText())
+
     def test_getFullKeyText_for_corrupt_key(self):
         # If the key text is corrupt, the type from the database is used
         # instead of the one decoded from the text.
