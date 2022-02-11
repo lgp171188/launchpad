@@ -22,34 +22,35 @@ Overview
    values
    faq
 
-Tutorials
+How-to Guides
+=============
+
+.. toctree::
+   :maxdepth: 1
+
+   how-to/running
+   how-to/exceptions
+   how-to/security
+   how-to/new-user
+
+Explanation
+===========
+
+.. toctree::
+   :maxdepth: 1
+
+   explanation/running-details
+   explanation/architecture
+   explanation/pip
+
+Reference
 =========
 
 .. toctree::
    :maxdepth: 1
 
-   running
-
-Guides
-======
-
-.. toctree::
-   :maxdepth: 1
-
-   guides/architecture
-   guides/python
-   guides/tests
-   guides/exceptions
-
-Technical
-=========
-
-.. toctree::
-   :maxdepth: 1
-
-   running-details
-   pip
-   security
+   reference/python
+   reference/tests
 
 Possibly out-of-date
 --------------------

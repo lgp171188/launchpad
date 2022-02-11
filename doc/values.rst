@@ -1,5 +1,5 @@
 ================
-Launchpad Values
+Launchpad values
 ================
 
 Whenever we are thinking about what Launchpad should be, or how we should

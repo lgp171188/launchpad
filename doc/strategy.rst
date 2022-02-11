@@ -1,5 +1,5 @@
 ==================
-Launchpad Strategy
+Launchpad strategy
 ==================
 
 *We want to make Ubuntu the world’s best operating system. To do this, we need

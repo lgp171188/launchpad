@@ -1,6 +1,6 @@
-=================
-Running Launchpad
-=================
+===============================
+How to set up and run Launchpad
+===============================
 
 .. note::
 
@@ -150,7 +150,7 @@ Then:
    $ curl https://git.launchpad.net/launchpad/plain/utilities/rocketfuel-setup >rocketfuel-setup
 
 Read through the rocketfuel-setup script at this point and make sure you're
-OK with what it's going to do.  (See :doc:`running-details` if you want to
+OK with what it's going to do.  (See :doc:`../explanation/running-details` if you want to
 know more.)
 
 .. code-block:: shell-session
