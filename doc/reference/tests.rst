@@ -1,5 +1,5 @@
 =================
-Tests Style Guide
+Tests style guide
 =================
 
 This page documents conventions for our Launchpad tests.  Reviewers make

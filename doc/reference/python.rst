@@ -1,5 +1,5 @@
 ==================
-Python Style Guide
+Python style guide
 ==================
 
 This document describes expected practices when writing Python code.  There
