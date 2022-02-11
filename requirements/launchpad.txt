@@ -74,7 +74,7 @@ lazr.jobrunner==0.17
 lazr.lifecycle==1.2.1
 lazr.restful==1.1.0
 lazr.restfulclient==0.14.4
-lazr.sshserver==0.1.12
+lazr.sshserver==0.1.13
 lazr.uri==1.0.6
 lpjsmin==0.6
 m2r==0.1.13
@@ -159,7 +159,7 @@ testtools==2.5.0
 timeline==0.0.7
 treq==18.6.0
 # lp:~launchpad/twisted:lp-backport
-Twisted==20.3.0+lp4
+Twisted==20.3.0+lp5
 txfixtures==0.4.3
 txpkgupload==0.4
 urllib3==1.25.11
