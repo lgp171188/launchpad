@@ -297,7 +297,7 @@ self-signed certificate.  You can log in as ``admin@canonical.com`` without
 a password.  (This is only for development convenience, and assumes that you
 trust machines that can route to your LXD containers; of course a production
 deployment would need real authentication.). If you want to create more user
-accounts, check :ref:`this FAQ <create-additional-user-accounts-dev-env>`.
+accounts, see :doc:`new-user`.
 
 Accessing launchpad.test from a single host over SSH
 ----------------------------------------------------
