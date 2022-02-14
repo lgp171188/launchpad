@@ -33,6 +33,7 @@ How-to Guides
    how-to/security
    how-to/new-user
    how-to/avoid-debugging-issues
+   how-to/apply-schema-changes
 
 Explanation
 ===========
