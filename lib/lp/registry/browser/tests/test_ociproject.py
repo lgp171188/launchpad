@@ -340,7 +340,7 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
             official=True, information_type=InformationType.PRIVATESECURITY)
 
         browser = self.getViewBrowser(
-            oci_project, view_name="+index", user=distribution.owner)
+            oci_project, view_name="+index", user=self.factory.makePerson())
         self.assertNotIn("Official recipes", browser.contents)
         self.assertNotIn("unofficial recipe", browser.contents)
         self.assertIn(

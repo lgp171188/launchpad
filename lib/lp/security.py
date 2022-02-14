@@ -1244,6 +1244,27 @@ class EditPollOptionByTeamOwnerOrTeamAdminsOrAdmins(AuthorizationBase):
         return can_edit_team(self.obj.poll.team, user)
 
 
+class ViewDistribution(AuthorizationBase):
+    permission = 'launchpad.View'
+    usedfor = IDistribution
+
+    def checkAuthenticated(self, user):
+        return self.obj.userCanView(user)
+
+    def checkUnauthenticated(self):
+        return self.obj.userCanView(None)
+
+
+class LimitedViewDistribution(ViewDistribution):
+    permission = 'launchpad.LimitedView'
+    usedfor = IDistribution
+
+    def checkAuthenticated(self, user):
+        return (
+            super().checkAuthenticated(user) or
+            self.obj.userCanLimitedView(user))
+
+
 class AdminDistribution(AdminByAdminsTeam):
     """Soyuz involves huge chunks of data in the archive and librarian,
     so for the moment we are locking down admin and edit on distributions
