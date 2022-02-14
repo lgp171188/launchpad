@@ -21,10 +21,15 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import (
+    FREE_INFORMATION_TYPES,
     InformationType,
+    PILLAR_INFORMATION_TYPES,
     ServiceUsage,
     )
-from lp.app.errors import NotFoundError
+from lp.app.errors import (
+    NotFoundError,
+    ServiceUsageForbidden,
+    )
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.enums import (
@@ -33,12 +38,19 @@ from lp.registry.enums import (
     DistributionDefaultTraversalPolicy,
     EXCLUSIVE_TEAM_POLICY,
     INCLUSIVE_TEAM_POLICY,
+    TeamMembershipPolicy,
     )
 from lp.registry.errors import (
+    CannotChangeInformationType,
+    CommercialSubscribersOnly,
     InclusiveTeamLinkageError,
     NoSuchDistroSeries,
+    ProprietaryPillar,
     )
-from lp.registry.interfaces.accesspolicy import IAccessPolicySource
+from lp.registry.interfaces.accesspolicy import (
+    IAccessPolicyGrantSource,
+    IAccessPolicySource,
+    )
 from lp.registry.interfaces.distribution import (
     IDistribution,
     IDistributionSet,
@@ -46,7 +58,9 @@ from lp.registry.interfaces.distribution import (
 from lp.registry.interfaces.oopsreferences import IHasOOPSReferences
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.model.distribution import Distribution
 from lp.registry.tests.test_distroseries import CurrentSourceReleasesMixin
+from lp.services.librarianserver.testing.fake import FakeLibrarian
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
 from lp.services.webapp.interfaces import OAuthPermission
@@ -71,6 +85,9 @@ from lp.testing.matchers import Provides
 from lp.testing.pages import webservice_for_person
 from lp.testing.views import create_initialized_view
 from lp.translations.enums import TranslationPermission
+
+
+PRIVATE_DISTRIBUTION_TYPES = [InformationType.PROPRIETARY]
 
 
 class TestDistribution(TestCaseWithFactory):
@@ -369,6 +386,362 @@ class TestDistribution(TestCaseWithFactory):
             distro.default_traversal_policy = (
                 DistributionDefaultTraversalPolicy.SERIES)
             distro.redirect_default_traversal = True
+
+    def test_creation_grants_maintainer_access(self):
+        # Creating a new distribution creates an access grant for the
+        # maintainer for all default policies.
+        distribution = self.factory.makeDistribution()
+        policies = getUtility(IAccessPolicySource).findByPillar(
+            (distribution,))
+        grants = getUtility(IAccessPolicyGrantSource).findByPolicy(policies)
+        expected_grantess = {distribution.owner}
+        grantees = {grant.grantee for grant in grants}
+        self.assertEqual(expected_grantess, grantees)
+
+    def test_change_info_type_proprietary_check_artifacts(self):
+        # Cannot change distribution information_type if any artifacts are
+        # public.
+        # XXX cjwatson 2022-02-11: Make this use
+        # artifact.transitionToInformationType once sharing policies are in
+        # place.
+        distribution = self.factory.makeDistribution()
+        self.useContext(person_logged_in(distribution.owner))
+        spec = self.factory.makeSpecification(distribution=distribution)
+        for info_type in PRIVATE_DISTRIBUTION_TYPES:
+            with ExpectedException(
+                    CannotChangeInformationType,
+                    "Some blueprints are public."):
+                distribution.information_type = info_type
+        removeSecurityProxy(spec).information_type = (
+            InformationType.PROPRIETARY)
+        dsp = self.factory.makeDistributionSourcePackage(
+            distribution=distribution)
+        bug = self.factory.makeBug(target=dsp)
+        for bug_info_type in FREE_INFORMATION_TYPES:
+            removeSecurityProxy(bug).information_type = bug_info_type
+            for info_type in PRIVATE_DISTRIBUTION_TYPES:
+                with ExpectedException(
+                        CannotChangeInformationType,
+                        "Some bugs are neither proprietary nor embargoed."):
+                    distribution.information_type = info_type
+        removeSecurityProxy(bug).information_type = InformationType.PROPRIETARY
+        distroseries = self.factory.makeDistroSeries(distribution=distribution)
+        sp = self.factory.makeSourcePackage(distroseries=distroseries)
+        branch = self.factory.makeBranch(sourcepackage=sp)
+        for branch_info_type in FREE_INFORMATION_TYPES:
+            removeSecurityProxy(branch).information_type = branch_info_type
+            for info_type in PRIVATE_DISTRIBUTION_TYPES:
+                with ExpectedException(
+                        CannotChangeInformationType,
+                        "Some branches are neither proprietary nor "
+                        "embargoed."):
+                    distribution.information_type = info_type
+        removeSecurityProxy(branch).information_type = (
+            InformationType.PROPRIETARY)
+        for info_type in PRIVATE_DISTRIBUTION_TYPES:
+            distribution.information_type = info_type
+
+    def test_change_info_type_proprietary_check_translations(self):
+        distribution = self.factory.makeDistribution()
+        with person_logged_in(distribution.owner):
+            for usage in ServiceUsage:
+                distribution.information_type = InformationType.PUBLIC
+                distribution.translations_usage = usage.value
+                for info_type in PRIVATE_DISTRIBUTION_TYPES:
+                    if (distribution.translations_usage ==
+                            ServiceUsage.LAUNCHPAD):
+                        with ExpectedException(
+                                CannotChangeInformationType,
+                                "Translations are enabled."):
+                            distribution.information_type = info_type
+                    else:
+                        distribution.information_type = info_type
+
+    def test_cacheAccessPolicies(self):
+        # Distribution.access_policies is a list caching AccessPolicy.ids
+        # for which an AccessPolicyGrant or AccessArtifactGrant gives a
+        # principal LimitedView on the Distribution.
+        aps = getUtility(IAccessPolicySource)
+
+        # Public distributions don't need a cache.
+        distribution = self.factory.makeDistribution()
+        naked_distribution = removeSecurityProxy(distribution)
+        self.assertContentEqual(
+            [InformationType.USERDATA, InformationType.PRIVATESECURITY],
+            [p.type for p in aps.findByPillar([distribution])])
+        self.assertIsNone(naked_distribution.access_policies)
+
+        # A private distribution normally just allows the Proprietary
+        # policy, even if there is still another policy like Private
+        # Security.
+        naked_distribution.information_type = InformationType.PROPRIETARY
+        [prop_policy] = aps.find([(distribution, InformationType.PROPRIETARY)])
+        self.assertEqual([prop_policy.id], naked_distribution.access_policies)
+
+        # If we switch it back to public, the cache is no longer
+        # required.
+        naked_distribution.information_type = InformationType.PUBLIC
+        self.assertIsNone(naked_distribution.access_policies)
+
+    def test_checkInformationType_bug_supervisor(self):
+        # Bug supervisors of proprietary distributions must not have
+        # inclusive membership policies.
+        team = self.factory.makeTeam()
+        distribution = self.factory.makeDistribution(bug_supervisor=team)
+        for policy in (token.value for token in TeamMembershipPolicy):
+            with person_logged_in(team.teamowner):
+                team.membership_policy = policy
+            for info_type in PRIVATE_DISTRIBUTION_TYPES:
+                with person_logged_in(distribution.owner):
+                    errors = list(distribution.checkInformationType(info_type))
+                if policy in EXCLUSIVE_TEAM_POLICY:
+                    self.assertEqual([], errors)
+                else:
+                    with ExpectedException(
+                            CannotChangeInformationType,
+                            "Bug supervisor has inclusive membership."):
+                        raise errors[0]
+
+    def test_checkInformationType_questions(self):
+        # Proprietary distributions must not have questions.
+        distribution = self.factory.makeDistribution()
+        for info_type in PRIVATE_DISTRIBUTION_TYPES:
+            with person_logged_in(distribution.owner):
+                self.assertEqual([],
+                    list(distribution.checkInformationType(info_type)))
+        self.factory.makeQuestion(target=distribution)
+        for info_type in PRIVATE_DISTRIBUTION_TYPES:
+            with person_logged_in(distribution.owner):
+                error, = list(distribution.checkInformationType(info_type))
+            with ExpectedException(
+                    CannotChangeInformationType,
+                    "This distribution has questions."):
+                raise error
+
+    def test_checkInformationType_translations(self):
+        # Proprietary distributions must not have translations.
+        distroseries = self.factory.makeDistroSeries()
+        distribution = distroseries.distribution
+        for info_type in PRIVATE_DISTRIBUTION_TYPES:
+            with person_logged_in(distribution.owner):
+                self.assertEqual(
+                    [], list(distribution.checkInformationType(info_type)))
+        self.factory.makePOTemplate(distroseries=distroseries)
+        for info_type in PRIVATE_DISTRIBUTION_TYPES:
+            with person_logged_in(distribution.owner):
+                error, = list(distribution.checkInformationType(info_type))
+            with ExpectedException(
+                    CannotChangeInformationType,
+                    "This distribution has translations."):
+                raise error
+
+    def test_checkInformationType_queued_translations(self):
+        # Proprietary distributions must not have queued translations.
+        self.useFixture(FakeLibrarian())
+        distroseries = self.factory.makeDistroSeries()
+        distribution = distroseries.distribution
+        entry = self.factory.makeTranslationImportQueueEntry(
+            distroseries=distroseries)
+        for info_type in PRIVATE_DISTRIBUTION_TYPES:
+            with person_logged_in(distribution.owner):
+                error, = list(distribution.checkInformationType(info_type))
+            with ExpectedException(
+                    CannotChangeInformationType,
+                    "This distribution has queued translations."):
+                raise error
+        Store.of(entry).remove(entry)
+        with person_logged_in(distribution.owner):
+            for info_type in PRIVATE_DISTRIBUTION_TYPES:
+                self.assertContentEqual(
+                    [], distribution.checkInformationType(info_type))
+
+    def test_checkInformationType_series_only_bugs(self):
+        # A distribution with bugtasks that are only targeted to a series
+        # cannot change information type.
+        series = self.factory.makeDistroSeries()
+        bug = self.factory.makeBug(target=series.distribution)
+        with person_logged_in(series.owner):
+            bug.addTask(series.owner, series)
+            bug.default_bugtask.delete()
+            for info_type in PRIVATE_DISTRIBUTION_TYPES:
+                error, = list(series.distribution.checkInformationType(
+                    info_type))
+                with ExpectedException(
+                        CannotChangeInformationType,
+                        "Some bugs are neither proprietary nor embargoed."):
+                    raise error
+
+    def test_private_forbids_translations(self):
+        owner = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(owner=owner)
+        self.useContext(person_logged_in(owner))
+        for info_type in PRIVATE_DISTRIBUTION_TYPES:
+            distribution.information_type = info_type
+            with ExpectedException(
+                    ProprietaryPillar,
+                    "Translations are not supported for proprietary "
+                    "distributions."):
+                distribution.translations_usage = ServiceUsage.LAUNCHPAD
+            for usage in ServiceUsage.items:
+                if usage == ServiceUsage.LAUNCHPAD:
+                    continue
+                distribution.translations_usage = usage
+
+    def createDistribution(self, information_type=None):
+        # Convenience method for testing IDistributionSet.new rather than
+        # self.factory.makeDistribution.
+        owner = self.factory.makePerson()
+        members = self.factory.makeTeam(owner=owner)
+        kwargs = {}
+        if information_type is not None:
+            kwargs['information_type'] = information_type
+        with person_logged_in(owner):
+            return getUtility(IDistributionSet).new(
+                name=self.factory.getUniqueUnicode("distro"),
+                display_name="Fnord", title="Fnord",
+                description="test 1", summary="test 2",
+                domainname="distro.example.org",
+                members=members, owner=owner, registrant=owner, **kwargs)
+
+    def test_information_type(self):
+        # Distribution is created with specified information_type.
+        distribution = self.createDistribution(
+            information_type=InformationType.PROPRIETARY)
+        self.assertEqual(
+            InformationType.PROPRIETARY, distribution.information_type)
+        # The owner can set information_type.
+        with person_logged_in(removeSecurityProxy(distribution).owner):
+            distribution.information_type = InformationType.PUBLIC
+        self.assertEqual(InformationType.PUBLIC, distribution.information_type)
+        # The database persists the value of information_type.
+        store = Store.of(distribution)
+        store.flush()
+        store.reset()
+        distribution = store.get(Distribution, distribution.id)
+        self.assertEqual(InformationType.PUBLIC, distribution.information_type)
+        self.assertFalse(distribution.private)
+
+    def test_switching_to_public_does_not_create_policy(self):
+        # Creating a Proprietary distribution and switching it to Public
+        # does not create a PUBLIC AccessPolicy.
+        distribution = self.createDistribution(
+            information_type=InformationType.PROPRIETARY)
+        aps = getUtility(IAccessPolicySource).findByPillar([distribution])
+        self.assertContentEqual(
+            [InformationType.PROPRIETARY],
+            [ap.type for ap in aps])
+        removeSecurityProxy(distribution).information_type = (
+            InformationType.PUBLIC)
+        aps = getUtility(IAccessPolicySource).findByPillar([distribution])
+        self.assertContentEqual(
+            [InformationType.PROPRIETARY],
+            [ap.type for ap in aps])
+
+    def test_information_type_default(self):
+        # The default information_type is PUBLIC.
+        distribution = self.createDistribution()
+        self.assertEqual(InformationType.PUBLIC, distribution.information_type)
+        self.assertFalse(distribution.private)
+
+    invalid_information_types = [
+        info_type for info_type in InformationType.items
+        if info_type not in PILLAR_INFORMATION_TYPES]
+
+    def test_information_type_init_invalid_values(self):
+        # Cannot create Distribution.information_type with invalid values.
+        for info_type in self.invalid_information_types:
+            with ExpectedException(
+                    CannotChangeInformationType,
+                    "Not supported for distributions."):
+                self.createDistribution(information_type=info_type)
+
+    def test_information_type_set_invalid_values(self):
+        # Cannot set Distribution.information_type to invalid values.
+        distribution = self.factory.makeDistribution()
+        for info_type in self.invalid_information_types:
+            with ExpectedException(
+                    CannotChangeInformationType,
+                    "Not supported for distributions."):
+                with person_logged_in(distribution.owner):
+                    distribution.information_type = info_type
+
+    def test_set_proprietary_gets_commercial_subscription(self):
+        # Changing a Distribution to Proprietary will auto-generate a
+        # complimentary subscription just as choosing a proprietary
+        # information type at creation time.
+        owner = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(owner=owner)
+        self.useContext(person_logged_in(owner))
+        self.assertIsNone(distribution.commercial_subscription)
+
+        distribution.information_type = InformationType.PROPRIETARY
+        self.assertEqual(
+            InformationType.PROPRIETARY, distribution.information_type)
+        self.assertIsNotNone(distribution.commercial_subscription)
+
+    def test_set_proprietary_fails_expired_commercial_subscription(self):
+        # Cannot set information type to proprietary with an expired
+        # complimentary subscription.
+        owner = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(
+            information_type=InformationType.PROPRIETARY, owner=owner)
+        self.useContext(person_logged_in(owner))
+
+        # The Distribution now has a complimentary commercial subscription.
+        new_expires_date = (
+            datetime.datetime.now(pytz.UTC) - datetime.timedelta(1))
+        naked_subscription = removeSecurityProxy(
+            distribution.commercial_subscription)
+        naked_subscription.date_expires = new_expires_date
+
+        # We can make the distribution PUBLIC.
+        distribution.information_type = InformationType.PUBLIC
+        self.assertEqual(InformationType.PUBLIC, distribution.information_type)
+
+        # However we can't change it back to Proprietary because our
+        # commercial subscription has expired.
+        with ExpectedException(
+                CommercialSubscribersOnly,
+                "A valid commercial subscription is required for private"
+                " distributions."):
+            distribution.information_type = InformationType.PROPRIETARY
+
+    def test_no_answers_for_proprietary(self):
+        # Enabling Answers is forbidden while information_type is proprietary.
+        distribution = self.factory.makeDistribution(
+            information_type=InformationType.PROPRIETARY)
+        with person_logged_in(removeSecurityProxy(distribution).owner):
+            self.assertEqual(ServiceUsage.UNKNOWN, distribution.answers_usage)
+            for usage in ServiceUsage.items:
+                if usage == ServiceUsage.LAUNCHPAD:
+                    with ExpectedException(
+                            ServiceUsageForbidden,
+                            "Answers not allowed for non-public "
+                            "distributions."):
+                        distribution.answers_usage = ServiceUsage.LAUNCHPAD
+                else:
+                    # All other values are permitted.
+                    distribution.answers_usage = usage
+
+    def test_answers_for_public(self):
+        # Enabling answers is permitted while information_type is PUBLIC.
+        distribution = self.factory.makeDistribution(
+            information_type=InformationType.PUBLIC)
+        self.assertEqual(ServiceUsage.UNKNOWN, distribution.answers_usage)
+        with person_logged_in(distribution.owner):
+            for usage in ServiceUsage.items:
+                # All values are permitted.
+                distribution.answers_usage = usage
+
+    def test_no_proprietary_if_answers(self):
+        # Information type cannot be set to proprietary while Answers are
+        # enabled.
+        distribution = self.factory.makeDistribution()
+        with person_logged_in(distribution.owner):
+            distribution.answers_usage = ServiceUsage.LAUNCHPAD
+            with ExpectedException(
+                    CannotChangeInformationType, "Answers is enabled."):
+                distribution.information_type = InformationType.PROPRIETARY
 
 
 class TestDistributionCurrentSourceReleases(

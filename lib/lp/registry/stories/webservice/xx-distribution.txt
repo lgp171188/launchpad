@@ -40,6 +40,7 @@ And for every distribution we publish most of its attributes.
     driver_link: None
     homepage_content: None
     icon_link: 'http://.../ubuntu/icon'
+    information_type: 'Public'
     logo_link: 'http://.../ubuntu/logo'
     main_archive_link: 'http://.../ubuntu/+archive/primary'
     members_link: 'http://.../~ubuntu-team'
@@ -54,6 +55,7 @@ And for every distribution we publish most of its attributes.
     official_codehosting: False
     official_packages: True
     owner_link: 'http://.../~ubuntu-team'
+    private: False
     redirect_default_traversal: False
     redirect_release_uploads: False
     registrant_link: 'http://.../~registry'

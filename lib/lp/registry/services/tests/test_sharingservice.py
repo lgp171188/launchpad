@@ -93,8 +93,7 @@ class PillarScenariosMixin(WithScenarios):
     def _makePillar(self, **kwargs):
         if ("bug_sharing_policy" in kwargs or
                 "branch_sharing_policy" in kwargs or
-                "specification_sharing_policy" in kwargs or
-                "information_type" in kwargs):
+                "specification_sharing_policy" in kwargs):
             self._skipUnlessProduct()
         return getattr(self.factory, self.pillar_factory_name)(**kwargs)
 
@@ -215,7 +214,6 @@ class TestSharingService(
             [InformationType.PRIVATESECURITY, InformationType.USERDATA])
 
     def test_getInformationTypes_expired_commercial(self):
-        self._skipUnlessProduct()
         pillar = self._makePillar()
         self.factory.makeCommercialSubscription(pillar, expired=True)
         self._assert_getAllowedInformationTypes(
@@ -268,6 +266,7 @@ class TestSharingService(
     def test_getBranchSharingPolicies_non_public(self):
         # When the pillar is non-public the policy options are limited to
         # only proprietary or embargoed/proprietary.
+        self._skipUnlessProduct()
         owner = self.factory.makePerson()
         pillar = self._makePillar(
             information_type=InformationType.PROPRIETARY,
@@ -334,6 +333,7 @@ class TestSharingService(
     def test_getSpecificationSharingPolicies_non_public(self):
         # When the pillar is non-public the policy options are limited to
         # only proprietary or embargoed/proprietary.
+        self._skipUnlessProduct()
         owner = self.factory.makePerson()
         pillar = self._makePillar(
             information_type=InformationType.PROPRIETARY,
@@ -386,6 +386,7 @@ class TestSharingService(
     def test_getBugSharingPolicies_non_public(self):
         # When the pillar is non-public the policy options are limited to
         # only proprietary or embargoed/proprietary.
+        self._skipUnlessProduct()
         owner = self.factory.makePerson()
         pillar = self._makePillar(
             information_type=InformationType.PROPRIETARY,
@@ -477,14 +478,13 @@ class TestSharingService(
             self._makeGranteeData(
                 artifact_grant.grantee,
                 [(InformationType.PROPRIETARY, SharingPermission.SOME)],
-                [InformationType.PROPRIETARY])]
-        if IProduct.providedBy(pillar):
-            owner_data = self._makeGranteeData(
+                [InformationType.PROPRIETARY]),
+            self._makeGranteeData(
                 pillar.owner,
                 [(InformationType.USERDATA, SharingPermission.ALL),
                  (InformationType.PRIVATESECURITY, SharingPermission.ALL)],
-                [])
-            expected_grantees.append(owner_data)
+                []),
+            ]
         self.assertContentEqual(expected_grantees, grantees)
 
     def test_getPillarGranteeData(self):
@@ -503,7 +503,6 @@ class TestSharingService(
 
         Steps 2 and 3 are split out to allow batching on persons.
         """
-        self._skipUnlessProduct()
         driver = self.factory.makePerson()
         pillar = self._makePillar(driver=driver)
         login_person(driver)
@@ -577,19 +576,15 @@ class TestSharingService(
             artifact=artifact_grant.abstract_artifact, policy=access_policy)
 
         grantees = self.service.getPillarGrantees(pillar)
+        policies = getUtility(IAccessPolicySource).findByPillar([pillar])
+        policies = [policy for policy in policies
+                    if policy.type != InformationType.PROPRIETARY]
         expected_grantees = [
             (grantee, {access_policy: SharingPermission.ALL}, []),
             (artifact_grant.grantee, {access_policy: SharingPermission.SOME},
-             [access_policy.type])]
-        if IProduct.providedBy(pillar):
-            policies = getUtility(IAccessPolicySource).findByPillar([pillar])
-            policies = [policy for policy in policies
-                            if policy.type != InformationType.PROPRIETARY]
-            owner_data = (
-                pillar.owner,
-                dict.fromkeys(policies, SharingPermission.ALL),
-                [])
-            expected_grantees.append(owner_data)
+             [access_policy.type]),
+            (pillar.owner, dict.fromkeys(policies, SharingPermission.ALL), []),
+            ]
         self.assertContentEqual(expected_grantees, grantees)
 
     def test_getPillarGrantees(self):
@@ -703,22 +698,13 @@ class TestSharingService(
         self.assertContentEqual(
             expected_grantee_data, grantee_data['grantee_entry'])
         # Check that getPillarGrantees returns what we expect.
-        if IProduct.providedBy(pillar):
-            expected_grantee_grants = [
-                (grantee,
-                 {ud_policy: SharingPermission.SOME,
-                  es_policy: SharingPermission.ALL},
-                 [InformationType.PRIVATESECURITY,
-                  InformationType.USERDATA]),
-                 ]
-        else:
-            expected_grantee_grants = [
-                (grantee,
-                 {es_policy: SharingPermission.ALL,
-                  ud_policy: SharingPermission.SOME},
-                 [InformationType.PRIVATESECURITY,
-                  InformationType.USERDATA]),
-                 ]
+        expected_grantee_grants = [
+            (grantee,
+             {ud_policy: SharingPermission.SOME,
+              es_policy: SharingPermission.ALL},
+             [InformationType.PRIVATESECURITY,
+              InformationType.USERDATA]),
+             ]
 
         grantee_grants = list(self.service.getPillarGrantees(pillar))
         # Again, filter out the owner, if one exists.
@@ -842,11 +828,10 @@ class TestSharingService(
             yet_another, policy_permissions,
             [InformationType.PRIVATESECURITY, InformationType.USERDATA])
         expected_data.append(yet_another_person_data)
-        if IProduct.providedBy(pillar):
-            policy_permissions = {
-                policy: SharingPermission.ALL for policy in access_policies}
-            owner_data = (pillar.owner, policy_permissions, [])
-            expected_data.append(owner_data)
+        policy_permissions = {
+            policy: SharingPermission.ALL for policy in access_policies}
+        owner_data = (pillar.owner, policy_permissions, [])
+        expected_data.append(owner_data)
         self._assert_grantee_data(
             expected_data, self.service.getPillarGrantees(pillar))
 
@@ -1516,8 +1501,9 @@ class TestSharingService(
             grant_access(branch, i == 9)
         for i, gitrepository in enumerate(gitrepositories):
             grant_access(gitrepository, i == 9)
-        getUtility(IService, 'sharing').ensureAccessGrants(
-            [grantee], pillar.owner, snaps=snaps[:9])
+        if snaps:
+            getUtility(IService, 'sharing').ensureAccessGrants(
+                [grantee], pillar.owner, snaps=snaps[:9])
         getUtility(IService, 'sharing').ensureAccessGrants(
             [grantee], pillar.owner, specifications=specs[:9])
         getUtility(IService, 'sharing').ensureAccessGrants(
@@ -1593,7 +1579,6 @@ class TestSharingService(
 
     def test_getSharedPillars_commercial_admin_current(self):
         # Commercial admins can see all current commercial pillars.
-        self._skipUnlessProduct()
         admin = getUtility(ILaunchpadCelebrities).commercial_admin.teamowner
         pillar = self._makePillar()
         self.factory.makeCommercialSubscription(pillar)
@@ -1601,7 +1586,6 @@ class TestSharingService(
 
     def test_getSharedPillars_commercial_admin_expired(self):
         # Commercial admins can see all expired commercial pillars.
-        self._skipUnlessProduct()
         admin = getUtility(ILaunchpadCelebrities).commercial_admin.teamowner
         pillar = self._makePillar()
         self.factory.makeCommercialSubscription(pillar, expired=True)
@@ -1684,6 +1668,7 @@ class TestSharingService(
 
     def test_getSharedSnaps(self):
         # Test the getSharedSnaps method.
+        self._skipUnlessProduct()
         owner = self.factory.makePerson()
         pillar = self._makePillar(
             owner=owner, specification_sharing_policy=(
@@ -1981,7 +1966,6 @@ class TestSharingService(
     def test_getAccessPolicyGrantCounts(self):
         # checkPillarAccess checks whether the user has full access to
         # an information type.
-        self._skipUnlessProduct()
         pillar = self._makePillar()
         grantee = self.factory.makePerson()
         with admin_logged_in():

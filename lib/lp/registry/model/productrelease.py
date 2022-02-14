@@ -26,7 +26,7 @@ from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
 from lp.registry.errors import (
     InvalidFilename,
-    ProprietaryProduct,
+    ProprietaryPillar,
     )
 from lp.registry.interfaces.person import (
     validate_person,
@@ -151,7 +151,7 @@ class ProductRelease(SQLBase):
                        description=None, from_api=False):
         """See `IProductRelease`."""
         if not self.can_have_release_files:
-            raise ProprietaryProduct(
+            raise ProprietaryPillar(
                 "Only public projects can have download files.")
         if self.hasReleaseFile(filename):
             raise InvalidFilename

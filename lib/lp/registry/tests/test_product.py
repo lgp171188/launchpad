@@ -68,7 +68,7 @@ from lp.registry.errors import (
     CannotChangeInformationType,
     CommercialSubscribersOnly,
     InclusiveTeamLinkageError,
-    ProprietaryProduct,
+    ProprietaryPillar,
     )
 from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyGrantSource,
@@ -635,7 +635,7 @@ class TestProduct(TestCaseWithFactory):
         for info_type in PRIVATE_PROJECT_TYPES:
             product.information_type = info_type
             with ExpectedException(
-                ProprietaryProduct,
+                ProprietaryPillar,
                 "Translations are not supported for proprietary products."):
                 product.translations_usage = ServiceUsage.LAUNCHPAD
             for usage in ServiceUsage.items:
@@ -1761,7 +1761,7 @@ class BaseSharingPolicyTests:
             InformationType.PUBLIC in self.allowed_types[policy])
         for policy in policies_permitting_public:
             with ExpectedException(
-                ProprietaryProduct, "The project is Proprietary."):
+                ProprietaryPillar, "The project is Proprietary."):
                 self.setSharingPolicy(policy, owner)
 
 

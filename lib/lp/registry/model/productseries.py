@@ -43,7 +43,7 @@ from lp.bugs.model.bugtarget import BugTargetBase
 from lp.bugs.model.structuralsubscription import (
     StructuralSubscriptionTargetMixin,
     )
-from lp.registry.errors import ProprietaryProduct
+from lp.registry.errors import ProprietaryPillar
 from lp.registry.interfaces.packaging import PackagingType
 from lp.registry.interfaces.person import validate_person
 from lp.registry.interfaces.productrelease import IProductReleaseSet
@@ -141,8 +141,8 @@ class ProductSeries(SQLBase, BugTargetBase, HasMilestonesMixin,
             return value
         if (self.product.private and
             value != TranslationsBranchImportMode.NO_IMPORT):
-            raise ProprietaryProduct('Translations are disabled for'
-                                     ' proprietary projects.')
+            raise ProprietaryPillar('Translations are disabled for'
+                                    ' proprietary projects.')
         return value
 
     translations_autoimport_mode = DBEnum(

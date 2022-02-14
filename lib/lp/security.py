@@ -1282,7 +1282,11 @@ class EditDistributionByDistroOwnersOrAdmins(AuthorizationBase):
     usedfor = IDistribution
 
     def checkAuthenticated(self, user):
-        return user.isOwner(self.obj) or user.in_admin
+        # Commercial admins may help setup commercial distributions.
+        return (
+            user.isOwner(self.obj)
+            or is_commercial_case(self.obj, user)
+            or user.in_admin)
 
 
 class ModerateDistributionByDriversOrOwnersOrAdmins(AuthorizationBase):
@@ -3264,6 +3268,10 @@ class EditMessageRevision(DelegatedAuthorization):
 
 class ViewPublisherConfig(AdminByAdminsTeam):
     usedfor = IPublisherConfig
+
+
+class ViewSourcePackage(AnonymousAuthorization):
+    usedfor = ISourcePackage
 
 
 class EditSourcePackage(EditDistributionSourcePackage):
