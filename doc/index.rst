@@ -32,6 +32,7 @@ How-to Guides
    how-to/exceptions
    how-to/security
    how-to/new-user
+   how-to/avoid-debugging-issues
 
 Explanation
 ===========
