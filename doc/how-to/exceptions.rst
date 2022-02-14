@@ -1,6 +1,6 @@
-========================
-How to handle exceptions
-========================
+===================
+Handling exceptions
+===================
 
 Catching exceptions
 ===================
