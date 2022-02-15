@@ -831,12 +831,22 @@ class TestPerson(TestCaseWithFactory):
         self.assertTrue(owner.isAnyPillarOwner())
         self.assertFalse(person.isAnyPillarOwner())
 
-    def test_has_current_commercial_subscription(self):
-        # IPerson.hasCurrentCommercialSubscription() checks for one.
+    def test_has_current_commercial_subscription_product(self):
+        # IPerson.hasCurrentCommercialSubscription() checks for one on a
+        # product.
         team = self.factory.makeTeam(
             membership_policy=TeamMembershipPolicy.MODERATED)
         product = self.factory.makeProduct(owner=team)
         self.factory.makeCommercialSubscription(product)
+        self.assertTrue(team.teamowner.hasCurrentCommercialSubscription())
+
+    def test_has_current_commercial_subscription_distribution(self):
+        # IPerson.hasCurrentCommercialSubscription() checks for one on a
+        # distribution.
+        team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.MODERATED)
+        distro = self.factory.makeDistribution(owner=team)
+        self.factory.makeCommercialSubscription(distro)
         self.assertTrue(team.teamowner.hasCurrentCommercialSubscription())
 
     def test_does_not_have_current_commercial_subscription(self):
@@ -846,6 +856,8 @@ class TestPerson(TestCaseWithFactory):
             membership_policy=TeamMembershipPolicy.MODERATED)
         product = self.factory.makeProduct(owner=team)
         self.factory.makeCommercialSubscription(product, expired=True)
+        distro = self.factory.makeDistribution(owner=team)
+        self.factory.makeCommercialSubscription(distro, expired=True)
         self.assertFalse(team.teamowner.hasCurrentCommercialSubscription())
 
     def test_does_not_have_commercial_subscription(self):
