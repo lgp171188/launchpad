@@ -4430,6 +4430,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                        int_to_bytes(curve_data["x"], key_byte_length) +
                        int_to_bytes(curve_data["y"], key_byte_length)),
                     ]
+        elif key_type == "ssh-ed25519":
+            parameters = [NS(keydata.Ed25519Data["a"])]
         if parameters is None:
             raise AssertionError(
                 "key_type must be a member of SSH_TEXT_TO_KEY_TYPE, not %r" %
