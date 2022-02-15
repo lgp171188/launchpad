@@ -107,6 +107,7 @@ from lp.bugs.adapters.bugchange import (
     UnsubscribedFromBug,
     )
 from lp.bugs.enums import (
+    BugLockedStatus,
     BugLockStatus,
     BugNotificationLevel,
     )
@@ -412,6 +413,14 @@ class Bug(SQLBase, InformationTypeMixin):
         name='lock_status', enum=BugLockStatus,
         allow_none=False, default=BugLockStatus.UNLOCKED)
     lock_reason = StringCol(notNull=False, default=None)
+
+    @property
+    def locked(self):
+        try:
+            BugLockedStatus.items[self.lock_status.value]
+            return True
+        except KeyError:
+            return False
 
     @property
     def linked_branches(self):
@@ -2252,8 +2261,8 @@ class Bug(SQLBase, InformationTypeMixin):
         """See `IBug`."""
         if self.lock_status != BugLockStatus.UNLOCKED:
             old_lock_status = self.lock_status
-            self.lock_status = BugLockStatus.UNLOCKED
             self.lock_reason = None
+            self.lock_status = BugLockStatus.UNLOCKED
 
             self.addChange(
                 BugUnlocked(

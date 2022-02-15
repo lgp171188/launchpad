@@ -229,6 +229,21 @@ class ModerateBug(AuthorizationBase):
         )
 
 
+class ModerateBugTask(DelegatedAuthorization):
+    """
+    Security adapter for moderating bug tasks.
+
+    This has the same semantics as `ModerateBug`, but can be used where
+    the context is a bug task rather than a bug.
+    """
+
+    permission = 'launchpad.Moderate'
+    usedfor = IHasBug
+
+    def __init__(self, obj):
+        super().__init__(obj, obj.bug)
+
+
 class PublicToAllOrPrivateToExplicitSubscribersForBug(AuthorizationBase):
     permission = 'launchpad.View'
     usedfor = IBug

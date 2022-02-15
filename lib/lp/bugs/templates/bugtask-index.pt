@@ -76,6 +76,7 @@
       <tal:reporter replace="structure context/bug/owner/fmt:link" />
       <tal:created
         replace="structure context/bug/datecreated/fmt:displaydatetitle" />
+      <span class="badge read-only inline-block" title="Locked" tal:condition="context/bug/locked"></span>
     </tal:registering>
 
     <metal:heading fill-slot="heading" tal:define="context_menu context/menu:context">
