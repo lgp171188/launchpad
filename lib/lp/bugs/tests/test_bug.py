@@ -7,7 +7,9 @@ from datetime import timedelta
 import json
 
 from lazr.lifecycle.snapshot import Snapshot
+from storm.exceptions import NoneError
 from testtools.matchers import MatchesStructure
+from testtools.testcase import ExpectedException
 from zope.component import getUtility
 from zope.interface import providedBy
 from zope.security.management import checkPermission
@@ -441,6 +443,12 @@ class TestBugLocking(TestCaseWithFactory):
         bug = self.factory.makeBug(owner=self.person, target=self.target)
         self.assertEqual(BugLockStatus.UNLOCKED, bug.lock_status)
         self.assertIsNone(bug.lock_reason)
+
+    def test_bug_lock_status_cannot_be_none(self):
+        bug = self.factory.makeBug(owner=self.person, target=self.target)
+        self.assertEqual(BugLockStatus.UNLOCKED, bug.lock_status)
+        with ExpectedException(NoneError):
+            removeSecurityProxy(bug).lock_status = None
 
     def test_bug_locking_when_bug_already_locked(self):
         bug = self.factory.makeBug(owner=self.person, target=self.target)

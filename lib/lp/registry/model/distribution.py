@@ -1568,6 +1568,18 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             self.oci_registry_credentials = None
             old_credentials.destroySelf()
 
+    def userCanView(self, user):
+        """See `IDistributionPublic`."""
+        # All distributions are public until we finish introducing privacy
+        # support.
+        return True
+
+    def userCanLimitedView(self, user):
+        """See `IDistributionPublic`."""
+        # All distributions are public until we finish introducing privacy
+        # support.
+        return True
+
 
 @implementer(IDistributionSet)
 class DistributionSet:

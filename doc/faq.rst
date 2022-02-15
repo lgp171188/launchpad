@@ -48,10 +48,8 @@ I have Launchpad running but mails are not sent...
 
 Development Launchpads don't send email to the outside world, for obvious
 reasons.  They connect to the local SMTP server and send to root.  To create
-new users, create a new account and check the local mailbox, or check
-:ref:`this FAQ <create-additional-user-accounts-dev-env>`.
-
-.. _create-additional-user-accounts-dev-env:
+new users, create a new account and check the local mailbox, or see
+:doc:`how-to/new-user`.
 
 My database permissions keep getting deleted!
 =============================================
