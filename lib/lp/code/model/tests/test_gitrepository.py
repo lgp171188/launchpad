@@ -20,6 +20,10 @@ import pytz
 import six
 from storm.exceptions import LostObjectError
 from storm.store import Store
+from testscenarios import (
+    load_tests_apply_scenarios,
+    WithScenarios,
+    )
 from testtools.matchers import (
     AnyMatch,
     ContainsDict,
@@ -141,6 +145,10 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyArtifactSource,
     IAccessPolicySource,
     )
+from lp.registry.interfaces.distributionsourcepackage import (
+    IDistributionSourcePackage,
+    )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackageFactory,
@@ -1746,13 +1754,18 @@ class TestGitRepositoryPrivacy(TestCaseWithFactory):
             get_policies_for_artifact(repository))
 
     def test__reconcileAccess_for_package_repository(self):
-        # Git repository privacy isn't yet supported for distributions, so
-        # no AccessPolicyArtifact is created for a package repository.
+        # _reconcileAccess uses a distribution policy for a package
+        # repository.
         repository = self.factory.makeGitRepository(
             target=self.factory.makeDistributionSourcePackage(),
             information_type=InformationType.USERDATA)
+        [artifact] = getUtility(IAccessArtifactSource).ensure([repository])
+        getUtility(IAccessPolicyArtifactSource).deleteByArtifact([artifact])
         removeSecurityProxy(repository)._reconcileAccess()
-        self.assertEqual([], get_policies_for_artifact(repository))
+        self.assertContentEqual(
+            getUtility(IAccessPolicySource).find(
+                [(repository.target.distribution, InformationType.USERDATA)]),
+            get_policies_for_artifact(repository))
 
     def test__reconcileAccess_for_oci_project_repository(self):
         # Git repository privacy isn't yet supported for OCI projects, so no
@@ -2356,17 +2369,36 @@ class TestGitRepositoryGetAllowedInformationTypes(TestCaseWithFactory):
             repository.getAllowedInformationTypes(admin))
 
 
-class TestGitRepositoryModerate(TestCaseWithFactory):
+class TestGitRepositoryModerate(WithScenarios, TestCaseWithFactory):
     """Test that project owners and commercial admins can moderate Git
     repositories."""
 
     layer = DatabaseFunctionalLayer
+    scenarios = [
+        ("project", {"target_factory_name": "makeProduct"}),
+        ("distribution",
+         {"target_factory_name": "makeDistributionSourcePackage"}),
+        ("OCI project", {"target_factory_name": "makeOCIProject"}),
+        ]
+
+    def _makeGitRepository(self, **kwargs):
+        target = getattr(self.factory, self.target_factory_name)()
+        return self.factory.makeGitRepository(target=target, **kwargs)
+
+    def _getPillar(self, repository):
+        target = repository.target
+        if IDistributionSourcePackage.providedBy(target):
+            return target.distribution
+        elif IOCIProject.providedBy(target):
+            return target.pillar
+        else:
+            return target
 
     def test_moderate_permission(self):
         # Test the ModerateGitRepository security checker.
-        project = self.factory.makeProduct()
-        repository = self.factory.makeGitRepository(target=project)
-        with person_logged_in(project.owner):
+        repository = self._makeGitRepository()
+        pillar = self._getPillar(repository)
+        with person_logged_in(pillar.owner):
             self.assertTrue(check_permission("launchpad.Moderate", repository))
         with celebrity_logged_in("commercial_admin"):
             self.assertTrue(check_permission("launchpad.Moderate", repository))
@@ -2376,24 +2408,26 @@ class TestGitRepositoryModerate(TestCaseWithFactory):
 
     def test_methods_smoketest(self):
         # Users with launchpad.Moderate can call transitionToInformationType.
-        project = self.factory.makeProduct()
-        repository = self.factory.makeGitRepository(target=project)
-        with person_logged_in(project.owner):
-            project.setBranchSharingPolicy(BranchSharingPolicy.PUBLIC)
+        if self.target_factory_name == "makeOCIProject":
+            self.skipTest("Not implemented for OCI projects yet.")
+        repository = self._makeGitRepository()
+        pillar = self._getPillar(repository)
+        with person_logged_in(pillar.owner):
+            pillar.setBranchSharingPolicy(BranchSharingPolicy.PUBLIC)
             repository.transitionToInformationType(
-                InformationType.PRIVATESECURITY, project.owner)
+                InformationType.PRIVATESECURITY, pillar.owner)
             self.assertEqual(
                 InformationType.PRIVATESECURITY, repository.information_type)
 
     def test_attribute_smoketest(self):
         # Users with launchpad.Moderate can set attributes.
-        project = self.factory.makeProduct()
-        repository = self.factory.makeGitRepository(target=project)
-        with person_logged_in(project.owner):
+        repository = self._makeGitRepository()
+        pillar = self._getPillar(repository)
+        with person_logged_in(pillar.owner):
             repository.description = "something"
-            repository.reviewer = project.owner
+            repository.reviewer = pillar.owner
         self.assertEqual("something", repository.description)
-        self.assertEqual(project.owner, repository.reviewer)
+        self.assertEqual(pillar.owner, repository.reviewer)
 
 
 class TestGitRepositoryIsPersonTrustedReviewer(TestCaseWithFactory):
@@ -5454,3 +5488,6 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
                 ["Caveat check for '%s' failed." %
                  find_caveats_by_name(macaroon2, "lp.expires")[0].caveat_id],
                 issuer, macaroon2, repository, user=repository.owner)
+
+
+load_tests = load_tests_apply_scenarios

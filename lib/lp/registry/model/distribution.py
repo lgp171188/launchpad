@@ -83,11 +83,17 @@ from lp.blueprints.enums import SpecificationFilter
 from lp.blueprints.model.specification import (
     HasSpecificationsMixin,
     Specification,
+    SPECIFICATION_POLICY_ALLOWED_TYPES,
+    SPECIFICATION_POLICY_DEFAULT_TYPES,
     )
 from lp.blueprints.model.specificationsearch import search_specifications
 from lp.blueprints.model.sprint import HasSprintsMixin
 from lp.bugs.interfaces.bugsummary import IBugSummaryDimension
 from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
+from lp.bugs.interfaces.bugtarget import (
+    BUG_POLICY_ALLOWED_TYPES,
+    BUG_POLICY_DEFAULT_TYPES,
+    )
 from lp.bugs.interfaces.bugtaskfilter import OrderedBugTask
 from lp.bugs.model.bugtarget import (
     BugTargetBase,
@@ -101,6 +107,7 @@ from lp.code.interfaces.seriessourcepackagebranch import (
     IFindOfficialBranchLinks,
     )
 from lp.code.model.branch import Branch
+from lp.code.model.branchnamespace import BRANCH_POLICY_ALLOWED_TYPES
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     )
@@ -119,6 +126,7 @@ from lp.registry.errors import (
     ProprietaryPillar,
     )
 from lp.registry.interfaces.accesspolicy import (
+    IAccessPolicyArtifactSource,
     IAccessPolicyGrantSource,
     IAccessPolicySource,
     )
@@ -238,6 +246,24 @@ from lp.translations.model.hastranslationimports import (
     )
 from lp.translations.model.potemplate import POTemplate
 from lp.translations.model.translationpolicy import TranslationPolicyMixin
+
+
+bug_policy_default = {
+    InformationType.PUBLIC: BugSharingPolicy.PUBLIC,
+    InformationType.PROPRIETARY: BugSharingPolicy.PROPRIETARY,
+    }
+
+
+branch_policy_default = {
+    InformationType.PUBLIC: BranchSharingPolicy.PUBLIC,
+    InformationType.PROPRIETARY: BranchSharingPolicy.PROPRIETARY,
+    }
+
+
+specification_policy_default = {
+    InformationType.PUBLIC: SpecificationSharingPolicy.PUBLIC,
+    InformationType.PROPRIETARY: SpecificationSharingPolicy.PROPRIETARY,
+    }
 
 
 @implementer(
@@ -462,6 +488,10 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             if (old_info_type == InformationType.PUBLIC and
                     value != InformationType.PUBLIC):
                 self._ensure_complimentary_subscription()
+                self.setBranchSharingPolicy(branch_policy_default[value])
+                self.setBugSharingPolicy(bug_policy_default[value])
+                self.setSpecificationSharingPolicy(
+                    specification_policy_default[value])
             self._ensurePolicies([value])
 
     @property
@@ -469,23 +499,51 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         """See `IPillar`."""
         return "Distribution"
 
-    @property
-    def branch_sharing_policy(self):
-        """See `IHasSharingPolicies."""
-        # Sharing policy for distributions is always PUBLIC.
-        return BranchSharingPolicy.PUBLIC
+    bug_sharing_policy = DBEnum(
+        enum=BugSharingPolicy, allow_none=True,
+        default=BugSharingPolicy.PUBLIC)
+    branch_sharing_policy = DBEnum(
+        enum=BranchSharingPolicy, allow_none=True,
+        default=BranchSharingPolicy.PUBLIC)
+    specification_sharing_policy = DBEnum(
+        enum=SpecificationSharingPolicy, allow_none=True,
+        default=SpecificationSharingPolicy.PUBLIC)
 
-    @property
-    def bug_sharing_policy(self):
-        """See `IHasSharingPolicies."""
-        # Sharing policy for distributions is always PUBLIC.
-        return BugSharingPolicy.PUBLIC
+    def _prepare_to_set_sharing_policy(self, var, enum, kind, allowed_types):
+        if (var not in {enum.PUBLIC, enum.FORBIDDEN} and
+                not self.has_current_commercial_subscription):
+            raise CommercialSubscribersOnly(
+                "A current commercial subscription is required to use "
+                "proprietary %s." % kind)
+        if self.information_type != InformationType.PUBLIC:
+            if InformationType.PUBLIC in allowed_types[var]:
+                raise ProprietaryPillar(
+                    "The distribution is %s." % self.information_type.title)
+        self._ensurePolicies(allowed_types[var])
 
-    @property
-    def specification_sharing_policy(self):
-        """See `IHasSharingPolicies."""
-        # Sharing policy for distributions is always PUBLIC.
-        return SpecificationSharingPolicy.PUBLIC
+    def setBranchSharingPolicy(self, branch_sharing_policy):
+        """See `IDistributionEditRestricted`."""
+        self._prepare_to_set_sharing_policy(
+            branch_sharing_policy, BranchSharingPolicy, 'branches',
+            BRANCH_POLICY_ALLOWED_TYPES)
+        self.branch_sharing_policy = branch_sharing_policy
+        self._pruneUnusedPolicies()
+
+    def setBugSharingPolicy(self, bug_sharing_policy):
+        """See `IDistributionEditRestricted`."""
+        self._prepare_to_set_sharing_policy(
+            bug_sharing_policy, BugSharingPolicy, 'bugs',
+            BUG_POLICY_ALLOWED_TYPES)
+        self.bug_sharing_policy = bug_sharing_policy
+        self._pruneUnusedPolicies()
+
+    def setSpecificationSharingPolicy(self, specification_sharing_policy):
+        """See `IDistributionEditRestricted`."""
+        self._prepare_to_set_sharing_policy(
+            specification_sharing_policy, SpecificationSharingPolicy,
+            'specifications', SPECIFICATION_POLICY_ALLOWED_TYPES)
+        self.specification_sharing_policy = specification_sharing_policy
+        self._pruneUnusedPolicies()
 
     # Cache of AccessPolicy.ids that convey launchpad.LimitedView.
     # Unlike artifacts' cached access_policies, an AccessArtifactGrant
@@ -529,6 +587,33 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
                     [(self, type) for type in PROPRIETARY_INFORMATION_TYPES])]
         else:
             self.access_policies = None
+
+    def _pruneUnusedPolicies(self):
+        allowed_bug_types = set(
+            BUG_POLICY_ALLOWED_TYPES.get(
+                self.bug_sharing_policy, FREE_INFORMATION_TYPES))
+        allowed_branch_types = set(
+            BRANCH_POLICY_ALLOWED_TYPES.get(
+                self.branch_sharing_policy, FREE_INFORMATION_TYPES))
+        allowed_spec_types = set(
+            SPECIFICATION_POLICY_ALLOWED_TYPES.get(
+                self.specification_sharing_policy, [InformationType.PUBLIC]))
+        allowed_types = (
+            allowed_bug_types | allowed_branch_types | allowed_spec_types)
+        allowed_types.add(self.information_type)
+        # Fetch all APs, and after filtering out ones that are forbidden
+        # by the bug, branch, and specification policies, the APs that have no
+        # APAs are unused and can be deleted.
+        ap_source = getUtility(IAccessPolicySource)
+        access_policies = set(ap_source.findByPillar([self]))
+        apa_source = getUtility(IAccessPolicyArtifactSource)
+        unused_aps = [
+            ap for ap in access_policies
+            if ap.type not in allowed_types
+            and apa_source.findByPolicy([ap]).is_empty()]
+        getUtility(IAccessPolicyGrantSource).revokeByPolicy(unused_aps)
+        ap_source.delete([(ap.pillar, ap.type) for ap in unused_aps])
+        self._cacheAccessPolicies()
 
     @cachedproperty
     def commercial_subscription(self):
@@ -1157,11 +1242,13 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
     def getAllowedSpecificationInformationTypes(self):
         """See `ISpecificationTarget`."""
-        return (InformationType.PUBLIC,)
+        return SPECIFICATION_POLICY_ALLOWED_TYPES[
+            self.specification_sharing_policy]
 
     def getDefaultSpecificationInformationType(self):
         """See `ISpecificationTarget`."""
-        return InformationType.PUBLIC
+        return SPECIFICATION_POLICY_DEFAULT_TYPES[
+            self.specification_sharing_policy]
 
     def searchQuestions(self, search_text=None,
                         status=QUESTION_STATUS_DEFAULT_SEARCH,
@@ -1639,11 +1726,11 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
     def getAllowedBugInformationTypes(self):
         """See `IDistribution.`"""
-        return FREE_INFORMATION_TYPES
+        return BUG_POLICY_ALLOWED_TYPES[self.bug_sharing_policy]
 
     def getDefaultBugInformationType(self):
         """See `IDistribution.`"""
-        return InformationType.PUBLIC
+        return BUG_POLICY_DEFAULT_TYPES[self.bug_sharing_policy]
 
     def userCanEdit(self, user):
         """See `IDistribution`."""
@@ -1924,12 +2011,11 @@ class DistributionSet:
             distribution=distro, owner=owner, purpose=ArchivePurpose.PRIMARY)
         if information_type != InformationType.PUBLIC:
             distro._ensure_complimentary_subscription()
-        # XXX cjwatson 2022-02-10: Replace this with sharing policies once
-        # those are defined here.
-        distro._ensurePolicies(
-            [information_type]
-            if information_type == InformationType.PROPRIETARY
-            else FREE_INFORMATION_TYPES)
+        distro.setBugSharingPolicy(bug_policy_default[information_type])
+        distro.setBranchSharingPolicy(
+            branch_policy_default[information_type])
+        distro.setSpecificationSharingPolicy(
+            specification_policy_default[information_type])
         return distro
 
     def getCurrentSourceReleases(self, distro_source_packagenames):

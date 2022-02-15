@@ -2709,7 +2709,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                          publish_root_dir=None, publish_base_url=None,
                          publish_copy_base_url=None, no_pubconf=False,
                          icon=None, summary=None, vcs=None,
-                         oci_project_admin=None, information_type=None):
+                         oci_project_admin=None, bug_sharing_policy=None,
+                         branch_sharing_policy=None,
+                         specification_sharing_policy=None,
+                         information_type=None):
         """Make a new distribution."""
         if name is None:
             name = self.getUniqueString(prefix="distribution")
@@ -2740,6 +2743,26 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             naked_distro.bug_supervisor = bug_supervisor
         if oci_project_admin is not None:
             naked_distro.oci_project_admin = oci_project_admin
+        # makeProduct defaults licenses to [License.OTHER_PROPRIETARY] if
+        # any non-public sharing policy is set, which ensures a
+        # complimentary commercial subscription.  However, Distribution
+        # doesn't have a licenses field, so deal with the commercial
+        # subscription directly here instead.
+        if ((bug_sharing_policy is not None and
+             bug_sharing_policy != BugSharingPolicy.PUBLIC) or
+            (branch_sharing_policy is not None and
+             branch_sharing_policy != BranchSharingPolicy.PUBLIC) or
+            (specification_sharing_policy is not None and
+             specification_sharing_policy !=
+             SpecificationSharingPolicy.PUBLIC)):
+            naked_distro._ensure_complimentary_subscription()
+        if branch_sharing_policy:
+            naked_distro.setBranchSharingPolicy(branch_sharing_policy)
+        if bug_sharing_policy:
+            naked_distro.setBugSharingPolicy(bug_sharing_policy)
+        if specification_sharing_policy:
+            naked_distro.setSpecificationSharingPolicy(
+                specification_sharing_policy)
         if not no_pubconf:
             self.makePublisherConfig(
                 distro, publish_root_dir, publish_base_url,
