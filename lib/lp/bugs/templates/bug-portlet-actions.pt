@@ -81,4 +81,11 @@
       tal:condition="link/enabled"
       tal:content="structure link/render" />
   </ul>
+  <ul id="lock-status-actions">
+    <li
+        tal:define="link context_menu/change_lock_status"
+        tal:condition="python: link.enabled"
+        tal:content="structure context_menu/change_lock_status/render"
+    />
+  </ul>
 </div>
