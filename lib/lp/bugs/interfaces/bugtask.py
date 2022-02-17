@@ -319,12 +319,16 @@ RESOLVED_BUGTASK_STATUSES = (
     BugTaskStatus.OPINION,
     BugTaskStatus.INVALID,
     BugTaskStatus.WONTFIX,
-    BugTaskStatus.EXPIRED)
+    BugTaskStatus.EXPIRED,
+    BugTaskStatus.DOES_NOT_EXIST,
+    )
 
 BUG_SUPERVISOR_BUGTASK_STATUSES = (
     BugTaskStatus.WONTFIX,
     BugTaskStatus.EXPIRED,
-    BugTaskStatus.TRIAGED)
+    BugTaskStatus.TRIAGED,
+    BugTaskStatus.DOES_NOT_EXIST,
+    )
 
 
 @error_status(http.client.BAD_REQUEST)

@@ -300,8 +300,8 @@ valid.
     hoary        False   351  Incomplete  False     False  False  False
     thunderbird  False   351  New         False     False  False  False
 
-If the valid bugtask becomes Invalid or Won't Fix, the hoary bugtask
-will be expirable.
+If the valid bugtask becomes Invalid, Won't Fix, or Does Not Exist
+the hoary bugtask will be expirable.
 
     >>> new_bugtask.transitionToStatus(BugTaskStatus.WONTFIX, sample_person)
     >>> hoary_bugtask.bug.can_expire
@@ -311,6 +311,18 @@ will be expirable.
     ubuntu       True    351  Incomplete  False     False  False  False
     hoary        True    351  Incomplete  False     False  False  False
     thunderbird  False   351  Won't Fix   False     False  False  False
+
+    >>> new_bugtask.transitionToStatus(
+    BugTaskStatus.DOES_NOT_EXIST,
+    sample_person)
+    >>> hoary_bugtask.bug.can_expire
+    True
+
+    >>> summarize_bugtasks(hoary_bugtask.bug.bugtasks)
+    ROLE         EXPIRE  AGE  STATUS      ASSIGNED  DUP    MILE   REPLIES
+    ubuntu       True    351  Incomplete  False     False  False  False
+    hoary        True    351  Incomplete  False     False  False  False
+    thunderbird  False   351  Does Not Exist   False     False  False  False
 
     >>> expirable_bugtasks = bugtaskset.findExpirableBugTasks(350, None)
     >>> summarize_bugtasks(expirable_bugtasks)
@@ -540,7 +552,7 @@ was expired. The remaining bugtasks are unchanged.
     hoary            False     0  Expired     False     False  False  False
     jokosher         False     0  Expired     False     False  False  False
     jokosher watched False    61  Incomplete  False     False  False  False
-    thunderbird      False     0  Won't Fix   False     False  False  False
+    thunderbird      False     0  Does Not Exist   False     False  False  False
     assigned         False    61  Incomplete  True      False  False  False
     confirmed        False    61  Confirmed   False     False  False  False
     duplicate        False    61  Incomplete  False     True   False  False

@@ -204,7 +204,7 @@
     }
   }
 
-  .statusINVALID, .statusWONTFIX, .statusOPINION {
+  .statusINVALID, .statusWONTFIX, .statusDOES_NOT_EXIST, .status.statusOPINION {
     color: #555;
 
     a {
@@ -301,7 +301,7 @@
       }
     }
 
-    .statusEXPIRED, .statusINVALID, .statusWONTFIX, .statusOPINION {
+    .statusEXPIRED, .statusINVALID, .statusWONTFIX, .statusDOES_NOT_EXIST, .statusOPINION {
       color: #464646;
       background-color: #ddd;
 

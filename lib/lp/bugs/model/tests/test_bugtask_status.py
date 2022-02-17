@@ -42,6 +42,9 @@ class TestBugTaskStatusTransitionForUser(TestCaseWithFactory):
                 BugTaskStatus.WONTFIX, self.user)
             self.assertRaises(
                 UserCannotEditBugTaskStatus, self.task.transitionToStatus,
+                BugTaskStatus.DOES_NOT_EXIST, self.user)
+            self.assertRaises(
+                UserCannotEditBugTaskStatus, self.task.transitionToStatus,
                 BugTaskStatus.EXPIRED, self.user)
             self.assertRaises(
                 UserCannotEditBugTaskStatus, self.task.transitionToStatus,
@@ -71,6 +74,15 @@ class TestBugTaskStatusTransitionForUser(TestCaseWithFactory):
         # A regular user should not be able to transition a bug away
         # from Won't Fix.
         removeSecurityProxy(self.task)._status = BugTaskStatus.WONTFIX
+        with person_logged_in(self.user):
+            self.assertRaises(
+                UserCannotEditBugTaskStatus, self.task.transitionToStatus,
+                BugTaskStatus.CONFIRMED, self.user)
+
+    def test_user_cannot_unset_does_not_exist_status(self):
+        # A regular user should not be able to transition a bug away
+        # from Does not exist.
+        removeSecurityProxy(self.task)._status = BugTaskStatus.DOES_NOT_EXIST
         with person_logged_in(self.user):
             self.assertRaises(
                 UserCannotEditBugTaskStatus, self.task.transitionToStatus,

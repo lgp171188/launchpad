@@ -892,8 +892,9 @@ class BugTask(StormBase):
               user.id != self.bug.ownerID and not user.inTeam(self.bug.owner)):
             # The bug reporter can reopen a Fix Released bug.
             return False
-        elif self.status == BugTaskStatus.WONTFIX:
-            # Only bug supervisors can switch away from WONTFIX.
+        elif (self.status == BugTaskStatus.WONTFIX or
+              self.status == BugTaskStatus.DOES_NOT_EXIST):
+            # Only bug supervisors can switch away from WONTFIX and DNE.
             return False
         # Non-supervisors can transition to non-supervisor statuses.
         return new_status not in BUG_SUPERVISOR_BUGTASK_STATUSES
@@ -1755,7 +1756,7 @@ class BugTaskSet:
         statuses_not_preventing_expiration = [
             BugTaskStatus.INVALID, BugTaskStatus.INCOMPLETE,
             BugTaskStatusSearch.INCOMPLETE_WITHOUT_RESPONSE,
-            BugTaskStatus.WONTFIX]
+            BugTaskStatus.WONTFIX, BugTaskStatus.DOES_NOT_EXIST]
         unexpirable_status_list = [
             status for status in BugTaskStatus.items
             if status not in statuses_not_preventing_expiration]

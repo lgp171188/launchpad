@@ -50,6 +50,11 @@ those statuses are not shown in the UI:
     ...
     zope.testbrowser.browser.ItemNotFoundError: Triaged
 
+    >>> status_control.displayValue = ["Does Not Exist"]
+    Traceback (most recent call last):
+    ...
+    zope.testbrowser.browser.ItemNotFoundError: Does Not Exist
+
 Bug Supervisor
 --------------
 
@@ -129,3 +134,21 @@ The Bug Supervisor for Ubuntu can also change the status to Triaged:
     http://bugs.launchpad.test/ubuntu/+source/iceweasel/+bug/1
     >>> print_highlighted_bugtask(bug_supervisor_browser)
     iceweasel (Ubuntu) ... Triaged  Medium Unassigned ...
+
+The Bug Supervisor for Ubuntu can also change the status to Does Not Exist:
+
+    >>> bug_supervisor_browser.open(
+    ...     'http://bugs.launchpad.test/ubuntu/+source/'
+    ...     'iceweasel/+bug/1/+editstatus')
+
+    >>> status_control = bug_supervisor_browser.getControl('Status')
+    >>> print(status_control.displayValue)
+    ['Triaged']
+
+    >>> status_control.displayValue = ["Does Not Exist"]
+    >>> bug_supervisor_browser.getControl('Save Changes').click()
+
+    >>> print(bug_supervisor_browser.url)
+    http://bugs.launchpad.test/ubuntu/+source/iceweasel/+bug/1
+    >>> print_highlighted_bugtask(bug_supervisor_browser)
+    iceweasel (Ubuntu) ... Does Not Exist  Medium Unassigned ...
