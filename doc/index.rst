@@ -34,6 +34,7 @@ How-to Guides
    how-to/new-user
    how-to/avoid-debugging-issues
    how-to/apply-schema-changes
+   how-to/use-updated-dependency
 
 Explanation
 ===========
