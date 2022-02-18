@@ -170,6 +170,11 @@ class RevisionStatusReportSet:
                 RevisionStatusReport.date_created,
                 RevisionStatusReport.id)
 
+    def getByCIBuildAndTitle(self, ci_build, title):
+        """See `IRevisionStatusReportSet`."""
+        return IStore(RevisionStatusReport).find(
+            RevisionStatusReport, ci_build=ci_build, title=title).one()
+
     def deleteForRepository(self, repository):
         clauses = [
             RevisionStatusArtifact.report == RevisionStatusReport.id,

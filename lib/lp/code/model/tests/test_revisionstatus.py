@@ -8,6 +8,7 @@ import io
 
 from fixtures import FakeLogger
 import requests
+from storm.store import Store
 from testtools.matchers import (
     AnyMatch,
     Equals,
@@ -24,7 +25,10 @@ from lp.code.enums import (
     RevisionStatusArtifactType,
     RevisionStatusResult,
     )
-from lp.code.interfaces.revisionstatus import IRevisionStatusArtifactSet
+from lp.code.interfaces.revisionstatus import (
+    IRevisionStatusArtifactSet,
+    IRevisionStatusReportSet,
+    )
 from lp.services.auth.enums import AccessTokenScope
 from lp.services.webapp.authorization import check_permission
 from lp.testing import (
@@ -122,6 +126,22 @@ class TestRevisionStatusReport(TestCaseWithFactory):
             self.assertFalse(check_permission("launchpad.View", artifact))
             self.assertFalse(check_permission("launchpad.Edit", report))
             self.assertFalse(check_permission("launchpad.Edit", artifact))
+
+    def test_getByCIBuildAndTitle(self):
+        build = self.factory.makeCIBuild()
+
+        report = getUtility(
+            IRevisionStatusReportSet).getByCIBuildAndTitle(build, "test")
+        self.assertEqual(None, report)
+
+        revision_status_report = self.factory.makeRevisionStatusReport(
+            title="test",
+            ci_build=build,
+        )
+        Store.of(revision_status_report).flush()
+        report = getUtility(
+            IRevisionStatusReportSet).getByCIBuildAndTitle(build, "test")
+        self.assertEqual("test", report.title)
 
 
 class TestRevisionStatusReportWebservice(TestCaseWithFactory):
