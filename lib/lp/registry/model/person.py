@@ -1372,6 +1372,8 @@ class Person(
             team_id for team_id in team_ids
             if team_id not in self._inTeam_cache
         }
+        if not unknown_team_ids:
+            return False
 
         found_team_ids = set(
             IStore(TeamParticipation).find(
