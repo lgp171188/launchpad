@@ -27,7 +27,7 @@ class TestLibraryFileAlias(unittest.TestCase):
         self.file_alias = getUtility(ILibraryFileAliasSet).create(
             'content.txt', len(self.text_content),
             io.BytesIO(self.text_content), 'text/plain')
-        # Make it posssible to retrieve the content from the Librarian.
+        # Make it possible to retrieve the content from the Librarian.
         transaction.commit()
 
     def tearDown(self):
