@@ -231,6 +231,9 @@ class IRevisionStatusReportSet(Interface):
     def findByCommit(repository, commit_sha1):
         """Returns all `RevisionStatusReport` for a repository and commit."""
 
+    def getByCIBuildAndTitle(ci_build, title):
+        """Return the `RevisionStatusReport` for a given CI build and title."""
+
     def deleteForRepository(repository):
         """Delete all `RevisionStatusReport` for a repository."""
 
