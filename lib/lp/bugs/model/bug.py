@@ -432,6 +432,8 @@ class Bug(SQLBase, InformationTypeMixin):
         xref_cve_sequences = [
             sequence for _, sequence in getUtility(IXRefSet).findFrom(
                 ('bug', str(self.id)), types=['cve'])]
+        if not xref_cve_sequences:
+            return []
         expr = Cve.sequence.is_in(xref_cve_sequences)
         return list(sorted(
             IStore(Cve).find(Cve, expr), key=operator.attrgetter('sequence')))
@@ -460,9 +462,12 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.blueprints.model.specificationsearch import (
             get_specification_privacy_filter,
             )
+        specifications = self.specifications
+        if not specifications:
+            return EmptyResultSet()
         return IStore(Specification).find(
             Specification,
-            Specification.id.is_in(spec.id for spec in self.specifications),
+            Specification.id.is_in(spec.id for spec in specifications),
             *get_specification_privacy_filter(user))
 
     @property
