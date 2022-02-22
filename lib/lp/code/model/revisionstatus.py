@@ -8,6 +8,7 @@ __all__ = [
     ]
 
 import io
+import os
 
 import pytz
 from storm.locals import (
@@ -90,9 +91,18 @@ class RevisionStatusReport(StormBase):
     def setLog(self, log_data):
         filename = '%s-%s.txt' % (self.title, self.commit_sha1)
 
+        if isinstance(log_data, bytes):
+            file = io.BytesIO(log_data)
+            size = len(log_data)
+        else:
+            file = log_data
+            file.seek(0, os.SEEK_END)
+            size = file.tell()
+            file.seek(0)
+
         lfa = getUtility(ILibraryFileAliasSet).create(
-            name=filename, size=len(log_data),
-            file=io.BytesIO(log_data), contentType='text/plain',
+            name=filename, size=size,
+            file=file, contentType='text/plain',
             restricted=self.git_repository.private)
 
         getUtility(IRevisionStatusArtifactSet).new(
@@ -101,8 +111,18 @@ class RevisionStatusReport(StormBase):
     def attach(self, name, data,
                artifact_type=RevisionStatusArtifactType.BINARY):
         """See `IRevisionStatusReport`."""
+
+        if isinstance(data, bytes):
+            file = io.BytesIO(data)
+            size = len(data)
+        else:
+            file = data
+            file.seek(0, os.SEEK_END)
+            size = file.tell()
+            file.seek(0)
+
         lfa = getUtility(ILibraryFileAliasSet).create(
-            name=name, size=len(data), file=io.BytesIO(data),
+            name=name, size=size, file=file,
             contentType='application/octet-stream',
             restricted=self.git_repository.private)
         getUtility(IRevisionStatusArtifactSet).new(lfa, self, artifact_type)
