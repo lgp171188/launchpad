@@ -83,6 +83,7 @@ from lp.bugs.interfaces.bug import (
     IBugSet,
     )
 from lp.bugs.interfaces.bugtask import (
+    BugTaskImportance,
     BugTaskStatus,
     IBugTaskSet,
     )
@@ -94,6 +95,10 @@ from lp.bugs.interfaces.bugwatch import IBugWatchSet
 from lp.bugs.interfaces.cve import (
     CveStatus,
     ICveSet,
+    )
+from lp.bugs.interfaces.vulnerability import (
+    IVulnerabilitySet,
+    VulnerabilityStatus,
     )
 from lp.bugs.model.bug import FileBugData
 from lp.buildmaster.enums import (
@@ -5313,6 +5318,35 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         IStore(build).flush()
         return build
 
+    def makeVulnerability(self, distribution=None, cve=None, status=None,
+                          description=None, notes=None, mitigation=None,
+                          importance=None, importance_explanation=None,
+                          private=None):
+        """Make a new `Vulnerability`."""
+        if distribution is None:
+            distribution = self.makeDistribution()
+        if cve is None:
+            cve = self.makeCVE('2022-1234')
+        if status is None:
+            status = VulnerabilityStatus.NEEDS_TRIAGE
+        if description is None:
+            description = self.getUniqueString("vulnerability-description")
+        if notes is None:
+            notes = self.getUniqueString("vulnerability-notes")
+        if mitigation is None:
+            mitigation = self.getUniqueString("vulnerability-mitigation")
+        if importance is None:
+            importance = BugTaskImportance.UNDECIDED
+        if importance_explanation is None:
+            importance_explanation = self.getUniqueString(
+                "vulnerability-importance-explanation")
+        if private is None:
+            private = False
+        return getUtility(
+            IVulnerabilitySet).new(distribution, cve, status,
+                                   description, notes, mitigation,
+                                   importance, importance_explanation,
+                                   private)
 
 # Some factory methods return simple Python types. We don't add
 # security wrappers for them, as well as for objects created by

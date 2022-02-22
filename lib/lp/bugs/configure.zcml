@@ -593,6 +593,26 @@
                 interface="lp.bugs.interfaces.cve.ICveSet"/>
         </securedutility>
 
+    <!-- Vulnerability -->
+    <class class="lp.bugs.model.vulnerability.Vulnerability">
+      <require
+        permission="launchpad.View"
+        interface="lp.bugs.interfaces.vulnerability.IVulnerabilityView
+                   lp.bugs.interfaces.vulnerability.IVulnerabilityEditableAttributes" />
+      <require
+        permission="launchpad.Edit"
+        interface="lp.bugs.interfaces.vulnerability.IVulnerabilityEdit"
+        set_schema="lp.bugs.interfaces.vulnerability.IVulnerabilityEditableAttributes" />
+    </class>
+    <class class="lp.bugs.model.vulnerability.VulnerabilitySet">
+      <allow interface="lp.bugs.interfaces.vulnerability.IVulnerabilitySet" />
+    </class>
+    <securedutility
+      class="lp.bugs.model.vulnerability.VulnerabilitySet"
+      provides="lp.bugs.interfaces.vulnerability.IVulnerabilitySet">
+      <allow interface="lp.bugs.interfaces.vulnerability.IVulnerabilitySet" />
+    </securedutility>
+  
     <!-- BugSubscription -->
 
     <class
