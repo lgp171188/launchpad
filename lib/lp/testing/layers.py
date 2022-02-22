@@ -45,6 +45,7 @@ __all__ = [
     'reconnect_stores',
     ]
 
+import base64
 from cProfile import Profile
 import datetime
 import errno
@@ -64,7 +65,6 @@ from unittest import (
     TestCase,
     TestResult,
     )
-import uuid
 
 from fixtures import (
     Fixture,
@@ -277,7 +277,13 @@ class BaseLayer:
         # We can only do unique test allocation and parallelisation if
         # LP_PERSISTENT_TEST_SERVICES is off.
         if not BaseLayer.persist_test_services:
-            test_instance = '%d_%s' % (os.getpid(), uuid.uuid1().hex)
+            # This should be at most 38 characters long, otherwise
+            # 'launchpad_ftest_template_{test_instance}' won't fit within
+            # PostgreSQL's 63-character limit for identifiers.  Linux
+            # currently allows up to 2^22 PIDs, so PIDs may be up to seven
+            # digits long.
+            test_instance = '%d_%s' % (
+                os.getpid(), base64.b16encode(os.urandom(12)).decode().lower())
             os.environ['LP_TEST_INSTANCE'] = test_instance
             cls.fixture.addCleanup(os.environ.pop, 'LP_TEST_INSTANCE', '')
             # Kill any Memcached or Librarian left running from a previous

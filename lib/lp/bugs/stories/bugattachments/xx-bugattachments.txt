@@ -44,14 +44,14 @@ We can check that the attachment is there
     >>> link.url
     'http://bugs.launchpad.test/firefox/+bug/1/+attachment/.../+files/foo.txt'
 
-    >>> six.ensure_str('Added some information') in user_browser.contents
+    >>> 'Added some information' in user_browser.contents
     True
 
 And that we stripped the leading and trailing whitespace correctly
 
-    >>> six.ensure_str('   Some information   ') in user_browser.contents
+    >>> '   Some information   ' in user_browser.contents
     False
-    >>> six.ensure_str('Some information') in user_browser.contents
+    >>> 'Some information' in user_browser.contents
     True
 
 If no description is given it gets set to the attachment filename. It's
@@ -265,7 +265,7 @@ We can also edit the attachment details, let's navigate to that page.
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1/+attachment/...'
 
-    >>> six.ensure_str('Edit attachment') in user_browser.contents
+    >>> 'Edit attachment' in user_browser.contents
     True
 
 There's also an option to cancel, which takes you back to the bug
@@ -286,7 +286,7 @@ whitespace to test that's correctly stripped)...
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
 
-    >>> six.ensure_str('Another title') in user_browser.contents
+    >>> 'Another title' in user_browser.contents
     True
 
 We can edit the attachment to be a patch.

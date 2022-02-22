@@ -34,11 +34,11 @@ Let's specify two valid tags.
 
 Now the tags will be displayed on the bug page:
 
-    >>> six.ensure_str('Tags:') in user_browser.contents
+    >>> 'Tags:' in user_browser.contents
     True
-    >>> six.ensure_str('foo') in user_browser.contents
+    >>> 'foo' in user_browser.contents
     True
-    >>> six.ensure_str('bar') in user_browser.contents
+    >>> 'bar' in user_browser.contents
     True
 
 Simply changing the ordering of the bug tags won't cause anything to

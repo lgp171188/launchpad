@@ -341,8 +341,7 @@ class GPGHandler:
         # See more information at:
         # http://pyme.sourceforge.net/doc/gpgme/Generating-Keys.html
         with gpgme_timeline("genkey", name):
-            result = context.genkey(
-                six.ensure_str(signing_only_param % {'name': name}))
+            result = context.genkey(signing_only_param % {'name': name})
 
         # Right, it might seem paranoid to have this many assertions,
         # but we have to take key generation very seriously.

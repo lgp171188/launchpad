@@ -4,10 +4,16 @@
 """Tests for revision status reports and artifacts."""
 
 import hashlib
+from hashlib import sha1
 import io
+import os
 
-from fixtures import FakeLogger
+from fixtures import (
+    FakeLogger,
+    TempDir,
+    )
 import requests
+from storm.store import Store
 from testtools.matchers import (
     AnyMatch,
     Equals,
@@ -24,8 +30,12 @@ from lp.code.enums import (
     RevisionStatusArtifactType,
     RevisionStatusResult,
     )
-from lp.code.interfaces.revisionstatus import IRevisionStatusArtifactSet
+from lp.code.interfaces.revisionstatus import (
+    IRevisionStatusArtifactSet,
+    IRevisionStatusReportSet,
+    )
 from lp.services.auth.enums import AccessTokenScope
+from lp.services.osutils import write_file
 from lp.services.webapp.authorization import check_permission
 from lp.testing import (
     anonymous_logged_in,
@@ -33,6 +43,7 @@ from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
     )
+from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
@@ -123,6 +134,22 @@ class TestRevisionStatusReport(TestCaseWithFactory):
             self.assertFalse(check_permission("launchpad.Edit", report))
             self.assertFalse(check_permission("launchpad.Edit", artifact))
 
+    def test_getByCIBuildAndTitle(self):
+        build = self.factory.makeCIBuild()
+
+        report = getUtility(
+            IRevisionStatusReportSet).getByCIBuildAndTitle(build, "test")
+        self.assertEqual(None, report)
+
+        revision_status_report = self.factory.makeRevisionStatusReport(
+            title="test",
+            ci_build=build,
+        )
+        Store.of(revision_status_report).flush()
+        report = getUtility(
+            IRevisionStatusReportSet).getByCIBuildAndTitle(build, "test")
+        self.assertEqual("test", report.title)
+
 
 class TestRevisionStatusReportWebservice(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
@@ -175,6 +202,32 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
     def test_setLog_private(self):
         self._test_setLog(private=True)
 
+    def test_setLog_with_file_object(self):
+        switch_dbuser("launchpad_main")
+
+        # create log file
+        path = os.path.join(
+            self.useFixture(TempDir()).path, "test", "build:0.log"
+        )
+        content = "some log content"
+        write_file(path, content.encode("utf-8"))
+
+        report = self.factory.makeRevisionStatusReport(
+            title="build:0",
+            ci_build=self.factory.makeCIBuild(),
+        )
+
+        with person_logged_in(report.creator):
+            with open(path, "rb") as f:
+                report.setLog(f)
+
+        artifacts = list(getUtility(
+            IRevisionStatusArtifactSet).findByReport(report))
+        self.assertEqual(
+            artifacts[0].library_file.content.sha1,
+            sha1(content.encode()).hexdigest()
+        )
+
     def _test_attach(self, private):
         requester = self.factory.makePerson()
         with person_logged_in(requester):
@@ -213,6 +266,32 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
 
     def test_attach_private(self):
         self._test_attach(private=True)
+
+    def test_attach_with_file_object(self):
+        switch_dbuser("launchpad_main")
+
+        # create text file
+        path = os.path.join(
+            self.useFixture(TempDir()).path, "test.md"
+        )
+        content = "some content"
+        write_file(path, content.encode("utf-8"))
+
+        report = self.factory.makeRevisionStatusReport(
+            title="build:0",
+            ci_build=self.factory.makeCIBuild(),
+        )
+
+        with person_logged_in(report.creator):
+            with open(path, "rb") as f:
+                report.attach("text", f)
+
+        artifacts = list(getUtility(
+            IRevisionStatusArtifactSet).findByReport(report))
+        self.assertEqual(
+            artifacts[0].library_file.content.sha1,
+            sha1(content.encode()).hexdigest()
+        )
 
     def test_update(self):
         report = self.factory.makeRevisionStatusReport(

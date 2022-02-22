@@ -52,11 +52,10 @@ Now, we'll POST the form. We should see a message that we have just
 subscribed.
 
     >>> browser.getControl('Subscribe').click()
-    >>> six.ensure_str('You have subscribed to this blueprint') in (
-    ...     browser.contents)
+    >>> 'You have subscribed to this blueprint' in browser.contents
     True
 
-    >>> six.ensure_str('subscriber-essential') in browser.contents
+    >>> 'subscriber-essential' in browser.contents
     True
 
 Now the link should say "Update subscription" in the actions menu.
@@ -77,11 +76,10 @@ We will unset the essential flag and resubmit:
 
     >>> essential.selected = False
     >>> browser.getControl('Change').click()
-    >>> six.ensure_str('Your subscription has been updated') in (
-    ...     browser.contents)
+    >>> 'Your subscription has been updated' in browser.contents
     True
 
-    >>> six.ensure_str('subscriber-inessential') in browser.contents
+    >>> 'subscriber-inessential' in browser.contents
     True
 
 It's also possible to change the essential flag clicking on the star
@@ -93,7 +91,7 @@ icon in the Subscribers portlet.
     >>> browser.url
     'http://blueprints.launchpad.test/firefox/+spec/e4x'
 
-    >>> six.ensure_str('subscriber-essential') in browser.contents
+    >>> 'subscriber-essential' in browser.contents
     True
 
 We don't really want to be subscribed, so lets unsubscribe from that
@@ -104,14 +102,13 @@ unsubscribe confirmation page loads.
     >>> unsubit.click()
     >>> confirm = browser.getControl('Unsubscribe')
     >>> confirm.click()
-    >>> six.ensure_str('You have unsubscribed from this blueprint.') in (
-    ...     browser.contents)
+    >>> 'You have unsubscribed from this blueprint.' in browser.contents
     True
 
-    >>> six.ensure_str('subscriber-inessential') in browser.contents
+    >>> 'subscriber-inessential' in browser.contents
     False
 
-    >>> six.ensure_str('subscriber-essential') in browser.contents
+    >>> 'subscriber-essential' in browser.contents
     False
 
 
@@ -128,8 +125,7 @@ When we want other users to track a specification we can subscribe them.
 
     >>> browser.getControl('Subscriber').value = 'stub'
     >>> browser.getControl('Subscribe').click()
-    >>> msg = six.ensure_str(
-    ...     "Stuart Bishop has been subscribed to this blueprint.")
+    >>> msg = "Stuart Bishop has been subscribed to this blueprint."
     >>> msg in browser.contents
     True
 
@@ -280,7 +276,7 @@ list, and now the unsubscribe confirmation page loads.
     >>> unsubit.click()
     >>> confirm = browser.getControl('Unsubscribe')
     >>> confirm.click()
-    >>> msg = six.ensure_str(
+    >>> msg = (
     ...     "Launchpad Administrators has been unsubscribed from this "
     ...     "blueprint.")
     >>> msg in browser.contents

@@ -21,8 +21,7 @@ according to the selected buildstate, by default All.
     ...     provide only part of the required arguments to enable filter by
     ...     name.
     ...     """
-    ...     assert six.ensure_str(
-    ...         '<input type="submit" value="Filter" />') in contents
+    ...     assert '<input type="submit" value="Filter" />' in contents
     ...
     ...     field_state = find_tag_by_id(contents, 'build_state') is not None
     ...     field_name = find_tag_by_id(contents, 'build_text') is not None

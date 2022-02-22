@@ -85,7 +85,7 @@ You cannot use integers or strings as DBEnum values:
     ...
     TypeError: Not a DBItem: 2
 
-    >>> t.foo = six.ensure_str("TWO")
+    >>> t.foo = "TWO"
     Traceback (most recent call last):
     ...
     TypeError: Not a DBItem: 'TWO'

@@ -15,7 +15,6 @@ import operator
 import os
 import sys
 
-import six
 from storm.locals import Join
 from storm.store import Store
 from zope.component import getUtility
@@ -175,7 +174,7 @@ class PPAReportScript(LaunchpadScript):
             if size <= (threshold * limit):
                 continue
             line = "%s | %d | %d\n" % (canonical_url(ppa), limit, size)
-            self.output.write(six.ensure_str(line))
+            self.output.write(line)
         self.output.write('\n')
 
     def reportUserEmails(self):
@@ -188,7 +187,7 @@ class PPAReportScript(LaunchpadScript):
         for user in sorted_people_to_email:
             line = "%s | %s | %s\n" % (
                 user.name, user.displayname, user.preferredemail.email)
-            self.output.write(six.ensure_str(line))
+            self.output.write(line)
         self.output.write('\n')
 
     @cachedproperty
