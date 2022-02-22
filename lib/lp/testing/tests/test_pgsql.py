@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import os
-import uuid
 
 from fixtures import (
     EnvironmentVariableFixture,
@@ -37,12 +36,9 @@ class TestPgTestSetup(testtools.TestCase, TestWithFixtures):
         BaseLayer.setUp()
         self.addCleanup(BaseLayer.tearDown)
         fixture = PgTestSetup(dbname=PgTestSetup.dynamic)
-        raw_uuid = os.environ['LP_TEST_INSTANCE'].split('_', 1)[1]
-        instance_uuid = uuid.UUID(raw_uuid)
-        self.assertEqual(uuid.RFC_4122, instance_uuid.variant)
-        self.assertEqual(1, instance_uuid.version)
-        expected_name = "%s_%d_%s" % (
-            PgTestSetup.dbname, os.getpid(), instance_uuid.hex)
+        suffix = os.environ['LP_TEST_INSTANCE'].split('_', 1)[1]
+        self.assertEqual(24, len(suffix))
+        expected_name = "%s_%d_%s" % (PgTestSetup.dbname, os.getpid(), suffix)
         self.assertDBName(expected_name, fixture)
 
     def test_db_naming_without_LP_TEST_INSTANCE_is_static(self):
