@@ -51,7 +51,7 @@ class POTranslation(StormBase):
         if r is not None:
             return r
         else:
-            raise NotFoundError(six.ensure_str(key, errors='replace'))
+            raise NotFoundError(key)
 
     @classmethod
     def getOrCreateTranslation(cls, key):

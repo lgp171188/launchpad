@@ -26,7 +26,7 @@ Launchpad won't let us use an URL already used in another blueprint.
     >>> browser.getControl('Specification URL').value = url
     >>> browser.getControl('Change').click()
 
-    >>> message = six.ensure_str(
+    >>> message = (
     ...     'https://wiki.ubuntu.com/MediaIntegrityCheck is already '
     ...     'registered by')
     >>> message in browser.contents
@@ -40,7 +40,7 @@ product.
     >>> browser.getControl('Specification URL').value = url
     >>> browser.getControl('Change').click()
 
-    >>> message = six.ensure_str('e4x is already in use by another blueprint')
+    >>> message = 'e4x is already in use by another blueprint'
     >>> message in browser.contents
     True
 

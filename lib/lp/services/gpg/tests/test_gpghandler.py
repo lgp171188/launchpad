@@ -77,9 +77,9 @@ class FakeGenerateKey(Fixture):
                 self.secret_key)
 
             # Fail if the key generation parameters aren't what we expect.
-            expected_params = six.ensure_str(signing_only_param % {
+            expected_params = signing_only_param % {
                 "name": imported_key.uids[0].name,
-                })
+                }
             if params != expected_params:
                 raise ValueError(
                     "Got params %r, expected %r" % (params, expected_params))

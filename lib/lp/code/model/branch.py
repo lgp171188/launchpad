@@ -743,7 +743,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
 
     def getInternalBzrUrl(self):
         """See `IBranch`."""
-        return six.ensure_str('lp-internal:///' + self.unique_name)
+        return 'lp-internal:///' + self.unique_name
 
     def getBzrBranch(self):
         """See `IBranch`."""

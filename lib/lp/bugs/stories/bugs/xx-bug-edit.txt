@@ -73,9 +73,9 @@ Now we are back at the bug page, and the tag has been added.
 
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
-    >>> six.ensure_str('layout-test') in user_browser.contents
+    >>> 'layout-test' in user_browser.contents
     True
-    >>> six.ensure_str('new-tag') in user_browser.contents
+    >>> 'new-tag' in user_browser.contents
     False
 
 Now, let's add 'new-tag' again, and confirm it this time.

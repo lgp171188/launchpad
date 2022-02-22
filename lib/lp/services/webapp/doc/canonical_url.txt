@@ -18,8 +18,7 @@ will put in a temporary module.
     >>> from lp.services.webapp.interfaces import ICanonicalUrlData
     >>> from zope.interface import Interface, Attribute, implementer
 
-    >>> module = types.ModuleType(
-    ...     six.ensure_str(factory.getUniqueString().replace('-', '_')))
+    >>> module = types.ModuleType(factory.getUniqueString().replace('-', '_'))
     >>> sys.modules[module.__name__] = module
 
     >>> class ICountrySet(Interface):

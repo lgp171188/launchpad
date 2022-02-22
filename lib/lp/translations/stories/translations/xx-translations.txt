@@ -94,7 +94,7 @@ page, and that it has all the data we are expecting, in terms of languages.
     >>> from lp.testing.pages import extract_url_parameter
     >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+translations')
-    >>> six.ensure_str('Translation status by language') in browser.contents
+    >>> 'Translation status by language' in browser.contents
     True
     >>> print(browser.getLink('Catalan').url)
     http://translations.launchpad.test/ubuntu/hoary/+lang/ca
@@ -113,7 +113,7 @@ put Afrihili into the list of "preferred languages".
     >>> browser.addHeader('Accept-Language', 'en-us,en;q=0.7,afh;q=0.3')
     >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+translations')
-    >>> six.ensure_str('Translation status by language') in browser.contents
+    >>> 'Translation status by language' in browser.contents
     True
     >>> print(browser.getLink('Catalan').url)
     http://translations.launchpad.test/ubuntu/hoary/+lang/ca
@@ -130,9 +130,9 @@ pofile) for evolution-2.2
     >>> browser.open(
     ...     'http://translations.launchpad.test/ubuntu/hoary/+lang/hr'
     ...     '?batch=2')
-    >>> six.ensure_str('Croatian') in browser.contents
+    >>> 'Croatian' in browser.contents
     True
-    >>> six.ensure_str('Translatable templates') in browser.contents
+    >>> 'Translatable templates' in browser.contents
     True
     >>> print(browser.getLink('evolution-2.2').url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/hr/+translate
@@ -173,7 +173,7 @@ And finally, we will get pmount.
 
 With its latest translator.
 
-    >>> six.ensure_str('Edgar Bursic') in browser.contents
+    >>> 'Edgar Bursic' in browser.contents
     True
 
 Last translator
@@ -213,7 +213,7 @@ file):
     batch=10
     >>> print(extract_url_parameter(browser.url, 'show'))
     show=untranslated
-    >>> six.ensure_str('10.') in browser.contents
+    >>> '10.' in browser.contents
     True
 
 If everything works out ok, that means that DummyPOFile has actually
@@ -225,9 +225,7 @@ Finally, lets also check that translated entries show up as well.
     >>> browser.getControl('Change').click()
     >>> print(extract_url_parameter(browser.url, 'show'))
     show=translated
-    >>> six.ensure_str(
-    ...     "There are no messages that match this filtering.") in (
-    ...         browser.contents)
+    >>> "There are no messages that match this filtering." in browser.contents
     True
 
 Links to filtered pages
@@ -386,20 +384,20 @@ should see Catalan in the list.
     >>> browser.open(
     ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
     ...     'evolution/+translations')
-    >>> six.ensure_str('Catalan') in browser.contents
+    >>> 'Catalan' in browser.contents
     True
 
 But also, he doesn't want to see other languages in the list.  So, he
 shouldn't see eg. Japanese.
 
-    >>> six.ensure_str('Japanese') in browser.contents
+    >>> 'Japanese' in browser.contents
     False
 
 Next, if he chooses to view all the languages, he should see Japanese
 among the languages on the page.
 
     >>> browser.getLink('View template & all languages...').click()
-    >>> six.ensure_str('Japanese') in browser.contents
+    >>> 'Japanese' in browser.contents
     True
 
 So, everything is fine, and Carlos can sleep calmly.

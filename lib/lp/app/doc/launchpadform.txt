@@ -229,7 +229,7 @@ setFieldError() method (for errors specific to a field):
     ...             self.addError('your password may not be the same '
     ...                           'as your name')
     ...         if data.get('password') == 'password':
-    ...             self.setFieldError(six.ensure_str('password'),
+    ...             self.setFieldError('password',
     ...                                'your password must not be "password"')
 
     >>> context = FormTest()

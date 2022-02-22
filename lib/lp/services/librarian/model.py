@@ -15,7 +15,6 @@ import hashlib
 
 from lazr.delegates import delegate_to
 import pytz
-import six
 from six.moves.urllib.parse import urlparse
 from storm.locals import (
     Date,
@@ -358,7 +357,7 @@ class TimeLimitedToken(StormBase):
         # allocation the external librarian must be able to serve the file
         # immediately.
         store.commit()
-        return six.ensure_str(token)
+        return token
 
     @staticmethod
     def url_to_token_path(url):

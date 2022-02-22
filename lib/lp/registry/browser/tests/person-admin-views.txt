@@ -129,7 +129,7 @@ an account is suspended, the preferred email address is disabled.
     >>> transaction.commit()
     >>> user.account_status
     <DBItem AccountStatus.SUSPENDED, ...>
-    >>> six.ensure_str(user.account_status_history)
+    >>> user.account_status_history
     '... name16: Active -> Suspended: Wanted by the galactic police.\n'
     >>> print(user.preferredemail)
     None
@@ -161,7 +161,7 @@ user must log in to restore the email addresses using the reactivate step.
     []
     >>> user.account_status
     <DBItem AccountStatus.DEACTIVATED, ...>
-    >>> six.ensure_str(user.account_status_history)
+    >>> user.account_status_history
     "... name16: Active -> Suspended: Wanted by the galactic police.\n...
     name16: Suspended -> Deactivated: Zaphod's a hoopy frood.\n"
     >>> print(user.preferredemail)
@@ -180,7 +180,7 @@ An admin can mark an account as belonging to a user who has died.
     []
     >>> user.account_status
     <DBItem AccountStatus.DECEASED, ...>
-    >>> six.ensure_str(user.account_status_history)
+    >>> user.account_status_history
     "... name16: Active -> Suspended: Wanted by the galactic police.\n...
     name16: Suspended -> Deactivated: Zaphod's a hoopy frood.\n...
     name16: Deactivated -> Deceased: In memoriam.\n"

@@ -57,7 +57,7 @@ provided.
     True
 
     >>> required_field = StrippedTextLine(
-    ...     __name__=six.ensure_str('field'), title=u'Title', required=True)
+    ...     __name__='field', title=u'Title', required=True)
     >>> request = LaunchpadTestRequest(form={'field.field':'    \n    '})
     >>> widget = StrippedTextWidget(required_field, request)
     >>> widget.getInputValue()

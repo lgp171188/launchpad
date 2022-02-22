@@ -153,8 +153,7 @@ there are none left in the queue.
     ...     'http://blueprints.launchpad.test/firefox/1.0/+setgoals')
     >>> driver_browser.getControl('Support E4X').selected = True
     >>> driver_browser.getControl('Decline').click()
-    >>> six.ensure_str('Declined 1 specification(s)') in (
-    ...     driver_browser.contents)
+    >>> 'Declined 1 specification(s)' in driver_browser.contents
     True
 
 The accepted item should show up in the list of specs for this series:
@@ -216,9 +215,9 @@ OK, lets see if it was immediately accepted:
 
     >>> anon_browser.open(
     ...     'http://launchpad.test/firefox/+spec/svg-support')
-    >>> six.ensure_str('firefox/trunk') in anon_browser.contents
+    >>> 'firefox/trunk' in anon_browser.contents
     True
-    >>> six.ensure_str('Accepted') in anon_browser.contents
+    >>> 'Accepted' in anon_browser.contents
     True
 
 And lets put it back:
@@ -258,7 +257,7 @@ And again, it should be accepted automatically.
 
     >>> anon_browser.open(
     ...     'http://launchpad.test/firefox/+spec/svg-support')
-    >>> six.ensure_str('firefox/1.0') in anon_browser.contents
+    >>> 'firefox/1.0' in anon_browser.contents
     True
-    >>> six.ensure_str('Accepted') in anon_browser.contents
+    >>> 'Accepted' in anon_browser.contents
     True

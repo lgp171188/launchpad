@@ -50,5 +50,5 @@ class POMsgID(StormBase):
             Func('sha1', POMsgID.msgid) ==
                 Func('sha1', six.ensure_text(key))).one()
         if r is None:
-            raise NotFoundError(six.ensure_str(key, errors='replace'))
+            raise NotFoundError(key)
         return r
