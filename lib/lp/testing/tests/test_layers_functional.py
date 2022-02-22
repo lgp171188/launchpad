@@ -10,7 +10,6 @@ to confirm that the environment hasn't been corrupted by tests
 import io
 import os
 import signal
-import uuid
 
 import amqp
 from fixtures import (
@@ -105,11 +104,9 @@ class TestBaseLayer(TestCase):
     def test_allocates_LP_TEST_INSTANCE(self):
         self.useFixture(BaseLayerIsolator())
         with LayerFixture(BaseLayer):
-            pid, raw_uuid = os.environ['LP_TEST_INSTANCE'].split('_', 1)
+            pid, suffix = os.environ['LP_TEST_INSTANCE'].split('_', 1)
             self.assertEqual(str(os.getpid()), pid)
-            instance_uuid = uuid.UUID(raw_uuid)
-            self.assertEqual(uuid.RFC_4122, instance_uuid.variant)
-            self.assertEqual(1, instance_uuid.version)
+            self.assertEqual(24, len(suffix))
         self.assertEqual(None, os.environ.get('LP_TEST_INSTANCE'))
 
     def test_persist_test_services_disables_LP_TEST_INSTANCE(self):
