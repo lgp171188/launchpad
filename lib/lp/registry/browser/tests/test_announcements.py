@@ -7,7 +7,6 @@ from datetime import datetime
 
 from lxml import html
 from pytz import utc
-import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -107,7 +106,7 @@ class TestAnnouncementPage(BrowserTestCase):
         removeSecurityProxy(inactive_product).active = False
 
         browser = self.getViewBrowser(context, view_name, user=user)
-        contents = six.ensure_str(browser.contents, "utf-8")
+        contents = browser.contents
 
         self.assertIn(first_announcement.title, contents)
         self.assertIn(first_announcement.summary, contents)

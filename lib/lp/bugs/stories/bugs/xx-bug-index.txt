@@ -43,7 +43,7 @@ highlighted.
     ...<tr>
     ...mozilla-firefox (Ubuntu)...
     ...
-    >>> anon_browser.contents.count(six.ensure_str('<tr class="highlight"'))
+    >>> anon_browser.contents.count('<tr class="highlight"')
     1
 
     >>> anon_browser.open(
@@ -60,7 +60,7 @@ highlighted.
     ...<tr>
     ...mozilla-firefox (Ubuntu)...
     ...
-    >>> anon_browser.contents.count(six.ensure_str('<tr class="highlight"'))
+    >>> anon_browser.contents.count('<tr class="highlight"')
     1
 
 If the context is a distribution package, the package name has a

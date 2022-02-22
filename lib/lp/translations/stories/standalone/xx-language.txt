@@ -274,9 +274,8 @@ Changing values to correct content works:
     >>> admin_browser.getControl('ISO 639').value = 'bars'
     >>> admin_browser.getControl('English name').value = 'Changed field'
     >>> spokenin_control = admin_browser.getControl(name='field.countries')
-    >>> spokenin_control.getControl(
-    ...     six.ensure_str('Argentina')).selected = False
-    >>> spokenin_control.getControl(six.ensure_str('France')).selected = True
+    >>> spokenin_control.getControl('Argentina').selected = False
+    >>> spokenin_control.getControl('France').selected = True
     >>> admin_browser.getControl('Admin Language').click()
     >>> print(admin_browser.url)
     http://translations.launchpad.test/+languages/bars

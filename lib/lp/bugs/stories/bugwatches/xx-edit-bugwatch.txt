@@ -10,9 +10,8 @@ After a bug watch is recorded, it is possible to go back and change it.
     >>> admin_browser.getControl('Change').click()
     >>> admin_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
-    >>> six.ensure_str(
-    ...     'https://bugzilla.mozilla.org/show_bug.cgi?id=1000') in (
-    ...         admin_browser.contents)
+    >>> 'https://bugzilla.mozilla.org/show_bug.cgi?id=1000' in (
+    ...     admin_browser.contents)
     True
 
 The URL supplied must be a valid bug tracker URL and must point to a

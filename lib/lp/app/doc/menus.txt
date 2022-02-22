@@ -33,7 +33,7 @@ later, implementations having facets and menus will be defined.
 
     >>> import sys
     >>> import types
-    >>> cookingexample = types.ModuleType(six.ensure_str('cookingexample'))
+    >>> cookingexample = types.ModuleType('cookingexample')
     >>> sys.modules['lp.app.cookingexample'] = cookingexample
 
     >>> cookingexample.ICookbook = ICookbook

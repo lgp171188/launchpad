@@ -111,7 +111,7 @@ Import the secret keys needed for this test:
 access the current IGpghandler instance to access this key and decrypt the
 message.
 
-    >>> body = decrypt_content(cipher_body, six.ensure_str('test'))
+    >>> body = decrypt_content(cipher_body, 'test')
 
 Extract the token URL from the email:
 
@@ -514,7 +514,7 @@ Get the token from the body of the email sent.
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
     >>> msg = email.message_from_bytes(raw_msg)
     >>> cipher_body = msg.get_payload(decode=1)
-    >>> body = decrypt_content(cipher_body, six.ensure_str('test'))
+    >>> body = decrypt_content(cipher_body, 'test')
     >>> link = get_token_url_from_bytes(body)
     >>> token = re.sub(r'.*token/', '', link)
     >>> token_url = 'http://launchpad.test/token/%s' % token

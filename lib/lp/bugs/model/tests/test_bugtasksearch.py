@@ -9,7 +9,6 @@ from operator import attrgetter
 import unittest
 
 import pytz
-import six
 from storm.expr import Or
 from testtools.matchers import Equals
 from testtools.testcase import ExpectedException
@@ -2460,8 +2459,7 @@ def test_suite():
     loader = unittest.TestLoader()
     for bug_target_search_type_class in (
         PreloadBugtaskTargets, NoPreloadBugtaskTargets, QueryBugIDs):
-        class_name = six.ensure_str(
-            'Test%s' % bug_target_search_type_class.__name__)
+        class_name = 'Test%s' % bug_target_search_type_class.__name__
         class_bases = (
             bug_target_search_type_class, ProductTarget, OnceTests,
             SearchTestBase, TestCaseWithFactory)
@@ -2469,10 +2467,9 @@ def test_suite():
         suite.addTest(loader.loadTestsFromTestCase(test_class))
 
         for target_mixin in bug_targets_mixins:
-            class_name = six.ensure_str(
-                'Test%s%s' % (
-                    bug_target_search_type_class.__name__,
-                    target_mixin.__name__))
+            class_name = 'Test%s%s' % (
+                bug_target_search_type_class.__name__,
+                target_mixin.__name__)
             mixins = [
                 target_mixin, bug_target_search_type_class]
             class_bases = (
