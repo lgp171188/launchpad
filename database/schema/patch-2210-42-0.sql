@@ -29,7 +29,7 @@ COMMENT ON COLUMN vulnerability.private IS 'Indicates privacy of the vulnerabili
 
 CREATE INDEX vulnerability__distribution__cve__idx
     ON vulnerability (distribution, cve);
-	
+
 CREATE TABLE vulnerabilityactivity (
 	id serial PRIMARY KEY,
 	vulnerability integer REFERENCES Vulnerability NOT NULL,
@@ -50,7 +50,7 @@ COMMENT ON COLUMN vulnerabilityactivity.new_value IS 'Indicates the current valu
 
 CREATE INDEX vulnerabilityactivity__vulnerability__changer__idx
     ON vulnerabilityactivity (vulnerability, changer);
-	
+
 CREATE TABLE bugvulnerability (
 	bug integer REFERENCES Bug NOT NULL,
 	vulnerability integer REFERENCES Vulnerability NOT NULL
