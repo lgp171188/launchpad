@@ -633,6 +633,15 @@
       <allow interface="lp.bugs.interfaces.vulnerability.IVulnerabilityActivitySet" />
     </securedutility>
 
+    <class class="lp.bugs.model.vulnerability.BugVulnerabilitySet">
+      <allow interface="lp.bugs.interfaces.vulnerability.IBugVulnerabilitySet" />
+    </class>
+    <securedutility
+      class="lp.bugs.model.vulnerability.BugVulnerabilitySet"
+      provides="lp.bugs.interfaces.vulnerability.IBugVulnerabilitySet">
+      <allow interface="lp.bugs.interfaces.vulnerability.IBugVulnerabilitySet" />
+    </securedutility>
+
     <!-- BugSubscription -->
 
     <class
