@@ -612,7 +612,27 @@
       provides="lp.bugs.interfaces.vulnerability.IVulnerabilitySet">
       <allow interface="lp.bugs.interfaces.vulnerability.IVulnerabilitySet" />
     </securedutility>
-  
+
+    <!-- Vulnerability Activity-->
+    <class class="lp.bugs.model.vulnerability.VulnerabilityActivity">
+      <require
+        permission="launchpad.View"
+        interface="lp.bugs.interfaces.vulnerability.IVulnerabilityActivityView
+                   lp.bugs.interfaces.vulnerability.IVulnerabilityActivityEditableAttributes" />
+      <require
+        permission="launchpad.Edit"
+        interface="lp.bugs.interfaces.vulnerability.IVulnerabilityActivityEdit"
+        set_schema="lp.bugs.interfaces.vulnerability.IVulnerabilityActivityEditableAttributes" />
+    </class>
+    <class class="lp.bugs.model.vulnerability.VulnerabilityActivitySet">
+      <allow interface="lp.bugs.interfaces.vulnerability.IVulnerabilityActivitySet" />
+    </class>
+    <securedutility
+      class="lp.bugs.model.vulnerability.VulnerabilityActivitySet"
+      provides="lp.bugs.interfaces.vulnerability.IVulnerabilityActivitySet">
+      <allow interface="lp.bugs.interfaces.vulnerability.IVulnerabilityActivitySet" />
+    </securedutility>
+
     <!-- BugSubscription -->
 
     <class

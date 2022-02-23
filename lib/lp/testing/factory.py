@@ -97,7 +97,9 @@ from lp.bugs.interfaces.cve import (
     ICveSet,
     )
 from lp.bugs.interfaces.vulnerability import (
+    IVulnerabilityActivitySet,
     IVulnerabilitySet,
+    VulnerabilityChange,
     VulnerabilityStatus,
     )
 from lp.bugs.model.bug import FileBugData
@@ -5347,6 +5349,24 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                    description, notes, mitigation,
                                    importance, importance_explanation,
                                    private)
+
+    def makeVulnerabilityActivity(self, vulnerability=None, changer=None,
+                                  what_changed=None, old_value=None,
+                                  new_value=None):
+        """Make a new `VulnerabilityActivity`."""
+        if vulnerability is None:
+            vulnerability = self.makeVulnerability()
+        if changer is None:
+            changer = self.makePerson()
+        if what_changed is None:
+            what_changed = VulnerabilityChange.DESCRIPTION
+        if old_value is None:
+            old_value = self.getUniqueString("old-value")
+        if new_value is None:
+            new_value = self.getUniqueString("new-description")
+        return getUtility(
+            IVulnerabilityActivitySet).new(vulnerability, changer,
+                                           what_changed, old_value, new_value)
 
 # Some factory methods return simple Python types. We don't add
 # security wrappers for them, as well as for objects created by
