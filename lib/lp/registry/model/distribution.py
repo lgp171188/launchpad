@@ -651,7 +651,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         # 'DistroSeries.distributionID!=self.id' is only required
         # because the previous_series attribute has been (mis-)used
         # to denote other relations than proper derivation
-        # relashionships. We should be rid of this condition once
+        # relationships. We should be rid of this condition once
         # the bug is fixed.
         ret = Store.of(self).find(
             DistroSeries,
