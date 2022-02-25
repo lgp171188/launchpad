@@ -5,7 +5,11 @@
 
 from optparse import OptionValueError
 
-from testtools.matchers import LessThan
+from testtools.matchers import (
+    EndsWith,
+    LessThan,
+    MatchesListwise,
+    )
 import transaction
 
 from lp.archivepublisher.scripts.processaccepted import ProcessAccepted
@@ -20,7 +24,10 @@ from lp.soyuz.enums import (
     )
 from lp.soyuz.model.queue import PackageUpload
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    StormStatementRecorder,
+    TestCaseWithFactory,
+    )
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 
@@ -205,3 +212,29 @@ class TestProcessAccepted(TestCaseWithFactory):
         script = ProcessAccepted(
             test_args=['--all-derived', '-d', distro.name])
         self.assertRaises(OptionValueError, script.validateArguments)
+
+    def test_processes_in_batches(self):
+        distroseries = self.factory.makeDistroSeries(distribution=self.distro)
+        uploads = [
+            self.createWaitingAcceptancePackage(
+                distroseries=distroseries, sourcename='source%d' % i)
+            for i in range(5)]
+
+        script = self.getScript([])
+        script.batch_size = 2
+        switch_dbuser(self.dbuser)
+        with StormStatementRecorder() as recorder:
+            script.main()
+
+        for upload in uploads:
+            published = self.distro.main_archive.getPublishedSources(
+                name=upload.name).one()
+            self.assertEqual(PackagePublishingStatus.PENDING, published.status)
+        # The script made three queries for PackageUploads, each of which
+        # was limited to the batch size.
+        self.assertThat(
+            [stmt for stmt in recorder.statements
+             if 'SELECT DISTINCT PackageUpload' in stmt],
+            MatchesListwise([
+                EndsWith('LIMIT 2'), EndsWith('LIMIT 2'), EndsWith('LIMIT 2'),
+                ]))
