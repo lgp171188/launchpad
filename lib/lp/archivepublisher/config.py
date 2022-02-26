@@ -6,10 +6,12 @@
 # to managing the archive publisher's configuration as stored in the
 # distribution and distroseries tables
 
+import logging
 import os
 
 from zope.component import getUtility
 
+from lp.archivepublisher.diskpool import DiskPool
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.config import config
@@ -150,3 +152,23 @@ class Config:
                 continue
             if not os.path.exists(directory):
                 os.makedirs(directory, 0o755)
+
+    def getDiskPool(self, log, pool_root_override=None):
+        """Return a DiskPool instance for this publisher configuration.
+
+        It ensures the given archive location matches the minimal structure
+        required.
+
+        :param log: A logger.
+        :param pool_root_override: Use this pool root for the archive
+            instead of the one provided by the publishing configuration.
+        """
+        log.debug("Preparing on-disk pool representation.")
+        dp_log = logging.getLogger("DiskPool")
+        pool_root = pool_root_override
+        if pool_root is None:
+            pool_root = self.poolroot
+        dp = DiskPool(pool_root, self.temproot, dp_log)
+        # Set the diskpool's log level to INFO to suppress debug output.
+        dp_log.setLevel(logging.INFO)
+        return dp
