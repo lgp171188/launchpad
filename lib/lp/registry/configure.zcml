@@ -1821,7 +1821,8 @@
         class="lp.registry.model.distribution.Distribution">
         <allow
             interface="lp.registry.interfaces.distribution.IDistributionPublic
-                       lp.bugs.interfaces.bugsummary.IBugSummaryDimension"/>
+                       lp.bugs.interfaces.bugsummary.IBugSummaryDimension"
+            attributes="information_type"/>
         <require
             permission="launchpad.LimitedView"
             interface="lp.registry.interfaces.distribution.IDistributionLimitedView"/>
@@ -1830,7 +1831,8 @@
             interface="lp.registry.interfaces.distribution.IDistributionView"/>
         <require
             permission="launchpad.Edit"
-            interface="lp.registry.interfaces.distribution.IDistributionEditRestricted"/>
+            interface="lp.registry.interfaces.distribution.IDistributionEditRestricted"
+            set_schema="lp.app.interfaces.informationtype.IInformationType"/>
         <require
             permission="launchpad.Edit"
             set_attributes="answers_usage blueprints_usage codehosting_usage

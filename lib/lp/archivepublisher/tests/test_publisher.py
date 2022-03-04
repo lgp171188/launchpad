@@ -1288,7 +1288,8 @@ class TestPublisher(TestPublisherBase):
         ubuntu = getUtility(IDistributionSet)['ubuntu']
 
         ppa = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
-        copy_archive = self.factory.makeArchive(purpose=ArchivePurpose.COPY)
+        copy_archive = self.factory.makeArchive(
+            distribution=self.ubuntu, purpose=ArchivePurpose.COPY)
         self.assertNotIn(ppa, ubuntu.getPendingPublicationPPAs())
         self.assertNotIn(copy_archive, ubuntu.getPendingPublicationPPAs())
         ppa.status = ArchiveStatus.DELETING

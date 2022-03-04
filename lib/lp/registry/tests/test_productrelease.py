@@ -8,7 +8,7 @@ from zope.component import getUtility
 from lp.app.enums import InformationType
 from lp.registry.errors import (
     InvalidFilename,
-    ProprietaryProduct,
+    ProprietaryPillar,
     )
 from lp.registry.interfaces.productrelease import (
     IProductReleaseSet,
@@ -101,5 +101,5 @@ class ProductReleaseFileTestcase(TestCaseWithFactory):
             release = self.factory.makeProductRelease(product=product)
             self.assertFalse(release.can_have_release_files)
             self.assertRaises(
-                ProprietaryProduct, release.addReleaseFile,
+                ProprietaryPillar, release.addReleaseFile,
                 'README', b'test', 'text/plain', owner)

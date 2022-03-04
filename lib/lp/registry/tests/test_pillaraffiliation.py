@@ -3,11 +3,11 @@
 
 """Tests for adapters."""
 
-from storm.store import Store
 from testtools.matchers import Equals
 from zope.component import getUtility
 
 from lp.registry.model.pillaraffiliation import IHasAffiliation
+from lp.services.database.sqlbase import flush_database_caches
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.testing import (
     person_logged_in,
@@ -146,21 +146,20 @@ class TestPillarAffiliation(TestCaseWithFactory):
         # - Product, Person
         person = self.factory.makePerson()
         product = self.factory.makeProduct(owner=person, name='pting')
-        Store.of(product).invalidate()
+        flush_database_caches()
         with StormStatementRecorder() as recorder:
             IHasAffiliation(product).getAffiliationBadges([person])
-        self.assertThat(recorder, HasQueryCount(Equals(4)))
+        self.assertThat(recorder, HasQueryCount(Equals(2)))
 
     def test_distro_affiliation_query_count(self):
         # Only 2 business queries are expected, selects from:
         # - Distribution, Person
-        # plus an additional query to create a PublisherConfig record.
         person = self.factory.makePerson()
         distro = self.factory.makeDistribution(owner=person, name='pting')
-        Store.of(distro).invalidate()
+        flush_database_caches()
         with StormStatementRecorder() as recorder:
             IHasAffiliation(distro).getAffiliationBadges([person])
-        self.assertThat(recorder, HasQueryCount(Equals(3)))
+        self.assertThat(recorder, HasQueryCount(Equals(2)))
 
 
 class _TestBugTaskorBranchMixin:

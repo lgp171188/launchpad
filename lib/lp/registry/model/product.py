@@ -128,7 +128,7 @@ from lp.registry.enums import (
 from lp.registry.errors import (
     CannotChangeInformationType,
     CommercialSubscribersOnly,
-    ProprietaryProduct,
+    ProprietaryPillar,
     )
 from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyArtifactSource,
@@ -560,7 +560,7 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
 
     def validate_translations_usage(self, attr, value):
         if value == ServiceUsage.LAUNCHPAD and self.private:
-            raise ProprietaryProduct(
+            raise ProprietaryPillar(
                 "Translations are not supported for proprietary products.")
         return value
 
@@ -683,7 +683,7 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
                 "proprietary %s." % kind)
         if self.information_type != InformationType.PUBLIC:
             if InformationType.PUBLIC in allowed_types[var]:
-                raise ProprietaryProduct(
+                raise ProprietaryPillar(
                     "The project is %s." % self.information_type.title)
         self._ensurePolicies(allowed_types[var])
 
