@@ -2843,6 +2843,23 @@ class TestGitRepositoryRescan(TestCaseWithFactory):
         self.assertTrue(result)
         self.assertIsNone(result.job.date_finished)
 
+    def test_security(self):
+        repository = self.factory.makeGitRepository()
+
+        # Random users can't rescan a branch.
+        with person_logged_in(self.factory.makePerson()):
+            self.assertRaises(Unauthorized, getattr, repository, 'rescan')
+
+        # But the owner can.
+        with person_logged_in(repository.owner):
+            repository.rescan()
+
+        # And so can commercial-admins (and maybe registry too,
+        # eventually).
+        with person_logged_in(
+                getUtility(ILaunchpadCelebrities).commercial_admin):
+            repository.rescan()
+
 
 class TestGitRepositoryUpdateMergeCommitIDs(TestCaseWithFactory):
 
