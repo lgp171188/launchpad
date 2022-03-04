@@ -187,7 +187,13 @@ class SharingService:
 
     def getSharedDistributions(self, person, user):
         """See `ISharingService`."""
-        return self._getSharedPillars(person, user, Distribution)
+        commercial_filter = None
+        if user and IPersonRoles(user).in_commercial_admin:
+            commercial_filter = Exists(Select(
+                1, tables=CommercialSubscription,
+                where=CommercialSubscription.distribution == Distribution.id))
+        return self._getSharedPillars(
+            person, user, Distribution, commercial_filter)
 
     def getArtifactGrantsForPersonOnPillar(self, pillar, person):
         """Return the artifact grants for the given person and pillar."""

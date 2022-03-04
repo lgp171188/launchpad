@@ -27,7 +27,7 @@ __all__ = [
     'InclusiveTeamLinkageError',
     'PPACreationError',
     'PrivatePersonLinkageError',
-    'ProprietaryProduct',
+    'ProprietaryPillar',
     'TeamMembershipTransitionError',
     'TeamMembershipPolicyError',
     'UserCannotChangeMembershipSilently',
@@ -100,8 +100,8 @@ class CommercialSubscribersOnly(Unauthorized):
     """
 
 
-class ProprietaryProduct(Exception):
-    """Cannot make the change because the project is proprietary."""
+class ProprietaryPillar(Exception):
+    """Cannot make the change because the pillar is proprietary."""
 
 
 class NoSuchSourcePackageName(NameLookupFailed):

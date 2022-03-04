@@ -29,7 +29,10 @@ from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
     )
-from lp.testing.dbuser import lp_dbuser
+from lp.testing.dbuser import (
+    lp_dbuser,
+    switch_dbuser,
+    )
 from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     ZopelessDatabaseLayer,
@@ -348,6 +351,13 @@ class BuildRecordCreationTests(TestNativePublishingBase):
 
     def setUp(self):
         super().setUp()
+
+        # TestNativePublishingBase switches to the archive publisher's
+        # database user, but the publisher doesn't create build records so
+        # we aren't really interested in its database permissions here.
+        # Just use the webapp's database user instead.
+        switch_dbuser("launchpad")
+
         self.distro = self.factory.makeDistribution()
         self.avr = self.factory.makeProcessor(
             name="avr2001", supports_virtualized=True)

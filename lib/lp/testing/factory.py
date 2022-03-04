@@ -2709,7 +2709,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                          publish_root_dir=None, publish_base_url=None,
                          publish_copy_base_url=None, no_pubconf=False,
                          icon=None, summary=None, vcs=None,
-                         oci_project_admin=None):
+                         oci_project_admin=None, information_type=None):
         """Make a new distribution."""
         if name is None:
             name = self.getUniqueString(prefix="distribution")
@@ -2729,7 +2729,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             members = self.makeTeam(owner)
         distro = getUtility(IDistributionSet).new(
             name, displayname, title, description, summary, domainname,
-            members, owner, registrant, icon=icon, vcs=vcs)
+            members, owner, registrant, icon=icon, vcs=vcs,
+            information_type=information_type)
         naked_distro = removeSecurityProxy(distro)
         if aliases is not None:
             naked_distro.setAliases(aliases)
