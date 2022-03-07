@@ -883,7 +883,7 @@
     <browser:page
         for="lp.code.interfaces.gitrepository.IGitRepository"
         class="lp.code.browser.gitrepository.GitRepositoryRescanView"
-        permission="launchpad.Edit"
+        permission="launchpad.Moderate"
         name="+rescan"
         template="../templates/gitrepository-rescan.pt"/>
     <browser:page

@@ -685,6 +685,54 @@ class TestGitRepositoryView(BrowserTestCase):
         ])
 
 
+class TestGitRepositoryRescanView(BrowserTestCase):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_owner_can_see_rescan(self):
+        repository = self.factory.makeGitRepository()
+        job = GitRefScanJob.create(repository)
+        job.job._status = JobStatus.FAILED
+        url = canonical_url(
+            repository, view_name='+rescan', rootsite='code')
+        browser = self.getUserBrowser(url, user=repository.owner)
+        browser.open(url)
+        self.assertIn('schedule a rescan', browser.contents)
+
+    def test_product_owner_can_see_rescan(self):
+        project_owner = self.factory.makePerson()
+        product = self.factory.makeProduct(owner=project_owner)
+        repository = self.factory.makeGitRepository(target=product)
+        job = GitRefScanJob.create(repository)
+        job.job._status = JobStatus.FAILED
+        url = canonical_url(
+            repository, view_name='+rescan', rootsite='code')
+        browser = self.getUserBrowser(url, user=project_owner)
+        browser.open(url)
+        self.assertIn('schedule a rescan', browser.contents)
+
+    def test_admin_can_see_rescan(self):
+        repository = self.factory.makeGitRepository()
+        job = GitRefScanJob.create(repository)
+        job.job._status = JobStatus.FAILED
+        url = canonical_url(
+            repository, view_name='+rescan', rootsite='code')
+        browser = self.getUserBrowser(
+            url,
+            user=self.factory.makeCommercialAdmin())
+        browser.open(url)
+        self.assertIn('schedule a rescan', browser.contents)
+
+    def test_other_user_can_not_see_rescan(self):
+        repository = self.factory.makeGitRepository()
+        job = GitRefScanJob.create(repository)
+        job.job._status = JobStatus.FAILED
+        url = canonical_url(
+            repository, view_name='+rescan', rootsite='code')
+        self.assertRaises(
+            Unauthorized, self.getUserBrowser, url)
+
+
 class TestGitRepositoryViewPrivateArtifacts(BrowserTestCase):
     """Tests that Git repositories with private team artifacts can be viewed.
 
