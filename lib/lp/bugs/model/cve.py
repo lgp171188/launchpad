@@ -9,12 +9,10 @@ __all__ = [
 import operator
 
 import pytz
-from storm.databases.postgres import JSON
 from storm.locals import (
     DateTime,
     Desc,
     Int,
-    Reference,
     ReferenceSet,
     Store,
     Unicode,
@@ -62,29 +60,11 @@ class Cve(StormBase, BugLinkTargetMixin):
     references = ReferenceSet(
         id, 'CveReference.cve_id', order_by='CveReference.id')
 
-    date_made_public = DateTime(tzinfo=pytz.UTC, allow_none=True)
-    discoverer_id = Int(name='discoverer', allow_none=True)
-    discoverer = Reference(discoverer_id, 'Person.id')
-    _cvss = JSON(name='cvss', allow_none=True)
-
-    @property
-    def cvss(self):
-        return self._cvss or {}
-
-    @cvss.setter
-    def cvss(self, value):
-        assert value is None or isinstance(value, dict)
-        self._cvss = value
-
-    def __init__(self, sequence, status, description,
-                 date_made_public=None, discoverer=None, cvss=None):
+    def __init__(self, sequence, status, description):
         super().__init__()
         self.sequence = sequence
         self.status = status
         self.description = description
-        self.date_made_public = date_made_public
-        self.discoverer = discoverer
-        self._cvss = cvss
 
     @property
     def url(self):
@@ -131,12 +111,6 @@ class Cve(StormBase, BugLinkTargetMixin):
         getUtility(IXRefSet).delete(
             {('cve', self.sequence): [('bug', str(bug.id))]})
 
-    def setCVSSVectorForAuthority(self, authority, vector_string):
-        """See ICveReference."""
-        if self._cvss is None:
-            self._cvss = {}
-        self._cvss[authority] = vector_string
-
 
 @implementer(ICveSet)
 class CveSet:
@@ -162,18 +136,10 @@ class CveSet:
         """See ICveSet."""
         return iter(IStore(Cve).find(Cve))
 
-    def new(self, sequence, description, status=CveStatus.CANDIDATE,
-            date_made_public=None, discoverer=None, cvss=None):
+    def new(self, sequence, description, status=CveStatus.CANDIDATE):
         """See ICveSet."""
-        cve = Cve(
-            sequence=sequence,
-            status=status,
-            description=description,
-            date_made_public=date_made_public,
-            discoverer=discoverer,
-            cvss=cvss
-        )
-
+        cve = Cve(sequence=sequence, status=status,
+            description=description)
         IStore(Cve).add(cve)
         return cve
 
