@@ -4582,21 +4582,11 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return secret, token
 
     def makeCVE(self, sequence, description=None,
-                cvestate=CveStatus.CANDIDATE,
-                date_made_public=None, discoverer=None,
-                cvss=None):
+                cvestate=CveStatus.CANDIDATE):
         """Create a new CVE record."""
         if description is None:
             description = self.getUniqueUnicode()
-
-        return getUtility(ICveSet).new(
-            sequence,
-            description,
-            cvestate,
-            date_made_public,
-            discoverer,
-            cvss
-        )
+        return getUtility(ICveSet).new(sequence, description, cvestate)
 
     def makePublisherConfig(self, distribution=None, root_dir=None,
                             base_url=None, copy_base_url=None):

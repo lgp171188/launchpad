@@ -30,15 +30,12 @@ from zope.interface import (
 from zope.schema import (
     Choice,
     Datetime,
-    Dict,
     Int,
-    Text,
     TextLine,
     )
 
 from lp import _
 from lp.app.validators.validation import valid_cve_sequence
-from lp.services.fields import PersonChoice
 
 
 class CveStatus(DBEnumeratedType):
@@ -124,44 +121,11 @@ class ICve(Interface):
                               description=_("A title for the CVE")))
     references = Attribute("The set of CVE References for this CVE.")
 
-    date_made_public = exported(
-        Datetime(title=_('Date Made Public'), required=False, readonly=True),
-        as_of='devel'
-    )
-
-    discoverer = exported(
-        PersonChoice(
-            title=_('Discoverer'),
-            required=False,
-            readonly=True,
-            vocabulary='ValidPerson'
-        ),
-        as_of='devel'
-    )
-
-    cvss = exported(
-        Dict(
-            title=_('CVSS'),
-            description=_(
-                'The CVSS vector strings from various authorities '
-                'that publish it.'
-            ),
-            key_type=Text(title=_('The authority that published the score.')),
-            value_type=Text(title=_('The CVSS vector string.')),
-            required=False,
-            readonly=True,
-        ),
-        as_of='devel'
-    )
-
     def createReference(source, content, url=None):
         """Create a new CveReference for this CVE."""
 
     def removeReference(ref):
         """Remove a CveReference."""
-
-    def setCVSSVectorForAuthority(authority, vector_string):
-        """Set the CVSS vector string from an authority."""
 
 
 @exported_as_webservice_collection(ICve)
@@ -176,8 +140,7 @@ class ICveSet(Interface):
     def __iter__():
         """Iterate through all the Cve records."""
 
-    def new(sequence, description, cvestate=CveStatus.CANDIDATE,
-            date_made_public=None, discoverer=None, cvss=None):
+    def new(sequence, description, cvestate=CveStatus.CANDIDATE):
         """Create a new ICve."""
 
     @collection_default_content()
