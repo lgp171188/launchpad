@@ -97,11 +97,15 @@ from lp.bugs.interfaces.cve import (
     )
 from lp.bugs.model.bug import FileBugData
 from lp.buildmaster.enums import (
+    BuildBaseImageType,
     BuilderResetProtocol,
     BuildStatus,
     )
 from lp.buildmaster.interfaces.builder import IBuilderSet
-from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.buildmaster.interfaces.processor import (
+    IProcessorSet,
+    ProcessorNotFound,
+    )
 from lp.charms.interfaces.charmbase import ICharmBaseSet
 from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuildSet
@@ -2907,6 +2911,34 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             architecturetag = self.getUniqueString('arch')
         return distroseries.newArch(
             architecturetag, processor, official, owner, enabled)
+
+    def makeBuildableDistroArchSeries(self, architecturetag=None,
+                                      processor=None,
+                                      supports_virtualized=True,
+                                      supports_nonvirtualized=True, **kwargs):
+        if architecturetag is None:
+            architecturetag = self.getUniqueUnicode("arch")
+        if processor is None:
+            try:
+                processor = getUtility(IProcessorSet).getByName(
+                    architecturetag)
+            except ProcessorNotFound:
+                processor = self.makeProcessor(
+                    name=architecturetag,
+                    supports_virtualized=supports_virtualized,
+                    supports_nonvirtualized=supports_nonvirtualized)
+        das = self.makeDistroArchSeries(
+            architecturetag=architecturetag, processor=processor, **kwargs)
+        # Add both a chroot and a LXD image to test that
+        # getAllowedArchitectures doesn't get confused by multiple
+        # PocketChroot rows for a single DistroArchSeries.
+        fake_chroot = self.makeLibraryFileAlias(
+            filename="fake_chroot.tar.gz", db_only=True)
+        das.addOrUpdateChroot(fake_chroot)
+        fake_lxd = self.makeLibraryFileAlias(
+            filename="fake_lxd.tar.gz", db_only=True)
+        das.addOrUpdateChroot(fake_lxd, image_type=BuildBaseImageType.LXD)
+        return das
 
     def makeComponent(self, name=None):
         """Make a new `IComponent`."""

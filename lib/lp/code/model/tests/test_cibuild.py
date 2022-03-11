@@ -7,9 +7,13 @@ from datetime import (
     datetime,
     timedelta,
     )
+import hashlib
 from textwrap import dedent
+from unittest.mock import Mock
 
+from fixtures import MockPatchObject
 import pytz
+from storm.locals import Store
 from testtools.matchers import (
     Equals,
     MatchesStructure,
@@ -18,9 +22,14 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
-from lp.buildmaster.enums import BuildStatus
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.buildmaster.enums import (
+    BuildQueueStatus,
+    BuildStatus,
+    )
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
+from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.code.errors import (
     GitRepositoryBlobNotFound,
     GitRepositoryScanFault,
@@ -28,12 +37,20 @@ from lp.code.errors import (
 from lp.code.interfaces.cibuild import (
     CannotFetchConfiguration,
     CannotParseConfiguration,
+    CIBuildAlreadyRequested,
+    CIBuildDisallowedArchitecture,
     ICIBuild,
     ICIBuildSet,
     MissingConfiguration,
     )
+from lp.code.model.cibuild import (
+    determine_DASes_to_build,
+    get_all_commits_for_paths,
+    )
+from lp.code.model.lpcraft import load_configuration
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.log.logger import BufferLogger
 from lp.services.propertycache import clear_property_cache
 from lp.testing import (
     person_logged_in,
@@ -42,6 +59,39 @@ from lp.testing import (
     )
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.matchers import HasQueryCount
+
+
+class TestGetAllCommitsForPaths(TestCaseWithFactory):
+
+    layer = LaunchpadZopelessLayer
+
+    def test_no_refs(self):
+        repository = self.factory.makeGitRepository()
+        ref_paths = ['refs/heads/master']
+
+        rv = get_all_commits_for_paths(repository, ref_paths)
+
+        self.assertEqual([], rv)
+
+    def test_one_ref_one_path(self):
+        repository = self.factory.makeGitRepository()
+        ref_paths = ['refs/heads/master']
+        [ref] = self.factory.makeGitRefs(repository, ref_paths)
+
+        rv = get_all_commits_for_paths(repository, ref_paths)
+
+        self.assertEqual(1, len(rv))
+        self.assertEqual(ref.commit_sha1, rv[0])
+
+    def test_multiple_refs_and_paths(self):
+        repository = self.factory.makeGitRepository()
+        ref_paths = ['refs/heads/master', "refs/heads/dev"]
+        refs = self.factory.makeGitRefs(repository, ref_paths)
+
+        rv = get_all_commits_for_paths(repository, ref_paths)
+
+        self.assertEqual(2, len(rv))
+        self.assertEqual({ref.commit_sha1 for ref in refs}, set(rv))
 
 
 class TestCIBuild(TestCaseWithFactory):
@@ -336,6 +386,329 @@ class TestCIBuildSet(TestCaseWithFactory):
         self.assertContentEqual(
             builds[2:], ci_build_set.findByGitRepository(repositories[1]))
 
+    def test_requestCIBuild(self):
+        # requestBuild creates a new CIBuild.
+        repository = self.factory.makeGitRepository()
+        commit_sha1 = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
+        das = self.factory.makeBuildableDistroArchSeries()
+
+        build = getUtility(ICIBuildSet).requestBuild(
+            repository, commit_sha1, das)
+
+        self.assertTrue(ICIBuild.providedBy(build))
+        self.assertThat(build, MatchesStructure.byEquality(
+            git_repository=repository,
+            commit_sha1=commit_sha1,
+            distro_arch_series=das,
+            status=BuildStatus.NEEDSBUILD,
+            ))
+        store = Store.of(build)
+        store.flush()
+        build_queue = store.find(
+            BuildQueue,
+            BuildQueue._build_farm_job_id ==
+                removeSecurityProxy(build).build_farm_job_id).one()
+        self.assertProvides(build_queue, IBuildQueue)
+        self.assertTrue(build_queue.virtualized)
+        self.assertEqual(BuildQueueStatus.WAITING, build_queue.status)
+
+    def test_requestBuild_score(self):
+        # CI builds have an initial queue score of 2600.
+        repository = self.factory.makeGitRepository()
+        commit_sha1 = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
+        das = self.factory.makeBuildableDistroArchSeries()
+        build = getUtility(ICIBuildSet).requestBuild(
+            repository, commit_sha1, das)
+        queue_record = build.buildqueue_record
+        queue_record.score()
+        self.assertEqual(2600, queue_record.lastscore)
+
+    def test_requestBuild_rejects_repeats(self):
+        # requestBuild refuses if an identical build was already requested.
+        repository = self.factory.makeGitRepository()
+        commit_sha1 = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
+        distro_series = self.factory.makeDistroSeries()
+        arches = [
+            self.factory.makeBuildableDistroArchSeries(
+                distroseries=distro_series)
+            for _ in range(2)]
+        old_build = getUtility(ICIBuildSet).requestBuild(
+            repository, commit_sha1, arches[0])
+        self.assertRaises(
+            CIBuildAlreadyRequested, getUtility(ICIBuildSet).requestBuild,
+            repository, commit_sha1, arches[0])
+        # We can build for a different distroarchseries.
+        getUtility(ICIBuildSet).requestBuild(
+            repository, commit_sha1, arches[1])
+        # Changing the status of the old build does not allow a new build.
+        old_build.updateStatus(BuildStatus.BUILDING)
+        old_build.updateStatus(BuildStatus.FULLYBUILT)
+        self.assertRaises(
+            CIBuildAlreadyRequested, getUtility(ICIBuildSet).requestBuild,
+            repository, commit_sha1, arches[0])
+
+    def test_requestBuild_virtualization(self):
+        # New builds are virtualized.
+        repository = self.factory.makeGitRepository()
+        commit_sha1 = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
+        distro_series = self.factory.makeDistroSeries()
+        for proc_nonvirt in True, False:
+            das = self.factory.makeBuildableDistroArchSeries(
+                distroseries=distro_series, supports_virtualized=True,
+                supports_nonvirtualized=proc_nonvirt)
+            build = getUtility(ICIBuildSet).requestBuild(
+                repository, commit_sha1, das)
+            self.assertTrue(build.virtualized)
+
+    def test_requestBuild_nonvirtualized(self):
+        # A non-virtualized processor cannot run a CI build.
+        repository = self.factory.makeGitRepository()
+        commit_sha1 = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
+        distro_series = self.factory.makeDistroSeries()
+        das = self.factory.makeBuildableDistroArchSeries(
+            distroseries=distro_series, supports_virtualized=False,
+            supports_nonvirtualized=True)
+        self.assertRaises(
+            CIBuildDisallowedArchitecture,
+            getUtility(ICIBuildSet).requestBuild, repository, commit_sha1, das)
+
+    def test_requestBuildsForRefs_triggers_builds(self):
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        series = self.factory.makeDistroSeries(
+            distribution=ubuntu,
+            name="focal",
+        )
+        self.factory.makeBuildableDistroArchSeries(
+            distroseries=series,
+            architecturetag="amd64"
+        )
+        configuration = dedent("""\
+            pipeline:
+            - test
+
+            jobs:
+                test:
+                    series: focal
+                    architectures: amd64
+                    run: echo hello world >output
+            """).encode()
+        repository = self.factory.makeGitRepository()
+        ref_paths = ['refs/heads/master']
+        [ref] = self.factory.makeGitRefs(repository, ref_paths)
+        encoded_commit_json = {
+            "sha1": ref.commit_sha1,
+            "blobs": {".launchpad.yaml": configuration},
+        }
+        hosting_fixture = self.useFixture(
+            GitHostingFixture(commits=[encoded_commit_json])
+        )
+
+        getUtility(ICIBuildSet).requestBuildsForRefs(repository, ref_paths)
+
+        self.assertEqual(
+            [((repository.getInternalPath(), [ref.commit_sha1]),
+              {"filter_paths": [".launchpad.yaml"]})],
+            hosting_fixture.getCommits.calls
+        )
+
+        build = getUtility(ICIBuildSet).findByGitRepository(repository).one()
+
+        # check that a build was created
+        self.assertEqual(ref.commit_sha1, build.commit_sha1)
+        self.assertEqual("focal", build.distro_arch_series.distroseries.name)
+        self.assertEqual("amd64", build.distro_arch_series.architecturetag)
+
+    def test_requestBuildsForRefs_no_commits_at_all(self):
+        repository = self.factory.makeGitRepository()
+        ref_paths = ['refs/heads/master']
+        hosting_fixture = self.useFixture(GitHostingFixture(commits=[]))
+
+        getUtility(ICIBuildSet).requestBuildsForRefs(repository, ref_paths)
+
+        self.assertEqual(
+            [((repository.getInternalPath(), []),
+              {"filter_paths": [".launchpad.yaml"]})],
+            hosting_fixture.getCommits.calls
+        )
+
+        self.assertTrue(
+            getUtility(ICIBuildSet).findByGitRepository(repository).is_empty()
+        )
+
+    def test_requestBuildsForRefs_no_matching_commits(self):
+        repository = self.factory.makeGitRepository()
+        ref_paths = ['refs/heads/master']
+        [ref] = self.factory.makeGitRefs(repository, ref_paths)
+        hosting_fixture = self.useFixture(
+            GitHostingFixture(commits=[])
+        )
+
+        getUtility(ICIBuildSet).requestBuildsForRefs(repository, ref_paths)
+
+        self.assertEqual(
+            [((repository.getInternalPath(), [ref.commit_sha1]),
+              {"filter_paths": [".launchpad.yaml"]})],
+            hosting_fixture.getCommits.calls
+        )
+
+        self.assertTrue(
+            getUtility(ICIBuildSet).findByGitRepository(repository).is_empty()
+        )
+
+    def test_requestBuildsForRefs_configuration_parse_error(self):
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        series = self.factory.makeDistroSeries(
+            distribution=ubuntu,
+            name="focal",
+        )
+        self.factory.makeBuildableDistroArchSeries(
+            distroseries=series,
+            architecturetag="amd64"
+        )
+        configuration = dedent("""\
+            no - valid - configuration - file
+            """).encode()
+        repository = self.factory.makeGitRepository()
+        ref_paths = ['refs/heads/master']
+        [ref] = self.factory.makeGitRefs(repository, ref_paths)
+        encoded_commit_json = {
+            "sha1": ref.commit_sha1,
+            "blobs": {".launchpad.yaml": configuration},
+        }
+        hosting_fixture = self.useFixture(
+            GitHostingFixture(commits=[encoded_commit_json])
+        )
+        logger = BufferLogger()
+
+        getUtility(ICIBuildSet).requestBuildsForRefs(
+            repository, ref_paths, logger)
+
+        self.assertEqual(
+            [((repository.getInternalPath(), [ref.commit_sha1]),
+              {"filter_paths": [".launchpad.yaml"]})],
+            hosting_fixture.getCommits.calls
+        )
+
+        self.assertTrue(
+            getUtility(ICIBuildSet).findByGitRepository(repository).is_empty()
+        )
+
+        self.assertEqual(
+            "ERROR Cannot parse .launchpad.yaml from %s: "
+            "Configuration file does not declare 'pipeline'\n" % (
+                repository.unique_name,),
+            logger.getLogBuffer()
+        )
+
+    def test_requestBuildsForRefs_build_already_scheduled(self):
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        series = self.factory.makeDistroSeries(
+            distribution=ubuntu,
+            name="focal",
+        )
+        self.factory.makeBuildableDistroArchSeries(
+            distroseries=series,
+            architecturetag="amd64"
+        )
+        configuration = dedent("""\
+            pipeline:
+            - test
+
+            jobs:
+                test:
+                    series: focal
+                    architectures: amd64
+                    run: echo hello world >output
+            """).encode()
+        repository = self.factory.makeGitRepository()
+        ref_paths = ['refs/heads/master']
+        [ref] = self.factory.makeGitRefs(repository, ref_paths)
+        encoded_commit_json = {
+            "sha1": ref.commit_sha1,
+            "blobs": {".launchpad.yaml": configuration},
+        }
+        hosting_fixture = self.useFixture(
+            GitHostingFixture(commits=[encoded_commit_json])
+        )
+        build_set = removeSecurityProxy(getUtility(ICIBuildSet))
+        mock = Mock(side_effect=CIBuildAlreadyRequested)
+        self.useFixture(MockPatchObject(build_set, "requestBuild", mock))
+        logger = BufferLogger()
+
+        build_set.requestBuildsForRefs(repository, ref_paths, logger)
+
+        self.assertEqual(
+            [((repository.getInternalPath(), [ref.commit_sha1]),
+              {"filter_paths": [".launchpad.yaml"]})],
+            hosting_fixture.getCommits.calls
+        )
+
+        self.assertTrue(
+            getUtility(ICIBuildSet).findByGitRepository(repository).is_empty()
+        )
+        self.assertEqual(
+            "INFO Requesting CI build "
+            "for %s on focal/amd64\n" % ref.commit_sha1,
+            logger.getLogBuffer()
+        )
+
+    def test_requestBuildsForRefs_unexpected_exception(self):
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        series = self.factory.makeDistroSeries(
+            distribution=ubuntu,
+            name="focal",
+        )
+        self.factory.makeBuildableDistroArchSeries(
+            distroseries=series,
+            architecturetag="amd64"
+        )
+        configuration = dedent("""\
+            pipeline:
+            - test
+
+            jobs:
+                test:
+                    series: focal
+                    architectures: amd64
+                    run: echo hello world >output
+            """).encode()
+        repository = self.factory.makeGitRepository()
+        ref_paths = ['refs/heads/master']
+        [ref] = self.factory.makeGitRefs(repository, ref_paths)
+        encoded_commit_json = {
+            "sha1": ref.commit_sha1,
+            "blobs": {".launchpad.yaml": configuration},
+        }
+        hosting_fixture = self.useFixture(
+            GitHostingFixture(commits=[encoded_commit_json])
+        )
+        build_set = removeSecurityProxy(getUtility(ICIBuildSet))
+        mock = Mock(side_effect=Exception("some unexpected error"))
+        self.useFixture(MockPatchObject(build_set, "requestBuild", mock))
+        logger = BufferLogger()
+
+        build_set.requestBuildsForRefs(repository, ref_paths, logger)
+
+        self.assertEqual(
+            [((repository.getInternalPath(), [ref.commit_sha1]),
+              {"filter_paths": [".launchpad.yaml"]})],
+            hosting_fixture.getCommits.calls
+        )
+
+        self.assertTrue(
+            getUtility(ICIBuildSet).findByGitRepository(repository).is_empty()
+        )
+
+        log_line1, log_line2 = logger.getLogBuffer().splitlines()
+        self.assertEqual(
+            "INFO Requesting CI build for %s on focal/amd64" % ref.commit_sha1,
+            log_line1)
+        self.assertEqual(
+            "ERROR Failed to request CI build for %s on focal/amd64: "
+            "some unexpected error" % (ref.commit_sha1,),
+            log_line2
+        )
+
     def test_deleteByGitRepository(self):
         repositories = [self.factory.makeGitRepository() for _ in range(2)]
         builds = []
@@ -350,3 +723,116 @@ class TestCIBuildSet(TestCaseWithFactory):
             [], ci_build_set.findByGitRepository(repositories[0]))
         self.assertContentEqual(
             builds[2:], ci_build_set.findByGitRepository(repositories[1]))
+
+
+class TestDetermineDASesToBuild(TestCaseWithFactory):
+
+    layer = LaunchpadZopelessLayer
+
+    def test_returns_expected_DASes(self):
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        distro_serieses = [
+            self.factory.makeDistroSeries(ubuntu) for _ in range(2)]
+        dases = []
+        for distro_series in distro_serieses:
+            for _ in range(2):
+                dases.append(self.factory.makeBuildableDistroArchSeries(
+                    distroseries=distro_series))
+        configuration = load_configuration(dedent("""\
+            pipeline:
+                - [build]
+                - [test]
+            jobs:
+                build:
+                    series: {distro_serieses[1].name}
+                    architectures:
+                        - {dases[2].architecturetag}
+                        - {dases[3].architecturetag}
+                test:
+                    series: {distro_serieses[1].name}
+                    architectures:
+                        - {dases[2].architecturetag}
+            """.format(distro_serieses=distro_serieses, dases=dases)))
+        logger = BufferLogger()
+
+        dases_to_build = list(
+            determine_DASes_to_build(configuration, logger=logger))
+
+        self.assertContentEqual(dases[2:], dases_to_build)
+        self.assertEqual("", logger.getLogBuffer())
+
+
+    def test_logs_missing_job_definition(self):
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        distro_series = self.factory.makeDistroSeries(ubuntu)
+        das = self.factory.makeBuildableDistroArchSeries(
+            distroseries=distro_series)
+        configuration = load_configuration(dedent("""\
+            pipeline:
+                - [test]
+            jobs:
+                build:
+                    series: {distro_series.name}
+                    architectures:
+                        - {das.architecturetag}
+            """.format(distro_series=distro_series, das=das)))
+        logger = BufferLogger()
+
+        dases_to_build = list(
+            determine_DASes_to_build(configuration, logger=logger))
+
+        self.assertEqual(0, len(dases_to_build))
+        self.assertEqual(
+            "ERROR No job definition for 'test'\n", logger.getLogBuffer()
+        )
+
+
+    def test_logs_missing_series(self):
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        distro_series = self.factory.makeDistroSeries(ubuntu)
+        das = self.factory.makeBuildableDistroArchSeries(
+            distroseries=distro_series)
+        configuration = load_configuration(dedent("""\
+            pipeline:
+                - [build]
+            jobs:
+                build:
+                    series: unknown-series
+                    architectures:
+                        - {das.architecturetag}
+            """.format(das=das)))
+        logger = BufferLogger()
+
+        dases_to_build = list(
+            determine_DASes_to_build(configuration, logger=logger))
+
+        self.assertEqual(0, len(dases_to_build))
+        self.assertEqual(
+            "ERROR Unknown Ubuntu series name unknown-series\n",
+            logger.getLogBuffer()
+        )
+
+
+    def test_logs_non_buildable_architecture(self):
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        distro_series = self.factory.makeDistroSeries(ubuntu)
+        configuration = load_configuration(dedent("""\
+            pipeline:
+                - [build]
+            jobs:
+                build:
+                    series: {distro_series.name}
+                    architectures:
+                        - non-buildable-architecture
+            """.format(distro_series=distro_series)))
+        logger = BufferLogger()
+
+        dases_to_build = list(
+            determine_DASes_to_build(configuration, logger=logger))
+
+        self.assertEqual(0, len(dases_to_build))
+        self.assertEqual(
+            "ERROR non-buildable-architecture is not a buildable architecture "
+            "name in Ubuntu %s\n" % distro_series.name,
+            logger.getLogBuffer()
+        )

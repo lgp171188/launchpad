@@ -6,11 +6,16 @@
 __all__ = [
     "CannotFetchConfiguration",
     "CannotParseConfiguration",
+    "CIBuildAlreadyRequested",
+    "CIBuildDisallowedArchitecture",
     "ICIBuild",
     "ICIBuildSet",
     "MissingConfiguration",
     ]
 
+import http.client
+
+from lazr.restful.declarations import error_status
 from lazr.restful.fields import Reference
 from zope.schema import (
     Bool,
@@ -51,6 +56,26 @@ class CannotFetchConfiguration(Exception):
 
 class CannotParseConfiguration(Exception):
     """Launchpad cannot parse this CI build's .launchpad.yaml."""
+
+
+@error_status(http.client.BAD_REQUEST)
+class CIBuildDisallowedArchitecture(Exception):
+    """A build was requested for a disallowed architecture."""
+
+    def __init__(self, das, pocket):
+        super().__init__(
+            "Builds for %s/%s are not allowed." % (
+                das.distroseries.getSuite(pocket), das.architecturetag)
+            )
+
+
+@error_status(http.client.BAD_REQUEST)
+class CIBuildAlreadyRequested(Exception):
+    """An identical build was requested more than once."""
+
+    def __init__(self):
+        super().__init__(
+            "An identical build for this commit was already requested.")
 
 
 class ICIBuildView(IPackageBuildView):
@@ -131,6 +156,37 @@ class ICIBuildSet(ISpecificBuildFarmJobSource):
         :param git_repository: An `IGitRepository`.
         :param commit_sha1s: If not None, only return CI builds for one of
             these Git commit IDs.
+        """
+
+    def requestBuild(git_repository, commit_sha1, distro_arch_series):
+        """Request a CI build.
+
+        This checks that the architecture is allowed and that there isn't
+        already a matching pending build.
+
+        :param git_repository: The `IGitRepository` for the new build.
+        :param commit_sha1: The Git commit ID for the new build.
+        :param distro_arch_series: The `IDistroArchSeries` that the new
+            build should run on.
+        :raises CIBuildDisallowedArchitecture: if builds on
+            `distro_arch_series` are not allowed.
+        :raises CIBuildAlreadyRequested: if a matching build was already
+            requested.
+        :return: `ICIBuild`.
+        """
+
+    def requestBuildsForRefs(git_repository, ref_paths, logger=None):
+        """Request CI builds for a collection of refs.
+
+        This fetches `.launchpad.yaml` from the repository and parses it to
+        work out which series/architectures need builds.
+
+        :param git_repository: The `IGitRepository` for which to request
+            builds.
+        :param ref_paths: A collection of Git reference paths within
+            `git_repository`; builds will be requested for the commits that
+            each of them points to.
+        :param logger: An optional logger.
         """
 
     def deleteByGitRepository(git_repository):

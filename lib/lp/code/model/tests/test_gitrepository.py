@@ -11,6 +11,7 @@ import email
 from functools import partial
 import hashlib
 import json
+from textwrap import dedent
 
 from breezy import urlutils
 from fixtures import MockPatch
@@ -80,6 +81,10 @@ from lp.code.errors import (
 from lp.code.event.git import GitRefsUpdatedEvent
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_FINAL_STATES as FINAL_STATES,
+    )
+from lp.code.interfaces.cibuild import (
+    ICIBuild,
+    ICIBuildSet,
     )
 from lp.code.interfaces.codeimport import ICodeImportSet
 from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
@@ -161,6 +166,7 @@ from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.job.runner import JobRunner
+from lp.services.log.logger import BufferLogger
 from lp.services.macaroons.interfaces import IMacaroonIssuer
 from lp.services.macaroons.testing import (
     find_caveats_by_name,
@@ -1461,6 +1467,7 @@ class TestGitRepositoryModifications(TestCaseWithFactory):
             repository, "date_last_modified", UTC_NOW)
 
     def test_create_ref_sets_date_last_modified(self):
+        self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository(
             date_created=datetime(2015, 6, 1, tzinfo=pytz.UTC))
         [ref] = self.factory.makeGitRefs(repository=repository)
@@ -1869,6 +1876,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
             repository.refs, repository, ["refs/heads/master"])
 
     def test_update(self):
+        self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository()
         paths = ("refs/heads/master", "refs/tags/1.0")
         self.factory.makeGitRefs(repository=repository, paths=paths)
@@ -1900,6 +1908,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         return [UpdatePreviewDiffJob(job) for job in jobs]
 
     def test_update_schedules_diff_update(self):
+        self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository()
         [ref] = self.factory.makeGitRefs(repository=repository)
         self.assertRefsMatch(repository.refs, repository, [ref.path])
@@ -2210,6 +2219,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
     def test_synchroniseRefs(self):
         # synchroniseRefs copes with synchronising a repository where some
         # refs have been created, some deleted, and some changed.
+        self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository()
         paths = ("refs/heads/master", "refs/heads/foo", "refs/heads/bar")
         self.factory.makeGitRefs(repository=repository, paths=paths)
@@ -2941,6 +2951,7 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
 
     def test_base_repository_recipe(self):
         # On ref changes, recipes where this ref is the base become stale.
+        self.useFixture(GitHostingFixture())
         [ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeSourcePackageRecipe(branches=[ref])
         removeSecurityProxy(recipe).is_stale = False
@@ -2951,6 +2962,7 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
     def test_base_repository_different_ref_recipe(self):
         # On ref changes, recipes where a different ref in the same
         # repository is the base are left alone.
+        self.useFixture(GitHostingFixture())
         ref1, ref2 = self.factory.makeGitRefs(
             paths=["refs/heads/a", "refs/heads/b"])
         recipe = self.factory.makeSourcePackageRecipe(branches=[ref1])
@@ -2962,6 +2974,7 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
     def test_base_repository_default_branch_recipe(self):
         # On ref changes to the default branch, recipes where this
         # repository is the base with no explicit revspec become stale.
+        self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository()
         ref1, ref2 = self.factory.makeGitRefs(
             repository=repository, paths=["refs/heads/a", "refs/heads/b"])
@@ -2977,6 +2990,7 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
 
     def test_instruction_repository_recipe(self):
         # On ref changes, recipes including this ref become stale.
+        self.useFixture(GitHostingFixture())
         [base_ref] = self.factory.makeGitRefs()
         [ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeSourcePackageRecipe(branches=[base_ref, ref])
@@ -2988,6 +3002,7 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
     def test_instruction_repository_different_ref_recipe(self):
         # On ref changes, recipes including a different ref in the same
         # repository are left alone.
+        self.useFixture(GitHostingFixture())
         [base_ref] = self.factory.makeGitRefs()
         ref1, ref2 = self.factory.makeGitRefs(
             paths=["refs/heads/a", "refs/heads/b"])
@@ -3001,6 +3016,7 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
     def test_instruction_repository_default_branch_recipe(self):
         # On ref changes to the default branch, recipes including this
         # repository with no explicit revspec become stale.
+        self.useFixture(GitHostingFixture())
         [base_ref] = self.factory.makeGitRefs()
         repository = self.factory.makeGitRepository()
         ref1, ref2 = self.factory.makeGitRefs(
@@ -3018,6 +3034,7 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
 
     def test_unrelated_repository_recipe(self):
         # On ref changes, unrelated recipes are left alone.
+        self.useFixture(GitHostingFixture())
         [ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeSourcePackageRecipe(
             branches=self.factory.makeGitRefs())
@@ -3033,6 +3050,7 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
 
     def test_same_repository(self):
         # On ref changes, snap packages using this ref become stale.
+        self.useFixture(GitHostingFixture())
         [ref] = self.factory.makeGitRefs()
         snap = self.factory.makeSnap(git_ref=ref)
         removeSecurityProxy(snap).is_stale = False
@@ -3043,6 +3061,7 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
     def test_same_repository_different_ref(self):
         # On ref changes, snap packages using a different ref in the same
         # repository are left alone.
+        self.useFixture(GitHostingFixture())
         ref1, ref2 = self.factory.makeGitRefs(
             paths=["refs/heads/a", "refs/heads/b"])
         snap = self.factory.makeSnap(git_ref=ref1)
@@ -3053,6 +3072,7 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
 
     def test_different_repository(self):
         # On ref changes, unrelated snap packages are left alone.
+        self.useFixture(GitHostingFixture())
         [ref] = self.factory.makeGitRefs()
         snap = self.factory.makeSnap(git_ref=self.factory.makeGitRefs()[0])
         removeSecurityProxy(snap).is_stale = False
@@ -3062,6 +3082,7 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
 
     def test_private_snap(self):
         # A private snap should be able to be marked stale
+        self.useFixture(GitHostingFixture())
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         [ref] = self.factory.makeGitRefs()
         snap = self.factory.makeSnap(git_ref=ref, private=True)
@@ -3084,6 +3105,7 @@ class TestGitRepositoryMarkCharmRecipesStale(TestCaseWithFactory):
 
     def test_same_repository(self):
         # On ref changes, charm recipes using this ref become stale.
+        self.useFixture(GitHostingFixture())
         [ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeCharmRecipe(git_ref=ref)
         removeSecurityProxy(recipe).is_stale = False
@@ -3094,6 +3116,7 @@ class TestGitRepositoryMarkCharmRecipesStale(TestCaseWithFactory):
     def test_same_repository_different_ref(self):
         # On ref changes, charm recipes using a different ref in the same
         # repository are left alone.
+        self.useFixture(GitHostingFixture())
         ref1, ref2 = self.factory.makeGitRefs(
             paths=["refs/heads/a", "refs/heads/b"])
         recipe = self.factory.makeCharmRecipe(git_ref=ref1)
@@ -3104,6 +3127,7 @@ class TestGitRepositoryMarkCharmRecipesStale(TestCaseWithFactory):
 
     def test_different_repository(self):
         # On ref changes, unrelated charm recipes are left alone.
+        self.useFixture(GitHostingFixture())
         [ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeCharmRecipe(
             git_ref=self.factory.makeGitRefs()[0])
@@ -3302,6 +3326,81 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
             {(event.object_before_modification.queue_status,
                  event.object.queue_status)
                 for event in events[:2]})
+
+
+class TestGitRepositoryRequestCIBuilds(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
+
+    def test_findByGitRepository_with_configuration(self):
+        # If a changed ref has CI configuration, we request CI builds.
+        logger = BufferLogger()
+        [ref] = self.factory.makeGitRefs()
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        distroseries = self.factory.makeDistroSeries(distribution=ubuntu)
+        dases = [
+            self.factory.makeBuildableDistroArchSeries(
+                distroseries=distroseries)
+            for _ in range(2)]
+        configuration = dedent("""\
+            pipeline: [test]
+            jobs:
+                test:
+                    series: {series}
+                    architectures: [{architectures}]
+            """.format(
+                series=distroseries.name,
+                architectures=", ".join(
+                    das.architecturetag for das in dases))).encode()
+        new_commit = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
+        self.useFixture(GitHostingFixture(commits=[
+            {
+                "sha1": new_commit,
+                "blobs": {".launchpad.yaml": configuration},
+                },
+            ]))
+        with dbuser("branchscanner"):
+            ref.repository.createOrUpdateRefs(
+                {ref.path: {"sha1": new_commit, "type": GitObjectType.COMMIT}},
+                logger=logger)
+
+        results = getUtility(ICIBuildSet).findByGitRepository(ref.repository)
+        for result in results:
+            self.assertTrue(ICIBuild.providedBy(result))
+
+        self.assertThat(
+            results,
+            MatchesSetwise(*(
+                MatchesStructure.byEquality(
+                    git_repository=ref.repository,
+                    commit_sha1=new_commit,
+                    distro_arch_series=das)
+                for das in dases)))
+        self.assertContentEqual(
+            [
+                "INFO Requesting CI build for {commit} on "
+                "{series}/{arch}".format(
+                    commit=new_commit, series=distroseries.name,
+                    arch=das.architecturetag)
+                for das in dases],
+            logger.getLogBuffer().splitlines())
+
+    def test_findByGitRepository_without_configuration(self):
+        # If a changed ref has no CI configuration, we do not request CI
+        # builds.
+        logger = BufferLogger()
+        [ref] = self.factory.makeGitRefs()
+        new_commit = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
+        self.useFixture(GitHostingFixture(commits=[]))
+        with dbuser("branchscanner"):
+            ref.repository.createOrUpdateRefs(
+                {ref.path: {"sha1": new_commit, "type": GitObjectType.COMMIT}},
+                logger=logger)
+        self.assertTrue(
+            getUtility(
+                ICIBuildSet).findByGitRepository(ref.repository).is_empty()
+        )
+        self.assertEqual("", logger.getLogBuffer())
 
 
 class TestGitRepositoryGetBlob(TestCaseWithFactory):
