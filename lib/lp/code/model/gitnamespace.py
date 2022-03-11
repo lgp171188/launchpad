@@ -510,11 +510,29 @@ class PackageGitNamespace(_BaseGitNamespace):
 
     def getAllowedInformationTypes(self, who=None):
         """See `IGitNamespace`."""
-        return PUBLIC_INFORMATION_TYPES
+        # Some policies require that the repository owner or current user
+        # have full access to an information type.  If it's required and the
+        # user doesn't hold it, no information types are legal.
+        distribution = self.distro_source_package.distribution
+        required_grant = BRANCH_POLICY_REQUIRED_GRANTS[
+            distribution.branch_sharing_policy]
+        if (required_grant is not None
+            and not getUtility(IService, 'sharing').checkPillarAccess(
+                [distribution], required_grant, self.owner)
+            and (who is None
+                or not getUtility(IService, 'sharing').checkPillarAccess(
+                    [distribution], required_grant, who))):
+            return []
+
+        return BRANCH_POLICY_ALLOWED_TYPES[distribution.branch_sharing_policy]
 
     def getDefaultInformationType(self, who=None):
         """See `IGitNamespace`."""
-        return InformationType.PUBLIC
+        default_type = BRANCH_POLICY_DEFAULT_TYPES[
+            self.distro_source_package.distribution.branch_sharing_policy]
+        if default_type not in self.getAllowedInformationTypes(who):
+            return None
+        return default_type
 
     def areRepositoriesMergeable(self, this, other):
         """See `IGitNamespacePolicy`."""

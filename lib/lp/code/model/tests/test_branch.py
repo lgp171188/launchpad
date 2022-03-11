@@ -17,6 +17,10 @@ from pytz import UTC
 import six
 from storm.exceptions import LostObjectError
 from storm.locals import Store
+from testscenarios import (
+    load_tests_apply_scenarios,
+    WithScenarios,
+    )
 from testtools import ExpectedException
 from testtools.matchers import (
     Not,
@@ -2531,13 +2535,17 @@ class TestBranchPrivacy(TestCaseWithFactory):
                 [(branch.product, InformationType.USERDATA)]),
             get_policies_for_artifact(branch))
 
-    def test__reconcileAccess_for_distro_branch(self):
-        # Branch privacy isn't yet supported for distributions, so no
-        # AccessPolicyArtifact is created for a distro branch.
+    def test__reconcileAccess_for_package_branch(self):
+        # _reconcileAccess uses a distribution policy for a package branch.
         branch = self.factory.makePackageBranch(
             information_type=InformationType.USERDATA)
+        [artifact] = getUtility(IAccessArtifactSource).ensure([branch])
+        getUtility(IAccessPolicyArtifactSource).deleteByArtifact([artifact])
         removeSecurityProxy(branch)._reconcileAccess()
-        self.assertEqual([], get_policies_for_artifact(branch))
+        self.assertContentEqual(
+            getUtility(IAccessPolicySource).find(
+                [(branch.distribution, InformationType.USERDATA)]),
+            get_policies_for_artifact(branch))
 
     def test__reconcileAccess_for_personal_branch(self):
         # _reconcileAccess uses a person policy for a personal branch.
@@ -2701,15 +2709,26 @@ class TestBranchSetPrivate(TestCaseWithFactory):
             InformationType.PRIVATESECURITY, branch.information_type)
 
 
-class BranchModerateTestCase(TestCaseWithFactory):
-    """Test that product owners and commercial admins can moderate branches."""
+class BranchModerateTestCase(WithScenarios, TestCaseWithFactory):
+    """Test that pillar owners and commercial admins can moderate branches."""
 
     layer = DatabaseFunctionalLayer
+    scenarios = [
+        ("project", {"branch_factory_name": "makeProductBranch"}),
+        ("distribution", {"branch_factory_name": "makePackageBranch"}),
+        ]
+
+    def _makeBranch(self, **kwargs):
+        return getattr(self.factory, self.branch_factory_name)(**kwargs)
+
+    def _getPillar(self, branch):
+        return branch.product or branch.distribution
 
     def test_moderate_permission(self):
         # Test the ModerateBranch security checker.
-        branch = self.factory.makeProductBranch()
-        with person_logged_in(branch.product.owner):
+        branch = self._makeBranch()
+        pillar = self._getPillar(branch)
+        with person_logged_in(pillar.owner):
             self.assertTrue(
                 check_permission('launchpad.Moderate', branch))
         with celebrity_logged_in('commercial_admin'):
@@ -2718,25 +2737,27 @@ class BranchModerateTestCase(TestCaseWithFactory):
 
     def test_methods_smoketest(self):
         # Users with launchpad.Moderate can call transitionToInformationType.
-        branch = self.factory.makeProductBranch()
-        with person_logged_in(branch.product.owner):
-            branch.product.setBranchSharingPolicy(BranchSharingPolicy.PUBLIC)
+        branch = self._makeBranch()
+        pillar = self._getPillar(branch)
+        with person_logged_in(pillar.owner):
+            pillar.setBranchSharingPolicy(BranchSharingPolicy.PUBLIC)
             branch.transitionToInformationType(
-                InformationType.PRIVATESECURITY, branch.product.owner)
+                InformationType.PRIVATESECURITY, pillar.owner)
         self.assertEqual(
             InformationType.PRIVATESECURITY, branch.information_type)
 
     def test_attribute_smoketest(self):
         # Users with launchpad.Moderate can set attrs.
-        branch = self.factory.makeProductBranch()
-        with person_logged_in(branch.product.owner):
+        branch = self._makeBranch()
+        pillar = self._getPillar(branch)
+        with person_logged_in(pillar.owner):
             branch.name = 'not-secret'
             branch.description = 'redacted'
-            branch.reviewer = branch.product.owner
+            branch.reviewer = pillar.owner
             branch.lifecycle_status = BranchLifecycleStatus.EXPERIMENTAL
         self.assertEqual('not-secret', branch.name)
         self.assertEqual('redacted', branch.description)
-        self.assertEqual(branch.product.owner, branch.reviewer)
+        self.assertEqual(pillar.owner, branch.reviewer)
         self.assertEqual(
             BranchLifecycleStatus.EXPERIMENTAL, branch.lifecycle_status)
 
@@ -3574,3 +3595,6 @@ class TestWebservice(TestCaseWithFactory):
         with admin_logged_in():
             self.assertEqual(
                 1, len(list(getUtility(IBranchScanJobSource).iterReady())))
+
+
+load_tests = load_tests_apply_scenarios

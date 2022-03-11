@@ -26,7 +26,6 @@ from lp.app.enums import (
     FREE_INFORMATION_TYPES,
     InformationType,
     NON_EMBARGOED_INFORMATION_TYPES,
-    PUBLIC_INFORMATION_TYPES,
     )
 from lp.app.interfaces.services import IService
 from lp.code.enums import (
@@ -420,11 +419,32 @@ class PackageBranchNamespace(_BaseBranchNamespace):
 
     def getAllowedInformationTypes(self, who=None):
         """See `IBranchNamespace`."""
-        return PUBLIC_INFORMATION_TYPES
+        # The distribution uses the new simplified branch_sharing_policy
+        # rules, so check them.
+
+        # Some policies require that the branch owner or current user have
+        # full access to an information type. If it's required and the user
+        # doesn't hold it, no information types are legal.
+        distribution = self.sourcepackage.distribution
+        required_grant = BRANCH_POLICY_REQUIRED_GRANTS[
+            distribution.branch_sharing_policy]
+        if (required_grant is not None
+            and not getUtility(IService, 'sharing').checkPillarAccess(
+                [distribution], required_grant, self.owner)
+            and (who is None
+                or not getUtility(IService, 'sharing').checkPillarAccess(
+                    [distribution], required_grant, who))):
+            return []
+
+        return BRANCH_POLICY_ALLOWED_TYPES[distribution.branch_sharing_policy]
 
     def getDefaultInformationType(self, who=None):
         """See `IBranchNamespace`."""
-        return InformationType.PUBLIC
+        default_type = BRANCH_POLICY_DEFAULT_TYPES[
+            self.sourcepackage.distribution.branch_sharing_policy]
+        if default_type not in self.getAllowedInformationTypes(who):
+            return None
+        return default_type
 
 
 class BranchNamespaceSet:
