@@ -3,7 +3,7 @@
 
 """Tests for deathrow class."""
 
-import os
+from pathlib import Path
 import shutil
 import tempfile
 
@@ -55,29 +55,29 @@ class TestDeathRow(TestCase):
             pub.source_package_name,
             pub_file.libraryfile.filename)
 
-    def assertIsFile(self, path):
+    def assertIsFile(self, path: Path):
         """Assert the path exists and is a regular file."""
         self.assertTrue(
-            os.path.exists(path),
-            "File %s does not exist" % os.path.basename(path))
+            path.exists(),
+            "File %s does not exist" % path.name)
         self.assertFalse(
-            os.path.islink(path),
-            "File %s is a symbolic link" % os.path.basename(path))
+            path.is_symlink(),
+            "File %s is a symbolic link" % path.name)
 
-    def assertIsLink(self, path):
+    def assertIsLink(self, path: Path):
         """Assert the path exists and is a symbolic link."""
         self.assertTrue(
-            os.path.exists(path),
-            "File %s does not exist" % os.path.basename(path))
+            path.exists(),
+            "File %s does not exist" % path.name)
         self.assertTrue(
-            os.path.islink(path),
-            "File %s is a not symbolic link" % os.path.basename(path))
+            path.is_symlink(),
+            "File %s is a not symbolic link" % path.name)
 
-    def assertDoesNotExist(self, path):
+    def assertDoesNotExist(self, path: Path):
         """Assert the path does not exit."""
         self.assertFalse(
-            os.path.exists(path),
-            "File %s exists" % os.path.basename(path))
+            path.exists(),
+            "File %s exists" % path.name)
 
     def test_MissingSymLinkInPool(self):
         # When a publication is promoted from 'universe' to 'main' and
@@ -118,7 +118,7 @@ class TestDeathRow(TestCase):
         self.assertIsLink(universe_dsc_path)
 
         # Remove the symbolic link to emulate MissingSymlinkInPool scenario.
-        os.remove(universe_dsc_path)
+        universe_dsc_path.unlink()
 
         # Remove the testing publications.
         for pub in test_publications:

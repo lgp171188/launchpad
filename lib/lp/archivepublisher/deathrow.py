@@ -6,7 +6,6 @@ Processes removals of packages that are scheduled for deletion.
 """
 
 import datetime
-import os
 
 import pytz
 from storm.expr import Exists
@@ -92,9 +91,9 @@ class DeathRow:
                 self.logger.debug("(Not really!) removing %s %s/%s" %
                                   (cn, sn, fn))
                 fullpath = self.diskpool.pathFor(cn, sn, fn)
-                if not os.path.exists(fullpath):
+                if not fullpath.exists():
                     raise NotInPool
-                return os.lstat(fullpath).st_size
+                return fullpath.lstat().st_size
             self._removeFile = _mockRemoveFile
 
         source_files, binary_files = self._collectCondemned()
@@ -232,7 +231,7 @@ class DeathRow:
                     pub_record.source_package_name,
                     pub_record.component_name,
                     )
-                file_path = self.diskpool.pathFor(*pub_file_details)
+                file_path = str(self.diskpool.pathFor(*pub_file_details))
 
                 # Check if the LibraryFileAlias in question was already
                 # verified. If the verification was already made and the

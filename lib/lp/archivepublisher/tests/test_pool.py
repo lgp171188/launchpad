@@ -4,7 +4,7 @@
 """Tests for pool.py."""
 
 import hashlib
-import os
+from pathlib import Path
 import shutil
 from tempfile import mkdtemp
 import unittest
@@ -65,11 +65,11 @@ class PoolTestingFile:
 
     def checkExists(self, component):
         path = self.pool.pathFor(component, self.sourcename, self.filename)
-        return os.path.exists(path)
+        return path.exists()
 
     def checkIsLink(self, component):
         path = self.pool.pathFor(component, self.sourcename, self.filename)
-        return os.path.islink(path)
+        return path.is_symlink()
 
     def checkIsFile(self, component):
         return self.checkExists(component) and not self.checkIsLink(component)
@@ -80,9 +80,9 @@ class TestPoolification(unittest.TestCase):
     def testPoolificationOkay(self):
         """poolify should poolify properly"""
         cases = (
-            ("foo", "main", "main/f/foo"),
-            ("foo", "universe", "universe/f/foo"),
-            ("libfoo", "main", "main/libf/libfoo"),
+            ("foo", "main", Path("main/f/foo")),
+            ("foo", "universe", Path("universe/f/foo")),
+            ("libfoo", "main", Path("main/libf/libfoo")),
             )
         for case in cases:
             self.assertEqual(case[2], poolify(case[0], case[1]))

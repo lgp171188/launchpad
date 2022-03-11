@@ -4,7 +4,12 @@
 __all__ = ['DiskPoolEntry', 'DiskPool', 'poolify', 'unpoolify']
 
 import os
+from pathlib import Path
 import tempfile
+from typing import (
+    Optional,
+    Tuple,
+    )
 
 from lp.archivepublisher import HARDCODED_COMPONENT_ORDER
 from lp.services.librarian.utils import (
@@ -20,20 +25,20 @@ from lp.soyuz.interfaces.publishing import (
     )
 
 
-def poolify(source, component):
+def poolify(source, component) -> Path:
     """Poolify a given source and component name."""
     if source.startswith("lib"):
-        return os.path.join(component, source[:4], source)
+        return Path(component) / source[:4] / source
     else:
-        return os.path.join(component, source[:1], source)
+        return Path(component) / source[:1] / source
 
 
-def unpoolify(self, path):
+def unpoolify(self, path: Path) -> Tuple[str, str, Optional[str]]:
     """Take a path and unpoolify it.
 
     Return a tuple of component, source, filename
     """
-    p = path.split("/")
+    p = path.parts
     if len(p) < 3 or len(p) > 4:
         raise ValueError("Path %s is not in a valid pool form" % path)
     if len(p) == 4:
@@ -41,22 +46,16 @@ def unpoolify(self, path):
     return p[0], p[2], None
 
 
-def relative_symlink(src_path, dst_path):
-    """os.symlink replacement that creates relative symbolic links."""
-    path_sep = os.path.sep
-    src_path = os.path.normpath(src_path)
-    dst_path = os.path.normpath(dst_path)
-    src_path_elems = src_path.split(path_sep)
-    dst_path_elems = dst_path.split(path_sep)
-    if os.path.isabs(src_path):
-        if not os.path.isabs(dst_path):
-            dst_path = os.path.abspath(dst_path)
-        common_prefix = os.path.commonprefix([src_path_elems, dst_path_elems])
-        backward_elems = ['..'] * (
-            len(dst_path_elems) - len(common_prefix) - 1)
-        forward_elems = src_path_elems[len(common_prefix):]
-        src_path = path_sep.join(backward_elems + forward_elems)
-    os.symlink(src_path, dst_path)
+def relative_symlink(src_path: Path, dst_path: Path):
+    """Path.symlink_to replacement that creates relative symbolic links."""
+    src_path = Path(os.path.normpath(str(src_path)))
+    dst_path = Path(os.path.normpath(str(dst_path)))
+    common_prefix = Path(os.path.commonpath([str(src_path), str(dst_path)]))
+    backward_elems = [os.path.pardir] * (
+        len(dst_path.parts) - len(common_prefix.parts) - 1)
+    forward_elems = src_path.parts[len(common_prefix.parts):]
+    src_path = Path(*backward_elems, *forward_elems)
+    dst_path.symlink_to(src_path)
 
 
 class FileAddActionEnum:
@@ -87,7 +86,7 @@ class _diskpool_atomicfile:
     the filename is present in the pool, it is definitely complete.
     """
 
-    def __init__(self, targetfilename, mode, rootpath="/tmp"):
+    def __init__(self, targetfilename: Path, mode, rootpath="/tmp"):
         # atomicfile implements the file object interface, but it is only
         # really used (or useful) for writing binary files, which is why we
         # keep the mode constructor argument but assert it's sane below.
@@ -95,21 +94,21 @@ class _diskpool_atomicfile:
             mode = "wb"
         assert mode == "wb"
 
-        assert not os.path.exists(targetfilename)
+        assert not targetfilename.exists()
 
         self.targetfilename = targetfilename
-        fd, name = tempfile.mkstemp(prefix="temp-download.", dir=rootpath)
+        fd, name = tempfile.mkstemp(prefix="temp-download.", dir=str(rootpath))
         self.fd = os.fdopen(fd, mode)
-        self.tempname = name
+        self.tempname = Path(name)
         self.write = self.fd.write
 
     def close(self):
         """Make the atomic move into place having closed the temp file."""
         self.fd.close()
-        os.chmod(self.tempname, 0o644)
+        self.tempname.chmod(0o644)
         # Note that this will fail if the target and the temp dirs are on
         # different filesystems.
-        os.rename(self.tempname, self.targetfilename)
+        self.tempname.rename(self.targetfilename)
 
 
 class DiskPoolEntry:
@@ -126,7 +125,8 @@ class DiskPoolEntry:
     Remaining files in the 'temppath' indicated installation failures and
     require manual removal after further investigation.
     """
-    def __init__(self, rootpath, temppath, source, filename, logger):
+    def __init__(self, rootpath: Path, temppath: Path, source, filename,
+                 logger):
         self.rootpath = rootpath
         self.temppath = temppath
         self.source = source
@@ -138,9 +138,9 @@ class DiskPoolEntry:
 
         for component in HARDCODED_COMPONENT_ORDER:
             path = self.pathFor(component)
-            if os.path.islink(path):
+            if path.is_symlink():
                 self.symlink_components.add(component)
-            elif os.path.isfile(path):
+            elif path.is_file():
                 assert not self.file_component
                 self.file_component = component
         if self.symlink_components:
@@ -149,11 +149,9 @@ class DiskPoolEntry:
     def debug(self, *args, **kwargs):
         self.logger.debug(*args, **kwargs)
 
-    def pathFor(self, component):
+    def pathFor(self, component) -> Path:
         """Return the path for this file in the given component."""
-        return os.path.join(self.rootpath,
-                            poolify(self.source, component),
-                            self.filename)
+        return self.rootpath / poolify(self.source, component) / self.filename
 
     def preferredComponent(self, add=None, remove=None):
         """Return the appropriate component for the real file.
@@ -180,15 +178,14 @@ class DiskPoolEntry:
     def file_hash(self):
         """Return the SHA1 sum of this file."""
         targetpath = self.pathFor(self.file_component)
-        return sha1_from_path(targetpath)
+        return sha1_from_path(str(targetpath))
 
     def addFile(self, component, pub_file: IPackageReleaseFile):
         """See DiskPool.addFile."""
         assert component in HARDCODED_COMPONENT_ORDER
 
         targetpath = self.pathFor(component)
-        if not os.path.exists(os.path.dirname(targetpath)):
-            os.makedirs(os.path.dirname(targetpath))
+        targetpath.parent.mkdir(parents=True, exist_ok=True)
         lfa = pub_file.libraryfile
 
         if self.file_component:
@@ -215,7 +212,7 @@ class DiskPoolEntry:
                 return FileAddActionEnum.SYMLINK_ADDED
 
         # If we get to here, we want to write the file.
-        assert not os.path.exists(targetpath)
+        assert not targetpath.exists()
 
         self.debug("Making new file in %s for %s/%s" %
                    (component, self.source, self.filename))
@@ -251,7 +248,7 @@ class DiskPoolEntry:
             # ensure we are removing a symbolic link and
             # it is published in one or more components
             link_path = self.pathFor(component)
-            assert os.path.islink(link_path)
+            assert link_path.is_symlink()
             return self._reallyRemove(component)
 
         if component != self.file_component:
@@ -281,7 +278,7 @@ class DiskPoolEntry:
         structures.
         """
         fullpath = self.pathFor(component)
-        assert os.path.exists(fullpath)
+        assert fullpath.exists()
 
         if component == self.file_component:
             # Deleting the master file is only allowed if there
@@ -291,8 +288,8 @@ class DiskPoolEntry:
         elif component in self.symlink_components:
             self.symlink_components.remove(component)
 
-        size = os.lstat(fullpath).st_size
-        os.remove(fullpath)
+        size = fullpath.lstat().st_size
+        fullpath.unlink()
         return size
 
     def _shufflesymlinks(self, targetcomponent):
@@ -312,7 +309,7 @@ class DiskPoolEntry:
 
         # Okay, so first up, we unlink the targetcomponent symlink.
         targetpath = self.pathFor(targetcomponent)
-        os.remove(targetpath)
+        targetpath.unlink()
 
         # Now we rename the source file into the target component.
         sourcepath = self.pathFor(self.file_component)
@@ -326,9 +323,9 @@ class DiskPoolEntry:
 
         # ensure targetpath doesn't exists and  the sourcepath exists
         # before rename them.
-        assert not os.path.exists(targetpath)
-        assert os.path.exists(sourcepath)
-        os.rename(sourcepath, targetpath)
+        assert not targetpath.exists()
+        assert sourcepath.exists()
+        sourcepath.rename(targetpath)
 
         # XXX cprov 2006-06-12: it may cause problems to the database, since
         # ZTM isn't handled properly in scripts/publish-distro.py. Things are
@@ -343,7 +340,7 @@ class DiskPoolEntry:
         for comp in self.symlink_components:
             newpath = self.pathFor(comp)
             try:
-                os.remove(newpath)
+                newpath.unlink()
             except OSError:
                 # Do nothing because it's almost certainly a not found.
                 pass
@@ -379,14 +376,8 @@ class DiskPool:
     results = FileAddActionEnum
 
     def __init__(self, rootpath, temppath, logger):
-        self.rootpath = rootpath
-        if not rootpath.endswith("/"):
-            self.rootpath += "/"
-
-        self.temppath = temppath
-        if not temppath.endswith("/"):
-            self.temppath += "/"
-
+        self.rootpath = Path(rootpath)
+        self.temppath = Path(temppath)
         self.entries = {}
         self.logger = logger
 
@@ -395,7 +386,7 @@ class DiskPool:
         return DiskPoolEntry(
             self.rootpath, self.temppath, sourcename, file, self.logger)
 
-    def pathFor(self, comp, source, file=None):
+    def pathFor(self, comp, source, file=None) -> Path:
         """Return the path for the given pool folder or file.
 
         If file is none, the path to the folder containing all packages
@@ -404,10 +395,9 @@ class DiskPool:
         If file is specified, the path to the specific package file will
         be returned.
         """
-        path = os.path.join(
-            self.rootpath, poolify(source, comp))
+        path = self.rootpath / poolify(source, comp)
         if file:
-            return os.path.join(path, file)
+            path = path / file
         return path
 
     def addFile(self, component, sourcename, filename,

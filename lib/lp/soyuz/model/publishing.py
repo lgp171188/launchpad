@@ -16,7 +16,7 @@ from operator import (
     attrgetter,
     itemgetter,
     )
-import os
+from pathlib import Path
 import sys
 
 import pytz
@@ -121,7 +121,7 @@ def makePoolPath(source_name, component_name):
     # XXX cprov 2006-08-18: move it away, perhaps archivepublisher/pool.py
     """Return the pool path for a given source name and component name."""
     from lp.archivepublisher.diskpool import poolify
-    return os.path.join('pool', poolify(source_name, component_name))
+    return str(Path('pool') / poolify(source_name, component_name))
 
 
 def get_component(archive, distroseries, component):
