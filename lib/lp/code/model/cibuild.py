@@ -9,6 +9,7 @@ __all__ = [
 
 from datetime import timedelta
 
+from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 from storm.locals import (
     Bool,
@@ -21,8 +22,11 @@ from storm.locals import (
     )
 from storm.store import EmptyResultSet
 from zope.component import getUtility
+from zope.event import notify
 from zope.interface import implementer
 
+from lp.app.errors import NotFoundError
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import (
     BuildFarmJobType,
     BuildQueueStatus,
@@ -38,10 +42,14 @@ from lp.code.errors import (
 from lp.code.interfaces.cibuild import (
     CannotFetchConfiguration,
     CannotParseConfiguration,
+    CIBuildAlreadyRequested,
+    CIBuildDisallowedArchitecture,
     ICIBuild,
     ICIBuildSet,
     MissingConfiguration,
     )
+from lp.code.interfaces.githosting import IGitHostingClient
+from lp.code.model.gitref import GitRef
 from lp.code.model.lpcraft import load_configuration
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
@@ -63,6 +71,53 @@ from lp.services.librarian.model import (
     )
 from lp.services.propertycache import cachedproperty
 from lp.soyuz.model.distroarchseries import DistroArchSeries
+
+
+def determine_DASes_to_build(configuration, logger=None):
+    """Generate distroarchseries to build for this configuration."""
+    architectures_by_series = {}
+    for stage in configuration.pipeline:
+        for job_name in stage:
+            if job_name not in configuration.jobs:
+                if logger is not None:
+                    logger.error("No job definition for %r", job_name)
+                continue
+            for job in configuration.jobs[job_name]:
+                for architecture in job["architectures"]:
+                    architectures_by_series.setdefault(
+                        job["series"], set()).add(architecture)
+    # XXX cjwatson 2022-01-21: We have to hardcode Ubuntu for now, since
+    # the .launchpad.yaml format doesn't currently support other
+    # distributions (although nor does the Launchpad build farm).
+    distribution = getUtility(ILaunchpadCelebrities).ubuntu
+    for series_name, architecture_names in architectures_by_series.items():
+        try:
+            series = distribution[series_name]
+        except NotFoundError:
+            if logger is not None:
+                logger.error("Unknown Ubuntu series name %s" % series_name)
+            continue
+        architectures = {
+            das.architecturetag: das
+            for das in series.buildable_architectures}
+        for architecture_name in architecture_names:
+            try:
+                das = architectures[architecture_name]
+            except KeyError:
+                if logger is not None:
+                    logger.error(
+                        "%s is not a buildable architecture name in "
+                        "Ubuntu %s" % (architecture_name, series_name))
+                continue
+            yield das
+
+
+def get_all_commits_for_paths(git_repository, paths):
+    return [
+        ref.commit_sha1
+        for ref in GitRef.findByReposAndPaths(
+            [(git_repository, ref_path)
+                for ref_path in paths]).values()]
 
 
 def parse_configuration(git_repository, blob):
@@ -329,6 +384,89 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
         store.flush()
         return cibuild
 
+    def findByGitRepository(self, git_repository, commit_sha1s=None):
+        """See `ICIBuildSet`."""
+        clauses = [CIBuild.git_repository == git_repository]
+        if commit_sha1s is not None:
+            clauses.append(CIBuild.commit_sha1.is_in(commit_sha1s))
+        return IStore(CIBuild).find(CIBuild, *clauses)
+
+    def _isBuildableArchitectureAllowed(self, das):
+        """Check whether we may build for a buildable `DistroArchSeries`.
+
+        The caller is assumed to have already checked that a suitable chroot
+        is available (either directly or via
+        `DistroSeries.buildable_architectures`).
+        """
+        return (
+            das.enabled
+            # We only support builds on virtualized builders at the moment.
+            and das.processor.supports_virtualized)
+
+    def _isArchitectureAllowed(self, das, pocket, snap_base=None):
+        return (
+            das.getChroot(pocket=pocket) is not None
+            and self._isBuildableArchitectureAllowed(das))
+
+    def requestBuild(self, git_repository, commit_sha1, distro_arch_series):
+        """See `ICIBuildSet`."""
+        pocket = PackagePublishingPocket.UPDATES
+        if not self._isArchitectureAllowed(distro_arch_series, pocket):
+            raise CIBuildDisallowedArchitecture(distro_arch_series, pocket)
+
+        result = IStore(CIBuild).find(
+            CIBuild,
+            CIBuild.git_repository == git_repository,
+            CIBuild.commit_sha1 == commit_sha1,
+            CIBuild.distro_arch_series == distro_arch_series)
+        if not result.is_empty():
+            raise CIBuildAlreadyRequested
+
+        build = self.new(git_repository, commit_sha1, distro_arch_series)
+        build.queueBuild()
+        notify(ObjectCreatedEvent(build))
+        return build
+
+    def _tryToRequestBuild(self, git_repository, commit_sha1, das, logger):
+        try:
+            if logger is not None:
+                logger.info(
+                    "Requesting CI build for %s on %s/%s",
+                    commit_sha1, das.distroseries.name, das.architecturetag,
+                )
+            self.requestBuild(git_repository, commit_sha1, das)
+        except CIBuildAlreadyRequested:
+            pass
+        except Exception as e:
+            if logger is not None:
+                logger.error(
+                    "Failed to request CI build for %s on %s/%s: %s",
+                    commit_sha1, das.distroseries.name, das.architecturetag, e
+                )
+
+    def requestBuildsForRefs(self, git_repository, ref_paths, logger=None):
+        """See `ICIBuildSet`."""
+        commit_sha1s = get_all_commits_for_paths(git_repository, ref_paths)
+        # getCommits performs a web request!
+        commits = getUtility(IGitHostingClient).getCommits(
+            git_repository.getInternalPath(), commit_sha1s,
+            # XXX cjwatson 2022-01-19: We should also fetch
+            # debian/.launchpad.yaml (or perhaps make the path a property of
+            # the repository) once lpcraft and launchpad-buildd support
+            # using alternative paths for builds.
+            filter_paths=[".launchpad.yaml"])
+        for commit in commits:
+            try:
+                configuration = parse_configuration(
+                    git_repository, commit["blobs"][".launchpad.yaml"])
+            except CannotParseConfiguration as e:
+                if logger is not None:
+                    logger.error(e)
+                continue
+            for das in determine_DASes_to_build(configuration):
+                self._tryToRequestBuild(
+                    git_repository, commit["sha1"], das,  logger)
+
     def getByID(self, build_id):
         """See `ISpecificBuildFarmJobSource`."""
         store = IMasterStore(CIBuild)
@@ -356,13 +494,6 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
             CIBuild, CIBuild.build_farm_job_id.is_in(
                 bfj.id for bfj in build_farm_jobs))
         return DecoratedResultSet(rows, pre_iter_hook=self.preloadBuildsData)
-
-    def findByGitRepository(self, git_repository, commit_sha1s=None):
-        """See `ICIBuildSet`."""
-        clauses = [CIBuild.git_repository == git_repository]
-        if commit_sha1s is not None:
-            clauses.append(CIBuild.commit_sha1.is_in(commit_sha1s))
-        return IStore(CIBuild).find(CIBuild, *clauses)
 
     def deleteByGitRepository(self, git_repository):
         """See `ICIBuildSet`."""
