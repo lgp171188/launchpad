@@ -885,6 +885,183 @@ class TestPackageGitNamespace(TestCaseWithFactory, NamespaceMixin):
             repositories[0].namespace.collection.getRepositories())
 
 
+class TestPackageGitNamespacePrivacyWithInformationType(TestCaseWithFactory):
+    """Tests for the privacy aspects of `PackageGitNamespace`.
+
+    This tests the behaviour for a package in a distribution using the new
+    branch_sharing_policy rules.
+    """
+
+    layer = DatabaseFunctionalLayer
+
+    def makePackageGitNamespace(self, sharing_policy, person=None):
+        if person is None:
+            person = self.factory.makePerson()
+        dsp = self.factory.makeDistributionSourcePackage()
+        self.factory.makeCommercialSubscription(pillar=dsp.distribution)
+        with person_logged_in(dsp.distribution.owner):
+            dsp.distribution.setBranchSharingPolicy(sharing_policy)
+        namespace = PackageGitNamespace(person, dsp)
+        return namespace
+
+    def test_public_anyone(self):
+        namespace = self.makePackageGitNamespace(BranchSharingPolicy.PUBLIC)
+        self.assertContentEqual(
+            FREE_INFORMATION_TYPES, namespace.getAllowedInformationTypes())
+        self.assertEqual(
+            InformationType.PUBLIC, namespace.getDefaultInformationType())
+
+    def test_forbidden_anyone(self):
+        namespace = self.makePackageGitNamespace(BranchSharingPolicy.FORBIDDEN)
+        self.assertEqual([], namespace.getAllowedInformationTypes())
+        self.assertIsNone(namespace.getDefaultInformationType())
+
+    def test_public_or_proprietary_anyone(self):
+        namespace = self.makePackageGitNamespace(
+            BranchSharingPolicy.PUBLIC_OR_PROPRIETARY)
+        self.assertContentEqual(
+            NON_EMBARGOED_INFORMATION_TYPES,
+            namespace.getAllowedInformationTypes())
+        self.assertEqual(
+            InformationType.PUBLIC, namespace.getDefaultInformationType())
+
+    def test_proprietary_or_public_anyone(self):
+        namespace = self.makePackageGitNamespace(
+            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC)
+        self.assertEqual([], namespace.getAllowedInformationTypes())
+        self.assertIsNone(namespace.getDefaultInformationType())
+
+    def test_proprietary_or_public_owner_grantee(self):
+        namespace = self.makePackageGitNamespace(
+            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC)
+        distribution = namespace.distro_source_package.distribution
+        with person_logged_in(distribution.owner):
+            getUtility(IService, "sharing").sharePillarInformation(
+                distribution, namespace.owner, distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+        self.assertContentEqual(
+            NON_EMBARGOED_INFORMATION_TYPES,
+            namespace.getAllowedInformationTypes())
+        self.assertEqual(
+            InformationType.PROPRIETARY,
+            namespace.getDefaultInformationType())
+
+    def test_proprietary_or_public_caller_grantee(self):
+        namespace = self.makePackageGitNamespace(
+            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC)
+        distribution = namespace.distro_source_package.distribution
+        grantee = self.factory.makePerson()
+        with person_logged_in(distribution.owner):
+            getUtility(IService, "sharing").sharePillarInformation(
+                distribution, grantee, distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+        self.assertContentEqual(
+            NON_EMBARGOED_INFORMATION_TYPES,
+            namespace.getAllowedInformationTypes(grantee))
+        self.assertEqual(
+            InformationType.PROPRIETARY,
+            namespace.getDefaultInformationType(grantee))
+
+    def test_proprietary_anyone(self):
+        namespace = self.makePackageGitNamespace(
+            BranchSharingPolicy.PROPRIETARY)
+        self.assertEqual([], namespace.getAllowedInformationTypes())
+        self.assertIsNone(namespace.getDefaultInformationType())
+
+    def test_proprietary_repository_owner_grantee(self):
+        namespace = self.makePackageGitNamespace(
+            BranchSharingPolicy.PROPRIETARY)
+        distribution = namespace.distro_source_package.distribution
+        with person_logged_in(distribution.owner):
+            getUtility(IService, "sharing").sharePillarInformation(
+                distribution, namespace.owner, distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+        self.assertContentEqual(
+            [InformationType.PROPRIETARY],
+            namespace.getAllowedInformationTypes())
+        self.assertEqual(
+            InformationType.PROPRIETARY,
+            namespace.getDefaultInformationType())
+
+    def test_proprietary_caller_grantee(self):
+        namespace = self.makePackageGitNamespace(
+            BranchSharingPolicy.PROPRIETARY)
+        distribution = namespace.distro_source_package.distribution
+        grantee = self.factory.makePerson()
+        with person_logged_in(distribution.owner):
+            getUtility(IService, "sharing").sharePillarInformation(
+                distribution, grantee, distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+        self.assertContentEqual(
+            [InformationType.PROPRIETARY],
+            namespace.getAllowedInformationTypes(grantee))
+        self.assertEqual(
+            InformationType.PROPRIETARY,
+            namespace.getDefaultInformationType(grantee))
+
+    def test_embargoed_or_proprietary_anyone(self):
+        namespace = self.makePackageGitNamespace(
+            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+        self.assertEqual([], namespace.getAllowedInformationTypes())
+        self.assertIsNone(namespace.getDefaultInformationType())
+
+    def test_embargoed_or_proprietary_owner_grantee(self):
+        namespace = self.makePackageGitNamespace(
+            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+        distribution = namespace.distro_source_package.distribution
+        with person_logged_in(distribution.owner):
+            getUtility(IService, "sharing").sharePillarInformation(
+                distribution, namespace.owner, distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+        self.assertContentEqual(
+            [InformationType.PROPRIETARY, InformationType.EMBARGOED],
+            namespace.getAllowedInformationTypes())
+        self.assertEqual(
+            InformationType.EMBARGOED,
+            namespace.getDefaultInformationType())
+
+    def test_embargoed_or_proprietary_caller_grantee(self):
+        namespace = self.makePackageGitNamespace(
+            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+        distribution = namespace.distro_source_package.distribution
+        grantee = self.factory.makePerson()
+        with person_logged_in(distribution.owner):
+            getUtility(IService, "sharing").sharePillarInformation(
+                distribution, grantee, distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+        self.assertContentEqual(
+            [InformationType.PROPRIETARY, InformationType.EMBARGOED],
+            namespace.getAllowedInformationTypes(grantee))
+        self.assertEqual(
+            InformationType.EMBARGOED,
+            namespace.getDefaultInformationType(grantee))
+
+    def test_grantee_has_no_artifact_grant(self):
+        # The owner of a new repository in a distribution whose default
+        # information type is non-public does not have an artifact grant
+        # specifically for the new repository, because their existing policy
+        # grant is sufficient.
+        person = self.factory.makePerson()
+        team = self.factory.makeTeam(members=[person])
+        namespace = self.makePackageGitNamespace(
+            BranchSharingPolicy.PROPRIETARY, person=person)
+        distribution = namespace.distro_source_package.distribution
+        with person_logged_in(distribution.owner):
+            getUtility(IService, 'sharing').sharePillarInformation(
+                distribution, team, distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+        repository = namespace.createRepository(
+            GitRepositoryType.HOSTED, person, self.factory.getUniqueUnicode())
+        [policy] = getUtility(IAccessPolicySource).find(
+            [(distribution, InformationType.PROPRIETARY)])
+        apgfs = getUtility(IAccessPolicyGrantFlatSource)
+        self.assertContentEqual(
+            [(distribution.owner, {policy: SharingPermission.ALL}, []),
+             (team, {policy: SharingPermission.ALL}, [])],
+            apgfs.findGranteePermissionsByPolicy([policy]))
+        self.assertTrue(removeSecurityProxy(repository).visibleByUser(person))
+
+
 class BaseCanCreateRepositoriesMixin:
     """Common tests for all namespaces."""
 
@@ -1038,20 +1215,6 @@ class TestPersonalGitNamespaceAllowedInformationTypes(TestCaseWithFactory):
         self.assertContentEqual(
             NON_EMBARGOED_INFORMATION_TYPES,
             namespace.getAllowedInformationTypes())
-
-
-class TestPackageGitNamespaceAllowedInformationTypes(TestCaseWithFactory):
-    """Tests for PackageGitNamespace.getAllowedInformationTypes."""
-
-    layer = DatabaseFunctionalLayer
-
-    def test_anyone(self):
-        # Package repositories are always public.
-        dsp = self.factory.makeDistributionSourcePackage()
-        person = self.factory.makePerson()
-        namespace = PackageGitNamespace(person, dsp)
-        self.assertContentEqual(
-            PUBLIC_INFORMATION_TYPES, namespace.getAllowedInformationTypes())
 
 
 class TestOCIProjectGitNamespaceAllowedInformationTypes(TestCaseWithFactory):

@@ -91,10 +91,6 @@ class PillarScenariosMixin(WithScenarios):
             self.skipTest("Only relevant for Product.")
 
     def _makePillar(self, **kwargs):
-        if ("bug_sharing_policy" in kwargs or
-                "branch_sharing_policy" in kwargs or
-                "specification_sharing_policy" in kwargs):
-            self._skipUnlessProduct()
         return getattr(self.factory, self.pillar_factory_name)(**kwargs)
 
     def _makeBranch(self, pillar, **kwargs):
@@ -246,14 +242,12 @@ class TestSharingService(
             pillar, [BranchSharingPolicy.PUBLIC])
 
     def test_getBranchSharingPolicies_expired_commercial(self):
-        self._skipUnlessProduct()
         pillar = self._makePillar()
         self.factory.makeCommercialSubscription(pillar, expired=True)
         self._assert_getBranchSharingPolicies(
             pillar, [BranchSharingPolicy.PUBLIC])
 
     def test_getBranchSharingPolicies_commercial(self):
-        self._skipUnlessProduct()
         pillar = self._makePillar()
         self.factory.makeCommercialSubscription(pillar)
         self._assert_getBranchSharingPolicies(
@@ -266,7 +260,6 @@ class TestSharingService(
     def test_getBranchSharingPolicies_non_public(self):
         # When the pillar is non-public the policy options are limited to
         # only proprietary or embargoed/proprietary.
-        self._skipUnlessProduct()
         owner = self.factory.makePerson()
         pillar = self._makePillar(
             information_type=InformationType.PROPRIETARY,
@@ -280,7 +273,6 @@ class TestSharingService(
     def test_getBranchSharingPolicies_disallowed_policy(self):
         # getBranchSharingPolicies includes a pillar's current policy even if
         # it is nominally not allowed.
-        self._skipUnlessProduct()
         pillar = self._makePillar()
         self.factory.makeCommercialSubscription(pillar, expired=True)
         with person_logged_in(pillar.owner):
@@ -313,14 +305,12 @@ class TestSharingService(
             pillar, [SpecificationSharingPolicy.PUBLIC])
 
     def test_getSpecificationSharingPolicies_expired_commercial(self):
-        self._skipUnlessProduct()
         pillar = self._makePillar()
         self.factory.makeCommercialSubscription(pillar, expired=True)
         self._assert_getSpecificationSharingPolicies(
             pillar, [SpecificationSharingPolicy.PUBLIC])
 
     def test_getSpecificationSharingPolicies_commercial(self):
-        self._skipUnlessProduct()
         pillar = self._makePillar()
         self.factory.makeCommercialSubscription(pillar)
         self._assert_getSpecificationSharingPolicies(
@@ -333,7 +323,6 @@ class TestSharingService(
     def test_getSpecificationSharingPolicies_non_public(self):
         # When the pillar is non-public the policy options are limited to
         # only proprietary or embargoed/proprietary.
-        self._skipUnlessProduct()
         owner = self.factory.makePerson()
         pillar = self._makePillar(
             information_type=InformationType.PROPRIETARY,
@@ -367,13 +356,11 @@ class TestSharingService(
         self._assert_getBugSharingPolicies(pillar, [BugSharingPolicy.PUBLIC])
 
     def test_getBugSharingPolicies_expired_commercial(self):
-        self._skipUnlessProduct()
         pillar = self._makePillar()
         self.factory.makeCommercialSubscription(pillar, expired=True)
         self._assert_getBugSharingPolicies(pillar, [BugSharingPolicy.PUBLIC])
 
     def test_getBugSharingPolicies_commercial(self):
-        self._skipUnlessProduct()
         pillar = self._makePillar()
         self.factory.makeCommercialSubscription(pillar)
         self._assert_getBugSharingPolicies(
@@ -386,7 +373,6 @@ class TestSharingService(
     def test_getBugSharingPolicies_non_public(self):
         # When the pillar is non-public the policy options are limited to
         # only proprietary or embargoed/proprietary.
-        self._skipUnlessProduct()
         owner = self.factory.makePerson()
         pillar = self._makePillar(
             information_type=InformationType.PROPRIETARY,
@@ -400,7 +386,6 @@ class TestSharingService(
     def test_getBugSharingPolicies_disallowed_policy(self):
         # getBugSharingPolicies includes a pillar's current policy even if it
         # is nominally not allowed.
-        self._skipUnlessProduct()
         pillar = self._makePillar()
         self.factory.makeCommercialSubscription(pillar, expired=True)
         with person_logged_in(pillar.owner):
@@ -1294,7 +1279,6 @@ class TestSharingService(
 
     def test_ensureAccessGrantsBranches(self):
         # Access grants can be created for branches.
-        self._skipUnlessProduct()
         owner = self.factory.makePerson()
         pillar = self._makePillar(owner=owner)
         login_person(owner)
@@ -1305,7 +1289,6 @@ class TestSharingService(
 
     def test_ensureAccessGrantsGitRepositories(self):
         # Access grants can be created for Git repositories.
-        self._skipUnlessProduct()
         owner = self.factory.makePerson()
         pillar = self._makePillar(owner=owner)
         login_person(owner)
@@ -1375,7 +1358,6 @@ class TestSharingService(
 
     def test_updatePillarBugSharingPolicy(self):
         # updatePillarSharingPolicies works for bugs.
-        self._skipUnlessProduct()
         owner = self.factory.makePerson()
         pillar = self._makePillar(owner=owner)
         self.factory.makeCommercialSubscription(pillar)
@@ -1388,7 +1370,6 @@ class TestSharingService(
 
     def test_updatePillarBranchSharingPolicy(self):
         # updatePillarSharingPolicies works for branches.
-        self._skipUnlessProduct()
         owner = self.factory.makePerson()
         pillar = self._makePillar(owner=owner)
         self.factory.makeCommercialSubscription(pillar)
@@ -1401,7 +1382,6 @@ class TestSharingService(
 
     def test_updatePillarSpecificationSharingPolicy(self):
         # updatePillarSharingPolicies works for specifications.
-        self._skipUnlessProduct()
         owner = self.factory.makePerson()
         pillar = self._makePillar(owner=owner)
         self.factory.makeCommercialSubscription(pillar)
@@ -1730,7 +1710,6 @@ class TestSharingService(
 
     def test_getPeopleWithAccessBranches(self):
         # Test the getPeopleWithoutAccess method with branches.
-        self._skipUnlessProduct()
         owner = self.factory.makePerson()
         pillar = self._makePillar(owner=owner)
         branch = self._makeBranch(
@@ -1741,7 +1720,6 @@ class TestSharingService(
 
     def test_getPeopleWithAccessGitRepositories(self):
         # Test the getPeopleWithoutAccess method with Git repositories.
-        self._skipUnlessProduct()
         owner = self.factory.makePerson()
         pillar = self._makePillar(owner=owner)
         gitrepository = self._makeGitRepository(

@@ -659,10 +659,10 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
                 (abstract_artifact, policy) for policy in
                 getUtility(IAccessPolicySource).findByTeam([self.owner])}
         else:
-            # We haven't yet quite worked out how distribution privacy
-            # works, so only work for projects for now.
             if self.project is not None:
                 pillars = [self.project]
+            elif self.distribution is not None:
+                pillars = [self.distribution]
         reconcile_access_for_artifacts(
             [self], self.information_type, pillars, wanted_links)
 

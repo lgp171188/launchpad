@@ -253,10 +253,10 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
                 (abstract_artifact, policy) for policy in
                 getUtility(IAccessPolicySource).findByTeam([self.owner])}
         else:
-            # We haven't yet quite worked out how distribution privacy
-            # works, so only work for products for now.
             if self.product is not None:
                 pillars = [self.product]
+            elif self.distribution is not None:
+                pillars = [self.distribution]
         reconcile_access_for_artifacts(
             [self], self.information_type, pillars, wanted_links)
 

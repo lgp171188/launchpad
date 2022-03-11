@@ -31,6 +31,12 @@ from lp.app.errors import (
     ServiceUsageForbidden,
     )
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.app.interfaces.services import IService
+from lp.blueprints.model.specification import (
+    SPECIFICATION_POLICY_ALLOWED_TYPES,
+    )
+from lp.bugs.interfaces.bugtarget import BUG_POLICY_ALLOWED_TYPES
+from lp.code.model.branchnamespace import BRANCH_POLICY_ALLOWED_TYPES
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.enums import (
     BranchSharingPolicy,
@@ -38,6 +44,7 @@ from lp.registry.enums import (
     DistributionDefaultTraversalPolicy,
     EXCLUSIVE_TEAM_POLICY,
     INCLUSIVE_TEAM_POLICY,
+    SpecificationSharingPolicy,
     TeamMembershipPolicy,
     )
 from lp.registry.errors import (
@@ -69,6 +76,7 @@ from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     IDistributionSourcePackageRelease,
     )
 from lp.testing import (
+    admin_logged_in,
     api_url,
     celebrity_logged_in,
     login_person,
@@ -398,13 +406,52 @@ class TestDistribution(TestCaseWithFactory):
         grantees = {grant.grantee for grant in grants}
         self.assertEqual(expected_grantess, grantees)
 
+    def test_open_creation_sharing_policies(self):
+        # Creating a new open (non-proprietary) distribution sets the bug
+        # and branch sharing policies to public, and creates policies if
+        # required.
+        owner = self.factory.makePerson()
+        with person_logged_in(owner):
+            distribution = self.factory.makeDistribution(owner=owner)
+        self.assertEqual(
+            BugSharingPolicy.PUBLIC, distribution.bug_sharing_policy)
+        self.assertEqual(
+            BranchSharingPolicy.PUBLIC, distribution.branch_sharing_policy)
+        self.assertEqual(
+            SpecificationSharingPolicy.PUBLIC,
+            distribution.specification_sharing_policy)
+        aps = getUtility(IAccessPolicySource).findByPillar([distribution])
+        expected = [
+            InformationType.USERDATA, InformationType.PRIVATESECURITY]
+        self.assertContentEqual(expected, [policy.type for policy in aps])
+
+    def test_proprietary_creation_sharing_policies(self):
+        # Creating a new proprietary distribution sets the bug, branch, and
+        # specification sharing policies to proprietary.
+        owner = self.factory.makePerson()
+        with person_logged_in(owner):
+            distribution = self.factory.makeDistribution(
+                owner=owner, information_type=InformationType.PROPRIETARY)
+            self.assertEqual(
+                BugSharingPolicy.PROPRIETARY, distribution.bug_sharing_policy)
+            self.assertEqual(
+                BranchSharingPolicy.PROPRIETARY,
+                distribution.branch_sharing_policy)
+            self.assertEqual(
+                SpecificationSharingPolicy.PROPRIETARY,
+                distribution.specification_sharing_policy)
+        aps = getUtility(IAccessPolicySource).findByPillar([distribution])
+        expected = [InformationType.PROPRIETARY]
+        self.assertContentEqual(expected, [policy.type for policy in aps])
+
     def test_change_info_type_proprietary_check_artifacts(self):
         # Cannot change distribution information_type if any artifacts are
         # public.
-        # XXX cjwatson 2022-02-11: Make this use
-        # artifact.transitionToInformationType once sharing policies are in
-        # place.
-        distribution = self.factory.makeDistribution()
+        distribution = self.factory.makeDistribution(
+            specification_sharing_policy=(
+                SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY),
+            bug_sharing_policy=BugSharingPolicy.PUBLIC_OR_PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PUBLIC_OR_PROPRIETARY)
         self.useContext(person_logged_in(distribution.owner))
         spec = self.factory.makeSpecification(distribution=distribution)
         for info_type in PRIVATE_DISTRIBUTION_TYPES:
@@ -412,32 +459,34 @@ class TestDistribution(TestCaseWithFactory):
                     CannotChangeInformationType,
                     "Some blueprints are public."):
                 distribution.information_type = info_type
-        removeSecurityProxy(spec).information_type = (
-            InformationType.PROPRIETARY)
+        spec.transitionToInformationType(
+            InformationType.PROPRIETARY, distribution.owner)
         dsp = self.factory.makeDistributionSourcePackage(
             distribution=distribution)
         bug = self.factory.makeBug(target=dsp)
         for bug_info_type in FREE_INFORMATION_TYPES:
-            removeSecurityProxy(bug).information_type = bug_info_type
+            bug.transitionToInformationType(bug_info_type, distribution.owner)
             for info_type in PRIVATE_DISTRIBUTION_TYPES:
                 with ExpectedException(
                         CannotChangeInformationType,
                         "Some bugs are neither proprietary nor embargoed."):
                     distribution.information_type = info_type
-        removeSecurityProxy(bug).information_type = InformationType.PROPRIETARY
+        bug.transitionToInformationType(
+            InformationType.PROPRIETARY, distribution.owner)
         distroseries = self.factory.makeDistroSeries(distribution=distribution)
         sp = self.factory.makeSourcePackage(distroseries=distroseries)
         branch = self.factory.makeBranch(sourcepackage=sp)
         for branch_info_type in FREE_INFORMATION_TYPES:
-            removeSecurityProxy(branch).information_type = branch_info_type
+            branch.transitionToInformationType(
+                branch_info_type, distribution.owner)
             for info_type in PRIVATE_DISTRIBUTION_TYPES:
                 with ExpectedException(
                         CannotChangeInformationType,
                         "Some branches are neither proprietary nor "
                         "embargoed."):
                     distribution.information_type = info_type
-        removeSecurityProxy(branch).information_type = (
-            InformationType.PROPRIETARY)
+        branch.transitionToInformationType(
+            InformationType.PROPRIETARY, distribution.owner)
         for info_type in PRIVATE_DISTRIBUTION_TYPES:
             distribution.information_type = info_type
 
@@ -456,6 +505,40 @@ class TestDistribution(TestCaseWithFactory):
                             distribution.information_type = info_type
                     else:
                         distribution.information_type = info_type
+
+    def test_change_info_type_proprietary_sets_policies(self):
+        # Changing information type from public to proprietary sets the
+        # appropriate policies.
+        distribution = self.factory.makeDistribution()
+        with person_logged_in(distribution.owner):
+            distribution.information_type = InformationType.PROPRIETARY
+            self.assertEqual(
+                BranchSharingPolicy.PROPRIETARY,
+                distribution.branch_sharing_policy)
+            self.assertEqual(
+                BugSharingPolicy.PROPRIETARY, distribution.bug_sharing_policy)
+            self.assertEqual(
+                SpecificationSharingPolicy.PROPRIETARY,
+                distribution.specification_sharing_policy)
+
+    def test_proprietary_to_public_leaves_policies(self):
+        # Changing information type from public leaves sharing policies
+        # unchanged.
+        owner = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(
+            information_type=InformationType.PROPRIETARY, owner=owner)
+        with person_logged_in(owner):
+            distribution.information_type = InformationType.PUBLIC
+            # Setting information type to the current type should be a no-op.
+            distribution.information_type = InformationType.PUBLIC
+        self.assertEqual(
+            BranchSharingPolicy.PROPRIETARY,
+            distribution.branch_sharing_policy)
+        self.assertEqual(
+            BugSharingPolicy.PROPRIETARY, distribution.bug_sharing_policy)
+        self.assertEqual(
+            SpecificationSharingPolicy.PROPRIETARY,
+            distribution.specification_sharing_policy)
 
     def test_cacheAccessPolicies(self):
         # Distribution.access_policies is a list caching AccessPolicy.ids
@@ -482,6 +565,18 @@ class TestDistribution(TestCaseWithFactory):
         # required.
         naked_distribution.information_type = InformationType.PUBLIC
         self.assertIsNone(naked_distribution.access_policies)
+
+        # Proprietary distributions can have both Proprietary and Embargoed
+        # artifacts, and someone who can see either needs LimitedView on the
+        # pillar they're on.  So both policies are permissible if they
+        # exist.
+        naked_distribution.information_type = InformationType.PROPRIETARY
+        naked_distribution.setBugSharingPolicy(
+            BugSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+        [emb_policy] = aps.find([(distribution, InformationType.EMBARGOED)])
+        self.assertContentEqual(
+            [prop_policy.id, emb_policy.id],
+            naked_distribution.access_policies)
 
     def test_checkInformationType_bug_supervisor(self):
         # Bug supervisors of proprietary distributions must not have
@@ -742,6 +837,378 @@ class TestDistribution(TestCaseWithFactory):
             with ExpectedException(
                     CannotChangeInformationType, "Answers is enabled."):
                 distribution.information_type = InformationType.PROPRIETARY
+
+
+class TestDistributionBugInformationTypes(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def makeDistributionWithPolicy(self, bug_sharing_policy):
+        distribution = self.factory.makeDistribution()
+        self.factory.makeCommercialSubscription(pillar=distribution)
+        with person_logged_in(distribution.owner):
+            distribution.setBugSharingPolicy(bug_sharing_policy)
+        return distribution
+
+    def test_no_policy(self):
+        # New distributions can only use the non-proprietary information
+        # types.
+        distribution = self.factory.makeDistribution()
+        self.assertContentEqual(
+            FREE_INFORMATION_TYPES,
+            distribution.getAllowedBugInformationTypes())
+        self.assertEqual(
+            InformationType.PUBLIC,
+            distribution.getDefaultBugInformationType())
+
+    def test_sharing_policy_public_or_proprietary(self):
+        # bug_sharing_policy can enable Proprietary.
+        distribution = self.makeDistributionWithPolicy(
+            BugSharingPolicy.PUBLIC_OR_PROPRIETARY)
+        self.assertContentEqual(
+            FREE_INFORMATION_TYPES + (InformationType.PROPRIETARY,),
+            distribution.getAllowedBugInformationTypes())
+        self.assertEqual(
+            InformationType.PUBLIC,
+            distribution.getDefaultBugInformationType())
+
+    def test_sharing_policy_proprietary_or_public(self):
+        # bug_sharing_policy can enable and default to Proprietary.
+        distribution = self.makeDistributionWithPolicy(
+            BugSharingPolicy.PROPRIETARY_OR_PUBLIC)
+        self.assertContentEqual(
+            FREE_INFORMATION_TYPES + (InformationType.PROPRIETARY,),
+            distribution.getAllowedBugInformationTypes())
+        self.assertEqual(
+            InformationType.PROPRIETARY,
+            distribution.getDefaultBugInformationType())
+
+    def test_sharing_policy_proprietary(self):
+        # bug_sharing_policy can enable only Proprietary.
+        distribution = self.makeDistributionWithPolicy(
+            BugSharingPolicy.PROPRIETARY)
+        self.assertContentEqual(
+            [InformationType.PROPRIETARY],
+            distribution.getAllowedBugInformationTypes())
+        self.assertEqual(
+            InformationType.PROPRIETARY,
+            distribution.getDefaultBugInformationType())
+
+
+class TestDistributionSpecificationPolicyAndInformationTypes(
+        TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def makeDistributionWithPolicy(self, specification_sharing_policy):
+        distribution = self.factory.makeDistribution()
+        self.factory.makeCommercialSubscription(pillar=distribution)
+        with person_logged_in(distribution.owner):
+            distribution.setSpecificationSharingPolicy(
+                specification_sharing_policy)
+        return distribution
+
+    def test_no_policy(self):
+        # Distributions that have not specified a policy can use the PUBLIC
+        # information type.
+        distribution = self.factory.makeDistribution()
+        self.assertContentEqual(
+            [InformationType.PUBLIC],
+            distribution.getAllowedSpecificationInformationTypes())
+        self.assertEqual(
+            InformationType.PUBLIC,
+            distribution.getDefaultSpecificationInformationType())
+
+    def test_sharing_policy_public(self):
+        # Distributions with a purely public policy should use PUBLIC
+        # information type.
+        distribution = self.makeDistributionWithPolicy(
+            SpecificationSharingPolicy.PUBLIC)
+        self.assertContentEqual(
+            [InformationType.PUBLIC],
+            distribution.getAllowedSpecificationInformationTypes())
+        self.assertEqual(
+            InformationType.PUBLIC,
+            distribution.getDefaultSpecificationInformationType())
+
+    def test_sharing_policy_public_or_proprietary(self):
+        # specification_sharing_policy can enable Proprietary.
+        distribution = self.makeDistributionWithPolicy(
+            SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY)
+        self.assertContentEqual(
+            [InformationType.PUBLIC, InformationType.PROPRIETARY],
+            distribution.getAllowedSpecificationInformationTypes())
+        self.assertEqual(
+            InformationType.PUBLIC,
+            distribution.getDefaultSpecificationInformationType())
+
+    def test_sharing_policy_proprietary_or_public(self):
+        # specification_sharing_policy can enable and default to Proprietary.
+        distribution = self.makeDistributionWithPolicy(
+            SpecificationSharingPolicy.PROPRIETARY_OR_PUBLIC)
+        self.assertContentEqual(
+            [InformationType.PUBLIC, InformationType.PROPRIETARY],
+            distribution.getAllowedSpecificationInformationTypes())
+        self.assertEqual(
+            InformationType.PROPRIETARY,
+            distribution.getDefaultSpecificationInformationType())
+
+    def test_sharing_policy_proprietary(self):
+        # specification_sharing_policy can enable only Proprietary.
+        distribution = self.makeDistributionWithPolicy(
+            SpecificationSharingPolicy.PROPRIETARY)
+        self.assertContentEqual(
+            [InformationType.PROPRIETARY],
+            distribution.getAllowedSpecificationInformationTypes())
+        self.assertEqual(
+            InformationType.PROPRIETARY,
+            distribution.getDefaultSpecificationInformationType())
+
+    def test_sharing_policy_embargoed_or_proprietary(self):
+        # specification_sharing_policy can be embargoed and then proprietary.
+        distribution = self.makeDistributionWithPolicy(
+            SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+        self.assertContentEqual(
+            [InformationType.PROPRIETARY, InformationType.EMBARGOED],
+            distribution.getAllowedSpecificationInformationTypes())
+        self.assertEqual(
+            InformationType.EMBARGOED,
+            distribution.getDefaultSpecificationInformationType())
+
+
+class BaseSharingPolicyTests:
+    """Common tests for distribution sharing policies."""
+
+    layer = DatabaseFunctionalLayer
+
+    def setSharingPolicy(self, policy, user):
+        raise NotImplementedError
+
+    def getSharingPolicy(self):
+        raise NotImplementedError
+
+    def setUp(self):
+        super().setUp()
+        self.distribution = self.factory.makeDistribution()
+        self.commercial_admin = self.factory.makeCommercialAdmin()
+
+    def test_owner_can_set_policy(self):
+        # Distribution maintainers can set sharing policies.
+        self.setSharingPolicy(self.public_policy, self.distribution.owner)
+        self.assertEqual(self.public_policy, self.getSharingPolicy())
+
+    def test_commercial_admin_can_set_policy(self):
+        # Commercial admins can set sharing policies for commercial
+        # distributions.
+        self.factory.makeCommercialSubscription(pillar=self.distribution)
+        self.setSharingPolicy(self.public_policy, self.commercial_admin)
+        self.assertEqual(self.public_policy, self.getSharingPolicy())
+
+    def test_random_cannot_set_policy(self):
+        # An unrelated user can't set sharing policies.
+        person = self.factory.makePerson()
+        self.assertRaises(
+            Unauthorized, self.setSharingPolicy, self.public_policy, person)
+
+    def test_anonymous_cannot_set_policy(self):
+        # An anonymous user can't set sharing policies.
+        self.assertRaises(
+            Unauthorized, self.setSharingPolicy, self.public_policy, None)
+
+    def test_proprietary_forbidden_without_commercial_sub(self):
+        # No policy that allows Proprietary can be configured without a
+        # commercial subscription.
+        self.setSharingPolicy(self.public_policy, self.distribution.owner)
+        self.assertEqual(self.public_policy, self.getSharingPolicy())
+        for policy in self.commercial_policies:
+            self.assertRaises(
+                CommercialSubscribersOnly,
+                self.setSharingPolicy, policy, self.distribution.owner)
+
+    def test_proprietary_allowed_with_commercial_sub(self):
+        # All policies are valid when there's a current commercial
+        # subscription.
+        self.factory.makeCommercialSubscription(pillar=self.distribution)
+        for policy in self.enum.items:
+            self.setSharingPolicy(policy, self.commercial_admin)
+            self.assertEqual(policy, self.getSharingPolicy())
+
+    def test_setting_proprietary_creates_access_policy(self):
+        # Setting a policy that allows Proprietary creates a
+        # corresponding access policy and shares it with the the
+        # maintainer.
+        self.factory.makeCommercialSubscription(pillar=self.distribution)
+        self.assertEqual(
+            [InformationType.PRIVATESECURITY, InformationType.USERDATA],
+            [policy.type for policy in
+             getUtility(IAccessPolicySource).findByPillar(
+                 [self.distribution])])
+        self.setSharingPolicy(
+            self.commercial_policies[0], self.commercial_admin)
+        self.assertEqual(
+            [InformationType.PRIVATESECURITY, InformationType.USERDATA,
+             InformationType.PROPRIETARY],
+            [policy.type for policy in
+             getUtility(IAccessPolicySource).findByPillar(
+                 [self.distribution])])
+        self.assertTrue(
+            getUtility(IService, 'sharing').checkPillarAccess(
+                [self.distribution], InformationType.PROPRIETARY,
+                self.distribution.owner))
+
+    def test_unused_policies_are_pruned(self):
+        # When a sharing policy is changed, the allowed information types may
+        # become more restricted. If this case, any existing access polices
+        # for the now defunct information type(s) should be removed so long as
+        # there are no corresponding policy artifacts.
+
+        # We create a distribution with and ensure there's an APA.
+        ap_source = getUtility(IAccessPolicySource)
+        distribution = self.factory.makeDistribution()
+        [ap] = ap_source.find(
+            [(distribution, InformationType.PRIVATESECURITY)])
+        self.factory.makeAccessPolicyArtifact(policy=ap)
+
+        def getAccessPolicyTypes(pillar):
+            return [
+                ap.type
+                for ap in ap_source.findByPillar([pillar])]
+
+        # Now change the sharing policies to PROPRIETARY
+        self.factory.makeCommercialSubscription(pillar=distribution)
+        with person_logged_in(distribution.owner):
+            distribution.setBugSharingPolicy(BugSharingPolicy.PROPRIETARY)
+            # Just bug sharing policy has been changed so all previous policy
+            # types are still valid.
+            self.assertContentEqual(
+                [InformationType.PRIVATESECURITY, InformationType.USERDATA,
+                 InformationType.PROPRIETARY],
+                getAccessPolicyTypes(distribution))
+
+            distribution.setBranchSharingPolicy(
+                BranchSharingPolicy.PROPRIETARY)
+            # Proprietary is permitted by the sharing policy, and there's a
+            # Private Security artifact. But Private isn't in use or allowed
+            # by a sharing policy, so it's now gone.
+            self.assertContentEqual(
+                [InformationType.PRIVATESECURITY, InformationType.PROPRIETARY],
+                getAccessPolicyTypes(distribution))
+
+    def test_proprietary_distributions_forbid_public_policies(self):
+        # A proprietary distribution forbids any sharing policy that would
+        # permit public artifacts.
+        owner = self.distribution.owner
+        with admin_logged_in():
+            self.distribution.information_type = InformationType.PROPRIETARY
+        policies_permitting_public = [self.public_policy]
+        policies_permitting_public.extend(
+            policy for policy in self.commercial_policies if
+            InformationType.PUBLIC in self.allowed_types[policy])
+        for policy in policies_permitting_public:
+            with ExpectedException(
+                    ProprietaryPillar, "The pillar is Proprietary."):
+                self.setSharingPolicy(policy, owner)
+
+
+class TestDistributionBugSharingPolicy(
+        BaseSharingPolicyTests, TestCaseWithFactory):
+    """Test Distribution.bug_sharing_policy."""
+
+    layer = DatabaseFunctionalLayer
+
+    enum = BugSharingPolicy
+    public_policy = BugSharingPolicy.PUBLIC
+    commercial_policies = (
+        BugSharingPolicy.PUBLIC_OR_PROPRIETARY,
+        BugSharingPolicy.PROPRIETARY_OR_PUBLIC,
+        BugSharingPolicy.PROPRIETARY,
+        )
+    allowed_types = BUG_POLICY_ALLOWED_TYPES
+
+    def setSharingPolicy(self, policy, user):
+        with person_logged_in(user):
+            result = self.distribution.setBugSharingPolicy(policy)
+        return result
+
+    def getSharingPolicy(self):
+        return self.distribution.bug_sharing_policy
+
+
+class TestDistributionBranchSharingPolicy(
+        BaseSharingPolicyTests, TestCaseWithFactory):
+    """Test Distribution.branch_sharing_policy."""
+
+    layer = DatabaseFunctionalLayer
+
+    enum = BranchSharingPolicy
+    public_policy = BranchSharingPolicy.PUBLIC
+    commercial_policies = (
+        BranchSharingPolicy.PUBLIC_OR_PROPRIETARY,
+        BranchSharingPolicy.PROPRIETARY_OR_PUBLIC,
+        BranchSharingPolicy.PROPRIETARY,
+        BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY,
+        )
+    allowed_types = BRANCH_POLICY_ALLOWED_TYPES
+
+    def setSharingPolicy(self, policy, user):
+        with person_logged_in(user):
+            result = self.distribution.setBranchSharingPolicy(policy)
+        return result
+
+    def getSharingPolicy(self):
+        return self.distribution.branch_sharing_policy
+
+    def test_setting_embargoed_creates_access_policy(self):
+        # Setting a policy that allows Embargoed creates a corresponding
+        # access policy and shares it with the maintainer.
+        self.factory.makeCommercialSubscription(pillar=self.distribution)
+        self.assertEqual(
+            [InformationType.PRIVATESECURITY, InformationType.USERDATA],
+            [policy.type for policy in
+             getUtility(IAccessPolicySource).findByPillar(
+                 [self.distribution])])
+        self.setSharingPolicy(
+            self.enum.EMBARGOED_OR_PROPRIETARY,
+            self.commercial_admin)
+        self.assertEqual(
+            [InformationType.PRIVATESECURITY, InformationType.USERDATA,
+             InformationType.PROPRIETARY, InformationType.EMBARGOED],
+            [policy.type for policy in
+             getUtility(IAccessPolicySource).findByPillar(
+                 [self.distribution])])
+        self.assertTrue(
+            getUtility(IService, 'sharing').checkPillarAccess(
+                [self.distribution], InformationType.PROPRIETARY,
+                self.distribution.owner))
+        self.assertTrue(
+            getUtility(IService, 'sharing').checkPillarAccess(
+                [self.distribution], InformationType.EMBARGOED,
+                self.distribution.owner))
+
+
+class TestDistributionSpecificationSharingPolicy(
+        BaseSharingPolicyTests, TestCaseWithFactory):
+    """Test Distribution.specification_sharing_policy."""
+
+    layer = DatabaseFunctionalLayer
+
+    enum = SpecificationSharingPolicy
+    public_policy = SpecificationSharingPolicy.PUBLIC
+    commercial_policies = (
+        SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY,
+        SpecificationSharingPolicy.PROPRIETARY_OR_PUBLIC,
+        SpecificationSharingPolicy.PROPRIETARY,
+        SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY,
+        )
+    allowed_types = SPECIFICATION_POLICY_ALLOWED_TYPES
+
+    def setSharingPolicy(self, policy, user):
+        with person_logged_in(user):
+            result = self.distribution.setSpecificationSharingPolicy(policy)
+        return result
+
+    def getSharingPolicy(self):
+        return self.distribution.specification_sharing_policy
 
 
 class TestDistributionCurrentSourceReleases(
