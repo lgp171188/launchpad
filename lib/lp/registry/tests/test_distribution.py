@@ -1106,7 +1106,7 @@ class BaseSharingPolicyTests:
             InformationType.PUBLIC in self.allowed_types[policy])
         for policy in policies_permitting_public:
             with ExpectedException(
-                    ProprietaryPillar, "The distribution is Proprietary."):
+                    ProprietaryPillar, "The pillar is Proprietary."):
                 self.setSharingPolicy(policy, owner)
 
 
