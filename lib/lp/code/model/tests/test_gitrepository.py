@@ -1184,6 +1184,19 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
             GitActivity, GitActivity.repository_id == repository_id)
         self.assertEqual([], list(activities))
 
+    def test_related_access_tokens_deleted(self):
+        _, token = self.factory.makeAccessToken(target=self.repository)
+        other_repository = self.factory.makeGitRepository()
+        _, other_token = self.factory.makeAccessToken(target=other_repository)
+        self.repository.destroySelf()
+        transaction.commit()
+        # The deleted repository's access tokens are gone.
+        self.assertRaises(
+            LostObjectError, getattr, removeSecurityProxy(token), 'target')
+        # An unrelated repository's access tokens are still present.
+        self.assertEqual(
+            other_repository, removeSecurityProxy(other_token).target)
+
     def test_related_ci_builds_deleted(self):
         # A repository that has a CI build can be deleted.
         build = self.factory.makeCIBuild(git_repository=self.repository)
