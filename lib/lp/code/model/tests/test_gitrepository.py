@@ -1190,8 +1190,10 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
         _, other_token = self.factory.makeAccessToken(target=other_repository)
         self.repository.destroySelf()
         transaction.commit()
+        # The deleted repository's access tokens are gone.
         self.assertRaises(
             LostObjectError, getattr, removeSecurityProxy(token), 'target')
+        # An unrelated repository's access tokens are still present.
         self.assertEqual(
             other_repository, removeSecurityProxy(other_token).target)
 
