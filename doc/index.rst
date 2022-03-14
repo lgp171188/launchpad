@@ -35,6 +35,7 @@ How-to Guides
    how-to/avoid-debugging-issues
    how-to/apply-schema-changes
    how-to/use-updated-dependency
+   how-to/resurrect-dogfood
 
 Explanation
 ===========
