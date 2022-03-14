@@ -6,6 +6,7 @@
 from datetime import datetime
 import hashlib
 import re
+from textwrap import dedent
 
 from fixtures import FakeLogger
 import pytz
@@ -153,7 +154,20 @@ class TestGitRefView(BrowserTestCase):
         [ref] = self.factory.makeGitRefs(paths=["refs/heads/branch"])
         log = self.makeCommitLog()
         self.hosting_fixture.getLog.result = list(reversed(log))
-        self.scanRef(ref, log[-1])
+        # XXX jugmac00 2022-03-14
+        # This is a workaround for the limitation of `GitHostingFixture` not
+        # implementing a proper `getCommits` method.
+        # If we would not supply the following configuration file,
+        # `CIBuild.requestBuildsForRefs`, which is unrelated to this test case,
+        # would fail.
+        configuration = dedent("""\
+            pipeline: [test]
+            jobs:
+                test:
+                    series: foo
+                    architectures: ["bar"]
+        """)
+        self.scanRef(ref, log[-1], blobs={".launchpad.yaml": configuration})
 
         # Make code hosting fail.
         self.hosting_fixture.getLog = FakeMethod(
@@ -193,7 +207,20 @@ class TestGitRefView(BrowserTestCase):
             result=RevisionStatusResult.FAILED)
 
         self.hosting_fixture.getLog.result = list(log)
-        self.scanRef(ref, log[-1])
+        # XXX jugmac00 2022-03-14
+        # This is a workaround for the limitation of `GitHostingFixture` not
+        # implementing a proper `getCommits` method.
+        # If we would not supply the following configuration file,
+        # `CIBuild.requestBuildsForRefs`, which is unrelated to this test case,
+        # would fail.
+        configuration = dedent("""\
+            pipeline: [test]
+            jobs:
+                test:
+                    series: foo
+                    architectures: ["bar"]
+        """)
+        self.scanRef(ref, log[-1], blobs={".launchpad.yaml": configuration})
         view = create_initialized_view(ref, "+index",
                                        principal=repository.owner)
         with person_logged_in(repository.owner):
@@ -533,7 +560,9 @@ class TestGitRefView(BrowserTestCase):
                 }
             for i in range(5)]
 
-    def scanRef(self, ref, tip):
+    def scanRef(self, ref, tip, blobs=None):
+        if blobs is not None:
+            tip["blobs"] = blobs
         self.hosting_fixture.getRefs.result = {
             ref.path: {"object": {"sha1": tip["sha1"], "type": "commit"}},
             }
@@ -550,7 +579,20 @@ class TestGitRefView(BrowserTestCase):
         [ref] = self.factory.makeGitRefs(paths=["refs/heads/branch"])
         log = self.makeCommitLog()
         self.hosting_fixture.getLog.result = list(reversed(log))
-        self.scanRef(ref, log[-1])
+        # XXX jugmac00 2022-03-14
+        # This is a workaround for the limitation of `GitHostingFixture` not
+        # implementing a proper `getCommits` method.
+        # If we would not supply the following configuration file,
+        # `CIBuild.requestBuildsForRefs`, which is unrelated to this test case,
+        # would fail.
+        configuration = dedent("""\
+            pipeline: [test]
+            jobs:
+                test:
+                    series: foo
+                    architectures: ["bar"]
+        """)
+        self.scanRef(ref, log[-1], blobs={".launchpad.yaml": configuration})
         view = create_initialized_view(ref, "+index")
         contents = view()
         expected_texts = list(reversed([
@@ -573,7 +615,20 @@ class TestGitRefView(BrowserTestCase):
         [ref] = self.factory.makeGitRefs(paths=["refs/heads/branch"])
         log = self.makeCommitLog()
         self.hosting_fixture.getLog.result = list(reversed(log))
-        self.scanRef(ref, log[-1])
+        # XXX jugmac00 2022-03-14
+        # This is a workaround for the limitation of `GitHostingFixture` not
+        # implementing a proper `getCommits` method.
+        # If we would not supply the following configuration file,
+        # `CIBuild.requestBuildsForRefs`, which is unrelated to this test case,
+        # would fail.
+        configuration = dedent("""\
+            pipeline: [test]
+            jobs:
+                test:
+                    series: foo
+                    architectures: ["bar"]
+        """)
+        self.scanRef(ref, log[-1], blobs={".launchpad.yaml": configuration})
         mp = self.factory.makeBranchMergeProposalForGit(target_ref=ref)
         merged_tip = dict(log[-1])
         merged_tip["sha1"] = six.ensure_text(
@@ -603,7 +658,20 @@ class TestGitRefView(BrowserTestCase):
         [ref] = self.factory.makeGitRefs(paths=["refs/heads/branch"])
         log = self.makeCommitLog()
         self.hosting_fixture.getLog.result = list(reversed(log))
-        self.scanRef(ref, log[-1])
+        # XXX jugmac00 2022-03-14
+        # This is a workaround for the limitation of `GitHostingFixture` not
+        # implementing a proper `getCommits` method.
+        # If we would not supply the following configuration file,
+        # `CIBuild.requestBuildsForRefs`, which is unrelated to this test case,
+        # would fail.
+        configuration = dedent("""\
+            pipeline: [test]
+            jobs:
+                test:
+                    series: foo
+                    architectures: ["bar"]
+        """)
+        self.scanRef(ref, log[-1], blobs={".launchpad.yaml": configuration})
         mp = self.factory.makeBranchMergeProposalForGit(target_ref=ref)
         merged_tip = dict(log[-1])
         merged_tip["sha1"] = six.ensure_text(
@@ -638,7 +706,20 @@ class TestGitRefView(BrowserTestCase):
         log = self.makeCommitLog()
         log[4]["author"]["email"] = "“%s”" % log[4]["author"]["email"]
         self.hosting_fixture.getLog.result = list(reversed(log))
-        self.scanRef(ref, log[-1])
+        # XXX jugmac00 2022-03-14
+        # This is a workaround for the limitation of `GitHostingFixture` not
+        # implementing a proper `getCommits` method.
+        # If we would not supply the following configuration file,
+        # `CIBuild.requestBuildsForRefs`, which is unrelated to this test case,
+        # would fail.
+        configuration = dedent("""\
+            pipeline: [test]
+            jobs:
+                test:
+                    series: foo
+                    architectures: ["bar"]
+        """)
+        self.scanRef(ref, log[-1], blobs={".launchpad.yaml": configuration})
         view = create_initialized_view(ref, "+index")
         contents = view()
         expected_texts = ["%.7s...\non 2015-01-05" % log[4]["sha1"]]
@@ -675,7 +756,20 @@ class TestGitRefView(BrowserTestCase):
         [ref] = self.factory.makeGitRefs(paths=["refs/heads/%s" % branch_name])
         log = self.makeCommitLog()
         self.hosting_fixture.getLog.result = list(reversed(log))
-        self.scanRef(ref, log[-1])
+        # XXX jugmac00 2022-03-14
+        # This is a workaround for the limitation of `GitHostingFixture` not
+        # implementing a proper `getCommits` method.
+        # If we would not supply the following configuration file,
+        # `CIBuild.requestBuildsForRefs`, which is unrelated to this test case,
+        # would fail.
+        configuration = dedent("""\
+            pipeline: [test]
+            jobs:
+                test:
+                    series: foo
+                    architectures: ["bar"]
+        """)
+        self.scanRef(ref, log[-1], blobs={".launchpad.yaml": configuration})
         view = create_initialized_view(ref, "+index")
         recent_commits_tag = soupmatchers.Tag(
             'recent commits', 'div', attrs={'id': 'recent-commits'})
@@ -734,7 +828,20 @@ class TestGitRefView(BrowserTestCase):
         self.useFixture(FakeLogger())
         [ref] = self.factory.makeGitRefs()
         log = self.makeCommitLog()
-        self.scanRef(ref, log[-1])
+        # XXX jugmac00 2022-03-14
+        # This is a workaround for the limitation of `GitHostingFixture` not
+        # implementing a proper `getCommits` method.
+        # If we would not supply the following configuration file,
+        # `CIBuild.requestBuildsForRefs`, which is unrelated to this test case,
+        # would fail.
+        configuration = dedent("""\
+            pipeline: [test]
+            jobs:
+                test:
+                    series: foo
+                    architectures: ["bar"]
+        """)
+        self.scanRef(ref, log[-1], blobs={".launchpad.yaml": configuration})
         self.hosting_fixture.getLog.failure = TimeoutError
         view = create_initialized_view(ref, "+index")
         contents = view()
