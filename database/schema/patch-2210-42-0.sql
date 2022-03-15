@@ -58,17 +58,4 @@ CREATE INDEX vulnerabilityactivity__vulnerability__changer__idx
 CREATE INDEX vulnerabilityactivity__changer__idx
     ON vulnerabilityactivity (changer);
 
-CREATE TABLE bugvulnerability (
-    bug integer REFERENCES Bug NOT NULL,
-    vulnerability integer REFERENCES Vulnerability NOT NULL
-);
-
-COMMENT ON TABLE bugvulnerability IS 'Links a vulnerability to the bug.';
-
-CREATE UNIQUE INDEX bugvulnerability__bug__vulnerability__key
-    ON bugvulnerability (bug, vulnerability);
-
-CREATE INDEX bugvulnerability__vulnerability__idx
-    ON bugvulnerability (vulnerability);
-
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 42, 0);
