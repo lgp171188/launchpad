@@ -6,6 +6,7 @@ from testtools.matchers import MatchesStructure
 import transaction
 from zope.component import getUtility
 
+from lp.app.enums import InformationType
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.oci.tests.helpers import OCIConfigHelperMixin
@@ -463,6 +464,7 @@ class TestDistributionAdminView(TestCaseWithFactory):
                 'field.supports_mirrors': 'on',
                 'field.default_traversal_policy': 'SERIES',
                 'field.redirect_default_traversal': 'on',
+                'field.information_type': 'PUBLIC',
                 'field.actions.change': 'change'})
         self.assertThat(
             distribution,
@@ -471,7 +473,8 @@ class TestDistributionAdminView(TestCaseWithFactory):
                 supports_mirrors=True,
                 default_traversal_policy=(
                     DistributionDefaultTraversalPolicy.SERIES),
-                redirect_default_traversal=True))
+                redirect_default_traversal=True,
+                information_type=InformationType.PUBLIC))
         create_initialized_view(
             distribution, '+admin', principal=admin,
             form={
@@ -479,6 +482,7 @@ class TestDistributionAdminView(TestCaseWithFactory):
                 'field.supports_mirrors': '',
                 'field.default_traversal_policy': 'OCI_PROJECT',
                 'field.redirect_default_traversal': '',
+                'field.information_type': 'PROPRIETARY',
                 'field.actions.change': 'change'})
         self.assertThat(
             distribution,
@@ -487,7 +491,8 @@ class TestDistributionAdminView(TestCaseWithFactory):
                 supports_mirrors=False,
                 default_traversal_policy=(
                     DistributionDefaultTraversalPolicy.OCI_PROJECT),
-                redirect_default_traversal=False))
+                redirect_default_traversal=False,
+                information_type=InformationType.PROPRIETARY))
 
 
 class TestDistroReassignView(TestCaseWithFactory):

@@ -461,9 +461,9 @@ class TestFileBugViewBase(FileBugViewMixin, TestCaseWithFactory):
             InformationType.USERDATA, view.default_information_type)
         self.assertEqual(InformationType.USERDATA, bug.information_type)
 
-    def test_filebug_information_type_public_policy(self):
+    def test_filebug_information_type_product_public_policy(self):
         # The vocabulary for information_type when filing a bug is created
-        # correctly for non commercial projects.
+        # correctly for non-commercial projects.
         product = self.factory.makeProduct(official_malone=True)
         with person_logged_in(product.owner):
             view = create_initialized_view(
@@ -472,7 +472,7 @@ class TestFileBugViewBase(FileBugViewMixin, TestCaseWithFactory):
             soup = BeautifulSoup(html)
         self.assertIsNone(soup.find('label', text="Proprietary"))
 
-    def test_filebug_information_type_proprietary_policy(self):
+    def test_filebug_information_type_product_proprietary_policy(self):
         # The vocabulary for information_type when filing a bug is created
         # correctly for a project with a proprietary sharing policy.
         product = self.factory.makeProduct(official_malone=True)
@@ -481,6 +481,32 @@ class TestFileBugViewBase(FileBugViewMixin, TestCaseWithFactory):
             product.setBugSharingPolicy(BugSharingPolicy.PROPRIETARY)
             view = create_initialized_view(
                 product, '+filebug', principal=product.owner)
+            html = view.render()
+            soup = BeautifulSoup(html)
+        self.assertIsNotNone(soup.find('label', text="Proprietary"))
+
+    def test_filebug_information_type_distribution_public_policy(self):
+        # The vocabulary for information_type when filing a bug is created
+        # correctly for non-commercial distributions.
+        distribution = self.factory.makeDistribution()
+        removeSecurityProxy(distribution).official_malone = True
+        with person_logged_in(distribution.owner):
+            view = create_initialized_view(
+                distribution, '+filebug', principal=distribution.owner)
+            html = view.render()
+            soup = BeautifulSoup(html)
+        self.assertIsNone(soup.find('label', text="Proprietary"))
+
+    def test_filebug_information_type_distribution_proprietary_policy(self):
+        # The vocabulary for information_type when filing a bug is created
+        # correctly for a distribution with a proprietary sharing policy.
+        distribution = self.factory.makeDistribution()
+        removeSecurityProxy(distribution).official_malone = True
+        self.factory.makeCommercialSubscription(pillar=distribution)
+        with person_logged_in(distribution.owner):
+            distribution.setBugSharingPolicy(BugSharingPolicy.PROPRIETARY)
+            view = create_initialized_view(
+                distribution, '+filebug', principal=distribution.owner)
             html = view.render()
             soup = BeautifulSoup(html)
         self.assertIsNotNone(soup.find('label', text="Proprietary"))

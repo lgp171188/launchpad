@@ -519,6 +519,29 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         return (self.commercial_subscription
             and self.commercial_subscription.date_expires > now)
 
+    @property
+    def commercial_subscription_is_due(self):
+        """See `IDistribution`.
+
+        If True, display subscription warning to distribution owner.
+        """
+        if self.information_type not in PROPRIETARY_INFORMATION_TYPES:
+            return False
+        elif (self.commercial_subscription is None
+              or not self.commercial_subscription.is_active):
+            # The distribution doesn't have an active subscription.
+            return True
+        else:
+            warning_date = (self.commercial_subscription.date_expires
+                            - timedelta(30))
+            now = datetime.now(pytz.UTC)
+            if now > warning_date:
+                # The subscription is close to being expired.
+                return True
+            else:
+                # The subscription is good.
+                return False
+
     def _ensure_complimentary_subscription(self):
         """Create a complementary commercial subscription for the distro."""
         if not self.commercial_subscription:

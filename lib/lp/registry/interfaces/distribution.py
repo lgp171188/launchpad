@@ -466,6 +466,12 @@ class IDistributionView(
             "An object which contains the timeframe and the voucher code of a "
             "subscription.")))
 
+    commercial_subscription_is_due = exported(Bool(
+        title=_("Commercial subscription is due"), readonly=True,
+        description=_(
+            "Whether the distribution's licensing requires a new commercial "
+            "subscription to use launchpad.")))
+
     has_current_commercial_subscription = Attribute(
         "Whether the distribution has a current commercial subscription.")
 
