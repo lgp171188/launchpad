@@ -628,7 +628,7 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
                 "Scheduling builds of charm recipe %s/%s/%s",
                 self.owner.name, self.project.name, self.name)
         return self.requestBuilds(
-            self.owner, channels=self.auto_build_channels)
+            requester=self.owner, channels=self.auto_build_channels)
 
     def getBuildRequest(self, job_id):
         """See `ICharmRecipe`."""
@@ -1064,7 +1064,13 @@ class CharmRecipeSet:
         recipes = cls._findStaleRecipes()
         build_requests = []
         for recipe in recipes:
-            build_requests.append(recipe.requestAutoBuilds(logger=logger))
+            try:
+                build_request = recipe.requestAutoBuilds(logger=logger)
+            except Exception as e:
+                if logger is not None:
+                    logger.exception(e)
+                continue
+            build_requests.append(build_request)
         return build_requests
 
     def detachFromGitRepository(self, repository):

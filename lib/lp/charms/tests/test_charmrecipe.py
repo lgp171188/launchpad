@@ -1279,6 +1279,40 @@ class TestCharmRecipeSet(TestCaseWithFactory):
             expected_log_entries, logger.getLogBuffer().splitlines())
         self.assertFalse(recipe.is_stale)
 
+    def test_makeAutoBuild_skips_for_unexpected_exceptions(self):
+        # scheduling builds need to be unaffected by one erroring
+        recipe = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
+        logger = BufferLogger()
+        recipe = removeSecurityProxy(recipe)
+        # currently there is no expected way that `makeAutoBuilds` could fail
+        # so we fake it
+        def fake_requestAutoBuilds_with_side_effect(logger=None):
+            raise Exception("something unexpected went wrong")
+        recipe.requestAutoBuilds = fake_requestAutoBuilds_with_side_effect
+
+        build_requests = getUtility(ICharmRecipeSet).makeAutoBuilds(
+            logger=logger)
+
+        self.assertEqual([], build_requests)
+        self.assertEqual(
+            ['ERROR something unexpected went wrong'],
+            logger.getLogBuffer().splitlines()
+        )
+
+    def test_makeAutoBuild_skips_and_no_logger_enabled(self):
+        # This is basically the same test case as
+        # `test_makeAutoBuild_skips_for_unexpected_exceptions`
+        # but we particularly test with no logger enabled.
+        recipe = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
+        recipe = removeSecurityProxy(recipe)
+        def fake_requestAutoBuilds_with_side_effect(logger=None):
+            raise Exception("something unexpected went wrong")
+        recipe.requestAutoBuilds = fake_requestAutoBuilds_with_side_effect
+
+        build_requests = getUtility(ICharmRecipeSet).makeAutoBuilds()
+
+        self.assertEqual([], build_requests)
+
     def test_makeAutoBuilds_skips_if_requested_recently(self):
         # ICharmRecipeSet.makeAutoBuilds skips recipes that have been built
         # recently.
