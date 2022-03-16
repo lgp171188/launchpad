@@ -3,7 +3,6 @@
 
 """Test the close-account script."""
 
-import six
 from storm.store import Store
 from testtools.matchers import (
     MatchesSetwise,
@@ -178,7 +177,7 @@ class TestCloseAccount(TestCaseWithFactory):
         person_id = person.id
         account_id = person.account.id
         self.factory.makeProduct(owner=person)
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.assertRaisesWithContent(
                 LaunchpadScriptFailure,
@@ -192,7 +191,7 @@ class TestCloseAccount(TestCaseWithFactory):
 
     def test_dry_run(self):
         person, person_id, account_id = self.makePopulatedUser()
-        script = self.makeScript(['--dry-run', six.ensure_str(person.name)])
+        script = self.makeScript(['--dry-run', person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertIn(
@@ -201,14 +200,14 @@ class TestCloseAccount(TestCaseWithFactory):
 
     def test_single_by_name(self):
         person, person_id, account_id = self.makePopulatedUser()
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
 
     def test_single_by_email(self):
         person, person_id, account_id = self.makePopulatedUser()
-        script = self.makeScript([six.ensure_str(person.preferredemail.email)])
+        script = self.makeScript([person.preferredemail.email])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -227,7 +226,7 @@ class TestCloseAccount(TestCaseWithFactory):
     def test_multiple_email_addresses(self):
         person, person_id, account_id = self.makePopulatedUser()
         self.factory.makeEmail('%s@another-domain.test' % person.name, person)
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -251,7 +250,7 @@ class TestCloseAccount(TestCaseWithFactory):
         snap = self.factory.makeSnap()
         snap_build = self.factory.makeSnapBuild(requester=person, snap=snap)
         specification = self.factory.makeSpecification(drafter=person)
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -271,7 +270,7 @@ class TestCloseAccount(TestCaseWithFactory):
             question.addComment(person, "comment")
             removeSecurityProxy(question).status = status
             questions.append(question)
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -293,7 +292,7 @@ class TestCloseAccount(TestCaseWithFactory):
             question.addComment(person, "comment")
             removeSecurityProxy(question).status = status
             questions[status] = question
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -308,7 +307,7 @@ class TestCloseAccount(TestCaseWithFactory):
         spec = self.factory.makeSpecification()
         branch = self.factory.makeAnyBranch()
         spec.linkBranch(branch, person)
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -331,7 +330,7 @@ class TestCloseAccount(TestCaseWithFactory):
             while not job.isDone():
                 job(chunk_size=100)
         self.assertTrue(person.hasMaintainedPackages())
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -345,7 +344,7 @@ class TestCloseAccount(TestCaseWithFactory):
         bugtask = self.factory.makeBugTask(bug=bug, owner=person)
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -358,7 +357,7 @@ class TestCloseAccount(TestCaseWithFactory):
         self.factory.makeBugWatch(owner=person)
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -370,7 +369,7 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertTrue(bug.isUserAffected(person))
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -382,7 +381,7 @@ class TestCloseAccount(TestCaseWithFactory):
         translations_person.translations_relicensing_agreement = True
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -399,7 +398,7 @@ class TestCloseAccount(TestCaseWithFactory):
                 person, pofile))
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -413,7 +412,7 @@ class TestCloseAccount(TestCaseWithFactory):
         pofile.owner = person
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -429,7 +428,7 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertIsNotNone(ppa.getAuthToken(person))
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             now = get_transaction_timestamp(Store.of(person))
             self.runScript(script)
@@ -557,7 +556,7 @@ class TestCloseAccount(TestCaseWithFactory):
             submission_ids[0], get_submission_by_submission_key(keys[0]))
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -584,7 +583,7 @@ class TestCloseAccount(TestCaseWithFactory):
             MatchesStructure.byEquality(count=1, viewed_by=other_person)))
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -620,7 +619,7 @@ class TestCloseAccount(TestCaseWithFactory):
             MatchesStructure.byEquality(owner=other_person)))
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -634,7 +633,7 @@ class TestCloseAccount(TestCaseWithFactory):
         product.active = False
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -652,7 +651,7 @@ class TestCloseAccount(TestCaseWithFactory):
                 TargetRevisionControlSystems.GIT)]
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -680,7 +679,7 @@ class TestCloseAccount(TestCaseWithFactory):
                 result_status=CodeImportResultStatus.SUCCESS)
             person_id = person.id
             account_id = person.account.id
-            script = self.makeScript([six.ensure_str(person.name)])
+            script = self.makeScript([person.name])
             with dbuser('launchpad'):
                 self.runScript(script)
             self.assertRemoved(account_id, person_id)
@@ -708,7 +707,7 @@ class TestCloseAccount(TestCaseWithFactory):
         removeSecurityProxy(ppa).owner = other_person
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -719,7 +718,7 @@ class TestCloseAccount(TestCaseWithFactory):
         person_id = person.id
         account_id = person.account.id
         specification = self.factory.makeSpecification(owner=person)
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -738,7 +737,7 @@ class TestCloseAccount(TestCaseWithFactory):
 
         person_id = member.id
         account_id = member.account.id
-        script = self.makeScript([six.ensure_str(member.name)])
+        script = self.makeScript([member.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -751,7 +750,7 @@ class TestCloseAccount(TestCaseWithFactory):
         owned_team2 = self.factory.makeTeam(name='target2', owner=person)
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
 
         # Closing account fails as the user still owns team2
         with dbuser('launchpad'):
@@ -776,7 +775,7 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertEqual(token, login_token_set[plaintext_token])
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -794,7 +793,7 @@ class TestCloseAccount(TestCaseWithFactory):
             [other_request_token], other_person.oauth_request_tokens)
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -813,7 +812,7 @@ class TestCloseAccount(TestCaseWithFactory):
             [other_access_token], other_person.oauth_access_tokens)
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
@@ -828,7 +827,7 @@ class TestCloseAccount(TestCaseWithFactory):
         ppa.setProcessors(procs)
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.assertRaisesWithContent(
                 LaunchpadScriptFailure,
@@ -851,7 +850,7 @@ class TestCloseAccount(TestCaseWithFactory):
             DevNullLogger(), getPubConfig(ppa), None, ppa).deleteArchive()
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.assertRaisesWithContent(
                 LaunchpadScriptFailure,
@@ -873,7 +872,7 @@ class TestCloseAccount(TestCaseWithFactory):
         store = Store.of(ppa)
         person_id = person.id
         account_id = person.account.id
-        script = self.makeScript([six.ensure_str(person.name)])
+        script = self.makeScript([person.name])
         with dbuser('launchpad'):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)

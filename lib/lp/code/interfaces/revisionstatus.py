@@ -149,7 +149,8 @@ class IRevisionStatusReportEdit(Interface):
     def setLog(log_data):
         """Set a new log on an existing status report.
 
-        :param log_data: The contents (in bytes) of the log.
+        :param log_data: The contents of the log, either as bytes or as a file
+            object.
         """
 
     # XXX cjwatson 2022-01-14: artifact_type isn't currently exported, but
@@ -166,7 +167,8 @@ class IRevisionStatusReportEdit(Interface):
     def attach(name, data, artifact_type=RevisionStatusArtifactType.BINARY):
         """Attach a new artifact to an existing status report.
 
-        :param data: The contents (in bytes) of the artifact.
+        :param data: The contents of the artifact, either as bytes or as a file
+            object.
         :param artifact_type: The type of the artifact.  This may currently
             only be `RevisionStatusArtifactType.BINARY`, but more types may
             be added in future.
@@ -230,6 +232,9 @@ class IRevisionStatusReportSet(Interface):
 
     def findByCommit(repository, commit_sha1):
         """Returns all `RevisionStatusReport` for a repository and commit."""
+
+    def getByCIBuildAndTitle(ci_build, title):
+        """Return the `RevisionStatusReport` for a given CI build and title."""
 
     def deleteForRepository(repository):
         """Delete all `RevisionStatusReport` for a repository."""

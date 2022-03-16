@@ -10,7 +10,6 @@ __all__ = [
     'TitleBreadcrumb',
     ]
 
-import six
 from zope.interface import implementer
 
 from lp.services.webapp import canonical_url
@@ -77,12 +76,8 @@ class Breadcrumb:
         return self._detail or self.text
 
     def __repr__(self):
-        # XXX: salgado, 2009-10-14, http://bugs.python.org/issue5876: In
-        # python 2.5-2.7, the return value of __repr__() may be forced into a
-        # type(str), so we can't include unicode here.
-        text = six.ensure_str(self.text, 'raw-unicode-escape')
         return "<%s url='%s' text='%s'>" % (
-            self.__class__.__name__, self.url, text)
+            self.__class__.__name__, self.url, self.text)
 
 
 class NameBreadcrumb(Breadcrumb):

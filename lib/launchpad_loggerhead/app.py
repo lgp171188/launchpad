@@ -40,7 +40,6 @@ from paste.request import (
     parse_querystring,
     path_info_pop,
     )
-import six
 from six.moves.urllib.parse import (
     urlencode,
     urljoin,
@@ -256,7 +255,7 @@ class RootApp:
             self.log.info('Using branch: %s', branch_name)
             if trail and not trail.startswith('/'):
                 trail = '/' + trail
-            environ['PATH_INFO'] = six.ensure_str(trail)
+            environ['PATH_INFO'] = trail
             environ['SCRIPT_NAME'] += consumed.rstrip('/')
             branch_url = lp_server.get_url() + branch_name
             branch_link = urljoin(

@@ -1283,7 +1283,11 @@ class EditDistributionByDistroOwnersOrAdmins(AuthorizationBase):
     usedfor = IDistribution
 
     def checkAuthenticated(self, user):
-        return user.isOwner(self.obj) or user.in_admin
+        # Commercial admins may help setup commercial distributions.
+        return (
+            user.isOwner(self.obj)
+            or is_commercial_case(self.obj, user)
+            or user.in_admin)
 
 
 class ModerateDistributionByDriversOrOwnersOrAdmins(AuthorizationBase):
@@ -2399,14 +2403,15 @@ class EditBranch(AuthorizationBase):
 
 
 class ModerateBranch(EditBranch):
-    """The owners, product owners, and admins can moderate branches."""
+    """The owners, pillar owners, and admins can moderate branches."""
     permission = 'launchpad.Moderate'
 
     def checkAuthenticated(self, user):
         if super().checkAuthenticated(user):
             return True
         branch = self.obj
-        if branch.product is not None and user.inTeam(branch.product.owner):
+        pillar = branch.product or branch.distribution
+        if pillar is not None and user.inTeam(pillar.owner):
             return True
         return user.in_commercial_admin
 
@@ -2474,15 +2479,22 @@ class EditGitRepository(AuthorizationBase):
 
 
 class ModerateGitRepository(EditGitRepository):
-    """The owners, project owners, and admins can moderate Git repositories."""
+    """The owners, pillar owners, and admins can moderate Git repositories."""
     permission = 'launchpad.Moderate'
 
     def checkAuthenticated(self, user):
         if super().checkAuthenticated(user):
             return True
         target = self.obj.target
-        if (target is not None and IProduct.providedBy(target) and
-            user.inTeam(target.owner)):
+        if IProduct.providedBy(target):
+            pillar = target
+        elif IDistributionSourcePackage.providedBy(target):
+            pillar = target.distribution
+        elif IOCIProject.providedBy(target):
+            pillar = target.pillar
+        else:
+            raise AssertionError("Unknown target: %r" % target)
+        if pillar is not None and user.inTeam(pillar.owner):
             return True
         return user.in_commercial_admin
 
@@ -3265,6 +3277,10 @@ class EditMessageRevision(DelegatedAuthorization):
 
 class ViewPublisherConfig(AdminByAdminsTeam):
     usedfor = IPublisherConfig
+
+
+class ViewSourcePackage(AnonymousAuthorization):
+    usedfor = ISourcePackage
 
 
 class EditSourcePackage(EditDistributionSourcePackage):

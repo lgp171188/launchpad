@@ -104,11 +104,15 @@ from lp.bugs.interfaces.vulnerability import (
     )
 from lp.bugs.model.bug import FileBugData
 from lp.buildmaster.enums import (
+    BuildBaseImageType,
     BuilderResetProtocol,
     BuildStatus,
     )
 from lp.buildmaster.interfaces.builder import IBuilderSet
-from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.buildmaster.interfaces.processor import (
+    IProcessorSet,
+    ProcessorNotFound,
+    )
 from lp.charms.interfaces.charmbase import ICharmBaseSet
 from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuildSet
@@ -2716,7 +2720,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                          publish_root_dir=None, publish_base_url=None,
                          publish_copy_base_url=None, no_pubconf=False,
                          icon=None, summary=None, vcs=None,
-                         oci_project_admin=None):
+                         oci_project_admin=None, bug_sharing_policy=None,
+                         branch_sharing_policy=None,
+                         specification_sharing_policy=None,
+                         information_type=None):
         """Make a new distribution."""
         if name is None:
             name = self.getUniqueString(prefix="distribution")
@@ -2736,7 +2743,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             members = self.makeTeam(owner)
         distro = getUtility(IDistributionSet).new(
             name, displayname, title, description, summary, domainname,
-            members, owner, registrant, icon=icon, vcs=vcs)
+            members, owner, registrant, icon=icon, vcs=vcs,
+            information_type=information_type)
         naked_distro = removeSecurityProxy(distro)
         if aliases is not None:
             naked_distro.setAliases(aliases)
@@ -2746,6 +2754,26 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             naked_distro.bug_supervisor = bug_supervisor
         if oci_project_admin is not None:
             naked_distro.oci_project_admin = oci_project_admin
+        # makeProduct defaults licenses to [License.OTHER_PROPRIETARY] if
+        # any non-public sharing policy is set, which ensures a
+        # complimentary commercial subscription.  However, Distribution
+        # doesn't have a licenses field, so deal with the commercial
+        # subscription directly here instead.
+        if ((bug_sharing_policy is not None and
+             bug_sharing_policy != BugSharingPolicy.PUBLIC) or
+            (branch_sharing_policy is not None and
+             branch_sharing_policy != BranchSharingPolicy.PUBLIC) or
+            (specification_sharing_policy is not None and
+             specification_sharing_policy !=
+             SpecificationSharingPolicy.PUBLIC)):
+            naked_distro._ensure_complimentary_subscription()
+        if branch_sharing_policy:
+            naked_distro.setBranchSharingPolicy(branch_sharing_policy)
+        if bug_sharing_policy:
+            naked_distro.setBugSharingPolicy(bug_sharing_policy)
+        if specification_sharing_policy:
+            naked_distro.setSpecificationSharingPolicy(
+                specification_sharing_policy)
         if not no_pubconf:
             self.makePublisherConfig(
                 distro, publish_root_dir, publish_base_url,
@@ -2914,6 +2942,34 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             architecturetag = self.getUniqueString('arch')
         return distroseries.newArch(
             architecturetag, processor, official, owner, enabled)
+
+    def makeBuildableDistroArchSeries(self, architecturetag=None,
+                                      processor=None,
+                                      supports_virtualized=True,
+                                      supports_nonvirtualized=True, **kwargs):
+        if architecturetag is None:
+            architecturetag = self.getUniqueUnicode("arch")
+        if processor is None:
+            try:
+                processor = getUtility(IProcessorSet).getByName(
+                    architecturetag)
+            except ProcessorNotFound:
+                processor = self.makeProcessor(
+                    name=architecturetag,
+                    supports_virtualized=supports_virtualized,
+                    supports_nonvirtualized=supports_nonvirtualized)
+        das = self.makeDistroArchSeries(
+            architecturetag=architecturetag, processor=processor, **kwargs)
+        # Add both a chroot and a LXD image to test that
+        # getAllowedArchitectures doesn't get confused by multiple
+        # PocketChroot rows for a single DistroArchSeries.
+        fake_chroot = self.makeLibraryFileAlias(
+            filename="fake_chroot.tar.gz", db_only=True)
+        das.addOrUpdateChroot(fake_chroot)
+        fake_lxd = self.makeLibraryFileAlias(
+            filename="fake_lxd.tar.gz", db_only=True)
+        das.addOrUpdateChroot(fake_lxd, image_type=BuildBaseImageType.LXD)
+        return das
 
     def makeComponent(self, name=None):
         """Make a new `IComponent`."""
@@ -4588,11 +4644,21 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return secret, token
 
     def makeCVE(self, sequence, description=None,
-                cvestate=CveStatus.CANDIDATE):
+                cvestate=CveStatus.CANDIDATE,
+                date_made_public=None, discoverer=None,
+                cvss=None):
         """Create a new CVE record."""
         if description is None:
             description = self.getUniqueUnicode()
-        return getUtility(ICveSet).new(sequence, description, cvestate)
+
+        return getUtility(ICveSet).new(
+            sequence,
+            description,
+            cvestate,
+            date_made_public,
+            discoverer,
+            cvss
+        )
 
     def makePublisherConfig(self, distribution=None, root_dir=None,
                             base_url=None, copy_base_url=None):

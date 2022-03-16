@@ -11,6 +11,7 @@ import email
 from functools import partial
 import hashlib
 import json
+from textwrap import dedent
 
 from breezy import urlutils
 from fixtures import MockPatch
@@ -20,6 +21,10 @@ import pytz
 import six
 from storm.exceptions import LostObjectError
 from storm.store import Store
+from testscenarios import (
+    load_tests_apply_scenarios,
+    WithScenarios,
+    )
 from testtools.matchers import (
     AnyMatch,
     ContainsDict,
@@ -81,6 +86,10 @@ from lp.code.event.git import GitRefsUpdatedEvent
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_FINAL_STATES as FINAL_STATES,
     )
+from lp.code.interfaces.cibuild import (
+    ICIBuild,
+    ICIBuildSet,
+    )
 from lp.code.interfaces.codeimport import ICodeImportSet
 from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
 from lp.code.interfaces.gitjob import (
@@ -141,6 +150,10 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyArtifactSource,
     IAccessPolicySource,
     )
+from lp.registry.interfaces.distributionsourcepackage import (
+    IDistributionSourcePackage,
+    )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackageFactory,
@@ -161,6 +174,7 @@ from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.job.runner import JobRunner
+from lp.services.log.logger import BufferLogger
 from lp.services.macaroons.interfaces import IMacaroonIssuer
 from lp.services.macaroons.testing import (
     find_caveats_by_name,
@@ -1170,6 +1184,19 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
             GitActivity, GitActivity.repository_id == repository_id)
         self.assertEqual([], list(activities))
 
+    def test_related_access_tokens_deleted(self):
+        _, token = self.factory.makeAccessToken(target=self.repository)
+        other_repository = self.factory.makeGitRepository()
+        _, other_token = self.factory.makeAccessToken(target=other_repository)
+        self.repository.destroySelf()
+        transaction.commit()
+        # The deleted repository's access tokens are gone.
+        self.assertRaises(
+            LostObjectError, getattr, removeSecurityProxy(token), 'target')
+        # An unrelated repository's access tokens are still present.
+        self.assertEqual(
+            other_repository, removeSecurityProxy(other_token).target)
+
     def test_related_ci_builds_deleted(self):
         # A repository that has a CI build can be deleted.
         build = self.factory.makeCIBuild(git_repository=self.repository)
@@ -1461,6 +1488,7 @@ class TestGitRepositoryModifications(TestCaseWithFactory):
             repository, "date_last_modified", UTC_NOW)
 
     def test_create_ref_sets_date_last_modified(self):
+        self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository(
             date_created=datetime(2015, 6, 1, tzinfo=pytz.UTC))
         [ref] = self.factory.makeGitRefs(repository=repository)
@@ -1746,13 +1774,18 @@ class TestGitRepositoryPrivacy(TestCaseWithFactory):
             get_policies_for_artifact(repository))
 
     def test__reconcileAccess_for_package_repository(self):
-        # Git repository privacy isn't yet supported for distributions, so
-        # no AccessPolicyArtifact is created for a package repository.
+        # _reconcileAccess uses a distribution policy for a package
+        # repository.
         repository = self.factory.makeGitRepository(
             target=self.factory.makeDistributionSourcePackage(),
             information_type=InformationType.USERDATA)
+        [artifact] = getUtility(IAccessArtifactSource).ensure([repository])
+        getUtility(IAccessPolicyArtifactSource).deleteByArtifact([artifact])
         removeSecurityProxy(repository)._reconcileAccess()
-        self.assertEqual([], get_policies_for_artifact(repository))
+        self.assertContentEqual(
+            getUtility(IAccessPolicySource).find(
+                [(repository.target.distribution, InformationType.USERDATA)]),
+            get_policies_for_artifact(repository))
 
     def test__reconcileAccess_for_oci_project_repository(self):
         # Git repository privacy isn't yet supported for OCI projects, so no
@@ -1869,6 +1902,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
             repository.refs, repository, ["refs/heads/master"])
 
     def test_update(self):
+        self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository()
         paths = ("refs/heads/master", "refs/tags/1.0")
         self.factory.makeGitRefs(repository=repository, paths=paths)
@@ -1900,6 +1934,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         return [UpdatePreviewDiffJob(job) for job in jobs]
 
     def test_update_schedules_diff_update(self):
+        self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository()
         [ref] = self.factory.makeGitRefs(repository=repository)
         self.assertRefsMatch(repository.refs, repository, [ref.path])
@@ -2210,6 +2245,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
     def test_synchroniseRefs(self):
         # synchroniseRefs copes with synchronising a repository where some
         # refs have been created, some deleted, and some changed.
+        self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository()
         paths = ("refs/heads/master", "refs/heads/foo", "refs/heads/bar")
         self.factory.makeGitRefs(repository=repository, paths=paths)
@@ -2356,17 +2392,36 @@ class TestGitRepositoryGetAllowedInformationTypes(TestCaseWithFactory):
             repository.getAllowedInformationTypes(admin))
 
 
-class TestGitRepositoryModerate(TestCaseWithFactory):
+class TestGitRepositoryModerate(WithScenarios, TestCaseWithFactory):
     """Test that project owners and commercial admins can moderate Git
     repositories."""
 
     layer = DatabaseFunctionalLayer
+    scenarios = [
+        ("project", {"target_factory_name": "makeProduct"}),
+        ("distribution",
+         {"target_factory_name": "makeDistributionSourcePackage"}),
+        ("OCI project", {"target_factory_name": "makeOCIProject"}),
+        ]
+
+    def _makeGitRepository(self, **kwargs):
+        target = getattr(self.factory, self.target_factory_name)()
+        return self.factory.makeGitRepository(target=target, **kwargs)
+
+    def _getPillar(self, repository):
+        target = repository.target
+        if IDistributionSourcePackage.providedBy(target):
+            return target.distribution
+        elif IOCIProject.providedBy(target):
+            return target.pillar
+        else:
+            return target
 
     def test_moderate_permission(self):
         # Test the ModerateGitRepository security checker.
-        project = self.factory.makeProduct()
-        repository = self.factory.makeGitRepository(target=project)
-        with person_logged_in(project.owner):
+        repository = self._makeGitRepository()
+        pillar = self._getPillar(repository)
+        with person_logged_in(pillar.owner):
             self.assertTrue(check_permission("launchpad.Moderate", repository))
         with celebrity_logged_in("commercial_admin"):
             self.assertTrue(check_permission("launchpad.Moderate", repository))
@@ -2376,24 +2431,26 @@ class TestGitRepositoryModerate(TestCaseWithFactory):
 
     def test_methods_smoketest(self):
         # Users with launchpad.Moderate can call transitionToInformationType.
-        project = self.factory.makeProduct()
-        repository = self.factory.makeGitRepository(target=project)
-        with person_logged_in(project.owner):
-            project.setBranchSharingPolicy(BranchSharingPolicy.PUBLIC)
+        if self.target_factory_name == "makeOCIProject":
+            self.skipTest("Not implemented for OCI projects yet.")
+        repository = self._makeGitRepository()
+        pillar = self._getPillar(repository)
+        with person_logged_in(pillar.owner):
+            pillar.setBranchSharingPolicy(BranchSharingPolicy.PUBLIC)
             repository.transitionToInformationType(
-                InformationType.PRIVATESECURITY, project.owner)
+                InformationType.PRIVATESECURITY, pillar.owner)
             self.assertEqual(
                 InformationType.PRIVATESECURITY, repository.information_type)
 
     def test_attribute_smoketest(self):
         # Users with launchpad.Moderate can set attributes.
-        project = self.factory.makeProduct()
-        repository = self.factory.makeGitRepository(target=project)
-        with person_logged_in(project.owner):
+        repository = self._makeGitRepository()
+        pillar = self._getPillar(repository)
+        with person_logged_in(pillar.owner):
             repository.description = "something"
-            repository.reviewer = project.owner
+            repository.reviewer = pillar.owner
         self.assertEqual("something", repository.description)
-        self.assertEqual(project.owner, repository.reviewer)
+        self.assertEqual(pillar.owner, repository.reviewer)
 
 
 class TestGitRepositoryIsPersonTrustedReviewer(TestCaseWithFactory):
@@ -2843,6 +2900,23 @@ class TestGitRepositoryRescan(TestCaseWithFactory):
         self.assertTrue(result)
         self.assertIsNone(result.job.date_finished)
 
+    def test_security(self):
+        repository = self.factory.makeGitRepository()
+
+        # Random users can't rescan a branch.
+        with person_logged_in(self.factory.makePerson()):
+            self.assertRaises(Unauthorized, getattr, repository, 'rescan')
+
+        # But the owner can.
+        with person_logged_in(repository.owner):
+            repository.rescan()
+
+        # And so can commercial-admins (and maybe registry too,
+        # eventually).
+        with person_logged_in(
+                getUtility(ILaunchpadCelebrities).commercial_admin):
+            repository.rescan()
+
 
 class TestGitRepositoryUpdateMergeCommitIDs(TestCaseWithFactory):
 
@@ -2941,6 +3015,7 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
 
     def test_base_repository_recipe(self):
         # On ref changes, recipes where this ref is the base become stale.
+        self.useFixture(GitHostingFixture())
         [ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeSourcePackageRecipe(branches=[ref])
         removeSecurityProxy(recipe).is_stale = False
@@ -2951,6 +3026,7 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
     def test_base_repository_different_ref_recipe(self):
         # On ref changes, recipes where a different ref in the same
         # repository is the base are left alone.
+        self.useFixture(GitHostingFixture())
         ref1, ref2 = self.factory.makeGitRefs(
             paths=["refs/heads/a", "refs/heads/b"])
         recipe = self.factory.makeSourcePackageRecipe(branches=[ref1])
@@ -2962,6 +3038,7 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
     def test_base_repository_default_branch_recipe(self):
         # On ref changes to the default branch, recipes where this
         # repository is the base with no explicit revspec become stale.
+        self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository()
         ref1, ref2 = self.factory.makeGitRefs(
             repository=repository, paths=["refs/heads/a", "refs/heads/b"])
@@ -2977,6 +3054,7 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
 
     def test_instruction_repository_recipe(self):
         # On ref changes, recipes including this ref become stale.
+        self.useFixture(GitHostingFixture())
         [base_ref] = self.factory.makeGitRefs()
         [ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeSourcePackageRecipe(branches=[base_ref, ref])
@@ -2988,6 +3066,7 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
     def test_instruction_repository_different_ref_recipe(self):
         # On ref changes, recipes including a different ref in the same
         # repository are left alone.
+        self.useFixture(GitHostingFixture())
         [base_ref] = self.factory.makeGitRefs()
         ref1, ref2 = self.factory.makeGitRefs(
             paths=["refs/heads/a", "refs/heads/b"])
@@ -3001,6 +3080,7 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
     def test_instruction_repository_default_branch_recipe(self):
         # On ref changes to the default branch, recipes including this
         # repository with no explicit revspec become stale.
+        self.useFixture(GitHostingFixture())
         [base_ref] = self.factory.makeGitRefs()
         repository = self.factory.makeGitRepository()
         ref1, ref2 = self.factory.makeGitRefs(
@@ -3018,6 +3098,7 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
 
     def test_unrelated_repository_recipe(self):
         # On ref changes, unrelated recipes are left alone.
+        self.useFixture(GitHostingFixture())
         [ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeSourcePackageRecipe(
             branches=self.factory.makeGitRefs())
@@ -3033,6 +3114,7 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
 
     def test_same_repository(self):
         # On ref changes, snap packages using this ref become stale.
+        self.useFixture(GitHostingFixture())
         [ref] = self.factory.makeGitRefs()
         snap = self.factory.makeSnap(git_ref=ref)
         removeSecurityProxy(snap).is_stale = False
@@ -3043,6 +3125,7 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
     def test_same_repository_different_ref(self):
         # On ref changes, snap packages using a different ref in the same
         # repository are left alone.
+        self.useFixture(GitHostingFixture())
         ref1, ref2 = self.factory.makeGitRefs(
             paths=["refs/heads/a", "refs/heads/b"])
         snap = self.factory.makeSnap(git_ref=ref1)
@@ -3053,6 +3136,7 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
 
     def test_different_repository(self):
         # On ref changes, unrelated snap packages are left alone.
+        self.useFixture(GitHostingFixture())
         [ref] = self.factory.makeGitRefs()
         snap = self.factory.makeSnap(git_ref=self.factory.makeGitRefs()[0])
         removeSecurityProxy(snap).is_stale = False
@@ -3062,6 +3146,7 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
 
     def test_private_snap(self):
         # A private snap should be able to be marked stale
+        self.useFixture(GitHostingFixture())
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         [ref] = self.factory.makeGitRefs()
         snap = self.factory.makeSnap(git_ref=ref, private=True)
@@ -3084,6 +3169,7 @@ class TestGitRepositoryMarkCharmRecipesStale(TestCaseWithFactory):
 
     def test_same_repository(self):
         # On ref changes, charm recipes using this ref become stale.
+        self.useFixture(GitHostingFixture())
         [ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeCharmRecipe(git_ref=ref)
         removeSecurityProxy(recipe).is_stale = False
@@ -3094,6 +3180,7 @@ class TestGitRepositoryMarkCharmRecipesStale(TestCaseWithFactory):
     def test_same_repository_different_ref(self):
         # On ref changes, charm recipes using a different ref in the same
         # repository are left alone.
+        self.useFixture(GitHostingFixture())
         ref1, ref2 = self.factory.makeGitRefs(
             paths=["refs/heads/a", "refs/heads/b"])
         recipe = self.factory.makeCharmRecipe(git_ref=ref1)
@@ -3104,6 +3191,7 @@ class TestGitRepositoryMarkCharmRecipesStale(TestCaseWithFactory):
 
     def test_different_repository(self):
         # On ref changes, unrelated charm recipes are left alone.
+        self.useFixture(GitHostingFixture())
         [ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeCharmRecipe(
             git_ref=self.factory.makeGitRefs()[0])
@@ -3302,6 +3390,81 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
             {(event.object_before_modification.queue_status,
                  event.object.queue_status)
                 for event in events[:2]})
+
+
+class TestGitRepositoryRequestCIBuilds(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
+
+    def test_findByGitRepository_with_configuration(self):
+        # If a changed ref has CI configuration, we request CI builds.
+        logger = BufferLogger()
+        [ref] = self.factory.makeGitRefs()
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        distroseries = self.factory.makeDistroSeries(distribution=ubuntu)
+        dases = [
+            self.factory.makeBuildableDistroArchSeries(
+                distroseries=distroseries)
+            for _ in range(2)]
+        configuration = dedent("""\
+            pipeline: [test]
+            jobs:
+                test:
+                    series: {series}
+                    architectures: [{architectures}]
+            """.format(
+                series=distroseries.name,
+                architectures=", ".join(
+                    das.architecturetag for das in dases))).encode()
+        new_commit = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
+        self.useFixture(GitHostingFixture(commits=[
+            {
+                "sha1": new_commit,
+                "blobs": {".launchpad.yaml": configuration},
+                },
+            ]))
+        with dbuser("branchscanner"):
+            ref.repository.createOrUpdateRefs(
+                {ref.path: {"sha1": new_commit, "type": GitObjectType.COMMIT}},
+                logger=logger)
+
+        results = getUtility(ICIBuildSet).findByGitRepository(ref.repository)
+        for result in results:
+            self.assertTrue(ICIBuild.providedBy(result))
+
+        self.assertThat(
+            results,
+            MatchesSetwise(*(
+                MatchesStructure.byEquality(
+                    git_repository=ref.repository,
+                    commit_sha1=new_commit,
+                    distro_arch_series=das)
+                for das in dases)))
+        self.assertContentEqual(
+            [
+                "INFO Requesting CI build for {commit} on "
+                "{series}/{arch}".format(
+                    commit=new_commit, series=distroseries.name,
+                    arch=das.architecturetag)
+                for das in dases],
+            logger.getLogBuffer().splitlines())
+
+    def test_findByGitRepository_without_configuration(self):
+        # If a changed ref has no CI configuration, we do not request CI
+        # builds.
+        logger = BufferLogger()
+        [ref] = self.factory.makeGitRefs()
+        new_commit = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
+        self.useFixture(GitHostingFixture(commits=[]))
+        with dbuser("branchscanner"):
+            ref.repository.createOrUpdateRefs(
+                {ref.path: {"sha1": new_commit, "type": GitObjectType.COMMIT}},
+                logger=logger)
+        self.assertTrue(
+            getUtility(
+                ICIBuildSet).findByGitRepository(ref.repository).is_empty()
+        )
+        self.assertEqual("", logger.getLogBuffer())
 
 
 class TestGitRepositoryGetBlob(TestCaseWithFactory):
@@ -5454,3 +5617,6 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
                 ["Caveat check for '%s' failed." %
                  find_caveats_by_name(macaroon2, "lp.expires")[0].caveat_id],
                 issuer, macaroon2, repository, user=repository.owner)
+
+
+load_tests = load_tests_apply_scenarios

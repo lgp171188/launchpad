@@ -53,6 +53,7 @@ from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
 from lp.archiveuploader.charmrecipeupload import CharmRecipeUpload
+from lp.archiveuploader.ciupload import CIUpload
 from lp.archiveuploader.livefsupload import LiveFSUpload
 from lp.archiveuploader.nascentupload import (
     EarlyReturnUploadError,
@@ -68,6 +69,7 @@ from lp.archiveuploader.utils import UploadError
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
+from lp.code.interfaces.cibuild import ICIBuild
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
     )
@@ -584,6 +586,31 @@ class BuildUploadHandler(UploadHandler):
                 "Unable to find %s with id %d. Skipping." %
                 (job_type, job_id))
 
+    def processCIResult(self, logger=None):
+        """Process a CI result upload."""
+        assert ICIBuild.providedBy(self.build)
+        if logger is None:
+            logger = self.processor.log
+        try:
+            logger.info("Processing CI result upload %s" % self.upload_path)
+            CIUpload(self.upload_path, logger).process(self.build)
+
+            if self.processor.dry_run:
+                logger.info("Dry run, aborting transaction.")
+                self.processor.ztm.abort()
+            else:
+                logger.info(
+                    "Committing the transaction and any mails associated "
+                    "with this upload.")
+                self.processor.ztm.commit()
+            return UploadStatusEnum.ACCEPTED
+        except UploadError as e:
+            logger.error(str(e))
+            return UploadStatusEnum.REJECTED
+        except BaseException:
+            self.processor.ztm.abort()
+            raise
+
     def processLiveFS(self, logger=None):
         """Process a live filesystem upload."""
         assert ILiveFSBuild.providedBy(self.build)
@@ -727,6 +754,8 @@ class BuildUploadHandler(UploadHandler):
                 result = self.processOCIRecipe(logger)
             elif ICharmRecipeBuild.providedBy(self.build):
                 result = self.processCharmRecipe(logger)
+            elif ICIBuild.providedBy(self.build):
+                result = self.processCIResult(logger)
             else:
                 self.processor.log.debug("Build %s found" % self.build.id)
                 [changes_file] = self.locateChangesFiles()

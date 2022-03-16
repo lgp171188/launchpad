@@ -207,7 +207,7 @@ class TestCodeReviewCommentHtmlMixin:
         contents = 'test-comment'
         comment = self.makeCodeReviewComment(body=contents)
         browser = self.getViewBrowser(comment, view_name='+reply')
-        self.assertIn(six.ensure_str(contents), browser.contents)
+        self.assertIn(contents, browser.contents)
 
     def test_footer_for_mergeable_and_admin(self):
         """An admin sees Hide/Reply links for a comment on a mergeable MP."""

@@ -17,7 +17,6 @@ from lazr.uri import (
     URI,
     )
 from psycopg2.extensions import TransactionRollbackError
-import six
 from six.moves.urllib.parse import quote
 from storm.database import STATE_DISCONNECTED
 from storm.exceptions import (
@@ -422,10 +421,7 @@ class LaunchpadBrowserPublication(
                 return self.constructPageID(context, context.context, names)
             view_names = ':'.join(names)
             pageid = '%s:%s' % (context_name, view_names)
-        # The view name used in the pageid usually comes from ZCML and so it
-        # will be a Unicode string, but we want a native string.  On Python
-        # 2, to avoid problems we encode it into ASCII.
-        return six.ensure_str(pageid, 'US-ASCII')
+        return pageid
 
     def callObject(self, request, ob):
         """See `zope.publisher.interfaces.IPublication`.

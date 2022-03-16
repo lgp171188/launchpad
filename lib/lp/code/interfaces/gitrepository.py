@@ -781,6 +781,14 @@ class IGitRepositoryModerate(Interface):
             with the `IGitNamespacePolicy`.
         """
 
+    @export_write_operation()
+    @operation_for_version("devel")
+    def rescan():
+        """Force a rescan of this repository as a celery task.
+
+        This may be helpful in cases where a previous scan crashed.
+        """
+
 
 class IGitRepositoryEditableAttributes(Interface):
     """IGitRepository attributes that can be edited.
@@ -857,14 +865,6 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
         Executes a synchronous scan of this repository.
 
         :return: A tuple with (upserted_refs, deleted_refs).
-        """
-
-    @export_write_operation()
-    @operation_for_version("devel")
-    def rescan():
-        """Force a rescan of this repository as a celery task.
-
-        This may be helpful in cases where a previous scan crashed.
         """
 
     def addRule(ref_pattern, creator, position=None):

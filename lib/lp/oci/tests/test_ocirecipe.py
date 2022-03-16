@@ -31,6 +31,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.enums import InformationType
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.code.tests.helpers import GitHostingFixture
 from lp.oci.interfaces.ocipushrule import (
     IOCIPushRuleSet,
     OCIPushRuleAlreadyExists,
@@ -1296,6 +1297,7 @@ class TestOCIRecipeSet(TestCaseWithFactory):
     def test_findByGitRepository(self):
         # IOCIRecipeSet.findByGitRepository returns all OCI recipes with the
         # given Git repository.
+        self.useFixture(GitHostingFixture())
         repositories = [self.factory.makeGitRepository() for i in range(2)]
         oci_recipes = []
         for repository in repositories:
@@ -1338,6 +1340,7 @@ class TestOCIRecipeSet(TestCaseWithFactory):
                     oci_recipes[0].git_ref.path, oci_recipes[1].git_ref.path]))
 
     def test_detachFromGitRepository(self):
+        self.useFixture(GitHostingFixture())
         repositories = [self.factory.makeGitRepository() for i in range(2)]
         oci_recipes = []
         paths = []

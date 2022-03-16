@@ -29,6 +29,7 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_collection,
     exported_as_webservice_entry,
+    mutator_for,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -59,6 +60,7 @@ from lp import _
 from lp.answers.interfaces.faqtarget import IFAQTarget
 from lp.answers.interfaces.questiontarget import IQuestionTarget
 from lp.app.errors import NameLookupFailed
+from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import (
     IHasIcon,
     IHasLogo,
@@ -162,6 +164,14 @@ class IDistributionPublic(Interface):
 
     def userCanLimitedView(user):
         """True if the given user has limited access to this distribution."""
+
+    private = exported(
+        Bool(
+            title=_("Distribution is confidential"),
+            required=False, readonly=True, default=False,
+            description=_(
+                "If set, this distribution is visible only to those with "
+                "access grants.")))
 
 
 class IDistributionLimitedView(IHasIcon, IHasLogo, IHasOwner, ILaunchpadUsage):
@@ -455,6 +465,9 @@ class IDistributionView(
         description=_(
             "An object which contains the timeframe and the voucher code of a "
             "subscription.")))
+
+    has_current_commercial_subscription = Attribute(
+        "Whether the distribution has a current commercial subscription.")
 
     def getArchiveIDList(archive=None):
         """Return a list of archive IDs suitable for sqlvalues() or quote().
@@ -768,6 +781,49 @@ class IDistributionView(
 class IDistributionEditRestricted(IOfficialBugTagTargetRestricted):
     """IDistribution properties requiring launchpad.Edit permission."""
 
+    @mutator_for(IDistributionView['bug_sharing_policy'])
+    @operation_parameters(bug_sharing_policy=copy_field(
+        IDistributionView['bug_sharing_policy']))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setBugSharingPolicy(bug_sharing_policy):
+        """Mutator for bug_sharing_policy.
+
+        Checks authorization and entitlement.
+        """
+
+    @mutator_for(IDistributionView['branch_sharing_policy'])
+    @operation_parameters(
+        branch_sharing_policy=copy_field(
+            IDistributionView['branch_sharing_policy']))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setBranchSharingPolicy(branch_sharing_policy):
+        """Mutator for branch_sharing_policy.
+
+        Checks authorization and entitlement.
+        """
+
+    @mutator_for(IDistributionView['specification_sharing_policy'])
+    @operation_parameters(
+        specification_sharing_policy=copy_field(
+            IDistributionView['specification_sharing_policy']))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setSpecificationSharingPolicy(specification_sharing_policy):
+        """Mutator for specification_sharing_policy.
+
+        Checks authorization and entitlement.
+        """
+
+    def checkInformationType(value):
+        """Check whether the information type change should be permitted.
+
+        Iterate through exceptions explaining why the type should not be
+        changed.  Has the side-effect of creating a commercial subscription
+        if permitted.
+        """
+
     @call_with(registrant=REQUEST_USER)
     @operation_parameters(
         registry_url=TextLine(
@@ -802,7 +858,8 @@ class IDistributionEditRestricted(IOfficialBugTagTargetRestricted):
 class IDistribution(
         IDistributionEditRestricted, IDistributionPublic,
         IDistributionLimitedView, IDistributionView, IHasBugSupervisor,
-        IFAQTarget, IQuestionTarget, IStructuralSubscriptionTarget):
+        IFAQTarget, IQuestionTarget, IStructuralSubscriptionTarget,
+        IInformationType):
     """An operating system distribution.
 
     Launchpadlib example: retrieving the current version of a package in a
@@ -853,7 +910,8 @@ class IDistributionSet(Interface):
         """Return the IDistribution with the given name or None."""
 
     def new(name, display_name, title, description, summary, domainname,
-            members, owner, registrant, mugshot=None, logo=None, icon=None):
+            members, owner, registrant, mugshot=None, logo=None, icon=None,
+            information_type=None):
         """Create a new distribution."""
 
     def getCurrentSourceReleases(distro_to_source_packagenames):

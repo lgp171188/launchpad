@@ -121,7 +121,7 @@ The following examples show the text version of the query using
     ...         "SELECT to_tsvector(%s) @@ ftq(%s)",
     ...         (text_to_search, search_phrase))
     ...     match = result.get_all()[0][0]
-    ...     return six.ensure_str("FTI data: %s query: %s match: %s") % (
+    ...     return "FTI data: %s query: %s match: %s" % (
     ...         ts_vector, ts_query, str(match))
     >>>
     >>> def search_same(text):
@@ -248,7 +248,7 @@ Punctuation is handled consistently. If a string containing punctuation
 appears in an FTI, it can also be passed to ftq(),and a search for this
 string finds the indexed text.
 
-    >>> punctuation = six.ensure_str('\'"#$%*+,./:;<=>?@[\]^`{}~')
+    >>> punctuation = '\'"#$%*+,./:;<=>?@[\]^`{}~'
     >>> for symbol in punctuation:
     ...     print(repr(symbol), search_same('foo%sbar' % symbol))
     "'" FTI data: 'bar':2 'foo':1 query: 'foo' & 'bar' match: True
