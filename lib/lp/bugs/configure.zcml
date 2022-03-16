@@ -617,12 +617,7 @@
     <class class="lp.bugs.model.vulnerability.VulnerabilityActivity">
       <require
         permission="launchpad.View"
-        interface="lp.bugs.interfaces.vulnerability.IVulnerabilityActivityView
-                   lp.bugs.interfaces.vulnerability.IVulnerabilityActivityEditableAttributes" />
-      <require
-        permission="launchpad.Edit"
-        interface="lp.bugs.interfaces.vulnerability.IVulnerabilityActivityEdit"
-        set_schema="lp.bugs.interfaces.vulnerability.IVulnerabilityActivityEditableAttributes" />
+        interface="lp.bugs.interfaces.vulnerability.IVulnerabilityActivity" />
     </class>
     <class class="lp.bugs.model.vulnerability.VulnerabilityActivitySet">
       <allow interface="lp.bugs.interfaces.vulnerability.IVulnerabilityActivitySet" />
@@ -631,15 +626,6 @@
       class="lp.bugs.model.vulnerability.VulnerabilityActivitySet"
       provides="lp.bugs.interfaces.vulnerability.IVulnerabilityActivitySet">
       <allow interface="lp.bugs.interfaces.vulnerability.IVulnerabilityActivitySet" />
-    </securedutility>
-
-    <class class="lp.bugs.model.vulnerability.BugVulnerabilitySet">
-      <allow interface="lp.bugs.interfaces.vulnerability.IBugVulnerabilitySet" />
-    </class>
-    <securedutility
-      class="lp.bugs.model.vulnerability.BugVulnerabilitySet"
-      provides="lp.bugs.interfaces.vulnerability.IBugVulnerabilitySet">
-      <allow interface="lp.bugs.interfaces.vulnerability.IBugVulnerabilitySet" />
     </securedutility>
 
     <!-- BugSubscription -->

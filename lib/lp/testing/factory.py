@@ -97,7 +97,6 @@ from lp.bugs.interfaces.cve import (
     ICveSet,
     )
 from lp.bugs.interfaces.vulnerability import (
-    IBugVulnerabilitySet,
     IVulnerabilityActivitySet,
     IVulnerabilitySet,
     VulnerabilityChange,
@@ -5324,20 +5323,12 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeVulnerability(self, distribution=None, cve=None, status=None,
                           description=None, notes=None, mitigation=None,
                           importance=None, importance_explanation=None,
-                          private=None):
+                          private=None, date_made_public=None):
         """Make a new `Vulnerability`."""
         if distribution is None:
             distribution = self.makeDistribution()
-        if cve is None:
-            cve = self.makeCVE('2022-1234')
         if status is None:
             status = VulnerabilityStatus.NEEDS_TRIAGE
-        if description is None:
-            description = self.getUniqueString("vulnerability-description")
-        if notes is None:
-            notes = self.getUniqueString("vulnerability-notes")
-        if mitigation is None:
-            mitigation = self.getUniqueString("vulnerability-mitigation")
         if importance is None:
             importance = BugTaskImportance.UNDECIDED
         if importance_explanation is None:
@@ -5346,10 +5337,14 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if private is None:
             private = False
         return getUtility(
-            IVulnerabilitySet).new(distribution, cve, status,
-                                   description, notes, mitigation,
-                                   importance, importance_explanation,
-                                   private)
+            IVulnerabilitySet).new(distribution=distribution, cve=cve,
+                                   status=status, description=description,
+                                   notes=notes, mitigation=mitigation,
+                                   importance=importance,
+                                   importance_explanation=
+                                   importance_explanation,
+                                   private=private,
+                                   date_made_public=date_made_public)
 
     def makeVulnerabilityActivity(self, vulnerability=None, changer=None,
                                   what_changed=None, old_value=None,
@@ -5366,17 +5361,12 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if new_value is None:
             new_value = self.getUniqueString("new-description")
         return getUtility(
-            IVulnerabilityActivitySet).new(vulnerability, changer,
-                                           what_changed, old_value, new_value)
+            IVulnerabilityActivitySet).new(vulnerability=vulnerability,
+                                           changer=changer,
+                                           what_changed=what_changed,
+                                           old_value=old_value,
+                                           new_value=new_value)
 
-    def makeBugVulnerability(self, vulnerability=None, bug=None):
-        """Make a new `BugVulnerability`."""
-        if vulnerability is None:
-            vulnerability = self.makeVulnerability()
-        if bug is None:
-            bug = self.makeBug()
-        return getUtility(
-            IBugVulnerabilitySet).new(vulnerability, bug)
 
 # Some factory methods return simple Python types. We don't add
 # security wrappers for them, as well as for objects created by

@@ -3789,5 +3789,7 @@ class EditVulnerability(AuthorizationBase):
     usedfor = IVulnerability
 
     def checkAuthenticated(self, user):
-        return (
-            user.in_commercial_admin or user.in_admin)
+        return (user.in_commercial_admin or user.in_admin or
+                user.isOwner(self.obj.distribution) or
+                user.isDriver(self.obj.distribution) or
+                user.isBugSupervisor(self.obj.distribution))
