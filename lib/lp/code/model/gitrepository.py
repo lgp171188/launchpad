@@ -1821,6 +1821,7 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
         # activity logs for removed repositories anyway.
         self.grants.remove()
         self.rules.remove()
+        removeSecurityProxy(self.getAccessTokens()).remove()
         getUtility(IRevisionStatusReportSet).deleteForRepository(self)
         getUtility(ICIBuildSet).deleteByGitRepository(self)
 
