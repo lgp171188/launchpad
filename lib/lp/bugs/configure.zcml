@@ -604,15 +604,15 @@
         interface="lp.bugs.interfaces.vulnerability.IVulnerabilityEdit"
         set_schema="lp.bugs.interfaces.vulnerability.IVulnerabilityEditableAttributes" />
 
-        <!-- IBugLinkTarget -->
-        <allow
-            attributes="
-                bug_links"/>
-        <require
-            permission="launchpad.AnyPerson"
-            attributes="
-                linkBug
-                unlinkBug"/>
+      <!-- IBugLinkTarget -->
+      <allow
+          attributes="
+              bugs"/>
+      <require
+          permission="launchpad.AnyPerson"
+          attributes="
+              linkBug
+              unlinkBug"/>
     </class>
     <class class="lp.bugs.model.vulnerability.VulnerabilitySet">
       <allow interface="lp.bugs.interfaces.vulnerability.IVulnerabilitySet" />
