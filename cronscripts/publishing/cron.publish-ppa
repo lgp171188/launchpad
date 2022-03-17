@@ -6,7 +6,7 @@
 set -x
 
 # Variables, lockfile and exit handler for PPA scripts.
-source `dirname $0`/cron.base-ppa
+source `dirname $0`/cron.base-ppa.sh
 
 LPCURRENT=`dirname $0`/../..
 

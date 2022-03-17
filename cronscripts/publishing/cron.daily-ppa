@@ -10,7 +10,7 @@ set -x
 LOCKFILEOPTIONS="-r-1"
 
 # Variables, lockfile and exit handler for PPA scripts.
-source `dirname $0`/cron.base-ppa
+source `dirname $0`/cron.base-ppa.sh
 
 # Clear out empty and thus redundant dirs.
 find $PPAROOT -type d -empty | xargs -r rmdir
