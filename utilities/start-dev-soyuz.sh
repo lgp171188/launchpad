@@ -11,7 +11,7 @@ start_twistd() {
     bin/twistd \
         --logfile "/var/tmp/development-$name.log" \
         --pidfile "/var/tmp/development-$name.pid" \
-        -y "$tac" $@
+        -y "$tac" "$@"
 }
 
 start_twistd_plugin() {

@@ -15,7 +15,7 @@ if [ ! -e .git ]; then
 fi
 
 git_diff_files() {
-    git diff --name-only -z $@ | perl -l -0 -ne '
+    git diff --name-only -z "$@" | perl -l -0 -ne '
         # Only show paths that exist and are not symlinks.
         print if -e and not -l'
 }
@@ -28,4 +28,4 @@ if [ -z "$files" ]; then
     files=$(git_diff_files "${1:-master}")
 fi
 
-echo $files
+echo "$files"
