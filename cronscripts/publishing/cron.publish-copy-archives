@@ -5,7 +5,7 @@
 
 # LPCONFIG will come from the environment so this script can run unaltered
 # on dogfood.
-if [ -z $LPCONFIG ]; then
+if [ -z "$LPCONFIG" ]; then
     echo LPCONFIG must be set to run this script.
     exit 1
 fi
