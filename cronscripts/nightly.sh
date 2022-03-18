@@ -14,38 +14,38 @@ LOGFILE=$LOGDIR/nightly.log
 LOCK=/var/lock/launchpad_nightly.lock
 lockfile -r0 -l 259200 $LOCK
 if [ $? -ne 0 ]; then
-    echo $(date): Unable to grab $LOCK lock - aborting | tee -a $LOGFILE
+    echo "$(date): Unable to grab $LOCK lock - aborting" | tee -a "$LOGFILE"
     ps fuxwww
     exit 1
 fi
 
-cd `dirname $0`
+cd "$(dirname "$0")"
 
-echo $(date): Grabbed lock >> $LOGFILE
+echo "$(date): Grabbed lock" >> "$LOGFILE"
 
-echo $(date): Expiring memberships >> $LOGFILE
-./flag-expired-memberships.py -q --log-file=DEBUG:$LOGDIR/flag-expired-memberships.log
+echo "$(date): Expiring memberships" >> "$LOGFILE"
+./flag-expired-memberships.py -q --log-file=DEBUG:"$LOGDIR/flag-expired-memberships.log"
 
-echo $(date): Allocating revision karma >> $LOGFILE
-./allocate-revision-karma.py -q --log-file=DEBUG:$LOGDIR/allocate-revision-karma.log
+echo "$(date): Allocating revision karma" >> "$LOGFILE"
+./allocate-revision-karma.py -q --log-file=DEBUG:"$LOGDIR/allocate-revision-karma.log"
 
-echo $(date): Recalculating karma >> $LOGFILE
-./foaf-update-karma-cache.py -q --log-file=INFO:$LOGDIR/foaf-update-karma-cache.log
+echo "$(date): Recalculating karma" >> "$LOGFILE"
+./foaf-update-karma-cache.py -q --log-file=INFO:"$LOGDIR/foaf-update-karma-cache.log"
 
-echo $(date): Updating cached statistics >> $LOGFILE
-./update-stats.py -q --log-file=DEBUG:$LOGDIR/update-stats.log
+echo "$(date): Updating cached statistics" >> "$LOGFILE"
+./update-stats.py -q --log-file=DEBUG:"$LOGDIR/update-stats.log"
 
-echo $(date): Expiring questions >> $LOGFILE
-./expire-questions.py -q --log-file=DEBUG:$LOGDIR/expire-questions.log
+echo "$(date): Expiring questions" >> "$LOGFILE"
+./expire-questions.py -q --log-file=DEBUG:"$LOGDIR/expire-questions.log"
 
-echo $(date): Updating bugtask target name caches >> $LOGFILE
-./update-bugtask-targetnamecaches.py -q --log-file=DEBUG:$LOGDIR/update-bugtask-targetnamecaches.log
+echo "$(date): Updating bugtask target name caches" >> "$LOGFILE"
+./update-bugtask-targetnamecaches.py -q --log-file=DEBUG:"$LOGDIR/update-bugtask-targetnamecaches.log"
 
-echo $(date): Updating personal standings >> $LOGFILE
-./update-standing.py -q --log-file=DEBUG:$LOGDIR/update-standing.log
+echo "$(date): Updating personal standings" >> "$LOGFILE"
+./update-standing.py -q --log-file=DEBUG:"$LOGDIR/update-standing.log"
 
-echo $(date): Updating CVE database >> $LOGFILE
-./update-cve.py -q --log-file=DEBUG:$LOGDIR/update-cve.log
+echo "$(date): Updating CVE database" >> "$LOGFILE"
+./update-cve.py -q --log-file=DEBUG:"$LOGDIR/update-cve.log"
 
-echo $(date): Removing lock >> $LOGFILE
+echo "$(date): Removing lock" >> "$LOGFILE"
 rm -f $LOCK

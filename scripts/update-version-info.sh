@@ -13,7 +13,7 @@ if [ ! -e .git ]; then
     exit 1
 fi
 
-if ! which git > /dev/null || ! test -x $(which git); then
+if ! which git > /dev/null || ! test -x "$(which git)"; then
     echo "No working 'git' executable found" >&2
     exit 1
 fi

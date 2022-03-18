@@ -6,12 +6,16 @@
 set -x
 
 # Variables, lockfile and exit handler for PPA scripts.
-source `dirname $0`/cron.base-ppa.sh
+source "$(dirname "$0")/cron.base-ppa.sh"
 
-LPCURRENT=`dirname $0`/../..
+LPCURRENT="$(dirname "$0")/../.."
 
 for DISTRO_ARG in "$@"; do
-  $LPCURRENT/scripts/process-accepted.py -v --ppa $DISTRO_ARG
-  $LPCURRENT/scripts/publish-distro.py -v --ppa $DISTRO_ARG
-  $LPCURRENT/scripts/publish-distro.py -v --private-ppa $DISTRO_ARG
+  # We intentionally allow word-splitting of $DISTRO_ARG here.
+  # shellcheck disable=SC2086
+  "$LPCURRENT/scripts/process-accepted.py" -v --ppa $DISTRO_ARG
+  # shellcheck disable=SC2086
+  "$LPCURRENT/scripts/publish-distro.py" -v --ppa $DISTRO_ARG
+  # shellcheck disable=SC2086
+  "$LPCURRENT/scripts/publish-distro.py" -v --private-ppa $DISTRO_ARG
 done
