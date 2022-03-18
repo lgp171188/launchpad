@@ -61,10 +61,11 @@ class CIUpload:
             report = getUtility(IRevisionStatusReportSet).getByCIBuildAndTitle(
                 build, job_name)
             if not report:
-                # the report should normally exist, since the build request
-                # logic will eventually create report rows for the jobs it
-                # expects to run, but for robustness it's a good idea to
-                # ensure its existence here
+                # The report should normally exist, since
+                # lp.code.model.cibuild.CIBuildSet._tryToRequestBuild
+                # creates report rows for the jobs it expects to run, but
+                # for robustness it's a good idea to ensure its existence
+                # here.
                 report = getUtility(IRevisionStatusReportSet).new(
                     creator=build.git_repository.owner,
                     title=job_name,

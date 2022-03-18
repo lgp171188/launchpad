@@ -16,6 +16,7 @@ import pytz
 from storm.locals import Store
 from testtools.matchers import (
     Equals,
+    MatchesSetwise,
     MatchesStructure,
     )
 from zope.component import getUtility
@@ -43,6 +44,7 @@ from lp.code.interfaces.cibuild import (
     ICIBuildSet,
     MissingConfiguration,
     )
+from lp.code.interfaces.revisionstatus import IRevisionStatusReportSet
 from lp.code.model.cibuild import (
     determine_DASes_to_build,
     get_all_commits_for_paths,
@@ -484,9 +486,17 @@ class TestCIBuildSet(TestCaseWithFactory):
         )
         configuration = dedent("""\
             pipeline:
-            - test
+                - build
+                - test
 
             jobs:
+                build:
+                    matrix:
+                        - series: bionic
+                          architectures: amd64
+                        - series: focal
+                          architectures: amd64
+                    run: pyproject-build
                 test:
                     series: focal
                     architectures: amd64
@@ -512,11 +522,21 @@ class TestCIBuildSet(TestCaseWithFactory):
         )
 
         build = getUtility(ICIBuildSet).findByGitRepository(repository).one()
+        reports = list(
+            getUtility(IRevisionStatusReportSet).findByRepository(repository))
 
-        # check that a build was created
+        # check that a build and some reports were created
         self.assertEqual(ref.commit_sha1, build.commit_sha1)
         self.assertEqual("focal", build.distro_arch_series.distroseries.name)
         self.assertEqual("amd64", build.distro_arch_series.architecturetag)
+        self.assertThat(reports, MatchesSetwise(*(
+            MatchesStructure.byEquality(
+                creator=repository.owner,
+                title=title,
+                git_repository=repository,
+                commit_sha1=ref.commit_sha1,
+                ci_build=build)
+            for title in ("build:0", "build:1", "test:0"))))
 
     def test_requestBuildsForRefs_no_commits_at_all(self):
         repository = self.factory.makeGitRepository()
@@ -533,6 +553,10 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertTrue(
             getUtility(ICIBuildSet).findByGitRepository(repository).is_empty()
+        )
+        self.assertTrue(
+            getUtility(IRevisionStatusReportSet).findByRepository(
+                repository).is_empty()
         )
 
     def test_requestBuildsForRefs_no_matching_commits(self):
@@ -553,6 +577,10 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertTrue(
             getUtility(ICIBuildSet).findByGitRepository(repository).is_empty()
+        )
+        self.assertTrue(
+            getUtility(IRevisionStatusReportSet).findByRepository(
+                repository).is_empty()
         )
 
     def test_requestBuildsForRefs_configuration_parse_error(self):
@@ -591,6 +619,10 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertTrue(
             getUtility(ICIBuildSet).findByGitRepository(repository).is_empty()
+        )
+        self.assertTrue(
+            getUtility(IRevisionStatusReportSet).findByRepository(
+                repository).is_empty()
         )
 
         self.assertEqual(
@@ -646,6 +678,10 @@ class TestCIBuildSet(TestCaseWithFactory):
         self.assertTrue(
             getUtility(ICIBuildSet).findByGitRepository(repository).is_empty()
         )
+        self.assertTrue(
+            getUtility(IRevisionStatusReportSet).findByRepository(
+                repository).is_empty()
+        )
         self.assertEqual(
             "INFO Requesting CI build "
             "for %s on focal/amd64\n" % ref.commit_sha1,
@@ -697,6 +733,10 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertTrue(
             getUtility(ICIBuildSet).findByGitRepository(repository).is_empty()
+        )
+        self.assertTrue(
+            getUtility(IRevisionStatusReportSet).findByRepository(
+                repository).is_empty()
         )
 
         log_line1, log_line2 = logger.getLogBuffer().splitlines()
