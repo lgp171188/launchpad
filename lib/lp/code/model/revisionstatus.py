@@ -158,19 +158,15 @@ class RevisionStatusReport(StormBase):
         artifacts = IStore(RevisionStatusArtifact).find(*clauses)
         return [artifact.download_url for artifact in artifacts]
 
-    def latestLog(self):
+    @property
+    def latest_log(self):
         log = IStore(RevisionStatusArtifact).find(
             RevisionStatusArtifact,
             RevisionStatusArtifact.report == self,
             RevisionStatusArtifact.artifact_type ==
             RevisionStatusArtifactType.LOG).order_by(
             Desc(RevisionStatusArtifact.date_created)).first()
-
-        if self.url:
-            return self.url
-        else:
-            if log:
-                return log.download_url
+        return log
 
 
 @implementer(IRevisionStatusReportSet)
