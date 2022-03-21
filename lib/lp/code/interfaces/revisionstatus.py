@@ -281,5 +281,8 @@ class IRevisionStatusArtifact(Interface):
 
     repository = Attribute("The repository for this artifact.")
 
+    date_created = Datetime(
+        title=_("When the artifact was created."), readonly=True)
+
     def getFileByName(filename):
         """Returns an artifact by name."""

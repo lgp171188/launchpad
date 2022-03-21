@@ -161,9 +161,8 @@ class RevisionStatusReport(StormBase):
     def latestLog(self):
         file_object = IStore(RevisionStatusArtifact).find(
             RevisionStatusArtifact,
-            RevisionStatusArtifact.report == self,
-            LibraryFileAlias.id == RevisionStatusArtifact.library_file_id
-        ).order_by(Desc(LibraryFileAlias.date_created)).first()
+            RevisionStatusArtifact.report == self).order_by(
+            Desc(RevisionStatusArtifact.date_created)).first()
 
         if self.url:
             return self.url
@@ -237,11 +236,15 @@ class RevisionStatusArtifact(StormBase):
     artifact_type = DBEnum(name='type', allow_none=False,
                            enum=RevisionStatusArtifactType)
 
+    date_created = DateTime(
+        name='date_created', tzinfo=pytz.UTC, allow_none=True)
+
     def __init__(self, library_file, report, artifact_type):
         super().__init__()
         self.library_file = library_file
         self.report = report
         self.artifact_type = artifact_type
+        self.date_created = UTC_NOW
 
     @property
     def download_url(self):
