@@ -91,6 +91,9 @@ class IRevisionStatusReportView(Interface):
         :param artifact_type: The type of artifact for the report.
         """
 
+    def latestLog():
+        """Retrieves the URL for the most recent log for this report."""
+
 
 class IRevisionStatusReportEditableAttributes(Interface):
     """`IRevisionStatusReport` attributes that can be edited.

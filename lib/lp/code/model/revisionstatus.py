@@ -11,6 +11,7 @@ import io
 import os
 
 import pytz
+from storm.expr import Desc
 from storm.locals import (
     And,
     DateTime,
@@ -156,6 +157,19 @@ class RevisionStatusReport(StormBase):
                 RevisionStatusArtifact.artifact_type == artifact_type)
         artifacts = IStore(RevisionStatusArtifact).find(*clauses)
         return [artifact.download_url for artifact in artifacts]
+
+    def latestLog(self):
+        file_object = IStore(RevisionStatusArtifact).find(
+            RevisionStatusArtifact,
+            RevisionStatusArtifact.report == self,
+            LibraryFileAlias.id == RevisionStatusArtifact.library_file_id
+        ).order_by(Desc(LibraryFileAlias.date_created)).first()
+
+        if self.url:
+            return self.url
+        else:
+            if file_object:
+                return file_object.download_url
 
 
 @implementer(IRevisionStatusReportSet)
