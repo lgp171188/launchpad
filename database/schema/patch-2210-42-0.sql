@@ -20,7 +20,7 @@ CREATE TABLE vulnerability (
 COMMENT ON TABLE vulnerability IS 'Expresses the notion of whether a CVE affects a distribution.';
 COMMENT ON COLUMN vulnerability.distribution IS 'Indicates control by the pillar''s owner.';
 COMMENT ON COLUMN vulnerability.status IS 'Indicates current status of the vulnerability.';
-COMMENT ON COLUMN vulnerability.cve IS 'Overrides the Cve.description.';
+COMMENT ON COLUMN vulnerability.description IS 'Overrides the Cve.description.';
 COMMENT ON COLUMN vulnerability.notes IS 'Free-form notes.';
 COMMENT ON COLUMN vulnerability.mitigation IS 'Explain why we''re ignoring something.';
 COMMENT ON COLUMN vulnerability.importance IS 'Indicates work priority, not severity.';
