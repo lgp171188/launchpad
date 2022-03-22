@@ -59,82 +59,82 @@ CREATE TRIGGER set_date_status_set_t
 
 DROP TRIGGER tsvectorupdate ON binarypackagerelease;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF summary, description ON binarypackagerelease
+    BEFORE INSERT OR UPDATE OF summary, description, fti ON binarypackagerelease
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('summary', 'b', 'description', 'c');
 
 DROP TRIGGER tsvectorupdate ON cve;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF sequence, description ON cve
+    BEFORE INSERT OR UPDATE OF sequence, description, fti ON cve
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('sequence', 'a', 'description', 'b');
 
 DROP TRIGGER tsvectorupdate ON distroseriespackagecache;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF name, summaries, descriptions ON distroseriespackagecache
+    BEFORE INSERT OR UPDATE OF name, summaries, descriptions, fti ON distroseriespackagecache
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('name', 'a', 'summaries', 'b', 'descriptions', 'c');
 
 DROP TRIGGER tsvectorupdate ON message;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF subject ON message
+    BEFORE INSERT OR UPDATE OF subject, fti ON message
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('subject', 'b');
 
 DROP TRIGGER tsvectorupdate ON messagechunk;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF content ON messagechunk
+    BEFORE INSERT OR UPDATE OF content, fti ON messagechunk
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('content', 'c');
 
 DROP TRIGGER tsvectorupdate ON product;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF name, displayname, title, summary, description ON product
+    BEFORE INSERT OR UPDATE OF name, displayname, title, summary, description, fti ON product
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('name', 'a', 'displayname', 'a', 'title', 'b', 'summary', 'c', 'description', 'd');
 
 DROP TRIGGER tsvectorupdate ON project;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF name, displayname, title, summary, description ON project
+    BEFORE INSERT OR UPDATE OF name, displayname, title, summary, description, fti ON project
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('name', 'a', 'displayname', 'a', 'title', 'b', 'summary', 'c', 'description', 'd');
 
 DROP TRIGGER tsvectorupdate ON question;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF title, description, whiteboard ON question
+    BEFORE INSERT OR UPDATE OF title, description, whiteboard, fti ON question
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('title', 'a', 'description', 'b', 'whiteboard', 'b');
 
 DROP TRIGGER tsvectorupdate ON bug;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF name, title, description ON bug
+    BEFORE INSERT OR UPDATE OF name, title, description, fti ON bug
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('name', 'a', 'title', 'b', 'description', 'd');
 
 DROP TRIGGER tsvectorupdate ON person;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF name, displayname ON person
+    BEFORE INSERT OR UPDATE OF name, displayname, fti ON person
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('name', 'a', 'displayname', 'a');
 
 DROP TRIGGER tsvectorupdate ON specification;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF name, title, summary, whiteboard ON specification
+    BEFORE INSERT OR UPDATE OF name, title, summary, whiteboard, fti ON specification
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('name', 'a', 'title', 'a', 'summary', 'b', 'whiteboard', 'd');
 
 DROP TRIGGER tsvectorupdate ON distribution;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF name, displayname, title, summary, description ON distribution
+    BEFORE INSERT OR UPDATE OF name, displayname, title, summary, description, fti ON distribution
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('name', 'a', 'displayname', 'a', 'title', 'b', 'summary', 'c', 'description', 'd');
 
 DROP TRIGGER tsvectorupdate ON productreleasefile;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF description ON productreleasefile
+    BEFORE INSERT OR UPDATE OF description, fti ON productreleasefile
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('description', 'd');
 
 DROP TRIGGER tsvectorupdate ON faq;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF title, tags, content ON faq
+    BEFORE INSERT OR UPDATE OF title, tags, content, fti ON faq
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('title', 'a', 'tags', 'b', 'content', 'd');
 
 DROP TRIGGER tsvectorupdate ON archive;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF description, package_description_cache ON archive
+    BEFORE INSERT OR UPDATE OF description, package_description_cache, fti ON archive
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('description', 'a', 'package_description_cache', 'b');
 
 DROP TRIGGER tsvectorupdate ON distributionsourcepackagecache;
 CREATE TRIGGER tsvectorupdate
-    BEFORE INSERT OR UPDATE OF name, binpkgnames, binpkgsummaries, binpkgdescriptions ON distributionsourcepackagecache
+    BEFORE INSERT OR UPDATE OF name, binpkgnames, binpkgsummaries, binpkgdescriptions, fti ON distributionsourcepackagecache
     FOR EACH ROW EXECUTE PROCEDURE ftiupdate('name', 'a', 'binpkgnames', 'b', 'binpkgsummaries', 'c', 'binpkgdescriptions', 'd');
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 6, 1);
