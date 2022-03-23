@@ -191,20 +191,22 @@ class TestGitRefView(BrowserTestCase):
                                          paths=["refs/heads/branch"])
         log = self.makeCommitLog()
 
-        # create 2 status reports for 2 of the 5 commits available here
+        # create status reports for 2 of the 5 commits available here
         report1 = self.factory.makeRevisionStatusReport(
             user=repository.owner, git_repository=repository,
             title="CI", commit_sha1=log[0]["sha1"],
             result_summary="120/120 tests passed",
             url="https://foo1.com",
             result=RevisionStatusResult.SUCCEEDED)
-
         report2 = self.factory.makeRevisionStatusReport(
             user=repository.owner, git_repository=repository,
             title="Lint", commit_sha1=log[1]["sha1"],
             result_summary="Invalid import in test_file.py",
             url="https://foo2.com",
             result=RevisionStatusResult.FAILED)
+        pending_report = self.factory.makeRevisionStatusReport(
+            user=repository.owner, git_repository=repository,
+            title="Build", commit_sha1=log[1]["sha1"])
 
         self.hosting_fixture.getLog.result = list(log)
         # XXX jugmac00 2022-03-14
@@ -251,6 +253,13 @@ class TestGitRefView(BrowserTestCase):
                 soupmatchers.Tag(
                     "second report summary", "td",
                     text=report2.result_summary))
+            self.assertThat(
+                reports_section[1],
+                soupmatchers.Within(
+                    soupmatchers.Tag("pending report title", "td"),
+                    soupmatchers.Tag(
+                        "pending report link", "a", text=pending_report.title,
+                        attrs={"href": None})))
 
             # Ensure we don't display an empty expander for those commits
             # that do not have status reports created for them - means we
