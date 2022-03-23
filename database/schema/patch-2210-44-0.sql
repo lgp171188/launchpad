@@ -98,9 +98,6 @@ ALTER TABLE SourcePackageRelease
     VALIDATE CONSTRAINT at_most_one_build,
     VALIDATE CONSTRAINT debian_columns;
 
-CREATE INDEX sourcepackagepublishinghistory__channel__idx
-    ON SourcePackagePublishingHistory (channel);
-
 ALTER TABLE SourcePackagePublishingHistory
     VALIDATE CONSTRAINT debian_columns,
     VALIDATE CONSTRAINT no_debian_channel;
@@ -116,9 +113,6 @@ CREATE INDEX binarypackagerelease__ci_build__idx
 ALTER TABLE BinaryPackageRelease
     VALIDATE CONSTRAINT one_build,
     VALIDATE CONSTRAINT debian_columns;
-
-CREATE INDEX binarypackagepublishinghistory__channel__idx
-    ON BinaryPackagePublishingHistory (channel);
 
 ALTER TABLE BinaryPackagePublishingHistory
     VALIDATE CONSTRAINT debian_columns,
