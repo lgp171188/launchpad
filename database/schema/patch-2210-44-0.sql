@@ -62,7 +62,10 @@ ALTER TABLE BinaryPackageRelease
             OR (component IS NOT NULL
                 AND section IS NOT NULL
                 AND priority IS NOT NULL))
-        NOT VALID;
+        NOT VALID,
+    -- binarypackagerelease_build_name_uniq is stricter, and this seems to
+    -- be unused on production.
+    DROP CONSTRAINT binarypackagerelease_binarypackagename_key;
 
 ALTER TABLE BinaryPackagePublishingHistory
     ADD COLUMN binarypackageformat integer,
@@ -102,9 +105,6 @@ ALTER TABLE SourcePackagePublishingHistory
     VALIDATE CONSTRAINT debian_columns,
     VALIDATE CONSTRAINT no_debian_channel;
 
-CREATE UNIQUE INDEX binarypackagerelease__bpn__build__version__key
-    ON BinaryPackageRelease (
-        binarypackagename, COALESCE(build, ci_build), version);
 CREATE UNIQUE INDEX binarypackagerelease__build__bpn__key
     ON BinaryPackageRelease (COALESCE(build, ci_build), binarypackagename);
 CREATE INDEX binarypackagerelease__ci_build__idx
@@ -121,10 +121,8 @@ ALTER TABLE BinaryPackagePublishingHistory
 
 -- STEP 3, COLD
 
--- Replaced by binarypackagerelease__bpn__build__version__key and
--- binarypackagerelease__build__bpn__key respectively.
+-- Replaced by binarypackagerelease__build__bpn__key.
 ALTER TABLE BinaryPackageRelease
-    DROP CONSTRAINT binarypackagerelease_binarypackagename_key,
     DROP CONSTRAINT binarypackagerelease_build_name_uniq;
 */
 
