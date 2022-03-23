@@ -36,9 +36,8 @@ ALTER TABLE SourcePackagePublishingHistory
     ALTER COLUMN component DROP NOT NULL,
     ALTER COLUMN section DROP NOT NULL,
     ADD CONSTRAINT debian_columns CHECK (
-        (format IS NOT NULL
-            -- 1 == DPKG
-            AND format != 1)
+        -- 1 == DPKG
+        COALESCE(format, 1) != 1
         OR (component IS NOT NULL
             AND section IS NOT NULL)) NOT VALID,
     ADD COLUMN channel jsonb;
