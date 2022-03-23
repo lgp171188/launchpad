@@ -229,7 +229,9 @@ class BuilderFactory(BaseBuilderFactory):
 
     def getVitals(self, name):
         """See `BaseBuilderFactory`."""
-        return extract_vitals_from_db(self[name])
+        vitals = extract_vitals_from_db(self[name])
+        transaction.abort()
+        return vitals
 
     def iterVitals(self):
         """See `BaseBuilderFactory`."""
@@ -681,6 +683,8 @@ class WorkerScanner:
                     # failure_count.
                     builder.resetFailureCount()
                     transaction.commit()
+                else:
+                    transaction.abort()
             else:
                 # Ask the BuilderInteractor to clean the worker. It might
                 # be immediately cleaned on return, in which case we go
@@ -705,10 +709,7 @@ class WorkerScanner:
         :return: A Deferred that fires when the scan is complete.
         """
         with TransactionFreeOperation():
-            try:
-                yield self._scan()
-            finally:
-                transaction.abort()
+            yield self._scan()
 
 
 class BuilddManager(service.Service):
