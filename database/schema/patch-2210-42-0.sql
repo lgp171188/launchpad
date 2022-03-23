@@ -13,19 +13,24 @@ CREATE TABLE vulnerability (
     mitigation text,
     importance integer NOT NULL,
     importance_explanation text,
-    private boolean DEFAULT false NOT NULL,
+    information_type integer DEFAULT 1 NOT NULL,
+    date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
+    creator integer REFERENCES Person NOT NULL,
     date_made_public timestamp without time zone
 );
 
 COMMENT ON TABLE vulnerability IS 'Expresses the notion of whether a CVE affects a distribution.';
-COMMENT ON COLUMN vulnerability.distribution IS 'Indicates control by the pillar''s owner.';
+COMMENT ON COLUMN vulnerability.distribution IS 'The distribution affected by this vulnerability.';
+COMMENT ON COLUMN vulnerability.cve IS 'The external CVE reference corresponding to this vulnerability, if any.';
 COMMENT ON COLUMN vulnerability.status IS 'Indicates current status of the vulnerability.';
 COMMENT ON COLUMN vulnerability.description IS 'Overrides the Cve.description.';
 COMMENT ON COLUMN vulnerability.notes IS 'Free-form notes.';
 COMMENT ON COLUMN vulnerability.mitigation IS 'Explain why we''re ignoring something.';
 COMMENT ON COLUMN vulnerability.importance IS 'Indicates work priority, not severity.';
 COMMENT ON COLUMN vulnerability.importance_explanation IS 'Used to explain why our importance differs from somebody else''s CVSS score.';
-COMMENT ON COLUMN vulnerability.private IS 'Indicates privacy of the vulnerability.';
+COMMENT ON COLUMN vulnerability.information_type IS 'Indicates privacy of the vulnerability.';
+COMMENT ON COLUMN vulnerability.date_created IS 'The date when the vulnerability was created.';
+COMMENT ON COLUMN vulnerability.creator IS 'The person that created the vulnerability.';
 COMMENT ON COLUMN vulnerability.date_made_public IS 'The date this vulnerability was made public.';
 
 CREATE UNIQUE INDEX vulnerability__distribution__cve__key
@@ -33,6 +38,9 @@ CREATE UNIQUE INDEX vulnerability__distribution__cve__key
 
 CREATE INDEX vulnerability__cve__idx
     ON vulnerability (cve);
+
+CREATE INDEX vulnerability__creator__idx
+    ON vulnerability (creator);
 
 CREATE TABLE vulnerabilityactivity (
     id serial PRIMARY KEY,
@@ -52,8 +60,8 @@ COMMENT ON COLUMN vulnerabilityactivity.what_changed IS 'Indicates what field ch
 COMMENT ON COLUMN vulnerabilityactivity.old_value IS 'The value prior to the change.';
 COMMENT ON COLUMN vulnerabilityactivity.new_value IS 'The current value.';
 
-CREATE INDEX vulnerabilityactivity__vulnerability__changer__idx
-    ON vulnerabilityactivity (vulnerability, changer);
+CREATE INDEX vulnerabilityactivity__vulnerability__date_changed__idx
+    ON vulnerabilityactivity (vulnerability, date_changed);
 
 CREATE INDEX vulnerabilityactivity__changer__idx
     ON vulnerabilityactivity (changer);
