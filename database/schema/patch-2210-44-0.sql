@@ -106,7 +106,11 @@ ALTER TABLE SourcePackagePublishingHistory
     VALIDATE CONSTRAINT no_debian_channel;
 
 CREATE UNIQUE INDEX binarypackagerelease__build__bpn__key
-    ON BinaryPackageRelease (COALESCE(build, ci_build), binarypackagename);
+    ON BinaryPackageRelease (build, binarypackagename)
+    WHERE build IS NOT NULL;
+CREATE UNIQUE INDEX binarypackagerelease__ci_build__bpn__key
+    ON BinaryPackageRelease (ci_build, binarypackagename)
+    WHERE ci_build IS NOT NULL;
 CREATE INDEX binarypackagerelease__ci_build__idx
     ON BinaryPackageRelease (ci_build);
 
