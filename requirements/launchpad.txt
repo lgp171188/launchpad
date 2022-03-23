@@ -159,7 +159,7 @@ testtools==2.5.0
 timeline==0.0.7
 treq==18.6.0
 # lp:~launchpad/twisted:lp-backport
-Twisted==20.3.0+lp7
+Twisted==20.3.0+lp8
 txfixtures==0.4.3
 txpkgupload==0.4
 urllib3==1.25.11
