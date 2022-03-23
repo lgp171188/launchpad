@@ -40,7 +40,11 @@ ALTER TABLE SourcePackagePublishingHistory
         COALESCE(format, 1) != 1
         OR (component IS NOT NULL
             AND section IS NOT NULL)) NOT VALID,
-    ADD COLUMN channel jsonb;
+    ADD COLUMN channel jsonb,
+    ADD CONSTRAINT no_debian_channel CHECK (
+        -- 1 == DPKG
+        COALESCE(format, 1) != 1
+        OR channel IS NULL) NOT VALID;
 
 ALTER TABLE BinaryPackageRelease
     ADD COLUMN ci_build integer REFERENCES CIBuild,
@@ -74,7 +78,12 @@ ALTER TABLE BinaryPackagePublishingHistory
                 AND section IS NOT NULL
                 AND priority IS NOT NULL))
         NOT VALID,
-    ADD COLUMN channel jsonb;
+    ADD COLUMN channel jsonb,
+    ADD CONSTRAINT no_debian_channel CHECK (
+        (binarypackageformat IS NOT NULL
+            -- 1 == DEB, 2 == UDEB, 5 == DDEB
+            AND binarypackageformat NOT IN (1, 2, 5))
+        OR channel IS NULL) NOT VALID;
 
 
 -- Subsequent statements, to be executed live and in subsequent patches.
@@ -92,7 +101,9 @@ ALTER TABLE SourcePackageRelease
 CREATE INDEX sourcepackagepublishinghistory__channel__idx
     ON SourcePackagePublishingHistory (channel);
 
-ALTER TABLE SourcePackagePublishingHistory VALIDATE CONSTRAINT debian_columns;
+ALTER TABLE SourcePackagePublishingHistory
+    VALIDATE CONSTRAINT debian_columns,
+    VALIDATE CONSTRAINT no_debian_channel;
 
 CREATE UNIQUE INDEX binarypackagerelease__bpn__build__version__key
     ON BinaryPackageRelease (
@@ -109,7 +120,9 @@ ALTER TABLE BinaryPackageRelease
 CREATE INDEX binarypackagepublishinghistory__channel__idx
     ON BinaryPackagePublishingHistory (channel);
 
-ALTER TABLE BinaryPackagePublishingHistory VALIDATE CONSTRAINT debian_columns;
+ALTER TABLE BinaryPackagePublishingHistory
+    VALIDATE CONSTRAINT debian_columns,
+    VALIDATE CONSTRAINT no_debian_channel;
 
 
 -- STEP 3, COLD
