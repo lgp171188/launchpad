@@ -610,6 +610,13 @@
       name="image"
       />
 
+  <adapter
+      for="lp.code.interfaces.revisionstatus.IRevisionStatusReport"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.tales.RevisionStatusReportImageDisplayAPI"
+      name="image"
+      />
+
   <!-- TALES badges: namespace -->
 
   <adapter

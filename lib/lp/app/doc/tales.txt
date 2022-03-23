@@ -229,6 +229,32 @@ But the 'failed to build' build is 16x14:
     >>> print(test_tales("build/image:icon", build=build))
     <img width="16" height="14"...src="/@@/build-failed" />
 
+Revision status reports have an icon for each result.
+
+    >>> from lp.code.enums import RevisionStatusResult
+
+    >>> report = factory.makeRevisionStatusReport()
+    >>> print(test_tales("report/image:icon", report=report))
+    <img width="14" height="14"...src="/@@/build-needed" />
+    >>> report.transitionToNewResult(RevisionStatusResult.WAITING)
+    >>> print(test_tales("report/image:icon", report=report))
+    <img width="14" height="14"...src="/@@/build-needed" />
+    >>> report.transitionToNewResult(RevisionStatusResult.RUNNING)
+    >>> print(test_tales("report/image:icon", report=report))
+    <img width="14" height="14"...src="/@@/processing" />
+    >>> report.transitionToNewResult(RevisionStatusResult.SUCCEEDED)
+    >>> print(test_tales("report/image:icon", report=report))
+    <img width="14" height="14"...src="/@@/yes" />
+    >>> report.transitionToNewResult(RevisionStatusResult.FAILED)
+    >>> print(test_tales("report/image:icon", report=report))
+    <img width="14" height="14"...src="/@@/no" />
+    >>> report.transitionToNewResult(RevisionStatusResult.SKIPPED)
+    >>> print(test_tales("report/image:icon", report=report))
+    <img width="14" height="14"...src="/@@/yes-gray" />
+    >>> report.transitionToNewResult(RevisionStatusResult.CANCELLED)
+    >>> print(test_tales("report/image:icon", report=report))
+    <img width="16" height="14"...src="/@@/build-failed" />
+
 All objects can be represented as a boolean icon.
 
     >>> print(test_tales("context/image:boolean", context=None))
