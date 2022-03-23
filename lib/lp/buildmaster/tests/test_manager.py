@@ -66,6 +66,7 @@ from lp.buildmaster.tests.test_interactor import (
     MockBuilderFactory,
     )
 from lp.registry.interfaces.distribution import IDistributionSet
+from lp.scripts.helpers import TransactionFreeOperation
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
 from lp.services.statsd.tests import StatsMixin
@@ -169,7 +170,8 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # Run 'scan' and check its result.
         switch_dbuser(config.builddmaster.dbuser)
         scanner = self._getScanner()
-        yield scanner.scan()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         self.assertEqual(0, builder.failure_count)
         self.assertTrue(builder.currentjob is not None)
 
@@ -207,7 +209,9 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         self.assertBuildingJob(job, builder)
 
         scanner = self._getScanner()
-        yield scanner.scan()
+        transaction.commit()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         self.assertIsNot(None, builder.currentjob)
 
         # Disable the sampledata builder
@@ -215,7 +219,8 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         transaction.commit()
 
         # Run 'scan' and check its result.
-        yield scanner.scan()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         self.assertIs(None, builder.currentjob)
         self._checkJobRescued(builder, job)
 
@@ -250,7 +255,8 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # Run 'scan' and check its result.
         switch_dbuser(config.builddmaster.dbuser)
         scanner = self._getScanner()
-        yield scanner.scan()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         scanner.manager.flushLogTails()
         self._checkJobUpdated(builder, job)
 
@@ -260,9 +266,10 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         builder = factory.makeBuilder()
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
         self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
-        transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
-        yield scanner.scan()
+        transaction.commit()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         self._checkNoDispatch(builder)
 
     @defer.inlineCallbacks
@@ -272,9 +279,10 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         self._resetBuilder(builder)
         self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
         builder.manual = True
-        transaction.commit()
         scanner = self._getScanner()
-        yield scanner.scan()
+        transaction.commit()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         self._checkNoDispatch(builder)
 
     @defer.inlineCallbacks
@@ -284,9 +292,10 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         self._resetBuilder(builder)
         self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
         builder.builderok = False
-        transaction.commit()
         scanner = self._getScanner()
-        yield scanner.scan()
+        transaction.commit()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         # Because the builder is not ok, we can't use _checkNoDispatch.
         self.assertIsNone(builder.currentjob)
 
@@ -297,10 +306,11 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         self.patch(
             BuilderWorker, 'makeBuilderWorker', FakeMethod(BrokenWorker()))
         builder.failure_count = 0
-        transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
+        transaction.commit()
         with ExpectedException(xmlrpc.client.Fault):
-            yield scanner.scan()
+            with TransactionFreeOperation.require():
+                yield scanner.scan()
 
     @defer.inlineCallbacks
     def test_scan_of_partial_utf8_logtail(self):
@@ -327,7 +337,8 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
 
         switch_dbuser(config.builddmaster.dbuser)
         scanner = self._getScanner()
-        yield scanner.scan()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         scanner.manager.flushLogTails()
         self._checkJobUpdated(builder, job, logtail="\uFFFD\uFFFD──")
 
@@ -356,7 +367,8 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
 
         switch_dbuser(config.builddmaster.dbuser)
         scanner = self._getScanner()
-        yield scanner.scan()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         scanner.manager.flushLogTails()
         self._checkJobUpdated(builder, job, logtail="foobarbaz")
 
@@ -375,7 +387,8 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         builder.builderok = False
         transaction.commit()
 
-        yield scanner.scan()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
 
         self.assertEqual(1, bf.prescanUpdate.call_count)
 
@@ -431,15 +444,18 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         job.markAsBuilding(builder)
         worker = SnapBuildingWorker(build_id="SNAPBUILD-%d" % build.id)
         self.patch(BuilderWorker, "makeBuilderWorker", FakeMethod(worker))
-        transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
-        yield scanner.scan()
+        transaction.commit()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         yield scanner.manager.flushLogTails()
         self.assertBuildingJob(job, builder, logtail="This is a build log: 0")
         self.assertIsNone(build.revision_id)
         worker.revision_id = "dummy"
         scanner = self._getScanner(builder_name=builder.name)
-        yield scanner.scan()
+        transaction.abort()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         yield scanner.manager.flushLogTails()
         self.assertBuildingJob(job, builder, logtail="This is a build log: 1")
         self.assertEqual("dummy", build.revision_id)
@@ -592,7 +608,8 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         self._resetBuilder(builder)
         self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(worker))
         scanner = self._getScanner()
-        yield scanner.scan()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         self.assertEqual("100", builder.version)
 
     def test_updateVersion_no_op(self):
@@ -638,7 +655,8 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         switch_dbuser(config.builddmaster.dbuser)
         clock = task.Clock()
         scanner = self._getScanner(clock=clock)
-        yield scanner.scan()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
 
         # An abort request should be sent.
         self.assertEqual(1, worker.call_log.count("abort"))
@@ -646,7 +664,9 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
 
         # Advance time a little.  Nothing much should happen.
         clock.advance(1)
-        yield scanner.scan()
+        transaction.abort()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         self.assertEqual(1, worker.call_log.count("abort"))
         self.assertEqual(BuildStatus.CANCELLING, build.status)
 
@@ -686,7 +706,6 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
 
         builder = self.factory.makeBuilder(
             processors=[bq.processor], manual=False, vm_host='VMHOST')
-        transaction.commit()
 
         # Mock out the build behaviour's handleSuccess so it doesn't
         # try to upload things to the librarian or queue.
@@ -708,7 +727,9 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
         # The worker is idle and dirty, so the first scan will clean it
         # with a reset.
         self.assertEqual(BuilderCleanStatus.DIRTY, builder.clean_status)
-        yield scanner.scan()
+        transaction.commit()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         self.assertEqual(['resume', 'echo'], get_worker.result.method_log)
         self.assertEqual(BuilderCleanStatus.CLEAN, builder.clean_status)
         self.assertIs(None, builder.currentjob)
@@ -716,7 +737,9 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
         # The worker is idle and clean, and there's a build candidate, so
         # the next scan will dispatch the build.
         get_worker.result = OkWorker()
-        yield scanner.scan()
+        transaction.abort()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         self.assertEqual(
             ['status', 'ensurepresent', 'build'],
             get_worker.result.method_log)
@@ -729,13 +752,19 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
         # Scans will now just do a status() each, as the logtail is
         # updated.
         get_worker.result = BuildingWorker(build.build_cookie)
-        yield scanner.scan()
+        transaction.abort()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         yield scanner.manager.flushLogTails()
         self.assertEqual("This is a build log: 0", bq.logtail)
-        yield scanner.scan()
+        transaction.abort()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         yield scanner.manager.flushLogTails()
         self.assertEqual("This is a build log: 1", bq.logtail)
-        yield scanner.scan()
+        transaction.abort()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         yield scanner.manager.flushLogTails()
         self.assertEqual("This is a build log: 2", bq.logtail)
         self.assertEqual(
@@ -747,7 +776,9 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
         # and the log is retrieved by handleStatus() afterwards.
         # The builder remains dirty afterward.
         get_worker.result = WaitingWorker(build_id=build.build_cookie)
-        yield scanner.scan()
+        transaction.abort()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         self.assertEqual(['status', 'getFile'], get_worker.result.method_log)
         self.assertIs(None, builder.currentjob)
         self.assertEqual(BuildStatus.UPLOADING, build.status)
@@ -757,7 +788,9 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
         # We're idle and dirty, so let's flip back to an idle worker and
         # confirm that the worker gets cleaned.
         get_worker.result = OkWorker()
-        yield scanner.scan()
+        transaction.abort()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         self.assertEqual(['resume', 'echo'], get_worker.result.method_log)
         self.assertIs(None, builder.currentjob)
         self.assertEqual(BuilderCleanStatus.CLEAN, builder.clean_status)
@@ -766,7 +799,9 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
         # go far enough to ensure that the lost-job check works on the
         # second iteration.)
         get_worker.result = OkWorker()
-        yield scanner.scan()
+        transaction.abort()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         self.assertEqual(
             ['status', 'ensurepresent', 'build'],
             get_worker.result.method_log)
@@ -776,7 +811,9 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
         self.assertEqual(BuilderCleanStatus.DIRTY, builder.clean_status)
 
         get_worker.result = BuildingWorker(build2.build_cookie)
-        yield scanner.scan()
+        transaction.abort()
+        with TransactionFreeOperation.require():
+            yield scanner.scan()
         yield scanner.manager.flushLogTails()
         self.assertEqual("This is a build log: 0", bq2.logtail)
 
@@ -954,6 +991,7 @@ class TestWorkerScannerWithoutDB(TestCase):
         scanner = self.getScanner(
             builder_factory=MockBuilderFactory(MockBuilder(), bq),
             worker=worker)
+        transaction.commit()
 
         yield scanner.scan()
         self.assertEqual(['status'], worker.call_log)
@@ -971,6 +1009,7 @@ class TestWorkerScannerWithoutDB(TestCase):
         scanner = self.getScanner(
             builder_factory=MockBuilderFactory(builder, bq),
             worker=worker)
+        transaction.commit()
 
         # A single scan will call status(), notice that the worker is lost,
         # and reset() the job without calling updateBuild().
@@ -993,6 +1032,7 @@ class TestWorkerScannerWithoutDB(TestCase):
         # they shouldn't be and aborts them.
         worker = BuildingWorker()
         scanner = self.getScanner(worker=worker)
+        transaction.commit()
         yield scanner.scan()
         self.assertEqual(['status', 'abort'], worker.call_log)
 
@@ -1005,6 +1045,7 @@ class TestWorkerScannerWithoutDB(TestCase):
         bq = FakeBuildQueue()
         scanner = self.getScanner(
             worker=worker, builder_factory=MockBuilderFactory(builder, bq))
+        transaction.commit()
 
         with ExpectedException(
                 BuildDaemonIsolationError,
@@ -1020,6 +1061,7 @@ class TestWorkerScannerWithoutDB(TestCase):
         builder = MockBuilder(clean_status=BuilderCleanStatus.CLEAN)
         scanner = self.getScanner(
             worker=worker, builder_factory=MockBuilderFactory(builder, None))
+        transaction.commit()
 
         with ExpectedException(
                 BuildDaemonIsolationError,

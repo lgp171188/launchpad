@@ -53,6 +53,7 @@ from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.builder import Builder
 from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.scripts.helpers import TransactionFreeOperation
 from lp.services.database.bulk import dbify_value
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormexpr import (
@@ -598,7 +599,7 @@ class WorkerScanner:
             transaction.commit()
 
     @defer.inlineCallbacks
-    def scan(self):
+    def _scan(self):
         """Probe the builder and update/dispatch/collect as appropriate.
 
         :return: A Deferred that fires when the scan is complete.
@@ -692,6 +693,22 @@ class WorkerScanner:
                     builder.setCleanStatus(BuilderCleanStatus.CLEAN)
                     self.logger.debug('%s has been cleaned.', vitals.name)
                     transaction.commit()
+
+    @defer.inlineCallbacks
+    def scan(self):
+        """Probe the builder and update/dispatch/collect as appropriate.
+
+        Ensure that a transaction is not held before or after the scan,
+        since otherwise buildd-manager can end up holding locks that block
+        schema updates until the next scan cycle starts.
+
+        :return: A Deferred that fires when the scan is complete.
+        """
+        with TransactionFreeOperation():
+            try:
+                yield self._scan()
+            finally:
+                transaction.abort()
 
 
 class BuilddManager(service.Service):
