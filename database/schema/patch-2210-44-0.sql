@@ -7,7 +7,7 @@ SET client_min_messages=ERROR;
 
 ALTER TABLE Archive
     ADD COLUMN publishing_method integer,
-    ADD COLUMN index_format integer;
+    ADD COLUMN repository_format integer;
 
 ALTER TABLE SourcePackageRelease
     ADD COLUMN ci_build integer REFERENCES CIBuild,
