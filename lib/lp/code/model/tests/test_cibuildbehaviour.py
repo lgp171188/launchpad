@@ -69,10 +69,6 @@ from lp.services.log.logger import (
     DevNullLogger,
     )
 from lp.services.statsd.tests import StatsMixin
-from lp.services.timeout import (
-    get_default_timeout_function,
-    set_default_timeout_function,
-    )
 from lp.services.webapp import canonical_url
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
@@ -182,9 +178,6 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
         self.useFixture(MockPatch("time.time", return_value=self.now))
         self.addCleanup(shut_down_default_process_pool)
         self.setUpStats()
-        self.addCleanup(
-            set_default_timeout_function, get_default_timeout_function())
-        set_default_timeout_function(lambda: None)
 
     def makeJob(self, configuration=_unset, **kwargs):
         # We need a builder in these tests, in order that requesting a proxy
@@ -208,7 +201,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                     job.build.distro_arch_series.distroseries.name,
                     job.build.distro_arch_series.architecturetag)).encode()
         hosting_fixture = self.useFixture(
-            GitHostingFixture(blob=configuration))
+            GitHostingFixture(blob=configuration, enforce_timeout=True))
         if configuration is None:
             hosting_fixture.getBlob.failure = GitRepositoryBlobNotFound(
                 job.build.git_repository.getInternalPath(), ".launchpad.yaml",
