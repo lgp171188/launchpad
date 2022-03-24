@@ -359,6 +359,20 @@ class CIBuild(PackageBuildMixin, StormBase):
                 "%s: %s" % (msg % self.git_repository.unique_name, e))
         return parse_configuration(self.git_repository, blob)
 
+    def getFileByName(self, filename):
+        """See `ICIBuild`."""
+        if filename.endswith(".txt.gz"):
+            file_object = self.log
+        elif filename.endswith("_log.txt"):
+            file_object = self.upload_log
+        else:
+            file_object = None
+
+        if file_object is not None and file_object.filename == filename:
+            return file_object
+
+        raise NotFoundError(filename)
+
     def verifySuccessfulUpload(self):
         """See `IPackageBuild`."""
         # We have no interesting checks to perform here.

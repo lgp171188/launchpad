@@ -23,6 +23,7 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import (
     BuildQueueStatus,
@@ -243,6 +244,17 @@ class TestCIBuild(TestCaseWithFactory):
     def test_build_cookie(self):
         build = self.factory.makeCIBuild()
         self.assertEqual('CIBUILD-%d' % build.id, build.build_cookie)
+
+    def test_getFileByName_logs(self):
+        # getFileByName returns the logs when requested by name.
+        build = self.factory.makeCIBuild()
+        build.setLog(
+            self.factory.makeLibraryFileAlias(filename="buildlog.txt.gz"))
+        self.assertEqual(build.log, build.getFileByName("buildlog.txt.gz"))
+        self.assertRaises(NotFoundError, build.getFileByName, "foo")
+        build.storeUploadLog("uploaded")
+        self.assertEqual(
+            build.upload_log, build.getFileByName(build.upload_log.filename))
 
     def addFakeBuildLog(self, build):
         build.setLog(self.factory.makeLibraryFileAlias("mybuildlog.txt"))
