@@ -28,6 +28,7 @@ And for every distribution we publish most of its attributes.
     bug_reporting_guidelines: None
     bug_supervisor_link: None
     cdimage_mirrors_collection_link: 'http://.../ubuntu/cdimage_mirrors'
+    commercial_subscription_is_due: False
     commercial_subscription_link: None
     current_series_link: 'http://.../ubuntu/hoary'
     date_created: '2006-10-16T18:31:43.415195+00:00'

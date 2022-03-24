@@ -360,6 +360,52 @@ If the distribution officially uses the application, its portlet does appear.
     portlet-blueprints
 
 
+Displaying commercial subscription information
+----------------------------------------------
+
+Only distribution owners, Launchpad administrators, and Launchpad
+Commercial members are to see commercial subscription information on
+the product overview page.
+
+For distribution owners the property is true.
+
+    >>> from zope.security.proxy import removeSecurityProxy
+
+    >>> commercial_distro = factory.makeDistribution()
+    >>> _ = login_person(removeSecurityProxy(commercial_distro).owner)
+    >>> view = create_initialized_view(commercial_distro, name='+index')
+    >>> print(view.show_commercial_subscription_info)
+    True
+
+For Launchpad admins the property is true.
+
+    >>> login('foo.bar@canonical.com')
+    >>> view = create_initialized_view(commercial_distro, name='+index')
+    >>> print(view.show_commercial_subscription_info)
+    True
+
+For Launchpad commercial members the property is true.
+
+    >>> login('commercial-member@canonical.com')
+    >>> view = create_initialized_view(commercial_distro, name='+index')
+    >>> print(view.show_commercial_subscription_info)
+    True
+
+But for a no-privileges user the property is false.
+
+    >>> login('no-priv@canonical.com')
+    >>> view = create_initialized_view(commercial_distro, name='+index')
+    >>> print(view.show_commercial_subscription_info)
+    False
+
+And for an anonymous user it is false.
+
+    >>> login(ANONYMOUS)
+    >>> view = create_initialized_view(commercial_distro, name='+index')
+    >>> print(view.show_commercial_subscription_info)
+    False
+
+
 Distribution +series
 --------------------
 
