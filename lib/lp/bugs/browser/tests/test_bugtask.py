@@ -1228,8 +1228,7 @@ class TestBugTaskEditViewStatusField(TestCaseWithFactory):
         view.initialize()
         self.assertEqual(
             ['New', 'Incomplete', 'Opinion', 'Invalid', 'Confirmed',
-             'In Progress', 'Fix Committed', 'Fix Released',
-             'Does Not Exist'],
+             'In Progress', 'Fix Committed', 'Fix Released'],
             self.getWidgetOptionTitles(view.form_fields['status']))
 
     def test_status_field_privileged_persons(self):
@@ -1263,8 +1262,7 @@ class TestBugTaskEditViewStatusField(TestCaseWithFactory):
         view.initialize()
         self.assertEqual(
             ['New', 'Incomplete', 'Opinion', 'Invalid', 'Confirmed',
-             'In Progress', 'Fix Committed', 'Fix Released', 'Does Not Exist',
-             'Unknown'],
+             'In Progress', 'Fix Committed', 'Fix Released', 'Unknown'],
             self.getWidgetOptionTitles(view.form_fields['status']))
 
     def test_status_field_bug_task_in_status_expired(self):
@@ -1278,8 +1276,7 @@ class TestBugTaskEditViewStatusField(TestCaseWithFactory):
         view.initialize()
         self.assertEqual(
             ['New', 'Incomplete', 'Opinion', 'Invalid', 'Expired',
-             'Confirmed', 'In Progress', 'Fix Committed', 'Fix Released',
-             'Does Not Exist'],
+             'Confirmed', 'In Progress', 'Fix Committed', 'Fix Released'],
             self.getWidgetOptionTitles(view.form_fields['status']))
 
 
