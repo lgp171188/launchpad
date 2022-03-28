@@ -1,9 +1,10 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test native publication workflow for Soyuz. """
 
 import datetime
+from functools import partial
 import io
 import operator
 import os
@@ -20,6 +21,10 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.errors import NotFoundError
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.diskpool import DiskPool
+from lp.archivepublisher.indices import (
+    build_binary_stanza_fields,
+    build_source_stanza_fields,
+    )
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.registry.interfaces.distribution import IDistributionSet
@@ -1028,6 +1033,176 @@ class TestPublishingSetLite(TestCaseWithFactory):
             OverrideError, "Cannot override ddeb publications directly; "
             "override the corresponding deb instead.",
             debug_bpph.changeOverride, new_phased_update_percentage=20)
+
+    def makePublishedSourcePackage(self, series, pocket=None, status=None):
+        # Make a published source package.
+        name = self.factory.getUniqueUnicode()
+        sourcepackagename = self.factory.makeSourcePackageName(name)
+        component = getUtility(IComponentSet)["universe"]
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            sourcepackagename=sourcepackagename, distroseries=series,
+            component=component, pocket=pocket, status=status)
+        source_package = self.factory.makeSourcePackage(
+            sourcepackagename=spph.sourcepackagename, distroseries=series)
+        spr = spph.sourcepackagerelease
+        for extension in ("dsc", "tar.gz"):
+            filename = "%s_%s.%s" % (spr.name, spr.version, extension)
+            spr.addFile(self.factory.makeLibraryFileAlias(
+                filename=filename, db_only=True))
+        return source_package
+
+    def test_getSourcesForPublishing(self):
+        # PublisherSet.getSourcesForPublishing returns all the ISPPH records
+        # in a given publishing context.  It is used as part of publishing
+        # some types of archives.
+        # XXX cjwatson 2022-03-28: Detach test from sampledata.
+        ubuntu = getUtility(IDistributionSet)["ubuntu"]
+        hoary = ubuntu["hoary"]
+        component_main = getUtility(IComponentSet)["main"]
+        component_multiverse = getUtility(IComponentSet)["multiverse"]
+        debian_archive = getUtility(IDistributionSet)["debian"].main_archive
+        publishing_set = getUtility(IPublishingSet)
+
+        spphs = publishing_set.getSourcesForPublishing(
+            archive=hoary.main_archive, distroseries=hoary,
+            pocket=PackagePublishingPocket.RELEASE, component=component_main)
+        self.assertEqual(6, spphs.count())
+        self.assertContentEqual(
+            ["alsa-utils", "evolution", "libstdc++", "linux-source-2.6.15",
+             "netapplet", "pmount"],
+            {spph.sourcepackagerelease.name for spph in spphs})
+        self.assertEqual(
+            0,
+            publishing_set.getSourcesForPublishing(
+                archive=hoary.main_archive, distroseries=hoary,
+                pocket=PackagePublishingPocket.RELEASE,
+                component=component_multiverse).count())
+        self.assertEqual(
+            0,
+            publishing_set.getSourcesForPublishing(
+                archive=hoary.main_archive, distroseries=hoary,
+                pocket=PackagePublishingPocket.BACKPORTS,
+                component=component_main).count())
+        self.assertEqual(
+            0,
+            publishing_set.getSourcesForPublishing(
+                archive=debian_archive, distroseries=hoary,
+                pocket=PackagePublishingPocket.RELEASE,
+                component=component_main).count())
+
+    def test_getSourcesForPublishing_query_count(self):
+        # Check that the number of queries required to publish source
+        # packages is constant in the number of source packages.
+        series = self.factory.makeDistroSeries()
+        archive = series.main_archive
+        component_universe = getUtility(IComponentSet)["universe"]
+
+        def get_index_stanzas():
+            for spp in getUtility(IPublishingSet).getSourcesForPublishing(
+                    archive=archive, distroseries=series,
+                    pocket=PackagePublishingPocket.RELEASE,
+                    component=component_universe):
+                build_source_stanza_fields(
+                    spp.sourcepackagerelease, spp.component, spp.section)
+
+        recorder1, recorder2 = record_two_runs(
+            get_index_stanzas,
+            partial(
+                self.makePublishedSourcePackage, series=series,
+                pocket=PackagePublishingPocket.RELEASE,
+                status=PackagePublishingStatus.PUBLISHED),
+            5, 5)
+        self.assertThat(recorder1, HasQueryCount(Equals(8)))
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+    def makePublishedBinaryPackage(self, das, pocket=None, status=None):
+        # Make a published binary package.
+        source = self.makePublishedSourcePackage(
+            das.distroseries, pocket=pocket, status=status)
+        spr = source.distinctreleases[0]
+        binarypackagename = self.factory.makeBinaryPackageName(source.name)
+        bpph = self.factory.makeBinaryPackagePublishingHistory(
+            binarypackagename=binarypackagename, distroarchseries=das,
+            component=spr.component, section_name=spr.section.name,
+            status=status, pocket=pocket, source_package_release=spr)
+        bpr = bpph.binarypackagerelease
+        filename = "%s_%s_%s.deb" % (
+            bpr.name, bpr.version, das.architecturetag)
+        bpr.addFile(self.factory.makeLibraryFileAlias(
+            filename=filename, db_only=True))
+        return bpph
+
+    def test_getBinariesForPublishing(self):
+        # PublisherSet.getBinariesForPublishing returns all the IBPPH
+        # records in a given publishing context.  It is used as part of
+        # publishing some types of archives.
+        # XXX cjwatson 2022-03-28: Detach test from sampledata.
+        ubuntu = getUtility(IDistributionSet)["ubuntu"]
+        warty = ubuntu["warty"]
+        warty_i386 = warty["i386"]
+        warty_another = self.factory.makeDistroArchSeries(distroseries=warty)
+        component_main = getUtility(IComponentSet)["main"]
+        component_multiverse = getUtility(IComponentSet)["multiverse"]
+        debian_archive = getUtility(IDistributionSet)["debian"].main_archive
+        publishing_set = getUtility(IPublishingSet)
+
+        bpphs = publishing_set.getBinariesForPublishing(
+            archive=warty.main_archive, distroarchseries=warty_i386,
+            pocket=PackagePublishingPocket.RELEASE, component=component_main)
+        self.assertEqual(8, bpphs.count())
+        self.assertIn(
+            "mozilla-firefox",
+            {bpph.binarypackagerelease.name for bpph in bpphs})
+        self.assertEqual(
+            0,
+            publishing_set.getBinariesForPublishing(
+                archive=warty.main_archive, distroarchseries=warty_another,
+                pocket=PackagePublishingPocket.RELEASE,
+                component=component_main).count())
+        self.assertEqual(
+            0,
+            publishing_set.getBinariesForPublishing(
+                archive=warty.main_archive, distroarchseries=warty_i386,
+                pocket=PackagePublishingPocket.RELEASE,
+                component=component_multiverse).count())
+        self.assertEqual(
+            0,
+            publishing_set.getBinariesForPublishing(
+                archive=warty.main_archive, distroarchseries=warty_i386,
+                pocket=PackagePublishingPocket.BACKPORTS,
+                component=component_main).count())
+        self.assertEqual(
+            0,
+            publishing_set.getBinariesForPublishing(
+                archive=debian_archive, distroarchseries=warty_i386,
+                pocket=PackagePublishingPocket.RELEASE,
+                component=component_main).count())
+
+    def test_getBinariesForPublishing_query_count(self):
+        # Check that the number of queries required to publish binary
+        # packages is constant in the number of binary packages.
+        das = self.factory.makeDistroArchSeries()
+        archive = das.main_archive
+        component_universe = getUtility(IComponentSet)["universe"]
+
+        def get_index_stanzas():
+            for bpp in getUtility(IPublishingSet).getBinariesForPublishing(
+                    archive=archive, distroarchseries=das,
+                    pocket=PackagePublishingPocket.RELEASE,
+                    component=component_universe):
+                build_binary_stanza_fields(
+                    bpp.binarypackagerelease, bpp.component, bpp.section,
+                    bpp.priority, bpp.phased_update_percentage, False)
+
+        recorder1, recorder2 = record_two_runs(
+            get_index_stanzas,
+            partial(
+                self.makePublishedBinaryPackage, das=das,
+                pocket=PackagePublishingPocket.RELEASE,
+                status=PackagePublishingStatus.PUBLISHED),
+            5, 5)
+        self.assertThat(recorder1, HasQueryCount(Equals(11)))
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
 
 class TestSourceDomination(TestNativePublishingBase):
