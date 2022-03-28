@@ -340,7 +340,7 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
             official=True, information_type=InformationType.PRIVATESECURITY)
 
         browser = self.getViewBrowser(
-            oci_project, view_name="+index", user=distribution.owner)
+            oci_project, view_name="+index", user=self.factory.makePerson())
         self.assertNotIn("Official recipes", browser.contents)
         self.assertNotIn("unofficial recipe", browser.contents)
         self.assertIn(
@@ -361,22 +361,24 @@ class TestOCIProjectEditView(BrowserTestCase):
         oci_project = self.factory.makeOCIProject()
         new_distribution = self.factory.makeDistribution(
             owner=oci_project.pillar.owner)
+        new_distribution_name = new_distribution.name
+        new_distribution_display_name = new_distribution.display_name
 
         browser = self.getViewBrowser(
             oci_project, user=oci_project.pillar.owner)
         browser.getLink("Edit OCI project").click()
         browser.getControl(name="field.distribution").value = [
-            new_distribution.name]
+            new_distribution_name]
         browser.getControl(name="field.name").value = "new-name"
         browser.getControl("Update OCI project").click()
 
         content = find_main_content(browser.contents)
         self.assertEqual(
-            "OCI project new-name for %s" % new_distribution.display_name,
+            "OCI project new-name for %s" % new_distribution_display_name,
             extract_text(content.h1))
         self.assertThat(
             "Distribution:\n%s\nEdit OCI project" % (
-                new_distribution.display_name),
+                new_distribution_display_name),
             MatchesTagText(content, "pillar"))
         self.assertThat(
             "Name:\nnew-name\nEdit OCI project",
@@ -419,22 +421,24 @@ class TestOCIProjectEditView(BrowserTestCase):
             pillar=original_distribution)
         new_distribution = self.factory.makeDistribution(
             oci_project_admin=admin_team)
+        new_distribution_name = new_distribution.name
+        new_distribution_display_name = new_distribution.display_name
 
         browser = self.getViewBrowser(
             oci_project, user=admin_person)
         browser.getLink("Edit OCI project").click()
         browser.getControl(name="field.distribution").value = [
-            new_distribution.name]
+            new_distribution_name]
         browser.getControl(name="field.name").value = "new-name"
         browser.getControl("Update OCI project").click()
 
         content = find_main_content(browser.contents)
         self.assertEqual(
-            "OCI project new-name for %s" % new_distribution.display_name,
+            "OCI project new-name for %s" % new_distribution_display_name,
             extract_text(content.h1))
         self.assertThat(
             "Distribution:\n%s\nEdit OCI project" % (
-                new_distribution.display_name),
+                new_distribution_display_name),
             MatchesTagText(content, "pillar"))
         self.assertThat(
             "Name:\nnew-name\nEdit OCI project",
@@ -486,6 +490,7 @@ class TestOCIProjectAddView(BrowserTestCase):
         user = oci_project.pillar.owner
         new_distribution = self.factory.makeDistribution(
             owner=user, oci_project_admin=user)
+        new_distribution_display_name = new_distribution.display_name
         browser = self.getViewBrowser(
             new_distribution, user=user, view_name='+new-oci-project')
         browser.getControl(name="field.name").value = "new-name"
@@ -493,11 +498,11 @@ class TestOCIProjectAddView(BrowserTestCase):
 
         content = find_main_content(browser.contents)
         self.assertEqual(
-            "OCI project new-name for %s" % new_distribution.display_name,
+            "OCI project new-name for %s" % new_distribution_display_name,
             extract_text(content.h1))
         self.assertThat(
             "Distribution:\n%s\nEdit OCI project" % (
-                new_distribution.display_name),
+                new_distribution_display_name),
             MatchesTagText(content, "pillar"))
         self.assertThat(
              "Name:\nnew-name\nEdit OCI project",
@@ -528,6 +533,7 @@ class TestOCIProjectAddView(BrowserTestCase):
     def test_create_oci_project_already_exists(self):
         person = self.factory.makePerson()
         distribution = self.factory.makeDistribution(oci_project_admin=person)
+        distribution_display_name = distribution.display_name
         self.factory.makeOCIProject(ociprojectname="new-name",
                                     pillar=distribution,
                                     registrant=person)
@@ -539,7 +545,7 @@ class TestOCIProjectAddView(BrowserTestCase):
 
         expected_msg = (
             "There is already an OCI project in distribution %s with this "
-            "name." % distribution.display_name)
+            "name." % distribution_display_name)
         self.assertEqual(
             expected_msg,
             extract_text(find_tags_by_class(browser.contents, "message")[1]))

@@ -331,7 +331,7 @@ Now, we will check suggestions in this form.
 
 Check that suggestions come in from other contexts:
 
-    >>> six.ensure_str("Suggested in") in browser.contents
+    >>> "Suggested in" in browser.contents
     True
 
     >>> find_tag_by_id(browser.contents, 'msgset_143_es_suggestion_697_0')
@@ -340,16 +340,15 @@ Check that suggestions come in from other contexts:
 Check that no other suggestions are presented (since no others are
 relevant for this message):
 
-    >>> six.ensure_str("Suggested by") in browser.contents
+    >>> "Suggested by" in browser.contents
     False
 
-    >>> six.ensure_str("Used in") in browser.contents
+    >>> "Used in" in browser.contents
     False
 
 Check for the translator note:
 
-    >>> note = six.ensure_str(
-    ...     "This is an example of commenttext for a multiline")
+    >>> note = "This is an example of commenttext for a multiline"
     >>> note in browser.contents
     True
 
@@ -410,7 +409,7 @@ And submit it.
 Now, we check that the translation we are going to add is not yet in the
 form, so we can check later that it's added as a suggestion:
 
-    >>> six.ensure_str('foo!!') in fast_submission.contents
+    >>> 'foo!!' in fast_submission.contents
     False
 
 Now, we update the translation in slow_submission.

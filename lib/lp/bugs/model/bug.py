@@ -107,6 +107,7 @@ from lp.bugs.adapters.bugchange import (
     UnsubscribedFromBug,
     )
 from lp.bugs.enums import (
+    BugLockedStatus,
     BugLockStatus,
     BugNotificationLevel,
     )
@@ -408,21 +409,18 @@ class Bug(SQLBase, InformationTypeMixin):
     heat = IntCol(notNull=True, default=0)
     heat_last_updated = UtcDateTimeCol(default=None)
     latest_patch_uploaded = UtcDateTimeCol(default=None)
-    _lock_status = DBEnum(
+    lock_status = DBEnum(
         name='lock_status', enum=BugLockStatus,
-        allow_none=True, default=BugLockStatus.UNLOCKED)
+        allow_none=False, default=BugLockStatus.UNLOCKED)
     lock_reason = StringCol(notNull=False, default=None)
 
     @property
-    def lock_status(self):
-        return (
-            BugLockStatus.UNLOCKED if self._lock_status is None
-            else self._lock_status
-        )
-
-    @lock_status.setter
-    def lock_status(self, value):
-        self._lock_status = value
+    def locked(self):
+        try:
+            BugLockedStatus.items[self.lock_status.value]
+            return True
+        except KeyError:
+            return False
 
     @property
     def linked_branches(self):
@@ -434,6 +432,8 @@ class Bug(SQLBase, InformationTypeMixin):
         xref_cve_sequences = [
             sequence for _, sequence in getUtility(IXRefSet).findFrom(
                 ('bug', str(self.id)), types=['cve'])]
+        if not xref_cve_sequences:
+            return []
         expr = Cve.sequence.is_in(xref_cve_sequences)
         return list(sorted(
             IStore(Cve).find(Cve, expr), key=operator.attrgetter('sequence')))
@@ -462,9 +462,12 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.blueprints.model.specificationsearch import (
             get_specification_privacy_filter,
             )
+        specifications = self.specifications
+        if not specifications:
+            return EmptyResultSet()
         return IStore(Specification).find(
             Specification,
-            Specification.id.is_in(spec.id for spec in self.specifications),
+            Specification.id.is_in(spec.id for spec in specifications),
             *get_specification_privacy_filter(user))
 
     @property
@@ -2264,8 +2267,8 @@ class Bug(SQLBase, InformationTypeMixin):
         """See `IBug`."""
         if self.lock_status != BugLockStatus.UNLOCKED:
             old_lock_status = self.lock_status
-            self.lock_status = BugLockStatus.UNLOCKED
             self.lock_reason = None
+            self.lock_status = BugLockStatus.UNLOCKED
 
             self.addChange(
                 BugUnlocked(

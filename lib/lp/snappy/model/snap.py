@@ -1739,9 +1739,27 @@ class SnapSet:
                 logger.debug(
                     "Scheduling builds of snap package %s/%s",
                     snap.owner.name, snap.name)
-            build_requests.append(snap.requestBuilds(
-                snap.owner, snap.auto_build_archive, snap.auto_build_pocket,
-                channels=snap.auto_build_channels))
+            try:
+                build_request = snap.requestBuilds(
+                    snap.owner, snap.auto_build_archive,
+                    snap.auto_build_pocket,
+                    channels=snap.auto_build_channels
+                )
+            except SnapBuildArchiveOwnerMismatch as e:
+                if logger is not None:
+                    logger.exception(
+                        "%s Snap owner: %s, Archive owner: %s" % (
+                            e,
+                            snap.owner.displayname,
+                            snap.auto_build_archive.owner.displayname,
+                        )
+                    )
+                continue
+            except Exception as e:
+                if logger is not None:
+                    logger.exception(e)
+                continue
+            build_requests.append(build_request)
         return build_requests
 
     def detachFromBranch(self, branch):

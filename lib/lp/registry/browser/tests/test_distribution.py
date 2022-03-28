@@ -3,6 +3,8 @@
 
 """Tests for Distribution page."""
 
+import re
+
 from fixtures import FakeLogger
 from lazr.restful.fields import Reference
 from lazr.restful.interfaces import (
@@ -20,6 +22,7 @@ from zope.schema.vocabulary import SimpleVocabulary
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.lazrjs import vocabulary_to_choice_edit_items
+from lp.app.enums import InformationType
 from lp.registry.enums import (
     DistributionDefaultTraversalPolicy,
     EXCLUSIVE_TEAM_POLICY,
@@ -366,12 +369,12 @@ class TestDistributionPage(TestCaseWithFactory):
         # User can't see the +search-oci-project link if there are no
         # available OCI projects.
         admin = login_celebrity('admin')
-        browser = self.getUserBrowser(canonical_url(self.distro), user=admin)
+        distro_url = canonical_url(self.distro)
+        browser = self.getUserBrowser(distro_url, user=admin)
         matchers = Not(soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'link to search oci project', 'a',
-                attrs={'href': canonical_url(
-                    self.distro, view_name='+search-oci-project')},
+                attrs={'href': '%s/+search-oci-project' % distro_url},
                 text='Search for OCI project')))
         self.assertThat(browser.contents, matchers)
 
@@ -379,12 +382,12 @@ class TestDistributionPage(TestCaseWithFactory):
         # User can see the +search-oci-project link if there are OCI projects.
         self.factory.makeOCIProject(pillar=self.distro)
         admin = login_celebrity('admin')
-        browser = self.getUserBrowser(canonical_url(self.distro), user=admin)
+        distro_url = canonical_url(self.distro)
+        browser = self.getUserBrowser(distro_url, user=admin)
         matchers = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'link to search oci project', 'a',
-                attrs={'href': canonical_url(
-                    self.distro, view_name='+search-oci-project')},
+                attrs={'href': '%s/+search-oci-project' % distro_url},
                 text='Search for OCI project'))
         self.assertThat(browser.contents, matchers)
 
@@ -393,20 +396,19 @@ class TestDistributionPage(TestCaseWithFactory):
         # is disabled.
         self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: ''}))
         user = self.factory.makePerson()
-        browser = self.getUserBrowser(canonical_url(self.distro), user=user)
+        distro_url = canonical_url(self.distro)
+        browser = self.getUserBrowser(distro_url, user=user)
 
         self.assertThat(browser.contents, Not(soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'link to search oci project', 'a',
-                attrs={'href': canonical_url(
-                    self.distro, view_name='+search-oci-project')},
+                attrs={'href': '%s/+search-oci-project' % distro_url},
                 text='Search for OCI project'))))
 
         self.assertThat(browser.contents, Not(soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'link to create oci project', 'a',
-                attrs={'href': canonical_url(
-                    self.distro, view_name='+new-oci-project')},
+                attrs={'href': '%s/+new-oci-project' % distro_url},
                 text='Create an OCI project'))))
 
     def test_distributionpage_oci_links_for_user_no_permission(self):
@@ -414,22 +416,21 @@ class TestDistributionPage(TestCaseWithFactory):
         # doesn't have permission to create OCI projects.
         self.factory.makeOCIProject(pillar=self.distro)
         user = self.factory.makePerson()
-        browser = self.getUserBrowser(canonical_url(self.distro), user=user)
+        distro_url = canonical_url(self.distro)
+        browser = self.getUserBrowser(distro_url, user=user)
 
         # User can see search link
         self.assertThat(browser.contents, soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'link to search oci project', 'a',
-                attrs={'href': canonical_url(
-                    self.distro, view_name='+search-oci-project')},
+                attrs={'href': '%s/+search-oci-project' % distro_url},
                 text='Search for OCI project')))
 
         # User cannot see "new-oci-project" link.
         self.assertThat(browser.contents, Not(soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'link to create oci project', 'a',
-                attrs={'href': canonical_url(
-                    self.distro, view_name='+new-oci-project')},
+                attrs={'href': '%s/+new-oci-project' % distro_url},
                 text='Create an OCI project'))))
 
     def test_distributionpage_addseries_link_noadmin(self):
@@ -502,6 +503,43 @@ class TestDistributionPage(TestCaseWithFactory):
         with admin_logged_in():
             self.distro.official_packages = True
         self.assertThat(view(), builds_link)
+
+    def test_requires_subscription_owner(self):
+        # If the distribution is proprietary and doesn't have much time left
+        # on its commercial subscription, the owner sees a portlet directing
+        # them to purchase a subscription.
+        owner = self.distro.owner
+        with admin_logged_in():
+            self.distro.information_type = InformationType.PROPRIETARY
+        login_person(owner)
+        view = create_initialized_view(self.distro, "+index", principal=owner)
+        warning = soupmatchers.HTMLContains(soupmatchers.Within(
+            soupmatchers.Tag(
+                "Portlet container", "div",
+                attrs={"id": "portlet-requires-subscription"}),
+            soupmatchers.Tag(
+                "Heading", "h2",
+                text=re.compile(
+                    r"Purchasing a commercial subscription is required"))))
+        self.assertThat(view(), warning)
+
+    def test_requires_subscription_non_owner(self):
+        # If the distribution is proprietary and doesn't have much time left
+        # on its commercial subscription, non-owners do not see a portlet
+        # directing them to purchase a subscription.
+        with admin_logged_in():
+            self.distro.information_type = InformationType.PROPRIETARY
+            policy = self.factory.makeAccessPolicy(
+                pillar=self.distro, check_existing=True)
+            self.factory.makeAccessPolicyGrant(
+                policy=policy, grantee=self.simple_user)
+        login_person(self.simple_user)
+        view = create_initialized_view(
+            self.distro, "+index", principal=self.simple_user)
+        warning = soupmatchers.HTMLContains(soupmatchers.Tag(
+            "Portlet container", "div",
+            attrs={"id": "portlet-requires-subscription"}))
+        self.assertThat(view(), Not(warning))
 
 
 class TestDistributionView(TestCaseWithFactory):

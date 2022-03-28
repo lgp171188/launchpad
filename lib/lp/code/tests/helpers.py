@@ -45,6 +45,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.sqlbase import cursor
 from lp.services.memcache.testing import MemcacheFixture
 from lp.services.propertycache import get_property_cache
+from lp.services.timeout import get_default_timeout_function
 from lp.testing import (
     run_with_login,
     time_counter,
@@ -303,30 +304,48 @@ class BranchHostingFixture(fixtures.Fixture):
             self.memcache_fixture = self.useFixture(MemcacheFixture())
 
 
+class FakeMethodEnforceTimeout(FakeMethod):
+    """A variant of `FakeMethod` that requires a default timeout.
+
+    Since `GitHostingClient` requires that `set_default_timeout_function` has
+    been called, `GitHostingFixture` requires that as well.
+    """
+
+    def __call__(self, *args, **kwargs):
+        if get_default_timeout_function() is None:
+            raise AssertionError("No default timeout function was set.")
+        return super().__call__(*args, **kwargs)
+
+
 class GitHostingFixture(fixtures.Fixture):
     """A fixture that temporarily registers a fake Git hosting client."""
 
     def __init__(self, default_branch="refs/heads/master",
                  refs=None, commits=None, log=None, diff=None, merge_diff=None,
-                 merges=None, blob=None, disable_memcache=True):
-        self.create = FakeMethod()
-        self.getProperties = FakeMethod(
+                 merges=None, blob=None, disable_memcache=True,
+                 enforce_timeout=False):
+        fake_method_factory = (
+            FakeMethodEnforceTimeout if enforce_timeout else FakeMethod)
+        self.create = fake_method_factory()
+        self.getProperties = fake_method_factory(
             result={"default_branch": default_branch, "is_available": True})
-        self.setProperties = FakeMethod()
-        self.getRefs = FakeMethod(result=({} if refs is None else refs))
-        self.getCommits = FakeMethod(
+        self.setProperties = fake_method_factory()
+        self.getRefs = fake_method_factory(
+            result=({} if refs is None else refs))
+        self.getCommits = fake_method_factory(
             result=([] if commits is None else commits))
-        self.getLog = FakeMethod(result=([] if log is None else log))
-        self.getDiff = FakeMethod(result=({} if diff is None else diff))
-        self.getMergeDiff = FakeMethod(
+        self.getLog = fake_method_factory(result=([] if log is None else log))
+        self.getDiff = fake_method_factory(
+            result=({} if diff is None else diff))
+        self.getMergeDiff = fake_method_factory(
             result={} if merge_diff is None else merge_diff)
-        self.detectMerges = FakeMethod(
+        self.detectMerges = fake_method_factory(
             result=({} if merges is None else merges))
-        self.getBlob = FakeMethod(result=blob)
-        self.delete = FakeMethod()
+        self.getBlob = fake_method_factory(result=blob)
+        self.delete = fake_method_factory()
         self.disable_memcache = disable_memcache
-        self.repackRepository = FakeMethod()
-        self.collectGarbage = FakeMethod()
+        self.repackRepository = fake_method_factory()
+        self.collectGarbage = fake_method_factory()
 
     def _setUp(self):
         self.useFixture(ZopeUtilityFixture(self, IGitHostingClient))

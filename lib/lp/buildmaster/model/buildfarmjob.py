@@ -304,12 +304,16 @@ class BuildFarmJobMixin:
             ]
         return self.status in cancellable_statuses
 
+    def clearBuilder(self):
+        """See `IBuildFarmJob`."""
+        self.build_farm_job.builder = self.builder = None
+
     def resetBuild(self):
         """See `IBuildFarmJob`."""
         self.build_farm_job.status = self.status = BuildStatus.NEEDSBUILD
         self.build_farm_job.date_finished = self.date_finished = None
         self.date_started = None
-        self.build_farm_job.builder = self.builder = None
+        self.clearBuilder()
         self.log = None
         self.upload_log = None
         self.dependencies = None

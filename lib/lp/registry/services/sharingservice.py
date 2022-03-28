@@ -187,7 +187,13 @@ class SharingService:
 
     def getSharedDistributions(self, person, user):
         """See `ISharingService`."""
-        return self._getSharedPillars(person, user, Distribution)
+        commercial_filter = None
+        if user and IPersonRoles(user).in_commercial_admin:
+            commercial_filter = Exists(Select(
+                1, tables=CommercialSubscription,
+                where=CommercialSubscription.distribution == Distribution.id))
+        return self._getSharedPillars(
+            person, user, Distribution, commercial_filter)
 
     def getArtifactGrantsForPersonOnPillar(self, pillar, person):
         """Return the artifact grants for the given person and pillar."""
@@ -543,15 +549,9 @@ class SharingService:
 
     def getBranchSharingPolicies(self, pillar):
         """See `ISharingService`."""
-        # Only Products have branch sharing policies. Distributions just
-        # default to Public.
-        # If the branch sharing policy is EMBARGOED_OR_PROPRIETARY, then we
-        # do not allow any other policies.
         allowed_policies = [BranchSharingPolicy.PUBLIC]
-        # Commercial projects also allow proprietary branches.
-        if (IProduct.providedBy(pillar)
-            and pillar.has_current_commercial_subscription):
-
+        # Commercial pillars also allow proprietary branches.
+        if pillar.has_current_commercial_subscription:
             if pillar.private:
                 allowed_policies = [
                     BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY,
@@ -573,13 +573,9 @@ class SharingService:
 
     def getBugSharingPolicies(self, pillar):
         """See `ISharingService`."""
-        # Only Products have bug sharing policies. Distributions just
-        # default to Public.
         allowed_policies = [BugSharingPolicy.PUBLIC]
-        # Commercial projects also allow proprietary bugs.
-        if (IProduct.providedBy(pillar)
-            and pillar.has_current_commercial_subscription):
-
+        # Commercial pillars also allow proprietary bugs.
+        if pillar.has_current_commercial_subscription:
             if pillar.private:
                 allowed_policies = [
                     BugSharingPolicy.EMBARGOED_OR_PROPRIETARY,
@@ -601,13 +597,8 @@ class SharingService:
 
     def getSpecificationSharingPolicies(self, pillar):
         """See `ISharingService`."""
-        # Only Products have specification sharing policies. Distributions just
-        # default to Public.
         allowed_policies = [SpecificationSharingPolicy.PUBLIC]
-        # Commercial projects also allow proprietary specifications.
-        if (IProduct.providedBy(pillar)
-            and pillar.has_current_commercial_subscription):
-
+        if pillar.has_current_commercial_subscription:
             if pillar.private:
                 allowed_policies = [
                     SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY,
@@ -904,10 +895,6 @@ class SharingService:
         if (not branch_sharing_policy and not bug_sharing_policy and not
             specification_sharing_policy):
             return None
-        # Only Products have sharing policies.
-        if not IProduct.providedBy(pillar):
-            raise ValueError(
-                "Sharing policies are only supported for products.")
         if branch_sharing_policy:
             pillar.setBranchSharingPolicy(branch_sharing_policy)
         if bug_sharing_policy:

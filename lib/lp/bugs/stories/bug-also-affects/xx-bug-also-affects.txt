@@ -704,7 +704,7 @@ confirmation.
       mailto:dark-master-o-bugs@mylittlepony.com
 
     >>> user_browser.contents.count(
-    ...     six.ensure_str('mailto:dark-master-o-bugs@mylittlepony.com'))
+    ...     'mailto:dark-master-o-bugs@mylittlepony.com')
     3
 
 To evade harvesting, the email address above is obfuscated if you're not
@@ -720,5 +720,5 @@ logged in.
       auto-dark-master-o-bugs
 
     >>> anon_browser.contents.count(
-    ...     six.ensure_str('mailto:dark-master-o-bugs@mylittlepony.com'))
+    ...     'mailto:dark-master-o-bugs@mylittlepony.com')
     0

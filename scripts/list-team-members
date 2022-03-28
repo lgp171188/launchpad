@@ -8,8 +8,6 @@ import _pythonpath  # noqa: F401
 import logging
 import sys
 
-import six
-
 from lp.registry.scripts.listteammembers import (
     NoSuchTeamError,
     process_team,
@@ -55,7 +53,7 @@ class ListTeamMembersScript(LaunchpadScript):
             except NoSuchTeamError:
                 raise LaunchpadScriptFailure("No such team: %s" % teamname)
         for detail in sorted(member_details):
-            print(six.ensure_str(detail))
+            print(detail)
 
 
 if __name__ == '__main__':

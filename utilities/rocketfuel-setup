@@ -33,12 +33,12 @@ while :; do
     esac
 done
 
-if [ -z ${lpusername} ]; then
+if [ -z "$lpusername" ]; then
   # Establish LP username
   whoami=`whoami`
   printf "What is your Launchpad username? [$whoami] "
   read lpusername
-  if [ -z ${lpusername} ]; then
+  if [ -z "$lpusername" ]; then
     lpusername=${whoami}
   fi
 fi
@@ -134,10 +134,10 @@ for key in $REQUIRED_PPA_KEYS; do
 done
 
 do_install() {
-  dpkg -s $pkg | grep -q "^Status: install ok installed"
+  dpkg -s "$pkg" | grep -q "^Status: install ok installed"
   if [ $? -ne 0 ]; then
     echo "Installing $pkg package..."
-    sudo apt-get install $INSTALL_OPTS $pkg
+    sudo apt-get install $INSTALL_OPTS "$pkg"
     if [ $? -ne 0 ]; then
       echo "Unable to install $pkg."
       exit 1
@@ -249,11 +249,11 @@ fi
 
 
 # Create the local branch structure we will use for managing Launchpad code
-mkdir -p $LP_PROJECT_ROOT
-cd $LP_PROJECT_ROOT
+mkdir -p "$LP_PROJECT_ROOT"
+cd "$LP_PROJECT_ROOT"
 
 echo "Logging bzr into Launchpad (it's okay if this errors)..."
-bzr launchpad-login $lpusername
+bzr launchpad-login "$lpusername"
 if [ $? -ne 0 ]; then
   echo ""
   echo "You can ignore any error above about not registering an SSH key"
@@ -275,17 +275,17 @@ if [ "$(git ls-remote --get-url lp:launchpad)" = lp:launchpad ]; then
   fi
 fi
 
-cd $LP_PROJECT_ROOT
-if [ ! -d $LP_TRUNK_NAME ]; then
+cd "$LP_PROJECT_ROOT"
+if [ ! -d "$LP_TRUNK_NAME" ]; then
   echo "Making local clone of Launchpad; this may take a while..."
-  git clone lp:launchpad $LP_TRUNK_NAME
+  git clone lp:launchpad "$LP_TRUNK_NAME"
   if [ $? -ne 0 ]; then
     echo "ERROR: Unable to create local clone of Launchpad"
     exit 1
   fi
 fi
 
-cd $LP_TRUNK_NAME
+cd "$LP_TRUNK_NAME"
 git status
 if [ $? -ne 0 ]; then
   echo "ERROR: Your clone in $LP_TRUNK_PATH is corrupted.
@@ -313,7 +313,7 @@ fi
 # Set up scripts in /usr/local/bin
 cd /usr/local/bin
 if [ ! -e rocketfuel-get ]; then
-  sudo ln -s $LP_TRUNK_PATH/utilities/rocketfuel-get
+  sudo ln -s "$LP_TRUNK_PATH/utilities/rocketfuel-get"
 fi
 ls -l rocketfuel-get | cut -d">" -f2 | grep -q "$LP_TRUNK_NAME\/utilities\/rocketfuel"
 if [ $? -ne 0 ]; then
@@ -321,7 +321,7 @@ if [ $? -ne 0 ]; then
          recreate it."
 fi
 if [ ! -e rocketfuel-setup ]; then
-  sudo ln -s $LP_TRUNK_PATH/utilities/rocketfuel-setup
+  sudo ln -s "$LP_TRUNK_PATH/utilities/rocketfuel-setup"
 fi
 ls -l rocketfuel-setup | cut -d">" -f2 | grep -q "$LP_TRUNK_NAME\/utilities\/rocketfuel"
 if [ $? -ne 0 ]; then

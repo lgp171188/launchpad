@@ -2006,13 +2006,9 @@ class BugTaskSet:
                 Milestone.productseriesID.is_in(product_series_ids)))
 
         # Pull in all the related pillars
-        list(store.find(
-            Distribution, Distribution.id.is_in(distro_ids)))
-        list(store.find(
-            DistroSeries, DistroSeries.id.is_in(distro_series_ids)))
-        list(store.find(
-            Product, Product.id.is_in(product_ids)))
-        list(store.find(
-            ProductSeries, ProductSeries.id.is_in(product_series_ids)))
+        load(Distribution, distro_ids)
+        load(DistroSeries, distro_series_ids)
+        load(Product, product_ids)
+        load(ProductSeries, product_series_ids)
 
         return milestones

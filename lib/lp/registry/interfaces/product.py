@@ -1190,5 +1190,3 @@ from lp.registry.interfaces.distributionsourcepackage import (  # noqa: E402
 
 patch_reference_property(
     IDistributionSourcePackage, 'upstream_product', IProduct)
-
-patch_reference_property(ICommercialSubscription, 'product', IProduct)

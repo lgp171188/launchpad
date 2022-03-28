@@ -101,7 +101,6 @@ from lp.scripts.garbo import (
     load_garbo_job_state,
     LoginTokenPruner,
     OpenIDConsumerAssociationPruner,
-    PopulateBugLockStatusDefaultUnlocked,
     PopulateSnapBuildStoreRevision,
     ProductVCSPopulator,
     save_garbo_job_state,
@@ -1356,12 +1355,13 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             ap.type
             for ap in getUtility(IAccessPolicySource).findByPillar([pillar])]
 
-    def test_UnusedAccessPolicyPruner(self):
-        # UnusedAccessPolicyPruner removes access policies that aren't
-        # in use by artifacts or allowed by the project sharing policy.
+    def test_UnusedProductAccessPolicyPruner(self):
+        # UnusedProductAccessPolicyPruner removes access policies that
+        # aren't in use by artifacts or allowed by the project sharing
+        # policy.
         switch_dbuser('testadmin')
         product = self.factory.makeProduct()
-        self.factory.makeCommercialSubscription(product=product)
+        self.factory.makeCommercialSubscription(pillar=product)
         self.factory.makeAccessPolicy(product, InformationType.PROPRIETARY)
         naked_product = removeSecurityProxy(product)
         naked_product.bug_sharing_policy = BugSharingPolicy.PROPRIETARY
@@ -1385,6 +1385,39 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertContentEqual(
             [InformationType.PRIVATESECURITY, InformationType.PROPRIETARY],
             self.getAccessPolicyTypes(product))
+
+    def test_UnusedDistributionAccessPolicyPruner(self):
+        # UnusedDistributionAccessPolicyPruner removes access policies that
+        # aren't in use by artifacts or allowed by the distribution sharing
+        # policy.
+        switch_dbuser('testadmin')
+        distribution = self.factory.makeProduct()
+        self.factory.makeCommercialSubscription(pillar=distribution)
+        self.factory.makeAccessPolicy(
+            distribution, InformationType.PROPRIETARY)
+        naked_distribution = removeSecurityProxy(distribution)
+        naked_distribution.bug_sharing_policy = BugSharingPolicy.PROPRIETARY
+        naked_distribution.branch_sharing_policy = (
+            BranchSharingPolicy.PROPRIETARY)
+        [ap] = getUtility(IAccessPolicySource).find(
+            [(distribution, InformationType.PRIVATESECURITY)])
+        self.factory.makeAccessPolicyArtifact(policy=ap)
+
+        # Private and Private Security were created with the distribution.
+        # Proprietary was created when the branch sharing policy was set.
+        self.assertContentEqual(
+            [InformationType.PRIVATESECURITY, InformationType.USERDATA,
+             InformationType.PROPRIETARY],
+            self.getAccessPolicyTypes(distribution))
+
+        self.runDaily()
+
+        # Proprietary is permitted by the sharing policy, and there's a
+        # Private Security artifact. But Private isn't in use or allowed
+        # by a sharing policy, so garbo deleted it.
+        self.assertContentEqual(
+            [InformationType.PRIVATESECURITY, InformationType.PROPRIETARY],
+            self.getAccessPolicyTypes(distribution))
 
     def test_ProductVCSPopulator(self):
         switch_dbuser('testadmin')
@@ -2109,21 +2142,6 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             [report2],
             list(getUtility(
                 IRevisionStatusReportSet).findByRepository(repo2)))
-
-    def test_PopulateBugLockStatusDefaultUnlocked(self):
-        switch_dbuser('testadmin')
-        populator = PopulateBugLockStatusDefaultUnlocked(log=None)
-        for _ in range(5):
-            bug = self.factory.makeBug()
-            removeSecurityProxy(bug).lock_status = None
-
-        result_set = populator.findBugsLockStatusNone()
-        self.assertGreater(result_set.count(), 0)
-
-        self.runDaily()
-
-        result_set = populator.findBugsLockStatusNone()
-        self.assertTrue(result_set.is_empty())
 
 
 class TestGarboTasks(TestCaseWithFactory):

@@ -60,9 +60,14 @@ from lp.app.browser.launchpadform import (
     )
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
+from lp.app.enums import PILLAR_INFORMATION_TYPES
 from lp.app.errors import NotFoundError
+from lp.app.vocabularies import InformationTypeVocabulary
 from lp.app.widgets.image import ImageChangeWidget
-from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
+from lp.app.widgets.itemswidgets import (
+    LabeledMultiCheckBoxWidget,
+    LaunchpadRadioWidgetWithDescription,
+    )
 from lp.archivepublisher.interfaces.publisherconfig import (
     IPublisherConfig,
     IPublisherConfigSet,
@@ -134,6 +139,7 @@ from lp.services.webapp import (
     StandardLaunchpadFacets,
     stepthrough,
     )
+from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import ILaunchBag
@@ -195,6 +201,10 @@ class DistributionNavigation(
     @stepthrough('+archive')
     def traverse_archive(self, name):
         return self.context.getArchive(name)
+
+    @stepthrough('+commercialsubscription')
+    def traverse_commercialsubscription(self, name):
+        return self.context.commercial_subscription
 
     def _resolveSeries(self, name):
         try:
@@ -794,6 +804,18 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
         """The 5 most recent derivatives."""
         return self.context.derivatives[:5]
 
+    @cachedproperty
+    def show_commercial_subscription_info(self):
+        """Should subscription information be shown?
+
+        Subscription information is only shown to the distribution owners,
+        Launchpad admins, and members of the Launchpad commercial team.  The
+        first two are allowed via the Launchpad.Edit permission.  The latter
+        is allowed via Launchpad.Commercial.
+        """
+        return (check_permission('launchpad.Edit', self.context) or
+                check_permission('launchpad.Commercial', self.context))
+
 
 class DistributionArchivesView(LaunchpadView):
 
@@ -1086,12 +1108,27 @@ class DistributionAdminView(LaunchpadEditFormView):
         'supports_mirrors',
         'default_traversal_policy',
         'redirect_default_traversal',
+        'information_type',
         ]
+
+    custom_widget_information_type = CustomWidgetFactory(
+        LaunchpadRadioWidgetWithDescription,
+        vocabulary=InformationTypeVocabulary(types=PILLAR_INFORMATION_TYPES))
 
     @property
     def label(self):
         """See `LaunchpadFormView`."""
         return 'Administer %s' % self.context.displayname
+
+    def validate(self, data):
+        super().validate(data)
+        information_type = data.get('information_type')
+        if information_type:
+            errors = [
+                str(e) for e in self.context.checkInformationType(
+                    information_type)]
+            if len(errors) > 0:
+                self.setFieldError('information_type', ' '.join(errors))
 
     @property
     def cancel_url(self):

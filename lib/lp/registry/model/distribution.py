@@ -9,11 +9,17 @@ __all__ = [
     ]
 
 from collections import defaultdict
+from datetime import (
+    datetime,
+    timedelta,
+    )
 import itertools
 from operator import itemgetter
 
+import pytz
 from storm.expr import (
     And,
+    Coalesce,
     Desc,
     Exists,
     Join,
@@ -27,6 +33,7 @@ from storm.expr import (
 from storm.info import ClassAlias
 from storm.locals import (
     Int,
+    List,
     Reference,
     )
 from storm.store import Store
@@ -40,15 +47,22 @@ from lp.answers.model.faq import (
     FAQSearch,
     )
 from lp.answers.model.question import (
+    Question,
     QuestionTargetMixin,
     QuestionTargetSearch,
     )
 from lp.app.enums import (
     FREE_INFORMATION_TYPES,
     InformationType,
+    PILLAR_INFORMATION_TYPES,
+    PROPRIETARY_INFORMATION_TYPES,
+    PUBLIC_INFORMATION_TYPES,
     ServiceUsage,
     )
-from lp.app.errors import NotFoundError
+from lp.app.errors import (
+    NotFoundError,
+    ServiceUsageForbidden,
+    )
 from lp.app.interfaces.launchpad import (
     IHasIcon,
     IHasLogo,
@@ -57,30 +71,41 @@ from lp.app.interfaces.launchpad import (
     ILaunchpadUsage,
     IServiceUsage,
     )
+from lp.app.interfaces.services import IService
+from lp.app.model.launchpad import InformationTypeMixin
 from lp.app.validators.name import (
     sanitize_name,
     valid_name,
     )
 from lp.archivepublisher.debversion import Version
+from lp.blueprints.enums import SpecificationFilter
 from lp.blueprints.model.specification import (
     HasSpecificationsMixin,
     Specification,
+    SPECIFICATION_POLICY_ALLOWED_TYPES,
+    SPECIFICATION_POLICY_DEFAULT_TYPES,
     )
 from lp.blueprints.model.specificationsearch import search_specifications
 from lp.blueprints.model.sprint import HasSprintsMixin
 from lp.bugs.interfaces.bugsummary import IBugSummaryDimension
 from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
+from lp.bugs.interfaces.bugtarget import (
+    BUG_POLICY_ALLOWED_TYPES,
+    BUG_POLICY_DEFAULT_TYPES,
+    )
 from lp.bugs.interfaces.bugtaskfilter import OrderedBugTask
 from lp.bugs.model.bugtarget import (
     BugTargetBase,
     OfficialBugTagTargetMixin,
     )
+from lp.bugs.model.bugtaskflat import BugTaskFlat
 from lp.bugs.model.structuralsubscription import (
     StructuralSubscriptionTargetMixin,
     )
 from lp.code.interfaces.seriessourcepackagebranch import (
     IFindOfficialBranchLinks,
     )
+from lp.code.model.branch import Branch
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     )
@@ -88,11 +113,16 @@ from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
     DistributionDefaultTraversalPolicy,
+    INCLUSIVE_TEAM_POLICY,
     SpecificationSharingPolicy,
     VCSType,
     )
-from lp.registry.errors import NoSuchDistroSeries
-from lp.registry.interfaces.accesspolicy import IAccessPolicySource
+from lp.registry.errors import (
+    CannotChangeInformationType,
+    CommercialSubscribersOnly,
+    NoSuchDistroSeries,
+    ProprietaryPillar,
+    )
 from lp.registry.interfaces.distribution import (
     IDistribution,
     IDistributionSet,
@@ -119,7 +149,9 @@ from lp.registry.interfaces.pocket import suffixpocket
 from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackagename import ISourcePackageName
+from lp.registry.model.accesspolicy import AccessPolicyGrantFlat
 from lp.registry.model.announcement import MakesAnnouncements
+from lp.registry.model.commercialsubscription import CommercialSubscription
 from lp.registry.model.distributionmirror import (
     DistributionMirror,
     MirrorCDImageDistroSeries,
@@ -140,7 +172,9 @@ from lp.registry.model.milestone import (
 from lp.registry.model.ociprojectname import OCIProjectName
 from lp.registry.model.oopsreferences import referenced_oops
 from lp.registry.model.pillar import HasAliasMixin
+from lp.registry.model.sharingpolicy import SharingPolicyMixin
 from lp.registry.model.sourcepackagename import SourcePackageName
+from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.bulk import load_referencing
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
@@ -158,6 +192,8 @@ from lp.services.database.sqlobject import (
     StringCol,
     )
 from lp.services.database.stormexpr import (
+    ArrayAgg,
+    ArrayIntersects,
     fti_search,
     rank_by_fti,
     )
@@ -202,7 +238,26 @@ from lp.translations.enums import TranslationPermission
 from lp.translations.model.hastranslationimports import (
     HasTranslationImportsMixin,
     )
+from lp.translations.model.potemplate import POTemplate
 from lp.translations.model.translationpolicy import TranslationPolicyMixin
+
+
+bug_policy_default = {
+    InformationType.PUBLIC: BugSharingPolicy.PUBLIC,
+    InformationType.PROPRIETARY: BugSharingPolicy.PROPRIETARY,
+    }
+
+
+branch_policy_default = {
+    InformationType.PUBLIC: BranchSharingPolicy.PUBLIC,
+    InformationType.PROPRIETARY: BranchSharingPolicy.PROPRIETARY,
+    }
+
+
+specification_policy_default = {
+    InformationType.PUBLIC: SpecificationSharingPolicy.PUBLIC,
+    InformationType.PROPRIETARY: SpecificationSharingPolicy.PROPRIETARY,
+    }
 
 
 @implementer(
@@ -214,7 +269,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
                    HasTranslationImportsMixin, KarmaContextMixin,
                    OfficialBugTagTargetMixin, QuestionTargetMixin,
                    StructuralSubscriptionTargetMixin, HasMilestonesMixin,
-                   HasDriversMixin, TranslationPolicyMixin):
+                   HasDriversMixin, TranslationPolicyMixin,
+                   InformationTypeMixin, SharingPolicyMixin):
     """A distribution of an operating system, e.g. Debian GNU/Linux."""
 
     _table = 'Distribution'
@@ -280,9 +336,12 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
     oci_registry_credentials = Reference(
         oci_registry_credentials_id, "OCIRegistryCredentials.id")
 
+    _creating = False
+
     def __init__(self, name, display_name, title, description, summary,
                  domainname, members, owner, registrant, mugshot=None,
-                 logo=None, icon=None, vcs=None):
+                 logo=None, icon=None, vcs=None, information_type=None):
+        self._creating = True
         try:
             self.name = name
             self.display_name = display_name
@@ -298,9 +357,11 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             self.logo = logo
             self.icon = icon
             self.vcs = vcs
+            self.information_type = information_type
         except Exception:
             IStore(self).remove(self)
             raise
+        del self._creating
 
     def __repr__(self):
         display_name = backslashreplace(self.display_name)
@@ -320,28 +381,182 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         """See `IBugTarget`."""
         return self
 
+    def _valid_distribution_information_type(self, attr, value):
+        for exception in self.checkInformationType(value):
+            raise exception
+        return value
+
+    def checkInformationType(self, value):
+        """See `IDistribution`."""
+        if value not in PILLAR_INFORMATION_TYPES:
+            yield CannotChangeInformationType(
+                'Not supported for distributions.')
+        if value in PROPRIETARY_INFORMATION_TYPES:
+            if self.answers_usage == ServiceUsage.LAUNCHPAD:
+                yield CannotChangeInformationType('Answers is enabled.')
+        if self._creating or value not in PROPRIETARY_INFORMATION_TYPES:
+            return
+        # Additional checks when transitioning an existing distribution to a
+        # proprietary type.
+        # All specs located by an ALL search are public.
+        public_specs = self.specifications(
+            None, filter=[SpecificationFilter.ALL])
+        if not public_specs.is_empty():
+            # Unlike bugs and branches, specifications cannot be USERDATA or a
+            # security type.
+            yield CannotChangeInformationType('Some blueprints are public.')
+        store = Store.of(self)
+        series_ids = [series.id for series in self.series]
+        non_proprietary_bugs = store.find(
+            BugTaskFlat,
+            BugTaskFlat.information_type.is_in(FREE_INFORMATION_TYPES),
+            Or(
+                BugTaskFlat.distribution == self.id,
+                BugTaskFlat.distroseries_id.is_in(series_ids)))
+        if not non_proprietary_bugs.is_empty():
+            yield CannotChangeInformationType(
+                'Some bugs are neither proprietary nor embargoed.')
+        # Default returns all public branches.
+        non_proprietary_branches = store.find(
+            Branch,
+            DistroSeries.distribution == self.id,
+            Branch.distroseries == DistroSeries.id,
+            Not(Branch.information_type.is_in(PROPRIETARY_INFORMATION_TYPES)))
+        if not non_proprietary_branches.is_empty():
+            yield CannotChangeInformationType(
+                'Some branches are neither proprietary nor embargoed.')
+        questions = store.find(Question, Question.distribution == self.id)
+        if not questions.is_empty():
+            yield CannotChangeInformationType(
+                'This distribution has questions.')
+        templates = store.find(
+            POTemplate, DistroSeries.distribution == self.id,
+            POTemplate.distroseries == DistroSeries.id)
+        if not templates.is_empty():
+            yield CannotChangeInformationType(
+                'This distribution has translations.')
+        if not self.getTranslationImportQueueEntries().is_empty():
+            yield CannotChangeInformationType(
+                'This distribution has queued translations.')
+        if self.translations_usage == ServiceUsage.LAUNCHPAD:
+            yield CannotChangeInformationType('Translations are enabled.')
+        bug_supervisor = self.bug_supervisor
+        if (bug_supervisor is not None and
+                bug_supervisor.membership_policy in INCLUSIVE_TEAM_POLICY):
+            yield CannotChangeInformationType(
+                'Bug supervisor has inclusive membership.')
+
+        # Proprietary check works only after creation, because during
+        # creation, has_current_commercial_subscription cannot give the
+        # right value and triggers an inappropriate DB flush.
+
+        # Create the complimentary commercial subscription for the
+        # distribution.
+        self._ensure_complimentary_subscription()
+
+        # If you have a commercial subscription, but it's not current, you
+        # cannot set the information type to a PROPRIETARY type.
+        if not self.has_current_commercial_subscription:
+            yield CommercialSubscribersOnly(
+                'A valid commercial subscription is required for private'
+                ' distributions.')
+
+    _information_type = DBEnum(
+        enum=InformationType, default=InformationType.PUBLIC,
+        name="information_type",
+        validator=_valid_distribution_information_type)
+
+    @property
+    def information_type(self):
+        return self._information_type or InformationType.PUBLIC
+
+    @information_type.setter
+    def information_type(self, value):
+        old_info_type = self._information_type
+        self._information_type = value
+        # Make sure that policies are updated to grant permission to the
+        # maintainer as required for the Distribution.
+        # However, only on edits.  If this is a new Distribution it's
+        # handled already.
+        if not self._creating:
+            if (old_info_type == InformationType.PUBLIC and
+                    value != InformationType.PUBLIC):
+                self._ensure_complimentary_subscription()
+                self.setBranchSharingPolicy(branch_policy_default[value])
+                self.setBugSharingPolicy(bug_policy_default[value])
+                self.setSpecificationSharingPolicy(
+                    specification_policy_default[value])
+            self._ensurePolicies([value])
+
     @property
     def pillar_category(self):
         """See `IPillar`."""
         return "Distribution"
 
-    @property
-    def branch_sharing_policy(self):
-        """See `IHasSharingPolicies."""
-        # Sharing policy for distributions is always PUBLIC.
-        return BranchSharingPolicy.PUBLIC
+    bug_sharing_policy = DBEnum(
+        enum=BugSharingPolicy, allow_none=True,
+        default=BugSharingPolicy.PUBLIC)
+    branch_sharing_policy = DBEnum(
+        enum=BranchSharingPolicy, allow_none=True,
+        default=BranchSharingPolicy.PUBLIC)
+    specification_sharing_policy = DBEnum(
+        enum=SpecificationSharingPolicy, allow_none=True,
+        default=SpecificationSharingPolicy.PUBLIC)
+
+    # Cache of AccessPolicy.ids that convey launchpad.LimitedView.
+    # Unlike artifacts' cached access_policies, an AccessArtifactGrant
+    # to an artifact in the policy is sufficient for access.
+    access_policies = List(type=Int())
+
+    @cachedproperty
+    def commercial_subscription(self):
+        return IStore(CommercialSubscription).find(
+            CommercialSubscription, distribution=self).one()
 
     @property
-    def bug_sharing_policy(self):
-        """See `IHasSharingPolicies."""
-        # Sharing policy for distributions is always PUBLIC.
-        return BugSharingPolicy.PUBLIC
+    def has_current_commercial_subscription(self):
+        now = datetime.now(pytz.UTC)
+        return (self.commercial_subscription
+            and self.commercial_subscription.date_expires > now)
 
     @property
-    def specification_sharing_policy(self):
-        """See `IHasSharingPolicies."""
-        # Sharing policy for distributions is always PUBLIC.
-        return SpecificationSharingPolicy.PUBLIC
+    def commercial_subscription_is_due(self):
+        """See `IDistribution`.
+
+        If True, display subscription warning to distribution owner.
+        """
+        if self.information_type not in PROPRIETARY_INFORMATION_TYPES:
+            return False
+        elif (self.commercial_subscription is None
+              or not self.commercial_subscription.is_active):
+            # The distribution doesn't have an active subscription.
+            return True
+        else:
+            warning_date = (self.commercial_subscription.date_expires
+                            - timedelta(30))
+            now = datetime.now(pytz.UTC)
+            if now > warning_date:
+                # The subscription is close to being expired.
+                return True
+            else:
+                # The subscription is good.
+                return False
+
+    def _ensure_complimentary_subscription(self):
+        """Create a complementary commercial subscription for the distro."""
+        if not self.commercial_subscription:
+            lp_janitor = getUtility(ILaunchpadCelebrities).janitor
+            now = datetime.now(pytz.UTC)
+            date_expires = now + timedelta(days=30)
+            sales_system_id = "complimentary-30-day-%s" % now
+            whiteboard = (
+                "Complimentary 30 day subscription. -- Launchpad %s" %
+                now.date().isoformat())
+            subscription = CommercialSubscription(
+                pillar=self, date_starts=now, date_expires=date_expires,
+                registrant=lp_janitor, purchaser=lp_janitor,
+                sales_system_id=sales_system_id, whiteboard=whiteboard)
+            get_property_cache(self).commercial_subscription = subscription
 
     @property
     def uploaders(self):
@@ -391,6 +606,10 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         return self._answers_usage
 
     def _set_answers_usage(self, val):
+        if val == ServiceUsage.LAUNCHPAD:
+            if self.information_type in PROPRIETARY_INFORMATION_TYPES:
+                raise ServiceUsageForbidden(
+                    "Answers not allowed for non-public distributions.")
         self._answers_usage = val
         if val == ServiceUsage.LAUNCHPAD:
             self.official_answers = True
@@ -426,9 +645,17 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         _set_blueprints_usage,
         doc="Indicates if the product uses the blueprints service.")
 
+    def validate_translations_usage(self, attr, value):
+        if value == ServiceUsage.LAUNCHPAD and self.private:
+            raise ProprietaryPillar(
+                "Translations are not supported for proprietary "
+                "distributions.")
+        return value
+
     translations_usage = DBEnum(
         name="translations_usage", allow_none=False,
-        enum=ServiceUsage, default=ServiceUsage.UNKNOWN)
+        enum=ServiceUsage, default=ServiceUsage.UNKNOWN,
+        validator=validate_translations_usage)
 
     @property
     def codehosting_usage(self):
@@ -645,7 +872,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         # 'DistroSeries.distributionID!=self.id' is only required
         # because the previous_series attribute has been (mis-)used
         # to denote other relations than proper derivation
-        # relashionships. We should be rid of this condition once
+        # relationships. We should be rid of this condition once
         # the bug is fixed.
         ret = Store.of(self).find(
             DistroSeries,
@@ -931,11 +1158,13 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
     def getAllowedSpecificationInformationTypes(self):
         """See `ISpecificationTarget`."""
-        return (InformationType.PUBLIC,)
+        return SPECIFICATION_POLICY_ALLOWED_TYPES[
+            self.specification_sharing_policy]
 
     def getDefaultSpecificationInformationType(self):
         """See `ISpecificationTarget`."""
-        return InformationType.PUBLIC
+        return SPECIFICATION_POLICY_DEFAULT_TYPES[
+            self.specification_sharing_policy]
 
     def searchQuestions(self, search_text=None,
                         status=QUESTION_STATUS_DEFAULT_SEARCH,
@@ -1413,11 +1642,11 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
     def getAllowedBugInformationTypes(self):
         """See `IDistribution.`"""
-        return FREE_INFORMATION_TYPES
+        return BUG_POLICY_ALLOWED_TYPES[self.bug_sharing_policy]
 
     def getDefaultBugInformationType(self):
         """See `IDistribution.`"""
-        return InformationType.PUBLIC
+        return BUG_POLICY_DEFAULT_TYPES[self.bug_sharing_policy]
 
     def userCanEdit(self, user):
         """See `IDistribution`."""
@@ -1562,6 +1791,42 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             self.oci_registry_credentials = None
             old_credentials.destroySelf()
 
+    @cachedproperty
+    def _known_viewers(self):
+        """A set of known persons able to view this distribution."""
+        return set()
+
+    def userCanView(self, user):
+        """See `IDistributionPublic`."""
+        if self.information_type in PUBLIC_INFORMATION_TYPES:
+            return True
+        if user is None:
+            return False
+        if user.id in self._known_viewers:
+            return True
+        if not IPersonRoles.providedBy(user):
+            user = IPersonRoles(user)
+        if user.in_commercial_admin or user.in_admin:
+            self._known_viewers.add(user.id)
+            return True
+        if getUtility(IService, 'sharing').checkPillarAccess(
+                [self], self.information_type, user):
+            self._known_viewers.add(user.id)
+            return True
+        return False
+
+    def userCanLimitedView(self, user):
+        """See `IDistributionPublic`."""
+        if self.userCanView(user):
+            return True
+        if user is None:
+            return False
+        return not Store.of(self).find(
+            Distribution,
+            Distribution.id == self.id,
+            DistributionSet.getDistributionPrivacyFilter(user.person),
+            ).is_empty()
+
 
 @implementer(IDistributionSet)
 class DistributionSet:
@@ -1600,10 +1865,48 @@ class DistributionSet:
             return None
         return pillar
 
+    @staticmethod
+    def getDistributionPrivacyFilter(user):
+        # Anonymous users can only see public distributions.  This is also
+        # sometimes used with an outer join with e.g. Product, so we let
+        # NULL through too.
+        public_filter = Or(
+            Distribution._information_type == None,
+            Distribution._information_type == InformationType.PUBLIC)
+        if user is None:
+            return public_filter
+
+        # (Commercial) admins can see any project.
+        roles = IPersonRoles(user)
+        if roles.in_admin or roles.in_commercial_admin:
+            return True
+
+        # Normal users can see any project for which they can see either
+        # an entire policy or an artifact.
+        # XXX wgrant 2015-06-26: This is slower than ideal for people in
+        # teams with lots of artifact grants, as there can be tens of
+        # thousands of APGF rows for a single policy. But it's tens of
+        # milliseconds at most.
+        grant_filter = Coalesce(
+            ArrayIntersects(
+                SQL('Distribution.access_policies'),
+                Select(
+                    ArrayAgg(AccessPolicyGrantFlat.policy_id),
+                    tables=(AccessPolicyGrantFlat,
+                            Join(TeamParticipation,
+                                TeamParticipation.teamID ==
+                                AccessPolicyGrantFlat.grantee_id)),
+                    where=(TeamParticipation.person == user)
+                    )),
+            False)
+        return Or(public_filter, grant_filter)
+
     def new(self, name, display_name, title, description, summary, domainname,
             members, owner, registrant, mugshot=None, logo=None, icon=None,
-            vcs=None):
+            vcs=None, information_type=None):
         """See `IDistributionSet`."""
+        if information_type is None:
+            information_type = InformationType.PUBLIC
         distro = Distribution(
             name=name,
             display_name=display_name,
@@ -1617,14 +1920,18 @@ class DistributionSet:
             mugshot=mugshot,
             logo=logo,
             icon=icon,
-            vcs=vcs)
+            vcs=vcs,
+            information_type=information_type)
         IStore(distro).add(distro)
-        getUtility(IArchiveSet).new(distribution=distro,
-            owner=owner, purpose=ArchivePurpose.PRIMARY)
-        policies = itertools.product(
-            (distro,), (InformationType.USERDATA,
-                InformationType.PRIVATESECURITY))
-        getUtility(IAccessPolicySource).create(policies)
+        getUtility(IArchiveSet).new(
+            distribution=distro, owner=owner, purpose=ArchivePurpose.PRIMARY)
+        if information_type != InformationType.PUBLIC:
+            distro._ensure_complimentary_subscription()
+        distro.setBugSharingPolicy(bug_policy_default[information_type])
+        distro.setBranchSharingPolicy(
+            branch_policy_default[information_type])
+        distro.setSpecificationSharingPolicy(
+            specification_policy_default[information_type])
         return distro
 
     def getCurrentSourceReleases(self, distro_source_packagenames):

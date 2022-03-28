@@ -387,6 +387,11 @@ class IBugView(Interface):
             readonly=True,
             value_type=Reference(schema=IMessage)),
         exported_as='messages'))
+    locked = Bool(
+        title=_('Locked?'),
+        description=_('Is this bug locked?'),
+        readonly=True
+    )
     lock_status = exported(
         Choice(
             title=_('Lock Status'), vocabulary=BugLockStatus,

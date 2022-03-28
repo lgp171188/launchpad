@@ -2474,6 +2474,64 @@ class TestSnapSet(TestCaseWithFactory):
             expected_log_entries, logger.getLogBuffer().splitlines())
         self.assertFalse(snap.is_stale)
 
+    def test_makeAutoBuilds_skips_when_owner_mismatches(self):
+        # ISnapSet.makeAutoBuilds skips snap packages if
+        # snap.owner != snap.archive.owner
+        _, snap = self.makeAutoBuildableSnap(
+            is_stale=True,
+        )
+        # we need to create a snap with a private archive,
+        # and a different snap.owner and snap.auto_build_archive.owner
+        # to trigger the `SnapBuildArchiveOwnerMismatch` exception
+        # which finally skips the build
+        snap = removeSecurityProxy(snap)
+        snap.owner=self.factory.makePerson(name="other")
+        snap.auto_build_archive.private = True
+        logger = BufferLogger()
+        build_requests = getUtility(ISnapSet).makeAutoBuilds(logger=logger)
+        self.assertEqual([], build_requests)
+        self.assertEqual([
+            'DEBUG Scheduling builds of snap package %s/%s' % (
+                snap.owner.name, snap.name),
+            'ERROR Snap package builds against private archives are only '
+            'allowed if the snap package owner and the archive owner are '
+            'equal. Snap owner: Other, Archive owner: %s' % (
+                snap.auto_build_archive.owner.displayname,)],
+            logger.getLogBuffer().splitlines()
+        )
+
+    def test_makeAutoBuilds_skips_for_other_exceptions(self):
+        # scheduling builds need to be unaffected by one erroring
+        _, snap = self.makeAutoBuildableSnap(
+            is_stale=True,
+        )
+        # builds cannot be scheduled when the archive is disabled
+        snap = removeSecurityProxy(snap)
+        snap.auto_build_archive._enabled = False
+        logger = BufferLogger()
+        build_requests = getUtility(ISnapSet).makeAutoBuilds(logger=logger)
+        self.assertEqual([], build_requests)
+        self.assertEqual([
+            'DEBUG Scheduling builds of snap package %s/%s' % (
+                snap.owner.name, snap.name),
+            'ERROR %s is disabled.' % (
+                snap.auto_build_archive.displayname,)],
+            logger.getLogBuffer().splitlines()
+        )
+
+    def test_makeAutoBuilds_skips_and_no_logger_enabled(self):
+        # This is basically the same test case as
+        # `test_makeAutoBuilds_skips_when_if_owner_mismatches`
+        # but we particularly test with no logger enabled.
+        _, snap = self.makeAutoBuildableSnap(
+            is_stale=True,
+        )
+        snap = removeSecurityProxy(snap)
+        snap.owner=self.factory.makePerson(name="other")
+        snap.auto_build_archive.private = True
+        build_requests = getUtility(ISnapSet).makeAutoBuilds()
+        self.assertEqual([], build_requests)
+
     def test_makeAutoBuilds_skips_if_built_recently(self):
         # ISnapSet.makeAutoBuilds skips snap packages that have been built
         # recently.
@@ -4061,10 +4119,12 @@ class TestSnapWebservice(TestCaseWithFactory):
         # requestAutoBuilds can be performed over the webservice.
         distroseries = self.factory.makeDistroSeries()
         dases = []
+        das_urls = []
         for _ in range(3):
             processor = self.factory.makeProcessor(supports_virtualized=True)
             dases.append(self.makeBuildableDistroArchSeries(
                 distroseries=distroseries, processor=processor))
+            das_urls.append(api_url(dases[-1]))
         archive = self.factory.makeArchive()
         snap = self.makeSnap(
             distroseries=distroseries,
@@ -4076,7 +4136,8 @@ class TestSnapWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         builds = response.jsonBody()
         self.assertContentEqual(
-            [self.getURL(das) for das in dases[:2]],
+            [self.webservice.getAbsoluteUrl(das_url)
+             for das_url in das_urls[:2]],
             [build["distro_arch_series_link"] for build in builds])
 
     def test_requestAutoBuilds_requires_auto_build_archive(self):
@@ -4151,7 +4212,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         builds = response.jsonBody()
         self.assertContentEqual(
-            [self.getURL(dases[1])],
+            [self.webservice.getAbsoluteUrl(das_urls[1])],
             [build["distro_arch_series_link"] for build in builds])
 
     def test_getBuilds(self):

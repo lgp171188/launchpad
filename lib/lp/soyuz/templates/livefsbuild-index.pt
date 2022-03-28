@@ -110,14 +110,10 @@
       <span tal:attributes="
             class string:buildstatus${context/status/name};"
             tal:content="context/status/title"/>
-      <tal:building condition="context/status/enumvalue:BUILDING">
-        on <a tal:content="context/buildqueue_record/builder/title"
-              tal:attributes="href context/buildqueue_record/builder/fmt:url"/>
-      </tal:building>
-      <tal:built condition="context/builder">
+      <tal:builder condition="context/builder">
         on <a tal:content="context/builder/title"
               tal:attributes="href context/builder/fmt:url"/>
-      </tal:built>
+      </tal:builder>
       <tal:cancel define="link context/menu:context/cancel"
                   condition="link/enabled"
                   replace="structure link/fmt:link" />

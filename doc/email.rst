@@ -1,4 +1,4 @@
-Launchpad and Email
+Launchpad and email
 ===================
 
 Quicker interactive testing

@@ -277,6 +277,13 @@ class IBuildFarmJobView(Interface):
         title=_("Can be cancelled"), required=True, readonly=True,
         description=_("Whether this build record can be cancelled.")))
 
+    def clearBuilder():
+        """Clear this build record's builder.
+
+        This is called by `BuildQueue.reset` as part of resetting jobs so
+        that they can be re-dispatched.
+        """
+
 
 class IBuildFarmJobEdit(Interface):
     """`IBuildFarmJob` methods that require launchpad.Edit."""

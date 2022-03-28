@@ -10,7 +10,6 @@ from lp.app.enums import (
     FREE_INFORMATION_TYPES,
     InformationType,
     NON_EMBARGOED_INFORMATION_TYPES,
-    PUBLIC_INFORMATION_TYPES,
     )
 from lp.app.interfaces.services import IService
 from lp.app.validators import LaunchpadValidationError
@@ -391,7 +390,7 @@ class TestProjectBranchNamespacePrivacyWithInformationType(
         if person is None:
             person = self.factory.makePerson()
         product = self.factory.makeProduct()
-        self.factory.makeCommercialSubscription(product=product)
+        self.factory.makeCommercialSubscription(pillar=product)
         with person_logged_in(product.owner):
             product.setBranchSharingPolicy(sharing_policy)
         namespace = ProjectBranchNamespace(person, product)
@@ -592,6 +591,186 @@ class TestPackageBranchNamespace(TestCaseWithFactory, NamespaceMixin):
         package = self.factory.makeSourcePackage()
         namespace = PackageBranchNamespace(person, package)
         self.assertEqual(IBranchTarget(package), namespace.target)
+
+
+class TestPackageBranchNamespacePrivacyWithInformationType(
+        TestCaseWithFactory):
+    """Tests for the privacy aspects of `PackageBranchNamespace`.
+
+    This tests the behaviour for a package in a distribution using the new
+    branch_sharing_policy rules.
+    """
+
+    layer = DatabaseFunctionalLayer
+
+    def makePackageBranchNamespace(self, sharing_policy, person=None):
+        if person is None:
+            person = self.factory.makePerson()
+        package = self.factory.makeSourcePackage()
+        self.factory.makeCommercialSubscription(pillar=package.distribution)
+        with person_logged_in(package.distribution.owner):
+            package.distribution.setBranchSharingPolicy(sharing_policy)
+        namespace = PackageBranchNamespace(person, package)
+        return namespace
+
+    def test_public_anyone(self):
+        namespace = self.makePackageBranchNamespace(
+            BranchSharingPolicy.PUBLIC)
+        self.assertContentEqual(
+            FREE_INFORMATION_TYPES, namespace.getAllowedInformationTypes())
+        self.assertEqual(
+            InformationType.PUBLIC, namespace.getDefaultInformationType())
+
+    def test_forbidden_anyone(self):
+        namespace = self.makePackageBranchNamespace(
+            BranchSharingPolicy.FORBIDDEN)
+        self.assertContentEqual([], namespace.getAllowedInformationTypes())
+        self.assertEqual(None, namespace.getDefaultInformationType())
+
+    def test_public_or_proprietary_anyone(self):
+        namespace = self.makePackageBranchNamespace(
+            BranchSharingPolicy.PUBLIC_OR_PROPRIETARY)
+        self.assertContentEqual(
+            NON_EMBARGOED_INFORMATION_TYPES,
+            namespace.getAllowedInformationTypes())
+        self.assertEqual(
+            InformationType.PUBLIC, namespace.getDefaultInformationType())
+
+    def test_proprietary_or_public_anyone(self):
+        namespace = self.makePackageBranchNamespace(
+            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC)
+        self.assertContentEqual([], namespace.getAllowedInformationTypes())
+        self.assertIs(None, namespace.getDefaultInformationType())
+
+    def test_proprietary_or_public_owner_grantee(self):
+        namespace = self.makePackageBranchNamespace(
+            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC)
+        distribution = namespace.sourcepackage.distribution
+        with person_logged_in(distribution.owner):
+            getUtility(IService, 'sharing').sharePillarInformation(
+                distribution, namespace.owner, distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+        self.assertContentEqual(
+            NON_EMBARGOED_INFORMATION_TYPES,
+            namespace.getAllowedInformationTypes())
+        self.assertEqual(
+            InformationType.PROPRIETARY,
+            namespace.getDefaultInformationType())
+
+    def test_proprietary_or_public_caller_grantee(self):
+        namespace = self.makePackageBranchNamespace(
+            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC)
+        distribution = namespace.sourcepackage.distribution
+        grantee = self.factory.makePerson()
+        with person_logged_in(distribution.owner):
+            getUtility(IService, 'sharing').sharePillarInformation(
+                distribution, grantee, distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+        self.assertContentEqual(
+            NON_EMBARGOED_INFORMATION_TYPES,
+            namespace.getAllowedInformationTypes(grantee))
+        self.assertEqual(
+            InformationType.PROPRIETARY,
+            namespace.getDefaultInformationType(grantee))
+
+    def test_proprietary_anyone(self):
+        namespace = self.makePackageBranchNamespace(
+            BranchSharingPolicy.PROPRIETARY)
+        self.assertContentEqual([], namespace.getAllowedInformationTypes())
+        self.assertIs(None, namespace.getDefaultInformationType())
+
+    def test_proprietary_branch_owner_grantee(self):
+        namespace = self.makePackageBranchNamespace(
+            BranchSharingPolicy.PROPRIETARY)
+        distribution = namespace.sourcepackage.distribution
+        with person_logged_in(distribution.owner):
+            getUtility(IService, 'sharing').sharePillarInformation(
+                distribution, namespace.owner, distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+        self.assertContentEqual(
+            [InformationType.PROPRIETARY],
+            namespace.getAllowedInformationTypes())
+        self.assertEqual(
+            InformationType.PROPRIETARY,
+            namespace.getDefaultInformationType())
+
+    def test_proprietary_caller_grantee(self):
+        namespace = self.makePackageBranchNamespace(
+            BranchSharingPolicy.PROPRIETARY)
+        distribution = namespace.sourcepackage.distribution
+        grantee = self.factory.makePerson()
+        with person_logged_in(distribution.owner):
+            getUtility(IService, 'sharing').sharePillarInformation(
+                distribution, grantee, distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+        self.assertContentEqual(
+            [InformationType.PROPRIETARY],
+            namespace.getAllowedInformationTypes(grantee))
+        self.assertEqual(
+            InformationType.PROPRIETARY,
+            namespace.getDefaultInformationType(grantee))
+
+    def test_embargoed_or_proprietary_anyone(self):
+        namespace = self.makePackageBranchNamespace(
+            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+        self.assertContentEqual([], namespace.getAllowedInformationTypes())
+        self.assertIs(None, namespace.getDefaultInformationType())
+
+    def test_embargoed_or_proprietary_owner_grantee(self):
+        namespace = self.makePackageBranchNamespace(
+            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+        distribution = namespace.sourcepackage.distribution
+        with person_logged_in(distribution.owner):
+            getUtility(IService, 'sharing').sharePillarInformation(
+                distribution, namespace.owner, distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+        self.assertContentEqual(
+            [InformationType.PROPRIETARY, InformationType.EMBARGOED],
+            namespace.getAllowedInformationTypes())
+        self.assertEqual(
+            InformationType.EMBARGOED,
+            namespace.getDefaultInformationType())
+
+    def test_embargoed_or_proprietary_caller_grantee(self):
+        namespace = self.makePackageBranchNamespace(
+            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+        distribution = namespace.sourcepackage.distribution
+        grantee = self.factory.makePerson()
+        with person_logged_in(distribution.owner):
+            getUtility(IService, 'sharing').sharePillarInformation(
+                distribution, grantee, distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+        self.assertContentEqual(
+            [InformationType.PROPRIETARY, InformationType.EMBARGOED],
+            namespace.getAllowedInformationTypes(grantee))
+        self.assertEqual(
+            InformationType.EMBARGOED,
+            namespace.getDefaultInformationType(grantee))
+
+    def test_grantee_has_no_artifact_grant(self):
+        # The owner of a new branch in a distribution whose default
+        # information type is non-public does not have an artifact grant
+        # specifically for the new branch, because their existing policy
+        # grant is sufficient.
+        person = self.factory.makePerson()
+        team = self.factory.makeTeam(members=[person])
+        namespace = self.makePackageBranchNamespace(
+            BranchSharingPolicy.PROPRIETARY, person=person)
+        distribution = namespace.sourcepackage.distribution
+        with person_logged_in(distribution.owner):
+            getUtility(IService, 'sharing').sharePillarInformation(
+                distribution, team, distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+        branch = namespace.createBranch(
+            BranchType.HOSTED, self.factory.getUniqueString(), person)
+        [policy] = getUtility(IAccessPolicySource).find(
+            [(distribution, InformationType.PROPRIETARY)])
+        apgfs = getUtility(IAccessPolicyGrantFlatSource)
+        self.assertContentEqual(
+            [(distribution.owner, {policy: SharingPermission.ALL}, []),
+             (team, {policy: SharingPermission.ALL}, [])],
+            apgfs.findGranteePermissionsByPolicy([policy]))
+        self.assertTrue(removeSecurityProxy(branch).visibleByUser(person))
 
 
 class TestNamespaceSet(TestCaseWithFactory):
@@ -1038,21 +1217,6 @@ class TestPersonalBranchNamespaceAllowedInformationTypes(TestCaseWithFactory):
         namespace = PersonalBranchNamespace(team)
         self.assertContentEqual(
             NON_EMBARGOED_INFORMATION_TYPES,
-            namespace.getAllowedInformationTypes())
-
-
-class TestPackageBranchNamespaceAllowedInformationTypes(TestCaseWithFactory):
-    """Tests for PackageBranchNamespace.getAllowedInformationTypes."""
-
-    layer = DatabaseFunctionalLayer
-
-    def test_anyone(self):
-        # Source package branches are always public.
-        source_package = self.factory.makeSourcePackage()
-        person = self.factory.makePerson()
-        namespace = PackageBranchNamespace(person, source_package)
-        self.assertContentEqual(
-            PUBLIC_INFORMATION_TYPES,
             namespace.getAllowedInformationTypes())
 
 

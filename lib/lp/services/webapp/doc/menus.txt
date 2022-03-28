@@ -561,8 +561,7 @@ First, we define a couple of interfaces, and put them in a temporary module.
     >>> import sys
     >>> import types
 
-    >>> module = types.ModuleType(
-    ...     six.ensure_str(factory.getUniqueString().replace('-', '_')))
+    >>> module = types.ModuleType(factory.getUniqueString().replace('-', '_'))
     >>> sys.modules[module.__name__] = module
 
     >>> class IThingHavingFacets(Interface):

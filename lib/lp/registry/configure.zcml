@@ -1820,11 +1820,19 @@
     <class
         class="lp.registry.model.distribution.Distribution">
         <allow
-            interface="lp.registry.interfaces.distribution.IDistributionPublic"/>
-        <allow interface="lp.bugs.interfaces.bugsummary.IBugSummaryDimension"/>
+            interface="lp.registry.interfaces.distribution.IDistributionPublic
+                       lp.bugs.interfaces.bugsummary.IBugSummaryDimension"
+            attributes="information_type"/>
+        <require
+            permission="launchpad.LimitedView"
+            interface="lp.registry.interfaces.distribution.IDistributionLimitedView"/>
+        <require
+            permission="launchpad.View"
+            interface="lp.registry.interfaces.distribution.IDistributionView"/>
         <require
             permission="launchpad.Edit"
-            interface="lp.registry.interfaces.distribution.IDistributionEditRestricted"/>
+            interface="lp.registry.interfaces.distribution.IDistributionEditRestricted"
+            set_schema="lp.app.interfaces.informationtype.IInformationType"/>
         <require
             permission="launchpad.Edit"
             set_attributes="answers_usage blueprints_usage codehosting_usage

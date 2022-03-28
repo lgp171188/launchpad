@@ -654,7 +654,7 @@
     <browser:url
         for="lp.registry.interfaces.commercialsubscription.ICommercialSubscription"
         path_expression="string:+commercialsubscription/${id}"
-        attribute_to_parent="product"
+        attribute_to_parent="pillar"
         />
     <browser:url
         for="lp.registry.interfaces.jabber.IJabberID"
@@ -2263,6 +2263,13 @@
         class="lp.registry.browser.distribution.DistributionView"
         permission="zope.Public"
         template="../templates/distribution-details.pt"
+        />
+    <browser:page
+        name="+portlet-requires-subscription"
+        for="lp.registry.interfaces.distribution.IDistribution"
+        class="lp.registry.browser.distribution.DistributionView"
+        permission="zope.Public"
+        template="../templates/distribution-portlet-requires-subscription.pt"
         />
     <browser:pages
         for="lp.registry.interfaces.distribution.IDistribution"

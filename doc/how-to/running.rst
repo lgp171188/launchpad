@@ -1,6 +1,6 @@
-=================
-Running Launchpad
-=================
+================================
+Setting up and running Launchpad
+================================
 
 .. note::
 
@@ -150,7 +150,7 @@ Then:
    $ curl https://git.launchpad.net/launchpad/plain/utilities/rocketfuel-setup >rocketfuel-setup
 
 Read through the rocketfuel-setup script at this point and make sure you're
-OK with what it's going to do.  (See :doc:`running-details` if you want to
+OK with what it's going to do.  (See :doc:`../explanation/running-details` if you want to
 know more.)
 
 .. code-block:: shell-session
@@ -296,7 +296,8 @@ browser on a suitably configured remote computer.  Accept the local
 self-signed certificate.  You can log in as ``admin@canonical.com`` without
 a password.  (This is only for development convenience, and assumes that you
 trust machines that can route to your LXD containers; of course a production
-deployment would need real authentication.)
+deployment would need real authentication.). If you want to create more user
+accounts, see :doc:`new-user`.
 
 Accessing launchpad.test from a single host over SSH
 ----------------------------------------------------

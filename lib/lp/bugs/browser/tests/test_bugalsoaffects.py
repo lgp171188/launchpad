@@ -21,6 +21,8 @@ class TestBugAlsoAffectsDistribution(TestCaseWithFactory):
     def setUp(self):
         super().setUp()
         self.distribution = self.factory.makeDistribution(displayname='Distro')
+        self.distribution_name = self.distribution.name
+        self.distribution_display_name = self.distribution.display_name
         removeSecurityProxy(self.distribution).official_malone = True
 
     def openBugPage(self, bug):
@@ -41,7 +43,7 @@ class TestBugAlsoAffectsDistribution(TestCaseWithFactory):
         spn = dsp2.sourcepackagename
         browser = self.openBugPage(bug)
         browser.getLink(url='+distrotask').click()
-        browser.getControl('Distribution').value = [self.distribution.name]
+        browser.getControl('Distribution').value = [self.distribution_name]
         browser.getControl('Source Package Name').value = spn.name
         browser.getControl('Continue').click()
         self.assertEqual([], get_feedback_messages(browser.contents))
@@ -60,7 +62,7 @@ class TestBugAlsoAffectsDistribution(TestCaseWithFactory):
         with FeatureFixture({"disclosure.dsp_picker.enabled": "on"}):
             browser = self.openBugPage(bug)
             browser.getLink(url='+distrotask').click()
-            browser.getControl('Distribution').value = [self.distribution.name]
+            browser.getControl('Distribution').value = [self.distribution_name]
             browser.getControl('Source Package Name').value = dsp2.name
             browser.getControl('Continue').click()
         self.assertEqual([], get_feedback_messages(browser.contents))
@@ -77,13 +79,13 @@ class TestBugAlsoAffectsDistribution(TestCaseWithFactory):
         self.assertTrue(self.distribution.has_published_binaries)
         browser = self.openBugPage(bug)
         browser.getLink(url='+distrotask').click()
-        browser.getControl('Distribution').value = [self.distribution.name]
+        browser.getControl('Distribution').value = [self.distribution_name]
         browser.getControl('Source Package Name').value = 'does-not-exist'
         browser.getControl('Continue').click()
         expected = [
             'There is 1 error.',
             'There is no package in %s named "does-not-exist".' % (
-                self.distribution.displayname)]
+                self.distribution_display_name)]
         self.assertEqual(expected, get_feedback_messages(browser.contents))
 
     def test_bug_alsoaffects_spn_not_exists_with_no_binaries(self):
@@ -91,13 +93,13 @@ class TestBugAlsoAffectsDistribution(TestCaseWithFactory):
         bug = self.factory.makeBug()
         browser = self.openBugPage(bug)
         browser.getLink(url='+distrotask').click()
-        browser.getControl('Distribution').value = [self.distribution.name]
+        browser.getControl('Distribution').value = [self.distribution_name]
         browser.getControl('Source Package Name').value = 'does-not-exist'
         browser.getControl('Continue').click()
         expected = [
             'There is 1 error.',
             'There is no package in %s named "does-not-exist". Launchpad '
             'does not track binary package names in %s.' % (
-                self.distribution.displayname,
-                self.distribution.displayname)]
+                self.distribution_display_name,
+                self.distribution_display_name)]
         self.assertEqual(expected, get_feedback_messages(browser.contents))

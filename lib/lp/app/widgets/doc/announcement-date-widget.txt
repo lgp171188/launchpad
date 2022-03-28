@@ -9,7 +9,7 @@ future, or to manually publish it later.
     >>> from lp.testing.pages import extract_text
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.app.widgets.announcementdate import AnnouncementDateWidget
-    >>> field = Field(__name__=six.ensure_str('foo'), title=u'Foo')
+    >>> field = Field(__name__='foo', title='Foo')
     >>> widget = AnnouncementDateWidget(field, LaunchpadTestRequest())
     >>> print(extract_text(widget()))
     Publish this announcement:

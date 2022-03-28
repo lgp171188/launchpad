@@ -41,6 +41,7 @@ from lp.testing import (
     StormStatementRecorder,
     TestCaseWithFactory,
     )
+from lp.testing.dbuser import lp_dbuser
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import ZopelessDatabaseLayer
 from lp.testing.matchers import HasQueryCount
@@ -165,6 +166,8 @@ class TestDominator(TestNativePublishingBase):
 
     def test_dominateBinaries_rejects_empty_publication_list(self):
         """Domination asserts for non-empty input list."""
+        with lp_dbuser():
+            distroseries = self.factory.makeDistroArchSeries().distroseries
         package = self.factory.makeBinaryPackageName()
         dominator = Dominator(self.logger, self.ubuntutest.main_archive)
         dominator._sortPackages = FakeMethod({package.name: []})
@@ -173,11 +176,12 @@ class TestDominator(TestNativePublishingBase):
         self.assertRaises(
             AssertionError,
             dominator.dominateBinaries,
-            self.factory.makeDistroArchSeries().distroseries,
-            self.factory.getAnyPocket())
+            distroseries, self.factory.getAnyPocket())
 
     def test_dominateSources_rejects_empty_publication_list(self):
         """Domination asserts for non-empty input list."""
+        with lp_dbuser():
+            distroseries = self.factory.makeDistroSeries()
         package = self.factory.makeSourcePackageName()
         dominator = Dominator(self.logger, self.ubuntutest.main_archive)
         dominator._sortPackages = FakeMethod({package.name: []})
@@ -186,7 +190,7 @@ class TestDominator(TestNativePublishingBase):
         self.assertRaises(
             AssertionError,
             dominator.dominateSources,
-            self.factory.makeDistroSeries(), self.factory.getAnyPocket())
+            distroseries, self.factory.getAnyPocket())
 
     def test_archall_domination(self):
         # Arch-all binaries should not be dominated when a new source

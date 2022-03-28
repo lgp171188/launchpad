@@ -52,10 +52,6 @@ class TranslationsOverview:
     def getMostTranslatedPillars(self, limit=50):
         """See `ITranslationsOverview`."""
 
-        # XXX Abel Deuring 2012-10-26 bug=1071751
-         # The expression product.information_type IS NULL can be
-         # removed once we have the DB constraint
-         # "Product.information_type IS NULL".
         query = """
         SELECT LOWER(COALESCE(product_name, distro_name)) AS name,
                product_id,
@@ -76,8 +72,7 @@ class TranslationsOverview:
               WHERE category=3 AND
                     (product IS NOT NULL OR distribution IS NOT NULL) AND
                     (product.translations_usage = %s AND
-                     (product.information_type = %s OR
-                      product.information_type IS NULL) OR
+                     product.information_type = %s OR
                     distribution.translations_usage = %s)
               GROUP BY product.displayname, product.id,
                        distribution.displayname, distribution.id

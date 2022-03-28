@@ -57,7 +57,7 @@ class TestProduct(TestCaseWithFactory):
         # branch_sharing_policy can be set via the API.
         product = self.factory.makeProduct()
         owner = product.owner
-        self.factory.makeCommercialSubscription(product=product)
+        self.factory.makeCommercialSubscription(pillar=product)
         webservice = webservice_for_person(
             owner, permission=OAuthPermission.WRITE_PRIVATE)
         response = self.patch(
@@ -88,7 +88,7 @@ class TestProduct(TestCaseWithFactory):
         # bug_sharing_policy can be set via the API.
         product = self.factory.makeProduct()
         owner = product.owner
-        self.factory.makeCommercialSubscription(product=product)
+        self.factory.makeCommercialSubscription(pillar=product)
         webservice = webservice_for_person(
             product.owner, permission=OAuthPermission.WRITE_PRIVATE)
         response = self.patch(

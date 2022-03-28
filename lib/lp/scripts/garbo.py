@@ -51,7 +51,6 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.answers.model.answercontact import AnswerContact
-from lp.bugs.enums import BugLockStatus
 from lp.bugs.interfaces.bug import IBugSet
 from lp.bugs.model.bug import Bug
 from lp.bugs.model.bugattachment import BugAttachment
@@ -80,6 +79,7 @@ from lp.code.model.revision import (
 from lp.code.model.revisionstatus import RevisionStatusArtifact
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.interfaces.person import IPersonSet
+from lp.registry.model.distribution import Distribution
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -1427,7 +1427,7 @@ class UnusedPOTMsgSetPruner(TunableLoop):
         transaction.commit()
 
 
-class UnusedAccessPolicyPruner(TunableLoop):
+class UnusedProductAccessPolicyPruner(TunableLoop):
     """Deletes unused AccessPolicy and AccessPolicyGrants for products."""
 
     maximum_chunk_size = 5000
@@ -1449,6 +1449,32 @@ class UnusedAccessPolicyPruner(TunableLoop):
         for product in products:
             product._pruneUnusedPolicies()
         self.start_at = products[-1].id + 1
+        transaction.commit()
+
+
+class UnusedDistributionAccessPolicyPruner(TunableLoop):
+    """Deletes unused AccessPolicy and AccessPolicyGrants for distributions."""
+
+    maximum_chunk_size = 5000
+
+    def __init__(self, log, abort_time=None):
+        super().__init__(log, abort_time)
+        self.start_at = 1
+        self.store = IMasterStore(Distribution)
+
+    def findDistributions(self):
+        return self.store.find(
+            Distribution,
+            Distribution.id >= self.start_at).order_by(Distribution.id)
+
+    def isDone(self):
+        return self.findDistributions().is_empty()
+
+    def __call__(self, chunk_size):
+        distributions = list(self.findDistributions()[:chunk_size])
+        for distribution in distributions:
+            distribution._pruneUnusedPolicies()
+        self.start_at = distributions[-1].id + 1
         transaction.commit()
 
 
@@ -1785,42 +1811,6 @@ class RevisionStatusReportPruner(BulkPruner):
         RevisionStatusArtifactType.BINARY.value)
 
 
-class PopulateBugLockStatusDefaultUnlocked(TunableLoop):
-    """
-    Populates Bug.lock_status to BugLockStatus.UNLOCKED if not set
-    """
-
-    maximum_chunk_size = 5000
-
-    def __init__(self, log, abort_time=None):
-        super().__init__(log, abort_time)
-        self.store = IMasterStore(Bug)
-        self.start_at = 1
-
-    def findBugsLockStatusNone(self):
-        return self.store.find(
-            Bug.id,
-            Bug.id >= self.start_at,
-            Bug._lock_status == None,
-        ).order_by(Bug.id)
-
-    def setBugLockStatusUnlocked(self, bug_ids):
-        self.store.find(Bug, Bug.id.is_in(bug_ids)).set(
-            _lock_status=BugLockStatus.UNLOCKED
-        )
-
-    def isDone(self):
-        return self.findBugsLockStatusNone().is_empty()
-
-    def __call__(self, chunk_size):
-        bug_ids = [
-            bug_id for bug_id in self.findBugsLockStatusNone()[:chunk_size]
-        ]
-        self.setBugLockStatusUnlocked(bug_ids)
-        self.start_at = bug_ids[-1] + 1
-        transaction.commit()
-
-
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
     """Abstract base class to run a collection of TunableLoops."""
     script_name = None  # Script name for locking and database user. Override.
@@ -2112,7 +2102,6 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         OCIFilePruner,
         ObsoleteBugAttachmentPruner,
         OldTimeLimitedTokenDeleter,
-        PopulateBugLockStatusDefaultUnlocked,
         PopulateSnapBuildStoreRevision,
         POTranslationPruner,
         PreviewDiffPruner,
@@ -2125,8 +2114,9 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         SuggestiveTemplatesCacheUpdater,
         TeamMembershipPruner,
         UnlinkedAccountPruner,
-        UnusedAccessPolicyPruner,
+        UnusedDistributionAccessPolicyPruner,
         UnusedPOTMsgSetPruner,
+        UnusedProductAccessPolicyPruner,
         WebhookJobPruner,
         ]
     experimental_tunable_loops = [

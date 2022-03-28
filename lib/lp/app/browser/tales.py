@@ -60,6 +60,7 @@ from lp.blueprints.interfaces.specification import ISpecification
 from lp.blueprints.interfaces.sprint import ISprint
 from lp.bugs.interfaces.bug import IBug
 from lp.buildmaster.enums import BuildStatus
+from lp.code.enums import RevisionStatusResult
 from lp.code.interfaces.branch import IBranch
 from lp.layers import LaunchpadLayer
 from lp.registry.interfaces.distribution import IDistribution
@@ -1204,6 +1205,45 @@ class SnapBuildRequestImageDisplayAPI(ObjectImageDisplayAPI):
             'title': title,
             'src': source,
             'width': width,
+            }
+
+
+class RevisionStatusReportImageDisplayAPI(ObjectImageDisplayAPI):
+    """Adapter for IRevisionStatusReport objects to an image.
+
+    Used for image:icon.
+    """
+    icon_template = (
+        '<img width="%(width)s" height="14" alt="%(alt)s" '
+        'title="%(title)s" src="%(src)s" />')
+
+    def icon(self):
+        """Return the appropriate <img> tag for the result icon."""
+        icon_map = {
+            RevisionStatusResult.WAITING: {"src": "/@@/build-needed"},
+            RevisionStatusResult.RUNNING: {"src": "/@@/processing"},
+            RevisionStatusResult.SUCCEEDED: {"src": "/@@/yes"},
+            RevisionStatusResult.FAILED: {"src": "/@@/no"},
+            RevisionStatusResult.SKIPPED: {"src": "/@@/yes-gray"},
+            RevisionStatusResult.CANCELLED: {
+                "src": "/@@/build-failed",
+                "width": "16",
+                },
+            }
+
+        result = self._context.result
+        if result is None:
+            result = RevisionStatusResult.WAITING
+        alt = "[%s]" % result.name
+        title = result.title
+        source = icon_map[result].get("src")
+        width = icon_map[result].get("width", "14")
+
+        return self.icon_template % {
+            "alt": alt,
+            "title": title,
+            "src": source,
+            "width": width,
             }
 
 

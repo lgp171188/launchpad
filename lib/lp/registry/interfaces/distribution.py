@@ -29,6 +29,7 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_collection,
     exported_as_webservice_entry,
+    mutator_for,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -59,7 +60,11 @@ from lp import _
 from lp.answers.interfaces.faqtarget import IFAQTarget
 from lp.answers.interfaces.questiontarget import IQuestionTarget
 from lp.app.errors import NameLookupFailed
+from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import (
+    IHasIcon,
+    IHasLogo,
+    IHasMugshot,
     ILaunchpadUsage,
     IServiceUsage,
     )
@@ -82,6 +87,9 @@ from lp.registry.enums import (
     VCSType,
     )
 from lp.registry.interfaces.announcement import IMakesAnnouncements
+from lp.registry.interfaces.commercialsubscription import (
+    ICommercialSubscription,
+    )
 from lp.registry.interfaces.distributionmirror import IDistributionMirror
 from lp.registry.interfaces.distroseries import DistroSeriesNameField
 from lp.registry.interfaces.karma import IKarmaContext
@@ -138,39 +146,6 @@ class DistributionNameField(PillarNameField):
         return IDistribution
 
 
-class IDistributionEditRestricted(IOfficialBugTagTargetRestricted):
-    """IDistribution properties requiring launchpad.Edit permission."""
-
-    @call_with(registrant=REQUEST_USER)
-    @operation_parameters(
-        registry_url=TextLine(
-            title=_("The registry url."),
-            description=_("The url of the OCI registry to use."),
-            required=True),
-        region=TextLine(
-            title=_("OCI registry region."),
-            description=_("The region of the OCI registry."),
-            required=False),
-        username=TextLine(
-            title=_("Username"),
-            description=_("The username for the OCI registry."),
-            required=False),
-        password=TextLine(
-            title=_("Password"),
-            description=_("The password for the OCI registry."),
-            required=False))
-    @export_write_operation()
-    @operation_for_version("devel")
-    def setOCICredentials(registrant, registry_url, region,
-                          username, password):
-        """Set the credentials for the OCI registry for OCI projects."""
-
-    @export_write_operation()
-    @operation_for_version("devel")
-    def deleteOCICredentials():
-        """Delete any existing OCI credentials for the distribution."""
-
-
 class IDistributionDriverRestricted(Interface):
     """IDistribution properties requiring launchpad.Driver permission."""
 
@@ -179,16 +154,29 @@ class IDistributionDriverRestricted(Interface):
         """Creates a new distroseries."""
 
 
-class IDistributionPublic(
-    IBugTarget, ICanGetMilestonesDirectly, IHasAppointedDriver,
-    IHasBuildRecords, IHasDrivers, IHasMilestones, IHasSharingPolicies,
-    IHasOOPSReferences, IHasOwner, IHasSprints, IHasTranslationImports,
-    ITranslationPolicy, IKarmaContext, ILaunchpadUsage, IMakesAnnouncements,
-    IOfficialBugTagTargetPublic, IPillar, IServiceUsage,
-    ISpecificationTarget, IHasExpirableBugs):
+class IDistributionPublic(Interface):
     """Public IDistribution properties."""
 
     id = Attribute("The distro's unique number.")
+
+    def userCanView(user):
+        """True if the given user has view access to this distribution."""
+
+    def userCanLimitedView(user):
+        """True if the given user has limited access to this distribution."""
+
+    private = exported(
+        Bool(
+            title=_("Distribution is confidential"),
+            required=False, readonly=True, default=False,
+            description=_(
+                "If set, this distribution is visible only to those with "
+                "access grants.")))
+
+
+class IDistributionLimitedView(IHasIcon, IHasLogo, IHasOwner, ILaunchpadUsage):
+    """IDistribution attributes visible to people with artifact grants."""
+
     name = exported(
         DistributionNameField(
             title=_("Name"),
@@ -204,20 +192,6 @@ class IDistributionPublic(
         Title(
             title=_("Title"),
             description=_("The distro's title."), required=True))
-    summary = exported(
-        Summary(
-            title=_("Summary"),
-            description=_(
-                "A short paragraph to introduce the goals and highlights "
-                "of the distribution."),
-            required=True))
-    homepage_content = exported(
-        Text(
-            title=_("Homepage Content"), required=False,
-            description=_(
-                "The content of this distribution's home page. Edit this and "
-                "it will be displayed for all the world to see. It is NOT a "
-                "wiki so you cannot undo changes.")))
     icon = exported(
         IconImageUpload(
             title=_("Icon"), required=False,
@@ -235,6 +209,43 @@ class IDistributionPublic(
                 "An image of exactly 64x64 pixels that will be displayed in "
                 "the heading of all pages related to this distribution. It "
                 "should be no bigger than 50kb in size.")))
+    owner = exported(
+        PublicPersonChoice(
+            title=_("Owner"),
+            required=True,
+            vocabulary='ValidPillarOwner',
+            description=_("The restricted team, moderated team, or person "
+                          "who maintains the distribution information in "
+                          "Launchpad.")))
+
+    @operation_parameters(
+        name=TextLine(title=_("OCI project name"), required=True))
+    # Really returns IOCIProject, see _schema_circular_imports.py.
+    @operation_returns_entry(Interface)
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getOCIProject(name):
+        """Return a `OCIProject` with the given name for this
+        distribution, or None.
+        """
+
+
+class IDistributionView(
+        IHasMugshot, IBugTarget, ICanGetMilestonesDirectly,
+        IHasAppointedDriver, IHasBuildRecords, IHasDrivers, IHasMilestones,
+        IHasSharingPolicies, IHasOOPSReferences, IHasSprints,
+        IHasTranslationImports, ITranslationPolicy, IKarmaContext,
+        IMakesAnnouncements, IOfficialBugTagTargetPublic, IPillar,
+        IServiceUsage, ISpecificationTarget, IHasExpirableBugs):
+    """IDistribution attributes requiring launchpad.View."""
+
+    homepage_content = exported(
+        Text(
+            title=_("Homepage Content"), required=False,
+            description=_(
+                "The content of this distribution's home page. Edit this and "
+                "it will be displayed for all the world to see. It is NOT a "
+                "wiki so you cannot undo changes.")))
     mugshot = exported(
         MugshotImageUpload(
             title=_("Brand"), required=False,
@@ -243,6 +254,13 @@ class IDistributionPublic(
                 "A large image of exactly 192x192 pixels, that will be "
                 "displayed on this distribution's home page in Launchpad. "
                 "It should be no bigger than 100kb in size. ")))
+    summary = exported(
+        Summary(
+            title=_("Summary"),
+            description=_(
+                "A short paragraph to introduce the goals and highlights "
+                "of the distribution."),
+            required=True))
     description = exported(
         Description(
             title=_("Description"),
@@ -257,14 +275,6 @@ class IDistributionPublic(
             title=_("Web site URL"),
             description=_("The distro's web site URL."), required=True),
         exported_as='domain_name')
-    owner = exported(
-        PublicPersonChoice(
-            title=_("Owner"),
-            required=True,
-            vocabulary='ValidPillarOwner',
-            description=_("The restricted team, moderated team, or person "
-                          "who maintains the distribution information in "
-                          "Launchpad.")))
     registrant = exported(
         PublicPersonChoice(
             title=_("Registrant"), vocabulary='ValidPersonOrTeam',
@@ -449,6 +459,22 @@ class IDistributionPublic(
             "to a different canonical URL."),
         readonly=False, required=False))
 
+    commercial_subscription = exported(Reference(
+        ICommercialSubscription,
+        title=_("Commercial subscriptions"),
+        description=_(
+            "An object which contains the timeframe and the voucher code of a "
+            "subscription.")))
+
+    commercial_subscription_is_due = exported(Bool(
+        title=_("Commercial subscription is due"), readonly=True,
+        description=_(
+            "Whether the distribution's licensing requires a new commercial "
+            "subscription to use launchpad.")))
+
+    has_current_commercial_subscription = Attribute(
+        "Whether the distribution has a current commercial subscription.")
+
     def getArchiveIDList(archive=None):
         """Return a list of archive IDs suitable for sqlvalues() or quote().
 
@@ -563,17 +589,6 @@ class IDistributionPublic(
 
         At least one of {http,https,ftp}_base_url must be provided in order to
         create a mirror.
-        """
-
-    @operation_parameters(
-        name=TextLine(title=_("OCI project name"), required=True))
-    # Really returns IOCIProject, see _schema_circular_imports.py.
-    @operation_returns_entry(Interface)
-    @export_read_operation()
-    @operation_for_version("devel")
-    def getOCIProject(name):
-        """Return a `OCIProject` with the given name for this
-        distribution, or None.
         """
 
     @operation_parameters(
@@ -768,10 +783,89 @@ class IDistributionPublic(
                       "images in this distribution to a registry."),
         required=False, readonly=False)
 
+
+class IDistributionEditRestricted(IOfficialBugTagTargetRestricted):
+    """IDistribution properties requiring launchpad.Edit permission."""
+
+    @mutator_for(IDistributionView['bug_sharing_policy'])
+    @operation_parameters(bug_sharing_policy=copy_field(
+        IDistributionView['bug_sharing_policy']))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setBugSharingPolicy(bug_sharing_policy):
+        """Mutator for bug_sharing_policy.
+
+        Checks authorization and entitlement.
+        """
+
+    @mutator_for(IDistributionView['branch_sharing_policy'])
+    @operation_parameters(
+        branch_sharing_policy=copy_field(
+            IDistributionView['branch_sharing_policy']))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setBranchSharingPolicy(branch_sharing_policy):
+        """Mutator for branch_sharing_policy.
+
+        Checks authorization and entitlement.
+        """
+
+    @mutator_for(IDistributionView['specification_sharing_policy'])
+    @operation_parameters(
+        specification_sharing_policy=copy_field(
+            IDistributionView['specification_sharing_policy']))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setSpecificationSharingPolicy(specification_sharing_policy):
+        """Mutator for specification_sharing_policy.
+
+        Checks authorization and entitlement.
+        """
+
+    def checkInformationType(value):
+        """Check whether the information type change should be permitted.
+
+        Iterate through exceptions explaining why the type should not be
+        changed.  Has the side-effect of creating a commercial subscription
+        if permitted.
+        """
+
+    @call_with(registrant=REQUEST_USER)
+    @operation_parameters(
+        registry_url=TextLine(
+            title=_("The registry url."),
+            description=_("The url of the OCI registry to use."),
+            required=True),
+        region=TextLine(
+            title=_("OCI registry region."),
+            description=_("The region of the OCI registry."),
+            required=False),
+        username=TextLine(
+            title=_("Username"),
+            description=_("The username for the OCI registry."),
+            required=False),
+        password=TextLine(
+            title=_("Password"),
+            description=_("The password for the OCI registry."),
+            required=False))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setOCICredentials(registrant, registry_url, region,
+                          username, password):
+        """Set the credentials for the OCI registry for OCI projects."""
+
+    @export_write_operation()
+    @operation_for_version("devel")
+    def deleteOCICredentials():
+        """Delete any existing OCI credentials for the distribution."""
+
+
 @exported_as_webservice_entry(as_of="beta")
 class IDistribution(
-    IDistributionEditRestricted, IDistributionPublic, IHasBugSupervisor,
-    IFAQTarget, IQuestionTarget, IStructuralSubscriptionTarget):
+        IDistributionEditRestricted, IDistributionPublic,
+        IDistributionLimitedView, IDistributionView, IHasBugSupervisor,
+        IFAQTarget, IQuestionTarget, IStructuralSubscriptionTarget,
+        IInformationType):
     """An operating system distribution.
 
     Launchpadlib example: retrieving the current version of a package in a
@@ -822,7 +916,8 @@ class IDistributionSet(Interface):
         """Return the IDistribution with the given name or None."""
 
     def new(name, display_name, title, description, summary, domainname,
-            members, owner, registrant, mugshot=None, logo=None, icon=None):
+            members, owner, registrant, mugshot=None, logo=None, icon=None,
+            information_type=None):
         """Create a new distribution."""
 
     def getCurrentSourceReleases(distro_to_source_packagenames):

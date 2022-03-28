@@ -211,7 +211,7 @@ timeout by sleeping for 200ms with a 100ms statement timeout:
     >>> set_request_started()
     >>> print(current_statement_timeout(store))
     100ms
-    >>> store.execute(six.ensure_str('SELECT pg_sleep(0.200)'), noresult=True)
+    >>> store.execute('SELECT pg_sleep(0.200)', noresult=True)
     Traceback (most recent call last):
       ...
     lp.services.webapp.adapter.LaunchpadTimeoutError:
@@ -285,7 +285,7 @@ issuing the SQL command as we have exceeded the precision period:
 This final invokation, we will actually sleep to ensure that the
 timeout being reported by PostgreSQL is actually working:
 
-    >>> store.execute(six.ensure_str('SELECT pg_sleep(0.2)'), noresult=True)
+    >>> store.execute('SELECT pg_sleep(0.2)', noresult=True)
     Traceback (most recent call last):
       ...
     lp.services.webapp.adapter.LaunchpadTimeoutError:

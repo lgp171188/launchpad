@@ -12,7 +12,10 @@ from lazr.restful.declarations import (
     exported_as_webservice_entry,
     )
 from lazr.restful.fields import ReferenceChoice
-from zope.interface import Interface
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import (
     Bool,
     Datetime,
@@ -38,14 +41,29 @@ class ICommercialSubscription(Interface):
     product = exported(
         ReferenceChoice(
             title=_("Product which has commercial subscription"),
-            required=True,
+            required=False,
             readonly=True,
             vocabulary='Product',
-            # Really IProduct. See lp/registry/interfaces/product.py
+            # Really IProduct, patched in _schema_circular_imports.py.
             schema=Interface,
             description=_(
                 "Project for which this commercial subscription is "
                 "applied.")))
+
+    distribution = exported(
+        ReferenceChoice(
+            title=_("Distribution which has commercial subscription"),
+            required=False,
+            readonly=True,
+            vocabulary='Distribution',
+            # Really IDistribution, patched in _schema_circular_imports.py.
+            schema=Interface,
+            description=_(
+                "Distribution for which this commercial subscription is "
+                "applied.")))
+
+    pillar = Attribute(
+        "Pillar for which this commercial subscription is applied.")
 
     date_created = exported(
         Datetime(

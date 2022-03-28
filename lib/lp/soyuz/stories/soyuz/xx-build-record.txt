@@ -160,7 +160,7 @@ messages.
     >>> import pytz
     >>> now = datetime.datetime.now(pytz.UTC)
     >>> build.updateStatus(
-    ...     BuildStatus.BUILDING,
+    ...     BuildStatus.BUILDING, builder=bob_builder,
     ...     date_started=(now - datetime.timedelta(minutes=1)))
     >>> build.buildqueue_record.markAsBuilding(bob_builder)
     >>> build.buildqueue_record.logtail = 'one line\nanother line'

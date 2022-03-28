@@ -7,6 +7,7 @@ Prelude
 
     >>> login(ANONYMOUS)
     >>> a_distro = factory.makeDistribution(name='my-distro')
+    >>> a_distro_owner = a_distro.owner
     >>> a_series = factory.makeDistroSeries(
     ...     name='my-series', distribution=a_distro)
     >>> evolution_package = factory.makeSourcePackage(
@@ -73,8 +74,7 @@ Then we set the branch on the evolution package:
     >>> from lp.testing.pages import webservice_for_person
     >>> from lp.services.webapp.interfaces import OAuthPermission
     >>> webservice = webservice_for_person(
-    ...     evolution_package.distribution.owner,
-    ...     permission=OAuthPermission.WRITE_PRIVATE)
+    ...     a_distro_owner, permission=OAuthPermission.WRITE_PRIVATE)
     >>> branch = webservice.get(branch_url).jsonBody()
     >>> response = webservice.named_post(
     ...     evolution['self_link'], 'setBranch', pocket='Release',
