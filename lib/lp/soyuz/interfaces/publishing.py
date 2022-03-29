@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Publishing interfaces."""
@@ -1131,6 +1131,32 @@ class IPublishingSet(Interface):
         :return: A Storm result set of active, architecture-specific
             `BinaryPackagePublishingHistory` objects for the source package
             release in the given `archive`, `distroseries`, and `pocket`.
+        """
+
+    def getSourcesForPublishing(archive, distroseries, pocket, component):
+        """Get source publications which are published in a given context.
+
+        :param archive: The `Archive` to search.
+        :param distroseries: The `DistroSeries` to search.
+        :param pocket: The `PackagePublishingPocket` to search.
+        :param component: The `Component` to search.
+        :return: A result set of `SourcePackagePublishingHistory` objects in
+            the given context and with the `PUBLISHED` status, ordered by
+            source package name, with associated publisher-relevant objects
+            preloaded.
+        """
+
+    def getBinariesForPublishing(archive, distroarchseries, pocket, component):
+        """Get binary publications which are published in a given context.
+
+        :param archive: The `Archive` to search.
+        :param distroarchseries: The `DistroArchSeries` to search.
+        :param pocket: The `PackagePublishingPocket` to search.
+        :param component: The `Component` to search.
+        :return: A result set of `BinaryPackagePublishingHistory` objects in
+            the given context and with the `PUBLISHED` status, ordered by
+            binary package name, with associated publisher-relevant objects
+            preloaded.
         """
 
     def getChangesFilesForSources(one_or_more_source_publications):

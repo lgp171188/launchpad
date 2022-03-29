@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for distroseries."""
@@ -7,7 +7,6 @@ __all__ = [
     'CurrentSourceReleasesMixin',
     ]
 
-from functools import partial
 import json
 
 from testtools.matchers import Equals
@@ -16,10 +15,6 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.archivepublisher.indices import (
-    build_binary_stanza_fields,
-    build_source_stanza_fields,
-    )
 from lp.registry.errors import NoSuchDistroSeries
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -46,7 +41,6 @@ from lp.testing import (
     api_url,
     login,
     person_logged_in,
-    record_two_runs,
     StormStatementRecorder,
     TestCase,
     TestCaseWithFactory,
@@ -583,47 +577,6 @@ class TestDistroSeriesPackaging(TestCaseWithFactory):
         names = [packaging.sourcepackagename.name for packaging in packagings]
         expected = ['translatable', 'linked', 'importabletranslatable']
         self.assertEqual(expected, names)
-
-    def test_getSourcePackagePublishing_query_count(self):
-        # Check that the number of queries required to publish source
-        # packages is constant in the number of source packages.
-        def get_index_stanzas():
-            for spp in self.series.getSourcePackagePublishing(
-                    PackagePublishingPocket.RELEASE, self.universe_component,
-                    self.series.main_archive):
-                build_source_stanza_fields(
-                    spp.sourcepackagerelease, spp.component, spp.section)
-
-        recorder1, recorder2 = record_two_runs(
-            get_index_stanzas,
-            partial(
-                self.makeSeriesPackage, pocket=PackagePublishingPocket.RELEASE,
-                status=PackagePublishingStatus.PUBLISHED),
-            5, 5)
-        self.assertThat(recorder1, HasQueryCount(Equals(11)))
-        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
-
-    def test_getBinaryPackagePublishing_query_count(self):
-        # Check that the number of queries required to publish binary
-        # packages is constant in the number of binary packages.
-        def get_index_stanzas(das):
-            for bpp in self.series.getBinaryPackagePublishing(
-                    das.architecturetag, PackagePublishingPocket.RELEASE,
-                    self.universe_component, self.series.main_archive):
-                build_binary_stanza_fields(
-                    bpp.binarypackagerelease, bpp.component, bpp.section,
-                    bpp.priority, bpp.phased_update_percentage, False)
-
-        das = self.factory.makeDistroArchSeries(distroseries=self.series)
-        recorder1, recorder2 = record_two_runs(
-            partial(get_index_stanzas, das),
-            partial(
-                self.makeSeriesBinaryPackage, das=das,
-                pocket=PackagePublishingPocket.RELEASE,
-                status=PackagePublishingStatus.PUBLISHED),
-            5, 5)
-        self.assertThat(recorder1, HasQueryCount(Equals(15)))
-        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
 
 class TestDistroSeriesWebservice(TestCaseWithFactory):

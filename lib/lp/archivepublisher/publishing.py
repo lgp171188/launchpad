@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -910,8 +910,9 @@ class Publisher:
             get_sources_path(self._config, suite_name, component),
             self._config.temproot, distroseries.index_compressors)
 
-        for spp in distroseries.getSourcePackagePublishing(
-                pocket, component, self.archive):
+        for spp in getUtility(IPublishingSet).getSourcesForPublishing(
+                archive=self.archive, distroseries=distroseries, pocket=pocket,
+                component=component):
             stanza = build_source_stanza_fields(
                 spp.sourcepackagerelease, spp.component, spp.section)
             source_index.write(stanza.makeOutput().encode('utf-8') + b'\n\n')
@@ -937,8 +938,9 @@ class Publisher:
                         self._config, suite_name, component, arch, subcomp),
                     self._config.temproot, distroseries.index_compressors)
 
-            for bpp in distroseries.getBinaryPackagePublishing(
-                    arch.architecturetag, pocket, component, self.archive):
+            for bpp in getUtility(IPublishingSet).getBinariesForPublishing(
+                    archive=self.archive, distroarchseries=arch, pocket=pocket,
+                    component=component):
                 subcomp = FORMAT_TO_SUBCOMPONENT.get(
                     bpp.binarypackagerelease.binpackageformat)
                 if subcomp not in indices:

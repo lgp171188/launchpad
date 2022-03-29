@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -45,6 +45,7 @@ from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import BuildStatus
 from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
@@ -112,6 +113,7 @@ from lp.soyuz.model.files import (
     BinaryPackageFile,
     SourcePackageReleaseFile,
     )
+from lp.soyuz.model.section import Section
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
 
@@ -1510,6 +1512,81 @@ class PublishingSet:
             BinaryPackagePublishingHistory.status.is_in(
                 active_publishing_status),
             BinaryPackageRelease.architecturespecific == True)
+
+    def getSourcesForPublishing(self, archive, distroseries, pocket,
+                                component):
+        """See `IPublishingSet`."""
+        spphs = IStore(SourcePackagePublishingHistory).find(
+            SourcePackagePublishingHistory,
+            SourcePackagePublishingHistory.archive == archive,
+            SourcePackagePublishingHistory.distroseries == distroseries,
+            SourcePackagePublishingHistory.pocket == pocket,
+            SourcePackagePublishingHistory.component == component,
+            SourcePackagePublishingHistory.status ==
+                PackagePublishingStatus.PUBLISHED,
+            SourcePackagePublishingHistory.sourcepackagename ==
+                SourcePackageName.id).order_by(SourcePackageName.name)
+
+        def eager_load(spphs):
+            # Preload everything which will be used by archivepublisher's
+            # build_source_stanza_fields.
+            bulk.load_related(Section, spphs, ["sectionID"])
+            sprs = bulk.load_related(
+                SourcePackageRelease, spphs, ["sourcepackagereleaseID"])
+            bulk.load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
+            spr_ids = set(map(attrgetter("id"), sprs))
+            sprfs = list(IStore(SourcePackageReleaseFile).find(
+                SourcePackageReleaseFile,
+                SourcePackageReleaseFile.sourcepackagereleaseID.is_in(
+                    spr_ids)).order_by(SourcePackageReleaseFile.libraryfileID))
+            file_map = defaultdict(list)
+            for sprf in sprfs:
+                file_map[sprf.sourcepackagerelease].append(sprf)
+            for spr, files in file_map.items():
+                get_property_cache(spr).files = files
+            lfas = bulk.load_related(
+                LibraryFileAlias, sprfs, ["libraryfileID"])
+            bulk.load_related(LibraryFileContent, lfas, ["contentID"])
+
+        return DecoratedResultSet(spphs, pre_iter_hook=eager_load)
+
+    def getBinariesForPublishing(self, archive, distroarchseries, pocket,
+                                 component):
+        """See `IPublishingSet`."""
+        bpphs = IStore(BinaryPackagePublishingHistory).find(
+            BinaryPackagePublishingHistory,
+            BinaryPackagePublishingHistory.archive == archive,
+            BinaryPackagePublishingHistory.distroarchseries ==
+                distroarchseries,
+            BinaryPackagePublishingHistory.pocket == pocket,
+            BinaryPackagePublishingHistory.component == component,
+            BinaryPackagePublishingHistory.status ==
+                PackagePublishingStatus.PUBLISHED,
+            BinaryPackagePublishingHistory.binarypackagename ==
+                BinaryPackageName.id).order_by(BinaryPackageName.name)
+
+        def eager_load(bpphs):
+            # Preload everything which will be used by archivepublisher's
+            # build_binary_stanza_fields.
+            bulk.load_related(Section, bpphs, ["sectionID"])
+            bprs = bulk.load_related(
+                BinaryPackageRelease, bpphs, ["binarypackagereleaseID"])
+            bpbs = bulk.load_related(BinaryPackageBuild, bprs, ["buildID"])
+            sprs = bulk.load_related(
+                SourcePackageRelease, bpbs, ["source_package_release_id"])
+            bpfs = bulk.load_referencing(
+                BinaryPackageFile, bprs, ["binarypackagereleaseID"])
+            file_map = defaultdict(list)
+            for bpf in bpfs:
+                file_map[bpf.binarypackagerelease].append(bpf)
+            for bpr, files in file_map.items():
+                get_property_cache(bpr).files = files
+            lfas = bulk.load_related(LibraryFileAlias, bpfs, ["libraryfileID"])
+            bulk.load_related(LibraryFileContent, lfas, ["contentID"])
+            bulk.load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
+            bulk.load_related(BinaryPackageName, bprs, ["binarypackagenameID"])
+
+        return DecoratedResultSet(bpphs, pre_iter_hook=eager_load)
 
     def getChangesFilesForSources(self, one_or_more_source_publications):
         """See `IPublishingSet`."""
