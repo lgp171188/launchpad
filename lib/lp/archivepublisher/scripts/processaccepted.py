@@ -11,6 +11,7 @@ from optparse import OptionValueError
 import sys
 
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.archivepublisher.publishing import GLOBAL_PUBLISHER_LOCK
 from lp.archivepublisher.scripts.base import PublisherScript
@@ -29,6 +30,7 @@ from lp.soyuz.enums import (
     )
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.model.processacceptedbugsjob import close_bugs_for_queue_item
+from lp.soyuz.model.queue import PackageUpload
 
 
 class ProcessAccepted(PublisherScript):
@@ -38,6 +40,8 @@ class ProcessAccepted(PublisherScript):
     distribution and then gets on and deals with any accepted items, preparing
     them for publishing as appropriate.
     """
+
+    batch_size = 100
 
     @property
     def lockfilename(self):
@@ -121,16 +125,34 @@ class ProcessAccepted(PublisherScript):
                         archive.reference, distroseries.name))
 
                     queue_items = distroseries.getPackageUploads(
-                        status=PackageUploadStatus.ACCEPTED, archive=archive)
-                    for queue_item in queue_items:
-                        if self.processQueueItem(queue_item):
-                            processed_queue_ids.append(queue_item.id)
-                        # Commit even on error; we may have altered the
-                        # on-disk archive, so the partial state must
-                        # make it to the DB.
-                        self.txn.commit()
-                        close_bugs_for_queue_item(queue_item)
-                        self.txn.commit()
+                        status=PackageUploadStatus.ACCEPTED,
+                        archive=archive).order_by(PackageUpload.id)
+                    start = 0
+
+                    # DistroSeries.getPackageUploads returns a
+                    # DecoratedResultSet, so we must slice it in order to
+                    # iterate over it efficiently; if we don't, then the
+                    # pre_iter_hook will be called for all rows in the set
+                    # at once, which may consume a very large amount of
+                    # memory if the queue is large.  Processing queue items
+                    # changes the result of the query, so we need to
+                    # explicitly order by ID and keep track of how far we've
+                    # got.
+                    while True:
+                        batch = list(removeSecurityProxy(queue_items).find(
+                            PackageUpload.id > start)[:self.batch_size])
+                        for queue_item in batch:
+                            start = queue_item.id
+                            if self.processQueueItem(queue_item):
+                                processed_queue_ids.append(queue_item.id)
+                            # Commit even on error; we may have altered the
+                            # on-disk archive, so the partial state must
+                            # make it to the DB.
+                            self.txn.commit()
+                            close_bugs_for_queue_item(queue_item)
+                            self.txn.commit()
+                        if len(batch) < self.batch_size:
+                            break
             finally:
                 clear_request_started()
         return processed_queue_ids
