@@ -529,7 +529,7 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertEqual(
             [((repository.getInternalPath(), [ref.commit_sha1]),
-              {"filter_paths": [".launchpad.yaml"]})],
+              {"filter_paths": [".launchpad.yaml"], "logger": None})],
             hosting_fixture.getCommits.calls
         )
 
@@ -559,7 +559,7 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertEqual(
             [((repository.getInternalPath(), []),
-              {"filter_paths": [".launchpad.yaml"]})],
+              {"filter_paths": [".launchpad.yaml"], "logger": None})],
             hosting_fixture.getCommits.calls
         )
 
@@ -583,7 +583,7 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertEqual(
             [((repository.getInternalPath(), [ref.commit_sha1]),
-              {"filter_paths": [".launchpad.yaml"]})],
+              {"filter_paths": [".launchpad.yaml"], "logger": None})],
             hosting_fixture.getCommits.calls
         )
 
@@ -625,7 +625,7 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertEqual(
             [((repository.getInternalPath(), [ref.commit_sha1]),
-              {"filter_paths": [".launchpad.yaml"]})],
+              {"filter_paths": [".launchpad.yaml"], "logger": logger})],
             hosting_fixture.getCommits.calls
         )
 
@@ -683,7 +683,7 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertEqual(
             [((repository.getInternalPath(), [ref.commit_sha1]),
-              {"filter_paths": [".launchpad.yaml"]})],
+              {"filter_paths": [".launchpad.yaml"], "logger": logger})],
             hosting_fixture.getCommits.calls
         )
 
@@ -739,7 +739,7 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertEqual(
             [((repository.getInternalPath(), [ref.commit_sha1]),
-              {"filter_paths": [".launchpad.yaml"]})],
+              {"filter_paths": [".launchpad.yaml"], "logger": logger})],
             hosting_fixture.getCommits.calls
         )
 

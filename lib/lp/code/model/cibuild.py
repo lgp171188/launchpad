@@ -489,7 +489,7 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
             # debian/.launchpad.yaml (or perhaps make the path a property of
             # the repository) once lpcraft and launchpad-buildd support
             # using alternative paths for builds.
-            filter_paths=[".launchpad.yaml"])
+            filter_paths=[".launchpad.yaml"], logger=logger)
         for commit in commits:
             try:
                 configuration = parse_configuration(
