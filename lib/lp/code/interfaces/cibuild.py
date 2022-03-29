@@ -130,6 +130,19 @@ class ICIBuildView(IPackageBuildView):
             cannot be parsed.
         """
 
+    def getFileByName(filename):
+        """Return the corresponding `ILibraryFileAlias` in this context.
+
+        The following file types (and extension) can be looked up:
+
+         * Build log: '.txt.gz'
+         * Upload log: '_log.txt'
+
+        :param filename: The filename to look up.
+        :raises NotFoundError: if no file exists with the given name.
+        :return: The corresponding `ILibraryFileAlias`.
+        """
+
 
 class ICIBuildEdit(IBuildFarmJobEdit):
     """`ICIBuild` methods that require launchpad.Edit."""
