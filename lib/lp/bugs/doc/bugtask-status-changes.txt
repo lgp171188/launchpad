@@ -41,6 +41,14 @@ from this status to any other status.
     ...
     lp.bugs.interfaces.bugtask.UserCannotEditBugTaskStatus: ...
 
+    >>> bugtask.transitionToStatus(BugTaskStatus.DOES_NOT_EXIST, owner)
+    >>> print(bugtask.status.title)
+    Does Not Exist
+    >>> bugtask.transitionToStatus(BugTaskStatus.CONFIRMED, user)
+    Traceback (most recent call last):
+    ...
+    lp.bugs.interfaces.bugtask.UserCannotEditBugTaskStatus: ...
+
     >>> bugtask.transitionToStatus(BugTaskStatus.WONTFIX, owner)
     >>> print(bugtask.status.title)
     Won't Fix
