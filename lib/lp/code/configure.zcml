@@ -851,6 +851,10 @@
       handler="lp.code.model.gitrepository.git_repository_modified"/>
   <subscriber
       for="lp.code.interfaces.gitrepository.IGitRepository
+           lp.code.interfaces.event.IGitRefsCreatedEvent"
+      handler="lp.code.subscribers.git.refs_created"/>
+  <subscriber
+      for="lp.code.interfaces.gitrepository.IGitRepository
            lp.code.interfaces.event.IGitRefsUpdatedEvent"
       handler="lp.code.subscribers.git.refs_updated"/>
 

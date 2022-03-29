@@ -110,7 +110,10 @@ from lp.code.errors import (
     GitTargetError,
     NoSuchGitReference,
     )
-from lp.code.event.git import GitRefsUpdatedEvent
+from lp.code.event.git import (
+    GitRefsCreatedEvent,
+    GitRefsUpdatedEvent,
+    )
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_FINAL_STATES,
     )
@@ -821,6 +824,9 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
             created = []
 
         self.date_last_modified = UTC_NOW
+        if created:
+            notify(GitRefsCreatedEvent(
+                self, [value[1] for value in created], logger))
         if updated:
             notify(GitRefsUpdatedEvent(
                 self, [value[1] for value in updated], logger))
