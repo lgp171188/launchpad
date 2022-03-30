@@ -24,7 +24,6 @@ from itertools import (
     chain,
     groupby,
     )
-import logging
 import lzma
 from operator import attrgetter
 import os
@@ -45,7 +44,6 @@ from zope.interface import (
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher import HARDCODED_COMPONENT_ORDER
 from lp.archivepublisher.config import getPubConfig
-from lp.archivepublisher.diskpool import DiskPool
 from lp.archivepublisher.domination import Dominator
 from lp.archivepublisher.indices import (
     build_binary_stanza_fields,
@@ -145,21 +143,6 @@ def get_suffixed_indices(path):
     return {path + suffix for suffix in ('', '.gz', '.bz2', '.xz')}
 
 
-def _getDiskPool(pubconf, log):
-    """Return a DiskPool instance for a given PubConf.
-
-    It ensures the given archive location matches the minimal structure
-    required.
-    """
-    log.debug("Preparing on-disk pool representation.")
-    dp = DiskPool(pubconf.poolroot, pubconf.temproot,
-                  logging.getLogger("DiskPool"))
-    # Set the diskpool's log level to INFO to suppress debug output
-    dp.logger.setLevel(logging.INFO)
-
-    return dp
-
-
 def getPublisher(archive, allowed_suites, log, distsroot=None):
     """Return an initialized Publisher instance for the given context.
 
@@ -174,7 +157,7 @@ def getPublisher(archive, allowed_suites, log, distsroot=None):
                   % archive.owner.name)
     pubconf = getPubConfig(archive)
 
-    disk_pool = _getDiskPool(pubconf, log)
+    disk_pool = pubconf.getDiskPool(log)
 
     if distsroot is not None:
         log.debug("Overriding dists root with %s." % distsroot)
