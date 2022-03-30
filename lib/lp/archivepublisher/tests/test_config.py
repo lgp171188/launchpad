@@ -6,6 +6,7 @@
 Publisher configuration provides archive-dependent filesystem paths.
 """
 
+import logging
 import os
 
 from zope.component import getUtility
@@ -13,6 +14,7 @@ from zope.component import getUtility
 from lp.archivepublisher.config import getPubConfig
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.config import config
+from lp.services.log.logger import BufferLogger
 from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.testing import TestCaseWithFactory
@@ -105,6 +107,21 @@ class TestGetPubConfig(TestCaseWithFactory):
         self.assertFalse(copy_config.signingautokey)
         self.assertIs(None, copy_config.metaroot)
         self.assertIs(None, copy_config.stagingroot)
+
+    def test_getDiskPool(self):
+        primary_config = getPubConfig(self.ubuntutest.main_archive)
+        disk_pool = primary_config.getDiskPool(BufferLogger())
+        self.assertEqual(self.root + "/ubuntutest/pool/", disk_pool.rootpath)
+        self.assertEqual(self.root + "/ubuntutest-temp/", disk_pool.temppath)
+        self.assertEqual(logging.INFO, disk_pool.logger.level)
+
+    def test_getDiskPool_pool_root_override(self):
+        primary_config = getPubConfig(self.ubuntutest.main_archive)
+        disk_pool = primary_config.getDiskPool(
+            BufferLogger(), pool_root_override="/path/to/pool")
+        self.assertEqual("/path/to/pool/", disk_pool.rootpath)
+        self.assertEqual(self.root + "/ubuntutest-temp/", disk_pool.temppath)
+        self.assertEqual(logging.INFO, disk_pool.logger.level)
 
 
 class TestGetPubConfigPPA(TestCaseWithFactory):
