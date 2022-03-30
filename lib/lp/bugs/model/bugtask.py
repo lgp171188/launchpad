@@ -256,14 +256,17 @@ class BugTaskDelta:
     """See `IBugTaskDelta`."""
 
     def __init__(self, bugtask, status=None, importance=None,
-                 assignee=None, milestone=None, bugwatch=None, target=None):
+                 assignee=None, milestone=None, bugwatch=None, target=None,
+                 importance_explanation=None, status_explanation=None):
         self.bugtask = bugtask
 
         self.assignee = assignee
         self.bugwatch = bugwatch
         self.importance = importance
+        self.importance_explanation = importance_explanation
         self.milestone = milestone
         self.status = status
+        self.status_explanation = status_explanation
         self.target = target
 
 
@@ -470,11 +473,16 @@ class BugTask(StormBase):
         enum=(BugTaskStatus, BugTaskStatusSearch),
         default=BugTaskStatus.NEW,
         validator=validate_status)
+
+    status_explanation = Unicode(allow_none=True, default=None)
+
     importance = DBEnum(
         name='importance', allow_none=False,
         enum=BugTaskImportance,
         default=BugTaskImportance.UNDECIDED,
         validator=validate_conjoined_attribute)
+
+    importance_explanation = Unicode(allow_none=True, default=None)
 
     assignee_id = Int(
         name="assignee", allow_none=True, validator=validate_assignee)
@@ -1293,7 +1301,8 @@ class BugTask(StormBase):
         # have in common
         changes = {}
         for field_name in ("target", "status", "importance",
-                           "assignee", "bugwatch", "milestone"):
+                           "assignee", "bugwatch", "milestone",
+                           "importance_explanation", "status_explanation"):
             old_val = getattr(old_task, field_name)
             new_val = getattr(self, field_name)
             if old_val != new_val:
