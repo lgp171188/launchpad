@@ -12,6 +12,7 @@ from lp.services.librarian.utils import (
     sha1_from_path,
     )
 from lp.services.propertycache import cachedproperty
+from lp.soyuz.interfaces.files import IPackageReleaseFile
 from lp.soyuz.interfaces.publishing import (
     MissingSymlinkInPool,
     NotInPool,
@@ -181,16 +182,18 @@ class DiskPoolEntry:
         targetpath = self.pathFor(self.file_component)
         return sha1_from_path(targetpath)
 
-    def addFile(self, component, sha1, contents):
+    def addFile(self, component, pub_file: IPackageReleaseFile):
         """See DiskPool.addFile."""
         assert component in HARDCODED_COMPONENT_ORDER
 
         targetpath = self.pathFor(component)
         if not os.path.exists(os.path.dirname(targetpath)):
             os.makedirs(os.path.dirname(targetpath))
+        lfa = pub_file.libraryfile
 
         if self.file_component:
             # There's something on disk. Check hash.
+            sha1 = lfa.content.sha1
             if sha1 != self.file_hash:
                 raise PoolFileOverwriteError('%s != %s for %s' %
                     (sha1, self.file_hash,
@@ -219,8 +222,8 @@ class DiskPoolEntry:
 
         file_to_write = _diskpool_atomicfile(
             targetpath, "wb", rootpath=self.temppath)
-        contents.open()
-        copy_and_close(contents, file_to_write)
+        lfa.open()
+        copy_and_close(lfa, file_to_write)
         self.file_component = component
         return FileAddActionEnum.FILE_ADDED
 
@@ -407,17 +410,16 @@ class DiskPool:
             return os.path.join(path, file)
         return path
 
-    def addFile(self, component, sourcename, filename, sha1, contents):
+    def addFile(self, component, sourcename, filename,
+                pub_file: IPackageReleaseFile):
         """Add a file with the given contents to the pool.
 
         Component, sourcename and filename are used to calculate the
         on-disk location.
 
-        sha1 is used to compare with the existing file's checksum, if
-        a file already exists for any component.
-
-        contents is a file-like object containing the contents we want
-        to write.
+        pub_file is an `IPackageReleaseFile` providing the file's contents
+        and SHA-1 hash.  The SHA-1 hash is used to compare the given file
+        with an existing file, if one exists for any component.
 
         There are four possible outcomes:
         - If the file doesn't exist in the pool for any component, it will
@@ -425,22 +427,22 @@ class DiskPool:
         returned.
 
         - If the file already exists in the pool, in this or any other
-        component, the checksum of the file on disk will be calculated and
-        compared with the checksum provided. If they fail to match,
+        component, the hash of the file on disk will be calculated and
+        compared with the hash provided. If they fail to match,
         PoolFileOverwriteError will be raised.
 
         - If the file already exists but not in this component, and the
-        checksum test above passes, a symlink will be added, and
+        hash test above passes, a symlink will be added, and
         results.SYMLINK_ADDED will be returned. Also, the symlinks will be
         checked and sanitised, to ensure the real copy of the file is in the
         most preferred component, according to HARDCODED_COMPONENT_ORDER.
 
         - If the file already exists and is already in this component,
-        either as a file or a symlink, and the checksum check passes,
+        either as a file or a symlink, and the hash check passes,
         results.NONE will be returned and nothing will be done.
         """
         entry = self._getEntry(sourcename, filename)
-        return entry.addFile(component, sha1, contents)
+        return entry.addFile(component, pub_file)
 
     def removeFile(self, component, sourcename, filename):
         """Remove the specified file from the pool.
