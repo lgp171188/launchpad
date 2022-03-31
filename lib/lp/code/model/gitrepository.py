@@ -826,10 +826,10 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
         self.date_last_modified = UTC_NOW
         if created:
             notify(GitRefsCreatedEvent(
-                self, [value[1] for value in created], logger))
+                self, [path for _, path in created], logger))
         if updated:
             notify(GitRefsUpdatedEvent(
-                self, [value[1] for value in updated], logger))
+                self, [path for _, path in updated], logger))
         if get_objects:
             return bulk.load(GitRef, updated + created)
 
