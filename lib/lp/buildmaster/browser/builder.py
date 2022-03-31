@@ -42,6 +42,7 @@ from lp.buildmaster.interfaces.builder import (
     IBuilder,
     IBuilderSet,
     )
+from lp.code.interfaces.cibuild import ICIBuildSet
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuildSource,
     )
@@ -104,6 +105,13 @@ class BuilderSetNavigation(GetitemNavigation):
     @stepthrough('+ocirecipebuild')
     def traverse_ocirecipebuild(self, name):
         build = get_build_by_id_str(IOCIRecipeBuildSet, name)
+        if build is None:
+            return None
+        return self.redirectSubTree(canonical_url(build, request=self.request))
+
+    @stepthrough('+cibuild')
+    def traverse_cibuild(self, name):
+        build = get_build_by_id_str(ICIBuildSet, name)
         if build is None:
             return None
         return self.redirectSubTree(canonical_url(build, request=self.request))

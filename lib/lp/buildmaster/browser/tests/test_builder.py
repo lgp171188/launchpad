@@ -116,6 +116,18 @@ class TestBuilderSetNavigation(TestCaseWithFactory):
         browser.open(url)
         self.assertEqual(expected_url, browser.url)
 
+    def test_ci_build_api_redirects(self):
+        build = self.factory.makeCIBuild()
+        url = (
+            "http://api.launchpad.test/devel/builders/+cibuild/%s" % build.id)
+        expected_url = (
+            "http://api.launchpad.test/devel" +
+            canonical_url(build, path_only_if_possible=True))
+        logout()
+        browser = setupBrowser()
+        browser.open(url)
+        self.assertEqual(expected_url, browser.url)
+
 
 class TestBuildersHomepage(TestCaseWithFactory, BuildCreationMixin):
 
