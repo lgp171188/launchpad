@@ -8,6 +8,16 @@ from zope.component import getUtility
 from lp.code.interfaces.cibuild import ICIBuildSet
 
 
+def _request_ci_builds(repository, event):
+    getUtility(ICIBuildSet).requestBuildsForRefs(
+        repository, event.paths, logger=event.logger)
+
+
+def refs_created(repository, event):
+    """Some references in a Git repository have been created."""
+    _request_ci_builds(repository, event)
+
+
 def refs_updated(repository, event):
     """Some references in a Git repository have been updated."""
     repository.updateMergeCommitIDs(event.paths)
@@ -16,5 +26,4 @@ def refs_updated(repository, event):
     repository.markSnapsStale(event.paths)
     repository.markCharmRecipesStale(event.paths)
     repository.detectMerges(event.paths, logger=event.logger)
-    getUtility(ICIBuildSet).requestBuildsForRefs(
-        repository, event.paths, logger=event.logger)
+    _request_ci_builds(repository, event)

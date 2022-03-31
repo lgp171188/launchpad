@@ -1493,8 +1493,8 @@ class TestGitRepositoryModifications(TestCaseWithFactory):
             date_created=datetime(2015, 6, 1, tzinfo=pytz.UTC))
         [ref] = self.factory.makeGitRefs(repository=repository)
         new_refs_info = {
-            ref.path: {
-                "sha1": "0000000000000000000000000000000000000000",
+            "refs/heads/new": {
+                "sha1": ref.commit_sha1,
                 "type": ref.object_type,
                 },
             }
@@ -1503,12 +1503,13 @@ class TestGitRepositoryModifications(TestCaseWithFactory):
             repository, "date_last_modified", UTC_NOW)
 
     def test_update_ref_sets_date_last_modified(self):
+        self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository(
             date_created=datetime(2015, 6, 1, tzinfo=pytz.UTC))
         [ref] = self.factory.makeGitRefs(repository=repository)
         new_refs_info = {
-            "refs/heads/new": {
-                "sha1": ref.commit_sha1,
+            ref.path: {
+                "sha1": "0000000000000000000000000000000000000000",
                 "type": ref.object_type,
                 },
             }
@@ -1867,6 +1868,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         self.assertThat(refs, MatchesSetwise(*matchers))
 
     def test_create(self):
+        self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository()
         self.assertEqual([], list(repository.refs))
         paths = ("refs/heads/master", "refs/tags/1.0")
@@ -2036,7 +2038,8 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 "type": GitObjectType.BLOB,
                 },
             }
-        repository.createOrUpdateRefs(refs_info)
+        with GitHostingFixture():
+            repository.createOrUpdateRefs(refs_info)
         self.useFixture(GitHostingFixture(refs={
             "refs/heads/blob": {
                 "object": {
@@ -3396,7 +3399,61 @@ class TestGitRepositoryRequestCIBuilds(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
 
-    def test_findByGitRepository_with_configuration(self):
+    def test_findByGitRepository_created_with_configuration(self):
+        # If a new ref has CI configuration, we request CI builds.
+        logger = BufferLogger()
+        repository = self.factory.makeGitRepository()
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        distroseries = self.factory.makeDistroSeries(distribution=ubuntu)
+        dases = [
+            self.factory.makeBuildableDistroArchSeries(
+                distroseries=distroseries)
+            for _ in range(2)]
+        configuration = dedent("""\
+            pipeline: [test]
+            jobs:
+                test:
+                    series: {series}
+                    architectures: [{architectures}]
+            """.format(
+                series=distroseries.name,
+                architectures=", ".join(
+                    das.architecturetag for das in dases))).encode()
+        new_commit = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
+        self.useFixture(GitHostingFixture(commits=[
+            {
+                "sha1": new_commit,
+                "blobs": {".launchpad.yaml": configuration},
+                },
+            ]))
+        with dbuser("branchscanner"):
+            repository.createOrUpdateRefs(
+                {"refs/heads/test":
+                    {"sha1": new_commit, "type": GitObjectType.COMMIT}},
+                logger=logger)
+
+        results = getUtility(ICIBuildSet).findByGitRepository(repository)
+        for result in results:
+            self.assertTrue(ICIBuild.providedBy(result))
+
+        self.assertThat(
+            results,
+            MatchesSetwise(*(
+                MatchesStructure.byEquality(
+                    git_repository=repository,
+                    commit_sha1=new_commit,
+                    distro_arch_series=das)
+                for das in dases)))
+        self.assertContentEqual(
+            [
+                "INFO Requesting CI build for {commit} on "
+                "{series}/{arch}".format(
+                    commit=new_commit, series=distroseries.name,
+                    arch=das.architecturetag)
+                for das in dases],
+            logger.getLogBuffer().splitlines())
+
+    def test_findByGitRepository_updated_with_configuration(self):
         # If a changed ref has CI configuration, we request CI builds.
         logger = BufferLogger()
         [ref] = self.factory.makeGitRefs()
