@@ -160,7 +160,7 @@ class DiskPoolEntry:
 
         If add is passed, add it to the list before calculating.
         If remove is passed, remove it before calculating.
-        Thus, we can calcuate which component should contain the main file
+        Thus, we can calculate which component should contain the main file
         after the addition or removal we are working on.
         """
         components = set()
