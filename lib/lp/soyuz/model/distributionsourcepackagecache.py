@@ -267,7 +267,7 @@ class DistributionSourcePackageCache(SQLBase):
         """
         # Do not create cache entries for disabled archives.
         if archive is not None and not archive.enabled:
-            return
+            return 0
 
         # Get the set of source package names to deal with.
         spns = list(sorted(
