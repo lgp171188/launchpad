@@ -155,11 +155,11 @@ def add_architecture(distroseries, architecture_name):
 def create_sections(distroseries):
     """Set up some sections for `distroseries`."""
     section_names = (
-        'admin', 'cli-mono', 'comm', 'database', 'devel', 'debug', 'doc',
+        'admin', 'cli-mono', 'comm', 'database', 'debug', 'devel', 'doc',
         'editors', 'education', 'electronics', 'embedded', 'fonts', 'games',
-        'gnome', 'golang', 'graphics', 'gnu-r', 'gnustep', 'hamradio',
+        'gnome', 'gnu-r', 'gnustep', 'golang', 'graphics', 'hamradio',
         'haskell', 'httpd', 'interpreters', 'java', 'javascript', 'kde',
-        'kernel', 'libs', 'libdevel', 'lisp', 'localization', 'mail',
+        'kernel', 'libdevel', 'libs', 'lisp', 'localization', 'mail',
         'math', 'misc', 'net', 'news', 'ocaml', 'oldlibs', 'otherosfs',
         'perl', 'php', 'python', 'raku', 'ruby', 'rust', 'science',
         'shells', 'sound', 'tex', 'text', 'utils', 'vcs', 'video', 'web',
