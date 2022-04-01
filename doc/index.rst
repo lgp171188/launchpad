@@ -36,6 +36,7 @@ How-to Guides
    how-to/apply-schema-changes
    how-to/use-updated-dependency
    how-to/resurrect-dogfood
+   how-to/preserve-query-count
 
 Explanation
 ===========
