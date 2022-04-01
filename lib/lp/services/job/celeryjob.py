@@ -49,7 +49,7 @@ celery_app = Celery()
 
 
 class CeleryRunJob(RunJob):
-    """The Celery Task that runs a job."""
+    """A Celery task that runs a job."""
 
     job_source = UniversalJobSource
 
@@ -67,20 +67,27 @@ class CeleryRunJob(RunJob):
         """
         self.dbuser = dbuser
         task_init(dbuser)
-        super().run(job_id)
+        # XXX cjwatson 2022-04-01: We'd normally use `super()` here, but
+        # that fails on Python 3.6 (and newer?) because running tasks don't
+        # seem to be instances of `CeleryRunJob`; it's not entirely clear
+        # why not.  Celery tends to steer users away from class-based tasks
+        # these days, so the right answer may be to rethink the interfaces
+        # provided by `lazr.jobrunner`.
+        RunJob.run(self, job_id)
 
     def reQueue(self, job_id, fallback_queue):
         self.apply_async(args=(job_id, self.dbuser), queue=fallback_queue)
 
 
-@celery_app.task(base=CeleryRunJob, bind=True)
-def celery_run_job(self, job_id, dbuser):
-    super(type(self), self).run(job_id, dbuser)
+class CeleryRunJobIgnoreResult(CeleryRunJob):
+    """A Celery task that runs a job and ignores its result."""
+
+    ignore_result = True
 
 
-@celery_app.task(base=CeleryRunJob, bind=True, ignore_result=True)
-def celery_run_job_ignore_result(self, job_id, dbuser):
-    super(type(self), self).run(job_id, dbuser)
+celery_run_job = celery_app.register_task(CeleryRunJob())
+celery_run_job_ignore_result = celery_app.register_task(
+    CeleryRunJobIgnoreResult())
 
 
 class FindMissingReady:
