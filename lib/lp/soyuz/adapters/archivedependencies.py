@@ -345,7 +345,7 @@ def _has_published_binaries(archive, distroarchseries, pocket):
 @defer.inlineCallbacks
 def _get_binary_sources_list_line(behaviour, archive, distroarchseries, pocket,
                                   components):
-    """Return the correponding binary sources_list line."""
+    """Return the corresponding binary sources_list line."""
     # Encode the private PPA repository password in the
     # sources_list line. Note that the buildlog will be
     # sanitized to not expose it.
