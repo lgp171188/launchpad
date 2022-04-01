@@ -32,6 +32,13 @@ top = os.path.dirname(scripts_dir)
 sys.modules.pop("site", None)
 sys.modules.pop("sitecustomize", None)
 
+# If the system Zope packages were built with setuptools >= 31.0.0, then the
+# new namespace package handling there causes sys.modules["zope"] to exist
+# pointing to the system-installed package, which will confuse attempts to
+# import zope.interface later.  Cross fingers and arrange for it to be
+# re-imported.
+sys.modules.pop("zope", None)
+
 import _pythonpath  # noqa: F401,E402
 
 from lp.soyuz.wsgi.archiveauth import check_password  # noqa: E402
