@@ -30,8 +30,13 @@ class TestPackageCacheUpdater(TestCaseWithFactory):
             self.factory.makeArchive(distribution=distribution)
             for _ in range(2)]
         for archive in archives:
+            self.assertEqual(0, archive.sources_cached)
             self.factory.makeSourcePackagePublishingHistory(archive=archive)
         script = self.makeScript()
         script.updateDistributionCache(distribution, archives[0])
+        archives[0].updateArchiveCache()
+        self.assertEqual(1, archives[0].sources_cached)
         archives[1].disable()
         script.updateDistributionCache(distribution, archives[1])
+        archives[1].updateArchiveCache()
+        self.assertEqual(0, archives[1].sources_cached)
