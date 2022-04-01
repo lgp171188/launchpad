@@ -26,7 +26,9 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_entry,
     mutator_for,
+    operation_for_version,
     operation_parameters,
+    operation_returns_collection_of,
     )
 from lazr.restful.fields import (
     Reference,
@@ -422,7 +424,9 @@ class IDistributionMirror(Interface):
         'The freshness of this mirror\'s archive mirrors')
     source_mirror_freshness = Attribute(
         'The freshness of this mirror\'s source mirrors')
-    base_url = Attribute('The HTTP or FTP base URL of this mirror')
+    base_url = exported(TextLine(
+        title=_('Base URL'), required=False, readonly=False,
+        description=_("The HTTP or FTP base URL of this mirror")))
     date_created = exported(Datetime(
         title=_('Date Created'), required=True, readonly=True,
         description=_("The date on which this mirror was registered.")))
@@ -606,6 +610,7 @@ class UnableToFetchCDImageFileList(Exception):
     """Couldn't fetch the file list needed for probing cdimage mirrors."""
 
 
+@exported_as_webservice_entry('distribution_mirrors', as_of='devel')
 class IDistributionMirrorSet(Interface):
     """The set of DistributionMirrors"""
 
@@ -628,6 +633,12 @@ class IDistributionMirrorSet(Interface):
         ago.
         """
 
+    @operation_parameters(
+        country=copy_field(IDistributionMirror['country'], required=True),
+        mirror_type=copy_field(IDistributionMirror['content'], required=True))
+    @operation_returns_collection_of(IDistributionMirror)
+    @export_read_operation()
+    @operation_for_version('devel')
     def getBestMirrorsForCountry(country, mirror_type):
         """Return the best mirrors to be used by someone in the given country.
 

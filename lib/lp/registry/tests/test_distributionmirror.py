@@ -12,20 +12,29 @@ from lp.registry.interfaces.distributionmirror import (
     IDistributionMirrorSet,
     MirrorContent,
     MirrorFreshness,
+    MirrorSpeed,
     MirrorStatus,
     )
+from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.distributionmirror import DistributionMirror
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.mail import stub
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.worlddata.interfaces.country import ICountrySet
 from lp.testing import (
+    api_url,
     login,
     login_as,
+    person_logged_in,
     TestCase,
     TestCaseWithFactory,
     )
-from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.testing.layers import (
+    DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
+    )
+from lp.testing.pages import webservice_for_person
 
 
 class TestDistributionMirror(TestCaseWithFactory):
@@ -242,6 +251,44 @@ class TestDistributionMirror(TestCaseWithFactory):
             MirrorStatus.PENDING_REVIEW, self.archive_mirror.status)
 
 
+class TestDistributionMirrorWebservice(TestCaseWithFactory):
+    """Test the IDistributionMirror API.
+
+    Some tests already exist in distribution-mirror.txt.
+    """
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.person = self.factory.makePerson(
+            displayname="Test Person")
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
+
+    def test_distribution_mirror_http_base_url(self):
+        distroset = getUtility(IDistributionSet)
+        with person_logged_in(self.person):
+            ubuntu = distroset.get(1)
+            owner = getUtility(IPersonSet).getByName('name16')
+            speed = MirrorSpeed.S2M
+            brazil = getUtility(ICountrySet)['BR']
+            content = MirrorContent.ARCHIVE
+            http_base_url = 'http://foo.bar.com/pub'
+            whiteboard = "This mirror is based deep in the Amazon rainforest."
+            new_mirror = ubuntu.newMirror(owner, speed, brazil, content,
+                                          http_base_url=http_base_url,
+                                          whiteboard=whiteboard)
+            mirror_url = api_url(new_mirror)
+            expected_url = new_mirror.base_url
+        response = self.webservice.get(
+            mirror_url)
+        self.assertEqual(200, response.status, response.body)
+
+        search_body = response.jsonBody()
+        self.assertEqual(expected_url, search_body["base_url"])
+
+
 class TestDistributionMirrorSet(TestCase):
     layer = LaunchpadFunctionalLayer
 
@@ -282,3 +329,40 @@ class TestDistributionMirrorSet(TestCase):
             france, MirrorContent.RELEASE)
         self.assertTrue(len(mirrors) > 1, "Not enough mirrors")
         self.assertEqual(main_mirror, mirrors[-1])
+
+
+class TestDistributionMirrorSetWebservice(TestCaseWithFactory):
+    """Test the IDistributionMirrorSet APIs.
+
+    Some tests already exist in xx-distribution-mirror.txt.
+    """
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.person = self.factory.makePerson(
+            displayname="Test Person")
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
+
+    def test_getBestMirrorsForCountry_webservice(self):
+        with person_logged_in(self.person):
+            france = getUtility(ICountrySet)['FR']
+            mirrors = getUtility(
+                IDistributionMirrorSet).getBestMirrorsForCountry(
+                france, MirrorContent.ARCHIVE)
+            base_urls = []
+            for mirror in mirrors:
+                base_urls.append(mirror.base_url)
+
+        response = self.webservice.named_get(
+            '/distribution_mirrors', 'getBestMirrorsForCountry',
+            country='%s' % api_url(france),
+            mirror_type='%s' % MirrorContent.ARCHIVE,
+            api_version='devel')
+
+        self.assertEqual(200, response.status)
+        self.assertContentEqual(
+            base_urls,
+            [entry["base_url"] for entry in response.jsonBody()["entries"]])
