@@ -16,9 +16,16 @@ from lp.archivepublisher.diskpool import (
 from lp.services.log.logger import BufferLogger
 
 
-class MockFile:
+class FakeLibraryFileContent:
 
     def __init__(self, contents):
+        self.sha1 = hashlib.sha1(contents).hexdigest()
+
+
+class FakeLibraryFileAlias:
+
+    def __init__(self, contents):
+        self.content = FakeLibraryFileContent(contents)
         self.contents = contents
 
     def open(self):
@@ -34,6 +41,12 @@ class MockFile:
         pass
 
 
+class FakePackageReleaseFile:
+
+    def __init__(self, contents):
+        self.libraryfile = FakeLibraryFileAlias(contents)
+
+
 class PoolTestingFile:
 
     def __init__(self, pool, sourcename, filename):
@@ -45,7 +58,7 @@ class PoolTestingFile:
     def addToPool(self, component):
         return self.pool.addFile(
             component, self.sourcename, self.filename,
-            hashlib.sha1(self.contents).hexdigest(), MockFile(self.contents))
+            FakePackageReleaseFile(self.contents))
 
     def removeFromPool(self, component):
         return self.pool.removeFile(component, self.sourcename, self.filename)

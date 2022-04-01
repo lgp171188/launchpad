@@ -156,6 +156,7 @@ from lp.code.model.diff import (
     Diff,
     PreviewDiff,
     )
+from lp.code.tests.helpers import GitHostingFixture
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
@@ -1815,10 +1816,11 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 "type": GitObjectType.COMMIT,
                 }
             for path in paths}
-        refs_by_path = {
-            ref.path: ref
-            for ref in removeSecurityProxy(repository).createOrUpdateRefs(
-                refs_info, get_objects=True)}
+        with GitHostingFixture():
+            refs_by_path = {
+                ref.path: ref
+                for ref in removeSecurityProxy(repository).createOrUpdateRefs(
+                    refs_info, get_objects=True)}
         return [refs_by_path[path] for path in paths]
 
     def makeGitRefRemote(self, repository_url=None, path=None):
