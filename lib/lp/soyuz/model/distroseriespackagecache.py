@@ -196,7 +196,7 @@ class DistroSeriesPackageCache(SQLBase):
         """
         # Do not create cache entries for disabled archives.
         if not archive.enabled:
-            return
+            return 0
 
         # Get the set of package names to deal with.
         bpns = list(sorted(
