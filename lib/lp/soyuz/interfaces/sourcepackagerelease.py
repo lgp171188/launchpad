@@ -84,7 +84,7 @@ class ISourcePackageRelease(Interface):
         title=_("DSC format"),
         description=_(
         "DSC file format used to upload this source"),
-        required=True)
+        required=False)
     dsc_binaries = TextLine(
         title=_("DSC proposed binaries"),
         description=_(

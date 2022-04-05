@@ -668,7 +668,7 @@ class IDistroSeriesPublic(
         """
 
     def createUploadedSourcePackageRelease(
-        sourcepackagename, version, maintainer, builddepends,
+        sourcepackagename, version, format, maintainer, builddepends,
         builddependsindep, architecturehintlist, component, creator, urgency,
         changelog, changelog_entry, dsc, dscsigningkey, section,
         dsc_maintainer_rfc822, dsc_standards_version, dsc_format,
@@ -686,6 +686,7 @@ class IDistroSeriesPublic(
          :param dateuploaded: timestamp, if not provided will be UTC_NOW
          :param sourcepackagename: `ISourcePackageName`
          :param version: string, a debian valid version
+         :param format: `SourcePackageType`
          :param maintainer: IPerson designed as package maintainer
          :param creator: IPerson, package uploader
          :param component: IComponent

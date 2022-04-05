@@ -31,7 +31,10 @@ from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
-from lp.registry.interfaces.sourcepackage import SourcePackageUrgency
+from lp.registry.interfaces.sourcepackage import (
+    SourcePackageType,
+    SourcePackageUrgency,
+    )
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
@@ -235,6 +238,7 @@ class SoyuzTestPublisher:
 
         spr = distroseries.createUploadedSourcePackageRelease(
             sourcepackagename=spn,
+            format=SourcePackageType.DPKG,
             maintainer=maintainer,
             creator=creator,
             component=component,
@@ -290,6 +294,7 @@ class SoyuzTestPublisher:
             distroseries=distroseries,
             sourcepackagerelease=spr,
             sourcepackagename=spr.sourcepackagename,
+            _format=spr.format,
             component=spr.component,
             section=spr.section,
             status=status,
@@ -487,6 +492,7 @@ class SoyuzTestPublisher:
                 distroarchseries=arch,
                 binarypackagerelease=binarypackagerelease,
                 binarypackagename=binarypackagerelease.binarypackagename,
+                _binarypackageformat=binarypackagerelease.binpackageformat,
                 component=binarypackagerelease.component,
                 section=binarypackagerelease.section,
                 priority=binarypackagerelease.priority,
