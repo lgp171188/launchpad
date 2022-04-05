@@ -609,7 +609,7 @@
           attributes="
               bugs"/>
       <require
-          permission="launchpad.AnyPerson"
+          permission="launchpad.Edit"
           attributes="
               linkBug
               unlinkBug"/>
@@ -623,7 +623,7 @@
       <allow interface="lp.bugs.interfaces.vulnerability.IVulnerabilitySet" />
     </securedutility>
 
-    <!-- Vulnerability Activity-->
+    <!-- VulnerabilityActivity -->
     <class class="lp.bugs.model.vulnerability.VulnerabilityActivity">
       <require
         permission="launchpad.View"

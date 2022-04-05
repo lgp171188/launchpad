@@ -5386,10 +5386,11 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         IStore(build).flush()
         return build
 
-    def makeVulnerability(self, distribution=None, cve=None, status=None,
+    def makeVulnerability(self, distribution=None, status=None,
+                          importance=None, creator=None,
+                          information_type=InformationType.PUBLIC, cve=None,
                           description=None, notes=None, mitigation=None,
-                          importance=None, importance_explanation=None,
-                          private=None, date_made_public=None):
+                          importance_explanation=None, date_made_public=None):
         """Make a new `Vulnerability`."""
         if distribution is None:
             distribution = self.makeDistribution()
@@ -5397,20 +5398,19 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             status = VulnerabilityStatus.NEEDS_TRIAGE
         if importance is None:
             importance = BugTaskImportance.UNDECIDED
+        if creator is None:
+            creator = self.makePerson()
         if importance_explanation is None:
             importance_explanation = self.getUniqueString(
                 "vulnerability-importance-explanation")
-        if private is None:
-            private = False
         return getUtility(
-            IVulnerabilitySet).new(distribution=distribution, cve=cve,
-                                   status=status, description=description,
-                                   notes=notes, mitigation=mitigation,
-                                   importance=importance,
-                                   importance_explanation=
-                                   importance_explanation,
-                                   private=private,
-                                   date_made_public=date_made_public)
+            IVulnerabilitySet).new(
+            distribution=distribution, cve=cve, status=status,
+            importance=importance, creator=creator,
+            information_type=information_type, description=description,
+            notes=notes, mitigation=mitigation,
+            importance_explanation=importance_explanation,
+            date_made_public=date_made_public)
 
     def makeVulnerabilityActivity(self, vulnerability=None, changer=None,
                                   what_changed=None, old_value=None,
@@ -5425,7 +5425,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if old_value is None:
             old_value = self.getUniqueString("old-value")
         if new_value is None:
-            new_value = self.getUniqueString("new-description")
+            new_value = self.getUniqueString("new-value")
         return getUtility(
             IVulnerabilityActivitySet).new(vulnerability=vulnerability,
                                            changer=changer,
