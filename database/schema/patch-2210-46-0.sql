@@ -645,7 +645,7 @@ CREATE OR REPLACE FUNCTION valid_absolute_url(text) RETURNS boolean
     AS $$
     from urllib.parse import urlparse, uses_netloc
     # Extend list of schemes that specify netloc.
-    if 'git' not in uses_netloc:
+    if 'bzr' not in uses_netloc:
         uses_netloc.insert(0, 'bzr')
         uses_netloc.insert(0, 'bzr+ssh')
         uses_netloc.insert(0, 'ssh') # Mercurial
