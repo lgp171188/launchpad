@@ -111,8 +111,6 @@ CREATE UNIQUE INDEX binarypackagerelease__build__bpn__key
 CREATE UNIQUE INDEX binarypackagerelease__ci_build__bpn__key
     ON BinaryPackageRelease (ci_build, binarypackagename)
     WHERE ci_build IS NOT NULL;
-CREATE INDEX binarypackagerelease__ci_build__idx
-    ON BinaryPackageRelease (ci_build);
 
 ALTER TABLE BinaryPackageRelease
     VALIDATE CONSTRAINT one_build,
