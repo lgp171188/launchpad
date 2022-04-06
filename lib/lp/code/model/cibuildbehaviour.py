@@ -115,7 +115,7 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                 self, build.distro_arch_series, None, logger=logger))
         args["jobs"] = stages
         args["git_repository"] = build.git_repository.git_https_url
-        args["commit_sha1"] = build.commit_sha1
+        args["git_path"] = build.commit_sha1
         args["private"] = build.is_private
         return args
 
