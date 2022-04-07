@@ -4,7 +4,7 @@
 """Archive dependencies helper function.
 
 This module contains the static maps representing the 'layered' component
-and pocket dependencies and helper function to handler `ArchiveDependency`
+and pocket dependencies and helper function to handle `ArchiveDependency`
 records.
 
  * pocket_dependencies: static map of pocket dependencies
