@@ -20,6 +20,7 @@ __all__ = [
 
 import io
 import os
+from pathlib import Path
 import re
 
 from storm.exceptions import NotOneError
@@ -507,8 +508,8 @@ class SourcePackageHandler:
 
         # Since the dsc doesn't know, we add in the directory, package
         # component and section
-        dsc_contents['directory'] = os.path.join("pool",
-            poolify(sp_name, sp_component)).encode("ASCII")
+        dsc_contents['directory'] = bytes(
+            Path('pool') / poolify(sp_name, sp_component))
         dsc_contents['package'] = sp_name.encode("ASCII")
         dsc_contents['component'] = sp_component.encode("ASCII")
         dsc_contents['section'] = sp_section.encode("ASCII")

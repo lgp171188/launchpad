@@ -876,7 +876,7 @@ class MirrorDistroArchSeries(SQLBase, _MirrorSeriesMixIn):
         """
         bpr = publishing_record.binarypackagerelease
         base_url = self.distribution_mirror.base_url
-        path = poolify(bpr.sourcepackagename, self.component.name)
+        path = poolify(bpr.sourcepackagename, self.component.name).as_posix()
         file = BinaryPackageFile.selectOneBy(
             binarypackagerelease=bpr, filetype=BinaryPackageFileType.DEB)
         full_path = 'pool/%s/%s' % (path, file.libraryfile.filename)

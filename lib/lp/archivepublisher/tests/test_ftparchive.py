@@ -7,6 +7,7 @@ import difflib
 from functools import partial
 import gzip
 import os
+from pathlib import Path
 import re
 import shutil
 from textwrap import dedent
@@ -149,16 +150,11 @@ class TestFTPArchive(TestCaseWithFactory):
                            samplename=None):
         """Create a repository file."""
         fullpath = self._dp.pathFor(component, sourcename, leafname)
-        dirname = os.path.dirname(fullpath)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
+        fullpath.parent.mkdir(parents=True, exist_ok=True)
         if samplename is None:
             samplename = leafname
-        leaf = os.path.join(self._sampledir, samplename)
-        with open(leaf, "rb") as leaf_file:
-            leafcontent = leaf_file.read()
-        with open(fullpath, "wb") as f:
-            f.write(leafcontent)
+        leaf = Path(self._sampledir) / samplename
+        fullpath.write_bytes(leaf.read_bytes())
 
     def _setUpFTPArchiveHandler(self):
         return FTPArchiveHandler(
@@ -792,8 +788,8 @@ class TestFTPArchive(TestCaseWithFactory):
         # Remove most of this repository's files so that cleanCaches has
         # something to do.
         for i in range(49):
-            os.unlink(
-                self._dp.pathFor("main", "bin%d" % i, "bin%d_1_i386.deb" % i))
+            self._dp.pathFor(
+                "main", "bin%d" % i, "bin%d_1_i386.deb" % i).unlink()
 
         cache_path = os.path.join(self._config.cacheroot, "packages-i386.db")
         old_cache_size = os.stat(cache_path).st_size
