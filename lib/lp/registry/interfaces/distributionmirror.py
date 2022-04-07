@@ -26,9 +26,7 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_entry,
     mutator_for,
-    operation_for_version,
     operation_parameters,
-    operation_returns_collection_of,
     )
 from lazr.restful.fields import (
     Reference,
@@ -610,7 +608,6 @@ class UnableToFetchCDImageFileList(Exception):
     """Couldn't fetch the file list needed for probing cdimage mirrors."""
 
 
-@exported_as_webservice_entry('distribution_mirrors', as_of='devel')
 class IDistributionMirrorSet(Interface):
     """The set of DistributionMirrors"""
 
@@ -631,20 +628,6 @@ class IDistributionMirrorSet(Interface):
         If limit is not None, then return at most limit mirrors, giving
         precedence to never probed ones followed by the ones probed longest
         ago.
-        """
-
-    @operation_parameters(
-        country=copy_field(IDistributionMirror['country'], required=True),
-        mirror_type=copy_field(IDistributionMirror['content'], required=True))
-    @operation_returns_collection_of(IDistributionMirror)
-    @export_read_operation()
-    @operation_for_version('devel')
-    def getBestMirrorsForCountry(country, mirror_type):
-        """Return the best mirrors to be used by someone in the given country.
-
-        The list of mirrors is composed by the official mirrors located in
-        the given country (or in the country's continent if the country
-        doesn't have any) plus the main mirror of that type.
         """
 
     def getByName(name):

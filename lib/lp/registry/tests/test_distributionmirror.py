@@ -266,7 +266,7 @@ class TestDistributionMirrorWebservice(TestCaseWithFactory):
             self.person, permission=OAuthPermission.WRITE_PUBLIC,
             default_api_version="devel")
 
-    def test_distribution_mirror_http_base_url(self):
+    def test_base_url(self):
         distroset = getUtility(IDistributionSet)
         with person_logged_in(self.person):
             ubuntu = distroset.get(1)
@@ -319,50 +319,13 @@ class TestDistributionMirrorSet(TestCase):
         login('foo.bar@canonical.com')
         france = getUtility(ICountrySet)['FR']
         main_mirror = getUtility(ILaunchpadCelebrities).ubuntu_archive_mirror
-        mirrors = getUtility(IDistributionMirrorSet).getBestMirrorsForCountry(
+        mirrors = main_mirror.distribution.getBestMirrorsForCountry(
             france, MirrorContent.ARCHIVE)
         self.assertTrue(len(mirrors) > 1, "Not enough mirrors")
         self.assertEqual(main_mirror, mirrors[-1])
 
         main_mirror = getUtility(ILaunchpadCelebrities).ubuntu_cdimage_mirror
-        mirrors = getUtility(IDistributionMirrorSet).getBestMirrorsForCountry(
+        mirrors = main_mirror.distribution.getBestMirrorsForCountry(
             france, MirrorContent.RELEASE)
         self.assertTrue(len(mirrors) > 1, "Not enough mirrors")
         self.assertEqual(main_mirror, mirrors[-1])
-
-
-class TestDistributionMirrorSetWebservice(TestCaseWithFactory):
-    """Test the IDistributionMirrorSet APIs.
-
-    Some tests already exist in xx-distribution-mirror.txt.
-    """
-    layer = DatabaseFunctionalLayer
-
-    def setUp(self):
-        super().setUp()
-        self.person = self.factory.makePerson(
-            displayname="Test Person")
-        self.webservice = webservice_for_person(
-            self.person, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
-
-    def test_getBestMirrorsForCountry_webservice(self):
-        with person_logged_in(self.person):
-            france = getUtility(ICountrySet)['FR']
-            mirrors = getUtility(
-                IDistributionMirrorSet).getBestMirrorsForCountry(
-                france, MirrorContent.ARCHIVE)
-            base_urls = []
-            for mirror in mirrors:
-                base_urls.append(mirror.base_url)
-
-        response = self.webservice.named_get(
-            '/distribution_mirrors', 'getBestMirrorsForCountry',
-            country='%s' % api_url(france),
-            mirror_type='%s' % MirrorContent.ARCHIVE,
-            api_version='devel')
-
-        self.assertEqual(200, response.status)
-        self.assertContentEqual(
-            base_urls,
-            [entry["base_url"] for entry in response.jsonBody()["entries"]])

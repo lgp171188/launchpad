@@ -581,6 +581,20 @@ class IDistributionView(
     def getCountryMirror(country, mirror_type):
         """Return the country DNS mirror for a country and content type."""
 
+    @operation_parameters(
+        country=copy_field(IDistributionMirror['country'], required=True),
+        mirror_type=copy_field(IDistributionMirror['content'], required=True))
+    @operation_returns_collection_of(IDistributionMirror)
+    @export_read_operation()
+    @operation_for_version('devel')
+    def getBestMirrorsForCountry(country, mirror_type):
+        """Return the best mirrors to be used by someone in the given country.
+
+        The list of mirrors is composed by the official mirrors located in
+        the given country (or in the country's continent if the country
+        doesn't have any) plus the main mirror of that type.
+        """
+
     def newMirror(owner, speed, country, content, display_name=None,
                   description=None, http_base_url=None, https_base_url=None,
                   ftp_base_url=None, rsync_base_url=None, enabled=False,

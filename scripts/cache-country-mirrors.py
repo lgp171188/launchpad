@@ -18,10 +18,8 @@ import tempfile
 
 from zope.component import getUtility
 
-from lp.registry.interfaces.distributionmirror import (
-    IDistributionMirrorSet,
-    MirrorContent,
-    )
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.registry.interfaces.distributionmirror import MirrorContent
 from lp.services.scripts.base import (
     LaunchpadScript,
     LaunchpadScriptFailure,
@@ -39,14 +37,14 @@ class CacheCountryMirrors(LaunchpadScript):
                 "You must specify the full path of the directory where the "
                 "files will be stored.")
 
-        mirror_set = getUtility(IDistributionMirrorSet)
         [dir_name] = self.args
         if not os.path.isdir(dir_name):
             raise LaunchpadScriptFailure(
                 "'%s' is not a directory." % dir_name)
 
         for country in getUtility(ICountrySet):
-            mirrors = mirror_set.getBestMirrorsForCountry(
+            mirrors = getUtility(
+                ILaunchpadCelebrities).ubuntu.getBestMirrorsForCountry(
                 country, MirrorContent.ARCHIVE)
             # Write the content to a temporary file first, to avoid problems
             # if the script is killed or something like that.

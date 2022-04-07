@@ -111,7 +111,6 @@ from lp.registry.enums import VCSType
 from lp.registry.interfaces.announcement import IAnnouncementSet
 from lp.registry.interfaces.codeofconduct import ICodeOfConductSet
 from lp.registry.interfaces.distribution import IDistributionSet
-from lp.registry.interfaces.distributionmirror import IDistributionMirrorSet
 from lp.registry.interfaces.karma import IKarmaActionSet
 from lp.registry.interfaces.nameblacklist import INameBlacklistSet
 from lp.registry.interfaces.person import IPersonSet
@@ -863,7 +862,6 @@ class LaunchpadRootNavigation(Navigation):
         'codeofconduct': ICodeOfConductSet,
         '+countries': ICountrySet,
         'distros': IDistributionSet,
-        'distribution_mirrors': IDistributionMirrorSet,
         '+git': IGitRepositorySet,
         'karmaaction': IKarmaActionSet,
         '+imports': ITranslationImportQueue,

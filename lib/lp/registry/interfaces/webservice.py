@@ -8,7 +8,6 @@ __all__ = [
     'ICommercialSubscription',
     'IDistribution',
     'IDistributionMirror',
-    'IDistributionMirrorSet',
     'IDistributionSet',
     'IDistributionSourcePackage',
     'IDistroSeries',
@@ -55,10 +54,7 @@ from lp.registry.interfaces.distribution import (
     IDistribution,
     IDistributionSet,
     )
-from lp.registry.interfaces.distributionmirror import (
-    IDistributionMirror,
-    IDistributionMirrorSet,
-    )
+from lp.registry.interfaces.distributionmirror import IDistributionMirror
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
