@@ -98,10 +98,18 @@ class lp_develop(develop):
                 """)
             self.write_script("py", py_header + py_script_text)
 
+            # Install site customizations for this virtualenv.  In principle
+            # we just want to install sitecustomize and have site load it,
+            # but this doesn't work with virtualenv 20.x
+            # (https://github.com/pypa/virtualenv/issues/1703).  Note that
+            # depending on the resolution of
+            # https://bugs.python.org/issue33944 we may need to change this
+            # again in future.
             env_top = os.path.join(os.path.dirname(__file__), "env")
-            stdlib_dir = get_python_lib(standard_lib=True, prefix=env_top)
+            site_packages_dir = get_python_lib(prefix=env_top)
             orig_sitecustomize = self._get_orig_sitecustomize()
-            sitecustomize_path = os.path.join(stdlib_dir, "sitecustomize.py")
+            sitecustomize_path = os.path.join(
+                site_packages_dir, "_sitecustomize.py")
             with open(sitecustomize_path, "w") as sitecustomize_file:
                 sitecustomize_file.write(dedent("""\
                     import os
@@ -114,6 +122,12 @@ class lp_develop(develop):
                     """))
                 if orig_sitecustomize:
                     sitecustomize_file.write(orig_sitecustomize)
+            # Awkward naming; this needs to come lexicographically after any
+            # other .pth files.
+            sitecustomize_pth_path = os.path.join(
+                site_packages_dir, "zzz_run_venv_sitecustomize.pth")
+            with open(sitecustomize_pth_path, "w") as sitecustomize_pth_file:
+                sitecustomize_pth_file.write("import _sitecustomize\n")
 
             # Write out the build-time value of LPCONFIG so that it can be
             # used by scripts as the default instance name.

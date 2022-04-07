@@ -25,16 +25,14 @@ python_version = '%s.%s' % sys.version_info[:2]
 stdlib_dir = os.path.join(env, 'lib', 'python%s' % python_version)
 
 if ('site' in sys.modules and
-    not sys.modules['site'].__file__.startswith(
-        os.path.join(stdlib_dir, 'site.py'))):
-    # We have the wrong site.py, so our paths are not set up correctly.
-    # We blow up, with a hopefully helpful error message.
+        'lp_sitecustomize' not in sys.modules):
+    # Site initialization has been run but lp_sitecustomize was not loaded,
+    # so something is set up incorrectly.  We blow up, with a hopefully
+    # helpful error message.
     raise RuntimeError(
-        'The wrong site.py is imported (%r imported, %r expected). '
-        'Scripts should usually be '
+        'Python was invoked incorrectly.  Scripts should usually be '
         "started with Launchpad's bin/py, or with a Python invoked with "
-        'the -S flag.' % (
-        sys.modules['site'].__file__, os.path.join(stdlib_dir, 'site.py')))
+        'the -S flag.')
 
 # Ensure that the virtualenv's standard library directory is in sys.path;
 # activate_this will not put it there.
@@ -53,6 +51,7 @@ if not sys.executable.startswith(top + os.sep) or 'site' not in sys.modules:
     sys.prefix = env
     os.environ['PATH'] = (
         os.path.join(env, 'bin') + os.pathsep + os.environ.get('PATH', ''))
+    os.environ['VIRTUAL_ENV'] = env
     site_packages = os.path.join(
         env, 'lib', 'python%s' % python_version, 'site-packages')
     import site
