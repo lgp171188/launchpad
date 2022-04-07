@@ -15,4 +15,4 @@ CREATE INDEX revisionstatusartifact__report__type__created__idx
     ON RevisionStatusArtifact (report, type, date_created DESC);
 DROP INDEX revisionstatusartifact__report__type__idx;
 
-INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 45, 0);
+INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 37, 1);
