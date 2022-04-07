@@ -3,12 +3,14 @@
 
 __all__ = ['DiskPoolEntry', 'DiskPool', 'poolify', 'unpoolify']
 
+import logging
 import os
 from pathlib import Path
 import tempfile
 from typing import (
     Optional,
     Tuple,
+    Union,
     )
 
 from lp.archivepublisher import HARDCODED_COMPONENT_ORDER
@@ -25,7 +27,7 @@ from lp.soyuz.interfaces.publishing import (
     )
 
 
-def poolify(source, component) -> Path:
+def poolify(source: str, component: str) -> Path:
     """Poolify a given source and component name."""
     if source.startswith("lib"):
         return Path(component) / source[:4] / source
@@ -46,7 +48,7 @@ def unpoolify(self, path: Path) -> Tuple[str, str, Optional[str]]:
     return p[0], p[2], None
 
 
-def relative_symlink(src_path: Path, dst_path: Path):
+def relative_symlink(src_path: Path, dst_path: Path) -> None:
     """Path.symlink_to replacement that creates relative symbolic links."""
     src_path = Path(os.path.normpath(str(src_path)))
     dst_path = Path(os.path.normpath(str(dst_path)))
@@ -86,7 +88,8 @@ class _diskpool_atomicfile:
     the filename is present in the pool, it is definitely complete.
     """
 
-    def __init__(self, targetfilename: Path, mode, rootpath="/tmp"):
+    def __init__(self, targetfilename: Path, mode: str,
+                 rootpath: Union[str, Path] = "/tmp") -> None:
         # atomicfile implements the file object interface, but it is only
         # really used (or useful) for writing binary files, which is why we
         # keep the mode constructor argument but assert it's sane below.
@@ -102,7 +105,7 @@ class _diskpool_atomicfile:
         self.tempname = Path(name)
         self.write = self.fd.write
 
-    def close(self):
+    def close(self) -> None:
         """Make the atomic move into place having closed the temp file."""
         self.fd.close()
         self.tempname.chmod(0o644)
@@ -125,8 +128,8 @@ class DiskPoolEntry:
     Remaining files in the 'temppath' indicated installation failures and
     require manual removal after further investigation.
     """
-    def __init__(self, rootpath: Path, temppath: Path, source, filename,
-                 logger):
+    def __init__(self, rootpath: Path, temppath: Path, source: str,
+                 filename: str, logger: logging.Logger) -> None:
         self.rootpath = rootpath
         self.temppath = temppath
         self.source = source
@@ -146,14 +149,15 @@ class DiskPoolEntry:
         if self.symlink_components:
             assert self.file_component
 
-    def debug(self, *args, **kwargs):
+    def debug(self, *args, **kwargs) -> None:
         self.logger.debug(*args, **kwargs)
 
-    def pathFor(self, component) -> Path:
+    def pathFor(self, component: str) -> Path:
         """Return the path for this file in the given component."""
         return self.rootpath / poolify(self.source, component) / self.filename
 
-    def preferredComponent(self, add=None, remove=None):
+    def preferredComponent(self, add: Optional[str] = None,
+                           remove: Optional[str] = None) -> Optional[str]:
         """Return the appropriate component for the real file.
 
         If add is passed, add it to the list before calculating.
@@ -175,12 +179,12 @@ class DiskPoolEntry:
                 return component
 
     @cachedproperty
-    def file_hash(self):
+    def file_hash(self) -> str:
         """Return the SHA1 sum of this file."""
         targetpath = self.pathFor(self.file_component)
         return sha1_from_path(str(targetpath))
 
-    def addFile(self, component, pub_file: IPackageReleaseFile):
+    def addFile(self, component: str, pub_file: IPackageReleaseFile):
         """See DiskPool.addFile."""
         assert component in HARDCODED_COMPONENT_ORDER
 
@@ -224,7 +228,7 @@ class DiskPoolEntry:
         self.file_component = component
         return FileAddActionEnum.FILE_ADDED
 
-    def removeFile(self, component):
+    def removeFile(self, component: str) -> int:
         """Remove a file from a given component; return bytes freed.
 
         This method handles three situations:
@@ -271,7 +275,7 @@ class DiskPoolEntry:
 
         return self._reallyRemove(component)
 
-    def _reallyRemove(self, component):
+    def _reallyRemove(self, component: str) -> int:
         """Remove file and return file size.
 
         Remove the file from the filesystem and from our data
@@ -292,7 +296,7 @@ class DiskPoolEntry:
         fullpath.unlink()
         return size
 
-    def _shufflesymlinks(self, targetcomponent):
+    def _shufflesymlinks(self, targetcomponent: str) -> None:
         """Shuffle the symlinks for filename so that targetcomponent contains
         the real file and the rest are symlinks to the right place..."""
         if targetcomponent == self.file_component:
@@ -346,7 +350,7 @@ class DiskPoolEntry:
                 pass
             relative_symlink(targetpath, newpath)
 
-    def _sanitiseLinks(self):
+    def _sanitiseLinks(self) -> None:
         """Ensure the real file is in the most preferred component.
 
         If this file is in more than one component, ensure the real
@@ -375,18 +379,19 @@ class DiskPool:
     """
     results = FileAddActionEnum
 
-    def __init__(self, rootpath, temppath, logger):
+    def __init__(self, rootpath, temppath, logger: logging.Logger) -> None:
         self.rootpath = Path(rootpath)
         self.temppath = Path(temppath)
         self.entries = {}
         self.logger = logger
 
-    def _getEntry(self, sourcename, file):
+    def _getEntry(self, sourcename: str, file: str) -> DiskPoolEntry:
         """Return a new DiskPoolEntry for the given sourcename and file."""
         return DiskPoolEntry(
             self.rootpath, self.temppath, sourcename, file, self.logger)
 
-    def pathFor(self, comp, source, file=None) -> Path:
+    def pathFor(self, comp: str, source: str,
+                file: Optional[str] = None) -> Path:
         """Return the path for the given pool folder or file.
 
         If file is none, the path to the folder containing all packages
@@ -400,7 +405,7 @@ class DiskPool:
             path = path / file
         return path
 
-    def addFile(self, component, sourcename, filename,
+    def addFile(self, component: str, sourcename: str, filename: str,
                 pub_file: IPackageReleaseFile):
         """Add a file with the given contents to the pool.
 
@@ -434,7 +439,8 @@ class DiskPool:
         entry = self._getEntry(sourcename, filename)
         return entry.addFile(component, pub_file)
 
-    def removeFile(self, component, sourcename, filename):
+    def removeFile(self, component: str, sourcename: str,
+                   filename: str) -> int:
         """Remove the specified file from the pool.
 
         There are three possible outcomes:

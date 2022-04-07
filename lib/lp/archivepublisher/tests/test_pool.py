@@ -55,23 +55,23 @@ class PoolTestingFile:
         self.filename = filename
         self.contents = sourcename.encode("UTF-8")
 
-    def addToPool(self, component):
+    def addToPool(self, component: str):
         return self.pool.addFile(
             component, self.sourcename, self.filename,
             FakePackageReleaseFile(self.contents))
 
-    def removeFromPool(self, component):
+    def removeFromPool(self, component: str) -> int:
         return self.pool.removeFile(component, self.sourcename, self.filename)
 
-    def checkExists(self, component):
+    def checkExists(self, component: str) -> bool:
         path = self.pool.pathFor(component, self.sourcename, self.filename)
         return path.exists()
 
-    def checkIsLink(self, component):
+    def checkIsLink(self, component: str) -> bool:
         path = self.pool.pathFor(component, self.sourcename, self.filename)
         return path.is_symlink()
 
-    def checkIsFile(self, component):
+    def checkIsFile(self, component: str) -> bool:
         return self.checkExists(component) and not self.checkIsLink(component)
 
 

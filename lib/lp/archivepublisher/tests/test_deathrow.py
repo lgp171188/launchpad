@@ -55,7 +55,7 @@ class TestDeathRow(TestCase):
             pub.source_package_name,
             pub_file.libraryfile.filename)
 
-    def assertIsFile(self, path: Path):
+    def assertIsFile(self, path: Path) -> None:
         """Assert the path exists and is a regular file."""
         self.assertTrue(
             path.exists(),
@@ -64,7 +64,7 @@ class TestDeathRow(TestCase):
             path.is_symlink(),
             "File %s is a symbolic link" % path.name)
 
-    def assertIsLink(self, path: Path):
+    def assertIsLink(self, path: Path) -> None:
         """Assert the path exists and is a symbolic link."""
         self.assertTrue(
             path.exists(),
@@ -73,7 +73,7 @@ class TestDeathRow(TestCase):
             path.is_symlink(),
             "File %s is a not symbolic link" % path.name)
 
-    def assertDoesNotExist(self, path: Path):
+    def assertDoesNotExist(self, path: Path) -> None:
         """Assert the path does not exit."""
         self.assertFalse(
             path.exists(),
