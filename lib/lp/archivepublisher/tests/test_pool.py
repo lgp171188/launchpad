@@ -4,7 +4,7 @@
 """Tests for pool.py."""
 
 import hashlib
-import os
+from pathlib import Path
 import shutil
 from tempfile import mkdtemp
 import unittest
@@ -55,23 +55,23 @@ class PoolTestingFile:
         self.filename = filename
         self.contents = sourcename.encode("UTF-8")
 
-    def addToPool(self, component):
+    def addToPool(self, component: str):
         return self.pool.addFile(
             component, self.sourcename, self.filename,
             FakePackageReleaseFile(self.contents))
 
-    def removeFromPool(self, component):
+    def removeFromPool(self, component: str) -> int:
         return self.pool.removeFile(component, self.sourcename, self.filename)
 
-    def checkExists(self, component):
+    def checkExists(self, component: str) -> bool:
         path = self.pool.pathFor(component, self.sourcename, self.filename)
-        return os.path.exists(path)
+        return path.exists()
 
-    def checkIsLink(self, component):
+    def checkIsLink(self, component: str) -> bool:
         path = self.pool.pathFor(component, self.sourcename, self.filename)
-        return os.path.islink(path)
+        return path.is_symlink()
 
-    def checkIsFile(self, component):
+    def checkIsFile(self, component: str) -> bool:
         return self.checkExists(component) and not self.checkIsLink(component)
 
 
@@ -80,9 +80,9 @@ class TestPoolification(unittest.TestCase):
     def testPoolificationOkay(self):
         """poolify should poolify properly"""
         cases = (
-            ("foo", "main", "main/f/foo"),
-            ("foo", "universe", "universe/f/foo"),
-            ("libfoo", "main", "main/libf/libfoo"),
+            ("foo", "main", Path("main/f/foo")),
+            ("foo", "universe", Path("universe/f/foo")),
+            ("libfoo", "main", Path("main/libf/libfoo")),
             )
         for case in cases:
             self.assertEqual(case[2], poolify(case[0], case[1]))

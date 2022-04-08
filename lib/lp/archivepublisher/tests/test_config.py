@@ -8,6 +8,7 @@ Publisher configuration provides archive-dependent filesystem paths.
 
 import logging
 import os
+from pathlib import Path
 
 from zope.component import getUtility
 
@@ -111,16 +112,20 @@ class TestGetPubConfig(TestCaseWithFactory):
     def test_getDiskPool(self):
         primary_config = getPubConfig(self.ubuntutest.main_archive)
         disk_pool = primary_config.getDiskPool(BufferLogger())
-        self.assertEqual(self.root + "/ubuntutest/pool/", disk_pool.rootpath)
-        self.assertEqual(self.root + "/ubuntutest-temp/", disk_pool.temppath)
+        self.assertEqual(
+            Path(self.root + "/ubuntutest/pool/"), disk_pool.rootpath)
+        self.assertEqual(
+            Path(self.root + "/ubuntutest-temp/"), disk_pool.temppath)
         self.assertEqual(logging.INFO, disk_pool.logger.level)
 
     def test_getDiskPool_pool_root_override(self):
         primary_config = getPubConfig(self.ubuntutest.main_archive)
         disk_pool = primary_config.getDiskPool(
             BufferLogger(), pool_root_override="/path/to/pool")
-        self.assertEqual("/path/to/pool/", disk_pool.rootpath)
-        self.assertEqual(self.root + "/ubuntutest-temp/", disk_pool.temppath)
+        self.assertEqual(
+            Path("/path/to/pool/"), disk_pool.rootpath)
+        self.assertEqual(
+            Path(self.root + "/ubuntutest-temp/"), disk_pool.temppath)
         self.assertEqual(logging.INFO, disk_pool.logger.level)
 
 

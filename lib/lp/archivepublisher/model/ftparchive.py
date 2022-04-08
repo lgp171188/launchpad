@@ -693,8 +693,8 @@ class FTPArchiveHandler:
 
         def updateFileList(sourcepackagename, filename, component,
                            architecturetag=None):
-            ondiskname = self._diskpool.pathFor(
-                            component, sourcepackagename, filename)
+            ondiskname = str(
+                self._diskpool.pathFor(component, sourcepackagename, filename))
             if architecturetag is None:
                 architecturetag = "source"
             filelist[component][architecturetag].append(ondiskname)

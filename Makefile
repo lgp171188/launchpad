@@ -30,6 +30,7 @@ PIP_ENV += PIP_FIND_LINKS="file://$(WD)/wheels/ file://$(WD)/download-cache/dist
 VIRTUALENV := $(PIP_ENV) /usr/bin/virtualenv
 PIP := PYTHONPATH= $(PIP_ENV) env/bin/pip --cache-dir=$(WD)/download-cache/
 
+VENV_INSTANCE_NAME := env/instance_name
 VENV_PYTHON := env/bin/$(PYTHON)
 
 SITE_PACKAGES := \
@@ -77,7 +78,7 @@ API_INDEX = $(APIDOC_DIR)/index.html
 # NB: It's important PIP_BIN only mentions things genuinely produced by pip.
 PIP_BIN = \
     $(PY) \
-    $(VENV_PYTHON) \
+    $(VENV_INSTANCE_NAME) \
     bin/bingtestservice \
     bin/build-twisted-plugin-cache \
     bin/harness \
@@ -131,7 +132,7 @@ hosted_branches: $(PY)
 $(API_INDEX): $(VERSION_INFO) $(PY)
 	$(RM) -r $(APIDOC_DIR) $(APIDOC_DIR).tmp
 	mkdir -p $(APIDOC_DIR).tmp
-	LPCONFIG=$(LPCONFIG) $(PY) ./utilities/create-lp-wadl-and-apidoc.py \
+	LPCONFIG=$(LPCONFIG) ./utilities/create-lp-wadl-and-apidoc.py \
 	    --force "$(APIDOC_TMPDIR)"
 	mv $(APIDOC_TMPDIR) $(APIDOC_DIR)
 
@@ -333,8 +334,9 @@ publish-tarball: build-tarball
 #
 # If we listed every target on the left-hand side, a parallel make would try
 # multiple copies of this rule to build them all.  Instead, we nominally build
-# just $(VENV_PYTHON), and everything else is implicitly updated by that.
-$(VENV_PYTHON): download-cache requirements/combined.txt setup.py
+# just $(VENV_INSTANCE_NAME), and everything else is implicitly updated by
+# that.
+$(VENV_INSTANCE_NAME): download-cache requirements/combined.txt setup.py
 	rm -rf env
 	mkdir -p env
 	$(VIRTUALENV) \
@@ -350,12 +352,12 @@ $(VENV_PYTHON): download-cache requirements/combined.txt setup.py
 		|| { code=$$?; rm -f $@; exit $$code; }
 	touch $@
 
-$(subst $(VENV_PYTHON),,$(PIP_BIN)): $(VENV_PYTHON)
+$(subst $(VENV_INSTANCE_NAME),,$(PIP_BIN)): $(VENV_INSTANCE_NAME)
 
 # Explicitly update version-info.py rather than declaring $(VERSION_INFO) as
 # a prerequisite, to make sure it's up to date when doing deployments.
 .PHONY: compile
-compile: $(VENV_PYTHON)
+compile: $(VENV_INSTANCE_NAME)
 	${SHHH} utilities/relocate-virtualenv env
 	$(PYTHON) utilities/link-system-packages.py \
 		"$(SITE_PACKAGES)" system-packages.txt
