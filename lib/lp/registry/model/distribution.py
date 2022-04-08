@@ -991,7 +991,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             country_dns_mirror=True).one()
 
     def getBestMirrorsForCountry(self, country, mirror_type):
-        """See IDistributionMirrorSet"""
+        """See `IDistribution`."""
         # As per mvo's request we only return mirrors which have an
         # http_base_url.
         country_id = None
