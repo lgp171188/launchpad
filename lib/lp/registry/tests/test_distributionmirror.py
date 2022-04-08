@@ -6,7 +6,6 @@ from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.distributionmirror import (
     IDistributionMirrorSet,
@@ -17,7 +16,6 @@ from lp.registry.interfaces.distributionmirror import (
     )
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
-from lp.registry.model.distributionmirror import DistributionMirror
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.mail import stub
 from lp.services.webapp.interfaces import OAuthPermission
@@ -27,7 +25,6 @@ from lp.testing import (
     login,
     login_as,
     person_logged_in,
-    TestCase,
     TestCaseWithFactory,
     )
 from lp.testing.layers import (
@@ -287,45 +284,3 @@ class TestDistributionMirrorWebservice(TestCaseWithFactory):
 
         search_body = response.jsonBody()
         self.assertEqual(expected_url, search_body["base_url"])
-
-
-class TestDistributionMirrorSet(TestCase):
-    layer = LaunchpadFunctionalLayer
-
-    def test_getBestMirrorsForCountry_randomizes_results(self):
-        """Make sure getBestMirrorsForCountry() randomizes its results."""
-        def my_select(class_, query, *args, **kw):
-            """Fake function with the same signature of SQLBase.select().
-
-            This function ensures the orderBy argument given to it contains
-            the 'random' string in its first item.
-            """
-            self.assertEqual(kw['orderBy'][0].name, 'random')
-            return [1, 2, 3]
-
-        orig_select = DistributionMirror.select
-        DistributionMirror.select = classmethod(my_select)
-        try:
-            login('foo.bar@canonical.com')
-            getUtility(IDistributionMirrorSet).getBestMirrorsForCountry(
-                None, MirrorContent.ARCHIVE)
-        finally:
-            DistributionMirror.select = orig_select
-
-    def test_getBestMirrorsForCountry_appends_main_repo_to_the_end(self):
-        """Make sure the main mirror is appended to the list of mirrors for a
-        given country.
-        """
-        login('foo.bar@canonical.com')
-        france = getUtility(ICountrySet)['FR']
-        main_mirror = getUtility(ILaunchpadCelebrities).ubuntu_archive_mirror
-        mirrors = main_mirror.distribution.getBestMirrorsForCountry(
-            france, MirrorContent.ARCHIVE)
-        self.assertTrue(len(mirrors) > 1, "Not enough mirrors")
-        self.assertEqual(main_mirror, mirrors[-1])
-
-        main_mirror = getUtility(ILaunchpadCelebrities).ubuntu_cdimage_mirror
-        mirrors = main_mirror.distribution.getBestMirrorsForCountry(
-            france, MirrorContent.RELEASE)
-        self.assertTrue(len(mirrors) > 1, "Not enough mirrors")
-        self.assertEqual(main_mirror, mirrors[-1])
