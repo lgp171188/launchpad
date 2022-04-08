@@ -422,7 +422,9 @@ class IDistributionMirror(Interface):
         'The freshness of this mirror\'s archive mirrors')
     source_mirror_freshness = Attribute(
         'The freshness of this mirror\'s source mirrors')
-    base_url = Attribute('The HTTP or FTP base URL of this mirror')
+    base_url = exported(TextLine(
+        title=_('Base URL'), required=False, readonly=False,
+        description=_("The HTTP or FTP base URL of this mirror")))
     date_created = exported(Datetime(
         title=_('Date Created'), required=True, readonly=True,
         description=_("The date on which this mirror was registered.")))
@@ -626,14 +628,6 @@ class IDistributionMirrorSet(Interface):
         If limit is not None, then return at most limit mirrors, giving
         precedence to never probed ones followed by the ones probed longest
         ago.
-        """
-
-    def getBestMirrorsForCountry(country, mirror_type):
-        """Return the best mirrors to be used by someone in the given country.
-
-        The list of mirrors is composed by the official mirrors located in
-        the given country (or in the country's continent if the country
-        doesn't have any) plus the main mirror of that type.
         """
 
     def getByName(name):

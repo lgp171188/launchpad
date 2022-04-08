@@ -14,6 +14,7 @@ archive mirrors:
     ...     ubuntu['self_link'], 'getMirrorByName',
     ...     name='canonical-archive').jsonBody()
     >>> pprint_entry(canonical_archive)
+    base_url: 'http://archive.ubuntu.com/ubuntu/'
     content: 'Archive'
     country_dns_mirror: False
     country_link: 'http://.../+countries/GB'
@@ -46,6 +47,7 @@ And CD image mirrors:
     >>> canonical_releases_json = webservice.get(
     ...     canonical_releases['self_link']).jsonBody()
     >>> pprint_entry(canonical_releases_json)
+    base_url: 'http://releases.ubuntu.com/'
     content: 'CD Image'
     country_dns_mirror: False
     country_link: 'http://.../+countries/GB'
@@ -115,6 +117,7 @@ One must have special permissions to access certain attributes:
     >>> response = no_priv_webservice.get(
     ...     archive_404_mirror['self_link']).jsonBody()
     >>> pprint_entry(response)
+    base_url: ...
     content: ...
     ...
     date_reviewed: ...redacted...
@@ -130,6 +133,7 @@ Mirror registrars may see some:
     >>> response = test_webservice.get(
     ...     archive_404_mirror['self_link']).jsonBody()
     >>> pprint_entry(response)
+    base_url: ...
     content: ...
     ...
     date_reviewed: ...redacted...
@@ -141,6 +145,7 @@ Mirror listing admins may see all:
     >>> response = karl_webservice.get(
     ...     archive_404_mirror['self_link']).jsonBody()
     >>> pprint_entry(response)
+    base_url: 'http://.../archive-mirror/'
     content: 'Archive'
     country_dns_mirror: False
     country_link: 'http://.../+countries/FR'
@@ -227,6 +232,7 @@ While others can be set with the appropriate authorization:
     ...     canonical_releases['self_link'], 'application/json',
     ...     dumps(patch)).jsonBody()
     >>> pprint_entry(response)
+    base_url: 'http://releases.ubuntu.com/'
     content: 'CD Image'
     country_dns_mirror: False
     country_link: 'http://.../+countries/GL'
