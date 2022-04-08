@@ -1335,9 +1335,12 @@ class EditDistributionSourcePackage(AuthorizationBase):
         # None if they are allowed.
         if distroseries is None:
             return False
+        sourcepackage = distroseries.getSourcePackage(
+            self.obj.sourcepackagename)
         reason = archive.verifyUpload(
             user.person, sourcepackagename=self.obj.sourcepackagename,
-            component=None, distroseries=distroseries, strict_component=False)
+            component=sourcepackage.latest_published_component,
+            distroseries=distroseries)
         return reason is None
 
     def checkAuthenticated(self, user):
