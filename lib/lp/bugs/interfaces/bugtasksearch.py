@@ -18,7 +18,7 @@ __all__ = [
     'IUpstreamProductBugTaskSearch',
     ]
 
-import collections
+from collections.abc import Iterable
 import http.client
 
 from lazr.enum import (
@@ -214,7 +214,7 @@ class BugTaskSearchParams:
         self.upstream_target = upstream_target
         self.milestone_dateexpected_before = milestone_dateexpected_before
         self.milestone_dateexpected_after = milestone_dateexpected_after
-        if isinstance(information_type, collections.Iterable):
+        if isinstance(information_type, Iterable):
             self.information_type = set(information_type)
         elif information_type:
             self.information_type = {information_type}

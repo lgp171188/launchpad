@@ -3,7 +3,7 @@
 
 """PostgreSQL server side session storage for Zope3."""
 
-from collections import MutableMapping
+from collections.abc import MutableMapping
 from datetime import datetime
 import hashlib
 import io
