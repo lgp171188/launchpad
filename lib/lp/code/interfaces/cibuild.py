@@ -21,6 +21,7 @@ from zope.schema import (
     Bool,
     Datetime,
     Int,
+    List,
     TextLine,
     )
 
@@ -115,6 +116,9 @@ class ICIBuildView(IPackageBuildView):
             "The date when the build completed or is estimated to complete."),
         readonly=True)
 
+    stages = List(
+        title=_("A list of stages in this build's configured pipeline."))
+
     def getConfiguration(logger=None):
         """Fetch a CI build's .launchpad.yaml from code hosting, if possible.
 
@@ -159,7 +163,7 @@ class ICIBuild(ICIBuildView, ICIBuildEdit, ICIBuildAdmin, IPackageBuild):
 class ICIBuildSet(ISpecificBuildFarmJobSource):
     """Utility to create and access `ICIBuild`s."""
 
-    def new(git_repository, commit_sha1, distro_arch_series,
+    def new(git_repository, commit_sha1, distro_arch_series, stages,
             date_created=DEFAULT):
         """Create an `ICIBuild`."""
 
@@ -171,7 +175,7 @@ class ICIBuildSet(ISpecificBuildFarmJobSource):
             these Git commit IDs.
         """
 
-    def requestBuild(git_repository, commit_sha1, distro_arch_series):
+    def requestBuild(git_repository, commit_sha1, distro_arch_series, stages):
         """Request a CI build.
 
         This checks that the architecture is allowed and that there isn't
@@ -181,6 +185,9 @@ class ICIBuildSet(ISpecificBuildFarmJobSource):
         :param commit_sha1: The Git commit ID for the new build.
         :param distro_arch_series: The `IDistroArchSeries` that the new
             build should run on.
+        :param stages: A list of stages in this build's pipeline according
+            to its `.launchpad.yaml`, each of which is a list of (job_name,
+            job_index) tuples.
         :raises CIBuildDisallowedArchitecture: if builds on
             `distro_arch_series` are not allowed.
         :raises CIBuildAlreadyRequested: if a matching build was already
