@@ -205,9 +205,9 @@ class IRevisionStatusReport(IRevisionStatusReportView,
 class IRevisionStatusReportSet(Interface):
     """The set of all revision status reports."""
 
-    def new(creator, title, git_repository, commit_sha1, date_created=None,
+    def new(creator, title, git_repository, commit_sha1,
             url=None, result_summary=None, result=None, date_started=None,
-            date_finished=None, log=None):
+            date_finished=None, log=None, ci_build=None):
         """Return a new revision status report.
 
         :param title: A text string.
@@ -215,13 +215,13 @@ class IRevisionStatusReportSet(Interface):
             is being created.
         :param commit_sha1: The sha1 of the commit for which the report
             is being created.
-        :param date_created: The date when the report is being created.
         :param url: External URL to view result of report.
         :param result_summary: A short summary of the result.
         :param result: The result of the check job for this revision.
         :param date_started: DateTime that report was started.
         :param date_finished: DateTime that report was completed.
         :param log: Stores the content of the artifact for this report.
+        :param ci_build: The `ICIBuild` that produced this report, if any.
         """
 
     def getByID(id):
