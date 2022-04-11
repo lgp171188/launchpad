@@ -76,22 +76,23 @@ def get_potmsgset_ids(potemplate_id):
         TranslationTemplateItem.sequence > 0))
 
 
-def summarize_contributors(potemplate_id, language_id, potmsgset_ids):
-    """Return the set of ids of persons who contributed to a `POFile`.
+def summarize_contributors(potemplate_id, language_ids, potmsgset_ids):
+    """Return per-language sets of person ids who contributed to a `POFile`.
 
     This is a limited version of `get_contributions` that is easier to
     compute.
     """
     store = IStore(POFile)
-    contribs = store.find(
-        TranslationMessage.submitterID,
-        TranslationMessage.potmsgsetID.is_in(potmsgset_ids),
-        TranslationMessage.languageID == language_id,
-        TranslationMessage.msgstr0 != None,
-        Coalesce(TranslationMessage.potemplateID, potemplate_id) ==
-            potemplate_id)
-    contribs.config(distinct=True)
-    return set(contribs)
+    contribs = {language_id: set() for language_id in language_ids}
+    for language_id, submitter_id in store.find(
+            (TranslationMessage.languageID, TranslationMessage.submitterID),
+            TranslationMessage.potmsgsetID.is_in(potmsgset_ids),
+            TranslationMessage.languageID.is_in(language_ids),
+            TranslationMessage.msgstr0 != None,
+            Coalesce(TranslationMessage.potemplateID, potemplate_id) ==
+                potemplate_id).config(distinct=True):
+        contribs[language_id].add(submitter_id)
+    return contribs
 
 
 def get_contributions(pofile, potmsgset_ids):
@@ -125,15 +126,18 @@ def get_contributions(pofile, potmsgset_ids):
     return dict(contribs)
 
 
-def get_pofiletranslators(pofile_id):
-    """Get `Person` ids from `POFileTranslator` entries for a `POFile`.
+def get_pofiletranslators(pofile_ids):
+    """Get `Person` ids from `POFileTranslator` entries for a set of `POFile`s.
 
-    Returns a `set` of `Person` ids.
+    Returns a mapping of `POFile` IDs to `set`s of `Person` ids.
     """
     store = IStore(POFileTranslator)
-    return set(store.find(
-        POFileTranslator.personID,
-        POFileTranslator.pofileID == pofile_id))
+    pofts = {pofile_id: set() for pofile_id in pofile_ids}
+    for pofile_id, person_id in store.find(
+            (POFileTranslator.pofileID, POFileTranslator.personID),
+            POFileTranslator.pofileID.is_in(pofile_ids)):
+        pofts[pofile_id].add(person_id)
+    return pofts
 
 
 def remove_pofiletranslators(logger, pofile, person_ids):
@@ -180,21 +184,6 @@ def fix_pofile(logger, pofile, potmsgset_ids, pofiletranslators):
         logger, pofile, pofiletranslators, contribs)
 
 
-def needs_fixing(template_id, language_id, potmsgset_ids, pofiletranslators):
-    """Does the `POFile` with given details need `POFileTranslator` changes?
-
-    :param template_id: id of the `POTemplate` for the `POFile`.
-    :param language_id: id of the `Language` the `POFile` translates to.
-    :param potmsgset_ids: ids of the `POTMsgSet` items participating in the
-        template.
-    :param pofiletranslators: `POFileTranslator` objects for the `POFile`.
-    :return: Bool: does the existing set of `POFileTranslator` need fixing?
-    """
-    contributors = summarize_contributors(
-        template_id, language_id, potmsgset_ids)
-    return pofiletranslators != set(contributors)
-
-
 # A tuple describing a POFile that needs its POFileTranslators fixed.
 WorkItem = namedtuple("WorkItem", [
     'pofile_id',
@@ -212,14 +201,24 @@ def gather_work_items(pofile_ids):
     """
     pofile_summaries = summarize_pofiles(pofile_ids)
     cached_potmsgsets = {}
+    cached_contributors = {}
+    cached_pofts = get_pofiletranslators(pofile_ids)
     work_items = []
     for pofile_id in pofile_ids:
         template_id, language_id = pofile_summaries[pofile_id]
         if template_id not in cached_potmsgsets:
             cached_potmsgsets[template_id] = get_potmsgset_ids(template_id)
         potmsgset_ids = cached_potmsgsets[template_id]
-        pofts = get_pofiletranslators(pofile_id)
-        if needs_fixing(template_id, language_id, potmsgset_ids, pofts):
+        if template_id not in cached_contributors:
+            all_language_ids = [
+                lang_id for temp_id, lang_id in pofile_summaries.values()
+                if temp_id == template_id]
+            cached_contributors[template_id] = summarize_contributors(
+                template_id, all_language_ids, potmsgset_ids)
+        contributor_ids = cached_contributors[template_id][language_id]
+        pofts = cached_pofts[pofile_id]
+        # Does this `POFile` need `POFileTranslator` changes?
+        if pofts != contributor_ids:
             work_items.append(WorkItem(pofile_id, potmsgset_ids, pofts))
 
     return work_items
@@ -255,7 +254,7 @@ def process_work_items(logger, work_items, pofiles):
 class ScrubPOFileTranslator(TunableLoop):
     """Tunable loop, meant for running from inside Garbo."""
 
-    maximum_chunk_size = 500
+    maximum_chunk_size = 5000
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

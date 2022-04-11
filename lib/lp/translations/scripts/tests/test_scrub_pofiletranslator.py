@@ -148,44 +148,62 @@ class TestScrubPOFileTranslator(TestCaseWithFactory):
         self.assertEqual(set(), get_potmsgset_ids(pofile.potemplate.id))
 
     def test_summarize_contributors_gets_contributors(self):
-        pofile = self.factory.makePOFile()
-        tm = self.factory.makeSuggestion(pofile=pofile)
-        potmsgset_ids = get_potmsgset_ids(pofile.potemplate.id)
-        self.assertContentEqual(
-            [tm.submitter.id],
+        template = self.factory.makePOTemplate()
+        pofiles = [
+            self.factory.makePOFile(potemplate=template) for _ in range(2)]
+        tms = [
+            self.factory.makeSuggestion(pofile=pofile) for pofile in pofiles]
+        potmsgset_ids = get_potmsgset_ids(template.id)
+        self.assertEqual(
+            {pofile.language.id: {tm.submitter.id}
+             for pofile, tm in zip(pofiles, tms)},
             summarize_contributors(
-                pofile.potemplate.id, pofile.language.id, potmsgset_ids))
+                template.id, [pofile.language.id for pofile in pofiles],
+                potmsgset_ids))
 
     def test_summarize_contributors_ignores_inactive_potmsgsets(self):
-        pofile = self.factory.makePOFile()
-        potmsgset = self.factory.makePOTMsgSet(
-            potemplate=pofile.potemplate, sequence=0)
-        self.factory.makeSuggestion(pofile=pofile, potmsgset=potmsgset)
-        potmsgset_ids = get_potmsgset_ids(pofile.potemplate.id)
-        self.assertContentEqual(
-            [],
+        template = self.factory.makePOTemplate()
+        pofiles = [
+            self.factory.makePOFile(potemplate=template) for _ in range(2)]
+        potmsgset = self.factory.makePOTMsgSet(potemplate=template, sequence=0)
+        self.factory.makeSuggestion(pofile=pofiles[0], potmsgset=potmsgset)
+        potmsgset_ids = get_potmsgset_ids(template.id)
+        self.assertEqual(
+            {pofile.language.id: set() for pofile in pofiles},
             summarize_contributors(
-                pofile.potemplate.id, pofile.language.id, potmsgset_ids))
+                template.id, [pofile.language.id for pofile in pofiles],
+                potmsgset_ids))
 
     def test_summarize_contributors_includes_diverged_msgs_for_template(self):
-        pofile = self.factory.makePOFile()
-        tm = self.factory.makeSuggestion(pofile=pofile)
-        tm.potemplate = pofile.potemplate
-        potmsgset_ids = get_potmsgset_ids(pofile.potemplate.id)
-        self.assertContentEqual(
-            [tm.submitter.id],
+        template = self.factory.makePOTemplate()
+        pofiles = [
+            self.factory.makePOFile(potemplate=template) for _ in range(2)]
+        tms = [
+            self.factory.makeSuggestion(pofile=pofile) for pofile in pofiles]
+        for tm in tms:
+            tm.potemplate = template
+        potmsgset_ids = get_potmsgset_ids(template.id)
+        self.assertEqual(
+            {pofile.language.id: {tm.submitter.id}
+             for pofile, tm in zip(pofiles, tms)},
             summarize_contributors(
-                pofile.potemplate.id, pofile.language.id, potmsgset_ids))
+                template.id, [pofile.language.id for pofile in pofiles],
+                potmsgset_ids))
 
     def test_summarize_contributors_excludes_other_diverged_messages(self):
-        pofile = self.factory.makePOFile()
-        tm = self.factory.makeSuggestion(pofile=pofile)
-        tm.potemplate = self.factory.makePOTemplate()
-        potmsgset_ids = get_potmsgset_ids(pofile.potemplate.id)
-        self.assertContentEqual(
-            [],
+        template = self.factory.makePOTemplate()
+        pofiles = [
+            self.factory.makePOFile(potemplate=template) for _ in range(2)]
+        tms = [
+            self.factory.makeSuggestion(pofile=pofile) for pofile in pofiles]
+        for tm in tms:
+            tm.potemplate = self.factory.makePOTemplate()
+        potmsgset_ids = get_potmsgset_ids(template.id)
+        self.assertEqual(
+            {pofile.language.id: set() for pofile in pofiles},
             summarize_contributors(
-                pofile.potemplate.id, pofile.language.id, potmsgset_ids))
+                template.id, [pofile.language.id for pofile in pofiles],
+                potmsgset_ids))
 
     def test_get_contributions_gets_contributions(self):
         pofile = self.factory.makePOFile()
@@ -233,10 +251,15 @@ class TestScrubPOFileTranslator(TestCaseWithFactory):
         self.assertEqual({}, get_contributions(pofile, potmsgset_ids))
 
     def test_get_pofiletranslators_gets_translators_for_pofile(self):
-        pofile = self.factory.makePOFile()
-        tm = self.make_message_with_pofiletranslator(pofile)
-        self.assertContentEqual(
-            [tm.submitter.id], get_pofiletranslators(pofile.id))
+        template = self.factory.makePOTemplate()
+        pofiles = [
+            self.factory.makePOFile(potemplate=template) for _ in range(2)]
+        tms = [
+            self.make_message_with_pofiletranslator(pofile)
+            for pofile in pofiles]
+        self.assertEqual(
+            {pofile.id: {tm.submitter.id} for pofile, tm in zip(pofiles, tms)},
+            get_pofiletranslators([pofile.id for pofile in pofiles]))
 
     def test_fix_pofile_leaves_good_pofiletranslator_in_place(self):
         pofile = self.factory.makePOFile()
