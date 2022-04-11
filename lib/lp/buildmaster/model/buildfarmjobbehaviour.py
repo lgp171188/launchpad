@@ -241,10 +241,9 @@ class BuildFarmJobBehaviourBase:
         return d
 
     @defer.inlineCallbacks
-    def storeLogFromWorker(self, build_queue=None):
+    def storeLogFromWorker(self):
         """See `IBuildFarmJob`."""
-        lfa_id = yield self.getLogFromWorker(
-            build_queue or self.build.buildqueue_record)
+        lfa_id = yield self.getLogFromWorker(self.build.buildqueue_record)
         self.build.setLog(lfa_id)
         transaction.commit()
 
