@@ -134,6 +134,15 @@ class ICIBuildView(IPackageBuildView):
             cannot be parsed.
         """
 
+    def getOrCreateRevisionStatusReport(job_id):
+        """Get the `IRevisionStatusReport` for a given job in this build.
+
+        Create the report if necessary.
+
+        :param job_id: A job ID, in the form "JOB_NAME:JOB_INDEX".
+        :return: An `IRevisionStatusReport`.
+        """
+
     def getFileByName(filename):
         """Return the corresponding `ILibraryFileAlias` in this context.
 
