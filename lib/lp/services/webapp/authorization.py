@@ -13,10 +13,8 @@ __all__ = [
     'precache_permission_for_objects',
     ]
 
-from collections import (
-    deque,
-    Iterable,
-    )
+from collections import deque
+from collections.abc import Iterable
 import warnings
 import weakref
 

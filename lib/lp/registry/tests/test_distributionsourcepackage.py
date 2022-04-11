@@ -20,9 +20,11 @@ from lp.registry.model.distributionsourcepackage import (
 from lp.registry.model.karma import KarmaTotalCache
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import flush_database_updates
+from lp.services.webapp.authorization import check_permission
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
+    person_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
@@ -180,6 +182,43 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
             distribution=distribution,
             sourcepackagerelease=spph.sourcepackagerelease))
         self.assertIsNone(dsp.getVersion("0.07-4"))
+
+    def test_non_uploader_cannot_edit(self):
+        dsp = self.factory.makeDistributionSourcePackage()
+        with person_logged_in(self.factory.makePerson()):
+            self.assertFalse(check_permission("launchpad.Edit", dsp))
+
+    def test_distribution_owner_can_edit(self):
+        dsp = self.factory.makeDistributionSourcePackage()
+        with person_logged_in(dsp.distribution.owner):
+            self.assertTrue(check_permission("launchpad.Edit", dsp))
+
+    def test_correct_component_uploader_can_edit(self):
+        dsp = self.factory.makeDistributionSourcePackage()
+        self.factory.makeSourcePackagePublishingHistory(
+            archive=dsp.distribution.main_archive,
+            distroseries=dsp.distribution.currentseries,
+            sourcepackagename=dsp.sourcepackagename,
+            component="main", status=PackagePublishingStatus.PUBLISHED)
+        person = self.factory.makePerson()
+        with person_logged_in(dsp.distribution.main_archive.owner):
+            dsp.distribution.main_archive.newComponentUploader(person, "main")
+        with person_logged_in(person):
+            self.assertTrue(check_permission("launchpad.Edit", dsp))
+
+    def test_incorrect_component_uploader_cannot_edit(self):
+        dsp = self.factory.makeDistributionSourcePackage()
+        self.factory.makeSourcePackagePublishingHistory(
+            archive=dsp.distribution.main_archive,
+            distroseries=dsp.distribution.currentseries,
+            sourcepackagename=dsp.sourcepackagename,
+            component="main", status=PackagePublishingStatus.PUBLISHED)
+        person = self.factory.makePerson()
+        with person_logged_in(dsp.distribution.main_archive.owner):
+            dsp.distribution.main_archive.newComponentUploader(
+                person, "universe")
+        with person_logged_in(person):
+            self.assertFalse(check_permission("launchpad.Edit", dsp))
 
 
 class TestDistributionSourcePackageFindRelatedArchives(TestCaseWithFactory):
