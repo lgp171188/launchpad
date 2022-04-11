@@ -70,10 +70,10 @@ def summarize_pofiles(pofile_ids):
 def get_potmsgset_ids(potemplate_id):
     """Get the ids for each current `POTMsgSet` in a `POTemplate`."""
     store = IStore(POTemplate)
-    return store.find(
+    return set(store.find(
         TranslationTemplateItem.potmsgsetID,
         TranslationTemplateItem.potemplateID == potemplate_id,
-        TranslationTemplateItem.sequence > 0)
+        TranslationTemplateItem.sequence > 0))
 
 
 def summarize_contributors(potemplate_id, language_id, potmsgset_ids):

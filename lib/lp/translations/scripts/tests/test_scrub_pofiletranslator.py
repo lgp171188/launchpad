@@ -138,14 +138,14 @@ class TestScrubPOFileTranslator(TestCaseWithFactory):
         pofile = self.factory.makePOFile()
         potmsgset = self.factory.makePOTMsgSet(
             potemplate=pofile.potemplate, sequence=1)
-        self.assertContentEqual(
-            [potmsgset.id], get_potmsgset_ids(pofile.potemplate.id))
+        self.assertEqual(
+            {potmsgset.id}, get_potmsgset_ids(pofile.potemplate.id))
 
     def test_get_potmsgset_ids_ignores_inactive_messages(self):
         pofile = self.factory.makePOFile()
         self.factory.makePOTMsgSet(
             potemplate=pofile.potemplate, sequence=0)
-        self.assertContentEqual([], get_potmsgset_ids(pofile.potemplate.id))
+        self.assertEqual(set(), get_potmsgset_ids(pofile.potemplate.id))
 
     def test_summarize_contributors_gets_contributors(self):
         pofile = self.factory.makePOFile()
