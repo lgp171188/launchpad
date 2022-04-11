@@ -122,7 +122,10 @@ IDistroSeries API:
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.gpg import IGPGKeySet
-    >>> from lp.registry.interfaces.sourcepackage import SourcePackageUrgency
+    >>> from lp.registry.interfaces.sourcepackage import (
+    ...     SourcePackageType,
+    ...     SourcePackageUrgency,
+    ...     )
     >>> from lp.registry.interfaces.sourcepackagename import (
     ...     ISourcePackageNameSet,
     ...     )
@@ -164,7 +167,7 @@ ISourcePackageRelease, it will automatically set the
 'upload_distroseries' to the API entry point, in this case Hoary.
 
     >>> new_spr = hoary.createUploadedSourcePackageRelease(
-    ...     arg_name, version, arg_maintainer,
+    ...     arg_name, version, SourcePackageType.DPKG, arg_maintainer,
     ...     builddepends, builddependsindep, archhintlist, arg_comp,
     ...     arg_creator, arg_urgency, changelog, changelog_entry, dsc,
     ...     arg_key, arg_sect, dsc_maintainer_rfc822, dsc_standards_version,

@@ -1230,6 +1230,7 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
             archive=target_archive,
             binarypackagename=bin_i386.binarypackagename,
             binarypackagerelease=bin_i386.binarypackagerelease,
+            _binarypackageformat=bin_i386.binarypackageformat,
             distroarchseries=nobby['i386'], pocket=bin_i386.pocket,
             component=bin_i386.component, section=bin_i386.section,
             priority=bin_i386.priority,

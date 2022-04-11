@@ -50,6 +50,7 @@ from zope.schema import (
     Date,
     Datetime,
     Int,
+    List,
     Text,
     TextLine,
     )
@@ -58,7 +59,9 @@ from lp import _
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.sourcepackage import SourcePackageType
 from lp.soyuz.enums import (
+    BinaryPackageFormat,
     PackagePublishingPriority,
     PackagePublishingStatus,
     )
@@ -219,6 +222,9 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
         required=False, readonly=False)
     sourcepackagerelease = Attribute(
         'The source package release being published')
+    format = Choice(
+        title=_("Source package format"), vocabulary=SourcePackageType,
+        required=True, readonly=True)
     status = exported(
         Choice(
             title=_('Package Publishing Status'),
@@ -263,6 +269,12 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
             vocabulary=PackagePublishingPocket,
             required=True, readonly=True,
             ))
+    channel = List(
+        value_type=TextLine(), title=_("Channel"),
+        required=False, readonly=False,
+        description=_(
+            "The channel into which this entry is published "
+            "(only for archives published using Artifactory)"))
     archive = exported(
         Reference(
             # Really IArchive (fixed in _schema_circular_imports.py).
@@ -609,6 +621,9 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
         required=False, readonly=False)
     binarypackagerelease = Attribute(
         "The binary package release being published")
+    binarypackageformat = Choice(
+        title=_("Binary package format"), vocabulary=BinaryPackageFormat,
+        required=True, readonly=True)
     # This and source_package_version are exported here to
     # avoid clients needing to indirectly look this up via a build.
     # This can cause security errors due to the differing levels of access.
@@ -685,6 +700,12 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
             vocabulary=PackagePublishingPocket,
             required=True, readonly=True,
             ))
+    channel = List(
+        value_type=TextLine(), title=_("Channel"),
+        required=False, readonly=False,
+        description=_(
+            "The channel into which this entry is published "
+            "(only for archives published using Artifactory)"))
     supersededby = Int(
             title=_('The build which superseded this one'),
             required=False, readonly=False,

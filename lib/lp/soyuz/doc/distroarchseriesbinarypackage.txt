@@ -71,6 +71,7 @@ needs to be removed.
     >>> pe = BinaryPackagePublishingHistory(
     ...      binarypackagerelease=bpr.id,
     ...      binarypackagename=bpr.binarypackagename,
+    ...      _binarypackageformat=bpr.binpackageformat,
     ...      component=main_component.id,
     ...      section=misc_section.id,
     ...      priority=priority,
@@ -116,6 +117,7 @@ needs to be removed.
     >>> pe = BinaryPackagePublishingHistory(
     ...      binarypackagerelease=bpr.id,
     ...      binarypackagename=bpr.binarypackagename,
+    ...      _binarypackageformat=bpr.binpackageformat,
     ...      component=main_component.id,
     ...      section=misc_section.id,
     ...      priority=priority,

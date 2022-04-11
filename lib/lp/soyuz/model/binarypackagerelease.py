@@ -57,14 +57,20 @@ class BinaryPackageRelease(SQLBase):
     version = StringCol(dbName='version', notNull=True)
     summary = StringCol(dbName='summary', notNull=True, default="")
     description = StringCol(dbName='description', notNull=True)
+    # DB constraint: exactly one of build and ci_build is non-NULL.
     build = ForeignKey(
-        dbName='build', foreignKey='BinaryPackageBuild', notNull=True)
+        dbName='build', foreignKey='BinaryPackageBuild', notNull=False)
+    ci_build_id = Int(name='ci_build', allow_none=True)
+    ci_build = Reference(ci_build_id, 'CIBuild.id')
     binpackageformat = DBEnum(name='binpackageformat', allow_none=False,
                               enum=BinaryPackageFormat)
+    # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
     component = ForeignKey(dbName='component', foreignKey='Component',
-                           notNull=True)
-    section = ForeignKey(dbName='section', foreignKey='Section', notNull=True)
-    priority = DBEnum(name='priority', allow_none=False,
+                           notNull=False)
+    # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
+    section = ForeignKey(dbName='section', foreignKey='Section', notNull=False)
+    # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
+    priority = DBEnum(name='priority', allow_none=True,
                       enum=PackagePublishingPriority)
     shlibdeps = StringCol(dbName='shlibdeps')
     depends = StringCol(dbName='depends')
@@ -122,12 +128,18 @@ class BinaryPackageRelease(SQLBase):
     @property
     def sourcepackagename(self):
         """See `IBinaryPackageRelease`."""
-        return self.build.source_package_release.sourcepackagename.name
+        if self.build is not None:
+            return self.build.source_package_release.sourcepackagename.name
+        else:
+            return None
 
     @property
     def sourcepackageversion(self):
         """See `IBinaryPackageRelease`."""
-        return self.build.source_package_release.version
+        if self.build is not None:
+            return self.build.source_package_release.version
+        else:
+            return None
 
     @cachedproperty
     def files(self):

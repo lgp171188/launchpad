@@ -1060,7 +1060,7 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
             self, build_state, name, pocket, arch_tag)
 
     def createUploadedSourcePackageRelease(
-        self, sourcepackagename, version, maintainer, builddepends,
+        self, sourcepackagename, version, format, maintainer, builddepends,
         builddependsindep, architecturehintlist, component, creator,
         urgency, changelog, changelog_entry, dsc, dscsigningkey, section,
         dsc_maintainer_rfc822, dsc_standards_version, dsc_format,
@@ -1071,7 +1071,8 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
         """See `IDistroSeries`."""
         return SourcePackageRelease(
             upload_distroseries=self, sourcepackagename=sourcepackagename,
-            version=version, maintainer=maintainer, dateuploaded=dateuploaded,
+            version=version, format=format,
+            maintainer=maintainer, dateuploaded=dateuploaded,
             builddepends=builddepends, builddependsindep=builddependsindep,
             architecturehintlist=architecturehintlist, component=component,
             creator=creator, urgency=urgency, changelog=changelog,
