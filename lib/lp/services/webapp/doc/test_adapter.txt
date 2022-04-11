@@ -200,7 +200,7 @@ the Postgres statement timeout (a value of zero means no timeout):
 
 The statement_timeout will be adjusted during the transaction, within
 a certain precision. To test this reliably, we need a time machine to
-avoid random failures under load. Lets build one and plug it in:
+avoid random failures under load. Let's build one and plug it in:
 
     >>> _now = 0
     >>> def fake_time():
