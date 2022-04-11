@@ -173,7 +173,7 @@ the Postgres statement timeout (a value of zero means no timeout):
     >>> def current_statement_timeout(store):
     ...     result = store.execute('SHOW statement_timeout')
     ...     timeout = result.get_one()[0]
-    ...     # convert to miliseconds and round value to nearest 10ms
+    ...     # convert to milliseconds and round value to nearest 10ms
     ...     if timeout == '0':
     ...         timeout = 0
     ...     elif timeout.endswith('ms'):
@@ -196,6 +196,19 @@ the Postgres statement timeout (a value of zero means no timeout):
     >>> print(current_statement_timeout(store))
     0ms
     >>> clear_request_started()
+
+
+The statement_timeout will be adjusted during the transaction, within
+a certain precision. To test this reliably, we need a time machine to
+avoid random failures under load. Let's build one and plug it in:
+
+    >>> _now = 0
+    >>> def fake_time():
+    ...     return float(_now)
+    >>> def time_travel(delta):
+    ...     global _now
+    ...     _now += delta
+    >>> lp.services.webapp.adapter.time = fake_time # Monkey patch
 
 
 Using the builtin pg_sleep() function, we can trigger the
@@ -236,18 +249,6 @@ set_request_started() is called in scripts.
     0ms
     >>> store.execute('SELECT pg_sleep(0.200)', noresult=True)
     >>> clear_request_started()
-
-The statement_timeout will be adjusted during the transaction, within
-a certain precision. To test this reliably, we need a time machine to
-avoid random failures under load. Lets build one and plug it in:
-
-    >>> _now = 0
-    >>> def fake_time():
-    ...     return float(_now)
-    >>> def time_travel(delta):
-    ...     global _now
-    ...     _now += delta
-    >>> lp.services.webapp.adapter.time = fake_time # Monkey patch
 
 
 Now issue three statements, the first one taking less than the precision
@@ -352,12 +353,12 @@ another query:
     ...
     lp.services.webapp.adapter.RequestExpired: request expired.
 
-The statement about to be executed is not recorded in the statement log.
-The request time limit was exceeded before the statement was issued to
-the database.
+The statement about to be executed is recorded in the statement log, even
+though the request time limit was exceeded before the statement was issued
+to the database.
 
     >>> print(pretty(get_request_statements()))
-    [(0, ..., 'SQL-main-primary', 'SELECT 2', ...)]
+    [(..., ..., 'SQL-main-primary', 'SELECT 2', ...)]
 
 
 When a RequestExpired exception is raised, the current
