@@ -18,6 +18,7 @@ from zope.schema import (
 
 from lp import _
 from lp.services.librarian.interfaces import ILibraryFileAlias
+from lp.soyuz.interfaces.binarypackagerelease import IBinaryPackageRelease
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
 
 
@@ -41,10 +42,14 @@ class IPackageReleaseFile(Interface):
 class IBinaryPackageFile(IPackageReleaseFile):
     """A binary package to librarian link record."""
 
-    binarypackagerelease = Int(
-            title=_('The binarypackagerelease being published'),
-            required=True, readonly=False,
-            )
+    binarypackagerelease = Reference(
+        IBinaryPackageRelease,
+        title=_('The binary package release being published'),
+        required=True, readonly=False)
+
+    binarypackagereleaseID = Int(
+        title=_('ID of the binary package release being published'),
+        required=True, readonly=False)
 
 
 class ISourcePackageReleaseFile(IPackageReleaseFile):

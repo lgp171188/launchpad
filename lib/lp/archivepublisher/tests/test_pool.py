@@ -9,11 +9,25 @@ import shutil
 from tempfile import mkdtemp
 import unittest
 
+from lazr.enum import (
+    EnumeratedType,
+    Item,
+    )
+from zope.interface import (
+    alsoProvides,
+    implementer,
+    )
+
 from lp.archivepublisher.diskpool import (
     DiskPool,
     poolify,
     )
 from lp.services.log.logger import BufferLogger
+from lp.soyuz.interfaces.files import (
+    IBinaryPackageFile,
+    IPackageReleaseFile,
+    ISourcePackageReleaseFile,
+    )
 
 
 class FakeLibraryFileContent:
@@ -41,24 +55,41 @@ class FakeLibraryFileAlias:
         pass
 
 
+class FakeReleaseType(EnumeratedType):
+
+    SOURCE = Item("Source")
+    BINARY = Item("Binary")
+
+
+@implementer(IPackageReleaseFile)
 class FakePackageReleaseFile:
 
-    def __init__(self, contents):
+    def __init__(self, contents, release_type, release_id):
         self.libraryfile = FakeLibraryFileAlias(contents)
+        if release_type == FakeReleaseType.SOURCE:
+            self.sourcepackagereleaseID = release_id
+            alsoProvides(self, ISourcePackageReleaseFile)
+        elif release_type == FakeReleaseType.BINARY:
+            self.binarypackagereleaseID = release_id
+            alsoProvides(self, IBinaryPackageFile)
 
 
 class PoolTestingFile:
 
-    def __init__(self, pool, sourcename, filename):
+    def __init__(self, pool, sourcename, filename,
+                 release_type=FakeReleaseType.BINARY, release_id=1):
         self.pool = pool
         self.sourcename = sourcename
         self.filename = filename
         self.contents = sourcename.encode("UTF-8")
+        self.release_type = release_type
+        self.release_id = release_id
 
     def addToPool(self, component: str):
         return self.pool.addFile(
             component, self.sourcename, self.filename,
-            FakePackageReleaseFile(self.contents))
+            FakePackageReleaseFile(
+                self.contents, self.release_type, self.release_id))
 
     def removeFromPool(self, component: str) -> int:
         return self.pool.removeFile(component, self.sourcename, self.filename)

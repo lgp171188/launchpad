@@ -1,7 +1,13 @@
 # Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['DiskPoolEntry', 'DiskPool', 'poolify', 'unpoolify']
+__all__ = [
+    'DiskPool',
+    'DiskPoolEntry',
+    'FileAddActionEnum',
+    'poolify',
+    'unpoolify',
+    ]
 
 import logging
 import os
@@ -27,12 +33,15 @@ from lp.soyuz.interfaces.publishing import (
     )
 
 
-def poolify(source: str, component: str) -> Path:
+def poolify(source: str, component: Optional[str] = None) -> Path:
     """Poolify a given source and component name."""
     if source.startswith("lib"):
-        return Path(component) / source[:4] / source
+        path = Path(source[:4]) / source
     else:
-        return Path(component) / source[:1] / source
+        path = Path(source[:1]) / source
+    if component is not None:
+        path = Path(component) / path
+    return path
 
 
 def unpoolify(self, path: Path) -> Tuple[str, str, Optional[str]]:
@@ -381,7 +390,7 @@ class DiskPool:
 
     def __init__(self, rootpath, temppath, logger: logging.Logger) -> None:
         self.rootpath = Path(rootpath)
-        self.temppath = Path(temppath)
+        self.temppath = Path(temppath) if temppath is not None else None
         self.entries = {}
         self.logger = logger
 
