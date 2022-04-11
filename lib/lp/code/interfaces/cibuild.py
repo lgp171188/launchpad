@@ -20,6 +20,7 @@ from lazr.restful.fields import Reference
 from zope.schema import (
     Bool,
     Datetime,
+    Dict,
     Int,
     List,
     TextLine,
@@ -118,6 +119,11 @@ class ICIBuildView(IPackageBuildView):
 
     stages = List(
         title=_("A list of stages in this build's configured pipeline."))
+
+    results = Dict(
+        title=_(
+            "A mapping from job IDs to result tokens, retrieved from the "
+            "builder."))
 
     def getConfiguration(logger=None):
         """Fetch a CI build's .launchpad.yaml from code hosting, if possible.

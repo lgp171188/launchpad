@@ -5,7 +5,6 @@
 
 import base64
 from datetime import datetime
-import json
 import os.path
 import re
 import time
@@ -59,6 +58,7 @@ from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestHandleStatusMixin,
     TestVerifySuccessfulBuildMixin,
     )
+from lp.code.enums import RevisionStatusResult
 from lp.code.model.cibuildbehaviour import CIBuildBehaviour
 from lp.services.config import config
 from lp.services.log.logger import (
@@ -396,19 +396,46 @@ class TestHandleStatusForCIBuild(
     @defer.inlineCallbacks
     def test_handleStatus_WAITING_OK_with_jobs(self):
         # If the worker status includes a "jobs" item, then we additionally
-        # dump that to jobs.json.
+        # save that as the build's results and update its reports.
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
                 self.build.buildqueue_record,
                 {"builder_status": "BuilderStatus.WAITING",
                  "build_status": "BuildStatus.OK",
                  "filemap": {"build:0.log": "test_file_hash"},
-                 "jobs": {"build:0": {"log": "test_file_hash"}}})
-        jobs_path = os.path.join(
-            self.upload_root, "incoming",
-            self.behaviour.getUploadDirLeaf(self.build.build_cookie),
-            str(self.build.archive.id), self.build.distribution.name,
-            "jobs.json")
-        with open(jobs_path) as jobs_file:
-            self.assertEqual(
-                {"build:0": {"log": "test_file_hash"}}, json.load(jobs_file))
+                 "jobs": {
+                     "build:0": {
+                         "log": "test_file_hash",
+                         "result": "SUCCEEDED",
+                         },
+                     }})
+        self.assertEqual(
+            {"build:0": {"log": "test_file_hash", "result": "SUCCEEDED"}},
+            self.build.results)
+        self.assertEqual(
+            RevisionStatusResult.SUCCEEDED,
+            self.build.getOrCreateRevisionStatusReport("build:0").result)
+
+    @defer.inlineCallbacks
+    def test_handleStatus_WAITING_PACKAGEFAIL_with_jobs(self):
+        # If the worker status includes a "jobs" item, then we additionally
+        # save that as the build's results and update its reports, even if
+        # the build failed.
+        with dbuser(config.builddmaster.dbuser):
+            yield self.behaviour.handleStatus(
+                self.build.buildqueue_record,
+                {"builder_status": "BuilderStatus.WAITING",
+                 "build_status": "BuildStatus.PACKAGEFAIL",
+                 "filemap": {"build:0.log": "test_file_hash"},
+                 "jobs": {
+                     "build:0": {
+                         "log": "test_file_hash",
+                         "result": "FAILED",
+                         },
+                     }})
+        self.assertEqual(
+            {"build:0": {"log": "test_file_hash", "result": "FAILED"}},
+            self.build.results)
+        self.assertEqual(
+            RevisionStatusResult.FAILED,
+            self.build.getOrCreateRevisionStatusReport("build:0").result)

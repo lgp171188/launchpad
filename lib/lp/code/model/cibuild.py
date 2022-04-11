@@ -387,6 +387,20 @@ class CIBuild(PackageBuildMixin, StormBase):
             return []
         return self._jobs.get("stages", [])
 
+    @property
+    def results(self):
+        """See `ICIBuild`."""
+        if self._jobs is None:
+            return {}
+        return self._jobs.get("results", {})
+
+    @results.setter
+    def results(self, results):
+        """See `ICIBuild`."""
+        if self._jobs is None:
+            self._jobs = {}
+        self._jobs["results"] = results
+
     def getOrCreateRevisionStatusReport(self, job_id):
         """See `ICIBuild`."""
         report = getUtility(IRevisionStatusReportSet).getByCIBuildAndTitle(
