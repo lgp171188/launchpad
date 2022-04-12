@@ -49,6 +49,7 @@ build_new_sampledata=./fti.py --null -d ${1} -q && \
     pg_dump --version >> $(2) && \
     pg_dump --schema=public --disable-triggers -a --column-inserts -O ${1} \
     | grep -v "\( TOC \|INSERT INTO public\.launchpaddatabase\|ALTER TABLE public\.launchpaddatabase\|sessiondata\|sessionpkgdata\|SELECT pg_catalog\.setval\|^--\| fticache \|'fticache'\|ALTER TABLE public\.secret\|INSERT INTO public\.secret\)" \
+    | sed -e :a -e '/^\n*$$/{$$d;N;};/\n$$/ba' \
     | ./sort_sql.py >> $(2) && \
     ./fti.py --live-rebuild -d ${1} -q
 
