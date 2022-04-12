@@ -8,7 +8,6 @@ from datetime import datetime
 import json
 import os.path
 import re
-from textwrap import dedent
 import time
 from urllib.parse import urlsplit
 import uuid
@@ -60,9 +59,7 @@ from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestHandleStatusMixin,
     TestVerifySuccessfulBuildMixin,
     )
-from lp.code.errors import GitRepositoryBlobNotFound
 from lp.code.model.cibuildbehaviour import CIBuildBehaviour
-from lp.code.tests.helpers import GitHostingFixture
 from lp.services.config import config
 from lp.services.log.logger import (
     BufferLogger,
@@ -179,7 +176,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
         self.addCleanup(shut_down_default_process_pool)
         self.setUpStats()
 
-    def makeJob(self, configuration=_unset, **kwargs):
+    def makeJob(self, **kwargs):
         # We need a builder in these tests, in order that requesting a proxy
         # token can piggyback on its reactor and pool.
         job = super().makeJob(**kwargs)
@@ -188,24 +185,6 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
         worker = self.useFixture(WorkerTestHelpers()).getClientWorker()
         job.setBuilder(builder, worker)
         self.addCleanup(worker.pool.closeCachedConnections)
-        if configuration is _unset:
-            # Skeleton configuration defining a single job.
-            configuration = dedent("""\
-                pipeline:
-                    - [test]
-                jobs:
-                    test:
-                        series: {}
-                        architectures: [{}]
-                """.format(
-                    job.build.distro_arch_series.distroseries.name,
-                    job.build.distro_arch_series.architecturetag)).encode()
-        hosting_fixture = self.useFixture(
-            GitHostingFixture(blob=configuration, enforce_timeout=True))
-        if configuration is None:
-            hosting_fixture.getBlob.failure = GitRepositoryBlobNotFound(
-                job.build.git_repository.getInternalPath(), ".launchpad.yaml",
-                rev=job.build.commit_sha1)
         return job
 
     @defer.inlineCallbacks
@@ -261,7 +240,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
     def test_extraBuildArgs_git(self):
         # extraBuildArgs returns appropriate arguments if asked to build a
         # job for a Git commit.
-        job = self.makeJob()
+        job = self.makeJob(stages=[[("test", 0)]])
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job, job.build.distro_arch_series, None))
@@ -277,7 +256,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
             "fast_cleanup": Is(True),
             "git_path": Equals(job.build.commit_sha1),
             "git_repository": Equals(job.build.git_repository.git_https_url),
-            "jobs": Equals([[("test", 0)]]),
+            "jobs": Equals([[["test", 0]]]),
             "private": Is(False),
             "proxy_url": ProxyURLMatcher(job, self.now),
             "revocation_endpoint": RevocationEndpointMatcher(job, self.now),
@@ -340,34 +319,11 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
             build_request[4]["proxy_url"], ProxyURLMatcher(job, self.now))
 
     @defer.inlineCallbacks
-    def test_composeBuildRequest_unparseable(self):
-        # If the job's configuration file fails to parse,
-        # composeBuildRequest raises CannotBuild.
-        job = self.makeJob(configuration=b"")
-        expected_exception_msg = (
-            r"Cannot parse \.launchpad\.yaml from .*: "
-            r"Empty configuration file")
-        with ExpectedException(CannotBuild, expected_exception_msg):
-            yield job.composeBuildRequest(None)
-
-    @defer.inlineCallbacks
-    def test_composeBuildRequest_no_jobs_defined(self):
-        # If the job's configuration does not define any jobs,
-        # composeBuildRequest raises CannotBuild.
-        job = self.makeJob(configuration=b"pipeline: []\njobs: {}\n")
+    def test_composeBuildRequest_no_stages_defined(self):
+        # If the build has no stages, composeBuildRequest raises CannotBuild.
+        job = self.makeJob(stages=[])
         expected_exception_msg = re.escape(
-            "No jobs defined for %s:%s" % (
-                job.build.git_repository.unique_name, job.build.commit_sha1))
-        with ExpectedException(CannotBuild, expected_exception_msg):
-            yield job.composeBuildRequest(None)
-
-    @defer.inlineCallbacks
-    def test_composeBuildRequest_undefined_job(self):
-        # If the job's configuration has a pipeline that defines a job not
-        # in the jobs matrix, composeBuildRequest raises CannotBuild.
-        job = self.makeJob(configuration=b"pipeline: [test]\njobs: {}\n")
-        expected_exception_msg = re.escape(
-            "Job 'test' in pipeline for %s:%s but not in jobs" % (
+            "No stages defined for %s:%s" % (
                 job.build.git_repository.unique_name, job.build.commit_sha1))
         with ExpectedException(CannotBuild, expected_exception_msg):
             yield job.composeBuildRequest(None)
@@ -416,15 +372,6 @@ class MakeCIBuildMixin:
 
     def makeBuild(self):
         build = self.factory.makeCIBuild(status=BuildStatus.BUILDING)
-        das = build.distro_arch_series
-        self.useFixture(GitHostingFixture(blob=dedent("""\
-            pipeline:
-                - [test]
-            jobs:
-                test:
-                    series: {}
-                    architectures: [{}]
-            """.format(das.distroseries.name, das.architecturetag)).encode()))
         build.queueBuild()
         return build
 

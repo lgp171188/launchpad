@@ -405,15 +405,17 @@ class TestCIBuildSet(TestCaseWithFactory):
         repository = self.factory.makeGitRepository()
         commit_sha1 = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
         das = self.factory.makeBuildableDistroArchSeries()
+        stages = [[("build", 0)]]
 
         build = getUtility(ICIBuildSet).requestBuild(
-            repository, commit_sha1, das)
+            repository, commit_sha1, das, stages)
 
         self.assertTrue(ICIBuild.providedBy(build))
         self.assertThat(build, MatchesStructure.byEquality(
             git_repository=repository,
             commit_sha1=commit_sha1,
             distro_arch_series=das,
+            stages=stages,
             status=BuildStatus.NEEDSBUILD,
             ))
         store = Store.of(build)
@@ -432,7 +434,7 @@ class TestCIBuildSet(TestCaseWithFactory):
         commit_sha1 = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
         das = self.factory.makeBuildableDistroArchSeries()
         build = getUtility(ICIBuildSet).requestBuild(
-            repository, commit_sha1, das)
+            repository, commit_sha1, das, [[("test", 0)]])
         queue_record = build.buildqueue_record
         queue_record.score()
         self.assertEqual(2600, queue_record.lastscore)
@@ -447,19 +449,19 @@ class TestCIBuildSet(TestCaseWithFactory):
                 distroseries=distro_series)
             for _ in range(2)]
         old_build = getUtility(ICIBuildSet).requestBuild(
-            repository, commit_sha1, arches[0])
+            repository, commit_sha1, arches[0], [[("test", 0)]])
         self.assertRaises(
             CIBuildAlreadyRequested, getUtility(ICIBuildSet).requestBuild,
-            repository, commit_sha1, arches[0])
+            repository, commit_sha1, arches[0], [[("test", 0)]])
         # We can build for a different distroarchseries.
         getUtility(ICIBuildSet).requestBuild(
-            repository, commit_sha1, arches[1])
+            repository, commit_sha1, arches[1], [[("test", 0)]])
         # Changing the status of the old build does not allow a new build.
         old_build.updateStatus(BuildStatus.BUILDING)
         old_build.updateStatus(BuildStatus.FULLYBUILT)
         self.assertRaises(
             CIBuildAlreadyRequested, getUtility(ICIBuildSet).requestBuild,
-            repository, commit_sha1, arches[0])
+            repository, commit_sha1, arches[0], [[("test", 0)]])
 
     def test_requestBuild_virtualization(self):
         # New builds are virtualized.
@@ -471,7 +473,7 @@ class TestCIBuildSet(TestCaseWithFactory):
                 distroseries=distro_series, supports_virtualized=True,
                 supports_nonvirtualized=proc_nonvirt)
             build = getUtility(ICIBuildSet).requestBuild(
-                repository, commit_sha1, das)
+                repository, commit_sha1, das, [[("test", 0)]])
             self.assertTrue(build.virtualized)
 
     def test_requestBuild_nonvirtualized(self):
@@ -484,7 +486,8 @@ class TestCIBuildSet(TestCaseWithFactory):
             supports_nonvirtualized=True)
         self.assertRaises(
             CIBuildDisallowedArchitecture,
-            getUtility(ICIBuildSet).requestBuild, repository, commit_sha1, das)
+            getUtility(ICIBuildSet).requestBuild,
+            repository, commit_sha1, das, [[("test", 0)]])
 
     def test_requestBuildsForRefs_triggers_builds(self):
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
@@ -541,6 +544,8 @@ class TestCIBuildSet(TestCaseWithFactory):
         self.assertEqual(ref.commit_sha1, build.commit_sha1)
         self.assertEqual("focal", build.distro_arch_series.distroseries.name)
         self.assertEqual("amd64", build.distro_arch_series.architecturetag)
+        self.assertEqual(
+            [[("build", 0), ("build", 1)], [("test", 0)]], build.stages)
         self.assertThat(reports, MatchesSetwise(*(
             MatchesStructure.byEquality(
                 creator=repository.owner,
@@ -641,6 +646,78 @@ class TestCIBuildSet(TestCaseWithFactory):
             "ERROR Cannot parse .launchpad.yaml from %s: "
             "Configuration file does not declare 'pipeline'\n" % (
                 repository.unique_name,),
+            logger.getLogBuffer()
+        )
+
+    def test_requestBuildsForRefs_no_pipeline_defined(self):
+        # If the job's configuration does not define any pipeline stages,
+        # requestBuildsForRefs logs an error.
+        configuration = b"pipeline: []\njobs: {}\n"
+        [ref] = self.factory.makeGitRefs()
+        encoded_commit_json = {
+            "sha1": ref.commit_sha1,
+            "blobs": {".launchpad.yaml": configuration},
+        }
+        hosting_fixture = self.useFixture(
+            GitHostingFixture(commits=[encoded_commit_json])
+        )
+        logger = BufferLogger()
+
+        getUtility(ICIBuildSet).requestBuildsForRefs(
+            ref.repository, [ref.path], logger)
+
+        self.assertEqual(
+            [((ref.repository.getInternalPath(), [ref.commit_sha1]),
+              {"filter_paths": [".launchpad.yaml"], "logger": logger})],
+            hosting_fixture.getCommits.calls
+        )
+        self.assertTrue(
+            getUtility(ICIBuildSet).findByGitRepository(
+                ref.repository).is_empty()
+        )
+        self.assertTrue(
+            getUtility(IRevisionStatusReportSet).findByRepository(
+                ref.repository).is_empty()
+        )
+        self.assertEqual(
+            "ERROR Failed to request CI builds for %s: "
+            "No pipeline stages defined\n" % ref.commit_sha1,
+            logger.getLogBuffer()
+        )
+
+    def test_requestBuildsForRefs_undefined_job(self):
+        # If the job's configuration has a pipeline that defines a job not
+        # in the jobs matrix, requestBuildsForRefs logs an error.
+        configuration = b"pipeline: [test]\njobs: {}\n"
+        [ref] = self.factory.makeGitRefs()
+        encoded_commit_json = {
+            "sha1": ref.commit_sha1,
+            "blobs": {".launchpad.yaml": configuration},
+        }
+        hosting_fixture = self.useFixture(
+            GitHostingFixture(commits=[encoded_commit_json])
+        )
+        logger = BufferLogger()
+
+        getUtility(ICIBuildSet).requestBuildsForRefs(
+            ref.repository, [ref.path], logger)
+
+        self.assertEqual(
+            [((ref.repository.getInternalPath(), [ref.commit_sha1]),
+              {"filter_paths": [".launchpad.yaml"], "logger": logger})],
+            hosting_fixture.getCommits.calls
+        )
+        self.assertTrue(
+            getUtility(ICIBuildSet).findByGitRepository(
+                ref.repository).is_empty()
+        )
+        self.assertTrue(
+            getUtility(IRevisionStatusReportSet).findByRepository(
+                ref.repository).is_empty()
+        )
+        self.assertEqual(
+            "ERROR Failed to request CI builds for %s: "
+            "No job definition for 'test'\n" % ref.commit_sha1,
             logger.getLogBuffer()
         )
 
