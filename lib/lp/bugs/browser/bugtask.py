@@ -595,7 +595,8 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
             'summary|tags|visibility|bug task deleted|lock status|lock reason')
         bugtask_change_re = (
             r'[a-z0-9][a-z0-9\+\.\-]+( \([A-Za-z0-9\s]+\))?: '
-            r'(assignee|importance|milestone|status)')
+            r'(assignee|importance explanation|importance|milestone|'
+            r'status explanation|status)')
         interesting_match = re.compile(
             "^(%s|%s)$" % (bug_change_re, bugtask_change_re)).match
 
