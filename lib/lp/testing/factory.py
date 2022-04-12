@@ -83,6 +83,7 @@ from lp.bugs.interfaces.bug import (
     IBugSet,
     )
 from lp.bugs.interfaces.bugtask import (
+    BugTaskImportance,
     BugTaskStatus,
     IBugTaskSet,
     )
@@ -94,6 +95,12 @@ from lp.bugs.interfaces.bugwatch import IBugWatchSet
 from lp.bugs.interfaces.cve import (
     CveStatus,
     ICveSet,
+    )
+from lp.bugs.interfaces.vulnerability import (
+    IVulnerabilityActivitySet,
+    IVulnerabilitySet,
+    VulnerabilityChange,
+    VulnerabilityStatus,
     )
 from lp.bugs.model.bug import FileBugData
 from lp.buildmaster.enums import (
@@ -5393,6 +5400,53 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             removeSecurityProxy(build).updateStatus(status, builder=builder)
         IStore(build).flush()
         return build
+
+    def makeVulnerability(self, distribution=None, status=None,
+                          importance=None, creator=None,
+                          information_type=InformationType.PUBLIC, cve=None,
+                          description=None, notes=None, mitigation=None,
+                          importance_explanation=None, date_made_public=None):
+        """Make a new `Vulnerability`."""
+        if distribution is None:
+            distribution = self.makeDistribution()
+        if status is None:
+            status = VulnerabilityStatus.NEEDS_TRIAGE
+        if importance is None:
+            importance = BugTaskImportance.UNDECIDED
+        if creator is None:
+            creator = self.makePerson()
+        if importance_explanation is None:
+            importance_explanation = self.getUniqueString(
+                "vulnerability-importance-explanation")
+        return getUtility(
+            IVulnerabilitySet).new(
+            distribution=distribution, cve=cve, status=status,
+            importance=importance, creator=creator,
+            information_type=information_type, description=description,
+            notes=notes, mitigation=mitigation,
+            importance_explanation=importance_explanation,
+            date_made_public=date_made_public)
+
+    def makeVulnerabilityActivity(self, vulnerability=None, changer=None,
+                                  what_changed=None, old_value=None,
+                                  new_value=None):
+        """Make a new `VulnerabilityActivity`."""
+        if vulnerability is None:
+            vulnerability = self.makeVulnerability()
+        if changer is None:
+            changer = self.makePerson()
+        if what_changed is None:
+            what_changed = VulnerabilityChange.DESCRIPTION
+        if old_value is None:
+            old_value = self.getUniqueString("old-value")
+        if new_value is None:
+            new_value = self.getUniqueString("new-value")
+        return getUtility(
+            IVulnerabilityActivitySet).new(vulnerability=vulnerability,
+                                           changer=changer,
+                                           what_changed=what_changed,
+                                           old_value=old_value,
+                                           new_value=new_value)
 
 
 # Some factory methods return simple Python types. We don't add
