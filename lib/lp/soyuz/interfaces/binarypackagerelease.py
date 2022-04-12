@@ -44,10 +44,15 @@ class IBinaryPackageRelease(Interface):
     version = TextLine(required=True, constraint=valid_debian_version)
     summary = Text(required=True)
     description = Text(required=True)
-    build = Int(required=True)
+    build = Reference(
+        # Really IBinaryPackageBuild.
+        Interface, required=False)
+    ci_build = Reference(
+        # Really ICIBuild.
+        Interface, required=False)
     binpackageformat = Int(required=True)
-    component = Int(required=True)
-    section = Int(required=True)
+    component = Int(required=False)
+    section = Int(required=False)
     priority = Int(required=False)
     shlibdeps = TextLine(required=False)
     depends = TextLine(required=False)

@@ -239,6 +239,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackage import (
     ISourcePackage,
     SourcePackageFileType,
+    SourcePackageType,
     SourcePackageUrgency,
     )
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
@@ -313,7 +314,9 @@ from lp.snappy.model.snapbuild import SnapFile
 from lp.soyuz.adapters.overrides import SourceOverride
 from lp.soyuz.adapters.packagelocation import PackageLocation
 from lp.soyuz.enums import (
+    ArchivePublishingMethod,
     ArchivePurpose,
+    ArchiveRepositoryFormat,
     BinaryPackageFileType,
     BinaryPackageFormat,
     DistroArchSeriesFilterSense,
@@ -2992,7 +2995,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                     purpose=None, enabled=True, private=False,
                     virtualized=True, description=None, displayname=None,
                     suppress_subscription_notifications=False,
-                    processors=None):
+                    processors=None,
+                    publishing_method=ArchivePublishingMethod.LOCAL,
+                    repository_format=ArchiveRepositoryFormat.DEBIAN):
         """Create and return a new arbitrary archive.
 
         :param distribution: Supply IDistribution, defaults to a new one
@@ -3008,6 +3013,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         :param suppress_subscription_notifications: Whether to suppress
             subscription notifications, defaults to False.  Only useful
             for private archives.
+        :param publishing_method: `ArchivePublishingMethod` for this archive
+            (defaults to `LOCAL`).
+        :param repository_format: `ArchiveRepositoryFormat` for this archive
+            (defaults to `DEBIAN`).
         """
         if purpose is None:
             purpose = ArchivePurpose.PPA
@@ -3039,7 +3048,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 owner=owner, purpose=purpose,
                 distribution=distribution, name=name, displayname=displayname,
                 enabled=enabled, require_virtualized=virtualized,
-                description=description, processors=processors)
+                description=description, processors=processors,
+                publishing_method=publishing_method,
+                repository_format=repository_format)
 
         if private:
             naked_archive = removeSecurityProxy(archive)
@@ -3834,7 +3845,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                  changelog_entry=None,
                                  homepage=None,
                                  changelog=None,
-                                 copyright=None):
+                                 copyright=None,
+                                 format=None):
         """Make a `SourcePackageRelease`."""
         if distroseries is None:
             if source_package_recipe_build is not None:
@@ -3878,11 +3890,15 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if version is None:
             version = str(self.getUniqueInteger()) + 'version'
 
+        if format is None:
+            format = SourcePackageType.DPKG
+
         if copyright is None:
             copyright = self.getUniqueString()
 
         return distroseries.createUploadedSourcePackageRelease(
             sourcepackagename=sourcepackagename,
+            format=format,
             maintainer=maintainer,
             creator=creator,
             component=component,

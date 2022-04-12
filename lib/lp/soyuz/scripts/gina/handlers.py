@@ -932,6 +932,7 @@ class BinaryPackagePublisher:
         BinaryPackagePublishingHistory(
             binarypackagerelease=binarypackage.id,
             binarypackagename=binarypackage.binarypackagename,
+            _binarypackageformat=binarypackage.binpackageformat,
             component=component.id,
             section=section.id,
             priority=priority,

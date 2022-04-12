@@ -79,22 +79,25 @@ from lp.soyuz.model.queue import (
 class SourcePackageRelease(SQLBase):
     _table = 'SourcePackageRelease'
 
+    # DB constraint: non-nullable for SourcePackageType.DPKG.
     section = ForeignKey(foreignKey='Section', dbName='section')
     creator = ForeignKey(
         dbName='creator', foreignKey='Person',
         storm_validator=validate_public_person, notNull=True)
+    # DB constraint: non-nullable for SourcePackageType.DPKG.
     component = ForeignKey(foreignKey='Component', dbName='component')
     sourcepackagename = ForeignKey(foreignKey='SourcePackageName',
         dbName='sourcepackagename', notNull=True)
     maintainer = ForeignKey(
         dbName='maintainer', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+        storm_validator=validate_public_person, notNull=False)
     signing_key_owner_id = Int(name="signing_key_owner")
     signing_key_owner = Reference(signing_key_owner_id, 'Person.id')
     signing_key_fingerprint = Unicode()
+    # DB constraint: non-nullable for SourcePackageType.DPKG.
     urgency = DBEnum(
         name='urgency', enum=SourcePackageUrgency,
-        default=SourcePackageUrgency.LOW, allow_none=False)
+        default=SourcePackageUrgency.LOW, allow_none=True)
     dateuploaded = UtcDateTimeCol(dbName='dateuploaded', notNull=True,
         default=UTC_NOW)
     dsc = StringCol(dbName='dsc')
@@ -127,6 +130,7 @@ class SourcePackageRelease(SQLBase):
     # (primary target) we don't need to populate old records.
     dsc_maintainer_rfc822 = StringCol(dbName='dsc_maintainer_rfc822')
     dsc_standards_version = StringCol(dbName='dsc_standards_version')
+    # DB constraint: non-nullable for SourcePackageType.DPKG.
     dsc_format = StringCol(dbName='dsc_format')
     dsc_binaries = StringCol(dbName='dsc_binaries')
 

@@ -31,6 +31,10 @@ from storm.expr import (
     Sum,
     )
 from storm.info import ClassAlias
+from storm.properties import (
+    List,
+    Unicode,
+    )
 from storm.store import Store
 from storm.zope import IResultSet
 from storm.zope.interfaces import ISQLObjectResultSet
@@ -45,6 +49,7 @@ from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import BuildStatus
 from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.sourcepackage import SourcePackageType
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
@@ -241,8 +246,13 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
         foreignKey='SourcePackageName', dbName='sourcepackagename')
     sourcepackagerelease = ForeignKey(
         foreignKey='SourcePackageRelease', dbName='sourcepackagerelease')
+    _format = DBEnum(
+        name='format', enum=SourcePackageType,
+        default=SourcePackageType.DPKG, allow_none=True)
     distroseries = ForeignKey(foreignKey='DistroSeries', dbName='distroseries')
+    # DB constraint: non-nullable for SourcePackageType.DPKG.
     component = ForeignKey(foreignKey='Component', dbName='component')
+    # DB constraint: non-nullable for SourcePackageType.DPKG.
     section = ForeignKey(foreignKey='Section', dbName='section')
     status = DBEnum(enum=PackagePublishingStatus)
     scheduleddeletiondate = UtcDateTimeCol(default=None)
@@ -256,6 +266,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
     pocket = DBEnum(name='pocket', enum=PackagePublishingPocket,
                     default=PackagePublishingPocket.RELEASE,
                     allow_none=False)
+    channel = List(name="channel", type=Unicode(), allow_none=True)
     archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
     copied_from_archive = ForeignKey(
         dbName="copied_from_archive", foreignKey="Archive", notNull=False)
@@ -274,6 +285,13 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
         storm_validator=validate_public_person, notNull=False, default=None)
     packageupload = ForeignKey(
         dbName='packageupload', foreignKey='PackageUpload', default=None)
+
+    @property
+    def format(self):
+        # XXX cjwatson 2022-04-04: Remove once this column has been backfilled.
+        return (
+            self._format if self._format is not None
+            else self.sourcepackagerelease.format)
 
     @property
     def package_creator(self):
@@ -638,11 +656,19 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         foreignKey='BinaryPackageName', dbName='binarypackagename')
     binarypackagerelease = ForeignKey(
         foreignKey='BinaryPackageRelease', dbName='binarypackagerelease')
+    _binarypackageformat = DBEnum(
+        name='binarypackageformat', enum=BinaryPackageFormat, allow_none=True)
     distroarchseries = ForeignKey(
         foreignKey='DistroArchSeries', dbName='distroarchseries')
-    component = ForeignKey(foreignKey='Component', dbName='component')
-    section = ForeignKey(foreignKey='Section', dbName='section')
-    priority = DBEnum(name='priority', enum=PackagePublishingPriority)
+    # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
+    component = ForeignKey(
+        foreignKey='Component', dbName='component', notNull=False)
+    # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
+    section = ForeignKey(
+        foreignKey='Section', dbName='section', notNull=False)
+    # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
+    priority = DBEnum(
+        name='priority', enum=PackagePublishingPriority, allow_none=True)
     status = DBEnum(name='status', enum=PackagePublishingStatus)
     phased_update_percentage = IntCol(
         dbName='phased_update_percentage', notNull=False, default=None)
@@ -658,6 +684,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
     datemadepending = UtcDateTimeCol(default=None)
     dateremoved = UtcDateTimeCol(default=None)
     pocket = DBEnum(name='pocket', enum=PackagePublishingPocket)
+    channel = List(name="channel", type=Unicode(), allow_none=True)
     archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
     copied_from_archive = ForeignKey(
         dbName="copied_from_archive", foreignKey="Archive", notNull=False)
@@ -665,6 +692,13 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         dbName="removed_by", foreignKey="Person",
         storm_validator=validate_public_person, default=None)
     removal_comment = StringCol(dbName="removal_comment", default=None)
+
+    @property
+    def binarypackageformat(self):
+        # XXX cjwatson 2022-04-04: Remove once this column has been backfilled.
+        return (
+            self._binarypackageformat if self._binarypackageformat is not None
+            else self.binarypackagerelease.binpackageformat)
 
     @property
     def distroarchseriesbinarypackagerelease(self):
@@ -896,6 +930,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             BinaryPackagePublishingHistory(
                 binarypackagename=debug.binarypackagename,
                 binarypackagerelease=debug.binarypackagerelease,
+                _binarypackageformat=debug.binarypackageformat,
                 distroarchseries=debug.distroarchseries,
                 status=PackagePublishingStatus.PENDING,
                 datecreated=UTC_NOW,
@@ -911,6 +946,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         return BinaryPackagePublishingHistory(
             binarypackagename=bpr.binarypackagename,
             binarypackagerelease=bpr,
+            _binarypackageformat=bpr.binpackageformat,
             distroarchseries=self.distroarchseries,
             status=PackagePublishingStatus.PENDING,
             datecreated=UTC_NOW,
@@ -1216,6 +1252,7 @@ class PublishingSet:
             archive=archive,
             sourcepackagename=sourcepackagerelease.sourcepackagename,
             sourcepackagerelease=sourcepackagerelease,
+            _format=sourcepackagerelease.format,
             component=get_component(archive, distroseries, component),
             section=section,
             status=PackagePublishingStatus.PENDING,
