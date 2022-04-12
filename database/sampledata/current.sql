@@ -971,21 +971,21 @@ ALTER TABLE public.translationgroup ENABLE TRIGGER ALL;
 
 ALTER TABLE public.distribution DISABLE TRIGGER ALL;
 
-INSERT INTO public.distribution (id, name, title, description, domainname, owner, displayname, summary, members, translationgroup, translationpermission, bug_supervisor, official_malone, official_rosetta, driver, translation_focus, mirror_admin, upload_sender, date_created, homepage_content, icon, mugshot, logo, fti, official_answers, language_pack_admin, official_blueprints, enable_bug_expiration, bug_reporting_guidelines, reviewer_whiteboard, max_bug_heat, bug_reported_acknowledgement, answers_usage, blueprints_usage, translations_usage, registrant, package_derivatives_email, redirect_release_uploads, development_series_alias, official_packages, supports_ppas, supports_mirrors, vcs, oci_project_admin, default_traversal_policy, redirect_default_traversal, oci_credentials) VALUES (1, 'ubuntu', 'Ubuntu Linux', 'Ubuntu is a new approach to Linux Distribution that includes regular releases, and a simplified single-CD installation system.', 'ubuntulinux.org', 17, 'Ubuntu', 'Ubuntu is a new approach to Linux Distribution that includes regular releases, and a simplified single-CD installation system.', 17, NULL, 1, NULL, true, true, NULL, 3, 59, NULL, '2006-10-16 18:31:43.415195', NULL, NULL, NULL, NULL, NULL, true, NULL, true, true, NULL, NULL, NULL, NULL, 10, 10, 20, 60, '{package_name}_derivatives@packages.qa.debian.org', false, NULL, true, true, true, NULL, NULL, 0, false, NULL);
-INSERT INTO public.distribution (id, name, title, description, domainname, owner, displayname, summary, members, translationgroup, translationpermission, bug_supervisor, official_malone, official_rosetta, driver, translation_focus, mirror_admin, upload_sender, date_created, homepage_content, icon, mugshot, logo, fti, official_answers, language_pack_admin, official_blueprints, enable_bug_expiration, bug_reporting_guidelines, reviewer_whiteboard, max_bug_heat, bug_reported_acknowledgement, answers_usage, blueprints_usage, translations_usage, registrant, package_derivatives_email, redirect_release_uploads, development_series_alias, official_packages, supports_ppas, supports_mirrors, vcs, oci_project_admin, default_traversal_policy, redirect_default_traversal, oci_credentials) VALUES (2, 'redhat', 'Redhat Advanced Server', 'Red Hat is a commercial distribution of the GNU/Linux Operating System.', 'redhat.com', 1, 'Red Hat', 'Red Hat is a commercial distribution of the GNU/Linux Operating System.', 1, NULL, 1, NULL, false, false, 8, NULL, 1, NULL, '2006-10-16 18:31:43.417928', NULL, NULL, NULL, NULL, NULL, false, NULL, false, false, NULL, NULL, NULL, NULL, 10, 10, 10, 60, NULL, false, NULL, false, false, false, NULL, NULL, 0, false, NULL);
-INSERT INTO public.distribution (id, name, title, description, domainname, owner, displayname, summary, members, translationgroup, translationpermission, bug_supervisor, official_malone, official_rosetta, driver, translation_focus, mirror_admin, upload_sender, date_created, homepage_content, icon, mugshot, logo, fti, official_answers, language_pack_admin, official_blueprints, enable_bug_expiration, bug_reporting_guidelines, reviewer_whiteboard, max_bug_heat, bug_reported_acknowledgement, answers_usage, blueprints_usage, translations_usage, registrant, package_derivatives_email, redirect_release_uploads, development_series_alias, official_packages, supports_ppas, supports_mirrors, vcs, oci_project_admin, default_traversal_policy, redirect_default_traversal, oci_credentials) VALUES (3, 'debian', 'Debian GNU/Linux', 'Debian GNU/Linux is
+INSERT INTO public.distribution (id, name, title, description, domainname, owner, displayname, summary, members, translationgroup, translationpermission, bug_supervisor, official_malone, official_rosetta, driver, translation_focus, mirror_admin, upload_sender, date_created, homepage_content, icon, mugshot, logo, fti, official_answers, language_pack_admin, official_blueprints, enable_bug_expiration, bug_reporting_guidelines, reviewer_whiteboard, max_bug_heat, bug_reported_acknowledgement, answers_usage, blueprints_usage, translations_usage, registrant, package_derivatives_email, redirect_release_uploads, development_series_alias, official_packages, supports_ppas, supports_mirrors, vcs, oci_project_admin, default_traversal_policy, redirect_default_traversal, oci_credentials, branch_sharing_policy, bug_sharing_policy, specification_sharing_policy, information_type, access_policies) VALUES (1, 'ubuntu', 'Ubuntu Linux', 'Ubuntu is a new approach to Linux Distribution that includes regular releases, and a simplified single-CD installation system.', 'ubuntulinux.org', 17, 'Ubuntu', 'Ubuntu is a new approach to Linux Distribution that includes regular releases, and a simplified single-CD installation system.', 17, NULL, 1, NULL, true, true, NULL, 3, 59, NULL, '2006-10-16 18:31:43.415195', NULL, NULL, NULL, NULL, NULL, true, NULL, true, true, NULL, NULL, NULL, NULL, 10, 10, 20, 60, '{package_name}_derivatives@packages.qa.debian.org', false, NULL, true, true, true, NULL, NULL, 0, false, NULL, 1, 1, 1, 1, NULL);
+INSERT INTO public.distribution (id, name, title, description, domainname, owner, displayname, summary, members, translationgroup, translationpermission, bug_supervisor, official_malone, official_rosetta, driver, translation_focus, mirror_admin, upload_sender, date_created, homepage_content, icon, mugshot, logo, fti, official_answers, language_pack_admin, official_blueprints, enable_bug_expiration, bug_reporting_guidelines, reviewer_whiteboard, max_bug_heat, bug_reported_acknowledgement, answers_usage, blueprints_usage, translations_usage, registrant, package_derivatives_email, redirect_release_uploads, development_series_alias, official_packages, supports_ppas, supports_mirrors, vcs, oci_project_admin, default_traversal_policy, redirect_default_traversal, oci_credentials, branch_sharing_policy, bug_sharing_policy, specification_sharing_policy, information_type, access_policies) VALUES (2, 'redhat', 'Redhat Advanced Server', 'Red Hat is a commercial distribution of the GNU/Linux Operating System.', 'redhat.com', 1, 'Red Hat', 'Red Hat is a commercial distribution of the GNU/Linux Operating System.', 1, NULL, 1, NULL, false, false, 8, NULL, 1, NULL, '2006-10-16 18:31:43.417928', NULL, NULL, NULL, NULL, NULL, false, NULL, false, false, NULL, NULL, NULL, NULL, 10, 10, 10, 60, NULL, false, NULL, false, false, false, NULL, NULL, 0, false, NULL, 1, 1, 1, 1, NULL);
+INSERT INTO public.distribution (id, name, title, description, domainname, owner, displayname, summary, members, translationgroup, translationpermission, bug_supervisor, official_malone, official_rosetta, driver, translation_focus, mirror_admin, upload_sender, date_created, homepage_content, icon, mugshot, logo, fti, official_answers, language_pack_admin, official_blueprints, enable_bug_expiration, bug_reporting_guidelines, reviewer_whiteboard, max_bug_heat, bug_reported_acknowledgement, answers_usage, blueprints_usage, translations_usage, registrant, package_derivatives_email, redirect_release_uploads, development_series_alias, official_packages, supports_ppas, supports_mirrors, vcs, oci_project_admin, default_traversal_policy, redirect_default_traversal, oci_credentials, branch_sharing_policy, bug_sharing_policy, specification_sharing_policy, information_type, access_policies) VALUES (3, 'debian', 'Debian GNU/Linux', 'Debian GNU/Linux is
 a non commercial distribution of a GNU/Linux Operating System for many
 platforms.', 'debian.org', 1, 'Debian', 'Debian GNU/Linux is
 a non commercial distribution of a GNU/Linux Operating System for many
-platforms.', 1, NULL, 1, NULL, false, false, NULL, NULL, 1, NULL, '2006-10-16 18:31:43.418942', NULL, NULL, NULL, NULL, NULL, false, NULL, false, false, NULL, NULL, NULL, NULL, 10, 10, 10, 60, NULL, false, NULL, false, false, false, NULL, NULL, 0, false, NULL);
-INSERT INTO public.distribution (id, name, title, description, domainname, owner, displayname, summary, members, translationgroup, translationpermission, bug_supervisor, official_malone, official_rosetta, driver, translation_focus, mirror_admin, upload_sender, date_created, homepage_content, icon, mugshot, logo, fti, official_answers, language_pack_admin, official_blueprints, enable_bug_expiration, bug_reporting_guidelines, reviewer_whiteboard, max_bug_heat, bug_reported_acknowledgement, answers_usage, blueprints_usage, translations_usage, registrant, package_derivatives_email, redirect_release_uploads, development_series_alias, official_packages, supports_ppas, supports_mirrors, vcs, oci_project_admin, default_traversal_policy, redirect_default_traversal, oci_credentials) VALUES (4, 'gentoo', 'The Gentoo Linux', 'Gentoo is a very
+platforms.', 1, NULL, 1, NULL, false, false, NULL, NULL, 1, NULL, '2006-10-16 18:31:43.418942', NULL, NULL, NULL, NULL, NULL, false, NULL, false, false, NULL, NULL, NULL, NULL, 10, 10, 10, 60, NULL, false, NULL, false, false, false, NULL, NULL, 0, false, NULL, 1, 1, 1, 1, NULL);
+INSERT INTO public.distribution (id, name, title, description, domainname, owner, displayname, summary, members, translationgroup, translationpermission, bug_supervisor, official_malone, official_rosetta, driver, translation_focus, mirror_admin, upload_sender, date_created, homepage_content, icon, mugshot, logo, fti, official_answers, language_pack_admin, official_blueprints, enable_bug_expiration, bug_reporting_guidelines, reviewer_whiteboard, max_bug_heat, bug_reported_acknowledgement, answers_usage, blueprints_usage, translations_usage, registrant, package_derivatives_email, redirect_release_uploads, development_series_alias, official_packages, supports_ppas, supports_mirrors, vcs, oci_project_admin, default_traversal_policy, redirect_default_traversal, oci_credentials, branch_sharing_policy, bug_sharing_policy, specification_sharing_policy, information_type, access_policies) VALUES (4, 'gentoo', 'The Gentoo Linux', 'Gentoo is a very
 customizeable GNU/Linux Distribution that is designed to let you build every
-single package yourself, with your own preferences.', 'gentoo.org', 1, 'Gentoo', 'Gentoo is a very customizeable GNU/Linux Distribution that is designed to let you build every single package yourself, with your own preferences.', 1, NULL, 1, NULL, true, false, NULL, NULL, 1, NULL, '2006-10-16 18:31:43.41974', NULL, NULL, NULL, NULL, NULL, false, NULL, false, false, NULL, NULL, NULL, NULL, 10, 10, 10, 60, NULL, false, NULL, false, false, false, NULL, NULL, 0, false, NULL);
-INSERT INTO public.distribution (id, name, title, description, domainname, owner, displayname, summary, members, translationgroup, translationpermission, bug_supervisor, official_malone, official_rosetta, driver, translation_focus, mirror_admin, upload_sender, date_created, homepage_content, icon, mugshot, logo, fti, official_answers, language_pack_admin, official_blueprints, enable_bug_expiration, bug_reporting_guidelines, reviewer_whiteboard, max_bug_heat, bug_reported_acknowledgement, answers_usage, blueprints_usage, translations_usage, registrant, package_derivatives_email, redirect_release_uploads, development_series_alias, official_packages, supports_ppas, supports_mirrors, vcs, oci_project_admin, default_traversal_policy, redirect_default_traversal, oci_credentials) VALUES (5, 'kubuntu', 'Kubuntu - Free KDE-based Linux', 'Kubuntu is an entirely free Linux distribution that uses the K Desktop
+single package yourself, with your own preferences.', 'gentoo.org', 1, 'Gentoo', 'Gentoo is a very customizeable GNU/Linux Distribution that is designed to let you build every single package yourself, with your own preferences.', 1, NULL, 1, NULL, true, false, NULL, NULL, 1, NULL, '2006-10-16 18:31:43.41974', NULL, NULL, NULL, NULL, NULL, false, NULL, false, false, NULL, NULL, NULL, NULL, 10, 10, 10, 60, NULL, false, NULL, false, false, false, NULL, NULL, 0, false, NULL, 1, 1, 1, 1, NULL);
+INSERT INTO public.distribution (id, name, title, description, domainname, owner, displayname, summary, members, translationgroup, translationpermission, bug_supervisor, official_malone, official_rosetta, driver, translation_focus, mirror_admin, upload_sender, date_created, homepage_content, icon, mugshot, logo, fti, official_answers, language_pack_admin, official_blueprints, enable_bug_expiration, bug_reporting_guidelines, reviewer_whiteboard, max_bug_heat, bug_reported_acknowledgement, answers_usage, blueprints_usage, translations_usage, registrant, package_derivatives_email, redirect_release_uploads, development_series_alias, official_packages, supports_ppas, supports_mirrors, vcs, oci_project_admin, default_traversal_policy, redirect_default_traversal, oci_credentials, branch_sharing_policy, bug_sharing_policy, specification_sharing_policy, information_type, access_policies) VALUES (5, 'kubuntu', 'Kubuntu - Free KDE-based Linux', 'Kubuntu is an entirely free Linux distribution that uses the K Desktop
 Environment as its default desktop after install.', 'kubuntu.org', 1, 'Kubuntu', 'Kubuntu is an entirely free Linux distribution that uses the K Desktop
-Environment as its default desktop after install.', 1, NULL, 1, NULL, false, false, 8, NULL, 1, NULL, '2006-10-16 18:31:43.420551', NULL, NULL, NULL, NULL, NULL, false, NULL, false, false, NULL, NULL, NULL, NULL, 10, 10, 10, 60, NULL, false, NULL, false, false, false, NULL, NULL, 0, false, NULL);
-INSERT INTO public.distribution (id, name, title, description, domainname, owner, displayname, summary, members, translationgroup, translationpermission, bug_supervisor, official_malone, official_rosetta, driver, translation_focus, mirror_admin, upload_sender, date_created, homepage_content, icon, mugshot, logo, fti, official_answers, language_pack_admin, official_blueprints, enable_bug_expiration, bug_reporting_guidelines, reviewer_whiteboard, max_bug_heat, bug_reported_acknowledgement, answers_usage, blueprints_usage, translations_usage, registrant, package_derivatives_email, redirect_release_uploads, development_series_alias, official_packages, supports_ppas, supports_mirrors, vcs, oci_project_admin, default_traversal_policy, redirect_default_traversal, oci_credentials) VALUES (7, 'guadalinex', 'GuadaLinex: Linux for Andalucia', 'GuadaLinex is based on Ubuntu and adds full support for applications specific to the local environment in Andalucia.', 'guadalinex.es', 4, 'GuadaLinex', 'The GuadaLinex team produces a high quality linux for the Andalucian marketplace.', 32, NULL, 1, NULL, false, false, NULL, NULL, 4, NULL, '2006-10-16 18:31:43.421329', NULL, NULL, NULL, NULL, NULL, false, NULL, false, false, NULL, NULL, NULL, NULL, 10, 10, 10, 60, NULL, false, NULL, false, false, false, NULL, NULL, 0, false, NULL);
-INSERT INTO public.distribution (id, name, title, description, domainname, owner, displayname, summary, members, translationgroup, translationpermission, bug_supervisor, official_malone, official_rosetta, driver, translation_focus, mirror_admin, upload_sender, date_created, homepage_content, icon, mugshot, logo, fti, official_answers, language_pack_admin, official_blueprints, enable_bug_expiration, bug_reporting_guidelines, reviewer_whiteboard, max_bug_heat, bug_reported_acknowledgement, answers_usage, blueprints_usage, translations_usage, registrant, package_derivatives_email, redirect_release_uploads, development_series_alias, official_packages, supports_ppas, supports_mirrors, vcs, oci_project_admin, default_traversal_policy, redirect_default_traversal, oci_credentials) VALUES (8, 'ubuntutest', 'Ubuntu Test', 'Ubuntu Test', 'ubuntulinux.org', 17, 'ubuntutest', 'Ubuntu Test summary', 17, NULL, 1, NULL, false, false, NULL, NULL, 17, NULL, '2006-10-16 18:31:43.422162', NULL, NULL, NULL, NULL, NULL, false, NULL, false, false, NULL, NULL, NULL, NULL, 10, 10, 10, 60, NULL, false, NULL, false, false, false, NULL, NULL, 0, false, NULL);
+Environment as its default desktop after install.', 1, NULL, 1, NULL, false, false, 8, NULL, 1, NULL, '2006-10-16 18:31:43.420551', NULL, NULL, NULL, NULL, NULL, false, NULL, false, false, NULL, NULL, NULL, NULL, 10, 10, 10, 60, NULL, false, NULL, false, false, false, NULL, NULL, 0, false, NULL, 1, 1, 1, 1, NULL);
+INSERT INTO public.distribution (id, name, title, description, domainname, owner, displayname, summary, members, translationgroup, translationpermission, bug_supervisor, official_malone, official_rosetta, driver, translation_focus, mirror_admin, upload_sender, date_created, homepage_content, icon, mugshot, logo, fti, official_answers, language_pack_admin, official_blueprints, enable_bug_expiration, bug_reporting_guidelines, reviewer_whiteboard, max_bug_heat, bug_reported_acknowledgement, answers_usage, blueprints_usage, translations_usage, registrant, package_derivatives_email, redirect_release_uploads, development_series_alias, official_packages, supports_ppas, supports_mirrors, vcs, oci_project_admin, default_traversal_policy, redirect_default_traversal, oci_credentials, branch_sharing_policy, bug_sharing_policy, specification_sharing_policy, information_type, access_policies) VALUES (7, 'guadalinex', 'GuadaLinex: Linux for Andalucia', 'GuadaLinex is based on Ubuntu and adds full support for applications specific to the local environment in Andalucia.', 'guadalinex.es', 4, 'GuadaLinex', 'The GuadaLinex team produces a high quality linux for the Andalucian marketplace.', 32, NULL, 1, NULL, false, false, NULL, NULL, 4, NULL, '2006-10-16 18:31:43.421329', NULL, NULL, NULL, NULL, NULL, false, NULL, false, false, NULL, NULL, NULL, NULL, 10, 10, 10, 60, NULL, false, NULL, false, false, false, NULL, NULL, 0, false, NULL, 1, 1, 1, 1, NULL);
+INSERT INTO public.distribution (id, name, title, description, domainname, owner, displayname, summary, members, translationgroup, translationpermission, bug_supervisor, official_malone, official_rosetta, driver, translation_focus, mirror_admin, upload_sender, date_created, homepage_content, icon, mugshot, logo, fti, official_answers, language_pack_admin, official_blueprints, enable_bug_expiration, bug_reporting_guidelines, reviewer_whiteboard, max_bug_heat, bug_reported_acknowledgement, answers_usage, blueprints_usage, translations_usage, registrant, package_derivatives_email, redirect_release_uploads, development_series_alias, official_packages, supports_ppas, supports_mirrors, vcs, oci_project_admin, default_traversal_policy, redirect_default_traversal, oci_credentials, branch_sharing_policy, bug_sharing_policy, specification_sharing_policy, information_type, access_policies) VALUES (8, 'ubuntutest', 'Ubuntu Test', 'Ubuntu Test', 'ubuntulinux.org', 17, 'ubuntutest', 'Ubuntu Test summary', 17, NULL, 1, NULL, false, false, NULL, NULL, 17, NULL, '2006-10-16 18:31:43.422162', NULL, NULL, NULL, NULL, NULL, false, NULL, false, false, NULL, NULL, NULL, NULL, 10, 10, 10, 60, NULL, false, NULL, false, false, false, NULL, NULL, 0, false, NULL, 1, 1, 1, 1, NULL);
 
 
 ALTER TABLE public.distribution ENABLE TRIGGER ALL;
@@ -993,19 +993,19 @@ ALTER TABLE public.distribution ENABLE TRIGGER ALL;
 
 ALTER TABLE public.archive DISABLE TRIGGER ALL;
 
-INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites) VALUES (1, 17, NULL, true, NULL, 1, 1, false, NULL, NULL, NULL, NULL, NULL, false, 'primary', true, '2008-05-27 18:15:12.241774', 15, 1, 8, 5, 1, '2008-09-23 17:29:03.442606', NULL, NULL, 'Primary Archive for Ubuntu Linux', 0, NULL, 0, false, true, false, false, NULL, NULL, NULL);
-INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites) VALUES (2, 1, NULL, true, NULL, 2, 1, false, NULL, NULL, NULL, NULL, NULL, false, 'primary', true, '2008-05-27 18:15:15.863812', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.445921', NULL, NULL, 'Primary Archive for Redhat Advanced Server', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL);
-INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites) VALUES (3, 1, NULL, true, NULL, 3, 1, false, NULL, NULL, NULL, NULL, NULL, false, 'primary', true, '2008-05-27 18:15:15.864941', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.446557', NULL, NULL, 'Primary Archive for Debian GNU/Linux', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL);
-INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites) VALUES (4, 1, NULL, true, NULL, 4, 1, false, NULL, NULL, NULL, NULL, NULL, false, 'primary', true, '2008-05-27 18:15:15.865502', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.44689', NULL, NULL, 'Primary Archive for The Gentoo Linux', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL);
-INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites) VALUES (5, 1, NULL, true, NULL, 5, 1, false, NULL, NULL, NULL, NULL, NULL, false, 'primary', true, '2008-05-27 18:15:15.866015', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.447202', NULL, NULL, 'Primary Archive for Kubuntu - Free KDE-based Linux', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL);
-INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites) VALUES (7, 4, NULL, true, NULL, 7, 1, false, NULL, NULL, NULL, NULL, NULL, false, 'primary', true, '2008-05-27 18:15:15.866529', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.447515', NULL, NULL, 'Primary Archive for GuadaLinex: Linux for Andalucia', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL);
-INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites) VALUES (8, 17, NULL, true, NULL, 8, 1, false, NULL, NULL, NULL, NULL, NULL, false, 'primary', true, '2008-05-27 18:15:15.867154', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.447851', NULL, NULL, 'Primary Archive for Ubuntu Test', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL);
-INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites) VALUES (9, 28, 'packages to help my friends.', true, 1024, 1, 2, false, 3, 3, NULL, NULL, NULL, true, 'ppa', true, '2008-05-27 18:15:15.867684', 4, 0, 3, 1, 0, '2008-09-23 17:29:03.448178', NULL, NULL, 'PPA for Celso Providelo', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL);
-INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites) VALUES (10, 1, 'packages to help the humanity (you know, ubuntu)', true, 1024, 1, 2, false, 1, 1, NULL, NULL, NULL, true, 'ppa', true, '2008-05-27 18:15:15.868202', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.448488', NULL, NULL, 'PPA for Mark Shuttleworth', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL);
-INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites) VALUES (11, 52, 'I am not allowed to say, I have no privs.', true, 1024, 1, 2, false, 0, 0, NULL, NULL, NULL, true, 'ppa', true, '2008-05-27 18:15:15.868709', 1, 0, 0, 1, 0, '2008-09-23 17:29:03.448797', NULL, NULL, 'PPA for No Privileges Person', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL);
-INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites) VALUES (12, 17, 'Partner archive', true, NULL, 1, 4, false, NULL, NULL, NULL, NULL, NULL, false, 'partner', true, '2008-05-27 18:15:15.869209', 1, 0, 1, 0, 0, '2008-09-23 17:29:03.449157', NULL, NULL, 'Partner Archive for Ubuntu Linux', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL);
-INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites) VALUES (13, 17, 'Partner archive', true, NULL, 8, 4, false, NULL, NULL, NULL, NULL, NULL, false, 'partner', true, '2008-05-27 18:15:15.869732', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.449471', NULL, NULL, 'Partner Archive for Ubuntu Test', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL);
-INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites) VALUES (14, 17, 'Sample copy archive', true, NULL, 8, 6, false, NULL, NULL, NULL, NULL, NULL, false, 'samplecopyarchive', false, '2008-11-19 18:15:15.869732', 0, 0, 0, 0, 0, '2008-11-18 17:29:03.449471', NULL, NULL, 'Copy archive samplecopyarchive for Ubuntu Team', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL);
+INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites, publishing_method, repository_format) VALUES (1, 17, NULL, true, NULL, 1, 1, false, NULL, NULL, NULL, NULL, NULL, false, 'primary', true, '2008-05-27 18:15:12.241774', 15, 1, 8, 5, 1, '2008-09-23 17:29:03.442606', NULL, NULL, 'Primary Archive for Ubuntu Linux', 0, NULL, 0, false, true, false, false, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites, publishing_method, repository_format) VALUES (2, 1, NULL, true, NULL, 2, 1, false, NULL, NULL, NULL, NULL, NULL, false, 'primary', true, '2008-05-27 18:15:15.863812', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.445921', NULL, NULL, 'Primary Archive for Redhat Advanced Server', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites, publishing_method, repository_format) VALUES (3, 1, NULL, true, NULL, 3, 1, false, NULL, NULL, NULL, NULL, NULL, false, 'primary', true, '2008-05-27 18:15:15.864941', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.446557', NULL, NULL, 'Primary Archive for Debian GNU/Linux', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites, publishing_method, repository_format) VALUES (4, 1, NULL, true, NULL, 4, 1, false, NULL, NULL, NULL, NULL, NULL, false, 'primary', true, '2008-05-27 18:15:15.865502', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.44689', NULL, NULL, 'Primary Archive for The Gentoo Linux', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites, publishing_method, repository_format) VALUES (5, 1, NULL, true, NULL, 5, 1, false, NULL, NULL, NULL, NULL, NULL, false, 'primary', true, '2008-05-27 18:15:15.866015', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.447202', NULL, NULL, 'Primary Archive for Kubuntu - Free KDE-based Linux', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites, publishing_method, repository_format) VALUES (7, 4, NULL, true, NULL, 7, 1, false, NULL, NULL, NULL, NULL, NULL, false, 'primary', true, '2008-05-27 18:15:15.866529', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.447515', NULL, NULL, 'Primary Archive for GuadaLinex: Linux for Andalucia', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites, publishing_method, repository_format) VALUES (8, 17, NULL, true, NULL, 8, 1, false, NULL, NULL, NULL, NULL, NULL, false, 'primary', true, '2008-05-27 18:15:15.867154', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.447851', NULL, NULL, 'Primary Archive for Ubuntu Test', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites, publishing_method, repository_format) VALUES (9, 28, 'packages to help my friends.', true, 1024, 1, 2, false, 3, 3, NULL, NULL, NULL, true, 'ppa', true, '2008-05-27 18:15:15.867684', 4, 0, 3, 1, 0, '2008-09-23 17:29:03.448178', NULL, NULL, 'PPA for Celso Providelo', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites, publishing_method, repository_format) VALUES (10, 1, 'packages to help the humanity (you know, ubuntu)', true, 1024, 1, 2, false, 1, 1, NULL, NULL, NULL, true, 'ppa', true, '2008-05-27 18:15:15.868202', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.448488', NULL, NULL, 'PPA for Mark Shuttleworth', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites, publishing_method, repository_format) VALUES (11, 52, 'I am not allowed to say, I have no privs.', true, 1024, 1, 2, false, 0, 0, NULL, NULL, NULL, true, 'ppa', true, '2008-05-27 18:15:15.868709', 1, 0, 0, 1, 0, '2008-09-23 17:29:03.448797', NULL, NULL, 'PPA for No Privileges Person', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites, publishing_method, repository_format) VALUES (12, 17, 'Partner archive', true, NULL, 1, 4, false, NULL, NULL, NULL, NULL, NULL, false, 'partner', true, '2008-05-27 18:15:15.869209', 1, 0, 1, 0, 0, '2008-09-23 17:29:03.449157', NULL, NULL, 'Partner Archive for Ubuntu Linux', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites, publishing_method, repository_format) VALUES (13, 17, 'Partner archive', true, NULL, 8, 4, false, NULL, NULL, NULL, NULL, NULL, false, 'partner', true, '2008-05-27 18:15:15.869732', 0, 0, 0, 0, 0, '2008-09-23 17:29:03.449471', NULL, NULL, 'Partner Archive for Ubuntu Test', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.archive (id, owner, description, enabled, authorized_size, distribution, purpose, private, sources_cached, binaries_cached, package_description_cache, fti, buildd_secret, require_virtualized, name, publish, date_updated, total_count, pending_count, succeeded_count, failed_count, building_count, date_created, removed_binary_retention_days, num_old_versions_published, displayname, relative_build_score, external_dependencies, status, suppress_subscription_notifications, build_debug_symbols, publish_debug_symbols, permit_obsolete_series_uploads, signing_key_owner, signing_key_fingerprint, dirty_suites, publishing_method, repository_format) VALUES (14, 17, 'Sample copy archive', true, NULL, 8, 6, false, NULL, NULL, NULL, NULL, NULL, false, 'samplecopyarchive', false, '2008-11-19 18:15:15.869732', 0, 0, 0, 0, 0, '2008-11-18 17:29:03.449471', NULL, NULL, 'Copy archive samplecopyarchive for Ubuntu Team', 0, NULL, 0, false, false, false, false, NULL, NULL, NULL, NULL, NULL);
 
 
 ALTER TABLE public.archive ENABLE TRIGGER ALL;
@@ -1224,19 +1224,19 @@ ALTER TABLE public.branch ENABLE TRIGGER ALL;
 
 ALTER TABLE public.bug DISABLE TRIGGER ALL;
 
-INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type) VALUES (1, '2004-01-01 20:58:04.553583', NULL, 'Firefox does not support SVG', 'Firefox needs to support embedded SVG images, now that the standard has been finalised.
+INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type, lock_status, lock_reason) VALUES (1, '2004-01-01 20:58:04.553583', NULL, 'Firefox does not support SVG', 'Firefox needs to support embedded SVG images, now that the standard has been finalised.
 
-The SVG standard 1.0 is complete, and draft implementations for Firefox exist. One of these implementations needs to be integrated with the base install of Firefox. Ideally, the implementation needs to include support for the manipulation of SVG objects from JavaScript to enable interactive and dynamic SVG drawings.', 12, NULL, NULL, '2006-05-19 06:37:40.344941', NULL, NULL, NULL, 0, 2, 0, 0, 0, NULL, NULL, 1);
-INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type) VALUES (2, '2004-01-02 20:58:04.572546', 'blackhole', 'Blackhole Trash folder', 'The Trash folder seems to have significant problems! At the moment, dragging an item to the trash results in immediate deletion. The item does not appear in the Trash, it is just deleted from my hard disk. There is no undo or ability to recover the deleted file. Help!', 12, NULL, NULL, '2006-07-14 08:47:36.124403', NULL, NULL, NULL, 0, 3, 0, 0, 0, NULL, NULL, 1);
-INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type) VALUES (3, '2004-01-03 00:00:00', NULL, 'Bug Title Test', 'Shirtpkdf user@domain.org lkjd hlkjfds gkfdsg kfd glkfd gifdsytoxdiytxoiufdytoidxf yxoigfyoigfxuyfxoiug yxoiuy oiugf hyoifxugyoixgfuy xoiuyxoiyxoifuy xo
+The SVG standard 1.0 is complete, and draft implementations for Firefox exist. One of these implementations needs to be integrated with the base install of Firefox. Ideally, the implementation needs to include support for the manipulation of SVG objects from JavaScript to enable interactive and dynamic SVG drawings.', 12, NULL, NULL, '2006-05-19 06:37:40.344941', NULL, NULL, NULL, 0, 2, 0, 0, 0, NULL, NULL, 1, 0, NULL);
+INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type, lock_status, lock_reason) VALUES (2, '2004-01-02 20:58:04.572546', 'blackhole', 'Blackhole Trash folder', 'The Trash folder seems to have significant problems! At the moment, dragging an item to the trash results in immediate deletion. The item does not appear in the Trash, it is just deleted from my hard disk. There is no undo or ability to recover the deleted file. Help!', 12, NULL, NULL, '2006-07-14 08:47:36.124403', NULL, NULL, NULL, 0, 3, 0, 0, 0, NULL, NULL, 1, 0, NULL);
+INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type, lock_status, lock_reason) VALUES (3, '2004-01-03 00:00:00', NULL, 'Bug Title Test', 'Shirtpkdf user@domain.org lkjd hlkjfds gkfdsg kfd glkfd gifdsytoxdiytxoiufdytoidxf yxoigfyoigfxuyfxoiug yxoiuy oiugf hyoifxugyoixgfuy xoiuyxoiyxoifuy xo
 
 y idu yifdxhfgffxShirtpkdf jlkdsj;lkd lkjd hlkjfds gkfdsg kfd glkfd gifdsytoxdiytxoiufdytoidxf yxoigfyoigfxuyfxoiug yxoiuy oiugf hyoifxugyoixgfuy xoiuyxoiyxoifuy xoShirtpkdf jlkdsj;lkd lkjd hlkjfds gkfdsg kfd glkfd gifdsytoxdiytxoiufdytoidxf yxoigfyoigfxuyfxoiug yxoiuy oiugf hyoifxugyoixgfuy xoiuyxoiyxoifuy xo
 Shirtpkdf jlkdsj;lkd lkjd hlkjfds gkfdsg kfd glkfd gifdsytoxdiytxoiufdytoidxf yxoigfyoigfxuyfxoiug yxoiuy oiugf hyoifxugyoixgfuy xoiuyxoiyxoifuy xoShirtpkdf jlkdsj;lkd lkjd hlkjfds gkfdsg kfd glkfd gifdsytoxdiytxoiufdytoidxf yxoigfyoigfxuyfxoiug yxoiuy oiugf hyoifxugyoixgfuy xoiuyxoiyxoifuy xo
 
-Shirtpkdf jlkdsj;lkd lkjd hlkjfds gkfdsg kfd glkfd gifdsytoxdiytxoiufdytoidxf yxoigfyoigfxuyfxoiug yxoiuy oiugf hyoifxugyoixgfuy xoiuyxoiyxoifuy xoShirtpkdf jlkdsj;lkd lkjd hlkjfds gkfdsg kfd glkfd gifdsytoxdiytxoiufdytoidxf yxoigfyoigfxuyfxoiug yxoiuy oiugf hyoifxugyoixgfuy xoiuyxoiyxoifuy xo', 16, NULL, NULL, '2006-07-14 08:48:52.922462', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 1);
-INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type) VALUES (4, '2004-01-04 00:00:00', NULL, 'Reflow problems with complex page layouts', 'Malone pages that use more complex layouts with portlets and fancy CSS are sometimes not getting properly reflowed after rendering.', 12, NULL, NULL, '2006-07-14 08:49:17.124885', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 1);
-INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type) VALUES (5, '2004-01-05 00:00:00', NULL, 'Firefox install instructions should be complete', 'All ways of downloading firefox should provide complete install instructions. At present, they are only visible on the Release Notes page.', 12, NULL, NULL, '2006-07-14 08:49:40.553212', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 1);
-INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type) VALUES (6, '2004-01-06 00:00:00', NULL, 'Firefox crashes when Save As dialog for a nonexistent window is closed', 'User-Agent:
+Shirtpkdf jlkdsj;lkd lkjd hlkjfds gkfdsg kfd glkfd gifdsytoxdiytxoiufdytoidxf yxoigfyoigfxuyfxoiug yxoiuy oiugf hyoifxugyoixgfuy xoiuyxoiyxoifuy xoShirtpkdf jlkdsj;lkd lkjd hlkjfds gkfdsg kfd glkfd gifdsytoxdiytxoiufdytoidxf yxoigfyoigfxuyfxoiug yxoiuy oiugf hyoifxugyoixgfuy xoiuyxoiyxoifuy xo', 16, NULL, NULL, '2006-07-14 08:48:52.922462', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 1, 0, NULL);
+INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type, lock_status, lock_reason) VALUES (4, '2004-01-04 00:00:00', NULL, 'Reflow problems with complex page layouts', 'Malone pages that use more complex layouts with portlets and fancy CSS are sometimes not getting properly reflowed after rendering.', 12, NULL, NULL, '2006-07-14 08:49:17.124885', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 1, 0, NULL);
+INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type, lock_status, lock_reason) VALUES (5, '2004-01-05 00:00:00', NULL, 'Firefox install instructions should be complete', 'All ways of downloading firefox should provide complete install instructions. At present, they are only visible on the Release Notes page.', 12, NULL, NULL, '2006-07-14 08:49:40.553212', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 1, 0, NULL);
+INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type, lock_status, lock_reason) VALUES (6, '2004-01-06 00:00:00', NULL, 'Firefox crashes when Save As dialog for a nonexistent window is closed', 'User-Agent:
 Build Identifier: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.6) Gecko/20040207 Firefox/0.8
 
 If a Save As dialog for a nonexistent window exists, when the dialog is closed Firefox will crash.  It''s possible to cause this to happen using the "Open With/Save As" dialog.
@@ -1255,12 +1255,12 @@ Actual Results:
 Crash!
 
 Expected Results:
-Not crashed.', 12, 5, NULL, '2006-05-19 06:37:40.389193', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 1);
-INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type) VALUES (7, '2004-01-07 15:12:29.602117', NULL, 'A test bug', 'A test description', 16, NULL, NULL, '2006-05-19 06:37:40.391822', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 1);
-INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type) VALUES (8, '2004-01-08 09:10:17.13237', NULL, 'Printing doesn''t work', 'When I press print in Firefox, nothing happens, not even a print dialog comes up.', 12, NULL, NULL, '2006-05-19 06:37:40.393303', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 1);
-INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type) VALUES (9, '2004-01-09 16:42:14.080227', NULL, 'Thunderbird crashes', 'Every time I start Thunderbird it crashes.', 16, NULL, NULL, '2006-07-14 08:45:10.600579', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 1);
-INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type) VALUES (10, '2004-01-10 19:42:21.890299', NULL, 'another test bug', 'test bug', 16, NULL, NULL, '2006-07-14 08:54:19.453881', NULL, NULL, NULL, 0, 2, 0, 0, 0, NULL, NULL, 1);
-INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type) VALUES (11, '2007-03-15 20:33:56.67893', NULL, 'Make Jokosher use autoaudiosink', 'I''ve had problems when switching from Jokosher to Totem to play an Ogg.
+Not crashed.', 12, 5, NULL, '2006-05-19 06:37:40.389193', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 1, 0, NULL);
+INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type, lock_status, lock_reason) VALUES (7, '2004-01-07 15:12:29.602117', NULL, 'A test bug', 'A test description', 16, NULL, NULL, '2006-05-19 06:37:40.391822', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 1, 0, NULL);
+INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type, lock_status, lock_reason) VALUES (8, '2004-01-08 09:10:17.13237', NULL, 'Printing doesn''t work', 'When I press print in Firefox, nothing happens, not even a print dialog comes up.', 12, NULL, NULL, '2006-05-19 06:37:40.393303', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 1, 0, NULL);
+INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type, lock_status, lock_reason) VALUES (9, '2004-01-09 16:42:14.080227', NULL, 'Thunderbird crashes', 'Every time I start Thunderbird it crashes.', 16, NULL, NULL, '2006-07-14 08:45:10.600579', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 1, 0, NULL);
+INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type, lock_status, lock_reason) VALUES (10, '2004-01-10 19:42:21.890299', NULL, 'another test bug', 'test bug', 16, NULL, NULL, '2006-07-14 08:54:19.453881', NULL, NULL, NULL, 0, 2, 0, 0, 0, NULL, NULL, 1, 0, NULL);
+INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type, lock_status, lock_reason) VALUES (11, '2007-03-15 20:33:56.67893', NULL, 'Make Jokosher use autoaudiosink', 'I''ve had problems when switching from Jokosher to Totem to play an Ogg.
 
 Totem appears to be playing normally but does not produce any sound.
 If I close Jokosher then you can hear totem.
@@ -1286,11 +1286,11 @@ I had to restart!
 Is there some way to reset alsa or the device driver - with out having
 to restart?
 
-Running on Ubuntu - with Jokosher 0.2 runscript.', 16, NULL, NULL, '2007-03-15 20:37:51.603369', NULL, NULL, NULL, 0, 7, 0, 0, 0, NULL, NULL, 1);
-INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type) VALUES (12, '2007-03-15 20:41:18.635493', NULL, 'Copy, Cut and Delete operations should work on selections', 'When trying to copy, cut or delete just a selected portion of an event, the operations affect the event completely. That is, you can''t select a portion and cut that piece. The whole event will be cut. Same goes for the other 2 operations.', 16, NULL, NULL, '2007-03-15 20:46:49.909153', NULL, NULL, NULL, 0, 5, 0, 0, 0, NULL, NULL, 1);
-INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type) VALUES (13, '2007-07-27 20:00:58.299796', NULL, 'Launchpad CSS and JS is not testible', 'The messages placed on this bug are for eyeball viewing of JS and CSS behaviour.', 12, NULL, NULL, '2007-07-27 20:29:46.336737', NULL, NULL, NULL, 0, 2, 0, 0, 0, NULL, NULL, 1);
-INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type) VALUES (14, '2007-08-09 11:39:16.836856', NULL, 'jokosher exposes personal details in its actions portlet', 'Jokosher discloses to any passerby the fact that I am single and unwed in its actions portlet. Please fix this blatant violacion of privacy now!!', 63, NULL, NULL, '2007-08-09 11:39:16.836856', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 3);
-INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type) VALUES (15, '2007-12-18 16:30:19.103679', NULL, 'Nonsensical bugs are useless', 'Like this one, natch.', 16, NULL, NULL, '2007-12-18 16:31:34.972893', NULL, NULL, '2007-12-18 16:31:34.790641', 0, 7, 0, 0, 0, NULL, NULL, 1);
+Running on Ubuntu - with Jokosher 0.2 runscript.', 16, NULL, NULL, '2007-03-15 20:37:51.603369', NULL, NULL, NULL, 0, 7, 0, 0, 0, NULL, NULL, 1, 0, NULL);
+INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type, lock_status, lock_reason) VALUES (12, '2007-03-15 20:41:18.635493', NULL, 'Copy, Cut and Delete operations should work on selections', 'When trying to copy, cut or delete just a selected portion of an event, the operations affect the event completely. That is, you can''t select a portion and cut that piece. The whole event will be cut. Same goes for the other 2 operations.', 16, NULL, NULL, '2007-03-15 20:46:49.909153', NULL, NULL, NULL, 0, 5, 0, 0, 0, NULL, NULL, 1, 0, NULL);
+INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type, lock_status, lock_reason) VALUES (13, '2007-07-27 20:00:58.299796', NULL, 'Launchpad CSS and JS is not testible', 'The messages placed on this bug are for eyeball viewing of JS and CSS behaviour.', 12, NULL, NULL, '2007-07-27 20:29:46.336737', NULL, NULL, NULL, 0, 2, 0, 0, 0, NULL, NULL, 1, 0, NULL);
+INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type, lock_status, lock_reason) VALUES (14, '2007-08-09 11:39:16.836856', NULL, 'jokosher exposes personal details in its actions portlet', 'Jokosher discloses to any passerby the fact that I am single and unwed in its actions portlet. Please fix this blatant violacion of privacy now!!', 63, NULL, NULL, '2007-08-09 11:39:16.836856', NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL, NULL, 3, 0, NULL);
+INSERT INTO public.bug (id, datecreated, name, title, description, owner, duplicateof, fti, date_last_updated, date_made_private, who_made_private, date_last_message, number_of_duplicates, message_count, users_affected_count, users_unaffected_count, heat, heat_last_updated, latest_patch_uploaded, information_type, lock_status, lock_reason) VALUES (15, '2007-12-18 16:30:19.103679', NULL, 'Nonsensical bugs are useless', 'Like this one, natch.', 16, NULL, NULL, '2007-12-18 16:31:34.972893', NULL, NULL, '2007-12-18 16:31:34.790641', 0, 7, 0, 0, 0, NULL, NULL, 1, 0, NULL);
 
 
 ALTER TABLE public.bug ENABLE TRIGGER ALL;
@@ -1838,6 +1838,13 @@ INSERT INTO public.buildfarmjob (id, date_created, date_finished, builder, statu
 ALTER TABLE public.buildfarmjob ENABLE TRIGGER ALL;
 
 
+ALTER TABLE public.cibuild DISABLE TRIGGER ALL;
+
+
+
+ALTER TABLE public.cibuild ENABLE TRIGGER ALL;
+
+
 ALTER TABLE public.section DISABLE TRIGGER ALL;
 
 INSERT INTO public.section (id, name) VALUES (1, 'base');
@@ -1896,29 +1903,29 @@ ALTER TABLE public.sourcepackagerecipebuild ENABLE TRIGGER ALL;
 
 ALTER TABLE public.sourcepackagerelease DISABLE TRIGGER ALL;
 
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (14, 1, '0.9', '2004-09-27 11:57:13', 1, 1, 'Mozilla dummy Changelog......', 'gcc-3.4-base, libc6 (>= 2.3.2.ds1-4), gcc-3.4 (>= 3.4.1-4sarge1), gcc-3.4 (<< 3.4.2), libstdc++6-dev (>= 3.4.1-4sarge1), pmount', 'bacula-common (= 1.34.6-2), bacula-director-common (= 1.34.6-2), postgresql-client (>= 7.4), pmount', 'any', NULL, 1, 1, 1, 1, 1, 'Mark Shuttleworth <mark@canonical.com>', '3.6.2', '1.0', 'mozilla-firefox', 1, NULL, 'gcc-4.0, pmount', 'gcc-4.0-base, pmount', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (15, 1, '1.0', '2004-09-27 11:57:13', 1, 1, NULL, NULL, NULL, 'all', NULL, 2, 1, 9, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (16, 1, '1.0-1', '2005-03-10 16:30:00', 1, 1, NULL, NULL, NULL, 'any', NULL, 3, 1, 10, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (17, 1, '0.99.6-1', '2005-03-14 18:00:00', 1, 1, NULL, NULL, NULL, 'i386', NULL, 2, 1, 10, 1, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (20, 1, '0.1-1', '2005-03-24 20:59:31.439579', 1, 1, 'pmount (0.1-1) hoary; urgency=low
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (14, 1, '0.9', '2004-09-27 11:57:13', 1, 1, 'Mozilla dummy Changelog......', 'gcc-3.4-base, libc6 (>= 2.3.2.ds1-4), gcc-3.4 (>= 3.4.1-4sarge1), gcc-3.4 (<< 3.4.2), libstdc++6-dev (>= 3.4.1-4sarge1), pmount', 'bacula-common (= 1.34.6-2), bacula-director-common (= 1.34.6-2), postgresql-client (>= 7.4), pmount', 'any', NULL, 1, 1, 1, 1, 1, 'Mark Shuttleworth <mark@canonical.com>', '3.6.2', '1.0', 'mozilla-firefox', 1, NULL, 'gcc-4.0, pmount', 'gcc-4.0-base, pmount', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (15, 1, '1.0', '2004-09-27 11:57:13', 1, 1, NULL, NULL, NULL, 'all', NULL, 2, 1, 9, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (16, 1, '1.0-1', '2005-03-10 16:30:00', 1, 1, NULL, NULL, NULL, 'any', NULL, 3, 1, 10, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (17, 1, '0.99.6-1', '2005-03-14 18:00:00', 1, 1, NULL, NULL, NULL, 'i386', NULL, 2, 1, 10, 1, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (20, 1, '0.1-1', '2005-03-24 20:59:31.439579', 1, 1, 'pmount (0.1-1) hoary; urgency=low
 
  * Fix description (Malone #1)
  * Fix debian (Debian #2000)
  * Fix warty (Warty Ubuntu #1)
 
- -- Sample Person <test@canonical.com> Tue, 7 Feb 2006 12:10:08 +0300', NULL, NULL, 'all', NULL, 2, 1, 14, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (21, 1, '0.1-2', '2005-06-24 20:59:31.439579', 1, 1, 'This is a placeholder changelog for pmount 0.1-2', NULL, NULL, 'powerpc', NULL, 1, 1, 14, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (23, 1, '1.0.8-1ubuntu1', '2005-02-03 08:50:00', 1, 1, 'alsa-utils (1.0.8-1ubuntu1) warty; urgency=low
+ -- Sample Person <test@canonical.com> Tue, 7 Feb 2006 12:10:08 +0300', NULL, NULL, 'all', NULL, 2, 1, 14, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (21, 1, '0.1-2', '2005-06-24 20:59:31.439579', 1, 1, 'This is a placeholder changelog for pmount 0.1-2', NULL, NULL, 'powerpc', NULL, 1, 1, 14, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (23, 1, '1.0.8-1ubuntu1', '2005-02-03 08:50:00', 1, 1, 'alsa-utils (1.0.8-1ubuntu1) warty; urgency=low
 
  * Placeholder
 
-     -- Sample Person <test@canonical.com> Tue, 7 Feb 2006 12:10:08 +0300', NULL, NULL, 'all', NULL, 1, 1, 19, 1, 1, 'Mark Shuttleworth <mark@example.com>', '3.6.2', '1.0', 'alsa-mixer', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (24, 1, '1.0.9a-4', '2005-07-01 22:47:00', 1, 1, 'alsa-utils (1.0.9a-4) warty; urgency=low
+     -- Sample Person <test@canonical.com> Tue, 7 Feb 2006 12:10:08 +0300', NULL, NULL, 'all', NULL, 1, 1, 19, 1, 1, 'Mark Shuttleworth <mark@example.com>', '3.6.2', '1.0', 'alsa-mixer', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (24, 1, '1.0.9a-4', '2005-07-01 22:47:00', 1, 1, 'alsa-utils (1.0.9a-4) warty; urgency=low
 
  * Placeholder
 
-     -- Sample Person <test@canonical.com> Tue, 7 Feb 2006 12:10:08 +0300', NULL, NULL, 'any', NULL, 2, 1, 19, 8, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (25, 1, '1.0.9a-4ubuntu1', '2005-08-01 14:10:00', 1, 1, 'alsa-utils (1.0.9a-4ubuntu1) hoary; urgency=low
+     -- Sample Person <test@canonical.com> Tue, 7 Feb 2006 12:10:08 +0300', NULL, NULL, 'any', NULL, 2, 1, 19, 8, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (25, 1, '1.0.9a-4ubuntu1', '2005-08-01 14:10:00', 1, 1, 'alsa-utils (1.0.9a-4ubuntu1) hoary; urgency=low
 
  * Placeholder
  LP: #10
@@ -1927,22 +1934,22 @@ INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urg
  LP: #7, #8,
    #11
 
-     -- Sample Person <test@canonical.com> Tue, 7 Feb 2006 12:10:08 +0300', NULL, NULL, 'all', NULL, 1, 16, 19, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (26, 1, 'cr.g7-37', '2005-12-22 18:19:00', 1, 1, NULL, NULL, NULL, 'i386', NULL, 1, 16, 20, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (27, 1, 'b8p', '2006-02-10 11:19:00', 1, 1, 'libstdc++ (9.9-1) hoary; urgency=high
+     -- Sample Person <test@canonical.com> Tue, 7 Feb 2006 12:10:08 +0300', NULL, NULL, 'all', NULL, 1, 16, 19, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (26, 1, 'cr.g7-37', '2005-12-22 18:19:00', 1, 1, NULL, NULL, NULL, 'i386', NULL, 1, 16, 20, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (27, 1, 'b8p', '2006-02-10 11:19:00', 1, 1, 'libstdc++ (9.9-1) hoary; urgency=high
 
  * Placeholder
 
- -- Sample Person <test@canonical.com> Tue, 10 Feb 2006 10:10:08 +0300', NULL, NULL, 'powerpc i386', NULL, 1, 16, 21, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (28, 1, '2.6.15.3', '2005-12-22 18:19:00', 1, 1, NULL, NULL, NULL, 'any', NULL, 1, 16, 22, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (29, 1, '0.00', '2005-12-22 18:19:00', 1, 1, NULL, NULL, NULL, 'all', NULL, 1, 16, 17, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (30, 1, '1.0', '2006-09-28 18:19:00', 1, 1, NULL, NULL, NULL, 'all', NULL, 1, 16, 20, 10, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (31, 1, '1.0', '2006-09-28 18:19:01', 1, 1, NULL, NULL, NULL, 'all', NULL, 1, 16, 20, 10, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (32, 1, '1.0', '2006-12-01 13:19:01', 1, 1, NULL, NULL, NULL, 'all', NULL, 1, 16, 23, 10, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (33, 1, '1.0', '2006-12-01 13:19:01', 1, 1, NULL, NULL, NULL, 'all', NULL, 1, 16, 24, 10, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (34, 1, '1.0', '2007-02-15 14:19:01', 1, 1, NULL, NULL, NULL, 'i386', NULL, 29, 16, 25, 10, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (35, 1, '1.0', '2006-04-11 11:19:01', 1, 1, NULL, NULL, NULL, 'any', NULL, 1, 16, 26, 1, 1, NULL, NULL, '1.0', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (36, 243606, '1.0-1', '2007-08-09 21:25:37.832976', 1, 5, 'commercialpackage (1.0-1) breezy; urgency=low
+ -- Sample Person <test@canonical.com> Tue, 10 Feb 2006 10:10:08 +0300', NULL, NULL, 'powerpc i386', NULL, 1, 16, 21, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (28, 1, '2.6.15.3', '2005-12-22 18:19:00', 1, 1, NULL, NULL, NULL, 'any', NULL, 1, 16, 22, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (29, 1, '0.00', '2005-12-22 18:19:00', 1, 1, NULL, NULL, NULL, 'all', NULL, 1, 16, 17, 3, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (30, 1, '1.0', '2006-09-28 18:19:00', 1, 1, NULL, NULL, NULL, 'all', NULL, 1, 16, 20, 10, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (31, 1, '1.0', '2006-09-28 18:19:01', 1, 1, NULL, NULL, NULL, 'all', NULL, 1, 16, 20, 10, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (32, 1, '1.0', '2006-12-01 13:19:01', 1, 1, NULL, NULL, NULL, 'all', NULL, 1, 16, 23, 10, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (33, 1, '1.0', '2006-12-01 13:19:01', 1, 1, NULL, NULL, NULL, 'all', NULL, 1, 16, 24, 10, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (34, 1, '1.0', '2007-02-15 14:19:01', 1, 1, NULL, NULL, NULL, 'i386', NULL, 29, 16, 25, 10, 1, NULL, NULL, '1.0', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (35, 1, '1.0', '2006-04-11 11:19:01', 1, 1, NULL, NULL, NULL, 'any', NULL, 1, 16, 26, 1, 1, NULL, NULL, '1.0', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (36, 243606, '1.0-1', '2007-08-09 21:25:37.832976', 1, 5, 'commercialpackage (1.0-1) breezy; urgency=low
 
   * Initial version
       Address for testing linkification: Foo Bar <foo.bar@canonical.com>
@@ -1966,8 +1973,8 @@ Version: GnuPG v1.4.6 (GNU/Linux)
 iD8DBQFGtzTjWhGlTF8G/HcRAtFsAJ4hHyKhOnsUOQDI+SAk000DmFAnUgCcC84J
 3F4bEPeRcnUjCFI/hjR0kxg=
 =Tjln
-', 7, 243606, 27, 10, 1, 'Julian Edwards <launchpad@julian-edwards.com>', '3.6.2', '1.0', 'commercialpackage', 12, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo) VALUES (37, 1, '1.0', '2006-04-11 11:19:01', 1, 1, NULL, NULL, NULL, 'i386', NULL, 1, 16, 26, 1, 1, NULL, NULL, '1.0', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+', 7, 243606, 27, 10, 1, 'Julian Edwards <launchpad@julian-edwards.com>', '3.6.2', '1.0', 'commercialpackage', 12, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagerelease (id, creator, version, dateuploaded, urgency, component, changelog_entry, builddepends, builddependsindep, architecturehintlist, dsc, section, maintainer, sourcepackagename, upload_distroseries, format, dsc_maintainer_rfc822, dsc_standards_version, dsc_format, dsc_binaries, upload_archive, copyright, build_conflicts, build_conflicts_indep, sourcepackage_recipe_build, changelog, user_defined_fields, homepage, signing_key_owner, signing_key_fingerprint, buildinfo, ci_build) VALUES (37, 1, '1.0', '2006-04-11 11:19:01', 1, 1, NULL, NULL, NULL, 'i386', NULL, 1, 16, 26, 1, 1, NULL, NULL, '1.0', NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 
 ALTER TABLE public.sourcepackagerelease ENABLE TRIGGER ALL;
@@ -2021,21 +2028,21 @@ ALTER TABLE public.binarypackagename ENABLE TRIGGER ALL;
 
 ALTER TABLE public.binarypackagerelease DISABLE TRIGGER ALL;
 
-INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage) VALUES (6, 6, '1.0', 'foobar is bad', 'foobar should be removed', 6, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, false, NULL, '2006-12-01 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage) VALUES (12, 8, '0.9', 'Mozilla Firefox Web Browser', 'Mozilla Firefox Web Browser is .....', 2, 1, 1, 1, 10, NULL, 'gcc-3.4-base, libc6 (>= 2.3.2.ds1-4), gcc-3.4 (>= 3.4.1-4sarge1), gcc-3.4 (<< 3.4.2), libstdc++6-dev (>= 3.4.1-4sarge1)', 'gcc-3.4-base, libc6 (>= 2.3.2.ds1-4), gcc-3.4 (>= 3.4.1-4sarge1), gcc-3.4 (<< 3.4.2), libstdc++6-dev (>= 3.4.1-4sarge1)', 'firefox-gnome-support (= 1.0.7-0ubuntu20), latex-xft-fonts, xprint', 'firefox, mozilla-web-browser', 'gnome-mozilla-browser', 'mozilla-firefox', false, NULL, true, NULL, '2005-10-19 17:50:10.874189', 'pmount, foo', 'pmount, bar', 'pmount, baz', NULL, NULL, NULL);
-INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage) VALUES (15, 13, '0.1-1', 'pmount shortdesc', 'pmount description', 7, 1, 1, 1, 40, NULL, 'at (>= 3.14156), linux-2.6.12, tramp-package', NULL, NULL, NULL, NULL, NULL, false, NULL, false, NULL, '2005-10-19 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage) VALUES (16, 14, '2.6.12.20', 'the kernel of boom', 'this kernel is like the crystal method: a temple of boom', 14, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, false, NULL, '2005-10-19 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage) VALUES (17, 15, '3.14156', 'at the mountains of madness', 'lovecraft long before enunciated that the mountains were not safe, but you did not believe him', 15, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, false, NULL, '2005-10-19 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage) VALUES (18, 13, '2:1.9-1', 'pmount shortdesc', 'pmount description', 16, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, true, NULL, '2005-10-19 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage) VALUES (19, 8, '0.9', 'Mozilla Firefox Web Browser', 'Mozilla Firefox Web Browser is .....', 18, 1, 1, 1, 10, NULL, 'gcc-3.4-base, libc6 (>= 2.3.2.ds1-4), gcc-3.4 (>= 3.4.1-4sarge1), gcc-3.4 (<< 3.4.2), libstdc++6-dev (>= 3.4.1-4sarge1)', 'gcc-3.4-base, libc6 (>= 2.3.2.ds1-4), gcc-3.4 (>= 3.4.1-4sarge1), gcc-3.4 (<< 3.4.2), libstdc++6-dev (>= 3.4.1-4sarge1)', 'firefox-gnome-support (= 1.0.7-0ubuntu20), latex-xft-fonts, xprint', 'firefox, mozilla-web-browser', 'gnome-mozilla-browser', 'mozilla-firefox', false, NULL, true, NULL, '2005-10-19 17:50:10.874189', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage) VALUES (20, 13, '0.1-1', 'pmount shortdesc', 'pmount description', 19, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, false, NULL, '2005-10-19 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage) VALUES (21, 16, '1.0', 'cdrkit is nice', 'cdrkit should be kept', 21, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, false, NULL, '2006-12-01 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage) VALUES (22, 8, '1.0', 'ff from iceweasel', 'iceweasel huh ?', 23, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, true, NULL, '2006-04-11 12:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage) VALUES (23, 13, '0.1-1', 'pmount shortdesc', 'pmount description', 27, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, false, NULL, '2007-07-24 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage) VALUES (24, 8, '1.0', 'ff from iceweasel', 'iceweasel huh ?', 28, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, true, NULL, '2006-08-10 12:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage) VALUES (25, 17, '1.0-1', 'Stuff for testing', ' This package is simply used for testing soyuz', 29, 1, 5, 7, 20, '', '', '', '', '', '', '', false, 8, true, NULL, '2007-08-09 21:54:18.456616', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage) VALUES (26, 8, '0.9', 'Mozilla Firefox Web Browser', 'Mozilla Firefox Web Browser is .....', 30, 1, 1, 1, 10, '', '', '', '', '', '', '', false, NULL, true, NULL, '2005-10-19 17:50:10.874189', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage) VALUES (27, 18, '0.9', 'Mozilla Firefox Data', 'Mozilla Firefox Data is .....', 2, 1, 1, 1, 10, '', '', '', '', '', '', '', false, NULL, false, NULL, '2005-10-19 17:50:10.874189', NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage, ci_build) VALUES (6, 6, '1.0', 'foobar is bad', 'foobar should be removed', 6, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, false, NULL, '2006-12-01 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage, ci_build) VALUES (12, 8, '0.9', 'Mozilla Firefox Web Browser', 'Mozilla Firefox Web Browser is .....', 2, 1, 1, 1, 10, NULL, 'gcc-3.4-base, libc6 (>= 2.3.2.ds1-4), gcc-3.4 (>= 3.4.1-4sarge1), gcc-3.4 (<< 3.4.2), libstdc++6-dev (>= 3.4.1-4sarge1)', 'gcc-3.4-base, libc6 (>= 2.3.2.ds1-4), gcc-3.4 (>= 3.4.1-4sarge1), gcc-3.4 (<< 3.4.2), libstdc++6-dev (>= 3.4.1-4sarge1)', 'firefox-gnome-support (= 1.0.7-0ubuntu20), latex-xft-fonts, xprint', 'firefox, mozilla-web-browser', 'gnome-mozilla-browser', 'mozilla-firefox', false, NULL, true, NULL, '2005-10-19 17:50:10.874189', 'pmount, foo', 'pmount, bar', 'pmount, baz', NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage, ci_build) VALUES (15, 13, '0.1-1', 'pmount shortdesc', 'pmount description', 7, 1, 1, 1, 40, NULL, 'at (>= 3.14156), linux-2.6.12, tramp-package', NULL, NULL, NULL, NULL, NULL, false, NULL, false, NULL, '2005-10-19 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage, ci_build) VALUES (16, 14, '2.6.12.20', 'the kernel of boom', 'this kernel is like the crystal method: a temple of boom', 14, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, false, NULL, '2005-10-19 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage, ci_build) VALUES (17, 15, '3.14156', 'at the mountains of madness', 'lovecraft long before enunciated that the mountains were not safe, but you did not believe him', 15, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, false, NULL, '2005-10-19 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage, ci_build) VALUES (18, 13, '2:1.9-1', 'pmount shortdesc', 'pmount description', 16, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, true, NULL, '2005-10-19 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage, ci_build) VALUES (19, 8, '0.9', 'Mozilla Firefox Web Browser', 'Mozilla Firefox Web Browser is .....', 18, 1, 1, 1, 10, NULL, 'gcc-3.4-base, libc6 (>= 2.3.2.ds1-4), gcc-3.4 (>= 3.4.1-4sarge1), gcc-3.4 (<< 3.4.2), libstdc++6-dev (>= 3.4.1-4sarge1)', 'gcc-3.4-base, libc6 (>= 2.3.2.ds1-4), gcc-3.4 (>= 3.4.1-4sarge1), gcc-3.4 (<< 3.4.2), libstdc++6-dev (>= 3.4.1-4sarge1)', 'firefox-gnome-support (= 1.0.7-0ubuntu20), latex-xft-fonts, xprint', 'firefox, mozilla-web-browser', 'gnome-mozilla-browser', 'mozilla-firefox', false, NULL, true, NULL, '2005-10-19 17:50:10.874189', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage, ci_build) VALUES (20, 13, '0.1-1', 'pmount shortdesc', 'pmount description', 19, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, false, NULL, '2005-10-19 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage, ci_build) VALUES (21, 16, '1.0', 'cdrkit is nice', 'cdrkit should be kept', 21, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, false, NULL, '2006-12-01 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage, ci_build) VALUES (22, 8, '1.0', 'ff from iceweasel', 'iceweasel huh ?', 23, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, true, NULL, '2006-04-11 12:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage, ci_build) VALUES (23, 13, '0.1-1', 'pmount shortdesc', 'pmount description', 27, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, false, NULL, '2007-07-24 17:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage, ci_build) VALUES (24, 8, '1.0', 'ff from iceweasel', 'iceweasel huh ?', 28, 1, 1, 1, 40, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, NULL, true, NULL, '2006-08-10 12:50:10.878712', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage, ci_build) VALUES (25, 17, '1.0-1', 'Stuff for testing', ' This package is simply used for testing soyuz', 29, 1, 5, 7, 20, '', '', '', '', '', '', '', false, 8, true, NULL, '2007-08-09 21:54:18.456616', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage, ci_build) VALUES (26, 8, '0.9', 'Mozilla Firefox Web Browser', 'Mozilla Firefox Web Browser is .....', 30, 1, 1, 1, 10, '', '', '', '', '', '', '', false, NULL, true, NULL, '2005-10-19 17:50:10.874189', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagerelease (id, binarypackagename, version, summary, description, build, binpackageformat, component, section, priority, shlibdeps, depends, recommends, suggests, conflicts, replaces, provides, essential, installedsize, architecturespecific, fti, datecreated, pre_depends, enhances, breaks, debug_package, user_defined_fields, homepage, ci_build) VALUES (27, 18, '0.9', 'Mozilla Firefox Data', 'Mozilla Firefox Data is .....', 2, 1, 1, 1, 10, '', '', '', '', '', '', '', false, NULL, false, NULL, '2005-10-19 17:50:10.874189', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 
 ALTER TABLE public.binarypackagerelease ENABLE TRIGGER ALL;
@@ -2059,31 +2066,31 @@ ALTER TABLE public.binarypackagefile ENABLE TRIGGER ALL;
 
 ALTER TABLE public.binarypackagepublishinghistory DISABLE TRIGGER ALL;
 
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (9, 12, 1, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-18 00:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 8, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (11, 15, 6, 3, 1, 3, 40, '2005-05-05 00:00:00', '2005-05-05 00:01:00', '2006-01-25 00:00:00', 7, NULL, NULL, NULL, 0, 1, NULL, NULL, 13, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (12, 15, 6, 2, 3, 3, 40, '2006-01-25 00:00:00', '2006-01-25 00:01:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 13, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (13, 15, 1, 3, 3, 3, 40, '2006-01-26 00:00:00', '2006-01-26 00:01:00', '2007-09-13 00:00:01', NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 13, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (14, 15, 7, 3, 3, 3, 40, '2006-01-26 00:00:00', '2006-01-26 00:01:00', '2006-01-28 00:00:00', NULL, NULL, NULL, NULL, 0, 3, NULL, NULL, 13, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (15, 12, 7, 2, 3, 3, 40, '2006-01-26 00:00:00', '2006-01-26 00:01:00', NULL, NULL, NULL, NULL, NULL, 0, 3, NULL, NULL, 8, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (16, 15, 1, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-24 00:01:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 13, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (17, 16, 1, 2, 1, 1, 10, '2005-07-06 00:00:00', '2005-08-20 00:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 14, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (18, 17, 1, 3, 1, 1, 10, '2005-08-07 00:00:00', '2005-08-22 00:00:00', '2005-08-22 00:00:01', NULL, NULL, '2005-08-22 00:00:02', '2005-08-23 00:00:00', 0, 1, NULL, NULL, 15, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (19, 18, 1, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-20 00:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 13, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (20, 17, 1, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-20 00:01:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 15, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (21, 18, 11, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-20 00:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 13, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (22, 20, 8, 4, 1, 1, 40, '2006-09-13 00:00:00', '2006-09-13 00:00:01', '2006-09-13 00:00:01', NULL, NULL, '2006-09-13 00:00:02', '2006-09-13 00:00:03', 0, 1, 1, 'nah ...', 13, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (23, 6, 1, 4, 1, 1, 40, '2006-12-01 00:00:00', '2006-12-01 00:00:01', '2006-12-01 00:00:01', NULL, NULL, '2006-12-01 00:00:02', '2006-12-01 00:00:03', 0, 1, 28, 'I do not like it either', 6, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (24, 21, 1, 2, 1, 1, 40, '2006-12-01 00:00:00', '2006-12-01 00:00:01', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 16, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (26, 22, 1, 2, 1, 1, 40, '2006-04-11 13:00:00', '2006-04-11 13:00:01', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 8, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (27, 22, 1, 2, 1, 1, 40, '2007-07-10 13:00:00', '2007-07-10 13:00:01', NULL, NULL, NULL, NULL, NULL, 0, 9, NULL, NULL, 8, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (28, 23, 1, 2, 1, 1, 40, '2007-07-10 13:00:00', '2007-07-10 13:00:01', NULL, NULL, NULL, NULL, NULL, 0, 9, NULL, NULL, 13, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (29, 23, 12, 2, 1, 1, 40, '2007-07-10 13:00:00', '2007-07-10 13:00:01', NULL, NULL, NULL, NULL, NULL, 0, 9, NULL, NULL, 13, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (30, 24, 12, 2, 1, 1, 40, '2007-08-10 13:00:00', '2007-08-10 13:00:01', NULL, NULL, NULL, NULL, NULL, 0, 9, NULL, NULL, 8, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (31, 25, 8, 2, 5, 7, 20, '2007-08-09 21:55:39.561526', '2007-08-09 21:56:39.561526', NULL, NULL, NULL, NULL, NULL, 0, 12, NULL, NULL, 17, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (32, 26, 12, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-18 00:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 8, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (33, 27, 1, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-18 00:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 18, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (34, 27, 12, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-18 00:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 18, NULL, NULL, NULL);
-INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive) VALUES (35, 24, 12, 2, 1, 1, 40, '2007-08-10 13:00:00', '2007-08-10 13:00:01', NULL, NULL, NULL, NULL, NULL, 0, 10, NULL, NULL, 8, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (9, 12, 1, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-18 00:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 8, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (11, 15, 6, 3, 1, 3, 40, '2005-05-05 00:00:00', '2005-05-05 00:01:00', '2006-01-25 00:00:00', 7, NULL, NULL, NULL, 0, 1, NULL, NULL, 13, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (12, 15, 6, 2, 3, 3, 40, '2006-01-25 00:00:00', '2006-01-25 00:01:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 13, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (13, 15, 1, 3, 3, 3, 40, '2006-01-26 00:00:00', '2006-01-26 00:01:00', '2007-09-13 00:00:01', NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 13, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (14, 15, 7, 3, 3, 3, 40, '2006-01-26 00:00:00', '2006-01-26 00:01:00', '2006-01-28 00:00:00', NULL, NULL, NULL, NULL, 0, 3, NULL, NULL, 13, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (15, 12, 7, 2, 3, 3, 40, '2006-01-26 00:00:00', '2006-01-26 00:01:00', NULL, NULL, NULL, NULL, NULL, 0, 3, NULL, NULL, 8, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (16, 15, 1, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-24 00:01:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 13, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (17, 16, 1, 2, 1, 1, 10, '2005-07-06 00:00:00', '2005-08-20 00:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 14, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (18, 17, 1, 3, 1, 1, 10, '2005-08-07 00:00:00', '2005-08-22 00:00:00', '2005-08-22 00:00:01', NULL, NULL, '2005-08-22 00:00:02', '2005-08-23 00:00:00', 0, 1, NULL, NULL, 15, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (19, 18, 1, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-20 00:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 13, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (20, 17, 1, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-20 00:01:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 15, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (21, 18, 11, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-20 00:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 13, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (22, 20, 8, 4, 1, 1, 40, '2006-09-13 00:00:00', '2006-09-13 00:00:01', '2006-09-13 00:00:01', NULL, NULL, '2006-09-13 00:00:02', '2006-09-13 00:00:03', 0, 1, 1, 'nah ...', 13, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (23, 6, 1, 4, 1, 1, 40, '2006-12-01 00:00:00', '2006-12-01 00:00:01', '2006-12-01 00:00:01', NULL, NULL, '2006-12-01 00:00:02', '2006-12-01 00:00:03', 0, 1, 28, 'I do not like it either', 6, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (24, 21, 1, 2, 1, 1, 40, '2006-12-01 00:00:00', '2006-12-01 00:00:01', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 16, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (26, 22, 1, 2, 1, 1, 40, '2006-04-11 13:00:00', '2006-04-11 13:00:01', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 8, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (27, 22, 1, 2, 1, 1, 40, '2007-07-10 13:00:00', '2007-07-10 13:00:01', NULL, NULL, NULL, NULL, NULL, 0, 9, NULL, NULL, 8, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (28, 23, 1, 2, 1, 1, 40, '2007-07-10 13:00:00', '2007-07-10 13:00:01', NULL, NULL, NULL, NULL, NULL, 0, 9, NULL, NULL, 13, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (29, 23, 12, 2, 1, 1, 40, '2007-07-10 13:00:00', '2007-07-10 13:00:01', NULL, NULL, NULL, NULL, NULL, 0, 9, NULL, NULL, 13, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (30, 24, 12, 2, 1, 1, 40, '2007-08-10 13:00:00', '2007-08-10 13:00:01', NULL, NULL, NULL, NULL, NULL, 0, 9, NULL, NULL, 8, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (31, 25, 8, 2, 5, 7, 20, '2007-08-09 21:55:39.561526', '2007-08-09 21:56:39.561526', NULL, NULL, NULL, NULL, NULL, 0, 12, NULL, NULL, 17, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (32, 26, 12, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-18 00:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 8, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (33, 27, 1, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-18 00:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 18, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (34, 27, 12, 2, 1, 1, 10, '2005-05-05 00:00:00', '2005-06-18 00:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, 18, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.binarypackagepublishinghistory (id, binarypackagerelease, distroarchseries, status, component, section, priority, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, binarypackagename, phased_update_percentage, creator, copied_from_archive, binarypackageformat, channel) VALUES (35, 24, 12, 2, 1, 1, 40, '2007-08-10 13:00:00', '2007-08-10 13:00:01', NULL, NULL, NULL, NULL, NULL, 0, 10, NULL, NULL, 8, NULL, NULL, NULL, NULL, NULL);
 
 
 ALTER TABLE public.binarypackagepublishinghistory ENABLE TRIGGER ALL;
@@ -2881,34 +2888,34 @@ ALTER TABLE public.bugtag ENABLE TRIGGER ALL;
 
 ALTER TABLE public.bugtask DISABLE TRIGGER ALL;
 
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (2, 1, 4, NULL, NULL, NULL, 10, 20, 1, '2005-01-02 11:07:20.330975', '2004-01-02 03:49:22.910878', 12, NULL, NULL, 'Mozilla Firefox', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (3, 2, 1, NULL, NULL, NULL, 10, 20, NULL, '2005-01-03 11:07:20.330975', '2004-01-03 03:49:22.908491', 12, NULL, NULL, 'Tomcat', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (4, 1, NULL, 3, NULL, 1, 20, 20, NULL, '2005-01-04 11:07:20.584746', '2004-01-04 03:49:22.79024', 12, NULL, 8, 'mozilla-firefox (Debian)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (5, 2, NULL, 3, NULL, 1, 20, 20, 12, '2005-01-05 11:07:20.584746', '2004-01-05 03:49:22.824591', 12, NULL, NULL, 'mozilla-firefox (Debian)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (6, 3, NULL, 3, NULL, 1, 10, 999, NULL, '2005-01-06 11:07:20.584746', '2004-01-06 03:49:22.825533', 16, NULL, NULL, 'mozilla-firefox (Debian)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (13, 4, 4, NULL, NULL, NULL, 10, 30, NULL, '2005-01-13 17:20:12.820778', '2004-01-13 17:20:12.820778', 12, NULL, NULL, 'Mozilla Firefox', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (14, 5, 4, NULL, NULL, NULL, 10, 50, 12, '2005-01-14 17:27:03.702622', '2004-01-14 17:27:03.702622', 12, NULL, NULL, 'Mozilla Firefox', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (15, 6, 4, NULL, NULL, NULL, 10, 40, NULL, '2005-01-15 17:35:39.548665', '2004-01-15 17:35:39.548665', 12, NULL, NULL, 'Mozilla Firefox', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (16, 5, NULL, NULL, 1, 1, 10, 30, NULL, '2005-01-16 14:43:02.452716', '2004-01-16 14:43:02.452716', 12, NULL, NULL, 'mozilla-firefox (Ubuntu Warty)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (17, 1, NULL, 1, NULL, 1, 10, 30, NULL, '2005-01-17 01:15:48.241836', '2004-01-17 01:15:48.241836', 16, NULL, NULL, 'mozilla-firefox (Ubuntu)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (18, 3, NULL, NULL, 6, 1, 10, 30, NULL, '2005-01-18 16:30:32.295049', '2004-01-18 16:30:32.295049', 12, NULL, NULL, 'mozilla-firefox (Debian Woody)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (19, 3, NULL, NULL, 7, 1, 10, 30, NULL, '2005-01-19 16:30:47.448639', '2004-01-19 16:30:47.448639', 12, 2, 10, 'mozilla-firefox (Debian Sarge)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (20, 2, NULL, NULL, 6, 1, 10, 30, NULL, '2005-01-20 13:54:57.840344', '2004-01-20 13:54:57.840344', 12, NULL, NULL, 'mozilla-firefox (Debian Woody)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (21, 7, 5, NULL, NULL, NULL, 10, 30, 16, '2005-01-21 15:12:29.602117', '2004-01-21 15:12:29.602117', 16, NULL, NULL, 'Evolution', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (22, 8, NULL, 3, NULL, 1, 30, 30, 16, '2005-01-22 09:10:17.13237', '2004-01-22 09:10:17.13237', 12, NULL, NULL, 'mozilla-firefox (Debian)', NULL, NULL, '2005-01-25 09:10:17.13237', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (23, 9, NULL, 1, NULL, 18, 20, 30, NULL, '2005-01-23 16:42:14.080227', '2004-01-23 16:42:14.080227', 16, NULL, NULL, 'thunderbird (Ubuntu)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (24, 9, 8, NULL, NULL, NULL, 999, 999, NULL, '2005-01-24 16:43:25.744534', '2004-01-24 16:43:25.744534', 12, NULL, 6, 'Mozilla Thunderbird', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (25, 10, NULL, 1, NULL, 22, 10, 30, NULL, '2005-01-25 19:42:21.890299', '2004-01-25 19:42:21.890299', 16, NULL, NULL, 'linux-source-2.6.15 (Ubuntu)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (26, 2, NULL, 1, NULL, NULL, 10, 30, NULL, '2005-01-26 10:11:02.729077', '2004-01-26 10:11:02.729077', 16, NULL, NULL, 'Ubuntu', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (27, 7, NULL, 3, NULL, 9, 999, 999, NULL, '2005-01-27 16:45:45.054836', '2004-01-27 16:45:45.054836', 12, NULL, 7, 'evolution (Debian)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (28, 2, NULL, NULL, 3, NULL, 10, 5, NULL, NULL, '2006-08-21 22:23:08.163936', 1, NULL, NULL, 'Ubuntu Hoary', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (29, 5, NULL, NULL, NULL, NULL, 10, 5, NULL, NULL, '2007-01-04 15:00:50.431687', 16, NULL, NULL, 'Mozilla Firefox 1.0', NULL, NULL, NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (30, 11, 20, NULL, NULL, NULL, 10, 5, NULL, NULL, '2007-03-15 20:33:56.67893', 16, NULL, NULL, 'Jokosher', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (31, 12, 20, NULL, NULL, NULL, 20, 50, NULL, NULL, '2007-03-15 20:41:18.635493', 16, NULL, NULL, 'Jokosher', '2007-03-15 20:41:42.256326', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (32, 13, 17, NULL, NULL, NULL, 10, 5, NULL, NULL, '2007-07-27 20:00:58.299796', 12, NULL, NULL, 'Launchpad', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (33, 14, 20, NULL, NULL, NULL, 10, 5, NULL, NULL, '2007-08-09 11:39:16.836856', 63, NULL, NULL, 'Jokosher', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (34, 15, 22, NULL, NULL, NULL, 10, 5, NULL, NULL, '2007-12-18 16:30:19.103679', 16, NULL, NULL, 'Redfish', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries) VALUES (35, 15, 8, NULL, NULL, NULL, 10, 999, NULL, NULL, '2007-12-18 16:30:47.889614', 16, NULL, 11, 'Mozilla Thunderbird', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (2, 1, 4, NULL, NULL, NULL, 10, 20, 1, '2005-01-02 11:07:20.330975', '2004-01-02 03:49:22.910878', 12, NULL, NULL, 'Mozilla Firefox', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (3, 2, 1, NULL, NULL, NULL, 10, 20, NULL, '2005-01-03 11:07:20.330975', '2004-01-03 03:49:22.908491', 12, NULL, NULL, 'Tomcat', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (4, 1, NULL, 3, NULL, 1, 20, 20, NULL, '2005-01-04 11:07:20.584746', '2004-01-04 03:49:22.79024', 12, NULL, 8, 'mozilla-firefox (Debian)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (5, 2, NULL, 3, NULL, 1, 20, 20, 12, '2005-01-05 11:07:20.584746', '2004-01-05 03:49:22.824591', 12, NULL, NULL, 'mozilla-firefox (Debian)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (6, 3, NULL, 3, NULL, 1, 10, 999, NULL, '2005-01-06 11:07:20.584746', '2004-01-06 03:49:22.825533', 16, NULL, NULL, 'mozilla-firefox (Debian)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (13, 4, 4, NULL, NULL, NULL, 10, 30, NULL, '2005-01-13 17:20:12.820778', '2004-01-13 17:20:12.820778', 12, NULL, NULL, 'Mozilla Firefox', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (14, 5, 4, NULL, NULL, NULL, 10, 50, 12, '2005-01-14 17:27:03.702622', '2004-01-14 17:27:03.702622', 12, NULL, NULL, 'Mozilla Firefox', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (15, 6, 4, NULL, NULL, NULL, 10, 40, NULL, '2005-01-15 17:35:39.548665', '2004-01-15 17:35:39.548665', 12, NULL, NULL, 'Mozilla Firefox', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (16, 5, NULL, NULL, 1, 1, 10, 30, NULL, '2005-01-16 14:43:02.452716', '2004-01-16 14:43:02.452716', 12, NULL, NULL, 'mozilla-firefox (Ubuntu Warty)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (17, 1, NULL, 1, NULL, 1, 10, 30, NULL, '2005-01-17 01:15:48.241836', '2004-01-17 01:15:48.241836', 16, NULL, NULL, 'mozilla-firefox (Ubuntu)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (18, 3, NULL, NULL, 6, 1, 10, 30, NULL, '2005-01-18 16:30:32.295049', '2004-01-18 16:30:32.295049', 12, NULL, NULL, 'mozilla-firefox (Debian Woody)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (19, 3, NULL, NULL, 7, 1, 10, 30, NULL, '2005-01-19 16:30:47.448639', '2004-01-19 16:30:47.448639', 12, 2, 10, 'mozilla-firefox (Debian Sarge)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (20, 2, NULL, NULL, 6, 1, 10, 30, NULL, '2005-01-20 13:54:57.840344', '2004-01-20 13:54:57.840344', 12, NULL, NULL, 'mozilla-firefox (Debian Woody)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (21, 7, 5, NULL, NULL, NULL, 10, 30, 16, '2005-01-21 15:12:29.602117', '2004-01-21 15:12:29.602117', 16, NULL, NULL, 'Evolution', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (22, 8, NULL, 3, NULL, 1, 30, 30, 16, '2005-01-22 09:10:17.13237', '2004-01-22 09:10:17.13237', 12, NULL, NULL, 'mozilla-firefox (Debian)', NULL, NULL, '2005-01-25 09:10:17.13237', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (23, 9, NULL, 1, NULL, 18, 20, 30, NULL, '2005-01-23 16:42:14.080227', '2004-01-23 16:42:14.080227', 16, NULL, NULL, 'thunderbird (Ubuntu)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (24, 9, 8, NULL, NULL, NULL, 999, 999, NULL, '2005-01-24 16:43:25.744534', '2004-01-24 16:43:25.744534', 12, NULL, 6, 'Mozilla Thunderbird', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (25, 10, NULL, 1, NULL, 22, 10, 30, NULL, '2005-01-25 19:42:21.890299', '2004-01-25 19:42:21.890299', 16, NULL, NULL, 'linux-source-2.6.15 (Ubuntu)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (26, 2, NULL, 1, NULL, NULL, 10, 30, NULL, '2005-01-26 10:11:02.729077', '2004-01-26 10:11:02.729077', 16, NULL, NULL, 'Ubuntu', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (27, 7, NULL, 3, NULL, 9, 999, 999, NULL, '2005-01-27 16:45:45.054836', '2004-01-27 16:45:45.054836', 12, NULL, 7, 'evolution (Debian)', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (28, 2, NULL, NULL, 3, NULL, 10, 5, NULL, NULL, '2006-08-21 22:23:08.163936', 1, NULL, NULL, 'Ubuntu Hoary', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (29, 5, NULL, NULL, NULL, NULL, 10, 5, NULL, NULL, '2007-01-04 15:00:50.431687', 16, NULL, NULL, 'Mozilla Firefox 1.0', NULL, NULL, NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (30, 11, 20, NULL, NULL, NULL, 10, 5, NULL, NULL, '2007-03-15 20:33:56.67893', 16, NULL, NULL, 'Jokosher', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (31, 12, 20, NULL, NULL, NULL, 20, 50, NULL, NULL, '2007-03-15 20:41:18.635493', 16, NULL, NULL, 'Jokosher', '2007-03-15 20:41:42.256326', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (32, 13, 17, NULL, NULL, NULL, 10, 5, NULL, NULL, '2007-07-27 20:00:58.299796', 12, NULL, NULL, 'Launchpad', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (33, 14, 20, NULL, NULL, NULL, 10, 5, NULL, NULL, '2007-08-09 11:39:16.836856', 63, NULL, NULL, 'Jokosher', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (34, 15, 22, NULL, NULL, NULL, 10, 5, NULL, NULL, '2007-12-18 16:30:19.103679', 16, NULL, NULL, 'Redfish', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.bugtask (id, bug, product, distribution, distroseries, sourcepackagename, status, importance, assignee, date_assigned, datecreated, owner, milestone, bugwatch, targetnamecache, date_confirmed, date_inprogress, date_closed, productseries, date_incomplete, date_left_new, date_triaged, date_fix_committed, date_fix_released, date_left_closed, date_milestone_set, ociproject, ociprojectseries, status_explanation, importance_explanation) VALUES (35, 15, 8, NULL, NULL, NULL, 10, 999, NULL, NULL, '2007-12-18 16:30:47.889614', 16, NULL, 11, 'Mozilla Thunderbird', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 
 ALTER TABLE public.bugtask ENABLE TRIGGER ALL;
@@ -3145,8 +3152,8 @@ ALTER TABLE public.codereviewvote ENABLE TRIGGER ALL;
 
 ALTER TABLE public.commercialsubscription DISABLE TRIGGER ALL;
 
-INSERT INTO public.commercialsubscription (id, date_created, date_last_modified, date_starts, date_expires, status, product, registrant, purchaser, whiteboard, sales_system_id) VALUES (1, '2012-10-08 11:09:37.75983', '2012-10-08 11:09:37.75983', '2012-10-08 11:09:37.838229', '2032-01-01 00:00:00', 10, 16, 65, 65, 'Complimentary 30 day subscription. -- Launchpad 2012-10-08', 'complimentary-30-day-2012-10-08 11:09:37.838229+00:00');
-INSERT INTO public.commercialsubscription (id, date_created, date_last_modified, date_starts, date_expires, status, product, registrant, purchaser, whiteboard, sales_system_id) VALUES (2, '2012-10-08 11:09:46.861812', '2012-10-08 11:09:46.861812', '2012-10-08 11:09:46.912691', '2032-01-01 00:00:00', 10, 17, 65, 65, 'Complimentary 30 day subscription. -- Launchpad 2012-10-08', 'complimentary-30-day-2012-10-08 11:09:46.912691+00:00');
+INSERT INTO public.commercialsubscription (id, date_created, date_last_modified, date_starts, date_expires, status, product, registrant, purchaser, whiteboard, sales_system_id, distribution) VALUES (1, '2012-10-08 11:09:37.75983', '2012-10-08 11:09:37.75983', '2012-10-08 11:09:37.838229', '2032-01-01 00:00:00', 10, 16, 65, 65, 'Complimentary 30 day subscription. -- Launchpad 2012-10-08', 'complimentary-30-day-2012-10-08 11:09:37.838229+00:00', NULL);
+INSERT INTO public.commercialsubscription (id, date_created, date_last_modified, date_starts, date_expires, status, product, registrant, purchaser, whiteboard, sales_system_id, distribution) VALUES (2, '2012-10-08 11:09:46.861812', '2012-10-08 11:09:46.861812', '2012-10-08 11:09:46.912691', '2032-01-01 00:00:00', 10, 17, 65, 65, 'Complimentary 30 day subscription. -- Launchpad 2012-10-08', 'complimentary-30-day-2012-10-08 11:09:46.912691+00:00', NULL);
 
 
 ALTER TABLE public.commercialsubscription ENABLE TRIGGER ALL;
@@ -3187,16 +3194,16 @@ ALTER TABLE public.customlanguagecode ENABLE TRIGGER ALL;
 
 ALTER TABLE public.cve DISABLE TRIGGER ALL;
 
-INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti) VALUES (1, '1999-8979', 2, 'Firefox crashes all the time', '2005-09-07 19:00:32.944561', '2005-09-13 14:00:03.508959', NULL);
-INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti) VALUES (2, '1999-2345', 1, 'Possible data loss', '2005-09-07 19:00:32.944561', '2005-09-13 14:00:03.513099', NULL);
-INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti) VALUES (3, '2005-2730', 1, 'The HTTP proxy in Astaro Security Linux 6.0 allows remote attackers to obtain sensitive information via an invalid request, which reveals a Proxy-authorization string in an error message.', '2005-09-13 14:05:15.669384', '2005-09-13 14:05:15.669384', NULL);
-INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti) VALUES (4, '2005-2731', 1, 'Directory traversal vulnerability in Astaro Security Linux 6.0, when using Webmin, allows remote authenticated webmin users to read arbitrary files via a ..  (dot dot) in the wfe_download parameter to index.fpl.', '2005-09-13 14:05:15.91729', '2005-09-13 14:05:15.91729', NULL);
-INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti) VALUES (5, '2005-2732', 1, 'AWStats 6.4, and possibly earlier versions, allows remote attackers to obtain sensitive information via a file that does not exist in the config parameter, which reveals the path in an error message.', '2005-09-13 14:05:15.992007', '2005-09-13 14:05:15.992007', NULL);
-INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti) VALUES (6, '2005-2733', 1, 'upload_img_cgi.php in Simple PHP Blog (SPHPBlog) does not properly restrict file extensions of uploaded files, which could allow remote attackers to execute arbitrary code.', '2005-09-13 14:05:16.072418', '2005-09-13 14:05:16.072418', NULL);
-INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti) VALUES (7, '2005-2734', 1, 'Cross-site scripting (XSS) vulnerability in Gallery 1.5.1-RC2 and earlier allows remote attackers to inject arbitrary web script or HTML via EXIF data, such as the Camera Model Tag.', '2005-09-13 14:05:16.202393', '2005-09-13 14:05:16.202393', NULL);
-INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti) VALUES (8, '2005-2735', 1, 'Cross-site scripting (XSS) vulnerability in phpGraphy 0.9.9a and earlier allows remote attackers to inject arbitrary web script or HTML via EXIF data, such as the Camera Model Tag.', '2005-09-13 14:05:16.412226', '2005-09-13 14:05:16.412226', NULL);
-INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti) VALUES (9, '2005-2736', 1, 'Cross-site scripting (XSS) vulnerability in YaPig 0.95 and earlier allows remote attackers to inject arbitrary web script or HTML via EXIF data, such as the Camera Model Tag.', '2005-09-13 14:05:16.841572', '2005-09-13 14:05:16.841572', NULL);
-INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti) VALUES (10, '2005-2737', 1, 'Cross-site scripting (XSS) vulnerability in PhotoPost PHP Pro 5.1 allows remote attackers to inject arbitrary web script or HTML via EXIF data, such as the Camera Model Tag.', '2005-09-13 14:05:17.043865', '2005-09-13 14:05:17.043865', NULL);
+INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti, date_made_public, discoverer, cvss) VALUES (1, '1999-8979', 2, 'Firefox crashes all the time', '2005-09-07 19:00:32.944561', '2005-09-13 14:00:03.508959', NULL, NULL, NULL, NULL);
+INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti, date_made_public, discoverer, cvss) VALUES (2, '1999-2345', 1, 'Possible data loss', '2005-09-07 19:00:32.944561', '2005-09-13 14:00:03.513099', NULL, NULL, NULL, NULL);
+INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti, date_made_public, discoverer, cvss) VALUES (3, '2005-2730', 1, 'The HTTP proxy in Astaro Security Linux 6.0 allows remote attackers to obtain sensitive information via an invalid request, which reveals a Proxy-authorization string in an error message.', '2005-09-13 14:05:15.669384', '2005-09-13 14:05:15.669384', NULL, NULL, NULL, NULL);
+INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti, date_made_public, discoverer, cvss) VALUES (4, '2005-2731', 1, 'Directory traversal vulnerability in Astaro Security Linux 6.0, when using Webmin, allows remote authenticated webmin users to read arbitrary files via a ..  (dot dot) in the wfe_download parameter to index.fpl.', '2005-09-13 14:05:15.91729', '2005-09-13 14:05:15.91729', NULL, NULL, NULL, NULL);
+INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti, date_made_public, discoverer, cvss) VALUES (5, '2005-2732', 1, 'AWStats 6.4, and possibly earlier versions, allows remote attackers to obtain sensitive information via a file that does not exist in the config parameter, which reveals the path in an error message.', '2005-09-13 14:05:15.992007', '2005-09-13 14:05:15.992007', NULL, NULL, NULL, NULL);
+INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti, date_made_public, discoverer, cvss) VALUES (6, '2005-2733', 1, 'upload_img_cgi.php in Simple PHP Blog (SPHPBlog) does not properly restrict file extensions of uploaded files, which could allow remote attackers to execute arbitrary code.', '2005-09-13 14:05:16.072418', '2005-09-13 14:05:16.072418', NULL, NULL, NULL, NULL);
+INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti, date_made_public, discoverer, cvss) VALUES (7, '2005-2734', 1, 'Cross-site scripting (XSS) vulnerability in Gallery 1.5.1-RC2 and earlier allows remote attackers to inject arbitrary web script or HTML via EXIF data, such as the Camera Model Tag.', '2005-09-13 14:05:16.202393', '2005-09-13 14:05:16.202393', NULL, NULL, NULL, NULL);
+INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti, date_made_public, discoverer, cvss) VALUES (8, '2005-2735', 1, 'Cross-site scripting (XSS) vulnerability in phpGraphy 0.9.9a and earlier allows remote attackers to inject arbitrary web script or HTML via EXIF data, such as the Camera Model Tag.', '2005-09-13 14:05:16.412226', '2005-09-13 14:05:16.412226', NULL, NULL, NULL, NULL);
+INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti, date_made_public, discoverer, cvss) VALUES (9, '2005-2736', 1, 'Cross-site scripting (XSS) vulnerability in YaPig 0.95 and earlier allows remote attackers to inject arbitrary web script or HTML via EXIF data, such as the Camera Model Tag.', '2005-09-13 14:05:16.841572', '2005-09-13 14:05:16.841572', NULL, NULL, NULL, NULL);
+INSERT INTO public.cve (id, sequence, status, description, datecreated, datemodified, fti, date_made_public, discoverer, cvss) VALUES (10, '2005-2737', 1, 'Cross-site scripting (XSS) vulnerability in PhotoPost PHP Pro 5.1 allows remote attackers to inject arbitrary web script or HTML via EXIF data, such as the Camera Model Tag.', '2005-09-13 14:05:17.043865', '2005-09-13 14:05:17.043865', NULL, NULL, NULL, NULL);
 
 
 ALTER TABLE public.cve ENABLE TRIGGER ALL;
@@ -4042,64 +4049,64 @@ ALTER TABLE public.karma ENABLE TRIGGER ALL;
 
 ALTER TABLE public.karmacache DISABLE TRIGGER ALL;
 
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1423, 12, 6, 22, 6, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1424, 12, 2, 15, 12, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1425, 13, 3, 9, 5, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1426, 12, 6, 22, 9, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1427, 12, 2, 13, NULL, 1, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1428, 12, 2, 66, 4, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1429, 1, 6, 22, 5, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1430, 16, 2, 15, 8, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1431, 1, 6, 27, 4, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1432, 16, 2, 2, 14, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1433, 16, 2, 15, 13, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1434, 1, 6, 37, NULL, 1, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1435, 1, 6, 18, 15, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1437, 16, 2, 26, NULL, 1, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1438, 1, 6, 17, 12, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1439, 1, 6, 9, 11, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1440, 16, 3, 164, 5, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1441, 16, 2, 11, 5, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1442, 16, 2, 8, 4, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1443, 1, 6, 130, NULL, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1444, 12, 2, 94, NULL, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1445, 12, 6, 44, NULL, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1446, 13, 3, 9, NULL, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1447, 16, 2, 77, NULL, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1448, 16, 3, 164, NULL, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1449, 12, NULL, 22, 9, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1450, 12, NULL, 15, 12, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1451, 16, NULL, 8, 4, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1452, 16, NULL, 175, 5, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1453, 1, NULL, 27, 4, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1454, 1, NULL, 22, 5, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1455, 16, NULL, 15, 8, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1456, 1, NULL, 9, 11, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1457, 12, NULL, 66, 4, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1458, 16, NULL, 15, 13, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1459, 1, NULL, 18, 15, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1460, 12, NULL, 22, 6, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1461, 16, NULL, 2, 14, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1462, 1, NULL, 17, 12, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1463, 13, NULL, 9, 5, NULL, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1464, 12, NULL, 13, NULL, 1, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1465, 16, NULL, 26, NULL, 1, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1466, 1, NULL, 37, NULL, 1, NULL, NULL);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1467, 16, NULL, 23, NULL, NULL, NULL, 4);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1468, 12, NULL, 66, NULL, NULL, NULL, 4);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1469, 16, NULL, 190, NULL, NULL, NULL, 5);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1470, 12, NULL, 44, NULL, NULL, NULL, 5);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1471, 1, NULL, 27, NULL, NULL, NULL, 4);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1472, 13, NULL, 9, NULL, NULL, NULL, 5);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1473, 1, NULL, 31, NULL, NULL, NULL, 5);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1474, 1, 6, 31, NULL, NULL, NULL, 5);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1475, 1, 6, 27, NULL, NULL, NULL, 4);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1476, 16, 3, 164, NULL, NULL, NULL, 5);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1477, 16, 2, 26, NULL, NULL, NULL, 5);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1478, 12, 6, 44, NULL, NULL, NULL, 5);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1479, 16, 2, 23, NULL, NULL, NULL, 4);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1480, 12, 2, 66, NULL, NULL, NULL, 4);
-INSERT INTO public.karmacache (id, person, category, karmavalue, product, distribution, sourcepackagename, project) VALUES (1481, 13, 3, 9, NULL, NULL, NULL, 5);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, 6, 130, NULL, NULL, NULL, NULL, 1443);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, 6, 17, 12, NULL, NULL, NULL, 1438);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, 6, 18, 15, NULL, NULL, NULL, 1435);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, 6, 22, 5, NULL, NULL, NULL, 1429);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, 6, 27, 4, NULL, NULL, NULL, 1431);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, 6, 27, NULL, NULL, NULL, 4, 1475);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, 6, 31, NULL, NULL, NULL, 5, 1474);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, 6, 37, NULL, 1, NULL, NULL, 1434);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, 6, 9, 11, NULL, NULL, NULL, 1439);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, NULL, 17, 12, NULL, NULL, NULL, 1462);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, NULL, 18, 15, NULL, NULL, NULL, 1459);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, NULL, 22, 5, NULL, NULL, NULL, 1454);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, NULL, 27, 4, NULL, NULL, NULL, 1453);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, NULL, 27, NULL, NULL, NULL, 4, 1471);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, NULL, 31, NULL, NULL, NULL, 5, 1473);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, NULL, 37, NULL, 1, NULL, NULL, 1466);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (1, NULL, 9, 11, NULL, NULL, NULL, 1456);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, 2, 13, NULL, 1, NULL, NULL, 1427);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, 2, 15, 12, NULL, NULL, NULL, 1424);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, 2, 66, 4, NULL, NULL, NULL, 1428);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, 2, 66, NULL, NULL, NULL, 4, 1480);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, 2, 94, NULL, NULL, NULL, NULL, 1444);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, 6, 22, 6, NULL, NULL, NULL, 1423);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, 6, 22, 9, NULL, NULL, NULL, 1426);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, 6, 44, NULL, NULL, NULL, 5, 1478);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, 6, 44, NULL, NULL, NULL, NULL, 1445);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, NULL, 13, NULL, 1, NULL, NULL, 1464);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, NULL, 15, 12, NULL, NULL, NULL, 1450);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, NULL, 22, 6, NULL, NULL, NULL, 1460);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, NULL, 22, 9, NULL, NULL, NULL, 1449);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, NULL, 44, NULL, NULL, NULL, 5, 1470);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, NULL, 66, 4, NULL, NULL, NULL, 1457);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (12, NULL, 66, NULL, NULL, NULL, 4, 1468);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (13, 3, 9, 5, NULL, NULL, NULL, 1425);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (13, 3, 9, NULL, NULL, NULL, 5, 1481);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (13, 3, 9, NULL, NULL, NULL, NULL, 1446);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (13, NULL, 9, 5, NULL, NULL, NULL, 1463);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (13, NULL, 9, NULL, NULL, NULL, 5, 1472);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, 2, 11, 5, NULL, NULL, NULL, 1441);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, 2, 15, 13, NULL, NULL, NULL, 1433);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, 2, 15, 8, NULL, NULL, NULL, 1430);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, 2, 2, 14, NULL, NULL, NULL, 1432);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, 2, 23, NULL, NULL, NULL, 4, 1479);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, 2, 26, NULL, 1, NULL, NULL, 1437);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, 2, 26, NULL, NULL, NULL, 5, 1477);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, 2, 77, NULL, NULL, NULL, NULL, 1447);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, 2, 8, 4, NULL, NULL, NULL, 1442);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, 3, 164, 5, NULL, NULL, NULL, 1440);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, 3, 164, NULL, NULL, NULL, 5, 1476);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, 3, 164, NULL, NULL, NULL, NULL, 1448);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, NULL, 15, 13, NULL, NULL, NULL, 1458);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, NULL, 15, 8, NULL, NULL, NULL, 1455);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, NULL, 175, 5, NULL, NULL, NULL, 1452);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, NULL, 190, NULL, NULL, NULL, 5, 1469);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, NULL, 2, 14, NULL, NULL, NULL, 1461);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, NULL, 23, NULL, NULL, NULL, 4, 1467);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, NULL, 26, NULL, 1, NULL, NULL, 1465);
+INSERT INTO public.karmacache (person, category, karmavalue, product, distribution, sourcepackagename, project, id) VALUES (16, NULL, 8, 4, NULL, NULL, NULL, 1451);
 
 
 ALTER TABLE public.karmacache ENABLE TRIGGER ALL;
@@ -4158,33 +4165,33 @@ ALTER TABLE public.packageupload ENABLE TRIGGER ALL;
 
 ALTER TABLE public.sourcepackagepublishinghistory DISABLE TRIGGER ALL;
 
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (1, 14, 1, 1, 1, 3, '2004-09-27 11:57:13', NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 1, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (2, 15, 3, 2, 1, 3, '2004-09-27 11:57:13', '2004-09-27 11:57:13', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 9, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (4, 17, 1, 2, 1, 1, '2004-03-14 18:00:00', '2004-03-14 18:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (5, 16, 3, 2, 1, 2, '2004-03-10 16:30:00', '2004-03-10 16:30:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (8, 20, 3, 3, 1, 1, '2005-04-18 17:34:15.308434', '2005-04-18 17:34:15.308434', '2005-08-24 17:01:15.308434', 21, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 14, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (9, 21, 3, 2, 1, 3, '2005-08-24 17:01:15.308434', '2005-08-24 17:01:15.308434', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 14, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (10, 23, 1, 2, 1, 1, '2005-09-15 11:42:02.870714', '2005-09-15 11:42:02.870714', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 19, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (11, 24, 8, 2, 1, 2, '2005-09-15 11:42:21.070926', '2005-09-15 11:42:21.070926', NULL, NULL, NULL, NULL, NULL, 0, 3, NULL, NULL, NULL, 19, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (12, 25, 3, 2, 1, 1, '2005-09-15 11:43:00.05741', '2005-09-15 11:43:00.05741', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 19, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (13, 26, 3, 2, 3, 1, '2005-12-22 18:19:00.05741', '2005-12-22 18:20:00.05741', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 20, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (14, 24, 3, 3, 1, 3, '2005-09-15 11:44:00.10654', '2005-09-15 11:44:00.10654', '2005-09-15 11:44:00.10654', 25, '2005-09-15 11:44:00.10654', '2005-09-15 11:44:00.10654', '2005-09-15 11:44:00.10654', 0, 1, NULL, NULL, NULL, 19, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (15, 24, 1, 2, 1, 1, '2005-09-16 11:42:02.870714', '2005-09-16 11:42:02.870714', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 19, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (16, 27, 3, 2, 1, 1, '2005-02-10 12:19:00.05741', '2005-02-10 12:20:00.05741', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 21, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (17, 28, 3, 2, 1, 1, '2005-02-10 12:19:00.05741', '2005-02-10 12:20:00.05741', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 22, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (18, 14, 1, 2, 1, 2, '2006-02-13 12:19:00.05741', '2006-02-13 12:19:00.05741', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 1, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (19, 28, 1, 1, 1, 3, '2006-02-15 12:19:00.05741', NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 22, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (20, 25, 1, 1, 1, 3, '2006-02-15 12:19:00.05741', NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 19, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (21, 24, 11, 4, 1, 3, '2006-09-14 11:44:00.10654', '2006-09-14 11:44:00', '2006-09-14 11:44:01', 25, '2006-09-14 11:45:00', '2006-09-14 11:45:00', '2006-09-15 11:45:00', 0, 8, 1, 'does anyone like ? I did not think so.', NULL, 19, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (22, 32, 1, 4, 1, 3, '2006-12-01 13:44:00.10654', '2006-12-01 11:44:00', NULL, NULL, NULL, NULL, '2006-12-02 11:44:00', 0, 1, 28, 'I do not like it.', NULL, 23, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (23, 33, 1, 2, 1, 3, '2006-12-01 13:44:00.10654', '2006-12-01 11:44:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 24, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (25, 33, 10, 2, 1, 3, '2007-04-25 13:44:00.10654', '2007-04-25 14:14:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 24, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (26, 35, 1, 2, 1, 3, '2006-04-11 12:00:00', '2006-04-11 12:00:01', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 26, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (27, 33, 10, 2, 1, 3, '2007-07-09 13:44:00.10654', '2007-07-09 14:14:00', NULL, NULL, NULL, NULL, NULL, 0, 9, NULL, NULL, NULL, 24, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (28, 35, 1, 2, 1, 3, '2007-07-09 12:00:00', '2007-07-09 12:00:01', NULL, NULL, NULL, NULL, NULL, 0, 9, NULL, NULL, NULL, 26, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (29, 20, 1, 2, 1, 3, '2007-07-09 12:00:00', '2007-07-09 12:00:01', NULL, NULL, NULL, NULL, NULL, 0, 9, NULL, NULL, NULL, 14, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (30, 36, 10, 2, 5, 7, '2007-08-09 21:28:12.106187', '2007-08-09 21:28:13', NULL, NULL, NULL, NULL, NULL, 0, 12, NULL, NULL, NULL, 27, NULL, NULL, NULL, NULL);
-INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive) VALUES (31, 35, 10, 2, 1, 3, '2007-07-09 12:00:00', '2007-07-09 12:00:01', NULL, NULL, NULL, NULL, NULL, 0, 10, NULL, NULL, NULL, 26, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (1, 14, 1, 1, 1, 3, '2004-09-27 11:57:13', NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (2, 15, 3, 2, 1, 3, '2004-09-27 11:57:13', '2004-09-27 11:57:13', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 9, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (4, 17, 1, 2, 1, 1, '2004-03-14 18:00:00', '2004-03-14 18:00:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (5, 16, 3, 2, 1, 2, '2004-03-10 16:30:00', '2004-03-10 16:30:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (8, 20, 3, 3, 1, 1, '2005-04-18 17:34:15.308434', '2005-04-18 17:34:15.308434', '2005-08-24 17:01:15.308434', 21, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 14, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (9, 21, 3, 2, 1, 3, '2005-08-24 17:01:15.308434', '2005-08-24 17:01:15.308434', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 14, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (10, 23, 1, 2, 1, 1, '2005-09-15 11:42:02.870714', '2005-09-15 11:42:02.870714', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 19, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (11, 24, 8, 2, 1, 2, '2005-09-15 11:42:21.070926', '2005-09-15 11:42:21.070926', NULL, NULL, NULL, NULL, NULL, 0, 3, NULL, NULL, NULL, 19, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (12, 25, 3, 2, 1, 1, '2005-09-15 11:43:00.05741', '2005-09-15 11:43:00.05741', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 19, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (13, 26, 3, 2, 3, 1, '2005-12-22 18:19:00.05741', '2005-12-22 18:20:00.05741', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 20, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (14, 24, 3, 3, 1, 3, '2005-09-15 11:44:00.10654', '2005-09-15 11:44:00.10654', '2005-09-15 11:44:00.10654', 25, '2005-09-15 11:44:00.10654', '2005-09-15 11:44:00.10654', '2005-09-15 11:44:00.10654', 0, 1, NULL, NULL, NULL, 19, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (15, 24, 1, 2, 1, 1, '2005-09-16 11:42:02.870714', '2005-09-16 11:42:02.870714', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 19, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (16, 27, 3, 2, 1, 1, '2005-02-10 12:19:00.05741', '2005-02-10 12:20:00.05741', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 21, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (17, 28, 3, 2, 1, 1, '2005-02-10 12:19:00.05741', '2005-02-10 12:20:00.05741', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 22, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (18, 14, 1, 2, 1, 2, '2006-02-13 12:19:00.05741', '2006-02-13 12:19:00.05741', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (19, 28, 1, 1, 1, 3, '2006-02-15 12:19:00.05741', NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 22, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (20, 25, 1, 1, 1, 3, '2006-02-15 12:19:00.05741', NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 19, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (21, 24, 11, 4, 1, 3, '2006-09-14 11:44:00.10654', '2006-09-14 11:44:00', '2006-09-14 11:44:01', 25, '2006-09-14 11:45:00', '2006-09-14 11:45:00', '2006-09-15 11:45:00', 0, 8, 1, 'does anyone like ? I did not think so.', NULL, 19, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (22, 32, 1, 4, 1, 3, '2006-12-01 13:44:00.10654', '2006-12-01 11:44:00', NULL, NULL, NULL, NULL, '2006-12-02 11:44:00', 0, 1, 28, 'I do not like it.', NULL, 23, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (23, 33, 1, 2, 1, 3, '2006-12-01 13:44:00.10654', '2006-12-01 11:44:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 24, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (25, 33, 10, 2, 1, 3, '2007-04-25 13:44:00.10654', '2007-04-25 14:14:00', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 24, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (26, 35, 1, 2, 1, 3, '2006-04-11 12:00:00', '2006-04-11 12:00:01', NULL, NULL, NULL, NULL, NULL, 0, 1, NULL, NULL, NULL, 26, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (27, 33, 10, 2, 1, 3, '2007-07-09 13:44:00.10654', '2007-07-09 14:14:00', NULL, NULL, NULL, NULL, NULL, 0, 9, NULL, NULL, NULL, 24, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (28, 35, 1, 2, 1, 3, '2007-07-09 12:00:00', '2007-07-09 12:00:01', NULL, NULL, NULL, NULL, NULL, 0, 9, NULL, NULL, NULL, 26, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (29, 20, 1, 2, 1, 3, '2007-07-09 12:00:00', '2007-07-09 12:00:01', NULL, NULL, NULL, NULL, NULL, 0, 9, NULL, NULL, NULL, 14, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (30, 36, 10, 2, 5, 7, '2007-08-09 21:28:12.106187', '2007-08-09 21:28:13', NULL, NULL, NULL, NULL, NULL, 0, 12, NULL, NULL, NULL, 27, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO public.sourcepackagepublishinghistory (id, sourcepackagerelease, distroseries, status, component, section, datecreated, datepublished, datesuperseded, supersededby, datemadepending, scheduleddeletiondate, dateremoved, pocket, archive, removed_by, removal_comment, ancestor, sourcepackagename, creator, sponsor, packageupload, copied_from_archive, format, channel) VALUES (31, 35, 10, 2, 1, 3, '2007-07-09 12:00:00', '2007-07-09 12:00:01', NULL, NULL, NULL, NULL, NULL, 0, 10, NULL, NULL, NULL, 26, NULL, NULL, NULL, NULL, NULL, NULL);
 
 
 ALTER TABLE public.sourcepackagepublishinghistory ENABLE TRIGGER ALL;
@@ -10792,6 +10799,20 @@ INSERT INTO public.votecast (id, person, poll) VALUES (10, 16, 5);
 ALTER TABLE public.votecast ENABLE TRIGGER ALL;
 
 
+ALTER TABLE public.vulnerability DISABLE TRIGGER ALL;
+
+
+
+ALTER TABLE public.vulnerability ENABLE TRIGGER ALL;
+
+
+ALTER TABLE public.vulnerabilityactivity DISABLE TRIGGER ALL;
+
+
+
+ALTER TABLE public.vulnerabilityactivity ENABLE TRIGGER ALL;
+
+
 ALTER TABLE public.webhook DISABLE TRIGGER ALL;
 
 
@@ -10826,824 +10847,3 @@ INSERT INTO public.xref (from_type, from_id, from_id_int, to_type, to_id, to_id_
 
 
 ALTER TABLE public.xref ENABLE TRIGGER ALL;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
