@@ -56,7 +56,8 @@ class BugActivity(SQLBase):
     # The regular expression we use for matching bug task changes.
     bugtask_change_re = re.compile(
         r'(?P<target>[a-z0-9][a-z0-9\+\.\-]+( \([A-Za-z0-9\s]+\))?): '
-        r'(?P<attribute>assignee|importance|milestone|status)')
+        r'(?P<attribute>assignee|importance explanation|importance|'
+        r'milestone|status explanation|status)')
 
     @property
     def target(self):

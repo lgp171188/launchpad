@@ -134,7 +134,7 @@ def get_bug_changes(bug_delta):
         # The order here is important; see bug_change_field_names.
         bugtask_change_field_names = [
             'target', 'importance', 'status', 'milestone', 'bugwatch',
-            'assignee',
+            'assignee', 'importance_explanation', 'status_explanation',
             ]
         for bugtask_delta in bugtask_deltas:
             for field_name in bugtask_change_field_names:
@@ -1016,6 +1016,97 @@ class BugTaskTargetChange(AttributeChange):
         return {'text': text}
 
 
+class BugTaskImportanceExplanationChange(AttributeChange):
+    """Represents a change in BugTask.importance_explanation."""
+
+    def __init__(self, bug_task, when, person,
+                 what_changed, old_value, new_value):
+        # XXX: lgp171188 2022-04-12: This is a sub-class of
+        # the `AttributeChange` class instead of
+        # the `BugTaskAttributeChange` class because the latter
+        # requires the `display_attribute` property to be set and
+        # does a getattr(<old/new value>, self.display_attribute).
+        # This works when an attribute of the field has to be used
+        # like `milestone.name`, `importance.title` etc. But this
+        # will not work since the `importance_explanation` value
+        # is a string that must be used directly.
+        #
+        # This could be fixed by refactoring the logic in
+        # the `BugTaskAttributeChange` constructor to allow values to be used
+        # directly.
+        super().__init__(when, person, what_changed, old_value, new_value)
+        self.bug_task = bug_task
+
+
+    def getBugActivity(self):
+        """See `IBugChange`."""
+        return {
+            'whatchanged': '%s: importance explanation' % (
+                self.bug_task.bugtargetname,
+            ),
+            'oldvalue': self.old_value or 'unset',
+            'newvalue': self.new_value or 'unset',
+        }
+
+    def getBugNotification(self):
+        """See `IBugChange`."""
+        return {
+            'text': (
+                "** Changed in %s\n"
+                "     Importance explanation: %s => %s" % (
+                    self.bug_task.bugtargetname,
+                    self.old_value or "unset",
+                    self.new_value or "unset",
+                )
+            )
+        }
+
+
+class BugTaskStatusExplanationChange(AttributeChange):
+    """Represents a change in BugTask.status_explanation."""
+
+    def __init__(self, bug_task, when, person,
+                 what_changed, old_value, new_value):
+        # XXX: lgp171188 2022-04-12: This is a sub-class of
+        # the `AttributeChange` class instead of
+        # the `BugTaskAttributeChange` class because the latter
+        # requires the `display_attribute` property to be set and
+        # does a getattr(<old/new value>, self.display_attribute).
+        # This works when an attribute of the field has to be used
+        # like `milestone.name`, `importance.title` etc. But this
+        # will not work since the `status_explanation` value
+        # is a string that must be used directly.
+        #
+        # This could be fixed by refactoring the logic in
+        # the `BugTaskAttributeChange` constructor to allow values to be used
+        # directly.
+        super().__init__(when, person, what_changed, old_value, new_value)
+        self.bug_task = bug_task
+
+    def getBugActivity(self):
+        """See `IBugChange`."""
+        return {
+            'whatchanged': '%s: status explanation' % (
+                self.bug_task.bugtargetname,
+            ),
+            'oldvalue': self.old_value or 'unset',
+            'newvalue': self.new_value or 'unset',
+        }
+
+    def getBugNotification(self):
+        """See `IBugChange`."""
+        return {
+            'text': (
+                '** Changed in %s\n'
+                '     Status explanation: %s => %s' % (
+                    self.bug_task.bugtargetname,
+                    self.old_value or 'unset',
+                    self.new_value or 'unset',
+                )
+            )
+        }
+
+
 BUG_CHANGE_LOOKUP = {
     'description': BugDescriptionChange,
     'information_type': BugInformationTypeChange,
@@ -1033,4 +1124,6 @@ BUGTASK_CHANGE_LOOKUP = {
     'milestone': BugTaskMilestoneChange,
     'bugwatch': BugTaskBugWatchChange,
     'assignee': BugTaskAssigneeChange,
+    'importance_explanation': BugTaskImportanceExplanationChange,
+    'status_explanation': BugTaskStatusExplanationChange,
     }

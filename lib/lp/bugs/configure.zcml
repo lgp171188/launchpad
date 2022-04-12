@@ -213,7 +213,9 @@
                     milestone
                     _status
                     status
+                    status_explanation
                     importance
+                    importance_explanation
                     assignee
                     bugwatch
                     age
@@ -261,6 +263,7 @@
                     bugwatch
                     datecreated
                     importance
+                    importance_explanation
                     milestone
                     owner
                     related_tasks
@@ -268,6 +271,7 @@
                     setStatusFromDebbugs
                     statusdisplayhtml
                     statuselsewhere
+                    status_explanation
                     targetname
                     title
                     "/>
