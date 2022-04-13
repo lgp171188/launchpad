@@ -790,6 +790,32 @@ def _fetch_blob_from_github(repository_url, ref_path, filename):
     return response.content
 
 
+def _fetch_blob_from_gitlab(repository_url, ref_path, filename):
+    repo_url = repository_url.strip("/")
+    if repo_url.endswith(".git"):
+        repo_url = repo_url[:-len(".git")]
+    try:
+        response = urlfetch(
+            "%s/-/raw/%s/%s" % (
+                repo_url,
+                # GitLab supports either branch or tag names here, but both
+                # must be shortened.  (If both a branch and a tag exist with
+                # the same name, it appears to pick the tag.)
+                quote(re.sub(r"^refs/(?:heads|tags)/", "", ref_path)),
+                quote(filename)),
+            use_proxy=True)
+    except requests.RequestException as e:
+        if (e.response is not None and
+                e.response.status_code == requests.codes.NOT_FOUND):
+            raise GitRepositoryBlobNotFound(
+                repository_url, filename, rev=ref_path)
+        else:
+            raise GitRepositoryScanFault(
+                "Failed to get file from Git repository at %s: %s" %
+                (repository_url, str(e)))
+    return response.content
+
+
 def _fetch_blob_from_launchpad(repository_url, ref_path, filename):
     repo_path = urlsplit(repository_url).path.strip("/")
     try:
@@ -923,6 +949,9 @@ class GitRefRemote(GitRefMixin):
         if (url.hostname == "github.com" and
                 len(url.path.strip("/").split("/")) == 2):
             return _fetch_blob_from_github(
+                self.repository_url, self.path, filename)
+        if url.hostname == "gitlab.com":
+            return _fetch_blob_from_gitlab(
                 self.repository_url, self.path, filename)
         if (url.hostname == "git.launchpad.net" and
                 config.vhost.mainsite.hostname != "launchpad.net"):
