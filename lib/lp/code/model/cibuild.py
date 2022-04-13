@@ -387,6 +387,37 @@ class CIBuild(PackageBuildMixin, StormBase):
             return []
         return self._jobs.get("stages", [])
 
+    @property
+    def results(self):
+        """See `ICIBuild`."""
+        if self._jobs is None:
+            return {}
+        return self._jobs.get("results", {})
+
+    @results.setter
+    def results(self, results):
+        """See `ICIBuild`."""
+        if self._jobs is None:
+            self._jobs = {}
+        self._jobs["results"] = results
+
+    def getOrCreateRevisionStatusReport(self, job_id):
+        """See `ICIBuild`."""
+        report = getUtility(IRevisionStatusReportSet).getByCIBuildAndTitle(
+            self, job_id)
+        if report is None:
+            # The report should normally exist, since
+            # lp.code.model.cibuild.CIBuildSet._tryToRequestBuild creates
+            # report rows for the jobs it expects to run, but for robustness
+            # it's a good idea to ensure its existence here.
+            report = getUtility(IRevisionStatusReportSet).new(
+                creator=self.git_repository.owner,
+                title=job_id,
+                git_repository=self.git_repository,
+                commit_sha1=self.commit_sha1,
+                ci_build=self)
+        return report
+
     def getFileByName(self, filename):
         """See `ICIBuild`."""
         if filename.endswith(".txt.gz"):
@@ -487,17 +518,12 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
             # lpbuildd.ci._make_job_id in launchpad-buildd;
             # lp.archiveuploader.ciupload looks for this report and attaches
             # artifacts to it.
-            rsr_set = getUtility(IRevisionStatusReportSet)
             for stage in stages:
                 for job_name, i in stage:
                     # XXX cjwatson 2022-03-17: It would be better if we
                     # could set some kind of meaningful description as well.
-                    rsr_set.new(
-                        creator=git_repository.owner,
-                        title="%s:%s" % (job_name, i),
-                        git_repository=git_repository,
-                        commit_sha1=commit_sha1,
-                        ci_build=build)
+                    build.getOrCreateRevisionStatusReport(
+                        "%s:%s" % (job_name, i))
         except CIBuildAlreadyRequested:
             pass
         except Exception as e:

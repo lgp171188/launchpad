@@ -7,15 +7,10 @@ __all__ = [
     "CIUpload",
     ]
 
-import json
 import os
-
-from zope.component import getUtility
 
 from lp.archiveuploader.utils import UploadError
 from lp.buildmaster.enums import BuildStatus
-from lp.code.enums import RevisionStatusResult
-from lp.code.interfaces.revisionstatus import IRevisionStatusReportSet
 
 
 class CIUpload:
@@ -34,11 +29,7 @@ class CIUpload:
         """Process this upload, loading it into the database."""
         self.logger.debug("Beginning processing.")
 
-        jobs_path = os.path.join(self.upload_path, "jobs.json")
-        try:
-            with open(jobs_path) as jobs_file:
-                jobs = json.load(jobs_file)
-        except FileNotFoundError:
+        if not build.results:
             raise UploadError("Build did not run any jobs.")
 
         # collect all artifacts
@@ -57,48 +48,26 @@ class CIUpload:
                         dirpath, filename
                     ))
 
-        for job_name in jobs:
-            report = getUtility(IRevisionStatusReportSet).getByCIBuildAndTitle(
-                build, job_name)
-            if not report:
-                # The report should normally exist, since
-                # lp.code.model.cibuild.CIBuildSet._tryToRequestBuild
-                # creates report rows for the jobs it expects to run, but
-                # for robustness it's a good idea to ensure its existence
-                # here.
-                report = getUtility(IRevisionStatusReportSet).new(
-                    creator=build.git_repository.owner,
-                    title=job_name,
-                    git_repository=build.git_repository,
-                    commit_sha1=build.commit_sha1,
-                    ci_build=build,
-                )
+        for job_id in build.results:
+            report = build.getOrCreateRevisionStatusReport(job_id)
 
             # attach log file
-            log_file = os.path.join(self.upload_path, job_name + ".log")
+            log_file = os.path.join(self.upload_path, job_id + ".log")
             try:
                 with open(log_file, mode="rb") as f:
                     report.setLog(f.read())
             except FileNotFoundError as e:
                 raise UploadError(
                     "log file `%s` for job `%s` not found" % (
-                        e.filename, job_name)
+                        e.filename, job_id)
                 ) from e
 
             # attach artifacts
-            for file_path in artifacts[job_name]:
+            for file_path in artifacts[job_id]:
                 with open(file_path, mode="rb") as f:
                     report.attach(
                         name=os.path.basename(file_path), data=f.read()
                     )
-
-            # set status
-            try:
-                result = RevisionStatusResult.items[jobs[job_name]["result"]]
-            except KeyError as e:
-                raise UploadError(
-                    "Invalid RevisionStatusResult `%s`" % e.args[0]) from e
-            report.transitionToNewResult(result)
 
         self.logger.debug("Updating %s" % build.title)
         build.updateStatus(BuildStatus.FULLYBUILT)

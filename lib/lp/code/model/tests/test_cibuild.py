@@ -347,6 +347,24 @@ class TestCIBuild(TestCaseWithFactory):
             hosting_fixture.getBlob.result = invalid_result
             self.assertRaises(CannotParseConfiguration, build.getConfiguration)
 
+    def test_getOrCreateRevisionStatusReport_present(self):
+        build = self.factory.makeCIBuild()
+        report = self.factory.makeRevisionStatusReport(
+            title="build:0", ci_build=build)
+        self.assertEqual(
+            report, build.getOrCreateRevisionStatusReport("build:0"))
+
+    def test_getOrCreateRevisionStatusReport_absent(self):
+        build = self.factory.makeCIBuild()
+        self.assertThat(
+            build.getOrCreateRevisionStatusReport("build:0"),
+            MatchesStructure.byEquality(
+                creator=build.git_repository.owner,
+                title="build:0",
+                git_repository=build.git_repository,
+                commit_sha1=build.commit_sha1,
+                ci_build=build))
+
 
 class TestCIBuildSet(TestCaseWithFactory):
 

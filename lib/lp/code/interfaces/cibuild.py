@@ -20,6 +20,7 @@ from lazr.restful.fields import Reference
 from zope.schema import (
     Bool,
     Datetime,
+    Dict,
     Int,
     List,
     TextLine,
@@ -119,6 +120,11 @@ class ICIBuildView(IPackageBuildView):
     stages = List(
         title=_("A list of stages in this build's configured pipeline."))
 
+    results = Dict(
+        title=_(
+            "A mapping from job IDs to result tokens, retrieved from the "
+            "builder."))
+
     def getConfiguration(logger=None):
         """Fetch a CI build's .launchpad.yaml from code hosting, if possible.
 
@@ -132,6 +138,15 @@ class ICIBuildView(IPackageBuildView):
             reason.
         :raises CannotParseConfiguration: if the fetched .launchpad.yaml
             cannot be parsed.
+        """
+
+    def getOrCreateRevisionStatusReport(job_id):
+        """Get the `IRevisionStatusReport` for a given job in this build.
+
+        Create the report if necessary.
+
+        :param job_id: A job ID, in the form "JOB_NAME:JOB_INDEX".
+        :return: An `IRevisionStatusReport`.
         """
 
     def getFileByName(filename):
