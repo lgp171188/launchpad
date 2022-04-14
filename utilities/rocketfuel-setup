@@ -46,15 +46,13 @@ fi
 # Make sure you have all the needed virtual hosts
 
 dev_host() {
-  grep -q "^127.0.0.88.* ${hostname}" /etc/hosts
-  if [ $? -ne 0 ]; then
+  if ! grep -q "^127.0.0.88.* ${hostname}" /etc/hosts; then
     sudo sed -i "s/^127.0.0.88.*$/&\ ${hostname}/" /etc/hosts
     echo "${hostname} added to /etc/hosts"
   fi
   }
 
-grep -q "^127.0.0.88" /etc/hosts
-if [ $? -ne 0 ]; then
+if ! grep -q "^127.0.0.88" /etc/hosts; then
   echo "Adding development hosts on local machine"
   echo "
 # Launchpad virtual domains. This should be on one line.
@@ -90,13 +88,11 @@ for hostname in $hostnames; do
 done
 
 # Enable relevant Ubuntu package repositories
-grep -qE "^deb https?:.* ${DISTRIB_CODENAME} .*universe" /etc/apt/sources.list
-if [ $? -ne 0 ]; then
+if ! grep -qE "^deb https?:.* ${DISTRIB_CODENAME} .*universe" /etc/apt/sources.list; then
     echo "Please enable the 'universe' component in /etc/apt/sources.list'"
     exit 1
 fi
-grep -qE "^deb https?:.* ${DISTRIB_CODENAME} .*multiverse" /etc/apt/sources.list
-if [ $? -ne 0 ]; then
+if ! grep -qE "^deb https?:.* ${DISTRIB_CODENAME} .*multiverse" /etc/apt/sources.list; then
     echo "Please enable the 'multiverse' component in /etc/apt/sources.list'"
     exit 1
 fi
@@ -107,8 +103,7 @@ if [ ! -e $LPDEV_SOURCES ]; then
 fi
 
 LP_PPA="deb http://ppa.launchpad.net/launchpad/ppa/ubuntu ${DISTRIB_CODENAME} main"
-grep -q "^${LP_PPA}" $LPDEV_SOURCES
-if [ $? -ne 0 ]; then
+if ! grep -q "^${LP_PPA}" $LPDEV_SOURCES; then
   echo "Adding ~launchpad PPA repository to package source list."
   echo "$LP_PPA"  | sudo tee -a $LPDEV_SOURCES
 fi
@@ -116,17 +111,14 @@ REQUIRED_PPA_KEYS="2AF499CB24AC5F65461405572D1FFB6C0A5174AF"
 
 # Get the key used to sign the launchpad-developer-dependencies in the PPA.
 for key in $REQUIRED_PPA_KEYS; do
-   sudo APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 \
-       apt-key adv --list-keys --with-colons --fingerprint | grep -qE "^fpr:+$key"
-   if [ $? -ne 0 ]; then
+   if ! sudo APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 \
+       apt-key adv --list-keys --with-colons --fingerprint | grep -qE "^fpr:+$key"; then
      echo "Retrieving key $key."
-     gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys $key
-     if [ $? -ne 0 ]; then
+     if ! gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys $key; then
        echo "Could not retrieve key $key."
        exit 1
      fi
-     gpg --export -a $key | sudo apt-key add -
-     if [ $? -ne 0 ]; then
+     if ! gpg --export -a $key | sudo apt-key add -; then
        echo "Could not install key $key."
        exit 1
      fi
@@ -134,11 +126,9 @@ for key in $REQUIRED_PPA_KEYS; do
 done
 
 do_install() {
-  dpkg -s "$pkg" | grep -q "^Status: install ok installed"
-  if [ $? -ne 0 ]; then
+  if ! dpkg -s "$pkg" | grep -q "^Status: install ok installed"; then
     echo "Installing $pkg package..."
-    sudo apt-get install $INSTALL_OPTS "$pkg"
-    if [ $? -ne 0 ]; then
+    if ! sudo apt-get install $INSTALL_OPTS "$pkg"; then
       echo "Unable to install $pkg."
       exit 1
     fi
@@ -155,44 +145,37 @@ done
 mkdir -p /var/tmp/bazaar.launchpad.test/static
 mkdir -p /var/tmp/bazaar.launchpad.test/mirrors
 
-sudo a2enmod proxy > /dev/null
-if [ $? -ne 0 ]; then
+if ! sudo a2enmod proxy > /dev/null; then
   echo "ERROR: Unable to enable proxy module in Apache2"
   exit 1
 fi
 
-sudo a2enmod proxy_http > /dev/null
-if [ $? -ne 0 ]; then
+if ! sudo a2enmod proxy_http > /dev/null; then
   echo "ERROR: Unable to enable proxy_http module in Apache2"
   exit 1
 fi
 
-sudo a2enmod rewrite > /dev/null
-if [ $? -ne 0 ]; then
+if ! sudo a2enmod rewrite > /dev/null; then
   echo "ERROR: Unable to enable rewrite module in Apache2"
   exit 1
 fi
 
-sudo a2enmod ssl > /dev/null
-if [ $? -ne 0 ]; then
+if ! sudo a2enmod ssl > /dev/null; then
   echo "ERROR: Unable to enable ssl module in Apache2"
   exit 1
 fi
 
-sudo a2enmod deflate > /dev/null
-if [ $? -ne 0 ]; then
+if ! sudo a2enmod deflate > /dev/null; then
   echo "ERROR: Unable to enable deflate module in Apache2"
   exit 1
 fi
 
-sudo a2enmod headers > /dev/null
-if [ $? -ne 0 ]; then
+if ! sudo a2enmod headers > /dev/null; then
   echo "ERROR: Unable to enable headers module in Apache2"
   exit 1
 fi
 
-sudo a2enmod wsgi > /dev/null
-if [ $? -ne 0 ]; then
+if ! sudo a2enmod wsgi > /dev/null; then
   echo "ERROR: Unable to enable wsgi module in Apache2"
   exit 1
 fi
@@ -241,8 +224,7 @@ LP_SOURCEDEPS_PATH=\$(eval echo \${LP_SOURCEDEPS_PATH})
 " > "$HOME/.rocketfuel-env.sh"
 fi
 
-source "$HOME/.rocketfuel-env.sh"
-if [ "$?" != 0 ]; then
+if ! source "$HOME/.rocketfuel-env.sh"; then
     echo "Something went wrong with rocketfuel-setup!"
     exit 1
 fi
@@ -250,11 +232,10 @@ fi
 
 # Create the local branch structure we will use for managing Launchpad code
 mkdir -p "$LP_PROJECT_ROOT"
-cd "$LP_PROJECT_ROOT"
+cd "$LP_PROJECT_ROOT" || exit 1
 
 echo "Logging bzr into Launchpad (it's okay if this errors)..."
-bzr launchpad-login "$lpusername"
-if [ $? -ne 0 ]; then
+if ! bzr launchpad-login "$lpusername"; then
   echo ""
   echo "You can ignore any error above about not registering an SSH key"
   echo "with Launchpad.  Registering an SSH key is only important if you"
@@ -275,27 +256,24 @@ if [ "$(git ls-remote --get-url lp:launchpad)" = lp:launchpad ]; then
   fi
 fi
 
-cd "$LP_PROJECT_ROOT"
+cd "$LP_PROJECT_ROOT" || exit 1
 if [ ! -d "$LP_TRUNK_NAME" ]; then
   echo "Making local clone of Launchpad; this may take a while..."
-  git clone lp:launchpad "$LP_TRUNK_NAME"
-  if [ $? -ne 0 ]; then
+  if ! git clone lp:launchpad "$LP_TRUNK_NAME"; then
     echo "ERROR: Unable to create local clone of Launchpad"
     exit 1
   fi
 fi
 
-cd "$LP_TRUNK_NAME"
-git status
-if [ $? -ne 0 ]; then
+cd "$LP_TRUNK_NAME" || exit 1
+if ! git status; then
   echo "ERROR: Your clone in $LP_TRUNK_PATH is corrupted.
        Please delete $LP_TRUNK_PATH and run rocketfuel-setup again."
        exit 1
 fi
 if [ "$(git remote get-url origin)" != "//git.launchpad.net/launchpad" ]; then
   echo "ERROR: Your clone in $LP_TRUNK_PATH has an incorrect pull location, correcting now..."
-  git remote set-url origin git+ssh://git.launchpad.net/launchpad
-  if [ $? -ne 0 ]; then
+  if ! git remote set-url origin git+ssh://git.launchpad.net/launchpad; then
     echo "ERROR: Unable to set trunk pull location to lp:launchpad"
     exit 1
   fi
@@ -303,28 +281,25 @@ fi
 
 # Call the newly minted Launchpad branch's 'make install' target to do some
 # more apache setup.
-sudo make install > /dev/null
-if [ $? -ne 0 ]; then
+if ! sudo make install > /dev/null; then
   echo "ERROR: Unable to install apache config appropriately"
   exit 1
 fi
 
 
 # Set up scripts in /usr/local/bin
-cd /usr/local/bin
+cd /usr/local/bin || exit 1
 if [ ! -e rocketfuel-get ]; then
   sudo ln -s "$LP_TRUNK_PATH/utilities/rocketfuel-get"
 fi
-ls -l rocketfuel-get | cut -d">" -f2 | grep -q "$LP_TRUNK_NAME\/utilities\/rocketfuel"
-if [ $? -ne 0 ]; then
+if ! ls -l rocketfuel-get | cut -d">" -f2 | grep -q "$LP_TRUNK_NAME\/utilities\/rocketfuel"; then
   echo "WARNING: /usr/local/bin/rocketfuel-get should be deleted so I can
          recreate it."
 fi
 if [ ! -e rocketfuel-setup ]; then
   sudo ln -s "$LP_TRUNK_PATH/utilities/rocketfuel-setup"
 fi
-ls -l rocketfuel-setup | cut -d">" -f2 | grep -q "$LP_TRUNK_NAME\/utilities\/rocketfuel"
-if [ $? -ne 0 ]; then
+if ! ls -l rocketfuel-setup | cut -d">" -f2 | grep -q "$LP_TRUNK_NAME\/utilities\/rocketfuel"; then
   echo "WARNING: /usr/local/bin/rocketfuel-setup should be deleted so I can
          recreate it."
 fi

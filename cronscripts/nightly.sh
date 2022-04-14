@@ -12,14 +12,16 @@ LOGDIR=$1
 LOGFILE=$LOGDIR/nightly.log
 
 LOCK=/var/lock/launchpad_nightly.lock
-lockfile -r0 -l 259200 $LOCK
-if [ $? -ne 0 ]; then
+if ! lockfile -r0 -l 259200 $LOCK; then
     echo "$(date): Unable to grab $LOCK lock - aborting" | tee -a "$LOGFILE"
     ps fuxwww
     exit 1
 fi
 
-cd "$(dirname "$0")"
+if ! cd "$(dirname "$0")"; then
+    echo "$(date): Unable to change directory to $(dirname "$0") - aborting" | tee -a "$LOGFILE"
+    exit 1
+fi
 
 echo "$(date): Grabbed lock" >> "$LOGFILE"
 
