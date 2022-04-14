@@ -75,6 +75,7 @@ from lp.app.browser.tales import DateTimeFormatterAPI
 from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
 from lp.code.browser.codereviewcomment import CodeReviewDisplayComment
 from lp.code.browser.decorations import DecoratedBranch
+from lp.code.browser.revisionstatus import HasRevisionStatusReportsMixin
 from lp.code.browser.widgets.gitref import GitRefWidget
 from lp.code.enums import (
     BranchMergeProposalStatus,
@@ -126,7 +127,6 @@ from lp.services.webapp import (
     stepthrough,
     )
 from lp.services.webapp.authorization import check_permission
-from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import ILaunchBag
@@ -634,7 +634,8 @@ class CodeReviewNewRevisions:
 class BranchMergeProposalView(LaunchpadFormView, UnmergedRevisionsMixin,
                               BranchMergeProposalRevisionIdMixin,
                               BranchMergeProposalStatusMixin,
-                              DiffRenderingMixin):
+                              DiffRenderingMixin,
+                              HasRevisionStatusReportsMixin):
     """A basic view used for the index page."""
 
     schema = ClaimButton
@@ -664,11 +665,6 @@ class BranchMergeProposalView(LaunchpadFormView, UnmergedRevisionsMixin,
             except ClaimReviewFailed as e:
                 self.request.response.addErrorNotification(str(e))
         self.next_url = canonical_url(self.context)
-
-    def getStatusReports(self, commit_sha1):
-        reports = self.context.getStatusReports(
-            commit_sha1)
-        return BatchNavigator(reports, self.request)
 
     @property
     def comment_location(self):
