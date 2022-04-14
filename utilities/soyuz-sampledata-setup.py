@@ -153,13 +153,20 @@ def add_architecture(distroseries, architecture_name):
 
 
 def create_sections(distroseries):
-    """Set up some sections for `distroseries`."""
+    """Set up some sections for `distroseries`.
+
+    These are kept roughly in sync with production, which in turn is
+    typically kept roughly in sync with the Debian archive (compare
+    https://www.debian.org/doc/debian-policy/ch-archive.html#sections).  The
+    list here is only a convenience for local development, so it isn't vital
+    for it to be precisely accurate.
+    """
     section_names = (
-        'admin', 'cli-mono', 'comm', 'database', 'devel', 'debug', 'doc',
+        'admin', 'cli-mono', 'comm', 'database', 'debug', 'devel', 'doc',
         'editors', 'education', 'electronics', 'embedded', 'fonts', 'games',
-        'gnome', 'golang', 'graphics', 'gnu-r', 'gnustep', 'hamradio',
+        'gnome', 'gnu-r', 'gnustep', 'golang', 'graphics', 'hamradio',
         'haskell', 'httpd', 'interpreters', 'java', 'javascript', 'kde',
-        'kernel', 'libs', 'libdevel', 'lisp', 'localization', 'mail',
+        'kernel', 'libdevel', 'libs', 'lisp', 'localization', 'mail',
         'math', 'misc', 'net', 'news', 'ocaml', 'oldlibs', 'otherosfs',
         'perl', 'php', 'python', 'raku', 'ruby', 'rust', 'science',
         'shells', 'sound', 'tex', 'text', 'utils', 'vcs', 'video', 'web',
