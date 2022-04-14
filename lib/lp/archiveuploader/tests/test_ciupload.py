@@ -55,7 +55,7 @@ class TestCIBuildUploads(TestUploadProcessorBase):
             UploadStatusEnum.REJECTED, result
         )
 
-    def test_requires_log_file(self):
+    def test_requires_upload_path(self):
         removeSecurityProxy(self.build).results = {
             'build:0': {'result': 'SUCCEEDED'},
         }
@@ -74,6 +74,29 @@ class TestCIBuildUploads(TestUploadProcessorBase):
             UploadStatusEnum.REJECTED, result
         )
 
+    def test_requires_log_file(self):
+        removeSecurityProxy(self.build).results = {
+            'build:0': {'result': 'SUCCEEDED'},
+        }
+        os.makedirs(os.path.join(self.incoming_folder, "test"))
+        handler = UploadHandler.forProcessor(
+            self.uploadprocessor,
+            self.incoming_folder,
+            "test",
+            self.build,
+        )
+        upload_path = os.path.join(
+            self.incoming_folder, "test", str(self.build.archive.id),
+            self.build.distribution.name)
+        os.makedirs(upload_path)
+
+        result = handler.processCIResult(self.log)
+
+        # we explicitly provided no log file, which causes a rejected upload
+        self.assertEqual(
+            UploadStatusEnum.REJECTED, result
+        )
+
     def test_triggers_store_upload_for_completed_ci_builds(self):
         removeSecurityProxy(self.build).results = {
             'build:0': {
@@ -81,21 +104,22 @@ class TestCIBuildUploads(TestUploadProcessorBase):
                 'result': 'SUCCEEDED',
             },
         }
+        upload_path = os.path.join(
+            self.incoming_folder, "test", str(self.build.archive.id),
+            self.build.distribution.name)
 
         # create log file
-        path = os.path.join(self.incoming_folder, "test", "build:0.log")
+        path = os.path.join(upload_path, "build:0.log")
         content = "some log content"
         write_file(path, content.encode("utf-8"))
 
         # create artifact
-        path = os.path.join(
-            self.incoming_folder, "test", "build:0", "ci.whl")
+        path = os.path.join(upload_path, "build:0", "ci.whl")
         content = b"abc"
         write_file(path, content)
 
         # create artifact in a sub-directory
-        path = os.path.join(
-            self.incoming_folder, "test", "build:0", "sub", "test.whl")
+        path = os.path.join(upload_path, "build:0", "sub", "test.whl")
         content = b"abc"
         write_file(path, content)
 
@@ -128,15 +152,17 @@ class TestCIBuildUploads(TestUploadProcessorBase):
                 'result': 'SUCCEEDED',
             },
         }
+        upload_path = os.path.join(
+            self.incoming_folder, "test", str(self.build.archive.id),
+            self.build.distribution.name)
 
         # create log file
-        path = os.path.join(self.incoming_folder, "test", "build:0.log")
+        path = os.path.join(upload_path, "build:0.log")
         content = "some log content"
         write_file(path, content.encode("utf-8"))
 
         # create artifact
-        path = os.path.join(
-            self.incoming_folder, "test", "build:0", "ci.whl")
+        path = os.path.join(upload_path, "build:0", "ci.whl")
         content = b"abc"
         write_file(path, content)
 
