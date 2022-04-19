@@ -43,7 +43,6 @@ from lp.code.enums import (
     BranchMergeProposalStatus,
     GitObjectType,
     GitRepositoryType,
-    RevisionStatusResult,
     )
 from lp.code.errors import (
     BranchMergeProposalExists,
@@ -182,13 +181,6 @@ class GitRefMixin:
 
     def getStatusReports(self, commit_sha1):
         return self.repository.getStatusReports(commit_sha1)
-
-    def getCommitStatus(self, commit_sha1):
-        """Help to show red or green icon at the top of the commit."""
-        reports = self.repository.getStatusReports(commit_sha1)
-        return all(
-            report.result == RevisionStatusResult.SUCCEEDED
-            for report in reports)
 
     @property
     def information_type(self):
