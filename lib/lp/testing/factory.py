@@ -5376,7 +5376,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             processors=processors, date_created=date_created)
 
     def makeCIBuild(self, git_repository=None, commit_sha1=None,
-                    distro_arch_series=None, date_created=DEFAULT,
+                    distro_arch_series=None, stages=None, date_created=DEFAULT,
                     status=BuildStatus.NEEDSBUILD, builder=None,
                     duration=None):
         """Make a new `CIBuild`."""
@@ -5386,8 +5386,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             commit_sha1 = hashlib.sha1(self.getUniqueBytes()).hexdigest()
         if distro_arch_series is None:
             distro_arch_series = self.makeDistroArchSeries()
+        if stages is None:
+            stages = [[("test", 0)]]
         build = getUtility(ICIBuildSet).new(
-            git_repository, commit_sha1, distro_arch_series,
+            git_repository, commit_sha1, distro_arch_series, stages,
             date_created=date_created)
         if duration is not None:
             removeSecurityProxy(build).updateStatus(
