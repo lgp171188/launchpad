@@ -904,3 +904,17 @@ class TestWorkerWithLibrarian(TestCaseWithFactory):
         yield worker.getFiles([(empty_sha1, temp_name)])
         with open(temp_name, 'rb') as f:
             self.assertEqual(b'', f.read())
+
+    @defer.inlineCallbacks
+    def test_getFiles_to_subdirectory(self):
+        # getFiles works if asked to download files to a subdirectory.
+        # (This is used by CI builds.)
+        tachandler = self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
+        temp_dir = self.makeTemporaryDirectory()
+        temp_name = os.path.join(temp_dir, 'build:0', 'log')
+        empty_sha1 = hashlib.sha1(b'').hexdigest()
+        self.worker_helper.makeCacheFile(tachandler, empty_sha1, contents=b'')
+        yield worker.getFiles([(empty_sha1, temp_name)])
+        with open(temp_name, 'rb') as f:
+            self.assertEqual(b'', f.read())

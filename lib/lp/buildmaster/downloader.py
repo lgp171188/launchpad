@@ -66,6 +66,10 @@ class RequestProcess(AMPChild):
         session.trust_env = False
         response = session.get(file_url, timeout=timeout, stream=True)
         response.raise_for_status()
+        try:
+            os.makedirs(os.path.dirname(path_to_write))
+        except FileExistsError:
+            pass
         f = tempfile.NamedTemporaryFile(
             mode="wb", prefix=os.path.basename(path_to_write) + "_",
             dir=os.path.dirname(path_to_write), delete=False)
