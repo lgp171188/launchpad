@@ -210,11 +210,6 @@ class ArtifactoryPool:
     def __init__(self, rootpath, logger: logging.Logger) -> None:
         if not isinstance(rootpath, ArtifactoryPath):
             rootpath = ArtifactoryPath(rootpath)
-        write_creds = config.artifactory.write_credentials
-        if write_creds is not None:
-            # The X-JFrog-Art-Api header only needs the API key, not the
-            # username.
-            rootpath.auth = XJFrogArtApiAuth(write_creds.split(":", 1)[1])
         rootpath.session = self._makeSession()
         rootpath.timeout = config.launchpad.urlfetch_timeout
         self.rootpath = rootpath
@@ -233,10 +228,15 @@ class ArtifactoryPool:
         if config.launchpad.http_proxy:
             session.proxies = {
                 "http": config.launchpad.http_proxy,
-                "https": config.launchpad.https_proxy,
+                "https": config.launchpad.http_proxy,
                 }
         if config.launchpad.ca_certificates_path is not None:
             session.verify = config.launchpad.ca_certificates_path
+        write_creds = config.artifactory.write_credentials
+        if write_creds is not None:
+            # The X-JFrog-Art-Api header only needs the API key, not the
+            # username.
+            session.auth = XJFrogArtApiAuth(write_creds.split(":", 1)[1])
         return session
 
     def _getEntry(self, sourcename, file) -> ArtifactoryPoolEntry:
