@@ -224,12 +224,12 @@
     <dd class="subordinate collapsible status-reports-table"
         tal:define="
           commit_sha1 commit_info/sha1;
-          status_result python:ref.getCommitStatus(commit_sha1);
+          status_result python:view.getOverallIcon(ref.repository, commit_sha1);
           batchnav python:view.getStatusReports(commit_sha1);
           batch python:batchnav.currentBatch()"
         tal:condition="batch">
-        <div class="sprite treeCollapsed">
-          <span tal:replace="structure status_result/image:boolean" />
+        <div class="treeCollapsed">
+          <span class="icon" tal:replace="structure status_result" />
         </div>
         <table class="listing" tal:condition="batch">
           <tbody>
