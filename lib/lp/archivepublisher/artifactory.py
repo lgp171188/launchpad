@@ -7,6 +7,7 @@ __all__ = [
     "ArtifactoryPool",
     ]
 
+from collections import defaultdict
 import logging
 import os
 from pathlib import (
@@ -78,6 +79,15 @@ class ArtifactoryPoolEntry:
         else:
             raise AssertionError("Unsupported file: %r" % pub_file)
 
+    # Property names outside the "launchpad." namespace that we expect to
+    # overwrite.  Any existing property names other than these will be left
+    # alone.
+    owned_properties = frozenset({
+        "deb.architecture",
+        "deb.component",
+        "deb.distribution",
+        })
+
     def calculateProperties(self, release_id, publications):
         """Return a dict of Artifactory properties to set for this file.
 
@@ -117,8 +127,8 @@ class ArtifactoryPoolEntry:
         used to generate more specific repositories.
         """
         properties = {}
-        properties["launchpad.release-id"] = release_id
-        properties["launchpad.source-name"] = self.source
+        properties["launchpad.release-id"] = [release_id]
+        properties["launchpad.source-name"] = [self.source]
         if publications:
             archives = {publication.archive for publication in publications}
             if len(archives) > 1:
@@ -139,16 +149,11 @@ class ArtifactoryPoolEntry:
                 if architectures:
                     properties["deb.architecture"] = architectures
             else:
-                properties["launchpad.channel"] = [
+                properties["launchpad.channel"] = sorted({
                     "%s:%s" % (
                         pub.distroseries.getSuite(pub.pocket),
                         pub.channel_string)
-                    for pub in sorted(
-                        publications,
-                        key=lambda p: (
-                            p.distroseries.version, p.pocket,
-                            p.channel_string))
-                    ]
+                    for pub in publications})
         return properties
 
     def addFile(self, pub_file: IPackageReleaseFile):
@@ -184,13 +189,25 @@ class ArtifactoryPoolEntry:
         if old_properties is None:
             old_properties = targetpath.properties
         release_id = old_properties.get("launchpad.release-id")
-        if release_id is None:
+        if not release_id:
             raise AssertionError(
                 "Cannot update properties: launchpad.release-id is not in %s" %
                 old_properties)
-        properties = self.calculateProperties(release_id, publications)
-        if old_properties != properties:
-            targetpath.properties = properties
+        properties = self.calculateProperties(release_id[0], publications)
+        new_properties = {
+            key: value for key, value in old_properties.items()
+            if not key.startswith("launchpad.") and
+               key not in self.owned_properties}
+        new_properties.update(properties)
+        if old_properties != new_properties:
+            # We could use the ArtifactoryPath.properties setter, but that
+            # will fetch the old properties again when we already have them
+            # in hand; this approach saves an HTTP request.
+            properties_to_remove = set(old_properties) - set(new_properties)
+            if properties_to_remove:
+                targetpath.del_properties(
+                    properties_to_remove, recursive=False)
+            targetpath.set_properties(new_properties, recursive=False)
 
     def removeFile(self) -> int:
         targetpath = self.pathFor()
@@ -359,8 +376,15 @@ class ArtifactoryPool:
             # non-admin users must include all of "name", "repo", and "path"
             # in the include directive.
             ["repo", "path", "name", "property"])
-        return {
-            PurePath(artifact["path"], artifact["name"]): {
-                prop["key"]: prop["value"] for prop in artifact["properties"]
-                }
-            for artifact in artifacts}
+        artifacts_by_path = {}
+        for artifact in artifacts:
+            path = PurePath(artifact["path"], artifact["name"])
+            properties = defaultdict(set)
+            for prop in artifact["properties"]:
+                properties[prop["key"]].add(prop["value"])
+            # AQL returns each value of multi-value properties separately
+            # and in an undefined order.  Always sort them to ensure that we
+            # can compare properties reliably.
+            artifacts_by_path[path] = {
+                key: sorted(values) for key, values in properties.items()}
+        return artifacts_by_path
