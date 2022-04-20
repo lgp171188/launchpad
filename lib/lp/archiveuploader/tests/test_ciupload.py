@@ -4,6 +4,7 @@
 """Test uploads of CIBuilds."""
 
 import os
+from urllib.parse import quote
 
 from storm.store import Store
 from zope.component import getUtility
@@ -97,6 +98,39 @@ class TestCIBuildUploads(TestUploadProcessorBase):
             UploadStatusEnum.REJECTED, result
         )
 
+    def test_no_artifacts(self):
+        # It is possible for a job to produce no artifacts.
+        removeSecurityProxy(self.build).results = {
+            'build:0': {
+                'log': 'test_file_hash',
+                'result': 'SUCCEEDED',
+            },
+        }
+        upload_path = os.path.join(
+            self.incoming_folder, "test", str(self.build.archive.id),
+            self.build.distribution.name)
+        write_file(os.path.join(upload_path, "build:0.log"), b"log content")
+        report = self.build.getOrCreateRevisionStatusReport("build:0")
+        handler = UploadHandler.forProcessor(
+            self.uploadprocessor,
+            self.incoming_folder,
+            "test",
+            self.build,
+        )
+
+        result = handler.processCIResult(self.log)
+
+        self.assertEqual(UploadStatusEnum.ACCEPTED, result)
+        self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
+        log_urls = report.getArtifactURLs(RevisionStatusArtifactType.LOG)
+        self.assertEqual(
+            {quote("build:0-%s.txt" % self.build.commit_sha1)},
+            {url.rsplit("/")[-1] for url in log_urls}
+        )
+        self.assertEqual(
+            [], report.getArtifactURLs(RevisionStatusArtifactType.BINARY)
+        )
+
     def test_triggers_store_upload_for_completed_ci_builds(self):
         removeSecurityProxy(self.build).results = {
             'build:0': {
@@ -137,6 +171,11 @@ class TestCIBuildUploads(TestUploadProcessorBase):
         self.assertEqual(UploadStatusEnum.ACCEPTED, result)
         self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
 
+        log_urls = report.getArtifactURLs(RevisionStatusArtifactType.LOG)
+        self.assertEqual(
+            {quote("build:0-%s.txt" % self.build.commit_sha1)},
+            {url.rsplit("/")[-1] for url in log_urls}
+        )
         artifact_urls = report.getArtifactURLs(
             RevisionStatusArtifactType.BINARY
         )
