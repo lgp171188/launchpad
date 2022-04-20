@@ -75,6 +75,7 @@ from lp.services.osutils import (
     )
 from lp.services.utils import file_exists
 from lp.soyuz.enums import (
+    ArchivePublishingMethod,
     ArchivePurpose,
     ArchiveStatus,
     BinaryPackageFormat,
@@ -718,6 +719,42 @@ class Publisher:
                 for component in components:
                     self._writeComponentIndexes(
                         distroseries, pocket, component)
+
+    def C_updateArtifactoryProperties(self, is_careful):
+        """Update Artifactory properties to match our database."""
+        self.log.debug("* Step C'': Updating properties in Artifactory")
+        # We don't currently have a more efficient approach available than
+        # just syncing up the entire repository.  At the moment it's
+        # difficult to do better, since Launchpad's publishing model
+        # normally assumes that the disk pool only needs to know about
+        # removals once they get to the point of being removed entirely from
+        # disk, as opposed to just being removed from a single
+        # suite/channel.  A more complete overhaul of the
+        # publisher/dominator might be able to deal with this.
+        publishing_set = getUtility(IPublishingSet)
+        pubs_by_id = defaultdict(list)
+        spphs_by_spr = defaultdict(list)
+        bpphs_by_bpr = defaultdict(list)
+        for spph in publishing_set.getSourcesForPublishing(
+                archive=self.archive):
+            spphs_by_spr[spph.sourcepackagereleaseID].append(spph)
+            pubs_by_id["source:%d" % spph.sourcepackagereleaseID].append(spph)
+        for bpph in publishing_set.getBinariesForPublishing(
+                archive=self.archive):
+            bpphs_by_bpr[bpph.binarypackagereleaseID].append(bpph)
+            pubs_by_id["binary:%d" % bpph.binarypackagereleaseID].append(bpph)
+        artifacts = self._diskpool.getAllArtifacts(
+            self.archive.name, self.archive.repository_format)
+
+        for path, properties in sorted(artifacts.items()):
+            release_id = properties.get("launchpad.release-id")
+            source_name = properties.get("launchpad.source-name")
+            if not release_id or not source_name:
+                # Skip any files that Launchpad didn't put in Artifactory.
+                continue
+            self._diskpool.updateProperties(
+                source_name[0], path.name, pubs_by_id.get(release_id[0]),
+                old_properties=properties)
 
     def D_writeReleaseFiles(self, is_careful):
         """Write out the Release files for the provided distribution.
@@ -1435,6 +1472,10 @@ class Publisher:
         be caught and an OOPS report generated.
         """
         assert self.archive.is_ppa
+        if self.archive.publishing_method != ArchivePublishingMethod.LOCAL:
+            raise NotImplementedError(
+                "Don't know how to delete archives published using %s" %
+                self.archive.publishing_method.title)
         self.log.info(
             "Attempting to delete archive '%s/%s' at '%s'." % (
                 self.archive.owner.name, self.archive.name,
