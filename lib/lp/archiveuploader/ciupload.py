@@ -73,7 +73,7 @@ class CIUpload:
                 ) from e
 
             # attach artifacts
-            for file_path in artifacts[job_id]:
+            for file_path in artifacts.get(job_id, []):
                 with open(file_path, mode="rb") as f:
                     report.attach(
                         name=os.path.basename(file_path), data=f.read()
