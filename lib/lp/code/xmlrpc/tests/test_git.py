@@ -1803,6 +1803,47 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             repository.registrant, path, permission="read",
             macaroon_raw=macaroons[0].serialize())
 
+    def test_translatePath_private_ci_build(self):
+        # A builder with a suitable macaroon can read from a repository
+        # associated with a running private CI build.
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+        with person_logged_in(self.factory.makePerson()) as owner:
+            repositories = [
+                self.factory.makeGitRepository(
+                    owner=owner, information_type=InformationType.USERDATA)
+                for _ in range(2)]
+            builds = [
+                self.factory.makeCIBuild(git_repository=repository)
+                for repository in repositories]
+            issuer = getUtility(IMacaroonIssuer, "ci-build")
+            macaroons = [
+                removeSecurityProxy(issuer).issueMacaroon(build)
+                for build in builds]
+            repository = repositories[0]
+            path = "/%s" % repository.unique_name
+        self.assertUnauthorized(
+            LAUNCHPAD_SERVICES, path, permission="write",
+            macaroon_raw=macaroons[0].serialize())
+        removeSecurityProxy(builds[0]).updateStatus(BuildStatus.BUILDING)
+        self.assertTranslates(
+            LAUNCHPAD_SERVICES, path, repository, False, permission="read",
+            macaroon_raw=macaroons[0].serialize(), private=True)
+        self.assertUnauthorized(
+            LAUNCHPAD_SERVICES, path, permission="read",
+            macaroon_raw=macaroons[1].serialize())
+        self.assertUnauthorized(
+            LAUNCHPAD_SERVICES, path, permission="read",
+            macaroon_raw=Macaroon(
+                location=config.vhost.mainsite.hostname, identifier="another",
+                key="another-secret").serialize())
+        self.assertUnauthorized(
+            LAUNCHPAD_SERVICES, path, permission="read",
+            macaroon_raw="nonsense")
+        self.assertUnauthorized(
+            removeSecurityProxy(repository).registrant, path,
+            permission="read", macaroon_raw=macaroons[0].serialize())
+
     def test_translatePath_user_macaroon(self):
         # A user with a suitable macaroon can write to the corresponding
         # repository, but not others, even if they own them.
@@ -2345,6 +2386,32 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 faults.Unauthorized, None,
                 "authenticateWithPassword", username, "nonsense")
 
+    def test_authenticateWithPassword_private_ci_build(self):
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+        with person_logged_in(self.factory.makePerson()) as owner:
+            repository = self.factory.makeGitRepository(
+                owner=owner, information_type=InformationType.USERDATA)
+            build = self.factory.makeCIBuild(git_repository=repository)
+            issuer = getUtility(IMacaroonIssuer, "ci-build")
+            macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
+        for username in ("", "+launchpad-services"):
+            self.assertEqual(
+                {"macaroon": macaroon.serialize(),
+                 "user": "+launchpad-services"},
+                self.assertDoesNotFault(
+                    None, "authenticateWithPassword",
+                    username, macaroon.serialize()))
+            other_macaroon = Macaroon(
+                identifier="another", key="another-secret")
+            self.assertFault(
+                faults.Unauthorized, None,
+                "authenticateWithPassword",
+                username, other_macaroon.serialize())
+            self.assertFault(
+                faults.Unauthorized, None,
+                "authenticateWithPassword", username, "nonsense")
+
     def test_authenticateWithPassword_user_macaroon(self):
         # A user with a suitable macaroon can authenticate using it, in
         # which case we return both the macaroon and the uid for use by
@@ -2517,6 +2584,23 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             build = self.factory.makeSnapBuild(
                 requester=owner, owner=owner, git_ref=ref, private=True)
             issuer = getUtility(IMacaroonIssuer, "snap-build")
+            macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
+            build.updateStatus(BuildStatus.BUILDING)
+            path = ref.path.encode("UTF-8")
+        self.assertHasRefPermissions(
+            LAUNCHPAD_SERVICES, ref.repository, [path], {path: []},
+            macaroon_raw=macaroon.serialize())
+
+    def test_checkRefPermissions_private_ci_build(self):
+        # A builder with a suitable macaroon cannot write to a repository,
+        # even if it is associated with a running private CI build.
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+        with person_logged_in(self.factory.makePerson()) as owner:
+            [ref] = self.factory.makeGitRefs(
+                owner=owner, information_type=InformationType.USERDATA)
+            build = self.factory.makeCIBuild(git_repository=ref.repository)
+            issuer = getUtility(IMacaroonIssuer, "ci-build")
             macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
             build.updateStatus(BuildStatus.BUILDING)
             path = ref.path.encode("UTF-8")
