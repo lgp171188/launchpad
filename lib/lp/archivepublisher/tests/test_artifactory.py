@@ -3,7 +3,6 @@
 
 """Artifactory pool tests."""
 
-from operator import attrgetter
 from pathlib import PurePath
 
 import transaction
@@ -89,8 +88,8 @@ class TestArtifactoryPool(TestCase):
         self.assertTrue(foo.checkIsFile())
         self.assertEqual(
             {
-                "launchpad.release-id": "binary:1",
-                "launchpad.source-name": "foo",
+                "launchpad.release-id": ["binary:1"],
+                "launchpad.source-name": ["foo"],
                 },
             foo.getProperties())
 
@@ -156,12 +155,12 @@ class TestArtifactoryPool(TestCase):
         self.assertEqual(
             {
                 PurePath("pool/f/foo/foo-1.0.deb"): {
-                    "launchpad.release-id": "binary:1",
-                    "launchpad.source-name": "foo",
+                    "launchpad.release-id": ["binary:1"],
+                    "launchpad.source-name": ["foo"],
                     },
                 PurePath("pool/f/foo/foo-1.1.deb"): {
-                    "launchpad.release-id": "binary:2",
-                    "launchpad.source-name": "foo",
+                    "launchpad.release-id": ["binary:2"],
+                    "launchpad.source-name": ["foo"],
                     },
                 },
             self.pool.getAllArtifacts(
@@ -169,8 +168,8 @@ class TestArtifactoryPool(TestCase):
         self.assertEqual(
             {
                 PurePath("pool/b/bar/bar-1.0.whl"): {
-                    "launchpad.release-id": "binary:3",
-                    "launchpad.source-name": "bar",
+                    "launchpad.release-id": ["binary:3"],
+                    "launchpad.source-name": ["bar"],
                     },
                 },
             self.pool.getAllArtifacts(
@@ -215,17 +214,17 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         self.assertFalse(path.is_symlink())
         self.assertEqual(
             {
-                "launchpad.release-id": "source:%d" % spr.id,
-                "launchpad.source-name": "foo",
+                "launchpad.release-id": ["source:%d" % spr.id],
+                "launchpad.source-name": ["foo"],
                 },
             path.properties)
         self.pool.updateProperties(spr.name, sprf.libraryfile.filename, spphs)
         self.assertEqual(
             {
-                "launchpad.release-id": "source:%d" % spr.id,
-                "launchpad.source-name": "foo",
-                "deb.distribution": ",".join(sorted(ds.name for ds in dses)),
-                "deb.component": "main",
+                "launchpad.release-id": ["source:%d" % spr.id],
+                "launchpad.source-name": ["foo"],
+                "deb.distribution": list(sorted(ds.name for ds in dses)),
+                "deb.component": ["main"],
                 },
             path.properties)
 
@@ -263,21 +262,19 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         self.assertFalse(path.is_symlink())
         self.assertEqual(
             {
-                "launchpad.release-id": "binary:%d" % bpr.id,
-                "launchpad.source-name": "foo",
+                "launchpad.release-id": ["binary:%d" % bpr.id],
+                "launchpad.source-name": ["foo"],
                 },
             path.properties)
         self.pool.updateProperties(
             bpr.sourcepackagename, bpf.libraryfile.filename, bpphs)
         self.assertEqual(
             {
-                "launchpad.release-id": "binary:%d" % bpr.id,
-                "launchpad.source-name": "foo",
-                "deb.distribution": ",".join(sorted(
-                    ds.name
-                    for ds in sorted(dses, key=attrgetter("version")))),
-                "deb.component": "main",
-                "deb.architecture": processor.name,
+                "launchpad.release-id": ["binary:%d" % bpr.id],
+                "launchpad.source-name": ["foo"],
+                "deb.distribution": list(sorted(ds.name for ds in dses)),
+                "deb.component": ["main"],
+                "deb.architecture": [processor.name],
                 },
             path.properties)
 
@@ -309,19 +306,64 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         self.assertFalse(path.is_symlink())
         self.assertEqual(
             {
-                "launchpad.release-id": "binary:%d" % bpr.id,
-                "launchpad.source-name": "foo",
+                "launchpad.release-id": ["binary:%d" % bpr.id],
+                "launchpad.source-name": ["foo"],
                 },
             path.properties)
         self.pool.updateProperties(
             bpr.sourcepackagename, bpf.libraryfile.filename, bpphs)
         self.assertEqual(
             {
-                "launchpad.release-id": "binary:%d" % bpr.id,
-                "launchpad.source-name": "foo",
-                "deb.distribution": ds.name,
-                "deb.component": "main",
-                "deb.architecture": ",".join(sorted(
+                "launchpad.release-id": ["binary:%d" % bpr.id],
+                "launchpad.source-name": ["foo"],
+                "deb.distribution": [ds.name],
+                "deb.component": ["main"],
+                "deb.architecture": list(sorted(
                     das.architecturetag for das in dases)),
+                },
+            path.properties)
+
+    def test_updateProperties_preserves_externally_set_properties(self):
+        # Artifactory sets some properties by itself as part of scanning
+        # packages.  We leave those untouched.
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        ds = self.factory.makeDistroSeries(distribution=archive.distribution)
+        das = self.factory.makeDistroArchSeries(distroseries=ds)
+        bpb = self.factory.makeBinaryPackageBuild(
+            archive=archive, distroarchseries=das,
+            pocket=PackagePublishingPocket.RELEASE, sourcepackagename="foo")
+        bpr = self.factory.makeBinaryPackageRelease(
+            binarypackagename="foo", build=bpb, component="main",
+            architecturespecific=False)
+        bpf = self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpr,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="foo_1.0_all.deb"),
+            filetype=BinaryPackageFileType.DEB)
+        bpphs = getUtility(IPublishingSet).publishBinaries(
+            archive, ds, PackagePublishingPocket.RELEASE,
+            {bpr: (bpr.component, bpr.section, bpr.priority, None)})
+        transaction.commit()
+        self.pool.addFile(
+            None, bpr.sourcepackagename, bpf.libraryfile.filename, bpf)
+        path = self.pool.rootpath / "f" / "foo" / "foo_1.0_all.deb"
+        path.set_properties({"deb.version": ["1.0"]}, recursive=False)
+        self.assertEqual(
+            {
+                "launchpad.release-id": ["binary:%d" % bpr.id],
+                "launchpad.source-name": ["foo"],
+                "deb.version": ["1.0"],
+                },
+            path.properties)
+        self.pool.updateProperties(
+            bpr.sourcepackagename, bpf.libraryfile.filename, bpphs)
+        self.assertEqual(
+            {
+                "launchpad.release-id": ["binary:%d" % bpr.id],
+                "launchpad.source-name": ["foo"],
+                "deb.distribution": [ds.name],
+                "deb.component": ["main"],
+                "deb.architecture": [das.architecturetag],
+                "deb.version": ["1.0"],
                 },
             path.properties)

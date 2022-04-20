@@ -104,6 +104,17 @@ class FakeArtifactoryFixture(Fixture):
         else:
             return 404, {}, "Unable to find item"
 
+    def _decode_properties(self, encoded):
+        """Decode properties that were encoded as part of a request."""
+        properties = {}
+        for param in encoded.split(";"):
+            key, value = param.split("=", 1)
+            # XXX cjwatson 2022-04-19: Check whether this unquoting approach
+            # actually matches the artifactory module and Artifactory
+            # itself.
+            properties[unquote(key)] = [unquote(v) for v in value.split(",")]
+        return properties
+
     def _handle_upload(self, request):
         """Handle a request to upload a directory or file."""
         parsed_url = urlparse(request.url[len(self.repo_url):])
@@ -111,10 +122,7 @@ class FakeArtifactoryFixture(Fixture):
         if path.endswith("/"):
             self.add_dir(path.rstrip("/"))
         elif path.rsplit("/", 1)[0] in self._fs:
-            properties = {}
-            for param in parsed_url.params.split(";"):
-                key, value = param.split("=", 1)
-                properties[unquote(key)] = unquote(value)
+            properties = self._decode_properties(parsed_url.params)
             self.add_file(
                 path, request.body,
                 int(request.headers["Content-Length"]), properties)
@@ -126,9 +134,8 @@ class FakeArtifactoryFixture(Fixture):
         path = parsed_url.path
         if path in self._fs:
             query = parse_qs(parsed_url.query)
-            for param in query["properties"][0].split(";"):
-                key, value = param.split("=", 1)
-                self._fs[path]["properties"][unquote(key)] = unquote(value)
+            properties = self._decode_properties(query["properties"][0])
+            self._fs[path]["properties"].update(properties)
             return 204, {}, ""
         else:
             return 404, {}, "Unable to find item"
@@ -153,9 +160,10 @@ class FakeArtifactoryFixture(Fixture):
             "path": path_obj.parent.as_posix()[1:],
             "name": path_obj.name,
             "properties": [
-                {"key": key, "value": value}
+                {"key": key, "value": v}
                 for key, value in sorted(
-                    self._fs[path]["properties"].items())],
+                    self._fs[path]["properties"].items())
+                for v in value],
             }
 
     def _matches_aql(self, item, criteria):
