@@ -625,7 +625,7 @@ class TestNativePublishingBase(TestCaseWithFactory, SoyuzTestPublisher):
                 self.config.distroroot,
                 config.personalpackagearchive.root,
                 config.personalpackagearchive.private_root):
-            if os.path.exists(root):
+            if root is not None and os.path.exists(root):
                 shutil.rmtree(root)
 
     def getPubSource(self, *args, **kwargs):
@@ -1095,6 +1095,10 @@ class TestPublishingSetLite(TestCaseWithFactory):
                 archive=debian_archive, distroseries=hoary,
                 pocket=PackagePublishingPocket.RELEASE,
                 component=component_main).count())
+        self.assertEqual(
+            14,
+            publishing_set.getSourcesForPublishing(
+                archive=hoary.main_archive).count())
 
     def test_getSourcesForPublishing_query_count(self):
         # Check that the number of queries required to publish source
@@ -1183,6 +1187,10 @@ class TestPublishingSetLite(TestCaseWithFactory):
                 archive=debian_archive, distroarchseries=warty_i386,
                 pocket=PackagePublishingPocket.RELEASE,
                 component=component_main).count())
+        self.assertEqual(
+            12,
+            publishing_set.getBinariesForPublishing(
+                archive=warty.main_archive).count())
 
     def test_getBinariesForPublishing_query_count(self):
         # Check that the number of queries required to publish binary

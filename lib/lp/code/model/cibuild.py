@@ -222,6 +222,9 @@ class CIBuild(PackageBuildMixin, StormBase):
         """See `IBuildFarmJob`."""
         return self.git_repository.private
 
+    # See `IPrivacy`.
+    private = is_private
+
     def __repr__(self):
         return "<CIBuild %s/+build/%s>" % (
             self.git_repository.unique_name, self.id)

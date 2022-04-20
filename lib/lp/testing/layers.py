@@ -71,6 +71,8 @@ from fixtures import (
     MonkeyPatch,
     )
 import psycopg2
+from requests import Session
+from requests.adapters import HTTPAdapter
 from six.moves.urllib.error import (
     HTTPError,
     URLError,
@@ -822,8 +824,11 @@ class LibrarianLayer(DatabaseLayer):
     def _check_and_reset(cls):
         """Raise an exception if the Librarian has been killed, else reset."""
         try:
-            f = urlopen(config.librarian.download_url)
-            f.read()
+            session = Session()
+            session.mount(
+                config.librarian.download_url,
+                HTTPAdapter(max_retries=3))
+            session.get(config.librarian.download_url).content
         except Exception as e:
             raise LayerIsolationError(
                     "Librarian has been killed or has hung."
