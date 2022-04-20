@@ -24,7 +24,10 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.app.interfaces.launchpad import (
+    ILaunchpadCelebrities,
+    IPrivacy,
+    )
 from lp.buildmaster.enums import (
     BuildQueueStatus,
     BuildStatus,
@@ -102,10 +105,11 @@ class TestCIBuild(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def test_implements_interfaces(self):
-        # CIBuild implements IPackageBuild and ICIBuild.
+        # CIBuild implements IPackageBuild, ICIBuild, and IPrivacy.
         build = self.factory.makeCIBuild()
         self.assertProvides(build, IPackageBuild)
         self.assertProvides(build, ICIBuild)
+        self.assertProvides(build, IPrivacy)
 
     def test___repr__(self):
         # CIBuild has an informative __repr__.
@@ -140,11 +144,13 @@ class TestCIBuild(TestCaseWithFactory):
         # A CIBuild is private iff its repository is.
         build = self.factory.makeCIBuild()
         self.assertFalse(build.is_private)
+        self.assertFalse(build.private)
         with person_logged_in(self.factory.makePerson()) as owner:
             build = self.factory.makeCIBuild(
                 git_repository=self.factory.makeGitRepository(
                     owner=owner, information_type=InformationType.USERDATA))
             self.assertTrue(build.is_private)
+            self.assertTrue(build.private)
 
     def test_can_be_retried(self):
         ok_cases = [

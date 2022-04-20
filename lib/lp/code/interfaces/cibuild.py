@@ -27,6 +27,7 @@ from zope.schema import (
     )
 
 from lp import _
+from lp.app.interfaces.launchpad import IPrivacy
 from lp.buildmaster.interfaces.buildfarmjob import (
     IBuildFarmJobAdmin,
     IBuildFarmJobEdit,
@@ -80,7 +81,7 @@ class CIBuildAlreadyRequested(Exception):
             "An identical build for this commit was already requested.")
 
 
-class ICIBuildView(IPackageBuildView):
+class ICIBuildView(IPackageBuildView, IPrivacy):
     """`ICIBuild` attributes that require launchpad.View."""
 
     git_repository = Reference(
