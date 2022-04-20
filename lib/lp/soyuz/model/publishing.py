@@ -177,7 +177,8 @@ class ArchivePublisherBase:
         try:
             for pub_file in self.files:
                 source = self.source_package_name
-                component = self.component.name
+                component = (
+                    None if self.component is None else self.component.name)
                 filename = pub_file.libraryfile.filename
                 path = diskpool.pathFor(component, source, filename)
 
@@ -1548,19 +1549,27 @@ class PublishingSet:
                 active_publishing_status),
             BinaryPackageRelease.architecturespecific == True)
 
-    def getSourcesForPublishing(self, archive, distroseries, pocket,
-                                component):
+    def getSourcesForPublishing(self, archive, distroseries=None, pocket=None,
+                                component=None):
         """See `IPublishingSet`."""
-        spphs = IStore(SourcePackagePublishingHistory).find(
-            SourcePackagePublishingHistory,
+        clauses = [
             SourcePackagePublishingHistory.archive == archive,
-            SourcePackagePublishingHistory.distroseries == distroseries,
-            SourcePackagePublishingHistory.pocket == pocket,
-            SourcePackagePublishingHistory.component == component,
             SourcePackagePublishingHistory.status ==
                 PackagePublishingStatus.PUBLISHED,
             SourcePackagePublishingHistory.sourcepackagename ==
-                SourcePackageName.id).order_by(SourcePackageName.name)
+                SourcePackageName.id,
+            ]
+        if distroseries is not None:
+            clauses.append(
+                SourcePackagePublishingHistory.distroseries == distroseries)
+        if pocket is not None:
+            clauses.append(SourcePackagePublishingHistory.pocket == pocket)
+        if component is not None:
+            clauses.append(
+                SourcePackagePublishingHistory.component == component)
+        spphs = IStore(SourcePackagePublishingHistory).find(
+            SourcePackagePublishingHistory,
+            *clauses).order_by(SourcePackageName.name)
 
         def eager_load(spphs):
             # Preload everything which will be used by archivepublisher's
@@ -1585,20 +1594,28 @@ class PublishingSet:
 
         return DecoratedResultSet(spphs, pre_iter_hook=eager_load)
 
-    def getBinariesForPublishing(self, archive, distroarchseries, pocket,
-                                 component):
+    def getBinariesForPublishing(self, archive, distroarchseries=None,
+                                 pocket=None, component=None):
         """See `IPublishingSet`."""
-        bpphs = IStore(BinaryPackagePublishingHistory).find(
-            BinaryPackagePublishingHistory,
+        clauses = [
             BinaryPackagePublishingHistory.archive == archive,
-            BinaryPackagePublishingHistory.distroarchseries ==
-                distroarchseries,
-            BinaryPackagePublishingHistory.pocket == pocket,
-            BinaryPackagePublishingHistory.component == component,
             BinaryPackagePublishingHistory.status ==
                 PackagePublishingStatus.PUBLISHED,
             BinaryPackagePublishingHistory.binarypackagename ==
-                BinaryPackageName.id).order_by(BinaryPackageName.name)
+                BinaryPackageName.id,
+            ]
+        if distroarchseries is not None:
+            clauses.append(
+                BinaryPackagePublishingHistory.distroarchseries ==
+                    distroarchseries)
+        if pocket is not None:
+            clauses.append(BinaryPackagePublishingHistory.pocket == pocket)
+        if component is not None:
+            clauses.append(
+                BinaryPackagePublishingHistory.component == component)
+        bpphs = IStore(BinaryPackagePublishingHistory).find(
+            BinaryPackagePublishingHistory,
+            *clauses).order_by(BinaryPackageName.name)
 
         def eager_load(bpphs):
             # Preload everything which will be used by archivepublisher's

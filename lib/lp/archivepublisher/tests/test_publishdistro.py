@@ -41,6 +41,7 @@ from lp.services.log.logger import (
     )
 from lp.services.scripts.base import LaunchpadScriptFailure
 from lp.soyuz.enums import (
+    ArchivePublishingMethod,
     ArchivePurpose,
     ArchiveStatus,
     PackagePublishingStatus,
@@ -512,6 +513,7 @@ class FakeArchive:
         self.purpose = purpose
         self.status = ArchiveStatus.ACTIVE
         self.dirty_suites = []
+        self.publishing_method = ArchivePublishingMethod.LOCAL
 
 
 class FakePublisher:

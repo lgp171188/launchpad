@@ -1154,26 +1154,28 @@ class IPublishingSet(Interface):
             release in the given `archive`, `distroseries`, and `pocket`.
         """
 
-    def getSourcesForPublishing(archive, distroseries, pocket, component):
+    def getSourcesForPublishing(archive, distroseries=None, pocket=None,
+                                component=None):
         """Get source publications which are published in a given context.
 
         :param archive: The `Archive` to search.
-        :param distroseries: The `DistroSeries` to search.
-        :param pocket: The `PackagePublishingPocket` to search.
-        :param component: The `Component` to search.
+        :param distroseries: The `DistroSeries` to search, or None.
+        :param pocket: The `PackagePublishingPocket` to search, or None.
+        :param component: The `Component` to search, or None.
         :return: A result set of `SourcePackagePublishingHistory` objects in
             the given context and with the `PUBLISHED` status, ordered by
             source package name, with associated publisher-relevant objects
             preloaded.
         """
 
-    def getBinariesForPublishing(archive, distroarchseries, pocket, component):
+    def getBinariesForPublishing(archive, distroarchseries=None, pocket=None,
+                                 component=None):
         """Get binary publications which are published in a given context.
 
         :param archive: The `Archive` to search.
-        :param distroarchseries: The `DistroArchSeries` to search.
-        :param pocket: The `PackagePublishingPocket` to search.
-        :param component: The `Component` to search.
+        :param distroarchseries: The `DistroArchSeries` to search, or None.
+        :param pocket: The `PackagePublishingPocket` to search, or None.
+        :param component: The `Component` to search, or None.
         :return: A result set of `BinaryPackagePublishingHistory` objects in
             the given context and with the `PUBLISHED` status, ordered by
             binary package name, with associated publisher-relevant objects

@@ -27,6 +27,7 @@ from lp.services.webapp.adapter import (
     set_request_started,
     )
 from lp.soyuz.enums import (
+    ArchivePublishingMethod,
     ArchivePurpose,
     ArchiveStatus,
     )
@@ -309,6 +310,8 @@ class PublishDistro(PublisherScript):
 
         Commits transactions along the way.
         """
+        publishing_method = archive.publishing_method
+
         for distroseries, pocket in self.findExplicitlyDirtySuites(archive):
             if not cannot_modify_suite(archive, distroseries, pocket):
                 publisher.markSuiteDirty(distroseries, pocket)
@@ -333,23 +336,31 @@ class PublishDistro(PublisherScript):
             self.txn.commit()
 
         if self.options.enable_apt:
-            # The primary and copy archives use apt-ftparchive to
-            # generate the indexes, everything else uses the newer
-            # internal LP code.
             careful_indexing = self.isCareful(self.options.careful_apt)
-            if archive.purpose in (
-                    ArchivePurpose.PRIMARY, ArchivePurpose.COPY):
-                publisher.C_doFTPArchive(careful_indexing)
+            if publishing_method == ArchivePublishingMethod.LOCAL:
+                # The primary and copy archives use apt-ftparchive to
+                # generate the indexes, everything else uses the newer
+                # internal LP code.
+                if archive.purpose in (
+                        ArchivePurpose.PRIMARY, ArchivePurpose.COPY):
+                    publisher.C_doFTPArchive(careful_indexing)
+                else:
+                    publisher.C_writeIndexes(careful_indexing)
+            elif publishing_method == ArchivePublishingMethod.ARTIFACTORY:
+                publisher.C_updateArtifactoryProperties(careful_indexing)
             else:
-                publisher.C_writeIndexes(careful_indexing)
+                raise AssertionError(
+                    "Unhandled publishing method: %r" % publishing_method)
             self.txn.commit()
 
-        if self.options.enable_release:
+        if (self.options.enable_release and
+                publishing_method == ArchivePublishingMethod.LOCAL):
             publisher.D_writeReleaseFiles(self.isCareful(
                 self.options.careful_apt or self.options.careful_release))
             # The caller will commit this last step.
 
-        if self.options.enable_apt:
+        if (self.options.enable_apt and
+                publishing_method == ArchivePublishingMethod.LOCAL):
             publisher.createSeriesAliases()
 
     def processArchive(self, archive_id, reset_store=True):
