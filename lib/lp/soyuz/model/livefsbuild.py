@@ -292,7 +292,7 @@ class LiveFSBuild(PackageBuildMixin, Storm):
         IMasterStore(LiveFSFile).add(livefsfile)
         return livefsfile
 
-    def verifySuccessfulUpload(self):
+    def verifySuccessfulUpload(self) -> bool:
         """See `IPackageBuild`."""
         return not self.getFiles().is_empty()
 

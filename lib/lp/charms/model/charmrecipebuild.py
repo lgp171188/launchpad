@@ -385,7 +385,7 @@ class CharmRecipeBuild(PackageBuildMixin, StormBase):
         IMasterStore(CharmFile).add(charm_file)
         return charm_file
 
-    def verifySuccessfulUpload(self):
+    def verifySuccessfulUpload(self) -> bool:
         """See `IPackageBuild`."""
         return not self.getFiles().is_empty()
 

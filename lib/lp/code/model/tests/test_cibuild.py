@@ -262,6 +262,13 @@ class TestCIBuild(TestCaseWithFactory):
         self.assertEqual(
             build.upload_log, build.getFileByName(build.upload_log.filename))
 
+    def test_verifySuccessfulUpload(self):
+        # verifySuccessfulUpload always returns True; the upload processor
+        # requires us to implement this, but we don't have any interesting
+        # checks to perform here.
+        build = self.factory.makeCIBuild()
+        self.assertTrue(build.verifySuccessfulUpload())
+
     def addFakeBuildLog(self, build):
         build.setLog(self.factory.makeLibraryFileAlias("mybuildlog.txt"))
 
