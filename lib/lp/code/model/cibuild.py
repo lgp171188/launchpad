@@ -443,9 +443,10 @@ class CIBuild(PackageBuildMixin, StormBase):
 
         raise NotFoundError(filename)
 
-    def verifySuccessfulUpload(self):
+    def verifySuccessfulUpload(self) -> bool:
         """See `IPackageBuild`."""
         # We have no interesting checks to perform here.
+        return True
 
     def notify(self, extra_info=None):
         """See `IPackageBuild`."""

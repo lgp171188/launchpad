@@ -400,7 +400,7 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
         except NotFoundError:
             return None
 
-    def verifySuccessfulUpload(self):
+    def verifySuccessfulUpload(self) -> bool:
         """See `IPackageBuild`."""
         layer_files = Store.of(self).find(
             OCIFile,

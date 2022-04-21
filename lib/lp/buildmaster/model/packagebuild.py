@@ -62,7 +62,7 @@ class PackageBuildMixin(BuildFarmJobMixin):
         else:
             self.dependencies = None
 
-    def verifySuccessfulUpload(self):
+    def verifySuccessfulUpload(self) -> bool:
         """See `IPackageBuild`."""
         raise NotImplementedError
 

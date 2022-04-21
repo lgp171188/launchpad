@@ -73,7 +73,7 @@ class IPackageBuildView(IBuildFarmJobView):
             title=_("Distribution series"), required=True,
             description=_("Shortcut for its distribution series.")))
 
-    def verifySuccessfulUpload():
+    def verifySuccessfulUpload() -> bool:
         """Verify that the upload of this build completed successfully."""
 
     def storeUploadLog(content):
