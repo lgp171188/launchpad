@@ -428,7 +428,7 @@ class TestBugTaskTargetName(TestCase):
         self.assertEqual(bugtask.bugtargetname, 'firefox')
 
 
-class TestEditingBugTask(TestCase):
+class TestEditingBugTask(TestCaseWithFactory):
     """Verify out editing functionality of bugtasks."""
 
     layer = DatabaseFunctionalLayer
@@ -483,6 +483,159 @@ class TestEditingBugTask(TestCase):
         distro_task.transitionToStatus(BugTaskStatus.FIXRELEASED,
                                        getUtility(ILaunchBag).user)
         distro_task.transitionToAssignee(sample_person)
+
+
+    def test_bugtask_edit_status_explanation(self):
+        bugtaskset = getUtility(IBugTaskSet)
+        bug_one = getUtility(IBugSet).get(1)
+        mark = getUtility(IPersonSet).getByEmail("mark@example.com")
+        product = self.factory.makeProduct()
+
+        bugtask = bugtaskset.createTask(
+            bug_one, mark, product,
+            status=BugTaskStatus.NEW,
+            importance=BugTaskImportance.MEDIUM)
+
+        self.assertIsNone(bugtask.status_explanation)
+
+        login(ANONYMOUS)
+
+        # Anonymous cannot set the value for 'status_explanation'.
+        with ExpectedException(ZopeUnAuthorized, ''):
+            bugtask.status_explanation = "Foo bar"
+
+        login("mark@example.com")
+        bugtask.status_explanation = "Foo bar"
+
+        self.assertEqual("Foo bar", bugtask.status_explanation)
+
+    def test_bugtask_edit_importance_explanation(self):
+        bugtaskset = getUtility(IBugTaskSet)
+        bug_one = getUtility(IBugSet).get(1)
+        mark = getUtility(IPersonSet).getByEmail("mark@example.com")
+        product = self.factory.makeProduct()
+
+        bugtask = bugtaskset.createTask(
+            bug_one, mark, product,
+            status=BugTaskStatus.NEW,
+            importance=BugTaskImportance.MEDIUM)
+
+        self.assertIsNone(bugtask.importance_explanation)
+
+        login(ANONYMOUS)
+
+        # Anonymous cannot set the value for 'importance_explanation'.
+        with ExpectedException(ZopeUnAuthorized, ''):
+            bugtask.importance_explanation = "Foo bar"
+
+        login("mark@example.com")
+        bugtask.importance_explanation = "Foo bar baz"
+
+        self.assertEqual("Foo bar baz", bugtask.importance_explanation)
+
+    def test_editing_importance_explanation_creates_bug_activity(self):
+        user = self.factory.makePerson()
+        bug = self.factory.makeBug(owner=user)
+        task = bug.default_bugtask
+        whatchanged = '{}: importance explanation'.format(task.bugtargetname)
+
+        self.assertEqual(1, bug.activity.count())
+
+        with person_logged_in(user):
+            with notify_modified(task, ["importance_explanation"]):
+                removeSecurityProxy(task).importance_explanation = 'Critical'
+
+        self.assertEqual(2, bug.activity.count())
+        self.assertThat(
+            bug.activity[1],
+            MatchesStructure.byEquality(
+                person=user,
+                whatchanged=whatchanged,
+                oldvalue='unset',
+                newvalue='Critical'
+            )
+        )
+
+        with person_logged_in(user):
+            with notify_modified(task, ["importance_explanation"]):
+                removeSecurityProxy(task).importance_explanation = 'Critical!'
+
+        self.assertEqual(3, bug.activity.count())
+        self.assertThat(
+            bug.activity[2],
+            MatchesStructure.byEquality(
+                person=user,
+                whatchanged=whatchanged,
+                oldvalue='Critical',
+                newvalue='Critical!'
+            )
+        )
+        with person_logged_in(user):
+            with notify_modified(task, ["importance_explanation"]):
+                removeSecurityProxy(task).importance_explanation = None
+
+        self.assertEqual(4, bug.activity.count())
+        self.assertThat(
+            bug.activity[3],
+            MatchesStructure.byEquality(
+                person=user,
+                whatchanged=whatchanged,
+                oldvalue='Critical!',
+                newvalue='unset',
+            )
+        )
+
+    def test_editing_status_explanation_creates_bug_activity(self):
+        user = self.factory.makePerson()
+        bug = self.factory.makeBug(owner=user)
+        task = bug.default_bugtask
+        whatchanged = '{}: status explanation'.format(task.bugtargetname)
+
+        self.assertEqual(1, bug.activity.count())
+
+        with person_logged_in(user):
+            with notify_modified(task, ["status_explanation"]):
+                removeSecurityProxy(task).status_explanation = 'Critical'
+
+        self.assertEqual(2, bug.activity.count())
+        self.assertThat(
+            bug.activity[1],
+            MatchesStructure.byEquality(
+                person=user,
+                whatchanged=whatchanged,
+                oldvalue='unset',
+                newvalue='Critical'
+            )
+        )
+
+        with person_logged_in(user):
+            with notify_modified(task, ["status_explanation"]):
+                removeSecurityProxy(task).status_explanation = 'Critical!'
+
+        self.assertEqual(3, bug.activity.count())
+        self.assertThat(
+            bug.activity[2],
+            MatchesStructure.byEquality(
+                person=user,
+                whatchanged=whatchanged,
+                oldvalue='Critical',
+                newvalue='Critical!'
+            )
+        )
+        with person_logged_in(user):
+            with notify_modified(task, ["status_explanation"]):
+                removeSecurityProxy(task).status_explanation = None
+
+        self.assertEqual(4, bug.activity.count())
+        self.assertThat(
+            bug.activity[3],
+            MatchesStructure.byEquality(
+                person=user,
+                whatchanged=whatchanged,
+                oldvalue='Critical!',
+                newvalue='unset',
+            )
+        )
 
 
 class TestBugTaskTags(TestCase):

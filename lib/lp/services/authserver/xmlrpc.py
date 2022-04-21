@@ -15,6 +15,7 @@ from zope.interface import implementer
 from zope.interface.interfaces import ComponentLookupError
 from zope.security.proxy import removeSecurityProxy
 
+from lp.code.interfaces.cibuild import ICIBuildSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.authserver.interfaces import (
@@ -58,7 +59,8 @@ class AuthServerAPIView(LaunchpadXMLRPCView):
 
         :param context_type: A string identifying the type of context.
             Currently only 'LibraryFileAlias', 'BinaryPackageBuild',
-            'LiveFSBuild', 'SnapBuild', and 'OCIRecipeBuild' are supported.
+            'LiveFSBuild', 'SnapBuild', 'OCIRecipeBuild', and 'CIBuild' are
+            supported.
         :param context: The context as plain data (e.g. an ID).
         :return: The resolved context, or None.
         """
@@ -78,8 +80,11 @@ class AuthServerAPIView(LaunchpadXMLRPCView):
             # The context is a `SnapBuild` ID.
             return getUtility(ISnapBuildSet).getByID(context)
         elif context_type == 'OCIRecipeBuild':
-            # The context is an OCIRecipe ID.
+            # The context is an `OCIRecipeBuild` ID.
             return getUtility(IOCIRecipeBuildSet).getByID(context)
+        elif context_type == 'CIBuild':
+            # The context is a `CIBuild` ID.
+            return getUtility(ICIBuildSet).getByID(context)
         else:
             return None
 

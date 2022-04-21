@@ -153,14 +153,22 @@ def add_architecture(distroseries, architecture_name):
 
 
 def create_sections(distroseries):
-    """Set up some sections for `distroseries`."""
+    """Set up some sections for `distroseries`.
+
+    These are kept roughly in sync with production, which in turn is
+    typically kept roughly in sync with the Debian archive (compare
+    https://www.debian.org/doc/debian-policy/ch-archive.html#sections).  The
+    list here is only a convenience for local development, so it isn't vital
+    for it to be precisely accurate.
+    """
     section_names = (
-        'admin', 'cli-mono', 'comm', 'database', 'devel', 'debug', 'doc',
-        'editors', 'electronics', 'embedded', 'fonts', 'games', 'gnome',
-        'graphics', 'gnu-r', 'gnustep', 'hamradio', 'haskell', 'httpd',
-        'interpreters', 'java', 'kde', 'kernel', 'libs', 'libdevel', 'lisp',
-        'localization', 'mail', 'math', 'misc', 'net', 'news', 'ocaml',
-        'oldlibs', 'otherosfs', 'perl', 'php', 'python', 'ruby', 'science',
+        'admin', 'cli-mono', 'comm', 'database', 'debug', 'devel', 'doc',
+        'editors', 'education', 'electronics', 'embedded', 'fonts', 'games',
+        'gnome', 'gnu-r', 'gnustep', 'golang', 'graphics', 'hamradio',
+        'haskell', 'httpd', 'interpreters', 'java', 'javascript', 'kde',
+        'kernel', 'libdevel', 'libs', 'lisp', 'localization', 'mail',
+        'math', 'misc', 'net', 'news', 'ocaml', 'oldlibs', 'otherosfs',
+        'perl', 'php', 'python', 'raku', 'ruby', 'rust', 'science',
         'shells', 'sound', 'tex', 'text', 'utils', 'vcs', 'video', 'web',
         'x11', 'xfce', 'zope')
     store = Store.of(distroseries)
@@ -226,7 +234,7 @@ def create_sample_series(original_series, log):
         ('Maverick Meerkat', SeriesStatus.OBSOLETE, '10.10'),
         ('Natty Narwhal', SeriesStatus.OBSOLETE, '11.04'),
         ('Oneiric Ocelot', SeriesStatus.OBSOLETE, '11.10'),
-        ('Precise Pangolin', SeriesStatus.SUPPORTED, '12.04'),
+        ('Precise Pangolin', SeriesStatus.OBSOLETE, '12.04'),
         ('Quantal Quetzal', SeriesStatus.OBSOLETE, '12.10'),
         ('Raring Ringtail', SeriesStatus.OBSOLETE, '13.04'),
         ('Saucy Salamander', SeriesStatus.OBSOLETE, '13.10'),
@@ -239,9 +247,14 @@ def create_sample_series(original_series, log):
         ('Zesty Zapus', SeriesStatus.OBSOLETE, '17.04'),
         ('Artful Aardvark', SeriesStatus.OBSOLETE, '17.10'),
         ('Bionic Beaver', SeriesStatus.SUPPORTED, '18.04'),
-        ('Cosmic Cuttlefish', SeriesStatus.SUPPORTED, '18.10'),
-        ('Disco Dingo', SeriesStatus.CURRENT, '19.04'),
-        ('Eoan Ermine', SeriesStatus.DEVELOPMENT, '19.10'),
+        ('Cosmic Cuttlefish', SeriesStatus.OBSOLETE, '18.10'),
+        ('Disco Dingo', SeriesStatus.OBSOLETE, '19.04'),
+        ('Eoan Ermine', SeriesStatus.OBSOLETE, '19.10'),
+        ('Focal Fossa', SeriesStatus.SUPPORTED, '20.04'),
+        ('Groovy Gorilla', SeriesStatus.OBSOLETE, '20.10'),
+        ('Hirsute Hippo', SeriesStatus.OBSOLETE, '21.04'),
+        ('Impish Indri', SeriesStatus.CURRENT, '21.10'),
+        ('Jammy Jellyfish', SeriesStatus.DEVELOPMENT, '22.04'),
         ]
 
     parent = original_series

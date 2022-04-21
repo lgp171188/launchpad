@@ -588,6 +588,12 @@
       factory="lp.app.browser.tales.BuildImageDisplayAPI"
       name="image"
       />
+  <adapter
+      for="lp.code.interfaces.cibuild.ICIBuild"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.tales.BuildImageDisplayAPI"
+      name="image"
+      />
 
   <adapter
       for="lp.soyuz.interfaces.archive.IArchive"

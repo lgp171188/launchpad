@@ -4,13 +4,27 @@
 """Events related to Git repositories."""
 
 __all__ = [
+    'GitRefsCreatedEvent',
     'GitRefsUpdatedEvent',
     ]
 
 from zope.interface import implementer
 from zope.interface.interfaces import ObjectEvent
 
-from lp.code.interfaces.event import IGitRefsUpdatedEvent
+from lp.code.interfaces.event import (
+    IGitRefsCreatedEvent,
+    IGitRefsUpdatedEvent,
+    )
+
+
+@implementer(IGitRefsCreatedEvent)
+class GitRefsCreatedEvent(ObjectEvent):
+    """See `IGitRefsCreatedEvent`."""
+
+    def __init__(self, repository, paths, logger):
+        super().__init__(repository)
+        self.paths = paths
+        self.logger = logger
 
 
 @implementer(IGitRefsUpdatedEvent)

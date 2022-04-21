@@ -211,18 +211,17 @@ Publish files on disk and build a list of all created file paths
     ...             unique_file_paths.add(file_path)
     ...         pub.publish(quiet_disk_pool, BufferLogger())
 
-    >>> all_test_file_paths = sorted(unique_file_paths)
+    >>> all_test_file_paths = sorted(unique_file_paths, key=str)
 
 Create a helper function to check if the publication files exist in
 the temporary repository.
 
-    >>> import os
     >>> def check_pool_files():
     ...     for file_path in all_test_file_paths:
-    ...         if os.path.exists(file_path):
-    ...             print('%s: OK' % os.path.basename(file_path))
+    ...         if file_path.exists():
+    ...             print('%s: OK' % file_path.name)
     ...         else:
-    ...             print('%s: REMOVED' % os.path.basename(file_path))
+    ...             print('%s: REMOVED' % file_path.name)
 
     >>> check_pool_files()
     deleted-bin_666_i386.deb:    OK

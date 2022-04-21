@@ -18,6 +18,7 @@ from zope.component import (
     queryMultiAdapter,
     )
 from zope.interface import implementer
+from zope.security.interfaces import Unauthorized
 
 from lp.app.errors import NameLookupFailed
 from lp.app.validators.name import valid_name
@@ -147,7 +148,10 @@ class ProjectGitTraversable(_BaseGitTraversable):
                 ociproject_name = next(segments)
             except StopIteration:
                 raise InvalidNamespace("/".join(segments.traversed))
-            oci_project = self.context.getOCIProject(ociproject_name)
+            try:
+                oci_project = self.context.getOCIProject(ociproject_name)
+            except Unauthorized:
+                oci_project = None
             if oci_project is None:
                 raise NoSuchOCIProjectName(ociproject_name)
             return owner, oci_project, None
@@ -184,12 +188,18 @@ class DistributionGitTraversable(_BaseGitTraversable):
         except StopIteration:
             raise InvalidNamespace("/".join(segments.traversed))
         if name == "+source":
-            distro_source_package = self.context.getSourcePackage(spn_name)
+            try:
+                distro_source_package = self.context.getSourcePackage(spn_name)
+            except Unauthorized:
+                distro_source_package = None
             if distro_source_package is None:
                 raise NoSuchSourcePackageName(spn_name)
             return owner, distro_source_package, None
         elif name == "+oci":
-            oci_project = self.context.getOCIProject(spn_name)
+            try:
+                oci_project = self.context.getOCIProject(spn_name)
+            except Unauthorized:
+                oci_project = None
             if oci_project is None:
                 raise NoSuchOCIProjectName(spn_name)
             return owner, oci_project, None

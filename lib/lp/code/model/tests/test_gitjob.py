@@ -8,6 +8,7 @@ from datetime import (
     timedelta,
     )
 import hashlib
+from unittest import mock
 
 from fixtures import FakeLogger
 from lazr.lifecycle.snapshot import Snapshot
@@ -157,9 +158,16 @@ class TestGitRefScanJob(TestCaseWithFactory):
         author = repository.owner
         author_date_start = datetime(2015, 1, 1, tzinfo=pytz.UTC)
         author_date_gen = time_counter(author_date_start, timedelta(days=1))
-        self.useFixture(GitHostingFixture(
-            refs=self.makeFakeRefs(paths),
-            commits=self.makeFakeCommits(author, author_date_gen, paths)))
+        hosting_fixture = self.useFixture(GitHostingFixture(
+            refs=self.makeFakeRefs(paths)))
+
+        def getCommits(path, commit_oids, filter_paths=None, **kwargs):
+            if filter_paths is not None:
+                return []
+            else:
+                return self.makeFakeCommits(author, author_date_gen, paths)
+
+        hosting_fixture.getCommits = mock.Mock(side_effect=getCommits)
         with dbuser("branchscanner"):
             JobRunner([job]).runAll()
         self.assertRefsMatch(repository.refs, repository, paths)

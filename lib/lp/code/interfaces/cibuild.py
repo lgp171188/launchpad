@@ -20,11 +20,14 @@ from lazr.restful.fields import Reference
 from zope.schema import (
     Bool,
     Datetime,
+    Dict,
     Int,
+    List,
     TextLine,
     )
 
 from lp import _
+from lp.app.interfaces.launchpad import IPrivacy
 from lp.buildmaster.interfaces.buildfarmjob import (
     IBuildFarmJobAdmin,
     IBuildFarmJobEdit,
@@ -78,7 +81,7 @@ class CIBuildAlreadyRequested(Exception):
             "An identical build for this commit was already requested.")
 
 
-class ICIBuildView(IPackageBuildView):
+class ICIBuildView(IPackageBuildView, IPrivacy):
     """`ICIBuild` attributes that require launchpad.View."""
 
     git_repository = Reference(
@@ -115,6 +118,14 @@ class ICIBuildView(IPackageBuildView):
             "The date when the build completed or is estimated to complete."),
         readonly=True)
 
+    stages = List(
+        title=_("A list of stages in this build's configured pipeline."))
+
+    results = Dict(
+        title=_(
+            "A mapping from job IDs to result tokens, retrieved from the "
+            "builder."))
+
     def getConfiguration(logger=None):
         """Fetch a CI build's .launchpad.yaml from code hosting, if possible.
 
@@ -128,6 +139,28 @@ class ICIBuildView(IPackageBuildView):
             reason.
         :raises CannotParseConfiguration: if the fetched .launchpad.yaml
             cannot be parsed.
+        """
+
+    def getOrCreateRevisionStatusReport(job_id):
+        """Get the `IRevisionStatusReport` for a given job in this build.
+
+        Create the report if necessary.
+
+        :param job_id: A job ID, in the form "JOB_NAME:JOB_INDEX".
+        :return: An `IRevisionStatusReport`.
+        """
+
+    def getFileByName(filename):
+        """Return the corresponding `ILibraryFileAlias` in this context.
+
+        The following file types (and extension) can be looked up:
+
+         * Build log: '.txt.gz'
+         * Upload log: '_log.txt'
+
+        :param filename: The filename to look up.
+        :raises NotFoundError: if no file exists with the given name.
+        :return: The corresponding `ILibraryFileAlias`.
         """
 
 
@@ -146,7 +179,7 @@ class ICIBuild(ICIBuildView, ICIBuildEdit, ICIBuildAdmin, IPackageBuild):
 class ICIBuildSet(ISpecificBuildFarmJobSource):
     """Utility to create and access `ICIBuild`s."""
 
-    def new(git_repository, commit_sha1, distro_arch_series,
+    def new(git_repository, commit_sha1, distro_arch_series, stages,
             date_created=DEFAULT):
         """Create an `ICIBuild`."""
 
@@ -158,7 +191,7 @@ class ICIBuildSet(ISpecificBuildFarmJobSource):
             these Git commit IDs.
         """
 
-    def requestBuild(git_repository, commit_sha1, distro_arch_series):
+    def requestBuild(git_repository, commit_sha1, distro_arch_series, stages):
         """Request a CI build.
 
         This checks that the architecture is allowed and that there isn't
@@ -168,6 +201,9 @@ class ICIBuildSet(ISpecificBuildFarmJobSource):
         :param commit_sha1: The Git commit ID for the new build.
         :param distro_arch_series: The `IDistroArchSeries` that the new
             build should run on.
+        :param stages: A list of stages in this build's pipeline according
+            to its `.launchpad.yaml`, each of which is a list of (job_name,
+            job_index) tuples.
         :raises CIBuildDisallowedArchitecture: if builds on
             `distro_arch_series` are not allowed.
         :raises CIBuildAlreadyRequested: if a matching build was already

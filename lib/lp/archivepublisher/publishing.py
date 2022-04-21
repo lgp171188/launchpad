@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -24,7 +24,6 @@ from itertools import (
     chain,
     groupby,
     )
-import logging
 import lzma
 from operator import attrgetter
 import os
@@ -45,7 +44,6 @@ from zope.interface import (
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher import HARDCODED_COMPONENT_ORDER
 from lp.archivepublisher.config import getPubConfig
-from lp.archivepublisher.diskpool import DiskPool
 from lp.archivepublisher.domination import Dominator
 from lp.archivepublisher.indices import (
     build_binary_stanza_fields,
@@ -77,6 +75,7 @@ from lp.services.osutils import (
     )
 from lp.services.utils import file_exists
 from lp.soyuz.enums import (
+    ArchivePublishingMethod,
     ArchivePurpose,
     ArchiveStatus,
     BinaryPackageFormat,
@@ -145,21 +144,6 @@ def get_suffixed_indices(path):
     return {path + suffix for suffix in ('', '.gz', '.bz2', '.xz')}
 
 
-def _getDiskPool(pubconf, log):
-    """Return a DiskPool instance for a given PubConf.
-
-    It ensures the given archive location matches the minimal structure
-    required.
-    """
-    log.debug("Preparing on-disk pool representation.")
-    dp = DiskPool(pubconf.poolroot, pubconf.temproot,
-                  logging.getLogger("DiskPool"))
-    # Set the diskpool's log level to INFO to suppress debug output
-    dp.logger.setLevel(logging.INFO)
-
-    return dp
-
-
 def getPublisher(archive, allowed_suites, log, distsroot=None):
     """Return an initialized Publisher instance for the given context.
 
@@ -174,7 +158,7 @@ def getPublisher(archive, allowed_suites, log, distsroot=None):
                   % archive.owner.name)
     pubconf = getPubConfig(archive)
 
-    disk_pool = _getDiskPool(pubconf, log)
+    disk_pool = pubconf.getDiskPool(log)
 
     if distsroot is not None:
         log.debug("Overriding dists root with %s." % distsroot)
@@ -736,6 +720,42 @@ class Publisher:
                     self._writeComponentIndexes(
                         distroseries, pocket, component)
 
+    def C_updateArtifactoryProperties(self, is_careful):
+        """Update Artifactory properties to match our database."""
+        self.log.debug("* Step C'': Updating properties in Artifactory")
+        # We don't currently have a more efficient approach available than
+        # just syncing up the entire repository.  At the moment it's
+        # difficult to do better, since Launchpad's publishing model
+        # normally assumes that the disk pool only needs to know about
+        # removals once they get to the point of being removed entirely from
+        # disk, as opposed to just being removed from a single
+        # suite/channel.  A more complete overhaul of the
+        # publisher/dominator might be able to deal with this.
+        publishing_set = getUtility(IPublishingSet)
+        pubs_by_id = defaultdict(list)
+        spphs_by_spr = defaultdict(list)
+        bpphs_by_bpr = defaultdict(list)
+        for spph in publishing_set.getSourcesForPublishing(
+                archive=self.archive):
+            spphs_by_spr[spph.sourcepackagereleaseID].append(spph)
+            pubs_by_id["source:%d" % spph.sourcepackagereleaseID].append(spph)
+        for bpph in publishing_set.getBinariesForPublishing(
+                archive=self.archive):
+            bpphs_by_bpr[bpph.binarypackagereleaseID].append(bpph)
+            pubs_by_id["binary:%d" % bpph.binarypackagereleaseID].append(bpph)
+        artifacts = self._diskpool.getAllArtifacts(
+            self.archive.name, self.archive.repository_format)
+
+        for path, properties in sorted(artifacts.items()):
+            release_id = properties.get("launchpad.release-id")
+            source_name = properties.get("launchpad.source-name")
+            if not release_id or not source_name:
+                # Skip any files that Launchpad didn't put in Artifactory.
+                continue
+            self._diskpool.updateProperties(
+                source_name[0], path.name, pubs_by_id.get(release_id[0]),
+                old_properties=properties)
+
     def D_writeReleaseFiles(self, is_careful):
         """Write out the Release files for the provided distribution.
 
@@ -910,8 +930,9 @@ class Publisher:
             get_sources_path(self._config, suite_name, component),
             self._config.temproot, distroseries.index_compressors)
 
-        for spp in distroseries.getSourcePackagePublishing(
-                pocket, component, self.archive):
+        for spp in getUtility(IPublishingSet).getSourcesForPublishing(
+                archive=self.archive, distroseries=distroseries, pocket=pocket,
+                component=component):
             stanza = build_source_stanza_fields(
                 spp.sourcepackagerelease, spp.component, spp.section)
             source_index.write(stanza.makeOutput().encode('utf-8') + b'\n\n')
@@ -937,8 +958,9 @@ class Publisher:
                         self._config, suite_name, component, arch, subcomp),
                     self._config.temproot, distroseries.index_compressors)
 
-            for bpp in distroseries.getBinaryPackagePublishing(
-                    arch.architecturetag, pocket, component, self.archive):
+            for bpp in getUtility(IPublishingSet).getBinariesForPublishing(
+                    archive=self.archive, distroarchseries=arch, pocket=pocket,
+                    component=component):
                 subcomp = FORMAT_TO_SUBCOMPONENT.get(
                     bpp.binarypackagerelease.binpackageformat)
                 if subcomp not in indices:
@@ -1450,6 +1472,10 @@ class Publisher:
         be caught and an OOPS report generated.
         """
         assert self.archive.is_ppa
+        if self.archive.publishing_method != ArchivePublishingMethod.LOCAL:
+            raise NotImplementedError(
+                "Don't know how to delete archives published using %s" %
+                self.archive.publishing_method.title)
         self.log.info(
             "Attempting to delete archive '%s/%s' at '%s'." % (
                 self.archive.owner.name, self.archive.name,

@@ -108,7 +108,6 @@ from lp.registry.interfaces.distribution import (
     IDistributionSet,
     )
 from lp.registry.interfaces.distributionmirror import (
-    IDistributionMirrorSet,
     MirrorContent,
     MirrorSpeed,
     )
@@ -1235,7 +1234,7 @@ class DistributionCountryArchiveMirrorsView(LaunchpadView):
             return ''
         ip_address = ipaddress_from_request(request)
         country = request_country(request)
-        mirrors = getUtility(IDistributionMirrorSet).getBestMirrorsForCountry(
+        mirrors = self.context.getBestMirrorsForCountry(
             country, MirrorContent.ARCHIVE)
         body = "\n".join(mirror.base_url for mirror in mirrors)
         request.response.setHeader('content-type', 'text/plain;charset=utf-8')

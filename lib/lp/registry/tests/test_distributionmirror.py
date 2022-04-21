@@ -6,26 +6,32 @@ from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.distributionmirror import (
     IDistributionMirrorSet,
     MirrorContent,
     MirrorFreshness,
+    MirrorSpeed,
     MirrorStatus,
     )
+from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
-from lp.registry.model.distributionmirror import DistributionMirror
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.mail import stub
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.worlddata.interfaces.country import ICountrySet
 from lp.testing import (
+    api_url,
     login,
     login_as,
-    TestCase,
+    person_logged_in,
     TestCaseWithFactory,
     )
-from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.testing.layers import (
+    DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
+    )
+from lp.testing.pages import webservice_for_person
 
 
 class TestDistributionMirror(TestCaseWithFactory):
@@ -242,43 +248,39 @@ class TestDistributionMirror(TestCaseWithFactory):
             MirrorStatus.PENDING_REVIEW, self.archive_mirror.status)
 
 
-class TestDistributionMirrorSet(TestCase):
-    layer = LaunchpadFunctionalLayer
+class TestDistributionMirrorWebservice(TestCaseWithFactory):
+    """Test the IDistributionMirror API.
 
-    def test_getBestMirrorsForCountry_randomizes_results(self):
-        """Make sure getBestMirrorsForCountry() randomizes its results."""
-        def my_select(class_, query, *args, **kw):
-            """Fake function with the same signature of SQLBase.select().
+    Some tests already exist in distribution-mirror.txt.
+    """
+    layer = DatabaseFunctionalLayer
 
-            This function ensures the orderBy argument given to it contains
-            the 'random' string in its first item.
-            """
-            self.assertEqual(kw['orderBy'][0].name, 'random')
-            return [1, 2, 3]
+    def setUp(self):
+        super().setUp()
+        self.person = self.factory.makePerson(
+            displayname="Test Person")
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
 
-        orig_select = DistributionMirror.select
-        DistributionMirror.select = classmethod(my_select)
-        try:
-            login('foo.bar@canonical.com')
-            getUtility(IDistributionMirrorSet).getBestMirrorsForCountry(
-                None, MirrorContent.ARCHIVE)
-        finally:
-            DistributionMirror.select = orig_select
+    def test_base_url(self):
+        distroset = getUtility(IDistributionSet)
+        with person_logged_in(self.person):
+            ubuntu = distroset.get(1)
+            owner = getUtility(IPersonSet).getByName('name16')
+            speed = MirrorSpeed.S2M
+            brazil = getUtility(ICountrySet)['BR']
+            content = MirrorContent.ARCHIVE
+            http_base_url = 'http://foo.bar.com/pub'
+            whiteboard = "This mirror is based deep in the Amazon rainforest."
+            new_mirror = ubuntu.newMirror(owner, speed, brazil, content,
+                                          http_base_url=http_base_url,
+                                          whiteboard=whiteboard)
+            mirror_url = api_url(new_mirror)
+            expected_url = new_mirror.base_url
+        response = self.webservice.get(
+            mirror_url)
+        self.assertEqual(200, response.status, response.body)
 
-    def test_getBestMirrorsForCountry_appends_main_repo_to_the_end(self):
-        """Make sure the main mirror is appended to the list of mirrors for a
-        given country.
-        """
-        login('foo.bar@canonical.com')
-        france = getUtility(ICountrySet)['FR']
-        main_mirror = getUtility(ILaunchpadCelebrities).ubuntu_archive_mirror
-        mirrors = getUtility(IDistributionMirrorSet).getBestMirrorsForCountry(
-            france, MirrorContent.ARCHIVE)
-        self.assertTrue(len(mirrors) > 1, "Not enough mirrors")
-        self.assertEqual(main_mirror, mirrors[-1])
-
-        main_mirror = getUtility(ILaunchpadCelebrities).ubuntu_cdimage_mirror
-        mirrors = getUtility(IDistributionMirrorSet).getBestMirrorsForCountry(
-            france, MirrorContent.RELEASE)
-        self.assertTrue(len(mirrors) > 1, "Not enough mirrors")
-        self.assertEqual(main_mirror, mirrors[-1])
+        search_body = response.jsonBody()
+        self.assertEqual(expected_url, search_body["base_url"])

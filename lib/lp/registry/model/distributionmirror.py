@@ -22,13 +22,10 @@ import pytz
 from storm.expr import (
     And,
     Desc,
-    Func,
     )
 from storm.store import Store
-from zope.component import getUtility
 from zope.interface import implementer
 
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher.diskpool import poolify
 from lp.registry.errors import (
     CannotTransitionToCountryMirror,
@@ -73,7 +70,6 @@ from lp.services.database.sqlobject import (
     ForeignKey,
     StringCol,
     )
-from lp.services.helpers import shortlist
 from lp.services.mail.helpers import (
     get_contact_email_addresses,
     get_email_template,
@@ -90,7 +86,6 @@ from lp.services.webapp import (
     canonical_url,
     urlappend,
     )
-from lp.services.worlddata.model.country import Country
 from lp.soyuz.enums import (
     BinaryPackageFileType,
     PackagePublishingStatus,
@@ -592,51 +587,6 @@ class DistributionMirrorSet:
         """See IDistributionMirrorSet"""
         return DistributionMirror.get(mirror_id)
 
-    def getBestMirrorsForCountry(self, country, mirror_type):
-        """See IDistributionMirrorSet"""
-        # As per mvo's request we only return mirrors which have an
-        # http_base_url.
-        country_id = None
-        if country is not None:
-            country_id = country.id
-        base_query = And(
-            DistributionMirror.content == mirror_type,
-            DistributionMirror.enabled == True,
-            DistributionMirror.http_base_url != None,
-            DistributionMirror.official_candidate == True,
-            DistributionMirror.status == MirrorStatus.OFFICIAL)
-        query = And(DistributionMirror.countryID == country_id, base_query)
-        # The list of mirrors returned by this method is fed to apt through
-        # launchpad.net, so we order the results randomly in a lame attempt to
-        # balance the load on the mirrors.
-        order_by = [Func('random')]
-        mirrors = shortlist(
-            DistributionMirror.select(query, orderBy=order_by),
-            longest_expected=200)
-
-        if not mirrors and country is not None:
-            continent = country.continent
-            query = And(
-                Country.q.continentID == continent.id,
-                DistributionMirror.countryID == Country.q.id,
-                base_query)
-            mirrors.extend(shortlist(
-                DistributionMirror.select(query, orderBy=order_by),
-                longest_expected=300))
-
-        if mirror_type == MirrorContent.ARCHIVE:
-            main_mirror = getUtility(
-                ILaunchpadCelebrities).ubuntu_archive_mirror
-        elif mirror_type == MirrorContent.RELEASE:
-            main_mirror = getUtility(
-                ILaunchpadCelebrities).ubuntu_cdimage_mirror
-        else:
-            raise AssertionError("Unknown mirror type: %s" % mirror_type)
-        assert main_mirror is not None, 'Main mirror was not found'
-        if main_mirror not in mirrors:
-            mirrors.append(main_mirror)
-        return mirrors
-
     def getMirrorsToProbe(
             self, content_type, ignore_last_probe=False, limit=None):
         """See IDistributionMirrorSet"""
@@ -876,7 +826,7 @@ class MirrorDistroArchSeries(SQLBase, _MirrorSeriesMixIn):
         """
         bpr = publishing_record.binarypackagerelease
         base_url = self.distribution_mirror.base_url
-        path = poolify(bpr.sourcepackagename, self.component.name)
+        path = poolify(bpr.sourcepackagename, self.component.name).as_posix()
         file = BinaryPackageFile.selectOneBy(
             binarypackagerelease=bpr, filetype=BinaryPackageFileType.DEB)
         full_path = 'pool/%s/%s' % (path, file.libraryfile.filename)

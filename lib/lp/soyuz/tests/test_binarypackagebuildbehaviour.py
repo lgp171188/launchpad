@@ -279,7 +279,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
             % (archive.owner.name, archive.name,
                poolify(
                    build.source_package_release.sourcepackagename.name,
-                   'main'),
+                   'main').as_posix(),
                sprf.libraryfile.filename))
         lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)

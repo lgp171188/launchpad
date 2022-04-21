@@ -445,9 +445,31 @@ class IBugTask(IHasBug, IBugTaskDelete):
         Choice(title=_('Status'), vocabulary=BugTaskStatus,
                default=BugTaskStatus.NEW, readonly=True))
     _status = Attribute('The actual status DB column used in queries.')
+    status_explanation = exported(
+        Text(
+            title=_("Status explanation"),
+            description=_(
+                "The explanation for the current status of this bugtask."
+            ),
+            required=False,
+        ),
+        as_of="devel"
+    )
+
     importance = exported(
         Choice(title=_('Importance'), vocabulary=BugTaskImportance,
                default=BugTaskImportance.UNDECIDED, readonly=True))
+    importance_explanation = exported(
+        Text(
+            title=_("Importance explanation"),
+            description=_(
+                "The explanation for the current importance of this bugtask."
+            ),
+            required=False,
+        ),
+        as_of="devel"
+    )
+
     assignee = exported(
         PersonChoice(
             title=_('Assigned to'), required=False,
@@ -832,12 +854,26 @@ class IBugTaskDelta(Interface):
         {'old' : BugTaskStatus.FOO, 'new' : BugTaskStatus.BAR}, or None,
         if no change was made to the status.
         """)
+    status_explanation = Attribute(
+        """The change made to the status_explanation for this task.
+
+        The value is a dict like
+        {'old': 'foo', 'new': 'bar'}, or None, if no change was made to
+        the status_explanation.
+        """)
     importance = Attribute(
         """The change made to the importance of this task.
 
         The value is a dict like
         {'old' : BugTaskImportance.FOO, 'new' : BugTaskImportance.BAR},
         or None, if no change was made to the importance.
+        """)
+    importance_explanation = Attribute(
+        """The change made to the importance_explanation for this task.
+
+        The value is a dict like
+        {'old': 'foo', 'new': 'bar'}, or None, if no change was made to
+        the importance_explanation.
         """)
     assignee = Attribute(
         """The change made to the assignee of this task.

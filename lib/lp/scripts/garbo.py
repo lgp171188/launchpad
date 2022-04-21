@@ -33,6 +33,7 @@ import six
 from storm.expr import (
     And,
     Cast,
+    Coalesce,
     Except,
     In,
     Join,
@@ -43,6 +44,7 @@ from storm.expr import (
     Row,
     Select,
     SQL,
+    Update,
     )
 from storm.info import ClassAlias
 from storm.store import EmptyResultSet
@@ -147,16 +149,24 @@ from lp.snappy.model.snapbuildjob import (
     SnapBuildJob,
     SnapBuildJobType,
     )
-from lp.soyuz.enums import ArchiveSubscriberStatus
+from lp.soyuz.enums import (
+    ArchivePublishingMethod,
+    ArchiveRepositoryFormat,
+    ArchiveSubscriberStatus,
+    )
 from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.archiveauthtoken import ArchiveAuthToken
 from lp.soyuz.model.archivesubscriber import ArchiveSubscriber
+from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.distributionsourcepackagecache import (
     DistributionSourcePackageCache,
     )
 from lp.soyuz.model.livefsbuild import LiveFSFile
-from lp.soyuz.model.publishing import SourcePackagePublishingHistory
+from lp.soyuz.model.publishing import (
+    BinaryPackagePublishingHistory,
+    SourcePackagePublishingHistory,
+    )
 from lp.soyuz.model.reporting import LatestPersonSourcePackageReleaseCache
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 from lp.translations.interfaces.potemplate import IPOTemplateSet
@@ -1811,6 +1821,116 @@ class RevisionStatusReportPruner(BulkPruner):
         RevisionStatusArtifactType.BINARY.value)
 
 
+class ArchiveArtifactoryColumnsPopulator(TunableLoop):
+    """Populate new `Archive` columns used for Artifactory publishing."""
+
+    maximum_chunk_size = 5000
+
+    def __init__(self, log, abort_time=None):
+        super().__init__(log, abort_time)
+        self.start_at = 1
+        self.store = IMasterStore(Archive)
+
+    def findArchives(self):
+        return self.store.find(
+            Archive,
+            Archive.id >= self.start_at,
+            Or(Archive._publishing_method == None,
+               Archive._repository_format == None),
+            ).order_by(Archive.id)
+
+    def isDone(self):
+        return self.findArchives().is_empty()
+
+    def __call__(self, chunk_size):
+        archives = list(self.findArchives()[:chunk_size])
+        ids = [archive.id for archive in archives]
+        self.store.execute(Update(
+            {
+                Archive._publishing_method: Coalesce(
+                    Archive._publishing_method,
+                    ArchivePublishingMethod.LOCAL.value),
+                Archive._repository_format: Coalesce(
+                    Archive._repository_format,
+                    ArchiveRepositoryFormat.DEBIAN.value),
+                },
+            where=Archive.id.is_in(ids), table=Archive))
+        self.start_at = archives[-1].id + 1
+        transaction.commit()
+
+
+class SourcePackagePublishingHistoryFormatPopulator(TunableLoop):
+    """Populate new `SPPH.format` column."""
+
+    maximum_chunk_size = 5000
+
+    def __init__(self, log, abort_time=None):
+        super().__init__(log, abort_time)
+        self.start_at = 1
+        self.store = IMasterStore(SourcePackagePublishingHistory)
+
+    def findPublications(self):
+        return self.store.find(
+            SourcePackagePublishingHistory,
+            SourcePackagePublishingHistory.id >= self.start_at,
+            SourcePackagePublishingHistory._format == None,
+            ).order_by(SourcePackagePublishingHistory.id)
+
+    def isDone(self):
+        return self.findPublications().is_empty()
+
+    def __call__(self, chunk_size):
+        spphs = list(self.findPublications()[:chunk_size])
+        ids = [spph.id for spph in spphs]
+        self.store.execute(BulkUpdate(
+            {SourcePackagePublishingHistory._format:
+                SourcePackageRelease.format},
+            table=SourcePackagePublishingHistory,
+            values=SourcePackageRelease,
+            where=And(
+                SourcePackagePublishingHistory.sourcepackagerelease ==
+                    SourcePackageRelease.id,
+                SourcePackagePublishingHistory.id.is_in(ids))))
+        self.start_at = spphs[-1].id + 1
+        transaction.commit()
+
+
+class BinaryPackagePublishingHistoryFormatPopulator(TunableLoop):
+    """Populate new `BPPH.binarypackageformat` column."""
+
+    maximum_chunk_size = 5000
+
+    def __init__(self, log, abort_time=None):
+        super().__init__(log, abort_time)
+        self.start_at = 1
+        self.store = IMasterStore(BinaryPackagePublishingHistory)
+
+    def findPublications(self):
+        return self.store.find(
+            BinaryPackagePublishingHistory,
+            BinaryPackagePublishingHistory.id >= self.start_at,
+            BinaryPackagePublishingHistory._binarypackageformat == None,
+            ).order_by(BinaryPackagePublishingHistory.id)
+
+    def isDone(self):
+        return self.findPublications().is_empty()
+
+    def __call__(self, chunk_size):
+        bpphs = list(self.findPublications()[:chunk_size])
+        ids = [bpph.id for bpph in bpphs]
+        self.store.execute(BulkUpdate(
+            {BinaryPackagePublishingHistory._binarypackageformat:
+                BinaryPackageRelease.binpackageformat},
+            table=BinaryPackagePublishingHistory,
+            values=BinaryPackageRelease,
+            where=And(
+                BinaryPackagePublishingHistory.binarypackagerelease ==
+                    BinaryPackageRelease.id,
+                BinaryPackagePublishingHistory.id.is_in(ids))))
+        self.start_at = bpphs[-1].id + 1
+        transaction.commit()
+
+
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
     """Abstract base class to run a collection of TunableLoops."""
     script_name = None  # Script name for locking and database user. Override.
@@ -2090,6 +2210,8 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
     script_name = 'garbo-daily'
     tunable_loops = [
         AnswerContactPruner,
+        ArchiveArtifactoryColumnsPopulator,
+        BinaryPackagePublishingHistoryFormatPopulator,
         BranchJobPruner,
         BugNotificationPruner,
         BugWatchActivityPruner,
@@ -2111,6 +2233,7 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         ScrubPOFileTranslator,
         SnapBuildJobPruner,
         SnapFilePruner,
+        SourcePackagePublishingHistoryFormatPopulator,
         SuggestiveTemplatesCacheUpdater,
         TeamMembershipPruner,
         UnlinkedAccountPruner,

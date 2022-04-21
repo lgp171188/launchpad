@@ -215,7 +215,7 @@ details the changes that have been applied.
 The event records all the current values, and the old value of
 attributes that have changed. This produces redundant data that makes it
 possible to validate the historical trail for integrity and to detect
-when changes were made without creating a correponding event.
+when changes were made without creating a corresponding event.
 
     >>> print_items(modify_event)
     CODE_IMPORT <muted>

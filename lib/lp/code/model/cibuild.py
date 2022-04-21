@@ -11,6 +11,7 @@ from datetime import timedelta
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
+from storm.databases.postgres import JSON
 from storm.locals import (
     Bool,
     DateTime,
@@ -24,6 +25,7 @@ from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -32,6 +34,7 @@ from lp.buildmaster.enums import (
     BuildQueueStatus,
     BuildStatus,
     )
+from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
 from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
@@ -49,6 +52,7 @@ from lp.code.interfaces.cibuild import (
     MissingConfiguration,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.code.interfaces.revisionstatus import IRevisionStatusReportSet
 from lp.code.model.gitref import GitRef
 from lp.code.model.lpcraft import load_configuration
@@ -70,8 +74,30 @@ from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
     )
+from lp.services.macaroons.interfaces import (
+    BadMacaroonContext,
+    IMacaroonIssuer,
+    NO_USER,
+    )
+from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.services.propertycache import cachedproperty
 from lp.soyuz.model.distroarchseries import DistroArchSeries
+
+
+def get_stages(configuration):
+    """Extract the job stages for this configuration."""
+    stages = []
+    if not configuration.pipeline:
+        raise CannotBuild("No pipeline stages defined")
+    for stage in configuration.pipeline:
+        jobs = []
+        for job_name in stage:
+            if job_name not in configuration.jobs:
+                raise CannotBuild("No job definition for %r" % job_name)
+            for i in range(len(configuration.jobs[job_name])):
+                jobs.append((job_name, i))
+        stages.append(jobs)
+    return stages
 
 
 def determine_DASes_to_build(configuration, logger=None):
@@ -182,8 +208,10 @@ class CIBuild(PackageBuildMixin, StormBase):
     build_farm_job_id = Int(name="build_farm_job", allow_none=False)
     build_farm_job = Reference(build_farm_job_id, "BuildFarmJob.id")
 
+    _jobs = JSON(name="jobs", allow_none=True)
+
     def __init__(self, build_farm_job, git_repository, commit_sha1,
-                 distro_arch_series, processor, virtualized,
+                 distro_arch_series, processor, virtualized, stages,
                  date_created=DEFAULT):
         """Construct a `CIBuild`."""
         super().__init__()
@@ -193,6 +221,7 @@ class CIBuild(PackageBuildMixin, StormBase):
         self.distro_arch_series = distro_arch_series
         self.processor = processor
         self.virtualized = virtualized
+        self._jobs = {"stages": stages}
         self.date_created = date_created
         self.status = BuildStatus.NEEDSBUILD
 
@@ -200,6 +229,9 @@ class CIBuild(PackageBuildMixin, StormBase):
     def is_private(self):
         """See `IBuildFarmJob`."""
         return self.git_repository.private
+
+    # See `IPrivacy`.
+    private = is_private
 
     def __repr__(self):
         return "<CIBuild %s/+build/%s>" % (
@@ -359,9 +391,62 @@ class CIBuild(PackageBuildMixin, StormBase):
                 "%s: %s" % (msg % self.git_repository.unique_name, e))
         return parse_configuration(self.git_repository, blob)
 
-    def verifySuccessfulUpload(self):
+    @property
+    def stages(self):
+        """See `ICIBuild`."""
+        if self._jobs is None:
+            return []
+        return self._jobs.get("stages", [])
+
+    @property
+    def results(self):
+        """See `ICIBuild`."""
+        if self._jobs is None:
+            return {}
+        return self._jobs.get("results", {})
+
+    @results.setter
+    def results(self, results):
+        """See `ICIBuild`."""
+        if self._jobs is None:
+            self._jobs = {}
+        self._jobs["results"] = results
+
+    def getOrCreateRevisionStatusReport(self, job_id):
+        """See `ICIBuild`."""
+        report = getUtility(IRevisionStatusReportSet).getByCIBuildAndTitle(
+            self, job_id)
+        if report is None:
+            # The report should normally exist, since
+            # lp.code.model.cibuild.CIBuildSet._tryToRequestBuild creates
+            # report rows for the jobs it expects to run, but for robustness
+            # it's a good idea to ensure its existence here.
+            report = getUtility(IRevisionStatusReportSet).new(
+                creator=self.git_repository.owner,
+                title=job_id,
+                git_repository=self.git_repository,
+                commit_sha1=self.commit_sha1,
+                ci_build=self)
+        return report
+
+    def getFileByName(self, filename):
+        """See `ICIBuild`."""
+        if filename.endswith(".txt.gz"):
+            file_object = self.log
+        elif filename.endswith("_log.txt"):
+            file_object = self.upload_log
+        else:
+            file_object = None
+
+        if file_object is not None and file_object.filename == filename:
+            return file_object
+
+        raise NotFoundError(filename)
+
+    def verifySuccessfulUpload(self) -> bool:
         """See `IPackageBuild`."""
         # We have no interesting checks to perform here.
+        return True
 
     def notify(self, extra_info=None):
         """See `IPackageBuild`."""
@@ -371,7 +456,7 @@ class CIBuild(PackageBuildMixin, StormBase):
 @implementer(ICIBuildSet)
 class CIBuildSet(SpecificBuildFarmJobSourceMixin):
 
-    def new(self, git_repository, commit_sha1, distro_arch_series,
+    def new(self, git_repository, commit_sha1, distro_arch_series, stages,
             date_created=DEFAULT):
         """See `ICIBuildSet`."""
         store = IMasterStore(CIBuild)
@@ -379,7 +464,7 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
             CIBuild.job_type, BuildStatus.NEEDSBUILD, date_created)
         cibuild = CIBuild(
             build_farm_job, git_repository, commit_sha1, distro_arch_series,
-            distro_arch_series.processor, virtualized=True,
+            distro_arch_series.processor, virtualized=True, stages=stages,
             date_created=date_created)
         store.add(cibuild)
         store.flush()
@@ -409,7 +494,8 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
             das.getChroot(pocket=pocket) is not None
             and self._isBuildableArchitectureAllowed(das))
 
-    def requestBuild(self, git_repository, commit_sha1, distro_arch_series):
+    def requestBuild(self, git_repository, commit_sha1, distro_arch_series,
+                     stages):
         """See `ICIBuildSet`."""
         pocket = PackagePublishingPocket.UPDATES
         if not self._isArchitectureAllowed(distro_arch_series, pocket):
@@ -423,39 +509,33 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
         if not result.is_empty():
             raise CIBuildAlreadyRequested
 
-        build = self.new(git_repository, commit_sha1, distro_arch_series)
+        build = self.new(
+            git_repository, commit_sha1, distro_arch_series, stages)
         build.queueBuild()
         notify(ObjectCreatedEvent(build))
         return build
 
     def _tryToRequestBuild(self, git_repository, commit_sha1, configuration,
-                           das, logger):
+                           das, stages, logger):
         try:
             if logger is not None:
                 logger.info(
                     "Requesting CI build for %s on %s/%s",
                     commit_sha1, das.distroseries.name, das.architecturetag,
                 )
-            build = self.requestBuild(git_repository, commit_sha1, das)
+            build = self.requestBuild(git_repository, commit_sha1, das, stages)
             # Create reports for each individual job in this build so that
             # they show up as pending in the web UI.  The job names
             # generated here should match those generated by
             # lpbuildd.ci._make_job_id in launchpad-buildd;
             # lp.archiveuploader.ciupload looks for this report and attaches
             # artifacts to it.
-            rsr_set = getUtility(IRevisionStatusReportSet)
-            for stage in configuration.pipeline:
-                for job_name in stage:
-                    for i in range(len(configuration.jobs.get(job_name, []))):
-                        # XXX cjwatson 2022-03-17: It would be better if we
-                        # could set some kind of meaningful description as
-                        # well.
-                        rsr_set.new(
-                            creator=git_repository.owner,
-                            title="%s:%s" % (job_name, i),
-                            git_repository=git_repository,
-                            commit_sha1=commit_sha1,
-                            ci_build=build)
+            for stage in stages:
+                for job_name, i in stage:
+                    # XXX cjwatson 2022-03-17: It would be better if we
+                    # could set some kind of meaningful description as well.
+                    build.getOrCreateRevisionStatusReport(
+                        "%s:%s" % (job_name, i))
         except CIBuildAlreadyRequested:
             pass
         except Exception as e:
@@ -475,7 +555,7 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
             # debian/.launchpad.yaml (or perhaps make the path a property of
             # the repository) once lpcraft and launchpad-buildd support
             # using alternative paths for builds.
-            filter_paths=[".launchpad.yaml"])
+            filter_paths=[".launchpad.yaml"], logger=logger)
         for commit in commits:
             try:
                 configuration = parse_configuration(
@@ -484,9 +564,18 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
                 if logger is not None:
                     logger.error(e)
                 continue
+            try:
+                stages = get_stages(configuration)
+            except CannotBuild as e:
+                if logger is not None:
+                    logger.error(
+                        "Failed to request CI builds for %s: %s",
+                        commit["sha1"], e)
+                continue
             for das in determine_DASes_to_build(configuration, logger=logger):
                 self._tryToRequestBuild(
-                    git_repository, commit["sha1"], configuration, das, logger)
+                    git_repository, commit["sha1"], configuration, das, stages,
+                    logger)
 
     def getByID(self, build_id):
         """See `ISpecificBuildFarmJobSource`."""
@@ -519,3 +608,58 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
     def deleteByGitRepository(self, git_repository):
         """See `ICIBuildSet`."""
         self.findByGitRepository(git_repository).remove()
+
+
+@implementer(IMacaroonIssuer)
+class CIBuildMacaroonIssuer(MacaroonIssuerBase):
+
+    identifier = "ci-build"
+    issuable_via_authserver = True
+
+    def checkIssuingContext(self, context, **kwargs):
+        """See `MacaroonIssuerBase`.
+
+        For issuing, the context is an `ICIBuild`.
+        """
+        if not ICIBuild.providedBy(context):
+            raise BadMacaroonContext(context)
+        return removeSecurityProxy(context).id
+
+    def checkVerificationContext(self, context, **kwargs):
+        """See `MacaroonIssuerBase`."""
+        if not IGitRepository.providedBy(context):
+            raise BadMacaroonContext(context)
+        return context
+
+    def verifyPrimaryCaveat(self, verified, caveat_value, context, user=None,
+                            **kwargs):
+        """See `MacaroonIssuerBase`.
+
+        For verification, the context is an `IGitRepository`.  We check that
+        the repository or archive is needed to build the `ICIBuild` that is
+        the context of the macaroon, and that the context build is currently
+        building.
+        """
+        # CI builds only support free-floating macaroons for Git
+        # authentication, not ones bound to a user.
+        if user:
+            return False
+        verified.user = NO_USER
+
+        if context is None:
+            # We're only verifying that the macaroon could be valid for some
+            # context.
+            return True
+        if not IGitRepository.providedBy(context):
+            return False
+
+        try:
+            build_id = int(caveat_value)
+        except ValueError:
+            return False
+        clauses = [
+            CIBuild.id == build_id,
+            CIBuild.status == BuildStatus.BUILDING,
+            CIBuild.git_repository == context,
+            ]
+        return not IStore(CIBuild).find(CIBuild, *clauses).is_empty()

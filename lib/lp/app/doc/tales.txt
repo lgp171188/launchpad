@@ -229,6 +229,40 @@ But the 'failed to build' build is 16x14:
     >>> print(test_tales("build/image:icon", build=build))
     <img width="16" height="14"...src="/@@/build-failed" />
 
+Other build types have similar icon handling.
+
+    >>> from lp.charms.interfaces.charmrecipe import CHARM_RECIPE_ALLOW_CREATE
+    >>> from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
+    >>> from lp.services.features.testing import FeatureFixture
+    >>> from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
+
+    >>> spr_build = factory.makeSourcePackageRecipeBuild()
+    >>> print(test_tales("build/image:icon", build=spr_build))
+    <img width="14" height="14"...src="/@@/build-needed" />
+
+    >>> with FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}):
+    ...     livefs_build = factory.makeLiveFSBuild()
+    >>> print(test_tales("build/image:icon", build=livefs_build))
+    <img width="14" height="14"...src="/@@/build-needed" />
+
+    >>> snap_build = factory.makeSnapBuild()
+    >>> print(test_tales("build/image:icon", build=snap_build))
+    <img width="14" height="14"...src="/@@/build-needed" />
+
+    >>> with FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}):
+    ...     oci_recipe_build = factory.makeOCIRecipeBuild()
+    >>> print(test_tales("build/image:icon", build=oci_recipe_build))
+    <img width="14" height="14"...src="/@@/build-needed" />
+
+    >>> with FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}):
+    ...     charm_recipe_build = factory.makeCharmRecipeBuild()
+    >>> print(test_tales("build/image:icon", build=charm_recipe_build))
+    <img width="14" height="14"...src="/@@/build-needed" />
+
+    >>> ci_build = factory.makeCIBuild()
+    >>> print(test_tales("build/image:icon", build=ci_build))
+    <img width="14" height="14"...src="/@@/build-needed" />
+
 Revision status reports have an icon for each result.
 
     >>> from lp.code.enums import RevisionStatusResult

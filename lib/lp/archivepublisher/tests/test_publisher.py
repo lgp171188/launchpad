@@ -71,6 +71,9 @@ from lp.archivepublisher.publishing import (
     I18nIndex,
     Publisher,
     )
+from lp.archivepublisher.tests.artifactory_fixture import (
+    FakeArtifactoryFixture,
+    )
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.archivepublisher.utils import RepositoryIndexFile
 from lp.registry.interfaces.distribution import IDistributionSet
@@ -94,7 +97,9 @@ from lp.services.log.logger import (
 from lp.services.osutils import open_for_writing
 from lp.services.utils import file_exists
 from lp.soyuz.enums import (
+    ArchivePublishingMethod,
     ArchivePurpose,
+    ArchiveRepositoryFormat,
     ArchiveStatus,
     BinaryPackageFormat,
     IndexCompressionType,
@@ -3543,6 +3548,188 @@ class TestDirectoryHash(TestDirectoryHashHelpers):
             ),
         }
         self.assertThat(self.fetchSums(rootdir), MatchesDict(expected))
+
+
+class TestArtifactoryPublishing(TestPublisherBase):
+    """Test publishing to Artifactory."""
+
+    def setUpArtifactory(self, repository_format):
+        self.base_url = "https://foo.example.com/artifactory"
+        self.pushConfig("artifactory", base_url=self.base_url)
+        self.archive = self.factory.makeArchive(
+            distribution=self.ubuntutest,
+            publishing_method=ArchivePublishingMethod.ARTIFACTORY,
+            repository_format=repository_format)
+        self.config = getPubConfig(self.archive)
+        self.disk_pool = self.config.getDiskPool(self.logger)
+        self.disk_pool.logger = self.logger
+        self.artifactory = self.useFixture(
+            FakeArtifactoryFixture(self.base_url, self.archive.name))
+
+    def test_publish_files(self):
+        """The actual publishing of packages' files to Artifactory works."""
+        self.setUpArtifactory(ArchiveRepositoryFormat.DEBIAN)
+        publisher = Publisher(
+            self.logger, self.config, self.disk_pool, self.archive)
+        pub_source = self.getPubSource(
+            sourcename="foo", version="666", filecontent=b"Hello world",
+            archive=self.archive)
+
+        publisher.A_publish(False)
+
+        self.assertEqual({"breezy-autotest"}, publisher.dirty_suites)
+        self.assertEqual(PackagePublishingStatus.PUBLISHED, pub_source.status)
+        path = self.disk_pool.rootpath / "f" / "foo" / "foo_666.dsc"
+        with path.open() as f:
+            self.assertEqual(b"Hello world", f.read())
+
+    def test_initialize_properties(self):
+        """We set initial properties for newly-published files."""
+        self.setUpArtifactory(ArchiveRepositoryFormat.DEBIAN)
+        publisher = Publisher(
+            self.logger, self.config, self.disk_pool, self.archive)
+        source = self.getPubSource(
+            sourcename="hello", version="1.0", archive=self.archive,
+            architecturehintlist="i386")
+        binary = self.getPubBinaries(
+            binaryname="hello", version="1.0", archive=self.archive,
+            pub_source=source)[0]
+
+        publisher.A_publish(False)
+        publisher.C_updateArtifactoryProperties(False)
+
+        source_path = self.disk_pool.rootpath / "h" / "hello" / "hello_1.0.dsc"
+        self.assertEqual(
+            {
+                "deb.component": ["main"],
+                "deb.distribution": ["breezy-autotest"],
+                "launchpad.release-id":
+                    ["source:%d" % source.sourcepackagereleaseID],
+                "launchpad.source-name": ["hello"],
+                },
+            source_path.properties)
+        binary_path = (
+            self.disk_pool.rootpath / "h" / "hello" /
+            ("hello_1.0_%s.deb" % binary.distroarchseries.architecturetag))
+        self.assertEqual(
+            {
+                "deb.architecture": [binary.distroarchseries.architecturetag],
+                "deb.component": ["main"],
+                "deb.distribution": ["breezy-autotest"],
+                "launchpad.release-id":
+                    ["binary:%d" % binary.binarypackagereleaseID],
+                "launchpad.source-name": ["hello"],
+                },
+            binary_path.properties)
+
+    def test_update_properties(self):
+        """We update properties when publishing contexts are updated."""
+        self.setUpArtifactory(ArchiveRepositoryFormat.DEBIAN)
+        publisher = Publisher(
+            self.logger, self.config, self.disk_pool, self.archive)
+        source = self.getPubSource(
+            sourcename="hello", version="1.0", archive=self.archive,
+            architecturehintlist="i386")
+        binary = self.getPubBinaries(
+            binaryname="hello", version="1.0", archive=self.archive,
+            pub_source=source)[0]
+
+        # Do an initial publication so that we have something to update.
+        publisher.A_publish(False)
+        publisher.C_updateArtifactoryProperties(False)
+
+        source_path = self.disk_pool.rootpath / "h" / "hello" / "hello_1.0.dsc"
+        self.assertEqual(
+            ["breezy-autotest"], source_path.properties["deb.distribution"])
+        binary_path = (
+            self.disk_pool.rootpath / "h" / "hello" /
+            ("hello_1.0_%s.deb" % binary.distroarchseries.architecturetag))
+        self.assertEqual(
+            ["breezy-autotest"], binary_path.properties["deb.distribution"])
+
+        # Copy the source and binary to another publishing context, and
+        # ensure that we update their Artifactory properties accordingly.
+        source.copyTo(
+            archive=self.archive,
+            distroseries=self.archive.distribution["hoary-test"],
+            pocket=PackagePublishingPocket.RELEASE)
+        binary.copyTo(
+            archive=self.archive,
+            distroseries=self.archive.distribution["hoary-test"],
+            pocket=PackagePublishingPocket.RELEASE)
+
+        publisher.A_publish(False)
+        publisher.C_updateArtifactoryProperties(False)
+
+        self.assertEqual(
+            {
+                "deb.component": ["main"],
+                "deb.distribution": ["breezy-autotest", "hoary-test"],
+                "launchpad.release-id":
+                    ["source:%d" % source.sourcepackagereleaseID],
+                "launchpad.source-name": ["hello"],
+                },
+            source_path.properties)
+        self.assertEqual(
+            {
+                "deb.architecture": [binary.distroarchseries.architecturetag],
+                "deb.component": ["main"],
+                "deb.distribution": ["breezy-autotest", "hoary-test"],
+                "launchpad.release-id":
+                    ["binary:%d" % binary.binarypackagereleaseID],
+                "launchpad.source-name": ["hello"],
+                },
+            binary_path.properties)
+
+    def test_remove_properties(self):
+        """We remove properties if a file is no longer published anywhere."""
+        self.setUpArtifactory(ArchiveRepositoryFormat.DEBIAN)
+        publisher = Publisher(
+            self.logger, self.config, self.disk_pool, self.archive)
+        source = self.getPubSource(
+            sourcename="hello", version="1.0", archive=self.archive,
+            architecturehintlist="i386")
+        binary = self.getPubBinaries(
+            binaryname="hello", version="1.0", archive=self.archive,
+            pub_source=source)[0]
+
+        # Do an initial publication so that we have something to update.
+        publisher.A_publish(False)
+        publisher.C_updateArtifactoryProperties(False)
+
+        source_path = self.disk_pool.rootpath / "h" / "hello" / "hello_1.0.dsc"
+        self.assertEqual(
+            ["breezy-autotest"], source_path.properties["deb.distribution"])
+        binary_path = (
+            self.disk_pool.rootpath / "h" / "hello" /
+            ("hello_1.0_%s.deb" % binary.distroarchseries.architecturetag))
+        self.assertEqual(
+            ["breezy-autotest"], binary_path.properties["deb.distribution"])
+
+        source.requestDeletion(self.archive.owner)
+        binary.requestDeletion(self.archive.owner)
+
+        publisher.A_publish(False)
+        publisher.A2_markPocketsWithDeletionsDirty()
+        publisher.C_updateArtifactoryProperties(False)
+
+        # The artifacts are still present until process-death-row runs, but
+        # they no longer have any properties that would cause them to be
+        # included in indexes.
+        self.assertEqual(
+            {
+                "launchpad.release-id":
+                    ["source:%d" % source.sourcepackagereleaseID],
+                "launchpad.source-name": ["hello"],
+                },
+            source_path.properties)
+        self.assertEqual(
+            {
+                "launchpad.release-id":
+                    ["binary:%d" % binary.binarypackagereleaseID],
+                "launchpad.source-name": ["hello"],
+                },
+            binary_path.properties)
 
 
 load_tests = load_tests_apply_scenarios

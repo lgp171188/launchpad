@@ -851,6 +851,10 @@
       handler="lp.code.model.gitrepository.git_repository_modified"/>
   <subscriber
       for="lp.code.interfaces.gitrepository.IGitRepository
+           lp.code.interfaces.event.IGitRefsCreatedEvent"
+      handler="lp.code.subscribers.git.refs_created"/>
+  <subscriber
+      for="lp.code.interfaces.gitrepository.IGitRepository
            lp.code.interfaces.event.IGitRefsUpdatedEvent"
       handler="lp.code.subscribers.git.refs_updated"/>
 
@@ -1301,6 +1305,14 @@
       provides="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource"
       name="CIBUILD">
     <allow interface="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource" />
+  </securedutility>
+
+  <!-- CIBuildMacaroonIssuer -->
+  <securedutility
+      class="lp.code.model.cibuild.CIBuildMacaroonIssuer"
+      provides="lp.services.macaroons.interfaces.IMacaroonIssuer"
+      name="ci-build">
+    <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic" />
   </securedutility>
 
   <!-- CIBuildBehaviour -->

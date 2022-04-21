@@ -329,7 +329,7 @@ which means that the attempt to insert it will violate a unique constraint.
     >>> copier.pour(transaction)
     Traceback (most recent call last):
     ...
-    storm.database.IntegrityError:
+    storm.database.UniqueViolation:
     duplicate ... violates unique constraint ...
 
 Now we have a fun situation!  Some data has been copied back into our source

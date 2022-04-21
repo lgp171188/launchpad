@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for a distribution series."""
@@ -12,10 +12,7 @@ __all__ = [
 
 import collections
 from io import BytesIO
-from operator import (
-    attrgetter,
-    itemgetter,
-    )
+from operator import itemgetter
 
 import apt_pkg
 from lazr.delegates import delegate_to
@@ -86,10 +83,6 @@ from lp.registry.model.person import Person
 from lp.registry.model.series import SeriesMixin
 from lp.registry.model.sourcepackage import SourcePackage
 from lp.registry.model.sourcepackagename import SourcePackageName
-from lp.services.database.bulk import (
-    load_referencing,
-    load_related,
-    )
 from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
@@ -116,10 +109,7 @@ from lp.services.database.stormexpr import (
     IsTrue,
     )
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
-from lp.services.librarian.model import (
-    LibraryFileAlias,
-    LibraryFileContent,
-    )
+from lp.services.librarian.model import LibraryFileAlias
 from lp.services.mail.signedmessage import signed_message_from_bytes
 from lp.services.propertycache import (
     cachedproperty,
@@ -146,9 +136,7 @@ from lp.soyuz.interfaces.queue import (
 from lp.soyuz.interfaces.sourcepackageformat import (
     ISourcePackageFormatSelectionSet,
     )
-from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
 from lp.soyuz.model.binarypackagename import BinaryPackageName
-from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.component import Component
 from lp.soyuz.model.distributionsourcepackagerelease import (
     DistributionSourcePackageRelease,
@@ -159,10 +147,6 @@ from lp.soyuz.model.distroarchseries import (
     )
 from lp.soyuz.model.distroseriesbinarypackage import DistroSeriesBinaryPackage
 from lp.soyuz.model.distroseriespackagecache import DistroSeriesPackageCache
-from lp.soyuz.model.files import (
-    BinaryPackageFile,
-    SourcePackageReleaseFile,
-    )
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
     get_current_source_releases,
@@ -173,7 +157,6 @@ from lp.soyuz.model.queue import (
     PackageUploadQueue,
     PackageUploadSource,
     )
-from lp.soyuz.model.section import Section
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 from lp.translations.enums import LanguagePackType
 from lp.translations.model.distroserieslanguage import (
@@ -1067,80 +1050,6 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
         """See `IDistroSeries`."""
         return self._getAllBinaries().find(scheduleddeletiondate=None)
 
-    def getSourcePackagePublishing(self, pocket, component, archive):
-        """See `IDistroSeries`."""
-        spphs = Store.of(self).find(
-            SourcePackagePublishingHistory,
-            SourcePackagePublishingHistory.archive == archive,
-            SourcePackagePublishingHistory.distroseries == self,
-            SourcePackagePublishingHistory.pocket == pocket,
-            SourcePackagePublishingHistory.component == component,
-            SourcePackagePublishingHistory.status ==
-                PackagePublishingStatus.PUBLISHED,
-            SourcePackagePublishingHistory.sourcepackagename ==
-                SourcePackageName.id).order_by(SourcePackageName.name)
-
-        def eager_load(spphs):
-            # Preload everything which will be used by archivepublisher's
-            # build_source_stanza_fields.
-            load_related(Section, spphs, ["sectionID"])
-            sprs = load_related(
-                SourcePackageRelease, spphs, ["sourcepackagereleaseID"])
-            load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
-            spr_ids = set(map(attrgetter("id"), sprs))
-            sprfs = list(Store.of(self).find(
-                SourcePackageReleaseFile,
-                SourcePackageReleaseFile.sourcepackagereleaseID.is_in(
-                    spr_ids)).order_by(SourcePackageReleaseFile.libraryfileID))
-            file_map = collections.defaultdict(list)
-            for sprf in sprfs:
-                file_map[sprf.sourcepackagerelease].append(sprf)
-            for spr, files in file_map.items():
-                get_property_cache(spr).files = files
-            lfas = load_related(LibraryFileAlias, sprfs, ["libraryfileID"])
-            load_related(LibraryFileContent, lfas, ["contentID"])
-
-        return DecoratedResultSet(spphs, pre_iter_hook=eager_load)
-
-    def getBinaryPackagePublishing(self, archtag, pocket, component, archive):
-        """See `IDistroSeries`."""
-        bpphs = Store.of(self).find(
-            BinaryPackagePublishingHistory,
-            DistroArchSeries.distroseries == self,
-            DistroArchSeries.architecturetag == archtag,
-            BinaryPackagePublishingHistory.archive == archive,
-            BinaryPackagePublishingHistory.distroarchseries ==
-                DistroArchSeries.id,
-            BinaryPackagePublishingHistory.pocket == pocket,
-            BinaryPackagePublishingHistory.component == component,
-            BinaryPackagePublishingHistory.status ==
-                PackagePublishingStatus.PUBLISHED,
-            BinaryPackagePublishingHistory.binarypackagename ==
-                BinaryPackageName.id).order_by(BinaryPackageName.name)
-
-        def eager_load(bpphs):
-            # Preload everything which will be used by archivepublisher's
-            # build_binary_stanza_fields.
-            load_related(Section, bpphs, ["sectionID"])
-            bprs = load_related(
-                BinaryPackageRelease, bpphs, ["binarypackagereleaseID"])
-            bpbs = load_related(BinaryPackageBuild, bprs, ["buildID"])
-            sprs = load_related(
-                SourcePackageRelease, bpbs, ["source_package_release_id"])
-            bpfs = load_referencing(
-                BinaryPackageFile, bprs, ["binarypackagereleaseID"])
-            file_map = collections.defaultdict(list)
-            for bpf in bpfs:
-                file_map[bpf.binarypackagerelease].append(bpf)
-            for bpr, files in file_map.items():
-                get_property_cache(bpr).files = files
-            lfas = load_related(LibraryFileAlias, bpfs, ["libraryfileID"])
-            load_related(LibraryFileContent, lfas, ["contentID"])
-            load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
-            load_related(BinaryPackageName, bprs, ["binarypackagenameID"])
-
-        return DecoratedResultSet(bpphs, pre_iter_hook=eager_load)
-
     def getBuildRecords(self, build_state=None, name=None, pocket=None,
                         arch_tag=None, user=None, binary_only=True):
         """See IHasBuildRecords"""
@@ -1151,7 +1060,7 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
             self, build_state, name, pocket, arch_tag)
 
     def createUploadedSourcePackageRelease(
-        self, sourcepackagename, version, maintainer, builddepends,
+        self, sourcepackagename, version, format, maintainer, builddepends,
         builddependsindep, architecturehintlist, component, creator,
         urgency, changelog, changelog_entry, dsc, dscsigningkey, section,
         dsc_maintainer_rfc822, dsc_standards_version, dsc_format,
@@ -1162,7 +1071,8 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
         """See `IDistroSeries`."""
         return SourcePackageRelease(
             upload_distroseries=self, sourcepackagename=sourcepackagename,
-            version=version, maintainer=maintainer, dateuploaded=dateuploaded,
+            version=version, format=format,
+            maintainer=maintainer, dateuploaded=dateuploaded,
             builddepends=builddepends, builddependsindep=builddependsindep,
             architecturehintlist=architecturehintlist, component=component,
             creator=creator, urgency=urgency, changelog=changelog,

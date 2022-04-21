@@ -16,6 +16,7 @@ import re
 from textwrap import dedent
 import time
 
+from psycopg2 import IntegrityError
 from pytz import UTC
 import six
 from storm.exceptions import LostObjectError
@@ -88,6 +89,7 @@ from lp.registry.enums import (
     )
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.registry.interfaces.person import IPersonSet
+from lp.registry.interfaces.sourcepackage import SourcePackageType
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
 from lp.registry.model.commercialsubscription import CommercialSubscription
 from lp.registry.model.teammembership import TeamMembership
@@ -147,7 +149,10 @@ from lp.snappy.tests.test_snapbuildjob import (
     run_isolated_jobs,
     )
 from lp.soyuz.enums import (
+    ArchivePublishingMethod,
+    ArchiveRepositoryFormat,
     ArchiveSubscriberStatus,
+    BinaryPackageFormat,
     PackagePublishingStatus,
     )
 from lp.soyuz.interfaces.archive import NAMED_AUTH_TOKEN_FEATURE_FLAG
@@ -2142,6 +2147,132 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             [report2],
             list(getUtility(
                 IRevisionStatusReportSet).findByRepository(repo2)))
+
+    def test_ArchiveArtifactoryColumnsPopulator(self):
+        switch_dbuser('testadmin')
+        old_archives = [self.factory.makeArchive() for _ in range(2)]
+        for archive in old_archives:
+            removeSecurityProxy(archive)._publishing_method = None
+            removeSecurityProxy(archive)._repository_format = None
+        try:
+            Store.of(old_archives[0]).flush()
+        except IntegrityError:
+            # Now enforced by DB NOT NULL constraint; backfilling is no
+            # longer necessary.
+            return
+        local_debian_archives = [
+            self.factory.makeArchive(
+                publishing_method=ArchivePublishingMethod.LOCAL,
+                repository_format=ArchiveRepositoryFormat.DEBIAN)
+            for _ in range(2)]
+        artifactory_python_archives = [
+            self.factory.makeArchive(
+                publishing_method=ArchivePublishingMethod.ARTIFACTORY,
+                repository_format=ArchiveRepositoryFormat.PYTHON)
+            for _ in range(2)]
+        transaction.commit()
+
+        self.runDaily()
+
+        # Old archives are backfilled.
+        for archive in old_archives:
+            self.assertThat(
+                removeSecurityProxy(archive),
+                MatchesStructure.byEquality(
+                    _publishing_method=ArchivePublishingMethod.LOCAL,
+                    _repository_format=ArchiveRepositoryFormat.DEBIAN))
+        # Other archives are left alone.
+        for archive in local_debian_archives:
+            self.assertThat(
+                removeSecurityProxy(archive),
+                MatchesStructure.byEquality(
+                    _publishing_method=ArchivePublishingMethod.LOCAL,
+                    _repository_format=ArchiveRepositoryFormat.DEBIAN))
+        for archive in artifactory_python_archives:
+            self.assertThat(
+                removeSecurityProxy(archive),
+                MatchesStructure.byEquality(
+                    _publishing_method=ArchivePublishingMethod.ARTIFACTORY,
+                    _repository_format=ArchiveRepositoryFormat.PYTHON))
+
+    def test_SourcePackagePublishingHistoryFormatPopulator(self):
+        switch_dbuser('testadmin')
+        old_spphs = [
+            self.factory.makeSourcePackagePublishingHistory(
+                format=SourcePackageType.DPKG)
+            for _ in range(2)]
+        for spph in old_spphs:
+            removeSecurityProxy(spph)._format = None
+        try:
+            Store.of(old_spphs[0]).flush()
+        except IntegrityError:
+            # Now enforced by DB NOT NULL constraint; backfilling is no
+            # longer necessary.
+            return
+        dpkg_spphs = [
+            self.factory.makeSourcePackagePublishingHistory(
+                format=SourcePackageType.DPKG)
+            for _ in range(2)]
+        rpm_spphs = [
+            self.factory.makeSourcePackagePublishingHistory(
+                format=SourcePackageType.RPM)
+            for _ in range(2)]
+        transaction.commit()
+
+        self.runDaily()
+
+        # Old publications are backfilled.
+        for spph in old_spphs:
+            self.assertEqual(
+                SourcePackageType.DPKG, removeSecurityProxy(spph)._format)
+        # Other publications are left alone.
+        for spph in dpkg_spphs:
+            self.assertEqual(
+                SourcePackageType.DPKG, removeSecurityProxy(spph)._format)
+        for spph in rpm_spphs:
+            self.assertEqual(
+                SourcePackageType.RPM, removeSecurityProxy(spph)._format)
+
+    def test_BinaryPackagePublishingHistoryFormatPopulator(self):
+        switch_dbuser('testadmin')
+        old_bpphs = [
+            self.factory.makeBinaryPackagePublishingHistory(
+                binpackageformat=BinaryPackageFormat.DEB)
+            for _ in range(2)]
+        for bpph in old_bpphs:
+            removeSecurityProxy(bpph)._format = None
+        try:
+            Store.of(old_bpphs[0]).flush()
+        except IntegrityError:
+            # Now enforced by DB NOT NULL constraint; backfilling is no
+            # longer necessary.
+            return
+        deb_bpphs = [
+            self.factory.makeBinaryPackagePublishingHistory(
+                binpackageformat=BinaryPackageFormat.DEB)
+            for _ in range(2)]
+        rpm_bpphs = [
+            self.factory.makeBinaryPackagePublishingHistory(
+                binpackageformat=BinaryPackageFormat.RPM)
+            for _ in range(2)]
+        transaction.commit()
+
+        self.runDaily()
+
+        # Old publications are backfilled.
+        for bpph in old_bpphs:
+            self.assertEqual(
+                BinaryPackageFormat.DEB,
+                removeSecurityProxy(bpph)._binarypackageformat)
+        # Other publications are left alone.
+        for bpph in deb_bpphs:
+            self.assertEqual(
+                BinaryPackageFormat.DEB,
+                removeSecurityProxy(bpph)._binarypackageformat)
+        for bpph in rpm_bpphs:
+            self.assertEqual(
+                BinaryPackageFormat.RPM,
+                removeSecurityProxy(bpph)._binarypackageformat)
 
 
 class TestGarboTasks(TestCaseWithFactory):

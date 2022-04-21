@@ -241,10 +241,9 @@ class BuildFarmJobBehaviourBase:
         return d
 
     @defer.inlineCallbacks
-    def storeLogFromWorker(self, build_queue=None):
+    def storeLogFromWorker(self, worker_status):
         """See `IBuildFarmJob`."""
-        lfa_id = yield self.getLogFromWorker(
-            build_queue or self.build.buildqueue_record)
+        lfa_id = yield self.getLogFromWorker(self.build.buildqueue_record)
         self.build.setLog(lfa_id)
         transaction.commit()
 
@@ -306,7 +305,7 @@ class BuildFarmJobBehaviourBase:
                    self.build.buildqueue_record.builder.name, status))
             build_status = None
             if status == 'OK':
-                yield self.storeLogFromWorker()
+                yield self.storeLogFromWorker(worker_status)
                 # handleSuccess will sometimes perform write operations
                 # outside the database transaction, so a failure between
                 # here and the commit can cause duplicated results. For
@@ -314,7 +313,7 @@ class BuildFarmJobBehaviourBase:
                 # queue twice if notify() crashes.
                 build_status = yield self.handleSuccess(worker_status, logger)
             elif status in fail_status_map:
-                yield self.storeLogFromWorker()
+                yield self.storeLogFromWorker(worker_status)
                 build_status = fail_status_map[status]
             else:
                 raise BuildDaemonError(

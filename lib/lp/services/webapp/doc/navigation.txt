@@ -2,8 +2,8 @@ Navigation components
 =====================
 
 You use navigation components to specify how objects get traversed and
-what their canonical url looks like, .  These are defined in
-`canonical/launchpad/browser/`, alongside the view classes.
+what their canonical URL looks like.
+These are defined in the `lp.*.browser` packages alongside the view classes.
 
 To define a navigation component, write a class that derives from
 lp.services.webapp.Navigation.
