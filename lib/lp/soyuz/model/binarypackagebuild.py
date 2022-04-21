@@ -691,7 +691,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
         else:
             assert self.buildinfo == buildinfo
 
-    def verifySuccessfulUpload(self):
+    def verifySuccessfulUpload(self) -> bool:
         return bool(self.binarypackages)
 
     def notify(self, extra_info=None):

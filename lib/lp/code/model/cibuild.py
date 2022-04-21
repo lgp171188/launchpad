@@ -25,6 +25,7 @@ from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -51,6 +52,7 @@ from lp.code.interfaces.cibuild import (
     MissingConfiguration,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.code.interfaces.revisionstatus import IRevisionStatusReportSet
 from lp.code.model.gitref import GitRef
 from lp.code.model.lpcraft import load_configuration
@@ -72,6 +74,12 @@ from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
     )
+from lp.services.macaroons.interfaces import (
+    BadMacaroonContext,
+    IMacaroonIssuer,
+    NO_USER,
+    )
+from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.services.propertycache import cachedproperty
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 
@@ -435,9 +443,10 @@ class CIBuild(PackageBuildMixin, StormBase):
 
         raise NotFoundError(filename)
 
-    def verifySuccessfulUpload(self):
+    def verifySuccessfulUpload(self) -> bool:
         """See `IPackageBuild`."""
         # We have no interesting checks to perform here.
+        return True
 
     def notify(self, extra_info=None):
         """See `IPackageBuild`."""
@@ -599,3 +608,58 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
     def deleteByGitRepository(self, git_repository):
         """See `ICIBuildSet`."""
         self.findByGitRepository(git_repository).remove()
+
+
+@implementer(IMacaroonIssuer)
+class CIBuildMacaroonIssuer(MacaroonIssuerBase):
+
+    identifier = "ci-build"
+    issuable_via_authserver = True
+
+    def checkIssuingContext(self, context, **kwargs):
+        """See `MacaroonIssuerBase`.
+
+        For issuing, the context is an `ICIBuild`.
+        """
+        if not ICIBuild.providedBy(context):
+            raise BadMacaroonContext(context)
+        return removeSecurityProxy(context).id
+
+    def checkVerificationContext(self, context, **kwargs):
+        """See `MacaroonIssuerBase`."""
+        if not IGitRepository.providedBy(context):
+            raise BadMacaroonContext(context)
+        return context
+
+    def verifyPrimaryCaveat(self, verified, caveat_value, context, user=None,
+                            **kwargs):
+        """See `MacaroonIssuerBase`.
+
+        For verification, the context is an `IGitRepository`.  We check that
+        the repository or archive is needed to build the `ICIBuild` that is
+        the context of the macaroon, and that the context build is currently
+        building.
+        """
+        # CI builds only support free-floating macaroons for Git
+        # authentication, not ones bound to a user.
+        if user:
+            return False
+        verified.user = NO_USER
+
+        if context is None:
+            # We're only verifying that the macaroon could be valid for some
+            # context.
+            return True
+        if not IGitRepository.providedBy(context):
+            return False
+
+        try:
+            build_id = int(caveat_value)
+        except ValueError:
+            return False
+        clauses = [
+            CIBuild.id == build_id,
+            CIBuild.status == BuildStatus.BUILDING,
+            CIBuild.git_repository == context,
+            ]
+        return not IStore(CIBuild).find(CIBuild, *clauses).is_empty()

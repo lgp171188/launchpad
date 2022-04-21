@@ -349,7 +349,7 @@ class SnapBuild(PackageBuildMixin, Storm):
         IMasterStore(SnapFile).add(snapfile)
         return snapfile
 
-    def verifySuccessfulUpload(self):
+    def verifySuccessfulUpload(self) -> bool:
         """See `IPackageBuild`."""
         return not self.getFiles().is_empty()
 
