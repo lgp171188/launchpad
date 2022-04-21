@@ -1252,7 +1252,8 @@ class BugTaskEditView(LaunchpadEditFormView, BugTaskBugWatchMixin,
                 status_noshow = set(BugTaskStatus.items)
             else:
                 status_noshow = {
-                    BugTaskStatus.UNKNOWN, BugTaskStatus.EXPIRED}
+                    BugTaskStatus.UNKNOWN, BugTaskStatus.EXPIRED,
+                    BugTaskStatus.DOES_NOT_EXIST}
                 status_noshow.update(
                     status for status in BugTaskStatus.items
                     if not self.context.canTransitionToStatus(
