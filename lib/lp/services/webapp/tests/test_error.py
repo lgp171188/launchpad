@@ -17,6 +17,7 @@ from storm.exceptions import (
     )
 from testtools.content import text_content
 from testtools.matchers import (
+    AllMatch,
     Equals,
     MatchesAny,
     MatchesListwise,
@@ -202,10 +203,12 @@ class TestDatabaseErrorViews(TestCase):
         self.assertEqual(503, int(browser.headers['Status'].split(' ', 1)[0]))
         self.assertThat(
             browser.contents, Contains(DisconnectionErrorView.reason))
+        disconnection_oopses = [
+            (oops['type'], oops['value'].split('\n')[0])
+            for oops in oopses.oopses]
+        self.assertNotEqual([], disconnection_oopses)
         self.assertThat(
-            [(oops['type'], oops['value'].split('\n')[0])
-             for oops in oopses.oopses],
-            MatchesListwise([Disconnects('database removed')]))
+            disconnection_oopses, AllMatch(Disconnects('database removed')))
 
         # A second request doesn't log any OOPSes.
         with CaptureOops() as oopses:
