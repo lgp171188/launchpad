@@ -51,7 +51,6 @@ def _reversed_number_sort_key(text):
 
     """
     assert isinstance(text, str)
-    assert isinstance(text, str)
     return text.translate(reversed_numbers_table)
 
 
