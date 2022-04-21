@@ -6,6 +6,7 @@
 from lazr.uri import URI
 from zope.component import getUtility
 
+from lp.app.enums import InformationType
 from lp.code.errors import (
     InvalidNamespace,
     NoSuchGitRepository,
@@ -384,6 +385,33 @@ class TestGitTraverser(TestCaseWithFactory):
                 dsp.distribution.name, dsp.sourcepackagename.name,
                 repository.name))
 
+    def test_visible_package_in_private_distribution(self):
+        # `traverse_path` resolves 'distro/+source/package' to the
+        # distribution source package even if the distribution is private.
+        with person_logged_in(self.factory.makePerson()) as owner:
+            distro = self.factory.makeDistribution(
+                owner=owner, information_type=InformationType.PROPRIETARY)
+            dsp = self.factory.makeDistributionSourcePackage(
+                distribution=distro)
+            path = "%s/+source/%s" % (
+                dsp.distribution.name, dsp.sourcepackagename.name)
+            self.assertTraverses(path, None, dsp)
+
+    def test_invisible_package_in_private_distribution(self):
+        # `traverse_path` raises `NoSuchSourcePackageName` (denying
+        # existence in order to avoid disclosing whether the object exists)
+        # if it cannot traverse to a package due to the distribution being
+        # private.
+        with person_logged_in(self.factory.makePerson()) as owner:
+            distro = self.factory.makeDistribution(
+                owner=owner, information_type=InformationType.PROPRIETARY)
+            dsp = self.factory.makeDistributionSourcePackage(
+                distribution=distro)
+            path = "%s/+source/%s" % (
+                dsp.distribution.name, dsp.sourcepackagename.name)
+        self.assertRaises(
+            NoSuchSourcePackageName, self.traverser.traverse_path, path)
+
     def test_missing_ociprojectname(self):
         # `traverse_path` raises `InvalidNamespace` if there are no segments
         # after '+oci'.
@@ -425,6 +453,52 @@ class TestGitTraverser(TestCaseWithFactory):
             InvalidNamespace, self.traverser.traverse_path,
             "%s/+oci/%s/+git/%s" % (
                 oci_project.pillar.name, oci_project.name, repository.name))
+
+    def test_visible_ociproject_in_private_distribution(self):
+        # `traverse_path` resolves 'distro/+oci/ociproject' to the OCI
+        # project even if the distribution is private.
+        with person_logged_in(self.factory.makePerson()) as owner:
+            distro = self.factory.makeDistribution(
+                owner=owner, information_type=InformationType.PROPRIETARY)
+            oci_project = self.factory.makeOCIProject(pillar=distro)
+            path = "%s/+oci/%s" % (oci_project.pillar.name, oci_project.name)
+            self.assertTraverses(path, None, oci_project)
+
+    def test_invisible_ociproject_in_private_distribution(self):
+        # `traverse_path` raises `NoSuchOCIProjectName` (denying existence
+        # in order to avoid disclosing whether the object exists) if it
+        # cannot traverse to an OCI project due to the distribution being
+        # private.
+        with person_logged_in(self.factory.makePerson()) as owner:
+            distro = self.factory.makeDistribution(
+                owner=owner, information_type=InformationType.PROPRIETARY)
+            oci_project = self.factory.makeOCIProject(pillar=distro)
+            path = "%s/+oci/%s" % (oci_project.pillar.name, oci_project.name)
+        self.assertRaises(
+            NoSuchOCIProjectName, self.traverser.traverse_path, path)
+
+    def test_visible_ociproject_in_private_project(self):
+        # `traverse_path` resolves 'project/+oci/ociproject' to the OCI
+        # project even if the project is private.
+        with person_logged_in(self.factory.makePerson()) as owner:
+            project = self.factory.makeProduct(
+                owner=owner, information_type=InformationType.PROPRIETARY)
+            oci_project = self.factory.makeOCIProject(pillar=project)
+            path = "%s/+oci/%s" % (oci_project.pillar.name, oci_project.name)
+            self.assertTraverses(path, None, oci_project)
+
+    def test_invisible_ociproject_in_private_project(self):
+        # `traverse_path` raises `NoSuchOCIProjectName` (denying existence
+        # in order to avoid disclosing whether the object exists) if it
+        # cannot traverse to an OCI project due to the project being
+        # private.
+        with person_logged_in(self.factory.makePerson()) as owner:
+            project = self.factory.makeProduct(
+                owner=owner, information_type=InformationType.PROPRIETARY)
+            oci_project = self.factory.makeOCIProject(pillar=project)
+            path = "%s/+oci/%s" % (oci_project.pillar.name, oci_project.name)
+        self.assertRaises(
+            NoSuchOCIProjectName, self.traverser.traverse_path, path)
 
     def test_nonexistent_person(self):
         # `traverse_path` raises `NoSuchPerson` when resolving a path of
