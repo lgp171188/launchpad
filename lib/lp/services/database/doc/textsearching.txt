@@ -31,7 +31,7 @@ against the database and display the results:
     ...     for row in store.execute(query, args):
     ...         line = ''
     ...         for col in row:
-    ...             if isinstance(col, (float, six.integer_types)):
+    ...             if isinstance(col, (float, int)):
     ...                 col = '%1.2f' % col
     ...             if len(col) > colsize:
     ...                 line += '%s... ' % col[:colsize-3]
