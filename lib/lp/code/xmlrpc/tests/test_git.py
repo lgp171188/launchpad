@@ -514,6 +514,20 @@ class TestGitAPIMixin:
         self.assertGitRepositoryNotFound(None, path, can_authenticate=False)
         self.assertUnauthorized(None, path, can_authenticate=True)
 
+    def test_translatePath_anonymous_cannot_see_private_distro_repository(
+            self):
+        with person_logged_in(self.factory.makePerson()) as owner:
+            distro = self.factory.makeDistribution(
+                owner=owner, information_type=InformationType.PROPRIETARY)
+            dsp = self.factory.makeDistributionSourcePackage(
+                distribution=distro)
+            repository = removeSecurityProxy(
+                self.factory.makeGitRepository(
+                    registrant=owner, owner=owner, target=dsp))
+            path = "/%s" % repository.unique_name
+        self.assertGitRepositoryNotFound(None, path, can_authenticate=False)
+        self.assertUnauthorized(None, path, can_authenticate=True)
+
     def test_translatePath_team_unowned(self):
         requester = self.factory.makePerson()
         team = self.factory.makeTeam(self.factory.makePerson())
