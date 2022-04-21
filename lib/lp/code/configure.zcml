@@ -1307,6 +1307,14 @@
     <allow interface="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource" />
   </securedutility>
 
+  <!-- CIBuildMacaroonIssuer -->
+  <securedutility
+      class="lp.code.model.cibuild.CIBuildMacaroonIssuer"
+      provides="lp.services.macaroons.interfaces.IMacaroonIssuer"
+      name="ci-build">
+    <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic" />
+  </securedutility>
+
   <!-- CIBuildBehaviour -->
   <adapter
       for="lp.code.interfaces.cibuild.ICIBuild"

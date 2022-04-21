@@ -12,14 +12,17 @@ from textwrap import dedent
 from unittest.mock import Mock
 
 from fixtures import MockPatchObject
+from pymacaroons import Macaroon
 import pytz
 from storm.locals import Store
 from testtools.matchers import (
     Equals,
+    MatchesListwise,
     MatchesSetwise,
     MatchesStructure,
     )
 from zope.component import getUtility
+from zope.publisher.xmlrpc import TestRequest
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
@@ -56,7 +59,11 @@ from lp.code.model.cibuild import (
 from lp.code.model.lpcraft import load_configuration
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.authserver.xmlrpc import AuthServerAPIView
+from lp.services.config import config
 from lp.services.log.logger import BufferLogger
+from lp.services.macaroons.interfaces import IMacaroonIssuer
+from lp.services.macaroons.testing import MacaroonTestMixin
 from lp.services.propertycache import clear_property_cache
 from lp.testing import (
     person_logged_in,
@@ -65,6 +72,7 @@ from lp.testing import (
     )
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.matchers import HasQueryCount
+from lp.xmlrpc.interfaces import IPrivateApplication
 
 
 class TestGetAllCommitsForPaths(TestCaseWithFactory):
@@ -989,3 +997,144 @@ class TestDetermineDASesToBuild(TestCaseWithFactory):
             "name in Ubuntu %s\n" % distro_series.name,
             logger.getLogBuffer()
         )
+
+
+class TestCIBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
+    """Test CIBuild macaroon issuing and verification."""
+
+    layer = LaunchpadZopelessLayer
+
+    def setUp(self):
+        super().setUp()
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+
+    def test_issueMacaroon_good(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        issuer = getUtility(IMacaroonIssuer, "ci-build")
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
+        self.assertThat(macaroon, MatchesStructure(
+            location=Equals("launchpad.test"),
+            identifier=Equals("ci-build"),
+            caveats=MatchesListwise([
+                MatchesStructure.byEquality(
+                    caveat_id="lp.ci-build %s" % build.id),
+                ])))
+
+    def test_issueMacaroon_via_authserver(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        private_root = getUtility(IPrivateApplication)
+        authserver = AuthServerAPIView(private_root.authserver, TestRequest())
+        macaroon = Macaroon.deserialize(
+            authserver.issueMacaroon("ci-build", "CIBuild", build.id))
+        self.assertThat(macaroon, MatchesStructure(
+            location=Equals("launchpad.test"),
+            identifier=Equals("ci-build"),
+            caveats=MatchesListwise([
+                MatchesStructure.byEquality(
+                    caveat_id="lp.ci-build %s" % build.id),
+                ])))
+
+    def test_verifyMacaroon_good_repository(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(issuer, macaroon, build.git_repository)
+
+    def test_verifyMacaroon_good_no_context(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(
+            issuer, macaroon, None, require_context=False)
+        self.assertMacaroonVerifies(
+            issuer, macaroon, build.git_repository, require_context=False)
+
+    def test_verifyMacaroon_no_context_but_require_context(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Expected macaroon verification context but got None."],
+            issuer, macaroon, None)
+
+    def test_verifyMacaroon_wrong_location(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = Macaroon(
+            location="another-location", key=issuer._root_secret)
+        self.assertMacaroonDoesNotVerify(
+            ["Macaroon has unknown location 'another-location'."],
+            issuer, macaroon, build.git_repository)
+        self.assertMacaroonDoesNotVerify(
+            ["Macaroon has unknown location 'another-location'."],
+            issuer, macaroon, build.git_repository, require_context=False)
+
+    def test_verifyMacaroon_wrong_key(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = Macaroon(
+            location=config.vhost.mainsite.hostname, key="another-secret")
+        self.assertMacaroonDoesNotVerify(
+            ["Signatures do not match"],
+            issuer, macaroon, build.git_repository)
+        self.assertMacaroonDoesNotVerify(
+            ["Signatures do not match"],
+            issuer, macaroon, build.git_repository, require_context=False)
+
+    def test_verifyMacaroon_not_building(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.ci-build %s' failed." % build.id],
+            issuer, macaroon, build.git_repository)
+
+    def test_verifyMacaroon_wrong_build(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        build.updateStatus(BuildStatus.BUILDING)
+        other_build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        other_build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = issuer.issueMacaroon(other_build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.ci-build %s' failed." % other_build.id],
+            issuer, macaroon, build.git_repository)
+
+    def test_verifyMacaroon_wrong_repository(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        other_repository = self.factory.makeGitRepository()
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.ci-build %s' failed." % build.id],
+            issuer, macaroon, other_repository)
