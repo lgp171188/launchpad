@@ -79,8 +79,7 @@ a "proposed" goal.
 The spec will not show up immediately as a Grumpy goal since it must
 first be approved.
 
-    >>> import six
-    >>> result = six.text_type(http(r"""
+    >>> result = str(http(r"""
     ... GET /ubuntu/hoary/+specs HTTP/1.1
     ... """))
     >>> '<td>CD Media Integrity Check' not in result

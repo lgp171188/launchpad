@@ -129,8 +129,7 @@ The database IDs of the CodeImport is also recorded. It is useful to
 collate events associated with deleted CodeImport objects.
 
     >>> event_dict = dict(svn_create_event.items())
-    >>> event_dict[CodeImportEventDataType.CODE_IMPORT] == (
-    ...     six.text_type(svn_import.id))
+    >>> event_dict[CodeImportEventDataType.CODE_IMPORT] == str(svn_import.id)
     True
 
 Different source details are recorded according to the type of the
@@ -261,8 +260,7 @@ The database ID of the requested CodeImport is also recorded. It is
 useful to collate events associated with deleted CodeImport objects.
 
     >>> event_dict = dict(request_event.items())
-    >>> event_dict[CodeImportEventDataType.CODE_IMPORT] == (
-    ...     six.text_type(svn_import.id))
+    >>> event_dict[CodeImportEventDataType.CODE_IMPORT] == str(svn_import.id)
     True
 
 
