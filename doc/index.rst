@@ -78,8 +78,8 @@ Project and community
 =====================
 
 Launchpad is a member of the Ubuntu family.  It's an open source project
-that warmly welcomes community projects, contributions, suggestions, fixes
-and constructive feedback.
+that warmly welcomes contributions, suggestions, fixes and constructive
+feedback.
 
  * `Code of conduct <https://ubuntu.com/community/code-of-conduct>`_
  * `Get help using Launchpad <https://help.launchpad.net/>`_
