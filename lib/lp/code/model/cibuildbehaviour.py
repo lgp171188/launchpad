@@ -23,6 +23,9 @@ from lp.buildmaster.model.buildfarmjobbehaviour import (
     )
 from lp.code.enums import RevisionStatusResult
 from lp.code.interfaces.cibuild import ICIBuild
+from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
+from lp.services.config import config
+from lp.services.twistedsupport import cancel_on_timeout
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
@@ -60,6 +63,13 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             raise CannotBuild(
                 "Missing chroot for %s" % build.distro_arch_series.displayname)
 
+    def issueMacaroon(self):
+        """See `IBuildFarmJobBehaviour`."""
+        return cancel_on_timeout(
+            self._authserver.callRemote(
+                "issueMacaroon", "ci-build", "CIBuild", self.build.id),
+            config.builddmaster.authentication_timeout)
+
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None):
         """Return extra builder arguments for this build."""
@@ -75,7 +85,13 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             yield get_sources_list_for_building(
                 self, build.distro_arch_series, None, logger=logger))
         args["jobs"] = removeSecurityProxy(build.stages)
-        args["git_repository"] = build.git_repository.git_https_url
+        if build.git_repository.private:
+            macaroon_raw = yield self.issueMacaroon()
+            url = build.git_repository.getCodebrowseUrl(
+                username=LAUNCHPAD_SERVICES, password=macaroon_raw)
+            args["git_repository"] = url
+        else:
+            args["git_repository"] = build.git_repository.git_https_url
         args["git_path"] = build.commit_sha1
         args["private"] = build.is_private
         return args
