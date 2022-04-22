@@ -75,6 +75,23 @@ Other
 
    historical
 
+Project and community
+=====================
+
+Launchpad is a member of the Ubuntu family.  It's an open source project
+that warmly welcomes contributions, suggestions, fixes and constructive
+feedback.
+
+ * `Code of conduct <https://ubuntu.com/community/code-of-conduct>`_
+ * `Get help using Launchpad <https://help.launchpad.net/>`_
+ * `Get help developing Launchpad <https://dev.launchpad.net/Help>`_
+ * Join our `IRC channel <irc://irc.libera.chat/launchpad-dev>`_:
+   #launchpad-dev on `libera.chat <https://libera.chat/>`_
+ * `Contribute <https://dev.launchpad.net/PatchSubmission>`_
+
+Thinking about using Launchpad for your next project?  `Get in touch!
+<https://launchpad.net/~launchpad-users>`_
+
 
 Indices and tables
 ==================
