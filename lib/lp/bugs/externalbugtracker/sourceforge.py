@@ -6,8 +6,7 @@
 __all__ = ['SourceForge']
 
 import re
-
-from six.moves.urllib.parse import splitvalue
+from urllib.parse import parse_qsl
 
 from lp.bugs.externalbugtracker import (
     BugNotFound,
@@ -91,7 +90,6 @@ class SourceForge(ExternalBugTracker):
 
             # We save the group_id and atid parameters from the
             # query_url. They'll be returned by getRemoteProduct().
-            query_dict = {}
             bugtracker_link = soup.find('a', text='Bugs')
             if bugtracker_link:
                 href = bugtracker_link['href']
@@ -100,11 +98,7 @@ class SourceForge(ExternalBugTracker):
                 # SourceForge occasionally encodes them.
                 href = href.replace('&amp;', '&')
                 schema, host, path, query, fragment = urlsplit(href)
-
-                query_bits = query.split('&')
-                for bit in query_bits:
-                    key, value = splitvalue(bit)
-                    query_dict[key] = value
+                query_dict = {key: value for key, value in parse_qsl(query)}
 
                 try:
                     atid = int(query_dict.get('atid', None))
