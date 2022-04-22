@@ -38,6 +38,7 @@ How-to Guides
    how-to/resurrect-dogfood
    how-to/preserve-query-count
    how-to/land-update-for-loggerhead
+   how-to/update-configuration-for-testing
 
 Explanation
 ===========
