@@ -877,9 +877,9 @@ class BaseSubscriptionErrors(Exception):
     def __init__(self, error_string):
         """Instantiate a subscription exception.
 
-        :param error_string: a unicode error string, which may contain
+        :param error_string: an error string, which may contain
             non-ascii text (since a person's display name is used here).
-        :type error_string: unicode
+        :type error_string: str
         """
         assert isinstance(error_string, str), 'Unicode expected'
         Exception.__init__(self, error_string)

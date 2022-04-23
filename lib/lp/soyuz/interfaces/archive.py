@@ -810,11 +810,11 @@ class IArchiveView(IHasBuildRecords):
 
     publishing_method = Choice(
         title=_("Publishing method"), vocabulary=ArchivePublishingMethod,
-        required=True, readonly=True)
+        required=True, readonly=False)
 
     repository_format = Choice(
         title=_("Repository format"), vocabulary=ArchiveRepositoryFormat,
-        required=True, readonly=True)
+        required=True, readonly=False)
 
     @call_with(check_permissions=True, user=REQUEST_USER)
     @operation_parameters(

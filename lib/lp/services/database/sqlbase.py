@@ -319,7 +319,7 @@ def quote(x):
     before sending across the wire to the database).
 
     >>> quoted = quote(u"\N{TRADE MARK SIGN}")
-    >>> isinstance(quoted, six.text_type)
+    >>> isinstance(quoted, str)
     True
     >>> print(backslashreplace(quoted))
     E'\u2122'

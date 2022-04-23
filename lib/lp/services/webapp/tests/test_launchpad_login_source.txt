@@ -5,7 +5,6 @@ LaunchpadLoginSource is used to create principals, from login
 information, passing the email address to getPrincipalByLogin. If no
 person is found with the given email address, None is returned
 
-    >>> import six
     >>> from lp.services.webapp.authentication import (
     ...     LaunchpadLoginSource)
     >>> login_source = LaunchpadLoginSource()
@@ -23,7 +22,7 @@ account id.
     >>> from lp.services.webapp.interfaces import ILaunchpadPrincipal
     >>> ILaunchpadPrincipal.providedBy(principal)
     True
-    >>> principal.id == six.text_type(account.id)
+    >>> principal.id == str(account.id)
     True
 
 The corresponding Account and Person records are also in the
