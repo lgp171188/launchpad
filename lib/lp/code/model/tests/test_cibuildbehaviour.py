@@ -12,14 +12,17 @@ from urllib.parse import urlsplit
 import uuid
 
 from fixtures import MockPatch
+from pymacaroons import Macaroon
 from testtools import ExpectedException
 from testtools.matchers import (
+    AfterPreprocessing,
     ContainsDict,
     Equals,
     Is,
     IsInstance,
     MatchesDict,
     MatchesListwise,
+    MatchesStructure,
     StartsWith,
     )
 from testtools.twistedsupport import (
@@ -60,6 +63,7 @@ from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     )
 from lp.code.enums import RevisionStatusResult
 from lp.code.model.cibuildbehaviour import CIBuildBehaviour
+from lp.services.authserver.testing import InProcessAuthServerFixture
 from lp.services.config import config
 from lp.services.log.logger import (
     BufferLogger,
@@ -304,12 +308,48 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
     def test_extraBuildArgs_private(self):
         # If the repository is private, extraBuildArgs sends the appropriate
         # arguments.
+        self.useFixture(InProcessAuthServerFixture())
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
         repository = self.factory.makeGitRepository(
             information_type=InformationType.USERDATA)
-        job = self.makeJob(git_repository=repository)
+        job = self.makeJob(git_repository=repository, stages=[[("test", 0)]])
+        expected_archives, expected_trusted_keys = (
+            yield get_sources_list_for_building(
+                job, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn("universe", archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
-        self.assertTrue(args["private"])
+        split_browse_root = urlsplit(config.codehosting.git_browse_root)
+        self.assertThat(args, MatchesDict({
+            "archive_private": Is(False),
+            "archives": Equals(expected_archives),
+            "arch_tag": Equals("i386"),
+            "build_url": Equals(canonical_url(job.build)),
+            "fast_cleanup": Is(True),
+            "git_path": Equals(job.build.commit_sha1),
+            "git_repository": AfterPreprocessing(urlsplit, MatchesStructure(
+                scheme=Equals(split_browse_root.scheme),
+                username=Equals("+launchpad-services"),
+                password=AfterPreprocessing(
+                    Macaroon.deserialize, MatchesStructure(
+                        location=Equals(config.vhost.mainsite.hostname),
+                        identifier=Equals("ci-build"),
+                        caveats=MatchesListwise([
+                            MatchesStructure.byEquality(
+                                caveat_id="lp.ci-build %s" % job.build.id),
+                            ]))),
+                hostname=Equals(split_browse_root.hostname),
+                port=Equals(split_browse_root.port),
+                path=Equals("/" + job.build.git_repository.shortened_path))),
+            "jobs": Equals([[["test", 0]]]),
+            "private": Is(True),
+            "proxy_url": ProxyURLMatcher(job, self.now),
+            "revocation_endpoint": RevocationEndpointMatcher(job, self.now),
+            "series": Equals(job.build.distro_series.name),
+            "trusted_keys": Equals(expected_trusted_keys),
+            }))
 
     @defer.inlineCallbacks
     def test_composeBuildRequest_proxy_url_set(self):
