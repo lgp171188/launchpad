@@ -10,16 +10,13 @@ __all__ = [
 
 from datetime import datetime
 import re
+from urllib.parse import urlunsplit
 
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.uri import find_uris_in_text
 from pytz import utc
 import six
-from six.moves.urllib.parse import (
-    splitvalue,
-    urlunsplit,
-    )
 from storm.expr import (
     Desc,
     Not,
@@ -721,9 +718,15 @@ class BugWatchSet:
         for trackertype, parse_func in (
             self.bugtracker_parse_functions.items()):
             scheme, host, path, query_string, frag = urlsplit(url)
+            # urllib.parse.parse_qsl would almost be suitable here, but
+            # Savannah/Savane use bare bug IDs as query strings without any
+            # key=value structure, so we need something more like the
+            # deprecated urllib.parse.splitvalue.
             query = {}
             for query_part in query_string.split('&'):
-                key, value = splitvalue(query_part)
+                key, delim, value = query_part.partition('=')
+                if not delim:
+                    value = None
                 query[key] = value
 
             bugtracker_data = parse_func(scheme, host, path, query)

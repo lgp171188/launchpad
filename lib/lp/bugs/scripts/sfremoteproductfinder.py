@@ -7,8 +7,9 @@ __all__ = [
     'SourceForgeRemoteProductFinder',
     ]
 
+from urllib.parse import parse_qsl
+
 import requests
-from six.moves.urllib.parse import splitvalue
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -95,13 +96,8 @@ class SourceForgeRemoteProductFinder:
         # We need to replace encoded ampersands in the URL since
         # SourceForge usually encodes them.
         bugtracker_url = bugtracker_url.replace('&amp;', '&')
-        schema, host, path, query, fragment = urlsplit(bugtracker_url)
-
-        query_dict = {}
-        query_bits = query.split('&')
-        for bit in query_bits:
-            key, value = splitvalue(bit)
-            query_dict[key] = value
+        parsed_url = urlsplit(bugtracker_url)
+        query_dict = {key: value for key, value in parse_qsl(parsed_url.query)}
 
         try:
             atid = int(query_dict.get('atid', None))
