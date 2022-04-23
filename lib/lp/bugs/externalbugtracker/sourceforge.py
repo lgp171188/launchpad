@@ -97,8 +97,9 @@ class SourceForge(ExternalBugTracker):
                 # We need to replace encoded ampersands in the URL since
                 # SourceForge occasionally encodes them.
                 href = href.replace('&amp;', '&')
-                schema, host, path, query, fragment = urlsplit(href)
-                query_dict = {key: value for key, value in parse_qsl(query)}
+                parsed_href = urlsplit(href)
+                query_dict = {
+                    key: value for key, value in parse_qsl(parsed_href.query)}
 
                 try:
                     atid = int(query_dict.get('atid', None))

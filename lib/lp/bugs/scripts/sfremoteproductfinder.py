@@ -96,8 +96,8 @@ class SourceForgeRemoteProductFinder:
         # We need to replace encoded ampersands in the URL since
         # SourceForge usually encodes them.
         bugtracker_url = bugtracker_url.replace('&amp;', '&')
-        schema, host, path, query, fragment = urlsplit(bugtracker_url)
-        query_dict = {key: value for key, value in parse_qsl(query)}
+        parsed_url = urlsplit(bugtracker_url)
+        query_dict = {key: value for key, value in parse_qsl(parsed_url.query)}
 
         try:
             atid = int(query_dict.get('atid', None))
