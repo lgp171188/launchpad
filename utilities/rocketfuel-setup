@@ -292,14 +292,14 @@ cd /usr/local/bin || exit 1
 if [ ! -e rocketfuel-get ]; then
   sudo ln -s "$LP_TRUNK_PATH/utilities/rocketfuel-get"
 fi
-if ! ls -l rocketfuel-get | cut -d">" -f2 | grep -q "$LP_TRUNK_NAME\/utilities\/rocketfuel"; then
+if [ "$(readlink rocketfuel-get)" != "$LP_TRUNK_PATH/utilities/rocketfuel-get" ]; then
   echo "WARNING: /usr/local/bin/rocketfuel-get should be deleted so I can
          recreate it."
 fi
 if [ ! -e rocketfuel-setup ]; then
   sudo ln -s "$LP_TRUNK_PATH/utilities/rocketfuel-setup"
 fi
-if ! ls -l rocketfuel-setup | cut -d">" -f2 | grep -q "$LP_TRUNK_NAME\/utilities\/rocketfuel"; then
+if [ "$(readlink rocketfuel-setup)" != "$LP_TRUNK_PATH/utilities/rocketfuel-setup" ]; then
   echo "WARNING: /usr/local/bin/rocketfuel-setup should be deleted so I can
          recreate it."
 fi
