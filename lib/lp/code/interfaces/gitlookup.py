@@ -15,7 +15,7 @@ from zope.interface import Interface
 class IGitTraversable(Interface):
     """A thing that can be traversed to find a thing with a Git repository."""
 
-    def traverse(owner, name, segments):
+    def traverse(owner, name, segments, check_permissions=True):
         """Return the object beneath this one that matches 'name'.
 
         :param owner: The current `IPerson` context, or None.
@@ -32,10 +32,14 @@ class IGitTraversable(Interface):
 class IGitTraverser(Interface):
     """Utility for traversing to an object that can have a Git repository."""
 
-    def traverse(segments, owner=None):
+    def traverse(segments, owner=None, check_permissions=True):
         """Traverse to the object referred to by a prefix of the 'segments'
         iterable, starting from 'owner' if given.
 
+        :param check_permissions: If False, skip authorization checks on
+            intermediate segments of the path.  This should only be used in
+            unusual situations where we are specifically granting access to
+            a repository using a token rather than using a normal principal.
         :raises InvalidNamespace: If the path cannot be parsed as a
             repository namespace.
         :raises InvalidProductName: If the project component of the path is
@@ -56,11 +60,15 @@ class IGitTraverser(Interface):
             * a trailing path segment, or None.
         """
 
-    def traverse_path(path):
+    def traverse_path(path, check_permissions=True):
         """Traverse to the object referred to by 'path'.
 
         All segments of 'path' must be consumed.
 
+        :param check_permissions: If False, skip authorization checks on
+            intermediate segments of the path.  This should only be used in
+            unusual situations where we are specifically granting access to
+            a repository using a token rather than using a normal principal.
         :raises InvalidNamespace: If the path cannot be parsed as a
             repository namespace.
         :raises InvalidProductName: If the project component of the path is
@@ -124,7 +132,7 @@ class IGitLookup(Interface):
         lp: URL (which relies on client-side configuration).
         """
 
-    def getByPath(path):
+    def getByPath(path, check_permissions=True):
         """Find a repository by its path.
 
         Any of these forms may be used, with or without a leading slash:
@@ -139,6 +147,10 @@ class IGitLookup(Interface):
                 PROJECT
                 DISTRO/+source/SOURCE
 
+        :param check_permissions: If False, skip authorization checks on
+            intermediate segments of the path.  This should only be used in
+            unusual situations where we are specifically granting access to
+            a repository using a token rather than using a normal principal.
         :return: A tuple of (`IGitRepository`, extra_path), or (None, _).
             'extra_path' may be used by applications that need to traverse a
             leading part of a path as a repository, such as external code
