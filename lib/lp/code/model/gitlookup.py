@@ -19,6 +19,7 @@ from zope.component import (
     )
 from zope.interface import implementer
 from zope.security.interfaces import Unauthorized
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NameLookupFailed
 from lp.app.validators.name import valid_name
@@ -291,7 +292,7 @@ class SegmentIterator:
 class GitTraverser:
     """Utility for traversing to objects that can have Git repositories."""
 
-    def traverse(self, segments, owner=None):
+    def traverse(self, segments, owner=None, check_permissions=True):
         """See `IGitTraverser`."""
         repository = None
         if owner is None:
@@ -318,15 +319,18 @@ class GitTraverser:
                     break
             if repository is not None:
                 break
+            if not check_permissions:
+                target = removeSecurityProxy(target)
             traversable = adapt(target, IGitTraversable)
         if target is None or not IHasGitRepositories.providedBy(target):
             raise InvalidNamespace("/".join(segments_iter.traversed))
         return owner, target, repository, trailing
 
-    def traverse_path(self, path):
+    def traverse_path(self, path, check_permissions=True):
         """See `IGitTraverser`."""
         segments = iter(path.split("/"))
-        owner, target, repository, trailing = self.traverse(segments)
+        owner, target, repository, trailing = self.traverse(
+            segments, check_permissions=check_permissions)
         if trailing or list(segments):
             raise InvalidNamespace(path)
         return owner, target, repository
@@ -396,12 +400,13 @@ class GitLookup:
             pass
         return None
 
-    def getByPath(self, path):
+    def getByPath(self, path, check_permissions=True):
         """See `IGitLookup`."""
         traverser = getUtility(IGitTraverser)
         segments = iter(path.split("/"))
         try:
-            owner, target, repository, trailing = traverser.traverse(segments)
+            owner, target, repository, trailing = traverser.traverse(
+                segments, check_permissions=check_permissions)
         except (InvalidNamespace, InvalidProductName, NameLookupFailed):
             return None, None
         if repository is None:
