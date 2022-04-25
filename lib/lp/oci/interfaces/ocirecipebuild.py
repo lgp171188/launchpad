@@ -21,6 +21,7 @@ from lazr.enum import (
     )
 from lazr.restful.declarations import (
     error_status,
+    export_read_operation,
     export_write_operation,
     exported,
     exported_as_webservice_entry,
@@ -194,6 +195,14 @@ class IOCIRecipeBuildView(IPackageBuildView, IPrivacy):
         :param filename: The filename to look up.
         :raises NotFoundError: if no file exists with the given name.
         :return: The corresponding `ILibraryFileAlias`.
+        """
+
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getFileUrls():
+        """URLs for all the files produced by this build.
+
+        :return: A collection of URLs for this build.
         """
 
     def getLayerFileByDigest(layer_file_digest):
