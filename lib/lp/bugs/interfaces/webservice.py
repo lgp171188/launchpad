@@ -34,6 +34,7 @@ __all__ = [
     'IStructuralSubscriptionTarget',
     'IllegalRelatedBugTasksParams',
     'IllegalTarget',
+    'IVulnerability',
     'NominationError',
     'NominationSeriesObsoleteError',
     'UserCannotEditBugTaskAssignee',
@@ -87,6 +88,7 @@ from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscription,
     IStructuralSubscriptionTarget,
     )
+from lp.bugs.interfaces.vulnerability import IVulnerability
 
 
 _schema_circular_imports
