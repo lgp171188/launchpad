@@ -1823,9 +1823,14 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret")
         with person_logged_in(self.factory.makePerson()) as owner:
+            distro = self.factory.makeDistribution(
+                owner=owner, information_type=InformationType.PROPRIETARY)
+            dsp = self.factory.makeDistributionSourcePackage(
+                distribution=distro)
             repositories = [
                 self.factory.makeGitRepository(
-                    owner=owner, information_type=InformationType.USERDATA)
+                    registrant=owner, owner=owner,
+                    information_type=InformationType.PROPRIETARY, target=dsp)
                 for _ in range(2)]
             builds = [
                 self.factory.makeCIBuild(git_repository=repository)
@@ -2404,8 +2409,13 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret")
         with person_logged_in(self.factory.makePerson()) as owner:
+            distro = self.factory.makeDistribution(
+                owner=owner, information_type=InformationType.PROPRIETARY)
+            dsp = self.factory.makeDistributionSourcePackage(
+                distribution=distro)
             repository = self.factory.makeGitRepository(
-                owner=owner, information_type=InformationType.USERDATA)
+                registrant=owner, owner=owner,
+                information_type=InformationType.PROPRIETARY, target=dsp)
             build = self.factory.makeCIBuild(git_repository=repository)
             issuer = getUtility(IMacaroonIssuer, "ci-build")
             macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
