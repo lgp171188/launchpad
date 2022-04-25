@@ -75,7 +75,7 @@ OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
 
 @error_status(http.client.BAD_REQUEST)
 class CannotDeleteOCIProject(Exception):
-    """The OCIProject cannnot be deleted."""
+    """The OCIProject cannot be deleted."""
 
 
 @error_status(http.client.UNAUTHORIZED)
