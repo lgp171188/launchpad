@@ -235,7 +235,9 @@
           <tbody>
             <tr tal:repeat="report batch">
               <td tal:content="structure report/result/enumvalue:SUCCEEDED/image:boolean" />
-              <td><a tal:attributes="href report/url | report/latest_log/download_url | nothing" tal:content="report/title" /></td>
+              <td tal:define="url python: report.url if report.url is not None else path('report/latest_log/download_url | nothing')">
+                <a tal:attributes="href url" tal:content="report/title" />
+              </td>
               <td tal:content="report/result_summary" />
             </tr>
           </tbody>

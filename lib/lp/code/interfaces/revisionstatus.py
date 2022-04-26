@@ -79,7 +79,7 @@ class IRevisionStatusReportView(Interface):
     date_finished = exported(Datetime(
         title=_("When the report has finished.")), readonly=False)
 
-    latest_log = Attribute("The URL for the most recent log for this report.")
+    latest_log = Attribute("The most recent log for this report.")
 
     @operation_parameters(
         artifact_type=Choice(vocabulary=RevisionStatusArtifactType,
