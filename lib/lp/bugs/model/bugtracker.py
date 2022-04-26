@@ -12,15 +12,15 @@ __all__ = [
 
 from datetime import datetime
 from itertools import chain
-
-from lazr.uri import URI
-from pytz import timezone
-import six
-from six.moves.urllib.parse import (
+from urllib.parse import (
     quote,
     urlsplit,
     urlunsplit,
     )
+
+from lazr.uri import URI
+from pytz import timezone
+import six
 from storm.expr import (
     Count,
     Desc,

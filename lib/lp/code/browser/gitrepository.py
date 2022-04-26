@@ -23,6 +23,10 @@ __all__ = [
 import base64
 import binascii
 from collections import defaultdict
+from urllib.parse import (
+    urlsplit,
+    urlunsplit,
+    )
 
 from breezy import urlutils
 from lazr.lifecycle.event import ObjectModifiedEvent
@@ -30,10 +34,6 @@ from lazr.lifecycle.snapshot import Snapshot
 from lazr.restful.interface import (
     copy_field,
     use_template,
-    )
-from six.moves.urllib_parse import (
-    urlsplit,
-    urlunsplit,
     )
 from zope.component import getUtility
 from zope.event import notify

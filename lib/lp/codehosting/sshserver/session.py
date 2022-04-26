@@ -8,11 +8,11 @@ __all__ = [
     ]
 
 import os
+from urllib.parse import urlparse
 
 from lazr.sshserver.events import AvatarEvent
 from lazr.sshserver.session import DoNothingSession
 import six
-from six.moves.urllib.parse import urlparse
 from twisted.internet import process
 from twisted.python import log
 from zope.event import notify

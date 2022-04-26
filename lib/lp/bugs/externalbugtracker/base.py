@@ -26,11 +26,12 @@ __all__ = [
     ]
 
 
-import requests
-from six.moves.urllib_parse import (
+from urllib.parse import (
     urljoin,
     urlparse,
     )
+
+import requests
 from zope.interface import implementer
 
 from lp.bugs.adapters import treelookup

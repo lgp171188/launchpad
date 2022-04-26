@@ -6,6 +6,7 @@ from datetime import (
     datetime,
     timedelta,
     )
+from urllib.parse import urlencode
 
 from openid.consumer.consumer import (
     CANCEL,
@@ -22,7 +23,6 @@ from paste.httpexceptions import (
     HTTPException,
     )
 import six
-from six.moves.urllib.parse import urlencode
 import transaction
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.browserpage import ViewPageTemplateFile

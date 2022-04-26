@@ -41,8 +41,8 @@ Define some request mocks so that we don't try to access SourceForge.
 
     >>> import os.path
     >>> import re
+    >>> from urllib.parse import urlsplit
     >>> import responses
-    >>> from six.moves.urllib_parse import urlsplit
 
     >>> def project_callback(request):
     ...     url = urlsplit(request.url)

@@ -28,6 +28,7 @@ __all__ = [
 from cgi import FieldStorage
 import http.client
 import re
+from urllib.parse import urlparse
 from wsgiref.headers import Headers
 
 from lazr.restful import (
@@ -41,7 +42,6 @@ from lazr.restful.tales import WebLayerAPI
 from lazr.restful.utils import get_current_browser_request
 import simplejson
 import six
-from six.moves.urllib.parse import urlparse
 from zope.app.publisher.xmlrpc import IMethodPublisher
 from zope.component import (
     getUtility,

@@ -16,6 +16,7 @@ __all__ = [
     ]
 
 import string
+from urllib.parse import urlencode
 
 from apt_pkg import (
     upstream_version,
@@ -26,7 +27,6 @@ from lazr.enum import (
     Item,
     )
 from lazr.restful.interface import copy_field
-from six.moves.urllib.parse import urlencode
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     adapter,

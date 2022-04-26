@@ -40,6 +40,7 @@ __all__ = [
 
 
 from operator import attrgetter
+from urllib.parse import urlunsplit
 
 from breezy import urlutils
 from breezy.revision import NULL_REVISION
@@ -49,7 +50,6 @@ from lazr.restful.interface import (
     use_template,
     )
 from lazr.restful.interfaces import IJSONRequestCache
-from six.moves.urllib.parse import urlunsplit
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.event import notify

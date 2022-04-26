@@ -120,7 +120,7 @@ shown to the user.
 Clicking the back button and then clicking on either Change or
 Unsubscribe will give a message that we are not subscribed.
 
-    >>> from six.moves.urllib.parse import urlencode
+    >>> from urllib.parse import urlencode
     >>> browser.addHeader('Referer', 'https://launchpad.test/')
     >>> browser.open(
     ...     form_url,

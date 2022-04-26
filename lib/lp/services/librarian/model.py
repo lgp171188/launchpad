@@ -12,10 +12,10 @@ __all__ = [
 
 from datetime import datetime
 import hashlib
+from urllib.parse import urlparse
 
 from lazr.delegates import delegate_to
 import pytz
-from six.moves.urllib.parse import urlparse
 from storm.locals import (
     Date,
     Desc,

@@ -1,7 +1,8 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from six.moves.urllib.parse import urlencode
+from urllib.parse import urlencode
+
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import ServiceUsage

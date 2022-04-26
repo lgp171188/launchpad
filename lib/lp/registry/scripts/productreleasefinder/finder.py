@@ -11,10 +11,10 @@ import mimetypes
 import os
 import re
 import tempfile
+from urllib.parse import urlsplit
 
 import pytz
 import requests
-from six.moves.urllib.parse import urlsplit
 from zope.component import getUtility
 
 from lp.app.validators.name import invalid_name_pattern

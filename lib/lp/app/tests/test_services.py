@@ -4,10 +4,10 @@
 """Tests for core services infrastructure."""
 
 import json
+from urllib.parse import urlparse
 
 from fixtures import FakeLogger
 from lazr.restful.interfaces._rest import IHTTPResource
-from six.moves.urllib.parse import urlparse
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.interface.interfaces import ComponentLookupError

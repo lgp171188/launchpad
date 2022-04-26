@@ -2,9 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from datetime import datetime
+from urllib.parse import parse_qs
 
 import lazr.uri
-from six.moves.urllib.parse import parse_qs
 from zope.component import getUtility
 from zope.event import notify
 from zope.session.interfaces import ISession

@@ -9,15 +9,15 @@ from datetime import (
     )
 import json
 import re
+from urllib.parse import (
+    parse_qs,
+    urlsplit,
+    )
 
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
 import pytz
 import responses
-from six.moves.urllib.parse import (
-    parse_qs,
-    urlsplit,
-    )
 import soupmatchers
 from testtools.matchers import (
     AfterPreprocessing,

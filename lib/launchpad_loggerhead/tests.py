@@ -1,12 +1,13 @@
 # Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from paste.httpexceptions import HTTPExceptionHandler
-import requests
-from six.moves.urllib_parse import (
+from urllib.parse import (
     urlencode,
     urlsplit,
     )
+
+from paste.httpexceptions import HTTPExceptionHandler
+import requests
 import soupmatchers
 from testtools.content import Content
 from testtools.content_type import UTF8_TEXT

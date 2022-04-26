@@ -7,9 +7,9 @@ try:
     from importlib import resources
 except ImportError:
     import importlib_resources as resources
-import subprocess
 
-from six.moves.urllib.parse import urljoin
+import subprocess
+from urllib.parse import urljoin
 
 from lp.services.webapp.interaction import (
     ANONYMOUS,

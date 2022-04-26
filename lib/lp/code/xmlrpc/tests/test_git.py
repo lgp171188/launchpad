@@ -5,6 +5,7 @@
 
 from datetime import datetime
 import hashlib
+from urllib.parse import quote
 import uuid
 import xmlrpc.client
 
@@ -12,7 +13,6 @@ from fixtures import FakeLogger
 from pymacaroons import Macaroon
 import pytz
 import six
-from six.moves.urllib.parse import quote
 from storm.store import Store
 from testtools.matchers import (
     Equals,

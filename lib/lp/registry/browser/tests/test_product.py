@@ -7,15 +7,15 @@ __all__ = ['make_product_form']
 
 import re
 from textwrap import dedent
+from urllib.parse import (
+    urlencode,
+    urlsplit,
+    )
 
 from lazr.restful.fields import Reference
 from lazr.restful.interfaces import (
     IFieldMarshaller,
     IJSONRequestCache,
-    )
-from six.moves.urllib.parse import (
-    urlencode,
-    urlsplit,
     )
 from soupmatchers import (
     HTMLContains,

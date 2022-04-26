@@ -11,13 +11,13 @@ import base64
 from contextlib import contextmanager
 import json
 import re
-
-from lazr.restful.utils import get_current_browser_request
-import responses
-from six.moves.urllib.parse import (
+from urllib.parse import (
     parse_qsl,
     urlsplit,
     )
+
+from lazr.restful.utils import get_current_browser_request
+import responses
 from testtools.matchers import (
     AfterPreprocessing,
     Equals,

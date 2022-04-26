@@ -19,12 +19,12 @@ __all__ = [
 import datetime
 import operator
 import re
-
-import pytz
-from six.moves.urllib.parse import (
+from urllib.parse import (
     parse_qsl,
     urlencode,
     )
+
+import pytz
 from zope import datetime as zope_datetime
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility

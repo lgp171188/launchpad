@@ -21,20 +21,20 @@ from socket import (
     )
 import threading
 import time
-
-from lazr.restful.utils import get_current_browser_request
-import six
-from six.moves.urllib.error import (
+from urllib.error import (
     HTTPError,
     URLError,
     )
-from six.moves.urllib.parse import (
+from urllib.parse import (
     quote,
     urljoin,
     urlparse,
     urlunparse,
     )
-from six.moves.urllib.request import urlopen
+from urllib.request import urlopen
+
+from lazr.restful.utils import get_current_browser_request
+import six
 from storm.store import Store
 from zope.interface import implementer
 

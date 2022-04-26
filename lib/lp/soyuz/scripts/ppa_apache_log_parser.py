@@ -4,8 +4,7 @@
 __all__ = ['DBUSER', 'get_ppa_file_key']
 
 import os.path
-
-from six.moves.urllib.parse import unquote
+from urllib.parse import unquote
 
 from lp.archiveuploader.utils import re_isadeb
 

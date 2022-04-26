@@ -9,6 +9,8 @@ import sys
 # line below this comment.
 import lp.codehosting  # noqa: F401  # isort: split
 
+from urllib.error import HTTPError
+
 from breezy import (
     errors,
     urlutils,
@@ -39,7 +41,6 @@ from lazr.uri import (
     URI,
     )
 import six
-from six.moves.urllib.error import HTTPError
 
 from lp.code.bzr import (
     BranchFormat,

@@ -10,16 +10,16 @@ import socket
 import textwrap
 import threading
 import unittest
+from urllib.error import (
+    HTTPError,
+    URLError,
+    )
+from urllib.request import urlopen
 
 from fixtures import (
     EnvironmentVariable,
     TempDir,
     )
-from six.moves.urllib.error import (
-    HTTPError,
-    URLError,
-    )
-from six.moves.urllib.request import urlopen
 from testtools.testcase import ExpectedException
 import transaction
 

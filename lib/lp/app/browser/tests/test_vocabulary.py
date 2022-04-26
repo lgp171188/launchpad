@@ -4,10 +4,10 @@
 """Test vocabulary adapters."""
 
 from datetime import datetime
+from urllib.parse import urlencode
 
 import pytz
 import simplejson
-from six.moves.urllib.parse import urlencode
 from zope.component import (
     getSiteManager,
     getUtility,

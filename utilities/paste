@@ -9,11 +9,11 @@ from optparse import OptionParser
 import os
 import pwd
 import sys
+from urllib.parse import urljoin
 import webbrowser
 
 from fixtures import MonkeyPatch
 from six.moves.http_cookiejar import Cookie
-from six.moves.urllib.parse import urljoin
 from zope.testbrowser.browser import Browser
 
 
@@ -118,8 +118,7 @@ def main():
     # Remove the check for robots.txt, since the one on
     # pastebin.ubuntu.com doesn't allow us to open the page. We're not
     # really a robot.
-    with MonkeyPatch(
-            'six.moves.urllib.robotparser.RobotFileParser.allow_all', True):
+    with MonkeyPatch('urllib.robotparser.RobotFileParser.allow_all', True):
         browser.open(urljoin('https://' + paste_host, PASTE_PATH))
 
     if parser.options.private:

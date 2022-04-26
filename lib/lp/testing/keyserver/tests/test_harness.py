@@ -1,7 +1,7 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from six.moves.urllib.request import urlopen
+from urllib.request import urlopen
 
 from lp.services.config import config
 from lp.testing import TestCase

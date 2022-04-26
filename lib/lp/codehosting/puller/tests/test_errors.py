@@ -7,6 +7,7 @@ import http.client
 import os
 import socket
 import tempfile
+from urllib.error import HTTPError
 
 from breezy.errors import (
     BzrError,
@@ -20,7 +21,6 @@ from breezy.url_policy_open import (
     BranchReferenceForbidden,
     )
 from lazr.uri import InvalidURIError
-from six.moves.urllib.error import HTTPError
 
 from lp.code.enums import BranchType
 from lp.codehosting.puller.worker import (

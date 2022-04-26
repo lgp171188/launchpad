@@ -57,6 +57,10 @@ from operator import (
     itemgetter,
     )
 from textwrap import dedent
+from urllib.parse import (
+    quote,
+    urlencode,
+    )
 
 from lazr.config import as_timedelta
 from lazr.delegates import delegate_to
@@ -65,10 +69,6 @@ from lazr.restful.interfaces import IWebServiceClientRequest
 from lazr.restful.utils import smartquote
 from lazr.uri import URI
 import pytz
-from six.moves.urllib.parse import (
-    quote,
-    urlencode,
-    )
 from storm.zope.interfaces import IResultSet
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (

@@ -11,13 +11,13 @@ import base64
 import json
 import string
 import time
+from urllib.parse import urlsplit
 
 from lazr.restful.utils import get_current_browser_request
 from pymacaroons import Macaroon
 import requests
 from requests_toolbelt import MultipartEncoder
 import six
-from six.moves.urllib.parse import urlsplit
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy

@@ -144,7 +144,7 @@ status. Bookmarks of such searches work nevertheless.
 
 The user opens a bookmark for "upstream status doesn't matter"
 
-    >>> from six.moves.urllib.parse import urlencode
+    >>> from urllib.parse import urlencode
     >>> bookmark_params = {
     ...     'field.status_upstream': '',
     ...     'field.status_upstream-empty-marker': '1',

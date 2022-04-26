@@ -65,6 +65,12 @@ from unittest import (
     TestCase,
     TestResult,
     )
+from urllib.error import (
+    HTTPError,
+    URLError,
+    )
+from urllib.parse import urlparse
+from urllib.request import urlopen
 
 from fixtures import (
     Fixture,
@@ -73,12 +79,6 @@ from fixtures import (
 import psycopg2
 from requests import Session
 from requests.adapters import HTTPAdapter
-from six.moves.urllib.error import (
-    HTTPError,
-    URLError,
-    )
-from six.moves.urllib.parse import urlparse
-from six.moves.urllib.request import urlopen
 from storm.uri import URI
 from talisker.context import Context
 import transaction

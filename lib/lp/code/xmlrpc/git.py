@@ -9,12 +9,12 @@ __all__ = [
 
 import logging
 import sys
+from urllib.parse import quote
 import uuid
 import xmlrpc.client
 
 from pymacaroons import Macaroon
 import six
-from six.moves.urllib.parse import quote
 import transaction
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility

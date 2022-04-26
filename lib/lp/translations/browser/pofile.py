@@ -15,10 +15,10 @@ __all__ = [
 
 import os.path
 import re
+from urllib.parse import urlencode
 
 from lazr.restful.utils import smartquote
 import six
-from six.moves.urllib.parse import urlencode
 from zope.component import getUtility
 from zope.publisher.browser import FileUpload
 

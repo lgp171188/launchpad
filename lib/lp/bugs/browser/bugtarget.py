@@ -21,15 +21,15 @@ from datetime import datetime
 from functools import partial
 import http.client
 from io import BytesIO
+from urllib.parse import (
+    quote,
+    urlencode,
+    )
 
 from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
 from pytz import timezone
 from simplejson import dumps
-from six.moves.urllib.parse import (
-    quote,
-    urlencode,
-    )
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.form import Fields

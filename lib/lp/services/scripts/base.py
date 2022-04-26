@@ -19,6 +19,10 @@ import logging
 from optparse import OptionParser
 import os.path
 import sys
+from urllib.parse import (
+    urlparse,
+    urlunparse,
+    )
 
 from contrib.glock import (
     GlobalLock,
@@ -26,10 +30,6 @@ from contrib.glock import (
     )
 import pytz
 import requests
-from six.moves.urllib.parse import (
-    urlparse,
-    urlunparse,
-    )
 import transaction
 from zope.component import getUtility
 

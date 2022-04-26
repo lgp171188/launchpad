@@ -3,8 +3,9 @@
 
 """Tests for the Mantis BugTracker."""
 
+from urllib.parse import urljoin
+
 import responses
-from six.moves.urllib_parse import urljoin
 from testtools.matchers import (
     Equals,
     Is,
