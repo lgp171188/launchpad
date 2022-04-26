@@ -234,6 +234,7 @@ class TestProductSeriesStatus(TestCaseWithFactory):
             (BugTaskStatus.INPROGRESS, 1),
             (BugTaskStatus.FIXCOMMITTED, 1),
             (BugTaskStatus.FIXRELEASED, 1),
+            (BugTaskStatus.DOESNOTEXIST, 1),
             (BugTaskStatus.UNKNOWN, 1)]
         with person_logged_in(product.owner):
             view = create_initialized_view(series, '+status')

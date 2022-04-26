@@ -972,6 +972,7 @@ class TestFileBugRequestCache(TestCaseWithFactory):
             BugTaskStatus.INVALID,
             BugTaskStatus.OPINION,
             BugTaskStatus.WONTFIX,
+            BugTaskStatus.DOESNOTEXIST,
             BugTaskStatus.INCOMPLETE]
         bugtask_status_data = []
         for item in BugTaskStatus:

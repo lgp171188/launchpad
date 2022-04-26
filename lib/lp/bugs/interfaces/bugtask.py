@@ -224,6 +224,12 @@ class BugTaskStatus(DBEnumeratedType):
         The fix was released.
         """)
 
+    DOESNOTEXIST = DBItem(35, """
+        Does Not Exist
+
+        Nothing is published for this bug target.
+        """)
+
     UNKNOWN = DBItem(999, """
         Unknown
 
@@ -313,12 +319,16 @@ RESOLVED_BUGTASK_STATUSES = (
     BugTaskStatus.OPINION,
     BugTaskStatus.INVALID,
     BugTaskStatus.WONTFIX,
-    BugTaskStatus.EXPIRED)
+    BugTaskStatus.EXPIRED,
+    BugTaskStatus.DOESNOTEXIST,
+    )
 
 BUG_SUPERVISOR_BUGTASK_STATUSES = (
     BugTaskStatus.WONTFIX,
     BugTaskStatus.EXPIRED,
-    BugTaskStatus.TRIAGED)
+    BugTaskStatus.TRIAGED,
+    BugTaskStatus.DOESNOTEXIST,
+    )
 
 
 @error_status(http.client.BAD_REQUEST)
