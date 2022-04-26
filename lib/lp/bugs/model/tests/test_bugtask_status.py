@@ -42,7 +42,7 @@ class TestBugTaskStatusTransitionForUser(TestCaseWithFactory):
                 BugTaskStatus.WONTFIX, self.user)
             self.assertRaises(
                 UserCannotEditBugTaskStatus, self.task.transitionToStatus,
-                BugTaskStatus.DOES_NOT_EXIST, self.user)
+                BugTaskStatus.DOESNOTEXIST, self.user)
             self.assertRaises(
                 UserCannotEditBugTaskStatus, self.task.transitionToStatus,
                 BugTaskStatus.EXPIRED, self.user)
@@ -82,7 +82,7 @@ class TestBugTaskStatusTransitionForUser(TestCaseWithFactory):
     def test_user_cannot_unset_does_not_exist_status(self):
         # A regular user should not be able to transition a bug away
         # from Does not exist.
-        removeSecurityProxy(self.task)._status = BugTaskStatus.DOES_NOT_EXIST
+        removeSecurityProxy(self.task)._status = BugTaskStatus.DOESNOTEXIST
         with person_logged_in(self.user):
             self.assertRaises(
                 UserCannotEditBugTaskStatus, self.task.transitionToStatus,
@@ -106,7 +106,7 @@ class TestBugTaskStatusTransitionForUser(TestCaseWithFactory):
             False)
         self.assertEqual(
             self.task.canTransitionToStatus(
-                BugTaskStatus.DOES_NOT_EXIST, self.user),
+                BugTaskStatus.DOESNOTEXIST, self.user),
             False)
         self.assertEqual(
             self.task.canTransitionToStatus(
@@ -160,7 +160,7 @@ class TestBugTaskStatusTransitionForUser(TestCaseWithFactory):
     def test_user_canTransitionToStatus_from_doesnotexist(self):
         # A regular user cannot transition away from Does Not Exist,
         # so canTransitionToStatus should return False.
-        removeSecurityProxy(self.task)._status = BugTaskStatus.DOES_NOT_EXIST
+        removeSecurityProxy(self.task)._status = BugTaskStatus.DOESNOTEXIST
         self.assertEqual(
             self.task.canTransitionToStatus(
                 BugTaskStatus.NEW, self.user),
@@ -281,8 +281,8 @@ class TestBugTaskStatusTransitionForPrivilegedUserBase:
         with person_logged_in(self.person):
             self.task.transitionToStatus(BugTaskStatus.WONTFIX, self.person)
             self.assertEqual(self.task.status, BugTaskStatus.WONTFIX)
-            self.task.transitionToStatus(BugTaskStatus.DOES_NOT_EXIST, self.person)
-            self.assertEqual(self.task.status, BugTaskStatus.DOES_NOT_EXIST)
+            self.task.transitionToStatus(BugTaskStatus.DOESNOTEXIST, self.person)
+            self.assertEqual(self.task.status, BugTaskStatus.DOESNOTEXIST)
             self.task.transitionToStatus(BugTaskStatus.EXPIRED, self.person)
             self.assertEqual(self.task.status, BugTaskStatus.EXPIRED)
             self.task.transitionToStatus(BugTaskStatus.TRIAGED, self.person)
@@ -317,7 +317,7 @@ class TestBugTaskStatusTransitionForPrivilegedUserBase:
 
     def test_privileged_user_can_unset_does_not_exist_status(self):
         # Privileged users can transition away from Does Not Exist.
-        removeSecurityProxy(self.task)._status = BugTaskStatus.DOES_NOT_EXIST
+        removeSecurityProxy(self.task)._status = BugTaskStatus.DOESNOTEXIST
         with person_logged_in(self.person):
             self.task.transitionToStatus(BugTaskStatus.CONFIRMED, self.person)
             self.assertEqual(self.task.status, BugTaskStatus.CONFIRMED)
@@ -339,7 +339,7 @@ class TestBugTaskStatusTransitionForPrivilegedUserBase:
             True)
         self.assertEqual(
             self.task.canTransitionToStatus(
-                BugTaskStatus.DOES_NOT_EXIST, self.person),
+                BugTaskStatus.DOESNOTEXIST, self.person),
             True)
         self.assertEqual(
             self.task.canTransitionToStatus(
@@ -394,7 +394,7 @@ class TestBugTaskStatusTransitionForPrivilegedUserBase:
     def test_privileged_user_canTransitionToStatus_from_doesnotexist(self):
         # A privileged user can transition away from Does Not Exist, so
         # canTransitionToStatus should return True.
-        removeSecurityProxy(self.task)._status = BugTaskStatus.DOES_NOT_EXIST
+        removeSecurityProxy(self.task)._status = BugTaskStatus.DOESNOTEXIST
         self.assertEqual(
             self.task.canTransitionToStatus(
                 BugTaskStatus.NEW, self.person),

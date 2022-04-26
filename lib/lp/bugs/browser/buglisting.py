@@ -159,7 +159,7 @@ DISPLAY_BUG_STATUS_FOR_PATCHES = {
     BugTaskStatus.FIXRELEASED: False,
     BugTaskStatus.UNKNOWN: False,
     BugTaskStatus.EXPIRED: False,
-    BugTaskStatus.DOES_NOT_EXIST: False,
+    BugTaskStatus.DOESNOTEXIST: False,
     BugTaskStatusSearch.INCOMPLETE_WITHOUT_RESPONSE: True,
     BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE: True,
     }

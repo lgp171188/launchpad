@@ -224,7 +224,7 @@ class BugTaskStatus(DBEnumeratedType):
         The fix was released.
         """)
 
-    DOES_NOT_EXIST = DBItem(35, """
+    DOESNOTEXIST = DBItem(35, """
         Does Not Exist
 
         Nothing is published for this bug target.
@@ -320,14 +320,14 @@ RESOLVED_BUGTASK_STATUSES = (
     BugTaskStatus.INVALID,
     BugTaskStatus.WONTFIX,
     BugTaskStatus.EXPIRED,
-    BugTaskStatus.DOES_NOT_EXIST,
+    BugTaskStatus.DOESNOTEXIST,
     )
 
 BUG_SUPERVISOR_BUGTASK_STATUSES = (
     BugTaskStatus.WONTFIX,
     BugTaskStatus.EXPIRED,
     BugTaskStatus.TRIAGED,
-    BugTaskStatus.DOES_NOT_EXIST,
+    BugTaskStatus.DOESNOTEXIST,
     )
 
 

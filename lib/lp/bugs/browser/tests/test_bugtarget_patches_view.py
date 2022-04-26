@@ -34,7 +34,7 @@ class TestBugTargetPatchView(TestBugTargetPatchCountBase):
 
     def test_status_of_bugs_with_patches_shown(self):
         # Bugs with patches that have the status FIXRELEASED, INVALID,
-        # WONTFIX, UNKNOWN, EXPIRED, DOES_NOT_EXIST are not shown
+        # WONTFIX, UNKNOWN, EXPIRED, DOESNOTEXIST are not shown
         # in the +patches view; all other bugs are shown.
         number_of_bugs_shown = 0
         for bugtask_status in DISPLAY_BUG_STATUS_FOR_PATCHES:
@@ -53,7 +53,7 @@ class TestBugListingPortletStatsView(TestBugTargetPatchCountBase):
 
     def test_bugs_with_patches_count(self):
         # Bugs with patches that have the status FIXRELEASED, INVALID,
-        # WONTFIX, UNKNOWN or DOES_NOT_EXIST are not counted in
+        # WONTFIX, UNKNOWN or DOESNOTEXIST are not counted in
         # BugListingPortletStatsView.bugs_with_patches_count, bugs
         # with all other statuses are counted.
         number_of_bugs_shown = 0

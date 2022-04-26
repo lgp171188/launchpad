@@ -268,7 +268,7 @@ class FileBugViewBase(LaunchpadFormView):
                 BugTaskStatus.OPINION,
                 BugTaskStatus.WONTFIX,
                 BugTaskStatus.INCOMPLETE,
-                BugTaskStatus.DOES_NOT_EXIST])
+                BugTaskStatus.DOESNOTEXIST])
         cache.objects['bugtask_status_data'] = bugtask_status_data
         bugtask_importance_data = vocabulary_to_choice_edit_items(
             BugTaskImportance, include_description=True,

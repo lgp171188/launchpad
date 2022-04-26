@@ -767,7 +767,7 @@ class Bug(SQLBase, InformationTypeMixin):
         # Bugs cannot be expired if any bugtask is valid.
         expirable_status_list = [
             BugTaskStatus.INCOMPLETE, BugTaskStatus.INVALID,
-            BugTaskStatus.WONTFIX, BugTaskStatus.DOES_NOT_EXIST]
+            BugTaskStatus.WONTFIX, BugTaskStatus.DOESNOTEXIST]
         has_an_expirable_bugtask = False
         for bugtask in self.bugtasks:
             if bugtask.status not in expirable_status_list:
@@ -1534,7 +1534,7 @@ class Bug(SQLBase, InformationTypeMixin):
         non_invalid_bugtasks = [
             bugtask for bugtask in self.bugtasks
             if (bugtask.status != BugTaskStatus.INVALID
-                and bugtask.status != BugTaskStatus.DOES_NOT_EXIST
+                and bugtask.status != BugTaskStatus.DOESNOTEXIST
                 and bugtask.conjoined_primary is None)]
         if len(non_invalid_bugtasks) != 1:
             return None

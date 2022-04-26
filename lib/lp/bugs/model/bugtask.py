@@ -901,7 +901,7 @@ class BugTask(StormBase):
             # The bug reporter can reopen a Fix Released bug.
             return False
         elif (self.status == BugTaskStatus.WONTFIX or
-              self.status == BugTaskStatus.DOES_NOT_EXIST):
+              self.status == BugTaskStatus.DOESNOTEXIST):
             # Only bug supervisors can switch away from WONTFIX and DNE.
             return False
         # Non-supervisors can transition to non-supervisor statuses.
@@ -1765,7 +1765,7 @@ class BugTaskSet:
         statuses_not_preventing_expiration = [
             BugTaskStatus.INVALID, BugTaskStatus.INCOMPLETE,
             BugTaskStatusSearch.INCOMPLETE_WITHOUT_RESPONSE,
-            BugTaskStatus.WONTFIX, BugTaskStatus.DOES_NOT_EXIST]
+            BugTaskStatus.WONTFIX, BugTaskStatus.DOESNOTEXIST]
         unexpirable_status_list = [
             status for status in BugTaskStatus.items
             if status not in statuses_not_preventing_expiration]

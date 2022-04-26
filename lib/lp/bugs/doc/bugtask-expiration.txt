@@ -312,7 +312,7 @@ the hoary bugtask will be expirable.
     hoary        True    351  Incomplete  False     False  False  False
     thunderbird  False   351  Won't Fix   False     False  False  False
 
-    >>> new_bugtask.transitionToStatus(BugTaskStatus.DOES_NOT_EXIST,
+    >>> new_bugtask.transitionToStatus(BugTaskStatus.DOESNOTEXIST,
     ...     sample_person)
     >>> hoary_bugtask.bug.can_expire
     True
