@@ -6,7 +6,9 @@
 __all__ = [
     'ArchiveJobType',
     'ArchivePermissionType',
+    'ArchivePublishingMethod',
     'ArchivePurpose',
+    'ArchiveRepositoryFormat',
     'ArchiveStatus',
     'ArchiveSubscriberStatus',
     'archive_suffixes',
@@ -625,4 +627,38 @@ class BinarySourceReferenceType(DBEnumeratedType):
         The referencing binary package incorporates part of the referenced
         source package, and so the referenced source package needs to remain
         in the archive for as long as the referencing binary package does.
+        """)
+
+
+class ArchivePublishingMethod(DBEnumeratedType):
+    """The method used to publish an archive."""
+
+    LOCAL = DBItem(0, """
+        Local
+
+        Publish locally, either using apt-ftparchive or writing indexes
+        directly from the database depending on the archive purpose.
+        """)
+
+    ARTIFACTORY = DBItem(1, """
+        Artifactory
+
+        Publish via JFrog Artifactory.
+        """)
+
+
+class ArchiveRepositoryFormat(DBEnumeratedType):
+    """The repository format used by an archive."""
+
+    DEBIAN = DBItem(0, """
+        Debian
+
+        A Debian-format apt archive
+        (https://wiki.debian.org/DebianRepository/Format).
+        """)
+
+    PYTHON = DBItem(1, """
+        Python
+
+        A Python package index (https://www.python.org/dev/peps/pep-0301/).
         """)

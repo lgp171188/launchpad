@@ -6,8 +6,6 @@ Processes removals of packages that are scheduled for deletion.
 """
 
 import datetime
-import logging
-import os
 
 import pytz
 from storm.expr import Exists
@@ -19,7 +17,6 @@ from storm.locals import (
     )
 
 from lp.archivepublisher.config import getPubConfig
-from lp.archivepublisher.diskpool import DiskPool
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.librarian.model import (
@@ -57,19 +54,10 @@ def getDeathRow(archive, log, pool_root_override):
     log.debug("Grab publisher config.")
     pubconf = getPubConfig(archive)
 
-    if (pool_root_override is not None and
-        archive.purpose == ArchivePurpose.PRIMARY):
-        pool_root = pool_root_override
-    else:
-        pool_root = pubconf.poolroot
+    if archive.purpose != ArchivePurpose.PRIMARY:
+        pool_root_override = None
 
-    log.debug("Preparing on-disk pool representation.")
-
-    diskpool_log = logging.getLogger("DiskPool")
-    # Set the diskpool's log level to INFO to suppress debug output
-    diskpool_log.setLevel(20)
-
-    dp = DiskPool(pool_root, pubconf.temproot, diskpool_log)
+    dp = pubconf.getDiskPool(log, pool_root_override=pool_root_override)
 
     log.debug("Preparing death row.")
     return DeathRow(archive, dp, log)
@@ -103,9 +91,9 @@ class DeathRow:
                 self.logger.debug("(Not really!) removing %s %s/%s" %
                                   (cn, sn, fn))
                 fullpath = self.diskpool.pathFor(cn, sn, fn)
-                if not os.path.exists(fullpath):
+                if not fullpath.exists():
                     raise NotInPool
-                return os.lstat(fullpath).st_size
+                return fullpath.lstat().st_size
             self._removeFile = _mockRemoveFile
 
         source_files, binary_files = self._collectCondemned()
@@ -243,7 +231,7 @@ class DeathRow:
                     pub_record.source_package_name,
                     pub_record.component_name,
                     )
-                file_path = self.diskpool.pathFor(*pub_file_details)
+                file_path = str(self.diskpool.pathFor(*pub_file_details))
 
                 # Check if the LibraryFileAlias in question was already
                 # verified. If the verification was already made and the

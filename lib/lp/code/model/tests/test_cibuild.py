@@ -12,17 +12,25 @@ from textwrap import dedent
 from unittest.mock import Mock
 
 from fixtures import MockPatchObject
+from pymacaroons import Macaroon
 import pytz
 from storm.locals import Store
 from testtools.matchers import (
     Equals,
+    MatchesListwise,
+    MatchesSetwise,
     MatchesStructure,
     )
 from zope.component import getUtility
+from zope.publisher.xmlrpc import TestRequest
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.app.errors import NotFoundError
+from lp.app.interfaces.launchpad import (
+    ILaunchpadCelebrities,
+    IPrivacy,
+    )
 from lp.buildmaster.enums import (
     BuildQueueStatus,
     BuildStatus,
@@ -43,6 +51,7 @@ from lp.code.interfaces.cibuild import (
     ICIBuildSet,
     MissingConfiguration,
     )
+from lp.code.interfaces.revisionstatus import IRevisionStatusReportSet
 from lp.code.model.cibuild import (
     determine_DASes_to_build,
     get_all_commits_for_paths,
@@ -50,7 +59,11 @@ from lp.code.model.cibuild import (
 from lp.code.model.lpcraft import load_configuration
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.authserver.xmlrpc import AuthServerAPIView
+from lp.services.config import config
 from lp.services.log.logger import BufferLogger
+from lp.services.macaroons.interfaces import IMacaroonIssuer
+from lp.services.macaroons.testing import MacaroonTestMixin
 from lp.services.propertycache import clear_property_cache
 from lp.testing import (
     person_logged_in,
@@ -59,6 +72,7 @@ from lp.testing import (
     )
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.matchers import HasQueryCount
+from lp.xmlrpc.interfaces import IPrivateApplication
 
 
 class TestGetAllCommitsForPaths(TestCaseWithFactory):
@@ -99,10 +113,11 @@ class TestCIBuild(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def test_implements_interfaces(self):
-        # CIBuild implements IPackageBuild and ICIBuild.
+        # CIBuild implements IPackageBuild, ICIBuild, and IPrivacy.
         build = self.factory.makeCIBuild()
         self.assertProvides(build, IPackageBuild)
         self.assertProvides(build, ICIBuild)
+        self.assertProvides(build, IPrivacy)
 
     def test___repr__(self):
         # CIBuild has an informative __repr__.
@@ -137,11 +152,13 @@ class TestCIBuild(TestCaseWithFactory):
         # A CIBuild is private iff its repository is.
         build = self.factory.makeCIBuild()
         self.assertFalse(build.is_private)
+        self.assertFalse(build.private)
         with person_logged_in(self.factory.makePerson()) as owner:
             build = self.factory.makeCIBuild(
                 git_repository=self.factory.makeGitRepository(
                     owner=owner, information_type=InformationType.USERDATA))
             self.assertTrue(build.is_private)
+            self.assertTrue(build.private)
 
     def test_can_be_retried(self):
         ok_cases = [
@@ -242,6 +259,24 @@ class TestCIBuild(TestCaseWithFactory):
         build = self.factory.makeCIBuild()
         self.assertEqual('CIBUILD-%d' % build.id, build.build_cookie)
 
+    def test_getFileByName_logs(self):
+        # getFileByName returns the logs when requested by name.
+        build = self.factory.makeCIBuild()
+        build.setLog(
+            self.factory.makeLibraryFileAlias(filename="buildlog.txt.gz"))
+        self.assertEqual(build.log, build.getFileByName("buildlog.txt.gz"))
+        self.assertRaises(NotFoundError, build.getFileByName, "foo")
+        build.storeUploadLog("uploaded")
+        self.assertEqual(
+            build.upload_log, build.getFileByName(build.upload_log.filename))
+
+    def test_verifySuccessfulUpload(self):
+        # verifySuccessfulUpload always returns True; the upload processor
+        # requires us to implement this, but we don't have any interesting
+        # checks to perform here.
+        build = self.factory.makeCIBuild()
+        self.assertTrue(build.verifySuccessfulUpload())
+
     def addFakeBuildLog(self, build):
         build.setLog(self.factory.makeLibraryFileAlias("mybuildlog.txt"))
 
@@ -333,6 +368,24 @@ class TestCIBuild(TestCaseWithFactory):
             hosting_fixture.getBlob.result = invalid_result
             self.assertRaises(CannotParseConfiguration, build.getConfiguration)
 
+    def test_getOrCreateRevisionStatusReport_present(self):
+        build = self.factory.makeCIBuild()
+        report = self.factory.makeRevisionStatusReport(
+            title="build:0", ci_build=build)
+        self.assertEqual(
+            report, build.getOrCreateRevisionStatusReport("build:0"))
+
+    def test_getOrCreateRevisionStatusReport_absent(self):
+        build = self.factory.makeCIBuild()
+        self.assertThat(
+            build.getOrCreateRevisionStatusReport("build:0"),
+            MatchesStructure.byEquality(
+                creator=build.git_repository.owner,
+                title="build:0",
+                git_repository=build.git_repository,
+                commit_sha1=build.commit_sha1,
+                ci_build=build))
+
 
 class TestCIBuildSet(TestCaseWithFactory):
 
@@ -391,15 +444,17 @@ class TestCIBuildSet(TestCaseWithFactory):
         repository = self.factory.makeGitRepository()
         commit_sha1 = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
         das = self.factory.makeBuildableDistroArchSeries()
+        stages = [[("build", 0)]]
 
         build = getUtility(ICIBuildSet).requestBuild(
-            repository, commit_sha1, das)
+            repository, commit_sha1, das, stages)
 
         self.assertTrue(ICIBuild.providedBy(build))
         self.assertThat(build, MatchesStructure.byEquality(
             git_repository=repository,
             commit_sha1=commit_sha1,
             distro_arch_series=das,
+            stages=stages,
             status=BuildStatus.NEEDSBUILD,
             ))
         store = Store.of(build)
@@ -418,7 +473,7 @@ class TestCIBuildSet(TestCaseWithFactory):
         commit_sha1 = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
         das = self.factory.makeBuildableDistroArchSeries()
         build = getUtility(ICIBuildSet).requestBuild(
-            repository, commit_sha1, das)
+            repository, commit_sha1, das, [[("test", 0)]])
         queue_record = build.buildqueue_record
         queue_record.score()
         self.assertEqual(2600, queue_record.lastscore)
@@ -433,19 +488,19 @@ class TestCIBuildSet(TestCaseWithFactory):
                 distroseries=distro_series)
             for _ in range(2)]
         old_build = getUtility(ICIBuildSet).requestBuild(
-            repository, commit_sha1, arches[0])
+            repository, commit_sha1, arches[0], [[("test", 0)]])
         self.assertRaises(
             CIBuildAlreadyRequested, getUtility(ICIBuildSet).requestBuild,
-            repository, commit_sha1, arches[0])
+            repository, commit_sha1, arches[0], [[("test", 0)]])
         # We can build for a different distroarchseries.
         getUtility(ICIBuildSet).requestBuild(
-            repository, commit_sha1, arches[1])
+            repository, commit_sha1, arches[1], [[("test", 0)]])
         # Changing the status of the old build does not allow a new build.
         old_build.updateStatus(BuildStatus.BUILDING)
         old_build.updateStatus(BuildStatus.FULLYBUILT)
         self.assertRaises(
             CIBuildAlreadyRequested, getUtility(ICIBuildSet).requestBuild,
-            repository, commit_sha1, arches[0])
+            repository, commit_sha1, arches[0], [[("test", 0)]])
 
     def test_requestBuild_virtualization(self):
         # New builds are virtualized.
@@ -457,7 +512,7 @@ class TestCIBuildSet(TestCaseWithFactory):
                 distroseries=distro_series, supports_virtualized=True,
                 supports_nonvirtualized=proc_nonvirt)
             build = getUtility(ICIBuildSet).requestBuild(
-                repository, commit_sha1, das)
+                repository, commit_sha1, das, [[("test", 0)]])
             self.assertTrue(build.virtualized)
 
     def test_requestBuild_nonvirtualized(self):
@@ -470,7 +525,8 @@ class TestCIBuildSet(TestCaseWithFactory):
             supports_nonvirtualized=True)
         self.assertRaises(
             CIBuildDisallowedArchitecture,
-            getUtility(ICIBuildSet).requestBuild, repository, commit_sha1, das)
+            getUtility(ICIBuildSet).requestBuild,
+            repository, commit_sha1, das, [[("test", 0)]])
 
     def test_requestBuildsForRefs_triggers_builds(self):
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
@@ -484,9 +540,17 @@ class TestCIBuildSet(TestCaseWithFactory):
         )
         configuration = dedent("""\
             pipeline:
-            - test
+                - build
+                - test
 
             jobs:
+                build:
+                    matrix:
+                        - series: bionic
+                          architectures: amd64
+                        - series: focal
+                          architectures: amd64
+                    run: pyproject-build
                 test:
                     series: focal
                     architectures: amd64
@@ -507,16 +571,28 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertEqual(
             [((repository.getInternalPath(), [ref.commit_sha1]),
-              {"filter_paths": [".launchpad.yaml"]})],
+              {"filter_paths": [".launchpad.yaml"], "logger": None})],
             hosting_fixture.getCommits.calls
         )
 
         build = getUtility(ICIBuildSet).findByGitRepository(repository).one()
+        reports = list(
+            getUtility(IRevisionStatusReportSet).findByRepository(repository))
 
-        # check that a build was created
+        # check that a build and some reports were created
         self.assertEqual(ref.commit_sha1, build.commit_sha1)
         self.assertEqual("focal", build.distro_arch_series.distroseries.name)
         self.assertEqual("amd64", build.distro_arch_series.architecturetag)
+        self.assertEqual(
+            [[("build", 0), ("build", 1)], [("test", 0)]], build.stages)
+        self.assertThat(reports, MatchesSetwise(*(
+            MatchesStructure.byEquality(
+                creator=repository.owner,
+                title=title,
+                git_repository=repository,
+                commit_sha1=ref.commit_sha1,
+                ci_build=build)
+            for title in ("build:0", "build:1", "test:0"))))
 
     def test_requestBuildsForRefs_no_commits_at_all(self):
         repository = self.factory.makeGitRepository()
@@ -527,12 +603,16 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertEqual(
             [((repository.getInternalPath(), []),
-              {"filter_paths": [".launchpad.yaml"]})],
+              {"filter_paths": [".launchpad.yaml"], "logger": None})],
             hosting_fixture.getCommits.calls
         )
 
         self.assertTrue(
             getUtility(ICIBuildSet).findByGitRepository(repository).is_empty()
+        )
+        self.assertTrue(
+            getUtility(IRevisionStatusReportSet).findByRepository(
+                repository).is_empty()
         )
 
     def test_requestBuildsForRefs_no_matching_commits(self):
@@ -547,12 +627,16 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertEqual(
             [((repository.getInternalPath(), [ref.commit_sha1]),
-              {"filter_paths": [".launchpad.yaml"]})],
+              {"filter_paths": [".launchpad.yaml"], "logger": None})],
             hosting_fixture.getCommits.calls
         )
 
         self.assertTrue(
             getUtility(ICIBuildSet).findByGitRepository(repository).is_empty()
+        )
+        self.assertTrue(
+            getUtility(IRevisionStatusReportSet).findByRepository(
+                repository).is_empty()
         )
 
     def test_requestBuildsForRefs_configuration_parse_error(self):
@@ -585,18 +669,94 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertEqual(
             [((repository.getInternalPath(), [ref.commit_sha1]),
-              {"filter_paths": [".launchpad.yaml"]})],
+              {"filter_paths": [".launchpad.yaml"], "logger": logger})],
             hosting_fixture.getCommits.calls
         )
 
         self.assertTrue(
             getUtility(ICIBuildSet).findByGitRepository(repository).is_empty()
         )
+        self.assertTrue(
+            getUtility(IRevisionStatusReportSet).findByRepository(
+                repository).is_empty()
+        )
 
         self.assertEqual(
             "ERROR Cannot parse .launchpad.yaml from %s: "
             "Configuration file does not declare 'pipeline'\n" % (
                 repository.unique_name,),
+            logger.getLogBuffer()
+        )
+
+    def test_requestBuildsForRefs_no_pipeline_defined(self):
+        # If the job's configuration does not define any pipeline stages,
+        # requestBuildsForRefs logs an error.
+        configuration = b"pipeline: []\njobs: {}\n"
+        [ref] = self.factory.makeGitRefs()
+        encoded_commit_json = {
+            "sha1": ref.commit_sha1,
+            "blobs": {".launchpad.yaml": configuration},
+        }
+        hosting_fixture = self.useFixture(
+            GitHostingFixture(commits=[encoded_commit_json])
+        )
+        logger = BufferLogger()
+
+        getUtility(ICIBuildSet).requestBuildsForRefs(
+            ref.repository, [ref.path], logger)
+
+        self.assertEqual(
+            [((ref.repository.getInternalPath(), [ref.commit_sha1]),
+              {"filter_paths": [".launchpad.yaml"], "logger": logger})],
+            hosting_fixture.getCommits.calls
+        )
+        self.assertTrue(
+            getUtility(ICIBuildSet).findByGitRepository(
+                ref.repository).is_empty()
+        )
+        self.assertTrue(
+            getUtility(IRevisionStatusReportSet).findByRepository(
+                ref.repository).is_empty()
+        )
+        self.assertEqual(
+            "ERROR Failed to request CI builds for %s: "
+            "No pipeline stages defined\n" % ref.commit_sha1,
+            logger.getLogBuffer()
+        )
+
+    def test_requestBuildsForRefs_undefined_job(self):
+        # If the job's configuration has a pipeline that defines a job not
+        # in the jobs matrix, requestBuildsForRefs logs an error.
+        configuration = b"pipeline: [test]\njobs: {}\n"
+        [ref] = self.factory.makeGitRefs()
+        encoded_commit_json = {
+            "sha1": ref.commit_sha1,
+            "blobs": {".launchpad.yaml": configuration},
+        }
+        hosting_fixture = self.useFixture(
+            GitHostingFixture(commits=[encoded_commit_json])
+        )
+        logger = BufferLogger()
+
+        getUtility(ICIBuildSet).requestBuildsForRefs(
+            ref.repository, [ref.path], logger)
+
+        self.assertEqual(
+            [((ref.repository.getInternalPath(), [ref.commit_sha1]),
+              {"filter_paths": [".launchpad.yaml"], "logger": logger})],
+            hosting_fixture.getCommits.calls
+        )
+        self.assertTrue(
+            getUtility(ICIBuildSet).findByGitRepository(
+                ref.repository).is_empty()
+        )
+        self.assertTrue(
+            getUtility(IRevisionStatusReportSet).findByRepository(
+                ref.repository).is_empty()
+        )
+        self.assertEqual(
+            "ERROR Failed to request CI builds for %s: "
+            "No job definition for 'test'\n" % ref.commit_sha1,
             logger.getLogBuffer()
         )
 
@@ -639,12 +799,16 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertEqual(
             [((repository.getInternalPath(), [ref.commit_sha1]),
-              {"filter_paths": [".launchpad.yaml"]})],
+              {"filter_paths": [".launchpad.yaml"], "logger": logger})],
             hosting_fixture.getCommits.calls
         )
 
         self.assertTrue(
             getUtility(ICIBuildSet).findByGitRepository(repository).is_empty()
+        )
+        self.assertTrue(
+            getUtility(IRevisionStatusReportSet).findByRepository(
+                repository).is_empty()
         )
         self.assertEqual(
             "INFO Requesting CI build "
@@ -691,12 +855,16 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         self.assertEqual(
             [((repository.getInternalPath(), [ref.commit_sha1]),
-              {"filter_paths": [".launchpad.yaml"]})],
+              {"filter_paths": [".launchpad.yaml"], "logger": logger})],
             hosting_fixture.getCommits.calls
         )
 
         self.assertTrue(
             getUtility(ICIBuildSet).findByGitRepository(repository).is_empty()
+        )
+        self.assertTrue(
+            getUtility(IRevisionStatusReportSet).findByRepository(
+                repository).is_empty()
         )
 
         log_line1, log_line2 = logger.getLogBuffer().splitlines()
@@ -836,3 +1004,144 @@ class TestDetermineDASesToBuild(TestCaseWithFactory):
             "name in Ubuntu %s\n" % distro_series.name,
             logger.getLogBuffer()
         )
+
+
+class TestCIBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
+    """Test CIBuild macaroon issuing and verification."""
+
+    layer = LaunchpadZopelessLayer
+
+    def setUp(self):
+        super().setUp()
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+
+    def test_issueMacaroon_good(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        issuer = getUtility(IMacaroonIssuer, "ci-build")
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
+        self.assertThat(macaroon, MatchesStructure(
+            location=Equals("launchpad.test"),
+            identifier=Equals("ci-build"),
+            caveats=MatchesListwise([
+                MatchesStructure.byEquality(
+                    caveat_id="lp.ci-build %s" % build.id),
+                ])))
+
+    def test_issueMacaroon_via_authserver(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        private_root = getUtility(IPrivateApplication)
+        authserver = AuthServerAPIView(private_root.authserver, TestRequest())
+        macaroon = Macaroon.deserialize(
+            authserver.issueMacaroon("ci-build", "CIBuild", build.id))
+        self.assertThat(macaroon, MatchesStructure(
+            location=Equals("launchpad.test"),
+            identifier=Equals("ci-build"),
+            caveats=MatchesListwise([
+                MatchesStructure.byEquality(
+                    caveat_id="lp.ci-build %s" % build.id),
+                ])))
+
+    def test_verifyMacaroon_good_repository(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(issuer, macaroon, build.git_repository)
+
+    def test_verifyMacaroon_good_no_context(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(
+            issuer, macaroon, None, require_context=False)
+        self.assertMacaroonVerifies(
+            issuer, macaroon, build.git_repository, require_context=False)
+
+    def test_verifyMacaroon_no_context_but_require_context(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Expected macaroon verification context but got None."],
+            issuer, macaroon, None)
+
+    def test_verifyMacaroon_wrong_location(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = Macaroon(
+            location="another-location", key=issuer._root_secret)
+        self.assertMacaroonDoesNotVerify(
+            ["Macaroon has unknown location 'another-location'."],
+            issuer, macaroon, build.git_repository)
+        self.assertMacaroonDoesNotVerify(
+            ["Macaroon has unknown location 'another-location'."],
+            issuer, macaroon, build.git_repository, require_context=False)
+
+    def test_verifyMacaroon_wrong_key(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = Macaroon(
+            location=config.vhost.mainsite.hostname, key="another-secret")
+        self.assertMacaroonDoesNotVerify(
+            ["Signatures do not match"],
+            issuer, macaroon, build.git_repository)
+        self.assertMacaroonDoesNotVerify(
+            ["Signatures do not match"],
+            issuer, macaroon, build.git_repository, require_context=False)
+
+    def test_verifyMacaroon_not_building(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.ci-build %s' failed." % build.id],
+            issuer, macaroon, build.git_repository)
+
+    def test_verifyMacaroon_wrong_build(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        build.updateStatus(BuildStatus.BUILDING)
+        other_build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        other_build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = issuer.issueMacaroon(other_build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.ci-build %s' failed." % other_build.id],
+            issuer, macaroon, build.git_repository)
+
+    def test_verifyMacaroon_wrong_repository(self):
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                information_type=InformationType.USERDATA))
+        other_repository = self.factory.makeGitRepository()
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(getUtility(IMacaroonIssuer, "ci-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.ci-build %s' failed." % build.id],
+            issuer, macaroon, other_repository)

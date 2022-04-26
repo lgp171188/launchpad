@@ -23,8 +23,10 @@ class TestRabbitServer(TestCase):
         # tests fail to cleanup.
         self.useFixture(EnvironmentVariableFixture('HOME', '/nonsense/value'))
 
+        # The default timeout is 15 seconds, but increase this a bit to
+        # allow some more leeway for slow test environments.
+        fixture = self.useFixture(RabbitServer(ctltimeout=60))
         # RabbitServer pokes some .ini configuration into its config.
-        fixture = self.useFixture(RabbitServer())
         service_config = ConfigParser()
         service_config.read_file(io.StringIO(fixture.config.service_config))
         self.assertEqual(["rabbitmq"], service_config.sections())

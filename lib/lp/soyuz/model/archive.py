@@ -140,7 +140,9 @@ from lp.soyuz.adapters.packagelocation import PackageLocation
 from lp.soyuz.enums import (
     archive_suffixes,
     ArchivePermissionType,
+    ArchivePublishingMethod,
     ArchivePurpose,
+    ArchiveRepositoryFormat,
     ArchiveStatus,
     ArchiveSubscriberStatus,
     PackageCopyPolicy,
@@ -368,6 +370,14 @@ class Archive(SQLBase):
         notNull=True, default=False)
 
     dirty_suites = JSON(name='dirty_suites', allow_none=True)
+
+    _publishing_method = DBEnum(
+        name='publishing_method', allow_none=True,
+        enum=ArchivePublishingMethod)
+
+    _repository_format = DBEnum(
+        name='repository_format', allow_none=True,
+        enum=ArchiveRepositoryFormat)
 
     def _init(self, *args, **kw):
         """Provide the right interface for URL traversal."""
@@ -2481,6 +2491,28 @@ class Archive(SQLBase):
         elif suite not in self.dirty_suites:
             self.dirty_suites.append(suite)
 
+    @property
+    def publishing_method(self):
+        # XXX cjwatson 2022-04-04: Remove once this column has been backfilled.
+        return (
+            ArchivePublishingMethod.LOCAL if self._publishing_method is None
+            else self._publishing_method)
+
+    @publishing_method.setter
+    def publishing_method(self, value):
+        self._publishing_method = value
+
+    @property
+    def repository_format(self):
+        # XXX cjwatson 2022-04-04: Remove once this column has been backfilled.
+        return (
+            ArchiveRepositoryFormat.DEBIAN if self._repository_format is None
+            else self._repository_format)
+
+    @repository_format.setter
+    def repository_format(self, value):
+        self._repository_format = value
+
 
 def validate_ppa(owner, distribution, proposed_name, private=False):
     """Can 'person' create a PPA called 'proposed_name'?
@@ -2655,7 +2687,9 @@ class ArchiveSet:
     def new(self, purpose, owner, name=None, displayname=None,
             distribution=None, description=None, enabled=True,
             require_virtualized=True, private=False,
-            suppress_subscription_notifications=False, processors=None):
+            suppress_subscription_notifications=False, processors=None,
+            publishing_method=ArchivePublishingMethod.LOCAL,
+            repository_format=ArchiveRepositoryFormat.DEBIAN):
         """See `IArchiveSet`."""
         if distribution is None:
             distribution = getUtility(ILaunchpadCelebrities).ubuntu
@@ -2717,7 +2751,9 @@ class ArchiveSet:
             purpose=purpose, publish=publish,
             signing_key_owner=signing_key_owner,
             signing_key_fingerprint=signing_key_fingerprint,
-            require_virtualized=require_virtualized)
+            require_virtualized=require_virtualized,
+            _publishing_method=publishing_method,
+            _repository_format=repository_format)
 
         # Upon creation archives are enabled by default.
         if enabled == False:

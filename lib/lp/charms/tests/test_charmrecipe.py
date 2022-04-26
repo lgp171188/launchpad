@@ -73,11 +73,13 @@ from lp.charms.interfaces.charmrecipebuild import (
     ICharmRecipeBuild,
     ICharmRecipeBuildSet,
     )
+from lp.charms.interfaces.charmrecipebuildjob import ICharmhubUploadJobSource
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
     )
 from lp.charms.model.charmrecipe import CharmRecipeSet
 from lp.charms.model.charmrecipebuild import CharmFile
+from lp.charms.model.charmrecipebuildjob import CharmRecipeBuildJob
 from lp.charms.model.charmrecipejob import CharmRecipeJob
 from lp.code.errors import GitRepositoryBlobNotFound
 from lp.code.tests.helpers import GitHostingFixture
@@ -955,7 +957,7 @@ class TestCharmRecipeDeleteWithBuilds(TestCaseWithFactory):
     def test_delete_with_builds(self):
         # A charm recipe with build requests and builds can be deleted.
         # Doing so deletes all its build requests, their builds, and their
-        # files.
+        # files, and any associated build jobs too.
         owner = self.factory.makePerson()
         project = self.factory.makeProduct()
         distroseries = self.factory.makeDistroSeries()
@@ -997,17 +999,23 @@ class TestCharmRecipeDeleteWithBuilds(TestCaseWithFactory):
             [other_build] = requests[1].builds
             charm_file = self.factory.makeCharmFile(build=build)
             other_charm_file = self.factory.makeCharmFile(build=other_build)
+            charm_build_job = getUtility(
+                ICharmhubUploadJobSource).create(build)
+            other_build_job = getUtility(
+                ICharmhubUploadJobSource).create(other_build)
         store = Store.of(condemned_recipe)
         store.flush()
         job_ids = [job.job_id for job in jobs]
         build_id = build.id
         build_queue_id = build.buildqueue_record.id
         build_farm_job_id = removeSecurityProxy(build).build_farm_job_id
+        charm_build_job_id = charm_build_job.job_id
         charm_file_id = removeSecurityProxy(charm_file).id
         with person_logged_in(condemned_recipe.owner):
             condemned_recipe.destroySelf()
         flush_database_caches()
-        # The deleted recipe, its build requests, and its builds are gone.
+        # The deleted recipe, its build requests, its builds and the build job
+        # are gone.
         self.assertFalse(
             getUtility(ICharmRecipeSet).exists(owner, project, "condemned"))
         self.assertIsNone(store.get(CharmRecipeJob, job_ids[0]))
@@ -1015,7 +1023,10 @@ class TestCharmRecipeDeleteWithBuilds(TestCaseWithFactory):
         self.assertIsNone(store.get(BuildQueue, build_queue_id))
         self.assertIsNone(store.get(BuildFarmJob, build_farm_job_id))
         self.assertIsNone(store.get(CharmFile, charm_file_id))
-        # Unrelated build requests and builds are still present.
+        self.assertIsNone(store.get(CharmRecipeBuildJob, charm_build_job_id))
+        # Unrelated build requests, build jobs and builds are still present.
+        self.assertIsNotNone(
+            store.get(CharmRecipeBuildJob, other_build_job.job_id))
         self.assertEqual(
             removeSecurityProxy(jobs[1]).context,
             store.get(CharmRecipeJob, job_ids[1]))

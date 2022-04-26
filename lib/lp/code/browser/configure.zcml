@@ -1422,6 +1422,44 @@
             for="lp.code.interfaces.cibuild.ICIBuild"
             path_expression="string:+build/${id}"
             attribute_to_parent="git_repository"/>
+        <browser:menus
+            module="lp.code.browser.cibuild"
+            classes="CIBuildContextMenu" />
+        <browser:navigation
+            module="lp.code.browser.cibuild"
+            classes="CIBuildNavigation" />
+        <browser:defaultView
+            for="lp.code.interfaces.cibuild.ICIBuild"
+            name="+index" />
+        <browser:page
+            for="lp.code.interfaces.cibuild.ICIBuild"
+            class="lp.code.browser.cibuild.CIBuildView"
+            permission="launchpad.View"
+            name="+index"
+            template="../templates/cibuild-index.pt" />
+        <browser:page
+            for="lp.code.interfaces.cibuild.ICIBuild"
+            class="lp.code.browser.cibuild.CIBuildRetryView"
+            permission="launchpad.Edit"
+            name="+retry"
+            template="../templates/cibuild-retry.pt" />
+        <browser:page
+            for="lp.code.interfaces.cibuild.ICIBuild"
+            class="lp.code.browser.cibuild.CIBuildCancelView"
+            permission="launchpad.Edit"
+            name="+cancel"
+            template="../../app/templates/generic-edit.pt" />
+        <browser:page
+            for="lp.code.interfaces.cibuild.ICIBuild"
+            class="lp.code.browser.cibuild.CIBuildRescoreView"
+            permission="launchpad.Admin"
+            name="+rescore"
+            template="../../app/templates/generic-edit.pt" />
+        <adapter
+            provides="lp.services.webapp.interfaces.IBreadcrumb"
+            for="lp.code.interfaces.cibuild.ICIBuild"
+            factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
+            permission="zope.Public" />
 
     </facet>
 

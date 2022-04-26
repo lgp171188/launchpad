@@ -418,7 +418,7 @@ XXX Mon May  7 10:02:49 2007 -- bac
     >>> redirect_resp = http("""
     ...     GET %s HTTP/1.1""" % url_path)
     >>> redirect_url = None
-    >>> for line in six.text_type(redirect_resp).splitlines()[1:]:
+    >>> for line in str(redirect_resp).splitlines()[1:]:
     ...     key, value = line.split(": ", 1)
     ...     if key.lower() == "location":
     ...         redirect_url = value

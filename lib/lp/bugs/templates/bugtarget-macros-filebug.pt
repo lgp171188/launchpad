@@ -138,13 +138,14 @@
 
 <metal:not_uses_malone define-macro="not_uses_malone">
   <tal:not_uses_malone tal:condition="not: view/contextUsesMalone">
-    <tal:has-context define="product_or_distro view/getProductOrDistroFromContext"
+    <tal:has-context define="product_or_distro view/getProductOrDistroFromContext;
+                             overview_menu context/menu:overview"
                      condition="product_or_distro">
       <div class="highlight-message">
         <a tal:replace="structure product_or_distro/fmt:link">Alsa Utils</a>
         <strong>does not use</strong> Launchpad as its bug tracker.
-        <a tal:attributes="href context/menu:overview/configure_bugtracker/fmt:url"
-           tal:condition="context/required:launchpad.Edit">
+        <a tal:condition="overview_menu/configure_bugtracker/enabled|nothing"
+           tal:attributes="href overview_menu/configure_bugtracker/fmt:url">
           Change this <span class="sprite edit action-icon">Edit</span>
         </a>
       </div>

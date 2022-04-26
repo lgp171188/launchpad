@@ -91,7 +91,7 @@ For Launchpad admins the property is true.
     >>> print(view.show_commercial_subscription_info)
     True
 
-For Launchpad commercial members th property is true.
+For Launchpad commercial members the property is true.
 
     >>> login('commercial-member@canonical.com')
     >>> view = create_initialized_view(firefox, name='+index')

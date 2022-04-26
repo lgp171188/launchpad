@@ -61,7 +61,10 @@ from lp.registry.interfaces.person import (
     IPersonSet,
     PersonCreationRationale,
     )
-from lp.registry.interfaces.sourcepackage import SourcePackageFileType
+from lp.registry.interfaces.sourcepackage import (
+    SourcePackageFileType,
+    SourcePackageType,
+    )
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.services.encoding import guess as guess_encoding
 from lp.services.gpg.interfaces import (
@@ -694,6 +697,7 @@ class DSCFile(SourceUploadFile, SignableTagFile):
         release = self.policy.distroseries.createUploadedSourcePackageRelease(
             sourcepackagename=source_name,
             version=self.dsc_version,
+            format=SourcePackageType.DPKG,
             maintainer=self.maintainer['person'],
             builddepends=encoded.get('Build-Depends', ''),
             builddependsindep=encoded.get('Build-Depends-Indep', ''),

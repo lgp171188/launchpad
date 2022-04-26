@@ -324,7 +324,7 @@ class SourcePackageRecipeBuild(SpecificBuildFarmJobSourceMixin,
             return median
         return timedelta(minutes=10)
 
-    def verifySuccessfulUpload(self):
+    def verifySuccessfulUpload(self) -> bool:
         return self.source_package_release is not None
 
     def notify(self, extra_info=None):

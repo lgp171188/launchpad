@@ -782,6 +782,13 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
                 CharmFile.build = CharmRecipeBuild.id AND
                 CharmRecipeBuild.recipe = ?
             """, (self.id,))
+        store.execute("""
+            DELETE FROM CharmRecipeBuildJob
+            USING CharmRecipeBuild
+            WHERE
+                CharmRecipeBuildJob.build = CharmRecipeBuild.id AND
+                CharmRecipeBuild.recipe = ?
+            """, (self.id,))
         store.find(CharmRecipeBuild, CharmRecipeBuild.recipe == self).remove()
         affected_jobs = Select(
             [CharmRecipeJob.job_id],

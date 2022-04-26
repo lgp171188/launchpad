@@ -444,6 +444,35 @@ class TestDistributionPickerEntrySourceAdapter(TestCaseWithFactory):
             'http://launchpad.test/fnord',
             self.getPickerEntry(distribution).alt_title_link)
 
+    def test_provides_commercial_subscription_none(self):
+        distribution = self.factory.makeDistribution()
+        self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.CURRENT)
+        self.assertEqual(
+            'Commercial Subscription: None',
+            self.getPickerEntry(distribution).details[1])
+
+    def test_provides_commercial_subscription_active(self):
+        distribution = self.factory.makeDistribution()
+        self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.CURRENT)
+        self.factory.makeCommercialSubscription(distribution)
+        self.assertEqual(
+            'Commercial Subscription: Active',
+            self.getPickerEntry(distribution).details[1])
+
+    def test_provides_commercial_subscription_expired(self):
+        distribution = self.factory.makeDistribution()
+        self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.CURRENT)
+        self.factory.makeCommercialSubscription(distribution)
+        then = datetime(2005, 6, 15, 0, 0, 0, 0, pytz.UTC)
+        with celebrity_logged_in('admin'):
+            distribution.commercial_subscription.date_expires = then
+        self.assertEqual(
+            'Commercial Subscription: Expired',
+            self.getPickerEntry(distribution).details[1])
+
 
 @implementer(IHugeVocabulary)
 class TestPersonVocabulary:

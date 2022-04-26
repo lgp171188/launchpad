@@ -99,6 +99,7 @@ from lp.code.errors import (
     GitRepositoryExists,
     GitTargetError,
     )
+from lp.code.interfaces.cibuild import ICIBuildSet
 from lp.code.interfaces.gitnamespace import get_git_namespace
 from lp.code.interfaces.gitref import IGitRefBatchNavigator
 from lp.code.interfaces.gitrepository import (
@@ -145,6 +146,7 @@ from lp.services.webapp.publisher import DataDownloadView
 from lp.services.webapp.snapshot import notify_modified
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.snappy.browser.hassnaps import HasSnapsViewMixin
+from lp.soyuz.browser.build import get_build_by_id_str
 
 
 GIT_REPOSITORY_FORK_ENABLED = 'gitrepository.fork.enabled'
@@ -269,6 +271,13 @@ class GitRepositoryNavigation(WebhookTargetNavigationMixin, Navigation):
     def traverse_code_import(self):
         """Traverses to the `ICodeImport` for the repository."""
         return self.context.code_import
+
+    @stepthrough("+build")
+    def traverse_build(self, name):
+        build = get_build_by_id_str(ICIBuildSet, name)
+        if build is None or build.git_repository != self.context:
+            return None
+        return build
 
 
 class GitRepositoryEditMenu(NavigationMenu):

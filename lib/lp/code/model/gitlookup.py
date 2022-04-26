@@ -18,6 +18,8 @@ from zope.component import (
     queryMultiAdapter,
     )
 from zope.interface import implementer
+from zope.security.interfaces import Unauthorized
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NameLookupFailed
 from lp.app.validators.name import valid_name
@@ -147,7 +149,10 @@ class ProjectGitTraversable(_BaseGitTraversable):
                 ociproject_name = next(segments)
             except StopIteration:
                 raise InvalidNamespace("/".join(segments.traversed))
-            oci_project = self.context.getOCIProject(ociproject_name)
+            try:
+                oci_project = self.context.getOCIProject(ociproject_name)
+            except Unauthorized:
+                oci_project = None
             if oci_project is None:
                 raise NoSuchOCIProjectName(ociproject_name)
             return owner, oci_project, None
@@ -184,12 +189,18 @@ class DistributionGitTraversable(_BaseGitTraversable):
         except StopIteration:
             raise InvalidNamespace("/".join(segments.traversed))
         if name == "+source":
-            distro_source_package = self.context.getSourcePackage(spn_name)
+            try:
+                distro_source_package = self.context.getSourcePackage(spn_name)
+            except Unauthorized:
+                distro_source_package = None
             if distro_source_package is None:
                 raise NoSuchSourcePackageName(spn_name)
             return owner, distro_source_package, None
         elif name == "+oci":
-            oci_project = self.context.getOCIProject(spn_name)
+            try:
+                oci_project = self.context.getOCIProject(spn_name)
+            except Unauthorized:
+                oci_project = None
             if oci_project is None:
                 raise NoSuchOCIProjectName(spn_name)
             return owner, oci_project, None
@@ -281,7 +292,7 @@ class SegmentIterator:
 class GitTraverser:
     """Utility for traversing to objects that can have Git repositories."""
 
-    def traverse(self, segments, owner=None):
+    def traverse(self, segments, owner=None, check_permissions=True):
         """See `IGitTraverser`."""
         repository = None
         if owner is None:
@@ -308,15 +319,18 @@ class GitTraverser:
                     break
             if repository is not None:
                 break
+            if not check_permissions:
+                target = removeSecurityProxy(target)
             traversable = adapt(target, IGitTraversable)
         if target is None or not IHasGitRepositories.providedBy(target):
             raise InvalidNamespace("/".join(segments_iter.traversed))
         return owner, target, repository, trailing
 
-    def traverse_path(self, path):
+    def traverse_path(self, path, check_permissions=True):
         """See `IGitTraverser`."""
         segments = iter(path.split("/"))
-        owner, target, repository, trailing = self.traverse(segments)
+        owner, target, repository, trailing = self.traverse(
+            segments, check_permissions=check_permissions)
         if trailing or list(segments):
             raise InvalidNamespace(path)
         return owner, target, repository
@@ -386,12 +400,13 @@ class GitLookup:
             pass
         return None
 
-    def getByPath(self, path):
+    def getByPath(self, path, check_permissions=True):
         """See `IGitLookup`."""
         traverser = getUtility(IGitTraverser)
         segments = iter(path.split("/"))
         try:
-            owner, target, repository, trailing = traverser.traverse(segments)
+            owner, target, repository, trailing = traverser.traverse(
+                segments, check_permissions=check_permissions)
         except (InvalidNamespace, InvalidProductName, NameLookupFailed):
             return None, None
         if repository is None:

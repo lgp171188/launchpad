@@ -241,7 +241,14 @@ class GitAPI(LaunchpadXMLRPCView):
 
         :return: A tuple with the repository object and a dict with
                  translation information."""
-        repository, extra_path = getUtility(IGitLookup).getByPath(path)
+        # Skip permission checks on intermediate URL segments if
+        # internal-services authentication was requested, since in that case
+        # they'll never succeed for elements of private pillars.  This is
+        # safe because internal services can only authenticate using
+        # macaroons issued for a specific repository.
+        check_permissions = requester != LAUNCHPAD_SERVICES
+        repository, extra_path = getUtility(IGitLookup).getByPath(
+            path, check_permissions=check_permissions)
         if repository is None:
             return None, None
 

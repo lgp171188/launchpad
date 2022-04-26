@@ -277,8 +277,7 @@ response) bugs.
     >>> user_browser.getControl('Search', index=1).click()
     >>> ('<a class="bugtitle" '
     ...  'href="http://bugs.launchpad.test/jokosher/+bug/11">' in
-    ...     six.text_type(
-    ...         find_tag_by_id(user_browser.contents, 'bugs-table-listing')))
+    ...     str(find_tag_by_id(user_browser.contents, 'bugs-table-listing')))
     True
 
 A default search turns that bug up as well.
@@ -289,6 +288,5 @@ A default search turns that bug up as well.
     http://bugs.launchpad.test/jokosher/+bugs?...&field.status%3Alist=INCOMPLETE_WITH_RESPONSE&field.status%3Alist=INCOMPLETE_WITHOUT_RESPONSE...
     >>> ('<a class="bugtitle" '
     ...  'href="http://bugs.launchpad.test/jokosher/+bug/11">' in
-    ...     six.text_type(
-    ...         find_tag_by_id(user_browser.contents, 'bugs-table-listing')))
+    ...     str(find_tag_by_id(user_browser.contents, 'bugs-table-listing')))
     True

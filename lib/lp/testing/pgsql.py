@@ -14,6 +14,10 @@ import time
 from breezy.errors import LockContention
 from breezy.lock import WriteLock
 import psycopg2
+from psycopg2.errors import (
+    InvalidCatalogName,
+    ObjectInUse,
+    )
 
 from lp.services.config import config
 from lp.services.database import activity_cols
@@ -381,6 +385,8 @@ rw_main_standby: dbname=%s
             try:
                 con = self.superuser_connection(self.template)
             except psycopg2.OperationalError as x:
+                # At least in psycopg2 2.8.6, this doesn't seem to end up as
+                # a more specific exception type.
                 if 'does not exist' in str(x):
                     return
                 raise
@@ -406,17 +412,15 @@ rw_main_standby: dbname=%s
                 try:
                     cur = con.cursor()
                     cur.execute('DROP DATABASE %s' % self.dbname)
-                except psycopg2.DatabaseError as x:
-                    if i == attempts - 1:
+                except InvalidCatalogName:
+                    break
+                except ObjectInUse:
+                    if i < attempts - 1:
+                        time.sleep(0.1)
+                        continue
+                    else:
                         # Too many failures - raise an exception
                         raise
-                    if 'being accessed by other users' in str(x):
-                        if i < attempts - 1:
-                            time.sleep(0.1)
-                            continue
-                    if 'does not exist' in str(x):
-                        break
-                    raise
                 PgTestSetup._vacuum_shdepend_counter += 1
                 if (PgTestSetup._vacuum_shdepend_counter
                     % PgTestSetup.vacuum_shdepend_every) == 0:

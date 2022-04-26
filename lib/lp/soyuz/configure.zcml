@@ -367,9 +367,13 @@
             interface="lp.soyuz.interfaces.archive.IArchiveAdmin"
             set_attributes="authorized_size
                             enabled_restricted_processors
-                            external_dependencies name
+                            external_dependencies
+                            name
                             permit_obsolete_series_uploads
-                            private require_virtualized"/>
+                            private
+                            publishing_method
+                            repository_format
+                            require_virtualized"/>
         <require
             permission="launchpad.Moderate"
             set_schema="lp.soyuz.interfaces.archive.IArchiveRestricted"/>

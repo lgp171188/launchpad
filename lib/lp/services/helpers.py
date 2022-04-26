@@ -41,7 +41,7 @@ def text_replaced(text, replacements, _cache={}):
     Unicode strings work too.
 
     >>> replaced = text_replaced(u'1 2 3 4', {u'1': u'2', u'2': u'1'})
-    >>> isinstance(replaced, six.text_type)
+    >>> isinstance(replaced, str)
     True
     >>> print(replaced)
     2 1 3 4

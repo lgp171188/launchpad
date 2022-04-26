@@ -23,11 +23,8 @@ from requests.exceptions import (
     ConnectionError,
     HTTPError,
     )
+from requests.utils import parse_dict_header
 from six.moves.urllib.parse import urlparse
-from six.moves.urllib.request import (
-    parse_http_list,
-    parse_keqv_list,
-    )
 from tenacity import (
     before_log,
     retry,
@@ -707,7 +704,7 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
         parameters of the token GET request."""
         instructions = request.headers['Www-Authenticate']
         token_type, values = instructions.split(' ', 1)
-        dict_values = parse_keqv_list(parse_http_list(values))
+        dict_values = parse_dict_header(values)
         return token_type, dict_values
 
     def authenticate(self, last_failed_request):

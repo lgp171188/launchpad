@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces including and related to IDistroSeries."""
@@ -668,7 +668,7 @@ class IDistroSeriesPublic(
         """
 
     def createUploadedSourcePackageRelease(
-        sourcepackagename, version, maintainer, builddepends,
+        sourcepackagename, version, format, maintainer, builddepends,
         builddependsindep, architecturehintlist, component, creator, urgency,
         changelog, changelog_entry, dsc, dscsigningkey, section,
         dsc_maintainer_rfc822, dsc_standards_version, dsc_format,
@@ -686,6 +686,7 @@ class IDistroSeriesPublic(
          :param dateuploaded: timestamp, if not provided will be UTC_NOW
          :param sourcepackagename: `ISourcePackageName`
          :param version: string, a debian valid version
+         :param format: `SourcePackageType`
          :param maintainer: IPerson designed as package maintainer
          :param creator: IPerson, package uploader
          :param component: IComponent
@@ -728,26 +729,6 @@ class IDistroSeriesPublic(
 
     def addSection(section):
         """SQLObject provided method to fill a related join key section."""
-
-    def getBinaryPackagePublishing(archtag, pocket, component, archive):
-        """Get BinaryPackagePublishings in a DistroSeries.
-
-        Can optionally restrict the results by architecturetag, pocket and/or
-        component.
-
-        If archive is passed, restricted the results to the given archive,
-        if it is suppressed the results will be restricted to the
-        distribution 'main_archive'.
-        """
-
-    def getSourcePackagePublishing(pocket, component, archive):
-        """Return a selectResult of ISourcePackagePublishingHistory.
-
-        According status and pocket.
-        If archive is passed, restricted the results to the given archive,
-        if it is suppressed the results will be restricted to the
-        distribution 'main_archive'.
-        """
 
     def searchPackages(text):
         """Search through the package cache for this distroseries and return

@@ -52,7 +52,7 @@ class LibrarianUploader(LaunchpadScript):
             file.
         """
         try:
-            file = open(filepath)
+            file = open(filepath, "rb")
         except OSError:
             raise LaunchpadScriptFailure('Could not open: %s' % filepath)
 

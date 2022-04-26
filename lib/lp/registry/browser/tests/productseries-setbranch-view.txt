@@ -232,7 +232,7 @@ But Git branches may use git.
     >>> print(series.branch.name)
     chevette-branch
 
-But Subversion branches cannnot use git.
+But Subversion branches cannot use git.
 
     >>> form = {
     ...     'field.branch_type': 'import-external',

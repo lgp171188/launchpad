@@ -466,6 +466,12 @@ class IDistributionView(
             "An object which contains the timeframe and the voucher code of a "
             "subscription.")))
 
+    commercial_subscription_is_due = exported(Bool(
+        title=_("Commercial subscription is due"), readonly=True,
+        description=_(
+            "Whether the distribution's licensing requires a new commercial "
+            "subscription to use launchpad.")))
+
     has_current_commercial_subscription = Attribute(
         "Whether the distribution has a current commercial subscription.")
 
@@ -574,6 +580,20 @@ class IDistributionView(
     @export_read_operation()
     def getCountryMirror(country, mirror_type):
         """Return the country DNS mirror for a country and content type."""
+
+    @operation_parameters(
+        country=copy_field(IDistributionMirror['country'], required=True),
+        mirror_type=copy_field(IDistributionMirror['content'], required=True))
+    @operation_returns_collection_of(IDistributionMirror)
+    @export_read_operation()
+    @operation_for_version('devel')
+    def getBestMirrorsForCountry(country, mirror_type):
+        """Return the best mirrors to be used by someone in the given country.
+
+        The list of mirrors is composed by the official mirrors located in
+        the given country (or in the country's continent if the country
+        doesn't have any) plus the main mirror of that type.
+        """
 
     def newMirror(owner, speed, country, content, display_name=None,
                   description=None, http_base_url=None, https_base_url=None,

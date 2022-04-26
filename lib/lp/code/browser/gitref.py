@@ -40,6 +40,7 @@ from lp.charms.browser.hascharmrecipes import (
 from lp.code.browser.branchmergeproposal import (
     latest_proposals_for_each_branch,
     )
+from lp.code.browser.revisionstatus import HasRevisionStatusReportsMixin
 from lp.code.browser.sourcepackagerecipelisting import HasRecipesMenuMixin
 from lp.code.browser.widgets.gitref import GitRefWidget
 from lp.code.enums import GitRepositoryType
@@ -66,7 +67,6 @@ from lp.services.webapp import (
     Link,
     )
 from lp.services.webapp.authorization import check_permission
-from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.escaping import structured
 from lp.snappy.browser.hassnaps import (
     HasSnapsMenuMixin,
@@ -118,7 +118,8 @@ class GitRefContextMenu(
         return Link("+new-recipe", text, enabled=enabled, icon="add")
 
 
-class GitRefView(LaunchpadView, HasSnapsViewMixin, HasCharmRecipesViewMixin):
+class GitRefView(LaunchpadView, HasSnapsViewMixin, HasCharmRecipesViewMixin,
+                 HasRevisionStatusReportsMixin):
 
     # This is set at self.commit_infos, and should be accessed by the view
     # as self.commit_info_message.
@@ -275,10 +276,6 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin, HasCharmRecipesViewMixin):
             return structured(
                 '<a href="+recipes">%s recipes</a> using this branch.',
                 count).escapedtext
-
-    def getStatusReports(self, commit_sha1):
-        reports = self.context.getStatusReports(commit_sha1)
-        return BatchNavigator(reports, self.request)
 
 
 class GitRefRegisterMergeProposalSchema(Interface):

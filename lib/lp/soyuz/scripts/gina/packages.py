@@ -82,7 +82,7 @@ def get_dsc_path(name, version, component, archive_root):
     # We do a first attempt using the obvious directory name, composed
     # with the component. However, this may fail if a binary is being
     # published in another component.
-    pool_dir = poolify(name, component)
+    pool_dir = str(poolify(name, component))
     fullpath = os.path.join(pool_root, pool_dir, filename)
     if os.path.exists(fullpath):
         return filename, fullpath, component
@@ -91,7 +91,7 @@ def get_dsc_path(name, version, component, archive_root):
     for alt_component_entry in os.scandir(pool_root):
         if not alt_component_entry.is_dir():
             continue
-        pool_dir = poolify(name, alt_component_entry.name)
+        pool_dir = str(poolify(name, alt_component_entry.name))
         fullpath = os.path.join(pool_root, pool_dir, filename)
         if os.path.exists(fullpath):
             return filename, fullpath, alt_component_entry.name

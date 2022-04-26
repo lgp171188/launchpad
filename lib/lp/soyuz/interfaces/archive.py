@@ -111,7 +111,9 @@ from lp.services.fields import (
     StrippedTextLine,
     )
 from lp.soyuz.enums import (
+    ArchivePublishingMethod,
     ArchivePurpose,
+    ArchiveRepositoryFormat,
     PackagePublishingStatus,
     )
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
@@ -805,6 +807,14 @@ class IArchiveView(IHasBuildRecords):
     available_processors = Attribute(
         "The architectures that are available to be enabled or disabled for "
         "this archive.")
+
+    publishing_method = Choice(
+        title=_("Publishing method"), vocabulary=ArchivePublishingMethod,
+        required=True, readonly=False)
+
+    repository_format = Choice(
+        title=_("Repository format"), vocabulary=ArchiveRepositoryFormat,
+        required=True, readonly=False)
 
     @call_with(check_permissions=True, user=REQUEST_USER)
     @operation_parameters(
@@ -2321,7 +2331,7 @@ class IArchiveSet(Interface):
     def new(purpose, owner, name=None, displayname=None, distribution=None,
             description=None, enabled=True, require_virtualized=True,
             private=False, suppress_subscription_notifications=False,
-            processors=None):
+            processors=None, publishing_method=None, repository_format=None):
         """Create a new archive.
 
         On named-ppa creation, the signing key for the default PPA for the
@@ -2348,6 +2358,10 @@ class IArchiveSet(Interface):
             emails to subscribers about new subscriptions.
         :param processors: list of `IProcessors` for which the archive should
             build. If omitted, processors with `build_by_default` will be used.
+        :param publishing_method: `ArchivePublishingMethod` for this archive
+            (defaults to `LOCAL`).
+        :param repository_format: `ArchiveRepositoryFormat` for this archive
+            (defaults to `DEBIAN`).
 
         :return: an `IArchive` object.
         :raises AssertionError if name is already taken within distribution.

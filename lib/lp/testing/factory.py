@@ -83,6 +83,7 @@ from lp.bugs.interfaces.bug import (
     IBugSet,
     )
 from lp.bugs.interfaces.bugtask import (
+    BugTaskImportance,
     BugTaskStatus,
     IBugTaskSet,
     )
@@ -94,6 +95,12 @@ from lp.bugs.interfaces.bugwatch import IBugWatchSet
 from lp.bugs.interfaces.cve import (
     CveStatus,
     ICveSet,
+    )
+from lp.bugs.interfaces.vulnerability import (
+    IVulnerabilityActivitySet,
+    IVulnerabilitySet,
+    VulnerabilityChange,
+    VulnerabilityStatus,
     )
 from lp.bugs.model.bug import FileBugData
 from lp.buildmaster.enums import (
@@ -122,7 +129,6 @@ from lp.code.enums import (
     GitRepositoryType,
     RevisionControlSystems,
     RevisionStatusArtifactType,
-    RevisionStatusResult,
     TargetRevisionControlSystems,
     )
 from lp.code.errors import UnknownBranchTypeError
@@ -157,6 +163,7 @@ from lp.code.model.diff import (
     Diff,
     PreviewDiff,
     )
+from lp.code.tests.helpers import GitHostingFixture
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
@@ -239,6 +246,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackage import (
     ISourcePackage,
     SourcePackageFileType,
+    SourcePackageType,
     SourcePackageUrgency,
     )
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
@@ -313,7 +321,9 @@ from lp.snappy.model.snapbuild import SnapFile
 from lp.soyuz.adapters.overrides import SourceOverride
 from lp.soyuz.adapters.packagelocation import PackageLocation
 from lp.soyuz.enums import (
+    ArchivePublishingMethod,
     ArchivePurpose,
+    ArchiveRepositoryFormat,
     BinaryPackageFileType,
     BinaryPackageFormat,
     DistroArchSeriesFilterSense,
@@ -1816,10 +1826,11 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 "type": GitObjectType.COMMIT,
                 }
             for path in paths}
-        refs_by_path = {
-            ref.path: ref
-            for ref in removeSecurityProxy(repository).createOrUpdateRefs(
-                refs_info, get_objects=True)}
+        with GitHostingFixture():
+            refs_by_path = {
+                ref.path: ref
+                for ref in removeSecurityProxy(repository).createOrUpdateRefs(
+                    refs_info, get_objects=True)}
         return [refs_by_path[path] for path in paths]
 
     def makeGitRefRemote(self, repository_url=None, path=None):
@@ -1876,8 +1887,6 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 commit_sha1 = hashlib.sha1(self.getUniqueBytes()).hexdigest()
         if result_summary is None:
             result_summary = self.getUniqueUnicode()
-        if result is None:
-            result = RevisionStatusResult.RUNNING
         return getUtility(IRevisionStatusReportSet).new(
             user, title, git_repository, commit_sha1, url,
             result_summary, result, ci_build=ci_build)
@@ -2993,7 +3002,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                     purpose=None, enabled=True, private=False,
                     virtualized=True, description=None, displayname=None,
                     suppress_subscription_notifications=False,
-                    processors=None):
+                    processors=None,
+                    publishing_method=ArchivePublishingMethod.LOCAL,
+                    repository_format=ArchiveRepositoryFormat.DEBIAN):
         """Create and return a new arbitrary archive.
 
         :param distribution: Supply IDistribution, defaults to a new one
@@ -3009,6 +3020,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         :param suppress_subscription_notifications: Whether to suppress
             subscription notifications, defaults to False.  Only useful
             for private archives.
+        :param publishing_method: `ArchivePublishingMethod` for this archive
+            (defaults to `LOCAL`).
+        :param repository_format: `ArchiveRepositoryFormat` for this archive
+            (defaults to `DEBIAN`).
         """
         if purpose is None:
             purpose = ArchivePurpose.PPA
@@ -3040,7 +3055,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 owner=owner, purpose=purpose,
                 distribution=distribution, name=name, displayname=displayname,
                 enabled=enabled, require_virtualized=virtualized,
-                description=description, processors=processors)
+                description=description, processors=processors,
+                publishing_method=publishing_method,
+                repository_format=repository_format)
 
         if private:
             naked_archive = removeSecurityProxy(archive)
@@ -3835,7 +3852,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                  changelog_entry=None,
                                  homepage=None,
                                  changelog=None,
-                                 copyright=None):
+                                 copyright=None,
+                                 format=None):
         """Make a `SourcePackageRelease`."""
         if distroseries is None:
             if source_package_recipe_build is not None:
@@ -3879,11 +3897,15 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if version is None:
             version = str(self.getUniqueInteger()) + 'version'
 
+        if format is None:
+            format = SourcePackageType.DPKG
+
         if copyright is None:
             copyright = self.getUniqueString()
 
         return distroseries.createUploadedSourcePackageRelease(
             sourcepackagename=sourcepackagename,
+            format=format,
             maintainer=maintainer,
             creator=creator,
             component=component,
@@ -5354,7 +5376,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             processors=processors, date_created=date_created)
 
     def makeCIBuild(self, git_repository=None, commit_sha1=None,
-                    distro_arch_series=None, date_created=DEFAULT,
+                    distro_arch_series=None, stages=None, date_created=DEFAULT,
                     status=BuildStatus.NEEDSBUILD, builder=None,
                     duration=None):
         """Make a new `CIBuild`."""
@@ -5364,8 +5386,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             commit_sha1 = hashlib.sha1(self.getUniqueBytes()).hexdigest()
         if distro_arch_series is None:
             distro_arch_series = self.makeDistroArchSeries()
+        if stages is None:
+            stages = [[("test", 0)]]
         build = getUtility(ICIBuildSet).new(
-            git_repository, commit_sha1, distro_arch_series,
+            git_repository, commit_sha1, distro_arch_series, stages,
             date_created=date_created)
         if duration is not None:
             removeSecurityProxy(build).updateStatus(
@@ -5378,6 +5402,53 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             removeSecurityProxy(build).updateStatus(status, builder=builder)
         IStore(build).flush()
         return build
+
+    def makeVulnerability(self, distribution=None, status=None,
+                          importance=None, creator=None,
+                          information_type=InformationType.PUBLIC, cve=None,
+                          description=None, notes=None, mitigation=None,
+                          importance_explanation=None, date_made_public=None):
+        """Make a new `Vulnerability`."""
+        if distribution is None:
+            distribution = self.makeDistribution()
+        if status is None:
+            status = VulnerabilityStatus.NEEDS_TRIAGE
+        if importance is None:
+            importance = BugTaskImportance.UNDECIDED
+        if creator is None:
+            creator = self.makePerson()
+        if importance_explanation is None:
+            importance_explanation = self.getUniqueString(
+                "vulnerability-importance-explanation")
+        return getUtility(
+            IVulnerabilitySet).new(
+            distribution=distribution, cve=cve, status=status,
+            importance=importance, creator=creator,
+            information_type=information_type, description=description,
+            notes=notes, mitigation=mitigation,
+            importance_explanation=importance_explanation,
+            date_made_public=date_made_public)
+
+    def makeVulnerabilityActivity(self, vulnerability=None, changer=None,
+                                  what_changed=None, old_value=None,
+                                  new_value=None):
+        """Make a new `VulnerabilityActivity`."""
+        if vulnerability is None:
+            vulnerability = self.makeVulnerability()
+        if changer is None:
+            changer = self.makePerson()
+        if what_changed is None:
+            what_changed = VulnerabilityChange.DESCRIPTION
+        if old_value is None:
+            old_value = self.getUniqueString("old-value")
+        if new_value is None:
+            new_value = self.getUniqueString("new-value")
+        return getUtility(
+            IVulnerabilityActivitySet).new(vulnerability=vulnerability,
+                                           changer=changer,
+                                           what_changed=what_changed,
+                                           old_value=old_value,
+                                           new_value=new_value)
 
 
 # Some factory methods return simple Python types. We don't add

@@ -5,23 +5,24 @@
 
 import base64
 from datetime import datetime
-import json
 import os.path
 import re
-from textwrap import dedent
 import time
 from urllib.parse import urlsplit
 import uuid
 
 from fixtures import MockPatch
+from pymacaroons import Macaroon
 from testtools import ExpectedException
 from testtools.matchers import (
+    AfterPreprocessing,
     ContainsDict,
     Equals,
     Is,
     IsInstance,
     MatchesDict,
     MatchesListwise,
+    MatchesStructure,
     StartsWith,
     )
 from testtools.twistedsupport import (
@@ -60,19 +61,15 @@ from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestHandleStatusMixin,
     TestVerifySuccessfulBuildMixin,
     )
-from lp.code.errors import GitRepositoryBlobNotFound
+from lp.code.enums import RevisionStatusResult
 from lp.code.model.cibuildbehaviour import CIBuildBehaviour
-from lp.code.tests.helpers import GitHostingFixture
+from lp.services.authserver.testing import InProcessAuthServerFixture
 from lp.services.config import config
 from lp.services.log.logger import (
     BufferLogger,
     DevNullLogger,
     )
 from lp.services.statsd.tests import StatsMixin
-from lp.services.timeout import (
-    get_default_timeout_function,
-    set_default_timeout_function,
-    )
 from lp.services.webapp import canonical_url
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
@@ -182,11 +179,8 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
         self.useFixture(MockPatch("time.time", return_value=self.now))
         self.addCleanup(shut_down_default_process_pool)
         self.setUpStats()
-        self.addCleanup(
-            set_default_timeout_function, get_default_timeout_function())
-        set_default_timeout_function(lambda: None)
 
-    def makeJob(self, configuration=_unset, **kwargs):
+    def makeJob(self, **kwargs):
         # We need a builder in these tests, in order that requesting a proxy
         # token can piggyback on its reactor and pool.
         job = super().makeJob(**kwargs)
@@ -195,24 +189,6 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
         worker = self.useFixture(WorkerTestHelpers()).getClientWorker()
         job.setBuilder(builder, worker)
         self.addCleanup(worker.pool.closeCachedConnections)
-        if configuration is _unset:
-            # Skeleton configuration defining a single job.
-            configuration = dedent("""\
-                pipeline:
-                    - [test]
-                jobs:
-                    test:
-                        series: {}
-                        architectures: [{}]
-                """.format(
-                    job.build.distro_arch_series.distroseries.name,
-                    job.build.distro_arch_series.architecturetag)).encode()
-        hosting_fixture = self.useFixture(
-            GitHostingFixture(blob=configuration))
-        if configuration is None:
-            hosting_fixture.getBlob.failure = GitRepositoryBlobNotFound(
-                job.build.git_repository.getInternalPath(), ".launchpad.yaml",
-                rev=job.build.commit_sha1)
         return job
 
     @defer.inlineCallbacks
@@ -268,7 +244,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
     def test_extraBuildArgs_git(self):
         # extraBuildArgs returns appropriate arguments if asked to build a
         # job for a Git commit.
-        job = self.makeJob()
+        job = self.makeJob(stages=[[("test", 0)]])
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job, job.build.distro_arch_series, None))
@@ -281,10 +257,10 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
             "archives": Equals(expected_archives),
             "arch_tag": Equals("i386"),
             "build_url": Equals(canonical_url(job.build)),
-            "commit_sha1": Equals(job.build.commit_sha1),
             "fast_cleanup": Is(True),
+            "git_path": Equals(job.build.commit_sha1),
             "git_repository": Equals(job.build.git_repository.git_https_url),
-            "jobs": Equals([[("test", 0)]]),
+            "jobs": Equals([[["test", 0]]]),
             "private": Is(False),
             "proxy_url": ProxyURLMatcher(job, self.now),
             "revocation_endpoint": RevocationEndpointMatcher(job, self.now),
@@ -332,12 +308,48 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
     def test_extraBuildArgs_private(self):
         # If the repository is private, extraBuildArgs sends the appropriate
         # arguments.
+        self.useFixture(InProcessAuthServerFixture())
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
         repository = self.factory.makeGitRepository(
             information_type=InformationType.USERDATA)
-        job = self.makeJob(git_repository=repository)
+        job = self.makeJob(git_repository=repository, stages=[[("test", 0)]])
+        expected_archives, expected_trusted_keys = (
+            yield get_sources_list_for_building(
+                job, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn("universe", archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
-        self.assertTrue(args["private"])
+        split_browse_root = urlsplit(config.codehosting.git_browse_root)
+        self.assertThat(args, MatchesDict({
+            "archive_private": Is(False),
+            "archives": Equals(expected_archives),
+            "arch_tag": Equals("i386"),
+            "build_url": Equals(canonical_url(job.build)),
+            "fast_cleanup": Is(True),
+            "git_path": Equals(job.build.commit_sha1),
+            "git_repository": AfterPreprocessing(urlsplit, MatchesStructure(
+                scheme=Equals(split_browse_root.scheme),
+                username=Equals("+launchpad-services"),
+                password=AfterPreprocessing(
+                    Macaroon.deserialize, MatchesStructure(
+                        location=Equals(config.vhost.mainsite.hostname),
+                        identifier=Equals("ci-build"),
+                        caveats=MatchesListwise([
+                            MatchesStructure.byEquality(
+                                caveat_id="lp.ci-build %s" % job.build.id),
+                            ]))),
+                hostname=Equals(split_browse_root.hostname),
+                port=Equals(split_browse_root.port),
+                path=Equals("/" + job.build.git_repository.shortened_path))),
+            "jobs": Equals([[["test", 0]]]),
+            "private": Is(True),
+            "proxy_url": ProxyURLMatcher(job, self.now),
+            "revocation_endpoint": RevocationEndpointMatcher(job, self.now),
+            "series": Equals(job.build.distro_series.name),
+            "trusted_keys": Equals(expected_trusted_keys),
+            }))
 
     @defer.inlineCallbacks
     def test_composeBuildRequest_proxy_url_set(self):
@@ -347,34 +359,11 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
             build_request[4]["proxy_url"], ProxyURLMatcher(job, self.now))
 
     @defer.inlineCallbacks
-    def test_composeBuildRequest_unparseable(self):
-        # If the job's configuration file fails to parse,
-        # composeBuildRequest raises CannotBuild.
-        job = self.makeJob(configuration=b"")
-        expected_exception_msg = (
-            r"Cannot parse \.launchpad\.yaml from .*: "
-            r"Empty configuration file")
-        with ExpectedException(CannotBuild, expected_exception_msg):
-            yield job.composeBuildRequest(None)
-
-    @defer.inlineCallbacks
-    def test_composeBuildRequest_no_jobs_defined(self):
-        # If the job's configuration does not define any jobs,
-        # composeBuildRequest raises CannotBuild.
-        job = self.makeJob(configuration=b"pipeline: []\njobs: {}\n")
+    def test_composeBuildRequest_no_stages_defined(self):
+        # If the build has no stages, composeBuildRequest raises CannotBuild.
+        job = self.makeJob(stages=[])
         expected_exception_msg = re.escape(
-            "No jobs defined for %s:%s" % (
-                job.build.git_repository.unique_name, job.build.commit_sha1))
-        with ExpectedException(CannotBuild, expected_exception_msg):
-            yield job.composeBuildRequest(None)
-
-    @defer.inlineCallbacks
-    def test_composeBuildRequest_undefined_job(self):
-        # If the job's configuration has a pipeline that defines a job not
-        # in the jobs matrix, composeBuildRequest raises CannotBuild.
-        job = self.makeJob(configuration=b"pipeline: [test]\njobs: {}\n")
-        expected_exception_msg = re.escape(
-            "Job 'test' in pipeline for %s:%s but not in jobs" % (
+            "No stages defined for %s:%s" % (
                 job.build.git_repository.unique_name, job.build.commit_sha1))
         with ExpectedException(CannotBuild, expected_exception_msg):
             yield job.composeBuildRequest(None)
@@ -423,15 +412,6 @@ class MakeCIBuildMixin:
 
     def makeBuild(self):
         build = self.factory.makeCIBuild(status=BuildStatus.BUILDING)
-        das = build.distro_arch_series
-        self.useFixture(GitHostingFixture(blob=dedent("""\
-            pipeline:
-                - [test]
-            jobs:
-                test:
-                    series: {}
-                    architectures: [{}]
-            """.format(das.distroseries.name, das.architecturetag)).encode()))
         build.queueBuild()
         return build
 
@@ -456,19 +436,46 @@ class TestHandleStatusForCIBuild(
     @defer.inlineCallbacks
     def test_handleStatus_WAITING_OK_with_jobs(self):
         # If the worker status includes a "jobs" item, then we additionally
-        # dump that to jobs.json.
+        # save that as the build's results and update its reports.
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
                 self.build.buildqueue_record,
                 {"builder_status": "BuilderStatus.WAITING",
                  "build_status": "BuildStatus.OK",
                  "filemap": {"build:0.log": "test_file_hash"},
-                 "jobs": {"build:0": {"log": "test_file_hash"}}})
-        jobs_path = os.path.join(
-            self.upload_root, "incoming",
-            self.behaviour.getUploadDirLeaf(self.build.build_cookie),
-            str(self.build.archive.id), self.build.distribution.name,
-            "jobs.json")
-        with open(jobs_path) as jobs_file:
-            self.assertEqual(
-                {"build:0": {"log": "test_file_hash"}}, json.load(jobs_file))
+                 "jobs": {
+                     "build:0": {
+                         "log": "test_file_hash",
+                         "result": "SUCCEEDED",
+                         },
+                     }})
+        self.assertEqual(
+            {"build:0": {"log": "test_file_hash", "result": "SUCCEEDED"}},
+            self.build.results)
+        self.assertEqual(
+            RevisionStatusResult.SUCCEEDED,
+            self.build.getOrCreateRevisionStatusReport("build:0").result)
+
+    @defer.inlineCallbacks
+    def test_handleStatus_WAITING_PACKAGEFAIL_with_jobs(self):
+        # If the worker status includes a "jobs" item, then we additionally
+        # save that as the build's results and update its reports, even if
+        # the build failed.
+        with dbuser(config.builddmaster.dbuser):
+            yield self.behaviour.handleStatus(
+                self.build.buildqueue_record,
+                {"builder_status": "BuilderStatus.WAITING",
+                 "build_status": "BuildStatus.PACKAGEFAIL",
+                 "filemap": {"build:0.log": "test_file_hash"},
+                 "jobs": {
+                     "build:0": {
+                         "log": "test_file_hash",
+                         "result": "FAILED",
+                         },
+                     }})
+        self.assertEqual(
+            {"build:0": {"log": "test_file_hash", "result": "FAILED"}},
+            self.build.results)
+        self.assertEqual(
+            RevisionStatusResult.FAILED,
+            self.build.getOrCreateRevisionStatusReport("build:0").result)

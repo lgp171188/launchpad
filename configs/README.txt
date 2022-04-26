@@ -126,6 +126,9 @@ the config.
     >>> config.answertracker.email_domain
     'answers.launchpad.net'
 
+Please note that TestCase.pushConfig is the preferred way of modifying
+the configuration for testing, also see
+https://launchpad.readthedocs.io/en/latest/.
 
 lazr.conf schema and confs
 --------------------------

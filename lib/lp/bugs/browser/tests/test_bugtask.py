@@ -1975,6 +1975,98 @@ class TestBugActivityItem(TestCaseWithFactory):
             BugActivityItem(bug.activity[-1]).change_details
         )
 
+    def test_change_details_bugtask_importance_explanation_set(self):
+        with celebrity_logged_in('admin'):
+            task = self.factory.makeBugTask()
+            self.setAttribute(
+                task, 'importance_explanation',
+                'Critical'
+            )
+        self.assertEqual(
+            'unset &#8594; Critical',
+            BugActivityItem(task.bug.activity[-1]).change_details
+        )
+
+    def test_change_details_bugtask_status_explanation_set(self):
+        with celebrity_logged_in('admin'):
+            task = self.factory.makeBugTask()
+            self.setAttribute(
+                task, 'status_explanation',
+                'This is blocked on foo'
+            )
+
+        self.assertEqual(
+            'unset &#8594; This is blocked on foo',
+            BugActivityItem(task.bug.activity[-1]).change_details
+        )
+
+    def test_change_details_bugtask_importance_explanation_unset(self):
+        with celebrity_logged_in('admin'):
+            task = self.factory.makeBugTask()
+            self.setAttribute(
+                task, 'importance_explanation',
+                'Critical'
+            )
+            self.setAttribute(
+                task, 'importance_explanation',
+                None
+            )
+
+        self.assertEqual(
+            'Critical &#8594; unset',
+            BugActivityItem(task.bug.activity[-1]).change_details
+        )
+
+    def test_change_details_bugtask_status_explanation_unset(self):
+        with celebrity_logged_in('admin'):
+            task = self.factory.makeBugTask()
+            self.setAttribute(
+                task, 'status_explanation',
+                'This is blocked on foo'
+            )
+            self.setAttribute(
+                task, 'status_explanation',
+                None
+            )
+
+        self.assertEqual(
+            'This is blocked on foo &#8594; unset',
+            BugActivityItem(task.bug.activity[-1]).change_details
+        )
+
+    def test_change_details_bugtask_importance_explanation_changed(self):
+        with celebrity_logged_in('admin'):
+            task = self.factory.makeBugTask()
+            self.setAttribute(
+                task, 'importance_explanation',
+                'Critical'
+            )
+            self.setAttribute(
+                task, 'importance_explanation',
+                'Critical!'
+            )
+        self.assertEqual(
+            'Critical &#8594; Critical!',
+            BugActivityItem(task.bug.activity[-1]).change_details
+        )
+
+    def test_change_details_bugtask_status_explanation_changed(self):
+        with celebrity_logged_in('admin'):
+            task = self.factory.makeBugTask()
+            self.setAttribute(
+                task, 'status_explanation',
+                'This is blocked on foo'
+            )
+            self.setAttribute(
+                task, 'status_explanation',
+                'This is blocked on bar'
+            )
+
+        self.assertEqual(
+            'This is blocked on foo &#8594; This is blocked on bar',
+            BugActivityItem(task.bug.activity[-1]).change_details
+        )
+
 
 class TestCommentCollapseVisibility(TestCaseWithFactory):
     """Test for the conditions around display of collapsed/hidden comments."""

@@ -15,6 +15,7 @@ import soupmatchers
 from storm.store import Store
 from testtools.matchers import (
     Equals,
+    MatchesListwise,
     Not,
     )
 from zope.component import getUtility
@@ -191,20 +192,22 @@ class TestGitRefView(BrowserTestCase):
                                          paths=["refs/heads/branch"])
         log = self.makeCommitLog()
 
-        # create 2 status reports for 2 of the 5 commits available here
+        # create status reports for 2 of the 5 commits available here
         report1 = self.factory.makeRevisionStatusReport(
             user=repository.owner, git_repository=repository,
             title="CI", commit_sha1=log[0]["sha1"],
             result_summary="120/120 tests passed",
             url="https://foo1.com",
             result=RevisionStatusResult.SUCCEEDED)
-
         report2 = self.factory.makeRevisionStatusReport(
             user=repository.owner, git_repository=repository,
             title="Lint", commit_sha1=log[1]["sha1"],
             result_summary="Invalid import in test_file.py",
             url="https://foo2.com",
             result=RevisionStatusResult.FAILED)
+        pending_report = self.factory.makeRevisionStatusReport(
+            user=repository.owner, git_repository=repository,
+            title="Build", commit_sha1=log[1]["sha1"])
 
         self.hosting_fixture.getLog.result = list(log)
         # XXX jugmac00 2022-03-14
@@ -251,12 +254,197 @@ class TestGitRefView(BrowserTestCase):
                 soupmatchers.Tag(
                     "second report summary", "td",
                     text=report2.result_summary))
+            self.assertThat(
+                reports_section[1],
+                soupmatchers.Within(
+                    soupmatchers.Tag("pending report title", "td"),
+                    soupmatchers.Tag(
+                        "pending report link", "a", text=pending_report.title,
+                        attrs={"href": None})))
 
             # Ensure we don't display an empty expander for those commits
             # that do not have status reports created for them - means we
             # should only see 2 entries with class 'status-reports-table'
             # on the page: reports_section[0] and reports_section[1]
             self.assertEqual(2, len(reports_section))
+
+    def test_revisionStatusReports_all_skipped(self):
+        self.useFixture(FakeLogger())
+        [ref] = self.factory.makeGitRefs()
+        log = self.makeCommitLog()
+        for _ in range(2):
+            self.factory.makeRevisionStatusReport(
+                user=ref.repository.owner, git_repository=ref.repository,
+                commit_sha1=log[0]["sha1"],
+                result=RevisionStatusResult.SKIPPED)
+        self.hosting_fixture.getLog.result = list(log)
+        self.scanRef(ref, log[-1], blobs={".launchpad.yaml": ""})
+        view = create_initialized_view(
+            ref, "+index", principal=ref.repository.owner)
+        with person_logged_in(ref.repository.owner):
+            contents = view.render()
+        reports_section = find_tags_by_class(contents, "status-reports-table")
+        with person_logged_in(ref.repository.owner):
+            self.assertThat(
+                reports_section[0].div,
+                soupmatchers.Tag(
+                    "overall icon", "img",
+                    attrs={
+                        "width": "14", "height": "14",
+                        "src": "/@@/yes-gray", "title": "Skipped",
+                        }))
+            self.assertThat(
+                reports_section[0].table.find_all("tr"),
+                MatchesListwise([
+                    soupmatchers.Tag(
+                        "icon", "img",
+                        attrs={"src": "/@@/yes-gray", "title": "Skipped"})
+                    for _ in range(2)]))
+
+    def test_revisionStatusReports_all_succeeded_or_skipped(self):
+        self.useFixture(FakeLogger())
+        [ref] = self.factory.makeGitRefs()
+        log = self.makeCommitLog()
+        for result in (
+                RevisionStatusResult.SUCCEEDED, RevisionStatusResult.SUCCEEDED,
+                RevisionStatusResult.SKIPPED):
+            self.factory.makeRevisionStatusReport(
+                user=ref.repository.owner, git_repository=ref.repository,
+                commit_sha1=log[0]["sha1"], result=result)
+        self.hosting_fixture.getLog.result = list(log)
+        self.scanRef(ref, log[-1], blobs={".launchpad.yaml": ""})
+        view = create_initialized_view(
+            ref, "+index", principal=ref.repository.owner)
+        with person_logged_in(ref.repository.owner):
+            contents = view.render()
+        reports_section = find_tags_by_class(contents, "status-reports-table")
+        with person_logged_in(ref.repository.owner):
+            self.assertThat(
+                reports_section[0].div,
+                soupmatchers.Tag(
+                    "overall icon", "img",
+                    attrs={
+                        "width": "14", "height": "14",
+                        "src": "/@@/yes", "title": "Succeeded",
+                        }))
+            self.assertThat(
+                reports_section[0].table.find_all("tr"),
+                MatchesListwise([
+                    soupmatchers.Tag(
+                        "icon", "img", attrs={"src": src, "title": title})
+                    for src, title in (
+                        ("/@@/yes", "Succeeded"),
+                        ("/@@/yes", "Succeeded"),
+                        ("/@@/yes-gray", "Skipped"),
+                        )]))
+
+    def test_revisionStatusReports_failed(self):
+        self.useFixture(FakeLogger())
+        [ref] = self.factory.makeGitRefs()
+        log = self.makeCommitLog()
+        for result in (
+                RevisionStatusResult.SUCCEEDED, RevisionStatusResult.FAILED):
+            self.factory.makeRevisionStatusReport(
+                user=ref.repository.owner, git_repository=ref.repository,
+                commit_sha1=log[0]["sha1"], result=result)
+        self.hosting_fixture.getLog.result = list(log)
+        self.scanRef(ref, log[-1], blobs={".launchpad.yaml": ""})
+        view = create_initialized_view(
+            ref, "+index", principal=ref.repository.owner)
+        with person_logged_in(ref.repository.owner):
+            contents = view.render()
+        reports_section = find_tags_by_class(contents, "status-reports-table")
+        with person_logged_in(ref.repository.owner):
+            self.assertThat(
+                reports_section[0].div,
+                soupmatchers.Tag(
+                    "overall icon", "img",
+                    attrs={
+                        "width": "14", "height": "14",
+                        "src": "/@@/no", "title": "Failed",
+                        }))
+            self.assertThat(
+                reports_section[0].table.find_all("tr"),
+                MatchesListwise([
+                    soupmatchers.Tag(
+                        "icon", "img", attrs={"src": src, "title": title})
+                    for src, title in (
+                        ("/@@/yes", "Succeeded"),
+                        ("/@@/no", "Failed"),
+                        )]))
+
+    def test_revisionStatusReports_cancelled(self):
+        self.useFixture(FakeLogger())
+        [ref] = self.factory.makeGitRefs()
+        log = self.makeCommitLog()
+        for result in (
+                RevisionStatusResult.SUCCEEDED,
+                RevisionStatusResult.CANCELLED):
+            self.factory.makeRevisionStatusReport(
+                user=ref.repository.owner, git_repository=ref.repository,
+                commit_sha1=log[0]["sha1"], result=result)
+        self.hosting_fixture.getLog.result = list(log)
+        self.scanRef(ref, log[-1], blobs={".launchpad.yaml": ""})
+        view = create_initialized_view(
+            ref, "+index", principal=ref.repository.owner)
+        with person_logged_in(ref.repository.owner):
+            contents = view.render()
+        reports_section = find_tags_by_class(contents, "status-reports-table")
+        with person_logged_in(ref.repository.owner):
+            self.assertThat(
+                reports_section[0].div,
+                soupmatchers.Tag(
+                    "overall icon", "img",
+                    attrs={
+                        "width": "14", "height": "14",
+                        "src": "/@@/no", "title": "Failed",
+                        }))
+            self.assertThat(
+                reports_section[0].table.find_all("tr"),
+                MatchesListwise([
+                    soupmatchers.Tag(
+                        "icon", "img",
+                        attrs={"src": src, "title": title})
+                    for src, title in (
+                        ("/@@/yes", "Succeeded"),
+                        ("/@@/build-failed", "Cancelled"),
+                        )]))
+
+    def test_revisionStatusReports_all_waiting_or_running(self):
+        self.useFixture(FakeLogger())
+        [ref] = self.factory.makeGitRefs()
+        log = self.makeCommitLog()
+        for result in (
+                RevisionStatusResult.WAITING, RevisionStatusResult.RUNNING):
+            self.factory.makeRevisionStatusReport(
+                user=ref.repository.owner, git_repository=ref.repository,
+                commit_sha1=log[0]["sha1"], result=result)
+        self.hosting_fixture.getLog.result = list(log)
+        self.scanRef(ref, log[-1], blobs={".launchpad.yaml": ""})
+        view = create_initialized_view(
+            ref, "+index", principal=ref.repository.owner)
+        with person_logged_in(ref.repository.owner):
+            contents = view.render()
+        reports_section = find_tags_by_class(contents, "status-reports-table")
+        with person_logged_in(ref.repository.owner):
+            self.assertThat(
+                reports_section[0].div,
+                soupmatchers.Tag(
+                    "overall icon", "img",
+                    attrs={
+                        "width": "14", "height": "14",
+                        "src": "/@@/processing", "title": "In progress",
+                        }))
+            self.assertThat(
+                reports_section[0].table.find_all("tr"),
+                MatchesListwise([
+                    soupmatchers.Tag(
+                        "icon", "img",
+                        attrs={"src": src, "title": title})
+                    for src, title in (
+                        ("/@@/build-needed", "Waiting"),
+                        ("/@@/processing", "Running"),
+                        )]))
 
     def test_clone_instructions(self):
         [ref] = self.factory.makeGitRefs(paths=["refs/heads/branch"])

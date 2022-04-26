@@ -2150,9 +2150,13 @@ class ArchiveAdminView(BaseArchiveEditView, EnableProcessorsMixin):
         'authorized_size',
         'relative_build_score',
         'external_dependencies',
+        'publishing_method',
+        'repository_format',
         ]
     custom_widget_external_dependencies = CustomWidgetFactory(
         TextAreaWidget, height=3)
+    custom_widget_publishing_method = LaunchpadDropdownWidget
+    custom_widget_repository_format = LaunchpadDropdownWidget
     page_title = 'Administer'
 
     @property
@@ -2183,6 +2187,24 @@ class ArchiveAdminView(BaseArchiveEditView, EnableProcessorsMixin):
             if len(errors) != 0:
                 error_text = "\n".join(errors)
                 self.setFieldError('external_dependencies', error_text)
+
+        if data.get('publishing_method') != self.context.publishing_method:
+            # The publishing method is being switched.
+            if (not self.context.getPublishedSources().is_empty() or
+                    not self.context.getAllPublishedBinaries().is_empty()):
+                self.setFieldError(
+                    'publishing_method',
+                    'This archive already has published packages. It is '
+                    'not possible to switch the publishing method.')
+
+        if data.get('repository_format') != self.context.repository_format:
+            # The repository format is being switched.
+            if (not self.context.getPublishedSources().is_empty() or
+                    not self.context.getAllPublishedBinaries().is_empty()):
+                self.setFieldError(
+                    'repository_format',
+                    'This archive already has published packages. It is '
+                    'not possible to switch the repository format.')
 
     @property
     def owner_is_private_team(self):

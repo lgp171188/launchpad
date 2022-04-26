@@ -1669,6 +1669,10 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
             result_summary="120/120 tests passed",
             url="https://foo.com",
             result=RevisionStatusResult.SUCCEEDED)
+        pending_report = self.factory.makeRevisionStatusReport(
+            user=bmp.source_git_repository.owner,
+            git_repository=bmp.source_git_repository,
+            title="Build", commit_sha1=sha1)
 
         self.useFixture(GitHostingFixture(log=[
             {
@@ -1695,12 +1699,18 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
                     Tag(
                         "first report link", "a", text=report1.title,
                         attrs={"href": report1.url})))
-
             self.assertThat(
                 reports_section[0],
                 Tag(
                     "first report summary", "td",
                     text=report1.result_summary))
+            self.assertThat(
+                reports_section[0],
+                Within(
+                    Tag("pending report title", "td"),
+                    Tag(
+                        "pending report link", "a", text=pending_report.title,
+                        attrs={"href": None})))
 
             # Ensure we don't display an empty expander for those commits
             # that do not have status reports created for them - means we

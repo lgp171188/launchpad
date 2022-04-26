@@ -696,6 +696,8 @@ First, some set-up.
     >>> from lp.bugs.adapters.bugchange import (
     ...     BugLocked,
     ...     BugLockReasonSet,
+    ...     BugTaskImportanceExplanationChange,
+    ...     BugTaskStatusExplanationChange,
     ...     BugTitleChange,
     ...     BugUnlocked,
     ... )
@@ -732,6 +734,19 @@ First, some set-up.
     ...     when=nowish, person=foo_bar,
     ...     old_status=BugLockStatus.COMMENT_ONLY)
     >>> bug.addChange(unlocked)
+    >>> nowish = nowish + timedelta(days=1)
+    >>> importance_explanation_set = BugTaskImportanceExplanationChange(
+    ...     when=nowish, person=foo_bar,
+    ...     what_changed='importance explanation',
+    ...     old_value=None, new_value='This is a security issue',
+    ...     bug_task=bug.default_bugtask)
+    >>> bug.addChange(importance_explanation_set)
+    >>> status_explanation_set = BugTaskStatusExplanationChange(
+    ...     when=nowish, person=foo_bar, what_changed='status explanation',
+    ...     old_value=None, new_value='Blocked on foo',
+    ...     bug_task=bug.default_bugtask)
+    >>> bug.addChange(status_explanation_set)
+
     >>> request = LaunchpadTestRequest(
     ...     method="POST",
     ...     form={'field.subject': bug.title,
@@ -814,6 +829,10 @@ order, the comments and activity that have taken place on a bug.
     Changed:
     * lock status: Comment-only => Unlocked
     -- name16 --
+    Changed in testproduct:
+    * importance explanation: unset => This is a security issue
+    * status explanation: unset => Blocked on foo
+    -- name16 --
     A comment, for the reading of.
     Changed in testproduct:
     * status: New => Confirmed
@@ -859,6 +878,10 @@ grouped with that comment.
     -- name16 --
     Changed:
     * lock status: Comment-only => Unlocked
+    -- name16 --
+    Changed in testproduct:
+    * importance explanation: unset => This is a security issue
+    * status explanation: unset => Blocked on foo
     -- name16 --
     A comment, for the reading of.
     -- name16 --

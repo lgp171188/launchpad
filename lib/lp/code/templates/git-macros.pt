@@ -224,17 +224,17 @@
     <dd class="subordinate collapsible status-reports-table"
         tal:define="
           commit_sha1 commit_info/sha1;
-          status_result python:ref.getCommitStatus(commit_sha1);
+          status_result python:view.getOverallIcon(ref.repository, commit_sha1);
           batchnav python:view.getStatusReports(commit_sha1);
           batch python:batchnav.currentBatch()"
         tal:condition="batch">
-        <div class="sprite treeCollapsed">
-          <span tal:replace="structure status_result/image:boolean" />
+        <div class="treeCollapsed">
+          <span class="icon" tal:replace="structure status_result" />
         </div>
         <table class="listing" tal:condition="batch">
           <tbody>
             <tr tal:repeat="report batch">
-              <td tal:content="structure report/result/enumvalue:SUCCEEDED/image:boolean" />
+              <td class="icon" tal:content="structure report/image:icon" />
               <td tal:define="url python: report.url if report.url is not None else path('report/latest_log/download_url | nothing')">
                 <a tal:attributes="href url" tal:content="report/title" />
               </td>

@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -16,7 +16,7 @@ from operator import (
     attrgetter,
     itemgetter,
     )
-import os
+from pathlib import Path
 import sys
 
 import pytz
@@ -31,6 +31,10 @@ from storm.expr import (
     Sum,
     )
 from storm.info import ClassAlias
+from storm.properties import (
+    List,
+    Unicode,
+    )
 from storm.store import Store
 from storm.zope import IResultSet
 from storm.zope.interfaces import ISQLObjectResultSet
@@ -45,6 +49,8 @@ from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import BuildStatus
 from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.sourcepackage import SourcePackageType
+from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
@@ -112,14 +118,15 @@ from lp.soyuz.model.files import (
     BinaryPackageFile,
     SourcePackageReleaseFile,
     )
+from lp.soyuz.model.section import Section
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
 
-def makePoolPath(source_name, component_name):
+def makePoolPath(source_name: str, component_name: str) -> str:
     # XXX cprov 2006-08-18: move it away, perhaps archivepublisher/pool.py
     """Return the pool path for a given source name and component name."""
     from lp.archivepublisher.diskpool import poolify
-    return os.path.join('pool', poolify(source_name, component_name))
+    return str(Path('pool') / poolify(source_name, component_name))
 
 
 def get_component(archive, distroseries, component):
@@ -170,14 +177,13 @@ class ArchivePublisherBase:
         try:
             for pub_file in self.files:
                 source = self.source_package_name
-                component = self.component.name
+                component = (
+                    None if self.component is None else self.component.name)
                 filename = pub_file.libraryfile.filename
-                filealias = pub_file.libraryfile
-                sha1 = filealias.content.sha1
                 path = diskpool.pathFor(component, source, filename)
 
                 action = diskpool.addFile(
-                    component, source, filename, sha1, filealias)
+                    component, source, filename, pub_file)
                 if action == diskpool.results.FILE_ADDED:
                     log.debug("Added %s from library" % path)
                 elif action == diskpool.results.SYMLINK_ADDED:
@@ -241,8 +247,13 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
         foreignKey='SourcePackageName', dbName='sourcepackagename')
     sourcepackagerelease = ForeignKey(
         foreignKey='SourcePackageRelease', dbName='sourcepackagerelease')
+    _format = DBEnum(
+        name='format', enum=SourcePackageType,
+        default=SourcePackageType.DPKG, allow_none=True)
     distroseries = ForeignKey(foreignKey='DistroSeries', dbName='distroseries')
+    # DB constraint: non-nullable for SourcePackageType.DPKG.
     component = ForeignKey(foreignKey='Component', dbName='component')
+    # DB constraint: non-nullable for SourcePackageType.DPKG.
     section = ForeignKey(foreignKey='Section', dbName='section')
     status = DBEnum(enum=PackagePublishingStatus)
     scheduleddeletiondate = UtcDateTimeCol(default=None)
@@ -256,6 +267,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
     pocket = DBEnum(name='pocket', enum=PackagePublishingPocket,
                     default=PackagePublishingPocket.RELEASE,
                     allow_none=False)
+    channel = List(name="channel", type=Unicode(), allow_none=True)
     archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
     copied_from_archive = ForeignKey(
         dbName="copied_from_archive", foreignKey="Archive", notNull=False)
@@ -274,6 +286,13 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
         storm_validator=validate_public_person, notNull=False, default=None)
     packageupload = ForeignKey(
         dbName='packageupload', foreignKey='PackageUpload', default=None)
+
+    @property
+    def format(self):
+        # XXX cjwatson 2022-04-04: Remove once this column has been backfilled.
+        return (
+            self._format if self._format is not None
+            else self.sourcepackagerelease.format)
 
     @property
     def package_creator(self):
@@ -638,11 +657,19 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         foreignKey='BinaryPackageName', dbName='binarypackagename')
     binarypackagerelease = ForeignKey(
         foreignKey='BinaryPackageRelease', dbName='binarypackagerelease')
+    _binarypackageformat = DBEnum(
+        name='binarypackageformat', enum=BinaryPackageFormat, allow_none=True)
     distroarchseries = ForeignKey(
         foreignKey='DistroArchSeries', dbName='distroarchseries')
-    component = ForeignKey(foreignKey='Component', dbName='component')
-    section = ForeignKey(foreignKey='Section', dbName='section')
-    priority = DBEnum(name='priority', enum=PackagePublishingPriority)
+    # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
+    component = ForeignKey(
+        foreignKey='Component', dbName='component', notNull=False)
+    # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
+    section = ForeignKey(
+        foreignKey='Section', dbName='section', notNull=False)
+    # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
+    priority = DBEnum(
+        name='priority', enum=PackagePublishingPriority, allow_none=True)
     status = DBEnum(name='status', enum=PackagePublishingStatus)
     phased_update_percentage = IntCol(
         dbName='phased_update_percentage', notNull=False, default=None)
@@ -658,6 +685,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
     datemadepending = UtcDateTimeCol(default=None)
     dateremoved = UtcDateTimeCol(default=None)
     pocket = DBEnum(name='pocket', enum=PackagePublishingPocket)
+    channel = List(name="channel", type=Unicode(), allow_none=True)
     archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
     copied_from_archive = ForeignKey(
         dbName="copied_from_archive", foreignKey="Archive", notNull=False)
@@ -665,6 +693,13 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         dbName="removed_by", foreignKey="Person",
         storm_validator=validate_public_person, default=None)
     removal_comment = StringCol(dbName="removal_comment", default=None)
+
+    @property
+    def binarypackageformat(self):
+        # XXX cjwatson 2022-04-04: Remove once this column has been backfilled.
+        return (
+            self._binarypackageformat if self._binarypackageformat is not None
+            else self.binarypackagerelease.binpackageformat)
 
     @property
     def distroarchseriesbinarypackagerelease(self):
@@ -896,6 +931,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             BinaryPackagePublishingHistory(
                 binarypackagename=debug.binarypackagename,
                 binarypackagerelease=debug.binarypackagerelease,
+                _binarypackageformat=debug.binarypackageformat,
                 distroarchseries=debug.distroarchseries,
                 status=PackagePublishingStatus.PENDING,
                 datecreated=UTC_NOW,
@@ -911,6 +947,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         return BinaryPackagePublishingHistory(
             binarypackagename=bpr.binarypackagename,
             binarypackagerelease=bpr,
+            _binarypackageformat=bpr.binpackageformat,
             distroarchseries=self.distroarchseries,
             status=PackagePublishingStatus.PENDING,
             datecreated=UTC_NOW,
@@ -1216,6 +1253,7 @@ class PublishingSet:
             archive=archive,
             sourcepackagename=sourcepackagerelease.sourcepackagename,
             sourcepackagerelease=sourcepackagerelease,
+            _format=sourcepackagerelease.format,
             component=get_component(archive, distroseries, component),
             section=section,
             status=PackagePublishingStatus.PENDING,
@@ -1510,6 +1548,97 @@ class PublishingSet:
             BinaryPackagePublishingHistory.status.is_in(
                 active_publishing_status),
             BinaryPackageRelease.architecturespecific == True)
+
+    def getSourcesForPublishing(self, archive, distroseries=None, pocket=None,
+                                component=None):
+        """See `IPublishingSet`."""
+        clauses = [
+            SourcePackagePublishingHistory.archive == archive,
+            SourcePackagePublishingHistory.status ==
+                PackagePublishingStatus.PUBLISHED,
+            SourcePackagePublishingHistory.sourcepackagename ==
+                SourcePackageName.id,
+            ]
+        if distroseries is not None:
+            clauses.append(
+                SourcePackagePublishingHistory.distroseries == distroseries)
+        if pocket is not None:
+            clauses.append(SourcePackagePublishingHistory.pocket == pocket)
+        if component is not None:
+            clauses.append(
+                SourcePackagePublishingHistory.component == component)
+        spphs = IStore(SourcePackagePublishingHistory).find(
+            SourcePackagePublishingHistory,
+            *clauses).order_by(SourcePackageName.name)
+
+        def eager_load(spphs):
+            # Preload everything which will be used by archivepublisher's
+            # build_source_stanza_fields.
+            bulk.load_related(Section, spphs, ["sectionID"])
+            sprs = bulk.load_related(
+                SourcePackageRelease, spphs, ["sourcepackagereleaseID"])
+            bulk.load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
+            spr_ids = set(map(attrgetter("id"), sprs))
+            sprfs = list(IStore(SourcePackageReleaseFile).find(
+                SourcePackageReleaseFile,
+                SourcePackageReleaseFile.sourcepackagereleaseID.is_in(
+                    spr_ids)).order_by(SourcePackageReleaseFile.libraryfileID))
+            file_map = defaultdict(list)
+            for sprf in sprfs:
+                file_map[sprf.sourcepackagerelease].append(sprf)
+            for spr, files in file_map.items():
+                get_property_cache(spr).files = files
+            lfas = bulk.load_related(
+                LibraryFileAlias, sprfs, ["libraryfileID"])
+            bulk.load_related(LibraryFileContent, lfas, ["contentID"])
+
+        return DecoratedResultSet(spphs, pre_iter_hook=eager_load)
+
+    def getBinariesForPublishing(self, archive, distroarchseries=None,
+                                 pocket=None, component=None):
+        """See `IPublishingSet`."""
+        clauses = [
+            BinaryPackagePublishingHistory.archive == archive,
+            BinaryPackagePublishingHistory.status ==
+                PackagePublishingStatus.PUBLISHED,
+            BinaryPackagePublishingHistory.binarypackagename ==
+                BinaryPackageName.id,
+            ]
+        if distroarchseries is not None:
+            clauses.append(
+                BinaryPackagePublishingHistory.distroarchseries ==
+                    distroarchseries)
+        if pocket is not None:
+            clauses.append(BinaryPackagePublishingHistory.pocket == pocket)
+        if component is not None:
+            clauses.append(
+                BinaryPackagePublishingHistory.component == component)
+        bpphs = IStore(BinaryPackagePublishingHistory).find(
+            BinaryPackagePublishingHistory,
+            *clauses).order_by(BinaryPackageName.name)
+
+        def eager_load(bpphs):
+            # Preload everything which will be used by archivepublisher's
+            # build_binary_stanza_fields.
+            bulk.load_related(Section, bpphs, ["sectionID"])
+            bprs = bulk.load_related(
+                BinaryPackageRelease, bpphs, ["binarypackagereleaseID"])
+            bpbs = bulk.load_related(BinaryPackageBuild, bprs, ["buildID"])
+            sprs = bulk.load_related(
+                SourcePackageRelease, bpbs, ["source_package_release_id"])
+            bpfs = bulk.load_referencing(
+                BinaryPackageFile, bprs, ["binarypackagereleaseID"])
+            file_map = defaultdict(list)
+            for bpf in bpfs:
+                file_map[bpf.binarypackagerelease].append(bpf)
+            for bpr, files in file_map.items():
+                get_property_cache(bpr).files = files
+            lfas = bulk.load_related(LibraryFileAlias, bpfs, ["libraryfileID"])
+            bulk.load_related(LibraryFileContent, lfas, ["contentID"])
+            bulk.load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
+            bulk.load_related(BinaryPackageName, bprs, ["binarypackagenameID"])
+
+        return DecoratedResultSet(bpphs, pre_iter_hook=eager_load)
 
     def getChangesFilesForSources(self, one_or_more_source_publications):
         """See `IPublishingSet`."""

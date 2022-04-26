@@ -2264,6 +2264,13 @@
         permission="zope.Public"
         template="../templates/distribution-details.pt"
         />
+    <browser:page
+        name="+portlet-requires-subscription"
+        for="lp.registry.interfaces.distribution.IDistribution"
+        class="lp.registry.browser.distribution.DistributionView"
+        permission="zope.Public"
+        template="../templates/distribution-portlet-requires-subscription.pt"
+        />
     <browser:pages
         for="lp.registry.interfaces.distribution.IDistribution"
         class="lp.registry.browser.distribution.DistributionReassignmentView"

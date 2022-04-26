@@ -4,10 +4,7 @@ Upload processing queue with translations
 This test covers the use case when a package includes translations and is
 uploaded into the system.
 
-    >>> from lp.registry.model.gpgkey import GPGKey
-    >>> from lp.soyuz.model.component import Component
     >>> from lp.buildmaster.interfaces.processor import IProcessorSet
-    >>> from lp.soyuz.model.section import Section
     >>> from lp.soyuz.model.publishing import (
     ...     SourcePackagePublishingHistory)
     >>> from lp.registry.interfaces.distribution import IDistributionSet
@@ -28,7 +25,6 @@ uploaded into the system.
     >>> import_public_test_keys()
 
     >>> from lp.services.database.constants import UTC_NOW
-    >>> from lp.registry.interfaces.sourcepackage import SourcePackageUrgency
 
     >>> from lp.soyuz.model.packagetranslationsuploadjob import (
     ...     PackageTranslationsUploadJob)
@@ -54,17 +50,18 @@ queue:
 
 # We are going to import the pmount build into RELEASE pocket.
     >>> pmount_sourcepackagename = getUtility(ISourcePackageNameSet)['pmount']
-    >>> source_package_release = dapper.createUploadedSourcePackageRelease(
-    ...     pmount_sourcepackagename, "0.9.7-2ubuntu2", dapper.owner,
-    ...     None, None, 'i386', Component.get(1), dapper.owner,
-    ...     SourcePackageUrgency.LOW, None, None, None, GPGKey.get(1),
-    ...     Section.get(1), '', '', '', '', dapper.main_archive,
-    ...     'copyright ?!', '', '')
+    >>> source_package_release = factory.makeSourcePackageRelease(
+    ...     distroseries=dapper, sourcepackagename=pmount_sourcepackagename,
+    ...     version="0.9.7-2ubuntu2",
+    ...     maintainer=dapper.owner, creator=dapper.owner,
+    ...     component="main", section_name="base", urgency="low",
+    ...     architecturehintlist="i386")
 
     >>> publishing_history = SourcePackagePublishingHistory(
     ...     distroseries=dapper.id,
     ...     sourcepackagerelease=source_package_release.id,
     ...     sourcepackagename=source_package_release.sourcepackagename,
+    ...     _format=source_package_release.format,
     ...     component=source_package_release.component.id,
     ...     section=source_package_release.section.id,
     ...     status=PackagePublishingStatus.PUBLISHED,

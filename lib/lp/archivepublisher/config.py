@@ -6,15 +6,19 @@
 # to managing the archive publisher's configuration as stored in the
 # distribution and distroseries tables
 
+import logging
 import os
 
 from zope.component import getUtility
 
+from lp.archivepublisher.artifactory import ArtifactoryPool
+from lp.archivepublisher.diskpool import DiskPool
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.config import config
 from lp.soyuz.enums import (
     archive_suffixes,
+    ArchivePublishingMethod,
     ArchivePurpose,
     )
 
@@ -29,7 +33,7 @@ def getPubConfig(archive):
     modified according local context, it basically fixes the archive
     paths to cope with non-primary and PPA archives publication workflow.
     """
-    pubconf = Config()
+    pubconf = Config(archive)
     ppa_config = config.personalpackagearchive
     db_pubconf = getUtility(
         IPublisherConfigSet).getByDistribution(archive.distribution)
@@ -39,7 +43,19 @@ def getPubConfig(archive):
     pubconf.temproot = os.path.join(
         db_pubconf.root_dir, '%s-temp' % archive.distribution.name)
 
-    if archive.is_ppa:
+    if archive.publishing_method == ArchivePublishingMethod.ARTIFACTORY:
+        if config.artifactory.base_url is None:
+            raise AssertionError(
+                "Cannot publish to Artifactory because "
+                "config.artifactory.base_url is unset.")
+        pubconf.distroroot = None
+        # XXX cjwatson 2022-04-01: This assumes that only admins can
+        # configure archives to publish to Artifactory, since Archive.name
+        # isn't unique.  We may eventually need to use a new column with a
+        # unique constraint, but this is enough to get us going for now.
+        pubconf.archiveroot = "%s/%s" % (
+            config.artifactory.base_url.rstrip("/"), archive.name)
+    elif archive.is_ppa:
         if archive.private:
             pubconf.distroroot = ppa_config.private_root
         else:
@@ -68,7 +84,8 @@ def getPubConfig(archive):
     if archive.is_copy:
         pubconf.temproot = pubconf.archiveroot + '-temp'
 
-    if archive.purpose in APT_FTPARCHIVE_PURPOSES:
+    if (archive.publishing_method == ArchivePublishingMethod.LOCAL and
+            archive.purpose in APT_FTPARCHIVE_PURPOSES):
         pubconf.overrideroot = pubconf.archiveroot + '-overrides'
         pubconf.cacheroot = pubconf.archiveroot + '-cache'
         pubconf.miscroot = pubconf.archiveroot + '-misc'
@@ -105,7 +122,8 @@ def getPubConfig(archive):
     # by a few PPAs, and only by USC, so we leave metaroot unset and
     # ignore the uploads for anything except Ubuntu PPAs.
     ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    if archive.is_ppa and archive.distribution == ubuntu:
+    if (archive.publishing_method == ArchivePublishingMethod.LOCAL and
+            archive.is_ppa and archive.distribution == ubuntu):
         meta_root = os.path.join(
             pubconf.distroroot, archive.owner.name)
         pubconf.metaroot = os.path.join(
@@ -131,8 +149,24 @@ class Config:
     how the database stores configuration then the publisher will not
     need to be re-coded to cope"""
 
+    disk_pool_factory = {
+        ArchivePublishingMethod.LOCAL: DiskPool,
+        ArchivePublishingMethod.ARTIFACTORY: (
+            # Artifactory publishing doesn't need a temporary directory on
+            # the same filesystem as the pool, since the pool is remote
+            # anyway.
+            lambda rootpath, temppath, logger: ArtifactoryPool(
+                rootpath, logger)),
+        }
+
+    def __init__(self, archive):
+        self.archive = archive
+
     def setupArchiveDirs(self):
         """Create missing required directories in archive."""
+        if self.archive.publishing_method != ArchivePublishingMethod.LOCAL:
+            return
+
         required_directories = [
             self.distroroot,
             self.poolroot,
@@ -150,3 +184,24 @@ class Config:
                 continue
             if not os.path.exists(directory):
                 os.makedirs(directory, 0o755)
+
+    def getDiskPool(self, log, pool_root_override=None):
+        """Return a DiskPool instance for this publisher configuration.
+
+        It ensures the given archive location matches the minimal structure
+        required.
+
+        :param log: A logger.
+        :param pool_root_override: Use this pool root for the archive
+            instead of the one provided by the publishing configuration.
+        """
+        log.debug("Preparing on-disk pool representation.")
+        dp_log = logging.getLogger("DiskPool")
+        pool_root = pool_root_override
+        if pool_root is None:
+            pool_root = self.poolroot
+        dp_factory = self.disk_pool_factory[self.archive.publishing_method]
+        dp = dp_factory(pool_root, self.temproot, dp_log)
+        # Set the diskpool's log level to INFO to suppress debug output.
+        dp_log.setLevel(logging.INFO)
+        return dp

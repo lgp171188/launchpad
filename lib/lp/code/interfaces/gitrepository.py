@@ -741,6 +741,18 @@ class IGitRepositoryView(IHasRecipes):
             macaroon.
         """
 
+    @operation_parameters(
+        commit_sha1=copy_field(IRevisionStatusReport["commit_sha1"]))
+    @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
+    @operation_returns_collection_of(Interface)
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getStatusReports(commit_sha1):
+        """Retrieves the list of reports that exist for a commit.
+
+        :param commit_sha1: The commit sha1 for the report.
+        """
+
 
 class IGitRepositoryModerateAttributes(Interface):
     """IGitRepository attributes that can be edited by more than one community.
@@ -1037,18 +1049,6 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
         :param url: The external link of the status report.
         :param result_summary: The description of the new report.
         :param result: The result of the new report.
-        """
-
-    @operation_parameters(
-        commit_sha1=copy_field(IRevisionStatusReport["commit_sha1"]))
-    @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
-    @operation_returns_collection_of(Interface)
-    @export_read_operation()
-    @operation_for_version("devel")
-    def getStatusReports(commit_sha1):
-        """Retrieves the list of reports that exist for a commit.
-
-        :param commit_sha1: The commit sha1 for the report.
         """
 
 

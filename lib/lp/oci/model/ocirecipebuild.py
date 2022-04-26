@@ -67,6 +67,7 @@ from lp.services.database.interfaces import (
 from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
+from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
@@ -293,6 +294,15 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
 
         raise NotFoundError(filename)
 
+    def lfaUrl(self, lfa):
+        """Return the URL for a LibraryFileAlias in this context."""
+        if lfa is None:
+            return None
+        return ProxiedLibraryFileAlias(lfa, self).http_url
+
+    def getFileUrls(self):
+        return [self.lfaUrl(lfa) for _, lfa, _ in self.getFiles()]
+
     @cachedproperty
     def eta(self):
         """The datetime when the build job is estimated to complete.
@@ -400,7 +410,7 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
         except NotFoundError:
             return None
 
-    def verifySuccessfulUpload(self):
+    def verifySuccessfulUpload(self) -> bool:
         """See `IPackageBuild`."""
         layer_files = Store.of(self).find(
             OCIFile,

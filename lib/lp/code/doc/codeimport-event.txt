@@ -129,8 +129,7 @@ The database IDs of the CodeImport is also recorded. It is useful to
 collate events associated with deleted CodeImport objects.
 
     >>> event_dict = dict(svn_create_event.items())
-    >>> event_dict[CodeImportEventDataType.CODE_IMPORT] == (
-    ...     six.text_type(svn_import.id))
+    >>> event_dict[CodeImportEventDataType.CODE_IMPORT] == str(svn_import.id)
     True
 
 Different source details are recorded according to the type of the
@@ -215,7 +214,7 @@ details the changes that have been applied.
 The event records all the current values, and the old value of
 attributes that have changed. This produces redundant data that makes it
 possible to validate the historical trail for integrity and to detect
-when changes were made without creating a correponding event.
+when changes were made without creating a corresponding event.
 
     >>> print_items(modify_event)
     CODE_IMPORT <muted>
@@ -261,8 +260,7 @@ The database ID of the requested CodeImport is also recorded. It is
 useful to collate events associated with deleted CodeImport objects.
 
     >>> event_dict = dict(request_event.items())
-    >>> event_dict[CodeImportEventDataType.CODE_IMPORT] == (
-    ...     six.text_type(svn_import.id))
+    >>> event_dict[CodeImportEventDataType.CODE_IMPORT] == str(svn_import.id)
     True
 
 

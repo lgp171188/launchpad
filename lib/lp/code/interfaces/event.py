@@ -5,6 +5,7 @@
 
 __all__ = [
     'IBranchMergeProposalNeedsReviewEvent',
+    'IGitRefsCreatedEvent',
     'IGitRefsUpdatedEvent',
     'IReviewerNominatedEvent',
     ]
@@ -19,6 +20,10 @@ class IReviewerNominatedEvent(IObjectEvent):
 
 class IBranchMergeProposalNeedsReviewEvent(IObjectEvent):
     """The merge proposal has moved from work in progress to needs reivew."""
+
+
+class IGitRefsCreatedEvent(IObjectEvent):
+    """Some references in a Git repository have been created."""
 
 
 class IGitRefsUpdatedEvent(IObjectEvent):
