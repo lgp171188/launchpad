@@ -12,11 +12,12 @@ __all__ = [
     'OCIProjectURL',
     ]
 
-from breezy import urlutils
-from six.moves.urllib.parse import (
+from urllib.parse import (
     urlsplit,
     urlunsplit,
     )
+
+from breezy import urlutils
 from zope.component import getUtility
 from zope.interface import implementer
 

@@ -3,7 +3,8 @@
 
 """Tests for structural subscription traversal."""
 
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
+
 from zope.publisher.interfaces import NotFound
 
 from lp.registry.browser.distribution import DistributionNavigation

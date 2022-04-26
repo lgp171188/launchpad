@@ -9,13 +9,13 @@ __all__ = [
     ]
 
 import http.client
-
-import pytz
-from six.moves.urllib.parse import (
+from urllib.parse import (
     quote,
     quote_plus,
     urlunsplit,
     )
+
+import pytz
 
 from lp.bugs.externalbugtracker import (
     BugTrackerConnectError,

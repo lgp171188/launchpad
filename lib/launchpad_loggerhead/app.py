@@ -4,6 +4,10 @@
 import logging
 import os
 import threading
+from urllib.parse import (
+    urlencode,
+    urljoin,
+    )
 import xmlrpc.client
 
 from breezy import (
@@ -39,10 +43,6 @@ from paste.request import (
     construct_url,
     parse_querystring,
     path_info_pop,
-    )
-from six.moves.urllib.parse import (
-    urlencode,
-    urljoin,
     )
 
 from lp.code.interfaces.codehosting import (

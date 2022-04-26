@@ -209,7 +209,7 @@ There is an option to remove entries from the queue.
 
 No Privileges Person tries to remove entries but to no effect.
 
-    >>> from six.moves.urllib.parse import urlencode
+    >>> from urllib.parse import urlencode
     >>> post_data = urlencode(
     ...     {
     ...         'field.filter_target': 'all',

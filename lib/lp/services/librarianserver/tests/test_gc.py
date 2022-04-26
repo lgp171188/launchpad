@@ -19,11 +19,11 @@ from subprocess import (
     STDOUT,
     )
 import tempfile
+from urllib.parse import urljoin
 
 from fixtures import MockPatchObject
 import pytz
 import requests
-from six.moves.urllib.parse import urljoin
 from storm.store import Store
 from swiftclient import client as swiftclient
 from testtools.matchers import (

@@ -10,11 +10,11 @@ __all__ = [
     ]
 
 import io
-
-from six.moves.urllib_parse import (
+from urllib.parse import (
     unquote,
     urljoin,
     )
+
 from zope.app.publication.requestpublicationregistry import factoryRegistry
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.component import (

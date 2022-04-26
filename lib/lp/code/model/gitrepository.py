@@ -25,6 +25,11 @@ from itertools import (
     )
 import logging
 from operator import attrgetter
+from urllib.parse import (
+    quote_plus,
+    urlsplit,
+    urlunsplit,
+    )
 
 from breezy import urlutils
 from lazr.enum import DBItem
@@ -32,11 +37,6 @@ from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
 import six
-from six.moves.urllib.parse import (
-    quote_plus,
-    urlsplit,
-    urlunsplit,
-    )
 from storm.databases.postgres import Returning
 from storm.expr import (
     And,

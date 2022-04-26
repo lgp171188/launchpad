@@ -9,13 +9,13 @@ __all__ = [
 
 import json
 import sys
-
-from lazr.restful.utils import get_current_browser_request
-import requests
-from six.moves.urllib_parse import (
+from urllib.parse import (
     quote,
     urljoin,
     )
+
+from lazr.restful.utils import get_current_browser_request
+import requests
 from zope.interface import implementer
 
 from lp.code.errors import (

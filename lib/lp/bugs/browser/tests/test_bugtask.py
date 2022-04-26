@@ -6,12 +6,12 @@ from datetime import (
     timedelta,
     )
 import re
+from urllib.parse import urlencode
 
 from lazr.restful.interfaces import IJSONRequestCache
 from pytz import UTC
 import simplejson
 import six
-from six.moves.urllib.parse import urlencode
 import soupmatchers
 from testscenarios import (
     load_tests_apply_scenarios,

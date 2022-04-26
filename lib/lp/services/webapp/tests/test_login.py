@@ -17,6 +17,12 @@ from datetime import (
     )
 import http.client
 import unittest
+from urllib.error import HTTPError
+from urllib.parse import (
+    parse_qsl,
+    quote,
+    urlsplit,
+    )
 
 from openid.consumer.consumer import (
     FAILURE,
@@ -27,12 +33,6 @@ from openid.extensions import (
     sreg,
     )
 from openid.yadis.discover import DiscoveryFailure
-from six.moves.urllib.error import HTTPError
-from six.moves.urllib.parse import (
-    parse_qsl,
-    quote,
-    urlsplit,
-    )
 from testtools.matchers import (
     Contains,
     ContainsDict,

@@ -31,7 +31,7 @@ The +authorize-token page is restricted to logged in users, so users will
 first be asked to log in. (We won't show the actual login process because
 it involves OpenID, which would complicate this test quite a bit.)
 
-    >>> from six.moves.urllib.parse import urlencode
+    >>> from urllib.parse import urlencode
     >>> params = dict(
     ...     oauth_token=token.key, oauth_callback='http://launchpad.test/bzr')
     >>> url = "http://launchpad.test/+authorize-token?%s" % urlencode(params)

@@ -4,6 +4,7 @@
 """Definition of the internet servers that Launchpad uses."""
 
 import threading
+from urllib.parse import parse_qs
 import xmlrpc.client
 
 from lazr.restful.interfaces import (
@@ -18,7 +19,6 @@ from lazr.restful.publisher import (
 from lazr.restful.utils import get_current_browser_request
 from lazr.uri import URI
 import six
-from six.moves.urllib.parse import parse_qs
 from talisker.logs import logging_context
 import transaction
 from transaction.interfaces import ISynchronizer

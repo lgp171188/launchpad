@@ -7,10 +7,10 @@ import http.client
 import logging
 import socket
 import time
+from urllib.error import HTTPError
 
 from fixtures import FakeLogger
 import psycopg2
-from six.moves.urllib.error import HTTPError
 from storm.exceptions import (
     DisconnectionError,
     OperationalError,

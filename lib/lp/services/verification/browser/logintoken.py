@@ -13,10 +13,11 @@ __all__ = [
     'ValidateGPGKeyView',
     ]
 
-from six.moves.urllib.parse import (
+from urllib.parse import (
     urlencode,
     urljoin,
     )
+
 from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextAreaWidget

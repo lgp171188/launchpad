@@ -9,12 +9,12 @@ __all__ = [
 
 from functools import partial
 import os.path
+from urllib.request import urlopen
 
 from openid.fetchers import (
     setDefaultFetcher,
     Urllib2Fetcher,
     )
-from six.moves.urllib.request import urlopen
 
 from lp.services.config import config
 from lp.services.encoding import wsgi_native_string

@@ -8,7 +8,7 @@ __all__ = [
     'SearchFAQsView',
     ]
 
-from six.moves.urllib.parse import urlencode
+from urllib.parse import urlencode
 
 from lp import _
 from lp.answers.enums import (

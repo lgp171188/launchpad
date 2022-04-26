@@ -1335,7 +1335,7 @@ we must follow to download the data.
     Location: http://.../numbers.txt
     ...
 
-    >>> from six.moves.urllib.request import urlopen
+    >>> from urllib.request import urlopen
 
     >>> data = None
     >>> conn = urlopen(data_response.getHeader('Location'))

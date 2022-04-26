@@ -145,7 +145,7 @@ Person code listing pages
 The person code listings is the other obvious place to filter out the
 viewable branches.
 
-    >>> from six.moves.urllib.parse import urlencode
+    >>> from urllib.parse import urlencode
     >>> def print_person_code_listing(browser, category=None):
     ...     params = {'batch': '15'}
     ...     if category is not None:

@@ -29,7 +29,7 @@ After determining the URL of the OpenID server, the next thing a consumer
 needs to do is associate with the server and get a shared secret via a
 POST request.
 
-    >>> from six.moves.urllib.parse import urlencode
+    >>> from urllib.parse import urlencode
     >>> anon_browser.open(
     ...     'http://testopenid.test/+openid', data=urlencode({
     ...         'openid.mode': 'associate',

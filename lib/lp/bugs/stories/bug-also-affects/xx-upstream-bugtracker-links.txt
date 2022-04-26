@@ -74,7 +74,7 @@ will be displayed.
 The description given in the link to the bug filing form contains a
 link back to bug 13, the place where it was originally filed.
 
-    >>> from six.moves.urllib.parse import (
+    >>> from urllib.parse import (
     ...     parse_qs,
     ...     urlparse,
     ...     )

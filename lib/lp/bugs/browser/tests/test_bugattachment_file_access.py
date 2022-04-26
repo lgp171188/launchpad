@@ -2,13 +2,13 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import re
-
-import requests
-from six.moves.urllib.parse import (
+from urllib.parse import (
     parse_qs,
     urlparse,
     urlunparse,
     )
+
+import requests
 import transaction
 from zope.component import (
     getMultiAdapter,

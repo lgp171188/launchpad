@@ -6,10 +6,10 @@
 Database outages happen by accident and during fastdowntime deployments."""
 
 import io
+from urllib.error import HTTPError
+from urllib.request import urlopen
 
 from fixtures import Fixture
-from six.moves.urllib.error import HTTPError
-from six.moves.urllib.request import urlopen
 
 from lp.services.librarian.client import LibrarianClient
 from lp.services.librarianserver.testing.server import LibrarianServerFixture

@@ -5,10 +5,11 @@
 
 __all__ = []
 
-from six.moves.urllib.parse import (
+from urllib.parse import (
     quote,
     unquote,
     )
+
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.schema.vocabulary import SimpleTerm

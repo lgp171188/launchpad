@@ -8,11 +8,11 @@ import http.client
 from io import BytesIO
 import os
 import unittest
+from urllib.parse import urlparse
 
 from lazr.uri import URI
 import pytz
 import requests
-from six.moves.urllib.parse import urlparse
 from storm.expr import SQL
 from testtools.matchers import EndsWith
 import transaction

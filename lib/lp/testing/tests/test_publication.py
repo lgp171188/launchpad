@@ -3,9 +3,10 @@
 
 """Tests for the helpers in `lp.testing.publication`."""
 
+from urllib.parse import quote
+
 from lazr.restful import EntryResource
 from lazr.restful.utils import get_current_browser_request
-from six.moves.urllib_parse import quote
 from zope.browserpage.simpleviewclass import simple
 from zope.component import (
     getSiteManager,

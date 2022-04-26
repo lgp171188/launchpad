@@ -10,14 +10,14 @@ __all__ = [
     ]
 
 import json
-
-from breezy import urlutils
-from lazr.restful.interface import copy_field
-from six.moves.urllib_parse import (
+from urllib.parse import (
     quote_plus,
     urlsplit,
     urlunsplit,
     )
+
+from breezy import urlutils
+from lazr.restful.interface import copy_field
 from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextAreaWidget

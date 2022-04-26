@@ -5,14 +5,14 @@
 
 from datetime import datetime
 import json
-
-import pytz
-import responses
-from six.moves.urllib_parse import (
+from urllib.parse import (
     parse_qs,
     urlsplit,
     urlunsplit,
     )
+
+import pytz
+import responses
 from testtools.matchers import (
     Contains,
     ContainsDict,

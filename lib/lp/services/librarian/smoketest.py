@@ -9,9 +9,9 @@
 import datetime
 import io
 import sys
+from urllib.request import urlopen
 
 import pytz
-from six.moves.urllib.request import urlopen
 import transaction
 from zope.component import getUtility
 

@@ -13,17 +13,17 @@ __all__ = [
 
 import ftplib
 import os
+from urllib.parse import (
+    unquote_plus,
+    urljoin,
+    urlsplit,
+    )
 
 from lazr.uri import (
     InvalidURIError,
     URI,
     )
 import requests
-from six.moves.urllib.parse import (
-    unquote_plus,
-    urljoin,
-    urlsplit,
-    )
 
 from lp.registry.scripts.productreleasefinder import log
 from lp.registry.scripts.productreleasefinder.path import (

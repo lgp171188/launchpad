@@ -22,7 +22,7 @@ The user is redirected to a new url to make the change explicit, and
 to allow user agents (and users) to update bookmarks, etc.
 
     >>> def print_query_changes(query_string_before, query_string_after):
-    ...     from six.moves.urllib.parse import parse_qsl
+    ...     from urllib.parse import parse_qsl
     ...     query_before = parse_qsl(
     ...         query_string_before, keep_blank_values=True)
     ...     query_after = parse_qsl(

@@ -19,7 +19,7 @@ access token.
     >>> token.review(salgado, OAuthPermission.WRITE_PUBLIC)
     >>> logout()
 
-    >>> from six.moves.urllib.parse import urlencode
+    >>> from urllib.parse import urlencode
     >>> data = dict(
     ...     oauth_consumer_key='foobar123451432',
     ...     oauth_version='1.0',

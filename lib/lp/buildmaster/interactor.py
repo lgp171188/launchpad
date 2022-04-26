@@ -14,10 +14,10 @@ import logging
 import os.path
 import sys
 import traceback
+from urllib.parse import urlparse
 
 from ampoule.pool import ProcessPool
 import six
-from six.moves.urllib.parse import urlparse
 import transaction
 from twisted.internet import (
     defer,

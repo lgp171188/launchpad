@@ -7,7 +7,7 @@ __all__ = [
     'PPANameWidget',
     ]
 
-from six.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from lp.app.widgets.textwidgets import URIComponentWidget
 from lp.services.config import config

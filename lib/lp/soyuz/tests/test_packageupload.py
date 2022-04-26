@@ -7,13 +7,13 @@ from datetime import timedelta
 import io
 import os.path
 import shutil
+from urllib.request import urlopen
 
 from debian.deb822 import Changes
 from lazr.restfulclient.errors import (
     BadRequest,
     Unauthorized,
     )
-from six.moves.urllib.request import urlopen
 from testtools.matchers import (
     Equals,
     MatchesListwise,

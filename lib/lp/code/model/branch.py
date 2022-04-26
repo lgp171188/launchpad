@@ -11,6 +11,7 @@ from datetime import datetime
 from functools import partial
 import operator
 import os.path
+from urllib.parse import urlsplit
 
 from breezy import urlutils
 from breezy.revision import NULL_REVISION
@@ -18,7 +19,6 @@ from breezy.url_policy_open import open_only_scheme
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 import six
-from six.moves.urllib_parse import urlsplit
 from storm.expr import (
     And,
     Coalesce,

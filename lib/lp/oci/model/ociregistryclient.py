@@ -16,6 +16,7 @@ import json
 import logging
 import re
 import tarfile
+from urllib.parse import urlparse
 
 import boto3
 from botocore.config import Config
@@ -24,7 +25,6 @@ from requests.exceptions import (
     HTTPError,
     )
 from requests.utils import parse_dict_header
-from six.moves.urllib.parse import urlparse
 from tenacity import (
     before_log,
     retry,

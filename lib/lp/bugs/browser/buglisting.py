@@ -20,6 +20,12 @@ __all__ = [
     ]
 
 import os.path
+from urllib.parse import (
+    parse_qs,
+    parse_qsl,
+    quote,
+    urlencode,
+    )
 
 from lazr.delegates import delegate_to
 from lazr.restful.interfaces import IJSONRequestCache
@@ -27,12 +33,6 @@ from lazr.uri import URI
 import pystache
 from simplejson import dumps
 from simplejson.encoder import JSONEncoderForHTML
-from six.moves.urllib.parse import (
-    parse_qs,
-    parse_qsl,
-    quote,
-    urlencode,
-    )
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (

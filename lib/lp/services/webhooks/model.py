@@ -15,6 +15,7 @@ from datetime import (
 import ipaddress
 import re
 import socket
+from urllib.parse import urlsplit
 
 import iso8601
 from lazr.delegates import delegate_to
@@ -24,7 +25,6 @@ from lazr.enum import (
     )
 import psutil
 from pytz import utc
-from six.moves.urllib.parse import urlsplit
 from storm.expr import Desc
 from storm.properties import (
     Bool,

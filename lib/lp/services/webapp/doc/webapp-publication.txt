@@ -507,7 +507,7 @@ python 'in' operator.
 
     >>> from lp.services.webapp.servers import (
     ...     LaunchpadBrowserRequest)
-    >>> from six.moves.urllib.parse import urlencode
+    >>> from urllib.parse import urlencode
     >>> environment = {'QUERY_STRING': urlencode({
     ...     'a_field': 'a_value',
     ...     'items_field': [1, 2, 3]}, doseq=True)}

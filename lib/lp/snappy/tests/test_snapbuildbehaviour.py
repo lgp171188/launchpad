@@ -8,13 +8,13 @@ from datetime import datetime
 import os.path
 from textwrap import dedent
 import time
+from urllib.parse import urlsplit
 import uuid
 
 from aptsources.sourceslist import SourceEntry
 import fixtures
 from pymacaroons import Macaroon
 import pytz
-from six.moves.urllib_parse import urlsplit
 from testtools import ExpectedException
 from testtools.matchers import (
     AfterPreprocessing,

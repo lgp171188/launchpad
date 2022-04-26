@@ -7,6 +7,7 @@ import contextlib
 from itertools import repeat
 import operator
 import re
+from urllib.parse import urlparse
 
 from lazr.restful.utils import get_current_browser_request
 import oops.createhooks
@@ -15,7 +16,6 @@ from oops_datedir_repo import DateDirRepo
 import oops_timeline
 import pytz
 import six
-from six.moves.urllib.parse import urlparse
 from talisker.logs import logging_context
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility

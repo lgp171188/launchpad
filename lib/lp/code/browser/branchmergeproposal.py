@@ -26,6 +26,10 @@ __all__ = [
 
 from functools import wraps
 import operator
+from urllib.parse import (
+    urlsplit,
+    urlunsplit,
+    )
 
 from lazr.delegates import delegate_to
 from lazr.restful.interface import copy_field
@@ -34,10 +38,6 @@ from lazr.restful.interfaces import (
     IWebServiceClientRequest,
     )
 import simplejson
-from six.moves.urllib_parse import (
-    urlsplit,
-    urlunsplit,
-    )
 from zope.component import (
     adapter,
     getMultiAdapter,

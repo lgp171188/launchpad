@@ -9,14 +9,15 @@ __all__ = [
     'PageMatches',
     ]
 
-from lazr.restful.utils import get_current_browser_request
-from lazr.uri import URI
-import requests
-from six.moves.urllib.parse import (
+from urllib.parse import (
     parse_qsl,
     urlencode,
     urlunparse,
     )
+
+from lazr.restful.utils import get_current_browser_request
+from lazr.uri import URI
+import requests
 from zope.interface import implementer
 
 from lp.services.config import config

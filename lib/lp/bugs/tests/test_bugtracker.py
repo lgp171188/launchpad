@@ -11,11 +11,11 @@ from doctest import (
     NORMALIZE_WHITESPACE,
     )
 import unittest
+from urllib.parse import urlencode
 
 from lazr.lifecycle.snapshot import Snapshot
 from pytz import utc
 import responses
-from six.moves.urllib_parse import urlencode
 from testtools.matchers import (
     Equals,
     MatchesListwise,

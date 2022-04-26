@@ -13,13 +13,13 @@ from datetime import (
     timedelta,
     )
 from operator import attrgetter
+from urllib.parse import urlsplit
 
 from breezy import urlutils
 from lazr.lifecycle.event import ObjectCreatedEvent
 from pymacaroons import Macaroon
 import pytz
 import six
-from six.moves.urllib.parse import urlsplit
 from storm.expr import (
     And,
     Coalesce,

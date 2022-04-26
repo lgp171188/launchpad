@@ -252,7 +252,7 @@ the client until it begins a new transaction.
     >>> print(url)
     http://.../text.txt
 
-    >>> from six.moves.urllib.request import urlopen
+    >>> from urllib.request import urlopen
     >>> six.ensure_str(urlopen(url).read())
     'This is some data'
 

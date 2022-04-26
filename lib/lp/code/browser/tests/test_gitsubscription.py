@@ -3,8 +3,9 @@
 
 """Unit tests for GitSubscriptions."""
 
+from urllib.parse import urlencode
+
 from fixtures import FakeLogger
-from six.moves.urllib.parse import urlencode
 from testtools.matchers import MatchesStructure
 from zope.security.interfaces import Unauthorized
 from zope.testbrowser.browser import LinkNotFoundError
