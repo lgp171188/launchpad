@@ -1125,7 +1125,7 @@ class DistroMirrorProber:
                 continue
 
             probed_mirrors.append(mirror)
-            logfile = six.StringIO()
+            logfile = io.StringIO()
             logfiles[mirror_id] = logfile
             prob_scheduled_calls = probe_function(
                 mirror, logfile, unchecked_keys, self.logger,

@@ -8,6 +8,7 @@ from __future__ import (
     print_function,
     )
 
+import io
 import os
 import shutil
 import tempfile
@@ -23,8 +24,6 @@ except ImportError:
     from bzrlib.tests import TestCase
     from bzrlib.transport import get_transport
 
-import six
-
 from devscripts import get_launchpad_root
 from devscripts.sourcecode import (
     find_branches,
@@ -38,7 +37,7 @@ class TestParseConfigFile(unittest.TestCase):
     """Tests for the config file parser."""
 
     def makeFile(self, contents):
-        return six.StringIO(contents)
+        return io.StringIO(contents)
 
     def test_empty(self):
         # Parsing an empty config file returns an empty sequence.

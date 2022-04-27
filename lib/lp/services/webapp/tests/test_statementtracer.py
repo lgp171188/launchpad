@@ -4,10 +4,10 @@
 """Tests for the LaunchpadStatementTracer."""
 
 from contextlib import contextmanager
+import io
 import sys
 
 from lazr.restful.utils import get_current_browser_request
-import six
 
 from lp.services.osutils import override_environ
 from lp.services.timeline.requesttimeline import get_request_timeline
@@ -23,7 +23,7 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 @contextmanager
 def stdout():
-    file = six.StringIO()
+    file = io.StringIO()
     original = sys.stdout
     sys.stdout = file
     try:
@@ -34,7 +34,7 @@ def stdout():
 
 @contextmanager
 def stderr():
-    file = six.StringIO()
+    file = io.StringIO()
     original = sys.stderr
     sys.stderr = file
     try:

@@ -18,6 +18,7 @@ __all__ = [
     ]
 
 from configparser import ConfigParser
+import io
 import os.path
 import socket
 import time
@@ -32,7 +33,6 @@ from lazr.restful.utils import get_current_browser_request
 import oops
 import oops_amqp
 import pgbouncer.fixture
-import six
 from zope.component import (
     adapter,
     getGlobalSiteManager,
@@ -271,8 +271,8 @@ class CapturedOutput(Fixture):
 
     def __init__(self):
         super().__init__()
-        self.stdout = six.StringIO()
-        self.stderr = six.StringIO()
+        self.stdout = io.StringIO()
+        self.stderr = io.StringIO()
 
     def _setUp(self):
         self.useFixture(MonkeyPatch('sys.stdout', self.stdout))

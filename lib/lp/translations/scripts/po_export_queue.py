@@ -6,11 +6,11 @@ __all__ = [
     'process_queue',
     ]
 
+import io
 import os
 import traceback
 
 import psycopg2
-import six
 from zope.component import (
     getAdapter,
     getUtility,
@@ -344,7 +344,7 @@ class ExportResult:
     def addFailure(self):
         """Store an exception that broke the export."""
         # Get the trace back that produced this failure.
-        exception = six.StringIO()
+        exception = io.StringIO()
         traceback.print_exc(file=exception)
         exception.seek(0)
         # And store it.

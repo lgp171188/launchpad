@@ -5,9 +5,8 @@
 
 __all__ = ["OpStats"]
 
+import io
 from time import time
-
-import six
 
 from lp.services.webapp import LaunchpadXMLRPCView
 
@@ -65,7 +64,7 @@ class OpStats(LaunchpadXMLRPCView):
 
     def __call__(self):
         now = time()
-        out = six.StringIO()
+        out = io.StringIO()
         for stat_key in sorted(OpStats.stats.keys()):
             print('%s:%d@%d' % (
                     # Make keys more cricket friendly

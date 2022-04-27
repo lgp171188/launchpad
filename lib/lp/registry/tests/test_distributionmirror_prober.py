@@ -5,6 +5,7 @@
 
 from datetime import datetime
 import http.client
+import io
 import logging
 import os
 import re
@@ -13,7 +14,6 @@ from textwrap import dedent
 from fixtures import MockPatchObject
 from lazr.uri import URI
 import responses
-import six
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -879,7 +879,7 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
         mirror = removeSecurityProxy(
             self.factory.makeMirror(distroseries.distribution))
         callbacks = MirrorCDImageProberCallbacks(
-            mirror, distroseries, 'ubuntu', six.StringIO())
+            mirror, distroseries, 'ubuntu', io.StringIO())
         return callbacks
 
     def getLogger(self):
@@ -980,7 +980,7 @@ class TestArchiveMirrorProberCallbacks(TestCaseWithFactory):
         component = self.factory.makeComponent()
         callbacks = ArchiveMirrorProberCallbacks(
             mirror, distroseries, PackagePublishingPocket.RELEASE,
-            component, 'foo', six.StringIO())
+            component, 'foo', io.StringIO())
         return callbacks
 
     def test_failure_propagation(self):
@@ -1068,7 +1068,7 @@ class TestProbeFunctionSemaphores(TestCase):
         # Note that calling this function won't actually probe any mirrors; we
         # need to call reactor.run() to actually start the probing.
         with default_timeout(15.0):
-            probe_cdimage_mirror(mirror, six.StringIO(), [], logging, 100, 2)
+            probe_cdimage_mirror(mirror, io.StringIO(), [], logging, 100, 2)
         self.assertEqual(0, len(mirror.cdimage_series))
 
     def test_archive_mirror_probe_function(self):
@@ -1104,7 +1104,7 @@ class TestProbeFunctionSemaphores(TestCase):
         mirror2_host = URI(mirror2.base_url).host
         mirror3_host = URI(mirror3.base_url).host
 
-        probe_function(mirror1, six.StringIO(), [], logging, 100, 2)
+        probe_function(mirror1, io.StringIO(), [], logging, 100, 2)
         # Since we have a single mirror to probe we need to have a single
         # DeferredSemaphore with a limit of max_per_host_requests, to ensure we
         # don't issue too many simultaneous connections on that host.
@@ -1115,7 +1115,7 @@ class TestProbeFunctionSemaphores(TestCase):
         # overall number of requests.
         self.assertEqual(multi_lock.overall_lock.limit, max_requests)
 
-        probe_function(mirror2, six.StringIO(), [], logging, 100, 2)
+        probe_function(mirror2, io.StringIO(), [], logging, 100, 2)
         # Now we have two mirrors to probe, but they have the same hostname,
         # so we'll still have a single semaphore in host_semaphores.
         self.assertEqual(mirror2_host, mirror1_host)
@@ -1123,7 +1123,7 @@ class TestProbeFunctionSemaphores(TestCase):
         multi_lock = request_manager.host_locks[mirror2_host]
         self.assertEqual(multi_lock.host_lock.limit, max_per_host_requests)
 
-        probe_function(mirror3, six.StringIO(), [], logging, 100, 2)
+        probe_function(mirror3, io.StringIO(), [], logging, 100, 2)
         # This third mirror is on a separate host, so we'll have a second
         # semaphore added to host_semaphores.
         self.assertTrue(mirror3_host != mirror1_host)
@@ -1135,7 +1135,7 @@ class TestProbeFunctionSemaphores(TestCase):
         # proxy, we'll use the mirror's host as the key to find the semaphore
         # that should be used
         self.pushConfig('launchpad', http_proxy='http://squid.internal:3128/')
-        probe_function(mirror3, six.StringIO(), [], logging, 100, 2)
+        probe_function(mirror3, io.StringIO(), [], logging, 100, 2)
         self.assertEqual(len(request_manager.host_locks), 2)
 
 
@@ -1168,7 +1168,7 @@ class TestLoggingMixin(TestCase):
 
     def test_logMessage_output(self):
         logger = LoggingMixin()
-        logger.log_file = six.StringIO()
+        logger.log_file = io.StringIO()
         logger._getTime = self._fake_gettime
         logger.logMessage("Ubuntu Warty Released")
         logger.log_file.seek(0)
@@ -1179,7 +1179,7 @@ class TestLoggingMixin(TestCase):
 
     def test_logMessage_integration(self):
         logger = LoggingMixin()
-        logger.log_file = six.StringIO()
+        logger.log_file = io.StringIO()
         logger.logMessage("Probing...")
         logger.log_file.seek(0)
         message = logger.log_file.read()

@@ -3,6 +3,7 @@
 
 """Test DKIM-signed messages"""
 
+import io
 import logging
 
 import dkim
@@ -68,7 +69,7 @@ class TestDKIM(TestCaseWithFactory):
     def setUp(self):
         # Login with admin roles as we aren't testing access here.
         TestCaseWithFactory.setUp(self, 'admin@canonical.com')
-        self._log_output = six.StringIO()
+        self._log_output = io.StringIO()
         handler = logging.StreamHandler(self._log_output)
         self.logger = logging.getLogger('mail-authenticate-dkim')
         self.logger.addHandler(handler)

@@ -11,11 +11,10 @@ __all__ = [
     'PrefixFilter',
     ]
 
+import io
 import logging
 import sys
 import traceback
-
-import six
 
 from lp.services.log import loglevels
 
@@ -196,7 +195,7 @@ class BufferLogger(FakeLogger):
     # service.
 
     def __init__(self):
-        super().__init__(six.StringIO())
+        super().__init__(io.StringIO())
 
     def getLogBuffer(self):
         """Return the existing log messages."""
@@ -204,7 +203,7 @@ class BufferLogger(FakeLogger):
 
     def clearLogBuffer(self):
         """Clear out the existing log messages."""
-        self.output_file = six.StringIO()
+        self.output_file = io.StringIO()
 
     def getLogBufferAndClear(self):
         """Return the existing log messages and clear the buffer."""

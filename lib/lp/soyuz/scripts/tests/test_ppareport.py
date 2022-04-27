@@ -3,12 +3,11 @@
 
 """Tests for `PPAReportScript.` """
 
+import io
 import os
 import shutil
 import tempfile
 import unittest
-
-import six
 
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
@@ -70,7 +69,7 @@ class TestPPAReport(unittest.TestCase):
         if output is None:
 
             def set_test_output():
-                reporter.output = six.StringIO()
+                reporter.output = io.StringIO()
             reporter.setOutput = set_test_output
 
             reporter.closeOutput = FakeMethod()

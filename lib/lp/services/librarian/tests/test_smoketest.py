@@ -7,7 +7,6 @@ from functools import partial
 import io
 
 from fixtures import MockPatch
-import six
 
 from lp.services.librarian.smoketest import (
     do_smoketest,
@@ -63,7 +62,7 @@ class SmokeTestTestCase(TestCaseWithFactory):
                 "lp.services.librarian.smoketest.urlopen", good_urlopen):
             self.assertEqual(
                 do_smoketest(self.fake_librarian, self.fake_librarian,
-                             output=six.StringIO()),
+                             output=io.StringIO()),
                 0)
 
     def test_bad_data(self):
@@ -72,7 +71,7 @@ class SmokeTestTestCase(TestCaseWithFactory):
         with MockPatch("lp.services.librarian.smoketest.urlopen", bad_urlopen):
             self.assertEqual(
                 do_smoketest(self.fake_librarian, self.fake_librarian,
-                             output=six.StringIO()),
+                             output=io.StringIO()),
                 1)
 
     def test_exception(self):
@@ -83,7 +82,7 @@ class SmokeTestTestCase(TestCaseWithFactory):
                 "lp.services.librarian.smoketest.urlopen", error_urlopen):
             self.assertEqual(
                 do_smoketest(self.fake_librarian, self.fake_librarian,
-                             output=six.StringIO()),
+                             output=io.StringIO()),
                 1)
 
     def test_explosive_errors(self):
@@ -96,4 +95,4 @@ class SmokeTestTestCase(TestCaseWithFactory):
                 self.assertRaises(
                     exception,
                     do_smoketest, self.fake_librarian, self.fake_librarian,
-                    output=six.StringIO())
+                    output=io.StringIO())
