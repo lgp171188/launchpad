@@ -11,7 +11,6 @@ import sys
 import tempfile
 
 from breezy.osutils import local_concurrency
-from six.moves import zip as izip
 from subunit import ProtocolTestCase
 from subunit.run import SubunitTestRunner
 from testtools import (
@@ -139,7 +138,7 @@ def partition_tests(test_ids, count):
     # just one partition.  So the slowest partition shouldn't be much slower
     # than the fastest.
     partitions = [list() for i in range(count)]
-    for partition, test_id in izip(itertools.cycle(partitions), test_ids):
+    for partition, test_id in zip(itertools.cycle(partitions), test_ids):
         partition.append(test_id)
     return partitions
 

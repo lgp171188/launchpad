@@ -53,16 +53,13 @@ __all__ = ['Dominator']
 from collections import defaultdict
 from datetime import timedelta
 from functools import cmp_to_key
+from itertools import filterfalse
 from operator import (
     attrgetter,
     itemgetter,
     )
 
 import apt_pkg
-from six.moves import (
-    filter as ifilter,
-    filterfalse as ifilterfalse,
-    )
 from storm.expr import (
     And,
     Count,
@@ -331,8 +328,8 @@ def find_live_binary_versions_pass_2(sorted_pubs, cache):
     sorted_pubs = list(sorted_pubs)
     latest = sorted_pubs.pop(0)
     is_arch_specific = attrgetter('architecture_specific')
-    arch_specific_pubs = list(ifilter(is_arch_specific, sorted_pubs))
-    arch_indep_pubs = list(ifilterfalse(is_arch_specific, sorted_pubs))
+    arch_specific_pubs = list(filter(is_arch_specific, sorted_pubs))
+    arch_indep_pubs = list(filterfalse(is_arch_specific, sorted_pubs))
 
     bpbs = load_related(
         BinaryPackageBuild,
