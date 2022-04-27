@@ -707,7 +707,7 @@ class RevisionsAddedJob(BranchJobDerived):
             authors = self.getAuthors(merged_revisions, graph)
             revision_set = RevisionSet()
             rev_authors = revision_set.acquireRevisionAuthors(authors)
-            outf = six.StringIO()
+            outf = io.StringIO()
             pretty_authors = []
             for rev_author in rev_authors.values():
                 if rev_author.person is None:

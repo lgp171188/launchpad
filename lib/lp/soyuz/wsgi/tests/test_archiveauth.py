@@ -4,12 +4,12 @@
 """Tests for the WSGI archive authorisation provider."""
 
 import crypt
+import io
 import os.path
 import subprocess
 import time
 
 from fixtures import MonkeyPatch
-import six
 import transaction
 
 from lp.services.config import config
@@ -39,7 +39,7 @@ class TestWSGIArchiveAuth(TestCaseWithFactory):
         self.resetLog()
 
     def resetLog(self):
-        self.wsgi_errors = six.StringIO()
+        self.wsgi_errors = io.StringIO()
 
     def assertLogs(self, message):
         self.assertEqual(

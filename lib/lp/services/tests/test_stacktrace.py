@@ -3,10 +3,10 @@
 
 """Test the stacktrace module."""
 
+import io
 import sys
 
 from fixtures import MonkeyPatch
-import six
 
 from lp.services import stacktrace
 from lp.testing import TestCase
@@ -149,7 +149,7 @@ class TestStacktrace(TestCase):
     def test_get_frame_data_supplement_bad_getInfo_with_traceback(self):
         def boo_hiss():
             raise ValueError()
-        stderr = six.StringIO()
+        stderr = io.StringIO()
         self.assertFalse(stacktrace.DEBUG_EXCEPTION_FORMATTER)
         stacktrace.DEBUG_EXCEPTION_FORMATTER = True
         try:
@@ -276,7 +276,7 @@ class TestStacktrace(TestCase):
     def test_format_list_extra_errors(self):
         extracted = stacktrace.extract_stack(get_frame(supplement=dict()))
         extracted[-1][-2]['warnings'] = object()  # This should never happen.
-        stderr = six.StringIO()
+        stderr = io.StringIO()
         self.assertFalse(stacktrace.DEBUG_EXCEPTION_FORMATTER)
         stacktrace.DEBUG_EXCEPTION_FORMATTER = True
         try:
@@ -289,30 +289,30 @@ class TestStacktrace(TestCase):
 
     def test_print_list_default(self):
         extracted = stacktrace.extract_stack(get_frame())
-        stderr = six.StringIO()
+        stderr = io.StringIO()
         with MonkeyPatch('sys.stderr', stderr):
             stacktrace.print_list(extracted)
         self.assertEndsWith(stderr.getvalue(), 'return sys._getframe()\n')
 
     def test_print_list_file(self):
         extracted = stacktrace.extract_stack(get_frame())
-        f = six.StringIO()
+        f = io.StringIO()
         stacktrace.print_list(extracted, file=f)
         self.assertEndsWith(f.getvalue(), 'return sys._getframe()\n')
 
     def test_print_stack_default(self):
-        stderr = six.StringIO()
+        stderr = io.StringIO()
         with MonkeyPatch('sys.stderr', stderr):
             stacktrace.print_stack()
         self.assertEndsWith(stderr.getvalue(), 'stacktrace.print_stack()\n')
 
     def test_print_stack_options(self):
-        f = six.StringIO()
+        f = io.StringIO()
         frame = get_frame()
         stacktrace.print_stack(f=frame, limit=100, file=f)
         self.assertEndsWith(f.getvalue(), 'return sys._getframe()\n')
         self.assertTrue(len(f.getvalue().split('\n')) > 4)
-        f = six.StringIO()
+        f = io.StringIO()
         stacktrace.print_stack(f=frame, limit=2, file=f)
         self.assertEqual(4, len(f.getvalue().strip().split('\n')))
         self.assertEndsWith(f.getvalue(), 'return sys._getframe()\n')

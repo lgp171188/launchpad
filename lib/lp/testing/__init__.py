@@ -352,7 +352,7 @@ class StormStatementRecorder:
         stop_sql_logging()
 
     def __str__(self):
-        out = six.StringIO()
+        out = io.StringIO()
         print_queries(self.query_data, file=out)
         return out.getvalue()
 
@@ -665,7 +665,7 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
     @contextmanager
     def expectedLog(self, regex):
         """Expect a log to be written that matches the regex."""
-        output = six.StringIO()
+        output = io.StringIO()
         handler = logging.StreamHandler(output)
         logger = logging.getLogger()
         logger.addHandler(handler)

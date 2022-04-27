@@ -6,7 +6,8 @@
 These are the edge test cases that don't belong in the doctest.
 """
 
-import six
+import io
+
 from zope.interface import implementer
 
 from lp.services.log.logger import FakeLogger
@@ -57,7 +58,7 @@ class TestSomething(TestCase):
 
         Exception from cleanup raised.
         """
-        log_file = six.StringIO()
+        log_file = io.StringIO()
         loop = FailingLoop(fail_cleanup=True)
         tuner = LoopTuner(loop, 5, log=FakeLogger(log_file))
         self.assertRaises(CleanupException, tuner.run)
@@ -69,7 +70,7 @@ class TestSomething(TestCase):
         Exception from cleanup is logged.
         Original exception from main task is raised.
         """
-        log_file = six.StringIO()
+        log_file = io.StringIO()
         loop = FailingLoop(fail_main=True, fail_cleanup=True)
         tuner = LoopTuner(loop, 5, log=FakeLogger(log_file))
         self.assertRaises(MainException, tuner.run)

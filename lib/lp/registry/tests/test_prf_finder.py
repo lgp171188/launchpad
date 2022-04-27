@@ -1,13 +1,13 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import io
 import logging
 import os
 import shutil
 import tempfile
 
 import responses
-import six
 from testtools import ExpectedException
 import transaction
 from zope.component import getUtility
@@ -389,7 +389,7 @@ class HandleReleaseTestCase(TestCase):
         # Test that handleRelease() handles the case where a version can't be
         # parsed from the url given.
         ztm = self.layer.txn
-        output = six.StringIO()
+        output = io.StringIO()
         logger = logging.getLogger()
         logger.setLevel(logging.INFO)
         logger.addHandler(logging.StreamHandler(output))

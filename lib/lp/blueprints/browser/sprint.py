@@ -24,10 +24,10 @@ __all__ = [
 
 from collections import defaultdict
 import csv
+import io
 
 from lazr.restful.utils import smartquote
 import pytz
-import six
 from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextAreaWidget
@@ -617,7 +617,7 @@ class SprintAttendeesCsvExportView(LaunchpadView):
         self.request.response.setHeader(
             'Content-disposition',
             'attachment; filename=%s-attendees.csv' % self.context.name)
-        output = six.StringIO()
+        output = io.StringIO()
         writer = csv.writer(output)
         writer.writerows(rows)
         return output.getvalue()
