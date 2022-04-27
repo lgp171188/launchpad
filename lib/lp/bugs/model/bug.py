@@ -18,6 +18,10 @@ __all__ = [
     ]
 
 
+from collections.abc import (
+    Iterable,
+    Set,
+    )
 from email.utils import make_msgid
 from functools import wraps
 import http.client
@@ -30,10 +34,6 @@ from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.restful.declarations import error_status
 import pytz
-from six.moves.collections_abc import (
-    Iterable,
-    Set,
-    )
 from storm.expr import (
     And,
     Coalesce,

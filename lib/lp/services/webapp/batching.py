@@ -1,6 +1,7 @@
 # Copyright 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from collections.abc import Sequence
 from datetime import datetime
 from functools import reduce
 import re
@@ -12,7 +13,6 @@ from iso8601 import (
 import lazr.batchnavigator
 from lazr.batchnavigator.interfaces import IRangeFactory
 import simplejson
-from six.moves.collections_abc import Sequence
 from storm import Undef
 from storm.expr import (
     And,

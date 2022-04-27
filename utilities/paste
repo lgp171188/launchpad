@@ -5,6 +5,7 @@
 
 import _pythonpath  # noqa: F401
 
+from http.cookiejar import Cookie
 from optparse import OptionParser
 import os
 import pwd
@@ -13,7 +14,6 @@ from urllib.parse import urljoin
 import webbrowser
 
 from fixtures import MonkeyPatch
-from six.moves.http_cookiejar import Cookie
 from zope.testbrowser.browser import Browser
 
 

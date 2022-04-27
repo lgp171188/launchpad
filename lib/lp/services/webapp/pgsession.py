@@ -7,11 +7,11 @@ from collections.abc import MutableMapping
 from datetime import datetime
 import hashlib
 import io
+import pickle
 import time
 
 from lazr.restful.utils import get_current_browser_request
 import six
-from six.moves import cPickle as pickle
 from storm.zope.interfaces import IZStorm
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.component import getUtility

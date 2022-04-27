@@ -10,6 +10,7 @@ when given certain user-configurable URLs.
 
 
 import errno
+from http.server import BaseHTTPRequestHandler
 import os
 import signal
 import socket
@@ -17,7 +18,6 @@ import subprocess
 import time
 
 import six
-from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
 
 from lp.services.osutils import remove_if_exists
 from lp.services.pidfile import (

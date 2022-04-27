@@ -17,12 +17,12 @@ import datetime
 import io
 import logging
 import os
+import pickle
 import time
 
 from defusedxml import cElementTree
 import pytz
 import six
-from six.moves import cPickle as pickle
 from storm.store import Store
 from zope.component import getUtility
 from zope.contenttype import guess_content_type

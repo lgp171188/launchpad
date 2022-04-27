@@ -8,10 +8,9 @@ This script runs a simple HTTP server. The server returns JSON files
 when given certain user-configurable URLs.
 """
 
+from http.server import HTTPServer
 import logging
 import os
-
-from six.moves.BaseHTTPServer import HTTPServer
 
 from lp.services.config import config
 from lp.services.osutils import ensure_directory_exists
