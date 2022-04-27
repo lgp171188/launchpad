@@ -200,8 +200,8 @@ argument to the constructor.
 #    >>> os.environ[DEFAULT_SECTION] = 'default'
 
 #    # reload the LaunchpadConfig class object.
-#    >>> from six.moves import reload_module
-#    >>> config_module = reload_module(lp.services.config)
+#    >>> import importlib
+#    >>> config_module = importlib.reload(lp.services.config)
 #    >>> from lp.services.config import config
 #    >>> config.filename
 #    '.../configs/mailman-itests/launchpad-lazr.conf'

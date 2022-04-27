@@ -21,9 +21,8 @@ __all__ = [
     'undocumented_scopes',
     ]
 
+from itertools import zip_longest
 import re
-
-from six.moves import zip_longest as izip_longest
 
 from lp.registry.interfaces.person import IPerson
 import lp.services.config
@@ -86,7 +85,7 @@ class PageScope(BaseScope):
         pageid_scope = scope_name[len('pageid:'):]
         scope_segments = self._pageid_to_namespace(pageid_scope)
         request_segments = self._request_pageid_namespace
-        for scope_segment, request_segment in izip_longest(
+        for scope_segment, request_segment in zip_longest(
                 scope_segments, request_segments):
             if scope_segment is None:
                 break

@@ -12,7 +12,6 @@ __all__ = [
 
 from lazr.restful.interfaces import IWebServiceClientRequest
 import simplejson
-from six.moves import zip as izip
 from zope.component import (
     adapter,
     getUtility,
@@ -158,7 +157,7 @@ class PersonPickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
             # If a person is affiliated with the associated_object then we
             # can display a badge.
             badges = affiliated_context.getAffiliationBadges(term_values)
-            for picker_entry, badges in izip(picker_entries, badges):
+            for picker_entry, badges in zip(picker_entries, badges):
                 picker_entry.badges = []
                 for badge_info in badges:
                     picker_entry.badges.append(
@@ -166,7 +165,7 @@ class PersonPickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
                              label=badge_info.label,
                              role=badge_info.role))
 
-        for person, picker_entry in izip(term_values, picker_entries):
+        for person, picker_entry in zip(term_values, picker_entries):
             picker_entry.details = []
 
             if person.preferredemail is not None:
@@ -213,7 +212,7 @@ class BranchPickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
         """See `IPickerEntrySource`"""
         entries = (
             super().getPickerEntries(term_values, context_object, **kwarg))
-        for branch, picker_entry in izip(term_values, entries):
+        for branch, picker_entry in zip(term_values, entries):
             picker_entry.description = branch.bzr_identity
         return entries
 
@@ -239,7 +238,7 @@ class TargetPickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
         """See `IPickerEntrySource`"""
         entries = (
             super().getPickerEntries(term_values, context_object, **kwarg))
-        for target, picker_entry in izip(term_values, entries):
+        for target, picker_entry in zip(term_values, entries):
             picker_entry.description = self.getDescription(target)
             picker_entry.details = []
             summary = picker_entry.description
@@ -281,7 +280,7 @@ class SourcePackageNamePickerEntrySourceAdapter(
         """See `IPickerEntrySource`"""
         entries = (
             super().getPickerEntries(term_values, context_object, **kwarg))
-        for sourcepackagename, picker_entry in izip(term_values, entries):
+        for sourcepackagename, picker_entry in zip(term_values, entries):
             descriptions = getSourcePackageDescriptions([sourcepackagename])
             picker_entry.description = descriptions.get(
                 sourcepackagename.name, "Not yet built")
@@ -390,7 +389,7 @@ class ArchivePickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
         """See `IPickerEntrySource`"""
         entries = (
             super().getPickerEntries(term_values, context_object, **kwarg))
-        for archive, picker_entry in izip(term_values, entries):
+        for archive, picker_entry in zip(term_values, entries):
             picker_entry.description = archive.reference
         return entries
 
@@ -463,7 +462,7 @@ class HugeVocabularyJSONView:
             picker_entries = adapter_cache[adapter_class].getPickerEntries(
                 term_values,
                 self.context)
-            for term_value, picker_entry in izip(term_values, picker_entries):
+            for term_value, picker_entry in zip(term_values, picker_entries):
                 picker_term_entries[term_value] = picker_entry
 
         result = []

@@ -11,6 +11,7 @@ __all__ = [
 ]
 
 from fnmatch import fnmatchcase
+import importlib
 import os
 import sys
 from textwrap import dedent
@@ -20,7 +21,6 @@ import unittest
 from lazr.restful import ResourceJSONEncoder
 from lazr.restful.utils import get_current_browser_request
 import simplejson
-from six.moves import reload_module
 from zope.component import getUtility
 from zope.exceptions.exceptionformatter import format_exception
 from zope.interface import implementer
@@ -382,7 +382,7 @@ class YUITestFixtureControllerView(LaunchpadView):
             module = sys.modules.get(self.module_name)
             if module is not None:
                 del module._fixtures_
-                reload_module(module)
+                importlib.reload(module)
         return self.page_template % dict(
             test_module='/+yuitest/%s.js' % self.traversed_path,
             test_namespace=self.traversed_path.replace('/', '.'),
