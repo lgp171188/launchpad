@@ -4,6 +4,7 @@
 """Tests for Diff, etc."""
 
 from difflib import unified_diff
+import importlib
 from io import BytesIO
 import logging
 from textwrap import dedent
@@ -15,7 +16,6 @@ from breezy.patches import (
     RemoveLine,
     )
 import six
-from six.moves import reload_module
 from testtools.matchers import (
     Equals,
     Is,
@@ -572,7 +572,7 @@ class TestPreviewDiff(DiffTestCase):
 
     def test_fromBranchMergeProposal_does_not_warn_on_conflicts(self):
         """PreviewDiff generation emits no conflict warnings."""
-        reload_module(trace)
+        importlib.reload(trace)
         bmp, source_rev_id, target_rev_id = self.createExampleBzrMerge()
         handler = RecordLister()
         logger = logging.getLogger('brz')
