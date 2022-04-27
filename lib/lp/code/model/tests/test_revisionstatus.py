@@ -150,14 +150,13 @@ class TestRevisionStatusReport(TestCaseWithFactory):
             IRevisionStatusReportSet).getByCIBuildAndTitle(build, "test")
         self.assertEqual("test", report.title)
 
-    def test_getLatestLog(self):
+    def test_latest_log(self):
         report = self.factory.makeRevisionStatusReport()
         self.makeRevisionStatusArtifact(report=report)
         self.makeRevisionStatusArtifact(report=report)
         artifact3 = self.makeRevisionStatusArtifact(report=report)
-        url = artifact3.download_url
         with person_logged_in(report.git_repository.owner):
-            self.assertEqual(url, report.latest_log.download_url)
+            self.assertEqual(artifact3, report.latest_log)
 
 
 class TestRevisionStatusReportWebservice(TestCaseWithFactory):
