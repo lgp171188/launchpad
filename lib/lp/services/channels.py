@@ -1,0 +1,56 @@
+# Copyright 2022 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+"""Utilities for dealing with channels in Canonical's stores."""
+
+__all__ = [
+    "channel_components_delimiter",
+    "channel_list_to_string",
+    "channel_string_to_list",
+    ]
+
+from lp.registry.enums import StoreRisk
+
+
+# delimiter separating channel components
+channel_components_delimiter = '/'
+
+
+def _is_risk(component):
+    """Does this channel component identify a risk?"""
+    return component in {item.title for item in StoreRisk.items}
+
+
+def channel_string_to_list(channel):
+    """Return extracted track, risk, and branch from given channel name."""
+    components = channel.split(channel_components_delimiter)
+    if len(components) == 3:
+        track, risk, branch = components
+    elif len(components) == 2:
+        # Identify risk to determine if this is track/risk or risk/branch.
+        if _is_risk(components[0]):
+            if _is_risk(components[1]):
+                raise ValueError(
+                    "Branch name cannot match a risk name: %r" % channel)
+            track = None
+            risk, branch = components
+        elif _is_risk(components[1]):
+            track, risk = components
+            branch = None
+        else:
+            raise ValueError("No valid risk provided: %r" % channel)
+    elif len(components) == 1:
+        track = None
+        risk = components[0]
+        branch = None
+    else:
+        raise ValueError("Invalid channel name: %r" % channel)
+    return track, risk, branch
+
+
+def channel_list_to_string(track, risk, branch):
+    """Return channel name composed from given track, risk, and branch."""
+    if track == "latest":
+        track = None
+    return channel_components_delimiter.join(
+        [c for c in (track, risk, branch) if c is not None])
