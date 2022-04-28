@@ -2819,10 +2819,6 @@ class TestSnapWebservice(TestCaseWithFactory):
         super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.snap_store_client = FakeMethod()
-        self.snap_store_client.listChannels = FakeMethod(result=[
-            {"name": "stable", "display_name": "Stable"},
-            {"name": "edge", "display_name": "Edge"},
-            ])
         self.snap_store_client.requestPackageUploadPermission = (
             getUtility(ISnapStoreClient).requestPackageUploadPermission)
         self.useFixture(

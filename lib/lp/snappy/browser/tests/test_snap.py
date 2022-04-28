@@ -144,10 +144,6 @@ class TestSnapViewsFeatureFlag(TestCaseWithFactory):
         # Without a private_snap feature flag, we will not create Snaps for
         # private contexts.
         self.useFixture(BranchHostingFixture())
-        self.snap_store_client = FakeMethod()
-        self.snap_store_client.listChannels = FakeMethod(result=[])
-        self.useFixture(
-            ZopeUtilityFixture(self.snap_store_client, ISnapStoreClient))
         owner = self.factory.makePerson()
         branch = self.factory.makeAnyBranch(
             owner=owner, information_type=InformationType.USERDATA)
@@ -166,10 +162,6 @@ class BaseTestSnapView(BrowserTestCase):
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.useFixture(FakeLogger())
         self.snap_store_client = FakeMethod()
-        self.snap_store_client.listChannels = FakeMethod(result=[
-            {"name": "stable", "display_name": "Stable"},
-            {"name": "edge", "display_name": "Edge"},
-            ])
         self.snap_store_client.requestPackageUploadPermission = (
             getUtility(ISnapStoreClient).requestPackageUploadPermission)
         self.useFixture(

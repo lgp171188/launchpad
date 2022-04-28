@@ -44,7 +44,6 @@ from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.snappy.interfaces.snapstoreclient import (
     BadRequestPackageUploadResponse,
     BadScanStatusResponse,
-    BadSearchResponse,
     ISnapStoreClient,
     ScanFailedResponse,
     UnauthorizedUploadResponse,
@@ -741,42 +740,3 @@ class TestSnapStoreClient(TestCaseWithFactory):
                 "can_release": False,
                 })
         self.assertEqual((None, None), self.client.checkStatus(status_url))
-
-    @responses.activate
-    def test_listChannels(self):
-        self._addChannelsResponse()
-        self.assertEqual(self.channels, self.client.listChannels())
-        self.assertThat(responses.calls[-1].request, RequestMatches(
-            url=Equals("http://search.example/api/v1/channels"),
-            method=Equals("GET"),
-            headers=ContainsDict({"Accept": Equals("application/hal+json")})))
-        self.assertEqual(
-            self.channels,
-            json.loads(getUtility(IMemcacheClient).get(
-                self.channels_memcache_key)))
-        responses.reset()
-        self.assertEqual(self.channels, self.client.listChannels())
-        self.assertContentEqual([], responses.calls)
-
-    @responses.activate
-    def test_listChannels_404(self):
-        responses.add(
-            "GET", "http://search.example/api/v1/channels", status=404)
-        self.assertRaisesWithContent(
-            BadSearchResponse, "404 Client Error: Not Found",
-            self.client.listChannels)
-
-    @responses.activate
-    def test_listChannels_disable_search(self):
-        self.useFixture(
-            FeatureFixture({"snap.disable_channel_search": "on"}))
-        expected_channels = [
-            {"name": "candidate", "display_name": "Candidate"},
-            {"name": "edge", "display_name": "Edge"},
-            {"name": "beta", "display_name": "Beta"},
-            {"name": "stable", "display_name": "Stable"},
-            ]
-        self.assertEqual(expected_channels, self.client.listChannels())
-        self.assertContentEqual([], responses.calls)
-        self.assertIsNone(
-            getUtility(IMemcacheClient).get(self.channels_memcache_key))

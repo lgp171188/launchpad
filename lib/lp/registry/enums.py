@@ -18,6 +18,7 @@ __all__ = [
     'VCSType',
     'SharingPermission',
     'SpecificationSharingPolicy',
+    'StoreRisk',
     'TeamMembershipPolicy',
     'TeamMembershipRenewalPolicy',
     ]
@@ -491,3 +492,20 @@ class PollSort(EnumeratedType):
 
         Sort polls with the earliest closing date first.
         """)
+
+
+class StoreRisk(EnumeratedType):
+    """The "risk" element of a channel in one of Canonical's stores.
+
+    The snap store, Charmhub, and other similar stores operated by Canonical
+    have a model where a "channel" consists of a track, a risk, and a
+    branch.  The track and branch elements are both somewhat free-form (the
+    track functions a little like a major version number in semver, while
+    the branch is for short-lived hotfixes), but the risk element is from a
+    fixed vocabulary, modelled here.
+    """
+
+    STABLE = Item("stable", "Stable")
+    CANDIDATE = Item("candidate", "Candidate")
+    BETA = Item("beta", "Beta")
+    EDGE = Item("edge", "Edge")

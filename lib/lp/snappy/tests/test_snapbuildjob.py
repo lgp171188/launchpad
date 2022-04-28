@@ -74,7 +74,6 @@ class FakeSnapStoreClient:
         self.uploadFile = FakeMethod()
         self.push = FakeMethod()
         self.checkStatus = FakeMethod()
-        self.listChannels = FakeMethod(result=[])
 
 
 class FileUploaded(MatchesListwise):

@@ -60,7 +60,6 @@ from lp.services.job.interfaces.job import JobStatus
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.testing import (
     BrowserTestCase,
     login,
@@ -70,8 +69,6 @@ from lp.testing import (
     TestCaseWithFactory,
     time_counter,
     )
-from lp.testing.fakemethod import FakeMethod
-from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
@@ -127,13 +124,6 @@ class BaseTestCharmRecipeView(BrowserTestCase):
         super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
         self.useFixture(FakeLogger())
-        self.snap_store_client = FakeMethod()
-        self.snap_store_client.listChannels = FakeMethod(result=[
-            {"name": "stable", "display_name": "Stable"},
-            {"name": "edge", "display_name": "Edge"},
-            ])
-        self.useFixture(
-            ZopeUtilityFixture(self.snap_store_client, ISnapStoreClient))
         self.person = self.factory.makePerson(
             name="test-person", displayname="Test Person")
 
