@@ -1859,10 +1859,11 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
         """The list of email address that can be shown.
 
         The list contains email addresses when the EmailAddressVisibleState's
-        PUBLIC or ALLOWED attributes are True. The preferred email
-        address is the first in the list, the other validated email addresses
-        are not ordered. When the team is the context, only the preferred
-        email address is in the list.
+        PUBLIC or ALLOWED attributes are True.
+        The preferred email address is the first in the list, the other
+        validated email addresses are ordered alphabetically.
+        When the team is the context, only the preferred email address is in
+        the list.
 
         :return: A list of email address strings that can be seen.
         """
