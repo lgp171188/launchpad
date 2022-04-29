@@ -18,7 +18,6 @@ import hashlib
 import re
 
 import pytz
-import six
 from storm.locals import (
     Bool,
     DateTime,
@@ -75,9 +74,9 @@ class OAuthBase:
         return IMasterStore(cls)
 
 
-def sha256_digest(data):
+def sha256_digest(data: str):
     """Return the SHA-256 hash of some data."""
-    return hashlib.sha256(six.ensure_binary(data)).hexdigest()
+    return hashlib.sha256(data.encode()).hexdigest()
 
 
 @implementer(IOAuthConsumer)
