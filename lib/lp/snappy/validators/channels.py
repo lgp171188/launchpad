@@ -3,10 +3,9 @@
 
 """Validators for the .store_channels attribute."""
 
-from zope.schema.vocabulary import getVocabularyRegistry
-
 from lp import _
 from lp.app.validators import LaunchpadValidationError
+from lp.registry.enums import StoreRisk
 from lp.services.webapp.escaping import (
     html_escape,
     structured,
@@ -19,13 +18,7 @@ channel_components_delimiter = '/'
 
 def _is_risk(component):
     """Does this channel component identify a risk?"""
-    vocabulary = getVocabularyRegistry().get(None, "SnapStoreChannel")
-    try:
-        vocabulary.getTermByToken(component)
-    except LookupError:
-        return False
-    else:
-        return True
+    return component in {item.title for item in StoreRisk.items}
 
 
 def split_channel_name(channel):

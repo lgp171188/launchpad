@@ -25,7 +25,6 @@ from lp.oci.interfaces.ocirecipe import (
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.interfaces import IPlacelessAuthUtility
 from lp.services.webapp.publisher import canonical_url
-from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.soyuz.interfaces.livefs import (
     LIVEFS_FEATURE_FLAG,
     LIVEFS_WEBHOOKS_FEATURE_FLAG,
@@ -35,8 +34,6 @@ from lp.testing import (
     record_two_runs,
     TestCaseWithFactory,
     )
-from lp.testing.fakemethod import FakeMethod
-from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import extract_text
@@ -99,13 +96,6 @@ class SnapTestHelpers:
     expected_event_types = [
         ("snap:build:0.1", "Snap build"),
         ]
-
-    def setUp(self):
-        super().setUp()
-        snap_store_client = FakeMethod()
-        snap_store_client.listChannels = FakeMethod(result=[])
-        self.useFixture(
-            ZopeUtilityFixture(snap_store_client, ISnapStoreClient))
 
     def makeTarget(self):
         self.useFixture(FeatureFixture({
