@@ -7,7 +7,6 @@ import os
 from textwrap import dedent
 from unittest import mock
 
-import six
 from testtools.matchers import (
     Equals,
     FileContains,
@@ -71,7 +70,7 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
             self.distro)
-        db_pubconf.root_dir = six.ensure_text(self.temp_dir)
+        db_pubconf.root_dir = self.temp_dir
         self.archive = self.factory.makeArchive(
             distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
         self.archive_root = getPubConfig(self.archive).archiveroot
@@ -207,7 +206,7 @@ class TestSignableArchiveWithRunParts(RunPartsMixin, TestCaseWithFactory):
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
             self.distro)
-        db_pubconf.root_dir = six.ensure_text(self.temp_dir)
+        db_pubconf.root_dir = self.temp_dir
         self.archive = self.factory.makeArchive(
             distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
         self.archive_root = getPubConfig(self.archive).archiveroot

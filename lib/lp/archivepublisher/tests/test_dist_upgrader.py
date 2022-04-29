@@ -10,7 +10,6 @@ tests of dist-upgrader upload and queue manipulation.
 import os
 from textwrap import dedent
 
-import six
 from testtools.matchers import DirContains
 from zope.component import getUtility
 
@@ -41,7 +40,7 @@ class TestDistUpgrader(RunPartsMixin, TestCaseWithFactory):
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
             self.distro)
-        db_pubconf.root_dir = six.ensure_text(self.temp_dir)
+        db_pubconf.root_dir = self.temp_dir
         self.archive = self.factory.makeArchive(
             distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
         self.suite = "distroseries"

@@ -16,7 +16,6 @@ from fixtures import (
     MonkeyPatch,
     )
 from pytz import utc
-import six
 from testtools.matchers import (
     Contains,
     Equals,
@@ -194,7 +193,7 @@ class TestSigningHelpers(TestCaseWithFactory):
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
             self.distro)
-        db_pubconf.root_dir = six.ensure_text(self.temp_dir)
+        db_pubconf.root_dir = self.temp_dir
         self.archive = self.factory.makeArchive(
             distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
         self.signing_dir = os.path.join(
