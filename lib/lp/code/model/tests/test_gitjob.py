@@ -13,7 +13,6 @@ from unittest import mock
 from fixtures import FakeLogger
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
-import six
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -110,8 +109,7 @@ class TestGitRefScanJob(TestCaseWithFactory):
     def makeFakeCommits(author, author_date_gen, paths):
         dates = {path: next(author_date_gen) for path in paths}
         return [{
-            "sha1": six.ensure_text(hashlib.sha1(
-                path.encode("UTF-8")).hexdigest()),
+            "sha1": hashlib.sha1(path.encode()).hexdigest(),
             "message": "tip of %s" % path,
             "author": {
                 "name": author.displayname,
@@ -124,7 +122,7 @@ class TestGitRefScanJob(TestCaseWithFactory):
                 "time": int(seconds_since_epoch(dates[path])),
                 },
             "parents": [],
-            "tree": six.ensure_text(hashlib.sha1(b"").hexdigest()),
+            "tree": hashlib.sha1(b"").hexdigest(),
             } for path in paths]
 
     def assertRefsMatch(self, refs, repository, paths):
@@ -132,8 +130,7 @@ class TestGitRefScanJob(TestCaseWithFactory):
             MatchesStructure.byEquality(
                 repository=repository,
                 path=path,
-                commit_sha1=six.ensure_text(hashlib.sha1(
-                    path.encode("UTF-8")).hexdigest()),
+                commit_sha1=hashlib.sha1(path.encode()).hexdigest(),
                 object_type=GitObjectType.COMMIT)
             for path in paths]
         self.assertThat(refs, MatchesSetwise(*matchers))

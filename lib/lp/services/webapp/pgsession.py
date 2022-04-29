@@ -117,9 +117,8 @@ class PGSessionData(PGSessionBase):
     def __init__(self, session_data_container, client_id):
         self.session_data_container = session_data_container
         self.client_id = six.ensure_text(client_id, 'ascii')
-        self.hashed_client_id = six.ensure_text(
-            hashlib.sha256(self.client_id.encode('utf-8')).hexdigest(),
-            'ascii')
+        self.hashed_client_id = (
+            hashlib.sha256(self.client_id.encode()).hexdigest())
         self.lastAccessTime = time.time()
 
         # Update the last access time in the db if it is out of date

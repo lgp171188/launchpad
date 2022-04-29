@@ -1821,8 +1821,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             paths = [self.getUniqueUnicode('refs/heads/path')]
         refs_info = {
             path: {
-                "sha1": six.ensure_text(
-                    hashlib.sha1(path.encode('utf-8')).hexdigest()),
+                "sha1": hashlib.sha1(path.encode()).hexdigest(),
                 "type": GitObjectType.COMMIT,
                 }
             for path in paths}

@@ -18,7 +18,6 @@ import hashlib
 import re
 
 import pytz
-import six
 from storm.locals import (
     Bool,
     DateTime,
@@ -75,15 +74,9 @@ class OAuthBase:
         return IMasterStore(cls)
 
 
-def sha256_digest(data):
-    """Return the SHA-256 hash of some data.
-
-    The returned string is always Unicode, to satisfy Storm.  In Python 3,
-    this is straightforward because hexdigest() returns that anyway, but in
-    Python 2 we must decode.
-    """
-    return six.ensure_text(
-        hashlib.sha256(six.ensure_binary(data)).hexdigest(), encoding='ASCII')
+def sha256_digest(data: str):
+    """Return the SHA-256 hash of some data."""
+    return hashlib.sha256(data.encode()).hexdigest()
 
 
 @implementer(IOAuthConsumer)
