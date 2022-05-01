@@ -7,7 +7,6 @@ import hashlib
 from optparse import OptionValueError
 import os
 
-import six
 from testtools.matchers import StartsWith
 
 from lp.archivepublisher.scripts.generate_contents_files import (
@@ -111,7 +110,7 @@ class TestGenerateContentsFiles(TestCaseWithFactory):
         be cleaned up after the test.
         """
         return self.factory.makeDistribution(
-            publish_root_dir=six.ensure_text(self.makeTemporaryDirectory()))
+            publish_root_dir=self.makeTemporaryDirectory())
 
     def makeScript(self, distribution=None, run_setup=True):
         """Create a script for testing."""

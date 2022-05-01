@@ -8,7 +8,6 @@ import os
 import shutil
 import subprocess
 
-import six
 from storm.store import Store
 from testtools.matchers import (
     Not,
@@ -540,7 +539,7 @@ class TestPublishDistroMethods(TestCaseWithFactory):
         # this, getPublisher will create archives in the current
         # directory.
         return self.factory.makeDistribution(
-            publish_root_dir=six.ensure_text(self.makeTemporaryDirectory()))
+            publish_root_dir=self.makeTemporaryDirectory())
 
     def makeScript(self, distribution=None, args=[], all_derived=False):
         """Create a `PublishDistro` for `distribution`."""
