@@ -5,8 +5,8 @@
 
 __all__ = ['urlappend', 'urlparse', 'urlsplit']
 
-import six.moves.urllib.parse as urlparse_module
-from six.moves.urllib.parse import (
+import urllib.parse as urlparse_module
+from urllib.parse import (
     urljoin,
     urlparse as original_urlparse,
     urlsplit as original_urlsplit,

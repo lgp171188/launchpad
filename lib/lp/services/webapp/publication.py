@@ -11,13 +11,13 @@ import sys
 import threading
 import time
 import traceback
+from urllib.parse import quote
 
 from lazr.uri import (
     InvalidURIError,
     URI,
     )
 from psycopg2.extensions import TransactionRollbackError
-from six.moves.urllib.parse import quote
 from storm.database import STATE_DISCONNECTED
 from storm.exceptions import (
     DisconnectionError,

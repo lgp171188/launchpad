@@ -3,10 +3,10 @@
 
 from datetime import datetime
 import time
+from urllib.parse import urlparse
 
 from pymacaroons import Macaroon
 import six
-from six.moves.urllib.parse import urlparse
 from storm.exceptions import DisconnectionError
 from twisted.internet import (
     abstract,

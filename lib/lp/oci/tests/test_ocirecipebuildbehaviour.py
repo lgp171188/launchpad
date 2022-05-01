@@ -10,6 +10,7 @@ import os
 import shutil
 import tempfile
 import time
+from urllib.parse import urlsplit
 import uuid
 
 import fixtures
@@ -17,7 +18,6 @@ from fixtures import MockPatch
 from pymacaroons import Macaroon
 import pytz
 import six
-from six.moves.urllib_parse import urlsplit
 from testtools import ExpectedException
 from testtools.matchers import (
     AfterPreprocessing,

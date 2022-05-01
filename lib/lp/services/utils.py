@@ -37,6 +37,7 @@ from itertools import (
     tee,
     )
 import os
+import pickle
 import re
 import sys
 from textwrap import dedent
@@ -45,7 +46,6 @@ from types import FunctionType
 from lazr.enum import BaseItem
 import pytz
 import six
-from six.moves import cPickle as pickle
 from twisted.python.util import mergeFunctionMetadata
 from zope.security.proxy import isinstance as zope_isinstance
 

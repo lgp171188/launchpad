@@ -21,10 +21,10 @@ __all__ = [
     ]
 
 import os.path
+from urllib.parse import quote
 
 from lazr.uri import URI
 import six
-from six.moves.urllib.parse import quote
 from zope.interface import Interface
 
 from lp.app.validators.name import valid_name

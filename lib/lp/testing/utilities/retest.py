@@ -30,8 +30,6 @@ import re
 import sys
 import tempfile
 
-from six.moves import map as imap
-
 from lp.services.config import config
 
 
@@ -111,7 +109,7 @@ def run_tests(tests):
 
 
 def main():
-    lines = imap(decolorize, fileinput.input())
+    lines = map(decolorize, fileinput.input())
     tests = extract_tests(lines)
     if len(tests) >= 1:
         run_tests(tests)

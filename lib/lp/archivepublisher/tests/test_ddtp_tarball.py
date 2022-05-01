@@ -9,7 +9,6 @@ tests of ddtp-tarball upload and queue manipulation.
 
 import os
 
-import six
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
@@ -32,7 +31,7 @@ class TestDdtpTarball(TestCaseWithFactory):
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
             self.distro)
-        db_pubconf.root_dir = six.ensure_text(self.temp_dir)
+        db_pubconf.root_dir = self.temp_dir
         self.archive = self.factory.makeArchive(
             distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
         self.distroseries = self.factory.makeDistroSeries(

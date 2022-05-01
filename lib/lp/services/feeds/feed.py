@@ -18,8 +18,8 @@ __all__ = [
 import operator
 import os
 import time
+from urllib.parse import urljoin
 
-from six.moves.urllib.parse import urljoin
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.datetime import rfc1123_date

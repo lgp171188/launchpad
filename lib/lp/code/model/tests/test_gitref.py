@@ -13,7 +13,6 @@ import json
 from breezy import urlutils
 import pytz
 import responses
-import six
 from storm.store import Store
 from testtools.matchers import (
     ContainsDict,
@@ -169,8 +168,8 @@ class TestGitRefGetCommits(TestCaseWithFactory):
             datetime(2015, 1, 1, 0, 0, 0, tzinfo=pytz.UTC),
             datetime(2015, 1, 2, 0, 0, 0, tzinfo=pytz.UTC),
             ]
-        self.sha1_tip = six.ensure_text(hashlib.sha1(b"tip").hexdigest())
-        self.sha1_root = six.ensure_text(hashlib.sha1(b"root").hexdigest())
+        self.sha1_tip = hashlib.sha1(b"tip").hexdigest()
+        self.sha1_root = hashlib.sha1(b"root").hexdigest()
         self.log = [
             {
                 "sha1": self.sha1_tip,
@@ -186,7 +185,7 @@ class TestGitRefGetCommits(TestCaseWithFactory):
                     "time": int(seconds_since_epoch(self.dates[1])),
                     },
                 "parents": [self.sha1_root],
-                "tree": six.ensure_text(hashlib.sha1(b"").hexdigest()),
+                "tree": hashlib.sha1(b"").hexdigest(),
                 },
             {
                 "sha1": self.sha1_root,
@@ -202,7 +201,7 @@ class TestGitRefGetCommits(TestCaseWithFactory):
                     "time": int(seconds_since_epoch(self.dates[0])),
                     },
                 "parents": [],
-                "tree": six.ensure_text(hashlib.sha1(b"").hexdigest()),
+                "tree": hashlib.sha1(b"").hexdigest(),
                 },
             ]
         self.hosting_fixture = self.useFixture(GitHostingFixture(log=self.log))
@@ -774,7 +773,7 @@ class TestGitRefWebservice(TestCaseWithFactory):
         self.assertThat(result["repository_link"], EndsWith(repository_url))
         self.assertEqual("refs/heads/master", result["path"])
         self.assertEqual(
-            six.ensure_text(hashlib.sha1(b"refs/heads/master").hexdigest()),
+            hashlib.sha1(b"refs/heads/master").hexdigest(),
             result["commit_sha1"])
 
     def test_landing_candidates(self):

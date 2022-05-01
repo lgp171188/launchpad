@@ -11,6 +11,12 @@ import io
 import itertools
 import logging
 import os.path
+from urllib.parse import (
+    unquote,
+    urljoin,
+    urlparse,
+    urlunparse,
+    )
 
 import OpenSSL
 from OpenSSL.SSL import (
@@ -19,12 +25,6 @@ from OpenSSL.SSL import (
     )
 import requests
 import six
-from six.moves.urllib.parse import (
-    unquote,
-    urljoin,
-    urlparse,
-    urlunparse,
-    )
 from treq.client import HTTPClient as TreqHTTPClient
 from twisted.internet import (
     defer,
@@ -1125,7 +1125,7 @@ class DistroMirrorProber:
                 continue
 
             probed_mirrors.append(mirror)
-            logfile = six.StringIO()
+            logfile = io.StringIO()
             logfiles[mirror_id] = logfile
             prob_scheduled_calls = probe_function(
                 mirror, logfile, unchecked_keys, self.logger,

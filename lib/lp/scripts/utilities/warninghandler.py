@@ -4,10 +4,10 @@
 """Handlers for warnings, to be installed when testing."""
 
 import inspect
+import io
 import sys
 import warnings
 
-import six
 # ViewPageTemplateFile has .filename.
 from zope.browserpage import ViewPageTemplateFile
 from zope.browserpage.simpleviewclass import simple
@@ -153,7 +153,7 @@ def launchpad_showwarning(message, category, filename, lineno, file=None,
                           line=None):
     if file is None:
         file = sys.stderr
-    stream = six.StringIO()
+    stream = io.StringIO()
     old_show_warning(message, category, filename, lineno, stream, line=line)
     warning_message = stream.getvalue()
     important_info = find_important_info()

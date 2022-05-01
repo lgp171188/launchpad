@@ -11,6 +11,7 @@ from datetime import (
     )
 from functools import partial
 import hashlib
+import io
 import logging
 import re
 from textwrap import dedent
@@ -457,7 +458,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.runFrequently()
 
         # Capture garbo log output to tests can examine it.
-        self.log_buffer = six.StringIO()
+        self.log_buffer = io.StringIO()
         handler = logging.StreamHandler(self.log_buffer)
         self.log.addHandler(handler)
         self.addDetail('garbo-log', text_content(self.log_buffer.getvalue()))

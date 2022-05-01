@@ -16,9 +16,9 @@ __all__ = [
 
 import hashlib
 import io
+from urllib.parse import urljoin
 
 from fixtures import Fixture
-from six.moves.urllib.parse import urljoin
 import transaction
 from transaction.interfaces import ISynchronizer
 import zope.component

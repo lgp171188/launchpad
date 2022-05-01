@@ -2,11 +2,11 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from collections import defaultdict
+import io
 import os
 import re
 import time
 
-import six
 from storm.expr import (
     Desc,
     Join,
@@ -771,7 +771,7 @@ class FTPArchiveHandler:
         released series, and in addition we exclude any suite not
         explicitly marked as dirty.
         """
-        apt_config = six.StringIO()
+        apt_config = io.StringIO()
         apt_config.write(CONFIG_HEADER % (self._config.archiveroot,
                                           self._config.overrideroot,
                                           self._config.cacheroot,
@@ -893,7 +893,7 @@ class FTPArchiveHandler:
         except OSError:
             pass
 
-        apt_config = six.StringIO()
+        apt_config = io.StringIO()
         apt_config.write(CONFIG_HEADER % (self._config.archiveroot,
                                           self._config.overrideroot,
                                           self._config.cacheroot,

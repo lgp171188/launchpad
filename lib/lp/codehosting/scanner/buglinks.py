@@ -7,8 +7,9 @@ __all__ = [
     'BugBranchLinker',
     ]
 
+from urllib.parse import urlsplit
+
 from breezy.bugtracker import InvalidBugStatus
-from six.moves.urllib.parse import urlsplit
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError

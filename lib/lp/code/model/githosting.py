@@ -11,14 +11,14 @@ __all__ = [
 import base64
 import json
 import sys
+from urllib.parse import (
+    quote,
+    urljoin,
+    )
 
 from lazr.restful.utils import get_current_browser_request
 import requests
 from six import ensure_text
-from six.moves.urllib.parse import (
-    quote,
-    urljoin,
-    )
 from zope.interface import implementer
 
 from lp.code.errors import (

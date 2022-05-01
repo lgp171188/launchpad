@@ -18,13 +18,13 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from urllib.parse import urlencode
 
 import gpgme
 from lazr.restful.utils import get_current_browser_request
 import pytz
 import requests
 import six
-from six.moves.urllib.parse import urlencode
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy

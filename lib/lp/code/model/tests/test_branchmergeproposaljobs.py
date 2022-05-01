@@ -275,7 +275,7 @@ class TestUpdatePreviewDiffJob(DiffTestCase):
         committer = self.factory.makePerson()
         self.hosting_fixture.getLog.result = [
             {
-                "sha1": six.ensure_text(hashlib.sha1(b"tip").hexdigest()),
+                "sha1": hashlib.sha1(b"tip").hexdigest(),
                 "message": "Fix upside-down messages\n\nLP: #%d" % bug.id,
                 "committer": {
                     "name": committer.display_name,

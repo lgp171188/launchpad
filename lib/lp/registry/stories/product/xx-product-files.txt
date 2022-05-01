@@ -401,8 +401,8 @@ Downloading and deleting files
 
 Download one of the files.
 
-    >>> from six.moves.urllib.parse import urlparse
-    >>> from six.moves.urllib.request import urlopen
+    >>> from urllib.parse import urlparse
+    >>> from urllib.request import urlopen
 
 XXX Downloading via the testbrowser does not work
 XXX unless the file is served by the Zope publisher.

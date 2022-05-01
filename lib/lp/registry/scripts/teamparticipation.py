@@ -20,10 +20,6 @@ from itertools import (
     count,
     )
 
-from six.moves import (
-    map as imap,
-    zip as izip,
-    )
 import transaction
 
 from lp.registry.interfaces.teammembership import ACTIVE_STATES
@@ -70,7 +66,7 @@ def report_progress(log, interval, results, what):
     :param results: An iterable of things.
     :param what: A string descriping what the results are.
     """
-    for num, result in izip(count(1), results):
+    for num, result in zip(count(1), results):
         if num % interval == 0:
             log.debug("%d %s", num, what)
         yield result
@@ -141,7 +137,7 @@ def check_teamparticipation_consistency(log, info):
         member_people.add(team)  # Teams always participate in themselves.
         member_teams = team_memberships[team].intersection(teams_set)
         return member_people.union(
-            chain.from_iterable(imap(get_participants, member_teams)))
+            chain.from_iterable(map(get_participants, member_teams)))
 
     def check_participants(person, expected, observed):
         spurious = observed - expected
@@ -179,7 +175,7 @@ def check_teamparticipation_consistency(log, info):
         return "%s (%d)" % (name, id)
 
     for error in errors:
-        people_repr = ", ".join(imap(get_repr, error.people))
+        people_repr = ", ".join(map(get_repr, error.people))
         log.warning(
             "%s: %s TeamParticipation entries for %s.",
             get_repr(error.team), error.type, people_repr)

@@ -5,6 +5,7 @@
 
 import os
 import re
+from urllib.request import urlopen
 import xmlrpc.client
 
 import breezy.branch
@@ -13,7 +14,6 @@ from breezy.tests.per_repository import all_repository_format_scenarios
 from breezy.urlutils import local_path_from_url
 from breezy.workingtree import WorkingTree
 import six
-from six.moves.urllib.request import urlopen
 from testscenarios import (
     load_tests_apply_scenarios,
     WithScenarios,

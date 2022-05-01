@@ -3,8 +3,9 @@
 
 """Support for browser-cookie sessions."""
 
+from http.cookiejar import domain_match
+
 from lazr.uri import URI
-from six.moves.http_cookiejar import domain_match
 from zope.session.http import CookieClientIdManager
 
 from lp.services.config import config

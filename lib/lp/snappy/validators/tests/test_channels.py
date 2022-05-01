@@ -2,33 +2,17 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from lp.app.validators import LaunchpadValidationError
-from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.snappy.validators.channels import (
     channels_validator,
     split_channel_name,
     )
 from lp.testing import TestCaseWithFactory
-from lp.testing.fakemethod import FakeMethod
-from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import LaunchpadFunctionalLayer
 
 
 class TestChannelsValidator(TestCaseWithFactory):
 
     layer = LaunchpadFunctionalLayer
-
-    def setUp(self):
-        super().setUp()
-        self.risks = [
-            {"name": "stable", "display_name": "Stable"},
-            {"name": "candidate", "display_name": "Candidate"},
-            {"name": "beta", "display_name": "Beta"},
-            {"name": "edge", "display_name": "Edge"},
-            ]
-        snap_store_client = FakeMethod()
-        snap_store_client.listChannels = FakeMethod(result=self.risks)
-        self.useFixture(
-            ZopeUtilityFixture(snap_store_client, ISnapStoreClient))
 
     def test_split_channel_name_no_track_or_branch(self):
         self.assertEqual((None, "edge", None), split_channel_name("edge"))

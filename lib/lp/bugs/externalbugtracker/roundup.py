@@ -6,9 +6,9 @@
 __all__ = ['Roundup']
 
 import csv
+from urllib.parse import quote_plus
 
 from lazr.uri import URI
-from six.moves.urllib.parse import quote_plus
 
 from lp.bugs.externalbugtracker import (
     BugNotFound,

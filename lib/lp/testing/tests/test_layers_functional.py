@@ -10,6 +10,8 @@ to confirm that the environment hasn't been corrupted by tests
 import io
 import os
 import signal
+from urllib.error import HTTPError
+from urllib.request import urlopen
 
 import amqp
 from fixtures import (
@@ -18,8 +20,6 @@ from fixtures import (
     TestWithFixtures,
     )
 import six
-from six.moves.urllib.error import HTTPError
-from six.moves.urllib.request import urlopen
 from zope.component import getUtility
 from zope.interface.interfaces import ComponentLookupError
 

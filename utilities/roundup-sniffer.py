@@ -44,9 +44,8 @@ from os.path import (
 from pprint import pprint
 import sys
 from time import sleep
-
-from six.moves.urllib.parse import urlencode
-from six.moves.urllib.request import urlopen
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
 from lp.services.beautifulsoup import BeautifulSoup
 

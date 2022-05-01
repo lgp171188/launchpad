@@ -7,15 +7,15 @@ from datetime import timedelta
 import difflib
 import re
 from textwrap import TextWrapper
+from urllib.parse import (
+    urlencode,
+    urlparse,
+    )
 
 from fixtures import FakeLogger
 from lazr.restful.interfaces import IJSONRequestCache
 from lxml import html
 import six
-from six.moves.urllib.parse import (
-    urlencode,
-    urlparse,
-    )
 import soupmatchers
 from storm.zope.interfaces import IResultSet
 from testtools.content import (

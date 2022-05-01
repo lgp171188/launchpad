@@ -11,14 +11,14 @@ __all__ = [
 import csv
 import logging
 import re
-
-from bs4.element import Comment
-from requests.cookies import RequestsCookieJar
-from six.moves.urllib_parse import (
+from urllib.parse import (
     parse_qsl,
     urlencode,
     urlunparse,
     )
+
+from bs4.element import Comment
+from requests.cookies import RequestsCookieJar
 
 from lp.bugs.externalbugtracker import (
     BugNotFound,

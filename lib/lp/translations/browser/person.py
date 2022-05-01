@@ -14,9 +14,9 @@ from datetime import (
     timedelta,
     )
 from itertools import islice
+from urllib.parse import urlencode
 
 import pytz
-from six.moves.urllib.parse import urlencode
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory

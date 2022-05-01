@@ -16,12 +16,12 @@ import math
 import os.path
 import sys
 from textwrap import dedent
+from urllib.parse import quote
 
 from lazr.enum import enumerated_type_registry
 from lazr.restful.utils import get_current_browser_request
 from lazr.uri import URI
 import pytz
-from six.moves.urllib.parse import quote
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     adapter,

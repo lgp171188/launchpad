@@ -7,12 +7,12 @@ from datetime import (
     datetime,
     timedelta,
     )
+from urllib.parse import urlsplit
+from urllib.request import urlopen
 
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
 import pytz
-from six.moves.urllib.parse import urlsplit
-from six.moves.urllib.request import urlopen
 from testtools.matchers import (
     ContainsDict,
     Equals,

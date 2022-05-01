@@ -39,7 +39,7 @@ from lp.services.fields import (
 
 @error_status(http.client.BAD_REQUEST)
 class CannotDeleteFAQ(Exception):
-    """The FAQ cannnot be deleted."""
+    """The FAQ cannot be deleted."""
 
 
 class IFAQPublic(IHasOwner):

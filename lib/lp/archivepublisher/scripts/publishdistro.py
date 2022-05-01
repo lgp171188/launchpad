@@ -9,7 +9,6 @@ __all__ = [
 
 from optparse import OptionValueError
 
-from six.moves import filter as ifilter
 from storm.store import Store
 from zope.component import getUtility
 
@@ -272,9 +271,9 @@ class PublishDistro(PublisherScript):
         if self.options.partner:
             return [distribution.getArchiveByComponent('partner')]
         elif self.options.ppa:
-            return ifilter(is_ppa_public, self.getPPAs(distribution))
+            return filter(is_ppa_public, self.getPPAs(distribution))
         elif self.options.private_ppa:
-            return ifilter(is_ppa_private, self.getPPAs(distribution))
+            return filter(is_ppa_private, self.getPPAs(distribution))
         elif self.options.copy_archive:
             return self.getCopyArchives(distribution)
         else:

@@ -7,11 +7,11 @@ from datetime import (
     datetime,
     timedelta,
     )
+from urllib.request import urlopen
 
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
 import pytz
-from six.moves.urllib.request import urlopen
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -57,6 +57,7 @@ from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.macaroons.interfaces import (
     BadMacaroonContext,
     IMacaroonIssuer,
@@ -845,6 +846,23 @@ class TestOCIRecipeBuildWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertCanOpenRedirectedUrl(browser, build["build_log_url"])
         self.assertIsNotNone(build["upload_log_url"])
         self.assertCanOpenRedirectedUrl(browser, build["upload_log_url"])
+
+    def test_getFileUrls(self):
+        # API clients can fetch files attached to builds.
+        db_build = self.factory.makeOCIRecipeBuild(requester=self.person)
+        db_files = [self.factory.makeOCIFile(build=db_build) for i in range(2)]
+        build_url = api_url(db_build)
+        file_urls = [
+            ProxiedLibraryFileAlias(file.library_file, db_build).http_url
+            for file in db_files]
+        logout()
+        response = self.webservice.named_get(build_url, "getFileUrls")
+        self.assertEqual(200, response.status)
+        self.assertContentEqual(file_urls, response.jsonBody())
+        browser = self.getNonRedirectingBrowser(user=self.person)
+        browser.raiseHttpErrors = False
+        for file_url in file_urls:
+            self.assertCanOpenRedirectedUrl(browser, file_url)
 
 
 class TestOCIRecipeBuildMacaroonIssuer(

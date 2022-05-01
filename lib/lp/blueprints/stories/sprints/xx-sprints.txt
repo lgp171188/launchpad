@@ -491,7 +491,8 @@ First, we add a couple of IRC nicknames for Carlos.
 The resulting CSV file lists physical attendance correctly.
 
     >>> import csv
-    >>> ubz_csv = list(csv.DictReader(six.StringIO(browser.contents)))
+    >>> import io
+    >>> ubz_csv = list(csv.DictReader(io.StringIO(browser.contents)))
     >>> [(row["Launchpad username"], row["Physically present"])
     ...     for row in ubz_csv]
     [('carlos', 'True'), ('salgado', 'False'), ('name12', 'True')]
@@ -522,7 +523,7 @@ as attending remotely.
     >>> browser.getControl('Register').click()
 
     >>> browser.getLink('Export attendees to CSV').click()
-    >>> ltsp_csv = list(csv.DictReader(six.StringIO(browser.contents)))
+    >>> ltsp_csv = list(csv.DictReader(io.StringIO(browser.contents)))
     >>> [(row["Launchpad username"], row["Physically present"])
     ...     for row in ltsp_csv]
     [('name12', 'False')]

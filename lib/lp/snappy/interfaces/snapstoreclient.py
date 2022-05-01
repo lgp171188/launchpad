@@ -7,7 +7,6 @@ __all__ = [
     'BadRefreshResponse',
     'BadRequestPackageUploadResponse',
     'BadScanStatusResponse',
-    'BadSearchResponse',
     'ISnapStoreClient',
     'NeedsRefreshResponse',
     'ScanFailedResponse',
@@ -64,10 +63,6 @@ class UploadNotScannedYetResponse(SnapStoreError):
 
 
 class ScanFailedResponse(SnapStoreError):
-    pass
-
-
-class BadSearchResponse(SnapStoreError):
     pass
 
 
@@ -142,13 +137,4 @@ class ISnapStoreClient(Interface):
         :return: A tuple of (`url`, `revision`), where `url` is a URL on the
             store with further information about this upload, and `revision`
             is the store revision number for the upload or None.
-        """
-
-    def listChannels():
-        """Fetch the current list of channels from the store.
-
-        :raises BadSearchResponse: if the attempt to fetch the list of
-            channels from the store fails.
-        :return: A list of dictionaries, one per channel, each of which
-            contains at least "name" and "display_name" keys.
         """

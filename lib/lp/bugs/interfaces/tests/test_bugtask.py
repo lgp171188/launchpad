@@ -43,6 +43,7 @@ class TestFunctions(TestCase):
             BugTaskStatus.EXPIRED: BugTaskStatus.EXPIRED,
             BugTaskStatus.FIXCOMMITTED: BugTaskStatus.FIXCOMMITTED,
             BugTaskStatus.FIXRELEASED: BugTaskStatus.FIXRELEASED,
+            BugTaskStatus.DOESNOTEXIST: BugTaskStatus.DOESNOTEXIST,
             BugTaskStatus.INCOMPLETE: BugTaskStatus.INCOMPLETE,
             BugTaskStatus.INPROGRESS: BugTaskStatus.INPROGRESS,
             BugTaskStatus.INVALID: BugTaskStatus.INVALID,
@@ -63,6 +64,7 @@ class TestFunctions(TestCase):
             BugTaskStatusSearch.EXPIRED: BugTaskStatus.EXPIRED,
             BugTaskStatusSearch.FIXCOMMITTED: BugTaskStatus.FIXCOMMITTED,
             BugTaskStatusSearch.FIXRELEASED: BugTaskStatus.FIXRELEASED,
+            BugTaskStatusSearch.DOESNOTEXIST: BugTaskStatus.DOESNOTEXIST,
             BugTaskStatusSearch.INCOMPLETE: BugTaskStatus.INCOMPLETE,
             BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE:
                 BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE,
@@ -88,6 +90,8 @@ class TestFunctions(TestCase):
                 BugTaskStatus.FIXCOMMITTED,
             BugTaskStatusSearchDisplay.FIXRELEASED:
                 BugTaskStatus.FIXRELEASED,
+            BugTaskStatusSearchDisplay.DOESNOTEXIST:
+                BugTaskStatus.DOESNOTEXIST,
             BugTaskStatusSearchDisplay.INCOMPLETE_WITH_RESPONSE:
                 BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE,
             BugTaskStatusSearchDisplay.INCOMPLETE_WITHOUT_RESPONSE:

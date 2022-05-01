@@ -2,12 +2,11 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import atexit
+import builtins
 import itertools
 from operator import attrgetter
 import types
 import warnings
-
-from six.moves import builtins
 
 
 # Silence bogus warnings from Hardy's python-pkg-resources package.
@@ -22,10 +21,10 @@ naughty_imports = set()
 # __all__. The following dict maps from such modules to a list of attributes
 # that are allowed to be imported, whether or not they are in __all__.
 valid_imports_not_in_all = {
+    'http.cookiejar': {'domain_match'},
     'importlib': {'resources'},
     'openid.fetchers': {'Urllib2Fetcher'},
     'openid.message': {'NamespaceAliasRegistrationError'},
-    'six.moves.http_cookiejar': {'domain_match'},
     'storm.database': {'STATE_DISCONNECTED'},
     'talisker': {'run_gunicorn'},
     'textwrap': {'dedent'},

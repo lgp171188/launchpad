@@ -14,14 +14,14 @@ import os
 import random
 import re
 import time
-import xmlrpc.client
-
-import responses
-from six.moves.urllib_parse import (
+from urllib.parse import (
     parse_qs,
     urljoin,
     urlsplit,
     )
+import xmlrpc.client
+
+import responses
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 

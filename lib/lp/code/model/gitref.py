@@ -10,16 +10,16 @@ __all__ = [
 
 from functools import partial
 import re
+from urllib.parse import (
+    quote,
+    quote_plus,
+    urlsplit,
+    )
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 import requests
 import six
-from six.moves.urllib.parse import (
-    quote,
-    quote_plus,
-    urlsplit,
-    )
 from storm.expr import And
 from storm.locals import (
     DateTime,

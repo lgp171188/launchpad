@@ -15,6 +15,10 @@ __all__ = [
     ]
 
 import base64
+from collections.abc import (
+    Mapping,
+    Sequence,
+    )
 from datetime import (
     datetime,
     timedelta,
@@ -43,10 +47,6 @@ from lazr.jobrunner.jobrunner import SuspendJobException
 import pytz
 from pytz import UTC
 import six
-from six.moves.collections_abc import (
-    Mapping,
-    Sequence,
-    )
 from twisted.conch.ssh.common import (
     MP,
     NS,
@@ -1821,8 +1821,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             paths = [self.getUniqueUnicode('refs/heads/path')]
         refs_info = {
             path: {
-                "sha1": six.ensure_text(
-                    hashlib.sha1(path.encode('utf-8')).hexdigest()),
+                "sha1": hashlib.sha1(path.encode()).hexdigest(),
                 "type": GitObjectType.COMMIT,
                 }
             for path in paths}

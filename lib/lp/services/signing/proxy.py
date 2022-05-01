@@ -5,6 +5,7 @@
 
 import base64
 import json
+from urllib.parse import urljoin
 
 from lazr.restful.utils import get_current_browser_request
 from nacl.encoding import Base64Encoder
@@ -14,7 +15,6 @@ from nacl.public import (
     PublicKey,
     )
 from nacl.utils import random
-from six.moves.urllib.parse import urljoin
 from zope.interface import implementer
 
 from lp.services.config import config

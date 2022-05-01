@@ -25,13 +25,13 @@ __all__ = [
     ]
 
 from operator import attrgetter
+from urllib.parse import parse_qs
 
 from lazr.delegates import delegate_to
 from lazr.enum import (
     EnumeratedType,
     Item,
     )
-from six.moves.urllib.parse import parse_qs
 from storm.expr import Desc
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility

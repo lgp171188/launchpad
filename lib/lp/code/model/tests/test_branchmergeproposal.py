@@ -15,7 +15,6 @@ from fixtures import FakeLogger
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.restfulclient.errors import BadRequest
 from pytz import UTC
-import six
 from storm.locals import Store
 from testscenarios import (
     load_tests_apply_scenarios,
@@ -1588,16 +1587,16 @@ class TestBranchMergeProposalBugs(WithVCSScenarios, TestCaseWithFactory):
                 "message": "Commit 1\n\nLP: #%d" % bugs[0].id,
                 },
             {
-                "sha1": six.ensure_text(hashlib.sha1(b"1").hexdigest()),
+                "sha1": hashlib.sha1(b"1").hexdigest(),
                 # Will not be matched.
                 "message": "Commit 2; see LP #%d" % bugs[1].id,
                 },
             {
-                "sha1": six.ensure_text(hashlib.sha1(b"2").hexdigest()),
+                "sha1": hashlib.sha1(b"2").hexdigest(),
                 "message": "Commit 3; LP: #%d" % bugs[2].id,
                 },
             {
-                "sha1": six.ensure_text(hashlib.sha1(b"3").hexdigest()),
+                "sha1": hashlib.sha1(b"3").hexdigest(),
                 # Non-existent bug ID will not be returned.
                 "message": "Non-existent bug; LP: #%d" % (bugs[2].id + 100),
                 },
@@ -1617,8 +1616,7 @@ class TestBranchMergeProposalBugs(WithVCSScenarios, TestCaseWithFactory):
         """Set up a fake log response referring to the given bugs."""
         self.hosting_fixture.getLog.result = [
             {
-                "sha1": six.ensure_text(hashlib.sha1(
-                    str(i).encode("ASCII")).hexdigest()),
+                "sha1": hashlib.sha1(str(i).encode()).hexdigest(),
                 "message": "LP: #%d" % bug.id,
                 }
             for i, bug in enumerate(bugs)]

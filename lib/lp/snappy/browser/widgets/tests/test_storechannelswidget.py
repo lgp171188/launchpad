@@ -11,18 +11,16 @@ from zope.formlib.interfaces import (
 from zope.schema import List
 
 from lp.app.validators import LaunchpadValidationError
+from lp.registry.enums import StoreRisk
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.snappy.browser.widgets.storechannels import StoreChannelsWidget
-from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.snappy.vocabularies import SnapStoreChannelVocabulary
 from lp.testing import (
     TestCaseWithFactory,
     verifyObject,
     )
-from lp.testing.fakemethod import FakeMethod
-from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -37,18 +35,6 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
         field = field.bind(self.context)
         request = LaunchpadTestRequest()
         self.widget = StoreChannelsWidget(field, None, request)
-
-        # setup fake store client response for available channels/risks
-        self.risks = [
-            {"name": "stable", "display_name": "Stable"},
-            {"name": "candidate", "display_name": "Candidate"},
-            {"name": "beta", "display_name": "Beta"},
-            {"name": "edge", "display_name": "Edge"},
-            ]
-        snap_store_client = FakeMethod()
-        snap_store_client.listChannels = FakeMethod(result=self.risks)
-        self.useFixture(
-            ZopeUtilityFixture(snap_store_client, ISnapStoreClient))
 
     def test_implements(self):
         self.assertTrue(verifyObject(IBrowserWidget, self.widget))
@@ -280,7 +266,7 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
         soup = BeautifulSoup(markup)
         fields = soup.find_all(["input"], {"id": re.compile(".*")})
         expected_ids = [
-            "field.channels.risks.%d" % i for i in range(len(self.risks))]
+            "field.channels.risks.%d" % i for i in range(len(StoreRisk))]
         expected_ids.append("field.channels.track")
         expected_ids.append("field.channels.branch")
         ids = [field["id"] for field in fields]

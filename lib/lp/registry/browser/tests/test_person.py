@@ -6,10 +6,10 @@ import email
 from operator import attrgetter
 import re
 from textwrap import dedent
+from urllib.parse import urljoin
 
 from fixtures import FakeLogger
 import six
-from six.moves.urllib.parse import urljoin
 import soupmatchers
 from storm.store import Store
 from testscenarios import (

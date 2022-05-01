@@ -13,6 +13,7 @@ from cProfile import Profile
 from datetime import datetime
 from functools import partial
 import heapq
+import io
 import os
 import pstats
 import re
@@ -21,7 +22,6 @@ import threading
 
 from breezy import lsprof
 import oops_datedir_repo.serializer_rfc822
-import six
 from zope.component import (
     adapter,
     getUtility,
@@ -344,7 +344,7 @@ def end_request(event):
             prof_stats.strip_dirs()
             for name in ('time', 'cumulative', 'calls'):
                 prof_stats.sort(name)
-                f = six.StringIO()
+                f = io.StringIO()
                 prof_stats.pprint(file=f)
                 template_context[name] = f.getvalue()
         template_context['profile_count'] = prof_stats.count

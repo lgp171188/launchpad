@@ -6,8 +6,7 @@
 import os
 import socket
 from textwrap import dedent
-
-from six.moves.urllib.request import urlopen
+from urllib.request import urlopen
 
 from lp.services.config import config
 from lp.services.config.fixture import ConfigFixture

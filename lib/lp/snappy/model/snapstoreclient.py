@@ -10,14 +10,12 @@ __all__ = [
 import base64
 import json
 import string
-import time
 
 from lazr.restful.utils import get_current_browser_request
 from pymacaroons import Macaroon
 import requests
 from requests_toolbelt import MultipartEncoder
 import six
-from six.moves.urllib.parse import urlsplit
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -27,9 +25,7 @@ from lp.services.crypto.interfaces import (
     CryptoError,
     IEncryptedContainer,
     )
-from lp.services.features import getFeatureFlag
 from lp.services.librarian.utils import EncodableLibraryFileAlias
-from lp.services.memcache.interfaces import IMemcacheClient
 from lp.services.scripts import log
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.timeout import urlfetch
@@ -38,7 +34,6 @@ from lp.snappy.interfaces.snapstoreclient import (
     BadRefreshResponse,
     BadRequestPackageUploadResponse,
     BadScanStatusResponse,
-    BadSearchResponse,
     ISnapStoreClient,
     NeedsRefreshResponse,
     ScanFailedResponse,
@@ -384,41 +379,3 @@ class SnapStoreClient:
                 return response_data["url"], response_data["revision"]
         except requests.HTTPError as e:
             raise cls._makeSnapStoreError(BadScanStatusResponse, e)
-
-    @classmethod
-    def listChannels(cls):
-        """See `ISnapStoreClient`."""
-        if config.snappy.store_search_url is None:
-            return _default_store_channels
-        memcache_client = getUtility(IMemcacheClient)
-        search_host = urlsplit(config.snappy.store_search_url).hostname
-        memcache_key = ("%s:channels" % search_host).encode("UTF-8")
-        description = "channels for %s" % search_host
-
-        channels = memcache_client.get_json(memcache_key, log, description)
-
-        if (channels is None and
-                not getFeatureFlag("snap.disable_channel_search")):
-            path = "api/v1/channels"
-            timeline = cls._getTimeline()
-            if timeline is not None:
-                action = timeline.start("store-search-get", "/" + path)
-            channels_url = urlappend(config.snappy.store_search_url, path)
-            try:
-                response = urlfetch(
-                    channels_url, headers={"Accept": "application/hal+json"})
-            except requests.HTTPError as e:
-                raise cls._makeSnapStoreError(BadSearchResponse, e)
-            finally:
-                if timeline is not None:
-                    action.finish()
-            channels = response.json().get("_embedded", {}).get(
-                "clickindex:channel", [])
-            DAY_IN_SECONDS = 60 * 60 * 24
-            # pymemcache's `expire` expects an int
-            expire_time = int(time.time()) + DAY_IN_SECONDS
-            memcache_client.set_json(
-                memcache_key, channels, expire_time, logger=log)
-        if channels is None:
-            channels = _default_store_channels
-        return channels

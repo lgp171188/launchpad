@@ -16,6 +16,7 @@ __all__ = [
     ]
 
 from base64 import urlsafe_b64encode
+from itertools import zip_longest
 import re
 import sys
 
@@ -23,7 +24,6 @@ from breezy.patches import hunk_from_header
 from lxml import html
 import markdown
 import six
-from six.moves import zip_longest as izip_longest
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.interface import implementer
@@ -963,7 +963,7 @@ class FormattersAPI:
         result.append('</tr>')
 
     def _ssdiff_emit_queued_lines(self, result, queue_removed, queue_added):
-        for removed, added in izip_longest(queue_removed, queue_added):
+        for removed, added in zip_longest(queue_removed, queue_added):
             if removed:
                 removed_diff_row, removed_row, removed_line = removed
             else:

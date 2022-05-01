@@ -11,13 +11,13 @@ __all__ = [
     ]
 
 import io
+from urllib.error import HTTPError
 
 from openid import fetchers
 from openid.consumer.discover import (
     OPENID_IDP_2_0_TYPE,
     OpenIDServiceEndpoint,
     )
-from six.moves.urllib.error import HTTPError
 from zope.testbrowser.wsgi import Browser
 
 from lp.services.encoding import wsgi_native_string

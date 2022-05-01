@@ -11,7 +11,6 @@ __all__ = [
 
 from itertools import repeat
 
-from six.moves import zip as izip
 from zope.component import queryAdapter
 from zope.interface import implementer
 from zope.security.permission import checkPermission
@@ -115,7 +114,7 @@ class AnonymousAuthorization(AuthorizationBase):
         return True
 
 
-class non_boolean_izip(izip):
+class non_boolean_zip(zip):
 
     def __bool__(self):
         # XXX wgrant 2016-11-15: Guard against security adapters
@@ -148,8 +147,8 @@ class DelegatedAuthorization(AuthorizationBase):
 
     def checkAuthenticated(self, user):
         """See `IAuthorization`."""
-        return non_boolean_izip(self.iter_objects(), repeat(self.permission))
+        return non_boolean_zip(self.iter_objects(), repeat(self.permission))
 
     def checkUnauthenticated(self):
         """See `IAuthorization`."""
-        return non_boolean_izip(self.iter_objects(), repeat(self.permission))
+        return non_boolean_zip(self.iter_objects(), repeat(self.permission))

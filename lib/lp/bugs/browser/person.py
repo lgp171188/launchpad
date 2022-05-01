@@ -16,8 +16,8 @@ __all__ = [
 
 import copy
 from operator import itemgetter
+from urllib.parse import urlencode
 
-from six.moves.urllib.parse import urlencode
 from zope.component import getUtility
 
 from lp.bugs.browser.buglisting import BugTaskSearchListingView

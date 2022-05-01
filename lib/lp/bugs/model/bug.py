@@ -18,6 +18,10 @@ __all__ = [
     ]
 
 
+from collections.abc import (
+    Iterable,
+    Set,
+    )
 from email.utils import make_msgid
 from functools import wraps
 import http.client
@@ -30,10 +34,6 @@ from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.restful.declarations import error_status
 import pytz
-from six.moves.collections_abc import (
-    Iterable,
-    Set,
-    )
 from storm.expr import (
     And,
     Coalesce,
@@ -767,7 +767,7 @@ class Bug(SQLBase, InformationTypeMixin):
         # Bugs cannot be expired if any bugtask is valid.
         expirable_status_list = [
             BugTaskStatus.INCOMPLETE, BugTaskStatus.INVALID,
-            BugTaskStatus.WONTFIX]
+            BugTaskStatus.WONTFIX, BugTaskStatus.DOESNOTEXIST]
         has_an_expirable_bugtask = False
         for bugtask in self.bugtasks:
             if bugtask.status not in expirable_status_list:
@@ -1522,7 +1522,7 @@ class Bug(SQLBase, InformationTypeMixin):
         None is returned when either of these conditions are true.
 
         The bugtask is selected by these rules:
-        1. It's status is not Invalid.
+        1. It's status is not Invalid or Does Not Exist.
         2. It is not a conjoined replica.
         Only one bugtask must meet both conditions to be return. When
         zero or many bugtasks match, None is returned.
@@ -1534,6 +1534,7 @@ class Bug(SQLBase, InformationTypeMixin):
         non_invalid_bugtasks = [
             bugtask for bugtask in self.bugtasks
             if (bugtask.status != BugTaskStatus.INVALID
+                and bugtask.status != BugTaskStatus.DOESNOTEXIST
                 and bugtask.conjoined_primary is None)]
         if len(non_invalid_bugtasks) != 1:
             return None

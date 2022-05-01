@@ -11,6 +11,7 @@ from datetime import (
 import json
 from operator import attrgetter
 from textwrap import dedent
+from urllib.parse import urlsplit
 
 from fixtures import (
     FakeLogger,
@@ -21,7 +22,6 @@ from nacl.public import PrivateKey
 from pymacaroons import Macaroon
 import pytz
 import responses
-from six.moves.urllib.parse import urlsplit
 from storm.exceptions import LostObjectError
 from storm.locals import Store
 from testtools.matchers import (
@@ -2819,10 +2819,6 @@ class TestSnapWebservice(TestCaseWithFactory):
         super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.snap_store_client = FakeMethod()
-        self.snap_store_client.listChannels = FakeMethod(result=[
-            {"name": "stable", "display_name": "Stable"},
-            {"name": "edge", "display_name": "Edge"},
-            ])
         self.snap_store_client.requestPackageUploadPermission = (
             getUtility(ISnapStoreClient).requestPackageUploadPermission)
         self.useFixture(

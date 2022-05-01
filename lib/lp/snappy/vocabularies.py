@@ -17,7 +17,6 @@ from storm.locals import (
     Desc,
     Not,
     )
-from zope.component import getUtility
 from zope.interface import implementer
 from zope.schema.vocabulary import (
     SimpleTerm,
@@ -25,6 +24,7 @@ from zope.schema.vocabulary import (
     )
 from zope.security.proxy import removeSecurityProxy
 
+from lp.registry.enums import StoreRisk
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.series import ACTIVE_STATUSES
@@ -34,7 +34,6 @@ from lp.services.utils import seconds_since_epoch
 from lp.services.webapp.vocabulary import StormVocabularyBase
 from lp.snappy.interfaces.snap import ISnap
 from lp.snappy.interfaces.snappyseries import ISnappyDistroSeries
-from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.snappy.model.snappyseries import (
     SnappyDistroSeries,
     SnappyDistroSeriesMixin,
@@ -224,17 +223,15 @@ class SnapStoreChannelVocabulary(SimpleVocabulary):
     """A vocabulary for searching store channels."""
 
     def __init__(self, context=None):
-        channels = getUtility(ISnapStoreClient).listChannels()
         terms = [
-            self.createTerm(
-                channel["name"], channel["name"], channel["display_name"])
-            for channel in channels]
+            self.createTerm(item.title, item.title, item.description)
+            for item in StoreRisk.items]
         if ISnap.providedBy(context):
             # Supplement the vocabulary with any obsolete channels still
             # used by this context.
             context_channels = removeSecurityProxy(context)._store_channels
             if context_channels is not None:
-                known_names = {channel["name"] for channel in channels}
+                known_names = {item.title for item in StoreRisk.items}
                 for name in context_channels:
                     if name not in known_names:
                         terms.append(self.createTerm(name, name, name))

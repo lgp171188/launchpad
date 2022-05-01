@@ -3,6 +3,7 @@
 
 """Tests for the branch filesystem."""
 
+import io
 import os
 import re
 import sys
@@ -1016,7 +1017,7 @@ class TestBranchChangedErrorHandling(TestCaseWithTransport, TestCase):
         self.disable_directory_isolation()
 
         # Trap stderr.
-        self.useFixture(MonkeyPatch('sys.stderr', six.StringIO()))
+        self.useFixture(MonkeyPatch('sys.stderr', io.StringIO()))
 
         # To record generated oopsids
         self.generated_oopsids = []

@@ -1816,7 +1816,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
 
     def test__convertRefInfo(self):
         # _convertRefInfo converts a valid info dictionary.
-        sha1 = six.ensure_text(hashlib.sha1(b"").hexdigest())
+        sha1 = hashlib.sha1(b"").hexdigest()
         info = {"object": {"sha1": sha1, "type": "commit"}}
         expected_info = {"sha1": sha1, "type": GitObjectType.COMMIT}
         self.assertEqual(expected_info, GitRepository._convertRefInfo(info))
@@ -1861,8 +1861,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
             MatchesStructure.byEquality(
                 repository=repository,
                 path=path,
-                commit_sha1=six.ensure_text(hashlib.sha1(
-                    path.encode("UTF-8")).hexdigest()),
+                commit_sha1=hashlib.sha1(path.encode()).hexdigest(),
                 object_type=GitObjectType.COMMIT)
             for path in paths]
         self.assertThat(refs, MatchesSetwise(*matchers))
@@ -2013,13 +2012,11 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 "type": GitObjectType.COMMIT,
                 },
             "refs/heads/foo": {
-                "sha1": six.ensure_text(
-                    hashlib.sha1(b"refs/heads/foo").hexdigest()),
+                "sha1": hashlib.sha1(b"refs/heads/foo").hexdigest(),
                 "type": GitObjectType.COMMIT,
                 },
             "refs/tags/1.0": {
-                "sha1": six.ensure_text(
-                    hashlib.sha1(b"refs/heads/master").hexdigest()),
+                "sha1": hashlib.sha1(b"refs/heads/master").hexdigest(),
                 "type": GitObjectType.COMMIT,
                 },
             }
@@ -2030,8 +2027,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         # planRefChanges does not attempt to update refs that point to
         # non-commits.
         repository = self.factory.makeGitRepository()
-        blob_sha1 = six.ensure_text(
-            hashlib.sha1(b"refs/heads/blob").hexdigest())
+        blob_sha1 = hashlib.sha1(b"refs/heads/blob").hexdigest()
         refs_info = {
             "refs/heads/blob": {
                 "sha1": blob_sha1,
@@ -2106,9 +2102,8 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         # fetchRefCommits fetches detailed tip commit metadata for the
         # requested refs.
         repository = self.factory.makeGitRepository()
-        master_sha1 = six.ensure_text(
-            hashlib.sha1(b"refs/heads/master").hexdigest())
-        foo_sha1 = six.ensure_text(hashlib.sha1(b"refs/heads/foo").hexdigest())
+        master_sha1 = hashlib.sha1(b"refs/heads/master").hexdigest()
+        foo_sha1 = hashlib.sha1(b"refs/heads/foo").hexdigest()
         author = self.factory.makePerson()
         with person_logged_in(author):
             author_email = author.preferredemail.email
@@ -2129,7 +2124,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                     "time": int(seconds_since_epoch(committer_date)),
                     },
                 "parents": [],
-                "tree": six.ensure_text(hashlib.sha1(b"").hexdigest()),
+                "tree": hashlib.sha1(b"").hexdigest(),
                 }]))
         refs = {
             "refs/heads/master": {
@@ -2187,9 +2182,8 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         # those containing the specified paths, and to return the contents
         # of those paths.
         repository = self.factory.makeGitRepository()
-        master_sha1 = six.ensure_text(
-            hashlib.sha1(b"refs/heads/master").hexdigest())
-        foo_sha1 = six.ensure_text(hashlib.sha1(b"refs/heads/foo").hexdigest())
+        master_sha1 = hashlib.sha1(b"refs/heads/master").hexdigest()
+        foo_sha1 = hashlib.sha1(b"refs/heads/foo").hexdigest()
         author = self.factory.makePerson()
         with person_logged_in(author):
             author_email = author.preferredemail.email
@@ -2204,7 +2198,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                     "time": int(seconds_since_epoch(author_date)),
                     },
                 "parents": [],
-                "tree": six.ensure_text(hashlib.sha1(b"").hexdigest()),
+                "tree": hashlib.sha1(b"").hexdigest(),
                 "blobs": {".launchpad.yaml": b"foo"},
                 }]))
         refs = {
@@ -2272,10 +2266,8 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         repository.synchroniseRefs(refs_to_upsert, refs_to_remove)
         expected_sha1s = [
             ("refs/heads/master", "1111111111111111111111111111111111111111"),
-            ("refs/heads/foo",
-             six.ensure_text(hashlib.sha1(b"refs/heads/foo").hexdigest())),
-            ("refs/tags/1.0",
-             six.ensure_text(hashlib.sha1(b"refs/heads/master").hexdigest())),
+            ("refs/heads/foo", hashlib.sha1(b"refs/heads/foo").hexdigest()),
+            ("refs/tags/1.0", hashlib.sha1(b"refs/heads/master").hexdigest()),
             ]
         matchers = [
             MatchesStructure.byEquality(

@@ -3,9 +3,9 @@
 
 """Test `BugSubscriptionInfo`."""
 
+from collections.abc import Set
 from contextlib import contextmanager
 
-from six.moves.collections_abc import Set
 from storm.store import Store
 from testtools.matchers import Equals
 from zope.component import queryAdapter

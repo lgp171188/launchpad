@@ -57,6 +57,10 @@ from operator import (
     itemgetter,
     )
 from textwrap import dedent
+from urllib.parse import (
+    quote,
+    urlencode,
+    )
 
 from lazr.config import as_timedelta
 from lazr.delegates import delegate_to
@@ -65,10 +69,6 @@ from lazr.restful.interfaces import IWebServiceClientRequest
 from lazr.restful.utils import smartquote
 from lazr.uri import URI
 import pytz
-from six.moves.urllib.parse import (
-    quote,
-    urlencode,
-    )
 from storm.zope.interfaces import IResultSet
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
@@ -1859,10 +1859,11 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
         """The list of email address that can be shown.
 
         The list contains email addresses when the EmailAddressVisibleState's
-        PUBLIC or ALLOWED attributes are True. The preferred email
-        address is the first in the list, the other validated email addresses
-        are not ordered. When the team is the context, only the preferred
-        email address is in the list.
+        PUBLIC or ALLOWED attributes are True.
+        The preferred email address is the first in the list, the other
+        validated email addresses are ordered alphabetically.
+        When the team is the context, only the preferred email address is in
+        the list.
 
         :return: A list of email address strings that can be seen.
         """

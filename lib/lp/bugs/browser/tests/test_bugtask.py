@@ -6,19 +6,19 @@ from datetime import (
     timedelta,
     )
 import re
+from urllib.parse import urlencode
 
 from lazr.restful.interfaces import IJSONRequestCache
 from pytz import UTC
 import simplejson
 import six
-from six.moves.urllib.parse import urlencode
 import soupmatchers
 from testscenarios import (
     load_tests_apply_scenarios,
     WithScenarios,
     )
 from testtools.matchers import (
-    Equals,
+    LessThan,
     Not,
     )
 import transaction
@@ -132,7 +132,7 @@ class TestBugTaskView(TestCaseWithFactory):
             0, 10, login_method=lambda: login(ADMIN_EMAIL))
         # This may seem large: it is; there is easily another 25% fat in
         # there.
-        self.assertThat(recorder1, HasQueryCount(Equals(82)))
+        self.assertThat(recorder1, HasQueryCount(LessThan(86)))
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_rendered_query_counts_constant_with_attachments(self):
@@ -143,7 +143,7 @@ class TestBugTaskView(TestCaseWithFactory):
             lambda: self.getUserBrowser(url, person),
             lambda: self.factory.makeBugAttachment(bug=task.bug),
             1, 9, login_method=lambda: login(ADMIN_EMAIL))
-        self.assertThat(recorder1, HasQueryCount(Equals(83)))
+        self.assertThat(recorder1, HasQueryCount(LessThan(87)))
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def makeLinkedBranchMergeProposal(self, sourcepackage, bug, owner):
@@ -178,11 +178,11 @@ class TestBugTaskView(TestCaseWithFactory):
         recorder1, recorder2 = record_two_runs(
             lambda: self.getUserBrowser(url, owner),
             make_merge_proposals, 0, 1)
-        self.assertThat(recorder1, HasQueryCount(Equals(92)))
+        self.assertThat(recorder1, HasQueryCount(LessThan(94)))
         # Ideally this should be much fewer, but this tries to keep a win of
         # removing more than half of these.
         self.assertThat(
-            recorder2, HasQueryCount(Equals(recorder1.count + 27)))
+            recorder2, HasQueryCount(LessThan(recorder1.count + 41)))
 
     def test_interesting_activity(self):
         # The interesting_activity property returns a tuple of interesting
@@ -224,7 +224,7 @@ class TestBugTaskView(TestCaseWithFactory):
             lambda: self.getUserBrowser(url, person),
             lambda: add_activity("description", self.factory.makePerson()),
             1, 20, login_method=lambda: login(ADMIN_EMAIL))
-        self.assertThat(recorder1, HasQueryCount(Equals(83)))
+        self.assertThat(recorder1, HasQueryCount(LessThan(87)))
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_rendered_query_counts_constant_with_milestones(self):
@@ -234,7 +234,7 @@ class TestBugTaskView(TestCaseWithFactory):
 
         with celebrity_logged_in('admin'):
             browses_under_limit = BrowsesWithQueryLimit(
-                84, self.factory.makePerson())
+                87, self.factory.makePerson())
 
         self.assertThat(bug, browses_under_limit)
 
@@ -2325,7 +2325,7 @@ class TestBugTaskSearchListingView(BrowserTestCase):
             lambda: self.getUserBrowser(url),
             lambda: self.factory.makeBug(target=product),
             1, 10, login_method=lambda: login(ANONYMOUS))
-        self.assertThat(recorder1, HasQueryCount(Equals(45)))
+        self.assertThat(recorder1, HasQueryCount(LessThan(47)))
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_mustache_model_in_json(self):

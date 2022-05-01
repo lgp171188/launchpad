@@ -79,6 +79,8 @@ class IRevisionStatusReportView(Interface):
     date_finished = exported(Datetime(
         title=_("When the report has finished.")), readonly=False)
 
+    latest_log = Attribute("The most recent log for this report.")
+
     @operation_parameters(
         artifact_type=Choice(vocabulary=RevisionStatusArtifactType,
                              required=False))
@@ -277,6 +279,11 @@ class IRevisionStatusArtifact(Interface):
         vocabulary=RevisionStatusArtifactType)
 
     repository = Attribute("The repository for this artifact.")
+
+    download_url = Attribute("The download url for this artifact.")
+
+    date_created = Datetime(
+        title=_("When the artifact was created."), readonly=True)
 
     def getFileByName(filename):
         """Returns an artifact by name."""

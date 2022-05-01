@@ -5,12 +5,12 @@
 
 import json
 import os
+from urllib.parse import quote
 
 from lazr.restful.interfaces import (
     IJSONRequestCache,
     IWebServiceClientRequest,
     )
-from six.moves.urllib.parse import quote
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 from zope.traversing.browser import absoluteURL

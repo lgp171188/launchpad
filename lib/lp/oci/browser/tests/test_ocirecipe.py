@@ -8,10 +8,10 @@ from datetime import (
     timedelta,
     )
 from operator import attrgetter
+from urllib.parse import quote
 
 from fixtures import FakeLogger
 import pytz
-from six.moves.urllib.parse import quote
 import soupmatchers
 from storm.locals import Store
 from testtools.matchers import (

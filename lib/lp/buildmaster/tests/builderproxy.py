@@ -6,10 +6,10 @@
 from datetime import datetime
 import json
 from textwrap import dedent
+from urllib.parse import urlsplit
 import uuid
 
 import fixtures
-from six.moves.urllib_parse import urlsplit
 from testtools.matchers import (
     Equals,
     HasLength,

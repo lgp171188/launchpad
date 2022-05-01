@@ -33,6 +33,7 @@ from datetime import (
 from itertools import groupby
 from operator import attrgetter
 import re
+from urllib.parse import quote
 
 from lazr.delegates import delegate_to
 from lazr.lifecycle.event import ObjectModifiedEvent
@@ -47,7 +48,6 @@ from lazr.restful.interfaces import (
 from lazr.restful.utils import smartquote
 from pytz import utc
 from simplejson import dumps
-from six.moves.urllib.parse import quote
 import transaction
 from zope import formlib
 from zope.browserpage import ViewPageTemplateFile
@@ -1253,7 +1253,8 @@ class BugTaskEditView(LaunchpadEditFormView, BugTaskBugWatchMixin,
                 status_noshow = set(BugTaskStatus.items)
             else:
                 status_noshow = {
-                    BugTaskStatus.UNKNOWN, BugTaskStatus.EXPIRED}
+                    BugTaskStatus.UNKNOWN, BugTaskStatus.EXPIRED,
+                    BugTaskStatus.DOESNOTEXIST}
                 status_noshow.update(
                     status for status in BugTaskStatus.items
                     if not self.context.canTransitionToStatus(

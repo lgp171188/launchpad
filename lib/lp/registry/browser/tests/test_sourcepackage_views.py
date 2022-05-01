@@ -3,10 +3,11 @@
 
 """Tests for SourcePackage view code."""
 
-from six.moves.urllib.parse import (
+from urllib.parse import (
     parse_qsl,
     splitquery,
     )
+
 from soupmatchers import (
     HTMLContains,
     Tag,

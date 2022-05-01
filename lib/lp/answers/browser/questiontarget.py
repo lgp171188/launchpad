@@ -19,13 +19,13 @@ __all__ = [
     ]
 
 from operator import attrgetter
+from urllib.parse import urlencode
 
 from lazr.restful.interfaces import (
     IJSONRequestCache,
     IWebServiceClientRequest,
     )
 from simplejson import dumps
-from six.moves.urllib.parse import urlencode
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     getMultiAdapter,

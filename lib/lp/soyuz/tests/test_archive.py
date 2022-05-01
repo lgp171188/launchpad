@@ -11,11 +11,11 @@ from datetime import (
 import doctest
 import http.client
 import os.path
+from urllib.parse import urlsplit
 
 from aptsources.sourceslist import SourceEntry
 from pytz import UTC
 import responses
-from six.moves.urllib.parse import urlsplit
 from storm.store import Store
 from testtools.matchers import (
     AfterPreprocessing,

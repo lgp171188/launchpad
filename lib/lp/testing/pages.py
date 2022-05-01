@@ -11,6 +11,7 @@ from itertools import chain
 import os
 import re
 import unittest
+from urllib.parse import urljoin
 
 from bs4.element import (
     CData,
@@ -25,7 +26,6 @@ from bs4.element import (
 from lazr.restful.testing.webservice import WebServiceCaller
 from oauthlib import oauth1
 import six
-from six.moves.urllib.parse import urljoin
 from soupsieve import escape as css_escape
 import transaction
 from webtest import TestRequest

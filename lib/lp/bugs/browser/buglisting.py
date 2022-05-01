@@ -20,6 +20,12 @@ __all__ = [
     ]
 
 import os.path
+from urllib.parse import (
+    parse_qs,
+    parse_qsl,
+    quote,
+    urlencode,
+    )
 
 from lazr.delegates import delegate_to
 from lazr.restful.interfaces import IJSONRequestCache
@@ -27,12 +33,6 @@ from lazr.uri import URI
 import pystache
 from simplejson import dumps
 from simplejson.encoder import JSONEncoderForHTML
-from six.moves.urllib.parse import (
-    parse_qs,
-    parse_qsl,
-    quote,
-    urlencode,
-    )
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
@@ -159,6 +159,7 @@ DISPLAY_BUG_STATUS_FOR_PATCHES = {
     BugTaskStatus.FIXRELEASED: False,
     BugTaskStatus.UNKNOWN: False,
     BugTaskStatus.EXPIRED: False,
+    BugTaskStatus.DOESNOTEXIST: False,
     BugTaskStatusSearch.INCOMPLETE_WITHOUT_RESPONSE: True,
     BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE: True,
     }
@@ -1443,7 +1444,7 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
                 dict(
                     value=term.token, title=term.title or term.token,
                     checked=term.value in default_values))
-        return shortlist(widget_values, longest_expected=12)
+        return shortlist(widget_values, longest_expected=13)
 
     def getStatusWidgetValues(self):
         """Return data used to render the status checkboxes."""

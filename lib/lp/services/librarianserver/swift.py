@@ -19,8 +19,8 @@ import hashlib
 import os.path
 import re
 import time
+from urllib.parse import quote
 
-from six.moves.urllib.parse import quote
 from swiftclient import client as swiftclient
 
 from lp.services.config import config

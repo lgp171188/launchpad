@@ -10,10 +10,6 @@ __all__ = [
     'ILinkedBranchTraverser',
     ]
 
-from six.moves import (
-    filter as ifilter,
-    map as imap,
-    )
 from zope.interface import Interface
 
 from lp.code.interfaces.codehosting import (
@@ -202,8 +198,8 @@ def get_first_path_result(path, perform_lookup, failure_result):
     :return: The first successful lookup, or failure_result if there are
         no successes.
     """
-    sparse_results = imap(perform_lookup, path_lookups(path))
-    results = ifilter(lambda x: x != failure_result, sparse_results)
+    sparse_results = map(perform_lookup, path_lookups(path))
+    results = filter(lambda x: x != failure_result, sparse_results)
     for result in results:
         return result
     return failure_result

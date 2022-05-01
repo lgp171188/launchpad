@@ -31,7 +31,7 @@ Trac to validate $token and return a Set-Cookie header.
 
     >>> import random
     >>> import re
-    >>> from six.moves.urllib_parse import (
+    >>> from urllib.parse import (
     ...     urljoin,
     ...     urlsplit,
     ...     )
