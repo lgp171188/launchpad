@@ -109,14 +109,22 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
 
     def test_setRenderedValue_invalid_value(self):
         # Multiple channels, different tracks or branches, unsupported
-        self.assertRaises(
-            AssertionError, self.widget.setRenderedValue,
-            ['2.2/candidate', '2.1/edge'])
-        self.assertRaises(
-            AssertionError, self.widget.setRenderedValue,
+        self.assertRaisesWithContent(
+            ValueError,
+            "Channels belong to different tracks: "
+            "['2.2/candidate', '2.1/edge']",
+            self.widget.setRenderedValue, ['2.2/candidate', '2.1/edge'])
+        self.assertRaisesWithContent(
+            ValueError,
+            "Channels belong to different branches: "
+            "['candidate/fix-123', 'edge/fix-124']",
+            self.widget.setRenderedValue,
             ['candidate/fix-123', 'edge/fix-124'])
-        self.assertRaises(
-            AssertionError, self.widget.setRenderedValue,
+        self.assertRaisesWithContent(
+            ValueError,
+            "Channels belong to different tracks: "
+            "['2.2/candidate', 'edge/fix-123']",
+            self.widget.setRenderedValue,
             ['2.2/candidate', 'edge/fix-123'])
 
     def test_hasInput_false(self):

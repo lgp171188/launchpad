@@ -96,15 +96,16 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
             branches = set()
             risks = []
             for channel in value:
-                try:
-                    track, risk, branch = channel_string_to_list(channel)
-                except ValueError:
-                    raise AssertionError("Not a valid value: %r" % channel)
+                track, risk, branch = channel_string_to_list(channel)
                 tracks.add(track)
                 risks.append(risk)
                 branches.add(branch)
-            if len(tracks) != 1 or len(branches) != 1:
-                raise AssertionError("Not a valid value: %r" % value)
+            if len(tracks) != 1:
+                raise ValueError(
+                    "Channels belong to different tracks: %r" % value)
+            if len(branches) != 1:
+                raise ValueError(
+                    "Channels belong to different branches: %r" % value)
             track = tracks.pop()
             self.track_widget.setRenderedValue(track)
             self.risks_widget.setRenderedValue(risks)
