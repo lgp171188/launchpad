@@ -29,7 +29,7 @@ from lp.app.errors import UnexpectedFormData
 from lp.app.validators import LaunchpadValidationError
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.services.channels import (
-    channel_components_delimiter,
+    CHANNEL_COMPONENTS_DELIMITER,
     channel_list_to_string,
     channel_string_to_list,
     )
@@ -135,14 +135,14 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
         track = self.track_widget.getInputValue()
         risks = self.risks_widget.getInputValue()
         branch = self.branch_widget.getInputValue()
-        if track and channel_components_delimiter in track:
+        if track and CHANNEL_COMPONENTS_DELIMITER in track:
             error_msg = "Track name cannot include '%s'." % (
-                channel_components_delimiter)
+                CHANNEL_COMPONENTS_DELIMITER)
             raise WidgetInputError(
                 self.name, self.label, LaunchpadValidationError(error_msg))
-        if branch and channel_components_delimiter in branch:
+        if branch and CHANNEL_COMPONENTS_DELIMITER in branch:
             error_msg = "Branch name cannot include '%s'." % (
-                channel_components_delimiter)
+                CHANNEL_COMPONENTS_DELIMITER)
             raise WidgetInputError(
                 self.name, self.label, LaunchpadValidationError(error_msg))
         channels = [

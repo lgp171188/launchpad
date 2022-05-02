@@ -4,7 +4,7 @@
 """Utilities for dealing with channels in Canonical's stores."""
 
 __all__ = [
-    "channel_components_delimiter",
+    "CHANNEL_COMPONENTS_DELIMITER",
     "channel_list_to_string",
     "channel_string_to_list",
     ]
@@ -13,7 +13,7 @@ from lp.registry.enums import StoreRisk
 
 
 # delimiter separating channel components
-channel_components_delimiter = '/'
+CHANNEL_COMPONENTS_DELIMITER = '/'
 
 
 def _is_risk(component):
@@ -23,7 +23,7 @@ def _is_risk(component):
 
 def channel_string_to_list(channel):
     """Return extracted track, risk, and branch from given channel name."""
-    components = channel.split(channel_components_delimiter)
+    components = channel.split(CHANNEL_COMPONENTS_DELIMITER)
     if len(components) == 3:
         track, risk, branch = components
     elif len(components) == 2:
@@ -52,5 +52,5 @@ def channel_list_to_string(track, risk, branch):
     """Return channel name composed from given track, risk, and branch."""
     if track == "latest":
         track = None
-    return channel_components_delimiter.join(
+    return CHANNEL_COMPONENTS_DELIMITER.join(
         [c for c in (track, risk, branch) if c is not None])
