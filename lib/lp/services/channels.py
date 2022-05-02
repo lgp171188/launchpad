@@ -22,7 +22,18 @@ def _is_risk(component):
 
 
 def channel_string_to_list(channel):
-    """Return extracted track, risk, and branch from given channel name."""
+    """Return extracted track, risk, and branch from given channel name.
+
+    The conversions are as follows, where 'stable', 'candidate', 'beta', and
+    'edge' are possible risks:
+
+    'stable' becomes (None, 'stable', None)
+    'foo/edge' becomes ('foo', 'edge', None)
+    'beta/hotfix' becomes (None, 'beta', 'hotfix')
+    'foo/stable/hotfix' becomes ('foo', 'stable', 'hotfix')
+
+    :raises ValueError: If the channel string is invalid.
+    """
     components = channel.split(CHANNEL_COMPONENTS_DELIMITER)
     if len(components) == 3:
         track, risk, branch = components
@@ -49,7 +60,13 @@ def channel_string_to_list(channel):
 
 
 def channel_list_to_string(track, risk, branch):
-    """Return channel name composed from given track, risk, and branch."""
+    """Return channel name composed from given track, risk, and branch.
+
+    (None, 'stable', None) or ('latest', 'stable', None) becomes 'stable'
+    ('foo', 'edge', None) becomes 'foo/edge'
+    (None, 'beta', 'hotfix') becomes 'beta/hotfix'
+    ('foo', 'stable', 'hotfix') becomes 'foo/stable/hotfix'
+    """
     if track == "latest":
         track = None
     return CHANNEL_COMPONENTS_DELIMITER.join(
