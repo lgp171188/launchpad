@@ -28,13 +28,14 @@ from lp import _
 from lp.app.errors import UnexpectedFormData
 from lp.app.validators import LaunchpadValidationError
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
+from lp.services.channels import (
+    CHANNEL_COMPONENTS_DELIMITER,
+    channel_list_to_string,
+    channel_string_to_list,
+    )
 from lp.services.webapp.interfaces import (
     IAlwaysSubmittedWidget,
     ISingleLineWidgetLayout,
-    )
-from lp.snappy.validators.channels import (
-    channel_components_delimiter,
-    split_channel_name,
     )
 
 
@@ -42,7 +43,6 @@ from lp.snappy.validators.channels import (
 class StoreChannelsWidget(BrowserWidget, InputWidget):
 
     template = ViewPageTemplateFile("templates/storechannels.pt")
-    _separator = channel_components_delimiter
     _default_track = 'latest'
     _widgets_set_up = False
 
@@ -86,23 +86,6 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
         risks_widget = getattr(self, 'risks_widget', None)
         return risks_widget and bool(risks_widget.vocabulary)
 
-    def buildChannelName(self, track, risk, branch):
-        """Return channel name composed from given track, risk, and branch."""
-        channel = risk
-        if track and track != self._default_track:
-            channel = self._separator.join((track, channel))
-        if branch:
-            channel = self._separator.join((channel, branch))
-        return channel
-
-    def splitChannelName(self, channel):
-        """Return extracted track, risk, and branch from given channel name."""
-        try:
-            track, risk, branch = split_channel_name(channel)
-        except ValueError:
-            raise AssertionError("Not a valid value: %r" % channel)
-        return track, risk, branch
-
     def setRenderedValue(self, value):
         """See `IWidget`."""
         self.setUpSubWidgets()
@@ -113,12 +96,16 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
             branches = set()
             risks = []
             for channel in value:
-                track, risk, branch = self.splitChannelName(channel)
+                track, risk, branch = channel_string_to_list(channel)
                 tracks.add(track)
                 risks.append(risk)
                 branches.add(branch)
-            if len(tracks) != 1 or len(branches) != 1:
-                raise AssertionError("Not a valid value: %r" % value)
+            if len(tracks) != 1:
+                raise ValueError(
+                    "Channels belong to different tracks: %r" % value)
+            if len(branches) != 1:
+                raise ValueError(
+                    "Channels belong to different branches: %r" % value)
             track = tracks.pop()
             self.track_widget.setRenderedValue(track)
             self.risks_widget.setRenderedValue(risks)
@@ -149,16 +136,18 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
         track = self.track_widget.getInputValue()
         risks = self.risks_widget.getInputValue()
         branch = self.branch_widget.getInputValue()
-        if track and self._separator in track:
-            error_msg = "Track name cannot include '%s'." % self._separator
+        if track and CHANNEL_COMPONENTS_DELIMITER in track:
+            error_msg = "Track name cannot include '%s'." % (
+                CHANNEL_COMPONENTS_DELIMITER)
             raise WidgetInputError(
                 self.name, self.label, LaunchpadValidationError(error_msg))
-        if branch and self._separator in branch:
-            error_msg = "Branch name cannot include '%s'." % self._separator
+        if branch and CHANNEL_COMPONENTS_DELIMITER in branch:
+            error_msg = "Branch name cannot include '%s'." % (
+                CHANNEL_COMPONENTS_DELIMITER)
             raise WidgetInputError(
                 self.name, self.label, LaunchpadValidationError(error_msg))
         channels = [
-            self.buildChannelName(track, risk, branch) for risk in risks]
+            channel_list_to_string(track, risk, branch) for risk in risks]
         return channels
 
     def error(self):

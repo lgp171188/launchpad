@@ -5,47 +5,11 @@
 
 from lp import _
 from lp.app.validators import LaunchpadValidationError
-from lp.registry.enums import StoreRisk
+from lp.services.channels import channel_string_to_list
 from lp.services.webapp.escaping import (
     html_escape,
     structured,
     )
-
-
-# delimiter separating channel components
-channel_components_delimiter = '/'
-
-
-def _is_risk(component):
-    """Does this channel component identify a risk?"""
-    return component in {item.title for item in StoreRisk.items}
-
-
-def split_channel_name(channel):
-    """Return extracted track, risk, and branch from given channel name."""
-    components = channel.split(channel_components_delimiter)
-    if len(components) == 3:
-        track, risk, branch = components
-    elif len(components) == 2:
-        # Identify risk to determine if this is track/risk or risk/branch.
-        if _is_risk(components[0]):
-            if _is_risk(components[1]):
-                raise ValueError(
-                    "Branch name cannot match a risk name: %r" % channel)
-            track = None
-            risk, branch = components
-        elif _is_risk(components[1]):
-            track, risk = components
-            branch = None
-        else:
-            raise ValueError("No valid risk provided: %r" % channel)
-    elif len(components) == 1:
-        track = None
-        risk = components[0]
-        branch = None
-    else:
-        raise ValueError("Invalid channel name: %r" % channel)
-    return track, risk, branch
 
 
 def channels_validator(channels):
@@ -56,7 +20,7 @@ def channels_validator(channels):
     branches = set()
     for name in channels:
         try:
-            track, risk, branch = split_channel_name(name)
+            track, risk, branch = channel_string_to_list(name)
         except ValueError:
             message = _(
                 "Invalid channel name '${name}'. Channel names must be of the "
