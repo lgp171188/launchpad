@@ -65,48 +65,6 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
         self.assertIsNone(getattr(self.widget, "branch_widget", None))
         self.assertIsNone(self.widget.has_risks_vocabulary)
 
-    def test_buildChannelName_no_track_or_branch(self):
-        self.assertEqual(
-            "edge", self.widget.buildChannelName(None, "edge", None))
-
-    def test_buildChannelName_with_track(self):
-        self.assertEqual(
-            "track/edge", self.widget.buildChannelName("track", "edge", None))
-
-    def test_buildChannelName_with_branch(self):
-        self.assertEqual(
-            "edge/fix-123",
-            self.widget.buildChannelName(None, "edge", "fix-123"))
-
-    def test_buildChannelName_with_track_and_branch(self):
-        self.assertEqual(
-            "track/edge/fix-123",
-            self.widget.buildChannelName("track", "edge", "fix-123"))
-
-    def test_splitChannelName_no_track_or_branch(self):
-        self.assertEqual(
-            (None, "edge", None), self.widget.splitChannelName("edge"))
-
-    def test_splitChannelName_with_track(self):
-        self.assertEqual(
-            ("track", "edge", None),
-            self.widget.splitChannelName("track/edge"))
-
-    def test_splitChannelName_with_branch(self):
-        self.assertEqual(
-            (None, "edge", "fix-123"),
-            self.widget.splitChannelName("edge/fix-123"))
-
-    def test_splitChannelName_with_track_and_branch(self):
-        self.assertEqual(
-            ("track", "edge", "fix-123"),
-            self.widget.splitChannelName("track/edge/fix-123"))
-
-    def test_splitChannelName_invalid(self):
-        self.assertRaises(
-            AssertionError, self.widget.splitChannelName,
-            "track/edge/invalid/too-long")
-
     def test_setRenderedValue_empty(self):
         self.widget.setRenderedValue([])
         self.assertIsNone(self.widget.track_widget._getCurrentValue())
@@ -151,14 +109,22 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
 
     def test_setRenderedValue_invalid_value(self):
         # Multiple channels, different tracks or branches, unsupported
-        self.assertRaises(
-            AssertionError, self.widget.setRenderedValue,
-            ['2.2/candidate', '2.1/edge'])
-        self.assertRaises(
-            AssertionError, self.widget.setRenderedValue,
+        self.assertRaisesWithContent(
+            ValueError,
+            "Channels belong to different tracks: "
+            "['2.2/candidate', '2.1/edge']",
+            self.widget.setRenderedValue, ['2.2/candidate', '2.1/edge'])
+        self.assertRaisesWithContent(
+            ValueError,
+            "Channels belong to different branches: "
+            "['candidate/fix-123', 'edge/fix-124']",
+            self.widget.setRenderedValue,
             ['candidate/fix-123', 'edge/fix-124'])
-        self.assertRaises(
-            AssertionError, self.widget.setRenderedValue,
+        self.assertRaisesWithContent(
+            ValueError,
+            "Channels belong to different tracks: "
+            "['2.2/candidate', 'edge/fix-123']",
+            self.widget.setRenderedValue,
             ['2.2/candidate', 'edge/fix-123'])
 
     def test_hasInput_false(self):

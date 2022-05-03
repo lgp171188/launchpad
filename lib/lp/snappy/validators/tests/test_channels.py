@@ -2,10 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from lp.app.validators import LaunchpadValidationError
-from lp.snappy.validators.channels import (
-    channels_validator,
-    split_channel_name,
-    )
+from lp.snappy.validators.channels import channels_validator
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadFunctionalLayer
 
@@ -13,32 +10,6 @@ from lp.testing.layers import LaunchpadFunctionalLayer
 class TestChannelsValidator(TestCaseWithFactory):
 
     layer = LaunchpadFunctionalLayer
-
-    def test_split_channel_name_no_track_or_branch(self):
-        self.assertEqual((None, "edge", None), split_channel_name("edge"))
-
-    def test_split_channel_name_with_track(self):
-        self.assertEqual(
-            ("track", "edge", None), split_channel_name("track/edge"))
-
-    def test_split_channel_name_with_branch(self):
-        self.assertEqual(
-            (None, "edge", "fix-123"), split_channel_name("edge/fix-123"))
-
-    def test_split_channel_name_with_track_and_branch(self):
-        self.assertEqual(
-            ("track", "edge", "fix-123"),
-            split_channel_name("track/edge/fix-123"))
-
-    def test_split_channel_name_no_risk(self):
-        self.assertRaises(ValueError, split_channel_name, "track/fix-123")
-
-    def test_split_channel_name_ambiguous_risk(self):
-        self.assertRaises(ValueError, split_channel_name, "edge/stable")
-
-    def test_split_channel_name_too_many_components(self):
-        self.assertRaises(
-            ValueError, split_channel_name, "track/edge/invalid/too-long")
 
     def test_channels_validator_valid(self):
         self.assertTrue(
