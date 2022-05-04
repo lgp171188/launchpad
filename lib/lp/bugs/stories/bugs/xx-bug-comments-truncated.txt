@@ -109,7 +109,7 @@ the same rules as xx-question-message.txt; changes here may require
 changes to that test.
 
     >>> user_browser.open('http://bugs.launchpad.test/tomcat/+bug/2')
-    >>> print(six.ensure_text(user_browser.title))
+    >>> print(user_browser.title)
     Bug #2 (blackhole) ... : Bugs : Tomcat
     >>> user_browser.getControl(name='field.comment').value = (
     ...     "-----BEGIN PGP SIGNED MESSAGE-----\n"
@@ -142,7 +142,7 @@ changes to that test.
 No Privileges Person is authenticated in user_browser, so they can see
 email addresses in messages.
 
-    >>> print(six.ensure_text(user_browser.title))
+    >>> print(user_browser.title)
     Bug #2 (blackhole) ... : Bugs : Tomcat
     >>> text = find_tags_by_class(
     ...     user_browser.contents, 'boardCommentBody')[-1]
@@ -157,7 +157,7 @@ address, '<email address hidden>'. The anonymous user is
 unauthenticated, so they will see the obfuscated email address.
 
     >>> anon_browser.open('http://bugs.launchpad.test/tomcat/+bug/2')
-    >>> print(six.ensure_text(anon_browser.title))
+    >>> print(anon_browser.title)
     Bug #2 (blackhole) ... : Bugs : Tomcat
     >>> text = find_tags_by_class(
     ...     anon_browser.contents, 'boardCommentBody')[-1]

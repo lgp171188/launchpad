@@ -60,5 +60,5 @@ happily without generating
     >>> admin_browser.getControl('Save').click()
 
     >>> print_feedback_messages(admin_browser.contents)
-    >>> "has been blocked" in six.ensure_text(admin_browser.contents)
+    >>> "has been blocked" in admin_browser.contents
     False

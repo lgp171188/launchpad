@@ -12,7 +12,7 @@ not already superseded).
     >>> browser.open(
     ...     'http://blueprints.launchpad.test/firefox/+spec/'
     ...     + 'extension-manager-upgrades')
-    >>> 'New' in six.ensure_text(browser.contents)
+    >>> 'New' in browser.contents
     True
 
 Make sure Bug 4116 stays fixed
@@ -39,10 +39,9 @@ Next, we will POST to that form, setting the spec which supersedes this one:
 Now, on the spec page we should see an alert that the spec has been
 superseded. The spec status should also have changed to superseded.
 
-    >>> 'This blueprint has been superseded.' in (
-    ...     six.ensure_text(browser.contents))
+    >>> 'This blueprint has been superseded.' in browser.contents
     True
-    >>> 'Superseded' in six.ensure_text(browser.contents)
+    >>> 'Superseded' in browser.contents
     True
 
 And finally, we want to clear the superseding spec data and reset the
@@ -57,5 +56,5 @@ then it should automatically do this:
 
 Let's confirm the status change:
 
-    >>> 'New' in six.ensure_text(browser.contents)
+    >>> 'New' in browser.contents
     True

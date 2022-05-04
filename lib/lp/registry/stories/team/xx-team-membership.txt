@@ -1,7 +1,7 @@
 Start out by verifying the members page is sane.
 
     >>> browser.open('http://launchpad.test/~ubuntu-team/+members')
-    >>> 'Ubuntu Team' in six.ensure_text(browser.contents)
+    >>> 'Ubuntu Team' in browser.contents
     True
 
 Let's take a look at Colin's subscription page. Colin is an
@@ -14,7 +14,7 @@ administrator and his subscription never expires.
 
     >>> print(browser.title)
     Colin Watson's membership : ...Ubuntu Team... team
-    >>> "Active member" in six.ensure_text(browser.contents)
+    >>> "Active member" in browser.contents
     True
     >>> browser.getControl(name='admin').value
     ['yes']
@@ -126,7 +126,7 @@ the administrator control on the membership page.
 
     >>> print(jdub_browser.title)
     Jeff Waugh's membership : ...Ubuntu Team... team
-    >>> "Active member" in six.ensure_text(jdub_browser.contents)
+    >>> "Active member" in jdub_browser.contents
     True
 
     >>> jdub_browser.getControl(name='admin').value = ['no']
@@ -148,7 +148,7 @@ that the page works and that foo.bar@canonical can access it.
 
     >>> browser.open('http://launchpad.test/~guadamen/+member/name12/')
 
-    >>> 'Declined member' in six.ensure_text(browser.contents)
+    >>> 'Declined member' in browser.contents
     True
 
 Dave Miller is a proposed member in Ubuntu Gnome Team.
@@ -187,7 +187,7 @@ But in the second browser with the stale data we get an error message:
     >>> message = (
     ...     'The membership request for Dave Miller has already been '
     ...     'processed')
-    >>> message in six.ensure_text(second_browser.contents)
+    >>> message in second_browser.contents
     True
 
 An admin can see the former members of the team.
