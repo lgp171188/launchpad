@@ -89,7 +89,7 @@ It's also not possible to edit a poll that's already closed.
     >>> team_admin_browser.url
     'http://launchpad.test/~ubuntu-team/+poll/director-2004'
 
-    >>> 'Voting has closed' in six.ensure_text(team_admin_browser.contents)
+    >>> 'Voting has closed' in team_admin_browser.contents
     True
 
     >>> team_admin_browser.getLink('Change details').click()

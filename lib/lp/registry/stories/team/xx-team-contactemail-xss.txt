@@ -38,6 +38,5 @@ The error message is also valid and correctly escaped:
 The script we tried to inject is not present, unescaped, anywhere in
 the page:
 
-    >>> '<script>alert("cheezburger");</script>' in (
-    ...     six.ensure_text(admin_browser.contents))
+    >>> '<script>alert("cheezburger");</script>' in admin_browser.contents
     False

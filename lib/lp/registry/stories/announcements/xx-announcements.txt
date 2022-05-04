@@ -717,23 +717,19 @@ hosted in Launchpad:
     >>> nopriv_browser.open(
     ...     'http://feeds.launchpad.test/announcements.atom')
     >>> _ = feedparser.parse(nopriv_browser.contents)
-    >>> 'Announcements published via Launchpad' in (
-    ...     six.ensure_text(nopriv_browser.contents))
+    >>> 'Announcements published via Launchpad' in nopriv_browser.contents
     True
-    >>> '[tomcat] Tomcat announcement headline' in (
-    ...     six.ensure_text(nopriv_browser.contents))
+    >>> '[tomcat] Tomcat announcement headline' in nopriv_browser.contents
     True
-    >>> '[apache] Modified headline' in (
-    ...     six.ensure_text(nopriv_browser.contents))
+    >>> '[apache] Modified headline' in nopriv_browser.contents
     True
 
 It excludes retracted and future announcements too:
 
     >>> "[guadalinex] Kubuntu announcement headline" in (
-    ...     six.ensure_text(nopriv_browser.contents))
+    ...     nopriv_browser.contents)
     False
-    >>> "[jokosher] Jokosher announcement headline" in (
-    ...     six.ensure_text(nopriv_browser.contents))
+    >>> "[jokosher] Jokosher announcement headline" in nopriv_browser.contents
     False
 
 The announcements are stored as plain text, but the text-to-html formatter
