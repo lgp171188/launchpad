@@ -9,7 +9,6 @@ from textwrap import dedent
 from urllib.parse import urljoin
 
 from fixtures import FakeLogger
-import six
 import soupmatchers
 from storm.store import Store
 from testscenarios import (
@@ -326,8 +325,7 @@ class TestPersonIndexView(BrowserTestCase):
             person, view_name='+close-account', user=admin)
         browser.getControl("Close").click()
         self.assertIn(
-            "This account will now be permanently closed.",
-            six.ensure_text(browser.contents))
+            "This account will now be permanently closed.", browser.contents)
 
         # the close account job is created with Waiting status
         job_source = getUtility(IPersonCloseAccountJobSource)
@@ -345,7 +343,7 @@ class TestPersonIndexView(BrowserTestCase):
             browser.getControl("Close").click()
             self.assertIn(
                 "This account will now be permanently closed.",
-                six.ensure_text(browser.contents))
+                browser.contents)
         # the close account job is created with Waiting status
         job_source = getUtility(IPersonCloseAccountJobSource)
         with person_logged_in(admin):
@@ -1591,8 +1589,7 @@ class TestPersonOCIRegistryCredentialsView(
         password_control.value = 'newpassword'
 
         browser.getControl("Save").click()
-        self.assertIn(
-            "Passwords do not match.", six.ensure_text(browser.contents))
+        self.assertIn("Passwords do not match.", browser.contents)
 
         # change all fields (except region) with one edit action
         username_control = browser.getControl(
@@ -1701,7 +1698,7 @@ class TestPersonOCIRegistryCredentialsView(
         browser.getControl("Save").click()
         self.assertIn("These credentials cannot be deleted as there are "
                       "push rules defined that still use them.",
-                      six.ensure_text(browser.contents))
+                      browser.contents)
 
         # make sure we don't have any push rules defined to use
         # the credentials we want to remove

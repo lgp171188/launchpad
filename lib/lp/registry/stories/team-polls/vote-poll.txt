@@ -80,8 +80,7 @@ yet.
     ...     auth='Basic jeff.waugh@ubuntulinux.com:test')
     >>> team_admin_browser.open(
     ...   'http://launchpad.test/~ubuntu-team/+poll/never-closes/+vote')
-    >>> not_yet_voted_message = 'You have not yet voted in this poll.'
-    >>> not_yet_voted_message in six.ensure_text(team_admin_browser.contents)
+    >>> 'You have not yet voted in this poll.' in team_admin_browser.contents
     True
 
     >>> team_admin_browser.getControl(name='newoption').value = ["donotvote"]

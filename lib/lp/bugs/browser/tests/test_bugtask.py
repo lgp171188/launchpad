@@ -11,7 +11,6 @@ from urllib.parse import urlencode
 from lazr.restful.interfaces import IJSONRequestCache
 from pytz import UTC
 import simplejson
-import six
 import soupmatchers
 from testscenarios import (
     load_tests_apply_scenarios,
@@ -314,7 +313,7 @@ class TestBugTaskView(TestCaseWithFactory):
         browser = self.getUserBrowser(canonical_url(bug), bug.owner)
         self.assertIn(
             'href="/foobar/+bugs?field.tag=depends-on%2B987"',
-            six.ensure_text(browser.contents))
+            browser.contents)
 
     def test_information_type(self):
         owner = self.factory.makePerson()
@@ -334,7 +333,7 @@ class TestBugTaskView(TestCaseWithFactory):
             bug.markAsDuplicate(inactive_bug)
         removeSecurityProxy(inactive_project).active = False
         browser = self.getUserBrowser(canonical_url(bug))
-        contents = six.ensure_text(browser.contents)
+        contents = browser.contents
         self.assertIn(
             "This bug report is a duplicate of a bug on an inactive project.",
             contents)
@@ -349,8 +348,7 @@ class TestBugTaskView(TestCaseWithFactory):
         # portlet is hidden.
         bug = self.factory.makeBug()
         browser = self.getUserBrowser(canonical_url(bug))
-        contents = six.ensure_text(browser.contents)
-        self.assertNotIn('Related blueprints', contents)
+        self.assertNotIn('Related blueprints', browser.contents)
 
     def test_related_blueprints_is_shown(self):
         # When a bug has specifications linked, the Related blueprints portlet
@@ -360,7 +358,7 @@ class TestBugTaskView(TestCaseWithFactory):
         with person_logged_in(spec.owner):
             spec.linkBug(bug)
         browser = self.getUserBrowser(canonical_url(bug))
-        contents = six.ensure_text(browser.contents)
+        contents = browser.contents
         self.assertIn('Related blueprints', contents)
         self.assertIn('My brilliant spec', contents)
 
@@ -2087,7 +2085,7 @@ class TestCommentCollapseVisibility(TestCaseWithFactory):
         bug = self.makeBugWithComments(20)
         url = canonical_url(bug.default_bugtask)
         browser = self.getUserBrowser(url=url)
-        contents = six.ensure_text(browser.contents)
+        contents = browser.contents
         self.assertIn("10 comments hidden", contents)
         self.assertEqual(1, contents.count('comments hidden'))
 
@@ -2100,7 +2098,7 @@ class TestCommentCollapseVisibility(TestCaseWithFactory):
         removeSecurityProxy(comments[-5]).visible = False
 
         browser = self.getUserBrowser(url=url)
-        contents = six.ensure_text(browser.contents)
+        contents = browser.contents
         self.assertIn("10 comments hidden", contents)
         self.assertIn("1 comments hidden", contents)
         self.assertEqual(2, contents.count('comments hidden'))
@@ -2122,7 +2120,7 @@ class TestCommentCollapseVisibility(TestCaseWithFactory):
         transaction.commit()
 
         browser = self.getUserBrowser(url=url)
-        contents = six.ensure_text(browser.contents)
+        contents = browser.contents
         self.assertIn("10 comments hidden", contents)
         self.assertIn("1 comments hidden", contents)
         self.assertEqual(2, contents.count('comments hidden'))
