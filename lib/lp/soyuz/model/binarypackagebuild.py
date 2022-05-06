@@ -588,7 +588,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
         except (AttributeError, Warning):
             raise UnparsableDependencies(
                 "Build dependencies for %s (%s) could not be parsed: '%s'\n"
-                "It indicates that something is wrong in buildd-slaves."
+                "It indicates that something is wrong in buildd-workers."
                 % (self.title, self.id, self.dependencies))
 
         remaining_deps = []

@@ -612,7 +612,7 @@ worker-scanner can safely update the build information (buildlog,
 duration, etc) and clean the builder for anther job.
 
 If the build record was not marked as FULLYBUILT during the
-upload-time, it means that the slave should be hold with the builds
+upload-time, it means that the worker should be held with the build
 results for later processing.
 
 Updating the build record as part of the upload processing avoids possible

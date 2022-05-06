@@ -36,7 +36,7 @@ from lp.buildmaster.interactor import (
     )
 from lp.buildmaster.interfaces.builder import (
     BuildDaemonIsolationError,
-    BuildSlaveFailure,
+    BuildWorkerFailure,
     IBuilderSet,
     )
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
@@ -1175,7 +1175,7 @@ class TestCancellationChecking(TestCaseWithFactory):
 
         clock.advance(WorkerScanner.CANCEL_TIMEOUT)
         with ExpectedException(
-                BuildSlaveFailure, "Timeout waiting for .* to cancel"):
+                BuildWorkerFailure, "Timeout waiting for .* to cancel"):
             yield scanner.checkCancellation(self.vitals, worker)
 
     @defer.inlineCallbacks

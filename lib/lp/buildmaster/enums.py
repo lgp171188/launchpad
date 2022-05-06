@@ -243,7 +243,7 @@ class BuilderResetProtocol(DBEnumeratedType):
         1.1
 
         Original synchronous protocol with vm_host and buildd_name. The
-        reset trigger must exit cleanly once the slave is reset and
+        reset trigger must exit cleanly once the worker is reset and
         accepting requests.
         """)
 
@@ -253,7 +253,7 @@ class BuilderResetProtocol(DBEnumeratedType):
         Asynchronous protocol with vm_host and buildd_name. The reset
         trigger must exit cleanly once the request is accepted, and use
         the webservice to set Builder.clean_status back to 'Clean' when
-        the slave is reset and accepting requests.
+        the worker is reset and accepting requests.
         """)
 
 

@@ -1646,21 +1646,21 @@ COMMENT ON COLUMN BinaryPackageBuild.distro_arch_series IS 'Points the target Di
 COMMENT ON COLUMN BinaryPackageBuild.source_package_release IS 'SourcePackageRelease which originated this build.';
 
 -- Builder
-COMMENT ON TABLE Builder IS 'Builder: This table stores the build-slave registry and status information as: name, url, trusted, builderok, builderaction, failnotes.';
+COMMENT ON TABLE Builder IS 'Builder: This table stores the build-worker registry and status information as: name, url, trusted, builderok, builderaction, failnotes.';
 COMMENT ON COLUMN Builder.builderok IS 'Should a builder fail for any reason, from out-of-disk-space to not responding to the buildd master, the builderok flag is set to false and the failnotes column is filled with a reason.';
 COMMENT ON COLUMN Builder.failnotes IS 'This column gets filled out with a textual description of how/why a builder has failed. If the builderok column is true then the value in this column is irrelevant and should be treated as NULL or empty.';
 COMMENT ON COLUMN Builder.virtualized IS 'Whether or not the builder is a virtual Xen builder. Packages coming via ubuntu workflow are trusted to build on non-Xen and do not need facist behaviour to be built. Other packages like ppa/grumpy incoming packages can contain malicious code, so are unstrusted and build in a Xen virtual machine.';
-COMMENT ON COLUMN Builder.url IS 'The url to the build slave. There may be more than one build slave on a given host so this url includes the port number to use. The default port number for a build slave is 8221';
+COMMENT ON COLUMN Builder.url IS 'The url to the build worker. There may be more than one build worker on a given host so this url includes the port number to use. The default port number for a build worker is 8221';
 COMMENT ON COLUMN Builder.manual IS 'Whether or not builder was manual mode, i.e., collect any result from the it, but do not dispach anything to it automatically.';
 COMMENT ON COLUMN Builder.vm_host IS 'The virtual machine host associated to this builder. It should be empty for "native" builders (old fashion or architectures not yet supported by XEN).';
 COMMENT ON COLUMN Builder.active IS 'Whether to present or not the builder in the public list of builders avaialble. It is used to hide transient or defunct builders while they get fixed.';
 COMMENT ON COLUMN Builder.failure_count IS 'The number of consecutive failures on this builder.  Is reset to zero after a sucessful dispatch.';
-COMMENT ON COLUMN Builder.version IS 'The version of launchpad-buildd on the slave.';
+COMMENT ON COLUMN Builder.version IS 'The version of launchpad-buildd on the worker.';
 
 -- BuildQueue
 COMMENT ON TABLE BuildQueue IS 'BuildQueue: The queue of jobs in progress/scheduled to run on the Soyuz build farm.';
 COMMENT ON COLUMN BuildQueue.builder IS 'The builder assigned to this build. Some builds will have a builder assigned to queue them up; some will be building on the specified builder already; others will not have a builder yet (NULL) and will be waiting to be assigned into a builder''s queue';
-COMMENT ON COLUMN BuildQueue.logtail IS 'The tail end of the log of the current build. This is updated regularly as the buildd master polls the buildd slaves. Once the build is complete; the full log will be lodged with the librarian and linked into the build table.';
+COMMENT ON COLUMN BuildQueue.logtail IS 'The tail end of the log of the current build. This is updated regularly as the buildd master polls the buildd workers. Once the build is complete; the full log will be lodged with the librarian and linked into the build table.';
 COMMENT ON COLUMN BuildQueue.lastscore IS 'The last score ascribed to this build record. This can be used in the UI among other places.';
 COMMENT ON COLUMN BuildQueue.manual IS 'Indicates if the current record was or not rescored manually, if so it get skipped from the auto-score procedure.';
 COMMENT ON COLUMN BuildQueue.estimated_duration IS 'Estimated job duration, based on previous running times of comparable jobs.';

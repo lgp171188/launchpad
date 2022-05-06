@@ -3,7 +3,7 @@
 
 """An `IBuildFarmJobBehaviour` for `LiveFSBuild`.
 
-Dispatches live filesystem build jobs to build-farm slaves.
+Dispatches live filesystem build jobs to build-farm workers.
 """
 
 __all__ = [
@@ -37,7 +37,7 @@ from lp.soyuz.interfaces.livefsbuild import ILiveFSBuild
 @adapter(ILiveFSBuild)
 @implementer(IBuildFarmJobBehaviour)
 class LiveFSBuildBehaviour(BuildFarmJobBehaviourBase):
-    """Dispatches `LiveFSBuild` jobs to slaves."""
+    """Dispatches `LiveFSBuild` jobs to workers."""
 
     builder_type = "livefs"
     image_types = [BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
@@ -89,7 +89,7 @@ class LiveFSBuildBehaviour(BuildFarmJobBehaviourBase):
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None):
         """
-        Return the extra arguments required by the slave for the given build.
+        Return the extra arguments required by the worker for the given build.
         """
         build = self.build
         base_args = yield super().extraBuildArgs(logger=logger)

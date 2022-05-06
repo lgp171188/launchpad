@@ -64,7 +64,7 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
     def determineFilesToSend(self):
         """See `IBuildFarmJobBehaviour`."""
         # Build filemap structure with the files required in this build
-        # and send them to the slave.
+        # and send them to the worker.
         if self.build.archive.private:
             # Builds in private archive may have restricted files that
             # we can't obtain from the public librarian. Prepare a pool
@@ -146,7 +146,7 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None):
         """
-        Return the extra arguments required by the slave for the given build.
+        Return the extra arguments required by the worker for the given build.
         """
         build = self.build
         das = build.distro_arch_series
