@@ -267,7 +267,7 @@
   <div id="footer" class="footer">
     <div class="lp-arcana" tal:condition="not:view/is_root_page|nothing">
         <div class="lp-branding">
-          <a tal:attributes="href string:${rooturl}"><img src="/@@/launchpad-logo-and-name-hierarchy.png" alt="Launchpad"/></a>
+          <a tal:attributes="href string:${rooturl}"><img src="/@@/launchpad-logo-and-name.png" alt="Launchpad" height="18"/></a>
           &nbsp;&bull;&nbsp;
           <a tal:attributes="href string:${rooturl}+tour">Take the tour</a>
           &nbsp;&bull;&nbsp;
@@ -368,4 +368,3 @@
     condition="python: count != 1"
     replace="l_plural" /></metal:plural-msg>
 </macros>
-
