@@ -75,7 +75,7 @@ class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
     def _readTarball(self, buildqueue, filemap, logger):
         """Read tarball with generated translation templates from worker."""
         if filemap is None:
-            logger.error("Slave returned no filemap.")
+            logger.error("Worker returned no filemap.")
             return defer.succeed(None)
 
         worker_filename = filemap.get(self.templates_tarball_path)

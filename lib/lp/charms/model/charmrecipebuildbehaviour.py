@@ -3,7 +3,7 @@
 
 """An `IBuildFarmJobBehaviour` for `CharmRecipeBuild`.
 
-Dispatches charm recipe build jobs to build-farm slaves.
+Dispatches charm recipe build jobs to build-farm workers.
 """
 
 __all__ = [
@@ -34,7 +34,7 @@ from lp.soyuz.adapters.archivedependencies import (
 @adapter(ICharmRecipeBuild)
 @implementer(IBuildFarmJobBehaviour)
 class CharmRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
-    """Dispatches `CharmRecipeBuild` jobs to slaves."""
+    """Dispatches `CharmRecipeBuild` jobs to workers."""
 
     builder_type = "charm"
     image_types = [BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
@@ -69,7 +69,7 @@ class CharmRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None):
         """
-        Return the extra arguments required by the slave for the given build.
+        Return the extra arguments required by the worker for the given build.
         """
         build = self.build
         args = yield super().extraBuildArgs(logger=logger)

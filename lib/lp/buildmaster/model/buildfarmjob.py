@@ -230,7 +230,7 @@ class BuildFarmJobMixin:
                 BuildStatus.NEEDSBUILD, BuildStatus.BUILDING,
                 BuildStatus.CANCELLING)):
             # XXX cprov 20060615 bug=120584: Currently buildduration includes
-            # the scanner latency, it should really be asking the slave for
+            # the scanner latency, it should really be asking the worker for
             # the duration spent building locally.
             self.build_farm_job.date_finished = self.date_finished = (
                 date_finished or datetime.datetime.now(pytz.UTC))

@@ -8,7 +8,7 @@ Builder Class
 =============
 
 The Builder class represents a machine in the build farm. These
-slaves are used to execute untrusted code -- for example when building
+workers are used to execute untrusted code -- for example when building
 packages.
 
 There are several builders in the sample data. Let's examine the first.

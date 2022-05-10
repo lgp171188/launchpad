@@ -931,7 +931,7 @@ def parse_upload_path(relative_path):
                 % (person.name, distribution.name, ppa_name))
 
     elif first_path.isdigit():
-        # This must be a binary upload from a build slave.
+        # This must be a binary upload from a build worker.
         try:
             archive = getUtility(IArchiveSet).get(int(first_path))
         except SQLObjectNotFound:

@@ -46,7 +46,7 @@ application.addComponent(
 # Service that announces when the daemon is ready.
 readyservice.ReadyService().setServiceParent(application)
 
-# Service for scanning buildd slaves.
+# Service for scanning buildd workers.
 service = BuilddManager()
 service.setServiceParent(application)
 
