@@ -123,7 +123,7 @@ installed and configured on your network.
 
 .. code-block:: sh
 
-    ssh -A $user@IP_ADDRESS_FROM_LXC_LS
+    ssh -A $USER@IP_ADDRESS_FROM_LXC_LS
 
 Getting Launchpad
 =================
