@@ -45,7 +45,8 @@
         </div>
         <div id="footer">
           <a href="https://launchpad.net/">
-            <img src="https://launchpad.net/@@/launchpad-logo-and-name-hierarchy.png"
+            <img src="https://launchpad.net/@@/launchpad-logo-and-name.png"
+            width="100"
             alt="Launchpad" />
           </a>
         </div>
