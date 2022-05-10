@@ -478,6 +478,62 @@ class TestGitRefGetBlob(TestCaseWithFactory):
         self.assertRaises(
             GitRepositoryBlobUnsupportedRemote, ref.getBlob, "dir/file")
 
+    @responses.activate
+    def test_remote_gitlab_branch(self):
+        ref = self.factory.makeGitRefRemote(
+            repository_url="https://gitlab.com/owner/name",
+            path="refs/heads/path")
+        responses.add(
+            "GET", "https://gitlab.com/owner/name/-/raw/path/dir/file",
+            body=b"foo")
+        self.assertEqual(b"foo", ref.getBlob("dir/file"))
+
+    @responses.activate
+    def test_remote_gitlab_tag(self):
+        ref = self.factory.makeGitRefRemote(
+            repository_url="https://gitlab.com/owner/name",
+            path="refs/tags/1.0")
+        responses.add(
+            "GET", "https://gitlab.com/owner/name/-/raw/1.0/dir/file",
+            body=b"foo")
+        self.assertEqual(b"foo", ref.getBlob("dir/file"))
+
+    @responses.activate
+    def test_remote_gitlab_HEAD(self):
+        ref = self.factory.makeGitRefRemote(
+            repository_url="https://gitlab.com/owner/name", path="HEAD")
+        responses.add(
+            "GET", "https://gitlab.com/owner/name/-/raw/HEAD/dir/file",
+            body=b"foo")
+        self.assertEqual(b"foo", ref.getBlob("dir/file"))
+
+    @responses.activate
+    def test_remote_gitlab_trailing_dot_git(self):
+        ref = self.factory.makeGitRefRemote(
+            repository_url="https://gitlab.com/owner/name.git", path="HEAD")
+        responses.add(
+            "GET", "https://gitlab.com/owner/name/-/raw/HEAD/dir/file",
+            body=b"foo")
+        self.assertEqual(b"foo", ref.getBlob("dir/file"))
+
+    @responses.activate
+    def test_remote_gitlab_404(self):
+        ref = self.factory.makeGitRefRemote(
+            repository_url="https://gitlab.com/owner/name", path="HEAD")
+        responses.add(
+            "GET", "https://gitlab.com/owner/name/-/raw/HEAD/dir/file",
+            status=404)
+        self.assertRaises(GitRepositoryBlobNotFound, ref.getBlob, "dir/file")
+
+    @responses.activate
+    def test_remote_gitlab_error(self):
+        ref = self.factory.makeGitRefRemote(
+            repository_url="https://gitlab.com/owner/name", path="HEAD")
+        responses.add(
+            "GET", "https://gitlab.com/owner/name/-/raw/HEAD/dir/file",
+            status=500)
+        self.assertRaises(GitRepositoryScanFault, ref.getBlob, "dir/file")
+
     def test_remote_unknown_host(self):
         ref = self.factory.makeGitRefRemote(
             repository_url="https://example.com/foo")
