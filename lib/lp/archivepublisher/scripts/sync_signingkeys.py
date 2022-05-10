@@ -49,6 +49,9 @@ class SyncSigningKeysScript(LaunchpadScript):
         self.parser.add_option(
             "-t", "--type",
             help="The type of keys to process (default: all types).")
+        self.parser.add_option(
+            "--local-keys",
+            help="Override directory where local keys are found.")
 
         self.parser.add_option(
             "-l", "--limit", dest="limit", type=int,
@@ -139,21 +142,24 @@ class SyncSigningKeysScript(LaunchpadScript):
                  archive's root signing) and the values are the directories
                  where the keys for that series are stored."""
         series_paths = {}
-        pubconf = getPubConfig(archive)
-        if pubconf is None or pubconf.signingroot is None:
-            self.logger.debug(
-                "Skipping %s: no pubconfig or no signing root." %
-                archive.reference)
-            return {}
+        if self.options.local_keys is not None:
+            local_keys = self.options.local_keys
+        else:
+            pubconf = getPubConfig(archive)
+            if pubconf is None or pubconf.signingroot is None:
+                self.logger.debug(
+                    "Skipping %s: no pubconfig or no signing root." %
+                    archive.reference)
+                return {}
+            local_keys = pubconf.signingroot
         for series in archive.distribution.series:
-            path = os.path.join(pubconf.signingroot, series.name)
+            path = os.path.join(local_keys, series.name)
             self.logger.debug("\tChecking if %s exists.", path)
             if os.path.exists(path):
                 series_paths[series] = path
-        self.logger.debug(
-            "\tChecking if root dir %s exists.", pubconf.signingroot)
-        if os.path.exists(pubconf.signingroot):
-            series_paths[None] = pubconf.signingroot
+        self.logger.debug("\tChecking if root dir %s exists.", local_keys)
+        if os.path.exists(local_keys):
+            series_paths[None] = local_keys
         return series_paths
 
     def inject(self, archive, key_type, series, priv_key_path, pub_key_path):
