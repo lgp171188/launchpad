@@ -816,6 +816,16 @@ def _fetch_blob_from_gitlab(repository_url, ref_path, filename):
     return response.content
 
 
+# Some well-known GitLab instances.  This is certainly not comprehensive.
+_gitlab_hostnames = {
+    "gitlab.com",
+    "gitlab.eclipse.org",
+    "gitlab.freedesktop.org",
+    "gitlab.gnome.org",
+    "salsa.debian.org",
+    }
+
+
 def _fetch_blob_from_launchpad(repository_url, ref_path, filename):
     repo_path = urlsplit(repository_url).path.strip("/")
     try:
@@ -950,7 +960,7 @@ class GitRefRemote(GitRefMixin):
                 len(url.path.strip("/").split("/")) == 2):
             return _fetch_blob_from_github(
                 self.repository_url, self.path, filename)
-        if url.hostname == "gitlab.com":
+        if url.hostname in _gitlab_hostnames:
             return _fetch_blob_from_gitlab(
                 self.repository_url, self.path, filename)
         if (url.hostname == "git.launchpad.net" and
