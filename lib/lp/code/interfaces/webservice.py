@@ -21,6 +21,7 @@ __all__ = [
     'IBranchMergeProposal',
     'IBranchSet',
     'IBranchSubscription',
+    'ICIBuild',
     'ICodeImport',
     'ICodeReviewComment',
     'ICodeReviewVoteReference',
@@ -56,6 +57,7 @@ from lp.code.interfaces.branch import (
     )
 from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
 from lp.code.interfaces.branchsubscription import IBranchSubscription
+from lp.code.interfaces.cibuild import ICIBuild
 from lp.code.interfaces.codeimport import ICodeImport
 from lp.code.interfaces.codereviewcomment import ICodeReviewComment
 from lp.code.interfaces.codereviewvote import ICodeReviewVoteReference

@@ -10,13 +10,16 @@ from datetime import (
 import hashlib
 from textwrap import dedent
 from unittest.mock import Mock
+from urllib.request import urlopen
 
 from fixtures import MockPatchObject
 from pymacaroons import Macaroon
 import pytz
 from storm.locals import Store
 from testtools.matchers import (
+    ContainsDict,
     Equals,
+    Is,
     MatchesListwise,
     MatchesSetwise,
     MatchesStructure,
@@ -61,17 +64,27 @@ from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
+from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.log.logger import BufferLogger
 from lp.services.macaroons.interfaces import IMacaroonIssuer
 from lp.services.macaroons.testing import MacaroonTestMixin
 from lp.services.propertycache import clear_property_cache
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
+    ANONYMOUS,
+    api_url,
+    login,
+    logout,
     person_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
-from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.layers import (
+    LaunchpadFunctionalLayer,
+    LaunchpadZopelessLayer,
+    )
 from lp.testing.matchers import HasQueryCount
+from lp.testing.pages import webservice_for_person
 from lp.xmlrpc.interfaces import IPrivateApplication
 
 
@@ -1004,6 +1017,159 @@ class TestDetermineDASesToBuild(TestCaseWithFactory):
             "name in Ubuntu %s\n" % distro_series.name,
             logger.getLogBuffer()
         )
+
+
+class TestCIBuildWebservice(TestCaseWithFactory):
+
+    layer = LaunchpadFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.person = self.factory.makePerson()
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PRIVATE)
+        self.webservice.default_api_version = "devel"
+        login(ANONYMOUS)
+
+    def getURL(self, obj):
+        return self.webservice.getAbsoluteUrl(api_url(obj))
+
+    def test_properties(self):
+        # The basic properties of a CI build are sensible.
+        db_build = self.factory.makeCIBuild()
+        build_url = api_url(db_build)
+        logout()
+        build = self.webservice.get(build_url).jsonBody()
+        with person_logged_in(self.person):
+            self.assertThat(build, ContainsDict({
+                "git_repository_link": Equals(
+                    self.getURL(db_build.git_repository)),
+                "commit_sha1": Equals(db_build.commit_sha1),
+                "distro_arch_series_link": Equals(
+                    self.getURL(db_build.distro_arch_series)),
+                "arch_tag": Equals(
+                    db_build.distro_arch_series.architecturetag),
+                "score": Is(None),
+                "stages": Equals([[["test", 0]]]),
+                "results": Equals({}),
+                "can_be_rescored": Is(False),
+                "can_be_retried": Is(False),
+                "can_be_cancelled": Is(False),
+                }))
+
+    def test_public(self):
+        # A CI build with a public repository is itself public.
+        db_build = self.factory.makeCIBuild()
+        build_url = api_url(db_build)
+        unpriv_webservice = webservice_for_person(
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+        unpriv_webservice.default_api_version = "devel"
+        logout()
+        self.assertEqual(200, self.webservice.get(build_url).status)
+        self.assertEqual(200, unpriv_webservice.get(build_url).status)
+
+    def test_private(self):
+        # A CI build with a private repository is private.
+        db_repository = self.factory.makeGitRepository(
+            owner=self.person, information_type=InformationType.USERDATA)
+        with person_logged_in(self.person):
+            db_build = self.factory.makeCIBuild(git_repository=db_repository)
+            build_url = api_url(db_build)
+        unpriv_webservice = webservice_for_person(
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+        unpriv_webservice.default_api_version = "devel"
+        logout()
+        self.assertEqual(200, self.webservice.get(build_url).status)
+        self.assertEqual(401, unpriv_webservice.get(build_url).status)
+
+    def test_cancel(self):
+        # The owner of a build's repository can cancel the build.
+        db_repository = self.factory.makeGitRepository(owner=self.person)
+        db_build = self.factory.makeCIBuild(git_repository=db_repository)
+        db_build.queueBuild()
+        build_url = api_url(db_build)
+        unpriv_webservice = webservice_for_person(
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+        unpriv_webservice.default_api_version = "devel"
+        logout()
+        build = self.webservice.get(build_url).jsonBody()
+        self.assertTrue(build["can_be_cancelled"])
+        response = unpriv_webservice.named_post(build["self_link"], "cancel")
+        self.assertEqual(401, response.status)
+        response = self.webservice.named_post(build["self_link"], "cancel")
+        self.assertEqual(200, response.status)
+        build = self.webservice.get(build_url).jsonBody()
+        self.assertFalse(build["can_be_cancelled"])
+        with person_logged_in(self.person):
+            self.assertEqual(BuildStatus.CANCELLED, db_build.status)
+
+    def test_rescore(self):
+        # Buildd administrators can rescore builds.
+        db_build = self.factory.makeCIBuild()
+        db_build.queueBuild()
+        build_url = api_url(db_build)
+        buildd_admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).buildd_admin])
+        buildd_admin_webservice = webservice_for_person(
+            buildd_admin, permission=OAuthPermission.WRITE_PUBLIC)
+        buildd_admin_webservice.default_api_version = "devel"
+        logout()
+        build = self.webservice.get(build_url).jsonBody()
+        self.assertEqual(2600, build["score"])
+        self.assertTrue(build["can_be_rescored"])
+        response = self.webservice.named_post(
+            build["self_link"], "rescore", score=5000)
+        self.assertEqual(401, response.status)
+        response = buildd_admin_webservice.named_post(
+            build["self_link"], "rescore", score=5000)
+        self.assertEqual(200, response.status)
+        build = self.webservice.get(build_url).jsonBody()
+        self.assertEqual(5000, build["score"])
+
+    def assertCanOpenRedirectedUrl(self, browser, url):
+        browser.open(url)
+        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        urlopen(browser.headers["Location"]).close()
+
+    def test_logs(self):
+        # API clients can fetch the build and upload logs.
+        db_build = self.factory.makeCIBuild()
+        db_build.setLog(self.factory.makeLibraryFileAlias("buildlog.txt.gz"))
+        db_build.storeUploadLog("uploaded")
+        build_url = api_url(db_build)
+        logout()
+        build = self.webservice.get(build_url).jsonBody()
+        browser = self.getNonRedirectingBrowser(user=self.person)
+        browser.raiseHttpErrors = False
+        self.assertIsNotNone(build["build_log_url"])
+        self.assertCanOpenRedirectedUrl(browser, build["build_log_url"])
+        self.assertIsNotNone(build["upload_log_url"])
+        self.assertCanOpenRedirectedUrl(browser, build["upload_log_url"])
+
+    def test_getFileUrls(self):
+        # API clients can fetch files attached to builds.
+        db_build = self.factory.makeCIBuild()
+        db_reports = [
+            self.factory.makeRevisionStatusReport(ci_build=db_build)
+            for _ in range(2)]
+        db_artifacts = []
+        for db_report in db_reports:
+            for _ in range(2):
+                db_artifacts.append(self.factory.makeRevisionStatusArtifact(
+                    lfa=self.factory.makeLibraryFileAlias(), report=db_report))
+        build_url = api_url(db_build)
+        file_urls = [
+            ProxiedLibraryFileAlias(
+                db_artifact.library_file, db_artifact).http_url
+            for db_artifact in db_artifacts]
+        logout()
+        response = self.webservice.named_get(build_url, "getFileUrls")
+        self.assertEqual(200, response.status)
+        self.assertContentEqual(file_urls, response.jsonBody())
+        browser = self.getNonRedirectingBrowser(user=self.person)
+        browser.raiseHttpErrors = False
+        for file_url in file_urls:
+            self.assertCanOpenRedirectedUrl(browser, file_url)
 
 
 class TestCIBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
