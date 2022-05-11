@@ -94,7 +94,9 @@ from lp.bugs.interfaces.bugtarget import (
     BUG_POLICY_ALLOWED_TYPES,
     BUG_POLICY_DEFAULT_TYPES,
     )
+from lp.bugs.interfaces.bugtask import BugTaskImportance
 from lp.bugs.interfaces.bugtaskfilter import OrderedBugTask
+from lp.bugs.interfaces.vulnerability import IVulnerabilitySet
 from lp.bugs.model.bugtarget import (
     BugTargetBase,
     OfficialBugTagTargetMixin,
@@ -103,6 +105,7 @@ from lp.bugs.model.bugtaskflat import BugTaskFlat
 from lp.bugs.model.structuralsubscription import (
     StructuralSubscriptionTargetMixin,
     )
+from lp.bugs.model.vulnerability import Vulnerability
 from lp.code.interfaces.seriessourcepackagebranch import (
     IFindOfficialBranchLinks,
     )
@@ -1838,6 +1841,26 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             self.oci_registry_credentials = None
             old_credentials.destroySelf()
 
+    def newVulnerability(self, status, creator, information_type,
+                         importance=BugTaskImportance.UNDECIDED,
+                         cve=None, description=None, notes=None,
+                         mitigation=None, importance_explanation=None,
+                         date_made_public=None):
+        """See `IDistribution`."""
+        return getUtility(IVulnerabilitySet).new(
+            self,
+            status,
+            importance,
+            creator,
+            information_type,
+            cve,
+            description,
+            notes,
+            mitigation,
+            importance_explanation,
+            date_made_public,
+        )
+
     @cachedproperty
     def _known_viewers(self):
         """A set of known persons able to view this distribution."""
@@ -1873,6 +1896,21 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             Distribution.id == self.id,
             DistributionSet.getDistributionPrivacyFilter(user.person),
             ).is_empty()
+
+    @property
+    def vulnerabilities(self):
+        """See `IDistribution`."""
+        return Store.of(self).find(
+            Vulnerability,
+            Vulnerability.distribution == self,
+        )
+
+    def getVulnerability(self, vulnerability_id):
+        """See `IDistribution`."""
+        return Store.of(self).find(
+            Vulnerability,
+            distribution=self,
+            id=vulnerability_id).one()
 
 
 @implementer(IDistributionSet)

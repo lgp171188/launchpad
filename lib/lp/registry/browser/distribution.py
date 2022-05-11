@@ -226,6 +226,16 @@ class DistributionNavigation(
         else:
             return series
 
+    @stepthrough('+vulnerability')
+    def traverse_vulnerability(self, id):
+        try:
+            id = int(id)
+        except ValueError:
+            # Not a number.
+            return None
+
+        return self.context.getVulnerability(id)
+
     def traverse(self, name):
         policy = self.context.default_traversal_policy
         if policy == DistributionDefaultTraversalPolicy.SERIES:

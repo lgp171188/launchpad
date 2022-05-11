@@ -892,6 +892,11 @@
             permission="zope.Public"
             template="../templates/cve-portlet-bugs2.pt"/>
     <browser:url
+        for="lp.bugs.interfaces.vulnerability.IVulnerability"
+        path_expression="string:+vulnerability/${id}"
+        attribute_to_parent="distribution"
+        rootsite="bugs"/>
+    <browser:url
         for="lp.bugs.interfaces.bugsubscription.IBugSubscription"
         path_expression="string:+subscription/${person/name}"
         attribute_to_parent="bug"

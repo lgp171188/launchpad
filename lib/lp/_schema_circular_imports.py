@@ -47,6 +47,7 @@ from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscription,
     IStructuralSubscriptionTarget,
     )
+from lp.bugs.interfaces.vulnerability import IVulnerability
 from lp.buildmaster.interfaces.builder import (
     IBuilder,
     IBuilderSet,
@@ -452,6 +453,7 @@ patch_collection_property(IDistribution, 'all_distro_archives', IArchive)
 patch_entry_return_type(IDistribution, 'newOCIProject', IOCIProject)
 patch_collection_return_type(
     IDistribution, 'searchOCIProjects', IOCIProject)
+patch_collection_property(IDistribution, 'vulnerabilities', IVulnerability)
 
 
 # IDistributionMirror
