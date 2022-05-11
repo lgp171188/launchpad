@@ -2114,10 +2114,12 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
         )
         self.assertEqual(400, response.status)
         self.assertEqual(
-            b'status: Required input is missing.\n'
-            b'creator: Required input is missing.\n'
-            b'information_type: Required input is missing.',
-            response.body
+            {
+                'status: Required input is missing.',
+                'creator: Required input is missing.',
+                'information_type: Required input is missing.'
+            },
+            set(response.body.decode().split('\n'))
         )
 
     def test_newVulnerability_default_arguments(self):
