@@ -237,6 +237,9 @@
               <td class="icon" tal:content="structure report/image:icon" />
               <td tal:define="url python: report.url if report.url is not None else path('report/latest_log/download_url | nothing')">
                 <a tal:attributes="href url" tal:content="report/title" />
+                <tal:ci_build condition="report/ci_build">
+                  (<a tal:attributes="href report/ci_build/fmt:url">build</a>)
+                </tal:ci_build>
               </td>
               <td tal:content="report/result_summary" />
             </tr>
