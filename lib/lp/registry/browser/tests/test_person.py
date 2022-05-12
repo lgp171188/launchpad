@@ -1115,6 +1115,22 @@ class TestPersonParticipationView(TestCaseWithFactory):
         [participation] = self.view.active_participations
         self.assertEqual('Subscribed', participation['subscribed'])
 
+    def test__asParticipation_dateexpires(self):
+        team = self.factory.makeTeam(owner=self.user)
+        [participation] = self.view.active_participations
+
+        self.assertIsNone(participation['dateexpires'])
+
+        membership_set = getUtility(ITeamMembershipSet)
+        membership = membership_set.getByPersonAndTeam(self.user, team)
+        tomorrow = datetime.now(pytz.timezone('UTC')) + timedelta(days=1)
+        with person_logged_in(self.user):
+            membership.setExpirationDate(tomorrow, self.user)
+        view = create_view(self.user, name='+participation')
+        [participation] = view.active_participations
+
+        self.assertEqual(tomorrow, participation['dateexpires'])
+
     def test_active_participations_with_direct_private_team(self):
         # Users cannot see private teams that they are not members of.
         owner = self.factory.makePerson()
@@ -1229,22 +1245,6 @@ class TestPersonParticipationView(TestCaseWithFactory):
         recorder1, recorder2 = record_two_runs(
             get_participations, create_subscriptions, 5)
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
-
-    def test__asParticipation_dateexpires(self):
-        team = self.factory.makeTeam(owner=self.user)
-        [participation] = self.view.active_participations
-
-        self.assertEqual(None, participation['dateexpires'])
-
-        membership_set = getUtility(ITeamMembershipSet)
-        membership = membership_set.getByPersonAndTeam(self.user, team)
-        tomorrow = datetime.now(pytz.timezone('UTC')) + timedelta(days=1)
-        with person_logged_in(self.user):
-            membership.setExpirationDate(tomorrow, self.user)
-        view = create_view(self.user, name='+participation')
-        [participation] = view.active_participations
-
-        self.assertEqual(tomorrow, participation['dateexpires'])
 
 
 class TestPersonRelatedPackagesView(TestCaseWithFactory):
