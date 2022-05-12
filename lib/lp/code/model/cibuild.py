@@ -85,6 +85,7 @@ from lp.services.macaroons.interfaces import (
     )
 from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.services.propertycache import cachedproperty
+from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 
 
@@ -464,6 +465,18 @@ class CIBuild(PackageBuildMixin, StormBase):
     def notify(self, extra_info=None):
         """See `IPackageBuild`."""
         # We don't currently send any notifications.
+
+    def createBinaryPackageRelease(
+            self, binarypackagename, version, summary, description,
+            binpackageformat, architecturespecific, installedsize=None,
+            homepage=None):
+        """See `ICIBuild`."""
+        return BinaryPackageRelease(
+            ci_build=self, binarypackagename=binarypackagename,
+            version=version, summary=summary, description=description,
+            binpackageformat=binpackageformat,
+            architecturespecific=architecturespecific,
+            installedsize=installedsize, homepage=homepage)
 
 
 @implementer(ICIBuildSet)

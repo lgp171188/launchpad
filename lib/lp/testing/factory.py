@@ -4262,7 +4262,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             libraryfile=library_file, filetype=filetype))
 
     def makeBinaryPackageRelease(self, binarypackagename=None,
-                                 version=None, build=None,
+                                 version=None, build=None, ci_build=None,
                                  binpackageformat=None, component=None,
                                  section_name=None, priority=None,
                                  architecturespecific=False,
@@ -4276,22 +4276,27 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                  date_created=None, debug_package=None,
                                  homepage=None):
         """Make a `BinaryPackageRelease`."""
-        if build is None:
+        if build is None and ci_build is None:
             build = self.makeBinaryPackageBuild()
         if binarypackagename is None or isinstance(binarypackagename, str):
             binarypackagename = self.getOrMakeBinaryPackageName(
                 binarypackagename)
-        if version is None:
+        if version is None and build is not None:
             version = build.source_package_release.version
         if binpackageformat is None:
             binpackageformat = BinaryPackageFormat.DEB
-        if component is None:
+        if component is None and build is not None:
             component = build.source_package_release.component
         elif isinstance(component, str):
             component = getUtility(IComponentSet)[component]
         if isinstance(section_name, str):
             section_name = self.makeSection(section_name)
-        section = section_name or build.source_package_release.section
+        if section_name is not None:
+            section = section_name
+        elif build is not None:
+            section = build.source_package_release.section
+        else:
+            section = None
         if priority is None:
             priority = PackagePublishingPriority.OPTIONAL
         if summary is None:
@@ -4300,18 +4305,35 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             description = self.getUniqueString("description")
         if installed_size is None:
             installed_size = self.getUniqueInteger()
-        bpr = build.createBinaryPackageRelease(
-                binarypackagename=binarypackagename, version=version,
-                binpackageformat=binpackageformat,
-                component=component, section=section, priority=priority,
-                summary=summary, description=description,
-                architecturespecific=architecturespecific,
-                shlibdeps=shlibdeps, depends=depends, recommends=recommends,
-                suggests=suggests, conflicts=conflicts, replaces=replaces,
-                provides=provides, pre_depends=pre_depends,
-                enhances=enhances, breaks=breaks, essential=essential,
-                installedsize=installed_size, debug_package=debug_package,
-                homepage=homepage)
+        kwargs = {
+            "binarypackagename": binarypackagename,
+            "version": version,
+            "binpackageformat": binpackageformat,
+            "summary": summary,
+            "description": description,
+            "architecturespecific": architecturespecific,
+            "installedsize": installed_size,
+            "homepage": homepage,
+            }
+        if build is not None:
+            kwargs.update({
+                "component": component,
+                "section": section,
+                "priority": priority,
+                "shlibdeps": shlibdeps,
+                "depends": depends,
+                "recommends": recommends,
+                "suggests": suggests,
+                "conflicts": conflicts,
+                "replaces": replaces,
+                "provides": provides,
+                "pre_depends": pre_depends,
+                "enhances": enhances,
+                "breaks": breaks,
+                "essential": essential,
+                "debug_package": debug_package,
+                })
+        bpr = (build or ci_build).createBinaryPackageRelease(**kwargs)
         if date_created is not None:
             removeSecurityProxy(bpr).datecreated = date_created
         return bpr
