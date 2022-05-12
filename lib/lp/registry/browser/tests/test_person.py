@@ -1,6 +1,10 @@
 # Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from datetime import (
+    datetime,
+    timedelta,
+    )
 import doctest
 import email
 from operator import attrgetter
@@ -9,6 +13,7 @@ from textwrap import dedent
 from urllib.parse import urljoin
 
 from fixtures import FakeLogger
+import pytz
 import soupmatchers
 from storm.store import Store
 from testscenarios import (
@@ -1109,6 +1114,22 @@ class TestPersonParticipationView(TestCaseWithFactory):
         team.addMember(self.user, team.teamowner)
         [participation] = self.view.active_participations
         self.assertEqual('Subscribed', participation['subscribed'])
+
+    def test__asParticipation_dateexpires(self):
+        team = self.factory.makeTeam(owner=self.user)
+        [participation] = self.view.active_participations
+
+        self.assertIsNone(participation['dateexpires'])
+
+        membership_set = getUtility(ITeamMembershipSet)
+        membership = membership_set.getByPersonAndTeam(self.user, team)
+        tomorrow = datetime.now(pytz.timezone('UTC')) + timedelta(days=1)
+        with person_logged_in(self.user):
+            membership.setExpirationDate(tomorrow, self.user)
+        view = create_view(self.user, name='+participation')
+        [participation] = view.active_participations
+
+        self.assertEqual(tomorrow, participation['dateexpires'])
 
     def test_active_participations_with_direct_private_team(self):
         # Users cannot see private teams that they are not members of.
