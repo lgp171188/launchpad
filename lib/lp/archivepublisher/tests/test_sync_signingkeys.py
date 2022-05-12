@@ -190,6 +190,25 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
             None: Equals(archive_root)
         }))
 
+    def test_get_series_paths_override_local_keys_directory(self):
+        distro = self.factory.makeDistribution()
+        series1 = self.factory.makeDistroSeries(distribution=distro)
+        series2 = self.factory.makeDistroSeries(distribution=distro)
+        # For this series, we will not create the keys directory.
+        self.factory.makeDistroSeries(distribution=distro)
+        local_keys = self.useFixture(TempDir()).path
+        os.makedirs(os.path.join(local_keys, series1.name))
+        os.makedirs(os.path.join(local_keys, series2.name))
+
+        archive = self.factory.makeArchive(distribution=distro)
+
+        script = self.makeScript(["--local-keys", local_keys])
+        self.assertThat(script.getSeriesPaths(archive), MatchesDict({
+            series1: Equals(os.path.join(local_keys, series1.name)),
+            series2: Equals(os.path.join(local_keys, series2.name)),
+            None: Equals(local_keys)
+        }))
+
     def test_process_archive(self):
         distro = self.factory.makeDistribution()
         series1 = self.factory.makeDistroSeries(distribution=distro)

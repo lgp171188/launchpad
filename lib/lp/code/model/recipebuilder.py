@@ -54,7 +54,7 @@ class RecipeBuildBehaviour(BuildFarmJobBehaviourBase):
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None):
         """
-        Return the extra arguments required by the slave for the given build.
+        Return the extra arguments required by the worker for the given build.
         """
         if self.distro_arch_series is None:
             raise CannotBuild(

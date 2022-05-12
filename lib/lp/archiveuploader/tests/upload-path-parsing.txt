@@ -258,10 +258,10 @@ An old-style named PPA upload missing '~'.
     lp.archiveuploader.uploadprocessor.UploadPathError: Path format mismatch.
 
 
-Binary uploads from build slaves
---------------------------------
+Binary uploads from build workers
+---------------------------------
 
-A relative path for a binary upload from a build slave will have the
+A relative path for a binary upload from a build worker will have the
 following format: <archive_id>/<distribution_name> where archive_id
 is the database key of the archive in question.
 

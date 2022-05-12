@@ -59,6 +59,7 @@ from zope.schema import (
 from lp import _
 from lp.answers.interfaces.faqtarget import IFAQTarget
 from lp.answers.interfaces.questiontarget import IQuestionTarget
+from lp.app.enums import InformationType
 from lp.app.errors import NameLookupFailed
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import (
@@ -71,6 +72,7 @@ from lp.app.interfaces.launchpad import (
 from lp.app.validators.name import name_validator
 from lp.blueprints.interfaces.specificationtarget import ISpecificationTarget
 from lp.blueprints.interfaces.sprint import IHasSprints
+from lp.bugs.enums import VulnerabilityStatus
 from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
 from lp.bugs.interfaces.bugtarget import (
     IBugTarget,
@@ -78,6 +80,8 @@ from lp.bugs.interfaces.bugtarget import (
     IOfficialBugTagTargetPublic,
     IOfficialBugTagTargetRestricted,
     )
+from lp.bugs.interfaces.bugtask import BugTaskImportance
+from lp.bugs.interfaces.cve import ICve
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
     )
@@ -98,6 +102,7 @@ from lp.registry.interfaces.milestone import (
     IHasMilestones,
     )
 from lp.registry.interfaces.oopsreferences import IHasOOPSReferences
+from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pillar import (
     IHasSharingPolicies,
     IPillar,
@@ -475,6 +480,14 @@ class IDistributionView(
     has_current_commercial_subscription = Attribute(
         "Whether the distribution has a current commercial subscription.")
 
+    vulnerabilities = exported(
+        doNotSnapshot(CollectionField(
+            description=_("Vulnerabilities in this distribution."),
+            readonly=True,
+            # Really IVulnerability, see _schema_circular_imports.py.
+            value_type=Reference(schema=Interface)))
+        )
+
     def getArchiveIDList(archive=None):
         """Return a list of archive IDs suitable for sqlvalues() or quote().
 
@@ -797,6 +810,9 @@ class IDistributionView(
                       "images in this distribution to a registry."),
         required=False, readonly=False)
 
+    def getVulnerability(vulnerability_id):
+        """Return the vulnerability in this distribution with the given id."""
+
 
 class IDistributionEditRestricted(IOfficialBugTagTargetRestricted):
     """IDistribution properties requiring launchpad.Edit permission."""
@@ -872,6 +888,68 @@ class IDistributionEditRestricted(IOfficialBugTagTargetRestricted):
     @operation_for_version("devel")
     def deleteOCICredentials():
         """Delete any existing OCI credentials for the distribution."""
+
+    @call_with(creator=REQUEST_USER)
+    @operation_parameters(
+        status=Choice(
+            title=_('The status of the vulnerability.'),
+            required=True,
+            vocabulary=VulnerabilityStatus,
+        ),
+        creator=Reference(
+            title=_('Person creating the vulnerability.'),
+            schema=IPerson,
+            required=True,
+        ),
+        information_type=Choice(
+            title=_('Information Type. Defaults to `Public`.'),
+            required=True,
+            vocabulary=InformationType,
+        ),
+        importance=Choice(
+            title=_('Indicates the work priority, not the severity. '
+                    'Defaults to `Undecided`.'),
+            vocabulary=BugTaskImportance,
+            required=False,
+            default=BugTaskImportance.UNDECIDED,
+        ),
+        cve=Reference(
+            ICve,
+            title=_('External CVE reference corresponding to '
+                    'this vulnerability, if any.'),
+            required=False,
+        ),
+        description=TextLine(
+            title=_('A short description of the vulnerability.'),
+            required=False,
+        ),
+        notes = TextLine(
+            title=_("Free-form notes for this vulnerability."),
+            required=False,
+            readonly=False
+        ),
+        mitigation=TextLine(
+            title=_("Explains why we're ignoring this vulnerability."),
+            required=False,
+        ),
+        importance_explanation=TextLine(
+            title=_('Used to explain why our importance differs from '
+                    "somebody else's CVSS score."),
+            required=False,
+        ),
+        date_made_public=Datetime(
+            title=_("The date this vulnerability was made public."),
+            required=False,
+        ),
+    )
+    @export_write_operation()
+    @operation_for_version("devel")
+    def newVulnerability(status, creator, information_type,
+                         importance=BugTaskImportance.UNDECIDED,
+                         cve=None, description=None, notes=None,
+                         mitigation=None, importance_explanation=None,
+                         date_made_public=None):
+        """Create a new vulnerability in the distribution."""
 
 
 @exported_as_webservice_entry(as_of="beta")

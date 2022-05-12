@@ -43,7 +43,7 @@ from lp.buildmaster.interactor import (
 from lp.buildmaster.interfaces.builder import (
     BuildDaemonError,
     BuildDaemonIsolationError,
-    BuildSlaveFailure,
+    BuildWorkerFailure,
     CannotBuild,
     CannotFetchFile,
     CannotResumeHost,
@@ -426,7 +426,7 @@ class WorkerScanner:
 
     # The time before deciding that a cancelling builder has failed, in
     # seconds.  This should normally be a multiple of SCAN_INTERVAL, and
-    # greater than abort_timeout in launchpad-buildd's slave BuildManager.
+    # greater than abort_timeout in launchpad-buildd's worker BuildManager.
     CANCEL_TIMEOUT = 180
 
     def __init__(self, builder_name, builder_factory, manager, logger,
@@ -507,7 +507,7 @@ class WorkerScanner:
         # the error.
         error_message = failure.getErrorMessage()
         if failure.check(
-            BuildSlaveFailure, CannotBuild, CannotResumeHost,
+            BuildWorkerFailure, CannotBuild, CannotResumeHost,
             BuildDaemonError, CannotFetchFile):
             self.logger.info("Scanning %s failed with: %s" % (
                 self.builder_name, error_message))
@@ -541,7 +541,7 @@ class WorkerScanner:
             transaction.abort()
 
     @defer.inlineCallbacks
-    def checkCancellation(self, vitals, slave):
+    def checkCancellation(self, vitals, worker):
         """See if there is a pending cancellation request.
 
         If the current build is in status CANCELLING then terminate it
@@ -556,7 +556,7 @@ class WorkerScanner:
                 "Cancelling BuildQueue %d (%s) on %s",
                 vitals.build_queue.id, self.getExpectedCookie(vitals),
                 vitals.name)
-            yield slave.abort()
+            yield worker.abort()
             self.date_cancel = self._clock.seconds() + self.CANCEL_TIMEOUT
         else:
             # The BuildFarmJob will normally set the build's status to
@@ -568,14 +568,14 @@ class WorkerScanner:
                     vitals.build_queue.id, self.getExpectedCookie(vitals),
                     vitals.name)
             else:
-                raise BuildSlaveFailure(
+                raise BuildWorkerFailure(
                     "Timeout waiting for BuildQueue %d (%s) on %s to "
                     "cancel" % (
                     vitals.build_queue.id, self.getExpectedCookie(vitals),
                     vitals.name))
 
     def getExpectedCookie(self, vitals):
-        """Return the build cookie expected to be held by the slave.
+        """Return the build cookie expected to be held by the worker.
 
         Calculating this requires hitting the DB, so it's cached based
         on the current BuildQueue.
@@ -606,12 +606,12 @@ class WorkerScanner:
         self.builder_factory.prescanUpdate()
         vitals = self.builder_factory.getVitals(self.builder_name)
         interactor = self.interactor_factory()
-        slave = self.worker_factory(vitals)
+        worker = self.worker_factory(vitals)
 
         if vitals.build_queue is not None:
             if vitals.clean_status != BuilderCleanStatus.DIRTY:
                 # This is probably a grave bug with security implications,
-                # as a slave that has a job must be cleaned afterwards.
+                # as a worker that has a job must be cleaned afterwards.
                 raise BuildDaemonIsolationError(
                     "Non-dirty builder allegedly building.")
 
@@ -619,8 +619,8 @@ class WorkerScanner:
             if not vitals.builderok:
                 lost_reason = '%s is disabled' % vitals.name
             else:
-                worker_status = yield slave.status()
-                # Ensure that the slave has the job that we think it
+                worker_status = yield worker.status()
+                # Ensure that the worker has the job that we think it
                 # should.
                 worker_cookie = worker_status.get('build_id')
                 expected_cookie = self.getExpectedCookie(vitals)
@@ -630,9 +630,9 @@ class WorkerScanner:
                             vitals.name, expected_cookie, worker_cookie))
 
             if lost_reason is not None:
-                # The slave is either confused or disabled, so reset and
+                # The worker is either confused or disabled, so reset and
                 # requeue the job. The next scan cycle will clean up the
-                # slave if appropriate.
+                # worker if appropriate.
                 self.logger.warning(
                     "%s. Resetting job %s.", lost_reason,
                     vitals.build_queue.build_cookie)
@@ -640,14 +640,14 @@ class WorkerScanner:
                 transaction.commit()
                 return
 
-            yield self.checkCancellation(vitals, slave)
+            yield self.checkCancellation(vitals, worker)
 
-            # The slave and DB agree on the builder's state.  Scan the
-            # slave and get the logtail, or collect the build if it's
+            # The worker and DB agree on the builder's state.  Scan the
+            # worker and get the logtail, or collect the build if it's
             # ready.  Yes, "updateBuild" is a bad name.
             assert worker_status is not None
             yield interactor.updateBuild(
-                vitals, slave, worker_status, self.builder_factory,
+                vitals, worker, worker_status, self.builder_factory,
                 self.behaviour_factory, self.manager)
         else:
             if not vitals.builderok:
@@ -655,7 +655,7 @@ class WorkerScanner:
             # We think the builder is idle. If it's clean, dispatch. If
             # it's dirty, clean.
             if vitals.clean_status == BuilderCleanStatus.CLEAN:
-                worker_status = yield slave.status()
+                worker_status = yield worker.status()
                 if worker_status.get('builder_status') != 'BuilderStatus.IDLE':
                     raise BuildDaemonIsolationError(
                         'Allegedly clean worker not idle (%r instead)'
@@ -672,7 +672,7 @@ class WorkerScanner:
                 # the job so the dispatch will be reattempted.
                 builder = self.builder_factory[self.builder_name]
                 d = interactor.findAndStartJob(
-                    vitals, builder, slave, self.builder_factory)
+                    vitals, builder, worker, self.builder_factory)
                 d.addErrback(functools.partial(self._scanFailed, False))
                 yield d
                 if builder.currentjob is not None:
@@ -686,7 +686,7 @@ class WorkerScanner:
                 # straight back to CLEAN, or we might have to spin
                 # through another few cycles.
                 done = yield interactor.cleanWorker(
-                    vitals, slave, self.builder_factory)
+                    vitals, worker, self.builder_factory)
                 if done:
                     builder = self.builder_factory[self.builder_name]
                     builder.setCleanStatus(BuilderCleanStatus.CLEAN)

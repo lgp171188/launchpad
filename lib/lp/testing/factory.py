@@ -3108,7 +3108,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """Make a new builder for i386 virtualized builds by default.
 
         Note: the builder returned will not be able to actually build -
-        we currently have a build slave setup for 'bob' only in the
+        we currently have a build worker setup for 'bob' only in the
         test environment.
         """
         if processors is None:

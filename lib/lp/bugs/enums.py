@@ -8,6 +8,7 @@ __all__ = [
     'BugLockStatus',
     'BugNotificationLevel',
     'BugNotificationStatus',
+    'VulnerabilityStatus',
     ]
 
 from lazr.enum import (
@@ -103,3 +104,31 @@ class BugLockedStatus(DBEnumeratedType):
     The various locked status values of a bug.
     """
     use_template(BugLockStatus, exclude=('UNLOCKED',))
+
+
+class VulnerabilityStatus(DBEnumeratedType):
+    """Vulnerability status"""
+
+    NEEDS_TRIAGE = DBItem(0, """
+        Needs triage
+
+        Not looked at yet.
+        """)
+
+    ACTIVE = DBItem(1, """
+        Active
+
+        The vulnerability is active.
+        """)
+
+    IGNORED = DBItem(2, """
+        Ignored
+
+        The vulnerability is currently ignored.
+        """)
+
+    RETIRED = DBItem(3, """
+        Retired
+
+        This vulnerability is now retired.
+        """)

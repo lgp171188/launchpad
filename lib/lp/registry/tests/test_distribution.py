@@ -12,8 +12,13 @@ import soupmatchers
 from storm.store import Store
 from testtools import ExpectedException
 from testtools.matchers import (
+    ContainsDict,
+    Equals,
+    Is,
+    IsInstance,
     MatchesAll,
     MatchesAny,
+    MatchesStructure,
     Not,
     )
 from zope.component import getUtility
@@ -35,7 +40,9 @@ from lp.app.interfaces.services import IService
 from lp.blueprints.model.specification import (
     SPECIFICATION_POLICY_ALLOWED_TYPES,
     )
+from lp.bugs.enums import VulnerabilityStatus
 from lp.bugs.interfaces.bugtarget import BUG_POLICY_ALLOWED_TYPES
+from lp.bugs.interfaces.bugtask import BugTaskImportance
 from lp.code.model.branchnamespace import BRANCH_POLICY_ALLOWED_TYPES
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.enums import (
@@ -1813,3 +1820,389 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             france, MirrorContent.RELEASE)
         self.assertTrue(len(mirrors) > 1, "Not enough mirrors")
         self.assertEqual(main_mirror, mirrors[-1])
+
+
+class TestDistributionVulnerabilities(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_vulnerabilities_no_vulnerability_present(self):
+        distribution = self.factory.makeDistribution()
+        self.assertEqual(0, distribution.vulnerabilities.count())
+
+    def test_vulnerabilities_vulnerabilities_present(self):
+        distribution = self.factory.makeDistribution()
+        first_vulnerability = self.factory.makeVulnerability(
+            distribution
+        )
+        second_vulnerability = self.factory.makeVulnerability(
+            distribution
+        )
+        self.assertEqual(
+            {first_vulnerability, second_vulnerability},
+            set(distribution.vulnerabilities),
+        )
+
+    def test_newVulnerability_default_arguments(self):
+        distribution = self.factory.makeDistribution()
+        owner = distribution.owner
+
+        with person_logged_in(owner):
+            # The distribution owner can create a new vulnerability in
+            # the distribution.
+            vulnerability = distribution.newVulnerability(
+                status=VulnerabilityStatus.NEEDS_TRIAGE,
+                information_type=InformationType.PUBLIC,
+                creator=owner,
+            )
+
+            self.assertThat(
+                vulnerability,
+                MatchesStructure.byEquality(
+                    status=VulnerabilityStatus.NEEDS_TRIAGE,
+                    creator=owner,
+                    importance=BugTaskImportance.UNDECIDED,
+                    information_type=InformationType.PUBLIC,
+                    cve=None,
+                    description=None,
+                    notes=None,
+                    mitigation=None,
+                    importance_explanation=None,
+                    date_made_public=None
+                )
+            )
+
+    def test_newVulnerability_all_parameters(self):
+        distribution = self.factory.makeDistribution()
+        owner = distribution.owner
+        cve = self.factory.makeCVE(sequence='2022-1234')
+        now = datetime.datetime.now(pytz.UTC)
+
+        with person_logged_in(owner):
+            # The distribution owner can create a new vulnerability in
+            # the distribution.
+            vulnerability = distribution.newVulnerability(
+                status=VulnerabilityStatus.ACTIVE,
+                creator=owner,
+                importance=BugTaskImportance.CRITICAL,
+                information_type=InformationType.PRIVATESECURITY,
+                cve=cve,
+                description='Vulnerability',
+                notes='lgp171188> Foo bar',
+                mitigation='Foo bar baz',
+                importance_explanation='Foo bar baz',
+                date_made_public=now,
+                )
+            self.assertThat(
+                vulnerability,
+                MatchesStructure.byEquality(
+                    status=VulnerabilityStatus.ACTIVE,
+                    creator=owner,
+                    importance=BugTaskImportance.CRITICAL,
+                    information_type=InformationType.PRIVATESECURITY,
+                    cve=cve,
+                    description='Vulnerability',
+                    notes='lgp171188> Foo bar',
+                    mitigation='Foo bar baz',
+                    importance_explanation='Foo bar baz',
+                    date_made_public=now,
+                )
+            )
+
+    def test_getVulnerability_non_existent_id(self):
+        distribution = self.factory.makeDistribution()
+        vulnerability = distribution.getVulnerability(9999999)
+        self.assertIsNone(vulnerability)
+
+    def test_getVulnerability(self):
+        distribution = self.factory.makeDistribution()
+        vulnerability = self.factory.makeVulnerability(distribution)
+        self.assertEqual(
+            vulnerability,
+            distribution.getVulnerability(
+                removeSecurityProxy(vulnerability).id
+            )
+        )
+
+
+class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_vulnerability_api_url_data(self):
+        distribution = self.factory.makeDistribution()
+        person = distribution.owner
+        cve = self.factory.makeCVE('2022-1234')
+        now = datetime.datetime.now(pytz.UTC)
+        vulnerability = removeSecurityProxy(
+            self.factory.makeVulnerability(
+                distribution,
+                creator=person,
+                cve=cve,
+                description="Foo bar baz",
+                notes="Foo bar baz",
+                mitigation="Foo bar baz",
+                importance_explanation="Foo bar baz",
+                date_made_public=now
+            )
+        )
+        vulnerability_url = api_url(vulnerability)
+
+        webservice = webservice_for_person(
+            person,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel"
+        )
+        with person_logged_in(person):
+            distribution_url = webservice.getAbsoluteUrl(api_url(distribution))
+            cve_url = webservice.getAbsoluteUrl(api_url(cve))
+            creator_url = webservice.getAbsoluteUrl(api_url(person))
+
+        response = webservice.get(
+            vulnerability_url
+        )
+        self.assertEqual(200, response.status)
+
+        self.assertThat(response.jsonBody(), ContainsDict({
+            "id": Equals(vulnerability.id),
+            "distribution_link": Equals(distribution_url),
+            "cve_link": Equals(cve_url),
+            "creator_link": Equals(creator_url),
+            "status": Equals("Needs triage"),
+            "description": Equals("Foo bar baz"),
+            "notes": Equals("Foo bar baz"),
+            "mitigation": Equals("Foo bar baz"),
+            "importance": Equals("Undecided"),
+            "importance_explanation": Equals("Foo bar baz"),
+            "information_type": Equals("Public"),
+            "date_made_public": Equals(now.isoformat()),
+        }))
+
+    def test_vulnerability_api_url_invalid_id(self):
+        person = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(owner=person)
+        webservice = webservice_for_person(
+            person,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel"
+        )
+        with person_logged_in(person):
+            distribution_url = api_url(distribution)
+        invalid_vulnerability_url = distribution_url + '/+vulnerability/foo'
+        response = webservice.get(invalid_vulnerability_url)
+        self.assertEqual(404, response.status)
+
+    def test_vulnerability_api_url_nonexistent_id(self):
+        person = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(owner=person)
+        webservice = webservice_for_person(
+            person,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel"
+        )
+        with person_logged_in(person):
+            distribution_url = api_url(distribution)
+        vulnerability_url = distribution_url + '/+vulnerability/99999999'
+        response = webservice.get(vulnerability_url)
+        self.assertEqual(404, response.status)
+
+    def test_vulnerabilities_collection_link(self):
+        person = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(owner=person)
+        cve = self.factory.makeCVE('2022-1234')
+        another_cve = self.factory.makeCVE('2022-1235')
+        now = datetime.datetime.now(pytz.UTC)
+
+        first_vulnerability = removeSecurityProxy(
+            self.factory.makeVulnerability(
+                distribution,
+                creator=person,
+                cve=cve,
+                description="Foo bar baz",
+                notes="Foo bar baz",
+                mitigation="Foo bar baz",
+                importance_explanation="Foo bar baz",
+                date_made_public=now
+            )
+        )
+        second_vulnerability = removeSecurityProxy(
+            self.factory.makeVulnerability(
+                distribution,
+                creator=person,
+                cve=another_cve,
+                description="A B C",
+                notes="A B C",
+                mitigation="A B C",
+                importance_explanation="A B C",
+                date_made_public=now
+            )
+        )
+
+        distribution_url = api_url(distribution)
+        webservice = webservice_for_person(
+            person,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel"
+        )
+        with person_logged_in(person):
+            distribution_url = webservice.getAbsoluteUrl(api_url(distribution))
+            cve_url = webservice.getAbsoluteUrl(api_url(cve))
+            another_cve_url = webservice.getAbsoluteUrl(api_url(another_cve))
+            creator_url = webservice.getAbsoluteUrl(api_url(person))
+
+        response = webservice.get(
+            distribution_url
+        )
+        response_json = response.jsonBody()
+        self.assertEqual(200, response.status)
+        self.assertIn('vulnerabilities_collection_link', response_json)
+
+        response = webservice.get(
+            response_json['vulnerabilities_collection_link']
+        )
+        response_json = response.jsonBody()
+        self.assertEqual(200, response.status)
+        self.assertEqual(2, len(response_json['entries']))
+        self.assertThat(
+            response_json['entries'][0],
+            ContainsDict({
+                "id": Equals(first_vulnerability.id),
+                "distribution_link": Equals(distribution_url),
+                "cve_link": Equals(cve_url),
+                "creator_link": Equals(creator_url),
+                "status": Equals("Needs triage"),
+                "description": Equals("Foo bar baz"),
+                "notes": Equals("Foo bar baz"),
+                "mitigation": Equals("Foo bar baz"),
+                "importance": Equals("Undecided"),
+                "importance_explanation": Equals("Foo bar baz"),
+                "information_type": Equals("Public"),
+                "date_made_public": Equals(now.isoformat()),
+        }))
+        self.assertThat(
+            response_json['entries'][1],
+            ContainsDict({
+                "id": Equals(second_vulnerability.id),
+                "distribution_link": Equals(distribution_url),
+                "cve_link": Equals(another_cve_url),
+                "creator_link": Equals(creator_url),
+                "status": Equals("Needs triage"),
+                "description": Equals("A B C"),
+                "notes": Equals("A B C"),
+                "mitigation": Equals("A B C"),
+                "importance": Equals("Undecided"),
+                "importance_explanation": Equals("A B C"),
+                "information_type": Equals("Public"),
+                "date_made_public": Equals(now.isoformat()),
+        }))
+
+    def test_newVulnerability_required_arguments_missing(self):
+        distribution = self.factory.makeDistribution()
+        owner = distribution.owner
+        distribution_url = api_url(distribution)
+
+        self.assertEqual(0, distribution.vulnerabilities.count())
+
+        webservice = webservice_for_person(
+            owner,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel"
+        )
+        response = webservice.named_post(
+            distribution_url,
+            'newVulnerability',
+        )
+        self.assertEqual(400, response.status)
+        self.assertEqual(
+            {
+                'status: Required input is missing.',
+                'creator: Required input is missing.',
+                'information_type: Required input is missing.'
+            },
+            set(response.body.decode().split('\n'))
+        )
+
+    def test_newVulnerability_default_arguments(self):
+        distribution = self.factory.makeDistribution()
+        owner = distribution.owner
+        api_base = "http://api.launchpad.test/devel"
+        distribution_url = api_base + api_url(distribution)
+        owner_url = api_base + api_url(owner)
+
+        self.assertEqual(0, distribution.vulnerabilities.count())
+
+        webservice = webservice_for_person(
+            owner,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel"
+        )
+        response = webservice.named_post(
+            distribution_url,
+            'newVulnerability',
+            status='Needs triage',
+            information_type='Public',
+            creator=owner_url,
+        )
+        self.assertEqual(200, response.status)
+        self.assertThat(response.jsonBody(), ContainsDict({
+            "distribution_link": Equals(distribution_url),
+            "id": IsInstance(int),
+            "cve_link": Is(None),
+            "creator_link": Equals(owner_url),
+            "status": Equals("Needs triage"),
+            "description": Is(None),
+            "notes": Is(None),
+            "mitigation": Is(None),
+            "importance": Equals("Undecided"),
+            "importance_explanation": Is(None),
+            "information_type": Equals("Public"),
+            "date_made_public": Is(None),
+        }))
+
+    def test_newVulnerability_all_parameters(self):
+        distribution = self.factory.makeDistribution()
+        owner = distribution.owner
+        cve = self.factory.makeCVE(sequence='2022-1234')
+
+        api_base = "http://api.launchpad.test/devel"
+        distribution_url = api_base + api_url(distribution)
+        owner_url = api_base + api_url(owner)
+        cve_url = api_base + api_url(cve)
+        now = datetime.datetime.now(pytz.UTC)
+
+        self.assertEqual(0, distribution.vulnerabilities.count())
+
+        webservice = webservice_for_person(
+            owner,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel"
+        )
+        response = webservice.named_post(
+            distribution_url,
+            "newVulnerability",
+            status="Active",
+            information_type="Private",
+            creator=owner_url,
+            importance="Critical",
+            cve=cve_url,
+            description="Vulnerability Foo",
+            notes="lgp171188> Foo bar",
+            mitigation="Foo bar baz",
+            importance_explanation="Foo bar bazz",
+            date_made_public=now.isoformat(),
+        )
+        self.assertEqual(200, response.status)
+        self.assertThat(response.jsonBody(), ContainsDict({
+            "distribution_link": Equals(distribution_url),
+            "id": IsInstance(int),
+            "cve_link": Equals(cve_url),
+            "creator_link": Equals(owner_url),
+            "status": Equals("Active"),
+            "description": Equals("Vulnerability Foo"),
+            "notes": Equals("lgp171188> Foo bar"),
+            "mitigation": Equals("Foo bar baz"),
+            "importance": Equals("Critical"),
+            "importance_explanation": Equals("Foo bar bazz"),
+            "information_type": Equals("Private"),
+            "date_made_public": Equals(now.isoformat()),
+        }))

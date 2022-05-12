@@ -6,7 +6,7 @@
 __all__ = [
     'BuildDaemonError',
     'BuildDaemonIsolationError',
-    'BuildSlaveFailure',
+    'BuildWorkerFailure',
     'CannotBuild',
     'CannotFetchFile',
     'CannotResumeHost',
@@ -75,7 +75,7 @@ class BuildDaemonIsolationError(BuildDaemonError):
 
 
 class CannotFetchFile(BuildDaemonError):
-    """The slave was unable to fetch the file."""
+    """The worker was unable to fetch the file."""
 
     def __init__(self, file_url, error_information):
         super().__init__()
@@ -84,7 +84,7 @@ class CannotFetchFile(BuildDaemonError):
 
 
 class CannotResumeHost(BuildDaemonError):
-    """The build slave virtual machine cannot be resumed."""
+    """The build worker virtual machine cannot be resumed."""
 
 
 # CannotBuild is intended to be the base class for a family of more specific
@@ -93,8 +93,8 @@ class CannotBuild(BuildDaemonError):
     """The requested build cannot be done."""
 
 
-class BuildSlaveFailure(BuildDaemonError):
-    """The build slave has suffered an error and cannot be used."""
+class BuildWorkerFailure(BuildDaemonError):
+    """The build worker has suffered an error and cannot be used."""
 
 
 class IBuilderModerateAttributes(Interface):

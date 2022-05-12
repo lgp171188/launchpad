@@ -444,7 +444,7 @@ class BuilderEditView(LaunchpadEditFormView):
         # lazr.lifecycle.snapshot to store the state of the object
         # before and after modification.  This is dangerous for the
         # builder model class because it causes some properties to be
-        # queried that try and communicate with the slave, which cannot
+        # queried that try and communicate with the worker, which cannot
         # be done from the webapp (it's generally firewalled).  We could
         # prevent snapshots for individual properties by defining the
         # interface properties with doNotSnapshot() but this doesn't

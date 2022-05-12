@@ -220,12 +220,12 @@ class BuildQueue(StormBase):
     def cancel(self):
         """See `IBuildQueue`."""
         if self.status == BuildQueueStatus.WAITING:
-            # If the job's not yet on a slave then we can just
+            # If the job's not yet on a worker then we can just
             # short-circuit to completed cancellation.
             self.markAsCancelled()
         elif self.status == BuildQueueStatus.RUNNING:
             # Otherwise set the statuses to CANCELLING so buildd-manager
-            # can kill the slave, grab the log, and call
+            # can kill the worker, grab the log, and call
             # markAsCancelled() when it's done.
             self.status = BuildQueueStatus.CANCELLING
             self.specific_build.updateStatus(BuildStatus.CANCELLING)

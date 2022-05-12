@@ -123,7 +123,7 @@ installed and configured on your network.
 
 .. code-block:: sh
 
-    ssh -A $user@IP_ADDRESS_FROM_LXC_LS
+    ssh -A $USER@IP_ADDRESS_FROM_LXC_LS
 
 Getting Launchpad
 =================
@@ -248,8 +248,9 @@ Now you should be able to start up Launchpad:
     $ make run
 
 This only runs the basic web application.  `Codehosting
-<Code/HowToUseCodehostingLocally>`_ and `Soyuz
-<Soyuz/HowToUseSoyuzLocally>`_ require additional steps.
+<https://dev.launchpad.net/Code/HowToUseCodehostingLocally>`_ and `Soyuz
+<https://dev.launchpad.net/Soyuz/HowToUseSoyuzLocally>`_ require additional
+steps.
 
 For subsequent builds, you can just do ``make run`` right away.  You don't
 need to do ``make schema`` every time, and you should avoid it because it's

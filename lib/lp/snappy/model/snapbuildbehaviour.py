@@ -3,7 +3,7 @@
 
 """An `IBuildFarmJobBehaviour` for `SnapBuild`.
 
-Dispatches snap package build jobs to build-farm slaves.
+Dispatches snap package build jobs to build-farm workers.
 """
 
 __all__ = [
@@ -54,7 +54,7 @@ def format_as_rfc3339(timestamp):
 @adapter(ISnapBuild)
 @implementer(IBuildFarmJobBehaviour)
 class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
-    """Dispatches `SnapBuild` jobs to slaves."""
+    """Dispatches `SnapBuild` jobs to workers."""
 
     builder_type = "snap"
     image_types = [BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
@@ -103,7 +103,7 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None):
         """
-        Return the extra arguments required by the slave for the given build.
+        Return the extra arguments required by the worker for the given build.
         """
         build = self.build
         args = yield super().extraBuildArgs(logger=logger)

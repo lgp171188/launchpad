@@ -85,7 +85,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
     """Tests for the BinaryPackageBuildBehaviour.
 
     In particular, these tests are about how the BinaryPackageBuildBehaviour
-    interacts with the build slave.  We test this by using a test double that
+    interacts with the build worker.  We test this by using a test double that
     implements the same interface as `BuilderWorker` but instead of actually
     making XML-RPC calls, just records any method invocations along with
     interesting parameters.
@@ -114,7 +114,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
     def makeExpectedInteraction(self, builder, build, behaviour, chroot,
                                 archive, archive_purpose, component=None,
                                 extra_uploads=None, filemap_names=None):
-        """Build the log of calls that we expect to be made to the slave.
+        """Build the log of calls that we expect to be made to the worker.
 
         :param builder: The builder we are using to build the binary package.
         :param build: The build being done on the builder.
@@ -125,7 +125,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         :param archive_purpose: The ArchivePurpose we are sending to the
             builder. We specify this separately from the archive because
             sometimes the behaviour object has to give a different purpose
-            in order to trick the slave into building correctly.
+            in order to trick the worker into building correctly.
         :return: A list of the calls we expect to be made.
         """
         das = build.distro_arch_series
@@ -362,7 +362,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
 
     @defer.inlineCallbacks
     def test_arch_indep(self):
-        # BinaryPackageBuild.arch_indep is passed through to the slave.
+        # BinaryPackageBuild.arch_indep is passed through to the worker.
         builder = self.factory.makeBuilder()
         build = self.factory.makeBinaryPackageBuild(arch_indep=False)
         behaviour = IBuildFarmJobBehaviour(build)
@@ -545,11 +545,11 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
         self.addCleanup(self._cleanup)
 
     @defer.inlineCallbacks
-    def updateBuild(self, candidate, slave):
+    def updateBuild(self, candidate, worker):
         bf = MockBuilderFactory(self.builder, candidate)
-        worker_status = yield slave.status()
+        worker_status = yield worker.status()
         yield self.interactor.updateBuild(
-            bf.getVitals('foo'), slave, worker_status, bf,
+            bf.getVitals('foo'), worker, worker_status, bf,
             self.interactor.getBuildBehaviour, self.manager)
         self.manager.flushLogTails()
 
