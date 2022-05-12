@@ -30,7 +30,10 @@ from lp.archivepublisher.publishing import Publisher
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.log.logger import DevNullLogger
-from lp.soyuz.enums import PackagePublishingStatus
+from lp.soyuz.enums import (
+    BinaryPackageFormat,
+    PackagePublishingStatus,
+    )
 from lp.soyuz.interfaces.publishing import (
     IPublishingSet,
     ISourcePackagePublishingHistory,
@@ -397,6 +400,51 @@ class TestDominator(TestNativePublishingBase):
             self.assertEqual(PackagePublishingStatus.SUPERSEDED, pub.status)
         for pub in overrides_2:
             self.assertEqual(PackagePublishingStatus.PUBLISHED, pub.status)
+
+    def test_dominate_by_channel(self):
+        # Publications only dominate other publications in the same channel.
+        # (Currently only tested for binary publications.)
+        with lp_dbuser():
+            archive = self.factory.makeArchive()
+            distroseries = self.factory.makeDistroSeries(
+                distribution=archive.distribution)
+            das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+            repository = self.factory.makeGitRepository(
+                target=self.factory.makeDistributionSourcePackage(
+                    distribution=archive.distribution))
+            ci_builds = [
+                self.factory.makeCIBuild(
+                    git_repository=repository, distro_arch_series=das)
+                for _ in range(3)]
+        bpn = self.factory.makeBinaryPackageName()
+        bprs = [
+            self.factory.makeBinaryPackageRelease(
+                binarypackagename=bpn, version=version, ci_build=ci_build,
+                binpackageformat=BinaryPackageFormat.WHL)
+            for version, ci_build in zip(("1.0", "1.1", "1.2"), ci_builds)]
+        stable_bpphs = [
+            self.factory.makeBinaryPackagePublishingHistory(
+                binarypackagerelease=bpr, archive=archive,
+                distroarchseries=das, status=PackagePublishingStatus.PUBLISHED,
+                pocket=PackagePublishingPocket.RELEASE, channel="stable")
+            for bpr in bprs[:2]]
+        candidate_bpph = self.factory.makeBinaryPackagePublishingHistory(
+            binarypackagerelease=bprs[2], archive=archive,
+            distroarchseries=das, status=PackagePublishingStatus.PUBLISHED,
+            pocket=PackagePublishingPocket.RELEASE, channel="candidate")
+
+        dominator = Dominator(self.logger, archive)
+        dominator.judgeAndDominate(
+            distroseries, PackagePublishingPocket.RELEASE)
+
+        # The older of the two stable publications is superseded, while the
+        # current stable publication and the candidate publication are left
+        # alone.
+        self.checkPublication(
+            stable_bpphs[0], PackagePublishingStatus.SUPERSEDED)
+        self.checkPublications(
+            (stable_bpphs[1], candidate_bpph),
+            PackagePublishingStatus.PUBLISHED)
 
 
 class TestDomination(TestNativePublishingBase):
@@ -1315,7 +1363,7 @@ class TestArchSpecificPublicationsCache(TestCaseWithFactory):
         return removeSecurityProxy(self.factory.makeSourcePackageRelease())
 
     def makeBPPH(self, spr=None, arch_specific=True, archive=None,
-                 distroseries=None):
+                 distroseries=None, binpackageformat=None, channel=None):
         """Create a `BinaryPackagePublishingHistory`."""
         if spr is None:
             spr = self.makeSPR()
@@ -1323,12 +1371,13 @@ class TestArchSpecificPublicationsCache(TestCaseWithFactory):
         bpb = self.factory.makeBinaryPackageBuild(
             source_package_release=spr, distroarchseries=das)
         bpr = self.factory.makeBinaryPackageRelease(
-            build=bpb, architecturespecific=arch_specific)
+            build=bpb, binpackageformat=binpackageformat,
+            architecturespecific=arch_specific)
         return removeSecurityProxy(
             self.factory.makeBinaryPackagePublishingHistory(
                 binarypackagerelease=bpr, archive=archive,
                 distroarchseries=das, pocket=PackagePublishingPocket.UPDATES,
-                status=PackagePublishingStatus.PUBLISHED))
+                status=PackagePublishingStatus.PUBLISHED, channel=channel))
 
     def test_getKey_is_consistent_and_distinguishing(self):
         # getKey consistently returns the same key for the same BPPH,
@@ -1351,14 +1400,19 @@ class TestArchSpecificPublicationsCache(TestCaseWithFactory):
             spr, arch_specific=False, archive=dependent.archive,
             distroseries=dependent.distroseries)
         bpph2 = self.makeBPPH(arch_specific=False)
+        bpph3 = self.makeBPPH(
+            arch_specific=False, binpackageformat=BinaryPackageFormat.WHL,
+            channel="edge")
         cache = self.makeCache()
         self.assertEqual(
-            [True, True, False, False],
+            [True, True, False, False, False, False],
             [
                 cache.hasArchSpecificPublications(bpph1),
                 cache.hasArchSpecificPublications(bpph1),
                 cache.hasArchSpecificPublications(bpph2),
                 cache.hasArchSpecificPublications(bpph2),
+                cache.hasArchSpecificPublications(bpph3),
+                cache.hasArchSpecificPublications(bpph3),
             ])
 
     def test_hasArchSpecificPublications_caches_results(self):

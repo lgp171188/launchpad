@@ -854,21 +854,26 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
                     dominant.distroarchseries.architecturetag))
 
             dominant_build = dominant.binarypackagerelease.build
-            distroarchseries = dominant_build.distro_arch_series
-            if logger is not None:
-                logger.debug(
-                    "The %s build of %s has been judged as superseded by the "
-                    "build of %s.  Arch-specific == %s" % (
-                    distroarchseries.architecturetag,
-                    self.binarypackagerelease.title,
-                    dominant_build.source_package_release.title,
-                    self.binarypackagerelease.architecturespecific))
-            # Binary package releases are superseded by the new build,
-            # not the new binary package release. This is because
-            # there may not *be* a new matching binary package -
-            # source packages can change the binaries they build
-            # between releases.
-            self.supersededby = dominant_build
+            # XXX cjwatson 2022-05-01: We can't currently dominate with CI
+            # builds, since supersededby is a reference to a BPB.  Just
+            # leave supersededby unset in that case for now, which isn't
+            # ideal but will work well enough.
+            if dominant_build is not None:
+                distroarchseries = dominant_build.distro_arch_series
+                if logger is not None:
+                    logger.debug(
+                        "The %s build of %s has been judged as superseded by "
+                        "the build of %s.  Arch-specific == %s" % (
+                        distroarchseries.architecturetag,
+                        self.binarypackagerelease.title,
+                        dominant_build.source_package_release.title,
+                        self.binarypackagerelease.architecturespecific))
+                # Binary package releases are superseded by the new build,
+                # not the new binary package release. This is because
+                # there may not *be* a new matching binary package -
+                # source packages can change the binaries they build
+                # between releases.
+                self.supersededby = dominant_build
 
         debug = getUtility(IPublishingSet).findCorrespondingDDEBPublications(
             [self])

@@ -64,6 +64,7 @@ from storm.expr import (
     And,
     Count,
     Desc,
+    Not,
     Select,
     )
 from zope.component import getUtility
@@ -74,6 +75,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import flush_database_updates
+from lp.services.database.stormexpr import IsDistinctFrom
 from lp.services.orderingcheck import OrderingCheck
 from lp.soyuz.enums import (
     BinaryPackageFormat,
@@ -202,6 +204,31 @@ class GeneralizedPublication:
     def sortPublications(self, publications):
         """Sort publications from most to least current versions."""
         return sorted(publications, key=cmp_to_key(self.compare), reverse=True)
+
+
+class PublicationLocation:
+    """A representation of a publication's location.
+
+    This currently consists of just its name and channel.
+    """
+    def __init__(self, pub, generalization):
+        self.name = generalization.getPackageName(pub)
+        self.channel = pub.channel
+
+    def __str__(self):
+        s = self.name
+        if self.channel is not None:
+            s += " (%s)" % self.channel
+        return s
+
+    def __eq__(self, other):
+        return self.name == other.name and self.channel == other.channel
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __hash__(self):
+        return hash((self.name, self.channel))
 
 
 def find_live_source_versions(sorted_pubs):
@@ -336,10 +363,19 @@ def find_live_binary_versions_pass_2(sorted_pubs, cache):
         [pub.binarypackagerelease for pub in arch_indep_pubs], ['buildID'])
     load_related(SourcePackageRelease, bpbs, ['source_package_release_id'])
 
+    # XXX cjwatson 2022-05-01: Skip the architecture-specific check for
+    # publications from CI builds for now, until we figure out how to
+    # approximate source package releases for groups of CI builds.  We don't
+    # currently expect problematic situations to come up on production; CI
+    # builds are currently only expected to be used in situations where
+    # either we don't build both architecture-specific and
+    # architecture-independent packages, or where tight dependencies between
+    # the two aren't customary.
     reprieved_pubs = [
         pub
         for pub in arch_indep_pubs
-            if cache.hasArchSpecificPublications(pub)]
+            if pub.binarypackagerelease.ci_build_id is None and
+               cache.hasArchSpecificPublications(pub)]
 
     return get_binary_versions([latest] + arch_specific_pubs + reprieved_pubs)
 
@@ -382,9 +418,9 @@ class Dominator:
         list we import.
 
         :param sorted_pubs: A list of publications for the same package,
-            in the same archive, series, and pocket, all with status
-            `PackagePublishingStatus.PUBLISHED`.  They must be sorted from
-            most current to least current, as would be the result of
+            in the same archive, series, pocket, and channel, all with
+            status `PackagePublishingStatus.PUBLISHED`.  They must be sorted
+            from most current to least current, as would be the result of
             `generalization.sortPublications`.
         :param live_versions: Iterable of versions that are still considered
             "live" for this package.  For any of these, the latest publication
@@ -458,31 +494,33 @@ class Dominator:
         return supersede, keep, delete
 
     def _sortPackages(self, publications, generalization):
-        """Partition publications by package name, and sort them.
+        """Partition publications by package location, and sort them.
 
         The publications are sorted from most current to least current,
-        as required by `planPackageDomination` etc.
+        as required by `planPackageDomination` etc.  Locations are currently
+        (package name, channel).
 
         :param publications: An iterable of `SourcePackagePublishingHistory`
             or of `BinaryPackagePublishingHistory`.
         :param generalization: A `GeneralizedPublication` helper representing
             the kind of publications these are: source or binary.
-        :return: A dict mapping each package name to a sorted list of
-            publications from `publications`.
+        :return: A dict mapping each package location (package name,
+            channel) to a sorted list of publications from `publications`.
         """
-        pubs_by_package = defaultdict(list)
+        pubs_by_location = defaultdict(list)
         for pub in publications:
-            pubs_by_package[generalization.getPackageName(pub)].append(pub)
+            location = PublicationLocation(pub, generalization)
+            pubs_by_location[location].append(pub)
 
         # Sort the publication lists.  This is not an in-place sort, so
         # it involves altering the dict while we iterate it.  Listify
         # the keys so that we can be sure that we're not altering the
         # iteration order while iteration is underway.
-        for package in list(pubs_by_package.keys()):
-            pubs_by_package[package] = generalization.sortPublications(
-                pubs_by_package[package])
+        for location in list(pubs_by_location):
+            pubs_by_location[location] = generalization.sortPublications(
+                pubs_by_location[location])
 
-        return pubs_by_package
+        return pubs_by_location
 
     def _setScheduledDeletionDate(self, pub_record):
         """Set the scheduleddeletiondate on a publishing record.
@@ -541,7 +579,10 @@ class Dominator:
                 BinaryPackagePublishingHistory.binarypackagerelease ==
                     BinaryPackageRelease.id,
                 BinaryPackageRelease.build == BinaryPackageBuild.id,
-                BinaryPackagePublishingHistory.pocket == pub_record.pocket)
+                BinaryPackagePublishingHistory.pocket == pub_record.pocket,
+                Not(IsDistinctFrom(
+                    BinaryPackagePublishingHistory._channel,
+                    pub_record._channel)))
 
             # There is at least one non-removed binary to consider
             if not considered_binaries.is_empty():
@@ -552,6 +593,7 @@ class Dominator:
                     SourcePackagePublishingHistory,
                     distroseries=pub_record.distroseries,
                     pocket=pub_record.pocket,
+                    channel=pub_record.channel,
                     status=PackagePublishingStatus.PUBLISHED,
                     archive=self.archive,
                     sourcepackagerelease=srcpkg_release)
@@ -588,7 +630,8 @@ class Dominator:
             ]
         candidate_binary_names = Select(
             BPPH.binarypackagenameID, And(*bpph_location_clauses),
-            group_by=BPPH.binarypackagenameID, having=(Count() > 1))
+            group_by=(BPPH.binarypackagenameID, BPPH._channel),
+            having=(Count() > 1))
         main_clauses = bpph_location_clauses + [
             BPR.id == BPPH.binarypackagereleaseID,
             BPR.binarypackagenameID.is_in(candidate_binary_names),
@@ -664,13 +707,13 @@ class Dominator:
             bins = self.findBinariesForDomination(distroarchseries, pocket)
             sorted_packages = self._sortPackages(bins, generalization)
             self.logger.info("Planning domination of binaries...")
-            for name, pubs in sorted_packages.items():
-                self.logger.debug("Planning domination of %s" % name)
+            for location, pubs in sorted_packages.items():
+                self.logger.debug("Planning domination of %s" % location)
                 assert len(pubs) > 0, "Dominating zero binaries!"
                 live_versions = find_live_binary_versions_pass_1(pubs)
                 plan(pubs, live_versions)
                 if contains_arch_indep(pubs):
-                    packages_w_arch_indep.add(name)
+                    packages_w_arch_indep.add(location)
 
         execute_plan()
 
@@ -692,9 +735,10 @@ class Dominator:
             bins = self.findBinariesForDomination(distroarchseries, pocket)
             sorted_packages = self._sortPackages(bins, generalization)
             self.logger.info("Planning domination of binaries...(2nd pass)")
-            for name in packages_w_arch_indep.intersection(sorted_packages):
-                pubs = sorted_packages[name]
-                self.logger.debug("Planning domination of %s" % name)
+            for location in packages_w_arch_indep.intersection(
+                    sorted_packages):
+                pubs = sorted_packages[location]
+                self.logger.debug("Planning domination of %s" % location)
                 assert len(pubs) > 0, "Dominating zero binaries in 2nd pass!"
                 live_versions = find_live_binary_versions_pass_2(
                     pubs, reprieve_cache)
@@ -732,7 +776,7 @@ class Dominator:
         candidate_source_names = Select(
             SPPH.sourcepackagenameID,
             And(join_spph_spr(), spph_location_clauses),
-            group_by=SPPH.sourcepackagenameID,
+            group_by=(SPPH.sourcepackagenameID, SPPH._channel),
             having=(Count() > 1))
 
         # We'll also access the SourcePackageReleases associated with
@@ -769,8 +813,8 @@ class Dominator:
         delete = []
 
         self.logger.debug("Dominating sources...")
-        for name, pubs in sorted_packages.items():
-            self.logger.debug("Dominating %s" % name)
+        for location, pubs in sorted_packages.items():
+            self.logger.debug("Dominating %s" % location)
             assert len(pubs) > 0, "Dominating zero sources!"
             live_versions = find_live_source_versions(pubs)
             cur_supersede, _, cur_delete = self.planPackageDomination(
