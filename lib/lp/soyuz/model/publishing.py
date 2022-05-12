@@ -12,6 +12,7 @@ __all__ = [
 
 from collections import defaultdict
 from datetime import datetime
+import json
 from operator import (
     attrgetter,
     itemgetter,
@@ -20,6 +21,7 @@ from pathlib import Path
 import sys
 
 import pytz
+from storm.databases.postgres import JSON
 from storm.expr import (
     And,
     Cast,
@@ -31,10 +33,6 @@ from storm.expr import (
     Sum,
     )
 from storm.info import ClassAlias
-from storm.properties import (
-    List,
-    Unicode,
-    )
 from storm.store import Store
 from storm.zope import IResultSet
 from storm.zope.interfaces import ISQLObjectResultSet
@@ -51,6 +49,10 @@ from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.sourcepackage import SourcePackageType
 from lp.registry.model.sourcepackagename import SourcePackageName
+from lp.services.channels import (
+    channel_list_to_string,
+    channel_string_to_list,
+    )
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
@@ -267,7 +269,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
     pocket = DBEnum(name='pocket', enum=PackagePublishingPocket,
                     default=PackagePublishingPocket.RELEASE,
                     allow_none=False)
-    channel = List(name="channel", type=Unicode(), allow_none=True)
+    _channel = JSON(name="channel", allow_none=True)
     archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
     copied_from_archive = ForeignKey(
         dbName="copied_from_archive", foreignKey="Archive", notNull=False)
@@ -314,6 +316,13 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
         """See `ISourcePackagePublishingHistory`."""
         self.distroseries.setNewerDistroSeriesVersions([self])
         return get_property_cache(self).newer_distroseries_version
+
+    @property
+    def channel(self):
+        """See `ISourcePackagePublishingHistory`."""
+        if self._channel is None:
+            return None
+        return channel_list_to_string(*self._channel)
 
     def getPublishedBinaries(self):
         """See `ISourcePackagePublishingHistory`."""
@@ -538,7 +547,8 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
             component=new_component,
             section=new_section,
             creator=creator,
-            archive=self.archive)
+            archive=self.archive,
+            channel=self.channel)
 
     def copyTo(self, distroseries, pocket, archive, override=None,
                create_dsd_job=True, creator=None, sponsor=None,
@@ -564,7 +574,8 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
             creator=creator,
             sponsor=sponsor,
             copied_from_archive=self.archive,
-            packageupload=packageupload)
+            packageupload=packageupload,
+            channel=self.channel)
 
     def getStatusSummaryForBuilds(self):
         """See `ISourcePackagePublishingHistory`."""
@@ -685,7 +696,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
     datemadepending = UtcDateTimeCol(default=None)
     dateremoved = UtcDateTimeCol(default=None)
     pocket = DBEnum(name='pocket', enum=PackagePublishingPocket)
-    channel = List(name="channel", type=Unicode(), allow_none=True)
+    _channel = JSON(name="channel", allow_none=True)
     archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
     copied_from_archive = ForeignKey(
         dbName="copied_from_archive", foreignKey="Archive", notNull=False)
@@ -778,6 +789,13 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         return "%s %s in %s %s" % (name, release.version,
                                    distroseries.name,
                                    self.distroarchseries.architecturetag)
+
+    @property
+    def channel(self):
+        """See `ISourcePackagePublishingHistory`."""
+        if self._channel is None:
+            return None
+        return channel_list_to_string(*self._channel)
 
     def getDownloadCount(self):
         """See `IBinaryPackagePublishingHistory`."""
@@ -941,7 +959,8 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 priority=new_priority,
                 creator=creator,
                 archive=debug.archive,
-                phased_update_percentage=new_phased_update_percentage)
+                phased_update_percentage=new_phased_update_percentage,
+                _channel=removeSecurityProxy(debug)._channel)
 
         # Append the modified package publishing entry
         return BinaryPackagePublishingHistory(
@@ -957,7 +976,8 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             priority=new_priority,
             archive=self.archive,
             creator=creator,
-            phased_update_percentage=new_phased_update_percentage)
+            phased_update_percentage=new_phased_update_percentage,
+            _channel=self._channel)
 
     def copyTo(self, distroseries, pocket, archive):
         """See `BinaryPackagePublishingHistory`."""
@@ -1086,10 +1106,12 @@ class PublishingSet:
     """Utilities for manipulating publications in batches."""
 
     def publishBinaries(self, archive, distroseries, pocket, binaries,
-                        copied_from_archives=None):
+                        copied_from_archives=None, channel=None):
         """See `IPublishingSet`."""
         if copied_from_archives is None:
             copied_from_archives = {}
+        if channel is not None:
+            channel = channel_string_to_list(channel)
         # Expand the dict of binaries into a list of tuples including the
         # architecture.
         if distroseries.distribution != archive.distribution:
@@ -1124,6 +1146,9 @@ class PublishingSet:
              BinaryPackageRelease.binarypackagenameID,
              BinaryPackageRelease.version),
             BinaryPackagePublishingHistory.pocket == pocket,
+            Not(IsDistinctFrom(
+                BinaryPackagePublishingHistory._channel,
+                json.dumps(channel) if channel is not None else None)),
             BinaryPackagePublishingHistory.status.is_in(
                 active_publishing_status),
             BinaryPackageRelease.id ==
@@ -1141,12 +1166,13 @@ class PublishingSet:
         BPPH = BinaryPackagePublishingHistory
         return bulk.create(
             (BPPH.archive, BPPH.copied_from_archive,
-             BPPH.distroarchseries, BPPH.pocket,
+             BPPH.distroarchseries, BPPH.pocket, BPPH._channel,
              BPPH.binarypackagerelease, BPPH.binarypackagename,
+             BPPH._binarypackageformat,
              BPPH.component, BPPH.section, BPPH.priority,
              BPPH.phased_update_percentage, BPPH.status, BPPH.datecreated),
-            [(archive, copied_from_archives.get(bpr), das, pocket, bpr,
-              bpr.binarypackagename,
+            [(archive, copied_from_archives.get(bpr), das, pocket, channel,
+              bpr, bpr.binarypackagename, bpr.binpackageformat,
               get_component(archive, das.distroseries, component),
               section, priority, phased_update_percentage,
               PackagePublishingStatus.PENDING, UTC_NOW)
@@ -1156,7 +1182,7 @@ class PublishingSet:
             get_objects=True)
 
     def copyBinaries(self, archive, distroseries, pocket, bpphs, policy=None,
-                     source_override=None):
+                     source_override=None, channel=None):
         """See `IPublishingSet`."""
         from lp.soyuz.adapters.overrides import BinaryOverride
         if distroseries.distribution != archive.distribution:
@@ -1228,13 +1254,14 @@ class PublishingSet:
             bpph.binarypackagerelease: bpph.archive for bpph in bpphs}
         return self.publishBinaries(
             archive, distroseries, pocket, with_overrides,
-            copied_from_archives)
+            copied_from_archives, channel=channel)
 
     def newSourcePublication(self, archive, sourcepackagerelease,
                              distroseries, component, section, pocket,
                              ancestor=None, create_dsd_job=True,
                              copied_from_archive=None,
-                             creator=None, sponsor=None, packageupload=None):
+                             creator=None, sponsor=None, packageupload=None,
+                             channel=None):
         """See `IPublishingSet`."""
         # Circular import.
         from lp.registry.model.distributionsourcepackage import (
@@ -1245,6 +1272,14 @@ class PublishingSet:
             raise AssertionError(
                 "Series distribution %s doesn't match archive distribution %s."
                 % (distroseries.distribution.name, archive.distribution.name))
+
+        if (sourcepackagerelease.format == SourcePackageType.DPKG and
+                channel is not None):
+            raise AssertionError(
+                "Can't publish dpkg source packages to a channel")
+
+        if channel is not None:
+            channel = channel_string_to_list(channel)
 
         pub = SourcePackagePublishingHistory(
             distroseries=distroseries,
@@ -1261,7 +1296,8 @@ class PublishingSet:
             ancestor=ancestor,
             creator=creator,
             sponsor=sponsor,
-            packageupload=packageupload)
+            packageupload=packageupload,
+            _channel=channel)
         DistributionSourcePackage.ensure(pub)
 
         if create_dsd_job and archive == distroseries.main_archive:

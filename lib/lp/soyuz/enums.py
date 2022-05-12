@@ -208,6 +208,13 @@ class BinaryPackageFileType(DBEnumeratedType):
         build environment.
         """)
 
+    WHL = DBItem(6, """
+        Python Wheel
+
+        The "wheel" binary package format for Python, originally defined in
+        U{https://peps.python.org/pep-0427/}.
+        """)
+
 
 class BinaryPackageFormat(DBEnumeratedType):
     """Binary Package Format
@@ -250,6 +257,13 @@ class BinaryPackageFormat(DBEnumeratedType):
 
         This is the binary package format used for shipping debug symbols
         in Ubuntu and similar distributions.""")
+
+    WHL = DBItem(6, """
+        Python Wheel
+
+        The "wheel" binary package format for Python, originally defined in
+        U{https://peps.python.org/pep-0427/}.
+        """)
 
 
 class PackageCopyPolicy(DBEnumeratedType):

@@ -4029,6 +4029,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                            creator=None,
                                            packageupload=None,
                                            spr_creator=None,
+                                           channel=None,
                                            **kwargs):
         """Make a `SourcePackagePublishingHistory`.
 
@@ -4050,6 +4051,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             is scheduled to be removed.
         :param ancestor: The publication ancestor parameter.
         :param creator: The publication creator.
+        :param channel: An optional channel to publish into, as a string.
         :param **kwargs: All other parameters are passed through to the
             makeSourcePackageRelease call if needed.
         """
@@ -4087,7 +4089,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 archive, sourcepackagerelease, distroseries,
                 sourcepackagerelease.component, sourcepackagerelease.section,
                 pocket, ancestor=ancestor, creator=creator,
-                packageupload=packageupload)
+                packageupload=packageupload, channel=channel)
 
         naked_spph = removeSecurityProxy(spph)
         naked_spph.status = status
@@ -4113,7 +4115,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                            version=None,
                                            architecturespecific=False,
                                            with_debug=False, with_file=False,
-                                           creator=None):
+                                           creator=None, channel=None):
         """Make a `BinaryPackagePublishingHistory`."""
         if distroarchseries is None:
             if archive is None:
@@ -4144,7 +4146,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if priority is None:
             priority = PackagePublishingPriority.OPTIONAL
         if binpackageformat is None:
-            binpackageformat = BinaryPackageFormat.DEB
+            if binarypackagerelease is not None:
+                binpackageformat = binarypackagerelease.binpackageformat
+            else:
+                binpackageformat = BinaryPackageFormat.DEB
 
         if binarypackagerelease is None:
             # Create a new BinaryPackageBuild and BinaryPackageRelease
@@ -4182,7 +4187,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             archive, distroarchseries.distroseries, pocket,
             {binarypackagerelease: (
                 binarypackagerelease.component, binarypackagerelease.section,
-                priority, None)})
+                priority, None)},
+            channel=channel)
         for bpph in bpphs:
             naked_bpph = removeSecurityProxy(bpph)
             naked_bpph.status = status
