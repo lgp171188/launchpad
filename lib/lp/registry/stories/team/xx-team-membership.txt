@@ -228,12 +228,12 @@ Sample Person has both direct and indirect memberships:
 
     >>> print(extract_text(
     ...     find_tag_by_id(content, 'participation'), formatter='html'))
-    Team                  Joined      Role    Via                 Mailing List
-    HWDB Team             2009-07-09  Member  &mdash;              &mdash;
-    Landscape Developers  2006-07-11  Owner   &mdash;              &mdash;
-    Launchpad Users       2008-11-26  Owner   &mdash;              &mdash;
-    Ubuntu Gnome Team     &mdash;     Member  Warty Security Team  &mdash;
-    Warty Security Team   2007-01-26  Member  &mdash;              &mdash;
+    Team                  Joined      Expires   Role    Via                 Mailing List
+    HWDB Team             2009-07-09            Member  &mdash;              &mdash;
+    Landscape Developers  2006-07-11            Owner   &mdash;              &mdash;
+    Launchpad Users       2008-11-26            Owner   &mdash;              &mdash;
+    Ubuntu Gnome Team     &mdash;               Member  Warty Security Team  &mdash;
+    Warty Security Team   2007-01-26            Member  &mdash;              &mdash;
 
 User can see links to register teams and change their mailing list
 subscriptions on their own participation page.
@@ -260,5 +260,5 @@ list column.
     >>> print(extract_text(
     ...     find_tag_by_id(admin_browser.contents, 'participation'),
     ...     formatter='html'))
-    Team                  Joined      Role    Via
-    Mailing List Experts  2007-10-04  Owner   &mdash;
+    Team                  Joined      Expires   Role    Via
+    Mailing List Experts  2007-10-04            Owner   &mdash;
