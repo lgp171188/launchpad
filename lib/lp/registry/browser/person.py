@@ -1997,9 +1997,11 @@ class PersonParticipationView(LaunchpadView):
             role = 'Member'
             # The Person never joined, and can't have a join date.
             datejoined = None
+            dateexpires = None
         else:
             # The member is a direct member; use the membership data.
             datejoined = membership.datejoined
+            dateexpires = membership.dateexpires
             if membership.personID == team.teamownerID:
                 role = 'Owner'
             elif membership.status == TeamMembershipStatus.ADMIN:
@@ -2017,7 +2019,7 @@ class PersonParticipationView(LaunchpadView):
 
         return dict(
             displayname=team.displayname, team=team, datejoined=datejoined,
-            role=role, via=via, subscribed=subscribed)
+            role=role, via=via, subscribed=subscribed, dateexpires=dateexpires)
 
     @cachedproperty
     def active_participations(self):

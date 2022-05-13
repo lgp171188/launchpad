@@ -203,7 +203,9 @@ class TestGitRefView(BrowserTestCase):
             title="Lint", commit_sha1=log[1]["sha1"],
             result_summary="Invalid import in test_file.py",
             url="https://foo2.com",
-            result=RevisionStatusResult.FAILED)
+            result=RevisionStatusResult.FAILED,
+            ci_build=self.factory.makeCIBuild(
+                git_repository=repository, commit_sha1=log[1]["sha1"]))
         pending_report = self.factory.makeRevisionStatusReport(
             user=repository.owner, git_repository=repository,
             title="Build", commit_sha1=log[1]["sha1"])
@@ -238,6 +240,13 @@ class TestGitRefView(BrowserTestCase):
                         attrs={"href": report1.url})))
             self.assertThat(
                 reports_section[0],
+                Not(
+                    soupmatchers.Within(
+                        soupmatchers.Tag("first report title", "td"),
+                        soupmatchers.Tag(
+                            "first report CI build link", "a", text="build"))))
+            self.assertThat(
+                reports_section[0],
                 soupmatchers.Tag(
                     "first report summary", "td",
                     text=report1.result_summary))
@@ -248,6 +257,16 @@ class TestGitRefView(BrowserTestCase):
                     soupmatchers.Tag(
                         "second report link", "a", text=report2.title,
                         attrs={"href": report2.url})))
+            self.assertThat(
+                reports_section[1],
+                soupmatchers.Within(
+                    soupmatchers.Tag("second report title", "td"),
+                    soupmatchers.Tag(
+                        "second report CI build link", "a", text="build",
+                        attrs={
+                            "href": canonical_url(
+                                report2.ci_build, force_local_path=True),
+                            })))
             self.assertThat(
                 reports_section[1],
                 soupmatchers.Tag(

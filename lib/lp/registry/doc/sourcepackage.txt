@@ -2,7 +2,7 @@ Source Packages
 ===============
 
 A source package is a thing from which binary packages are built, to
-then be installed using a package management tool like apt-get or rpm.
+then be installed using a package management tool like apt or rpm.
 One named source package in a distro may be used to build several
 different named binary packages, on one or more architectures. One named
 binary package in a distro may have been built from more than one named

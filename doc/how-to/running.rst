@@ -181,7 +181,7 @@ off.
 
 .. code-block:: shell-session
 
-   $ sudo apt-get dist-upgrade
+   $ sudo apt dist-upgrade
 
 This is just to make doubly-sure everything from the Launchpad PPA gets
 installed.

@@ -26,6 +26,7 @@
         <tr>
           <th>Team</th>
           <th>Joined</th>
+          <th>Expires</th>
           <th>Role</th>
           <th>Via</th>
           <th
@@ -43,6 +44,15 @@
               2005-06-17
             </tal:date>
             <tal:no-date condition="participation/via">
+              &mdash;
+            </tal:no-date>
+          </td>
+          <td>
+            <tal:date condition="not: participation/dateexpires"
+              tal:replace="participation/dateexpires/fmt:date">
+              2005-06-17
+            </tal:date>
+            <tal:no-date condition="participation/dateexpires">
               &mdash;
             </tal:no-date>
           </td>
