@@ -33,7 +33,7 @@ source community::
   upstream, build it and install it locally. They will install a package
   that has already been prepared for the specific platform they are running
   on. For example, on Gentoo, they will type "emerge foo". On Ubuntu, they
-  would type "apt-get install foo". And on RedHat they would install a
+  would type "apt install foo". And on RedHat they would install a
   custom RPM. So the same software code is being repackaged many times, for
   Gentoo, Ubuntu, RedHat, and many other platforms.
 
