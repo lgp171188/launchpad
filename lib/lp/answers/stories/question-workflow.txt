@@ -156,7 +156,7 @@ clicking the 'Propose Answer' button.
     ...     'http://launchpad.test/firefox/+question/2')
     >>> support_browser.getControl('Message').value = (
     ...     "New version of the firefox package are available with SVG "
-    ...     "support enabled. You can use apt-get or adept to upgrade.")
+    ...     "support enabled. You can use apt to upgrade.")
     >>> support_browser.getControl('Propose Answer').click()
 
 This moves the question to the Answered state and adds the answer to
@@ -167,7 +167,7 @@ the end of the discussion:
 
     >>> print_last_comment(support_browser.contents)
     New version of the firefox package are available with SVG support
-    enabled. You can use apt-get or adept to upgrade.
+    enabled. You can use apt to upgrade.
 
 
 Confirming an Answer
@@ -222,7 +222,7 @@ The confirmed answer is also highlighted.
     ...     'div', 'boardCommentBody highlighted editable-message-text'
     ... ).decode_contents())
     <p>New version of the firefox package are available with SVG support
-    enabled. You can use apt-get or adept to upgrade.</p>
+    enabled. You can use apt to upgrade.</p>
 
 The History link should now show up.
 
@@ -293,7 +293,7 @@ answerer back to None.
     >>> bestAnswer.find('div', 'boardCommentBody editable-message-text')
     <div class="boardCommentBody editable-message-text"
     itemprop="commentText"><p>New version of the firefox package
-    are available with SVG support enabled. You can use apt-get or adept to
+    are available with SVG support enabled. You can use apt to
     upgrade.</p></div>
 
 In addition, this creates a reopening record that is displayed in the
@@ -361,11 +361,11 @@ The answer's message is also highlighted as the best answer.
     >>> print(message)
     <div class="boardCommentBody highlighted editable-message-text"
     itemprop="commentText"><p>New version of the firefox package are
-    available with SVG support enabled. You can use apt-get or adept to
+    available with SVG support enabled. You can use apt to
     upgrade.</p></div>
     >>> print(extract_text(message))
     New version of the firefox package are available with SVG support
-    enabled. You can use apt-get or adept to upgrade.
+    enabled. You can use apt to upgrade.
 
 
 History

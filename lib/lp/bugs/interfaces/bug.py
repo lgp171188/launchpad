@@ -1157,13 +1157,13 @@ class IBugAddForm(IBug):
     product = Choice(
             title=_("Project"), required=False,
             description=_("""The thing you found this bug in,
-            which was installed by something other than apt-get, rpm,
+            which was installed by something other than apt, rpm,
             emerge or similar"""),
             vocabulary="Product")
     packagename = Choice(
             title=_("Package Name"), required=False,
             description=_("""The package you found this bug in,
-            which was installed via apt-get, rpm, emerge or similar."""),
+            which was installed via apt, rpm, emerge or similar."""),
             vocabulary="BinaryAndSourcePackageName")
     title = Title(title=_('Summary'), required=True)
     distribution = Choice(
