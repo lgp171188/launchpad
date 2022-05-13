@@ -188,8 +188,8 @@ The other user can come back and gives an answer:
     >>> workflow_harness.submit(
     ...     'answer', {
     ...         'field.message': "New version of the firefox package are "
-    ...             "available with SVG support enabled. Using apt-get or "
-    ...             "adept you should be able to upgrade."})
+    ...             "available with SVG support enabled. Using apt "
+    ...             "you should be able to upgrade."})
     >>> for notification in workflow_harness.request.response.notifications:
     ...     print(notification.message)
     Thanks for your answer.

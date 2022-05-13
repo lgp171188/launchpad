@@ -128,14 +128,14 @@ done
 do_install() {
   if ! dpkg -s "$pkg" | grep -q "^Status: install ok installed"; then
     echo "Installing $pkg package..."
-    if ! sudo apt-get install $INSTALL_OPTS "$pkg"; then
+    if ! sudo apt install $INSTALL_OPTS "$pkg"; then
       echo "Unable to install $pkg."
       exit 1
     fi
   fi
   }
 
-sudo apt-get update
+sudo apt update
 REQUIRED_PACKAGES="launchpad-developer-dependencies apache2 libapache2-mod-wsgi"
 for pkg in $REQUIRED_PACKAGES; do
   do_install;
