@@ -219,7 +219,20 @@ Kiko has not joined any teams:
     >>> print(find_tag_by_id(anon_browser.contents, 'participation'))
     None
 
-Sample Person has both direct and indirect memberships:
+Sample Person has both direct and indirect memberships, and expiry dates are
+shown where relevant.  We force an expiration date to be in the past in
+order to avoid this test failing at some point in the future.
+
+    >>> import pytz
+    >>> from zope.security.proxy import removeSecurityProxy
+
+    >>> login('admin@canonical.com')
+    >>> name12 = personset.getByName('name12')
+    >>> lp_users = personset.getByName('launchpad-users')
+    >>> membership = teammembershipset.getByPersonAndTeam(name12, lp_users)
+    >>> removeSecurityProxy(membership).dateexpires = datetime(
+    ...     2009, 1, 1, tzinfo=pytz.UTC)
+    >>> logout()
 
     >>> anon_browser.open('http://launchpad.test/~name12/+participation')
     >>> content = find_main_content(anon_browser.contents)
@@ -227,13 +240,14 @@ Sample Person has both direct and indirect memberships:
     None
 
     >>> print(extract_text(
-    ...     find_tag_by_id(content, 'participation'), formatter='html'))
-    Team                  Joined      Expires   Role    Via                 Mailing List
-    HWDB Team             2009-07-09            Member  &mdash;              &mdash;
-    Landscape Developers  2006-07-11            Owner   &mdash;              &mdash;
-    Launchpad Users       2008-11-26            Owner   &mdash;              &mdash;
-    Ubuntu Gnome Team     &mdash;               Member  Warty Security Team  &mdash;
-    Warty Security Team   2007-01-26            Member  &mdash;              &mdash;
+    ...     find_tag_by_id(content, 'participation'),
+    ...     formatter='html'))  # noqa
+    Team                  Joined      Expires     Role    Via                 Mailing List
+    HWDB Team             2009-07-09  &mdash;     Member  &mdash;              &mdash;
+    Landscape Developers  2006-07-11  &mdash;     Owner   &mdash;              &mdash;
+    Launchpad Users       2008-11-26  2009-01-01  Owner   &mdash;              &mdash;
+    Ubuntu Gnome Team     &mdash;     &mdash;     Member  Warty Security Team  &mdash;
+    Warty Security Team   2007-01-26  &mdash;     Member  &mdash;              &mdash;
 
 User can see links to register teams and change their mailing list
 subscriptions on their own participation page.
@@ -261,4 +275,4 @@ list column.
     ...     find_tag_by_id(admin_browser.contents, 'participation'),
     ...     formatter='html'))
     Team                  Joined      Expires   Role    Via
-    Mailing List Experts  2007-10-04            Owner   &mdash;
+    Mailing List Experts  2007-10-04  &mdash;   Owner   &mdash;
