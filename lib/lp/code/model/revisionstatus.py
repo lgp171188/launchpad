@@ -284,6 +284,13 @@ class RevisionStatusArtifactSet:
             RevisionStatusArtifact,
             RevisionStatusArtifact.report == report)
 
+    def findByCIBuild(self, ci_build):
+        """See `IRevisionStatusArtifactSet`."""
+        return IStore(RevisionStatusArtifact).find(
+            RevisionStatusArtifact,
+            RevisionStatusArtifact.report == RevisionStatusReport.id,
+            RevisionStatusReport.ci_build == ci_build)
+
     def getByRepositoryAndID(self, repository, id):
         return IStore(RevisionStatusArtifact).find(
             RevisionStatusArtifact,

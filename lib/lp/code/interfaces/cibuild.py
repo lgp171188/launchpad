@@ -15,7 +15,13 @@ __all__ = [
 
 import http.client
 
-from lazr.restful.declarations import error_status
+from lazr.restful.declarations import (
+    error_status,
+    export_read_operation,
+    exported,
+    exported_as_webservice_entry,
+    operation_for_version,
+    )
 from lazr.restful.fields import Reference
 from zope.schema import (
     Bool,
@@ -84,27 +90,27 @@ class CIBuildAlreadyRequested(Exception):
 class ICIBuildView(IPackageBuildView, IPrivacy):
     """`ICIBuild` attributes that require launchpad.View."""
 
-    git_repository = Reference(
+    git_repository = exported(Reference(
         IGitRepository,
         title=_("The Git repository for this CI build."),
-        required=False, readonly=True)
+        required=False, readonly=True))
 
-    commit_sha1 = TextLine(
+    commit_sha1 = exported(TextLine(
         title=_("The Git commit ID for this CI build."),
-        required=True, readonly=True)
+        required=True, readonly=True))
 
-    distro_arch_series = Reference(
+    distro_arch_series = exported(Reference(
         IDistroArchSeries,
         title=_(
             "The series and architecture that this CI build should run on."),
-        required=True, readonly=True)
+        required=True, readonly=True))
 
-    arch_tag = TextLine(
-        title=_("Architecture tag"), required=True, readonly=True)
+    arch_tag = exported(TextLine(
+        title=_("Architecture tag"), required=True, readonly=True))
 
-    score = Int(
+    score = exported(Int(
         title=_("Score of the related build farm job (if any)."),
-        required=False, readonly=True)
+        required=False, readonly=True))
 
     eta = Datetime(
         title=_("The datetime when the build job is estimated to complete."),
@@ -118,13 +124,13 @@ class ICIBuildView(IPackageBuildView, IPrivacy):
             "The date when the build completed or is estimated to complete."),
         readonly=True)
 
-    stages = List(
-        title=_("A list of stages in this build's configured pipeline."))
+    stages = exported(List(
+        title=_("A list of stages in this build's configured pipeline.")))
 
-    results = Dict(
+    results = exported(Dict(
         title=_(
             "A mapping from job IDs to result tokens, retrieved from the "
-            "builder."))
+            "builder.")))
 
     def getConfiguration(logger=None):
         """Fetch a CI build's .launchpad.yaml from code hosting, if possible.
@@ -163,6 +169,14 @@ class ICIBuildView(IPackageBuildView, IPrivacy):
         :return: The corresponding `ILibraryFileAlias`.
         """
 
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getFileUrls():
+        """URLs for all the files produced by this build.
+
+        :return: A collection of URLs for this build.
+        """
+
 
 class ICIBuildEdit(IBuildFarmJobEdit):
     """`ICIBuild` methods that require launchpad.Edit."""
@@ -172,6 +186,7 @@ class ICIBuildAdmin(IBuildFarmJobAdmin):
     """`ICIBuild` methods that require launchpad.Admin."""
 
 
+@exported_as_webservice_entry(as_of="devel", singular_name="ci_build")
 class ICIBuild(ICIBuildView, ICIBuildEdit, ICIBuildAdmin, IPackageBuild):
     """A build record for a pipeline of CI jobs."""
 
