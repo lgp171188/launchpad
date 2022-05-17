@@ -124,10 +124,10 @@ class IRevisionStatusReportEditableAttributes(Interface):
         title=_('Result of the report'),  readonly=True,
         required=False, vocabulary=RevisionStatusResult))
 
-    ci_build = Reference(
+    ci_build = exported(Reference(
         title=_("The CI build that produced this report."),
         # Really ICIBuild, patched in _schema_circular_imports.py.
-        schema=Interface, required=False, readonly=True)
+        schema=Interface, required=False, readonly=True))
 
     @mutator_for(result)
     @operation_parameters(result=copy_field(result))
@@ -260,6 +260,9 @@ class IRevisionStatusArtifactSet(Interface):
     def findByReport(report):
         """Returns the set of artifacts for a given report."""
 
+    def findByCIBuild(ci_build):
+        """Return all `RevisionStatusArtifact`s for a CI build."""
+
     def getByRepositoryAndID(repository, id):
         """Returns the artifact for a given repository and ID."""
 
@@ -270,6 +273,8 @@ class IRevisionStatusArtifact(Interface):
     report = Attribute(
         "The `RevisionStatusReport` that this artifact is linked to.")
 
+    library_file_id = Int(
+        title=_("LibraryFileAlias ID"), required=True, readonly=True)
     library_file = Attribute(
         "The `LibraryFileAlias` object containing information for "
         "a revision status report.")
