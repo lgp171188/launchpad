@@ -186,7 +186,9 @@ class ICIBuildAdmin(IBuildFarmJobAdmin):
     """`ICIBuild` methods that require launchpad.Admin."""
 
 
-@exported_as_webservice_entry(as_of="devel", singular_name="ci_build")
+# XXX cjwatson 2022-05-17 bug=760849: "beta" is a lie to get WADL generation
+# working.  Individual attributes must set their version to "devel".
+@exported_as_webservice_entry(as_of="beta", singular_name="ci_build")
 class ICIBuild(ICIBuildView, ICIBuildEdit, ICIBuildAdmin, IPackageBuild):
     """A build record for a pipeline of CI jobs."""
 
