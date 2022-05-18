@@ -1053,6 +1053,21 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
             '%s/+editemails/+login?reauth=1' % canonical_url(self.person))
         self.assertEqual(expected_url, response.getHeader('location'))
 
+    def test_description_hint_depends_on_probationary_status(self):
+        """
+        The hint message for the 'Description' field should change
+        depending on the `probationary` status of the person. We don't
+        linkify the URLs in the description for people without karma, this
+        should be reflected in the hint text.
+        """
+        person_with_karma = self.factory.makePerson(karma=10)
+        view = create_initialized_view(person_with_karma, "+edit")
+        self.assertIn("URLs are linked", view.widgets["description"].hint)
+
+        person_without_karma = self.factory.makePerson(karma=0)
+        view = create_initialized_view(person_without_karma, "+edit")
+        self.assertNotIn("URLs are linked", view.widgets["description"].hint)
+
 
 class TestPersonParticipationView(TestCaseWithFactory):
 
