@@ -70,6 +70,18 @@ class TestGitLab(TestCase):
         self.assertRaises(
             BadGitLabURL, GitLab, "https://gitlab.com/user/repository")
 
+    def test_parses_issues_url(self):
+        tracker = GitLab("https://gitlab.com/user/repository/issues")
+        self.assertEqual(
+            "https://gitlab.com/api/v4/projects/user%2Frepository",
+            tracker.baseurl)
+
+    def test_parses_dash_issues_url(self):
+        tracker = GitLab("https://gitlab.com/user/repository/-/issues")
+        self.assertEqual(
+            "https://gitlab.com/api/v4/projects/user%2Frepository",
+            tracker.baseurl)
+
     @responses.activate
     def test__getPage_authenticated(self):
         responses.add(
