@@ -70,6 +70,7 @@ from lp.services.macaroons.interfaces import IMacaroonIssuer
 from lp.services.macaroons.testing import MacaroonTestMixin
 from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.interfaces import OAuthPermission
+from lp.soyuz.enums import BinaryPackageFormat
 from lp.testing import (
     ANONYMOUS,
     api_url,
@@ -398,6 +399,24 @@ class TestCIBuild(TestCaseWithFactory):
                 git_repository=build.git_repository,
                 commit_sha1=build.commit_sha1,
                 ci_build=build))
+
+    def test_createBinaryPackageRelease(self):
+        build = self.factory.makeCIBuild()
+        bpn = self.factory.makeBinaryPackageName()
+        bpr = build.createBinaryPackageRelease(
+            bpn, "1.0", "test summary", "test description",
+            BinaryPackageFormat.WHL, False, installedsize=1024,
+            homepage="https://example.com/")
+        self.assertThat(bpr, MatchesStructure(
+            binarypackagename=Equals(bpn),
+            version=Equals("1.0"),
+            summary=Equals("test summary"),
+            description=Equals("test description"),
+            binpackageformat=Equals(BinaryPackageFormat.WHL),
+            architecturespecific=Is(False),
+            installedsize=Equals(1024),
+            homepage=Equals("https://example.com/"),
+            ))
 
 
 class TestCIBuildSet(TestCaseWithFactory):

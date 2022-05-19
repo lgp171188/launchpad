@@ -680,6 +680,9 @@ class Publisher:
         judgejudy = Dominator(self.log, self.archive)
         for distroseries in self.distro.series:
             for pocket in self.archive.getPockets():
+                # XXX cjwatson 2022-05-19: Channels are handled in the
+                # dominator instead; see the comment in
+                # Dominator._sortPackages.
                 if not self.isAllowed(distroseries, pocket):
                     continue
                 if not force_domination:

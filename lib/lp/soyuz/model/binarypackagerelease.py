@@ -157,6 +157,8 @@ class BinaryPackageRelease(SQLBase):
             determined_filetype = BinaryPackageFileType.UDEB
         elif file.filename.endswith(".ddeb"):
             determined_filetype = BinaryPackageFileType.DDEB
+        elif file.filename.endswith(".whl"):
+            determined_filetype = BinaryPackageFileType.WHL
         else:
             raise AssertionError(
                 'Unsupported file type: %s' % file.filename)
