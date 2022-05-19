@@ -7,6 +7,9 @@ __all__ = [
     "CIBuildBehaviour",
     ]
 
+from configparser import NoSectionError
+import json
+
 from twisted.internet import defer
 from zope.component import adapter
 from zope.interface import implementer
@@ -24,11 +27,50 @@ from lp.buildmaster.model.buildfarmjobbehaviour import (
 from lp.code.enums import RevisionStatusResult
 from lp.code.interfaces.cibuild import ICIBuild
 from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
+from lp.registry.interfaces.distributionsourcepackage import (
+    IDistributionSourcePackage,
+    )
 from lp.services.config import config
 from lp.services.twistedsupport import cancel_on_timeout
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
+
+
+def replace_placeholders(s: str) -> str:
+    # replace both `read_auth` and `base_url` from input value
+    read_auth = config.artifactory.read_credentials
+    base_url = config.artifactory.base_url
+    return s % {
+        "read_auth": read_auth,
+        "base_url": base_url,
+    }
+
+
+def build_environment_variables(distribution_name: str) -> dict:
+    # - load key/value pairs from JSON Object
+    # - replace authentication placeholders
+    try:
+        pairs = config["cibuild."+distribution_name]["environment_variables"]
+    except NoSectionError:
+        return {}
+    rv = {}
+    for key, value in json.loads(pairs).items():
+        rv[key] = replace_placeholders(value)
+    return rv
+
+
+def build_apt_repositories(distribution_name: str) -> list:
+    # - load apt repository configuration lines from JSON Array
+    # - replace authentication placeholders
+    try:
+        lines = config["cibuild."+distribution_name]["apt_repositories"]
+    except NoSectionError:
+        return []
+    rv = []
+    for line in json.loads(lines):
+        rv.append(replace_placeholders(line))
+    return rv
 
 
 @adapter(ICIBuild)
@@ -94,6 +136,12 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             args["git_repository"] = build.git_repository.git_https_url
         args["git_path"] = build.commit_sha1
         args["private"] = build.is_private
+        if IDistributionSourcePackage.providedBy(build.git_repository.target):
+            distribution_name = build.git_repository.target.distribution.name
+            args["environment_variables"] = build_environment_variables(
+                distribution_name)
+            args["apt_repositories"] = build_apt_repositories(
+                distribution_name)
         return args
 
     def verifySuccessfulBuild(self):
