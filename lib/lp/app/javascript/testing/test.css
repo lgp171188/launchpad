@@ -1,7 +1,7 @@
 @import url("../../../../canonical/launchpad/icing/import.css");
-@import url("../../../../canonical/launchpad/icing/yui/cssreset/reset.css");
-@import url("../../../../canonical/launchpad/icing/yui/cssfonts/fonts.css");
-@import url("../../../../canonical/launchpad/icing/yui/cssbase/base.css");
+@import url("../../../../canonical/launchpad/icing/yui/cssreset/cssreset.css");
+@import url("../../../../canonical/launchpad/icing/yui/cssfonts/cssfonts.css");
+@import url("../../../../canonical/launchpad/icing/yui/cssbase/cssbase.css");
 
 /* Taken and customized from testlogger.css */
 .yui-console-entry-src { display:none; }
