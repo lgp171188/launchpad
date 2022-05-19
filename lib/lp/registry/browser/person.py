@@ -2122,6 +2122,14 @@ class EmailAddressVisibleState:
         return self.state is EmailAddressVisibleState.ALLOWED
 
 
+def is_description_text_linkified(person: IPerson) -> bool:
+    """
+    Controls whether the URLs in the description should be turned to
+    links.
+    """
+    return not person.is_probationary
+
+
 class PersonIndexView(XRDSContentNegotiationMixin, PersonView,
                       TeamJoinMixin):
     """View class for person +index and +xrds pages."""
@@ -2153,11 +2161,10 @@ class PersonIndexView(XRDSContentNegotiationMixin, PersonView,
     @property
     def description_widget(self):
         """The description as a widget."""
-        non_probationary = not self.context.is_probationary
         return TextAreaEditorWidget(
             self.context, IPerson['description'], title="",
             edit_title='Edit description', hide_empty=False,
-            linkify_text=non_probationary)
+            linkify_text=is_description_text_linkified(self.context))
 
     @cachedproperty
     def page_description(self):
@@ -2639,6 +2646,16 @@ class PersonEditView(PersonRenameFormMixin, BasePersonEditView):
     # Will contain an hidden input when the user is renaming their
     # account with full knowledge of the consequences.
     i_know_this_is_an_openid_security_issue_input = None
+
+    def setUpWidgets(self):
+        super().setUpWidgets()
+        # Change the hint of the `description` field to either include or
+        # exclude the "URLs are linked" text, depending on whether the
+        # text will be actually linkified.
+        if not is_description_text_linkified(self.context):
+            self.widgets["description"].hint = _(
+                "Details about interests and goals. Use plain text, "
+                "paragraphs are preserved.")
 
     def validate(self, data):
         """If the name changed, warn the user about the implications."""
