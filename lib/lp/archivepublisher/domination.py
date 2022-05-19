@@ -494,6 +494,19 @@ class Dominator:
         :return: A dict mapping each package location (package name,
             channel) to a sorted list of publications from `publications`.
         """
+        # XXX cjwatson 2022-05-19: Traditional suites (distroseries/pocket)
+        # are divided up in the loop in Publisher.B_dominate.  However, this
+        # doesn't scale to channel-map-style suites (distroseries/channel),
+        # since there may be a very large number of channels and we don't
+        # want to have to loop over all the possible ones, so we divide
+        # those up here instead.
+        #
+        # This is definitely confusing.  In the longer term, we should
+        # probably push the loop down from the publisher to here, and sort
+        # and dominate all candidates in a given archive at once: there's no
+        # particularly obvious reason not to, and it might perform better as
+        # well.
+
         pubs_by_name_and_location = defaultdict(list)
         for pub in publications:
             name = generalization.getPackageName(pub)
