@@ -5,6 +5,7 @@
 
 import base64
 from datetime import datetime
+import json
 import os.path
 import re
 import time
@@ -175,6 +176,20 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                             port=config.builddmaster.builder_proxy_port))
         self.proxy_api = self.useFixture(InProcessProxyAuthAPIFixture())
         yield self.proxy_api.start()
+        self.pushConfig(
+            "artifactory",
+            base_url="canonical.artifactory.com",
+            read_credentials="user:pass",
+        )
+        self.pushConfig(
+            "cibuild.soss",
+            environment_variables=json.dumps({
+                "PIP_INDEX_URL": "http://%(read_auth)s@%(base_url)s/simple",
+                "SOME_PATH": "/bin/zip"}),
+            apt_repositories=json.dumps([
+                "deb https://%(read_auth)s@%(base_url)s/repository focal main",
+                "deb https://public_ppa.example.net/repository focal main"])
+        )
         self.now = time.time()
         self.useFixture(MockPatch("time.time", return_value=self.now))
         self.addCleanup(shut_down_default_process_pool)
@@ -266,6 +281,73 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
             "revocation_endpoint": RevocationEndpointMatcher(job, self.now),
             "series": Equals(job.build.distro_series.name),
             "trusted_keys": Equals(expected_trusted_keys),
+            }))
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_git_does_not_contain_artifactory_data(self):
+        # create a distribution with a name other than "soss", see
+        # schema-lazr.conf -> cibuild.soss
+        # for this distribution neither Artifactory environment variables nor
+        # apt repositories will be dispatched
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=self.factory.makeDistribution(name="distribution-123")
+        )
+        git_repository = self.factory.makeGitRepository(target=package)
+        job = self.makeJob(
+            stages=[[("test", 0)]],
+            git_repository=git_repository
+        )
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual({}, args["environment_variables"])
+        self.assertNotIn([], args["apt_repositories"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_git_include_artifactory_configuration(self):
+        # we use the `soss` distribution which refers to `cibuild.soss` in the
+        # global configuration
+        # suitable Artifactory configuration data will be dispatched for this
+        # distribution
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=self.factory.makeDistribution(name="soss")
+        )
+        git_repository = self.factory.makeGitRepository(target=package)
+        job = self.makeJob(
+            stages=[[("test", 0)]],
+            git_repository=git_repository
+        )
+        expected_archives, expected_trusted_keys = (
+            yield get_sources_list_for_building(
+                job, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn("universe", archive_line)
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertThat(args, MatchesDict({
+            "archive_private": Is(False),
+            "archives": Equals(expected_archives),
+            "arch_tag": Equals("i386"),
+            "build_url": Equals(canonical_url(job.build)),
+            "fast_cleanup": Is(True),
+            "git_path": Equals(job.build.commit_sha1),
+            "git_repository": Equals(job.build.git_repository.git_https_url),
+            "jobs": Equals([[["test", 0]]]),
+            "private": Is(False),
+            "proxy_url": ProxyURLMatcher(job, self.now),
+            "revocation_endpoint": RevocationEndpointMatcher(job, self.now),
+            "series": Equals(job.build.distro_series.name),
+            "trusted_keys": Equals(expected_trusted_keys),
+            "environment_variables": Equals(
+                {
+                    "PIP_INDEX_URL":"http://user:pass@canonical.artifactory.com/simple",  # noqa: E501
+                    "SOME_PATH":"/bin/zip",
+                }),
+            "apt_repositories": Equals(
+                [
+                    'deb https://user:pass@canonical.artifactory.com/repository focal main',  # noqa: E501
+                    'deb https://public_ppa.example.net/repository focal main'
+                ]
+            )
             }))
 
     @defer.inlineCallbacks

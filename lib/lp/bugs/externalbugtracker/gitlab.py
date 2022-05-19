@@ -46,7 +46,12 @@ class GitLab(ExternalBugTracker):
         path = path.strip("/")
         if not path.endswith("/issues"):
             raise BadGitLabURL(baseurl)
-        path = "/api/v4/projects/%s" % quote(path[:-len("/issues")], safe="")
+        # GitLab redirects <repository>/issues to <repository>/-/issues, so
+        # people might use either form.
+        base_path = path[:-len("/issues")]
+        if base_path.endswith("/-"):
+            base_path = base_path[:-len("/-")]
+        path = "/api/v4/projects/%s" % quote(base_path, safe="")
         baseurl = urlunsplit(("https", host, path, query, fragment))
         super().__init__(baseurl)
         self.cached_bugs = {}
