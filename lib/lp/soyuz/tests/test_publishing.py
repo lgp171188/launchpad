@@ -1600,7 +1600,9 @@ class TestPublishBinaries(TestCaseWithFactory):
         args = {
             'archive': archive,
             'distroseries': distroseries,
-            'pocket': PackagePublishingPocket.BACKPORTS,
+            'pocket': (
+                PackagePublishingPocket.BACKPORTS if channel is None
+                else PackagePublishingPocket.RELEASE),
             'binaries': {
                 bpr: (self.factory.makeComponent(),
                  self.factory.makeSection(),

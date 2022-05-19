@@ -1116,6 +1116,9 @@ class PublishingSet:
         if copied_from_archives is None:
             copied_from_archives = {}
         if channel is not None:
+            if pocket != PackagePublishingPocket.RELEASE:
+                raise AssertionError(
+                    "Channel publications must be in the RELEASE pocket")
             channel = channel_string_to_list(channel)
         # Expand the dict of binaries into a list of tuples including the
         # architecture.
@@ -1278,12 +1281,13 @@ class PublishingSet:
                 "Series distribution %s doesn't match archive distribution %s."
                 % (distroseries.distribution.name, archive.distribution.name))
 
-        if (sourcepackagerelease.format == SourcePackageType.DPKG and
-                channel is not None):
-            raise AssertionError(
-                "Can't publish dpkg source packages to a channel")
-
         if channel is not None:
+            if sourcepackagerelease.format == SourcePackageType.DPKG:
+                raise AssertionError(
+                    "Can't publish dpkg source packages to a channel")
+            if pocket != PackagePublishingPocket.RELEASE:
+                raise AssertionError(
+                    "Channel publications must be in the RELEASE pocket")
             channel = channel_string_to_list(channel)
 
         pub = SourcePackagePublishingHistory(
