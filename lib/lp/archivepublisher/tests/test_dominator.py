@@ -30,6 +30,7 @@ from lp.archivepublisher.publishing import Publisher
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.log.logger import DevNullLogger
+from lp.soyuz.adapters.packagelocation import PackageLocation
 from lp.soyuz.enums import (
     BinaryPackageFormat,
     PackagePublishingStatus,
@@ -171,29 +172,39 @@ class TestDominator(TestNativePublishingBase):
         """Domination asserts for non-empty input list."""
         with lp_dbuser():
             distroseries = self.factory.makeDistroArchSeries().distroseries
+        pocket = self.factory.getAnyPocket()
         package = self.factory.makeBinaryPackageName()
+        location = PackageLocation(
+            archive=self.ubuntutest.main_archive,
+            distribution=distroseries.distribution, distroseries=distroseries,
+            pocket=pocket)
         dominator = Dominator(self.logger, self.ubuntutest.main_archive)
-        dominator._sortPackages = FakeMethod({package.name: []})
+        dominator._sortPackages = FakeMethod({(package.name, location): []})
         # This isn't a really good exception. It should probably be
         # something more indicative of bad input.
         self.assertRaises(
             AssertionError,
             dominator.dominateBinaries,
-            distroseries, self.factory.getAnyPocket())
+            distroseries, pocket)
 
     def test_dominateSources_rejects_empty_publication_list(self):
         """Domination asserts for non-empty input list."""
         with lp_dbuser():
             distroseries = self.factory.makeDistroSeries()
+        pocket = self.factory.getAnyPocket()
         package = self.factory.makeSourcePackageName()
+        location = PackageLocation(
+            archive=self.ubuntutest.main_archive,
+            distribution=distroseries.distribution, distroseries=distroseries,
+            pocket=pocket)
         dominator = Dominator(self.logger, self.ubuntutest.main_archive)
-        dominator._sortPackages = FakeMethod({package.name: []})
+        dominator._sortPackages = FakeMethod({(package.name, location): []})
         # This isn't a really good exception. It should probably be
         # something more indicative of bad input.
         self.assertRaises(
             AssertionError,
             dominator.dominateSources,
-            distroseries, self.factory.getAnyPocket())
+            distroseries, pocket)
 
     def test_archall_domination(self):
         # Arch-all binaries should not be dominated when a new source

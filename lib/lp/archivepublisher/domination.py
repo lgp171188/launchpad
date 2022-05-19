@@ -77,6 +77,7 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.database.stormexpr import IsDistinctFrom
 from lp.services.orderingcheck import OrderingCheck
+from lp.soyuz.adapters.packagelocation import PackageLocation
 from lp.soyuz.enums import (
     BinaryPackageFormat,
     PackagePublishingStatus,
@@ -206,29 +207,15 @@ class GeneralizedPublication:
         return sorted(publications, key=cmp_to_key(self.compare), reverse=True)
 
 
-class PublicationLocation:
-    """A representation of a publication's location.
-
-    This currently consists of just its name and channel.
-    """
-    def __init__(self, pub, generalization):
-        self.name = generalization.getPackageName(pub)
-        self.channel = pub.channel
-
-    def __str__(self):
-        s = self.name
-        if self.channel is not None:
-            s += " (%s)" % self.channel
-        return s
-
-    def __eq__(self, other):
-        return self.name == other.name and self.channel == other.channel
-
-    def __ne__(self, other):
-        return not (self == other)
-
-    def __hash__(self):
-        return hash((self.name, self.channel))
+def make_package_location(pub):
+    """Make a `PackageLocation` representing a publication."""
+    return PackageLocation(
+        archive=pub.archive,
+        distribution=pub.distroseries.distribution,
+        distroseries=pub.distroseries,
+        pocket=pub.pocket,
+        channel=pub.channel,
+        )
 
 
 def find_live_source_versions(sorted_pubs):
@@ -494,7 +481,7 @@ class Dominator:
         return supersede, keep, delete
 
     def _sortPackages(self, publications, generalization):
-        """Partition publications by package location, and sort them.
+        """Partition publications by package name and location, and sort them.
 
         The publications are sorted from most current to least current,
         as required by `planPackageDomination` etc.  Locations are currently
@@ -507,20 +494,21 @@ class Dominator:
         :return: A dict mapping each package location (package name,
             channel) to a sorted list of publications from `publications`.
         """
-        pubs_by_location = defaultdict(list)
+        pubs_by_name_and_location = defaultdict(list)
         for pub in publications:
-            location = PublicationLocation(pub, generalization)
-            pubs_by_location[location].append(pub)
+            name = generalization.getPackageName(pub)
+            location = make_package_location(pub)
+            pubs_by_name_and_location[(name, location)].append(pub)
 
         # Sort the publication lists.  This is not an in-place sort, so
         # it involves altering the dict while we iterate it.  Listify
-        # the keys so that we can be sure that we're not altering the
+        # the items so that we can be sure that we're not altering the
         # iteration order while iteration is underway.
-        for location in list(pubs_by_location):
-            pubs_by_location[location] = generalization.sortPublications(
-                pubs_by_location[location])
+        for (name, location), pubs in list(pubs_by_name_and_location.items()):
+            pubs_by_name_and_location[(name, location)] = (
+                generalization.sortPublications(pubs))
 
-        return pubs_by_location
+        return pubs_by_name_and_location
 
     def _setScheduledDeletionDate(self, pub_record):
         """Set the scheduleddeletiondate on a publishing record.
@@ -707,13 +695,14 @@ class Dominator:
             bins = self.findBinariesForDomination(distroarchseries, pocket)
             sorted_packages = self._sortPackages(bins, generalization)
             self.logger.info("Planning domination of binaries...")
-            for location, pubs in sorted_packages.items():
-                self.logger.debug("Planning domination of %s" % location)
+            for (name, location), pubs in sorted_packages.items():
+                self.logger.debug(
+                    "Planning domination of %s in %s" % (name, location))
                 assert len(pubs) > 0, "Dominating zero binaries!"
                 live_versions = find_live_binary_versions_pass_1(pubs)
                 plan(pubs, live_versions)
                 if contains_arch_indep(pubs):
-                    packages_w_arch_indep.add(location)
+                    packages_w_arch_indep.add((name, location))
 
         execute_plan()
 
@@ -735,10 +724,11 @@ class Dominator:
             bins = self.findBinariesForDomination(distroarchseries, pocket)
             sorted_packages = self._sortPackages(bins, generalization)
             self.logger.info("Planning domination of binaries...(2nd pass)")
-            for location in packages_w_arch_indep.intersection(
+            for name, location in packages_w_arch_indep.intersection(
                     sorted_packages):
-                pubs = sorted_packages[location]
-                self.logger.debug("Planning domination of %s" % location)
+                pubs = sorted_packages[(name, location)]
+                self.logger.debug(
+                    "Planning domination of %s in %s" % (name, location))
                 assert len(pubs) > 0, "Dominating zero binaries in 2nd pass!"
                 live_versions = find_live_binary_versions_pass_2(
                     pubs, reprieve_cache)
@@ -813,8 +803,8 @@ class Dominator:
         delete = []
 
         self.logger.debug("Dominating sources...")
-        for location, pubs in sorted_packages.items():
-            self.logger.debug("Dominating %s" % location)
+        for (name, location), pubs in sorted_packages.items():
+            self.logger.debug("Dominating %s in %s" % (name, location))
             assert len(pubs) > 0, "Dominating zero sources!"
             live_versions = find_live_source_versions(pubs)
             cur_supersede, _, cur_delete = self.planPackageDomination(

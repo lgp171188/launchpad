@@ -29,9 +29,10 @@ class PackageLocation:
     pocket = None
     component = None
     packagesets = None
+    channel = None
 
     def __init__(self, archive, distribution, distroseries, pocket,
-                 component=None, packagesets=None):
+                 component=None, packagesets=None, channel=None):
         """Initialize the PackageLocation from the given parameters."""
         self.archive = archive
         self.distribution = distribution
@@ -39,6 +40,7 @@ class PackageLocation:
         self.pocket = pocket
         self.component = component
         self.packagesets = packagesets or []
+        self.channel = channel
 
     def __eq__(self, other):
         if (self.distribution == other.distribution and
@@ -46,9 +48,21 @@ class PackageLocation:
             self.distroseries == other.distroseries and
             self.component == other.component and
             self.pocket == other.pocket and
-            self.packagesets == other.packagesets):
+            self.packagesets == other.packagesets and
+            self.channel == other.channel):
             return True
         return False
+
+    def __hash__(self):
+        return hash((
+            self.archive,
+            self.distribution,
+            self.distroseries,
+            self.pocket,
+            self.component,
+            None if self.packagesets is None else tuple(self.packagesets),
+            self.channel,
+            ))
 
     def __str__(self):
         result = '%s: %s-%s' % (
@@ -61,6 +75,9 @@ class PackageLocation:
             result += ' [%s]' % (
                 ", ".join([str(p.name) for p in self.packagesets]),)
 
+        if self.channel is not None:
+            result += ' {%s}' % self.channel
+
         return result
 
 
@@ -70,7 +87,7 @@ class PackageLocationError(Exception):
 
 def build_package_location(distribution_name, suite=None, purpose=None,
                            person_name=None, archive_name=None,
-                           packageset_names=None):
+                           packageset_names=None, channel=None):
     """Convenience function to build PackageLocation objects."""
 
     # XXX kiko 2007-10-24:
@@ -143,6 +160,10 @@ def build_package_location(distribution_name, suite=None, purpose=None,
         distroseries = distribution.currentseries
         pocket = PackagePublishingPocket.RELEASE
 
+    if pocket != PackagePublishingPocket.RELEASE and channel is not None:
+        raise PackageLocationError(
+            "Channels may only be used with the RELEASE pocket.")
+
     packagesets = []
     if packageset_names:
         packageset_set = getUtility(IPackagesetSet)
@@ -155,5 +176,6 @@ def build_package_location(distribution_name, suite=None, purpose=None,
                     "Could not find packageset %s" % err)
             packagesets.append(packageset)
 
-    return PackageLocation(archive, distribution, distroseries, pocket,
-            packagesets=packagesets)
+    return PackageLocation(
+        archive, distribution, distroseries, pocket,
+        packagesets=packagesets, channel=channel)
