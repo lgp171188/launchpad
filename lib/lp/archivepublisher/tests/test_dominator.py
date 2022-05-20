@@ -1379,6 +1379,9 @@ class TestArchSpecificPublicationsCache(TestCaseWithFactory):
         if spr is None:
             spr = self.makeSPR()
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+        pocket = (
+            PackagePublishingPocket.UPDATES if channel is None
+            else PackagePublishingPocket.RELEASE)
         bpb = self.factory.makeBinaryPackageBuild(
             source_package_release=spr, distroarchseries=das)
         bpr = self.factory.makeBinaryPackageRelease(
@@ -1387,7 +1390,7 @@ class TestArchSpecificPublicationsCache(TestCaseWithFactory):
         return removeSecurityProxy(
             self.factory.makeBinaryPackagePublishingHistory(
                 binarypackagerelease=bpr, archive=archive,
-                distroarchseries=das, pocket=PackagePublishingPocket.UPDATES,
+                distroarchseries=das, pocket=pocket,
                 status=PackagePublishingStatus.PUBLISHED, channel=channel))
 
     def test_getKey_is_consistent_and_distinguishing(self):
