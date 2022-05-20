@@ -181,15 +181,6 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
             base_url="canonical.artifactory.com",
             read_credentials="user:pass",
         )
-        self.pushConfig(
-            "cibuild.soss",
-            environment_variables=json.dumps({
-                "PIP_INDEX_URL": "http://%(read_auth)s@%(base_url)s/simple",
-                "SOME_PATH": "/bin/zip"}),
-            apt_repositories=json.dumps([
-                "deb https://%(read_auth)s@%(base_url)s/repository focal main",
-                "deb https://public_ppa.example.net/repository focal main"])
-        )
         self.now = time.time()
         self.useFixture(MockPatch("time.time", return_value=self.now))
         self.addCleanup(shut_down_default_process_pool)
@@ -284,7 +275,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
             }))
 
     @defer.inlineCallbacks
-    def test_extraBuildArgs_git_does_not_contain_artifactory_data(self):
+    def test_extraBuildArgs_git_no_artifactory_configuration_section(self):
         # create a distribution with a name other than "soss", see
         # schema-lazr.conf -> cibuild.soss
         # for this distribution neither Artifactory environment variables nor
@@ -303,11 +294,38 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
         self.assertNotIn([], args["apt_repositories"])
 
     @defer.inlineCallbacks
+    def test_extraBuildArgs_git_no_artifactory_configuration(self):
+        # If the cibuild.* section exists for the distribution but has no
+        # relevant configuration entries, neither Artifactory environment
+        # variables nor apt repositories will be dispatched.
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=self.factory.makeDistribution(name="soss")
+        )
+        git_repository = self.factory.makeGitRepository(target=package)
+        job = self.makeJob(
+            stages=[[("test", 0)]],
+            git_repository=git_repository
+        )
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual({}, args["environment_variables"])
+        self.assertNotIn([], args["apt_repositories"])
+
+    @defer.inlineCallbacks
     def test_extraBuildArgs_git_include_artifactory_configuration(self):
         # we use the `soss` distribution which refers to `cibuild.soss` in the
         # global configuration
         # suitable Artifactory configuration data will be dispatched for this
         # distribution
+        self.pushConfig(
+            "cibuild.soss",
+            environment_variables=json.dumps({
+                "PIP_INDEX_URL": "http://%(read_auth)s@%(base_url)s/simple",
+                "SOME_PATH": "/bin/zip"}),
+            apt_repositories=json.dumps([
+                "deb https://%(read_auth)s@%(base_url)s/repository focal main",
+                "deb https://public_ppa.example.net/repository focal main"])
+        )
         package = self.factory.makeDistributionSourcePackage(
             distribution=self.factory.makeDistribution(name="soss")
         )

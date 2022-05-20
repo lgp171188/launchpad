@@ -54,6 +54,8 @@ def build_environment_variables(distribution_name: str) -> dict:
         pairs = config["cibuild."+distribution_name]["environment_variables"]
     except NoSectionError:
         return {}
+    if pairs is None:
+        return {}
     rv = {}
     for key, value in json.loads(pairs).items():
         rv[key] = replace_placeholders(value)
@@ -66,6 +68,8 @@ def build_apt_repositories(distribution_name: str) -> list:
     try:
         lines = config["cibuild."+distribution_name]["apt_repositories"]
     except NoSectionError:
+        return []
+    if lines is None:
         return []
     rv = []
     for line in json.loads(lines):
