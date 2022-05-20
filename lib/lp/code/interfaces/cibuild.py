@@ -177,6 +177,14 @@ class ICIBuildView(IPackageBuildView, IPrivacy):
         :return: A collection of URLs for this build.
         """
 
+    def createBinaryPackageRelease(
+            binarypackagename, version, summary, description, binpackageformat,
+            architecturespecific, installedsize=None, homepage=None):
+        """Create and return a `BinaryPackageRelease` for this CI build.
+
+        The new binary package release will be linked to this build.
+        """
+
 
 class ICIBuildEdit(IBuildFarmJobEdit):
     """`ICIBuild` methods that require launchpad.Edit."""

@@ -36,6 +36,7 @@ from lp.registry.interfaces.sourcepackage import (
     SourcePackageUrgency,
     )
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
+from lp.services.channels import channel_string_to_list
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
@@ -212,7 +213,8 @@ class SoyuzTestPublisher:
                      build_conflicts_indep=None,
                      dsc_maintainer_rfc822='Foo Bar <foo@bar.com>',
                      maintainer=None, creator=None, date_uploaded=UTC_NOW,
-                     spr_only=False, user_defined_fields=None):
+                     spr_only=False, user_defined_fields=None,
+                     format=SourcePackageType.DPKG, channel=None):
         """Return a mock source publishing record.
 
         if spr_only is specified, the source is not published and the
@@ -238,7 +240,7 @@ class SoyuzTestPublisher:
 
         spr = distroseries.createUploadedSourcePackageRelease(
             sourcepackagename=spn,
-            format=SourcePackageType.DPKG,
+            format=format,
             maintainer=maintainer,
             creator=creator,
             component=component,
@@ -289,6 +291,8 @@ class SoyuzTestPublisher:
             datepublished = UTC_NOW
         else:
             datepublished = None
+        if channel is not None:
+            channel = channel_string_to_list(channel)
 
         spph = SourcePackagePublishingHistory(
             distroseries=distroseries,
@@ -304,7 +308,8 @@ class SoyuzTestPublisher:
             scheduleddeletiondate=scheduleddeletiondate,
             pocket=pocket,
             archive=archive,
-            creator=creator)
+            creator=creator,
+            _channel=channel)
 
         return spph
 
@@ -328,7 +333,8 @@ class SoyuzTestPublisher:
                        builder=None,
                        component='main',
                        phased_update_percentage=None,
-                       with_debug=False, user_defined_fields=None):
+                       with_debug=False, user_defined_fields=None,
+                       channel=None):
         """Return a list of binary publishing records."""
         if distroseries is None:
             distroseries = self.distroseries
@@ -366,7 +372,7 @@ class SoyuzTestPublisher:
                 pub_binaries += self.publishBinaryInArchive(
                     binarypackagerelease_ddeb, archive, status,
                     pocket, scheduleddeletiondate, dateremoved,
-                    phased_update_percentage)
+                    phased_update_percentage, channel=channel)
             else:
                 binarypackagerelease_ddeb = None
 
@@ -378,7 +384,8 @@ class SoyuzTestPublisher:
                 user_defined_fields=user_defined_fields)
             pub_binaries += self.publishBinaryInArchive(
                 binarypackagerelease, archive, status, pocket,
-                scheduleddeletiondate, dateremoved, phased_update_percentage)
+                scheduleddeletiondate, dateremoved, phased_update_percentage,
+                channel=channel)
             published_binaries.extend(pub_binaries)
             package_upload = self.addPackageUpload(
                 archive, distroseries, pocket,
@@ -476,7 +483,7 @@ class SoyuzTestPublisher:
         status=PackagePublishingStatus.PENDING,
         pocket=PackagePublishingPocket.RELEASE,
         scheduleddeletiondate=None, dateremoved=None,
-        phased_update_percentage=None):
+        phased_update_percentage=None, channel=None):
         """Return the corresponding BinaryPackagePublishingHistory."""
         distroarchseries = binarypackagerelease.build.distro_arch_series
 
@@ -485,6 +492,8 @@ class SoyuzTestPublisher:
             archs = [distroarchseries]
         else:
             archs = distroarchseries.distroseries.architectures
+        if channel is not None:
+            channel = channel_string_to_list(channel)
 
         pub_binaries = []
         for arch in archs:
@@ -502,7 +511,8 @@ class SoyuzTestPublisher:
                 datecreated=UTC_NOW,
                 pocket=pocket,
                 archive=archive,
-                phased_update_percentage=phased_update_percentage)
+                phased_update_percentage=phased_update_percentage,
+                _channel=channel)
             if status == PackagePublishingStatus.PUBLISHED:
                 pub.datepublished = UTC_NOW
             pub_binaries.append(pub)
@@ -1583,19 +1593,24 @@ class TestPublishBinaries(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
 
-    def makeArgs(self, bprs, distroseries, archive=None):
+    def makeArgs(self, bprs, distroseries, archive=None, channel=None):
         """Create a dict of arguments for publishBinaries."""
         if archive is None:
             archive = distroseries.main_archive
-        return {
+        args = {
             'archive': archive,
             'distroseries': distroseries,
-            'pocket': PackagePublishingPocket.BACKPORTS,
+            'pocket': (
+                PackagePublishingPocket.BACKPORTS if channel is None
+                else PackagePublishingPocket.RELEASE),
             'binaries': {
                 bpr: (self.factory.makeComponent(),
                  self.factory.makeSection(),
                  PackagePublishingPriority.REQUIRED, 50) for bpr in bprs},
             }
+        if channel is not None:
+            args['channel'] = channel
+        return args
 
     def test_architecture_dependent(self):
         # Architecture-dependent binaries get created as PENDING in the
@@ -1614,8 +1629,8 @@ class TestPublishBinaries(TestCaseWithFactory):
         overrides = args['binaries'][bpr]
         self.assertEqual(bpr, bpph.binarypackagerelease)
         self.assertEqual(
-            (args['archive'], target_das, args['pocket']),
-            (bpph.archive, bpph.distroarchseries, bpph.pocket))
+            (args['archive'], target_das, args['pocket'], None),
+            (bpph.archive, bpph.distroarchseries, bpph.pocket, bpph.channel))
         self.assertEqual(
             overrides,
             (bpph.component, bpph.section, bpph.priority,
@@ -1670,30 +1685,59 @@ class TestPublishBinaries(TestCaseWithFactory):
         args['pocket'] = PackagePublishingPocket.RELEASE
         [another_bpph] = getUtility(IPublishingSet).publishBinaries(**args)
 
+    def test_channel(self):
+        bpr = self.factory.makeBinaryPackageRelease(
+            binpackageformat=BinaryPackageFormat.WHL)
+        target_das = self.factory.makeDistroArchSeries()
+        args = self.makeArgs([bpr], target_das.distroseries, channel="stable")
+        [bpph] = getUtility(IPublishingSet).publishBinaries(**args)
+        self.assertEqual(bpr, bpph.binarypackagerelease)
+        self.assertEqual(
+            (args["archive"], target_das, args["pocket"], args["channel"]),
+            (bpph.archive, bpph.distroarchseries, bpph.pocket, bpph.channel))
+        self.assertEqual(PackagePublishingStatus.PENDING, bpph.status)
+
+    def test_does_not_duplicate_by_channel(self):
+        bpr = self.factory.makeBinaryPackageRelease(
+            binpackageformat=BinaryPackageFormat.WHL)
+        target_das = self.factory.makeDistroArchSeries()
+        args = self.makeArgs([bpr], target_das.distroseries, channel="stable")
+        [bpph] = getUtility(IPublishingSet).publishBinaries(**args)
+        self.assertContentEqual(
+            [], getUtility(IPublishingSet).publishBinaries(**args))
+        args["channel"] = "edge"
+        [another_bpph] = getUtility(IPublishingSet).publishBinaries(**args)
+
 
 class TestChangeOverride(TestNativePublishingBase):
     """Test that changing overrides works."""
 
     def setUpOverride(self, status=SeriesStatus.DEVELOPMENT,
-                      pocket=PackagePublishingPocket.RELEASE, binary=False,
-                      ddeb=False, **kwargs):
+                      pocket=PackagePublishingPocket.RELEASE, channel=None,
+                      binary=False, format=None, ddeb=False, **kwargs):
         self.distroseries.status = status
+        get_pub_kwargs = {"pocket": pocket, "channel": channel}
+        if format is not None:
+            get_pub_kwargs["format"] = format
         if ddeb:
-            pub = self.getPubBinaries(pocket=pocket, with_debug=True)[2]
+            pub = self.getPubBinaries(with_debug=True, **get_pub_kwargs)[2]
             self.assertEqual(
                 BinaryPackageFormat.DDEB,
                 pub.binarypackagerelease.binpackageformat)
         elif binary:
-            pub = self.getPubBinaries(pocket=pocket)[0]
+            pub = self.getPubBinaries(**get_pub_kwargs)[0]
         else:
-            pub = self.getPubSource(pocket=pocket)
+            pub = self.getPubSource(**get_pub_kwargs)
         return pub.changeOverride(**kwargs)
 
     def assertCanOverride(self, status=SeriesStatus.DEVELOPMENT,
-                          pocket=PackagePublishingPocket.RELEASE, **kwargs):
-        new_pub = self.setUpOverride(status=status, pocket=pocket, **kwargs)
+                          pocket=PackagePublishingPocket.RELEASE, channel=None,
+                          **kwargs):
+        new_pub = self.setUpOverride(
+            status=status, pocket=pocket, channel=channel, **kwargs)
         self.assertEqual(new_pub.status, PackagePublishingStatus.PENDING)
         self.assertEqual(new_pub.pocket, pocket)
+        self.assertEqual(new_pub.channel, channel)
         if "new_component" in kwargs:
             self.assertEqual(kwargs["new_component"], new_pub.component.name)
         if "new_section" in kwargs:
@@ -1783,6 +1827,12 @@ class TestChangeOverride(TestNativePublishingBase):
         # archive.
         self.assertCannotOverride(new_component="partner")
         self.assertCannotOverride(binary=True, new_component="partner")
+
+    def test_preserves_channel(self):
+        self.assertCanOverride(
+            binary=True, format=BinaryPackageFormat.WHL, channel="stable",
+            new_component="universe", new_section="misc", new_priority="extra",
+            new_phased_update_percentage=90)
 
 
 class TestPublishingHistoryView(TestCaseWithFactory):

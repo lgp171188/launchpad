@@ -22,11 +22,12 @@ class TestPackageLocation(TestCaseWithFactory):
 
     def getPackageLocation(self, distribution_name='ubuntu', suite=None,
                            purpose=None, person_name=None,
-                           archive_name=None, packageset_names=None):
+                           archive_name=None, packageset_names=None,
+                           channel=None):
         """Use a helper method to setup a `PackageLocation` object."""
         return build_package_location(
             distribution_name, suite, purpose, person_name, archive_name,
-            packageset_names=packageset_names)
+            packageset_names=packageset_names, channel=channel)
 
     def testSetupLocationForCOPY(self):
         """`PackageLocation` for COPY archives."""
@@ -150,6 +151,15 @@ class TestPackageLocation(TestCaseWithFactory):
             distribution_name='debian',
             packageset_names=[packageset_name, "unknown"])
 
+    def test_build_package_location_with_channel_outside_release_pocket(self):
+        """It doesn't make sense to use non-RELEASE pockets with channels."""
+        self.assertRaisesWithContent(
+            PackageLocationError,
+            "Channels may only be used with the RELEASE pocket.",
+            self.getPackageLocation,
+            suite="warty-security",
+            channel="stable")
+
     def testSetupLocationPPANotMatchingDistribution(self):
         """`PackageLocationError` is raised when PPA does not match the
         distribution."""
@@ -213,6 +223,14 @@ class TestPackageLocation(TestCaseWithFactory):
         location_ubuntu_hoary_again.packagesets = [packageset]
         self.assertEqual(
             location_ubuntu_hoary, location_ubuntu_hoary_again)
+
+    def testCompareChannels(self):
+        location_ubuntu_hoary = self.getPackageLocation(channel="stable")
+        location_ubuntu_hoary_again = self.getPackageLocation(channel="edge")
+        self.assertNotEqual(location_ubuntu_hoary, location_ubuntu_hoary_again)
+
+        location_ubuntu_hoary_again.channel = "stable"
+        self.assertEqual(location_ubuntu_hoary, location_ubuntu_hoary_again)
 
     def testRepresentation(self):
         """Check if PackageLocation is represented correctly."""

@@ -50,7 +50,6 @@ from zope.schema import (
     Date,
     Datetime,
     Int,
-    List,
     Text,
     TextLine,
     )
@@ -269,9 +268,8 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
             vocabulary=PackagePublishingPocket,
             required=True, readonly=True,
             ))
-    channel = List(
-        value_type=TextLine(), title=_("Channel"),
-        required=False, readonly=False,
+    channel = TextLine(
+        title=_("Channel"), required=False, readonly=False,
         description=_(
             "The channel into which this entry is published "
             "(only for archives published using Artifactory)"))
@@ -700,9 +698,8 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
             vocabulary=PackagePublishingPocket,
             required=True, readonly=True,
             ))
-    channel = List(
-        value_type=TextLine(), title=_("Channel"),
-        required=False, readonly=False,
+    channel = TextLine(
+        title=_("Channel"), required=False, readonly=False,
         description=_(
             "The channel into which this entry is published "
             "(only for archives published using Artifactory)"))
@@ -970,7 +967,8 @@ class IPublishingSet(Interface):
     def newSourcePublication(archive, sourcepackagerelease, distroseries,
                              component, section, pocket, ancestor,
                              create_dsd_job=True, copied_from_archive=None,
-                             creator=None, sponsor=None, packageupload=None):
+                             creator=None, sponsor=None, packageupload=None,
+                             channel=None):
         """Create a new `SourcePackagePublishingHistory`.
 
         :param archive: An `IArchive`

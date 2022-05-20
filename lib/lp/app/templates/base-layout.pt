@@ -62,7 +62,7 @@
         condition="python: getattr(view, 'show_opengraph_meta', True)">
       <meta property="og:title" tal:attributes="content view/fmt:pagetitle" />
       <meta property="og:type" content="website" />
-      <meta property="og:image" content="/@@/launchpad.png" />
+      <meta property="og:image" content="/@@/launchpad-og-image.png" />
       <meta property="og:url" tal:attributes="content python: view.recommended_canonical_url or request.URL" />
       <meta property="og:site_name" content="Launchpad" />
     </tal:opengraph>
