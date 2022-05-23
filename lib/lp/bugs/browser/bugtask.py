@@ -2173,18 +2173,22 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
             status_items = [
                 (item.title, item) for item in BugTaskStatus.items
                 if item not in (BugTaskStatus.UNKNOWN,
-                                BugTaskStatus.EXPIRED)]
+                                BugTaskStatus.EXPIRED,
+                                BugTaskStatus.DOESNOTEXIST)
+                   or item == self.context.status]
 
             disabled_items = [status for status in BugTaskStatus.items
-                if not self.context.canTransitionToStatus(status, self.user)]
-
-            items = vocabulary_to_choice_edit_items(
-                SimpleVocabulary.fromItems(status_items),
-                include_description=True,
-                css_class_prefix='status',
-                disabled_items=disabled_items)
+                if not self.context.canTransitionToStatus(status, self.user)
+                   and status != self.context.status]
         else:
-            items = '[]'
+            status_items = [(self.context.status.title, self.context.status)]
+            disabled_items = []
+
+        items = vocabulary_to_choice_edit_items(
+            SimpleVocabulary.fromItems(status_items),
+            include_description=True,
+            css_class_prefix='status',
+            disabled_items=disabled_items)
 
         return items
 
