@@ -1078,6 +1078,14 @@ class DistributionEditView(RegistryEditFormView,
         official_malone = data.get('official_malone', False)
         if not official_malone:
             data['enable_bug_expiration'] = False
+        if 'processors' in data:
+            widget = self.widgets['processors']
+            for processor in self.context.main_archive.processors:
+                if processor not in data['processors']:
+                    if processor.name in widget.disabled_items:
+                        # This processor is restricted and currently
+                        # enabled.  Leave it untouched.
+                        data['processors'].append(processor)
 
     def change_archive_fields(self, data):
         # Update context.main_archive.
