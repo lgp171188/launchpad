@@ -88,6 +88,7 @@ from lp.soyuz.adapters.overrides import (
     )
 from lp.soyuz.enums import (
     ArchivePermissionType,
+    ArchivePublishingMethod,
     ArchivePurpose,
     ArchiveStatus,
     PackageCopyPolicy,
@@ -116,6 +117,7 @@ from lp.soyuz.interfaces.archive import (
     RedirectedPocket,
     VersionRequiresName,
     )
+from lp.soyuz.interfaces.archivejob import ICIBuildUploadJobSource
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.binarypackagebuild import BuildSetStatus
 from lp.soyuz.interfaces.binarypackagename import IBinaryPackageNameSet
@@ -3444,6 +3446,71 @@ class TestCopyPackage(TestCaseWithFactory):
                 [source_name], source_archive, to_pocket.name,
                 to_series=to_series.name, include_binaries=True,
                 person=source_archive.owner, move=True)
+
+
+class TestUploadCIBuild(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_creates_job(self):
+        # The uploadCIBuild method creates a CIBuildUploadJob with the
+        # appropriate parameters.
+        archive = self.factory.makeArchive(
+            publishing_method=ArchivePublishingMethod.ARTIFACTORY)
+        series = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        build = self.factory.makeCIBuild(status=BuildStatus.FULLYBUILT)
+        with person_logged_in(archive.owner):
+            archive.uploadCIBuild(
+                build, archive.owner, series.name, "Release",
+                to_channel="edge")
+        [job] = getUtility(ICIBuildUploadJobSource).iterReady()
+        self.assertThat(job, MatchesStructure.byEquality(
+            ci_build=build,
+            target_distroseries=series,
+            target_pocket=PackagePublishingPocket.RELEASE,
+            target_channel="edge"))
+
+    def test_disallows_non_artifactory_publishing(self):
+        # CI builds may only be copied into archives published using
+        # Artifactory.
+        archive = self.factory.makeArchive()
+        series = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        build = self.factory.makeCIBuild(status=BuildStatus.FULLYBUILT)
+        with person_logged_in(archive.owner):
+            self.assertRaisesWithContent(
+                CannotCopy,
+                "CI builds may only be uploaded to archives published using "
+                "Artifactory.",
+                archive.uploadCIBuild,
+                build, archive.owner, series.name, "Release")
+
+    def test_disallows_incomplete_builds(self):
+        # CI builds with statuses other than FULLYBUILT may not be copied.
+        archive = self.factory.makeArchive(
+            publishing_method=ArchivePublishingMethod.ARTIFACTORY)
+        series = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        build = self.factory.makeCIBuild(status=BuildStatus.FAILEDTOBUILD)
+        person = self.factory.makePerson()
+        self.assertRaisesWithContent(
+            CannotCopy,
+            "%r has status 'Failed to build', not 'Successfully built'." % (
+                build),
+            archive.uploadCIBuild, build, person, series.name, "Release")
+
+    def test_disallows_non_uploaders(self):
+        # Only people with upload permission may call uploadCIBuild.
+        archive = self.factory.makeArchive(
+            publishing_method=ArchivePublishingMethod.ARTIFACTORY)
+        series = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        build = self.factory.makeCIBuild(status=BuildStatus.FULLYBUILT)
+        person = self.factory.makePerson()
+        self.assertRaisesWithContent(
+            CannotCopy, "Signer has no upload rights to this PPA.",
+            archive.uploadCIBuild, build, person, series.name, "Release")
 
 
 class TestgetAllPublishedBinaries(TestCaseWithFactory):

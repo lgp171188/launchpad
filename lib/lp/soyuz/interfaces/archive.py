@@ -1672,6 +1672,18 @@ class IArchiveView(IHasBuildRecords):
         :raises CannotCopy: if there is a problem copying.
         """
 
+    @call_with(person=REQUEST_USER)
+    @operation_parameters(
+        # Really ICIBuild, patched in _schema_circular_imports.
+        ci_build=Reference(schema=Interface),
+        to_series=TextLine(title=_("Target distroseries name")),
+        to_pocket=TextLine(title=_("Target pocket name")),
+        to_channel=TextLine(title=_("Target channel"), required=False))
+    @export_write_operation()
+    @operation_for_version('devel')
+    def uploadCIBuild(ci_build, person, to_series, to_pocket, to_channel=None):
+        """Upload the output of a CI build to this archive."""
+
 
 class IArchiveAppend(Interface):
     """Archive interface for operations restricted by append privilege."""

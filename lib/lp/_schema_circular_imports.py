@@ -397,6 +397,7 @@ patch_plain_parameter_type(IArchive, 'syncSource', 'from_archive', IArchive)
 patch_plain_parameter_type(IArchive, 'copyPackage', 'from_archive', IArchive)
 patch_plain_parameter_type(
     IArchive, 'copyPackages', 'from_archive', IArchive)
+patch_plain_parameter_type(IArchive, 'uploadCIBuild', 'ci_build', ICIBuild)
 patch_entry_return_type(IArchive, 'newSubscription', IArchiveSubscriber)
 patch_plain_parameter_type(
     IArchive, 'getArchiveDependency', 'dependency', IArchive)

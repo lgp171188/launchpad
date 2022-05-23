@@ -57,6 +57,12 @@ class ArchiveJobType(DBEnumeratedType):
         or held for approval.
         """)
 
+    CI_BUILD_UPLOAD = DBItem(2, """
+        CI build upload
+
+        Upload a CI build to this archive.
+        """)
+
 
 class ArchivePermissionType(DBEnumeratedType):
     """Archive Permission Type.

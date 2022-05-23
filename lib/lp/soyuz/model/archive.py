@@ -187,6 +187,7 @@ from lp.soyuz.interfaces.archive import (
     VersionRequiresName,
     )
 from lp.soyuz.interfaces.archiveauthtoken import IArchiveAuthTokenSet
+from lp.soyuz.interfaces.archivejob import ICIBuildUploadJobSource
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.archivesubscriber import (
     ArchiveSubscriptionError,
@@ -1989,6 +1990,34 @@ class Archive(SQLBase):
         do_copy(
             sources, self, series, pocket, include_binaries, person=person,
             check_permissions=False, unembargo=True)
+
+    def uploadCIBuild(self, ci_build, person, to_series, to_pocket,
+                      to_channel=None):
+        """See `IArchive`."""
+        series = self._text_to_series(to_series)
+        pocket = self._text_to_pocket(to_pocket)
+        if self.publishing_method != ArchivePublishingMethod.ARTIFACTORY:
+            raise CannotCopy(
+                "CI builds may only be uploaded to archives published using "
+                "Artifactory.")
+        if ci_build.status != BuildStatus.FULLYBUILT:
+            raise CannotCopy(
+                "%r has status '%s', not '%s'." %
+                (ci_build, ci_build.status.title, BuildStatus.FULLYBUILT))
+        # Check upload permissions.  We don't know the package name until we
+        # actually run the job; however, per-package upload permissions are
+        # by source package name, so don't necessarily make sense for CI
+        # builds anyway.  For now, just ignore per-package upload
+        # permissions.
+        reason = self.checkUpload(
+            person=person, distroseries=series, sourcepackagename=None,
+            component=None, pocket=pocket)
+        if reason is not None:
+            raise CannotCopy(reason)
+        getUtility(ICIBuildUploadJobSource).create(
+            ci_build=ci_build, requester=person, target_archive=self,
+            target_distroseries=series, target_pocket=pocket,
+            target_channel=to_channel)
 
     def getAuthToken(self, person):
         """See `IArchive`."""

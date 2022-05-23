@@ -3,20 +3,29 @@
 
 import io
 import logging
+import os.path
+import tempfile
 
 from lazr.delegates import delegate_to
+from pkginfo import Wheel
 from storm.expr import And
 from storm.locals import (
     Int,
     JSON,
     Reference,
     )
+from wheel_filename import parse_wheel_filename
 from zope.component import getUtility
 from zope.interface import (
     implementer,
     provider,
     )
 
+from lp.code.enums import RevisionStatusArtifactType
+from lp.code.interfaces.cibuild import ICIBuildSet
+from lp.code.interfaces.revisionstatus import IRevisionStatusArtifactSet
+from lp.registry.interfaces.distroseries import IDistroSeriesSet
+from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IMasterStore
@@ -26,16 +35,22 @@ from lp.services.job.model.job import (
     Job,
     )
 from lp.services.job.runner import BaseRunnableJob
+from lp.services.librarian.utils import copy_and_close
 from lp.soyuz.enums import (
     ArchiveJobType,
+    BinaryPackageFormat,
     PackageUploadStatus,
     )
 from lp.soyuz.interfaces.archivejob import (
     IArchiveJob,
     IArchiveJobSource,
+    ICIBuildUploadJob,
+    ICIBuildUploadJobSource,
     IPackageUploadNotificationJob,
     IPackageUploadNotificationJobSource,
     )
+from lp.soyuz.interfaces.binarypackagename import IBinaryPackageNameSet
+from lp.soyuz.interfaces.publishing import IPublishingSet
 from lp.soyuz.interfaces.queue import IPackageUploadSet
 from lp.soyuz.model.archive import Archive
 
@@ -165,3 +180,115 @@ class PackageUploadNotificationJob(ArchiveJobDerived):
         packageupload.notify(
             status=self.packageupload_status, summary_text=self.summary_text,
             changes_file_object=changes_file_object, logger=logger)
+
+
+class ScanException(Exception):
+    """A CI build upload job failed to scan a file."""
+
+
+@implementer(ICIBuildUploadJob)
+@provider(ICIBuildUploadJobSource)
+class CIBuildUploadJob(ArchiveJobDerived):
+
+    class_job_type = ArchiveJobType.CI_BUILD_UPLOAD
+
+    config = config.ICIBuildUploadJobSource
+
+    @classmethod
+    def create(cls, ci_build, requester, target_archive, target_distroseries,
+               target_pocket, target_channel=None):
+        """See `ICIBuildUploadJobSource`."""
+        metadata = {
+            "ci_build_id": ci_build.id,
+            "target_distroseries_id": target_distroseries.id,
+            "target_pocket": target_pocket.title,
+            "target_channel": target_channel,
+            }
+        derived = super().create(target_archive, metadata)
+        derived.job.requester = requester
+        return derived
+
+    def getOopsVars(self):
+        vars = super().getOopsVars()
+        vars.extend([
+            (key, self.metadata[key])
+            for key in (
+                "ci_build_id",
+                "target_distroseries_id",
+                "target_pocket",
+                "target_channel",
+                )])
+        return vars
+
+    @property
+    def ci_build(self):
+        return getUtility(ICIBuildSet).getByID(self.metadata["ci_build_id"])
+
+    @property
+    def target_distroseries(self):
+        return getUtility(IDistroSeriesSet).get(
+            self.metadata["target_distroseries_id"])
+
+    @property
+    def target_pocket(self):
+        return PackagePublishingPocket.getTermByToken(
+            self.metadata["target_pocket"]).value
+
+    @property
+    def target_channel(self):
+        return self.metadata["target_channel"]
+
+    def _scanFile(self, path):
+        if path.endswith(".whl"):
+            try:
+                parsed_path = parse_wheel_filename(path)
+                wheel = Wheel(path)
+            except Exception as e:
+                raise ScanException("Failed to scan %s" % path) from e
+            return {
+                "name": wheel.name,
+                "version": wheel.version,
+                "summary": wheel.summary or "",
+                "description": wheel.description,
+                "binpackageformat": BinaryPackageFormat.WHL,
+                "architecturespecific": "any" not in parsed_path.platform_tags,
+                "homepage": wheel.home_page or "",
+                }
+        else:
+            return None
+
+    def run(self):
+        """See `IRunnableJob`."""
+        logger = logging.getLogger()
+        with tempfile.TemporaryDirectory(prefix="ci-build-copy-job") as tmpdir:
+            binaries = {}
+            for artifact in getUtility(
+                    IRevisionStatusArtifactSet).findByCIBuild(self.ci_build):
+                if artifact.artifact_type == RevisionStatusArtifactType.LOG:
+                    continue
+                name = artifact.library_file.filename
+                contents = os.path.join(tmpdir, name)
+                artifact.library_file.open()
+                copy_and_close(artifact.library_file, open(contents, "wb"))
+                metadata = self._scanFile(contents)
+                if metadata is None:
+                    logger.info("No upload handler for %s" % name)
+                    continue
+                logger.info(
+                    "Uploading %s to %s %s (%s)" % (
+                        name, self.archive.reference,
+                        self.target_distroseries.getSuite(self.target_pocket),
+                        self.target_channel))
+                metadata["binarypackagename"] = (
+                    getUtility(IBinaryPackageNameSet).ensure(metadata["name"]))
+                del metadata["name"]
+                bpr = self.ci_build.createBinaryPackageRelease(**metadata)
+                bpr.addFile(artifact.library_file)
+                # The publishBinaries interface was designed for .debs,
+                # which need extra per-binary "override" information
+                # (component, etc.).  None of this is relevant here.
+                binaries[bpr] = (None, None, None, None)
+            if binaries:
+                getUtility(IPublishingSet).publishBinaries(
+                    self.archive, self.target_distroseries, self.target_pocket,
+                    binaries, channel=self.target_channel)
