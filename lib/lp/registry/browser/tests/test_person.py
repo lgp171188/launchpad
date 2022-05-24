@@ -2316,4 +2316,28 @@ class TestPersonRdfView(BrowserTestCase):
             browser.headers['Content-type'])
 
 
+class TestPersonViewSSHKeys(BrowserTestCase):
+    """Tests for Person:+sshkeys."""
+
+    layer = DatabaseFunctionalLayer
+
+    def test_no_keys(self):
+        person = self.factory.makePerson()
+        browser = self.getViewBrowser(person, view_name="+sshkeys")
+        self.assertEqual(
+            "text/plain;charset=utf-8", browser.headers["Content-Type"])
+        self.assertEqual("", browser.contents)
+
+    def test_keys(self):
+        person = self.factory.makePerson()
+        with person_logged_in(person):
+            keys = [self.factory.makeSSHKey(person) for _ in range(2)]
+        browser = self.getViewBrowser(person, view_name="+sshkeys")
+        self.assertEqual(
+            "text/plain;charset=utf-8", browser.headers["Content-Type"])
+        self.assertContentEqual(
+            [key.getFullKeyText() + "\n" for key in keys],
+            re.findall(r".*\n", browser.contents))
+
+
 load_tests = load_tests_apply_scenarios
