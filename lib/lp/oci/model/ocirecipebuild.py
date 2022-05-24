@@ -355,6 +355,11 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
         return self.recipe.distro_series.getDistroArchSeriesByProcessor(
             self.processor)
 
+    @property
+    def arch_tag(self):
+        """See `IOCIRecipeBuild`."""
+        return self.distro_arch_series.architecturetag
+
     def updateStatus(self, status, builder=None, worker_status=None,
                      date_started=None, date_finished=None,
                      force_invalid_transition=False):
