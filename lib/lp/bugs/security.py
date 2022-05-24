@@ -23,6 +23,7 @@ from lp.bugs.interfaces.bugtracker import IBugTracker
 from lp.bugs.interfaces.bugwatch import IBugWatch
 from lp.bugs.interfaces.hasbug import IHasBug
 from lp.bugs.interfaces.structuralsubscription import IStructuralSubscription
+from lp.bugs.interfaces.vulnerability import IVulnerability
 from lp.registry.interfaces.role import (
     IHasAppointedDriver,
     IHasOwner,
@@ -384,3 +385,13 @@ class EditBugSubscriptionFilter(AuthorizationBase):
 
     def checkAuthenticated(self, user):
         return user.inTeam(self.obj.structural_subscription.subscriber)
+
+
+class EditVulnerability(DelegatedAuthorization):
+    """The security admins of a distribution should be able to edit
+    vulnerabilities in that distribution."""
+    permission = 'launchpad.Edit'
+    usedfor = IVulnerability
+
+    def __init__(self, obj):
+        super().__init__(obj, obj.distribution, 'launchpad.SecurityAdmin')
