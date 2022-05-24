@@ -14,6 +14,7 @@ from textwrap import dedent
 from fixtures import MockPatchObject
 from lazr.uri import URI
 import responses
+from storm.locals import Store
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -38,6 +39,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.distributionmirror import (
+    IDistributionMirrorSet,
     MirrorContent,
     MirrorStatus,
     )
@@ -83,7 +85,6 @@ from lp.registry.tests.distributionmirror_http_server import (
 from lp.services.config import config
 from lp.services.daemons.tachandler import TacTestSetup
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.httpproxy.connect_tunneling import TunnelingAgent
 from lp.services.timeout import default_timeout
 from lp.testing import (
@@ -913,9 +914,9 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
         callbacks.ensureOrDeleteMirrorCDImageSeries(not_all_success)
         # If the prober gets at least one 404 status, we need to make sure
         # there's no MirrorCDImageSeries for that series and flavour.
-        self.assertRaises(
-            SQLObjectNotFound, mirror_cdimage_series.get,
-            mirror_cdimage_series.id)
+        self.assertIsNone(
+            Store.of(mirror_cdimage_series).get(
+                type(mirror_cdimage_series), mirror_cdimage_series.id))
 
     def test_expected_failures_are_ignored(self):
         # Any errors included in callbacks.expected_failures are simply
@@ -1037,9 +1038,10 @@ class TestArchiveMirrorProberCallbacks(TestCaseWithFactory):
         # If the prober gets a 404 status, we need to make sure there's no
         # MirrorDistroSeriesSource/MirrorDistroArchSeries referent to
         # that url
-        self.assertRaises(
-            SQLObjectNotFound, mirror_distro_series_source.get,
-            mirror_distro_series_source.id)
+        self.assertIsNone(
+            Store.of(mirror_distro_series_source).get(
+                type(mirror_distro_series_source),
+                mirror_distro_series_source.id))
 
 
 class TestProbeFunctionSemaphores(TestCase):
@@ -1063,7 +1065,8 @@ class TestProbeFunctionSemaphores(TestCase):
         super().tearDown()
 
     def test_MirrorCDImageSeries_records_are_deleted_before_probing(self):
-        mirror = DistributionMirror.byName('releases-mirror2')
+        mirror = getUtility(IDistributionMirrorSet).getByName(
+            'releases-mirror2')
         self.assertNotEqual(0, len(mirror.cdimage_series))
         # Note that calling this function won't actually probe any mirrors; we
         # need to call reactor.run() to actually start the probing.
@@ -1072,16 +1075,22 @@ class TestProbeFunctionSemaphores(TestCase):
         self.assertEqual(0, len(mirror.cdimage_series))
 
     def test_archive_mirror_probe_function(self):
-        mirror1 = DistributionMirror.byName('archive-mirror')
-        mirror2 = DistributionMirror.byName('archive-mirror2')
-        mirror3 = DistributionMirror.byName('canonical-archive')
+        mirror1 = getUtility(IDistributionMirrorSet).getByName(
+            'archive-mirror')
+        mirror2 = getUtility(IDistributionMirrorSet).getByName(
+            'archive-mirror2')
+        mirror3 = getUtility(IDistributionMirrorSet).getByName(
+            'canonical-archive')
         self._test_one_semaphore_for_each_host(
             mirror1, mirror2, mirror3, probe_archive_mirror)
 
     def test_cdimage_mirror_probe_function(self):
-        mirror1 = DistributionMirror.byName('releases-mirror')
-        mirror2 = DistributionMirror.byName('releases-mirror2')
-        mirror3 = DistributionMirror.byName('canonical-releases')
+        mirror1 = getUtility(IDistributionMirrorSet).getByName(
+            'releases-mirror')
+        mirror2 = getUtility(IDistributionMirrorSet).getByName(
+            'releases-mirror2')
+        mirror3 = getUtility(IDistributionMirrorSet).getByName(
+            'canonical-releases')
         with default_timeout(15.0):
             self._test_one_semaphore_for_each_host(
                 mirror1, mirror2, mirror3, probe_cdimage_mirror)

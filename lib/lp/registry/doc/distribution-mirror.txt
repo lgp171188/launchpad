@@ -414,11 +414,12 @@ single notification to the distribution's mirror admins.
     >>> print(pretty(sorted(to_addrs)))
     ['mark@example.com']
 
-    Now we delete the MirrorProbeRecord we've just created, to make
-    sure this mirror is probed by our prober script.
-    >>> from zope.security.proxy import removeSecurityProxy
-    >>> naked_record = removeSecurityProxy(proberecord)
-    >>> naked_record.destroySelf()
+Now we delete the MirrorProbeRecord we've just created, to make sure this
+mirror is probed by our prober script.
+
+    >>> from lp.services.database.interfaces import IStore
+
+    >>> IStore(proberecord).remove(proberecord)
     >>> transaction.commit()
 
 
@@ -592,6 +593,8 @@ because there were no recent uploads there.
     UP: http://foo.bar.com/pub/pool/main/c/cdrkit/foobar-1.0.dsc
 
 If the mirror has no HTTP base url, we'll use the FTP one.
+
+    >>> from zope.security.proxy import removeSecurityProxy
 
     >>> naked_mirror = removeSecurityProxy(warty_mirror)
     >>> http_url = naked_mirror.distribution_mirror.http_base_url

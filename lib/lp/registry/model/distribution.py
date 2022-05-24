@@ -1013,7 +1013,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         # balance the load on the mirrors.
         order_by = [Func('random')]
         mirrors = shortlist(
-            DistributionMirror.select(query, orderBy=order_by),
+            IStore(DistributionMirror).find(
+                DistributionMirror, query).order_by(order_by),
             longest_expected=200)
 
         if not mirrors and country is not None:
@@ -1023,7 +1024,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
                 DistributionMirror.countryID == Country.q.id,
                 base_query)
             mirrors.extend(shortlist(
-                DistributionMirror.select(query, orderBy=order_by),
+                IStore(DistributionMirror).find(
+                    DistributionMirror, query).order_by(order_by),
                 longest_expected=300))
 
         if mirror_type == MirrorContent.ARCHIVE:
