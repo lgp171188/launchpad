@@ -1209,6 +1209,20 @@ class TestBuilddManager(TestCase):
         scanner_names = {scanner.builder_name for scanner in scanners}
         self.assertEqual(builder_names, scanner_names)
 
+    def test_startService_clears_grabbing(self):
+        # When startService is called, the manager clears out the "grabbing"
+        # directory.
+        self._stub_out_scheduleNextScanCycle()
+        tempdir = self.makeTemporaryDirectory()
+        self.pushConfig("builddmaster", root=tempdir)
+        os.makedirs(os.path.join(tempdir, "grabbing", "some-upload"))
+        clock = task.Clock()
+        manager = BuilddManager(clock=clock)
+
+        manager.startService()
+
+        self.assertFalse(os.path.exists(os.path.join(tempdir, "grabbing")))
+
     def test_startService_adds_scanBuilders_loop(self):
         # When startService is called, the manager will start up a
         # scanBuilders loop.
