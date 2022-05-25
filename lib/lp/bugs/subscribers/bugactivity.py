@@ -62,10 +62,10 @@ def get_string_representation(obj):
         return None
 
 
-def what_changed(sqlobject_modified_event):
-    before = sqlobject_modified_event.object_before_modification
-    after = sqlobject_modified_event.object
-    fields = sqlobject_modified_event.edited_fields
+def what_changed(object_modified_event):
+    before = object_modified_event.object_before_modification
+    after = object_modified_event.object
+    fields = object_modified_event.edited_fields
     changes = {}
     for fieldname in fields:
         # XXX 2011-01-21 gmb bug=705955:
@@ -164,15 +164,15 @@ def record_bugsubscription_added(bugsubscription_added, object_created_event):
 
 @block_implicit_flushes
 def record_bugsubscription_edited(bugsubscription_edited,
-                                  sqlobject_modified_event):
-    changes = what_changed(sqlobject_modified_event)
+                                  object_modified_event):
+    changes = what_changed(object_modified_event)
     if changes:
         for changed_field in changes.keys():
             oldvalue, newvalue = changes[changed_field]
             getUtility(IBugActivitySet).new(
                 bug=bugsubscription_edited.bug,
                 datechanged=UTC_NOW,
-                person=IPerson(sqlobject_modified_event.user),
+                person=IPerson(object_modified_event.user),
                 whatchanged="subscriber %s" % (
                     bugsubscription_edited.person.displayname),
                 oldvalue=oldvalue,

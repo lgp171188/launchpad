@@ -858,7 +858,7 @@ class TestBugActivityView(TestCaseWithFactory):
             view = create_initialized_view(
                 bug.default_bugtask, name='+activity')
             view.render()
-        self.assertThat(recorder, HasQueryCount(Equals(7)))
+        self.assertThat(recorder, HasQueryCount(Equals(5)))
 
 
 class TestMainBugView(BrowserTestCase):

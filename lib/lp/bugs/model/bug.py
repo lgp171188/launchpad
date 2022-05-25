@@ -388,7 +388,7 @@ class Bug(SQLBase, InformationTypeMixin):
         enum=InformationType, allow_none=False, default=InformationType.PUBLIC)
 
     # useful Joins
-    activity = SQLMultipleJoin('BugActivity', joinColumn='bug', orderBy='id')
+    activity = ReferenceSet('id', BugActivity.bug_id, order_by=BugActivity.id)
     messages = SQLRelatedJoin('Message', joinColumn='bug_id',
                            otherColumn='message_id',
                            intermediateTable='BugMessage',

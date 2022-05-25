@@ -1889,7 +1889,7 @@ class TestBugActivityItem(TestCaseWithFactory):
                 self.factory.makePerson(displayname="Foo &<>", name='foo'))
         self.assertEqual(
             "nobody &#8594; Foo &amp;&lt;&gt; (foo)",
-            BugActivityItem(task.bug.activity[-1]).change_details)
+            BugActivityItem(task.bug.activity.last()).change_details)
 
     def test_escapes_title(self):
         with celebrity_logged_in('admin'):
@@ -1897,7 +1897,7 @@ class TestBugActivityItem(TestCaseWithFactory):
             self.setAttribute(bug, 'title', "bar &<>")
         self.assertEqual(
             "- foo<br />+ bar &amp;&lt;&gt;",
-            BugActivityItem(bug.activity[-1]).change_details)
+            BugActivityItem(bug.activity.last()).change_details)
 
     def test_change_details_bug_locked_with_reason(self):
         target = self.factory.makeProduct()
@@ -1910,7 +1910,7 @@ class TestBugActivityItem(TestCaseWithFactory):
             )
         self.assertEqual(
             'Metadata changes locked (too hot) and limited to project staff',
-            BugActivityItem(bug.activity[-1]).change_details
+            BugActivityItem(bug.activity.last()).change_details
         )
 
     def test_change_details_bug_locked_without_reason(self):
@@ -1923,7 +1923,7 @@ class TestBugActivityItem(TestCaseWithFactory):
             )
         self.assertEqual(
             'Metadata changes locked and limited to project staff',
-            BugActivityItem(bug.activity[-1]).change_details
+            BugActivityItem(bug.activity.last()).change_details
         )
 
     def test_change_details_bug_unlocked(self):
@@ -1937,7 +1937,7 @@ class TestBugActivityItem(TestCaseWithFactory):
             bug.unlock(who=target.owner)
         self.assertEqual(
             'Metadata changes unlocked',
-            BugActivityItem(bug.activity[-1]).change_details
+            BugActivityItem(bug.activity.last()).change_details
         )
 
     def test_change_details_bug_lock_reason_set(self):
@@ -1951,7 +1951,7 @@ class TestBugActivityItem(TestCaseWithFactory):
             bug.setLockReason('too hot', who=target.owner)
         self.assertEqual(
             'too hot',
-            BugActivityItem(bug.activity[-1]).change_details
+            BugActivityItem(bug.activity.last()).change_details
         )
 
     def test_change_details_bug_lock_reason_updated(self):
@@ -1966,7 +1966,7 @@ class TestBugActivityItem(TestCaseWithFactory):
             bug.setLockReason('too hot!', who=target.owner)
         self.assertEqual(
             'too hot &rarr; too hot!',
-            BugActivityItem(bug.activity[-1]).change_details
+            BugActivityItem(bug.activity.last()).change_details
         )
 
     def test_change_details_bug_lock_reason_unset(self):
@@ -1981,7 +1981,7 @@ class TestBugActivityItem(TestCaseWithFactory):
             bug.setLockReason(None, who=target.owner)
         self.assertEqual(
             'Unset',
-            BugActivityItem(bug.activity[-1]).change_details
+            BugActivityItem(bug.activity.last()).change_details
         )
 
     def test_change_details_bugtask_importance_explanation_set(self):
@@ -1993,7 +1993,7 @@ class TestBugActivityItem(TestCaseWithFactory):
             )
         self.assertEqual(
             'unset &#8594; Critical',
-            BugActivityItem(task.bug.activity[-1]).change_details
+            BugActivityItem(task.bug.activity.last()).change_details
         )
 
     def test_change_details_bugtask_status_explanation_set(self):
@@ -2006,7 +2006,7 @@ class TestBugActivityItem(TestCaseWithFactory):
 
         self.assertEqual(
             'unset &#8594; This is blocked on foo',
-            BugActivityItem(task.bug.activity[-1]).change_details
+            BugActivityItem(task.bug.activity.last()).change_details
         )
 
     def test_change_details_bugtask_importance_explanation_unset(self):
@@ -2023,7 +2023,7 @@ class TestBugActivityItem(TestCaseWithFactory):
 
         self.assertEqual(
             'Critical &#8594; unset',
-            BugActivityItem(task.bug.activity[-1]).change_details
+            BugActivityItem(task.bug.activity.last()).change_details
         )
 
     def test_change_details_bugtask_status_explanation_unset(self):
@@ -2040,7 +2040,7 @@ class TestBugActivityItem(TestCaseWithFactory):
 
         self.assertEqual(
             'This is blocked on foo &#8594; unset',
-            BugActivityItem(task.bug.activity[-1]).change_details
+            BugActivityItem(task.bug.activity.last()).change_details
         )
 
     def test_change_details_bugtask_importance_explanation_changed(self):
@@ -2056,7 +2056,7 @@ class TestBugActivityItem(TestCaseWithFactory):
             )
         self.assertEqual(
             'Critical &#8594; Critical!',
-            BugActivityItem(task.bug.activity[-1]).change_details
+            BugActivityItem(task.bug.activity.last()).change_details
         )
 
     def test_change_details_bugtask_status_explanation_changed(self):
@@ -2073,7 +2073,7 @@ class TestBugActivityItem(TestCaseWithFactory):
 
         self.assertEqual(
             'This is blocked on foo &#8594; This is blocked on bar',
-            BugActivityItem(task.bug.activity[-1]).change_details
+            BugActivityItem(task.bug.activity.last()).change_details
         )
 
 
