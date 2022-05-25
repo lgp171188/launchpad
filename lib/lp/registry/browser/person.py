@@ -1897,7 +1897,7 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
         """Return a data structure used for display of raw SSH keys"""
         self.request.response.setHeader('Content-Type', 'text/plain')
         keys = [key.getFullKeyText() for key in self.context.sshkeys]
-        return "\n".join(keys)
+        return "".join(key + "\n" for key in keys)
 
     @cachedproperty
     def archive_url(self):

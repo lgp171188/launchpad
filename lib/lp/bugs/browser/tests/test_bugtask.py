@@ -63,7 +63,10 @@ from lp.registry.enums import (
     BugSharingPolicy,
     DistributionDefaultTraversalPolicy,
     )
-from lp.registry.interfaces.person import PersonVisibility
+from lp.registry.interfaces.person import (
+    IPersonSet,
+    PersonVisibility,
+    )
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
@@ -100,7 +103,6 @@ from lp.testing.matchers import (
 from lp.testing.pages import find_tag_by_id
 from lp.testing.sampledata import (
     ADMIN_EMAIL,
-    NO_PRIVILEGE_EMAIL,
     USER_EMAIL,
     )
 from lp.testing.views import create_initialized_view
@@ -1208,26 +1210,47 @@ class TestBugTaskEditViewStatusField(TestCaseWithFactory):
         """Return the titles of options of the given choice widget."""
         return [item.value.title for item in widget.field.vocabulary]
 
+    def assertStatuses(self, titles, bugtask, user):
+        """Assert that both form and JS widget show expected statuses."""
+        if user is None:
+            login(ANONYMOUS)
+            username = "<anonymous>"
+        else:
+            login_person(user)
+            username = user.name
+        getUtility(ILaunchBag).add(bugtask)
+        view = create_initialized_view(
+            bugtask, name="+editstatus", principal=user, rootsite="bugs")
+        form_statuses = self.getWidgetOptionTitles(view.form_fields["status"])
+        self.assertEqual(
+            titles, form_statuses,
+            "Unexpected list of settable status options for %s" % username)
+        view = create_initialized_view(
+            bugtask.bug, name="+bugtasks-and-nominations-table",
+            principal=user, rootsite="bugs")
+        row_view = view._getTableRowView(bugtask, False, False)
+        row_view.initialize()
+        cache = IJSONRequestCache(row_view.request)
+        bugtask_data = cache.objects["bugtask_data"][bugtask.id]
+        js_statuses = [
+            item["value"] for item in bugtask_data["status_widget_items"]
+            if not item["disabled"]]
+        self.assertEqual(
+            titles, js_statuses,
+            "Unexpected list of settable JS status options for %s" % username)
+
     def test_status_field_items_for_anonymous(self):
         # Anonymous users see only the current value.
-        login(ANONYMOUS)
-        view = BugTaskEditView(
-            self.bug.default_bugtask, LaunchpadTestRequest())
-        view.initialize()
-        self.assertEqual(
-            ['New'], self.getWidgetOptionTitles(view.form_fields['status']))
+        self.assertStatuses(['New'], self.bug.default_bugtask, None)
 
     def test_status_field_items_for_ordinary_users(self):
         # Ordinary users can set the status to all values except Won't fix,
         # Expired, Triaged, Unknown.
-        login(NO_PRIVILEGE_EMAIL)
-        view = BugTaskEditView(
-            self.bug.default_bugtask, LaunchpadTestRequest())
-        view.initialize()
-        self.assertEqual(
+        no_priv = getUtility(IPersonSet).getByName('no-priv')
+        self.assertStatuses(
             ['New', 'Incomplete', 'Opinion', 'Invalid', 'Confirmed',
              'In Progress', 'Fix Committed', 'Fix Released'],
-            self.getWidgetOptionTitles(view.form_fields['status']))
+            self.bug.default_bugtask, no_priv)
 
     def test_status_field_privileged_persons(self):
         # The bug target owner and the bug target supervisor can set
@@ -1235,17 +1258,11 @@ class TestBugTaskEditViewStatusField(TestCaseWithFactory):
         for user in (
             self.bug.default_bugtask.pillar.owner,
             self.bug.default_bugtask.pillar.bug_supervisor):
-            login_person(user)
-            view = BugTaskEditView(
-                self.bug.default_bugtask, LaunchpadTestRequest())
-            view.initialize()
-            self.assertEqual(
+            self.assertStatuses(
                 ['New', 'Incomplete', 'Opinion', 'Invalid', "Won't Fix",
                  'Confirmed', 'Triaged', 'In Progress', 'Fix Committed',
                  'Fix Released'],
-                self.getWidgetOptionTitles(view.form_fields['status']),
-                'Unexpected set of settable status options for %s'
-                % user.name)
+                self.bug.default_bugtask, user)
 
     def test_status_field_bug_task_in_status_unknown(self):
         # If a bugtask has the status Unknown, this status is included
@@ -1254,28 +1271,22 @@ class TestBugTaskEditViewStatusField(TestCaseWithFactory):
         login_person(owner)
         self.bug.default_bugtask.transitionToStatus(
             BugTaskStatus.UNKNOWN, owner)
-        login(NO_PRIVILEGE_EMAIL)
-        view = BugTaskEditView(
-            self.bug.default_bugtask, LaunchpadTestRequest())
-        view.initialize()
-        self.assertEqual(
+        no_priv = getUtility(IPersonSet).getByName('no-priv')
+        self.assertStatuses(
             ['New', 'Incomplete', 'Opinion', 'Invalid', 'Confirmed',
              'In Progress', 'Fix Committed', 'Fix Released', 'Unknown'],
-            self.getWidgetOptionTitles(view.form_fields['status']))
+            self.bug.default_bugtask, no_priv)
 
     def test_status_field_bug_task_in_status_expired(self):
         # If a bugtask has the status Expired, this status is included
         # in the options.
         removeSecurityProxy(self.bug.default_bugtask)._status = (
             BugTaskStatus.EXPIRED)
-        login(NO_PRIVILEGE_EMAIL)
-        view = BugTaskEditView(
-            self.bug.default_bugtask, LaunchpadTestRequest())
-        view.initialize()
-        self.assertEqual(
+        no_priv = getUtility(IPersonSet).getByName('no-priv')
+        self.assertStatuses(
             ['New', 'Incomplete', 'Opinion', 'Invalid', 'Expired',
              'Confirmed', 'In Progress', 'Fix Committed', 'Fix Released'],
-            self.getWidgetOptionTitles(view.form_fields['status']))
+            self.bug.default_bugtask, no_priv)
 
 
 class TestBugTaskEditViewAssigneeField(TestCaseWithFactory):
