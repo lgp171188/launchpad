@@ -98,9 +98,6 @@ class MakeOCIBuildMixin:
 
     def makeBuild(self):
         build = self.factory.makeOCIRecipeBuild()
-        self.factory.makeDistroSeries(
-            distribution=build.recipe.oci_project.distribution,
-            status=SeriesStatus.CURRENT)
         build.queueBuild()
         return build
 
