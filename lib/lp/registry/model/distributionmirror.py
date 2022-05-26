@@ -20,10 +20,19 @@ from datetime import (
 
 import pytz
 from storm.expr import (
+    Cast,
+    Coalesce,
+    LeftJoin,
+    )
+from storm.locals import (
     And,
     Desc,
+    Max,
+    Or,
+    Select,
+    Store,
     )
-from storm.store import Store
+from storm.store import EmptyResultSet
 from zope.interface import implementer
 
 from lp.archivepublisher.diskpool import poolify
@@ -61,10 +70,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import (
     BoolCol,
     ForeignKey,
@@ -162,15 +168,16 @@ class DistributionMirror(SQLBase):
     @property
     def last_probe_record(self):
         """See IDistributionMirror"""
-        return MirrorProbeRecord.selectFirst(
-            MirrorProbeRecord.q.distribution_mirrorID == self.id,
-            orderBy='-date_created')
+        return Store.of(self).find(
+            MirrorProbeRecord, distribution_mirror=self).order_by(
+                MirrorProbeRecord.date_created).last()
 
     @property
     def all_probe_records(self):
         """See IDistributionMirror"""
-        return MirrorProbeRecord.selectBy(
-            distribution_mirror=self, orderBy='-date_created')
+        return Store.of(self).find(
+            MirrorProbeRecord, distribution_mirror=self).order_by(
+                Desc(MirrorProbeRecord.date_created))
 
     @property
     def displayname(self):
@@ -221,7 +228,7 @@ class DistributionMirror(SQLBase):
         """
         assert self.last_probe_record is None, (
             "This mirror has been probed and thus can't be removed.")
-        SQLBase.destroySelf(self)
+        Store.of(self).remove(self)
 
     def verifyTransitionToCountryMirror(self):
         """Verify that a mirror can be set as a country mirror.
@@ -349,7 +356,7 @@ class DistributionMirror(SQLBase):
             if expected_file_count > len(self.cdimage_series):
                 return True
         else:
-            if not (self.source_series or self.arch_series):
+            if self.source_series.is_empty() and self.arch_series.is_empty():
                 return True
         return False
 
@@ -397,11 +404,12 @@ class DistributionMirror(SQLBase):
     def deleteMirrorDistroArchSeries(self, distro_arch_series, pocket,
                                      component):
         """See IDistributionMirror"""
-        mirror = MirrorDistroArchSeries.selectOneBy(
+        mirror = IStore(MirrorDistroArchSeries).find(
+            MirrorDistroArchSeries,
             distribution_mirror=self, distro_arch_series=distro_arch_series,
-            pocket=pocket, component=component)
+            pocket=pocket, component=component).one()
         if mirror is not None:
-            mirror.destroySelf()
+            Store.of(mirror).remove(mirror)
 
     def _getMirrorDistroArchSeries(
         self, distro_arch_series, pocket, component):
@@ -451,17 +459,19 @@ class DistributionMirror(SQLBase):
 
     def deleteMirrorDistroSeriesSource(self, distroseries, pocket, component):
         """See IDistributionMirror"""
-        mirror = MirrorDistroSeriesSource.selectOneBy(
+        mirror = IStore(MirrorDistroSeriesSource).find(
+            MirrorDistroSeriesSource,
             distribution_mirror=self, distroseries=distroseries,
-            pocket=pocket, component=component)
+            pocket=pocket, component=component).one()
         if mirror is not None:
-            mirror.destroySelf()
+            Store.of(mirror).remove(mirror)
 
     def ensureMirrorCDImageSeries(self, distroseries, flavour):
         """See IDistributionMirror"""
-        mirror = MirrorCDImageDistroSeries.selectOneBy(
+        mirror = IStore(MirrorCDImageDistroSeries).find(
+            MirrorCDImageDistroSeries,
             distribution_mirror=self, distroseries=distroseries,
-            flavour=flavour)
+            flavour=flavour).one()
         if mirror is None:
             mirror = MirrorCDImageDistroSeries(
                 distribution_mirror=self, distroseries=distroseries,
@@ -471,72 +481,67 @@ class DistributionMirror(SQLBase):
 
     def deleteMirrorCDImageSeries(self, distroseries, flavour):
         """See IDistributionMirror"""
-        mirror = MirrorCDImageDistroSeries.selectOneBy(
+        mirror = IStore(MirrorCDImageDistroSeries).find(
+            MirrorCDImageDistroSeries,
             distribution_mirror=self, distroseries=distroseries,
-            flavour=flavour)
+            flavour=flavour).one()
         if mirror is not None:
-            mirror.destroySelf()
+            Store.of(mirror).remove(mirror)
         del get_property_cache(self).cdimage_series
 
     def deleteAllMirrorCDImageSeries(self):
         """See IDistributionMirror"""
         for mirror in self.cdimage_series:
-            mirror.destroySelf()
+            Store.of(mirror).remove(mirror)
         del get_property_cache(self).cdimage_series
 
     @property
     def arch_series(self):
         """See IDistributionMirror"""
-        return MirrorDistroArchSeries.selectBy(distribution_mirror=self)
+        return IStore(MirrorDistroArchSeries).find(
+            MirrorDistroArchSeries, distribution_mirror=self)
 
     @cachedproperty
     def cdimage_series(self):
         """See IDistributionMirror"""
-        return list(
-            MirrorCDImageDistroSeries.selectBy(distribution_mirror=self))
+        return list(IStore(MirrorCDImageDistroSeries).find(
+            MirrorCDImageDistroSeries, distribution_mirror=self))
 
     @property
     def source_series(self):
         """See IDistributionMirror"""
-        return MirrorDistroSeriesSource.selectBy(distribution_mirror=self)
+        return IStore(MirrorDistroSeriesSource).find(
+            MirrorDistroSeriesSource, distribution_mirror=self)
 
     def getSummarizedMirroredSourceSeries(self):
         """See IDistributionMirror"""
-        query = """
-            MirrorDistroSeriesSource.id IN (
-              SELECT DISTINCT ON (
-                        MirrorDistroSeriesSource.distribution_mirror,
-                        MirrorDistroSeriesSource.distroseries)
-                     MirrorDistroSeriesSource.id
-              FROM MirrorDistroSeriesSource, DistributionMirror
-              WHERE DistributionMirror.id =
-                         MirrorDistroSeriesSource.distribution_mirror
-                    AND DistributionMirror.id = %(mirrorid)s
-                    AND DistributionMirror.distribution = %(distribution)s
-              ORDER BY MirrorDistroSeriesSource.distribution_mirror,
-                       MirrorDistroSeriesSource.distroseries,
-                       MirrorDistroSeriesSource.freshness DESC)
-            """ % sqlvalues(distribution=self.distribution, mirrorid=self)
-        return MirrorDistroSeriesSource.select(query)
+        return IStore(MirrorDistroSeriesSource).find(
+            MirrorDistroSeriesSource,
+            MirrorDistroSeriesSource.id.is_in(Select(
+                MirrorDistroSeriesSource.id,
+                where=(MirrorDistroSeriesSource.distribution_mirror == self),
+                order_by=(
+                    MirrorDistroSeriesSource.distribution_mirrorID,
+                    MirrorDistroSeriesSource.distroseriesID,
+                    Desc(MirrorDistroSeriesSource.freshness)),
+                distinct=(
+                    MirrorDistroSeriesSource.distribution_mirrorID,
+                    MirrorDistroSeriesSource.distroseriesID))))
 
     def getSummarizedMirroredArchSeries(self):
         """See IDistributionMirror"""
-        query = """
-            MirrorDistroArchSeries.id IN (
-                SELECT DISTINCT ON (
-                        MirrorDistroArchSeries.distribution_mirror,
-                        MirrorDistroArchSeries.distroarchseries)
-                       MirrorDistroArchSeries.id
-                FROM MirrorDistroArchSeries, DistributionMirror
-                WHERE DistributionMirror.id =
-                            MirrorDistroArchSeries.distribution_mirror
-                      AND DistributionMirror.id = %(mirrorid)s
-                      AND DistributionMirror.distribution = %(distribution)s
-                ORDER BY MirrorDistroArchSeries.distribution_mirror,
-                         MirrorDistroArchSeries.distroarchseries,
-                         MirrorDistroArchSeries.freshness DESC)
-            """ % sqlvalues(distribution=self.distribution, mirrorid=self)
-        return MirrorDistroArchSeries.select(query)
+        return IStore(MirrorDistroArchSeries).find(
+            MirrorDistroArchSeries,
+            MirrorDistroArchSeries.id.is_in(Select(
+                MirrorDistroArchSeries.id,
+                where=(MirrorDistroArchSeries.distribution_mirror == self),
+                order_by=(
+                    MirrorDistroArchSeries.distribution_mirrorID,
+                    MirrorDistroArchSeries.distro_arch_seriesID,
+                    Desc(MirrorDistroArchSeries.freshness)),
+                distinct=(
+                    MirrorDistroArchSeries.distribution_mirrorID,
+                    MirrorDistroArchSeries.distro_arch_seriesID))))
 
     def getExpectedPackagesPaths(self):
         """See IDistributionMirror"""
@@ -585,64 +590,70 @@ class DistributionMirrorSet:
 
     def __getitem__(self, mirror_id):
         """See IDistributionMirrorSet"""
-        return DistributionMirror.get(mirror_id)
+        return IStore(DistributionMirror).get(DistributionMirror, mirror_id)
 
     def getMirrorsToProbe(
             self, content_type, ignore_last_probe=False, limit=None):
         """See IDistributionMirrorSet"""
-        query = """
-            SELECT distributionmirror.id, MAX(mirrorproberecord.date_created)
-            FROM distributionmirror
-            LEFT OUTER JOIN mirrorproberecord
-                ON mirrorproberecord.distribution_mirror =
-                    distributionmirror.id
-            WHERE distributionmirror.content = %s
-                AND distributionmirror.official_candidate IS TRUE
-                AND distributionmirror.status = %s
-            GROUP BY distributionmirror.id
-            """ % sqlvalues(content_type, MirrorStatus.OFFICIAL)
+        tables = [
+            DistributionMirror,
+            LeftJoin(
+                MirrorProbeRecord,
+                MirrorProbeRecord.distribution_mirror ==
+                    DistributionMirror.id),
+            ]
+        results = IStore(DistributionMirror).using(*tables).find(
+            (DistributionMirror.id, Max(MirrorProbeRecord.date_created)),
+            DistributionMirror.content == content_type,
+            DistributionMirror.official_candidate,
+            DistributionMirror.status == MirrorStatus.OFFICIAL).group_by(
+                DistributionMirror.id)
 
         if not ignore_last_probe:
-            query += """
-                HAVING MAX(mirrorproberecord.date_created) IS NULL
-                    OR MAX(mirrorproberecord.date_created)
-                        < %s - '%s hours'::interval
-                """ % sqlvalues(UTC_NOW, PROBE_INTERVAL)
+            results = results.having(Or(
+                Max(MirrorProbeRecord.date_created) == None,
+                Max(MirrorProbeRecord.date_created) < (
+                    UTC_NOW -
+                    Cast(timedelta(hours=PROBE_INTERVAL), 'interval'))))
 
-        query += """
-            ORDER BY MAX(COALESCE(
-                mirrorproberecord.date_created, '1970-01-01')) ASC, id"""
+        results = results.order_by(
+            Max(Coalesce(
+                MirrorProbeRecord.date_created, datetime(1970, 1, 1))),
+            DistributionMirror.id)
 
         if limit is not None:
-            query += " LIMIT %d" % limit
+            results = results.config(limit=limit)
 
-        store = IStore(MirrorDistroArchSeries)
-        ids = ", ".join(str(id)
-                        for (id, date_created) in store.execute(query))
-        query = '1 = 2'
-        if ids:
-            query = 'id IN (%s)' % ids
-        return DistributionMirror.select(query)
+        mirror_ids = {mirror_id for mirror_id, _ in results}
+        if not mirror_ids:
+            return EmptyResultSet()
+        return IStore(DistributionMirror).find(
+            DistributionMirror, DistributionMirror.id.is_in(mirror_ids))
 
     def getByName(self, name):
         """See IDistributionMirrorSet"""
-        return DistributionMirror.selectOneBy(name=name)
+        return IStore(DistributionMirror).find(
+            DistributionMirror, name=name).one()
 
     def getByHttpUrl(self, url):
         """See IDistributionMirrorSet"""
-        return DistributionMirror.selectOneBy(http_base_url=url)
+        return IStore(DistributionMirror).find(
+            DistributionMirror, http_base_url=url).one()
 
     def getByHttpsUrl(self, url):
         """See IDistributionMirrorSet"""
-        return DistributionMirror.selectOneBy(https_base_url=url)
+        return IStore(DistributionMirror).find(
+            DistributionMirror, https_base_url=url).one()
 
     def getByFtpUrl(self, url):
         """See IDistributionMirrorSet"""
-        return DistributionMirror.selectOneBy(ftp_base_url=url)
+        return IStore(DistributionMirror).find(
+            DistributionMirror, ftp_base_url=url).one()
 
     def getByRsyncUrl(self, url):
         """See IDistributionMirrorSet"""
-        return DistributionMirror.selectOneBy(rsync_base_url=url)
+        return IStore(DistributionMirror).find(
+            DistributionMirror, rsync_base_url=url).one()
 
 
 class _MirrorSeriesMixIn:
@@ -827,8 +838,10 @@ class MirrorDistroArchSeries(SQLBase, _MirrorSeriesMixIn):
         bpr = publishing_record.binarypackagerelease
         base_url = self.distribution_mirror.base_url
         path = poolify(bpr.sourcepackagename, self.component.name).as_posix()
-        file = BinaryPackageFile.selectOneBy(
-            binarypackagerelease=bpr, filetype=BinaryPackageFileType.DEB)
+        file = IStore(BinaryPackageFile).find(
+            BinaryPackageFile,
+            binarypackagerelease=bpr,
+            filetype=BinaryPackageFileType.DEB).one()
         full_path = 'pool/%s/%s' % (path, file.libraryfile.filename)
         return urlappend(base_url, full_path)
 
@@ -887,8 +900,10 @@ class MirrorDistroSeriesSource(SQLBase, _MirrorSeriesMixIn):
         base_url = self.distribution_mirror.base_url
         sourcename = spr.name
         path = poolify(sourcename, self.component.name)
-        file = SourcePackageReleaseFile.selectOneBy(
-            sourcepackagerelease=spr, filetype=SourcePackageFileType.DSC)
+        file = IStore(SourcePackageReleaseFile).find(
+            SourcePackageReleaseFile,
+            sourcepackagerelease=spr,
+            filetype=SourcePackageFileType.DSC).one()
         full_path = 'pool/%s/%s' % (path, file.libraryfile.filename)
         return urlappend(base_url, full_path)
 

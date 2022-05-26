@@ -74,7 +74,6 @@ from lp.registry.interfaces.oopsreferences import IHasOOPSReferences
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distribution import Distribution
-from lp.registry.model.distributionmirror import DistributionMirror
 from lp.registry.tests.test_distroseries import CurrentSourceReleasesMixin
 from lp.services.librarianserver.testing.fake import FakeLibrarian
 from lp.services.propertycache import get_property_cache
@@ -92,6 +91,7 @@ from lp.testing import (
     login,
     login_person,
     person_logged_in,
+    StormStatementRecorder,
     TestCase,
     TestCaseWithFactory,
     )
@@ -1784,24 +1784,11 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_getBestMirrorsForCountry_randomizes_results(self):
         """Make sure getBestMirrorsForCountry() randomizes its results."""
-        def my_select(class_, query, *args, **kw):
-            """Fake function with the same signature of SQLBase.select().
-
-            This function ensures the orderBy argument given to it contains
-            the 'random' string in its first item.
-            """
-            self.assertEqual(kw['orderBy'][0].name, 'random')
-            return [1, 2, 3]
-
-        orig_select = DistributionMirror.select
-        DistributionMirror.select = classmethod(my_select)
-        try:
-            login('foo.bar@canonical.com')
-            getUtility(
-                IDistributionSet).getByName('ubuntu').getBestMirrorsForCountry(
-                None, MirrorContent.ARCHIVE)
-        finally:
-            DistributionMirror.select = orig_select
+        login("foo.bar@canonical.com")
+        ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+        with StormStatementRecorder() as recorder:
+            ubuntu.getBestMirrorsForCountry(None, MirrorContent.ARCHIVE)
+        self.assertIn("ORDER BY random()", recorder.statements[0])
 
     def test_getBestMirrorsForCountry_appends_main_repo_to_the_end(self):
         """Make sure the main mirror is appended to the list of mirrors for a
