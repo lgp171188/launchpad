@@ -46,6 +46,18 @@ class TestSnapArchitecture(WithScenarios, TestCase):
             "expected_run_on": ["amd64"],
             "expected_build_error": "ignore",
             }),
+        ("run-on", {
+            "architectures": {"build-on": ["amd64"], "run-on": "all"},
+            "expected_build_on": ["amd64"],
+            "expected_run_on": ["all"],
+            "expected_build_error": None,
+            }),
+        ("build-to", {
+            "architectures": {"build-on": ["amd64"], "build-to": "all"},
+            "expected_build_on": ["amd64"],
+            "expected_run_on": ["all"],
+            "expected_build_error": None,
+            }),
         ]
 
     def test_architecture(self):

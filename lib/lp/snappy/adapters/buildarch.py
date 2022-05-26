@@ -61,8 +61,8 @@ class SnapArchitecture:
 
         :param build_on: string or list; build-on property from
             snapcraft.yaml.
-        :param run_on: string or list; run-on property from snapcraft.yaml
-            (defaults to build_on).
+        :param run_on: string or list; run-on (or build-to) property from
+            snapcraft.yaml (defaults to build_on).
         :param build_error: string; build-error property from
             snapcraft.yaml.
         """
@@ -84,8 +84,10 @@ class SnapArchitecture:
             raise MissingPropertyError("build-on")
 
         return cls(
-            build_on=build_on, run_on=properties.get("run-on"),
-            build_error=properties.get("build-error"))
+            build_on=build_on,
+            run_on=properties.get("run-on", properties.get("build-to")),
+            build_error=properties.get("build-error"),
+        )
 
 
 class SnapBuildInstance:
