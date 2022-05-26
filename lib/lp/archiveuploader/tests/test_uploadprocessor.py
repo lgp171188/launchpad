@@ -16,6 +16,7 @@ import tempfile
 from fixtures import MonkeyPatch
 import six
 from storm.locals import Store
+from testtools.matchers import LessThan
 from zope.component import (
     getGlobalSiteManager,
     getUtility,
@@ -1408,6 +1409,31 @@ class TestUploadProcessor(TestUploadProcessorBase):
         error_report = self.oopses[0]
         self.assertEqual('SomeException', error_report['type'])
         self.assertIn("I am an explanation", error_report['tb_text'])
+
+    def testOopsTimeline(self):
+        """Each upload has an independent OOPS timeline."""
+        self.options.builds = False
+        processor = self.getUploadProcessor(self.layer.txn)
+
+        self.queueUpload("bar_1.0-1")
+        self.queueUpload("bar_1.0-2")
+
+        # Inject an unhandled exception into the upload processor.
+        class SomeException(Exception):
+            pass
+        self.useFixture(
+            MonkeyPatch(
+                "lp.archiveuploader.nascentupload.NascentUpload."
+                "from_changesfile_path",
+                FakeMethod(failure=SomeException("I am an explanation."))))
+
+        processor.processUploadQueue()
+
+        self.assertEqual(2, len(self.oopses))
+        # If we aren't resetting the timeline between uploads, it will be
+        # much longer.
+        self.assertThat(len(self.oopses[0]["timeline"]), LessThan(5))
+        self.assertThat(len(self.oopses[1]["timeline"]), LessThan(5))
 
     def testLZMADebUpload(self):
         """Make sure that data files compressed with lzma in Debs work.
