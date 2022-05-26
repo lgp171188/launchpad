@@ -41,7 +41,7 @@ class IBugActivity(Interface):
                  description=_("The date on which this activity occurred."),
                  readonly=True))
 
-    personID = Attribute('DB ID for Person')
+    person_id = Attribute('DB ID for Person')
     person = exported(PersonChoice(
         title=_('Person'), required=True, vocabulary='ValidPersonOrTeam',
         readonly=True, description=_("The person's Launchpad ID or "

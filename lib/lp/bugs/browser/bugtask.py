@@ -605,7 +605,7 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
             if interesting_match(activity_item.whatchanged) is not None]
         # Pre-load the doers of the activities in one query.
         person_ids = {
-            activity_item.personID for activity_item in activity_items}
+            activity_item.person_id for activity_item in activity_items}
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             person_ids, need_validity=True))
 

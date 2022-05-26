@@ -37,7 +37,7 @@ User files a bug
     ...     comment="this is only a test bug\nplease ignore",
     ...     owner=user)
     >>> bug = firefox.createBug(params)
-    >>> latest_activity = bug.activity[-1]
+    >>> latest_activity = bug.activity.last()
     >>> latest_activity.person == user
     True
     >>> print(latest_activity.whatchanged)
@@ -51,7 +51,7 @@ Bug title edited
 
     >>> with notify_modified(bug, ["title", "description"]):
     ...     bug.title = "new bug title"
-    >>> latest_activity = bug.activity[-1]
+    >>> latest_activity = bug.activity.last()
     >>> print(latest_activity.whatchanged)
     summary
     >>> print(latest_activity.oldvalue)
@@ -77,7 +77,7 @@ Source package assignment edited
     >>> with notify_modified(source_package_assignment, edit_fields):
     ...     source_package_assignment.transitionToStatus(
     ...         BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user)
-    >>> latest_activity = bug.activity[-1]
+    >>> latest_activity = bug.activity.last()
     >>> print(latest_activity.whatchanged)
     mozilla-firefox (Ubuntu): status
     >>> latest_activity.oldvalue == BugTaskStatus.NEW.title
@@ -100,11 +100,12 @@ typically the same as `whatchanged`.  However, in some cases (ideally,
 whenever necessary), it is normalized to show the actual attribute name.
 For instance, look at the attributes on the previous activity.
 
-    >>> print(bug.activity[-2].target)
+    >>> second_latest_activity = list(bug.activity)[-2]
+    >>> print(second_latest_activity.target)
     None
-    >>> print(bug.activity[-2].whatchanged)
+    >>> print(second_latest_activity.whatchanged)
     summary
-    >>> bug.activity[-2].attribute
+    >>> second_latest_activity.attribute
     'title'
 
 (This is covered more comprehensively in tests/test_bugchanges.py).
@@ -120,7 +121,7 @@ Upstream product assignment edited
     >>> with notify_modified(product_assignment, edit_fields):
     ...     product_assignment.transitionToStatus(
     ...         BugTaskStatus.INVALID, getUtility(ILaunchBag).user)
-    >>> latest_activity = bug.activity[-1]
+    >>> latest_activity = bug.activity.last()
     >>> print(latest_activity.whatchanged)
     thunderbird: status
     >>> print(latest_activity.target)
@@ -142,7 +143,7 @@ Bug report is marked as a duplicate of another bug report
     >>> with notify_modified(bug, edit_fields):
     ...     latest_bug = factory.makeBug()
     ...     bug.markAsDuplicate(latest_bug)
-    >>> latest_activity = bug.activity[-1]
+    >>> latest_activity = bug.activity.last()
     >>> print(latest_activity.whatchanged)
     marked as duplicate
     >>> latest_activity.oldvalue is None
@@ -160,7 +161,7 @@ Bug report has its duplicate marker changed to another bug report
     >>> with notify_modified(bug, edit_fields):
     ...     another_bug = factory.makeBug()
     ...     bug.markAsDuplicate(another_bug)
-    >>> latest_activity = bug.activity[-1]
+    >>> latest_activity = bug.activity.last()
     >>> print(latest_activity.whatchanged)
     changed duplicate marker
     >>> latest_activity.oldvalue == str(latest_bug.id)
@@ -177,7 +178,7 @@ The bug report is un-duplicated
     ...     "security_related"]
     >>> with notify_modified(bug, edit_fields):
     ...     bug.markAsDuplicate(None)
-    >>> latest_activity = bug.activity[-1]
+    >>> latest_activity = bug.activity.last()
     >>> print(latest_activity.whatchanged)
     removed duplicate marker
     >>> latest_activity.oldvalue == str(another_bug.id)
@@ -211,14 +212,14 @@ the initial bug against it.
 Now, we confirm the activity log for the other bugs correctly list the
 final_bug as their master bug.
 
-    >>> latest_activity = dupe_one.activity[-1]
+    >>> latest_activity = dupe_one.activity.last()
     >>> print(latest_activity.whatchanged)
     changed duplicate marker
     >>> latest_activity.oldvalue == str(initial_bug.id)
     True
     >>> latest_activity.newvalue == str(final_bug.id)
     True
-    >>> latest_activity = dupe_two.activity[-1]
+    >>> latest_activity = dupe_two.activity.last()
     >>> print(latest_activity.whatchanged)
     changed duplicate marker
     >>> latest_activity.oldvalue == str(initial_bug.id)

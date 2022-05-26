@@ -636,7 +636,7 @@ def _build_query(params):
                         BugMessage.index > 0,
                         BugMessage.owner == params.bug_commenter)),
                 Select(
-                    BugActivity.bugID, tables=[BugActivity],
+                    BugActivity.bug_id, tables=[BugActivity],
                     where=And(
                         BugActivity.person == params.bug_commenter,
                         # This is distressingly fragile, but BugActivity

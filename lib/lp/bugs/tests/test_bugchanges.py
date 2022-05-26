@@ -214,7 +214,7 @@ class TestBugChanges(TestCaseWithFactory):
         self.bug.unsubscribe(self.user, self.user)
 
         # This checks the activity's attribute and target attributes.
-        activity = self.bug.activity[-1]
+        activity = self.bug.activity.last()
         self.assertEqual(activity.attribute, 'removed_subscriber')
         self.assertEqual(activity.target, None)
 
@@ -244,7 +244,7 @@ class TestBugChanges(TestCaseWithFactory):
         old_title = self.changeAttribute(self.bug, 'title', '42')
 
         # This checks the activity's attribute and target attributes.
-        activity = self.bug.activity[-1]
+        activity = self.bug.activity.last()
         self.assertEqual(activity.attribute, 'title')
         self.assertEqual(activity.target, None)
 
@@ -299,7 +299,7 @@ class TestBugChanges(TestCaseWithFactory):
         bug_watch = self.bug.addWatch(bugtracker, '42', self.user)
 
         # This checks the activity's attribute and target attributes.
-        activity = self.bug.activity[-1]
+        activity = self.bug.activity.last()
         self.assertEqual(activity.attribute, 'watches')
         self.assertEqual(activity.target, None)
 
@@ -371,7 +371,7 @@ class TestBugChanges(TestCaseWithFactory):
         self.bug.removeWatch(bug_watch, self.user)
 
         # This checks the activity's attribute and target attributes.
-        activity = self.bug.activity[-1]
+        activity = self.bug.activity.last()
         self.assertEqual(activity.attribute, 'watches')
         self.assertEqual(activity.target, None)
 
@@ -453,7 +453,7 @@ class TestBugChanges(TestCaseWithFactory):
         self.bug.linkBranch(branch, self.user)
 
         # This checks the activity's attribute and target attributes.
-        activity = self.bug.activity[-1]
+        activity = self.bug.activity.last()
         self.assertEqual(activity.attribute, 'linked_branches')
         self.assertEqual(activity.target, None)
 
@@ -506,7 +506,7 @@ class TestBugChanges(TestCaseWithFactory):
         self.bug.unlinkBranch(branch, self.user)
 
         # This checks the activity's attribute and target attributes.
-        activity = self.bug.activity[-1]
+        activity = self.bug.activity.last()
         self.assertEqual(activity.attribute, 'linked_branches')
         self.assertEqual(activity.target, None)
 
@@ -560,7 +560,7 @@ class TestBugChanges(TestCaseWithFactory):
         self.bug.linkMergeProposal(bmp, self.user)
 
         # This checks the activity's attribute and target attributes.
-        activity = self.bug.activity[-1]
+        activity = self.bug.activity.last()
         self.assertEqual(activity.attribute, 'linked_merge_proposals')
         self.assertEqual(activity.target, None)
 
@@ -616,7 +616,7 @@ class TestBugChanges(TestCaseWithFactory):
         self.bug.unlinkMergeProposal(bmp, self.user)
 
         # This checks the activity's attribute and target attributes.
-        activity = self.bug.activity[-1]
+        activity = self.bug.activity.last()
         self.assertEqual(activity.attribute, 'linked_merge_proposals')
         self.assertEqual(activity.target, None)
 
@@ -776,7 +776,7 @@ class TestBugChanges(TestCaseWithFactory):
         self.bug.linkCVE(cve, self.user)
 
         # This checks the activity's attribute and target attributes.
-        activity = self.bug.activity[-1]
+        activity = self.bug.activity.last()
         self.assertEqual(activity.attribute, 'cves')
         self.assertEqual(activity.target, None)
 
@@ -807,7 +807,7 @@ class TestBugChanges(TestCaseWithFactory):
         self.bug.unlinkCVE(cve, self.user)
 
         # This checks the activity's attribute and target attributes.
-        activity = self.bug.activity[-1]
+        activity = self.bug.activity.last()
         self.assertEqual(activity.attribute, 'cves')
         self.assertEqual(activity.target, None)
 
@@ -840,7 +840,7 @@ class TestBugChanges(TestCaseWithFactory):
             bug=self.bug, owner=self.user, comment=message)
 
         # This checks the activity's attribute and target attributes.
-        activity = self.bug.activity[-1]
+        activity = self.bug.activity.last()
         self.assertEqual(activity.attribute, 'attachments')
         self.assertIsNone(activity.target)
 
@@ -878,7 +878,7 @@ class TestBugChanges(TestCaseWithFactory):
         attachment.removeFromBug(user=self.user)
 
         # This checks the activity's attribute and target attributes.
-        activity = self.bug.activity[-1]
+        activity = self.bug.activity.last()
         self.assertEqual(activity.attribute, 'attachments')
         self.assertEqual(activity.target, None)
 
@@ -1003,7 +1003,7 @@ class TestBugChanges(TestCaseWithFactory):
                 BugTaskImportance.HIGH, user=self.user)
 
         # This checks the activity's attribute and target attributes.
-        activity = self.bug.activity[-1]
+        activity = self.bug.activity.last()
         self.assertEqual(activity.attribute, 'importance')
         self.assertThat(activity.target, StartsWith('product-name'))
 
@@ -1489,7 +1489,7 @@ class TestBugChanges(TestCaseWithFactory):
         self.changeAttribute(duplicate_bug, 'duplicateof', self.bug)
 
         # This checks the activity's attribute and target attributes.
-        activity = duplicate_bug.activity[-1]
+        activity = duplicate_bug.activity.last()
         self.assertEqual(activity.attribute, 'duplicateof')
         self.assertEqual(activity.target, None)
 
@@ -1532,7 +1532,7 @@ class TestBugChanges(TestCaseWithFactory):
         self.changeAttribute(duplicate_bug, 'duplicateof', None)
 
         # This checks the activity's attribute and target attributes.
-        activity = duplicate_bug.activity[-1]
+        activity = duplicate_bug.activity.last()
         self.assertEqual(activity.attribute, 'duplicateof')
         self.assertEqual(activity.target, None)
 
@@ -1568,7 +1568,7 @@ class TestBugChanges(TestCaseWithFactory):
         self.changeAttribute(self.bug, 'duplicateof', bug_two)
 
         # This checks the activity's attribute and target attributes.
-        activity = self.bug.activity[-1]
+        activity = self.bug.activity.last()
         self.assertEqual(activity.attribute, 'duplicateof')
         self.assertEqual(activity.target, None)
 
@@ -1610,7 +1610,7 @@ class TestBugChanges(TestCaseWithFactory):
         self.changeAttribute(public_bug, 'duplicateof', private_bug)
 
         # This checks the activity's attribute and target attributes.
-        activity = public_bug.activity[-1]
+        activity = public_bug.activity.last()
         self.assertEqual(activity.attribute, 'duplicateof')
         self.assertEqual(activity.target, None)
 
@@ -1654,7 +1654,7 @@ class TestBugChanges(TestCaseWithFactory):
         self.changeAttribute(public_bug, 'duplicateof', None)
 
         # This checks the activity's attribute and target attributes.
-        activity = public_bug.activity[-1]
+        activity = public_bug.activity.last()
         self.assertEqual(activity.attribute, 'duplicateof')
         self.assertEqual(activity.target, None)
 
@@ -1695,7 +1695,7 @@ class TestBugChanges(TestCaseWithFactory):
         self.changeAttribute(duplicate_bug, 'duplicateof', public_bug)
 
         # This checks the activity's attribute and target attributes.
-        activity = duplicate_bug.activity[-1]
+        activity = duplicate_bug.activity.last()
         self.assertEqual(activity.attribute, 'duplicateof')
         self.assertEqual(activity.target, None)
 
