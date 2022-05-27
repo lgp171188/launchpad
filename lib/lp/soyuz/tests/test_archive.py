@@ -3983,6 +3983,144 @@ class TestArchiveSetGetByReference(TestCaseWithFactory):
         self.assertLookupFails('~enoent/twonoent/threenoent/fournoent')
 
 
+class TestArchiveSetCheckViewPermission(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.archive_set = getUtility(IArchiveSet)
+        self.public_archive = self.factory.makeArchive(private=False)
+        self.public_disabled_archive = self.factory.makeArchive(
+            private=False, enabled=False
+        )
+        self.private_archive = self.factory.makeArchive(private=True)
+
+    def test_public_enabled_archives(self):
+        somebody = self.factory.makePerson()
+        with person_logged_in(somebody):
+            results = self.archive_set.checkViewPermission(
+                [
+                    self.public_archive,
+                    self.public_disabled_archive,
+                    self.private_archive
+                ],
+                somebody,
+            )
+        self.assertDictEqual(results, {
+            self.public_archive: True,
+            self.public_disabled_archive: False,
+            self.private_archive: False,
+        })
+
+    def test_admin_can_view(self):
+        admin = self.factory.makeAdministrator()
+        with person_logged_in(admin):
+            results = self.archive_set.checkViewPermission(
+                [
+                    self.public_archive,
+                    self.public_disabled_archive,
+                    self.private_archive
+                ],
+                admin,
+            )
+        self.assertDictEqual(results, {
+            self.public_archive: True,
+            self.public_disabled_archive: True,
+            self.private_archive: True,
+        })
+        comm_admin = self.factory.makeCommercialAdmin()
+        with person_logged_in(comm_admin):
+            results = self.archive_set.checkViewPermission(
+                [
+                    self.public_archive,
+                    self.public_disabled_archive,
+                    self.private_archive
+                ],
+                comm_admin,
+            )
+        self.assertDictEqual(results, {
+            self.public_archive: True,
+            self.public_disabled_archive: True,
+            self.private_archive: True,
+        })
+
+    def test_registry_experts(self):
+        registry_expert = self.factory.makeRegistryExpert()
+        with person_logged_in(registry_expert):
+            results = self.archive_set.checkViewPermission(
+                [
+                    self.public_archive,
+                    self.public_disabled_archive,
+                    self.private_archive
+                ],
+                registry_expert,
+            )
+        self.assertDictEqual(results, {
+            self.public_archive: True,
+            self.public_disabled_archive: True,
+            self.private_archive: False,
+        })
+
+    def test_owner(self):
+        owner = self.factory.makePerson()
+        enabled_archive = self.factory.makeArchive(
+            owner=owner, private=False, enabled=True
+        )
+        disabled_archive = self.factory.makeArchive(
+            owner=owner, private=False, enabled=False
+        )
+        with person_logged_in(owner):
+            results = self.archive_set.checkViewPermission(
+                [
+                    enabled_archive,
+                    disabled_archive,
+                ],
+                owner,
+            )
+        self.assertDictEqual(results, {
+            enabled_archive: True,
+            disabled_archive: True,
+        })
+
+    def test_team_owner(self):
+        team_member = self.factory.makePerson()
+        team = self.factory.makeTeam(members=[team_member])
+        enabled_archive = self.factory.makeArchive(
+            owner=team, private=False, enabled=True
+        )
+        disabled_archive = self.factory.makeArchive(
+            owner=team, private=False, enabled=False
+        )
+        with person_logged_in(team_member):
+            results = self.archive_set.checkViewPermission(
+                [
+                    enabled_archive,
+                    disabled_archive,
+                ],
+                team_member,
+            )
+        self.assertDictEqual(results, {
+            enabled_archive: True,
+            disabled_archive: True,
+        })
+
+    def test_query_count(self):
+        archives = [
+            self.factory.makeArchive(private=False) for _ in range(10)
+        ]
+        somebody = self.factory.makePerson()
+        with StormStatementRecorder() as recorder1:
+            self.archive_set.checkViewPermission(
+                archives[:5], somebody
+            )
+        with StormStatementRecorder() as recorder2:
+            self.archive_set.checkViewPermission(
+                archives, somebody
+            )
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+
 class TestDisplayName(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
