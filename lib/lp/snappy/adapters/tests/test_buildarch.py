@@ -20,38 +20,50 @@ class TestSnapArchitecture(WithScenarios, TestCase):
 
     scenarios = [
         ("lists", {
-            "architectures": {"build-on": ["amd64"], "run-on": ["amd64"]},
+            "architectures": {"build-on": ["amd64"], "build-to": ["amd64"]},
             "expected_build_on": ["amd64"],
-            "expected_run_on": ["amd64"],
+            "expected_build_to": ["amd64"],
             "expected_build_error": None,
             }),
         ("strings", {
-            "architectures": {"build-on": "amd64", "run-on": "amd64"},
+            "architectures": {"build-on": "amd64", "build-to": "amd64"},
             "expected_build_on": ["amd64"],
-            "expected_run_on": ["amd64"],
+            "expected_build_to": ["amd64"],
             "expected_build_error": None,
             }),
-        ("no run-on", {
+        ("no build-to", {
             "architectures": {"build-on": ["amd64"]},
             "expected_build_on": ["amd64"],
-            "expected_run_on": ["amd64"],
+            "expected_build_to": ["amd64"],
             "expected_build_error": None,
             }),
         ("not required", {
             "architectures": {
                 "build-on": ["amd64"],
-                "run-on": "amd64",
+                "build-to": "amd64",
                 "build-error": "ignore"},
             "expected_build_on": ["amd64"],
-            "expected_run_on": ["amd64"],
+            "expected_build_to": ["amd64"],
             "expected_build_error": "ignore",
+            }),
+        ("build-to", {
+            "architectures": {"build-on": ["amd64"], "build-to": "all"},
+            "expected_build_on": ["amd64"],
+            "expected_build_to": ["all"],
+            "expected_build_error": None,
+            }),
+        ("run-on", {
+            "architectures": {"build-on": ["amd64"], "run-on": "all"},
+            "expected_build_on": ["amd64"],
+            "expected_build_to": ["all"],
+            "expected_build_error": None,
             }),
         ]
 
     def test_architecture(self):
         architecture = SnapArchitecture.from_dict(self.architectures)
         self.assertEqual(self.expected_build_on, architecture.build_on)
-        self.assertEqual(self.expected_run_on, architecture.run_on)
+        self.assertEqual(self.expected_build_to, architecture.build_to)
         self.assertEqual(self.expected_build_error, architecture.build_error)
 
 
@@ -62,27 +74,27 @@ class TestSnapBuildInstance(WithScenarios, TestCase):
     scenarios = [
         ("i386", {
             "architecture": SnapArchitecture(
-                build_on="i386", run_on=["amd64", "i386"]),
+                build_on="i386", build_to=["amd64", "i386"]),
             "supported_architectures": ["amd64", "i386", "armhf"],
             "expected_architecture": "i386",
             "expected_required": True,
             }),
         ("amd64", {
-            "architecture": SnapArchitecture(build_on="amd64", run_on="all"),
+            "architecture": SnapArchitecture(build_on="amd64", build_to="all"),
             "supported_architectures": ["amd64", "i386", "armhf"],
             "expected_architecture": "amd64",
             "expected_required": True,
             }),
         ("amd64 priority", {
             "architecture": SnapArchitecture(
-                build_on=["amd64", "i386"], run_on="all"),
+                build_on=["amd64", "i386"], build_to="all"),
             "supported_architectures": ["amd64", "i386", "armhf"],
             "expected_architecture": "amd64",
             "expected_required": True,
             }),
         ("i386 priority", {
             "architecture": SnapArchitecture(
-                build_on=["amd64", "i386"], run_on="all"),
+                build_on=["amd64", "i386"], build_to="all"),
             "supported_architectures": ["i386", "amd64", "armhf"],
             "expected_architecture": "i386",
             "expected_required": True,
@@ -106,7 +118,7 @@ class TestSnapBuildInstance(WithScenarios, TestCase):
 class TestSnapBuildInstanceError(TestCase):
 
     def test_no_matching_arch_raises(self):
-        architecture = SnapArchitecture(build_on="amd64", run_on="amd64")
+        architecture = SnapArchitecture(build_on="amd64", build_to="amd64")
         raised = self.assertRaises(
             UnsupportedBuildOnError, SnapBuildInstance, architecture, ["i386"])
         self.assertEqual(["amd64"], raised.build_on)
@@ -128,20 +140,20 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCase):
             }),
         ("i386", {
             "architectures": [
-                {"build-on": "i386", "run-on": ["amd64", "i386"]},
+                {"build-on": "i386", "build-to": ["amd64", "i386"]},
                 ],
             "supported_architectures": ["amd64", "i386", "armhf"],
             "expected": [{"architecture": "i386", "required": True}],
             }),
         ("amd64", {
-            "architectures": [{"build-on": "amd64", "run-on": "all"}],
+            "architectures": [{"build-on": "amd64", "build-to": "all"}],
             "supported_architectures": ["amd64", "i386", "armhf"],
             "expected": [{"architecture": "amd64", "required": True}],
             }),
         ("amd64 and i386", {
             "architectures": [
-                {"build-on": "amd64", "run-on": "amd64"},
-                {"build-on": "i386", "run-on": "i386"},
+                {"build-on": "amd64", "build-to": "amd64"},
+                {"build-on": "i386", "build-to": "i386"},
                 ],
             "supported_architectures": ["amd64", "i386", "armhf"],
             "expected": [
@@ -162,11 +174,11 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCase):
             }),
         ("amd64, i386, and armhf", {
             "architectures": [
-                {"build-on": "amd64", "run-on": "amd64"},
-                {"build-on": "i386", "run-on": "i386"},
+                {"build-on": "amd64", "build-to": "amd64"},
+                {"build-on": "i386", "build-to": "i386"},
                 {
                     "build-on": "armhf",
-                    "run-on": "armhf",
+                    "build-to": "armhf",
                     "build-error": "ignore",
                     },
                 ],
@@ -179,14 +191,14 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCase):
             }),
         ("amd64 priority", {
             "architectures": [
-                {"build-on": ["amd64", "i386"], "run-on": "all"},
+                {"build-on": ["amd64", "i386"], "build-to": "all"},
                 ],
             "supported_architectures": ["amd64", "i386", "armhf"],
             "expected": [{"architecture": "amd64", "required": True}],
             }),
         ("i386 priority", {
             "architectures": [
-                {"build-on": ["amd64", "i386"], "run-on": "all"},
+                {"build-on": ["amd64", "i386"], "build-to": "all"},
                 ],
             "supported_architectures": ["i386", "amd64", "armhf"],
             "expected": [{"architecture": "i386", "required": True}],
