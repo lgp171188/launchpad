@@ -4548,7 +4548,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return "%s %s %s" % (key_type, key_text, comment)
 
     def makeSSHKey(self, person=None, key_type="ssh-rsa",
-                   send_notification=True):
+                   send_notification=True, comment=None):
         """Create a new SSHKey.
 
         :param person: If specified, the person to attach the key to. If
@@ -4561,7 +4561,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if person is None:
             person = self.makePerson()
-        public_key = self.makeSSHKeyText(key_type=key_type)
+        public_key = self.makeSSHKeyText(key_type=key_type, comment=comment)
         return getUtility(ISSHKeySet).new(
             person, public_key, send_notification=send_notification)
 

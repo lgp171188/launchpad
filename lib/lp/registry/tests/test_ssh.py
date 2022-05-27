@@ -68,6 +68,13 @@ class TestSSHKey(TestCaseWithFactory):
         expected = "ssh-ed25519 %s %s" % (key.keytext, key.comment)
         self.assertEqual(expected, key.getFullKeyText())
 
+    def test_getFullKeyText_for_key_without_comment(self):
+        person = self.factory.makePerson()
+        with person_logged_in(person):
+            key = self.factory.makeSSHKey(person, "ssh-rsa", comment="")
+        expected = "ssh-rsa %s" % (key.keytext)
+        self.assertEqual(expected, key.getFullKeyText())
+
     def test_getFullKeyText_for_corrupt_key(self):
         # If the key text is corrupt, the type from the database is used
         # instead of the one decoded from the text.
@@ -88,12 +95,32 @@ class TestSSHKey(TestCaseWithFactory):
             [email] = pop_notifications()
             self.assertEqual(
                 email['Subject'],
-                "SSH Key removed from your Launchpad account.")
+                "SSH key removed from your Launchpad account.")
             self.assertThat(
                 email.get_payload(),
                 StartsWith(
-                    "The SSH Key %s was removed from your "
+                    "The SSH key %s was removed from your "
                     % key.comment)
+            )
+
+    def test_destroySelf_notification_empty_comment(self):
+        person = self.factory.makePerson()
+        with person_logged_in(person):
+            key = self.factory.makeSSHKey(
+                person, send_notification=False, comment=""
+            )
+            key.destroySelf()
+            [email] = pop_notifications()
+            self.assertEqual(
+                "SSH key removed from your Launchpad account.",
+                email['Subject']
+            )
+            self.assertThat(
+                email.get_payload(),
+                StartsWith(
+                    "An SSH key of type '%s' was removed "
+                    "from your account." % key.keytype.title
+                )
             )
 
     def test_destroySelf_notifications_can_be_suppressed(self):
@@ -122,6 +149,24 @@ class TestSSHKeySet(TestCaseWithFactory):
         self.assertThat(
             email.get_payload(),
             StartsWith("The SSH key 'comment' has been added to your account.")
+        )
+
+    def test_notification_add_ssh_key_comment_empty(self):
+        person = self.factory.makePerson()
+        with person_logged_in(person):
+            key = getUtility(ISSHKeySet).new(
+                person,
+                self.factory.makeSSHKeyText(comment="")
+            )
+            [email] = pop_notifications()
+        self.assertEqual(
+            "New SSH key added to your account.", email['Subject']
+        )
+        self.assertThat(
+            email.get_payload(),
+            StartsWith(
+                "An SSH key of type '%s' has been added "
+                "to your account." % key.keytype.title)
         )
 
     def test_does_not_send_notifications(self):

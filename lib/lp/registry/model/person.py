@@ -4374,9 +4374,18 @@ class SSHKey(SQLBase):
         if send_notification:
             # For security reasons we want to notify the preferred email
             # address that this sshkey has been removed.
+            if self.comment:
+                change_description = (
+                    "The SSH key %s was removed from your account."
+                ) % (self.comment)
+            else:
+                change_description = (
+                    "An SSH key of type '%s' was removed from your "
+                    "account." % self.keytype.title
+                )
             self.person.security_field_changed(
-                "SSH Key removed from your Launchpad account.",
-                "The SSH Key %s was removed from your account." % self.comment)
+                "SSH key removed from your Launchpad account.",
+                change_description)
         super().destroySelf()
 
     def getFullKeyText(self):
@@ -4397,7 +4406,10 @@ class SSHKey(SQLBase):
                 raise ValueError(
                     "SSH key of type %s has invalid data '%s'" %
                     (self.keytype, self.keytext))
-        return "%s %s %s" % (ssh_keytype, self.keytext, self.comment)
+        key_text = "%s %s" % (ssh_keytype, self.keytext)
+        if self.comment:
+            key_text = "%s %s" % (key_text, self.comment)
+        return key_text
 
 
 @implementer(ISSHKeySet)
@@ -4418,9 +4430,18 @@ class SSHKeySet:
                 raise SSHKeyAdditionError(type_mismatch=(kind, keydatatype))
 
         if send_notification:
+            if comment:
+                change_description = (
+                    "The SSH key '%s' has been added to your account."
+                ) % comment
+            else:
+                change_description = (
+                    "An SSH key of type '%s' has been added "
+                    "to your account." % keytype.title
+                )
             person.security_field_changed(
                 "New SSH key added to your account.",
-                "The SSH key '%s' has been added to your account." % comment)
+                change_description)
 
         if not dry_run:
             return SSHKey(person=person, keytype=keytype, keytext=keytext,
@@ -4446,12 +4467,17 @@ class SSHKeySet:
 
     def _extract_ssh_key_components(self, sshkey):
         try:
-            kind, keytext, comment = sshkey.split(' ', 2)
-        except (ValueError, AttributeError):
+            ssh_key_components = sshkey.split(' ', 2)
+        except AttributeError:
             raise SSHKeyAdditionError(key=sshkey)
 
-        if not (kind and keytext and comment):
+        if len(ssh_key_components) < 2:
             raise SSHKeyAdditionError(key=sshkey)
+        elif len(ssh_key_components) == 2:
+            kind, keytext = ssh_key_components
+            comment = ''
+        else:
+            kind, keytext, comment = ssh_key_components
 
         keytype = SSH_TEXT_TO_KEY_TYPE.get(kind)
         if keytype is None:
