@@ -736,29 +736,29 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             # Since country data is needed, fetch countries into the cache.
             list(Store.of(self).find(
                 Country,
-                Country.id.is_in(mirror.countryID for mirror in mirrors)))
+                Country.id.is_in(mirror.country_id for mirror in mirrors)))
 
         if needs_fresh and mirrors:
             # Preload the distribution_mirrors' cache for mirror freshness.
             mirror_ids = [mirror.id for mirror in mirrors]
 
             arch_mirrors = list(Store.of(self).find(
-                (MirrorDistroArchSeries.distribution_mirrorID,
+                (MirrorDistroArchSeries.distribution_mirror_id,
                  Max(MirrorDistroArchSeries.freshness)),
-                MirrorDistroArchSeries.distribution_mirrorID.is_in(
+                MirrorDistroArchSeries.distribution_mirror_id.is_in(
                     mirror_ids)).group_by(
-                        MirrorDistroArchSeries.distribution_mirrorID))
+                        MirrorDistroArchSeries.distribution_mirror_id))
             arch_mirror_freshness = {}
             arch_mirror_freshness.update(
                 [(mirror_id, MirrorFreshness.items[mirror_freshness]) for
                  (mirror_id, mirror_freshness) in arch_mirrors])
 
             source_mirrors = list(Store.of(self).find(
-                (MirrorDistroSeriesSource.distribution_mirrorID,
+                (MirrorDistroSeriesSource.distribution_mirror_id,
                  Max(MirrorDistroSeriesSource.freshness)),
-                MirrorDistroSeriesSource.distribution_mirrorID.is_in(
+                MirrorDistroSeriesSource.distribution_mirror_id.is_in(
                     [mirror.id for mirror in mirrors])).group_by(
-                        MirrorDistroSeriesSource.distribution_mirrorID))
+                        MirrorDistroSeriesSource.distribution_mirror_id))
             source_mirror_freshness = {}
             source_mirror_freshness.update(
                 [(mirror_id, MirrorFreshness.items[mirror_freshness]) for
@@ -773,10 +773,10 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
         if needs_cdimage_series and mirrors:
             all_cdimage_series = load_referencing(
-                MirrorCDImageDistroSeries, mirrors, ["distribution_mirrorID"])
+                MirrorCDImageDistroSeries, mirrors, ["distribution_mirror_id"])
             cdimage_series = defaultdict(list)
             for series in all_cdimage_series:
-                cdimage_series[series.distribution_mirrorID].append(series)
+                cdimage_series[series.distribution_mirror_id].append(series)
             for mirror in mirrors:
                 cache = get_property_cache(mirror)
                 cache.cdimage_series = cdimage_series.get(mirror.id, [])
@@ -997,17 +997,14 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         """See `IDistribution`."""
         # As per mvo's request we only return mirrors which have an
         # http_base_url.
-        country_id = None
-        if country is not None:
-            country_id = country.id
         base_query = And(
             DistributionMirror.distribution == self,
             DistributionMirror.content == mirror_type,
-            DistributionMirror.enabled == True,
+            DistributionMirror.enabled,
             DistributionMirror.http_base_url != None,
             DistributionMirror.official_candidate == True,
             DistributionMirror.status == MirrorStatus.OFFICIAL)
-        query = And(DistributionMirror.countryID == country_id, base_query)
+        query = And(DistributionMirror.country == country, base_query)
         # The list of mirrors returned by this method is fed to apt through
         # launchpad.net, so we order the results randomly in a lame attempt to
         # balance the load on the mirrors.
@@ -1020,8 +1017,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         if not mirrors and country is not None:
             continent = country.continent
             query = And(
-                Country.q.continentID == continent.id,
-                DistributionMirror.countryID == Country.q.id,
+                Country.continentID == continent.id,
+                DistributionMirror.country == Country.id,
                 base_query)
             mirrors.extend(shortlist(
                 IStore(DistributionMirror).find(
@@ -1075,7 +1072,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             count += 1
             name = '%s%s' % (orig_name, count)
 
-        return DistributionMirror(
+        mirror = DistributionMirror(
             distribution=self, owner=owner, name=name, speed=speed,
             country=country, content=content, display_name=display_name,
             description=description, http_base_url=urls['http_base_url'],
@@ -1084,6 +1081,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             rsync_base_url=urls['rsync_base_url'],
             official_candidate=official_candidate, enabled=enabled,
             whiteboard=whiteboard)
+        IStore(DistributionMirror).add(mirror)
+        return mirror
 
     @property
     def currentseries(self):
