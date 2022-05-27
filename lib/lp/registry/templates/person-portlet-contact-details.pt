@@ -157,7 +157,10 @@
       </dt>
       <dd tal:define="sshkeys context/sshkeys">
         <tal:keys repeat="sshkey sshkeys">
-          <a href="+sshkeys" tal:content="sshkey/comment">foo@bar</a>
+          <a href="+sshkeys" tal:content="sshkey/comment" tal:condition="sshkey/comment">foo@bar</a>
+          <a href="+sshkeys" tal:condition="not: sshkey/comment">
+            <span tal:condition="not: sshkey/comment" tal:content="sshkey/keytype/title">RSA</span> key
+          </a>
           <br />
         </tal:keys>
         <div tal:condition="not: context/sshkeys">

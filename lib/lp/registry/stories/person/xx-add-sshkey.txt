@@ -173,6 +173,16 @@ format.
     ...     print(tag.decode_contents())
     SSH public key added.
 
+    >>> sshkey_without_comment = (
+    ...     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGoDIdJaOkdr0wn0egyWEOtGxhe"
+    ...     "3x0Iz9um6CEOFaqIw")
+    >>> browser.getControl(name='sshkey').value = sshkey_without_comment
+    >>> browser.getControl('Import Public Key').click()
+    >>> soup = find_main_content(browser.contents)
+    >>> for tag in soup('p', 'informational message'):
+    ...     print(tag.decode_contents())
+    SSH public key added.
+
 Launchpad administrators are not allowed to poke at other user's ssh keys.
 
     >>> login(ANONYMOUS)
@@ -198,6 +208,7 @@ to edit his keys is on the page.
     salgado@canario
     salgado@canario
     salgado@canario
+    ED25519 key
     >>> browser.getLink('Update SSH keys').click()
     >>> print(browser.title)
     Change your SSH keys...
@@ -245,7 +256,7 @@ that the key has been removed.
     >>> to_addr
     ['guilherme.salgado@canonical.com']
     >>> payload = email.message_from_bytes(msg).get_payload()
-    >>> assert payload.startswith('The SSH Key')
+    >>> assert payload.startswith('The SSH key')
 
 
 Keys containing non-ASCII comments
