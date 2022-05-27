@@ -20,6 +20,7 @@ from lp.soyuz.enums import (
     archive_suffixes,
     ArchivePublishingMethod,
     ArchivePurpose,
+    ArchiveRepositoryFormat,
     )
 
 
@@ -111,8 +112,12 @@ def getPubConfig(archive):
         pubconf.signingroot = None
         pubconf.signingautokey = False
 
-    pubconf.poolroot = os.path.join(pubconf.archiveroot, 'pool')
-    pubconf.distsroot = os.path.join(pubconf.archiveroot, 'dists')
+    if archive.repository_format == ArchiveRepositoryFormat.DEBIAN:
+        pubconf.poolroot = os.path.join(pubconf.archiveroot, 'pool')
+        pubconf.distsroot = os.path.join(pubconf.archiveroot, 'dists')
+    else:
+        pubconf.poolroot = pubconf.archiveroot
+        pubconf.distsroot = None
 
     # META_DATA custom uploads are stored in a separate directory
     # outside the archive root so Ubuntu Software Center can get some

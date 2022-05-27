@@ -418,6 +418,12 @@ class SourcePackageFileType(DBEnumeratedType):
         This file is a detached signature for an Ubuntu component "orig"
         file.""")
 
+    SDIST = DBItem(11, """
+        Python Source Distribution
+
+        This file is a Python source distribution ("sdist").
+        """)
+
 
 class SourcePackageType(DBEnumeratedType):
     """Source Package Format
@@ -445,6 +451,12 @@ class SourcePackageType(DBEnumeratedType):
         The Ebuild Format
 
         This is the source package format used by Gentoo.
+        """)
+
+    SDIST = DBItem(4, """
+        The Python Format
+
+        This is the source package format used by Python packages.
         """)
 
 

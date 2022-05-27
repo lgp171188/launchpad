@@ -41,6 +41,21 @@ from lp.soyuz.interfaces.publishing import (
     )
 
 
+def _path_for(archive: IArchive, rootpath: ArtifactoryPath, source_name: str,
+              source_version: str, filename: Optional[str] = None) -> Path:
+    repository_format = archive.repository_format
+    if repository_format == ArchiveRepositoryFormat.DEBIAN:
+        path = rootpath / poolify(source_name)
+    elif repository_format == ArchiveRepositoryFormat.PYTHON:
+        path = rootpath / source_name / source_version
+    else:
+        raise AssertionError(
+            "Unsupported repository format: %r" % repository_format)
+    if filename:
+        path = path / filename
+    return path
+
+
 class ArtifactoryPoolEntry:
 
     def __init__(self, archive: IArchive, rootpath: ArtifactoryPath,
@@ -63,7 +78,9 @@ class ArtifactoryPoolEntry:
         # the pool structure, and doing so would introduce significant
         # complications in terms of having to keep track of components just
         # in order to update an artifact's properties.
-        return self.rootpath / poolify(self.source_name) / self.filename
+        return _path_for(
+            self.archive, self.rootpath, self.source_name, self.source_version,
+            self.filename)
 
     def makeReleaseID(self, pub_file: IPackageReleaseFile) -> str:
         """
@@ -156,8 +173,7 @@ class ArtifactoryPoolEntry:
             else:
                 properties["launchpad.channel"] = sorted({
                     "%s:%s" % (
-                        pub.distroseries.getSuite(pub.pocket),
-                        pub.channel_string)
+                        pub.distroseries.getSuite(pub.pocket), pub.channel)
                     for pub in publications})
         return properties
 
@@ -285,10 +301,8 @@ class ArtifactoryPool:
         # the pool structure, and doing so would introduce significant
         # complications in terms of having to keep track of components just
         # in order to update an artifact's properties.
-        path = self.rootpath / poolify(source_name)
-        if file:
-            path = path / file
-        return path
+        return _path_for(
+            self.archive, self.rootpath, source_name, source_version, file)
 
     def addFile(self, component: str, source_name: str, source_version: str,
                 filename: str, pub_file: IPackageReleaseFile):
