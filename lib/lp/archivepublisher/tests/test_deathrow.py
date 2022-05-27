@@ -53,6 +53,7 @@ class TestDeathRow(TestCase):
         return diskpool.pathFor(
             pub.component.name,
             pub.source_package_name,
+            pub.source_package_version,
             pub_file.libraryfile.filename)
 
     def assertIsFile(self, path: Path) -> None:

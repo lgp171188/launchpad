@@ -44,9 +44,12 @@ from lp.soyuz.interfaces.publishing import (
 class ArtifactoryPoolEntry:
 
     def __init__(self, archive: IArchive, rootpath: ArtifactoryPath,
-                 source: str, filename: str, logger: logging.Logger) -> None:
+                 source_name: str, source_version: str, filename: str,
+                 logger: logging.Logger) -> None:
+        self.archive = archive
         self.rootpath = rootpath
-        self.source = source
+        self.source_name = source_name
+        self.source_version = source_version
         self.filename = filename
         self.logger = logger
 
@@ -60,7 +63,7 @@ class ArtifactoryPoolEntry:
         # the pool structure, and doing so would introduce significant
         # complications in terms of having to keep track of components just
         # in order to update an artifact's properties.
-        return self.rootpath / poolify(self.source) / self.filename
+        return self.rootpath / poolify(self.source_name) / self.filename
 
     def makeReleaseID(self, pub_file: IPackageReleaseFile) -> str:
         """
@@ -129,7 +132,8 @@ class ArtifactoryPoolEntry:
         """
         properties = {}
         properties["launchpad.release-id"] = [release_id]
-        properties["launchpad.source-name"] = [self.source]
+        properties["launchpad.source-name"] = [self.source_name]
+        properties["launchpad.source-version"] = [self.source_version]
         if publications:
             archives = {publication.archive for publication in publications}
             if len(archives) > 1:
@@ -259,12 +263,14 @@ class ArtifactoryPool:
             session.auth = XJFrogArtApiAuth(write_creds.split(":", 1)[1])
         return session
 
-    def _getEntry(self, sourcename, file) -> ArtifactoryPoolEntry:
+    def _getEntry(self, source_name: str, source_version: str,
+                  file: str) -> ArtifactoryPoolEntry:
         """See `DiskPool._getEntry`."""
         return ArtifactoryPoolEntry(
-            self.archive, self.rootpath, sourcename, file, self.logger)
+            self.archive, self.rootpath, source_name, source_version, file,
+            self.logger)
 
-    def pathFor(self, comp: str, source: str,
+    def pathFor(self, comp: str, source_name: str, source_version: str,
                 file: Optional[str] = None) -> Path:
         """Return the path for the given pool folder or file.
 
@@ -279,16 +285,17 @@ class ArtifactoryPool:
         # the pool structure, and doing so would introduce significant
         # complications in terms of having to keep track of components just
         # in order to update an artifact's properties.
-        path = self.rootpath / poolify(source)
+        path = self.rootpath / poolify(source_name)
         if file:
             path = path / file
         return path
 
-    def addFile(self, component: str, sourcename: str, filename: str,
-                pub_file: IPackageReleaseFile):
+    def addFile(self, component: str, source_name: str, source_version: str,
+                filename: str, pub_file: IPackageReleaseFile):
         """Add a file with the given contents to the pool.
 
-        `sourcename` and `filename` are used to calculate the location.
+        `source_name`, `source_version`, and `filename` are used to
+        calculate the location.
 
         pub_file is an `IPackageReleaseFile` providing the file's contents
         and SHA-1 hash.  The SHA-1 hash is used to compare the given file
@@ -308,10 +315,10 @@ class ArtifactoryPool:
         This is similar to `DiskPool.addFile`, except that there is no
         symlink handling and the component is ignored.
         """
-        entry = self._getEntry(sourcename, filename)
+        entry = self._getEntry(source_name, source_version, filename)
         return entry.addFile(pub_file)
 
-    def removeFile(self, component: str, sourcename: str,
+    def removeFile(self, component: str, source_name: str, source_version: str,
                    filename: str) -> int:
         """Remove the specified file from the pool.
 
@@ -324,13 +331,13 @@ class ArtifactoryPool:
         This is similar to `DiskPool.removeFile`, except that there is no
         symlink handling and the component is ignored.
         """
-        entry = self._getEntry(sourcename, filename)
+        entry = self._getEntry(source_name, source_version, filename)
         return entry.removeFile()
 
-    def updateProperties(self, sourcename, filename, publications,
-                         old_properties=None):
+    def updateProperties(self, source_name: str, source_version: str,
+                         filename: str, publications, old_properties=None):
         """Update a file's properties in Artifactory."""
-        entry = self._getEntry(sourcename, filename)
+        entry = self._getEntry(source_name, source_version, filename)
         entry.updateProperties(publications, old_properties=old_properties)
 
     def getArtifactPatterns(self, repository_format):

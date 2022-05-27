@@ -752,12 +752,13 @@ class Publisher:
         for path, properties in sorted(artifacts.items()):
             release_id = properties.get("launchpad.release-id")
             source_name = properties.get("launchpad.source-name")
-            if not release_id or not source_name:
+            source_version = properties.get("launchpad.source-version")
+            if not release_id or not source_name or not source_version:
                 # Skip any files that Launchpad didn't put in Artifactory.
                 continue
             self._diskpool.updateProperties(
-                source_name[0], path.name, pubs_by_id.get(release_id[0]),
-                old_properties=properties)
+                source_name[0], source_version[0], path.name,
+                pubs_by_id.get(release_id[0]), old_properties=properties)
 
     def D_writeReleaseFiles(self, is_careful):
         """Write out the Release files for the provided distribution.
