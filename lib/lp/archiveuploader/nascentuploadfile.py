@@ -985,7 +985,12 @@ class DebBinaryUploadFile(BaseBinaryUploadFile):
             self.verifyDepends,
             self.verifySection,
             self.verifyPriority,
-            self.verifyFormat,
+            # We used to run verifyFormat here too.  However,
+            # verifyDebTimestamp does an approximately equivalent check in
+            # passing by iterating over the control and data parts via
+            # apt_inst.DebFile, and both verifyFormat and verifyDebTimestamp
+            # can be slow on large files, so it's best to avoid running both
+            # of them.
             self.verifyDebTimestamp,
             ]
 
