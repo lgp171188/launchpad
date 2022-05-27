@@ -23,11 +23,18 @@ from lp.archivepublisher.diskpool import (
     poolify,
     )
 from lp.services.log.logger import BufferLogger
+from lp.soyuz.enums import ArchiveRepositoryFormat
 from lp.soyuz.interfaces.files import (
     IBinaryPackageFile,
     IPackageReleaseFile,
     ISourcePackageReleaseFile,
     )
+
+
+class FakeArchive:
+
+    def __init__(self, repository_format=ArchiveRepositoryFormat.DEBIAN):
+        self.repository_format = repository_format
 
 
 class FakeLibraryFileContent:
@@ -124,7 +131,8 @@ class TestPool(unittest.TestCase):
     def setUp(self):
         self.pool_path = mkdtemp()
         self.temp_path = mkdtemp()
-        self.pool = DiskPool(self.pool_path, self.temp_path, BufferLogger())
+        self.pool = DiskPool(
+            FakeArchive(), self.pool_path, self.temp_path, BufferLogger())
 
     def tearDown(self):
         shutil.rmtree(self.pool_path)

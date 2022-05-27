@@ -626,7 +626,8 @@ class TestNativePublishingBase(TestCaseWithFactory, SoyuzTestPublisher):
         self.pool_dir = self.config.poolroot
         self.temp_dir = self.config.temproot
         self.logger = DevNullLogger()
-        self.disk_pool = DiskPool(self.pool_dir, self.temp_dir, self.logger)
+        self.disk_pool = self.config.getDiskPool(self.logger)
+        self.disk_pool.logger = self.logger
 
     def tearDown(self):
         """Tear down blows the pool dirs away."""
@@ -858,7 +859,8 @@ class TestNativePublishing(TestNativePublishingBase):
         cprov = getUtility(IPersonSet).getByName('cprov')
         test_pool_dir = tempfile.mkdtemp()
         test_temp_dir = tempfile.mkdtemp()
-        test_disk_pool = DiskPool(test_pool_dir, test_temp_dir, self.logger)
+        test_disk_pool = DiskPool(
+            cprov.archive, test_pool_dir, test_temp_dir, self.logger)
 
         pub_source = self.getPubSource(
             sourcename="foo", filecontent=b'Am I a PPA Record ?',

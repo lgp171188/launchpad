@@ -28,6 +28,7 @@ from lp.archivepublisher.diskpool import (
 from lp.services.config import config
 from lp.services.librarian.utils import copy_and_close
 from lp.soyuz.enums import ArchiveRepositoryFormat
+from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.files import (
     IBinaryPackageFile,
     IPackageReleaseFile,
@@ -42,8 +43,8 @@ from lp.soyuz.interfaces.publishing import (
 
 class ArtifactoryPoolEntry:
 
-    def __init__(self, rootpath: ArtifactoryPath, source: str, filename: str,
-                 logger: logging.Logger) -> None:
+    def __init__(self, archive: IArchive, rootpath: ArtifactoryPath,
+                 source: str, filename: str, logger: logging.Logger) -> None:
         self.rootpath = rootpath
         self.source = source
         self.filename = filename
@@ -224,7 +225,9 @@ class ArtifactoryPool:
 
     results = FileAddActionEnum
 
-    def __init__(self, rootpath, logger: logging.Logger) -> None:
+    def __init__(self, archive: IArchive, rootpath,
+                 logger: logging.Logger) -> None:
+        self.archive = archive
         if not isinstance(rootpath, ArtifactoryPath):
             rootpath = ArtifactoryPath(rootpath)
         rootpath.session = self._makeSession()
@@ -259,7 +262,7 @@ class ArtifactoryPool:
     def _getEntry(self, sourcename, file) -> ArtifactoryPoolEntry:
         """See `DiskPool._getEntry`."""
         return ArtifactoryPoolEntry(
-            self.rootpath, sourcename, file, self.logger)
+            self.archive, self.rootpath, sourcename, file, self.logger)
 
     def pathFor(self, comp: str, source: str,
                 file: Optional[str] = None) -> Path:

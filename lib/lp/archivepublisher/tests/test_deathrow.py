@@ -45,7 +45,7 @@ class TestDeathRow(TestCase):
         self.addCleanup(clean_pool, pool_path, temp_path)
 
         logger = BufferLogger()
-        diskpool = DiskPool(pool_path, temp_path, logger)
+        diskpool = DiskPool(archive, pool_path, temp_path, logger)
         return DeathRow(archive, diskpool, logger)
 
     def getDiskPoolPath(self, pub, pub_file, diskpool):

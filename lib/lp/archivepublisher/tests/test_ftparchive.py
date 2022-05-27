@@ -103,7 +103,8 @@ class TestFTPArchive(TestCaseWithFactory):
         self._listdir = self._config.overrideroot
         self._tempdir = self._config.temproot
         self._logger = BufferLogger()
-        self._dp = DiskPool(self._pooldir, self._tempdir, self._logger)
+        self._dp = DiskPool(
+            self._archive, self._pooldir, self._tempdir, self._logger)
         self._publisher = SamplePublisher(self._archive)
 
     def tearDown(self):

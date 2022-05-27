@@ -13,6 +13,7 @@ from lp.archivepublisher.tests.artifactory_fixture import (
     FakeArtifactoryFixture,
     )
 from lp.archivepublisher.tests.test_pool import (
+    FakeArchive,
     FakeReleaseType,
     PoolTestingFile,
     )
@@ -76,7 +77,7 @@ class TestArtifactoryPool(TestCase):
         self.artifactory = self.useFixture(
             FakeArtifactoryFixture(self.base_url, self.repository_name))
         root_url = "%s/%s/pool" % (self.base_url, self.repository_name)
-        self.pool = ArtifactoryPool(root_url, BufferLogger())
+        self.pool = ArtifactoryPool(FakeArchive(), root_url, BufferLogger())
 
     def test_addFile(self):
         foo = ArtifactoryPoolTestingFile(
@@ -187,15 +188,16 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         self.artifactory = self.useFixture(
             FakeArtifactoryFixture(self.base_url, self.repository_name))
         root_url = "%s/%s/pool" % (self.base_url, self.repository_name)
-        self.pool = ArtifactoryPool(root_url, BufferLogger())
+        self.archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        self.pool = ArtifactoryPool(self.archive, root_url, BufferLogger())
 
     def test_updateProperties_debian_source(self):
-        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
         dses = [
-            self.factory.makeDistroSeries(distribution=archive.distribution)
+            self.factory.makeDistroSeries(
+                distribution=self.archive.distribution)
             for _ in range(2)]
         spph = self.factory.makeSourcePackagePublishingHistory(
-            archive=archive, distroseries=dses[0],
+            archive=self.archive, distroseries=dses[0],
             pocket=PackagePublishingPocket.RELEASE, component="main",
             sourcepackagename="foo")
         spr = spph.sourcepackagerelease
@@ -206,7 +208,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             filetype=SourcePackageFileType.DSC)
         spphs = [spph]
         spphs.append(spph.copyTo(
-            dses[1], PackagePublishingPocket.RELEASE, archive))
+            dses[1], PackagePublishingPocket.RELEASE, self.archive))
         transaction.commit()
         self.pool.addFile(None, spr.name, sprf.libraryfile.filename, sprf)
         path = self.pool.rootpath / "f" / "foo" / "foo_1.0.dsc"
@@ -229,9 +231,9 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             path.properties)
 
     def test_updateProperties_debian_binary_multiple_series(self):
-        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
         dses = [
-            self.factory.makeDistroSeries(distribution=archive.distribution)
+            self.factory.makeDistroSeries(
+                distribution=self.archive.distribution)
             for _ in range(2)]
         processor = self.factory.makeProcessor()
         dases = [
@@ -239,7 +241,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 distroseries=ds, architecturetag=processor.name)
             for ds in dses]
         bpph = self.factory.makeBinaryPackagePublishingHistory(
-            archive=archive, distroarchseries=dases[0],
+            archive=self.archive, distroarchseries=dases[0],
             pocket=PackagePublishingPocket.RELEASE, component="main",
             sourcepackagename="foo", binarypackagename="foo",
             architecturespecific=True)
@@ -251,7 +253,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             filetype=BinaryPackageFileType.DEB)
         bpphs = [bpph]
         bpphs.append(bpph.copyTo(
-            dses[1], PackagePublishingPocket.RELEASE, archive)[0])
+            dses[1], PackagePublishingPocket.RELEASE, self.archive)[0])
         transaction.commit()
         self.pool.addFile(
             None, bpr.sourcepackagename, bpf.libraryfile.filename, bpf)
@@ -279,13 +281,13 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             path.properties)
 
     def test_updateProperties_debian_binary_multiple_architectures(self):
-        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
-        ds = self.factory.makeDistroSeries(distribution=archive.distribution)
+        ds = self.factory.makeDistroSeries(
+            distribution=self.archive.distribution)
         dases = [
             self.factory.makeDistroArchSeries(distroseries=ds)
             for _ in range(2)]
         bpb = self.factory.makeBinaryPackageBuild(
-            archive=archive, distroarchseries=dases[0],
+            archive=self.archive, distroarchseries=dases[0],
             pocket=PackagePublishingPocket.RELEASE, sourcepackagename="foo")
         bpr = self.factory.makeBinaryPackageRelease(
             binarypackagename="foo", build=bpb, component="main",
@@ -296,7 +298,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 filename="foo_1.0_all.deb"),
             filetype=BinaryPackageFileType.DEB)
         bpphs = getUtility(IPublishingSet).publishBinaries(
-            archive, ds, PackagePublishingPocket.RELEASE,
+            self.archive, ds, PackagePublishingPocket.RELEASE,
             {bpr: (bpr.component, bpr.section, bpr.priority, None)})
         transaction.commit()
         self.pool.addFile(
@@ -326,11 +328,11 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
     def test_updateProperties_preserves_externally_set_properties(self):
         # Artifactory sets some properties by itself as part of scanning
         # packages.  We leave those untouched.
-        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
-        ds = self.factory.makeDistroSeries(distribution=archive.distribution)
+        ds = self.factory.makeDistroSeries(
+            distribution=self.archive.distribution)
         das = self.factory.makeDistroArchSeries(distroseries=ds)
         bpb = self.factory.makeBinaryPackageBuild(
-            archive=archive, distroarchseries=das,
+            archive=self.archive, distroarchseries=das,
             pocket=PackagePublishingPocket.RELEASE, sourcepackagename="foo")
         bpr = self.factory.makeBinaryPackageRelease(
             binarypackagename="foo", build=bpb, component="main",
@@ -341,7 +343,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 filename="foo_1.0_all.deb"),
             filetype=BinaryPackageFileType.DEB)
         bpphs = getUtility(IPublishingSet).publishBinaries(
-            archive, ds, PackagePublishingPocket.RELEASE,
+            self.archive, ds, PackagePublishingPocket.RELEASE,
             {bpr: (bpr.component, bpr.section, bpr.priority, None)})
         transaction.commit()
         self.pool.addFile(
