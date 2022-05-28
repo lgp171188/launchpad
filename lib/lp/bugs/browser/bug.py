@@ -626,11 +626,11 @@ class BugActivity(BugView):
 
     page_title = 'Activity log'
 
-    @property
+    @cachedproperty
     def activity(self):
-        activity = IBug(self.context).activity
+        activity = list(IBug(self.context).activity)
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-            [a.personID for a in activity], need_validity=True))
+            [a.person_id for a in activity], need_validity=True))
         return activity
 
 

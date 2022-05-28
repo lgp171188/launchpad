@@ -14,6 +14,8 @@ from collections import defaultdict
 import datetime
 import functools
 import logging
+import os.path
+import shutil
 
 import six
 from storm.expr import (
@@ -53,6 +55,7 @@ from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.builder import Builder
 from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.services.config import config
 from lp.services.database.bulk import dbify_value
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormexpr import (
@@ -796,6 +799,17 @@ class BuilddManager(service.Service):
 
     def startService(self):
         """Service entry point, called when the application starts."""
+        # Clear "grabbing" directory, used by
+        # BuildFarmJobBehaviourBase.handleSuccess as temporary storage for
+        # results of builds.  They're moved to "incoming" once they've been
+        # gathered completely, so any files still here when buildd-manager
+        # starts are useless, and we can easily end up with quite large
+        # leftovers here if buildd-manager was restarted while gathering
+        # builds.  The behaviour will recreate this directory as needed.
+        try:
+            shutil.rmtree(os.path.join(config.builddmaster.root, "grabbing"))
+        except FileNotFoundError:
+            pass
         # Add and start WorkerScanners for each current builder, and any
         # added in the future.
         self.scan_builders_loop, self.scan_builders_deferred = (

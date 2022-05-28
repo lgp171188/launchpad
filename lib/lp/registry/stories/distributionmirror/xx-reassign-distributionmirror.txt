@@ -4,11 +4,17 @@ allow them. -- Guilherme Salgado, 2006-10-27
 
     These are the variables that will be defined in each setup hook once we
     move to a generic test used for all objects that can be reassigned.
-    >>> from lp.registry.model.distributionmirror import DistributionMirror
-    >>> context = DistributionMirror.byName('archive-mirror')
+    >>> from zope.component import getUtility
+    >>> from lp.registry.interfaces.distributionmirror import (
+    ...     IDistributionMirrorSet,
+    ...     )
+    >>> login(ANONYMOUS)
+    >>> context = getUtility(IDistributionMirrorSet).getByName(
+    ...     'archive-mirror')
     >>> owner_attribute_name = 'owner'
     >>> context_url = (
     ...     'http://launchpad.test/ubuntu/+mirror/archive-mirror')
+    >>> logout()
 
 Distribution mirrors can be reassigned by anybody with the launchpad.Edit
 permission on them. Mark is the owner of the archive-mirror.
@@ -80,6 +86,9 @@ account.
     >>> browser.getControl('Change').click()
     >>> browser.url
     'http://launchpad.test/ubuntu/+mirror/archive-mirror'
-    >>> context = DistributionMirror.byName('archive-mirror')
+    >>> login(ANONYMOUS)
+    >>> context = getUtility(IDistributionMirrorSet).getByName(
+    ...     'archive-mirror')
     >>> salgado.id == getattr(context, owner_attribute_name).id
     True
+    >>> logout()

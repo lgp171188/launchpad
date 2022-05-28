@@ -5,6 +5,13 @@ __all__ = ['BugActivity', 'BugActivitySet']
 
 import re
 
+import pytz
+from storm.locals import (
+    DateTime,
+    Int,
+    Reference,
+    Unicode,
+    )
 from storm.store import Store
 from zope.interface import implementer
 
@@ -29,35 +36,45 @@ from lp.bugs.interfaces.bugactivity import (
     IBugActivitySet,
     )
 from lp.registry.interfaces.person import validate_person
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IBugActivity)
-class BugActivity(SQLBase):
+class BugActivity(StormBase):
     """Bug activity log entry."""
 
-    _table = 'BugActivity'
-    bug = ForeignKey(foreignKey='Bug', dbName='bug', notNull=True)
-    datechanged = UtcDateTimeCol(notNull=True)
-    person = ForeignKey(
-        dbName='person', foreignKey='Person',
-        storm_validator=validate_person,
-        notNull=True)
-    whatchanged = StringCol(notNull=True)
-    oldvalue = StringCol(default=None)
-    newvalue = StringCol(default=None)
-    message = StringCol(default=None)
+    __storm_table__ = 'BugActivity'
+
+    id = Int(primary=True)
+
+    bug_id = Int(name='bug', allow_none=False)
+    bug = Reference(bug_id, 'Bug.id')
+
+    datechanged = DateTime(tzinfo=pytz.UTC, allow_none=False)
+
+    person_id = Int(name='person', allow_none=False, validator=validate_person)
+    person = Reference(person_id, 'Person.id')
+
+    whatchanged = Unicode(allow_none=False)
+    oldvalue = Unicode(allow_none=True, default=None)
+    newvalue = Unicode(allow_none=True, default=None)
+    message = Unicode(allow_none=True, default=None)
 
     # The regular expression we use for matching bug task changes.
     bugtask_change_re = re.compile(
         r'(?P<target>[a-z0-9][a-z0-9\+\.\-]+( \([A-Za-z0-9\s]+\))?): '
         r'(?P<attribute>assignee|importance explanation|importance|'
         r'milestone|status explanation|status)')
+
+    def __init__(self, bug, datechanged, person, whatchanged,
+                 oldvalue=None, newvalue=None, message=None):
+        self.bug = bug
+        self.datechanged = datechanged
+        self.person = person
+        self.whatchanged = whatchanged
+        self.oldvalue = oldvalue
+        self.newvalue = newvalue
+        self.message = message
 
     @property
     def target(self):

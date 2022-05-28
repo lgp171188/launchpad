@@ -37,19 +37,13 @@ from lp.soyuz.adapters.archivedependencies import (
     )
 
 
-def replace_placeholders(s: str) -> str:
-    # replace both `read_auth` and `base_url` from input value
-    read_auth = config.artifactory.read_credentials
-    base_url = config.artifactory.base_url
-    return s % {
-        "read_auth": read_auth,
-        "base_url": base_url,
-    }
+def replace_auth_placeholder(s: str) -> str:
+    return s % {"read_auth": config.artifactory.read_credentials}
 
 
 def build_environment_variables(distribution_name: str) -> dict:
     # - load key/value pairs from JSON Object
-    # - replace authentication placeholders
+    # - replace authentication placeholder
     try:
         pairs = config["cibuild."+distribution_name]["environment_variables"]
     except NoSectionError:
@@ -58,13 +52,13 @@ def build_environment_variables(distribution_name: str) -> dict:
         return {}
     rv = {}
     for key, value in json.loads(pairs).items():
-        rv[key] = replace_placeholders(value)
+        rv[key] = replace_auth_placeholder(value)
     return rv
 
 
 def build_apt_repositories(distribution_name: str) -> list:
     # - load apt repository configuration lines from JSON Array
-    # - replace authentication placeholders
+    # - replace authentication placeholder
     try:
         lines = config["cibuild."+distribution_name]["apt_repositories"]
     except NoSectionError:
@@ -73,7 +67,7 @@ def build_apt_repositories(distribution_name: str) -> list:
         return []
     rv = []
     for line in json.loads(lines):
-        rv.append(replace_placeholders(line))
+        rv.append(replace_auth_placeholder(line))
     return rv
 
 

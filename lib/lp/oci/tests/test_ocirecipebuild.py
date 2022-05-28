@@ -730,6 +730,8 @@ class TestOCIRecipeBuildWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
                 "recipe_link": Equals(self.getURL(db_build.recipe)),
                 "distro_arch_series_link": Equals(
                     self.getURL(db_build.distro_arch_series)),
+                "arch_tag": Equals(
+                    db_build.distro_arch_series.architecturetag),
                 "score": Is(None),
                 "can_be_rescored": Is(False),
                 "can_be_cancelled": Is(False),

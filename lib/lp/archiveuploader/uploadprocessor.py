@@ -78,6 +78,10 @@ from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.log.logger import BufferLogger
+from lp.services.webapp.adapter import (
+    clear_request_started,
+    set_request_started,
+    )
 from lp.services.webapp.errorlog import (
     ErrorReportingUtility,
     ScriptRequest,
@@ -195,12 +199,15 @@ class UploadProcessor:
                     self.log.debug("Skipping %s -- does not match %s" % (
                         upload, leaf_name))
                     continue
+                set_request_started(enable_timeout=False)
                 try:
                     handler = UploadHandler.forProcessor(self, fsroot, upload)
                 except CannotGetBuild as e:
                     self.log.warning(e)
                 else:
                     handler.process()
+                finally:
+                    clear_request_started()
         finally:
             self.log.debug("Rolling back any remaining transactions.")
             self.ztm.abort()

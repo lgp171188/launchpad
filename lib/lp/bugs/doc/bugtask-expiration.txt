@@ -545,7 +545,7 @@ expired by the expiration process. Although ubuntu was never returned
 by findExpirableBugTasks(), it was expired because its primary (hoary)
 was expired. The remaining bugtasks are unchanged.
 
-    >>> summarize_bugtasks(bugtasks)
+    >>> summarize_bugtasks(bugtasks)  # noqa
     ROLE             EXPIRE  AGE  STATUS      ASSIGNED  DUP    MILE   REPLIES
     ubuntu           False     0  Expired     False     False  False  False
     hoary            False     0  Expired     False     False  False  False
@@ -578,7 +578,7 @@ primary and replica bugtasks were expired.
 
 The bug's activity log was updated too with the status change.
 
-    >>> activity = hoary_bugtask.bug.activity[-1]
+    >>> activity = hoary_bugtask.bug.activity.last()
     >>> print("%s  %s  %s  %s" % (
     ...     activity.person.displayname, activity.whatchanged,
     ...     activity.oldvalue, activity.newvalue))

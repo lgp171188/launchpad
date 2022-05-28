@@ -218,6 +218,9 @@ class IOCIRecipeBuildView(IPackageBuildView, IPrivacy):
         title=_("The series and architecture for which to build."),
         required=True, readonly=True))
 
+    arch_tag = exported(
+        TextLine(title=_("Architecture tag"), required=True, readonly=True))
+
     score = exported(Int(
         title=_("Score of the related build farm job (if any)."),
         required=False, readonly=True))

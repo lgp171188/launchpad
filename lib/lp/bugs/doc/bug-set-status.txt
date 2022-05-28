@@ -53,7 +53,9 @@ BugActivity records are created.
            Status: New => Confirmed
 
     >>> from lp.bugs.model.bugactivity import BugActivity
-    >>> latest_activity = BugActivity.selectFirst(orderBy='-id')
+    >>> from lp.services.database.interfaces import IStore
+    >>> latest_activity = IStore(BugActivity).find(
+    ...     BugActivity).order_by(BugActivity.id).last()
     >>> print(latest_activity.whatchanged)
     firefox: status
     >>> print(latest_activity.oldvalue)

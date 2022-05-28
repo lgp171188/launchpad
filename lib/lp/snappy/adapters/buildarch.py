@@ -56,23 +56,23 @@ class UnsupportedBuildOnError(SnapArchitecturesParserError):
 class SnapArchitecture:
     """A single entry in the snapcraft.yaml 'architectures' list."""
 
-    def __init__(self, build_on, run_on=None, build_error=None):
+    def __init__(self, build_on, build_to=None, build_error=None):
         """Create a new architecture entry.
 
         :param build_on: string or list; build-on property from
             snapcraft.yaml.
-        :param run_on: string or list; run-on property from snapcraft.yaml
-            (defaults to build_on).
+        :param build_to: string or list; build-to property from
+            snapcraft.yaml (defaults to build_on).
         :param build_error: string; build-error property from
             snapcraft.yaml.
         """
         self.build_on = (
             [build_on] if isinstance(build_on, str) else build_on)
-        if run_on:
-            self.run_on = (
-                [run_on] if isinstance(run_on, str) else run_on)
+        if build_to:
+            self.build_to = (
+                [build_to] if isinstance(build_to, str) else build_to)
         else:
-            self.run_on = self.build_on
+            self.build_to = self.build_on
         self.build_error = build_error
 
     @classmethod
@@ -84,8 +84,10 @@ class SnapArchitecture:
             raise MissingPropertyError("build-on")
 
         return cls(
-            build_on=build_on, run_on=properties.get("run-on"),
-            build_error=properties.get("build-error"))
+            build_on=build_on,
+            build_to=properties.get("build-to", properties.get("run-on")),
+            build_error=properties.get("build-error"),
+        )
 
 
 class SnapBuildInstance:

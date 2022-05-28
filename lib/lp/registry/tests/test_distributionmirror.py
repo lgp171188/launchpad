@@ -89,8 +89,8 @@ class TestDistributionMirror(TestCaseWithFactory):
         self.assertEqual(0, len(self.cdimage_mirror.cdimage_series))
 
     def test_archive_mirror_without_content_freshness(self):
-        self.assertFalse(self.archive_mirror.source_series)
-        self.assertFalse(self.archive_mirror.arch_series)
+        self.assertTrue(self.archive_mirror.source_series.is_empty())
+        self.assertTrue(self.archive_mirror.arch_series.is_empty())
         self.assertEqual(
             self.archive_mirror.getOverallFreshness(),
             MirrorFreshness.UNKNOWN)
