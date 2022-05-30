@@ -15,7 +15,6 @@ from storm.locals import (
     Int,
     Unicode,
     )
-from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.services.database.interfaces import IStore
@@ -24,7 +23,7 @@ from lp.services.scripts.interfaces.scriptactivity import (
     IScriptActivity,
     IScriptActivitySet,
     )
-from lp.services.statsd.interfaces.statsd_client import IStatsdClient
+from lp.services.scripts.metrics import emit_script_activity_metric
 
 
 @implementer(IScriptActivity)
@@ -58,12 +57,8 @@ class ScriptActivitySet:
             name=six.ensure_text(name), hostname=six.ensure_text(hostname),
             date_started=date_started, date_completed=date_completed)
         IStore(ScriptActivity).add(activity)
-        # Pass equivalent information through to statsd as well.  (Don't
-        # bother with the hostname, since telegraf adds that.)
-        getUtility(IStatsdClient).timing(
-            'script_activity',
-            (date_completed - date_started).total_seconds() * 1000,
-            labels={'name': name})
+        # Pass equivalent information through to statsd as well.
+        emit_script_activity_metric(name, date_completed - date_started)
         return activity
 
     def getLastActivity(self, name):
