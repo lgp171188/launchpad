@@ -6,21 +6,29 @@
 __all__ = [
     'IArchiveJob',
     'IArchiveJobSource',
+    'ICIBuildUploadJob',
+    'ICIBuildUploadJobSource',
     'IPackageUploadNotificationJob',
     'IPackageUploadNotificationJobSource',
     ]
 
 
+from lazr.restful.fields import Reference
 from zope.interface import (
     Attribute,
     Interface,
     )
 from zope.schema import (
+    Choice,
     Int,
     Object,
+    TextLine,
     )
 
 from lp import _
+from lp.code.interfaces.cibuild import ICIBuild
+from lp.registry.interfaces.distroseries import IDistroSeries
+from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.job.interfaces.job import (
     IJob,
     IJobSource,
@@ -62,3 +70,26 @@ class IPackageUploadNotificationJob(IRunnableJob):
 
 class IPackageUploadNotificationJobSource(IArchiveJobSource):
     """Interface for acquiring PackageUploadNotificationJobs."""
+
+
+class ICIBuildUploadJob(IRunnableJob):
+    """A Job to upload a CI build to an archive."""
+
+    ci_build = Reference(
+        schema=ICIBuild, title=_("CI build to copy"),
+        required=True, readonly=True)
+
+    target_distroseries = Reference(
+        schema=IDistroSeries, title=_("Target distroseries"),
+        required=True, readonly=True)
+
+    target_pocket = Choice(
+        title=_("Target pocket"), vocabulary=PackagePublishingPocket,
+        required=True, readonly=True)
+
+    target_channel = TextLine(
+        title=_("Target channel"), required=False, readonly=True)
+
+
+class ICIBuildUploadJobSource(IArchiveJobSource):
+    """Interface for acquiring `CIBuildUploadJob`s."""

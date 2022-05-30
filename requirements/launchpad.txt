@@ -109,6 +109,7 @@ PasteDeploy==2.1.0
 pathlib2==2.3.2
 patiencediff==0.2.2
 pgbouncer==0.0.9
+pkginfo==1.8.2
 prettytable==0.7.2
 psutil==5.4.2
 psycopg2==2.8.6
@@ -174,6 +175,7 @@ webencodings==0.5.1
 WebOb==1.8.5
 WebTest==2.0.35
 Werkzeug==1.0.1
+wheel-filename==1.1.0
 wrapt==1.12.1
 wsgi-intercept==1.9.2
 WSGIProxy2==0.4.6
