@@ -13,6 +13,7 @@ __all__ = [
 
 from operator import attrgetter
 import re
+import typing
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import six
@@ -82,6 +83,7 @@ from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.distroseriesparent import IDistroSeriesParentSet
 from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.registry.interfaces.person import (
+    IPerson,
     IPersonSet,
     validate_person,
     )
@@ -3019,6 +3021,52 @@ class ArchiveSet:
         results = store.find(SourcePackagePublishingHistory, *clauses)
 
         return results.order_by(SourcePackagePublishingHistory.id)
+
+    def checkViewPermission(
+        self, archives: typing.List[IArchive], user: IPerson
+    ) -> typing.Dict[IArchive, bool]:
+        """See `IArchiveSet`."""
+        allowed_ids = set()
+        ids_to_check_in_database = []
+        roles = IPersonRoles(user)
+        for archive in archives:
+            # No further checks are required if the archive is public and
+            # enabled.
+            if not archive.private and archive.enabled:
+                allowed_ids.add(archive.id)
+
+            # Administrators are allowed to view private archives.
+            elif roles.in_admin or roles.in_commercial_admin:
+                allowed_ids.add(archive.id)
+
+            # Registry experts are allowed to view public but disabled archives
+            # (since they are allowed to disable archives).
+            elif (not archive.private and not archive.enabled and
+                    roles.in_registry_experts):
+                allowed_ids.add(archive.id)
+
+            # Users that are direct owners (not through a team)
+            # can view the PPA.
+            # This is an optimization to avoid making a database query
+            # when a user is the direct owner of the PPA.
+            # Team ownership is accounted for in `get_enabled_archive_filter`
+            # below
+            elif user.id == removeSecurityProxy(archive).ownerID:
+                allowed_ids.add(archive.id)
+
+            else:
+                ids_to_check_in_database.append(archive.id)
+
+        if ids_to_check_in_database:
+            store = IStore(Archive)
+            allowed_ids.update(
+                store.find(
+                    Archive.id,
+                    Archive.id.is_in(ids_to_check_in_database),
+                    get_enabled_archive_filter(user),
+                )
+            )
+        return {archive: archive.id in allowed_ids for archive in archives}
 
     def empty_list(self):
         """See `IArchiveSet."""

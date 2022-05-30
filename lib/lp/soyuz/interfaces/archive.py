@@ -54,6 +54,7 @@ __all__ = [
 
 import http.client
 import re
+import typing
 from urllib.parse import urlparse
 
 from lazr.restful.declarations import (
@@ -2503,6 +2504,23 @@ class IArchiveSet(Interface):
             that are currently published in the given archives.
         """
 
+    def checkViewPermission(
+        archives: typing.List[IArchive], user: IPerson
+    ) -> typing.Dict[IArchive, bool]:
+        """
+        Given a collection of archives, check if the user can view
+        each of them.
+
+        Anyone can see a public and enabled archive.
+
+        Only Launchpad admins and uploaders can view private or disabled
+        archives.
+
+        :param archives: a collection of `IArchive` objects
+        :param user: a user (a `IPerson` object)
+        :return: a mapping of `IArchive` -> `bool`, where the values represent
+            the result of the permission check.
+        """
 
 default_name_by_purpose = {
     ArchivePurpose.PRIMARY: 'primary',
