@@ -151,7 +151,7 @@ BUG_POLICY_DEFAULT_TYPES = {
     }
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IHasBugs(Interface):
     """An entity which has a collection of bug tasks."""
 
@@ -210,7 +210,7 @@ class IHasExpirableBugs(Interface):
     """Marker interface for entities supporting querying expirable bugs"""
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugTarget(IHasBugs):
     """An entity on which a bug can be reported.
 

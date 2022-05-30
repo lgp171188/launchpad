@@ -29,7 +29,7 @@ from lp.services.fields import (
     )
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugActivity(Interface):
     """A log of all things that have happened to a bug."""
 

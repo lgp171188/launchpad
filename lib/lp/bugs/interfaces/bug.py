@@ -247,7 +247,7 @@ class IBugView(Interface):
                 "Expiration may happen when the bug permits expiration, "
                 "and a bugtask cannot be confirmed."),
             readonly=True),
-        ('devel', dict(exported=False)), exported=True)
+        ('devel', dict(exported=False)), as_of="beta", exported=True)
     subscriptions = exported(
         doNotSnapshot(CollectionField(
             title=_('Subscriptions'),
@@ -545,6 +545,7 @@ class IBugView(Interface):
     @operation_parameters(
         target=Reference(schema=Interface, title=_('Target')))
     @export_read_operation()
+    @operation_for_version("beta")
     def canBeNominatedFor(target):
         """Can this bug nominated for this target?
 
@@ -557,6 +558,7 @@ class IBugView(Interface):
         target=Reference(schema=Interface, title=_('Target')))
     @operation_returns_entry(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getNominationFor(target):
         """Return the IBugNomination for the target.
 
@@ -574,6 +576,7 @@ class IBugView(Interface):
             required=False))
     @operation_returns_collection_of(Interface)  # IBugNomination
     @export_read_operation()
+    @operation_for_version("beta")
     def getNominations(target=None, nominations=None):
         """Return a list of all IBugNominations for this bug.
 
@@ -615,6 +618,7 @@ class IBugView(Interface):
 
     @call_with(user=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def isUserAffected(user):
         """Is :user: marked as affected by this bug?"""
 
@@ -641,6 +645,7 @@ class IBugView(Interface):
             title=_('Number of days of inactivity for which to check.'),
             required=False))
     @export_read_operation()
+    @operation_for_version("beta")
     def isExpirable(days_old=None):
         """Is this bug eligible for expiration and was it last updated
         more than X days ago?
@@ -702,6 +707,7 @@ class IBugAppend(Interface):
         comment=Text(), filename=TextLine(), is_patch=Bool(),
         content_type=TextLine(), description=Text())
     @export_factory_operation(IBugAttachment, [])
+    @operation_for_version("beta")
     def addAttachment(owner, data, comment, filename, is_patch=False,
                       content_type=None, description=None, from_api=False):
         """Attach a file to this bug.
@@ -737,6 +743,7 @@ class IBugAppend(Interface):
         bugtracker='bug_tracker', remotebug='remote_bug')
     @export_factory_operation(
         IBugWatch, ['bugtracker', 'remotebug'])
+    @operation_for_version("beta")
     def addWatch(bugtracker, remotebug, owner):
         """Create a new watch for this bug on the given remote bug and bug
         tracker, owned by the person given as the owner.
@@ -794,6 +801,7 @@ class IBugAppend(Interface):
             required=False, default=True))
     @call_with(user=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def markUserAffected(user, affected=True):
         """Mark :user: as affected by this bug."""
 
@@ -804,6 +812,7 @@ class IBugAppend(Interface):
         visible=Bool(title=_('Show this comment?'), required=True))
     @call_with(user=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def setCommentVisibility(user, comment_number, visible):
         """Set the visible attribute on a bug comment.  This is restricted
         to Launchpad admins, and will return a HTTP Error 401: Unauthorized
@@ -833,6 +842,7 @@ class IBugAppend(Interface):
         content=copy_field(IMessage['content']))
     @call_with(owner=REQUEST_USER)
     @export_factory_operation(IMessage, [])
+    @operation_for_version("beta")
     def newMessage(owner, subject, content):
         """Create a new message, and link it to this object."""
 
@@ -843,6 +853,7 @@ class IBugAppend(Interface):
             title=_('Level')))
     @call_with(subscribed_by=REQUEST_USER, suppress_notify=False)
     @export_write_operation()
+    @operation_for_version("beta")
     def subscribe(person, subscribed_by, suppress_notify=True, level=None):
         """Subscribe `person` to the bug.
 
@@ -857,6 +868,7 @@ class IBugAppend(Interface):
         person=Reference(IPerson, title=_('Person'), required=False))
     @call_with(unsubscribed_by=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def unsubscribe(person, unsubscribed_by):
         """Remove this person's subscription to this bug."""
 
@@ -864,6 +876,7 @@ class IBugAppend(Interface):
         person=Reference(IPerson, title=_('Person'), required=False))
     @call_with(unsubscribed_by=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def unsubscribeFromDupes(person, unsubscribed_by):
         """Remove this person's subscription from all dupes of this bug."""
 
@@ -875,6 +888,7 @@ class IBugEdit(Interface):
         target=Reference(schema=Interface, title=_('Target')))
     @call_with(owner=REQUEST_USER)
     @export_factory_operation(Interface, [])
+    @operation_for_version("beta")
     def addNomination(owner, target):
         """Nominate a bug for an IDistroSeries or IProductSeries.
 
@@ -888,6 +902,7 @@ class IBugEdit(Interface):
     @call_with(owner=REQUEST_USER)
     @operation_parameters(target=copy_field(IBugTask['target']))
     @export_factory_operation(IBugTask, [])
+    @operation_for_version("beta")
     def addTask(owner, target):
         """Create a new bug task on this bug.
 
@@ -936,12 +951,14 @@ class IBugEdit(Interface):
     @call_with(user=REQUEST_USER)
     @operation_parameters(cve=Reference(ICve, title=_('CVE'), required=True))
     @export_write_operation()
+    @operation_for_version("beta")
     def linkCVE(cve, user, check_permissions=True):
         """Ensure that this CVE is linked to this bug."""
 
     @call_with(user=REQUEST_USER)
     @operation_parameters(cve=Reference(ICve, title=_('CVE'), required=True))
     @export_write_operation()
+    @operation_for_version("beta")
     def unlinkCVE(cve, user, check_permissions=True):
         """Ensure that any links between this bug and the given CVE are
         removed.
@@ -951,6 +968,7 @@ class IBugEdit(Interface):
     @operation_parameters(private=copy_field(IBugPublic['private']))
     @call_with(who=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def setPrivate(private, who):
         """Set bug privacy.
 
@@ -965,6 +983,7 @@ class IBugEdit(Interface):
         security_related=copy_field(IBugView['security_related']))
     @call_with(who=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def setSecurityRelated(security_related, who):
         """Set bug security.
 
@@ -990,6 +1009,7 @@ class IBugEdit(Interface):
     @mutator_for(IBugView['duplicateof'])
     @operation_parameters(duplicate_of=copy_field(IBugView['duplicateof']))
     @export_write_operation()
+    @operation_for_version("beta")
     def markAsDuplicate(duplicate_of):
         """Mark this bug as a duplicate of another."""
 
@@ -1054,7 +1074,7 @@ class IBugModerate(Interface):
         """
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBug(IBugPublic, IBugView, IBugAppend, IBugEdit, IBugModerate,
            IHasLinkedBranches):
     """The core bug entry."""

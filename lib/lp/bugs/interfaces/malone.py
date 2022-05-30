@@ -74,6 +74,7 @@ class IMaloneApplication(ILaunchpadApplication, IHasBugs):
     @export_factory_operation(
         IBug, ['title', 'description', 'tags', 'information_type',
                'security_related', 'private'])
+    @operation_for_version("beta")
     def createBug(owner, title, description, target, information_type=None,
                   tags=None, security_related=None, private=None):
         """Create a bug (with an appropriate bugtask) and return it.

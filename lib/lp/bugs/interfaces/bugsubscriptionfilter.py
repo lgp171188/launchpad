@@ -141,6 +141,7 @@ class IBugSubscriptionFilterMethodsProtected(Interface):
     """Methods of `IBugSubscriptionFilter` that require launchpad.Edit."""
 
     @export_destructor_operation()
+    @operation_for_version("beta")
     def delete():
         """Delete this bug subscription filter.
 
@@ -148,7 +149,7 @@ class IBugSubscriptionFilterMethodsProtected(Interface):
         structural subscription."""
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugSubscriptionFilter(
     IBugSubscriptionFilterAttributes, IBugSubscriptionFilterMethodsProtected,
     IBugSubscriptionFilterMethodsPublic):

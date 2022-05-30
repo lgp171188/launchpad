@@ -26,7 +26,7 @@ from lp.registry.interfaces.person import IPerson
 from lp.services.fields import BugField
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugBranch(IHasBug):
     """A branch linked to a bug."""
 

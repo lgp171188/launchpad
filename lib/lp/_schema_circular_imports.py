@@ -24,8 +24,6 @@ from lp.bugs.interfaces.bug import (
     IBug,
     IFrontPageBugAddForm,
     )
-from lp.bugs.interfaces.bugactivity import IBugActivity
-from lp.bugs.interfaces.bugattachment import IBugAttachment
 from lp.bugs.interfaces.bugbranch import IBugBranch
 from lp.bugs.interfaces.bugnomination import IBugNomination
 from lp.bugs.interfaces.bugsubscriptionfilter import IBugSubscriptionFilter
@@ -38,11 +36,8 @@ from lp.bugs.interfaces.bugtracker import (
     IBugTracker,
     IBugTrackerComponent,
     IBugTrackerComponentGroup,
-    IBugTrackerSet,
     )
 from lp.bugs.interfaces.bugwatch import IBugWatch
-from lp.bugs.interfaces.cve import ICve
-from lp.bugs.interfaces.malone import IMaloneApplication
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscription,
     IStructuralSubscriptionTarget,
@@ -773,69 +768,6 @@ patch_entry_explicit_version(IBranchSubscription, 'beta')
 patch_operations_explicit_version(
     IBranchSubscription, 'beta', "canBeUnsubscribedByUser")
 
-# IBug
-patch_entry_explicit_version(IBug, 'beta')
-patch_operations_explicit_version(
-    IBug, 'beta', "addAttachment", "addNomination", "addTask", "addWatch",
-    "canBeNominatedFor", "getNominationFor",
-    "getNominations", "isExpirable", "isUserAffected",
-    "linkCVE", "markAsDuplicate",
-    "markUserAffected", "newMessage", "setCommentVisibility", "setPrivate",
-    "setSecurityRelated", "subscribe", "unlinkCVE",
-    "unsubscribe", "unsubscribeFromDupes")
-
-# IBugActivity
-patch_entry_explicit_version(IBugActivity, 'beta')
-
-# IBugAttachment
-patch_entry_explicit_version(IBugAttachment, 'beta')
-patch_operations_explicit_version(
-    IBugAttachment, 'beta', "removeFromBug")
-
-# IBugBranch
-patch_entry_explicit_version(IBugBranch, 'beta')
-
-# IBugNomination
-patch_entry_explicit_version(IBugNomination, 'beta')
-patch_operations_explicit_version(
-    IBugNomination, 'beta', "approve", "canApprove", "decline")
-
-# IBugSubscriptionFilter
-patch_entry_explicit_version(IBugSubscriptionFilter, 'beta')
-patch_operations_explicit_version(
-    IBugSubscriptionFilter, 'beta', "delete")
-
-# IBugTarget
-patch_entry_explicit_version(IBugTarget, 'beta')
-
-# IBugTask
-patch_entry_explicit_version(IBugTask, 'beta')
-patch_operations_explicit_version(
-    IBugTask, 'beta', "findSimilarBugs", "transitionToAssignee",
-    "transitionToImportance", "transitionToMilestone", "transitionToStatus",
-    "transitionToTarget")
-
-# IBugTracker
-patch_entry_explicit_version(IBugTracker, 'beta')
-patch_operations_explicit_version(
-    IBugTracker, 'beta', "addRemoteComponentGroup",
-    "getAllRemoteComponentGroups", "getRemoteComponentGroup")
-
-# IBugTrackerComponent
-patch_entry_explicit_version(IBugTrackerComponent, 'beta')
-
-# IBugTrackerComponentGroup
-patch_entry_explicit_version(IBugTrackerComponentGroup, 'beta')
-patch_operations_explicit_version(
-    IBugTrackerComponentGroup, 'beta', "addComponent")
-
-# IBugTrackerSet
-patch_operations_explicit_version(
-    IBugTrackerSet, 'beta', "ensureBugTracker", "getByName", "queryByBaseURL")
-
-# IBugWatch
-patch_entry_explicit_version(IBugWatch, 'beta')
-
 # IBuilder
 patch_entry_explicit_version(IBuilder, 'beta')
 patch_reference_property(IBuilder, 'current_build', IBuildFarmJob)
@@ -866,9 +798,6 @@ patch_entry_explicit_version(ICountry, 'beta')
 # ICountrySet
 patch_operations_explicit_version(
     ICountrySet, 'beta', "getByCode", "getByName")
-
-# ICve
-patch_entry_explicit_version(ICve, 'beta')
 
 # IDistribution
 patch_operations_explicit_version(
@@ -907,9 +836,6 @@ patch_entry_explicit_version(IDistroSeriesDifferenceComment, 'beta')
 # IGPGKey
 patch_entry_explicit_version(IGPGKey, 'beta')
 
-# IHasBugs
-patch_entry_explicit_version(IHasBugs, 'beta')
-
 # IHasMilestones
 patch_entry_explicit_version(IHasMilestones, 'beta')
 
@@ -927,9 +853,6 @@ patch_entry_explicit_version(ILanguage, 'beta')
 
 # ILanguageSet
 patch_operations_explicit_version(ILanguageSet, 'beta', "getAllLanguages")
-
-# IMaloneApplication
-patch_operations_explicit_version(IMaloneApplication, 'beta', "createBug")
 
 # IMessage
 patch_entry_explicit_version(IMessage, 'beta')
@@ -1025,14 +948,6 @@ patch_operations_explicit_version(
 
 # ISourcePackageRecipeBuild
 patch_entry_explicit_version(ISourcePackageRecipeBuild, 'beta')
-
-# IStructuralSubscription
-patch_entry_explicit_version(IStructuralSubscription, 'beta')
-patch_operations_explicit_version(
-    IStructuralSubscription, 'beta', "delete", "newBugFilter")
-
-# IStructuralSubscriptionTarget
-patch_entry_explicit_version(IStructuralSubscriptionTarget, 'beta')
 
 # ITeam
 patch_entry_explicit_version(ITeam, 'beta')
