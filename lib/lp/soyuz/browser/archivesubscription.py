@@ -336,6 +336,29 @@ class PersonArchiveSubscriptionsView(LaunchpadView):
         for archive in archives:
             get_property_cache(archive)._known_subscribers = [self.context]
 
+        # Check if the user can view the archives and cache the permission
+        # check results
+        viewable_archives = []
+        non_viewable_archives = []
+        archive_set = getUtility(IArchiveSet) # type: IArchiveSet
+        for archive, has_view_permission in archive_set.checkViewPermission(
+            archives, self.user
+        ).items():
+            if has_view_permission:
+                viewable_archives.append(archive)
+            else:
+                non_viewable_archives.append(archive)
+        precache_permission_for_objects(
+            None,
+            'launchpad.View',
+            viewable_archives, result=True
+        )
+        precache_permission_for_objects(
+            None,
+            'launchpad.View',
+            non_viewable_archives, result=False
+        )
+
         # Turn the result set into a list of dicts so it can be easily
         # accessed in TAL. Note that we need to ensure that only one
         # PersonalArchiveSubscription is included for each archive,
