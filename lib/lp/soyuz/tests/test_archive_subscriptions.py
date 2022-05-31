@@ -182,7 +182,14 @@ class PersonArchiveSubscriptions(TestCaseWithFactory):
     def test_query_count(self):
         subscriber = self.factory.makePerson()
         for x in range(10):
-            archive = self.factory.makeArchive(private=True)
+            archive_owner = self.factory.makePerson()
+            # some archives are owned by a user, others are owned by a team
+            archive = self.factory.makeArchive(
+                private=True,
+                owner=archive_owner if x < 5 else self.factory.makeTeam(
+                    members=[archive_owner]
+                )
+            )
             with person_logged_in(archive.owner):
                 if x >= 5:
                     team = self.factory.makeTeam(members=[subscriber])
@@ -196,7 +203,7 @@ class PersonArchiveSubscriptions(TestCaseWithFactory):
                 view = create_initialized_view(
                     subscriber, '+archivesubscriptions', principal=subscriber)
                 view.render()
-        self.assertThat(recorder, HasQueryCount(Equals(12)))
+        self.assertThat(recorder, HasQueryCount(Equals(16)))
 
     def test_getArchiveSubscriptions(self):
         # Anyone with 'View' permission on a given person is able to

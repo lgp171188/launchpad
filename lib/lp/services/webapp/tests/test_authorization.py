@@ -521,13 +521,29 @@ class TestPrecachePermissionForObjects(TestCase):
         # policy cache for the permission specified.
         class Boring:
             """A boring, but weakref-able object."""
-        objects = [Boring(), Boring()]
+        viewable_objects = [Boring(), Boring()]
+        non_viewable_objects = [Boring(), Boring()]
         request = LaunchpadTestRequest()
         login(ANONYMOUS, request)
-        precache_permission_for_objects(request, 'launchpad.View', objects)
+        precache_permission_for_objects(
+            request, 'launchpad.View', viewable_objects
+        )
+        precache_permission_for_objects(
+            request, 'launchpad.View', non_viewable_objects, result=False
+        )
         # Confirm that the objects have the permission set.
-        self.assertTrue(check_permission('launchpad.View', objects[0]))
-        self.assertTrue(check_permission('launchpad.View', objects[1]))
+        self.assertTrue(
+            check_permission('launchpad.View', viewable_objects[0])
+        )
+        self.assertTrue(
+            check_permission('launchpad.View', viewable_objects[1])
+        )
+        self.assertFalse(
+            check_permission('launchpad.View', non_viewable_objects[0])
+        )
+        self.assertFalse(
+            check_permission('launchpad.View', non_viewable_objects[1])
+        )
 
     def test_default_request(self):
         # If no request is provided, the current interaction is used.

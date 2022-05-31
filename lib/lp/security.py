@@ -232,7 +232,10 @@ from lp.snappy.interfaces.snappyseries import (
     ISnappySeriesSet,
     )
 from lp.snappy.interfaces.snapsubscription import ISnapSubscription
-from lp.soyuz.interfaces.archive import IArchive
+from lp.soyuz.interfaces.archive import (
+    IArchive,
+    IArchiveSet,
+    )
 from lp.soyuz.interfaces.archiveauthtoken import IArchiveAuthToken
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.archivesubscriber import (
@@ -2784,35 +2787,11 @@ class ViewArchive(AuthorizationBase):
     usedfor = IArchive
 
     def checkAuthenticated(self, user):
-        """Verify that the user can view the archive.
-
-        Anyone can see a public and enabled archive.
-
-        Only Launchpad admins and uploaders can view private or disabled
-        archives.
-        """
-        # No further checks are required if the archive is public and
-        # enabled.
-        if not self.obj.private and self.obj.enabled:
-            return True
-
-        # Administrator are allowed to view private archives.
-        if user.in_admin or user.in_commercial_admin:
-            return True
-
-        # Registry experts are allowed to view public but disabled archives
-        # (since they are allowed to disable archives).
-        if (not self.obj.private and not self.obj.enabled and
-                user.in_registry_experts):
-            return True
-
-        # Owners can view the PPA.
-        if user.inTeam(self.obj.owner):
-            return True
-
-        filter = get_enabled_archive_filter(user.person)
-        return not IStore(self.obj).find(
-            Archive.id, And(Archive.id == self.obj.id, filter)).is_empty()
+        """Verify that the user can view the archive."""
+        archive_set = getUtility(IArchiveSet) # type: IArchiveSet
+        return archive_set.checkViewPermission(
+            [self.obj], user.person
+        )[self.obj]
 
     def checkUnauthenticated(self):
         """Unauthenticated users can see the PPA if it's not private."""

@@ -13,6 +13,7 @@ __all__ = [
 
 from operator import attrgetter
 import re
+import typing
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import six
@@ -82,6 +83,7 @@ from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.distroseriesparent import IDistroSeriesParentSet
 from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.registry.interfaces.person import (
+    IPerson,
     IPersonSet,
     validate_person,
     )
@@ -187,6 +189,7 @@ from lp.soyuz.interfaces.archive import (
     VersionRequiresName,
     )
 from lp.soyuz.interfaces.archiveauthtoken import IArchiveAuthTokenSet
+from lp.soyuz.interfaces.archivejob import ICIBuildUploadJobSource
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.archivesubscriber import (
     ArchiveSubscriptionError,
@@ -1990,6 +1993,34 @@ class Archive(SQLBase):
             sources, self, series, pocket, include_binaries, person=person,
             check_permissions=False, unembargo=True)
 
+    def uploadCIBuild(self, ci_build, person, to_series, to_pocket,
+                      to_channel=None):
+        """See `IArchive`."""
+        series = self._text_to_series(to_series)
+        pocket = self._text_to_pocket(to_pocket)
+        if self.publishing_method != ArchivePublishingMethod.ARTIFACTORY:
+            raise CannotCopy(
+                "CI builds may only be uploaded to archives published using "
+                "Artifactory.")
+        if ci_build.status != BuildStatus.FULLYBUILT:
+            raise CannotCopy(
+                "%r has status '%s', not '%s'." %
+                (ci_build, ci_build.status.title, BuildStatus.FULLYBUILT))
+        # Check upload permissions.  We don't know the package name until we
+        # actually run the job; however, per-package upload permissions are
+        # by source package name, so don't necessarily make sense for CI
+        # builds anyway.  For now, just ignore per-package upload
+        # permissions.
+        reason = self.checkUpload(
+            person=person, distroseries=series, sourcepackagename=None,
+            component=None, pocket=pocket)
+        if reason is not None:
+            raise CannotCopy(reason)
+        getUtility(ICIBuildUploadJobSource).create(
+            ci_build=ci_build, requester=person, target_archive=self,
+            target_distroseries=series, target_pocket=pocket,
+            target_channel=to_channel)
+
     def getAuthToken(self, person):
         """See `IArchive`."""
 
@@ -3019,6 +3050,52 @@ class ArchiveSet:
         results = store.find(SourcePackagePublishingHistory, *clauses)
 
         return results.order_by(SourcePackagePublishingHistory.id)
+
+    def checkViewPermission(
+        self, archives: typing.List[IArchive], user: IPerson
+    ) -> typing.Dict[IArchive, bool]:
+        """See `IArchiveSet`."""
+        allowed_ids = set()
+        ids_to_check_in_database = []
+        roles = IPersonRoles(user)
+        for archive in archives:
+            # No further checks are required if the archive is public and
+            # enabled.
+            if not archive.private and archive.enabled:
+                allowed_ids.add(archive.id)
+
+            # Administrators are allowed to view private archives.
+            elif roles.in_admin or roles.in_commercial_admin:
+                allowed_ids.add(archive.id)
+
+            # Registry experts are allowed to view public but disabled archives
+            # (since they are allowed to disable archives).
+            elif (not archive.private and not archive.enabled and
+                    roles.in_registry_experts):
+                allowed_ids.add(archive.id)
+
+            # Users that are direct owners (not through a team)
+            # can view the PPA.
+            # This is an optimization to avoid making a database query
+            # when a user is the direct owner of the PPA.
+            # Team ownership is accounted for in `get_enabled_archive_filter`
+            # below
+            elif user.id == removeSecurityProxy(archive).ownerID:
+                allowed_ids.add(archive.id)
+
+            else:
+                ids_to_check_in_database.append(archive.id)
+
+        if ids_to_check_in_database:
+            store = IStore(Archive)
+            allowed_ids.update(
+                store.find(
+                    Archive.id,
+                    Archive.id.is_in(ids_to_check_in_database),
+                    get_enabled_archive_filter(user),
+                )
+            )
+        return {archive: archive.id in allowed_ids for archive in archives}
 
     def empty_list(self):
         """See `IArchiveSet."""

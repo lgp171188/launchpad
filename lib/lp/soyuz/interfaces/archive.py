@@ -54,6 +54,7 @@ __all__ = [
 
 import http.client
 import re
+import typing
 from urllib.parse import urlparse
 
 from lazr.restful.declarations import (
@@ -1672,6 +1673,18 @@ class IArchiveView(IHasBuildRecords):
         :raises CannotCopy: if there is a problem copying.
         """
 
+    @call_with(person=REQUEST_USER)
+    @operation_parameters(
+        # Really ICIBuild, patched in _schema_circular_imports.
+        ci_build=Reference(schema=Interface),
+        to_series=TextLine(title=_("Target distroseries name")),
+        to_pocket=TextLine(title=_("Target pocket name")),
+        to_channel=TextLine(title=_("Target channel"), required=False))
+    @export_write_operation()
+    @operation_for_version('devel')
+    def uploadCIBuild(ci_build, person, to_series, to_pocket, to_channel=None):
+        """Upload the output of a CI build to this archive."""
+
 
 class IArchiveAppend(Interface):
     """Archive interface for operations restricted by append privilege."""
@@ -2503,6 +2516,23 @@ class IArchiveSet(Interface):
             that are currently published in the given archives.
         """
 
+    def checkViewPermission(
+        archives: typing.List[IArchive], user: IPerson
+    ) -> typing.Dict[IArchive, bool]:
+        """
+        Given a collection of archives, check if the user can view
+        each of them.
+
+        Anyone can see a public and enabled archive.
+
+        Only Launchpad admins and uploaders can view private or disabled
+        archives.
+
+        :param archives: a collection of `IArchive` objects
+        :param user: a user (a `IPerson` object)
+        :return: a mapping of `IArchive` -> `bool`, where the values represent
+            the result of the permission check.
+        """
 
 default_name_by_purpose = {
     ArchivePurpose.PRIMARY: 'primary',

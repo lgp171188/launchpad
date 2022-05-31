@@ -1097,7 +1097,7 @@ def expand_binary_requests(distroseries, binaries):
             # Find the DAS in this series corresponding to the original
             # build arch tag. If it does not exist or is disabled, we should
             # not publish.
-            target_arch = arch_map.get(bpr.build.arch_tag)
+            target_arch = arch_map.get((bpr.build or bpr.ci_build).arch_tag)
             target_archs = [target_arch] if target_arch is not None else []
         else:
             target_archs = archs

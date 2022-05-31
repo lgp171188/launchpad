@@ -337,7 +337,9 @@ def iter_authorization(objecttoauthorize, permission, principal, cache,
             yield result
 
 
-def precache_permission_for_objects(participation, permission_name, objects):
+def precache_permission_for_objects(
+    participation, permission_name, objects, result=True
+):
     """Precaches the permission for the objects into the policy cache."""
     if participation is None:
         participation = getInteraction().participations[0]
@@ -347,7 +349,7 @@ def precache_permission_for_objects(participation, permission_name, objects):
     for obj in objects:
         naked_obj = removeSecurityProxy(obj)
         obj_permission_cache = permission_cache.setdefault(naked_obj, {})
-        obj_permission_cache[permission_name] = True
+        obj_permission_cache[permission_name] = result
 
 
 def check_permission(permission_name, context):
