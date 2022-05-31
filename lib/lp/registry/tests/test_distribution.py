@@ -86,6 +86,7 @@ from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     )
 from lp.testing import (
     admin_logged_in,
+    anonymous_logged_in,
     api_url,
     celebrity_logged_in,
     login,
@@ -1813,6 +1814,33 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
+    def assert_newVulnerability_only_the_required_params(
+            self,
+            distribution,
+            creator
+    ):
+        vulnerability = distribution.newVulnerability(
+            status=VulnerabilityStatus.NEEDS_TRIAGE,
+            information_type=InformationType.PUBLIC,
+            creator=creator,
+        )
+
+        self.assertThat(
+            vulnerability,
+            MatchesStructure.byEquality(
+                status=VulnerabilityStatus.NEEDS_TRIAGE,
+                creator=creator,
+                importance=BugTaskImportance.UNDECIDED,
+                information_type=InformationType.PUBLIC,
+                cve=None,
+                description=None,
+                notes=None,
+                mitigation=None,
+                importance_explanation=None,
+                date_made_public=None
+            )
+        )
+
     def test_vulnerabilities_no_vulnerability_present(self):
         distribution = self.factory.makeDistribution()
         self.assertEqual(0, distribution.vulnerabilities.count())
@@ -1830,33 +1858,34 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
             set(distribution.vulnerabilities),
         )
 
+    def test_set_security_admin_permissions(self):
+        distribution = self.factory.makeDistribution()
+        person = self.factory.makePerson()
+        person2 = self.factory.makePerson()
+        security_team = self.factory.makeTeam(members=[person])
+
+        with person_logged_in(distribution.owner):
+            distribution.security_admin = security_team
+            self.assertEqual(security_team, distribution.security_admin)
+
+        with admin_logged_in():
+            distribution.security_admin = None
+            self.assertIsNone(distribution.security_admin)
+
+        with person_logged_in(person2), ExpectedException(Unauthorized):
+            distribution.security_admin = security_team
+
+        with anonymous_logged_in(), ExpectedException(Unauthorized):
+            distribution.security_admin = security_team
+
     def test_newVulnerability_default_arguments(self):
         distribution = self.factory.makeDistribution()
         owner = distribution.owner
 
         with person_logged_in(owner):
-            # The distribution owner can create a new vulnerability in
-            # the distribution.
-            vulnerability = distribution.newVulnerability(
-                status=VulnerabilityStatus.NEEDS_TRIAGE,
-                information_type=InformationType.PUBLIC,
-                creator=owner,
-            )
-
-            self.assertThat(
-                vulnerability,
-                MatchesStructure.byEquality(
-                    status=VulnerabilityStatus.NEEDS_TRIAGE,
-                    creator=owner,
-                    importance=BugTaskImportance.UNDECIDED,
-                    information_type=InformationType.PUBLIC,
-                    cve=None,
-                    description=None,
-                    notes=None,
-                    mitigation=None,
-                    importance_explanation=None,
-                    date_made_public=None
-                )
+            self.assert_newVulnerability_only_the_required_params(
+                distribution,
+                creator=owner
             )
 
     def test_newVulnerability_all_parameters(self):
@@ -1894,6 +1923,54 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
                     importance_explanation='Foo bar baz',
                     date_made_public=now,
                 )
+            )
+
+    def test_newVulnerability_permissions(self):
+        person = self.factory.makePerson()
+        distribution = self.factory.makeDistribution()
+        security_team = self.factory.makeTeam(members=[person])
+
+        # The distribution owner, admin, can create a new vulnerability
+        # in the distribution.
+        with person_logged_in(distribution.owner):
+            self.assert_newVulnerability_only_the_required_params(
+                distribution,
+                creator=distribution.owner
+            )
+
+        with admin_logged_in():
+            self.assert_newVulnerability_only_the_required_params(
+                distribution,
+                creator=person
+            )
+        self.factory.makeCommercialSubscription(pillar=distribution)
+
+        with celebrity_logged_in('commercial_admin'):
+            self.assert_newVulnerability_only_the_required_params(
+                distribution,
+                creator=person
+            )
+
+        with person_logged_in(distribution.owner):
+            distribution.security_admin = security_team
+
+        # When the security admin is set for the distribution,
+        # users in that team can create a new vulnerability in the
+        # distribution.
+        with person_logged_in(person):
+            self.assert_newVulnerability_only_the_required_params(
+                distribution,
+                creator=person
+            )
+
+    def test_newVulnerability_cannot_be_called_by_unprivileged_users(self):
+        person = self.factory.makePerson()
+        distribution = self.factory.makeDistribution()
+        with person_logged_in(person), ExpectedException(Unauthorized):
+            distribution.newVulnerability(
+                status=VulnerabilityStatus.NEEDS_TRIAGE,
+                information_type=InformationType.PUBLIC,
+                creator=person,
             )
 
     def test_getVulnerability_non_existent_id(self):
@@ -2145,6 +2222,66 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
             "information_type": Equals("Public"),
             "date_made_public": Is(None),
         }))
+
+    def test_newVulnerability_security_admin(self):
+        distribution = self.factory.makeDistribution()
+        person = self.factory.makePerson()
+        security_team = self.factory.makeTeam(members=[person])
+        api_base = "http://api.launchpad.test/devel"
+        distribution_url = api_base + api_url(distribution)
+        owner_url = api_base + api_url(person)
+
+        with person_logged_in(distribution.owner):
+            distribution.security_admin = security_team
+
+        webservice = webservice_for_person(
+            person,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel"
+        )
+        response = webservice.named_post(
+            distribution_url,
+            'newVulnerability',
+            status='Needs triage',
+            information_type='Public',
+            creator=owner_url,
+        )
+        self.assertEqual(200, response.status)
+        self.assertThat(response.jsonBody(), ContainsDict({
+            "distribution_link": Equals(distribution_url),
+            "id": IsInstance(int),
+            "cve_link": Is(None),
+            "creator_link": Equals(owner_url),
+            "status": Equals("Needs triage"),
+            "description": Is(None),
+            "notes": Is(None),
+            "mitigation": Is(None),
+            "importance": Equals("Undecided"),
+            "importance_explanation": Is(None),
+            "information_type": Equals("Public"),
+            "date_made_public": Is(None),
+        }))
+
+    def test_newVulnerability_unauthorized_users(self):
+        distribution = self.factory.makeDistribution()
+        person = self.factory.makePerson()
+        api_base = "http://api.launchpad.test/devel"
+        distribution_url = api_base + api_url(distribution)
+        owner_url = api_base + api_url(person)
+
+        webservice = webservice_for_person(
+            person,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel"
+        )
+        response = webservice.named_post(
+            distribution_url,
+            'newVulnerability',
+            status='Needs triage',
+            information_type='Public',
+            creator=owner_url,
+        )
+        self.assertEqual(401, response.status)
 
     def test_newVulnerability_all_parameters(self):
         distribution = self.factory.makeDistribution()

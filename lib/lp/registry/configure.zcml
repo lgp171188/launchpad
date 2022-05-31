@@ -1834,6 +1834,9 @@
             interface="lp.registry.interfaces.distribution.IDistributionEditRestricted"
             set_schema="lp.app.interfaces.informationtype.IInformationType"/>
         <require
+            permission="launchpad.SecurityAdmin"
+            interface="lp.registry.interfaces.distribution.IDistributionSecurityAdminRestricted" />
+        <require
             permission="launchpad.Edit"
             set_attributes="answers_usage blueprints_usage codehosting_usage
                             bug_tracking_usage uses_launchpad"/>
@@ -1866,6 +1869,7 @@
                 package_derivatives_email
                 redirect_default_traversal
                 redirect_release_uploads
+                security_admin
                 summary
                 vcs
                 "/>

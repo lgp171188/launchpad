@@ -685,6 +685,9 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
     language_pack_admin = ForeignKey(
         dbName='language_pack_admin', foreignKey='Person',
         storm_validator=validate_public_person, notNull=False, default=None)
+    security_admin = ForeignKey(
+        dbName='security_admin', foreignKey='Person',
+        storm_validator=validate_public_person, notNull=False, default=None)
 
     @cachedproperty
     def main_archive(self):
