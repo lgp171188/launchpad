@@ -20,7 +20,10 @@ from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 import requests
 import six
-from storm.expr import And
+from storm.expr import (
+    And,
+    Or,
+    )
 from storm.locals import (
     DateTime,
     Int,
@@ -643,15 +646,16 @@ class GitRef(GitRefMixin, StormBase):
                 return path
             return "refs/heads/%s" % path
 
-        condition = None
+        clauses = []
         for repo, path in repos_and_paths:
-            clause = And(
+            clauses.append(And(
                 GitRef.path.is_in([path, full_path(path)]),
-                (GitRef.repository_id == repo.id))
-            condition = clause if condition is None else condition | clause
-        result = {}
+                (GitRef.repository_id == repo.id)))
+        if not clauses:
+            return {}
 
-        for row in IStore(GitRef).find(GitRef, condition):
+        result = {}
+        for row in IStore(GitRef).find(GitRef, Or(*clauses)):
             result[(row.repository_id, row.path)] = row
 
         return_value = {}
