@@ -31,6 +31,11 @@
       <dt>OCI project admins:</dt>
       <dd tal:content="structure view/oci_project_admin_widget" />
     </dl>
+
+    <dl id="security-admins">
+      <dt>Security admins:</dt>
+      <dd tal:content="structure view/security_admin_widget" />
+    </dl>
   </div>
 
   <dl id="uploaders" style="clear:left">

@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for distributions."""
@@ -12,6 +12,7 @@ __all__ = [
     'DistributionChangeMembersView',
     'DistributionChangeMirrorAdminView',
     'DistributionChangeOCIProjectAdminView',
+    'DistributionChangeSecurityAdminView',
     'DistributionCountryArchiveMirrorsView',
     'DistributionDisabledMirrorsView',
     'DistributionEditView',
@@ -417,6 +418,7 @@ class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
         'members',
         'mirror_admin',
         'oci_project_admin',
+        'security_admin',
         'reassign',
         'addseries',
         'series',
@@ -509,6 +511,11 @@ class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
     def oci_project_admin(self):
         text = 'Change OCI project admins'
         return Link('+select-oci-project-admins', text, icon='edit')
+
+    @enabled_with_permission('launchpad.Edit')
+    def security_admin(self):
+        text = 'Change security admins'
+        return Link('+select-security-admins', text, icon='edit')
 
     def search(self):
         text = 'Search packages'
@@ -792,6 +799,26 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
             edit_view='+select-oci-project-admins',
             null_display_value=empty_value,
             step_title='Select a new OCI project administrator')
+
+    @property
+    def security_admin_widget(self):
+        if canWrite(self.context, 'security_admin'):
+            empty_value = ' Specify a security administrator'
+        else:
+            empty_value = 'None'
+
+        return InlinePersonEditPickerWidget(
+            self.context,
+            IDistribution['security_admin'],
+            format_link(
+                self.context.security_admin,
+                empty_value=empty_value,
+            ),
+            header='Change the security administrator',
+            edit_view='+select-security-admins',
+            null_display_value=empty_value,
+            step_title='Select a new security administrator'
+        )
 
     def linkedMilestonesForSeries(self, series):
         """Return a string of linkified milestones in the series."""
@@ -1216,6 +1243,19 @@ class DistributionChangeOCIProjectAdminView(RegistryEditFormView):
         """See `LaunchpadFormView`."""
         return "Change the %s OCI project administrator" % (
             self.context.displayname)
+
+
+class DistributionChangeSecurityAdminView(RegistryEditFormView):
+    """A view to change the security administrator."""
+    schema = IDistribution
+    field_names = ['security_admin']
+
+    @property
+    def label(self):
+        """See `LaunchpadFormView`."""
+        return "Change the %s security administrator" % (
+            self.context.displayname
+        )
 
 
 class DistributionChangeMembersView(RegistryEditFormView):
