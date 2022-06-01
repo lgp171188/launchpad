@@ -74,7 +74,10 @@ from lp.services.database.bulk import load_related
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import flush_database_updates
+from lp.services.database.sqlbase import (
+    block_implicit_flushes,
+    flush_database_updates,
+    )
 from lp.services.database.stormexpr import IsDistinctFrom
 from lp.services.orderingcheck import OrderingCheck
 from lp.soyuz.adapters.packagelocation import PackageLocation
@@ -563,6 +566,7 @@ class Dominator:
             # XXX cprov 20070820: 'datemadepending' is useless, since it's
             # always equals to "scheduleddeletiondate - quarantine".
             pub_record.datemadepending = UTC_NOW
+            IStore(pub_record).flush()
 
         for pub_record in source_records:
             srcpkg_release = pub_record.sourcepackagerelease
@@ -612,6 +616,10 @@ class Dominator:
             # XXX cprov 20070820: 'datemadepending' is pointless, since it's
             # always equals to "scheduleddeletiondate - quarantine".
             pub_record.datemadepending = UTC_NOW
+            # We have to flush for each source publication, since otherwise
+            # the query above for other PUBLISHED records for the same SPR
+            # might have the effect of discarding these updates.
+            IStore(pub_record).flush()
 
     def findBinariesForDomination(self, distroarchseries, pocket):
         """Find binary publications that need dominating.
@@ -684,6 +692,7 @@ class Dominator:
                 self.logger.info("Applying supersessions...")
             for pub, dominant in supersede:
                 pub.supersede(dominant, logger=self.logger)
+                IStore(pub).flush()
                 # If this is architecture-independent, all publications with
                 # the same context and overrides should be dominated
                 # simultaneously, unless one of the plans decided to keep
@@ -693,10 +702,12 @@ class Dominator:
                     for dominated in pub.getOtherPublications():
                         if dominated != pub and dominated not in keep:
                             dominated.supersede(dominant, logger=self.logger)
+                            IStore(dominated).flush()
             if delete:
                 self.logger.info("Applying deletions...")
             for pub in delete:
                 pub.requestDeletion(None)
+                IStore(pub).flush()
 
         for distroarchseries in distroseries.architectures:
             self.logger.info(
@@ -827,10 +838,10 @@ class Dominator:
 
         for pub, dominant in supersede:
             pub.supersede(dominant, logger=self.logger)
+            IStore(pub).flush()
         for pub in delete:
             pub.requestDeletion(None)
-
-        flush_database_updates()
+            IStore(pub).flush()
 
     def findPublishedSourcePackageNames(self, distroseries, pocket):
         """Find currently published source packages.
@@ -889,8 +900,10 @@ class Dominator:
             pubs, live_versions, generalization)
         for pub, dominant in supersede:
             pub.supersede(dominant, logger=self.logger)
+            IStore(pub).flush()
         for pub in delete:
             pub.requestDeletion(None, immutable_check=immutable_check)
+            IStore(pub).flush()
 
     def judge(self, distroseries, pocket):
         """Judge superseded sources and binaries."""
@@ -918,11 +931,22 @@ class Dominator:
 
         self._judgeSuperseded(sources, binaries)
 
+    # The domination process loads many objects into the Storm cache, many
+    # of which contain mutable-value variables, and Store.flush gets
+    # substantially slower when the cache contains many mutable-value
+    # variables since it has to dump each of them to detect changes.  In the
+    # long term we may need a different strategy for mutable-value variables
+    # in Storm; in the short term, we can get by with blocking implicit
+    # flushes during domination (so that every Store.get doesn't incur a
+    # flush) and being careful to flush both at the start of domination and
+    # explicitly after changing objects.
+    @block_implicit_flushes
     def judgeAndDominate(self, distroseries, pocket):
         """Perform the domination and superseding calculations
 
         It only works across the distroseries and pocket specified.
         """
+        flush_database_updates()
 
         self.dominateBinaries(distroseries, pocket)
         self.dominateSources(distroseries, pocket)
