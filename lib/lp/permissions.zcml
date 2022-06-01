@@ -70,6 +70,10 @@
     id="launchpad.LanguagePacksAdmin" title="Administer Language Packs."
     access_level="write" />
 
+  <permission
+    id="launchpad.SecurityAdmin" title="Administer vulnerabilities."
+    access_level="write" />
+
   <!-- XXX: GuilhermeSalgado 2005-08-25
   To be removed soon, this is only needed by the page to upload SSH
   keys, cause we decided to not allow admins to upload keys in behalf of other

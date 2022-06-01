@@ -480,6 +480,11 @@ class IDistributionView(
     has_current_commercial_subscription = Attribute(
         "Whether the distribution has a current commercial subscription.")
 
+    security_admin = Choice(
+        title=_("Security Administrator"),
+        description=_("The distribution security administrator."),
+        required=False, vocabulary='ValidPersonOrTeam')
+
     vulnerabilities = exported(
         doNotSnapshot(CollectionField(
             description=_("Vulnerabilities in this distribution."),
@@ -889,6 +894,10 @@ class IDistributionEditRestricted(IOfficialBugTagTargetRestricted):
     def deleteOCICredentials():
         """Delete any existing OCI credentials for the distribution."""
 
+
+class IDistributionSecurityAdminRestricted(Interface):
+    """IDistribution properties requiring launchpad.SecurityAdmin permission"""
+
     @call_with(creator=REQUEST_USER)
     @operation_parameters(
         status=Choice(
@@ -954,10 +963,10 @@ class IDistributionEditRestricted(IOfficialBugTagTargetRestricted):
 
 @exported_as_webservice_entry(as_of="beta")
 class IDistribution(
-        IDistributionEditRestricted, IDistributionPublic,
-        IDistributionLimitedView, IDistributionView, IHasBugSupervisor,
-        IFAQTarget, IQuestionTarget, IStructuralSubscriptionTarget,
-        IInformationType):
+        IDistributionEditRestricted, IDistributionSecurityAdminRestricted,
+        IDistributionPublic,IDistributionLimitedView, IDistributionView,
+        IHasBugSupervisor, IFAQTarget, IQuestionTarget,
+        IStructuralSubscriptionTarget, IInformationType):
     """An operating system distribution.
 
     Launchpadlib example: retrieving the current version of a package in a

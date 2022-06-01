@@ -55,7 +55,6 @@ from lp.blueprints.model.specificationsubscription import (
     )
 from lp.bugs.interfaces.bugtarget import IOfficialBugTagTargetRestricted
 from lp.bugs.interfaces.structuralsubscription import IStructuralSubscription
-from lp.bugs.interfaces.vulnerability import IVulnerability
 from lp.bugs.model.bugsubscription import BugSubscription
 from lp.bugs.model.bugtaskflat import BugTaskFlat
 from lp.bugs.model.bugtasksearch import get_bug_privacy_filter
@@ -1291,6 +1290,21 @@ class EditDistributionByDistroOwnersOrAdmins(AuthorizationBase):
             user.isOwner(self.obj)
             or is_commercial_case(self.obj, user)
             or user.in_admin)
+
+
+class SecurityAdminDistribution(AuthorizationBase):
+    """The security admins of a distribution should be able to create
+    and edit vulnerabilities in the distribution."""
+    permission = 'launchpad.SecurityAdmin'
+    usedfor = IDistribution
+
+    def checkAuthenticated(self, user):
+        return (
+            user.isOwner(self.obj)
+            or is_commercial_case(self.obj, user)
+            or user.in_admin
+            or user.inTeam(self.obj.security_admin)
+        )
 
 
 class ModerateDistributionByDriversOrOwnersOrAdmins(AuthorizationBase):
@@ -3780,14 +3794,3 @@ class EditCIBuild(AdminByBuilddAdmin):
         if auth_repository.checkAuthenticated(user):
             return True
         return super().checkAuthenticated(user)
-
-
-class EditVulnerability(AuthorizationBase):
-    permission = 'launchpad.Edit'
-    usedfor = IVulnerability
-
-    def checkAuthenticated(self, user):
-        return (user.in_commercial_admin or user.in_admin or
-                user.isOwner(self.obj.distribution) or
-                user.isDriver(self.obj.distribution) or
-                user.isBugSupervisor(self.obj.distribution))
