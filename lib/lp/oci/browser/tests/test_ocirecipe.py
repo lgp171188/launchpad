@@ -336,7 +336,8 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         self.assertContentEqual(["386", "amd64", "hppa"], processors.value)
 
     def test_create_new_recipe_display_restricted_processors(self):
-        # A restricted processor is shown disabled in the UI.
+        # A restricted processor is shown with a disabled (greyed out)
+        # checkbox in the UI.
         self.setUpDistroSeries()
         oci_project = self.factory.makeOCIProject(pillar=self.distribution)
         proc_armhf = self.factory.makeProcessor(
@@ -900,8 +901,8 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         self.assertRecipeProcessors(recipe, ["amd64", "armel"])
 
     def test_edit_processors_restricted(self):
-        # A restricted processor is shown disabled in the UI and cannot be
-        # enabled.
+        # A restricted processor is shown with a disabled (greyed out)
+        # checkbox in the UI, and the processor cannot be enabled.
         self.setUpDistroSeries()
         proc_armhf = self.factory.makeProcessor(
             name="armhf", restricted=True, build_by_default=False)
@@ -929,10 +930,11 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             browser.getControl("Update OCI recipe").click)
 
     def test_edit_processors_restricted_already_enabled(self):
-        # A restricted processor that is already enabled is shown disabled
-        # in the UI.  This causes form submission to omit it, but the
-        # validation code fixes that up behind the scenes so that we don't
-        # get CannotModifyOCIRecipeProcessor.
+        # A restricted processor that is already enabled is shown with a
+        # disabled (greyed out) checkbox in the UI.  This causes form
+        # submission to omit it, but the validation code fixes that up
+        # behind the scenes so that we don't get
+        # CannotModifyOCIRecipeProcessor.
         proc_386 = getUtility(IProcessorSet).getByName("386")
         proc_amd64 = getUtility(IProcessorSet).getByName("amd64")
         proc_armhf = self.factory.makeProcessor(

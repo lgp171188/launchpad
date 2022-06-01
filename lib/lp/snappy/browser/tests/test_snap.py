@@ -629,7 +629,8 @@ class TestSnapAddView(BaseTestSnapView):
         self.assertContentEqual(["386", "amd64", "hppa"], processors.value)
 
     def test_create_new_snap_display_restricted_processors(self):
-        # A restricted processor is shown disabled in the UI.
+        # A restricted processor is shown with a disabled (greyed out)
+        # checkbox in the UI.
         self.useFixture(BranchHostingFixture(blob=b""))
         branch = self.factory.makeAnyBranch()
         distroseries = self.setUpDistroSeries()
@@ -1311,8 +1312,8 @@ class TestSnapEditView(BaseTestSnapView):
         self.assertSnapProcessors(snap, ["amd64", "armel"])
 
     def test_edit_processors_restricted(self):
-        # A restricted processor is shown disabled in the UI and cannot be
-        # enabled.
+        # A restricted processor is shown with a disabled (greyed out)
+        # checkbox in the UI, and the processor cannot be enabled.
         distroseries, snappyseries = self.setUpSeries()
         proc_armhf = self.factory.makeProcessor(
             name="armhf", restricted=True, build_by_default=False)
@@ -1339,10 +1340,10 @@ class TestSnapEditView(BaseTestSnapView):
             browser.getControl("Update snap package").click)
 
     def test_edit_processors_restricted_already_enabled(self):
-        # A restricted processor that is already enabled is shown disabled
-        # in the UI.  This causes form submission to omit it, but the
-        # validation code fixes that up behind the scenes so that we don't
-        # get CannotModifySnapProcessor.
+        # A restricted processor that is already enabled is shown with a
+        # disabled (greyed out) checkbox in the UI.  This causes form
+        # submission to omit it, but the validation code fixes that up
+        # behind the scenes so that we don't get CannotModifySnapProcessor.
         proc_386 = getUtility(IProcessorSet).getByName("386")
         proc_amd64 = getUtility(IProcessorSet).getByName("amd64")
         proc_armhf = self.factory.makeProcessor(
