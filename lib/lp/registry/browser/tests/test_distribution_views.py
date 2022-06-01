@@ -277,8 +277,8 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertThat(processors_control.controls, MatchesSetwise(*matchers))
 
     def test_edit_processors_restricted(self):
-        # A restricted processor is shown disabled in the UI and cannot be
-        # enabled.
+        # A restricted processor is shown with a disabled (greyed out)
+        # checkbox in the UI, and the processor cannot be enabled.
         self.useFixture(FakeLogger())
         self.factory.makeProcessor(
             name="riscv64", restricted=True, build_by_default=False)
@@ -301,10 +301,11 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
             browser.getControl(name="field.actions.change").click)
 
     def test_edit_processors_restricted_already_enabled(self):
-        # A restricted processor that is already enabled is shown disabled
-        # in the UI.  This causes form submission to omit it, but the
-        # validation code fixes that up behind the scenes so that we don't
-        # get CannotModifyArchiveProcessor.
+        # A restricted processor that is already enabled is shown with a
+        # disabled (greyed out) checkbox in the UI.  This causes form
+        # submission to omit it, but the validation code fixes that up
+        # behind the scenes so that we don't get
+        # CannotModifyArchiveProcessor.
         proc_386 = getUtility(IProcessorSet).getByName("386")
         proc_amd64 = getUtility(IProcessorSet).getByName("amd64")
         proc_riscv64 = self.factory.makeProcessor(
