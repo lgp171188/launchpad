@@ -1,8 +1,12 @@
 # Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from fixtures import FakeLogger
 import soupmatchers
-from testtools.matchers import MatchesStructure
+from testtools.matchers import (
+    MatchesSetwise,
+    MatchesStructure,
+    )
 import transaction
 from zope.component import getUtility
 
@@ -17,12 +21,15 @@ from lp.registry.interfaces.distributionmirror import (
     MirrorContent,
     MirrorStatus,
     )
+from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.services.worlddata.interfaces.country import ICountrySet
+from lp.soyuz.interfaces.archive import CannotModifyArchiveProcessor
 from lp.testing import (
     login,
     login_celebrity,
     login_person,
+    person_logged_in,
     record_two_runs,
     TestCaseWithFactory,
     )
@@ -254,6 +261,70 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
             method='POST', form=edit_form)
 
         self.assertContentEqual([], self.distribution.main_archive.processors)
+
+    def assertArchiveProcessors(self, archive, names):
+        with person_logged_in(archive.owner):
+            self.assertContentEqual(
+                names, [processor.name for processor in archive.processors])
+
+    def assertProcessorControls(self, processors_control, enabled, disabled):
+        matchers = [
+            MatchesStructure.byEquality(optionValue=name, disabled=False)
+            for name in enabled]
+        matchers.extend([
+            MatchesStructure.byEquality(optionValue=name, disabled=True)
+            for name in disabled])
+        self.assertThat(processors_control.controls, MatchesSetwise(*matchers))
+
+    def test_edit_processors_restricted(self):
+        # A restricted processor is shown with a disabled (greyed out)
+        # checkbox in the UI, and the processor cannot be enabled.
+        self.useFixture(FakeLogger())
+        self.factory.makeProcessor(
+            name="riscv64", restricted=True, build_by_default=False)
+        login_person(self.distribution.owner)
+        browser = self.getUserBrowser(
+            canonical_url(self.distribution) + "/+edit",
+            user=self.distribution.owner)
+        processors = browser.getControl(name="field.processors")
+        self.assertContentEqual(["386", "amd64", "hppa"], processors.value)
+        self.assertProcessorControls(
+            processors, ["386", "amd64", "hppa"], ["riscv64"])
+        # Even if the user works around the disabled checkbox and forcibly
+        # enables it, they can't enable the restricted processor.
+        for control in processors.controls:
+            if control.optionValue == "riscv64":
+                del control._control.attrs["disabled"]
+        processors.value = ["386", "amd64", "riscv64"]
+        self.assertRaises(
+            CannotModifyArchiveProcessor,
+            browser.getControl(name="field.actions.change").click)
+
+    def test_edit_processors_restricted_already_enabled(self):
+        # A restricted processor that is already enabled is shown with a
+        # disabled (greyed out) checkbox in the UI.  This causes form
+        # submission to omit it, but the validation code fixes that up
+        # behind the scenes so that we don't get
+        # CannotModifyArchiveProcessor.
+        proc_386 = getUtility(IProcessorSet).getByName("386")
+        proc_amd64 = getUtility(IProcessorSet).getByName("amd64")
+        proc_riscv64 = self.factory.makeProcessor(
+            name="riscv64", restricted=True, build_by_default=False)
+        login_person(self.distribution.owner)
+        archive = self.distribution.main_archive
+        archive.setProcessors([proc_386, proc_amd64, proc_riscv64])
+        self.assertArchiveProcessors(archive, ["386", "amd64", "riscv64"])
+        browser = self.getUserBrowser(
+            canonical_url(self.distribution) + "/+edit",
+            user=self.distribution.owner)
+        processors = browser.getControl(name="field.processors")
+        # riscv64 is checked but disabled.
+        self.assertContentEqual(["386", "amd64", "riscv64"], processors.value)
+        self.assertProcessorControls(
+            processors, ["386", "amd64", "hppa"], ["riscv64"])
+        processors.value = ["386"]
+        browser.getControl(name="field.actions.change").click()
+        self.assertArchiveProcessors(archive, ["386", "riscv64"])
 
     def test_package_derivatives_email(self):
         # Test that the edit form allows changing package_derivatives_email
