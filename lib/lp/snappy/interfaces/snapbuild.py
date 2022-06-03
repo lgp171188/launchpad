@@ -159,11 +159,19 @@ class ISnapBuildView(IPackageBuildView, IPrivacy):
 
     distro_arch_series = exported(Reference(
         IDistroArchSeries,
-        title=_("The series and architecture for which to build."),
+        title=_("The series and architecture to build on."),
         required=True, readonly=True))
 
     arch_tag = exported(
         TextLine(title=_("Architecture tag"), required=True, readonly=True))
+
+    target_architectures = exported(
+        List(
+            TextLine(),
+            title=_("The target architectures to build for."),
+            required=False, readonly=True,
+        )
+    )
 
     pocket = exported(Choice(
         title=_("The pocket for which to build."),
@@ -327,7 +335,8 @@ class ISnapBuildSet(ISpecificBuildFarmJobSource):
 
     def new(requester, snap, archive, distro_arch_series, pocket,
             snap_base=None, channels=None, date_created=DEFAULT,
-            store_upload_metadata=None, build_request=None):
+            store_upload_metadata=None, build_request=None,
+            target_architectures=None):
         """Create an `ISnapBuild`."""
 
     def preloadBuildsData(builds):

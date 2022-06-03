@@ -5018,7 +5018,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                       archive=None, distroarchseries=None, pocket=None,
                       snap_base=None, channels=None, date_created=DEFAULT,
                       build_request=None, status=BuildStatus.NEEDSBUILD,
-                      builder=None, duration=None, **kwargs):
+                      builder=None, duration=None, target_architectures=None,
+                      **kwargs):
         """Make a new SnapBuild."""
         if requester is None:
             requester = self.makePerson()
@@ -5047,7 +5048,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         snapbuild = getUtility(ISnapBuildSet).new(
             requester, snap, archive, distroarchseries, pocket,
             snap_base=snap_base, channels=channels, date_created=date_created,
-            build_request=build_request)
+            build_request=build_request,
+            target_architectures=target_architectures)
         if duration is not None:
             removeSecurityProxy(snapbuild).updateStatus(
                 BuildStatus.BUILDING, builder=builder,
