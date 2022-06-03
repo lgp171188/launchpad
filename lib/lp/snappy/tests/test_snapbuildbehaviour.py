@@ -148,7 +148,7 @@ class TestSnapBuildBehaviourBase(TestCaseWithFactory):
 
         build = self.factory.makeSnapBuild(
             archive=archive, distroarchseries=distroarchseries, pocket=pocket,
-            name="test-snap", **kwargs)
+            name="test-snap", target_architectures=["i386"], **kwargs)
         return IBuildFarmJobBehaviour(build)
 
 
@@ -353,6 +353,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
             "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
+            "target_architectures": Equals(["i386"]),
             }))
 
     @defer.inlineCallbacks
@@ -394,6 +395,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
             "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
+            "target_architectures": Equals(["i386"]),
             }))
 
     @defer.inlineCallbacks
@@ -424,6 +426,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
             "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
+            "target_architectures": Equals(["i386"]),
             }))
 
     @defer.inlineCallbacks
@@ -471,6 +474,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
             "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
+            "target_architectures": Equals(["i386"]),
             }))
 
     @defer.inlineCallbacks
@@ -503,6 +507,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
             "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
+            "target_architectures": Equals(["i386"]),
             }))
 
     @defer.inlineCallbacks
@@ -533,6 +538,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
             "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
+            "target_architectures": Equals(["i386"]),
             }))
 
     @defer.inlineCallbacks
