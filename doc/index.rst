@@ -49,6 +49,7 @@ Explanation
    explanation/running-details
    explanation/architecture
    explanation/pip
+   explanation/favicon
 
 Reference
 =========
