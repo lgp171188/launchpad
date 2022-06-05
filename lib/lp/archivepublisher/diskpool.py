@@ -25,6 +25,7 @@ from lp.services.librarian.utils import (
     sha1_from_path,
     )
 from lp.services.propertycache import cachedproperty
+from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.files import IPackageReleaseFile
 from lp.soyuz.interfaces.publishing import (
     MissingSymlinkInPool,
@@ -137,8 +138,9 @@ class DiskPoolEntry:
     Remaining files in the 'temppath' indicated installation failures and
     require manual removal after further investigation.
     """
-    def __init__(self, rootpath: Path, temppath: Path, source: str,
-                 filename: str, logger: logging.Logger) -> None:
+    def __init__(self, archive: IArchive, rootpath: Path, temppath: Path,
+                 source: str, filename: str, logger: logging.Logger) -> None:
+        self.archive = archive
         self.rootpath = rootpath
         self.temppath = temppath
         self.source = source
@@ -388,7 +390,9 @@ class DiskPool:
     """
     results = FileAddActionEnum
 
-    def __init__(self, rootpath, temppath, logger: logging.Logger) -> None:
+    def __init__(self, archive: IArchive, rootpath, temppath,
+                 logger: logging.Logger) -> None:
+        self.archive = archive
         self.rootpath = Path(rootpath)
         self.temppath = Path(temppath) if temppath is not None else None
         self.entries = {}
@@ -397,7 +401,8 @@ class DiskPool:
     def _getEntry(self, sourcename: str, file: str) -> DiskPoolEntry:
         """Return a new DiskPoolEntry for the given sourcename and file."""
         return DiskPoolEntry(
-            self.rootpath, self.temppath, sourcename, file, self.logger)
+            self.archive, self.rootpath, self.temppath, sourcename,
+            file, self.logger)
 
     def pathFor(self, comp: str, source: str,
                 file: Optional[str] = None) -> Path:

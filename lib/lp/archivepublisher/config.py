@@ -155,8 +155,8 @@ class Config:
             # Artifactory publishing doesn't need a temporary directory on
             # the same filesystem as the pool, since the pool is remote
             # anyway.
-            lambda rootpath, temppath, logger: ArtifactoryPool(
-                rootpath, logger)),
+            lambda archive, rootpath, temppath, logger: ArtifactoryPool(
+                archive, rootpath, logger)),
         }
 
     def __init__(self, archive):
@@ -201,7 +201,7 @@ class Config:
         if pool_root is None:
             pool_root = self.poolroot
         dp_factory = self.disk_pool_factory[self.archive.publishing_method]
-        dp = dp_factory(pool_root, self.temproot, dp_log)
+        dp = dp_factory(self.archive, pool_root, self.temproot, dp_log)
         # Set the diskpool's log level to INFO to suppress debug output.
         dp_log.setLevel(logging.INFO)
         return dp

@@ -20,7 +20,8 @@ The no-operation use case, reflects the sampledata status.
     >>> from lp.archivepublisher.deathrow import DeathRow
     >>> from lp.archivepublisher.diskpool import DiskPool
 
-    >>> disk_pool = DiskPool(pool_path, temp_path, FakeLogger())
+    >>> disk_pool = DiskPool(
+    ...     ubuntu.main_archive, pool_path, temp_path, FakeLogger())
     >>> death_row = DeathRow(ubuntu.main_archive, disk_pool, FakeLogger())
     >>> death_row.reap(dry_run=True)
     DEBUG 0 Sources
@@ -196,7 +197,8 @@ Group the test publications according to their purpose:
 Publish files on disk and build a list of all created file paths
 
     >>> from lp.services.log.logger import BufferLogger
-    >>> quiet_disk_pool = DiskPool(pool_path, temp_path, BufferLogger())
+    >>> quiet_disk_pool = DiskPool(
+    ...     ubuntu.main_archive, pool_path, temp_path, BufferLogger())
 
     >>> unique_file_paths = set()
 
@@ -238,7 +240,8 @@ the temporary repository.
 
 Run DeathRow against the current 'removable' context.
 
-    >>> disk_pool = DiskPool(pool_path, temp_path, FakeLogger())
+    >>> disk_pool = DiskPool(
+    ...     ubuntu.main_archive, pool_path, temp_path, FakeLogger())
     >>> death_row = DeathRow(ubuntu.main_archive, disk_pool, FakeLogger())
     >>> death_row.reap()
     DEBUG 4 Sources
@@ -334,7 +337,8 @@ publications we have to remove any 'live' publications.
 
 Now DeathRow considers 'stuck-bin' publications.
 
-    >>> disk_pool = DiskPool(pool_path, temp_path, FakeLogger())
+    >>> disk_pool = DiskPool(
+    ...     ubuntu.main_archive, pool_path, temp_path, FakeLogger())
     >>> death_row = DeathRow(ubuntu.main_archive, disk_pool, FakeLogger())
     >>> death_row.reap()
     DEBUG 0 Sources
@@ -358,7 +362,8 @@ from the repository.
 That done, the publication and its files are free to be removed in a
 single pass.
 
-    >>> disk_pool = DiskPool(pool_path, temp_path, FakeLogger())
+    >>> disk_pool = DiskPool(
+    ...     ubuntu.main_archive, pool_path, temp_path, FakeLogger())
     >>> death_row = DeathRow(ubuntu.main_archive, disk_pool, FakeLogger())
     >>> death_row.reap()
     DEBUG 0 Sources

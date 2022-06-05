@@ -921,7 +921,7 @@ class TestPublisher(TestPublisherBase):
         pub_config = getPubConfig(archive)
         pub_config.setupArchiveDirs()
         disk_pool = DiskPool(
-            pub_config.poolroot, pub_config.temproot, self.logger)
+            archive, pub_config.poolroot, pub_config.temproot, self.logger)
         publisher = Publisher(
             self.logger, pub_config, disk_pool, archive)
         self.getPubSource(archive=archive, filecontent=b"I am partner")
@@ -963,7 +963,7 @@ class TestPublisher(TestPublisherBase):
         pub_config = getPubConfig(archive)
         pub_config.setupArchiveDirs()
         disk_pool = DiskPool(
-            pub_config.poolroot, pub_config.temproot, self.logger)
+            archive, pub_config.poolroot, pub_config.temproot, self.logger)
         publisher = Publisher(self.logger, pub_config, disk_pool, archive)
         self.getPubSource(
             archive=archive, filecontent=b"I am partner",
@@ -1125,7 +1125,8 @@ class TestPublisher(TestPublisherBase):
 
         test_pool_dir = tempfile.mkdtemp()
         test_temp_dir = tempfile.mkdtemp()
-        test_disk_pool = DiskPool(test_pool_dir, test_temp_dir, self.logger)
+        test_disk_pool = DiskPool(
+            test_archive, test_pool_dir, test_temp_dir, self.logger)
 
         publisher = Publisher(
             self.logger, self.config, test_disk_pool,
