@@ -97,7 +97,7 @@ class GPGHandler:
     def _setNewHome(self):
         """Create a new directory containing the required configuration.
 
-        This method is called inside the class constructor and genereates
+        This method is called inside the class constructor and generates
         a new directory (name randomly generated with the 'gpg-' prefix)
         containing the proper file configuration and options.
 
@@ -597,7 +597,7 @@ class PymeKey:
     exists_in_local_keyring = False
 
     def __init__(self, fingerprint):
-        """Inititalize a key container."""
+        """Initialize a key container."""
         if fingerprint:
             self._buildFromFingerprint(fingerprint)
 
