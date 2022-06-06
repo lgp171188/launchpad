@@ -144,14 +144,18 @@ class TestPool(unittest.TestCase):
 
     def testSimpleAdd(self):
         """Adding a new file should work."""
-        foo = PoolTestingFile(self.pool, "foo", "1.0", "foo-1.0.deb")
+        foo = PoolTestingFile(
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb")
         result = foo.addToPool("main")
         self.assertEqual(self.pool.results.FILE_ADDED, result)
         self.assertTrue(foo.checkIsFile("main"))
 
     def testSimpleSymlink(self):
         """Adding a file twice should result in a symlink."""
-        foo = PoolTestingFile(self.pool, "foo", "1.0", "foo-1.0.deb")
+        foo = PoolTestingFile(
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb")
         foo.addToPool("main")
         result = foo.addToPool("universe")
         self.assertEqual(self.pool.results.SYMLINK_ADDED, result)
@@ -160,7 +164,9 @@ class TestPool(unittest.TestCase):
 
     def testSymlinkShuffleOnAdd(self):
         """If the second add is a more preferred component, links shuffle."""
-        foo = PoolTestingFile(self.pool, "foo", "1.0", "foo-1.0.deb")
+        foo = PoolTestingFile(
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb")
         foo.addToPool("universe")
         result = foo.addToPool("main")
         self.assertEqual(self.pool.results.SYMLINK_ADDED, result)
@@ -169,7 +175,9 @@ class TestPool(unittest.TestCase):
 
     def testRemoveSymlink(self):
         """Remove file should just remove a symlink"""
-        foo = PoolTestingFile(self.pool, "foo", "1.0", "foo-1.0.deb")
+        foo = PoolTestingFile(
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb")
         foo.addToPool("main")
         foo.addToPool("universe")
 
@@ -179,7 +187,9 @@ class TestPool(unittest.TestCase):
 
     def testRemoveLoneFile(self):
         """Removing a file with no symlinks removes it."""
-        foo = PoolTestingFile(self.pool, "foo", "1.0", "foo-1.0.deb")
+        foo = PoolTestingFile(
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb")
         foo.addToPool("main")
 
         size = foo.removeFromPool("main")
@@ -188,7 +198,9 @@ class TestPool(unittest.TestCase):
 
     def testSymlinkShuffleOnRemove(self):
         """Removing a file with a symlink shuffles links."""
-        foo = PoolTestingFile(self.pool, "foo", "1.0", "foo-1.0.deb")
+        foo = PoolTestingFile(
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb")
         foo.addToPool("universe")
         foo.addToPool("main")
 

@@ -82,8 +82,9 @@ class TestArtifactoryPool(TestCase):
 
     def test_addFile(self):
         foo = ArtifactoryPoolTestingFile(
-            self.pool, "foo", "1.0", "foo-1.0.deb",
-            release_type=FakeReleaseType.BINARY, release_id=1)
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb", release_type=FakeReleaseType.BINARY,
+            release_id=1)
         self.assertFalse(foo.checkIsFile())
         result = foo.addToPool()
         self.assertEqual(self.pool.results.FILE_ADDED, result)
@@ -98,8 +99,9 @@ class TestArtifactoryPool(TestCase):
 
     def test_addFile_exists_identical(self):
         foo = ArtifactoryPoolTestingFile(
-            self.pool, "foo", "1.0", "foo-1.0.deb",
-            release_type=FakeReleaseType.BINARY, release_id=1)
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb", release_type=FakeReleaseType.BINARY,
+            release_id=1)
         foo.addToPool()
         self.assertTrue(foo.checkIsFile())
         result = foo.addToPool()
@@ -108,8 +110,9 @@ class TestArtifactoryPool(TestCase):
 
     def test_addFile_exists_overwrite(self):
         foo = ArtifactoryPoolTestingFile(
-            self.pool, "foo", "1.0", "foo-1.0.deb",
-            release_type=FakeReleaseType.BINARY, release_id=1)
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb", release_type=FakeReleaseType.BINARY,
+            release_id=1)
         foo.addToPool()
         self.assertTrue(foo.checkIsFile())
         foo.contents = b"different"
@@ -117,7 +120,8 @@ class TestArtifactoryPool(TestCase):
 
     def test_removeFile(self):
         foo = ArtifactoryPoolTestingFile(
-            self.pool, "foo", "1.0", "foo-1.0.deb")
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb")
         foo.addToPool()
         self.assertTrue(foo.checkIsFile())
         size = foo.removeFromPool()
@@ -148,14 +152,17 @@ class TestArtifactoryPool(TestCase):
         # with it.  This test mainly ensures that we transform the response
         # correctly.
         ArtifactoryPoolTestingFile(
-            self.pool, "foo", "1.0", "foo-1.0.deb",
-            release_type=FakeReleaseType.BINARY, release_id=1).addToPool()
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb", release_type=FakeReleaseType.BINARY,
+            release_id=1).addToPool()
         ArtifactoryPoolTestingFile(
-            self.pool, "foo", "1.1", "foo-1.1.deb",
-            release_type=FakeReleaseType.BINARY, release_id=2).addToPool()
+            pool=self.pool, source_name="foo", source_version="1.1",
+            filename="foo-1.1.deb", release_type=FakeReleaseType.BINARY,
+            release_id=2).addToPool()
         ArtifactoryPoolTestingFile(
-            self.pool, "bar", "1.0", "bar-1.0.whl",
-            release_type=FakeReleaseType.BINARY, release_id=3).addToPool()
+            pool=self.pool, source_name="bar", source_version="1.0",
+            filename="bar-1.0.whl", release_type=FakeReleaseType.BINARY,
+            release_id=3).addToPool()
         self.assertEqual(
             {
                 PurePath("pool/f/foo/foo-1.0.deb"): {
