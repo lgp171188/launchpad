@@ -220,7 +220,7 @@ class IGPGHandler(Interface):
     def sanitizeFingerprint(fingerprint):
         """Return sanitized fingerprint if well-formed.
 
-        If the firgerprint cannot be sanitized return None.
+        If the fingerprint cannot be sanitized return None.
         """
 
     def getURLForKeyInServer(fingerprint, action=None, public=False):
