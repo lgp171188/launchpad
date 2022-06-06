@@ -458,11 +458,11 @@ class GPGHandler:
     def retrieveKey(self, fingerprint):
         """See IGPGHandler."""
         # XXX cprov 2005-07-05:
-        # Integrate it with the furure proposal related
+        # Integrate it with the future proposal related
         # synchronization of the local key ring with the
         # global one. It should basically consists of be
         # aware of a revoked flag coming from the global
-        # key ring, but it needs "specing"
+        # key ring, but it needs "speccing"
         key = PymeKey(fingerprint)
         if not key.exists_in_local_keyring:
             pubkey = self._getPubKey(fingerprint)
