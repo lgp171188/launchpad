@@ -3607,6 +3607,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.release-id":
                     ["source:%d" % source.sourcepackagereleaseID],
                 "launchpad.source-name": ["hello"],
+                "launchpad.source-version": ["1.0"],
                 },
             source_path.properties)
         binary_path = (
@@ -3620,6 +3621,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.release-id":
                     ["binary:%d" % binary.binarypackagereleaseID],
                 "launchpad.source-name": ["hello"],
+                "launchpad.source-version": ["1.0"],
                 },
             binary_path.properties)
 
@@ -3669,6 +3671,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.release-id":
                     ["source:%d" % source.sourcepackagereleaseID],
                 "launchpad.source-name": ["hello"],
+                "launchpad.source-version": ["1.0"],
                 },
             source_path.properties)
         self.assertEqual(
@@ -3679,6 +3682,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.release-id":
                     ["binary:%d" % binary.binarypackagereleaseID],
                 "launchpad.source-name": ["hello"],
+                "launchpad.source-version": ["1.0"],
                 },
             binary_path.properties)
 
@@ -3722,6 +3726,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.release-id":
                     ["source:%d" % source.sourcepackagereleaseID],
                 "launchpad.source-name": ["hello"],
+                "launchpad.source-version": ["1.0"],
                 },
             source_path.properties)
         self.assertEqual(
@@ -3729,6 +3734,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.release-id":
                     ["binary:%d" % binary.binarypackagereleaseID],
                 "launchpad.source-name": ["hello"],
+                "launchpad.source-version": ["1.0"],
                 },
             binary_path.properties)
 

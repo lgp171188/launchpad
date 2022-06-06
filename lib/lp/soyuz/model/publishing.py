@@ -178,14 +178,16 @@ class ArchivePublisherBase:
         """See `IPublishing`"""
         try:
             for pub_file in self.files:
-                source = self.source_package_name
+                source_name = self.source_package_name
+                source_version = self.source_package_version
                 component = (
                     None if self.component is None else self.component.name)
                 filename = pub_file.libraryfile.filename
-                path = diskpool.pathFor(component, source, filename)
+                path = diskpool.pathFor(
+                    component, source_name, source_version, filename)
 
                 action = diskpool.addFile(
-                    component, source, filename, pub_file)
+                    component, source_name, source_version, filename, pub_file)
                 if action == diskpool.results.FILE_ADDED:
                     log.debug("Added %s from library" % path)
                 elif action == diskpool.results.SYMLINK_ADDED:
