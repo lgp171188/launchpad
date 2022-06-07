@@ -19,6 +19,7 @@ from zope.formlib.widget import (
     )
 from zope.interface import implementer
 from zope.schema import (
+    Bool,
     Choice,
     List,
     TextLine,
@@ -72,6 +73,9 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                     "Branches provide users with an easy way to test bug "
                     "fixes.  They are temporary and created on demand.  If "
                     "not specified, no branch is used.")),
+            Bool(
+                __name__="delete", title="Delete",
+                readonly=False, default=False),
             ]
 
         self.risks_widget = CustomWidgetFactory(LabeledMultiCheckBoxWidget)

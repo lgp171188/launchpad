@@ -386,6 +386,26 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
                     })),
                 fragment=Equals("")))
 
+    @responses.activate
+    def test_create_new_recipe_multiple_tracks(self):
+        self.factory.makeProduct(
+            name="test-project", displayname="Test Project")
+        [git_ref] = self.factory.makeGitRefs()
+        view_url = canonical_url(git_ref, view_name="+new-charm-recipe")
+        browser = self.getNonRedirectingBrowser(url=view_url, user=self.person)
+        browser.getControl(name="field.project").value = "test-project"
+        browser.getControl("Automatically upload to store").selected = True
+        browser.getControl("Registered store name").value = "charmhub-name"
+        self.assertFalse(browser.getControl("Stable").selected)
+        browser.getControl(name="field.store_channels.track").value = "track"
+        browser.getControl("Edge").selected = True
+        browser.getControl(name="field.store_channels.branch").value = "branch"
+        browser.getControl("Delete").selected = False
+
+        browser.getControl("Save store channel data").click()
+
+        self.assertIn("Required input is missing.", browser.contents)
+
 
 class TestCharmRecipeAdminView(BaseTestCharmRecipeView):
 
