@@ -372,8 +372,18 @@ A mirror that have been probed cannot be deleted.
     ...     print(notification.message)
     This mirror has been probed and thus can&#x27;t be deleted.
 
+Only users with launchpad.Admin can access the view.
+
+    >>> check_permission('launchpad.Admin', view)
+    True
+
+    >>> login('no-priv@canonical.com')
+    >>> check_permission('launchpad.Admin', view)
+    False
+
 Deletion is permanent.
 
+    >>> login('karl@canonical.com')
     >>> form = {
     ...     'field.actions.delete': 'Delete Mirror',
     ...     }
@@ -386,15 +396,6 @@ Deletion is permanent.
     >>> transaction.commit()
     >>> print(ubuntu.getMirrorByName('secret.me-archive'))
     None
-
-Only users with launchpad.Admin can access the view.
-
-    >>> check_permission('launchpad.Admin', view)
-    True
-
-    >>> login('no-priv@canonical.com')
-    >>> check_permission('launchpad.Admin', view)
-    False
 
 
 Viewing a mirror
