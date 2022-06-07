@@ -5,32 +5,42 @@ __all__ = [
     'TranslationRelicensingAgreement',
     ]
 
+import pytz
+from storm.locals import (
+    Bool,
+    DateTime,
+    Int,
+    Reference,
+    )
 from zope.interface import implementer
 
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    )
+from lp.services.database.stormbase import StormBase
 from lp.translations.interfaces.translationrelicensingagreement import (
     ITranslationRelicensingAgreement,
     )
 
 
 @implementer(ITranslationRelicensingAgreement)
-class TranslationRelicensingAgreement(SQLBase):
+class TranslationRelicensingAgreement(StormBase):
 
-    _table = 'TranslationRelicensingAgreement'
+    __storm_table__ = "TranslationRelicensingAgreement"
 
-    person = ForeignKey(
-        foreignKey='Person', dbName='person', notNull=True,
-        storm_validator=validate_public_person)
+    id = Int(primary=True)
 
-    allow_relicensing = BoolCol(
-        dbName='allow_relicensing', notNull=True, default=True)
+    person_id = Int(
+        name="person", allow_none=False, validator=validate_public_person)
+    person = Reference(person_id, "Person.id")
 
-    date_decided = UtcDateTimeCol(
-        dbName='date_decided', notNull=True, default=UTC_NOW)
+    allow_relicensing = Bool(
+        name="allow_relicensing", allow_none=False, default=True)
+
+    date_decided = DateTime(
+        name="date_decided", allow_none=False, default=UTC_NOW,
+        tzinfo=pytz.UTC)
+
+    def __init__(self, person, allow_relicensing=True):
+        super().__init__()
+        self.person = person
+        self.allow_relicensing = allow_relicensing
