@@ -39,6 +39,7 @@ How-to Guides
    how-to/preserve-query-count
    how-to/land-update-for-loggerhead
    how-to/update-configuration-for-testing
+   how-to/deploying-configuration-changes
 
 Explanation
 ===========
