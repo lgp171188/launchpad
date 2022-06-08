@@ -87,10 +87,13 @@ class DeathRow:
         removed."""
         if dry_run:
             # Don't actually remove the files if we are dry running
-            def _mockRemoveFile(cn, pn, pv, fn):
-                self.logger.debug("(Not really!) removing %s %s/%s/%s" %
-                                  (cn, pn, pv, fn))
-                fullpath = self.diskpool.pathFor(cn, pn, pv, fn)
+            def _mockRemoveFile(component_name, pool_name, pool_version,
+                                file_name):
+                self.logger.debug(
+                    "(Not really!) removing %s %s/%s/%s" %
+                    (component_name, pool_name, pool_version, file_name))
+                fullpath = self.diskpool.pathFor(
+                    component_name, pool_name, pool_version, file_name)
                 if not fullpath.exists():
                     raise NotInPool
                 return fullpath.lstat().st_size
