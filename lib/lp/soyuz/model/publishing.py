@@ -178,16 +178,16 @@ class ArchivePublisherBase:
         """See `IPublishing`"""
         try:
             for pub_file in self.files:
-                source_name = self.source_package_name
-                source_version = self.source_package_version
+                pool_name = self.pool_name
+                pool_version = self.pool_version
                 component = (
                     None if self.component is None else self.component.name)
                 filename = pub_file.libraryfile.filename
                 path = diskpool.pathFor(
-                    component, source_name, source_version, filename)
+                    component, pool_name, pool_version, filename)
 
                 action = diskpool.addFile(
-                    component, source_name, source_version, filename, pub_file)
+                    component, pool_name, pool_version, filename, pub_file)
                 if action == diskpool.results.FILE_ADDED:
                     log.debug("Added %s from library" % path)
                 elif action == diskpool.results.SYMLINK_ADDED:
@@ -477,6 +477,16 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
         return self.sourcepackagerelease.version
 
     @property
+    def pool_name(self):
+        """See `IPublishingView`."""
+        return self.source_package_name
+
+    @property
+    def pool_version(self):
+        """See `IPublishingView`."""
+        return self.source_package_version
+
+    @property
     def displayname(self):
         """See `IPublishing`."""
         release = self.sourcepackagerelease
@@ -764,6 +774,36 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
     def source_package_version(self):
         """See `IBinaryPackagePublishingHistory`"""
         return self.binarypackagerelease.sourcepackageversion
+
+    @property
+    def pool_name(self):
+        """See `IPublishingView`."""
+        # XXX cjwatson 2022-06-08: If the publishing record came from
+        # uploading a CI build, then it may be an isolated binary package
+        # without a corresponding source package, in which case we won't
+        # have a source package name.  For now, use the binary package name
+        # instead in that case so that the pool has a name to use for
+        # publishing files.  This is inelegant to say the least, but it gets
+        # the job done for now.
+        pool_name = self.source_package_name
+        if self.build is None and pool_name is None:
+            pool_name = self.binary_package_name
+        return pool_name
+
+    @property
+    def pool_version(self):
+        """See `IPublishingView`."""
+        # XXX cjwatson 2022-06-08: If the publishing record came from
+        # uploading a CI build, then it may be an isolated binary package
+        # without a corresponding source package, in which case we won't
+        # have a source package version.  For now, use the binary package
+        # version instead in that case so that the pool has a version to use
+        # for publishing files.  This is inelegant to say the least, but it
+        # gets the job done for now.
+        pool_version = self.source_package_version
+        if self.build is None and pool_version is None:
+            pool_version = self.binary_package_version
+        return pool_version
 
     @property
     def architecture_specific(self):

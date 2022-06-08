@@ -52,8 +52,8 @@ class TestDeathRow(TestCase):
         """Return the absolute path to a published file in the disk pool/."""
         return diskpool.pathFor(
             pub.component.name,
-            pub.source_package_name,
-            pub.source_package_version,
+            pub.pool_name,
+            pub.pool_version,
             pub_file.libraryfile.filename)
 
     def assertIsFile(self, path: Path) -> None:
