@@ -162,7 +162,7 @@ remote_product fields.
     0
 
     >>> print(err)
-    DEBUG   ...
+    INFO    ...
     INFO    No Products to update.
     INFO    Time for this run: ... seconds.
     DEBUG   updateremoteproduct ran in ...s (excl. load & lock)
