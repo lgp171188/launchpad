@@ -87,10 +87,13 @@ class DeathRow:
         removed."""
         if dry_run:
             # Don't actually remove the files if we are dry running
-            def _mockRemoveFile(cn, sn, sv, fn):
-                self.logger.debug("(Not really!) removing %s %s/%s/%s" %
-                                  (cn, sn, sv, fn))
-                fullpath = self.diskpool.pathFor(cn, sn, sv, fn)
+            def _mockRemoveFile(component_name, pool_name, pool_version,
+                                file_name):
+                self.logger.debug(
+                    "(Not really!) removing %s %s/%s/%s" %
+                    (component_name, pool_name, pool_version, file_name))
+                fullpath = self.diskpool.pathFor(
+                    component_name, pool_name, pool_version, file_name)
                 if not fullpath.exists():
                     raise NotInPool
                 return fullpath.lstat().st_size
@@ -228,8 +231,8 @@ class DeathRow:
                 # Calculating the file path in pool.
                 pub_file_details = (
                     pub_record.component_name,
-                    pub_record.source_package_name,
-                    pub_record.source_package_version,
+                    pub_record.pool_name,
+                    pub_record.pool_version,
                     pub_file.libraryfile.filename,
                     )
                 file_path = str(self.diskpool.pathFor(*pub_file_details))
@@ -265,11 +268,11 @@ class DeathRow:
             "Removing %s files marked for reaping" % len(condemned_files))
 
         for condemned_file in sorted(condemned_files, reverse=True):
-            component_name, source_name, source_version, file_name = (
+            component_name, pool_name, pool_version, file_name = (
                 details[condemned_file])
             try:
                 bytes += self._removeFile(
-                    component_name, source_name, source_version, file_name)
+                    component_name, pool_name, pool_version, file_name)
             except NotInPool as info:
                 # It's safe for us to let this slide because it means that
                 # the file is already gone.

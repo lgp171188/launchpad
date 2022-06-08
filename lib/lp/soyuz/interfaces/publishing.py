@@ -157,6 +157,11 @@ class IPublishingView(Interface):
             title=_("Section Name"),
             required=False, readonly=True))
 
+    pool_name = TextLine(
+        title="Name to use when publishing this record in the pool.")
+    pool_version = TextLine(
+        title="Version to use when publishing this record in the pool.")
+
     def publish(diskpool, log):
         """Publish or ensure contents of this publish record
 

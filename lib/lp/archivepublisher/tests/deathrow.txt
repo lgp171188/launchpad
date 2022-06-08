@@ -207,8 +207,8 @@ Publish files on disk and build a list of all created file paths
     ...         for pub_file in pub.files:
     ...             file_path = quiet_disk_pool.pathFor(
     ...                 pub.component.name,
-    ...                 pub.source_package_name,
-    ...                 pub.source_package_version,
+    ...                 pub.pool_name,
+    ...                 pub.pool_version,
     ...                 pub_file.libraryfile.filename
     ...              )
     ...             unique_file_paths.add(file_path)
