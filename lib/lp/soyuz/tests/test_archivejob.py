@@ -16,7 +16,13 @@ from lp.code.enums import RevisionStatusArtifactType
 from lp.code.model.revisionstatus import RevisionStatusArtifact
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.interfaces import IStore
+from lp.services.features.testing import FeatureFixture
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
+from lp.services.job.tests import (
+    block_on_job,
+    pop_remote_notifications,
+    )
 from lp.services.mail.sendmail import format_address_for_person
 from lp.soyuz.enums import (
     ArchiveJobType,
@@ -31,9 +37,14 @@ from lp.soyuz.model.archivejob import (
     PackageUploadNotificationJob,
     )
 from lp.soyuz.tests import datadir
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    admin_logged_in,
+    person_logged_in,
+    TestCaseWithFactory,
+    )
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
+    CeleryJobLayer,
     LaunchpadZopelessLayer,
     ZopelessDatabaseLayer,
     )
@@ -312,3 +323,51 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
                             filetype=BinaryPackageFileType.WHL))),
                 binarypackageformat=Equals(BinaryPackageFormat.WHL),
                 distroarchseries=Equals(dases[0]))))
+
+
+class TestViaCelery(TestCaseWithFactory):
+
+    layer = CeleryJobLayer
+
+    def test_PackageUploadNotificationJob(self):
+        # PackageUploadNotificationJob runs under Celery.
+        self.useFixture(FeatureFixture(
+            {"jobs.celery.enabled_classes": "PackageUploadNotificationJob"}))
+        creator = self.factory.makePerson()
+        changes = Changes({"Changed-By": format_address_for_person(creator)})
+        upload = self.factory.makePackageUpload(
+            changes_file_content=changes.dump().encode())
+        with admin_logged_in():
+            upload.addSource(self.factory.makeSourcePackageRelease())
+            self.factory.makeComponentSelection(
+                upload.distroseries, upload.sourcepackagerelease.component)
+            upload.setAccepted()
+        job = PackageUploadNotificationJob.create(upload)
+
+        with block_on_job():
+            transaction.commit()
+
+        self.assertEqual(JobStatus.COMPLETED, job.status)
+        self.assertEqual(1, len(pop_remote_notifications()))
+
+    def test_CIBuildUploadJob(self):
+        # CIBuildUploadJob runs under Celery.
+        self.useFixture(FeatureFixture(
+            {"jobs.celery.enabled_classes": "CIBuildUploadJob"}))
+        build = self.factory.makeCIBuild()
+        das = build.distro_arch_series
+        archive = das.distroseries.main_archive
+        report = build.getOrCreateRevisionStatusReport("build:0")
+        path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
+        with open(datadir(path), mode="rb") as f:
+            with person_logged_in(build.git_repository.owner):
+                report.attach(name=os.path.basename(path), data=f.read())
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, das.distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="edge")
+
+        with block_on_job():
+            transaction.commit()
+
+        self.assertEqual(JobStatus.COMPLETED, job.status)
+        self.assertEqual(1, archive.getAllPublishedBinaries().count())
