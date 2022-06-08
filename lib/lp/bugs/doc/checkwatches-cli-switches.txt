@@ -69,7 +69,6 @@ line.
     >>> run_cronscript_with_args([
     ...     '--bug-tracker=mozilla.org', '--bug-tracker=debbugs', '-v',
     ...     '--batch-size=10'])
-    DEBUG Enabled by DEFAULT section
     DEBUG Using a global batch size of 10
     DEBUG No watches to update on https://bugzilla.mozilla.org/
     DEBUG No watches to update on http://bugs.debian.org
@@ -99,7 +98,6 @@ demonstrate this.
     ...         bug_watch.lastchecked = datetime.now(pytz.timezone('UTC'))
 
     >>> run_cronscript_with_args(['-vvt', 'savannah', '--reset'])
-    DEBUG Enabled by DEFAULT section
     INFO Resetting 5 bug watches for bug tracker 'savannah'
     INFO Updating 5 watches on bug tracker 'savannah'
     INFO 'Unsupported Bugtracker' error updating http://savannah.gnu.org/:
