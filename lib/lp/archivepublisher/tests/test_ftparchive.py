@@ -103,7 +103,8 @@ class TestFTPArchive(TestCaseWithFactory):
         self._listdir = self._config.overrideroot
         self._tempdir = self._config.temproot
         self._logger = BufferLogger()
-        self._dp = DiskPool(self._pooldir, self._tempdir, self._logger)
+        self._dp = DiskPool(
+            self._archive, self._pooldir, self._tempdir, self._logger)
         self._publisher = SamplePublisher(self._archive)
 
     def tearDown(self):
@@ -146,10 +147,11 @@ class TestFTPArchive(TestCaseWithFactory):
         with open_func(path) as result_file:
             self.assertEqual(b"", result_file.read())
 
-    def _addRepositoryFile(self, component, sourcename, leafname,
-                           samplename=None):
+    def _addRepositoryFile(self, component, source_name, source_version,
+                           leafname, samplename=None):
         """Create a repository file."""
-        fullpath = self._dp.pathFor(component, sourcename, leafname)
+        fullpath = self._dp.pathFor(
+            component, source_name, source_version, leafname)
         fullpath.parent.mkdir(parents=True, exist_ok=True)
         if samplename is None:
             samplename = leafname
@@ -514,9 +516,9 @@ class TestFTPArchive(TestCaseWithFactory):
         self._publishDefaultFileLists(fa, 'main')
 
         # Add mentioned files in the repository pool/.
-        self._addRepositoryFile('main', 'tiny', 'tiny_0.1.dsc')
-        self._addRepositoryFile('main', 'tiny', 'tiny_0.1.tar.gz')
-        self._addRepositoryFile('main', 'tiny', 'tiny_0.1_i386.deb')
+        self._addRepositoryFile('main', 'tiny', '0.1', 'tiny_0.1.dsc')
+        self._addRepositoryFile('main', 'tiny', '0.1', 'tiny_0.1.tar.gz')
+        self._addRepositoryFile('main', 'tiny', '0.1', 'tiny_0.1_i386.deb')
 
         # When include_long_descriptions is set, apt.conf has
         # LongDescription "true" for that series.
@@ -648,9 +650,9 @@ class TestFTPArchive(TestCaseWithFactory):
         fa.createEmptyPocketRequests(fullpublish=True)
         self._publishDefaultOverrides(fa, "main")
         self._publishDefaultFileLists(fa, "main")
-        self._addRepositoryFile("main", "tiny", "tiny_0.1.dsc")
-        self._addRepositoryFile("main", "tiny", "tiny_0.1.tar.gz")
-        self._addRepositoryFile("main", "tiny", "tiny_0.1_i386.deb")
+        self._addRepositoryFile("main", "tiny", "0.1", "tiny_0.1.dsc")
+        self._addRepositoryFile("main", "tiny", "0.1", "tiny_0.1.tar.gz")
+        self._addRepositoryFile("main", "tiny", "0.1", "tiny_0.1_i386.deb")
         comp_dir = os.path.join(self._distsdir, "hoary-test", "main")
         os.makedirs(os.path.join(comp_dir, "signed"))
         with open(os.path.join(comp_dir, "signed", "stuff"), "w"):
@@ -777,10 +779,10 @@ class TestFTPArchive(TestCaseWithFactory):
         fa.publishFileLists(
             self._distribution["hoary-test"], PackagePublishingPocket.RELEASE,
             source_files, binary_files)
-        self._addRepositoryFile("main", "tiny", "tiny_0.1.dsc")
+        self._addRepositoryFile("main", "tiny", "0.1", "tiny_0.1.dsc")
         for i in range(50):
             self._addRepositoryFile(
-                "main", "bin%d" % i, "bin%d_1_i386.deb" % i,
+                "main", "bin%d" % i, "1", "bin%d_1_i386.deb" % i,
                 samplename="tiny_0.1_i386.deb")
         apt_conf = fa.generateConfig(fullpublish=True)
         fa.runApt(apt_conf)
@@ -789,7 +791,7 @@ class TestFTPArchive(TestCaseWithFactory):
         # something to do.
         for i in range(49):
             self._dp.pathFor(
-                "main", "bin%d" % i, "bin%d_1_i386.deb" % i).unlink()
+                "main", "bin%d" % i, "1", "bin%d_1_i386.deb" % i).unlink()
 
         cache_path = os.path.join(self._config.cacheroot, "packages-i386.db")
         old_cache_size = os.stat(cache_path).st_size

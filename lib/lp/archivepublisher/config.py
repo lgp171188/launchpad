@@ -20,6 +20,7 @@ from lp.soyuz.enums import (
     archive_suffixes,
     ArchivePublishingMethod,
     ArchivePurpose,
+    ArchiveRepositoryFormat,
     )
 
 
@@ -111,8 +112,12 @@ def getPubConfig(archive):
         pubconf.signingroot = None
         pubconf.signingautokey = False
 
-    pubconf.poolroot = os.path.join(pubconf.archiveroot, 'pool')
-    pubconf.distsroot = os.path.join(pubconf.archiveroot, 'dists')
+    if archive.repository_format == ArchiveRepositoryFormat.DEBIAN:
+        pubconf.poolroot = os.path.join(pubconf.archiveroot, 'pool')
+        pubconf.distsroot = os.path.join(pubconf.archiveroot, 'dists')
+    else:
+        pubconf.poolroot = pubconf.archiveroot
+        pubconf.distsroot = None
 
     # META_DATA custom uploads are stored in a separate directory
     # outside the archive root so Ubuntu Software Center can get some
@@ -155,8 +160,8 @@ class Config:
             # Artifactory publishing doesn't need a temporary directory on
             # the same filesystem as the pool, since the pool is remote
             # anyway.
-            lambda rootpath, temppath, logger: ArtifactoryPool(
-                rootpath, logger)),
+            lambda archive, rootpath, temppath, logger: ArtifactoryPool(
+                archive, rootpath, logger)),
         }
 
     def __init__(self, archive):
@@ -201,7 +206,7 @@ class Config:
         if pool_root is None:
             pool_root = self.poolroot
         dp_factory = self.disk_pool_factory[self.archive.publishing_method]
-        dp = dp_factory(pool_root, self.temproot, dp_log)
+        dp = dp_factory(self.archive, pool_root, self.temproot, dp_log)
         # Set the diskpool's log level to INFO to suppress debug output.
         dp_log.setLevel(logging.INFO)
         return dp

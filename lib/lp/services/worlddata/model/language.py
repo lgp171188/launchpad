@@ -112,7 +112,7 @@ class Language(SQLBase):
         Non-visible languages and English are not translatable, so they
         are excluded. Brazilian Portuguese has diverged from Portuguese
         to such a degree that it should be treated as a parent language.
-        Norwegian languages Nynorsk (nn) and Bokmaal (nb) are similar
+        Norwegian languages Nynorsk (nn) and Bokmål (nb) are similar
         and may provide suggestions for each other.
         """
         if self.code == 'pt_BR':

@@ -16,7 +16,11 @@ from lp.archivepublisher.config import getPubConfig
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
-from lp.soyuz.enums import ArchivePurpose
+from lp.soyuz.enums import (
+    ArchivePublishingMethod,
+    ArchivePurpose,
+    ArchiveRepositoryFormat,
+    )
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
@@ -235,3 +239,35 @@ class TestGetPubConfigPPACompatUefi(TestCaseWithFactory):
         signingroot = "/var/tmp/ppa-signing-keys.test/uefi/%s/%s" % (
             self.ppa.owner.name, self.ppa.name)
         self.assertEqual(signingroot, self.ppa_config.signingroot)
+
+
+class TestGetPubConfigPPARepositoryFormatPython(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
+
+    def setUp(self):
+        super().setUp()
+        self.base_url = "https://foo.example.com/artifactory"
+        self.pushConfig("artifactory", base_url=self.base_url)
+        self.ppa = self.factory.makeArchive(
+            purpose=ArchivePurpose.PPA,
+            publishing_method=ArchivePublishingMethod.ARTIFACTORY,
+            repository_format=ArchiveRepositoryFormat.PYTHON)
+        self.ppa_config = getPubConfig(self.ppa)
+
+    def test_config(self):
+        # Python-format archives published via Artifactory use paths under
+        # the Artifactory base URL, and have various features disabled that
+        # only make sense for locally-published Debian-format archives.
+        self.assertIsNone(self.ppa_config.distroroot)
+        archiveroot = "%s/%s" % (self.base_url, self.ppa.name)
+        self.assertEqual(archiveroot, self.ppa_config.archiveroot)
+        self.assertEqual(archiveroot, self.ppa_config.poolroot)
+        self.assertIsNone(self.ppa_config.distsroot)
+        self.assertIsNone(self.ppa_config.overrideroot)
+        self.assertIsNone(self.ppa_config.cacheroot)
+        self.assertIsNone(self.ppa_config.miscroot)
+        self.assertEqual(
+            "/var/tmp/archive/%s-temp" % self.ppa.distribution.name,
+            self.ppa_config.temproot)
+        self.assertIsNone(self.ppa_config.metaroot)

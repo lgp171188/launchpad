@@ -47,6 +47,7 @@ from lp.services.features import (
 from lp.services.mail.sendmail import set_immediate_mail_delivery
 from lp.services.scripts.interfaces.scriptactivity import IScriptActivitySet
 from lp.services.scripts.logger import OopsHandler
+from lp.services.scripts.metrics import emit_script_activity_metric
 from lp.services.timeout import (
     override_timeout,
     urlfetch,
@@ -193,12 +194,12 @@ class LaunchpadScript:
 
         if logger is None:
             scripts.logger_options(self.parser, default=self.loglevel)
-            self.parser.add_option(
-                '--profile', dest='profile', metavar='FILE', help=(
-                        "Run the script under the profiler and save the "
-                        "profiling stats in FILE."))
         else:
             scripts.dummy_logger_options(self.parser)
+        self.parser.add_option(
+            '--profile', dest='profile', metavar='FILE', help=(
+                    "Run the script under the profiler and save the "
+                    "profiling stats in FILE."))
 
         self.add_my_options()
         self.options, self.args = self.parser.parse_args(args=test_args)
@@ -384,14 +385,7 @@ class LaunchpadCronScript(LaunchpadScript):
                  ignore_cron_control=False):
         super().__init__(name, dbuser, test_args=test_args, logger=logger)
 
-        # self.name is used instead of the name argument, since it may have
-        # have been overridden by command-line parameters or by
-        # overriding the name property.
-        if not ignore_cron_control:
-            enabled = cronscript_enabled(
-                config.canonical.cron_control_url, self.name, self.logger)
-            if not enabled:
-                sys.exit(0)
+        self.ignore_cron_control = ignore_cron_control
 
         # Configure the IErrorReportingUtility we use with defaults.
         # Scripts can override this if they want.
@@ -403,6 +397,27 @@ class LaunchpadCronScript(LaunchpadScript):
         # overriding the name property.
         oops_hdlr = OopsHandler(self.name, logger=self.logger)
         logging.getLogger().addHandler(oops_hdlr)
+
+    def _init_db(self, isolation):
+        # This runs a bit late: we initialize the whole Zope component
+        # architecture before getting here, which is slow.  However, doing
+        # this allows us to emit a script activity metric via the
+        # IStatsdClient utility, and if cron scripts are disabled then we
+        # still exit before anything important like database access happens.
+        if not self.ignore_cron_control:
+            enabled = cronscript_enabled(
+                config.canonical.cron_control_url, self.name, self.logger)
+            if not enabled:
+                # Emit a basic script activity metric so that alerts don't
+                # fire while scripts are intentionally disabled (e.g. during
+                # schema updates).  We set the duration to 0 so that these
+                # can be distinguished from real completions.  Avoid
+                # touching the database here, since that could be
+                # problematic during schema updates.
+                emit_script_activity_metric(self.name, datetime.timedelta(0))
+                sys.exit(0)
+
+        super()._init_db(isolation)
 
     @log_unhandled_exception_and_exit
     def record_activity(self, date_started, date_completed):

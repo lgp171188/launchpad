@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces including and related to IDistribution."""
@@ -40,6 +40,7 @@ from lazr.restful.declarations import (
 from lazr.restful.fields import (
     CollectionField,
     Reference,
+    ReferenceChoice,
     )
 from lazr.restful.interface import copy_field
 from zope.interface import (
@@ -480,10 +481,14 @@ class IDistributionView(
     has_current_commercial_subscription = Attribute(
         "Whether the distribution has a current commercial subscription.")
 
-    security_admin = Choice(
-        title=_("Security Administrator"),
-        description=_("The distribution security administrator."),
-        required=False, vocabulary='ValidPersonOrTeam')
+    security_admin = exported(
+        ReferenceChoice(
+            title=_("Security Administrator"),
+            description=_("The distribution security administrator."),
+            required=False, vocabulary='ValidPersonOrTeam',
+            schema=IPerson,
+        ),
+    )
 
     vulnerabilities = exported(
         doNotSnapshot(CollectionField(

@@ -87,6 +87,9 @@ class ArchiveJob(StormBase):
         self.job_type = job_type
         self.metadata = metadata
 
+    def makeDerived(self):
+        return ArchiveJobDerived.makeSubclass(self)
+
 
 @delegate_to(IArchiveJob)
 @provider(IArchiveJobSource)

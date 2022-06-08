@@ -546,31 +546,22 @@ class TestRemoveTranslations(TestCase):
         # Removing translations whose submitters rejected our
         # translations licence does not affect translations by those who
         # agreed to license.
-        answer = TranslationRelicensingAgreement(
+        TranslationRelicensingAgreement(
             person=self.nl_message.submitter, allow_relicensing=True)
 
-        try:
-            self._removeMessages(reject_license=True)
-            self._checkInvariant()
-        finally:
-            # Clean up.
-            answer.destroySelf()
+        self._removeMessages(reject_license=True)
+        self._checkInvariant()
 
     def test_remove_unlicensed_restriction(self):
         # When removing unlicensed translations, other restrictions
         # still apply.
         self.nl_message.is_current_upstream = True
         self.de_message.is_current_upstream = True
-        answer = TranslationRelicensingAgreement(
+        TranslationRelicensingAgreement(
             person=self.nl_message.submitter, allow_relicensing=False)
 
-        try:
-            self._removeMessages(
-                reject_license=True, is_current_upstream=False)
-            self._checkInvariant()
-        finally:
-            # Clean up.
-            answer.destroySelf()
+        self._removeMessages(reject_license=True, is_current_upstream=False)
+        self._checkInvariant()
 
 
 class TestRemoveTranslationsUnmasking(TestCaseWithFactory):

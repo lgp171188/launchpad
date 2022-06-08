@@ -97,7 +97,7 @@ class GPGHandler:
     def _setNewHome(self):
         """Create a new directory containing the required configuration.
 
-        This method is called inside the class constructor and genereates
+        This method is called inside the class constructor and generates
         a new directory (name randomly generated with the 'gpg-' prefix)
         containing the proper file configuration and options.
 
@@ -458,11 +458,11 @@ class GPGHandler:
     def retrieveKey(self, fingerprint):
         """See IGPGHandler."""
         # XXX cprov 2005-07-05:
-        # Integrate it with the furure proposal related
+        # Integrate it with the future proposal related
         # synchronization of the local key ring with the
         # global one. It should basically consists of be
         # aware of a revoked flag coming from the global
-        # key ring, but it needs "specing"
+        # key ring, but it needs "speccing"
         key = PymeKey(fingerprint)
         if not key.exists_in_local_keyring:
             pubkey = self._getPubKey(fingerprint)
@@ -597,7 +597,7 @@ class PymeKey:
     exists_in_local_keyring = False
 
     def __init__(self, fingerprint):
-        """Inititalize a key container."""
+        """Initialize a key container."""
         if fingerprint:
             self._buildFromFingerprint(fingerprint)
 

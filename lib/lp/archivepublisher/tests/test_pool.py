@@ -23,11 +23,18 @@ from lp.archivepublisher.diskpool import (
     poolify,
     )
 from lp.services.log.logger import BufferLogger
+from lp.soyuz.enums import ArchiveRepositoryFormat
 from lp.soyuz.interfaces.files import (
     IBinaryPackageFile,
     IPackageReleaseFile,
     ISourcePackageReleaseFile,
     )
+
+
+class FakeArchive:
+
+    def __init__(self, repository_format=ArchiveRepositoryFormat.DEBIAN):
+        self.repository_format = repository_format
 
 
 class FakeLibraryFileContent:
@@ -76,30 +83,34 @@ class FakePackageReleaseFile:
 
 class PoolTestingFile:
 
-    def __init__(self, pool, sourcename, filename,
+    def __init__(self, pool, source_name, source_version, filename,
                  release_type=FakeReleaseType.BINARY, release_id=1):
         self.pool = pool
-        self.sourcename = sourcename
+        self.source_name = source_name
+        self.source_version = source_version
         self.filename = filename
-        self.contents = sourcename.encode("UTF-8")
+        self.contents = source_name.encode("UTF-8")
         self.release_type = release_type
         self.release_id = release_id
 
     def addToPool(self, component: str):
         return self.pool.addFile(
-            component, self.sourcename, self.filename,
+            component, self.source_name, self.source_version, self.filename,
             FakePackageReleaseFile(
                 self.contents, self.release_type, self.release_id))
 
     def removeFromPool(self, component: str) -> int:
-        return self.pool.removeFile(component, self.sourcename, self.filename)
+        return self.pool.removeFile(
+            component, self.source_name, self.source_version, self.filename)
 
     def checkExists(self, component: str) -> bool:
-        path = self.pool.pathFor(component, self.sourcename, self.filename)
+        path = self.pool.pathFor(
+            component, self.source_name, self.source_version, self.filename)
         return path.exists()
 
     def checkIsLink(self, component: str) -> bool:
-        path = self.pool.pathFor(component, self.sourcename, self.filename)
+        path = self.pool.pathFor(
+            component, self.source_name, self.source_version, self.filename)
         return path.is_symlink()
 
     def checkIsFile(self, component: str) -> bool:
@@ -124,7 +135,8 @@ class TestPool(unittest.TestCase):
     def setUp(self):
         self.pool_path = mkdtemp()
         self.temp_path = mkdtemp()
-        self.pool = DiskPool(self.pool_path, self.temp_path, BufferLogger())
+        self.pool = DiskPool(
+            FakeArchive(), self.pool_path, self.temp_path, BufferLogger())
 
     def tearDown(self):
         shutil.rmtree(self.pool_path)
@@ -132,14 +144,18 @@ class TestPool(unittest.TestCase):
 
     def testSimpleAdd(self):
         """Adding a new file should work."""
-        foo = PoolTestingFile(self.pool, "foo", "foo-1.0.deb")
+        foo = PoolTestingFile(
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb")
         result = foo.addToPool("main")
         self.assertEqual(self.pool.results.FILE_ADDED, result)
         self.assertTrue(foo.checkIsFile("main"))
 
     def testSimpleSymlink(self):
         """Adding a file twice should result in a symlink."""
-        foo = PoolTestingFile(self.pool, "foo", "foo-1.0.deb")
+        foo = PoolTestingFile(
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb")
         foo.addToPool("main")
         result = foo.addToPool("universe")
         self.assertEqual(self.pool.results.SYMLINK_ADDED, result)
@@ -148,7 +164,9 @@ class TestPool(unittest.TestCase):
 
     def testSymlinkShuffleOnAdd(self):
         """If the second add is a more preferred component, links shuffle."""
-        foo = PoolTestingFile(self.pool, "foo", "foo-1.0.deb")
+        foo = PoolTestingFile(
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb")
         foo.addToPool("universe")
         result = foo.addToPool("main")
         self.assertEqual(self.pool.results.SYMLINK_ADDED, result)
@@ -157,7 +175,9 @@ class TestPool(unittest.TestCase):
 
     def testRemoveSymlink(self):
         """Remove file should just remove a symlink"""
-        foo = PoolTestingFile(self.pool, "foo", "foo-1.0.deb")
+        foo = PoolTestingFile(
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb")
         foo.addToPool("main")
         foo.addToPool("universe")
 
@@ -167,7 +187,9 @@ class TestPool(unittest.TestCase):
 
     def testRemoveLoneFile(self):
         """Removing a file with no symlinks removes it."""
-        foo = PoolTestingFile(self.pool, "foo", "foo-1.0.deb")
+        foo = PoolTestingFile(
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb")
         foo.addToPool("main")
 
         size = foo.removeFromPool("main")
@@ -176,7 +198,9 @@ class TestPool(unittest.TestCase):
 
     def testSymlinkShuffleOnRemove(self):
         """Removing a file with a symlink shuffles links."""
-        foo = PoolTestingFile(self.pool, "foo", "foo-1.0.deb")
+        foo = PoolTestingFile(
+            pool=self.pool, source_name="foo", source_version="1.0",
+            filename="foo-1.0.deb")
         foo.addToPool("universe")
         foo.addToPool("main")
 

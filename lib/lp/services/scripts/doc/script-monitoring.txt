@@ -18,16 +18,12 @@ database.  This is performed with a call to
 IScriptActivitySet.recordSuccess():
 
     >>> import datetime
-    >>> import os
     >>> import socket
-    >>> import subprocess
-    >>> import tempfile
     >>> from textwrap import dedent
     >>> from unittest import mock
 
     >>> from fixtures import MockPatchObject
     >>> import pytz
-    >>> import transaction
     >>> from zope.component import getUtility
 
     >>> from lp.services.config import config
@@ -100,75 +96,3 @@ script ran on, as determined by 'socket.gethostname()':
     ...     date_completed=datetime.datetime.now(UTC))
     >>> local_activity.hostname == socket.gethostname()
     True
-
-
-LaunchpadScript Integration
----------------------------
-
-A LaunchpadScript subclass is provided that will automatically log the
-result of successful runs.  This is intended for use by cron scripts
-and others where it is useful to monitor the result.
-
-    >>> script_file = tempfile.NamedTemporaryFile()
-    >>> _ = script_file.write(b"""
-    ... from lp.services.scripts.base import LaunchpadCronScript
-    ...
-    ... class TestScript(LaunchpadCronScript):
-    ...     def main(self):
-    ...         # Fail if we are told to do so
-    ...         if self.args[0] == 'fail':
-    ...             raise RuntimeError('Some failure')
-    ...
-    ... if __name__ == '__main__':
-    ...     script = TestScript('test-script', 'garbo_daily')
-    ...     script.run()
-    ... """)
-    >>> script_file.flush()
-    >>> transaction.commit()
-
-Prepare an environment to run the testing script.
-
-    >>> import lp
-    >>> lp_py = os.path.join(
-    ...     os.path.dirname(lp.__file__), os.pardir, os.pardir, 'bin/py')
-
-We'll now run this script, telling it to fail:
-
-    >>> proc = subprocess.Popen([lp_py, script_file.name, 'fail'],
-    ...                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...                         stderr=subprocess.PIPE)
-    >>> (out, err) = proc.communicate()
-    >>> transaction.abort()
-
-The process failed:
-
-    >>> print(proc.returncode)
-    1
-
-And no activity got recorded:
-
-    >>> print(getUtility(IScriptActivitySet).getLastActivity('test-script'))
-    None
-
-If we run it such that it succeeds, we will get an activity record:
-
-    >>> proc = subprocess.Popen(
-    ...     [lp_py, script_file.name, 'pass'], stdin=subprocess.PIPE,
-    ...     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    >>> (out, err) = proc.communicate()
-    >>> transaction.abort()
-
-    >>> print(proc.returncode)
-    0
-    >>> activity = getUtility(IScriptActivitySet).getLastActivity(
-    ...     'test-script')
-    >>> activity is not None
-    True
-    >>> print(activity.name)
-    test-script
-    >>> activity.hostname == socket.gethostname()
-    True
-
-Remove the temporary script file:
-
-    >>> script_file.close()

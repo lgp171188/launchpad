@@ -26,11 +26,16 @@ from storm.expr import (
     )
 from storm.locals import (
     And,
+    Bool,
+    DateTime,
     Desc,
+    Int,
     Max,
     Or,
+    Reference,
     Select,
     Store,
+    Unicode,
     )
 from storm.store import EmptyResultSet
 from zope.interface import implementer
@@ -67,15 +72,9 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    StringCol,
-    )
+from lp.services.database.stormbase import StormBase
 from lp.services.mail.helpers import (
     get_contact_email_addresses,
     get_email_template,
@@ -108,52 +107,60 @@ from lp.soyuz.model.publishing import (
 
 
 @implementer(IDistributionMirror)
-class DistributionMirror(SQLBase):
+class DistributionMirror(StormBase):
     """See IDistributionMirror"""
-    _table = 'DistributionMirror'
-    _defaultOrder = ('-speed', 'name', 'id')
+    __storm_table__ = 'DistributionMirror'
+    __storm_order__ = ('-speed', 'name', 'id')
 
-    owner = ForeignKey(
-        dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    reviewer = ForeignKey(
-        dbName='reviewer', foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
-    distribution = ForeignKey(
-        dbName='distribution', foreignKey='Distribution', notNull=True)
-    name = StringCol(
-        alternateID=True, notNull=True)
-    display_name = StringCol(
-        dbName='displayname', notNull=False, default=None)
-    description = StringCol(
-        notNull=False, default=None)
-    http_base_url = StringCol(
-        notNull=False, default=None, unique=True)
-    https_base_url = StringCol(
-        notNull=False, default=None, unique=True)
-    ftp_base_url = StringCol(
-        notNull=False, default=None, unique=True)
-    rsync_base_url = StringCol(
-        notNull=False, default=None, unique=True)
-    enabled = BoolCol(
-        notNull=True, default=False)
-    speed = DBEnum(
-        allow_none=False, enum=MirrorSpeed)
-    country = ForeignKey(
-        dbName='country', foreignKey='Country', notNull=True)
-    content = DBEnum(
-        allow_none=False, enum=MirrorContent)
-    official_candidate = BoolCol(
-        notNull=True, default=False)
+    id = Int(primary=True)
+    owner_id = Int(
+        name='owner', validator=validate_public_person, allow_none=False)
+    owner = Reference(owner_id, 'Person.id')
+    reviewer_id = Int(
+        name='reviewer', validator=validate_public_person, default=None)
+    reviewer = Reference(reviewer_id, 'Person.id')
+    distribution_id = Int(name='distribution', allow_none=False)
+    distribution = Reference(distribution_id, 'Distribution.id')
+    name = Unicode(allow_none=False)
+    display_name = Unicode(name='displayname', allow_none=True, default=None)
+    description = Unicode(allow_none=True, default=None)
+    http_base_url = Unicode(allow_none=True, default=None)
+    https_base_url = Unicode(allow_none=True, default=None)
+    ftp_base_url = Unicode(allow_none=True, default=None)
+    rsync_base_url = Unicode(allow_none=True, default=None)
+    enabled = Bool(allow_none=False, default=False)
+    speed = DBEnum(allow_none=False, enum=MirrorSpeed)
+    country_id = Int(name='country', allow_none=False)
+    country = Reference(country_id, 'Country.id')
+    content = DBEnum(allow_none=False, enum=MirrorContent)
+    official_candidate = Bool(allow_none=False, default=False)
     status = DBEnum(
         allow_none=False, default=MirrorStatus.PENDING_REVIEW,
         enum=MirrorStatus)
-    date_created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    date_reviewed = UtcDateTimeCol(default=None)
-    whiteboard = StringCol(
-        notNull=False, default=None)
-    country_dns_mirror = BoolCol(
-        notNull=True, default=False)
+    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    date_reviewed = DateTime(tzinfo=pytz.UTC, default=None)
+    whiteboard = Unicode(allow_none=True, default=None)
+    country_dns_mirror = Bool(allow_none=False, default=False)
+
+    def __init__(self, owner, distribution, name, speed, country, content,
+                 display_name=None, description=None, http_base_url=None,
+                 https_base_url=None, ftp_base_url=None, rsync_base_url=None,
+                 enabled=False, official_candidate=False, whiteboard=None):
+        self.owner = owner
+        self.distribution = distribution
+        self.name = name
+        self.speed = speed
+        self.country = country
+        self.content = content
+        self.display_name = display_name
+        self.description = description
+        self.http_base_url = http_base_url
+        self.https_base_url = https_base_url
+        self.ftp_base_url = ftp_base_url
+        self.rsync_base_url = rsync_base_url
+        self.enabled = enabled
+        self.official_candidate = official_candidate
+        self.whiteboard = whiteboard
 
     @property
     def base_url(self):
@@ -521,12 +528,12 @@ class DistributionMirror(SQLBase):
                 MirrorDistroSeriesSource.id,
                 where=(MirrorDistroSeriesSource.distribution_mirror == self),
                 order_by=(
-                    MirrorDistroSeriesSource.distribution_mirrorID,
-                    MirrorDistroSeriesSource.distroseriesID,
+                    MirrorDistroSeriesSource.distribution_mirror_id,
+                    MirrorDistroSeriesSource.distroseries_id,
                     Desc(MirrorDistroSeriesSource.freshness)),
                 distinct=(
-                    MirrorDistroSeriesSource.distribution_mirrorID,
-                    MirrorDistroSeriesSource.distroseriesID))))
+                    MirrorDistroSeriesSource.distribution_mirror_id,
+                    MirrorDistroSeriesSource.distroseries_id))))
 
     def getSummarizedMirroredArchSeries(self):
         """See IDistributionMirror"""
@@ -536,12 +543,12 @@ class DistributionMirror(SQLBase):
                 MirrorDistroArchSeries.id,
                 where=(MirrorDistroArchSeries.distribution_mirror == self),
                 order_by=(
-                    MirrorDistroArchSeries.distribution_mirrorID,
-                    MirrorDistroArchSeries.distro_arch_seriesID,
+                    MirrorDistroArchSeries.distribution_mirror_id,
+                    MirrorDistroArchSeries.distro_arch_series_id,
                     Desc(MirrorDistroArchSeries.freshness)),
                 distinct=(
-                    MirrorDistroArchSeries.distribution_mirrorID,
-                    MirrorDistroArchSeries.distro_arch_seriesID))))
+                    MirrorDistroArchSeries.distribution_mirror_id,
+                    MirrorDistroArchSeries.distro_arch_series_id))))
 
     def getExpectedPackagesPaths(self):
         """See IDistributionMirror"""
@@ -756,39 +763,52 @@ class _MirrorSeriesMixIn:
 
 
 @implementer(IMirrorCDImageDistroSeries)
-class MirrorCDImageDistroSeries(SQLBase):
+class MirrorCDImageDistroSeries(StormBase):
     """See IMirrorCDImageDistroSeries"""
-    _table = 'MirrorCDImageDistroSeries'
-    _defaultOrder = 'id'
+    __storm_table__ = 'MirrorCDImageDistroSeries'
+    __storm_order__ = 'id'
 
-    distribution_mirror = ForeignKey(
-        dbName='distribution_mirror', foreignKey='DistributionMirror',
-        notNull=True)
-    distroseries = ForeignKey(
-        dbName='distroseries', foreignKey='DistroSeries', notNull=True)
-    flavour = StringCol(notNull=True)
+    id = Int(primary=True)
+    distribution_mirror_id = Int(name='distribution_mirror', allow_none=False)
+    distribution_mirror = Reference(
+        distribution_mirror_id, 'DistributionMirror.id')
+    distroseries_id = Int(name='distroseries', allow_none=False)
+    distroseries = Reference(distroseries_id, 'DistroSeries.id')
+    flavour = Unicode(allow_none=False)
+
+    def __init__(self, distribution_mirror, distroseries, flavour):
+        self.distribution_mirror = distribution_mirror
+        self.distroseries = distroseries
+        self.flavour = flavour
 
 
 @implementer(IMirrorDistroArchSeries)
-class MirrorDistroArchSeries(SQLBase, _MirrorSeriesMixIn):
+class MirrorDistroArchSeries(StormBase, _MirrorSeriesMixIn):
     """See IMirrorDistroArchSeries"""
-    _table = 'MirrorDistroArchSeries'
-    _defaultOrder = [
+    __storm_table__ = 'MirrorDistroArchSeries'
+    __storm_order__ = [
         'distroarchseries', 'component', 'pocket', 'freshness', 'id']
 
-    distribution_mirror = ForeignKey(
-        dbName='distribution_mirror', foreignKey='DistributionMirror',
-        notNull=True)
-    distro_arch_series = ForeignKey(
-        dbName='distroarchseries', foreignKey='DistroArchSeries',
-        notNull=True)
-    component = ForeignKey(
-        dbName='component', foreignKey='Component', notNull=True)
+    id = Int(primary=True)
+    distribution_mirror_id = Int(name='distribution_mirror', allow_none=False)
+    distribution_mirror = Reference(
+        distribution_mirror_id, 'DistributionMirror.id')
+    distro_arch_series_id = Int(name='distroarchseries', allow_none=False)
+    distro_arch_series = Reference(
+        distro_arch_series_id, 'DistroArchSeries.id')
+    component_id = Int(name='component', allow_none=False)
+    component = Reference(component_id, 'Component.id')
     freshness = DBEnum(
         allow_none=False, default=MirrorFreshness.UNKNOWN,
         enum=MirrorFreshness)
-    pocket = DBEnum(
-        allow_none=False, enum=PackagePublishingPocket)
+    pocket = DBEnum(allow_none=False, enum=PackagePublishingPocket)
+
+    def __init__(self, distribution_mirror, distro_arch_series, component,
+                 pocket):
+        self.distribution_mirror = distribution_mirror
+        self.distro_arch_series = distro_arch_series
+        self.component = component
+        self.pocket = pocket
 
     def getLatestPublishingEntry(self, time_interval, deb_only=True):
         """Return the BinaryPackagePublishingHistory record with the
@@ -847,24 +867,30 @@ class MirrorDistroArchSeries(SQLBase, _MirrorSeriesMixIn):
 
 
 @implementer(IMirrorDistroSeriesSource)
-class MirrorDistroSeriesSource(SQLBase, _MirrorSeriesMixIn):
+class MirrorDistroSeriesSource(StormBase, _MirrorSeriesMixIn):
     """See IMirrorDistroSeriesSource"""
-    _table = 'MirrorDistroSeriesSource'
-    _defaultOrder = ['distroseries', 'component', 'pocket', 'freshness', 'id']
+    __storm_table__ = 'MirrorDistroSeriesSource'
+    __storm_order__ = [
+        'distroseries', 'component', 'pocket', 'freshness', 'id']
 
-    distribution_mirror = ForeignKey(
-        dbName='distribution_mirror', foreignKey='DistributionMirror',
-        notNull=True)
-    distroseries = ForeignKey(
-        dbName='distroseries', foreignKey='DistroSeries',
-        notNull=True)
-    component = ForeignKey(
-        dbName='component', foreignKey='Component', notNull=True)
+    id = Int(primary=True)
+    distribution_mirror_id = Int(name='distribution_mirror', allow_none=False)
+    distribution_mirror = Reference(
+        distribution_mirror_id, 'DistributionMirror.id')
+    distroseries_id = Int(name='distroseries', allow_none=False)
+    distroseries = Reference(distroseries_id, 'DistroSeries.id')
+    component_id = Int(name='component', allow_none=False)
+    component = Reference(component_id, 'Component.id')
     freshness = DBEnum(
         allow_none=False, default=MirrorFreshness.UNKNOWN,
         enum=MirrorFreshness)
-    pocket = DBEnum(
-        allow_none=False, enum=PackagePublishingPocket)
+    pocket = DBEnum(allow_none=False, enum=PackagePublishingPocket)
+
+    def __init__(self, distribution_mirror, distroseries, component, pocket):
+        self.distribution_mirror = distribution_mirror
+        self.distroseries = distroseries
+        self.component = component
+        self.pocket = pocket
 
     def getLatestPublishingEntry(self, time_interval):
         clauses = [
@@ -909,14 +935,20 @@ class MirrorDistroSeriesSource(SQLBase, _MirrorSeriesMixIn):
 
 
 @implementer(IMirrorProbeRecord)
-class MirrorProbeRecord(SQLBase):
+class MirrorProbeRecord(StormBase):
     """See IMirrorProbeRecord"""
-    _table = 'MirrorProbeRecord'
-    _defaultOrder = 'id'
+    __storm_table__ = 'MirrorProbeRecord'
+    __storm_order__ = 'id'
 
-    distribution_mirror = ForeignKey(
-        dbName='distribution_mirror', foreignKey='DistributionMirror',
-        notNull=True)
-    log_file = ForeignKey(
-        dbName='log_file', foreignKey='LibraryFileAlias', notNull=True)
-    date_created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    id = Int(primary=True)
+    distribution_mirror_id = Int(name='distribution_mirror', allow_none=False)
+    distribution_mirror = Reference(
+        distribution_mirror_id, 'DistributionMirror.id')
+    log_file_id = Int(name='log_file', allow_none=False)
+    log_file = Reference(log_file_id, 'LibraryFileAlias.id')
+    date_created = DateTime(
+        tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+
+    def __init__(self, distribution_mirror, log_file):
+        self.distribution_mirror = distribution_mirror
+        self.log_file = log_file

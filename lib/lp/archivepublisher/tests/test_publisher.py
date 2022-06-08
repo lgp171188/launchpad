@@ -921,7 +921,7 @@ class TestPublisher(TestPublisherBase):
         pub_config = getPubConfig(archive)
         pub_config.setupArchiveDirs()
         disk_pool = DiskPool(
-            pub_config.poolroot, pub_config.temproot, self.logger)
+            archive, pub_config.poolroot, pub_config.temproot, self.logger)
         publisher = Publisher(
             self.logger, pub_config, disk_pool, archive)
         self.getPubSource(archive=archive, filecontent=b"I am partner")
@@ -963,7 +963,7 @@ class TestPublisher(TestPublisherBase):
         pub_config = getPubConfig(archive)
         pub_config.setupArchiveDirs()
         disk_pool = DiskPool(
-            pub_config.poolroot, pub_config.temproot, self.logger)
+            archive, pub_config.poolroot, pub_config.temproot, self.logger)
         publisher = Publisher(self.logger, pub_config, disk_pool, archive)
         self.getPubSource(
             archive=archive, filecontent=b"I am partner",
@@ -1125,7 +1125,8 @@ class TestPublisher(TestPublisherBase):
 
         test_pool_dir = tempfile.mkdtemp()
         test_temp_dir = tempfile.mkdtemp()
-        test_disk_pool = DiskPool(test_pool_dir, test_temp_dir, self.logger)
+        test_disk_pool = DiskPool(
+            test_archive, test_pool_dir, test_temp_dir, self.logger)
 
         publisher = Publisher(
             self.logger, self.config, test_disk_pool,
@@ -3606,6 +3607,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.release-id":
                     ["source:%d" % source.sourcepackagereleaseID],
                 "launchpad.source-name": ["hello"],
+                "launchpad.source-version": ["1.0"],
                 },
             source_path.properties)
         binary_path = (
@@ -3619,6 +3621,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.release-id":
                     ["binary:%d" % binary.binarypackagereleaseID],
                 "launchpad.source-name": ["hello"],
+                "launchpad.source-version": ["1.0"],
                 },
             binary_path.properties)
 
@@ -3668,6 +3671,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.release-id":
                     ["source:%d" % source.sourcepackagereleaseID],
                 "launchpad.source-name": ["hello"],
+                "launchpad.source-version": ["1.0"],
                 },
             source_path.properties)
         self.assertEqual(
@@ -3678,6 +3682,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.release-id":
                     ["binary:%d" % binary.binarypackagereleaseID],
                 "launchpad.source-name": ["hello"],
+                "launchpad.source-version": ["1.0"],
                 },
             binary_path.properties)
 
@@ -3721,6 +3726,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.release-id":
                     ["source:%d" % source.sourcepackagereleaseID],
                 "launchpad.source-name": ["hello"],
+                "launchpad.source-version": ["1.0"],
                 },
             source_path.properties)
         self.assertEqual(
@@ -3728,6 +3734,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.release-id":
                     ["binary:%d" % binary.binarypackagereleaseID],
                 "launchpad.source-name": ["hello"],
+                "launchpad.source-version": ["1.0"],
                 },
             binary_path.properties)
 

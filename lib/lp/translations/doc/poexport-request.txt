@@ -254,8 +254,8 @@ The script is run.
     ...     )
     >>> (output, empty) = process.communicate()
     >>> print(output)
-    DEBUG   ...
     INFO    Creating lockfile: /var/lock/launchpad-rosetta-export-queue.lock
+    DEBUG   ...
     DEBUG   Exporting objects for Happy Downloader, related to template
     evolution-2.2 in Evolution trunk
     DEBUG   Exporting objects for Happy Downloader, related to template

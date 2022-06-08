@@ -693,8 +693,15 @@ class FTPArchiveHandler:
 
         def updateFileList(sourcepackagename, filename, component,
                            architecturetag=None):
+            # DiskPool.pathFor takes a source package version parameter.  We
+            # could fetch that in getSourceFiles/getBinaryFiles and pass it
+            # down here.  However, it adds another column to a query with an
+            # already large number of rows, and it's only needed for
+            # non-Debian-format archives, which by definition aren't
+            # involved here; so we just pass None as the version.
             ondiskname = str(
-                self._diskpool.pathFor(component, sourcepackagename, filename))
+                self._diskpool.pathFor(
+                    component, sourcepackagename, None, filename))
             if architecturetag is None:
                 architecturetag = "source"
             filelist[component][architecturetag].append(ondiskname)

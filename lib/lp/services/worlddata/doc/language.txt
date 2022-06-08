@@ -173,7 +173,7 @@ However, es_MX would find es useful:
     >>> print(language.alt_suggestion_language.code)
     es
 
-And Nynorsk and Bokmal have a special relationship:
+And Nynorsk and Bokmål have a special relationship:
 
     >>> language = language_set.getLanguageByCode('nn')
     >>> print(language.alt_suggestion_language.code)
