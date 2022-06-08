@@ -61,6 +61,7 @@ And for every distribution we publish most of its attributes.
     redirect_release_uploads: False
     registrant_link: 'http://.../~registry'
     resource_type_link: 'http://.../#distribution'
+    security_admin_link: None
     self_link: 'http://.../ubuntu'
     series_collection_link: 'http://.../ubuntu/series'
     summary: 'Ubuntu is a new approach to Linux Distribution...'
