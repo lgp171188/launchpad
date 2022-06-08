@@ -8,6 +8,12 @@ __all__ = [
     'LaunchpadStatisticSet',
     ]
 
+import pytz
+from storm.locals import (
+    DateTime,
+    Int,
+    Unicode,
+    )
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -22,16 +28,9 @@ from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.model.product import Product
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    cursor,
-    SQLBase,
-    )
-from lp.services.database.sqlobject import (
-    IntCol,
-    StringCol,
-    )
+from lp.services.database.sqlbase import cursor
+from lp.services.database.stormbase import StormBase
 from lp.services.statistics.interfaces.statistic import (
     ILaunchpadStatistic,
     ILaunchpadStatisticSet,
@@ -43,45 +42,56 @@ from lp.translations.model.potemplate import POTemplate
 
 
 @implementer(ILaunchpadStatistic)
-class LaunchpadStatistic(SQLBase):
+class LaunchpadStatistic(StormBase):
     """A table of Launchpad Statistics."""
 
-    _table = 'LaunchpadStatistic'
-    _defaultOrder = 'name'
+    __storm_table__ = "LaunchpadStatistic"
+    __storm_order__ = "name"
 
-    # db field names
-    name = StringCol(notNull=True, alternateID=True, unique=True)
-    value = IntCol(notNull=True)
-    dateupdated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    id = Int(primary=True)
+
+    name = Unicode(allow_none=False)
+    value = Int(allow_none=False)
+    dateupdated = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
+
+    def __init__(self, name, value):
+        super().__init__()
+        self.name = name
+        self.value = value
 
 
 @implementer(ILaunchpadStatisticSet)
 class LaunchpadStatisticSet:
-    """See`ILaunchpadStatisticSet`."""
+    """See `ILaunchpadStatisticSet`."""
 
     def __iter__(self):
         """See ILaunchpadStatisticSet."""
-        return iter(LaunchpadStatistic.select(orderBy='name'))
+        store = IStore(LaunchpadStatistic)
+        return iter(store.find(LaunchpadStatistic).order_by("name"))
 
     def update(self, name, value):
         """See ILaunchpadStatisticSet."""
-        stat = LaunchpadStatistic.selectOneBy(name=name)
+        store = IStore(LaunchpadStatistic)
+        stat = store.find(LaunchpadStatistic, name=name).one()
         if stat is None:
             stat = LaunchpadStatistic(name=name, value=value)
+            store.add(stat)
         else:
             stat.value = value
             stat.dateupdated = UTC_NOW
 
     def dateupdated(self, name):
         """See ILaunchpadStatisticSet."""
-        stat = LaunchpadStatistic.selectOneBy(name=name)
+        store = IStore(LaunchpadStatistic)
+        stat = store.find(LaunchpadStatistic, name=name).one()
         if stat is None:
             return None
         return stat.dateupdated
 
     def value(self, name):
         """See ILaunchpadStatisticSet."""
-        stat = LaunchpadStatistic.selectOneBy(name=name)
+        store = IStore(LaunchpadStatistic)
+        stat = store.find(LaunchpadStatistic, name=name).one()
         if stat is None:
             return None
         return stat.value
