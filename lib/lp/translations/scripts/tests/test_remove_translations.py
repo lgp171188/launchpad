@@ -5,6 +5,7 @@
 
 """Test `remove_translations` and the `RemoveTranslations` script."""
 
+from datetime import datetime
 import logging
 from optparse import (
     OptionParser,
@@ -12,6 +13,7 @@ from optparse import (
     )
 from unittest import TestLoader
 
+import pytz
 from storm.store import Store
 from testtools.matchers import MatchesStructure
 from zope.component import getUtility
@@ -179,6 +181,7 @@ class TestRemoveTranslationsOptionsHandling(TestCase):
         options = parse_opts([
             '--submitter=1',
             '--reviewer=2',
+            '--created=2022-06-12',
             '--id=3',
             '--id=4',
             '--potemplate=5',
@@ -193,6 +196,7 @@ class TestRemoveTranslationsOptionsHandling(TestCase):
         self.assertThat(options, MatchesStructure.byEquality(
             submitter=1,
             reviewer=2,
+            date_created='2022-06-12',
             ids=[3, 4],
             potemplate=5,
             language='te',
@@ -376,6 +380,69 @@ class TestRemoveTranslations(TestCase):
 
         self._removeMessages(reviewer=carlos)
         self._checkInvariant()
+
+    def test_RemoveByDateCreated(self):
+        # Remove messages by date_created.
+        carlos = getUtility(IPersonSet).getByName('carlos')
+        (new_nl_message, new_de_message) = self._makeMessages(
+            "Submitted by Carlos", "TestNL",
+            "TestDE", submitter=carlos)
+        # Manually force creation date to something in the past
+        removeSecurityProxy(new_nl_message).date_created = datetime(
+            2015, 5, 12, tzinfo=pytz.UTC)
+        removeSecurityProxy(new_de_message).date_created = datetime(
+            2015, 5, 12, tzinfo=pytz.UTC)
+
+        # This will restore invariant by deleting both messages created
+        # above in this test
+        self._removeMessages(date_created='2015-05-12')
+
+        self._checkInvariant()
+
+        # Created on the same date but by different submitters
+        mark = getUtility(IPersonSet).getByName('mark')
+        (new_nl_message, new_de_message) = self._makeMessages(
+            "Second message Submitted by Carlos", "Second Test NL",
+            "Second Test DE", submitter=carlos)
+        removeSecurityProxy(new_nl_message).date_created = datetime(
+            2015, 5, 12, tzinfo=pytz.UTC)
+        removeSecurityProxy(new_de_message).date_created = datetime(
+            2015, 5, 12, tzinfo=pytz.UTC)
+        removeSecurityProxy(new_de_message).submitter = mark
+
+        self._removeMessages(submitter=carlos, date_created='2015-05-12')
+
+        # First make sure we're not reading out of cache.
+        Store.of(self.nl_pofile).flush()
+        # The DE message should not be deleted as it was
+        # submitted by Mark
+        self.assertEqual(
+            self._getContents(self.nl_pofile),
+            ["Dit bericht mag niet worden verwijderd."])
+        self.assertEqual(
+            self._getContents(self.de_pofile),
+            ["Diese Nachricht soll nicht erloescht werden.", 'Second Test DE'])
+
+        # Check removal with messages created by the same User
+        # but for different dates
+        (new_nl_message, new_de_message) = self._makeMessages(
+            "Third translation submitted by Carlos", "Third Test NL",
+            "Third Test DE", submitter=carlos)
+        # Manually force creation date to something in the past
+        removeSecurityProxy(new_nl_message).date_created = datetime(
+            2015, 5, 12, tzinfo=pytz.UTC)
+
+        rowcount = self._removeMessages(submitter=carlos,
+                                        date_created='2015-05-12')
+
+        self.assertEqual(rowcount, 1)
+        self.assertEqual(
+            self._getContents(self.nl_pofile),
+            ["Dit bericht mag niet worden verwijderd."])
+        self.assertEqual(
+            self._getContents(self.de_pofile),
+            ["Diese Nachricht soll nicht erloescht werden.", "Second Test DE",
+             "Third Test DE"])
 
     def test_RemoveByTemplate(self):
         # Remove messages by template.  Limit this deletion by ids as
