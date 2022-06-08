@@ -682,3 +682,10 @@ class ArchiveRepositoryFormat(DBEnumeratedType):
 
         A Python package index (https://www.python.org/dev/peps/pep-0301/).
         """)
+
+    CONDA = DBItem(2, """
+        Conda
+
+        A Conda channel
+        (https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/channels.html).
+        """)

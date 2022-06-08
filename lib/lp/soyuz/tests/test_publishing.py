@@ -25,6 +25,9 @@ from lp.archivepublisher.indices import (
     build_binary_stanza_fields,
     build_source_stanza_fields,
     )
+from lp.archivepublisher.tests.artifactory_fixture import (
+    FakeArtifactoryFixture,
+    )
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.registry.interfaces.distribution import IDistributionSet
@@ -42,7 +45,9 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.log.logger import DevNullLogger
 from lp.soyuz.enums import (
+    ArchivePublishingMethod,
     ArchivePurpose,
+    ArchiveRepositoryFormat,
     BinaryPackageFormat,
     PackageUploadStatus,
     )
@@ -76,6 +81,7 @@ from lp.testing import (
     )
 from lp.testing.dbuser import (
     dbuser,
+    lp_dbuser,
     switch_dbuser,
     )
 from lp.testing.factory import LaunchpadObjectFactory
@@ -718,6 +724,40 @@ class TestNativePublishing(TestNativePublishingBase):
         self.assertEqual(PackagePublishingStatus.PUBLISHED, pub_binary.status)
         pool_path = "%s/main/f/foo/foo-bin_666_all.deb" % self.pool_dir
         self.assertEqual(open(pool_path).read().strip(), 'Hello world')
+
+    def test_publish_isolated_binaries(self):
+        # Some binary publications have no associated source publication
+        # (e.g. Python wheels in an archive published using Artifactory).
+        # In these cases, the binary package name/version is passed to the
+        # pool.
+        base_url = "https://foo.example.com/artifactory"
+        self.pushConfig("artifactory", base_url=base_url)
+        archive = self.factory.makeArchive(
+            distribution=self.distroseries.distribution,
+            publishing_method=ArchivePublishingMethod.ARTIFACTORY,
+            repository_format=ArchiveRepositoryFormat.PYTHON)
+        config = getPubConfig(archive)
+        disk_pool = config.getDiskPool(self.logger)
+        disk_pool.logger = self.logger
+        self.useFixture(FakeArtifactoryFixture(base_url, archive.name))
+        with lp_dbuser():
+            ci_build = self.factory.makeCIBuild(
+                distro_arch_series=self.distroseries.architectures[0])
+            bpn = self.factory.makeBinaryPackageName(name="foo")
+            bpr = self.factory.makeBinaryPackageRelease(
+                binarypackagename=bpn, version="0.1", ci_build=ci_build,
+                binpackageformat=BinaryPackageFormat.WHL)
+            lfa = self.addMockFile("foo-0.1.whl", filecontent=b"Hello world")
+            bpr.addFile(lfa)
+            bpph = self.factory.makeBinaryPackagePublishingHistory(
+                binarypackagerelease=bpr, archive=archive,
+                distroarchseries=self.distroseries.architectures[0],
+                pocket=PackagePublishingPocket.RELEASE, channel="stable")
+        bpph.publish(disk_pool, self.logger)
+        self.assertEqual(PackagePublishingStatus.PUBLISHED, bpph.status)
+        pool_path = disk_pool.rootpath / "foo" / "0.1" / "foo-0.1.whl"
+        with pool_path.open() as pool_file:
+            self.assertEqual(b"Hello world", pool_file.read())
 
     def test_publish_ddeb_when_disabled_is_noop(self):
         # Publishing a DDEB publication when
