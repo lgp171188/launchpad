@@ -192,6 +192,16 @@ class TestArtifactoryPool(TestCase):
             ["*.whl"],
             pool.getArtifactPatterns(ArchiveRepositoryFormat.PYTHON))
 
+    def test_getArtifactPatterns_conda(self):
+        pool = self.makePool()
+        self.assertEqual(
+            [
+                "*.tar.bz2",
+                "*.conda",
+            ],
+            pool.getArtifactPatterns(ArchiveRepositoryFormat.CONDA)
+        )
+
     def test_getAllArtifacts(self):
         # getAllArtifacts mostly relies on constructing a correct AQL query,
         # which we can't meaningfully test without a real Artifactory
@@ -211,6 +221,10 @@ class TestArtifactoryPool(TestCase):
             pool=pool, source_name="bar", source_version="1.0",
             filename="bar-1.0.whl", release_type=FakeReleaseType.BINARY,
             release_id=3).addToPool()
+        ArtifactoryPoolTestingFile(
+            pool=pool, source_name="qux", source_version="1.0",
+            filename="qux-1.0.conda", release_type=FakeReleaseType.BINARY,
+            release_id=4).addToPool()
         self.assertEqual(
             {
                 PurePath("pool/f/foo/foo-1.0.deb"): {
@@ -236,6 +250,17 @@ class TestArtifactoryPool(TestCase):
                 },
             pool.getAllArtifacts(
                 self.repository_name, ArchiveRepositoryFormat.PYTHON))
+        self.assertEqual(
+            {
+                PurePath("pool/q/qux/qux-1.0.conda"): {
+                    "launchpad.release-id": ["binary:4"],
+                    "launchpad.source-name": ["qux"],
+                    "launchpad.source-version": ["1.0"],
+                },
+            },
+            pool.getAllArtifacts(
+                self.repository_name, ArchiveRepositoryFormat.CONDA))
+
 
 
 class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):

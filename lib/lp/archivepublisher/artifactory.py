@@ -372,6 +372,11 @@ class ArtifactoryPool:
                 ]
         elif repository_format == ArchiveRepositoryFormat.PYTHON:
             return ["*.whl"]
+        elif repository_format == ArchiveRepositoryFormat.CONDA:
+            return [
+                "*.tar.bz2",
+                "*.conda",
+            ]
         else:
             raise AssertionError(
                 "Unknown repository format %r" % repository_format)
