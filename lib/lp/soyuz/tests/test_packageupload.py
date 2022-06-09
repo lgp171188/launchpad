@@ -370,9 +370,9 @@ class PackageUploadTestCase(TestCaseWithFactory):
             component="main", version="1.0"))
         transaction.commit()
         upload_one.setUnapproved()
-        upload_one.syncUpdate()
+        IStore(upload_one).flush()
         upload_two.setUnapproved()
-        upload_two.syncUpdate()
+        IStore(upload_two).flush()
 
         # There are now duplicate uploads in UNAPPROVED.
         unapproved = distroseries.getPackageUploads(

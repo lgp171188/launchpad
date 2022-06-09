@@ -222,8 +222,8 @@ class QueueItemsView(LaunchpadView):
         pubs = sum((removeSecurityProxy(u.builds) for u in uploads), [])
 
         source_sprs = load_related(
-            SourcePackageRelease, puses, ['sourcepackagereleaseID'])
-        bpbs = load_related(BinaryPackageBuild, pubs, ['buildID'])
+            SourcePackageRelease, puses, ['sourcepackagerelease_id'])
+        bpbs = load_related(BinaryPackageBuild, pubs, ['build_id'])
         bprs = load_referencing(BinaryPackageRelease, bpbs, ['buildID'])
         source_files = load_referencing(
             SourcePackageReleaseFile, source_sprs, ['sourcepackagereleaseID'])
@@ -242,7 +242,7 @@ class QueueItemsView(LaunchpadView):
         # Get a dictionary of lists of source files keyed by upload ID.
         package_upload_source_dict = {}
         for pus in puses:
-            package_upload_source_dict[pus.sourcepackagereleaseID] = pus
+            package_upload_source_dict[pus.sourcepackagerelease_id] = pus
         source_upload_files = self.source_files_dict(
             package_upload_source_dict, source_files)
 

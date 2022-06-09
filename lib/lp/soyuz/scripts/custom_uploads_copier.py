@@ -76,7 +76,7 @@ class CustomUploadsCopier:
         """Find custom uploads that may need copying."""
         uploads = source_series.getPackageUploads(
             pocket=source_pocket, custom_type=list(self.copyable_types))
-        load_referencing(PackageUploadCustom, uploads, ['packageuploadID'])
+        load_referencing(PackageUploadCustom, uploads, ['packageupload_id'])
         customs = sum((list(upload.customfiles) for upload in uploads), [])
         return sorted(
             filter(self.isCopyable, customs),

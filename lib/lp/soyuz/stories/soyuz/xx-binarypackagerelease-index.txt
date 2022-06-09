@@ -21,7 +21,6 @@ Next, we'll manually create a suitable package upload record for our
 build:
 XXX: noodles 2009-01-16 bug 317863: move this into the STP.
 
-    >>> from lp.soyuz.model.queue import PackageUploadBuild
     >>> from lp.soyuz.interfaces.binarypackagebuild import (
     ...     IBinaryPackageBuildSet)
     >>> from lp.registry.interfaces.pocket import (
@@ -45,9 +44,7 @@ manually insert one so that we can check how it's rendered.
     >>> package_upload = build.distro_series.createQueueEntry(
     ...     PackagePublishingPocket.UPDATES, build.archive,
     ...    'changes.txt', b'my changes')
-    >>> package_upload_build = PackageUploadBuild(
-    ...     packageupload =package_upload,
-    ...     build=build)
+    >>> _ = package_upload.addBuild(build)
     >>> package_upload.setDone()
     >>> logout()
 

@@ -408,7 +408,7 @@ class IPackageUpload(Interface):
     @call_with(user=REQUEST_USER)
     @operation_for_version("devel")
     def acceptFromQueue(user=None):
-        """Call setAccepted, do a syncUpdate, and send notification email.
+        """Call setAccepted, do a flush, and send notification email.
 
          * Grant karma to people involved with the upload.
         """
@@ -419,7 +419,7 @@ class IPackageUpload(Interface):
     @call_with(user=REQUEST_USER)
     @operation_for_version("devel")
     def rejectFromQueue(user, comment=None):
-        """Call setRejected, do a syncUpdate, and send notification email."""
+        """Call setRejected, do a flush, and send notification email."""
 
     def realiseUpload(logger=None):
         """Take this ACCEPTED upload and create the publishing records for it
@@ -443,13 +443,6 @@ class IPackageUpload(Interface):
     def addCustom(library_file, custom_type):
         """Add the provided library file alias as a custom queue entry of
         the given custom type.
-        """
-
-    def syncUpdate():
-        """Write updates made on this object to the database.
-
-        This should be used when you can't wait until the transaction is
-        committed to have some updates actually written to the database.
         """
 
     def notify(status=None, summary_text=None, changes_file_object=None,

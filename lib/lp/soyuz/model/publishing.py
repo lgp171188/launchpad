@@ -33,6 +33,8 @@ from storm.expr import (
     Sum,
     )
 from storm.info import ClassAlias
+from storm.properties import Int
+from storm.references import Reference
 from storm.store import Store
 from storm.zope import IResultSet
 from storm.zope.interfaces import ISQLObjectResultSet
@@ -288,8 +290,8 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
     sponsor = ForeignKey(
         dbName='sponsor', foreignKey='Person',
         storm_validator=validate_public_person, notNull=False, default=None)
-    packageupload = ForeignKey(
-        dbName='packageupload', foreignKey='PackageUpload', default=None)
+    packageupload_id = Int(name="packageupload", allow_none=True, default=None)
+    packageupload = Reference(packageupload_id, "PackageUpload.id")
 
     @property
     def format(self):
@@ -1743,13 +1745,12 @@ class PublishingSet:
              SourcePackageRelease, LibraryFileAlias, LibraryFileContent),
             LibraryFileContent.id == LibraryFileAlias.contentID,
             LibraryFileAlias.id == PackageUpload.changes_file_id,
-            PackageUpload.id == PackageUploadSource.packageuploadID,
+            PackageUpload.id == PackageUploadSource.packageupload_id,
             PackageUpload.status == PackageUploadStatus.DONE,
-            PackageUpload.distroseriesID ==
+            PackageUpload.distroseries ==
                 SourcePackageRelease.upload_distroseriesID,
-            PackageUpload.archiveID ==
-                SourcePackageRelease.upload_archiveID,
-            PackageUploadSource.sourcepackagereleaseID ==
+            PackageUpload.archive == SourcePackageRelease.upload_archiveID,
+            PackageUploadSource.sourcepackagerelease ==
                 SourcePackageRelease.id,
             SourcePackageRelease.id ==
                 SourcePackagePublishingHistory.sourcepackagereleaseID,
@@ -1770,10 +1771,10 @@ class PublishingSet:
             LibraryFileAlias,
             LibraryFileAlias.id == PackageUpload.changes_file_id,
             PackageUpload.status == PackageUploadStatus.DONE,
-            PackageUpload.distroseriesID == spr.upload_distroseries.id,
-            PackageUpload.archiveID == spr.upload_archive.id,
-            PackageUpload.id == PackageUploadSource.packageuploadID,
-            PackageUploadSource.sourcepackagereleaseID == spr.id).one()
+            PackageUpload.distroseries == spr.upload_distroseries,
+            PackageUpload.archive == spr.upload_archive,
+            PackageUploadSource.packageupload == PackageUpload.id,
+            PackageUploadSource.sourcepackagerelease == spr).one()
 
     def getBuildStatusSummariesForSourceIdsAndArchive(self, source_ids,
         archive):
