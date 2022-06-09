@@ -393,7 +393,8 @@ def remove_translations(logger=None, submitter=None, reviewer=None,
             'TranslationMessage.reviewer = %s' % sqlvalues(reviewer))
     if date_created is not None:
         conditions.add(
-            'TranslationMessage.date_created = %s' % sqlvalues(date_created))
+            "date_trunc('day', TranslationMessage.date_created) = %s"
+            % sqlvalues(date_created))
     if reject_license:
         joins.add('TranslationRelicensingAgreement')
         conditions.add(
