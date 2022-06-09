@@ -3,20 +3,32 @@
 
 """Test updates to Distroseries stats."""
 
+from datetime import timedelta
 import os
 import subprocess
 import unittest
 
+from storm.expr import (
+    Cast,
+    Max,
+    Select,
+    )
 from zope.component import getUtility
 
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
+from lp.registry.model.distroseries import DistroSeries
 from lp.services.config import config
-from lp.services.database.sqlbase import cursor
+from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormexpr import IsTrue
+from lp.services.statistics.model.statistics import LaunchpadStatistic
 from lp.services.worlddata.interfaces.language import ILanguageSet
+from lp.services.worlddata.model.language import Language
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.interfaces.potemplate import IPOTemplateSet
+from lp.translations.model.distroserieslanguage import DistroSeriesLanguage
 
 
 def get_script():
@@ -40,40 +52,33 @@ class UpdateStatsTest(unittest.TestCase):
     def test_basic(self):
         """Test insert and update operations to LaunchpadStatistic."""
         # Nuke some stats so we know that they are updated
-        cur = cursor()
+        store = IStore(LaunchpadStatistic)
 
         # Destroy the LaunchpadStatistic entries so we can confirm they are
         # updated.
-        cur.execute(
-            "DELETE FROM LaunchpadStatistic WHERE name='pofile_count'")
-        cur.execute("""
-            UPDATE LaunchpadStatistic
-            SET value=-1, dateupdated=now()-'10 weeks'::interval
-            """)
+        ten_weeks_ago = UTC_NOW - Cast(timedelta(weeks=10), "interval")
+        store.find(LaunchpadStatistic, name="pofile_count").remove()
+        store.find(LaunchpadStatistic).set(value=-1, dateupdated=ten_weeks_ago)
 
         # Destroy the messagecount caches on distroseries so we can confirm
         # they are all updated.
-        cur.execute("UPDATE DistroSeries SET messagecount=-1")
+        store.find(DistroSeries).set(messagecount=-1)
 
         # Delete half the entries in the DistroSeriesLanguage cache so we
         # can confirm they are created as required, and set the remainders
         # to invalid values so we can confirm they are updated.
-        cur.execute("""
-            DELETE FROM DistroSeriesLanguage
-            WHERE id > (SELECT max(id) FROM DistroSeriesLanguage)/2
-            """)
-        cur.execute("""
-            UPDATE DistroSeriesLanguage
-            SET
-                currentcount=-1, updatescount=-1, rosettacount=-1,
-                unreviewed_count=-1,contributorcount=-1,
-                dateupdated=now()-'10 weeks'::interval
-            """)
+        store.find(
+            DistroSeriesLanguage,
+            DistroSeriesLanguage.id > Select(
+                Max(DistroSeriesLanguage.id) / 2)).remove()
+        store.find(DistroSeriesLanguage).set(
+            currentcount=-1, updatescount=-1, rosettacount=-1,
+            unreviewed_count=-1, contributorcount=-1,
+            dateupdated=ten_weeks_ago)
 
         # Update stats should create missing distroserieslanguage,
         # so remember how many there are before the run.
-        cur.execute("SELECT COUNT(*) FROM DistroSeriesLanguage")
-        num_distroserieslanguage = cur.fetchone()[0]
+        num_distroserieslanguage = store.find(DistroSeriesLanguage).count()
 
         # Commit our changes so the subprocess can see them
         self.layer.txn.commit()
@@ -98,72 +103,39 @@ class UpdateStatsTest(unittest.TestCase):
 
         # Now confirm it did stuff it is supposed to
         self.layer.txn.abort()
-        cur = cursor()
 
         # Make sure all DistroSeries.messagecount entries are updated
-        cur.execute(
-            "SELECT COUNT(*) FROM DistroSeries WHERE messagecount=-1")
-        self.assertEqual(cur.fetchone()[0], 0)
+        self.assertEqual(0, store.find(DistroSeries, messagecount=-1).count())
 
         # Make sure we have created missing DistroSeriesLanguage entries
-        cur.execute("SELECT COUNT(*) FROM DistroSeriesLanguage")
-        self.assertTrue(cur.fetchone()[0] > num_distroserieslanguage)
+        self.assertGreater(
+            store.find(DistroSeriesLanguage).count(), num_distroserieslanguage)
 
-        # Make sure existing DistroSeriesLangauge entries have been updated.
-        cur.execute("""
-            SELECT COUNT(*) FROM DistroSeriesLanguage, Language
-            WHERE DistroSeriesLanguage.language = Language.id AND
-                  Language.visible = TRUE AND currentcount = -1
-            """)
-        self.assertEqual(cur.fetchone()[0], 0)
-
-        cur.execute("""
-            SELECT COUNT(*) FROM DistroSeriesLanguage, Language
-            WHERE DistroSeriesLanguage.language = Language.id AND
-                  Language.visible = TRUE AND updatescount = -1
-            """)
-        self.assertEqual(cur.fetchone()[0], 0)
-
-        cur.execute("""
-            SELECT COUNT(*) FROM DistroSeriesLanguage, Language
-            WHERE DistroSeriesLanguage.language = Language.id AND
-                  Language.visible = TRUE AND rosettacount = -1
-            """)
-        self.assertEqual(cur.fetchone()[0], 0)
-
-        cur.execute("""
-            SELECT COUNT(*) FROM DistroSeriesLanguage, Language
-            WHERE DistroSeriesLanguage.language = Language.id AND
-                  Language.visible = TRUE AND unreviewed_count = -1
-            """)
-        self.assertEqual(cur.fetchone()[0], 0)
-
-        cur.execute("""
-            SELECT COUNT(*) FROM DistroSeriesLanguage, Language
-            WHERE DistroSeriesLanguage.language = Language.id AND
-                  Language.visible = TRUE AND contributorcount = -1
-            """)
-        self.assertEqual(cur.fetchone()[0], 0)
-
-        cur.execute("""
-            SELECT COUNT(*) FROM DistroSeriesLanguage, Language
-            WHERE DistroSeriesLanguage.language = Language.id AND
-                  Language.visible = TRUE AND
-                  dateupdated < now() - '2 days'::interval
-            """)
-        self.assertEqual(cur.fetchone()[0], 0)
+        # Make sure existing DistroSeriesLanguage entries have been updated.
+        two_days_ago = UTC_NOW - Cast(timedelta(days=2), "interval")
+        for term in (
+            DistroSeriesLanguage.currentcount == -1,
+            DistroSeriesLanguage.updatescount == -1,
+            DistroSeriesLanguage.rosettacount == -1,
+            DistroSeriesLanguage.unreviewed_count == -1,
+            DistroSeriesLanguage.contributorcount == -1,
+            DistroSeriesLanguage.dateupdated < two_days_ago,
+        ):
+            self.assertEqual(
+                0,
+                store.find(
+                    DistroSeriesLanguage,
+                    DistroSeriesLanguage.language == Language.id,
+                    IsTrue(Language.visible),
+                    term).count())
 
         # All LaunchpadStatistic rows should have been updated
-        cur.execute("""
-            SELECT COUNT(*) FROM LaunchpadStatistic
-            WHERE value=-1
-            """)
-        self.assertEqual(cur.fetchone()[0], 0)
-        cur.execute("""
-            SELECT COUNT(*) FROM LaunchpadStatistic
-            WHERE dateupdated < now() - '2 days'::interval
-            """)
-        self.assertEqual(cur.fetchone()[0], 0)
+        self.assertEqual(0, store.find(LaunchpadStatistic, value=-1).count())
+        self.assertEqual(
+            0,
+            store.find(
+                LaunchpadStatistic,
+                LaunchpadStatistic.dateupdated < two_days_ago).count())
 
         keys = [
             'potemplate_count', 'pofile_count', 'pomsgid_count',
@@ -177,12 +149,10 @@ class UpdateStatsTest(unittest.TestCase):
             ]
 
         for key in keys:
-            cur.execute("""
-                SELECT value from LaunchpadStatistic WHERE name=%(key)s
-                """, dict(key=key))
-            row = cur.fetchone()
-            self.assertIsNotNone(row, '%s not updated' % key)
-            self.assertTrue(row[0] >= 0, '%s is invalid' % key)
+            value = store.find(
+                LaunchpadStatistic.value, LaunchpadStatistic.name == key).one()
+            self.assertIsNotNone(value, "%s not updated" % key)
+            self.assertGreaterEqual(value, 0, "%s is invalid" % key)
 
 
 class UpdateTranslationStatsTest(unittest.TestCase):
