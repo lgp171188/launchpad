@@ -634,6 +634,7 @@ table.diff {
    width: 100%;
    background-color: white;
    margin-bottom: 0.5em;
+   overflow-wrap: break-word;
 }
 table.unidiff {
    table-layout: fixed;
