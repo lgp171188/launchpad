@@ -1,0 +1,12 @@
+pipeline:
+    - build
+
+jobs:
+    build:
+        series: focal
+        architectures: amd64
+        plugin: conda-build
+        build-target: .
+        output:
+            paths:
+                - dist/*/*.tar.bz2

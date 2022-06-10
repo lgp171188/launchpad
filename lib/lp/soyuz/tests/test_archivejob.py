@@ -231,6 +231,86 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             }
         self.assertEqual(expected, job._scanFile(datadir(path)))
 
+    def test__scanFile_conda_indep(self):
+        archive = self.factory.makeArchive()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        build = self.factory.makeCIBuild()
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="edge")
+        path = "conda-indep/dist/noarch/conda-indep-0.1-0.tar.bz2"
+        expected = {
+            "name": "conda-indep",
+            "version": "0.1",
+            "summary": "Example summary",
+            "description": "Example description",
+            "binpackageformat": BinaryPackageFormat.CONDA_V1,
+            "architecturespecific": False,
+            "homepage": "",
+            }
+        self.assertEqual(expected, job._scanFile(datadir(path)))
+
+    def test__scanFile_conda_arch(self):
+        archive = self.factory.makeArchive()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        build = self.factory.makeCIBuild()
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="edge")
+        path = "conda-arch/dist/linux-64/conda-arch-0.1-0.tar.bz2"
+        expected = {
+            "name": "conda-arch",
+            "version": "0.1",
+            "summary": "Example summary",
+            "description": "Example description",
+            "binpackageformat": BinaryPackageFormat.CONDA_V1,
+            "architecturespecific": True,
+            "homepage": "http://example.com/",
+            }
+        self.assertEqual(expected, job._scanFile(datadir(path)))
+
+    def test__scanFile_conda_v2_indep(self):
+        archive = self.factory.makeArchive()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        build = self.factory.makeCIBuild()
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="edge")
+        path = "conda-v2-indep/dist/noarch/conda-v2-indep-0.1-0.conda"
+        expected = {
+            "name": "conda-v2-indep",
+            "version": "0.1",
+            "summary": "Example summary",
+            "description": "Example description",
+            "binpackageformat": BinaryPackageFormat.CONDA_V2,
+            "architecturespecific": False,
+            "homepage": "",
+            }
+        self.assertEqual(expected, job._scanFile(datadir(path)))
+
+    def test__scanFile_conda_v2_arch(self):
+        archive = self.factory.makeArchive()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        build = self.factory.makeCIBuild()
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="edge")
+        path = "conda-v2-arch/dist/linux-64/conda-v2-arch-0.1-0.conda"
+        expected = {
+            "name": "conda-v2-arch",
+            "version": "0.1",
+            "summary": "Example summary",
+            "description": "Example description",
+            "binpackageformat": BinaryPackageFormat.CONDA_V2,
+            "architecturespecific": True,
+            "homepage": "http://example.com/",
+            }
+        self.assertEqual(expected, job._scanFile(datadir(path)))
+
     def test_run_indep(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
