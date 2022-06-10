@@ -42,6 +42,7 @@ from lp.services.job.runner import BaseRunnableJob
 from lp.services.librarian.utils import copy_and_close
 from lp.soyuz.enums import (
     ArchiveJobType,
+    BinaryPackageFileType,
     BinaryPackageFormat,
     PackageUploadStatus,
     )
@@ -201,6 +202,18 @@ class CIBuildUploadJob(ArchiveJobDerived):
 
     config = config.ICIBuildUploadJobSource
 
+    # XXX cjwatson 2022-06-10: There doesn't seem to be a very clear
+    # conceptual distinction between BinaryPackageFormat and
+    # BinaryPackageFileType, but we end up having to add entries to both for
+    # each new package type because they're used in different database
+    # columns.  Try to minimize the hassle involved in this by maintaining a
+    # mapping here of all the formats we're interested in.
+    filetype_by_format = {
+        BinaryPackageFormat.WHL: BinaryPackageFileType.WHL,
+        BinaryPackageFormat.CONDA_V1: BinaryPackageFileType.CONDA_V1,
+        BinaryPackageFormat.CONDA_V2: BinaryPackageFileType.CONDA_V2,
+        }
+
     @classmethod
     def create(cls, ci_build, requester, target_archive, target_distroseries,
                target_pocket, target_channel=None):
@@ -332,8 +345,10 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 metadata["binarypackagename"] = (
                     getUtility(IBinaryPackageNameSet).ensure(metadata["name"]))
                 del metadata["name"]
+                filetype = self.filetype_by_format[
+                    metadata["binpackageformat"]]
                 bpr = self.ci_build.createBinaryPackageRelease(**metadata)
-                bpr.addFile(artifact.library_file)
+                bpr.addFile(artifact.library_file, filetype=filetype)
                 # The publishBinaries interface was designed for .debs,
                 # which need extra per-binary "override" information
                 # (component, etc.).  None of this is relevant here.
