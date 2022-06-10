@@ -1,0 +1,8 @@
+package:
+    name: conda-indep
+    version: 0.1
+build:
+    noarch: generic
+about:
+    summary: Example summary
+    description: Example description

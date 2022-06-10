@@ -1,0 +1,7 @@
+package:
+    name: conda-arch
+    version: 0.1
+about:
+    home: http://example.com/
+    summary: Example summary
+    description: Example description
