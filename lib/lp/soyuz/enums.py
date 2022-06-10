@@ -221,6 +221,19 @@ class BinaryPackageFileType(DBEnumeratedType):
         U{https://peps.python.org/pep-0427/}.
         """)
 
+    CONDA_V1 = DBItem(7, """
+        Conda Package v1
+
+        Version 1 of the Conda package format, with the ".tar.bz2" extension.
+        """)
+
+    CONDA_V2 = DBItem(8, """
+        Conda Package v2
+
+        Version 2 of the Conda package format, with the ".conda" extension;
+        introduced in Conda 4.7.
+        """)
+
 
 class BinaryPackageFormat(DBEnumeratedType):
     """Binary Package Format
@@ -269,6 +282,19 @@ class BinaryPackageFormat(DBEnumeratedType):
 
         The "wheel" binary package format for Python, originally defined in
         U{https://peps.python.org/pep-0427/}.
+        """)
+
+    CONDA_V1 = DBItem(7, """
+        Conda Package v1
+
+        Version 1 of the Conda package format, with the ".tar.bz2" extension.
+        """)
+
+    CONDA_V2 = DBItem(8, """
+        Conda Package v2
+
+        Version 2 of the Conda package format, with the ".conda" extension;
+        introduced in Conda 4.7.
         """)
 
 

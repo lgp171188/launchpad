@@ -2,9 +2,12 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import io
+import json
 import logging
 import os.path
+import tarfile
 import tempfile
+import zipfile
 
 from lazr.delegates import delegate_to
 from pkginfo import Wheel
@@ -20,6 +23,7 @@ from zope.interface import (
     implementer,
     provider,
     )
+import zstandard
 
 from lp.code.enums import RevisionStatusArtifactType
 from lp.code.interfaces.cibuild import ICIBuildSet
@@ -38,6 +42,7 @@ from lp.services.job.runner import BaseRunnableJob
 from lp.services.librarian.utils import copy_and_close
 from lp.soyuz.enums import (
     ArchiveJobType,
+    BinaryPackageFileType,
     BinaryPackageFormat,
     PackageUploadStatus,
     )
@@ -197,6 +202,18 @@ class CIBuildUploadJob(ArchiveJobDerived):
 
     config = config.ICIBuildUploadJobSource
 
+    # XXX cjwatson 2022-06-10: There doesn't seem to be a very clear
+    # conceptual distinction between BinaryPackageFormat and
+    # BinaryPackageFileType, but we end up having to add entries to both for
+    # each new package type because they're used in different database
+    # columns.  Try to minimize the hassle involved in this by maintaining a
+    # mapping here of all the formats we're interested in.
+    filetype_by_format = {
+        BinaryPackageFormat.WHL: BinaryPackageFileType.WHL,
+        BinaryPackageFormat.CONDA_V1: BinaryPackageFileType.CONDA_V1,
+        BinaryPackageFormat.CONDA_V2: BinaryPackageFileType.CONDA_V2,
+        }
+
     @classmethod
     def create(cls, ci_build, requester, target_archive, target_distroseries,
                target_pocket, target_channel=None):
@@ -241,7 +258,19 @@ class CIBuildUploadJob(ArchiveJobDerived):
     def target_channel(self):
         return self.metadata["target_channel"]
 
+    def _scanCondaMetadata(self, index, about):
+        return {
+            "name": index["name"],
+            "version": index["version"],
+            "summary": about.get("summary", ""),
+            "description": about.get("description", ""),
+            "architecturespecific": index["platform"] is not None,
+            "homepage": about.get("home", ""),
+            }
+
     def _scanFile(self, path):
+        # XXX cjwatson 2022-06-10: We should probably start splitting this
+        # up some more.
         if path.endswith(".whl"):
             try:
                 parsed_path = parse_wheel_filename(path)
@@ -257,6 +286,37 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 "architecturespecific": "any" not in parsed_path.platform_tags,
                 "homepage": wheel.home_page or "",
                 }
+        elif path.endswith(".tar.bz2"):
+            try:
+                with tarfile.open(path) as tar:
+                    index = json.loads(
+                        tar.extractfile("info/index.json").read().decode())
+                    about = json.loads(
+                        tar.extractfile("info/about.json").read().decode())
+            except Exception as e:
+                raise ScanException("Failed to scan %s" % path) from e
+            scanned = {"binpackageformat": BinaryPackageFormat.CONDA_V1}
+            scanned.update(self._scanCondaMetadata(index, about))
+            return scanned
+        elif path.endswith(".conda"):
+            try:
+                with zipfile.ZipFile(path) as zipf:
+                    base_name = os.path.basename(path)[:-len(".conda")]
+                    info = io.BytesIO()
+                    with zipf.open("info-%s.tar.zst" % base_name) as raw_info:
+                        zstandard.ZstdDecompressor().copy_stream(
+                            raw_info, info)
+                    info.seek(0)
+                    with tarfile.open(fileobj=info) as tar:
+                        index = json.loads(
+                            tar.extractfile("info/index.json").read().decode())
+                        about = json.loads(
+                            tar.extractfile("info/about.json").read().decode())
+            except Exception as e:
+                raise ScanException("Failed to scan %s" % path) from e
+            scanned = {"binpackageformat": BinaryPackageFormat.CONDA_V2}
+            scanned.update(self._scanCondaMetadata(index, about))
+            return scanned
         else:
             return None
 
@@ -285,8 +345,10 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 metadata["binarypackagename"] = (
                     getUtility(IBinaryPackageNameSet).ensure(metadata["name"]))
                 del metadata["name"]
+                filetype = self.filetype_by_format[
+                    metadata["binpackageformat"]]
                 bpr = self.ci_build.createBinaryPackageRelease(**metadata)
-                bpr.addFile(artifact.library_file)
+                bpr.addFile(artifact.library_file, filetype=filetype)
                 # The publishBinaries interface was designed for .debs,
                 # which need extra per-binary "override" information
                 # (component, etc.).  None of this is relevant here.
