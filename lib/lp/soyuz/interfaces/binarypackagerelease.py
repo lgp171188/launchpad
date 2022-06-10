@@ -96,9 +96,12 @@ class IBinaryPackageRelease(Interface):
     sourcepackageversion = Attribute(
         "The version of the source package from where this binary was built.")
 
-    def addFile(file):
+    def addFile(file, filetype=None):
         """Create a BinaryPackageFile record referencing this build
         and attach the provided library file alias (file).
+
+        If filetype is None, then the file type is automatically detected
+        based on the file name, if possible.
         """
 
     def override(component=None, section=None, priority=None):

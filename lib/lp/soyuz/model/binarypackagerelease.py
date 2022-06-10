@@ -146,26 +146,26 @@ class BinaryPackageRelease(SQLBase):
         return list(
             Store.of(self).find(BinaryPackageFile, binarypackagerelease=self))
 
-    def addFile(self, file):
+    def addFile(self, file, filetype=None):
         """See `IBinaryPackageRelease`."""
-        determined_filetype = None
-        if file.filename.endswith(".deb"):
-            determined_filetype = BinaryPackageFileType.DEB
-        elif file.filename.endswith(".rpm"):
-            determined_filetype = BinaryPackageFileType.RPM
-        elif file.filename.endswith(".udeb"):
-            determined_filetype = BinaryPackageFileType.UDEB
-        elif file.filename.endswith(".ddeb"):
-            determined_filetype = BinaryPackageFileType.DDEB
-        elif file.filename.endswith(".whl"):
-            determined_filetype = BinaryPackageFileType.WHL
-        else:
-            raise AssertionError(
-                'Unsupported file type: %s' % file.filename)
+        if filetype is None:
+            if file.filename.endswith(".deb"):
+                filetype = BinaryPackageFileType.DEB
+            elif file.filename.endswith(".rpm"):
+                filetype = BinaryPackageFileType.RPM
+            elif file.filename.endswith(".udeb"):
+                filetype = BinaryPackageFileType.UDEB
+            elif file.filename.endswith(".ddeb"):
+                filetype = BinaryPackageFileType.DDEB
+            elif file.filename.endswith(".whl"):
+                filetype = BinaryPackageFileType.WHL
+            else:
+                raise AssertionError(
+                    'Unsupported file type: %s' % file.filename)
 
         del get_property_cache(self).files
         return BinaryPackageFile(binarypackagerelease=self,
-                                 filetype=determined_filetype,
+                                 filetype=filetype,
                                  libraryfile=file)
 
     def override(self, component=None, section=None, priority=None):

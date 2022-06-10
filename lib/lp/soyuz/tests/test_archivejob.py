@@ -404,6 +404,98 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
                 binarypackageformat=Equals(BinaryPackageFormat.WHL),
                 distroarchseries=Equals(dases[0]))))
 
+    def test_run_conda(self):
+        archive = self.factory.makeArchive()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        dases = [
+            self.factory.makeDistroArchSeries(distroseries=distroseries)
+            for _ in range(2)]
+        build = self.factory.makeCIBuild(distro_arch_series=dases[0])
+        report = build.getOrCreateRevisionStatusReport("build:0")
+        report.setLog(b"log data")
+        path = "conda-arch/dist/linux-64/conda-arch-0.1-0.tar.bz2"
+        with open(datadir(path), mode="rb") as f:
+            report.attach(name=os.path.basename(path), data=f.read())
+        artifact = IStore(RevisionStatusArtifact).find(
+            RevisionStatusArtifact,
+            report=report,
+            artifact_type=RevisionStatusArtifactType.BINARY).one()
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="edge")
+        transaction.commit()
+
+        with dbuser(job.config.dbuser):
+            JobRunner([job]).runAll()
+
+        self.assertThat(archive.getAllPublishedBinaries(), MatchesSetwise(
+            MatchesStructure(
+                binarypackagename=MatchesStructure.byEquality(
+                    name="conda-arch"),
+                binarypackagerelease=MatchesStructure(
+                    ci_build=Equals(build),
+                    binarypackagename=MatchesStructure.byEquality(
+                        name="conda-arch"),
+                    version=Equals("0.1"),
+                    summary=Equals("Example summary"),
+                    description=Equals("Example description"),
+                    binpackageformat=Equals(BinaryPackageFormat.CONDA_V1),
+                    architecturespecific=Is(True),
+                    homepage=Equals("http://example.com/"),
+                    files=MatchesSetwise(
+                        MatchesStructure.byEquality(
+                            libraryfile=artifact.library_file,
+                            filetype=BinaryPackageFileType.CONDA_V1))),
+                binarypackageformat=Equals(BinaryPackageFormat.CONDA_V1),
+                distroarchseries=Equals(dases[0]))))
+
+    def test_run_conda_v2(self):
+        archive = self.factory.makeArchive()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        dases = [
+            self.factory.makeDistroArchSeries(distroseries=distroseries)
+            for _ in range(2)]
+        build = self.factory.makeCIBuild(distro_arch_series=dases[0])
+        report = build.getOrCreateRevisionStatusReport("build:0")
+        report.setLog(b"log data")
+        path = "conda-v2-arch/dist/linux-64/conda-v2-arch-0.1-0.conda"
+        with open(datadir(path), mode="rb") as f:
+            report.attach(name=os.path.basename(path), data=f.read())
+        artifact = IStore(RevisionStatusArtifact).find(
+            RevisionStatusArtifact,
+            report=report,
+            artifact_type=RevisionStatusArtifactType.BINARY).one()
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="edge")
+        transaction.commit()
+
+        with dbuser(job.config.dbuser):
+            JobRunner([job]).runAll()
+
+        self.assertThat(archive.getAllPublishedBinaries(), MatchesSetwise(
+            MatchesStructure(
+                binarypackagename=MatchesStructure.byEquality(
+                    name="conda-v2-arch"),
+                binarypackagerelease=MatchesStructure(
+                    ci_build=Equals(build),
+                    binarypackagename=MatchesStructure.byEquality(
+                        name="conda-v2-arch"),
+                    version=Equals("0.1"),
+                    summary=Equals("Example summary"),
+                    description=Equals("Example description"),
+                    binpackageformat=Equals(BinaryPackageFormat.CONDA_V2),
+                    architecturespecific=Is(True),
+                    homepage=Equals("http://example.com/"),
+                    files=MatchesSetwise(
+                        MatchesStructure.byEquality(
+                            libraryfile=artifact.library_file,
+                            filetype=BinaryPackageFileType.CONDA_V2))),
+                binarypackageformat=Equals(BinaryPackageFormat.CONDA_V2),
+                distroarchseries=Equals(dases[0]))))
+
 
 class TestViaCelery(TestCaseWithFactory):
 
