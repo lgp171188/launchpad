@@ -455,6 +455,10 @@ class Archive(SQLBase):
         # The explicit publish flag must be set.
         if not self.publish:
             return False
+        # Archives published via Artifactory don't (currently?) require
+        # local key generation.
+        if self.publishing_method == ArchivePublishingMethod.ARTIFACTORY:
+            return True
         # In production configurations, PPAs and copy archives can only be
         # published once their signing key has been generated.
         return (
