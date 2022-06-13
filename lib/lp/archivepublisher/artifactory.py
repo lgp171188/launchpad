@@ -42,30 +42,40 @@ from lp.soyuz.interfaces.publishing import (
 
 
 def _path_for(archive: IArchive, rootpath: ArtifactoryPath, source_name: str,
-              source_version: str, filename: Optional[str] = None) -> Path:
+              source_version: str, pub_file: IPackageReleaseFile) -> Path:
     repository_format = archive.repository_format
     if repository_format == ArchiveRepositoryFormat.DEBIAN:
         path = rootpath / poolify(source_name)
     elif repository_format == ArchiveRepositoryFormat.PYTHON:
         path = rootpath / source_name / source_version
+    elif repository_format == ArchiveRepositoryFormat.CONDA:
+        user_defined_fields = (
+            pub_file.binarypackagerelease.user_defined_fields)
+        subdir = next(
+            (value for key, value in user_defined_fields if key == "subdir"),
+            None)
+        if subdir is None:
+            raise AssertionError(
+                "Cannot publish a Conda package with no subdir")
+        path = rootpath / subdir
     else:
         raise AssertionError(
             "Unsupported repository format: %r" % repository_format)
-    if filename:
-        path = path / filename
+    path = path / pub_file.libraryfile.filename
     return path
 
 
 class ArtifactoryPoolEntry:
 
     def __init__(self, archive: IArchive, rootpath: ArtifactoryPath,
-                 source_name: str, source_version: str, filename: str,
+                 source_name: str, source_version: str,
+                 pub_file: IPackageReleaseFile,
                  logger: logging.Logger) -> None:
         self.archive = archive
         self.rootpath = rootpath
         self.source_name = source_name
         self.source_version = source_version
-        self.filename = filename
+        self.pub_file = pub_file
         self.logger = logger
 
     def debug(self, *args, **kwargs) -> None:
@@ -80,7 +90,7 @@ class ArtifactoryPoolEntry:
         # in order to update an artifact's properties.
         return _path_for(
             self.archive, self.rootpath, self.source_name, self.source_version,
-            self.filename)
+            self.pub_file)
 
     def makeReleaseID(self, pub_file: IPackageReleaseFile) -> str:
         """
@@ -177,11 +187,11 @@ class ArtifactoryPoolEntry:
                     for pub in publications})
         return properties
 
-    def addFile(self, pub_file: IPackageReleaseFile):
+    def addFile(self):
         targetpath = self.pathFor()
         if not targetpath.parent.exists():
             targetpath.parent.mkdir()
-        lfa = pub_file.libraryfile
+        lfa = self.pub_file.libraryfile
 
         if targetpath.exists():
             file_hash = targetpath.stat().sha1
@@ -193,7 +203,7 @@ class ArtifactoryPoolEntry:
 
         self.debug("Deploying %s", targetpath)
         properties = self.calculateProperties(
-            self.makeReleaseID(pub_file), [])
+            self.makeReleaseID(self.pub_file), [])
         fd, name = tempfile.mkstemp(prefix="temp-download.")
         f = os.fdopen(fd, "wb")
         try:
@@ -280,32 +290,25 @@ class ArtifactoryPool:
         return session
 
     def _getEntry(self, source_name: str, source_version: str,
-                  file: str) -> ArtifactoryPoolEntry:
+                  pub_file: IPackageReleaseFile) -> ArtifactoryPoolEntry:
         """See `DiskPool._getEntry`."""
         return ArtifactoryPoolEntry(
-            self.archive, self.rootpath, source_name, source_version, file,
+            self.archive, self.rootpath, source_name, source_version, pub_file,
             self.logger)
 
     def pathFor(self, comp: str, source_name: str, source_version: str,
-                file: Optional[str] = None) -> Path:
-        """Return the path for the given pool folder or file.
-
-        If file is none, the path to the folder containing all packages
-        for the given source package name will be returned.
-
-        If file is specified, the path to the specific package file will
-        be returned.
-        """
+                pub_file: Optional[IPackageReleaseFile] = None) -> Path:
+        """Return the path for the given pool file."""
         # For Artifactory publication, we ignore the component.  There's
         # only marginal benefit in having it be explicitly represented in
         # the pool structure, and doing so would introduce significant
         # complications in terms of having to keep track of components just
         # in order to update an artifact's properties.
         return _path_for(
-            self.archive, self.rootpath, source_name, source_version, file)
+            self.archive, self.rootpath, source_name, source_version, pub_file)
 
     def addFile(self, component: str, source_name: str, source_version: str,
-                filename: str, pub_file: IPackageReleaseFile):
+                pub_file: IPackageReleaseFile):
         """Add a file with the given contents to the pool.
 
         `source_name`, `source_version`, and `filename` are used to
@@ -329,11 +332,11 @@ class ArtifactoryPool:
         This is similar to `DiskPool.addFile`, except that there is no
         symlink handling and the component is ignored.
         """
-        entry = self._getEntry(source_name, source_version, filename)
-        return entry.addFile(pub_file)
+        entry = self._getEntry(source_name, source_version, pub_file)
+        return entry.addFile()
 
     def removeFile(self, component: str, source_name: str, source_version: str,
-                   filename: str) -> int:
+                   pub_file: IPackageReleaseFile) -> int:
         """Remove the specified file from the pool.
 
         There are two possible outcomes:
@@ -345,13 +348,14 @@ class ArtifactoryPool:
         This is similar to `DiskPool.removeFile`, except that there is no
         symlink handling and the component is ignored.
         """
-        entry = self._getEntry(source_name, source_version, filename)
+        entry = self._getEntry(source_name, source_version, pub_file)
         return entry.removeFile()
 
     def updateProperties(self, source_name: str, source_version: str,
-                         filename: str, publications, old_properties=None):
+                         pub_file: IPackageReleaseFile, publications,
+                         old_properties=None):
         """Update a file's properties in Artifactory."""
-        entry = self._getEntry(source_name, source_version, filename)
+        entry = self._getEntry(source_name, source_version, pub_file)
         entry.updateProperties(publications, old_properties=old_properties)
 
     def getArtifactPatterns(self, repository_format):

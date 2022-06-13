@@ -88,12 +88,13 @@ class DeathRow:
         if dry_run:
             # Don't actually remove the files if we are dry running
             def _mockRemoveFile(component_name, pool_name, pool_version,
-                                file_name):
+                                pub_file):
                 self.logger.debug(
                     "(Not really!) removing %s %s/%s/%s" %
-                    (component_name, pool_name, pool_version, file_name))
+                    (component_name, pool_name, pool_version,
+                     pub_file.libraryfile.filename))
                 fullpath = self.diskpool.pathFor(
-                    component_name, pool_name, pool_version, file_name)
+                    component_name, pool_name, pool_version, pub_file)
                 if not fullpath.exists():
                     raise NotInPool
                 return fullpath.lstat().st_size
@@ -233,7 +234,7 @@ class DeathRow:
                     pub_record.component_name,
                     pub_record.pool_name,
                     pub_record.pool_version,
-                    pub_file.libraryfile.filename,
+                    pub_file,
                     )
                 file_path = str(self.diskpool.pathFor(*pub_file_details))
 
@@ -268,11 +269,11 @@ class DeathRow:
             "Removing %s files marked for reaping" % len(condemned_files))
 
         for condemned_file in sorted(condemned_files, reverse=True):
-            component_name, pool_name, pool_version, file_name = (
+            component_name, pool_name, pool_version, pub_file = (
                 details[condemned_file])
             try:
                 bytes += self._removeFile(
-                    component_name, pool_name, pool_version, file_name)
+                    component_name, pool_name, pool_version, pub_file)
             except NotInPool as info:
                 # It's safe for us to let this slide because it means that
                 # the file is already gone.

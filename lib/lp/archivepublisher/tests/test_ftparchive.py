@@ -151,7 +151,7 @@ class TestFTPArchive(TestCaseWithFactory):
                            leafname, samplename=None):
         """Create a repository file."""
         fullpath = self._dp.pathFor(
-            component, source_name, source_version, leafname)
+            component, source_name, source_version, file=leafname)
         fullpath.parent.mkdir(parents=True, exist_ok=True)
         if samplename is None:
             samplename = leafname
@@ -791,7 +791,7 @@ class TestFTPArchive(TestCaseWithFactory):
         # something to do.
         for i in range(49):
             self._dp.pathFor(
-                "main", "bin%d" % i, "1", "bin%d_1_i386.deb" % i).unlink()
+                "main", "bin%d" % i, "1", file="bin%d_1_i386.deb" % i).unlink()
 
         cache_path = os.path.join(self._config.cacheroot, "packages-i386.db")
         old_cache_size = os.stat(cache_path).st_size

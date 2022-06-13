@@ -469,14 +469,15 @@ class CIBuild(PackageBuildMixin, StormBase):
     def createBinaryPackageRelease(
             self, binarypackagename, version, summary, description,
             binpackageformat, architecturespecific, installedsize=None,
-            homepage=None):
+            homepage=None, user_defined_fields=None):
         """See `ICIBuild`."""
         return BinaryPackageRelease(
             ci_build=self, binarypackagename=binarypackagename,
             version=version, summary=summary, description=description,
             binpackageformat=binpackageformat,
             architecturespecific=architecturespecific,
-            installedsize=installedsize, homepage=homepage)
+            installedsize=installedsize, homepage=homepage,
+            user_defined_fields=user_defined_fields)
 
 
 @implementer(ICIBuildSet)

@@ -15,6 +15,7 @@ from lp.archivepublisher.tests.artifactory_fixture import (
     )
 from lp.archivepublisher.tests.test_pool import (
     FakeArchive,
+    FakePackageReleaseFile,
     FakeReleaseType,
     PoolTestingFile,
     )
@@ -68,7 +69,7 @@ class ArtifactoryPoolTestingFile(PoolTestingFile):
 
     def getProperties(self):
         path = self.pool.pathFor(
-            None, self.source_name, self.source_version, self.filename)
+            None, self.source_name, self.source_version, self.pub_file)
         return path.properties
 
 
@@ -91,35 +92,34 @@ class TestArtifactoryPool(TestCase):
         return ArtifactoryPool(
             FakeArchive(repository_format), root_url, BufferLogger())
 
-    def test_pathFor_debian_without_file(self):
-        pool = self.makePool()
-        self.assertEqual(
-            ArtifactoryPath(
-                "https://foo.example.com/artifactory/repository/pool/f/foo"),
-            pool.pathFor(None, "foo", "1.0"))
-
     def test_pathFor_debian_with_file(self):
         pool = self.makePool()
+        pub_file = FakePackageReleaseFile(b"foo", "foo-1.0.deb")
         self.assertEqual(
             ArtifactoryPath(
                 "https://foo.example.com/artifactory/repository/pool/f/foo/"
                 "foo-1.0.deb"),
-            pool.pathFor(None, "foo", "1.0", "foo-1.0.deb"))
-
-    def test_pathFor_python_without_file(self):
-        pool = self.makePool(ArchiveRepositoryFormat.PYTHON)
-        self.assertEqual(
-            ArtifactoryPath(
-                "https://foo.example.com/artifactory/repository/foo/1.0"),
-            pool.pathFor(None, "foo", "1.0"))
+            pool.pathFor(None, "foo", "1.0", pub_file))
 
     def test_pathFor_python_with_file(self):
         pool = self.makePool(ArchiveRepositoryFormat.PYTHON)
+        pub_file = FakePackageReleaseFile(b"foo", "foo-1.0.whl")
         self.assertEqual(
             ArtifactoryPath(
                 "https://foo.example.com/artifactory/repository/foo/1.0/"
                 "foo-1.0.whl"),
-            pool.pathFor(None, "foo", "1.0", "foo-1.0.whl"))
+            pool.pathFor(None, "foo", "1.0", pub_file))
+
+    def test_pathFor_conda_with_file(self):
+        pool = self.makePool(ArchiveRepositoryFormat.CONDA)
+        pub_file = FakePackageReleaseFile(
+            b"foo", "foo-1.0.tar.bz2",
+            user_defined_fields=[("subdir", "linux-64")])
+        self.assertEqual(
+            ArtifactoryPath(
+                "https://foo.example.com/artifactory/repository/linux-64/"
+                "foo-1.0.tar.bz2"),
+            pool.pathFor(None, "foo", "1.0", pub_file))
 
     def test_addFile(self):
         pool = self.makePool()
@@ -159,7 +159,7 @@ class TestArtifactoryPool(TestCase):
             release_id=1)
         foo.addToPool()
         self.assertTrue(foo.checkIsFile())
-        foo.contents = b"different"
+        foo.pub_file.libraryfile.contents = b"different"
         self.assertRaises(PoolFileOverwriteError, foo.addToPool)
 
     def test_removeFile(self):
@@ -303,8 +303,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         spphs.append(spph.copyTo(
             dses[1], PackagePublishingPocket.RELEASE, pool.archive))
         transaction.commit()
-        pool.addFile(
-            None, spr.name, spr.version, sprf.libraryfile.filename, sprf)
+        pool.addFile(None, spr.name, spr.version, sprf)
         path = pool.rootpath / "f" / "foo" / "foo_1.0.dsc"
         self.assertTrue(path.exists())
         self.assertFalse(path.is_symlink())
@@ -315,8 +314,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "launchpad.source-version": ["1.0"],
                 },
             path.properties)
-        pool.updateProperties(
-            spr.name, spr.version, sprf.libraryfile.filename, spphs)
+        pool.updateProperties(spr.name, spr.version, sprf, spphs)
         self.assertEqual(
             {
                 "launchpad.release-id": ["source:%d" % spr.id],
@@ -356,8 +354,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             dses[1], PackagePublishingPocket.RELEASE, pool.archive)[0])
         transaction.commit()
         pool.addFile(
-            None, bpr.sourcepackagename, bpr.sourcepackageversion,
-            bpf.libraryfile.filename, bpf)
+            None, bpr.sourcepackagename, bpr.sourcepackageversion, bpf)
         path = (
             pool.rootpath / "f" / "foo" / ("foo_1.0_%s.deb" % processor.name))
         self.assertTrue(path.exists())
@@ -370,8 +367,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 },
             path.properties)
         pool.updateProperties(
-            bpr.sourcepackagename, bpr.sourcepackageversion,
-            bpf.libraryfile.filename, bpphs)
+            bpr.sourcepackagename, bpr.sourcepackageversion, bpf, bpphs)
         self.assertEqual(
             {
                 "launchpad.release-id": ["binary:%d" % bpr.id],
@@ -408,8 +404,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             {bpr: (bpr.component, bpr.section, bpr.priority, None)})
         transaction.commit()
         pool.addFile(
-            None, bpr.sourcepackagename, bpr.sourcepackageversion,
-            bpf.libraryfile.filename, bpf)
+            None, bpr.sourcepackagename, bpr.sourcepackageversion, bpf)
         path = pool.rootpath / "f" / "foo" / "foo_1.0_all.deb"
         self.assertTrue(path.exists())
         self.assertFalse(path.is_symlink())
@@ -421,8 +416,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 },
             path.properties)
         pool.updateProperties(
-            bpr.sourcepackagename, bpr.sourcepackageversion,
-            bpf.libraryfile.filename, bpphs)
+            bpr.sourcepackagename, bpr.sourcepackageversion, bpf, bpphs)
         self.assertEqual(
             {
                 "launchpad.release-id": ["binary:%d" % bpr.id],
@@ -456,8 +450,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         spphs.append(spph.copyTo(
             dses[1], PackagePublishingPocket.RELEASE, pool.archive))
         transaction.commit()
-        pool.addFile(
-            None, spr.name, spr.version, sprf.libraryfile.filename, sprf)
+        pool.addFile(None, spr.name, spr.version, sprf)
         path = pool.rootpath / "foo" / "1.0" / "foo-1.0.tar.gz"
         self.assertTrue(path.exists())
         self.assertFalse(path.is_symlink())
@@ -468,8 +461,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "launchpad.source-version": ["1.0"],
                 },
             path.properties)
-        pool.updateProperties(
-            spr.name, spr.version, sprf.libraryfile.filename, spphs)
+        pool.updateProperties(spr.name, spr.version, sprf, spphs)
         self.assertEqual(
             {
                 "launchpad.release-id": ["source:%d" % spr.id],
@@ -513,8 +505,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 channel="edge")[0])
         transaction.commit()
         pool.addFile(
-            None, bpr.sourcepackagename, bpr.sourcepackageversion,
-            bpf.libraryfile.filename, bpf)
+            None, bpr.sourcepackagename, bpr.sourcepackageversion, bpf)
         path = pool.rootpath / "foo" / "1.0" / "foo-1.0-py3-none-any.whl"
         self.assertTrue(path.exists())
         self.assertFalse(path.is_symlink())
@@ -526,8 +517,115 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 },
             path.properties)
         pool.updateProperties(
-            bpr.sourcepackagename, bpr.sourcepackageversion,
-            bpf.libraryfile.filename, bpphs)
+            bpr.sourcepackagename, bpr.sourcepackageversion, bpf, bpphs)
+        self.assertEqual(
+            {
+                "launchpad.release-id": ["binary:%d" % bpr.id],
+                "launchpad.source-name": ["foo"],
+                "launchpad.source-version": ["1.0"],
+                "launchpad.channel": list(
+                    sorted("%s:edge" % ds.name for ds in dses)),
+                },
+            path.properties)
+
+    def test_updateProperties_conda_v1(self):
+        pool = self.makePool(ArchiveRepositoryFormat.CONDA)
+        dses = [
+            self.factory.makeDistroSeries(
+                distribution=pool.archive.distribution)
+            for _ in range(2)]
+        processor = self.factory.makeProcessor()
+        dases = [
+            self.factory.makeDistroArchSeries(
+                distroseries=ds, architecturetag=processor.name)
+            for ds in dses]
+        ci_build = self.factory.makeCIBuild(distro_arch_series=dases[0])
+        bpn = self.factory.makeBinaryPackageName(name="foo")
+        bpr = self.factory.makeBinaryPackageRelease(
+            binarypackagename=bpn, version="1.0", ci_build=ci_build,
+            binpackageformat=BinaryPackageFormat.CONDA_V1,
+            user_defined_fields=[("subdir", "linux-64")])
+        bpf = self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpr,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="foo-1.0.tar.bz2"),
+            filetype=BinaryPackageFileType.CONDA_V1)
+        bpph = self.factory.makeBinaryPackagePublishingHistory(
+            binarypackagerelease=bpr, archive=pool.archive,
+            distroarchseries=dases[0], pocket=PackagePublishingPocket.RELEASE,
+            architecturespecific=False, channel="edge")
+        bpphs = [bpph]
+        bpphs.append(
+            getUtility(IPublishingSet).copyBinaries(
+                pool.archive, dses[1], PackagePublishingPocket.RELEASE, [bpph],
+                channel="edge")[0])
+        transaction.commit()
+        pool.addFile(None, bpph.pool_name, bpph.pool_version, bpf)
+        path = pool.rootpath / "linux-64" / "foo-1.0.tar.bz2"
+        self.assertTrue(path.exists())
+        self.assertFalse(path.is_symlink())
+        self.assertEqual(
+            {
+                "launchpad.release-id": ["binary:%d" % bpr.id],
+                "launchpad.source-name": ["foo"],
+                "launchpad.source-version": ["1.0"],
+                },
+            path.properties)
+        pool.updateProperties(bpph.pool_name, bpph.pool_version, bpf, bpphs)
+        self.assertEqual(
+            {
+                "launchpad.release-id": ["binary:%d" % bpr.id],
+                "launchpad.source-name": ["foo"],
+                "launchpad.source-version": ["1.0"],
+                "launchpad.channel": list(
+                    sorted("%s:edge" % ds.name for ds in dses)),
+                },
+            path.properties)
+
+    def test_updateProperties_conda_v2(self):
+        pool = self.makePool(ArchiveRepositoryFormat.CONDA)
+        dses = [
+            self.factory.makeDistroSeries(
+                distribution=pool.archive.distribution)
+            for _ in range(2)]
+        processor = self.factory.makeProcessor()
+        dases = [
+            self.factory.makeDistroArchSeries(
+                distroseries=ds, architecturetag=processor.name)
+            for ds in dses]
+        ci_build = self.factory.makeCIBuild(distro_arch_series=dases[0])
+        bpn = self.factory.makeBinaryPackageName(name="foo")
+        bpr = self.factory.makeBinaryPackageRelease(
+            binarypackagename=bpn, version="1.0", ci_build=ci_build,
+            binpackageformat=BinaryPackageFormat.CONDA_V2,
+            user_defined_fields=[("subdir", "noarch")])
+        bpf = self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpr,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="foo-1.0.conda"),
+            filetype=BinaryPackageFileType.CONDA_V2)
+        bpph = self.factory.makeBinaryPackagePublishingHistory(
+            binarypackagerelease=bpr, archive=pool.archive,
+            distroarchseries=dases[0], pocket=PackagePublishingPocket.RELEASE,
+            architecturespecific=True, channel="edge")
+        bpphs = [bpph]
+        bpphs.append(
+            getUtility(IPublishingSet).copyBinaries(
+                pool.archive, dses[1], PackagePublishingPocket.RELEASE, [bpph],
+                channel="edge")[0])
+        transaction.commit()
+        pool.addFile(None, bpph.pool_name, bpph.pool_version, bpf)
+        path = pool.rootpath / "noarch" / "foo-1.0.conda"
+        self.assertTrue(path.exists())
+        self.assertFalse(path.is_symlink())
+        self.assertEqual(
+            {
+                "launchpad.release-id": ["binary:%d" % bpr.id],
+                "launchpad.source-name": ["foo"],
+                "launchpad.source-version": ["1.0"],
+                },
+            path.properties)
+        pool.updateProperties(bpph.pool_name, bpph.pool_version, bpf, bpphs)
         self.assertEqual(
             {
                 "launchpad.release-id": ["binary:%d" % bpr.id],
@@ -563,8 +661,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             {bpr: (bpr.component, bpr.section, bpr.priority, None)})
         transaction.commit()
         pool.addFile(
-            None, bpr.sourcepackagename, bpr.sourcepackageversion,
-            bpf.libraryfile.filename, bpf)
+            None, bpr.sourcepackagename, bpr.sourcepackageversion, bpf)
         path = pool.rootpath / "f" / "foo" / "foo_1.0_all.deb"
         path.set_properties({"deb.version": ["1.0"]}, recursive=False)
         self.assertEqual(
@@ -576,8 +673,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 },
             path.properties)
         pool.updateProperties(
-            bpr.sourcepackagename, bpr.sourcepackageversion,
-            bpf.libraryfile.filename, bpphs)
+            bpr.sourcepackagename, bpr.sourcepackageversion, bpf, bpphs)
         self.assertEqual(
             {
                 "launchpad.release-id": ["binary:%d" % bpr.id],
