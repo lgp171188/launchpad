@@ -3,6 +3,7 @@
 
 """Test the stacktrace module."""
 
+import ast
 import io
 import sys
 
@@ -13,9 +14,17 @@ from lp.testing import TestCase
 from lp.testing.layers import BaseLayer
 
 
-# This constant must always be equal to the line number on which it lives for
-# the tests to pass.
-MY_LINE_NUMBER = 18
+def find_assignment_line_number(name):
+    """Find the first line number containing an assignment to `name`."""
+    with open(__file__) as f:
+        for node in ast.walk(ast.parse(f.read())):
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name) and target.id == name:
+                        return target.lineno
+
+
+MY_LINE_NUMBER = find_assignment_line_number("MY_LINE_NUMBER")
 
 MY_FILE_NAME = __file__[:__file__.rindex('.py')] + '.py'
 
