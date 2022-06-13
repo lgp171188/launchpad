@@ -23,11 +23,6 @@ repos:
         exclude: systemdocs\.py
     -   id: no-commit-to-branch
         args: [--branch, master, --branch, db-devel]
--   repo: https://github.com/PyCQA/flake8
-    rev: 3.9.2
-    hooks:
-    -   id: flake8
-        exclude: ^lib/contrib/
 -   repo: https://github.com/asottile/pyupgrade
     rev: v2.31.0
     hooks:
@@ -40,10 +35,45 @@ repos:
             |utilities/community-contributions\.py
             |utilities/update-sourcecode
           )$
+-   repo: https://github.com/psf/black
+    rev: 22.3.0
+    hooks:
+      - id: black
+        files: |
+          (?x)^lib/lp/(
+            answers/browser
+          )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
     hooks:
     -   id: isort
+        name: isort (old-style)
+        args:
+        -   --combine-as
+        -   --force-grid-wrap=2
+        -   --force-sort-within-sections
+        -   --trailing-comma
+        -   --line-length=78
+        -   --lines-after-imports=2
+        -   --multi-line=8
+        -   --dont-order-by-type
+        exclude: |
+          (?x)^lib/lp/(
+            answers/browser
+          )/
+    -   id: isort
+        alias: isort-black
+        name: isort (black)
+        args: [--profile, black]
+        files: |
+          (?x)^lib/lp/(
+            answers/browser
+          )/
+-   repo: https://github.com/PyCQA/flake8
+    rev: 3.9.2
+    hooks:
+    -   id: flake8
+        exclude: ^lib/contrib/
 -   repo: https://github.com/pre-commit/mirrors-eslint
     rev: v4.2.0
     hooks:
