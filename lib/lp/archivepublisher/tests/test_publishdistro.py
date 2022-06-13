@@ -29,6 +29,9 @@ from lp.archivepublisher.interfaces.archivegpgsigningkey import (
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.publishing import Publisher
 from lp.archivepublisher.scripts.publishdistro import PublishDistro
+from lp.archivepublisher.tests.artifactory_fixture import (
+    FakeArtifactoryFixture,
+    )
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -42,7 +45,10 @@ from lp.services.scripts.base import LaunchpadScriptFailure
 from lp.soyuz.enums import (
     ArchivePublishingMethod,
     ArchivePurpose,
+    ArchiveRepositoryFormat,
     ArchiveStatus,
+    BinaryPackageFileType,
+    BinaryPackageFormat,
     PackagePublishingStatus,
     )
 from lp.soyuz.interfaces.archive import IArchiveSet
@@ -403,6 +409,36 @@ class TestPublishDistro(TestNativePublishingBase):
         # Make sure that the files were published in the right place.
         pool_path = os.path.join(repo_path, 'pool/main/b/baz/baz_666.dsc')
         self.assertExists(pool_path)
+
+    def testPublishToArtifactory(self):
+        """Publishing to Artifactory doesn't require generated signing keys."""
+        self.setUpRequireSigningKeys()
+        switch_dbuser("launchpad")
+        base_url = "https://foo.example.com/artifactory"
+        self.pushConfig("artifactory", base_url=base_url)
+        archive = self.factory.makeArchive(
+            distribution=self.ubuntutest,
+            publishing_method=ArchivePublishingMethod.ARTIFACTORY,
+            repository_format=ArchiveRepositoryFormat.PYTHON)
+        das = self.ubuntutest.currentseries.architectures[0]
+        self.useFixture(FakeArtifactoryFixture(base_url, archive.name))
+        ci_build = self.factory.makeCIBuild(distro_arch_series=das)
+        bpn = self.factory.makeBinaryPackageName()
+        bpr = self.factory.makeBinaryPackageRelease(
+            binarypackagename=bpn, version="1.0", ci_build=ci_build,
+            binpackageformat=BinaryPackageFormat.WHL)
+        self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpr, filetype=BinaryPackageFileType.WHL)
+        bpph = self.factory.makeBinaryPackagePublishingHistory(
+            binarypackagerelease=bpr, archive=archive,
+            distroarchseries=das, pocket=PackagePublishingPocket.RELEASE,
+            architecturespecific=True)
+        self.assertEqual(PackagePublishingStatus.PENDING, bpph.status)
+        self.layer.txn.commit()
+
+        self.runPublishDistro(["--ppa"])
+
+        self.assertEqual(PackagePublishingStatus.PUBLISHED, bpph.status)
 
     def testRunWithEmptySuites(self):
         """Try a publish-distro run on empty suites in careful_apt mode
