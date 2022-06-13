@@ -52,3 +52,5 @@ d61c2ad002c2997a132a1580ce6ee82bb03de11d
 afcfc15adcf3267d3fd07d7679df00231853c908
 # apply pyupgrade --py3-plus to lp.translations
 3f3ea0f7799093f93740d3a1db3a11965d0b25cb
+# apply black to lp.answers.browser
+c606443bdb2f342593c9a7c9437cb70c01f85f29

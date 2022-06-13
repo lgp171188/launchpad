@@ -4,17 +4,17 @@
 """Person-related answer listing classes."""
 
 __all__ = [
-    'PersonAnswerContactForView',
-    'PersonAnswersMenu',
-    'PersonLatestQuestionsView',
-    'PersonSearchQuestionsView',
-    'SearchAnsweredQuestionsView',
-    'SearchAssignedQuestionsView',
-    'SearchCommentedQuestionsView',
-    'SearchCreatedQuestionsView',
-    'SearchNeedAttentionQuestionsView',
-    'SearchSubscribedQuestionsView',
-    ]
+    "PersonAnswerContactForView",
+    "PersonAnswersMenu",
+    "PersonLatestQuestionsView",
+    "PersonSearchQuestionsView",
+    "SearchAnsweredQuestionsView",
+    "SearchAssignedQuestionsView",
+    "SearchCommentedQuestionsView",
+    "SearchCreatedQuestionsView",
+    "SearchNeedAttentionQuestionsView",
+    "SearchSubscribedQuestionsView",
+]
 
 
 from operator import attrgetter
@@ -26,10 +26,7 @@ from lp.answers.interfaces.questionsperson import IQuestionsPerson
 from lp.app.browser.launchpadform import LaunchpadFormView
 from lp.registry.interfaces.person import IPerson
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp import (
-    Link,
-    NavigationMenu,
-    )
+from lp.services.webapp import Link, NavigationMenu
 from lp.services.webapp.publisher import LaunchpadView
 
 
@@ -40,9 +37,10 @@ class PersonLatestQuestionsView(LaunchpadFormView):
 
     @cachedproperty
     def getLatestQuestions(self, quantity=5):
-        """Return <quantity> latest questions created for this target. """
+        """Return <quantity> latest questions created for this target."""
         return IQuestionsPerson(self.context).searchQuestions(
-            participation=QuestionParticipation.OWNER)[:quantity]
+            participation=QuestionParticipation.OWNER
+        )[:quantity]
 
 
 class PersonSearchQuestionsView(SearchQuestionsView):
@@ -58,15 +56,19 @@ class PersonSearchQuestionsView(SearchQuestionsView):
     @property
     def pageheading(self):
         """See `SearchQuestionsView`."""
-        return _('Questions involving $name',
-                 mapping=dict(name=self.context.displayname))
+        return _(
+            "Questions involving $name",
+            mapping=dict(name=self.context.displayname),
+        )
 
     @property
     def empty_listing_message(self):
         """See `SearchQuestionsView`."""
-        return _('No questions  involving $name found with the '
-                 'requested statuses.',
-                 mapping=dict(name=self.context.displayname))
+        return _(
+            "No questions  involving $name found with the "
+            "requested statuses.",
+            mapping=dict(name=self.context.displayname),
+        )
 
 
 class SearchAnsweredQuestionsView(PersonSearchQuestionsView):
@@ -79,15 +81,19 @@ class SearchAnsweredQuestionsView(PersonSearchQuestionsView):
     @property
     def pageheading(self):
         """See `SearchQuestionsView`."""
-        return _('Questions answered by $name',
-                 mapping=dict(name=self.context.displayname))
+        return _(
+            "Questions answered by $name",
+            mapping=dict(name=self.context.displayname),
+        )
 
     @property
     def empty_listing_message(self):
         """See `SearchQuestionsView`."""
-        return _('No questions answered by $name found with the '
-                 'requested statuses.',
-                 mapping=dict(name=self.context.displayname))
+        return _(
+            "No questions answered by $name found with the "
+            "requested statuses.",
+            mapping=dict(name=self.context.displayname),
+        )
 
 
 class SearchAssignedQuestionsView(PersonSearchQuestionsView):
@@ -100,15 +106,19 @@ class SearchAssignedQuestionsView(PersonSearchQuestionsView):
     @property
     def pageheading(self):
         """See `SearchQuestionsView`."""
-        return _('Questions assigned to $name',
-                 mapping=dict(name=self.context.displayname))
+        return _(
+            "Questions assigned to $name",
+            mapping=dict(name=self.context.displayname),
+        )
 
     @property
     def empty_listing_message(self):
         """See `SearchQuestionsView`."""
-        return _('No questions assigned to $name found with the '
-                 'requested statuses.',
-                 mapping=dict(name=self.context.displayname))
+        return _(
+            "No questions assigned to $name found with the "
+            "requested statuses.",
+            mapping=dict(name=self.context.displayname),
+        )
 
 
 class SearchCommentedQuestionsView(PersonSearchQuestionsView):
@@ -121,15 +131,19 @@ class SearchCommentedQuestionsView(PersonSearchQuestionsView):
     @property
     def pageheading(self):
         """See `SearchQuestionsView`."""
-        return _('Questions commented on by $name ',
-                 mapping=dict(name=self.context.displayname))
+        return _(
+            "Questions commented on by $name ",
+            mapping=dict(name=self.context.displayname),
+        )
 
     @property
     def empty_listing_message(self):
         """See `SearchQuestionsView`."""
-        return _('No questions commented on by $name found with the '
-                 'requested statuses.',
-                 mapping=dict(name=self.context.displayname))
+        return _(
+            "No questions commented on by $name found with the "
+            "requested statuses.",
+            mapping=dict(name=self.context.displayname),
+        )
 
 
 class SearchCreatedQuestionsView(PersonSearchQuestionsView):
@@ -142,15 +156,19 @@ class SearchCreatedQuestionsView(PersonSearchQuestionsView):
     @property
     def pageheading(self):
         """See `SearchQuestionsView`."""
-        return _('Questions asked by $name',
-                 mapping=dict(name=self.context.displayname))
+        return _(
+            "Questions asked by $name",
+            mapping=dict(name=self.context.displayname),
+        )
 
     @property
     def empty_listing_message(self):
         """See `SearchQuestionsView`."""
-        return _('No questions asked by $name found with the '
-                 'requested statuses.',
-                 mapping=dict(name=self.context.displayname))
+        return _(
+            "No questions asked by $name found with the "
+            "requested statuses.",
+            mapping=dict(name=self.context.displayname),
+        )
 
 
 class SearchNeedAttentionQuestionsView(PersonSearchQuestionsView):
@@ -163,14 +181,18 @@ class SearchNeedAttentionQuestionsView(PersonSearchQuestionsView):
     @property
     def pageheading(self):
         """See `SearchQuestionsView`."""
-        return _("Questions needing $name's attention",
-                 mapping=dict(name=self.context.displayname))
+        return _(
+            "Questions needing $name's attention",
+            mapping=dict(name=self.context.displayname),
+        )
 
     @property
     def empty_listing_message(self):
         """See `SearchQuestionsView`."""
-        return _("No questions need $name's attention.",
-                 mapping=dict(name=self.context.displayname))
+        return _(
+            "No questions need $name's attention.",
+            mapping=dict(name=self.context.displayname),
+        )
 
 
 class SearchSubscribedQuestionsView(PersonSearchQuestionsView):
@@ -183,15 +205,19 @@ class SearchSubscribedQuestionsView(PersonSearchQuestionsView):
     @property
     def pageheading(self):
         """See `SearchQuestionsView`."""
-        return _('Questions $name is subscribed to',
-                 mapping=dict(name=self.context.displayname))
+        return _(
+            "Questions $name is subscribed to",
+            mapping=dict(name=self.context.displayname),
+        )
 
     @property
     def empty_listing_message(self):
         """See `SearchQuestionsView`."""
-        return _('No questions subscribed to by $name found with the '
-                 'requested statuses.',
-                 mapping=dict(name=self.context.displayname))
+        return _(
+            "No questions subscribed to by $name found with the "
+            "requested statuses.",
+            mapping=dict(name=self.context.displayname),
+        )
 
 
 class PersonAnswerContactForView(LaunchpadView):
@@ -201,8 +227,9 @@ class PersonAnswerContactForView(LaunchpadView):
 
     @property
     def label(self):
-        return 'Projects for which %s is an answer contact' % (
-            self.context.displayname)
+        return "Projects for which %s is an answer contact" % (
+            self.context.displayname
+        )
 
     page_title = label
 
@@ -214,7 +241,8 @@ class PersonAnswerContactForView(LaunchpadView):
         """
         return sorted(
             IQuestionsPerson(self.context).getDirectAnswerQuestionTargets(),
-            key=attrgetter('title'))
+            key=attrgetter("title"),
+        )
 
     @cachedproperty
     def team_question_targets(self):
@@ -224,7 +252,8 @@ class PersonAnswerContactForView(LaunchpadView):
         """
         return sorted(
             IQuestionsPerson(self.context).getTeamAnswerQuestionTargets(),
-            key=attrgetter('title'))
+            key=attrgetter("title"),
+        )
 
     def showRemoveYourselfLink(self):
         """The link is shown when the page is in the user's own profile."""
@@ -234,44 +263,53 @@ class PersonAnswerContactForView(LaunchpadView):
 class PersonAnswersMenu(NavigationMenu):
 
     usedfor = IPerson
-    facet = 'answers'
-    links = ['answered', 'assigned', 'created', 'commented', 'need_attention',
-             'subscribed', 'answer_contact_for']
+    facet = "answers"
+    links = [
+        "answered",
+        "assigned",
+        "created",
+        "commented",
+        "need_attention",
+        "subscribed",
+        "answer_contact_for",
+    ]
 
     def answer_contact_for(self):
         summary = "Projects for which %s is an answer contact" % (
-            self.context.displayname)
+            self.context.displayname
+        )
         return Link(
-            '+answer-contact-for', 'Answer contact for', summary, icon='edit')
+            "+answer-contact-for", "Answer contact for", summary, icon="edit"
+        )
 
     def answered(self):
-        summary = 'Questions answered by %s' % self.context.displayname
-        return Link(
-            '+answeredquestions', 'Answered', summary, icon='question')
+        summary = "Questions answered by %s" % self.context.displayname
+        return Link("+answeredquestions", "Answered", summary, icon="question")
 
     def assigned(self):
-        summary = 'Questions assigned to %s' % self.context.displayname
-        return Link(
-            '+assignedquestions', 'Assigned', summary, icon='question')
+        summary = "Questions assigned to %s" % self.context.displayname
+        return Link("+assignedquestions", "Assigned", summary, icon="question")
 
     def created(self):
-        summary = 'Questions asked by %s' % self.context.displayname
-        return Link('+createdquestions', 'Asked', summary, icon='question')
+        summary = "Questions asked by %s" % self.context.displayname
+        return Link("+createdquestions", "Asked", summary, icon="question")
 
     def commented(self):
-        summary = 'Questions commented on by %s' % (
-            self.context.displayname)
+        summary = "Questions commented on by %s" % (self.context.displayname)
         return Link(
-            '+commentedquestions', 'Commented', summary, icon='question')
+            "+commentedquestions", "Commented", summary, icon="question"
+        )
 
     def need_attention(self):
-        summary = 'Questions needing %s attention' % (
-            self.context.displayname)
-        return Link('+needattentionquestions', 'Need attention', summary,
-                    icon='question')
+        summary = "Questions needing %s attention" % (self.context.displayname)
+        return Link(
+            "+needattentionquestions",
+            "Need attention",
+            summary,
+            icon="question",
+        )
 
     def subscribed(self):
-        text = 'Subscribed'
-        summary = 'Questions subscribed to by %s' % (
-                self.context.displayname)
-        return Link('+subscribedquestions', text, summary, icon='question')
+        text = "Subscribed"
+        summary = "Questions subscribed to by %s" % (self.context.displayname)
+        return Link("+subscribedquestions", text, summary, icon="question")
