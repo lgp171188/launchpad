@@ -14,6 +14,7 @@ from datetime import (
     )
 
 import pytz
+from storm.expr import Func
 from storm.info import ClassAlias
 from storm.store import Store
 from zope.component import getUtility
@@ -340,6 +341,33 @@ class TeamMembershipSet:
                 [TeamMembershipStatus.ADMIN, TeamMembershipStatus.APPROVED]),
             ]
         return IStore(TeamMembership).find(TeamMembership, *conditions)
+
+    def getExpiringMembershipsToWarn(self):
+        """See `ITeamMembershipSet`,"""
+        now = datetime.now(pytz.UTC)
+        min_date_for_daily_warning = now + timedelta(days=7)
+        memberships_to_warn = set(
+            self.getMembershipsToExpire(min_date_for_daily_warning)
+        )
+        weekly_reminder_dates = [
+            (now + timedelta(days=weeks*7)).date()
+            for weeks in range(
+                2, DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT // 7 + 1
+            )
+        ]
+        memberships_to_warn.update(
+            list(self.getMembershipsExpiringOnDates(weekly_reminder_dates))
+        )
+        return memberships_to_warn
+
+    def getMembershipsExpiringOnDates(self, dates):
+        """See `ITeamMembershipSet`."""
+        return IStore(TeamMembership).find(
+            TeamMembership,
+            Func("date_trunc", "day", TeamMembership.dateexpires).is_in(dates),
+            TeamMembership.status.is_in(
+                [TeamMembershipStatus.ADMIN, TeamMembershipStatus.APPROVED]),
+        )
 
     def deactivateActiveMemberships(self, team, comment, reviewer):
         """See `ITeamMembershipSet`."""

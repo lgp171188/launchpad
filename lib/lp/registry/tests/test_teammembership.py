@@ -36,6 +36,7 @@ from lp.registry.interfaces.persontransferjob import (
     )
 from lp.registry.interfaces.teammembership import (
     CyclicalTeamMembershipError,
+    DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT,
     ITeamMembershipSet,
     TeamMembershipStatus,
     )
@@ -135,6 +136,13 @@ class TestTeamMembershipSet(TestCaseWithFactory):
         login('test@canonical.com')
         self.membershipset = getUtility(ITeamMembershipSet)
         self.personset = getUtility(IPersonSet)
+
+    def addToTeamSetExpiryDate(self, person, team, expiry_date):
+        team.addMember(person, team.teamowner)
+        membership = self.membershipset.getByPersonAndTeam(person, team)
+        self.assertIsNotNone(membership)
+        removeSecurityProxy(membership).dateexpires = expiry_date
+        return membership
 
     def test_membership_creation(self):
         marilize = self.personset.getByName('marilize')
@@ -259,6 +267,81 @@ class TestTeamMembershipSet(TestCaseWithFactory):
         self.assertEqual(
             [superteam], list(targetteam.teamowner.teams_participated_in))
         self.assertEqual([], list(member.teams_participated_in))
+
+    def test_getMembershipsExpiringOnDates(self):
+        now = datetime.now(pytz.UTC)
+        datetime1 = now + timedelta(days=1)
+        datetime2 = now + timedelta(days=2)
+        datetime3 = now + timedelta(days=3)
+        team = self.factory.makeTeam(name='super')
+        login_celebrity('admin')
+        member1 = self.factory.makePerson()
+        membership1 = self.addToTeamSetExpiryDate(
+            member1, team, datetime1
+        )
+        member2 = self.factory.makePerson()
+        membership2 = self.addToTeamSetExpiryDate(
+            member2,
+            team,
+            datetime2.replace(
+                hour=23, minute=59, second=59
+            )
+        )
+        member3 = self.factory.makePerson()
+        self.addToTeamSetExpiryDate(
+            member3, team, datetime3
+        )
+        self.assertContentEqual(
+            {membership1, membership2},
+            self.membershipset.getMembershipsExpiringOnDates(
+                [datetime1.date(), datetime2.date()]
+            )
+        )
+
+    def test_getExpiringMembershipsToWarn(self):
+        team = self.factory.makeTeam(name='super')
+        now = datetime.now(pytz.UTC)
+        login_celebrity('admin')
+
+        memberships = [
+            self.addToTeamSetExpiryDate(
+                self.factory.makePerson(),
+                team,
+                now + timedelta(days=2)
+            ),
+            self.addToTeamSetExpiryDate(
+                self.factory.makePerson(),
+                team,
+                now + timedelta(days=8)
+            ),
+            self.addToTeamSetExpiryDate(
+                self.factory.makePerson(),
+                team,
+                now + timedelta(days=15)
+            ),
+            self.addToTeamSetExpiryDate(
+                self.factory.makePerson(),
+                team,
+                now + timedelta(days=18),
+            ),
+            self.addToTeamSetExpiryDate(
+                self.factory.makePerson(),
+                team,
+                now + timedelta(days=30),
+            )
+        ]
+        for weeks in range(2, DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT // 7 + 2):
+            person = self.factory.makePerson()
+            memberships.append(
+                self.addToTeamSetExpiryDate(
+                    person, team, now + timedelta(days=weeks*7)
+                )
+            )
+
+        self.assertContentEqual(
+            memberships[:1] + memberships[5:-1],
+            self.membershipset.getExpiringMembershipsToWarn()
+        )
 
 
 class TeamParticipationTestCase(TestCaseWithFactory):
