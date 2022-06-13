@@ -324,6 +324,9 @@ class CIBuildUploadJob(ArchiveJobDerived):
         """See `IRunnableJob`."""
         logger = logging.getLogger()
         with tempfile.TemporaryDirectory(prefix="ci-build-copy-job") as tmpdir:
+            releases_by_name = {
+                release.binarypackagename: release
+                for release in self.ci_build.binarypackages}
             binaries = {}
             for artifact in getUtility(
                     IRevisionStatusArtifactSet).findByCIBuild(self.ci_build):
@@ -342,13 +345,20 @@ class CIBuildUploadJob(ArchiveJobDerived):
                         name, self.archive.reference,
                         self.target_distroseries.getSuite(self.target_pocket),
                         self.target_channel))
-                metadata["binarypackagename"] = (
+                metadata["binarypackagename"] = bpn = (
                     getUtility(IBinaryPackageNameSet).ensure(metadata["name"]))
                 del metadata["name"]
                 filetype = self.filetype_by_format[
                     metadata["binpackageformat"]]
-                bpr = self.ci_build.createBinaryPackageRelease(**metadata)
-                bpr.addFile(artifact.library_file, filetype=filetype)
+                bpr = releases_by_name.get(bpn)
+                if bpr is None:
+                    bpr = self.ci_build.createBinaryPackageRelease(**metadata)
+                for bpf in bpr.files:
+                    if (bpf.libraryfile == artifact.library_file and
+                            bpf.filetype == filetype):
+                        break
+                else:
+                    bpr.addFile(artifact.library_file, filetype=filetype)
                 # The publishBinaries interface was designed for .debs,
                 # which need extra per-binary "override" information
                 # (component, etc.).  None of this is relevant here.
