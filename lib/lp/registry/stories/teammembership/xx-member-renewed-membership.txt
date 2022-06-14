@@ -76,7 +76,7 @@ the user to renew that membership because it's not about to expire.
     >>> print(extract_text(find_tag_by_id(browser.contents, 'maincontent')))
     Renew membership of Karl Tilbury in Mirror Administrators
     This membership cannot be renewed because it is not set to expire in
-    7 days or less. You or one of the team administrators has already
+    28 days or less. You or one of the team administrators has already
     renewed it.
 
 If we now change Karl's membership to expire in a couple days, he'll be
@@ -133,7 +133,7 @@ Karl can't renew it again, since it's now not set to expire soon.
     >>> print(extract_text(find_tag_by_id(browser.contents, 'maincontent')))
     Renew membership of Karl Tilbury in Mirror Administrators
     This membership cannot be renewed because it is not set to expire in
-    7 days or less. You or one of the team administrators has already
+    28 days or less. You or one of the team administrators has already
     renewed it.
 
 In the case of subteams whose membership is about to expire, any admin of the
@@ -196,7 +196,7 @@ will no longer be expiring soon.
     >>> print(extract_text(find_tag_by_id(browser.contents, 'maincontent')))
     Renew membership of Landscape Developers in Mirror Administrators
     This membership cannot be renewed because it is not set to expire in
-    7 days or less. Somebody else has already renewed it.
+    28 days or less. Somebody else has already renewed it.
 
 Any user who's not an admin of landscape-developers can't even see that page.
 
