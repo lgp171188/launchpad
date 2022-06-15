@@ -25,15 +25,15 @@
   <head>
     <meta charset="UTF-8" />
     <title tal:content="view/fmt:pagetitle">Page Title</title>
-    <link rel="apple-touch-icon" sizes="180x180" href="/@@/apple-touch-icon.png?v=2022">
-    <link rel="icon" type="image/png" sizes="32x32" href="/@@/favicon-32x32.png?v=2022">
-    <link rel="icon" type="image/png" sizes="16x16" href="/@@/favicon-16x16.png?v=2022">
-    <link rel="manifest" href="/@@/site.webmanifest?v=2022">
-    <link rel="mask-icon" href="/@@/safari-pinned-tab.svg?v=2022" color="#e9531f">
-    <link rel="shortcut icon" href="/@@/favicon.ico?v=2022">
-    <meta name="msapplication-TileColor" content="#da532c">
-    <meta name="msapplication-config" content="/@@/browserconfig.xml?v=2022">
-    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" sizes="180x180" href="/@@/apple-touch-icon.png?v=2022" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/@@/favicon-32x32.png?v=2022" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/@@/favicon-16x16.png?v=2022" />
+    <link rel="manifest" href="/@@/site.webmanifest?v=2022" />
+    <link rel="mask-icon" href="/@@/safari-pinned-tab.svg?v=2022" color="#e9531f" />
+    <link rel="shortcut icon" href="/@@/favicon.ico?v=2022" />
+    <meta name="msapplication-TileColor" content="#da532c" />
+    <meta name="msapplication-config" content="/@@/browserconfig.xml?v=2022" />
+    <meta name="theme-color" content="#ffffff" />
     <link
       rel="canonical"
       tal:define="url view/recommended_canonical_url | nothing"
