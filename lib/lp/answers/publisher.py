@@ -4,25 +4,25 @@
 """Answers's custom publication."""
 
 __all__ = [
-    'AnswersBrowserRequest',
-    'AnswersFacet',
-    'AnswersLayer',
-    'answers_request_publication_factory',
-    ]
+    "AnswersBrowserRequest",
+    "AnswersFacet",
+    "AnswersLayer",
+    "answers_request_publication_factory",
+]
 
 
 from zope.interface import implementer
 from zope.publisher.interfaces.browser import (
     IBrowserRequest,
     IDefaultBrowserLayer,
-    )
+)
 
 from lp.services.webapp.interfaces import IFacet
 from lp.services.webapp.publication import LaunchpadBrowserPublication
 from lp.services.webapp.servers import (
     LaunchpadBrowserRequest,
     VHostWebServiceRequestPublicationFactory,
-    )
+)
 
 
 @implementer(IFacet)
@@ -46,9 +46,11 @@ class AnswersBrowserRequest(LaunchpadBrowserRequest):
         super().__init__(body_instream, environ, response)
         # Many of the responses from Answers vary based on language.
         self.response.setHeader(
-            'Vary', 'Cookie, Authorization, Accept-Language')
+            "Vary", "Cookie, Authorization, Accept-Language"
+        )
 
 
 def answers_request_publication_factory():
     return VHostWebServiceRequestPublicationFactory(
-        'answers', AnswersBrowserRequest, LaunchpadBrowserPublication)
+        "answers", AnswersBrowserRequest, LaunchpadBrowserPublication
+    )

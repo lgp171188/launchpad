@@ -4,35 +4,23 @@
 """Question models."""
 
 __all__ = [
-    'SimilarQuestionsSearch',
-    'Question',
-    'QuestionTargetSearch',
-    'QuestionPersonSearch',
-    'QuestionSet',
-    'QuestionTargetMixin',
-    ]
+    "SimilarQuestionsSearch",
+    "Question",
+    "QuestionTargetSearch",
+    "QuestionPersonSearch",
+    "QuestionSet",
+    "QuestionTargetMixin",
+]
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
-from email.utils import make_msgid
 import operator
+from datetime import datetime, timedelta
+from email.utils import make_msgid
 
-from lazr.enum import (
-    DBItem,
-    Item,
-    )
-from lazr.lifecycle.event import (
-    ObjectCreatedEvent,
-    ObjectModifiedEvent,
-    )
-from lazr.lifecycle.snapshot import Snapshot
 import pytz
-from storm.expr import (
-    Alias,
-    LeftJoin,
-    )
+from lazr.enum import DBItem, Item
+from lazr.lifecycle.event import ObjectCreatedEvent, ObjectModifiedEvent
+from lazr.lifecycle.snapshot import Snapshot
+from storm.expr import Alias, LeftJoin
 from storm.locals import (
     And,
     ClassAlias,
@@ -47,14 +35,11 @@ from storm.locals import (
     Select,
     Store,
     Unicode,
-    )
+)
 from storm.references import ReferenceSet
 from zope.component import getUtility
 from zope.event import notify
-from zope.interface import (
-    implementer,
-    providedBy,
-    )
+from zope.interface import implementer, providedBy
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import isinstance as zope_isinstance
 
@@ -65,7 +50,7 @@ from lp.answers.enums import (
     QuestionPriority,
     QuestionSort,
     QuestionStatus,
-    )
+)
 from lp.answers.errors import (
     AddAnswerContactError,
     FAQTargetError,
@@ -74,7 +59,7 @@ from lp.answers.errors import (
     NotMessageOwnerError,
     NotQuestionOwnerError,
     QuestionTargetError,
-    )
+)
 from lp.answers.interfaces.faq import IFAQ
 from lp.answers.interfaces.question import IQuestion
 from lp.answers.interfaces.questioncollection import IQuestionSet
@@ -91,43 +76,25 @@ from lp.bugs.interfaces.buglink import IBugLinkTarget
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.model.buglinktarget import BugLinkTargetMixin
 from lp.bugs.model.bugtask import BugTask
-from lp.registry.interfaces.distribution import (
-    IDistribution,
-    IDistributionSet,
-    )
+from lp.registry.interfaces.distribution import IDistribution, IDistributionSet
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
-from lp.registry.interfaces.person import (
-    IPerson,
-    validate_public_person,
-    )
-from lp.registry.interfaces.product import (
-    IProduct,
-    IProductSet,
-    )
+)
+from lp.registry.interfaces.person import IPerson, validate_public_person
+from lp.registry.interfaces.product import IProduct, IProductSet
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database import bulk
-from lp.services.database.constants import (
-    DEFAULT,
-    UTC_NOW,
-    )
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.nl_search import nl_phrase_search
 from lp.services.database.stormbase import StormBase
-from lp.services.database.stormexpr import (
-    fti_search,
-    rank_by_fti,
-    )
+from lp.services.database.stormexpr import fti_search, rank_by_fti
 from lp.services.mail.notificationrecipientset import NotificationRecipientSet
 from lp.services.messages.interfaces.message import IMessage
-from lp.services.messages.model.message import (
-    Message,
-    MessageChunk,
-    )
+from lp.services.messages.model.message import Message, MessageChunk
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp.authorization import check_permission
 from lp.services.worlddata.helpers import is_english_variant
@@ -160,17 +127,30 @@ class notify_question_modified:
             old_question = Snapshot(self, providing=providedBy(self))
             msg = func(self, *args, **kwargs)
 
-            edited_fields = ['messages']
-            for field in ['status', 'date_solved', 'answerer', 'answer',
-                          'datelastquery', 'datelastresponse', 'target',
-                          'assignee']:
+            edited_fields = ["messages"]
+            for field in [
+                "status",
+                "date_solved",
+                "answerer",
+                "answer",
+                "datelastquery",
+                "datelastresponse",
+                "target",
+                "assignee",
+            ]:
                 if getattr(self, field) != getattr(old_question, field):
                     edited_fields.append(field)
 
-            notify(ObjectModifiedEvent(
-                self, object_before_modification=old_question,
-                edited_fields=edited_fields, user=msg.owner))
+            notify(
+                ObjectModifiedEvent(
+                    self,
+                    object_before_modification=old_question,
+                    edited_fields=edited_fields,
+                    user=msg.owner,
+                )
+            )
             return msg
+
         return notify_question_modified
 
 
@@ -178,66 +158,103 @@ class notify_question_modified:
 class Question(StormBase, BugLinkTargetMixin):
     """See `IQuestion`."""
 
-    __storm_table__ = 'Question'
-    _defaultOrder = ['-priority', 'datecreated']
+    __storm_table__ = "Question"
+    _defaultOrder = ["-priority", "datecreated"]
 
     # db field names
     id = Int(primary=True)
-    owner_id = Int(name='owner', allow_none=False,
-                   validator=validate_public_person)
-    owner = Reference(owner_id, 'Person.id')
+    owner_id = Int(
+        name="owner", allow_none=False, validator=validate_public_person
+    )
+    owner = Reference(owner_id, "Person.id")
     title = Unicode(allow_none=False)
     description = Unicode(allow_none=False)
     language_id = Int(name="language", allow_none=False)
-    language = Reference(language_id, 'Language.id')
-    status = DBEnum(name="status", enum=QuestionStatus, allow_none=False,
-                    default=QuestionStatus.OPEN)
-    priority = DBEnum(name="priority", enum=QuestionPriority,
-                      allow_none=False, default=QuestionPriority.NORMAL)
-    assignee_id = Int(name="assignee", allow_none=True,
-                      validator=validate_public_person, default=None)
-    assignee = Reference(assignee_id, 'Person.id')
-    answerer_id = Int(name="answerer", allow_none=True,
-                      validator=validate_public_person, default=None)
-    answerer = Reference(answerer_id, 'Person.id')
-    answer_id = Int(name='answer', allow_none=True, default=None)
-    answer = Reference(answer_id, 'QuestionMessage.id')
+    language = Reference(language_id, "Language.id")
+    status = DBEnum(
+        name="status",
+        enum=QuestionStatus,
+        allow_none=False,
+        default=QuestionStatus.OPEN,
+    )
+    priority = DBEnum(
+        name="priority",
+        enum=QuestionPriority,
+        allow_none=False,
+        default=QuestionPriority.NORMAL,
+    )
+    assignee_id = Int(
+        name="assignee",
+        allow_none=True,
+        validator=validate_public_person,
+        default=None,
+    )
+    assignee = Reference(assignee_id, "Person.id")
+    answerer_id = Int(
+        name="answerer",
+        allow_none=True,
+        validator=validate_public_person,
+        default=None,
+    )
+    answerer = Reference(answerer_id, "Person.id")
+    answer_id = Int(name="answer", allow_none=True, default=None)
+    answer = Reference(answer_id, "QuestionMessage.id")
     datecreated = DateTime(allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
     datedue = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
     datelastquery = DateTime(
-        allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+        allow_none=False, default=DEFAULT, tzinfo=pytz.UTC
+    )
     datelastresponse = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
     date_solved = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
-    product_id = Int(name='product', allow_none=True, default=None)
-    product = Reference(product_id, 'Product.id')
-    distribution_id = Int(name='distribution', allow_none=True, default=None)
-    distribution = Reference(distribution_id, 'Distribution.id')
+    product_id = Int(name="product", allow_none=True, default=None)
+    product = Reference(product_id, "Product.id")
+    distribution_id = Int(name="distribution", allow_none=True, default=None)
+    distribution = Reference(distribution_id, "Distribution.id")
     sourcepackagename_id = Int(
-        name='sourcepackagename', allow_none=True, default=None)
-    sourcepackagename = Reference(sourcepackagename_id, 'SourcePackageName.id')
+        name="sourcepackagename", allow_none=True, default=None
+    )
+    sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
     whiteboard = Unicode(allow_none=True, default=None)
 
-    faq_id = Int(name='faq', allow_none=True, default=None)
-    faq = Reference(faq_id, 'FAQ.id')
+    faq_id = Int(name="faq", allow_none=True, default=None)
+    faq = Reference(faq_id, "FAQ.id")
 
     # useful joins
     subscriptions = ReferenceSet(
-        'id', 'QuestionSubscription.question_id',
-        order_by='QuestionSubscription.id')
+        "id",
+        "QuestionSubscription.question_id",
+        order_by="QuestionSubscription.id",
+    )
     subscribers = ReferenceSet(
-        'id', 'QuestionSubscription.question_id',
-        'QuestionSubscription.person_id', 'Person.id', order_by='Person.name')
+        "id",
+        "QuestionSubscription.question_id",
+        "QuestionSubscription.person_id",
+        "Person.id",
+        order_by="Person.name",
+    )
     # This should be `messages`, but we use it in a SnapShot during the
     # notification cycle, which don't appear to support saving the state of
     # ReferenceSets, so use a list() property instead.
     _messages = ReferenceSet(
-        'id', 'QuestionMessage.question_id', order_by='QuestionMessage.id')
+        "id", "QuestionMessage.question_id", order_by="QuestionMessage.id"
+    )
     reopenings = ReferenceSet(
-        'id', 'QuestionReopening.question_id',
-        order_by='QuestionReopening.datecreated')
+        "id",
+        "QuestionReopening.question_id",
+        order_by="QuestionReopening.datecreated",
+    )
 
-    def __init__(self, title, description, owner, product, distribution,
-                 language, sourcepackagename, datecreated):
+    def __init__(
+        self,
+        title,
+        description,
+        owner,
+        product,
+        distribution,
+        language,
+        sourcepackagename,
+        datecreated,
+    ):
         self.title = title
         self.description = description
         self.owner = owner
@@ -265,13 +282,12 @@ class Question(StormBase, BugLinkTargetMixin):
     def _settarget(self, question_target):
         """See Question.target."""
         if not IQuestionTarget.providedBy(question_target):
-            raise QuestionTargetError(
-                "The target must be an IQuestionTarget")
+            raise QuestionTargetError("The target must be an IQuestionTarget")
         if IProduct.providedBy(question_target):
             self.product = question_target
             self.distribution = None
             self.sourcepackagename = None
-        elif (IDistributionSourcePackage.providedBy(question_target)):
+        elif IDistributionSourcePackage.providedBy(question_target):
             self.product = None
             self.distribution = question_target.distribution
             self.sourcepackagename = question_target.sourcepackagename
@@ -280,8 +296,9 @@ class Question(StormBase, BugLinkTargetMixin):
             self.distribution = question_target
             self.sourcepackagename = None
         else:
-            raise AssertionError("Unknown IQuestionTarget type of %s" %
-                question_target)
+            raise AssertionError(
+                "Unknown IQuestionTarget type of %s" % question_target
+            )
 
     target = property(target, _settarget, doc=target.__doc__)
 
@@ -289,11 +306,11 @@ class Question(StormBase, BugLinkTargetMixin):
     def followup_subject(self):
         """See `IMessageTarget`."""
         if not self.messages:
-            return 'Re: ' + self.title
+            return "Re: " + self.title
         subject = self.messages[-1].title
-        if subject[:4].lower() == 're: ':
+        if subject[:4].lower() == "re: ":
             return subject
-        return 'Re: ' + subject
+        return "Re: " + subject
 
     def isSubscribed(self, person):
         """See `IQuestion`."""
@@ -301,7 +318,8 @@ class Question(StormBase, BugLinkTargetMixin):
         return not store.find(
             QuestionSubscription,
             QuestionSubscription.question == self,
-            QuestionSubscription.person == person).is_empty()
+            QuestionSubscription.person == person,
+        ).is_empty()
 
     # Workflow methods
 
@@ -313,7 +331,8 @@ class Question(StormBase, BugLinkTargetMixin):
         """See `IQuestion`."""
         if new_status == self.status:
             raise InvalidQuestionStateError(
-                "New status is same as the old one.")
+                "New status is same as the old one."
+            )
 
         # If the previous state recorded an answer, clear those
         # information as well, but copy it out for the reopening.
@@ -325,32 +344,39 @@ class Question(StormBase, BugLinkTargetMixin):
         self.date_solved = None
 
         msg = self._newMessage(
-            user, comment, datecreated=datecreated,
-            action=QuestionAction.SETSTATUS, new_status=new_status)
+            user,
+            comment,
+            datecreated=datecreated,
+            action=QuestionAction.SETSTATUS,
+            new_status=new_status,
+        )
 
         if new_status == QuestionStatus.OPEN:
             create_questionreopening(
-                self,
-                msg,
-                old_status,
-                old_answerer,
-                old_date_solved)
+                self, msg, old_status, old_answerer, old_date_solved
+            )
         return msg
 
     @notify_question_modified()
     def addComment(self, user, comment, datecreated=None):
         """See `IQuestion`."""
         return self._newMessage(
-            user, comment, datecreated=datecreated,
-            action=QuestionAction.COMMENT, new_status=self.status,
-            update_question_dates=False)
+            user,
+            comment,
+            datecreated=datecreated,
+            action=QuestionAction.COMMENT,
+            new_status=self.status,
+            update_question_dates=False,
+        )
 
     @property
     def can_request_info(self):
         """See `IQuestion`."""
         return self.status in [
-            QuestionStatus.OPEN, QuestionStatus.NEEDSINFO,
-            QuestionStatus.ANSWERED]
+            QuestionStatus.OPEN,
+            QuestionStatus.NEEDSINFO,
+            QuestionStatus.ANSWERED,
+        ]
 
     @notify_question_modified()
     def requestInfo(self, user, question, datecreated=None):
@@ -359,14 +385,19 @@ class Question(StormBase, BugLinkTargetMixin):
             raise NotQuestionOwnerError("Owner cannot use requestInfo().")
         if not self.can_request_info:
             raise InvalidQuestionStateError(
-            "Question status != OPEN, NEEDSINFO, or ANSWERED")
+                "Question status != OPEN, NEEDSINFO, or ANSWERED"
+            )
         if self.status == QuestionStatus.ANSWERED:
             new_status = self.status
         else:
             new_status = QuestionStatus.NEEDSINFO
         return self._newMessage(
-            user, question, datecreated=datecreated,
-            action=QuestionAction.REQUESTINFO, new_status=new_status)
+            user,
+            question,
+            datecreated=datecreated,
+            action=QuestionAction.REQUESTINFO,
+            new_status=new_status,
+        )
 
     @property
     def can_give_info(self):
@@ -378,17 +409,24 @@ class Question(StormBase, BugLinkTargetMixin):
         """See `IQuestion`."""
         if not self.can_give_info:
             raise InvalidQuestionStateError(
-                "Question status != OPEN or NEEDSINFO")
+                "Question status != OPEN or NEEDSINFO"
+            )
         return self._newMessage(
-            self.owner, reply, datecreated=datecreated,
-            action=QuestionAction.GIVEINFO, new_status=QuestionStatus.OPEN)
+            self.owner,
+            reply,
+            datecreated=datecreated,
+            action=QuestionAction.GIVEINFO,
+            new_status=QuestionStatus.OPEN,
+        )
 
     @property
     def can_give_answer(self):
         """See `IQuestion`."""
         return self.status in [
-            QuestionStatus.OPEN, QuestionStatus.NEEDSINFO,
-            QuestionStatus.ANSWERED]
+            QuestionStatus.OPEN,
+            QuestionStatus.NEEDSINFO,
+            QuestionStatus.ANSWERED,
+        ]
 
     @notify_question_modified()
     def giveAnswer(self, user, answer, datecreated=None):
@@ -396,11 +434,11 @@ class Question(StormBase, BugLinkTargetMixin):
         return self._giveAnswer(user, answer, datecreated)
 
     def _giveAnswer(self, user, answer, datecreated):
-        """Implementation of _giveAnswer that doesn't trigger notifications.
-        """
+        """Implementation of _giveAnswer that doesn't trigger notifications."""
         if not self.can_give_answer:
             raise InvalidQuestionStateError(
-            "Question status != OPEN, NEEDSINFO or ANSWERED")
+                "Question status != OPEN, NEEDSINFO or ANSWERED"
+            )
         if self.owner == user:
             new_status = QuestionStatus.SOLVED
             action = QuestionAction.CONFIRM
@@ -409,8 +447,12 @@ class Question(StormBase, BugLinkTargetMixin):
             action = QuestionAction.ANSWER
 
         msg = self._newMessage(
-            user, answer, datecreated=datecreated, action=action,
-            new_status=new_status)
+            user,
+            answer,
+            datecreated=datecreated,
+            action=action,
+            new_status=new_status,
+        )
 
         if self.owner == user:
             self.date_solved = msg.datecreated
@@ -424,10 +466,12 @@ class Question(StormBase, BugLinkTargetMixin):
         if faq is not None:
             if not IFAQ.providedBy(faq):
                 raise FAQTargetError(
-                    "faq parameter must provide IFAQ or be None.")
+                    "faq parameter must provide IFAQ or be None."
+                )
         if self.faq == faq:
             raise FAQTargetError(
-                'Cannot call linkFAQ() with already linked FAQ.')
+                "Cannot call linkFAQ() with already linked FAQ."
+            )
         self.faq = faq
         if self.can_give_answer:
             return self._giveAnswer(user, comment, datecreated)
@@ -439,8 +483,11 @@ class Question(StormBase, BugLinkTargetMixin):
     def can_confirm_answer(self):
         """See `IQuestion`."""
         if self.status not in [
-            QuestionStatus.OPEN, QuestionStatus.ANSWERED,
-            QuestionStatus.NEEDSINFO, QuestionStatus.SOLVED]:
+            QuestionStatus.OPEN,
+            QuestionStatus.ANSWERED,
+            QuestionStatus.NEEDSINFO,
+            QuestionStatus.SOLVED,
+        ]:
             return False
         if self.answerer is not None and self.answerer is not self.owner:
             return False
@@ -455,30 +502,39 @@ class Question(StormBase, BugLinkTargetMixin):
         """See `IQuestion`."""
         if not self.can_confirm_answer:
             raise InvalidQuestionStateError(
-                "There is no answer that can be confirmed")
+                "There is no answer that can be confirmed"
+            )
         if answer:
             assert answer in self.messages
             if answer.owner == self.owner:
                 raise NotQuestionOwnerError(
-                    'Use giveAnswer() when solving own question.')
+                    "Use giveAnswer() when solving own question."
+                )
 
         msg = self._newMessage(
-            self.owner, comment, datecreated=datecreated,
+            self.owner,
+            comment,
+            datecreated=datecreated,
             action=QuestionAction.CONFIRM,
-            new_status=QuestionStatus.SOLVED)
+            new_status=QuestionStatus.SOLVED,
+        )
         if answer:
             self.date_solved = msg.datecreated
             self.answerer = answer.owner
             self.answer = answer
 
             self.owner.assignKarma(
-                'questionansweraccepted', product=self.product,
+                "questionansweraccepted",
+                product=self.product,
                 distribution=self.distribution,
-                sourcepackagename=self.sourcepackagename)
+                sourcepackagename=self.sourcepackagename,
+            )
             self.answerer.assignKarma(
-                'questionanswered', product=self.product,
+                "questionanswered",
+                product=self.product,
                 distribution=self.distribution,
-                sourcepackagename=self.sourcepackagename)
+                sourcepackagename=self.sourcepackagename,
+            )
         return msg
 
     def canReject(self, user):
@@ -497,12 +553,17 @@ class Question(StormBase, BugLinkTargetMixin):
         """See `IQuestion`."""
         if not self.canReject(user):
             raise NotAnswerContactError(
-                'User "%s" cannot reject the question.' % user.displayname)
+                'User "%s" cannot reject the question.' % user.displayname
+            )
         if self.status == QuestionStatus.INVALID:
             raise InvalidQuestionStateError("Question is already rejected.")
         msg = self._newMessage(
-            user, comment, datecreated=datecreated,
-            action=QuestionAction.REJECT, new_status=QuestionStatus.INVALID)
+            user,
+            comment,
+            datecreated=datecreated,
+            action=QuestionAction.REJECT,
+            new_status=QuestionStatus.INVALID,
+        )
         self.answerer = user
         self.date_solved = msg.datecreated
         self.answer = msg
@@ -513,17 +574,24 @@ class Question(StormBase, BugLinkTargetMixin):
         """See `IQuestion`."""
         if self.status not in [QuestionStatus.OPEN, QuestionStatus.NEEDSINFO]:
             raise InvalidQuestionStateError(
-                "Question status != OPEN or NEEDSINFO")
+                "Question status != OPEN or NEEDSINFO"
+            )
         return self._newMessage(
-            user, comment, datecreated=datecreated,
-            action=QuestionAction.EXPIRE, new_status=QuestionStatus.EXPIRED)
+            user,
+            comment,
+            datecreated=datecreated,
+            action=QuestionAction.EXPIRE,
+            new_status=QuestionStatus.EXPIRED,
+        )
 
     @property
     def can_reopen(self):
         """See `IQuestion`."""
         return self.status in [
-            QuestionStatus.ANSWERED, QuestionStatus.EXPIRED,
-            QuestionStatus.SOLVED]
+            QuestionStatus.ANSWERED,
+            QuestionStatus.EXPIRED,
+            QuestionStatus.SOLVED,
+        ]
 
     @notify_question_modified()
     def reopen(self, comment, datecreated=None):
@@ -533,19 +601,18 @@ class Question(StormBase, BugLinkTargetMixin):
         old_date_solved = self.date_solved
         if not self.can_reopen:
             raise InvalidQuestionStateError(
-                "Question status != ANSWERED, EXPIRED or SOLVED.")
+                "Question status != ANSWERED, EXPIRED or SOLVED."
+            )
         msg = self._newMessage(
             self.owner,
             comment,
             datecreated=datecreated,
             action=QuestionAction.REOPEN,
-            new_status=QuestionStatus.OPEN)
+            new_status=QuestionStatus.OPEN,
+        )
         create_questionreopening(
-            self,
-            msg,
-            old_status,
-            old_answerer,
-            old_date_solved)
+            self, msg, old_status, old_answerer, old_date_solved
+        )
         self.answer = None
         self.answerer = None
         self.date_solved = None
@@ -572,9 +639,9 @@ class Question(StormBase, BugLinkTargetMixin):
             if sub.person.id == person.id:
                 if not sub.canBeUnsubscribedByUser(unsubscribed_by):
                     raise UserCannotUnsubscribePerson(
-                        '%s does not have permission to unsubscribe %s.' % (
-                            unsubscribed_by.displayname,
-                            person.displayname))
+                        "%s does not have permission to unsubscribe %s."
+                        % (unsubscribed_by.displayname, person.displayname)
+                    )
                 Store.of(sub).remove(sub)
                 return
 
@@ -583,19 +650,23 @@ class Question(StormBase, BugLinkTargetMixin):
 
         This method is sorted so that it iterates like direct_recipients.
         """
-        return sorted(
-            self.subscribers, key=operator.attrgetter('displayname'))
+        return sorted(self.subscribers, key=operator.attrgetter("displayname"))
 
     def getDirectSubscribersWithDetails(self):
         """See `IQuestion`."""
 
         # Avoid circular imports
         from lp.registry.model.person import Person
-        results = Store.of(self).find(
-            (Person, QuestionSubscription),
-            QuestionSubscription.person_id == Person.id,
-            QuestionSubscription.question_id == self.id,
-            ).order_by(Person.display_name)
+
+        results = (
+            Store.of(self)
+            .find(
+                (Person, QuestionSubscription),
+                QuestionSubscription.person_id == Person.id,
+                QuestionSubscription.question_id == self.id,
+            )
+            .order_by(Person.display_name)
+        )
         return results
 
     def getIndirectSubscribers(self):
@@ -605,10 +676,11 @@ class Question(StormBase, BugLinkTargetMixin):
         indirect_recipients.
         """
         subscribers = set(
-            self.target.getAnswerContactsForLanguage(self.language))
+            self.target.getAnswerContactsForLanguage(self.language)
+        )
         if self.assignee:
             subscribers.add(self.assignee)
-        return sorted(subscribers, key=operator.attrgetter('displayname'))
+        return sorted(subscribers, key=operator.attrgetter("displayname"))
 
     def getRecipients(self):
         """See `IQuestion`."""
@@ -623,6 +695,7 @@ class Question(StormBase, BugLinkTargetMixin):
         """See `IQuestion`."""
         # Circular import.
         from lp.registry.model.person import get_recipients
+
         subscribers = NotificationRecipientSet()
         for subscriber in self.subscribers:
             if subscriber == self.owner:
@@ -639,16 +712,26 @@ class Question(StormBase, BugLinkTargetMixin):
         """See `IQuestion`."""
         # Circular import.
         from lp.registry.model.person import get_recipients
+
         subscribers = self.target.getAnswerContactRecipients(self.language)
         if self.assignee:
             for recipient in get_recipients(self.assignee):
                 reason = QuestionRecipientReason.forAssignee(
-                    self.assignee, recipient)
+                    self.assignee, recipient
+                )
                 subscribers.add(recipient, reason, reason.mail_header)
         return subscribers
 
-    def _newMessage(self, owner, content, action, new_status, subject=None,
-                    datecreated=None, update_question_dates=True):
+    def _newMessage(
+        self,
+        owner,
+        content,
+        action,
+        new_status,
+        subject=None,
+        datecreated=None,
+        update_question_dates=True,
+    ):
         """Create a new QuestionMessage, link it to this question and update
         the question's status to new_status.
 
@@ -671,8 +754,7 @@ class Question(StormBase, BugLinkTargetMixin):
         """
         if IMessage.providedBy(content):
             if owner != content.owner:
-                raise NotMessageOwnerError(
-                    'The IMessage has the wrong owner.')
+                raise NotMessageOwnerError("The IMessage has the wrong owner.")
             msg = content
         else:
             if subject is None:
@@ -680,12 +762,14 @@ class Question(StormBase, BugLinkTargetMixin):
             if datecreated is None:
                 datecreated = UTC_NOW
             msg = Message(
-                owner=owner, rfc822msgid=make_msgid('lpquestions'),
-                subject=subject, datecreated=datecreated)
+                owner=owner,
+                rfc822msgid=make_msgid("lpquestions"),
+                subject=subject,
+                datecreated=datecreated,
+            )
             MessageChunk(message=msg, content=content, sequence=1)
 
-        tktmsg = QuestionMessage(
-            self, msg, action, new_status, owner)
+        tktmsg = QuestionMessage(self, msg, action, new_status, owner)
         notify(ObjectCreatedEvent(tktmsg, user=tktmsg.owner))
         # Make sure we update the relevant date of response or query.
         if update_question_dates:
@@ -699,11 +783,16 @@ class Question(StormBase, BugLinkTargetMixin):
     @property
     def bugs(self):
         from lp.bugs.model.bug import Bug
+
         bug_ids = [
-            int(id) for _, id in getUtility(IXRefSet).findFrom(
-                ('question', str(self.id)), types=['bug'])]
-        return list(sorted(
-            bulk.load(Bug, bug_ids), key=operator.attrgetter('id')))
+            int(id)
+            for _, id in getUtility(IXRefSet).findFrom(
+                ("question", str(self.id)), types=["bug"]
+            )
+        ]
+        return list(
+            sorted(bulk.load(Bug, bug_ids), key=operator.attrgetter("id"))
+        )
 
     # IBugLinkTarget implementation
     def createBugLink(self, bug, props=None):
@@ -712,20 +801,23 @@ class Question(StormBase, BugLinkTargetMixin):
             props = {}
         # XXX: Should set creator.
         getUtility(IXRefSet).create(
-            {('question', str(self.id)): {('bug', str(bug.id)): props}})
+            {("question", str(self.id)): {("bug", str(bug.id)): props}}
+        )
 
     def deleteBugLink(self, bug):
         """See BugLinkTargetMixin."""
         getUtility(IXRefSet).delete(
-            {('question', str(self.id)): [('bug', str(bug.id))]})
+            {("question", str(self.id)): [("bug", str(bug.id))]}
+        )
 
     def setCommentVisibility(self, user, comment_number, visible):
         """See `IQuestion`."""
         question_message = self.messages[comment_number]
-        if not check_permission('launchpad.Moderate', question_message):
+        if not check_permission("launchpad.Moderate", question_message):
             raise Unauthorized(
                 "Only admins, project maintainers, and comment authors "
-                "can change a comment's visibility.")
+                "can change a comment's visibility."
+            )
         message = question_message.message
         message.visible = visible
 
@@ -736,7 +828,7 @@ class QuestionSet:
 
     def __init__(self):
         """See `IQuestionSet`."""
-        self.title = 'Launchpad'
+        self.title = "Launchpad"
 
     def findExpiredQuestions(self, days_before_expiration):
         """See `IQuestionSet`."""
@@ -745,38 +837,68 @@ class QuestionSet:
         # included when BugTask.status IS NULL.
         origin = [
             Question,
-            LeftJoin(XRef, And(
-                XRef.from_type == 'question',
-                XRef.from_id_int == Question.id,
-                XRef.to_type == 'bug')),
-            LeftJoin(BugTask, And(
-                BugTask.bug == XRef.to_id_int,
-                BugTask._status != BugTaskStatus.INVALID)),
-            ]
+            LeftJoin(
+                XRef,
+                And(
+                    XRef.from_type == "question",
+                    XRef.from_id_int == Question.id,
+                    XRef.to_type == "bug",
+                ),
+            ),
+            LeftJoin(
+                BugTask,
+                And(
+                    BugTask.bug == XRef.to_id_int,
+                    BugTask._status != BugTaskStatus.INVALID,
+                ),
+            ),
+        ]
         expiry = datetime.now(pytz.UTC) - timedelta(
-            days=days_before_expiration)
-        return IStore(Question).using(*origin).find(
-            Question,
-            Question.status.is_in(
-                (QuestionStatus.OPEN, QuestionStatus.NEEDSINFO)),
-            Or(
-                Question.datelastresponse == None,
-                Question.datelastresponse < expiry),
-            Question.datelastquery < expiry,
-            Question.assignee == None,
-            BugTask._status == None).config(distinct=True)
+            days=days_before_expiration
+        )
+        return (
+            IStore(Question)
+            .using(*origin)
+            .find(
+                Question,
+                Question.status.is_in(
+                    (QuestionStatus.OPEN, QuestionStatus.NEEDSINFO)
+                ),
+                Or(
+                    Question.datelastresponse == None,
+                    Question.datelastresponse < expiry,
+                ),
+                Question.datelastquery < expiry,
+                Question.assignee == None,
+                BugTask._status == None,
+            )
+            .config(distinct=True)
+        )
 
-    def searchQuestions(self, search_text=None, language=None,
-                      status=QUESTION_STATUS_DEFAULT_SEARCH, sort=None):
+    def searchQuestions(
+        self,
+        search_text=None,
+        language=None,
+        status=QUESTION_STATUS_DEFAULT_SEARCH,
+        sort=None,
+    ):
         """See `IQuestionSet`"""
         return QuestionSearch(
-            search_text=search_text, status=status, language=language,
-            sort=sort).getResults()
+            search_text=search_text,
+            status=status,
+            language=language,
+            sort=sort,
+        ).getResults()
 
     def getQuestionLanguages(self):
         """See `IQuestionSet`"""
-        return set(Language.select('Language.id = Question.language',
-            clauseTables=['Question'], distinct=True))
+        return set(
+            Language.select(
+                "Language.id = Question.language",
+                clauseTables=["Question"],
+                distinct=True,
+            )
+        )
 
     def getMostActiveProjects(self, limit=5):
         """See `IQuestionSet`."""
@@ -787,21 +909,35 @@ class QuestionSet:
         time_cutoff = datetime.now(pytz.UTC) - timedelta(days=60)
         question_count = Alias(Count())
 
-        origin = (Question,
-                  LeftJoin(Product, Question.product_id == Product.id),
-                  LeftJoin(Distribution,
-                           Question.distribution_id == Distribution.id))
+        origin = (
+            Question,
+            LeftJoin(Product, Question.product_id == Product.id),
+            LeftJoin(
+                Distribution, Question.distribution_id == Distribution.id
+            ),
+        )
 
-        results = IStore(Question).using(*origin).find(
-            (Question.product_id, Question.distribution_id, question_count),
-            Or(
-                And(Product._answers_usage == ServiceUsage.LAUNCHPAD,
-                    Product.active),
-                Distribution._answers_usage == ServiceUsage.LAUNCHPAD),
-            Question.datecreated > time_cutoff
-            ).group_by(
-                Question.product_id, Question.distribution_id
-            ).order_by(Desc(question_count))[:limit]
+        results = (
+            IStore(Question)
+            .using(*origin)
+            .find(
+                (
+                    Question.product_id,
+                    Question.distribution_id,
+                    question_count,
+                ),
+                Or(
+                    And(
+                        Product._answers_usage == ServiceUsage.LAUNCHPAD,
+                        Product.active,
+                    ),
+                    Distribution._answers_usage == ServiceUsage.LAUNCHPAD,
+                ),
+                Question.datecreated > time_cutoff,
+            )
+            .group_by(Question.product_id, Question.distribution_id)
+            .order_by(Desc(question_count))[:limit]
+        )
 
         projects = []
         product_set = getUtility(IProductSet)
@@ -812,23 +948,35 @@ class QuestionSet:
             elif distribution_id:
                 projects.append(distribution_set.get(distribution_id))
             else:
-                raise AssertionError(
-                    'product_id and distribution_id are NULL')
+                raise AssertionError("product_id and distribution_id are NULL")
         return projects
 
     @staticmethod
-    def new(title=None, description=None, owner=None,
-            product=None, distribution=None, sourcepackagename=None,
-            datecreated=None, language=None):
+    def new(
+        title=None,
+        description=None,
+        owner=None,
+        product=None,
+        distribution=None,
+        sourcepackagename=None,
+        datecreated=None,
+        language=None,
+    ):
         """Common implementation for IQuestionTarget.newQuestion()."""
         if datecreated is None:
             datecreated = UTC_NOW
         if language is None:
             language = getUtility(ILaunchpadCelebrities).english
         question = Question(
-            title=title, description=description, owner=owner,
-            product=product, distribution=distribution, language=language,
-            sourcepackagename=sourcepackagename, datecreated=datecreated)
+            title=title,
+            description=description,
+            owner=owner,
+            product=product,
+            distribution=distribution,
+            language=language,
+            sourcepackagename=sourcepackagename,
+            datecreated=datecreated,
+        )
 
         # Subscribe the submitter
         question.subscribe(owner)
@@ -839,22 +987,24 @@ class QuestionSet:
         """See `IQuestionSet`."""
         # search views produce strings, not integers
         question_id = int(question_id)
-        question = IStore(Question).find(
-            Question,
-            Question.id == question_id).one()
+        question = (
+            IStore(Question).find(Question, Question.id == question_id).one()
+        )
         return question or default
 
     def getOpenQuestionCountByPackages(self, packages):
         """See `IQuestionSet`."""
-        distributions = list(
-            {package.distribution for package in packages})
+        distributions = list({package.distribution for package in packages})
         # We can't get counts for all packages in one query, since we'd
         # need to match on (distribution, sourcepackagename). Issue one
         # query per distribution instead.
         counts = {}
         for distribution in distributions:
-            counts.update(self._getOpenQuestionCountsForDistribution(
-                distribution, packages))
+            counts.update(
+                self._getOpenQuestionCountsForDistribution(
+                    distribution, packages
+                )
+            )
         return counts
 
     def _getOpenQuestionCountsForDistribution(self, distribution, packages):
@@ -864,18 +1014,29 @@ class QuestionSet:
         information.
         """
         packages = [
-            package for package in packages
-            if package.distribution == distribution]
+            package
+            for package in packages
+            if package.distribution == distribution
+        ]
         package_name_ids = [
-            package.sourcepackagename.id for package in packages]
+            package.sourcepackagename.id for package in packages
+        ]
         open_statuses = [QuestionStatus.OPEN, QuestionStatus.NEEDSINFO]
 
-        results = IStore(Question).find(
-            (Question.distribution_id, Question.sourcepackagename_id, Count()),
-            Question.status.is_in(open_statuses),
-            Question.sourcepackagename_id.is_in(package_name_ids),
-            Question.distribution == distribution,
-        ).group_by(Question.distribution_id, Question.sourcepackagename_id)
+        results = (
+            IStore(Question)
+            .find(
+                (
+                    Question.distribution_id,
+                    Question.sourcepackagename_id,
+                    Count(),
+                ),
+                Question.status.is_in(open_statuses),
+                Question.sourcepackagename_id.is_in(package_name_ids),
+                Question.distribution == distribution,
+            )
+            .group_by(Question.distribution_id, Question.sourcepackagename_id)
+        )
         sourcepackagename_set = getUtility(ISourcePackageNameSet)
         # Only packages with open questions are included in the query
         # result, so initialize each package to 0.
@@ -897,10 +1058,18 @@ class QuestionSearch:
     is used to retrieve the questions matching the search criteria.
     """
 
-    def __init__(self, search_text=None, needs_attention_from=None, sort=None,
-                 status=QUESTION_STATUS_DEFAULT_SEARCH, language=None,
-                 product=None, distribution=None, sourcepackagename=None,
-                 projectgroup=None):
+    def __init__(
+        self,
+        search_text=None,
+        needs_attention_from=None,
+        sort=None,
+        status=QUESTION_STATUS_DEFAULT_SEARCH,
+        language=None,
+        product=None,
+        distribution=None,
+        sourcepackagename=None,
+        projectgroup=None,
+    ):
         self.search_text = search_text
         self.nl_phrase_used = False
 
@@ -917,7 +1086,8 @@ class QuestionSearch:
         self.sort = sort
         if needs_attention_from is not None:
             assert IPerson.providedBy(needs_attention_from), (
-                "expected IPerson, got %r" % needs_attention_from)
+                "expected IPerson, got %r" % needs_attention_from
+            )
         self.needs_attention_from = needs_attention_from
 
         self.product = product
@@ -931,8 +1101,9 @@ class QuestionSearch:
         from lp.registry.model.product import Product
 
         if self.sourcepackagename:
-            assert self.distribution is not None, (
-                "Distribution must be specified if sourcepackage is not None")
+            assert (
+                self.distribution is not None
+            ), "Distribution must be specified if sourcepackage is not None"
 
         constraints = []
 
@@ -942,17 +1113,23 @@ class QuestionSearch:
             constraints.append(Question.distribution == self.distribution)
             if self.sourcepackagename:
                 constraints.append(
-                    Question.sourcepackagename == self.sourcepackagename)
+                    Question.sourcepackagename == self.sourcepackagename
+                )
         elif self.projectgroup:
-            constraints.extend([
-                Question.product == Product.id,
-                Product.active,
-                Product.projectgroup == self.projectgroup,
-                ])
+            constraints.extend(
+                [
+                    Question.product == Product.id,
+                    Product.active,
+                    Product.projectgroup == self.projectgroup,
+                ]
+            )
         else:
-            constraints.append(Or(
-                And(Question.product == Product.id, Product.active),
-                Question.product == None))
+            constraints.append(
+                Or(
+                    And(Question.product == Product.id, Product.active),
+                    Question.product == None,
+                )
+            )
 
         return constraints
 
@@ -975,8 +1152,10 @@ class QuestionSearch:
                 QuestionMessage,
                 And(
                     QuestionMessage.question == Question.id,
-                    QuestionMessage.owner == person)),
-            ]
+                    QuestionMessage.owner == person,
+                ),
+            ),
+        ]
         if self.projectgroup:
             joins.extend(self.getProductJoins())
         elif not self.product and not self.distribution:
@@ -1005,26 +1184,38 @@ class QuestionSearch:
         constraints = self.getTargetConstraints()
 
         if self.search_text is not None:
-            constraints.append(fti_search(
-                Question, self.search_text, ftq=not self.nl_phrase_used))
+            constraints.append(
+                fti_search(
+                    Question, self.search_text, ftq=not self.nl_phrase_used
+                )
+            )
 
         if self.status:
             constraints.append(Question.status.is_in(self.status))
 
         if self.needs_attention_from:
-            constraints.append(Or(
-                And(
-                    Question.owner == self.needs_attention_from,
-                    Question.status.is_in([
-                        QuestionStatus.NEEDSINFO, QuestionStatus.ANSWERED])),
-                And(
-                    Question.owner != self.needs_attention_from,
-                    Question.status == QuestionStatus.OPEN,
-                    QuestionMessage.owner == self.needs_attention_from)))
+            constraints.append(
+                Or(
+                    And(
+                        Question.owner == self.needs_attention_from,
+                        Question.status.is_in(
+                            [QuestionStatus.NEEDSINFO, QuestionStatus.ANSWERED]
+                        ),
+                    ),
+                    And(
+                        Question.owner != self.needs_attention_from,
+                        Question.status == QuestionStatus.OPEN,
+                        QuestionMessage.owner == self.needs_attention_from,
+                    ),
+                )
+            )
 
         if self.language:
-            constraints.append(Question.language_id.is_in(
-                [language.id for language in self.language]))
+            constraints.append(
+                Question.language_id.is_in(
+                    [language.id for language in self.language]
+                )
+            )
 
         return constraints
 
@@ -1035,13 +1226,13 @@ class QuestionSearch:
         # search criteria.
         if self.product or self.sourcepackagename or self.projectgroup:
             # Will always be the same project, sourcepackage, or project group.
-            return ['owner']
+            return ["owner"]
         elif self.distribution:
             # Same distribution, sourcepackagename will vary.
-            return ['owner', 'sourcepackagename']
+            return ["owner", "sourcepackagename"]
         else:
             # QuestionTarget will vary.
-            return ['owner', 'product', 'distribution', 'sourcepackagename']
+            return ["owner", "product", "distribution", "sourcepackagename"]
 
     def getOrderByClause(self):
         """Return the ORDER BY clause to use for this search's results."""
@@ -1062,7 +1253,8 @@ class QuestionSearch:
                 ftq = not self.nl_phrase_used
                 return [
                     rank_by_fti(Question, self.search_text, ftq=ftq),
-                    Desc(Question.datecreated)]
+                    Desc(Question.datecreated),
+                ]
             else:
                 return [Desc(Question.datecreated)]
         elif sort is QuestionSort.RECENT_OWNER_ACTIVITY:
@@ -1078,23 +1270,27 @@ class QuestionSearch:
         from lp.registry.model.product import Product
 
         prejoin_table_by_name = {
-            'owner': ClassAlias(Person, 'prejoin_owner'),
-            'product': ClassAlias(Product, 'prejoin_product'),
-            'distribution': ClassAlias(Distribution, 'prejoin_distribution'),
-            'sourcepackagename': ClassAlias(
-                SourcePackageName, 'prejoin_sourcepackagename'),
-            }
+            "owner": ClassAlias(Person, "prejoin_owner"),
+            "product": ClassAlias(Product, "prejoin_product"),
+            "distribution": ClassAlias(Distribution, "prejoin_distribution"),
+            "sourcepackagename": ClassAlias(
+                SourcePackageName, "prejoin_sourcepackagename"
+            ),
+        }
         prejoin_condition_by_name = {
-            'owner': Question.owner == prejoin_table_by_name['owner'].id,
-            'product': (
-                Question.product == prejoin_table_by_name['product'].id),
-            'distribution': (
-                Question.distribution ==
-                prejoin_table_by_name['distribution'].id),
-            'sourcepackagename': (
-                Question.sourcepackagename ==
-                prejoin_table_by_name['sourcepackagename'].id),
-            }
+            "owner": Question.owner == prejoin_table_by_name["owner"].id,
+            "product": (
+                Question.product == prejoin_table_by_name["product"].id
+            ),
+            "distribution": (
+                Question.distribution
+                == prejoin_table_by_name["distribution"].id
+            ),
+            "sourcepackagename": (
+                Question.sourcepackagename
+                == prejoin_table_by_name["sourcepackagename"].id
+            ),
+        }
 
         constraints = self.getConstraints()
         if constraints:
@@ -1102,20 +1298,30 @@ class QuestionSearch:
             if joins:
                 # Make a slower query to accommodate the joins.
                 constraints = [
-                    Question.id.is_in(Select(
-                        Question.id, where=And(*constraints),
-                        tables=[Question] + joins)),
-                    ]
+                    Question.id.is_in(
+                        Select(
+                            Question.id,
+                            where=And(*constraints),
+                            tables=[Question] + joins,
+                        )
+                    ),
+                ]
         prejoins = [
             LeftJoin(
                 prejoin_table_by_name[prejoin],
-                prejoin_condition_by_name[prejoin])
-            for prejoin in self.getPrejoins()]
+                prejoin_condition_by_name[prejoin],
+            )
+            for prejoin in self.getPrejoins()
+        ]
         prejoin_tables = [
-            prejoin_table_by_name[prejoin] for prejoin in self.getPrejoins()]
-        rows = IStore(Question).using(Question, *prejoins).find(
-            (Question,) + tuple(prejoin_tables),
-            *constraints).order_by(*self.getOrderByClause())
+            prejoin_table_by_name[prejoin] for prejoin in self.getPrejoins()
+        ]
+        rows = (
+            IStore(Question)
+            .using(Question, *prejoins)
+            .find((Question,) + tuple(prejoin_tables), *constraints)
+            .order_by(*self.getOrderByClause())
+        )
         return DecoratedResultSet(rows, operator.itemgetter(0))
 
 
@@ -1125,25 +1331,42 @@ class QuestionTargetSearch(QuestionSearch):
     Used to implement IQuestionTarget.searchQuestions().
     """
 
-    def __init__(self, search_text=None,
-                 status=QUESTION_STATUS_DEFAULT_SEARCH,
-                 language=None, sort=None, owner=None,
-                 needs_attention_from=None, unsupported_target=None,
-                 projectgroup=None, product=None, distribution=None,
-                 sourcepackagename=None):
+    def __init__(
+        self,
+        search_text=None,
+        status=QUESTION_STATUS_DEFAULT_SEARCH,
+        language=None,
+        sort=None,
+        owner=None,
+        needs_attention_from=None,
+        unsupported_target=None,
+        projectgroup=None,
+        product=None,
+        distribution=None,
+        sourcepackagename=None,
+    ):
         assert (
-            product is not None or distribution is not None or
-            projectgroup is not None), (
-                "Missing a project, distribution or project group context.")
+            product is not None
+            or distribution is not None
+            or projectgroup is not None
+        ), "Missing a project, distribution or project group context."
         QuestionSearch.__init__(
-            self, search_text=search_text, status=status, language=language,
-            needs_attention_from=needs_attention_from, sort=sort,
-            projectgroup=projectgroup, product=product,
-            distribution=distribution, sourcepackagename=sourcepackagename)
+            self,
+            search_text=search_text,
+            status=status,
+            language=language,
+            needs_attention_from=needs_attention_from,
+            sort=sort,
+            projectgroup=projectgroup,
+            product=product,
+            distribution=distribution,
+            sourcepackagename=sourcepackagename,
+        )
 
         if owner:
             assert IPerson.providedBy(owner), (
-                "expected IPerson, got %r" % owner)
+                "expected IPerson, got %r" % owner
+            )
         self.owner = owner
         self.unsupported_target = unsupported_target
 
@@ -1158,19 +1381,24 @@ class QuestionTargetSearch(QuestionSearch):
             constraints.append(Question.owner == self.owner)
         if self.unsupported_target is not None:
             supported_languages = (
-                self.unsupported_target.getSupportedLanguages())
+                self.unsupported_target.getSupportedLanguages()
+            )
             constraints.append(
-                Not(Question.language_id.is_in(
-                    [language.id for language in supported_languages])))
+                Not(
+                    Question.language_id.is_in(
+                        [language.id for language in supported_languages]
+                    )
+                )
+            )
 
         return constraints
 
     def getPrejoins(self):
         """See `QuestionSearch`."""
         prejoins = QuestionSearch.getPrejoins(self)
-        if self.owner and 'owner' in prejoins:
+        if self.owner and "owner" in prejoins:
             # Since it is constant, no need to prefetch it.
-            prejoins.remove('owner')
+            prejoins.remove("owner")
         return prejoins
 
 
@@ -1181,18 +1409,25 @@ class SimilarQuestionsSearch(QuestionSearch):
     IQuestionTarget.findSimilarQuestions().
     """
 
-    def __init__(self, title, product=None, distribution=None,
-                 sourcepackagename=None):
-        assert product is not None or distribution is not None, (
-            "Missing a product or distribution context.")
+    def __init__(
+        self, title, product=None, distribution=None, sourcepackagename=None
+    ):
+        assert (
+            product is not None or distribution is not None
+        ), "Missing a product or distribution context."
         QuestionSearch.__init__(
-            self, search_text=title, product=product,
-            distribution=distribution, sourcepackagename=sourcepackagename)
+            self,
+            search_text=title,
+            product=product,
+            distribution=distribution,
+            sourcepackagename=sourcepackagename,
+        )
 
         # Change the search text to use based on the native language
         # similarity search algorithm.
         self.search_text = nl_phrase_search(
-            title, Question, self.getTargetConstraints())
+            title, Question, self.getTargetConstraints()
+        )
         self.nl_phrase_used = True
 
 
@@ -1202,17 +1437,29 @@ class QuestionPersonSearch(QuestionSearch):
     Used to implement IQuestionsPerson.searchQuestions().
     """
 
-    def __init__(self, person, search_text=None,
-                 status=QUESTION_STATUS_DEFAULT_SEARCH, language=None,
-                 sort=None, participation=None, needs_attention=False):
+    def __init__(
+        self,
+        person,
+        search_text=None,
+        status=QUESTION_STATUS_DEFAULT_SEARCH,
+        language=None,
+        sort=None,
+        participation=None,
+        needs_attention=False,
+    ):
         if needs_attention:
             needs_attention_from = person
         else:
             needs_attention_from = None
 
         QuestionSearch.__init__(
-            self, search_text=search_text, status=status, language=language,
-            needs_attention_from=needs_attention_from, sort=sort)
+            self,
+            search_text=search_text,
+            status=status,
+            language=language,
+            needs_attention_from=needs_attention_from,
+            sort=sort,
+        )
 
         assert IPerson.providedBy(person), "expected IPerson, got %r" % person
         self.person = person
@@ -1237,9 +1484,13 @@ class QuestionPersonSearch(QuestionSearch):
                     QuestionSubscription,
                     And(
                         QuestionSubscription.question == Question.id,
-                        QuestionSubscription.person == self.person)))
+                        QuestionSubscription.person == self.person,
+                    ),
+                )
+            )
 
         if QuestionParticipation.COMMENTER in self.participation:
+
             def join_properties(join):
                 # Return the essential properties of a join, so that we can
                 # check whether we already have it in the list.
@@ -1247,9 +1498,13 @@ class QuestionPersonSearch(QuestionSearch):
 
             all_join_properties = [join_properties(join) for join in joins]
             message_joins = self.getMessageJoins(self.person)
-            joins.extend([
-                join for join in message_joins
-                if join_properties(join) not in all_join_properties])
+            joins.extend(
+                [
+                    join
+                    for join in message_joins
+                    if join_properties(join) not in all_join_properties
+                ]
+            )
 
         return joins
 
@@ -1259,7 +1514,7 @@ class QuestionPersonSearch(QuestionSearch):
         QuestionParticipation.OWNER: Question.owner,
         QuestionParticipation.COMMENTER: QuestionMessage.owner,
         QuestionParticipation.ASSIGNEE: Question.assignee,
-        }
+    }
 
     def getConstraints(self):
         """See `QuestionSearch`.
@@ -1292,21 +1547,26 @@ class QuestionTargetMixin:
         """
         return {}
 
-    def newQuestion(self, owner, title, description, language=None,
-        datecreated=None):
+    def newQuestion(
+        self, owner, title, description, language=None, datecreated=None
+    ):
         """See `IQuestionTarget`."""
         question = QuestionSet.new(
-            title=title, description=description, owner=owner,
-            datecreated=datecreated, language=language,
-            **self.getTargetTypes())
+            title=title,
+            description=description,
+            owner=owner,
+            datecreated=datecreated,
+            language=language,
+            **self.getTargetTypes(),
+        )
         notify(ObjectCreatedEvent(question))
         return question
 
     def createQuestionFromBug(self, bug):
         """See `IQuestionTarget`."""
         question = self.newQuestion(
-            bug.owner, bug.title, bug.description,
-            datecreated=bug.datecreated)
+            bug.owner, bug.title, bug.description, datecreated=bug.datecreated
+        )
         # Give the datelastresponse a current datetime, otherwise the
         # Launchpad Janitor would quickly expire questions made from old bugs.
         question.datelastresponse = datetime.now(pytz.UTC)
@@ -1316,8 +1576,10 @@ class QuestionTargetMixin:
         # Copy the last message that explains why the bug is a question.
         message = bug.messages[-1]
         question.addComment(
-            message.owner, message.text_contents,
-            datecreated=message.datecreated)
+            message.owner,
+            message.text_contents,
+            datecreated=message.datecreated,
+        )
         # Direct subscribers to the bug want to know the question answer.
         for subscriber in bug.getDirectSubscribers():
             if subscriber != question.owner:
@@ -1326,8 +1588,9 @@ class QuestionTargetMixin:
 
     def getQuestion(self, question_id):
         """See `IQuestionTarget`."""
-        question = IStore(Question).find(
-            Question, Question.id == question_id).one()
+        question = (
+            IStore(Question).find(Question, Question.id == question_id).one()
+        )
         if not question:
             return None
         # Verify that the question is actually for this target.
@@ -1344,7 +1607,8 @@ class QuestionTargetMixin:
     def findSimilarQuestions(self, phrase):
         """See `IQuestionTarget`."""
         return SimilarQuestionsSearch(
-            phrase, **self.getTargetTypes()).getResults()
+            phrase, **self.getTargetTypes()
+        ).getResults()
 
     def getQuestionLanguages(self):
         """See `IQuestionTarget`."""
@@ -1387,8 +1651,11 @@ class QuestionTargetMixin:
     def direct_answer_contacts(self):
         """See `IQuestionTarget`."""
         from lp.registry.model.person import Person
-        origin = [AnswerContact,
-                  LeftJoin(Person, AnswerContact.person == Person.id)]
+
+        origin = [
+            AnswerContact,
+            LeftJoin(Person, AnswerContact.person == Person.id),
+        ]
         conditions = self._getConditionsToQueryAnswerContacts()
         results = self._store.using(*origin).find(Person, conditions)
         return list(results.order_by(Person.display_name))
@@ -1401,17 +1668,17 @@ class QuestionTargetMixin:
         languages pre-filled so that we don't need to hit the DB again to get
         them.
         """
-        from lp.registry.model.person import (
-            Person,
-            PersonLanguage,
-            )
+        from lp.registry.model.person import Person, PersonLanguage
+
         origin = [
             AnswerContact,
             LeftJoin(Person, AnswerContact.person == Person.id),
-            LeftJoin(PersonLanguage,
-                     AnswerContact.personID == PersonLanguage.person_id),
-            LeftJoin(Language,
-                     PersonLanguage.language_id == Language.id)]
+            LeftJoin(
+                PersonLanguage,
+                AnswerContact.personID == PersonLanguage.person_id,
+            ),
+            LeftJoin(Language, PersonLanguage.language_id == Language.id),
+        ]
         columns = [Person, Language]
         conditions = self._getConditionsToQueryAnswerContacts()
         results = self._store.using(*origin).find(tuple(columns), conditions)
@@ -1423,17 +1690,19 @@ class QuestionTargetMixin:
                 D[person].append(language)
         for person, languages in D.items():
             person.setLanguagesCache(languages)
-        return sorted(D.keys(), key=operator.attrgetter('displayname'))
+        return sorted(D.keys(), key=operator.attrgetter("displayname"))
 
     def canUserAlterAnswerContact(self, person, subscribed_by):
         """See `IQuestionTarget`."""
         if person is None or subscribed_by is None:
             return False
         admins = getUtility(ILaunchpadCelebrities).admin
-        if (person == subscribed_by
+        if (
+            person == subscribed_by
             or person in subscribed_by.administrated_teams
             or subscribed_by.inTeam(self.owner)
-            or subscribed_by.inTeam(admins)):
+            or subscribed_by.inTeam(admins)
+        ):
             return True
         return False
 
@@ -1442,13 +1711,15 @@ class QuestionTargetMixin:
         if not self.canUserAlterAnswerContact(person, subscribed_by):
             return False
         answer_contact = AnswerContact.selectOneBy(
-            person=person, **self.getTargetTypes())
+            person=person, **self.getTargetTypes()
+        )
         if answer_contact is not None:
             return False
         # Person must speak a language to be an answer contact.
         if len(person.languages) == 0:
             raise AddAnswerContactError(
-                "An answer contact must speak a language.")
+                "An answer contact must speak a language."
+            )
         params = dict(product=None, distribution=None, sourcepackagename=None)
         params.update(self.getTargetTypes())
         answer_contact = AnswerContact(person=person, **params)
@@ -1457,12 +1728,11 @@ class QuestionTargetMixin:
 
     def getAnswerContactsForLanguage(self, language):
         """See `IQuestionTarget`."""
-        from lp.registry.model.person import (
-            Person,
-            PersonLanguage,
-            )
-        assert language is not None, (
-            "The language cannot be None when selecting answer contacts.")
+        from lp.registry.model.person import Person, PersonLanguage
+
+        assert (
+            language is not None
+        ), "The language cannot be None when selecting answer contacts."
         query = []
         targets = self.getTargetTypes()
         for column, target in targets.items():
@@ -1470,25 +1740,31 @@ class QuestionTargetMixin:
         query.append(
             And(
                 AnswerContact.person == PersonLanguage.person_id,
-                PersonLanguage.language_id == Language.id))
+                PersonLanguage.language_id == Language.id,
+            )
+        )
         # XXX sinzui 2007-07-12 bug=125545:
         # Using a LIKE constraint is suboptimal. We would not need this
         # if-else clause if variant languages knew their parent language.
-        if language.code == 'en':
+        if language.code == "en":
             query.append(Language.code.startswith(language.code))
         else:
             query.append(Language.id == language.id)
 
         query.append(AnswerContact.person == Person.id)
-        results = IStore(Person).find(
-            Person, *query).config(distinct=True).order_by(
-                "Person.displayname")
+        results = (
+            IStore(Person)
+            .find(Person, *query)
+            .config(distinct=True)
+            .order_by("Person.displayname")
+        )
         return results
 
     def getAnswerContactRecipients(self, language):
         """See `IQuestionTarget`."""
         # Circular import.
         from lp.registry.model.person import get_recipients
+
         if language is None:
             contacts = self.answer_contacts
         else:
@@ -1497,7 +1773,8 @@ class QuestionTargetMixin:
         for contact in contacts:
             for recipient in get_recipients(contact):
                 reason = QuestionRecipientReason.forAnswerContact(
-                    contact, recipient, self.name, self.displayname)
+                    contact, recipient, self.name, self.displayname
+                )
                 recipients.add(recipient, reason, reason.mail_header)
         return recipients
 
@@ -1508,7 +1785,8 @@ class QuestionTargetMixin:
         if person not in self.answer_contacts:
             return False
         answer_contact = AnswerContact.selectOneBy(
-            person=person, **self.getTargetTypes())
+            person=person, **self.getTargetTypes()
+        )
         if answer_contact is None:
             return False
         store = Store.of(answer_contact)
@@ -1523,5 +1801,6 @@ class QuestionTargetMixin:
             languages |= set(contact.languages)
         languages.add(getUtility(ILaunchpadCelebrities).english)
         languages = {
-            lang for lang in languages if not is_english_variant(lang)}
+            lang for lang in languages if not is_english_variant(lang)
+        }
         return list(languages)

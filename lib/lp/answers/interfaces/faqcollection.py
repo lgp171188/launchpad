@@ -4,16 +4,13 @@
 """Interface for things that contains a collection of FAQs."""
 
 __all__ = [
-    'FAQSort',
-    'IFAQCollection',
-    'ISearchFAQsForm',
-    ]
+    "FAQSort",
+    "IFAQCollection",
+    "ISearchFAQsForm",
+]
 
 
-from lazr.enum import (
-    EnumeratedType,
-    Item,
-    )
+from lazr.enum import EnumeratedType, Item
 from zope.interface import Interface
 from zope.schema import TextLine
 
@@ -27,23 +24,29 @@ class FAQSort(EnumeratedType):
     titles are formatted for nice display in browser code.
     """
 
-    RELEVANCY = Item("""
+    RELEVANCY = Item(
+        """
     by relevancy
 
     Sort by relevancy of the FAQ toward the search text.
-    """)
+    """
+    )
 
-    NEWEST_FIRST = Item("""
+    NEWEST_FIRST = Item(
+        """
     newest first
 
     Sort FAQs from newest to oldest.
-    """)
+    """
+    )
 
-    OLDEST_FIRST = Item("""
+    OLDEST_FIRST = Item(
+        """
     oldest first
 
     Sort FAQs from oldset to newest.
-    """)
+    """
+    )
 
 
 class IFAQCollection(Interface):
@@ -83,4 +86,4 @@ class IFAQCollection(Interface):
 class ISearchFAQsForm(Interface):
     """Schema for the search FAQs form."""
 
-    search_text = TextLine(title=_('Search text'), required=False)
+    search_text = TextLine(title=_("Search text"), required=False)

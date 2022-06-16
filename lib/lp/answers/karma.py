@@ -4,8 +4,8 @@
 """ Karma for the Answer Tracker. """
 
 __all__ = [
-    'assignKarmaUsingQuestionContext',
-    ]
+    "assignKarmaUsingQuestionContext",
+]
 
 from lp.answers.enums import QuestionAction
 from lp.registry.interfaces.distribution import IDistribution
@@ -20,16 +20,17 @@ def assignKarmaUsingQuestionContext(person, question, actionname):
     Use the given question's context as the karma context.
     """
     person.assignKarma(
-        actionname, product=question.product,
-    distribution=question.distribution,
-        sourcepackagename=question.sourcepackagename)
+        actionname,
+        product=question.product,
+        distribution=question.distribution,
+        sourcepackagename=question.sourcepackagename,
+    )
 
 
 @block_implicit_flushes
 def question_created(question, event):
     """Assign karma to the user which created <question>."""
-    assignKarmaUsingQuestionContext(
-        question.owner, question, 'questionasked')
+    assignKarmaUsingQuestionContext(question.owner, question, "questionasked")
 
 
 @block_implicit_flushes
@@ -40,23 +41,23 @@ def question_modified(question, event):
 
     if old_question.description != question.description:
         assignKarmaUsingQuestionContext(
-            user, question, 'questiondescriptionchanged')
+            user, question, "questiondescriptionchanged"
+        )
 
     if old_question.title != question.title:
-        assignKarmaUsingQuestionContext(
-            user, question, 'questiontitlechanged')
+        assignKarmaUsingQuestionContext(user, question, "questiontitlechanged")
 
 
 QuestionAction2KarmaAction = {
-    QuestionAction.REQUESTINFO: 'questionrequestedinfo',
-    QuestionAction.GIVEINFO: 'questiongaveinfo',
+    QuestionAction.REQUESTINFO: "questionrequestedinfo",
+    QuestionAction.GIVEINFO: "questiongaveinfo",
     QuestionAction.SETSTATUS: None,
-    QuestionAction.COMMENT: 'questioncommentadded',
-    QuestionAction.ANSWER: 'questiongaveanswer',
+    QuestionAction.COMMENT: "questioncommentadded",
+    QuestionAction.ANSWER: "questiongaveanswer",
     QuestionAction.CONFIRM: None,
     QuestionAction.EXPIRE: None,
-    QuestionAction.REJECT: 'questionrejected',
-    QuestionAction.REOPEN: 'questionreopened',
+    QuestionAction.REJECT: "questionrejected",
+    QuestionAction.REOPEN: "questionreopened",
 }
 
 
@@ -67,7 +68,8 @@ def question_comment_added(questionmessage, event):
     karma_action = QuestionAction2KarmaAction.get(questionmessage.action)
     if karma_action:
         assignKarmaUsingQuestionContext(
-            questionmessage.owner, question, karma_action)
+            questionmessage.owner, question, karma_action
+        )
 
 
 def get_karma_context_parameters(context):
@@ -76,11 +78,11 @@ def get_karma_context_parameters(context):
     # This should go away once bug #125849 is fixed.
     params = dict(product=None, distribution=None)
     if IProduct.providedBy(context):
-        params['product'] = context
+        params["product"] = context
     elif IDistribution.providedBy(context):
-        params['distribution'] = context
+        params["distribution"] = context
     else:
-        raise AssertionError('Unknown karma context: %r' % context)
+        raise AssertionError("Unknown karma context: %r" % context)
     return params
 
 
@@ -88,7 +90,7 @@ def get_karma_context_parameters(context):
 def faq_created(faq, event):
     """Assign karma to the user who created the FAQ."""
     context = get_karma_context_parameters(faq.target)
-    faq.owner.assignKarma('faqcreated', **context)
+    faq.owner.assignKarma("faqcreated", **context)
 
 
 @block_implicit_flushes
@@ -99,4 +101,4 @@ def faq_edited(faq, event):
 
     context = get_karma_context_parameters(faq.target)
     if old_faq.content != faq.content or old_faq.title != faq.title:
-        user.assignKarma('faqedited', **context)
+        user.assignKarma("faqedited", **context)

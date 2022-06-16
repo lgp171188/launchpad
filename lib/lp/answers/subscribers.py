@@ -3,7 +3,7 @@
 
 """Subscribers for `IFAQ`."""
 
-__all__ = ['update_last_updated']
+__all__ = ["update_last_updated"]
 
 
 from lp.registry.interfaces.person import IPerson

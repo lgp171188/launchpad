@@ -4,20 +4,14 @@
 """SQLBase implementation of IQuestionMessage."""
 
 __all__ = [
-    'QuestionMessage',
-    ]
+    "QuestionMessage",
+]
 
 from lazr.delegates import delegate_to
-from storm.locals import (
-    Int,
-    Reference,
-    )
+from storm.locals import Int, Reference
 from zope.interface import implementer
 
-from lp.answers.enums import (
-    QuestionAction,
-    QuestionStatus,
-    )
+from lp.answers.enums import QuestionAction, QuestionStatus
 from lp.answers.interfaces.questionmessage import IQuestionMessage
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.enumcol import DBEnum
@@ -27,30 +21,37 @@ from lp.services.propertycache import cachedproperty
 
 
 @implementer(IQuestionMessage)
-@delegate_to(IMessage, context='message')
+@delegate_to(IMessage, context="message")
 class QuestionMessage(StormBase):
     """A table linking questions and messages."""
 
-    __storm_table__ = 'QuestionMessage'
+    __storm_table__ = "QuestionMessage"
 
     id = Int(primary=True)
     question_id = Int(name="question", allow_none=False)
-    question = Reference(question_id, 'Question.id')
+    question = Reference(question_id, "Question.id")
 
     message_id = Int(name="message", allow_none=False)
-    message = Reference(message_id, 'Message.id')
+    message = Reference(message_id, "Message.id")
 
     action = DBEnum(
-        name='action', enum=QuestionAction, default=QuestionAction.COMMENT,
-        allow_none=False)
+        name="action",
+        enum=QuestionAction,
+        default=QuestionAction.COMMENT,
+        allow_none=False,
+    )
 
     new_status = DBEnum(
-        name='new_status', enum=QuestionStatus, default=QuestionStatus.OPEN,
-        allow_none=False)
+        name="new_status",
+        enum=QuestionStatus,
+        default=QuestionStatus.OPEN,
+        allow_none=False,
+    )
 
     owner_id = Int(
-        name="owner", allow_none=False, validator=validate_public_person)
-    owner = Reference(owner_id, 'Person.id')
+        name="owner", allow_none=False, validator=validate_public_person
+    )
+    owner = Reference(owner_id, "Person.id")
 
     def __init__(self, question, message, action, new_status, owner):
         self.question = question
