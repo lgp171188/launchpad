@@ -182,12 +182,11 @@ class ArchivePublisherBase:
                 pool_version = self.pool_version
                 component = (
                     None if self.component is None else self.component.name)
-                filename = pub_file.libraryfile.filename
                 path = diskpool.pathFor(
-                    component, pool_name, pool_version, filename)
+                    component, pool_name, pool_version, pub_file)
 
                 action = diskpool.addFile(
-                    component, pool_name, pool_version, filename, pub_file)
+                    component, pool_name, pool_version, pub_file)
                 if action == diskpool.results.FILE_ADDED:
                     log.debug("Added %s from library" % path)
                 elif action == diskpool.results.SYMLINK_ADDED:

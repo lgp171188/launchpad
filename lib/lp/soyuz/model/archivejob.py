@@ -266,6 +266,11 @@ class CIBuildUploadJob(ArchiveJobDerived):
             "description": about.get("description", ""),
             "architecturespecific": index["platform"] is not None,
             "homepage": about.get("home", ""),
+            # We should perhaps model this explicitly since it's used by the
+            # publisher, but this gives us an easy way to pass this through
+            # without needing to add a column to a large table that's only
+            # relevant to a tiny minority of rows.
+            "user_defined_fields": [("subdir", index["subdir"])],
             }
 
     def _scanFile(self, path):

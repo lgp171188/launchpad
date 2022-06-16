@@ -701,7 +701,7 @@ class FTPArchiveHandler:
             # involved here; so we just pass None as the version.
             ondiskname = str(
                 self._diskpool.pathFor(
-                    component, sourcepackagename, None, filename))
+                    component, sourcepackagename, None, file=filename))
             if architecturetag is None:
                 architecturetag = "source"
             filelist[component][architecturetag].append(ondiskname)

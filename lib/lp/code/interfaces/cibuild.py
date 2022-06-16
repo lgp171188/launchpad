@@ -184,7 +184,8 @@ class ICIBuildView(IPackageBuildView, IPrivacy):
 
     def createBinaryPackageRelease(
             binarypackagename, version, summary, description, binpackageformat,
-            architecturespecific, installedsize=None, homepage=None):
+            architecturespecific, installedsize=None, homepage=None,
+            user_defined_fields=None):
         """Create and return a `BinaryPackageRelease` for this CI build.
 
         The new binary package release will be linked to this build.

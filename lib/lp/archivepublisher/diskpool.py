@@ -139,14 +139,15 @@ class DiskPoolEntry:
     require manual removal after further investigation.
     """
     def __init__(self, archive: IArchive, rootpath: Path, temppath: Path,
-                 source_name: str, source_version: str, filename: str,
+                 source_name: str, source_version: str,
+                 pub_file: IPackageReleaseFile,
                  logger: logging.Logger) -> None:
         self.archive = archive
         self.rootpath = rootpath
         self.temppath = temppath
         self.source_name = source_name
         self.source_version = source_version
-        self.filename = filename
+        self.pub_file = pub_file
         self.logger = logger
 
         self.file_component = None
@@ -169,7 +170,7 @@ class DiskPoolEntry:
         """Return the path for this file in the given component."""
         return (
             self.rootpath / poolify(self.source_name, component) /
-            self.filename)
+            self.pub_file.libraryfile.filename)
 
     def preferredComponent(self, add: Optional[str] = None,
                            remove: Optional[str] = None) -> Optional[str]:
@@ -199,13 +200,13 @@ class DiskPoolEntry:
         targetpath = self.pathFor(self.file_component)
         return sha1_from_path(str(targetpath))
 
-    def addFile(self, component: str, pub_file: IPackageReleaseFile):
+    def addFile(self, component: str):
         """See DiskPool.addFile."""
         assert component in HARDCODED_COMPONENT_ORDER
 
         targetpath = self.pathFor(component)
         targetpath.parent.mkdir(parents=True, exist_ok=True)
-        lfa = pub_file.libraryfile
+        lfa = self.pub_file.libraryfile
 
         if self.file_component:
             # There's something on disk. Check hash.
@@ -234,7 +235,7 @@ class DiskPoolEntry:
         assert not targetpath.exists()
 
         self.debug("Making new file in %s for %s/%s" %
-                   (component, self.source_name, self.filename))
+                   (component, self.source_name, lfa.filename))
 
         file_to_write = _diskpool_atomicfile(
             targetpath, "wb", rootpath=self.temppath)
@@ -254,16 +255,17 @@ class DiskPoolEntry:
 
         3) Remove the main file and there are symlinks left.
         """
+        filename = self.pub_file.libraryfile.filename
         if not self.file_component:
             raise NotInPool(
                 "File for removing %s %s/%s is not in pool, skipping." %
-                (component, self.source_name, self.filename))
+                (component, self.source_name, filename))
 
         # Okay, it's there, if it's a symlink then we need to remove
         # it simply.
         if component in self.symlink_components:
             self.debug("Removing %s %s/%s as it is a symlink"
-                       % (component, self.source_name, self.filename))
+                       % (component, self.source_name, filename))
             # ensure we are removing a symbolic link and
             # it is published in one or more components
             link_path = self.pathFor(component)
@@ -273,13 +275,13 @@ class DiskPoolEntry:
         if component != self.file_component:
             raise MissingSymlinkInPool(
                 "Symlink for %s/%s in %s is missing, skipping." %
-                (self.source_name, self.filename, component))
+                (self.source_name, filename, component))
 
         # It's not a symlink, this means we need to check whether we
         # have symlinks or not.
         if len(self.symlink_components) == 0:
             self.debug("Removing %s/%s from %s" %
-                       (self.source_name, self.filename, component))
+                       (self.source_name, filename, component))
         else:
             # The target for removal is the real file, and there are symlinks
             # pointing to it. In order to avoid breakage, we need to first
@@ -318,13 +320,14 @@ class DiskPoolEntry:
             # We're already in the right place.
             return
 
+        filename = self.pub_file.libraryfile.filename
         if targetcomponent not in self.symlink_components:
             raise ValueError(
                 "Target component '%s' is not a symlink for %s" %
-                             (targetcomponent, self.filename))
+                             (targetcomponent, filename))
 
         self.debug("Shuffling symlinks so primary for %s is in %s" %
-                   (self.filename, targetcomponent))
+                   (filename, targetcomponent))
 
         # Okay, so first up, we unlink the targetcomponent symlink.
         targetpath = self.pathFor(targetcomponent)
@@ -403,32 +406,27 @@ class DiskPool:
         self.logger = logger
 
     def _getEntry(self, source_name: str, source_version: str,
-                  file: str) -> DiskPoolEntry:
+                  pub_file: IPackageReleaseFile) -> DiskPoolEntry:
         """Return a new DiskPoolEntry for the given source and file."""
         return DiskPoolEntry(
             self.archive, self.rootpath, self.temppath, source_name,
-            source_version, file, self.logger)
+            source_version, pub_file, self.logger)
 
     def pathFor(self, comp: str, source_name: str, source_version: str,
+                pub_file: Optional[IPackageReleaseFile] = None,
                 file: Optional[str] = None) -> Path:
-        """Return the path for the given pool folder or file.
-
-        If file is none, the path to the folder containing all packages
-        for the given component and source package will be returned.
-
-        If file is specified, the path to the specific package file will
-        be returned.
-        """
-        path = self.rootpath / poolify(source_name, comp)
-        if file:
-            path = path / file
-        return path
+        """Return the path for the given pool file."""
+        if file is None:
+            file = pub_file.libraryfile.filename
+        if file is None:
+            raise AssertionError("Must pass either pub_file or file")
+        return self.rootpath / poolify(source_name, comp) / file
 
     def addFile(self, component: str, source_name: str, source_version: str,
-                filename: str, pub_file: IPackageReleaseFile):
+                pub_file: IPackageReleaseFile):
         """Add a file with the given contents to the pool.
 
-        `component`, `source_name`, `source_version`, and `filename` are
+        `component`, `source_name`, `source_version`, and `pub_file` are
         used to calculate the on-disk location.
 
         pub_file is an `IPackageReleaseFile` providing the file's contents
@@ -455,11 +453,11 @@ class DiskPool:
         either as a file or a symlink, and the hash check passes,
         results.NONE will be returned and nothing will be done.
         """
-        entry = self._getEntry(source_name, source_version, filename)
-        return entry.addFile(component, pub_file)
+        entry = self._getEntry(source_name, source_version, pub_file)
+        return entry.addFile(component)
 
     def removeFile(self, component: str, source_name: str, source_version: str,
-                   filename: str) -> int:
+                   pub_file: IPackageReleaseFile) -> int:
         """Remove the specified file from the pool.
 
         There are three possible outcomes:
@@ -474,5 +472,5 @@ class DiskPool:
         will be deleted, and the file will be moved to replace it. The
         size of the deleted symlink will be returned.
         """
-        entry = self._getEntry(source_name, source_version, filename)
+        entry = self._getEntry(source_name, source_version, pub_file)
         return entry.removeFile(component)

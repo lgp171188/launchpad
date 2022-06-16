@@ -248,6 +248,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             "binpackageformat": BinaryPackageFormat.CONDA_V1,
             "architecturespecific": False,
             "homepage": "",
+            "user_defined_fields": [("subdir", "noarch")],
             }
         self.assertEqual(expected, job._scanFile(datadir(path)))
 
@@ -268,6 +269,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             "binpackageformat": BinaryPackageFormat.CONDA_V1,
             "architecturespecific": True,
             "homepage": "http://example.com/",
+            "user_defined_fields": [("subdir", "linux-64")],
             }
         self.assertEqual(expected, job._scanFile(datadir(path)))
 
@@ -288,6 +290,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             "binpackageformat": BinaryPackageFormat.CONDA_V2,
             "architecturespecific": False,
             "homepage": "",
+            "user_defined_fields": [("subdir", "noarch")],
             }
         self.assertEqual(expected, job._scanFile(datadir(path)))
 
@@ -308,6 +311,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             "binpackageformat": BinaryPackageFormat.CONDA_V2,
             "architecturespecific": True,
             "homepage": "http://example.com/",
+            "user_defined_fields": [("subdir", "linux-64")],
             }
         self.assertEqual(expected, job._scanFile(datadir(path)))
 
