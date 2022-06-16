@@ -4,10 +4,10 @@
 """Interface for FAQ document."""
 
 __all__ = [
-    'CannotDeleteFAQ',
-    'IFAQ',
-    'IFAQSet',
-    ]
+    "CannotDeleteFAQ",
+    "IFAQ",
+    "IFAQSet",
+]
 
 import http.client
 
@@ -17,24 +17,16 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_entry,
     operation_for_version,
-    )
+)
 from lazr.restful.fields import Reference
 from zope.interface import Attribute
-from zope.schema import (
-    Datetime,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.schema import Datetime, Int, Text, TextLine
 
 from lp import _
 from lp.answers.interfaces.faqcollection import IFAQCollection
 from lp.answers.interfaces.faqtarget import IFAQTarget
 from lp.registry.interfaces.role import IHasOwner
-from lp.services.fields import (
-    PublicPersonChoice,
-    Title,
-    )
+from lp.services.fields import PublicPersonChoice, Title
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -44,51 +36,86 @@ class CannotDeleteFAQ(Exception):
 
 class IFAQPublic(IHasOwner):
 
-    id = exported(Int(
-        title=_('FAQ Number'),
-        description=_('The unique number identifying the FAQ in Launchpad.'),
-        required=True, readonly=True), as_of='devel')
+    id = exported(
+        Int(
+            title=_("FAQ Number"),
+            description=_(
+                "The unique number identifying the FAQ in Launchpad."
+            ),
+            required=True,
+            readonly=True,
+        ),
+        as_of="devel",
+    )
 
-    title = exported(Title(
-        title=_('Title'),
-        description=_('The title describing this FAQ, often a question.'),
-        required=True), as_of='devel')
+    title = exported(
+        Title(
+            title=_("Title"),
+            description=_("The title describing this FAQ, often a question."),
+            required=True,
+        ),
+        as_of="devel",
+    )
 
-    keywords = exported(TextLine(
-        title=_('Keywords'),
-        description=_('One or more terms that relate to this FAQ.'),
-        required=False), as_of='devel')
+    keywords = exported(
+        TextLine(
+            title=_("Keywords"),
+            description=_("One or more terms that relate to this FAQ."),
+            required=False,
+        ),
+        as_of="devel",
+    )
 
-    content = exported(Text(
-        title=_('Content'),
-        description=_(
-            'The answer for this FAQ in plain text. You may choose to '
-            'include a URL to an external FAQ.'),
-        required=True), as_of='devel')
+    content = exported(
+        Text(
+            title=_("Content"),
+            description=_(
+                "The answer for this FAQ in plain text. You may choose to "
+                "include a URL to an external FAQ."
+            ),
+            required=True,
+        ),
+        as_of="devel",
+    )
 
-    date_created = exported(Datetime(
-        title=_('Created'), required=True, readonly=True), as_of='devel')
+    date_created = exported(
+        Datetime(title=_("Created"), required=True, readonly=True),
+        as_of="devel",
+    )
 
-    last_updated_by = exported(PublicPersonChoice(
-        title=_('Last Updated By'),
-        description=_('The last person who modified the document.'),
-        vocabulary='ValidPersonOrTeam', required=False, readonly=True),
-        as_of='devel')
+    last_updated_by = exported(
+        PublicPersonChoice(
+            title=_("Last Updated By"),
+            description=_("The last person who modified the document."),
+            vocabulary="ValidPersonOrTeam",
+            required=False,
+            readonly=True,
+        ),
+        as_of="devel",
+    )
 
-    date_last_updated = exported(Datetime(
-        title=_('Last Updated'), required=False, readonly=True),
-        as_of='devel')
+    date_last_updated = exported(
+        Datetime(title=_("Last Updated"), required=False, readonly=True),
+        as_of="devel",
+    )
 
-    target = exported(Reference(
-        title=_('Target'),
-        description=_('Product or distribution containing this FAQ.'),
-        schema=IFAQTarget, required=True, readonly=True), as_of='devel')
+    target = exported(
+        Reference(
+            title=_("Target"),
+            description=_("Product or distribution containing this FAQ."),
+            schema=IFAQTarget,
+            required=True,
+            readonly=True,
+        ),
+        as_of="devel",
+    )
 
     related_questions = Attribute(
-        _('The set of questions linked to this FAQ.'))
+        _("The set of questions linked to this FAQ.")
+    )
 
 
-@exported_as_webservice_entry('faq', as_of='beta')
+@exported_as_webservice_entry("faq", as_of="beta")
 class IFAQ(IFAQPublic):
     """A document containing the answer to a commonly asked question.
 
@@ -97,7 +124,7 @@ class IFAQ(IFAQPublic):
     """
 
     @export_destructor_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def destroySelf():
         """Delete this FAQ.
 

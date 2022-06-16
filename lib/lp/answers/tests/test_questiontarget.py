@@ -11,11 +11,11 @@ from zope.security.proxy import removeSecurityProxy
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.testing import (
+    TestCaseWithFactory,
     login_celebrity,
     login_person,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -32,50 +32,57 @@ class QuestionTargetAnswerContactTestCase(TestCaseWithFactory):
     def test_canUserAlterAnswerContact_self(self):
         login_person(self.user)
         self.assertTrue(
-            self.project.canUserAlterAnswerContact(self.user, self.user))
+            self.project.canUserAlterAnswerContact(self.user, self.user)
+        )
 
     def test_canUserAlterAnswerContact_owner(self):
         login_person(self.user)
         self.assertTrue(
             self.project.canUserAlterAnswerContact(
-                self.user, self.project.owner))
+                self.user, self.project.owner
+            )
+        )
 
     def test_canUserAlterAnswerContact_DistributionSourcePackage_owner(self):
         login_person(self.user)
         distro = self.factory.makeDistribution()
         dsp = self.factory.makeDistributionSourcePackage(distribution=distro)
-        self.assertTrue(
-            dsp.canUserAlterAnswerContact(self.user, distro.owner))
+        self.assertTrue(dsp.canUserAlterAnswerContact(self.user, distro.owner))
 
     def test_canUserAlterAnswerContact_other_user(self):
         login_person(self.user)
         other_user = self.factory.makePerson()
         self.assertFalse(
-            self.project.canUserAlterAnswerContact(other_user, self.user))
+            self.project.canUserAlterAnswerContact(other_user, self.user)
+        )
 
     def test_canUserAlterAnswerContact_administered_team(self):
         login_person(self.user)
         team = self.factory.makeTeam(owner=self.user)
         self.assertTrue(
-            self.project.canUserAlterAnswerContact(team, self.user))
+            self.project.canUserAlterAnswerContact(team, self.user)
+        )
 
     def test_canUserAlterAnswerContact_other_team(self):
         login_person(self.user)
         other_team = self.factory.makeTeam()
         self.assertFalse(
-            self.project.canUserAlterAnswerContact(other_team, self.user))
+            self.project.canUserAlterAnswerContact(other_team, self.user)
+        )
 
     def test_canUserAlterAnswerContact_admin(self):
-        admin = login_celebrity('admin')
+        admin = login_celebrity("admin")
         other_user = self.factory.makePerson()
         self.assertTrue(
-            self.project.canUserAlterAnswerContact(other_user, admin))
+            self.project.canUserAlterAnswerContact(other_user, admin)
+        )
 
 
 class TestQuestionTarget_answer_contacts_with_languages(TestCaseWithFactory):
     """Tests for the 'answer_contacts_with_languages' property of question
     targets.
     """
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -83,8 +90,8 @@ class TestQuestionTarget_answer_contacts_with_languages(TestCaseWithFactory):
         self.answer_contact = self.factory.makePerson()
         login_person(self.answer_contact)
         lang_set = getUtility(ILanguageSet)
-        self.answer_contact.addLanguage(lang_set['pt_BR'])
-        self.answer_contact.addLanguage(lang_set['en'])
+        self.answer_contact.addLanguage(lang_set["pt_BR"])
+        self.answer_contact.addLanguage(lang_set["en"])
 
     def test_Product_implementation_should_prefill_cache(self):
         # Remove the answer contact's security proxy because we need to call
@@ -100,20 +107,22 @@ class TestQuestionTarget_answer_contacts_with_languages(TestCaseWithFactory):
         # Need to remove the product's security proxy because
         # answer_contacts_with_languages is not part of its public API.
         answer_contacts = removeSecurityProxy(
-            product).answer_contacts_with_languages
+            product
+        ).answer_contacts_with_languages
         self.assertEqual(answer_contacts, [answer_contact])
         langs = [
-            lang.englishname for lang in answer_contact.getLanguagesCache()]
+            lang.englishname for lang in answer_contact.getLanguagesCache()
+        ]
         # The languages cache has been filled in the correct order.
-        self.assertEqual(langs, ['English', 'Portuguese (Brazil)'])
+        self.assertEqual(langs, ["English", "Portuguese (Brazil)"])
 
     def test_SourcePackage_implementation_should_prefill_cache(self):
         # Remove the answer contact's security proxy because we need to call
         # some non public methods to change its language cache.
         answer_contact = removeSecurityProxy(self.answer_contact)
-        ubuntu = getUtility(IDistributionSet)['ubuntu']
-        self.factory.makeSourcePackageName(name='test-pkg')
-        source_package = ubuntu.getSourcePackage('test-pkg')
+        ubuntu = getUtility(IDistributionSet)["ubuntu"]
+        self.factory.makeSourcePackageName(name="test-pkg")
+        source_package = ubuntu.getSourcePackage("test-pkg")
         source_package.addAnswerContact(answer_contact, answer_contact)
 
         # Must delete the cache because it's been filled in addAnswerContact.
@@ -123,12 +132,14 @@ class TestQuestionTarget_answer_contacts_with_languages(TestCaseWithFactory):
         # Need to remove the sourcepackage's security proxy because
         # answer_contacts_with_languages is not part of its public API.
         answer_contacts = removeSecurityProxy(
-            source_package).answer_contacts_with_languages
+            source_package
+        ).answer_contacts_with_languages
         self.assertEqual(answer_contacts, [answer_contact])
         langs = [
-            lang.englishname for lang in answer_contact.getLanguagesCache()]
+            lang.englishname for lang in answer_contact.getLanguagesCache()
+        ]
         # The languages cache has been filled in the correct order.
-        self.assertEqual(langs, ['English', 'Portuguese (Brazil)'])
+        self.assertEqual(langs, ["English", "Portuguese (Brazil)"])
 
 
 class TestQuestionTargetCreateQuestionFromBug(TestCaseWithFactory):
@@ -147,10 +158,11 @@ class TestQuestionTargetCreateQuestionFromBug(TestCaseWithFactory):
         # The question is created with the bug's description and the last
         # message which presumably is about why the bug was converted.
         with person_logged_in(self.reporter):
-            self.bug.newMessage(owner=self.reporter, content='second comment')
+            self.bug.newMessage(owner=self.reporter, content="second comment")
         with person_logged_in(self.contributor):
             last_message = self.bug.newMessage(
-                owner=self.contributor, content='third comment')
+                owner=self.contributor, content="third comment"
+            )
             question = self.target.createQuestionFromBug(self.bug)
         question_messages = list(question.messages)
         self.assertEqual(1, len(question_messages))
@@ -163,7 +175,7 @@ class TestQuestionTargetCreateQuestionFromBug(TestCaseWithFactory):
         with person_logged_in(subscriber):
             self.bug.subscribe(subscriber, subscriber)
         with person_logged_in(self.contributor):
-            self.bug.newMessage(owner=self.contributor, content='comment')
+            self.bug.newMessage(owner=self.contributor, content="comment")
             question = self.target.createQuestionFromBug(self.bug)
         self.assertTrue(question.isSubscribed(subscriber))
         self.assertTrue(question.isSubscribed(question.owner))

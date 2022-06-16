@@ -4,10 +4,10 @@
 """Named vocabularies defined by the Answers application."""
 
 __all__ = [
-    'FAQVocabulary',
-    'UsesAnswersDistributionVocabulary',
-    'UsesAnswersProductVocabulary',
-    ]
+    "FAQVocabulary",
+    "UsesAnswersDistributionVocabulary",
+    "UsesAnswersProductVocabulary",
+]
 
 from storm.expr import And
 from zope.interface import implementer
@@ -17,24 +17,21 @@ from lp.answers.interfaces.faq import IFAQ
 from lp.answers.interfaces.faqtarget import IFAQTarget
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.model.product import Product
-from lp.registry.vocabularies import (
-    DistributionVocabulary,
-    ProductVocabulary,
-    )
+from lp.registry.vocabularies import DistributionVocabulary, ProductVocabulary
 from lp.services.database.sqlobject import OR
 from lp.services.webapp.vocabulary import (
     CountableIterator,
     FilteredVocabularyBase,
     IHugeVocabulary,
-    )
+)
 
 
 @implementer(IHugeVocabulary)
 class FAQVocabulary(FilteredVocabularyBase):
     """Vocabulary containing all the FAQs in an `IFAQTarget`."""
 
-    displayname = 'Select a FAQ'
-    step_title = 'Search'
+    displayname = "Select a FAQ"
+    step_title = "Search"
 
     def __init__(self, context):
         """Create a new vocabulary for the context.
@@ -91,8 +88,7 @@ class UsesAnswersProductVocabulary(ProductVocabulary):
     def search(self, query, vocab_filter=None):
         if vocab_filter is None:
             vocab_filter = []
-        vocab_filter.append(
-            And(Product.official_answers == True))
+        vocab_filter.append(And(Product.official_answers == True))
         return super().search(query, vocab_filter)
 
 
@@ -116,5 +112,5 @@ class UsesAnswersDistributionVocabulary(DistributionVocabulary):
         else:
             distro_id = self.distribution.id
         return OR(
-            self._table.q.official_answers == True,
-            self._table.id == distro_id)
+            self._table.q.official_answers == True, self._table.id == distro_id
+        )

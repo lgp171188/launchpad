@@ -5,10 +5,7 @@
 
 import io
 
-from lp.answers.publisher import (
-    AnswersBrowserRequest,
-    AnswersLayer,
-    )
+from lp.answers.publisher import AnswersBrowserRequest, AnswersLayer
 from lp.layers import WebServiceLayer
 from lp.services.config import config
 from lp.testing import TestCase
@@ -25,7 +22,8 @@ class TestRegistration(TestCase):
         # The request constructed for requests to the answers hostname
         # provides AnswersLayer.
         request, publication = get_request_and_publication(
-            host=config.vhost.answers.hostname)
+            host=config.vhost.answers.hostname
+        )
         self.assertProvides(request, AnswersLayer)
 
     def test_answers_host_has_api(self):
@@ -33,7 +31,8 @@ class TestRegistration(TestCase):
         # requests.
         request, publication = get_request_and_publication(
             host=config.vhost.answers.hostname,
-            extra_environment={'PATH_INFO': '/api/1.0'})
+            extra_environment={"PATH_INFO": "/api/1.0"},
+        )
         # XXX MichaelHudson, 2010-07-20, bug=607664: WebServiceLayer only
         # actually provides WebServiceLayer in the sense of verifyObject after
         # traversal has started.
@@ -42,7 +41,8 @@ class TestRegistration(TestCase):
     def test_response_should_vary_based_on_language(self):
         # Responses to requests to answers pages have the 'Vary' header set to
         # include Accept-Language.
-        request = AnswersBrowserRequest(io.StringIO(''), {})
+        request = AnswersBrowserRequest(io.StringIO(""), {})
         self.assertEqual(
-            request.response.getHeader('Vary'),
-            'Cookie, Authorization, Accept-Language')
+            request.response.getHeader("Vary"),
+            "Cookie, Authorization, Accept-Language",
+        )

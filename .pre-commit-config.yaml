@@ -41,7 +41,7 @@ repos:
       - id: black
         files: |
           (?x)^lib/lp/(
-            answers/browser
+            answers
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
@@ -59,7 +59,7 @@ repos:
         -   --dont-order-by-type
         exclude: |
           (?x)^lib/lp/(
-            answers/browser
+            answers
           )/
     -   id: isort
         alias: isort-black
@@ -67,7 +67,7 @@ repos:
         args: [--profile, black]
         files: |
           (?x)^lib/lp/(
-            answers/browser
+            answers
           )/
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.9.2

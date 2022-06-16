@@ -4,14 +4,15 @@
 """Interfaces for a Question."""
 
 __all__ = [
-    'IQuestion',
-    'IQuestionAddMessageForm',
-    'IQuestionChangeStatusForm',
-    'IQuestionLinkFAQForm',
-    ]
+    "IQuestion",
+    "IQuestionAddMessageForm",
+    "IQuestionChangeStatusForm",
+    "IQuestionLinkFAQForm",
+]
 
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     export_factory_operation,
     export_write_operation,
@@ -19,32 +20,13 @@ from lazr.restful.declarations import (
     exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
-    REQUEST_USER,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    ReferenceChoice,
-    )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Int,
-    Object,
-    Text,
-    TextLine,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference, ReferenceChoice
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, Int, Object, Text, TextLine
 
 from lp import _
-from lp.answers.enums import (
-    QuestionPriority,
-    QuestionStatus,
-    )
+from lp.answers.enums import QuestionPriority, QuestionStatus
 from lp.answers.interfaces.faq import IFAQ
 from lp.answers.interfaces.questionmessage import IQuestionMessage
 from lp.answers.interfaces.questiontarget import IQuestionTarget
@@ -54,129 +36,240 @@ from lp.services.fields import PublicPersonChoice
 from lp.services.worlddata.interfaces.language import ILanguage
 
 
-@exported_as_webservice_entry(as_of='beta')
+@exported_as_webservice_entry(as_of="beta")
 class IQuestion(IHasOwner):
     """A single question, often a support request."""
 
-    id = exported(Int(
-        title=_('Question Number'), required=True, readonly=True,
-        description=_("The tracking number for this question.")),
-        as_of="devel")
-    title = exported(TextLine(
-        title=_('Summary'), required=True, description=_(
-        "A one-line summary of the issue or problem.")),
-        as_of="devel")
-    description = exported(Text(
-        title=_('Description'), required=True, description=_(
-        "Include as much detail as possible: what "
-        "you\N{right single quotation mark}re trying to achieve, what steps "
-        "you take, what happens, and what you think should happen instead.")),
-        as_of="devel")
-    status = exported(Choice(
-        title=_('Status'), vocabulary=QuestionStatus,
-        default=QuestionStatus.OPEN, readonly=True),
-        as_of="devel")
+    id = exported(
+        Int(
+            title=_("Question Number"),
+            required=True,
+            readonly=True,
+            description=_("The tracking number for this question."),
+        ),
+        as_of="devel",
+    )
+    title = exported(
+        TextLine(
+            title=_("Summary"),
+            required=True,
+            description=_("A one-line summary of the issue or problem."),
+        ),
+        as_of="devel",
+    )
+    description = exported(
+        Text(
+            title=_("Description"),
+            required=True,
+            description=_(
+                "Include as much detail as possible: what "
+                "you\N{right single quotation mark}re trying to achieve, what "
+                "steps you take, what happens, and what you think should "
+                "happen instead."
+            ),
+        ),
+        as_of="devel",
+    )
+    status = exported(
+        Choice(
+            title=_("Status"),
+            vocabulary=QuestionStatus,
+            default=QuestionStatus.OPEN,
+            readonly=True,
+        ),
+        as_of="devel",
+    )
     priority = Choice(
-        title=_('Priority'), vocabulary=QuestionPriority,
-        default=QuestionPriority.NORMAL)
+        title=_("Priority"),
+        vocabulary=QuestionPriority,
+        default=QuestionPriority.NORMAL,
+    )
     # XXX flacoste 2006-10-28: It should be more precise to define a new
     # vocabulary that excludes the English variants.
-    language = exported(ReferenceChoice(
-        title=_('Language'), vocabulary='Language', schema=ILanguage,
-        description=_('The language in which this question is written.')),
-        as_of="devel")
-    owner = exported(PublicPersonChoice(
-        title=_('Owner'), required=True, readonly=True,
-        vocabulary='ValidPersonOrTeam'),
-        as_of="devel")
-    assignee = exported(PublicPersonChoice(
-        title=_('Assignee'), required=False,
-        description=_("The person responsible for helping to resolve the "
-        "question."),
-        vocabulary='ValidPersonOrTeam'),
-        as_of="devel")
-    answerer = exported(PublicPersonChoice(
-        title=_('Answered By'), required=False,
-        description=_("The person who last provided a response intended to "
-        "resolve the question."),
-        vocabulary='ValidPersonOrTeam'),
+    language = exported(
+        ReferenceChoice(
+            title=_("Language"),
+            vocabulary="Language",
+            schema=ILanguage,
+            description=_("The language in which this question is written."),
+        ),
         as_of="devel",
-        readonly=True)
-    answer = exported(Reference(
-        title=_('Answer'), required=False,
-        description=_("The IQuestionMessage that contains the answer "
-            "confirmed by the owner as providing a solution to their "
-            "problem."),
-        schema=IQuestionMessage),
-        readonly=True, as_of="devel")
-    datecreated = exported(Datetime(
-        title=_('Date Created'), required=True, readonly=True),
-        exported_as='date_created', readonly=True, as_of="devel")
-    datedue = exported(Datetime(
-        title=_('Date Due'), required=False, default=None,
-        description=_(
-            "The date by which we should have resolved this question.")),
-        exported_as='date_due', readonly=True, as_of="devel")
-    datelastquery = exported(Datetime(
-        title=_("Date Last Queried"), required=True,
-        description=_("The date on which we last heard from the "
-        "customer (owner).")),
-       exported_as='date_last_query',  readonly=True, as_of="devel")
-    datelastresponse = exported(Datetime(
-        title=_("Date last Responded"),
-        required=False,
-        description=_("The date on which we last communicated "
-        "with the customer. The combination of datelastquery and "
-        "datelastresponse tells us in whose court the ball is.")),
-        exported_as='date_last_response', readonly=True, as_of="devel")
-    date_solved = exported(Datetime(title=_("Date Answered"), required=False,
-        description=_(
-            "The date on which the question owner confirmed that the "
-            "question is Solved.")),
-        exported_as='date_solved', readonly=True, as_of="devel")
+    )
+    owner = exported(
+        PublicPersonChoice(
+            title=_("Owner"),
+            required=True,
+            readonly=True,
+            vocabulary="ValidPersonOrTeam",
+        ),
+        as_of="devel",
+    )
+    assignee = exported(
+        PublicPersonChoice(
+            title=_("Assignee"),
+            required=False,
+            description=_(
+                "The person responsible for helping to resolve the "
+                "question."
+            ),
+            vocabulary="ValidPersonOrTeam",
+        ),
+        as_of="devel",
+    )
+    answerer = exported(
+        PublicPersonChoice(
+            title=_("Answered By"),
+            required=False,
+            description=_(
+                "The person who last provided a response intended to "
+                "resolve the question."
+            ),
+            vocabulary="ValidPersonOrTeam",
+        ),
+        as_of="devel",
+        readonly=True,
+    )
+    answer = exported(
+        Reference(
+            title=_("Answer"),
+            required=False,
+            description=_(
+                "The IQuestionMessage that contains the answer "
+                "confirmed by the owner as providing a solution to their "
+                "problem."
+            ),
+            schema=IQuestionMessage,
+        ),
+        readonly=True,
+        as_of="devel",
+    )
+    datecreated = exported(
+        Datetime(title=_("Date Created"), required=True, readonly=True),
+        exported_as="date_created",
+        readonly=True,
+        as_of="devel",
+    )
+    datedue = exported(
+        Datetime(
+            title=_("Date Due"),
+            required=False,
+            default=None,
+            description=_(
+                "The date by which we should have resolved this question."
+            ),
+        ),
+        exported_as="date_due",
+        readonly=True,
+        as_of="devel",
+    )
+    datelastquery = exported(
+        Datetime(
+            title=_("Date Last Queried"),
+            required=True,
+            description=_(
+                "The date on which we last heard from the customer (owner)."
+            ),
+        ),
+        exported_as="date_last_query",
+        readonly=True,
+        as_of="devel",
+    )
+    datelastresponse = exported(
+        Datetime(
+            title=_("Date last Responded"),
+            required=False,
+            description=_(
+                "The date on which we last communicated "
+                "with the customer. The combination of datelastquery and "
+                "datelastresponse tells us in whose court the ball is."
+            ),
+        ),
+        exported_as="date_last_response",
+        readonly=True,
+        as_of="devel",
+    )
+    date_solved = exported(
+        Datetime(
+            title=_("Date Answered"),
+            required=False,
+            description=_(
+                "The date on which the question owner confirmed that the "
+                "question is Solved."
+            ),
+        ),
+        exported_as="date_solved",
+        readonly=True,
+        as_of="devel",
+    )
     product = Choice(
-        title=_('Upstream Project'), required=False,
-        vocabulary='Product',
-        description=_('Select the upstream project with which you need '
-            'support.'))
+        title=_("Upstream Project"),
+        required=False,
+        vocabulary="Product",
+        description=_(
+            "Select the upstream project with which you need support."
+        ),
+    )
     distribution = Choice(
-        title=_('Distribution'), required=False,
-        vocabulary='Distribution', description=_('Select '
-        'the distribution for which you need support.'))
+        title=_("Distribution"),
+        required=False,
+        vocabulary="Distribution",
+        description=_("Select the distribution for which you need support."),
+    )
     sourcepackagename = Choice(
-        title=_('Source Package'), required=False,
-        vocabulary='SourcePackageName', description=_('The source package '
-        'in the distribution which contains the software with which you '
-        'are experiencing difficulties.'))
+        title=_("Source Package"),
+        required=False,
+        vocabulary="SourcePackageName",
+        description=_(
+            "The source package "
+            "in the distribution which contains the software with which you "
+            "are experiencing difficulties."
+        ),
+    )
     whiteboard = Text(
-        title=_('Status Whiteboard'), required=False,
-        description=_('Up-to-date notes on the status of the question.'))
+        title=_("Status Whiteboard"),
+        required=False,
+        description=_("Up-to-date notes on the status of the question."),
+    )
     # other attributes
-    target = exported(Reference(
-        title=_('This question is about'), required=True,
-        schema=IQuestionTarget,
-        description=_('The distribution, source package, or project the '
-                      'question pertains to.')),
-        as_of="devel")
+    target = exported(
+        Reference(
+            title=_("This question is about"),
+            required=True,
+            schema=IQuestionTarget,
+            description=_(
+                "The distribution, source package, or project the "
+                "question pertains to."
+            ),
+        ),
+        as_of="devel",
+    )
     faq = Object(
-        title=_('Linked FAQ'),
-        description=_('The FAQ document containing the long answer to this '
-                      'question.'),
-        readonly=True, required=False, schema=IFAQ)
+        title=_("Linked FAQ"),
+        description=_(
+            "The FAQ document containing the long answer to this question."
+        ),
+        readonly=True,
+        required=False,
+        schema=IFAQ,
+    )
 
     # joins
-    subscriptions = Attribute(
-        'The set of subscriptions to this question.')
-    reopenings = Attribute(
-        "Records of times when this question was reopened.")
-    messages = exported(CollectionField(
-        title=_("Messages"),
-        description=_(
-            "The list of messages that were exchanged as part of this "
-            "question , sorted from first to last."),
-        value_type=Reference(schema=IQuestionMessage),
-        required=True, default=[], readonly=True),
-        as_of='devel')
+    subscriptions = Attribute("The set of subscriptions to this question.")
+    reopenings = Attribute("Records of times when this question was reopened.")
+    messages = exported(
+        CollectionField(
+            title=_("Messages"),
+            description=_(
+                "The list of messages that were exchanged as part of this "
+                "question , sorted from first to last."
+            ),
+            value_type=Reference(schema=IQuestionMessage),
+            required=True,
+            default=[],
+            readonly=True,
+        ),
+        as_of="devel",
+    )
 
     # Workflow methods
     def setStatus(user, new_status, comment, datecreated=None):
@@ -204,8 +297,9 @@ class IQuestion(IHasOwner):
         """
 
     can_request_info = Attribute(
-        'Whether the question is in a state where a user can request more '
-        'information from the question owner.')
+        "Whether the question is in a state where a user can request more "
+        "information from the question owner."
+    )
 
     def requestInfo(user, question, datecreated=None):
         """Request more information from the question owner.
@@ -232,8 +326,9 @@ class IQuestion(IHasOwner):
         """
 
     can_give_info = Attribute(
-        'Whether the question is in a state where the question owner can '
-        'give more information on the question.')
+        "Whether the question is in a state where the question owner can "
+        "give more information on the question."
+    )
 
     def giveInfo(reply, datecreated=None):
         """Reply to the information request.
@@ -256,8 +351,9 @@ class IQuestion(IHasOwner):
         """
 
     can_give_answer = Attribute(
-        'Whether the question is in a state a user can provide an answer on '
-        'the question.')
+        "Whether the question is in a state a user can provide an answer on "
+        "the question."
+    )
 
     def giveAnswer(user, answer, datecreated=None):
         """Give an answer to this question.
@@ -308,8 +404,9 @@ class IQuestion(IHasOwner):
         """
 
     can_confirm_answer = Attribute(
-        'Whether the question is in a state for the question owner to '
-        'confirm that an answer solved their problem.')
+        "Whether the question is in a state for the question owner to "
+        "confirm that an answer solved their problem."
+    )
 
     def confirmAnswer(comment, answer=None, datecreated=None):
         """Confirm that a solution to the question was found.
@@ -330,7 +427,7 @@ class IQuestion(IHasOwner):
         This method should fire an IObjectCreatedEvent for the created
         IQuestionMessage and an IObjectModifiedEvent for the question.
 
-       :comment: A string or IMessage containing a comment.
+        :comment: A string or IMessage containing a comment.
         :answer: The IQuestionMessage that contain the answer to the question.
                  It must be one of the IQuestionMessage of this question.
         :datecreated: Date for the message. Defaults to the current time.
@@ -344,7 +441,8 @@ class IQuestion(IHasOwner):
         """
 
     @operation_parameters(
-        comment=Text(title=_("An explanation of the rejection")))
+        comment=Text(title=_("An explanation of the rejection"))
+    )
     @call_with(user=REQUEST_USER)
     @export_factory_operation(IQuestionMessage, [])
     @operation_for_version("devel")
@@ -397,8 +495,9 @@ class IQuestion(IHasOwner):
         """
 
     can_reopen = Attribute(
-        'Whether the question state is a state where the question owner '
-        'could reopen it.')
+        "Whether the question state is a state where the question owner "
+        "could reopen it."
+    )
 
     def reopen(comment, datecreated=None):
         """Reopen a question that was ANSWERED, EXPIRED or SOLVED.
@@ -439,7 +538,8 @@ class IQuestion(IHasOwner):
     # subscription-related methods
 
     @operation_parameters(
-        person=Reference(IPerson, title=_('Person'), required=True))
+        person=Reference(IPerson, title=_("Person"), required=True)
+    )
     @call_with(subscribed_by=REQUEST_USER)
     @export_write_operation()
     @operation_for_version("devel")
@@ -455,7 +555,8 @@ class IQuestion(IHasOwner):
         """Return a boolean indicating whether the person is subscribed."""
 
     @operation_parameters(
-        person=Reference(IPerson, title=_('Person'), required=False))
+        person=Reference(IPerson, title=_("Person"), required=False)
+    )
     @call_with(unsubscribed_by=REQUEST_USER)
     @export_write_operation()
     @operation_for_version("devel")
@@ -497,20 +598,24 @@ class IQuestion(IHasOwner):
 
     direct_recipients = Attribute(
         "Return An `INotificationRecipientSet` containing the persons to "
-        "notify along the rationale for doing so.")
+        "notify along the rationale for doing so."
+    )
 
     indirect_recipients = Attribute(
         "Return the INotificationRecipientSet of answer contacts for the "
-        "question's target as well as the question's assignee.")
+        "question's target as well as the question's assignee."
+    )
 
     @operation_parameters(
         comment_number=Int(
-            title=_('The number of the comment in the list of messages.'),
-            required=True),
-        visible=Bool(title=_('Show this comment?'), required=True))
+            title=_("The number of the comment in the list of messages."),
+            required=True,
+        ),
+        visible=Bool(title=_("Show this comment?"), required=True),
+    )
     @call_with(user=REQUEST_USER)
     @export_write_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def setCommentVisibility(user, comment_number, visible):
         """Set the visible attribute on a question message.
 
@@ -527,41 +632,53 @@ class IQuestionAddMessageForm(Interface):
     This will usually includes a status change as well.
     """
 
-    message = Text(title=_('Message'), required=False)
+    message = Text(title=_("Message"), required=False)
 
     subscribe_me = Bool(
-        title=_('Email me future discussion about this question'),
-        required=False, default=False)
+        title=_("Email me future discussion about this question"),
+        required=False,
+        default=False,
+    )
 
 
 class IQuestionChangeStatusForm(Interface):
     """Form schema for changing the status of a question."""
 
     status = Choice(
-        title=_('Status'), description=_('Select the new question status.'),
-        vocabulary=QuestionStatus, required=True)
+        title=_("Status"),
+        description=_("Select the new question status."),
+        vocabulary=QuestionStatus,
+        required=True,
+    )
 
     message = Text(
-        title=_('Message'),
-        description=_('Enter an explanation for the status change'),
-        required=True)
+        title=_("Message"),
+        description=_("Enter an explanation for the status change"),
+        required=True,
+    )
 
 
 class IQuestionLinkFAQForm(Interface):
     """Form schema for the `QuestionLinkFAQView`."""
 
     faq = Choice(
-        title=_('Which is the relevant FAQ?'),
+        title=_("Which is the relevant FAQ?"),
         description=_(
-            'Select the FAQ that is the most relevant for this question. '
-            'You can modify the list of suggested FAQs by editing the search '
-            'field and clicking "Search".'),
-        vocabulary='FAQ', required=False, default=None)
+            "Select the FAQ that is the most relevant for this question. "
+            "You can modify the list of suggested FAQs by editing the search "
+            'field and clicking "Search".'
+        ),
+        vocabulary="FAQ",
+        required=False,
+        default=None,
+    )
 
     message = Text(
-        title=_('Answer Message'),
+        title=_("Answer Message"),
         description=_(
-            'Enter a comment that will be added as the question comments. '
-            'The title of the FAQ will be automatically appended to this '
-            'message.'),
-        required=True)
+            "Enter a comment that will be added as the question comments. "
+            "The title of the FAQ will be automatically appended to this "
+            "message."
+        ),
+        required=True,
+    )

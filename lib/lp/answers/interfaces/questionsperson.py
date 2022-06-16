@@ -2,23 +2,18 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'IQuestionsPerson',
-    ]
+    "IQuestionsPerson",
+]
 
 from lazr.restful.declarations import (
     export_read_operation,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
-    )
+)
 from lazr.restful.fields import ReferenceChoice
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Choice,
-    List,
-    TextLine,
-    )
+from zope.schema import Bool, Choice, List, TextLine
 
 from lp import _
 from lp.answers.enums import (
@@ -26,15 +21,14 @@ from lp.answers.enums import (
     QuestionParticipation,
     QuestionSort,
     QuestionStatus,
-    )
+)
 from lp.answers.interfaces.questioncollection import IQuestionCollection
 
 
 class IQuestionsPerson(IQuestionCollection):
-
     @operation_returns_collection_of(Interface)  # IQuestionTarget.
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getDirectAnswerQuestionTargets():
         """Return a list of IQuestionTargets that a person is subscribed to.
 
@@ -44,7 +38,7 @@ class IQuestionsPerson(IQuestionCollection):
 
     @operation_returns_collection_of(Interface)  # IQuestionTarget
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getTeamAnswerQuestionTargets():
         """Return a list of IQuestionTargets that are indirect subscriptions.
 
@@ -53,31 +47,40 @@ class IQuestionsPerson(IQuestionCollection):
         """
 
     @operation_parameters(
-        search_text=TextLine(
-            title=_('Search text'), required=False),
+        search_text=TextLine(title=_("Search text"), required=False),
         status=List(
-            title=_('Status'), required=False,
-            value_type=Choice(vocabulary=QuestionStatus)),
+            title=_("Status"),
+            required=False,
+            value_type=Choice(vocabulary=QuestionStatus),
+        ),
         language=List(
-            title=_('Language'), required=False,
-            value_type=ReferenceChoice(vocabulary='Language')),
+            title=_("Language"),
+            required=False,
+            value_type=ReferenceChoice(vocabulary="Language"),
+        ),
         participation=Choice(
-            title=_('Participation'), required=False,
-            vocabulary=QuestionParticipation),
+            title=_("Participation"),
+            required=False,
+            vocabulary=QuestionParticipation,
+        ),
         needs_attention=Bool(
-            title=_('Needs attentions from'), default=False, required=False),
-        sort=Choice(
-            title=_('Sort'), required=False,
-            vocabulary=QuestionSort))
+            title=_("Needs attentions from"), default=False, required=False
+        ),
+        sort=Choice(title=_("Sort"), required=False, vocabulary=QuestionSort),
+    )
     @operation_returns_collection_of(Interface)  # IQuestion.
     @export_read_operation()
-    @operation_for_version('devel')
-    def searchQuestions(search_text=None,
-                        # Lp wants a sequence, but lazr.restful only supports
-                        # lists; cast the tuple as a list.
-                        status=list(QUESTION_STATUS_DEFAULT_SEARCH),
-                        language=None, sort=None, participation=None,
-                        needs_attention=None):
+    @operation_for_version("devel")
+    def searchQuestions(
+        search_text=None,
+        # Lp wants a sequence, but lazr.restful only supports
+        # lists; cast the tuple as a list.
+        status=list(QUESTION_STATUS_DEFAULT_SEARCH),
+        language=None,
+        sort=None,
+        participation=None,
+        needs_attention=None,
+    ):
         """Search the person's questions.
 
         :param search_text: A string that is matched against the question
