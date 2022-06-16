@@ -496,6 +496,57 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
                 binarypackageformat=Equals(BinaryPackageFormat.CONDA_V2),
                 distroarchseries=Equals(dases[0]))))
 
+    def test_existing_release(self):
+        # A `CIBuildUploadJob` can be run even if the build in question was
+        # already uploaded somewhere, and in that case may add publications
+        # in other locations for the same package.
+        archive = self.factory.makeArchive()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+        build = self.factory.makeCIBuild(distro_arch_series=das)
+        report = build.getOrCreateRevisionStatusReport("build:0")
+        path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
+        with open(datadir(path), mode="rb") as f:
+            report.attach(name=os.path.basename(path), data=f.read())
+        artifact = IStore(RevisionStatusArtifact).find(
+            RevisionStatusArtifact,
+            report=report,
+            artifact_type=RevisionStatusArtifactType.BINARY).one()
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="edge")
+        transaction.commit()
+        with dbuser(job.config.dbuser):
+            JobRunner([job]).runAll()
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="0.0.1/edge")
+        transaction.commit()
+
+        with dbuser(job.config.dbuser):
+            JobRunner([job]).runAll()
+
+        bpphs = archive.getAllPublishedBinaries()
+        # The publications are for the same binary package release, which
+        # has a single file attached to it.
+        self.assertEqual(1, len({bpph.binarypackagename for bpph in bpphs}))
+        self.assertEqual(1, len({bpph.binarypackagerelease for bpph in bpphs}))
+        self.assertThat(archive.getAllPublishedBinaries(), MatchesSetwise(*(
+            MatchesStructure(
+                binarypackagename=MatchesStructure.byEquality(
+                    name="wheel-indep"),
+                binarypackagerelease=MatchesStructure(
+                    ci_build=Equals(build),
+                    files=MatchesSetwise(
+                        MatchesStructure.byEquality(
+                            libraryfile=artifact.library_file,
+                            filetype=BinaryPackageFileType.WHL))),
+                binarypackageformat=Equals(BinaryPackageFormat.WHL),
+                distroarchseries=Equals(das),
+                channel=Equals(channel))
+            for channel in ("edge", "0.0.1/edge"))))
+
 
 class TestViaCelery(TestCaseWithFactory):
 

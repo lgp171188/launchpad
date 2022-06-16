@@ -8,7 +8,10 @@ __all__ = [
     ]
 
 from datetime import timedelta
-from operator import attrgetter
+from operator import (
+    attrgetter,
+    itemgetter,
+    )
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
@@ -85,6 +88,7 @@ from lp.services.macaroons.interfaces import (
     )
 from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.services.propertycache import cachedproperty
+from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 
@@ -465,6 +469,17 @@ class CIBuild(PackageBuildMixin, StormBase):
     def notify(self, extra_info=None):
         """See `IPackageBuild`."""
         # We don't currently send any notifications.
+
+    @property
+    def binarypackages(self):
+        """See `ICIBuild`."""
+        releases = IStore(BinaryPackageRelease).find(
+            (BinaryPackageRelease, BinaryPackageName),
+            BinaryPackageRelease.ci_build == self,
+            BinaryPackageRelease.binarypackagename == BinaryPackageName.id)
+        releases = releases.order_by(
+            BinaryPackageName.name, BinaryPackageRelease.id)
+        return DecoratedResultSet(releases, result_decorator=itemgetter(0))
 
     def createBinaryPackageRelease(
             self, binarypackagename, version, summary, description,
