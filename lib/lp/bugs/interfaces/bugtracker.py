@@ -214,7 +214,7 @@ SINGLE_PRODUCT_BUGTRACKERTYPES = [
     ]
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugTracker(Interface):
     """A remote bug system.
 
@@ -394,11 +394,13 @@ class IBugTracker(Interface):
             title="The name of the remote component group", required=True))
     @operation_returns_entry(Interface)
     @export_write_operation()
+    @operation_for_version("beta")
     def addRemoteComponentGroup(component_group_name):
         """Adds a new component group to the bug tracker"""
 
     @export_read_operation()
     @operation_returns_collection_of(Interface)
+    @operation_for_version("beta")
     def getAllRemoteComponentGroups():
         """Return collection of all component groups for this bug tracker"""
 
@@ -408,6 +410,7 @@ class IBugTracker(Interface):
             required=True))
     @operation_returns_entry(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getRemoteComponentGroup(component_group_name):
         """Retrieve a given component group registered with the bug tracker.
 
@@ -460,6 +463,7 @@ class IBugTrackerSet(Interface):
         name=TextLine(title="The bug tracker name", required=True))
     @operation_returns_entry(IBugTracker)
     @export_read_operation()
+    @operation_for_version("beta")
     def getByName(name, default=None):
         """Get a BugTracker by its name.
 
@@ -482,6 +486,7 @@ class IBugTrackerSet(Interface):
             title="The base URL of the bug tracker", required=True))
     @operation_returns_entry(IBugTracker)
     @export_read_operation()
+    @operation_for_version("beta")
     def queryByBaseURL(baseurl):
         """Return one or None BugTracker's by baseurl"""
 
@@ -493,6 +498,7 @@ class IBugTrackerSet(Interface):
         IBugTracker,
         ['baseurl', 'bugtrackertype', 'title', 'summary',
          'contactdetails', 'name'])
+    @operation_for_version("beta")
     def ensureBugTracker(baseurl, owner, bugtrackertype,
         title=None, summary=None, contactdetails=None, name=None):
         """Make sure that there is a bugtracker for the given base url.
@@ -547,7 +553,7 @@ class IBugTrackerAliasSet(Interface):
         """Query IBugTrackerAliases by BugTracker."""
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugTrackerComponent(Interface):
     """The software component in the remote bug tracker.
 
@@ -591,7 +597,7 @@ class IBugTrackerComponent(Interface):
         Reference(title=_('Component Group'), schema=Interface))
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugTrackerComponentGroup(Interface):
     """A collection of components in a remote bug tracker.
 
@@ -616,6 +622,7 @@ class IBugTrackerComponentGroup(Interface):
             title="The name of the remote software component to be added",
             required=True))
     @export_write_operation()
+    @operation_for_version("beta")
     def addComponent(component_name):
         """Adds a component to be tracked as part of this component group"""
 

@@ -20,6 +20,7 @@ from lazr.restful.declarations import (
     export_write_operation,
     exported,
     exported_as_webservice_entry,
+    operation_for_version,
     REQUEST_USER,
     )
 from lazr.restful.fields import Reference
@@ -115,11 +116,12 @@ class IBugAttachmentEdit(Interface):
 
     @call_with(user=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def removeFromBug(user):
         """Remove the attachment from the bug."""
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugAttachment(IBugAttachmentView, IBugAttachmentEdit):
     """A file attachment to an IBug.
 

@@ -146,7 +146,7 @@ BUG_WATCH_ACTIVITY_SUCCESS_STATUSES = [
     ]
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugWatch(IHasBug):
     """A bug on a remote system."""
 
