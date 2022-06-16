@@ -146,4 +146,4 @@ feeds.launchpad.test has a favicon.
 
     >>> browser.open('http://feeds.launchpad.test/favicon.ico')
     >>> print(browser.headers['Content-Type'])
-    image/png
+    image/vnd.microsoft.icon
