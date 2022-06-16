@@ -2184,7 +2184,7 @@ class Bug(SQLBase, InformationTypeMixin):
         return store.find(
             (BugAttachment, LibraryFileAlias, LibraryFileContent),
             BugAttachment.bug == self,
-            BugAttachment.libraryfileID == LibraryFileAlias.id,
+            BugAttachment.libraryfile == LibraryFileAlias.id,
             LibraryFileContent.id == LibraryFileAlias.contentID,
             ).order_by(BugAttachment.id)
 
@@ -2207,7 +2207,7 @@ class Bug(SQLBase, InformationTypeMixin):
             attachment = row[0]
             # row[1] - the LibraryFileAlias is now in the storm cache and
             # will be found without a query when dereferenced.
-            indexed_message = message_to_indexed.get(attachment._messageID)
+            indexed_message = message_to_indexed.get(attachment._message_id)
             if indexed_message is not None:
                 get_property_cache(attachment).message = indexed_message
             return attachment

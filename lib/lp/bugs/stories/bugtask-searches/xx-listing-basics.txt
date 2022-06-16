@@ -300,7 +300,7 @@ Patches also appear as badges in bug listings.
     ...     description="this fixes the bug",
     ...     comment=message,
     ...     is_patch=True)
-    <BugAttachment at ...>
+    <lp.bugs.model.bugattachment.BugAttachment object at ...>
     >>> transaction.commit()
     >>> logout()
     >>> browser.open('http://bugs.launchpad.test/firefox/+bugs')

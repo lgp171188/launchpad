@@ -140,7 +140,7 @@ the file when we later serialise the bug:
     >>> bug4.addAttachment(
     ...     sampleperson, io.BytesIO(b'Hello World'), 'Added attachment',
     ...     'hello.txt', description='"Hello World" attachment')
-    <BugAttachment ...>
+    <lp.bugs.model.bugattachment.BugAttachment ...>
 
     >>> transaction.commit()
 

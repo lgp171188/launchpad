@@ -871,6 +871,7 @@ class TestBugChanges(TestCaseWithFactory):
         # and BugNotification.
         attachment = self.factory.makeBugAttachment(
             bug=self.bug, owner=self.user)
+        attachment_title = attachment.title
         self.saveOldChanges()
         download_url = ProxiedLibraryFileAlias(
             attachment.libraryfile, attachment).http_url
@@ -887,13 +888,13 @@ class TestBugChanges(TestCaseWithFactory):
             'whatchanged': 'attachment removed',
             'newvalue': None,
             'oldvalue': '%s %s' % (
-                attachment.title, download_url),
+                attachment_title, download_url),
             }
 
         attachment_removed_notification = {
             'person': self.user,
             'text': '** Attachment removed: "%s"\n   %s' % (
-                attachment.title, download_url),
+                attachment_title, download_url),
             }
 
         self.assertRecordedChange(

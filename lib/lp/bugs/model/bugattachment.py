@@ -7,7 +7,12 @@ from lazr.lifecycle.event import (
     ObjectCreatedEvent,
     ObjectDeletedEvent,
     )
-from storm.store import Store
+from storm.locals import (
+    Int,
+    Reference,
+    Store,
+    Unicode,
+    )
 from zope.event import notify
 from zope.interface import implementer
 
@@ -18,33 +23,38 @@ from lp.bugs.interfaces.bugattachment import (
     IBugAttachmentSet,
     )
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.propertycache import cachedproperty
 
 
 @implementer(IBugAttachment)
-class BugAttachment(SQLBase):
+class BugAttachment(StormBase):
     """A bug attachment."""
 
-    _table = 'BugAttachment'
+    __storm_table__ = "BugAttachment"
 
-    bug = ForeignKey(
-        foreignKey='Bug', dbName='bug', notNull=True)
+    id = Int(primary=True)
+
+    bug_id = Int(name="bug", allow_none=False)
+    bug = Reference(bug_id, "Bug.id")
     type = DBEnum(
         enum=BugAttachmentType, allow_none=False,
         default=IBugAttachment['type'].default)
-    title = StringCol(notNull=True)
-    libraryfile = ForeignKey(
-        foreignKey='LibraryFileAlias', dbName='libraryfile', notNull=True)
-    data = ForeignKey(
-        foreignKey='LibraryFileAlias', dbName='libraryfile', notNull=True)
-    _message = ForeignKey(
-        foreignKey='Message', dbName='message', notNull=True)
+    title = Unicode(allow_none=False)
+    libraryfile_id = Int(name="libraryfile", allow_none=False)
+    libraryfile = Reference(libraryfile_id, "LibraryFileAlias.id")
+    _message_id = Int(name="message", allow_none=False)
+    _message = Reference(_message_id, "Message.id")
+
+    def __init__(self, bug, title, libraryfile, message,
+                 type=IBugAttachment["type"].default):
+        super().__init__()
+        self.bug = bug
+        self.title = title
+        self.libraryfile = libraryfile
+        self._message = message
+        self.type = type
 
     @cachedproperty
     def message(self):
@@ -72,7 +82,7 @@ class BugAttachment(SQLBase):
         # in order to avoid problems with not deleted files as described
         # in bug 387188.
         self.libraryfile.content = None
-        super().destroySelf()
+        Store.of(self).remove(self)
 
     def getFileByName(self, filename):
         """See IBugAttachment."""
@@ -91,9 +101,8 @@ class BugAttachmentSet:
             attach_id = int(attach_id)
         except ValueError:
             raise NotFoundError(attach_id)
-        try:
-            item = BugAttachment.get(attach_id)
-        except SQLObjectNotFound:
+        item = IStore(BugAttachment).get(BugAttachment, attach_id)
+        if item is None:
             raise NotFoundError(attach_id)
         return item
 
@@ -105,7 +114,7 @@ class BugAttachmentSet:
             attach_type = IBugAttachment['type'].default
         attachment = BugAttachment(
             bug=bug, libraryfile=filealias, type=attach_type, title=title,
-            _message=message)
+            message=message)
         # canonial_url(attachment) (called by notification subscribers
         # to generate the download URL of the attachments) blows up if
         # attachment.id is not (yet) set.

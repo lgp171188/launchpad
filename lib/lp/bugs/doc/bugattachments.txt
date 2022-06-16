@@ -54,7 +54,7 @@ ObjectCreatedEvent in order to trigger email notifications:
     ...     comment=message,
     ...     is_patch=False)
     Attachment added: 'foo.bar'
-    <BugAttachment ...>
+    <lp.bugs.model.bugattachment.BugAttachment ...>
 
     >>> import transaction
     >>> transaction.commit()
@@ -549,7 +549,7 @@ LibraryFileAlias.restricted and Bug.private. See also the section
     >>> bug.linkAttachment(
     ...     owner=bug.owner, file_alias=file_alias,
     ...     comment="Some attachment")
-    <BugAttachment ...>
+    <lp.bugs.model.bugattachment.BugAttachment ...>
 
     >>> bug.attachments.count()
     1
@@ -575,7 +575,7 @@ meaningful description.
     ...     owner=bug.owner, file_alias=file_alias,
     ...     comment="Some attachment", is_patch=True,
     ...     description="An attachment of some sort")
-    <BugAttachment ...>
+    <lp.bugs.model.bugattachment.BugAttachment ...>
 
     >>> bug.attachments.count()
     2

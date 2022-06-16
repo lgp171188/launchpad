@@ -444,7 +444,7 @@ def _build_query(params):
             extra_clauses.append(
                 BugTaskFlat.bug_id.is_in(
                     Select(
-                        BugAttachment.bugID, tables=[BugAttachment],
+                        BugAttachment.bug_id, tables=[BugAttachment],
                         where=search_value_to_storm_where_condition(
                             BugAttachment.type, params.attachmenttype))))
 
