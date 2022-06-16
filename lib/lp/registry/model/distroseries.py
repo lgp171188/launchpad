@@ -1170,14 +1170,13 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
                 And(
                     PackageUpload.status == PackageUploadStatus.DONE,
                     PackageUpload.distroseries == self,
-                    PackageUpload.archiveID.is_in(
+                    PackageUpload.archive_id.is_in(
                         self.distribution.all_distro_archive_ids))))
         clauses = [
-            SourcePackageRelease.id ==
-                PackageUploadSource.sourcepackagereleaseID,
+            PackageUploadSource.sourcepackagerelease ==
+                SourcePackageRelease.id,
             SourcePackageRelease.sourcepackagenameID == SourcePackageName.id,
-            PackageUploadSource.packageuploadID == Column(
-                "id", RelevantUpload),
+            PackageUploadSource.packageupload == Column("id", RelevantUpload),
             ]
 
         last_uploads = DecoratedResultSet(

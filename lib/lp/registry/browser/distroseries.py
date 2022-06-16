@@ -222,7 +222,14 @@ class DistroSeriesNavigation(GetitemNavigation, BugTargetTraversalMixin,
 
     @stepthrough('+upload')
     def traverse_queue(self, id):
-        return getUtility(IPackageUploadSet).get(id)
+        try:
+            queue_id = int(id)
+        except ValueError:
+            return None
+        try:
+            return getUtility(IPackageUploadSet).get(queue_id)
+        except NotFoundError:
+            return None
 
 
 class DistroSeriesBreadcrumb(Breadcrumb):

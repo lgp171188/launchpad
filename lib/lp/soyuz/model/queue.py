@@ -24,6 +24,7 @@ from storm.locals import (
     Join,
     List,
     Reference,
+    ReferenceSet,
     SQL,
     Unicode,
     )
@@ -49,23 +50,13 @@ from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
     )
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-    )
+from lp.services.database.sqlbase import sqlvalues
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     Array,
@@ -143,12 +134,9 @@ def validate_status(self, attr, value):
     if isinstance(value, PassthroughStatusValue):
         return value.value
 
-    if self._SO_creating:
-        return value
-    else:
-        raise QueueStateWriteProtectedError(
-            'Directly write on queue status is forbidden use the '
-            'provided methods to set it.')
+    raise QueueStateWriteProtectedError(
+        'Directly write on queue status is forbidden use the '
+        'provided methods to set it.')
 
 
 @implementer(IPackageUploadQueue)
@@ -160,19 +148,23 @@ class PackageUploadQueue:
 
 
 @implementer(IPackageUpload)
-class PackageUpload(SQLBase):
+class PackageUpload(StormBase):
     """A Queue item for the archive uploader."""
 
-    _defaultOrder = ['id']
+    __storm_table__ = "PackageUpload"
+    __storm_order__ = ["id"]
+
+    id = Int(primary=True)
 
     status = DBEnum(
         name='status', allow_none=False,
         default=PackageUploadStatus.NEW, enum=PackageUploadStatus,
         validator=validate_status)
 
-    date_created = UtcDateTimeCol(notNull=False, default=UTC_NOW)
+    date_created = DateTime(allow_none=True, default=UTC_NOW, tzinfo=pytz.UTC)
 
-    distroseries = ForeignKey(dbName="distroseries", foreignKey='DistroSeries')
+    distroseries_id = Int(name="distroseries", allow_none=False)
+    distroseries = Reference(distroseries_id, "DistroSeries.id")
 
     pocket = DBEnum(
         name='pocket', allow_none=False, enum=PackagePublishingPocket)
@@ -180,7 +172,8 @@ class PackageUpload(SQLBase):
     changes_file_id = Int(name='changesfile')
     changesfile = Reference(changes_file_id, 'LibraryFileAlias.id')
 
-    archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
+    archive_id = Int(name="archive", allow_none=False)
+    archive = Reference(archive_id, "Archive.id")
 
     signing_key_owner_id = Int(name="signing_key_owner")
     signing_key_owner = Reference(signing_key_owner_id, 'Person.id')
@@ -189,23 +182,32 @@ class PackageUpload(SQLBase):
     package_copy_job_id = Int(name='package_copy_job', allow_none=True)
     package_copy_job = Reference(package_copy_job_id, 'PackageCopyJob.id')
 
-    searchable_names = StringCol(name='searchable_names', default='')
+    searchable_names = Unicode(name="searchable_names", default="")
     searchable_versions = List(type=Unicode(), default_factory=list)
 
     # XXX julian 2007-05-06:
-    # Sources should not be SQLMultipleJoin, there is only ever one
-    # of each at most.
+    # Sources should not be ReferenceSet, there is only ever one of each at
+    # most.
 
     # Join this table to the PackageUploadBuild and the
     # PackageUploadSource objects which are related.
-    _sources = SQLMultipleJoin('PackageUploadSource',
-                               joinColumn='packageupload')
+    _sources = ReferenceSet("id", "PackageUploadSource.packageupload_id")
     # Does not include source builds.
-    _builds = SQLMultipleJoin('PackageUploadBuild',
-                              joinColumn='packageupload')
+    _builds = ReferenceSet("id", "PackageUploadBuild.packageupload_id")
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, distroseries, pocket, archive,
+                 status=PackageUploadStatus.NEW, changesfile=None,
+                 signing_key_owner=None, signing_key_fingerprint=None,
+                 package_copy_job=None):
+        super().__init__()
+        self.distroseries = distroseries
+        self.pocket = pocket
+        self.archive = archive
+        self.status = PassthroughStatusValue(status)
+        self.changesfile = changesfile
+        self.signing_key_owner = signing_key_owner
+        self.signing_key_fingerprint = signing_key_fingerprint
+        self.package_copy_job = package_copy_job
         # searchable_{name,version}s are set for the other cases when
         # add{Source,Build,Custom} are called.
         if self.package_copy_job:
@@ -271,13 +273,12 @@ class PackageUpload(SQLBase):
             SourcePackageRecipeBuild,
             SourcePackageRecipeBuild.id ==
                 SourcePackageRelease.source_package_recipe_build_id,
-            SourcePackageRelease.id ==
-            PackageUploadSource.sourcepackagereleaseID,
+            PackageUploadSource.sourcepackagerelease ==
+                SourcePackageRelease.id,
             PackageUploadSource.packageupload == self.id).one()
 
     # Also the custom files associated with the build.
-    _customfiles = SQLMultipleJoin('PackageUploadCustom',
-                                   joinColumn='packageupload')
+    _customfiles = ReferenceSet("id", "PackageUploadCustom.packageupload_id")
 
     @cachedproperty
     def customfiles(self):
@@ -340,8 +341,7 @@ class PackageUpload(SQLBase):
         custom = Store.of(self).find(
             PackageUploadCustom,
             PackageUploadCustom.packageupload == self.id,
-            LibraryFileAlias.id ==
-                PackageUploadCustom.libraryfilealiasID,
+            PackageUploadCustom.libraryfilealias == LibraryFileAlias.id,
             LibraryFileAlias.filename == filename).one()
         if custom is not None:
             return custom.libraryfilealias
@@ -576,7 +576,7 @@ class PackageUpload(SQLBase):
         self.setAccepted()
 
         getUtility(IPackageUploadNotificationJobSource).create(self)
-        self.syncUpdate()
+        IStore(self).flush()
 
         # If this is a single source upload we can create the
         # publishing records now so that the user doesn't have to
@@ -628,7 +628,7 @@ class PackageUpload(SQLBase):
             summary_text = "Rejected by %s." % user.displayname
         getUtility(IPackageUploadNotificationJobSource).create(
             self, summary_text=summary_text)
-        self.syncUpdate()
+        IStore(self).flush()
 
     def _isSingleSourceUpload(self):
         """Return True if this upload contains only a single source."""
@@ -845,8 +845,7 @@ class PackageUpload(SQLBase):
         """See `IPackageUpload`."""
         self.addSearchableNames([spr.name])
         self.addSearchableVersions([spr.version])
-        pus = PackageUploadSource(
-            packageupload=self, sourcepackagerelease=spr.id)
+        pus = PackageUploadSource(packageupload=self, sourcepackagerelease=spr)
         Store.of(self).flush()
         del get_property_cache(self).sources
         return pus
@@ -860,7 +859,7 @@ class PackageUpload(SQLBase):
             versions.append(bpr.version)
         self.addSearchableNames(names)
         self.addSearchableVersions(versions)
-        pub = PackageUploadBuild(packageupload=self, build=build.id)
+        pub = PackageUploadBuild(packageupload=self, build=build)
         Store.of(self).flush()
         del get_property_cache(self).builds
         return pub
@@ -869,7 +868,7 @@ class PackageUpload(SQLBase):
         """See `IPackageUpload`."""
         self.addSearchableNames([library_file.filename])
         puc = PackageUploadCustom(
-            packageupload=self, libraryfilealias=library_file.id,
+            packageupload=self, libraryfilealias=library_file,
             customformat=custom_type)
         Store.of(self).flush()
         del get_property_cache(self).customfiles
@@ -1223,16 +1222,24 @@ class PackageUploadLog(StormBase):
 
 
 @implementer(IPackageUploadBuild)
-class PackageUploadBuild(SQLBase):
+class PackageUploadBuild(StormBase):
     """A Queue item's related builds."""
 
-    _defaultOrder = ['id']
+    __storm_table__ = "PackageUploadBuild"
+    __storm_order__ = ["id"]
 
-    packageupload = ForeignKey(
-        dbName='packageupload',
-        foreignKey='PackageUpload')
+    id = Int(primary=True)
 
-    build = ForeignKey(dbName='build', foreignKey='BinaryPackageBuild')
+    packageupload_id = Int(name="packageupload", allow_none=False)
+    packageupload = Reference(packageupload_id, "PackageUpload.id")
+
+    build_id = Int(name="build", allow_none=False)
+    build = Reference(build_id, "BinaryPackageBuild.id")
+
+    def __init__(self, packageupload, build):
+        super().__init__()
+        self.packageupload = packageupload
+        self.build = build
 
     @property
     def binaries(self):
@@ -1283,18 +1290,26 @@ class PackageUploadBuild(SQLBase):
 
 
 @implementer(IPackageUploadSource)
-class PackageUploadSource(SQLBase):
+class PackageUploadSource(StormBase):
     """A Queue item's related sourcepackagereleases."""
 
-    _defaultOrder = ['id']
+    __storm_table__ = "PackageUploadSource"
+    __storm_order__ = ["id"]
 
-    packageupload = ForeignKey(
-        dbName='packageupload',
-        foreignKey='PackageUpload')
+    id = Int(primary=True)
 
-    sourcepackagerelease = ForeignKey(
-        dbName='sourcepackagerelease',
-        foreignKey='SourcePackageRelease')
+    packageupload_id = Int(name="packageupload", allow_none=False)
+    packageupload = Reference(packageupload_id, "PackageUpload.id")
+
+    sourcepackagerelease_id = Int(
+        name="sourcepackagerelease", allow_none=False)
+    sourcepackagerelease = Reference(
+        sourcepackagerelease_id, "SourcePackageRelease.id")
+
+    def __init__(self, packageupload, sourcepackagerelease):
+        super().__init__()
+        self.packageupload = packageupload
+        self.sourcepackagerelease = sourcepackagerelease
 
     def getSourceAncestryForDiffs(self):
         """See `IPackageUploadSource`."""
@@ -1408,19 +1423,28 @@ class PackageUploadSource(SQLBase):
 
 
 @implementer(IPackageUploadCustom)
-class PackageUploadCustom(SQLBase):
+class PackageUploadCustom(StormBase):
     """A Queue item's related custom format uploads."""
 
-    _defaultOrder = ['id']
+    __storm_table__ = "PackageUploadCustom"
+    __storm_order__ = ["id"]
 
-    packageupload = ForeignKey(
-        dbName='packageupload', foreignKey='PackageUpload')
+    id = Int(primary=True)
+
+    packageupload_id = Int(name="packageupload", allow_none=False)
+    packageupload = Reference(packageupload_id, "PackageUpload.id")
 
     customformat = DBEnum(
         name='customformat', allow_none=False, enum=PackageUploadCustomFormat)
 
-    libraryfilealias = ForeignKey(
-        dbName='libraryfilealias', foreignKey="LibraryFileAlias", notNull=True)
+    libraryfilealias_id = Int(name="libraryfilealias", allow_none=False)
+    libraryfilealias = Reference(libraryfilealias_id, "LibraryFileAlias.id")
+
+    def __init__(self, packageupload, customformat, libraryfilealias):
+        super().__init__()
+        self.packageupload = packageupload
+        self.customformat = customformat
+        self.libraryfilealias = libraryfilealias
 
     def publish(self, logger=None):
         """See `IPackageUploadCustom`."""
@@ -1441,21 +1465,16 @@ class PackageUploadSet:
 
     def __iter__(self):
         """See `IPackageUploadSet`."""
-        return iter(PackageUpload.select())
+        return iter(IStore(PackageUpload).find(PackageUpload))
 
     def __getitem__(self, queue_id):
         """See `IPackageUploadSet`."""
-        try:
-            return PackageUpload.get(queue_id)
-        except SQLObjectNotFound:
+        package_upload = IStore(PackageUpload).get(PackageUpload, queue_id)
+        if package_upload is None:
             raise NotFoundError(queue_id)
+        return package_upload
 
-    def get(self, queue_id):
-        """See `IPackageUploadSet`."""
-        try:
-            return PackageUpload.get(queue_id)
-        except SQLObjectNotFound:
-            raise NotFoundError(queue_id)
+    get = __getitem__
 
     def findSourceUpload(self, name, version, archive, distribution):
         """See `IPackageUploadSet`."""
@@ -1467,12 +1486,12 @@ class PackageUploadSet:
         origin = (
             PackageUpload,
             Join(DistroSeries,
-                 DistroSeries.id == PackageUpload.distroseriesID),
+                 PackageUpload.distroseries == DistroSeries.id),
             Join(PackageUploadSource,
-                 PackageUploadSource.packageuploadID == PackageUpload.id),
+                 PackageUploadSource.packageupload == PackageUpload.id),
             Join(SourcePackageRelease,
-                 SourcePackageRelease.id ==
-                     PackageUploadSource.sourcepackagereleaseID),
+                 PackageUploadSource.sourcepackagerelease ==
+                     SourcePackageRelease.id),
             Join(SourcePackageName,
                  SourcePackageName.id ==
                      SourcePackageRelease.sourcepackagenameID),
@@ -1501,8 +1520,8 @@ class PackageUploadSet:
         archives = distroseries.distribution.getArchiveIDList()
         clauses = [
             PackageUpload.distroseries == distroseries,
-            PackageUpload.archiveID.is_in(archives),
-            PackageUploadBuild.packageuploadID == PackageUpload.id,
+            PackageUpload.archive_id.is_in(archives),
+            PackageUploadBuild.packageupload == PackageUpload.id,
             ]
 
         if status is not None:
@@ -1511,9 +1530,8 @@ class PackageUploadSet:
             clauses.append(PackageUpload.pocket.is_in(pockets))
         if names is not None:
             clauses.extend([
-                BinaryPackageBuild.id == PackageUploadBuild.buildID,
-                BinaryPackageBuild.source_package_name ==
-                    SourcePackageName.id,
+                PackageUploadBuild.build == BinaryPackageBuild.id,
+                BinaryPackageBuild.source_package_name == SourcePackageName.id,
                 SourcePackageName.name.is_in(names),
                 ])
 
@@ -1524,16 +1542,15 @@ class PackageUploadSet:
         """See `IPackageUploadSet`."""
         clauses = []
         if status:
-            clauses.append("status=%s" % sqlvalues(status))
+            clauses.append(PackageUpload.status == status)
 
         if distroseries:
-            clauses.append("distroseries=%s" % sqlvalues(distroseries))
+            clauses.append(PackageUpload.distroseries == distroseries)
 
         if pocket:
-            clauses.append("pocket=%s" % sqlvalues(pocket))
+            clauses.append(PackageUpload.pocket == pocket)
 
-        query = " AND ".join(clauses)
-        return PackageUpload.select(query).count()
+        return IStore(PackageUpload).find(PackageUpload, *clauses).count()
 
     def getAll(self, distroseries, created_since_date=None, status=None,
                archive=None, pocket=None, custom_type=None, name=None,
@@ -1558,7 +1575,7 @@ class PackageUploadSet:
             conditions.append(PackageUpload.status.is_in(status))
 
         archives = distroseries.distribution.getArchiveIDList(archive)
-        conditions.append(PackageUpload.archiveID.is_in(archives))
+        conditions.append(PackageUpload.archive_id.is_in(archives))
 
         if pocket is not None:
             pocket = dbitem_tuple(pocket)
@@ -1567,7 +1584,7 @@ class PackageUploadSet:
         if custom_type is not None:
             custom_type = dbitem_tuple(custom_type)
             joins.append(Join(PackageUploadCustom, And(
-                PackageUpload.id == PackageUploadCustom.packageuploadID,
+                PackageUploadCustom.packageupload == PackageUpload.id,
                 PackageUploadCustom.customformat.is_in(custom_type))))
 
         if name:
@@ -1591,11 +1608,11 @@ class PackageUploadSet:
 
         def preload_hook(rows):
             puses = load_referencing(
-                PackageUploadSource, rows, ["packageuploadID"])
+                PackageUploadSource, rows, ["packageupload_id"])
             pubs = load_referencing(
-                PackageUploadBuild, rows, ["packageuploadID"])
+                PackageUploadBuild, rows, ["packageupload_id"])
             pucs = load_referencing(
-                PackageUploadCustom, rows, ["packageuploadID"])
+                PackageUploadCustom, rows, ["packageupload_id"])
             logs = load_referencing(
                 PackageUploadLog, rows, ["package_upload_id"])
 
@@ -1607,8 +1624,8 @@ class PackageUploadSet:
         """See `IPackageUploadSet`."""
         if build_ids is None or len(build_ids) == 0:
             return []
-        return PackageUploadBuild.select(
-            "PackageUploadBuild.build IN %s" % sqlvalues(build_ids))
+        return IStore(PackageUploadBuild).find(
+            PackageUploadBuild, PackageUploadBuild.build_id.is_in(build_ids))
 
     def getByPackageCopyJobIDs(self, pcj_ids):
         """See `IPackageUploadSet`."""
@@ -1657,8 +1674,8 @@ def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
         get_property_cache(puc.packageupload).customfiles.append(puc)
 
     source_sprs = load_related(
-        SourcePackageRelease, puses, ['sourcepackagereleaseID'])
-    bpbs = load_related(BinaryPackageBuild, pubs, ['buildID'])
+        SourcePackageRelease, puses, ['sourcepackagerelease_id'])
+    bpbs = load_related(BinaryPackageBuild, pubs, ['build_id'])
     load_related(DistroArchSeries, bpbs, ['distro_arch_series_id'])
     binary_sprs = load_related(
         SourcePackageRelease, bpbs, ['source_package_release_id'])
@@ -1676,7 +1693,7 @@ def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
     diffs = getUtility(IPackageDiffSet).getDiffsToReleases(
         sprs, preload_for_display=True)
 
-    puc_lfas = load_related(LibraryFileAlias, pucs, ['libraryfilealiasID'])
+    puc_lfas = load_related(LibraryFileAlias, pucs, ['libraryfilealias_id'])
     load_related(LibraryFileContent, puc_lfas, ['contentID'])
 
     for spr_cache in sprs:
