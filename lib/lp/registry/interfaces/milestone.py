@@ -228,7 +228,7 @@ class IAbstractMilestone(IMilestoneData):
         """
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IMilestone(IAbstractMilestone):
     """Actual interface for milestones."""
 
@@ -316,7 +316,7 @@ class IProjectGroupMilestone(IAbstractMilestone):
     """A marker interface for milestones related to a project"""
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IHasMilestones(Interface):
     """An interface for classes providing milestones."""
 

@@ -497,6 +497,7 @@ class IDistroSeriesPublic(
             title=_("The architecture tag"), required=True))
     @operation_returns_entry(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getDistroArchSeries(archtag):
         """Return the distroarchseries for this distroseries with the
         given architecturetag.
@@ -515,6 +516,7 @@ class IDistroSeriesPublic(
             title=_("The name of the source package"), required=True))
     @operation_returns_entry(ISourcePackage)
     @export_read_operation()
+    @operation_for_version("beta")
     def getSourcePackage(name):
         """Return a source package in this distro series by name.
 
@@ -583,6 +585,7 @@ class IDistroSeriesPublic(
     # Really IPackageUpload, patched in _schema_circular_imports.py
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getPackageUploads(status=None, created_since_date=None, archive=None,
                           pocket=None, custom_type=None, name=None,
                           version=None, exact_match=False):
@@ -790,11 +793,13 @@ class IDistroSeriesPublic(
 
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getDerivedSeries():
         """Get all `DistroSeries` derived from this one."""
 
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getParentSeries():
         """Get all parent `DistroSeries`."""
 
@@ -887,6 +892,7 @@ class IDistroSeriesEditRestricted(Interface):
     @rename_parameters_as(dateexpected='date_targeted')
     @export_factory_operation(
         IMilestone, ['name', 'dateexpected', 'summary', 'code_name'])
+    @operation_for_version("beta")
     def newMilestone(name, dateexpected=None, summary=None, code_name=None):
         """Create a new milestone for this DistroSeries."""
 
@@ -929,6 +935,7 @@ class IDistroSeriesEditRestricted(Interface):
         )
     @call_with(user=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def initDerivedDistroSeries(user, parents, architectures=[],
                                 archindep_archtag=None, packagesets=[],
                                 rebuild=False, overlays=[],
@@ -959,7 +966,7 @@ class IDistroSeriesEditRestricted(Interface):
         """
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IDistroSeries(IDistroSeriesEditRestricted, IDistroSeriesPublic,
                     IStructuralSubscriptionTarget):
     """A series of an operating system distribution."""

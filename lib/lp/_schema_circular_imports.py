@@ -94,49 +94,20 @@ from lp.registry.interfaces.distroseriesdifference import (
 from lp.registry.interfaces.distroseriesdifferencecomment import (
     IDistroSeriesDifferenceComment,
     )
-from lp.registry.interfaces.gpg import IGPGKey
-from lp.registry.interfaces.irc import IIrcID
-from lp.registry.interfaces.jabber import IJabberID
-from lp.registry.interfaces.milestone import (
-    IHasMilestones,
-    IMilestone,
-    )
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonEditRestricted,
     IPersonLimitedView,
     IPersonViewRestricted,
-    ITeam,
     )
-from lp.registry.interfaces.pillar import (
-    IPillar,
-    IPillarNameSet,
-    )
-from lp.registry.interfaces.product import (
-    IProduct,
-    IProductSet,
-    )
-from lp.registry.interfaces.productrelease import (
-    IProductRelease,
-    IProductReleaseFile,
-    )
-from lp.registry.interfaces.productseries import (
-    IProductSeries,
-    ITimelineProductSeries,
-    )
-from lp.registry.interfaces.projectgroup import (
-    IProjectGroup,
-    IProjectGroupSet,
-    )
+from lp.registry.interfaces.product import IProduct
+from lp.registry.interfaces.productseries import IProductSeries
 from lp.registry.interfaces.sourcepackage import (
     ISourcePackage,
     ISourcePackageEdit,
     ISourcePackagePublic,
     )
-from lp.registry.interfaces.ssh import ISSHKey
-from lp.registry.interfaces.teammembership import ITeamMembership
-from lp.registry.interfaces.wikiname import IWikiName
 from lp.services.auth.interfaces import IAccessToken
 from lp.services.comments.interfaces.conversation import IComment
 from lp.services.fields import InlineObject
@@ -790,9 +761,6 @@ patch_operations_explicit_version(
     ICodeReviewVoteReference, 'beta', "claimReview", "delete",
     "reassignReview")
 
-# ICommercialSubscription
-patch_entry_explicit_version(ICommercialSubscription, 'beta')
-
 # ICountry
 patch_entry_explicit_version(ICountry, 'beta')
 
@@ -800,54 +768,11 @@ patch_entry_explicit_version(ICountry, 'beta')
 patch_operations_explicit_version(
     ICountrySet, 'beta', "getByCode", "getByName")
 
-# IDistribution
-patch_operations_explicit_version(
-    IDistribution, 'beta', "getArchive", "getCountryMirror",
-    "getDevelopmentSeries", "getMirrorByName", "getSeries",
-    "getSourcePackage", "searchSourcePackages")
-
-# IDistributionMirror
-patch_entry_explicit_version(IDistributionMirror, 'beta')
-patch_operations_explicit_version(
-    IDistributionMirror, 'beta', "canTransitionToCountryMirror",
-    "getOverallFreshness", "isOfficial", "transitionToCountryMirror")
-
-# IDistributionSourcePackage
-patch_entry_explicit_version(IDistributionSourcePackage, 'beta')
-
 # IDistroArchSeries
 patch_entry_explicit_version(IDistroArchSeries, 'beta')
 
-# IDistroSeries
-patch_entry_explicit_version(IDistroSeries, 'beta')
-patch_operations_explicit_version(
-    IDistroSeries, 'beta', "initDerivedDistroSeries", "getDerivedSeries",
-    "getParentSeries", "getDistroArchSeries", "getPackageUploads",
-    "getSourcePackage", "newMilestone")
-
-# IDistroSeriesDifference
-patch_entry_explicit_version(IDistroSeriesDifference, 'beta')
-patch_operations_explicit_version(
-    IDistroSeriesDifference, 'beta', "addComment", "blocklist",
-    "requestPackageDiffs", "unblocklist")
-
-# IDistroSeriesDifferenceComment
-patch_entry_explicit_version(IDistroSeriesDifferenceComment, 'beta')
-
-# IGPGKey
-patch_entry_explicit_version(IGPGKey, 'beta')
-
-# IHasMilestones
-patch_entry_explicit_version(IHasMilestones, 'beta')
-
 # IHasTranslationImports
 patch_entry_explicit_version(IHasTranslationImports, 'beta')
-
-# IIrcID
-patch_entry_explicit_version(IIrcID, 'beta')
-
-# IJabberID
-patch_entry_explicit_version(IJabberID, 'beta')
 
 # ILanguage
 patch_entry_explicit_version(ILanguage, 'beta')
@@ -857,9 +782,6 @@ patch_operations_explicit_version(ILanguageSet, 'beta', "getAllLanguages")
 
 # IMessage
 patch_entry_explicit_version(IMessage, 'beta')
-
-# IMilestone
-patch_entry_explicit_version(IMilestone, 'beta')
 
 # IPOFile
 patch_entry_explicit_version(IPOFile, 'beta')
@@ -881,58 +803,8 @@ patch_operations_explicit_version(
 patch_operations_explicit_version(
     IPackagesetSet, 'beta', "getByName", "new", "setsIncludingSource")
 
-# IPerson
-patch_entry_explicit_version(IPerson, 'beta')
-
-# IPillar
-patch_entry_explicit_version(IPillar, 'beta')
-
-# IPillarNameSet
-patch_entry_explicit_version(IPillarNameSet, 'beta')
-patch_operations_explicit_version(
-    IPillarNameSet, 'beta', "search")
-
 # IPreviewDiff
 patch_entry_explicit_version(IPreviewDiff, 'beta')
-
-# IProduct
-patch_entry_explicit_version(IProduct, 'beta')
-patch_operations_explicit_version(
-    IProduct, 'beta', "getRelease", "getSeries", "getTimeline", "newSeries")
-
-# IProductRelease
-patch_entry_explicit_version(IProductRelease, 'beta')
-patch_operations_explicit_version(
-    IProductRelease, 'beta', "addReleaseFile", "destroySelf")
-
-# IProductReleaseFile
-patch_entry_explicit_version(IProductReleaseFile, 'beta')
-patch_operations_explicit_version(
-    IProductReleaseFile, 'beta', "destroySelf")
-
-# IProductSeries
-patch_entry_explicit_version(IProductSeries, 'beta')
-patch_operations_explicit_version(
-    IProductSeries, 'beta', "getTimeline", "newMilestone")
-
-# IProductSet
-patch_operations_explicit_version(
-    IProductSet, 'beta', "createProduct", "forReview", "latest", "search")
-
-# IProjectGroup
-patch_entry_explicit_version(IProjectGroup, 'beta')
-
-# IProjectGroupSet
-patch_operations_explicit_version(
-    IProjectGroupSet, 'beta', "search")
-
-# ISSHKey
-patch_entry_explicit_version(ISSHKey, 'beta')
-
-# ISourcePackage
-patch_entry_explicit_version(ISourcePackage, 'beta')
-patch_operations_explicit_version(
-    ISourcePackage, 'beta', "getBranch", "linkedBranches", "setBranch")
 
 # ISourcePackagePublishingHistory
 patch_entry_explicit_version(ISourcePackagePublishingHistory, 'beta')
@@ -950,17 +822,6 @@ patch_operations_explicit_version(
 # ISourcePackageRecipeBuild
 patch_entry_explicit_version(ISourcePackageRecipeBuild, 'beta')
 
-# ITeam
-patch_entry_explicit_version(ITeam, 'beta')
-
-# ITeamMembership
-patch_entry_explicit_version(ITeamMembership, 'beta')
-patch_operations_explicit_version(
-    ITeamMembership, 'beta', "setExpirationDate", "setStatus")
-
-# ITimelineProductSeries
-patch_entry_explicit_version(ITimelineProductSeries, 'beta')
-
 # ITranslationGroup
 patch_entry_explicit_version(ITranslationGroup, 'beta')
 
@@ -973,6 +834,3 @@ patch_operations_explicit_version(
 patch_entry_explicit_version(ITranslationImportQueueEntry, 'beta')
 patch_operations_explicit_version(
     ITranslationImportQueueEntry, 'beta', "setStatus")
-
-# IWikiName
-patch_entry_explicit_version(IWikiName, 'beta')

@@ -16,6 +16,7 @@ from lazr.restful.declarations import (
     export_write_operation,
     exported,
     exported_as_webservice_entry,
+    operation_for_version,
     operation_parameters,
     REQUEST_USER,
     )
@@ -230,11 +231,13 @@ class IDistroSeriesDifferenceEdit(Interface):
     @operation_parameters(
         comment=Text(title=_("Comment text"), required=True))
     @export_write_operation()
+    @operation_for_version("beta")
     def addComment(commenter, comment):
         """Add a comment on this difference."""
 
     @call_with(requestor=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def requestPackageDiffs(requestor):
         """Requests IPackageDiffs for the derived and parent version.
 
@@ -252,6 +255,7 @@ class IDistroSeriesDifferenceAdmin(Interface):
         comment=TextLine(title=_('Comment text'), required=False),
         )
     @export_write_operation()
+    @operation_for_version("beta")
     def blocklist(commenter, all=False, comment=None):
         """Blocklists this version or all versions of this source package and
         adds a comment on this difference.
@@ -267,6 +271,7 @@ class IDistroSeriesDifferenceAdmin(Interface):
     @operation_parameters(
         comment=TextLine(title=_('Comment text'), required=False))
     @export_write_operation()
+    @operation_for_version("beta")
     def unblocklist(commenter, comment=None):
         """Removes this difference from the blocklist and adds a comment on
         this difference.
@@ -279,7 +284,7 @@ class IDistroSeriesDifferenceAdmin(Interface):
         """
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IDistroSeriesDifference(IDistroSeriesDifferencePublic,
                               IDistroSeriesDifferenceEdit,
                               IDistroSeriesDifferenceAdmin):

@@ -251,6 +251,7 @@ class ISourcePackagePublic(IBugTarget, IHasBranches, IHasMergeProposals,
     # imports. Correct interface specified in _schema_circular_imports.
     @operation_returns_entry(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getBranch(pocket):
         """Get the official branch for this package in the given pocket.
 
@@ -289,6 +290,7 @@ class ISourcePackagePublic(IBugTarget, IHasBranches, IHasMergeProposals,
         """
 
     @export_read_operation()
+    @operation_for_version("beta")
     def linkedBranches():
         """Get the official branches for this package.
 
@@ -311,6 +313,7 @@ class ISourcePackageEdit(Interface):
         branch=Reference(Interface, title=_("Branch"), required=False))
     @call_with(registrant=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def setBranch(pocket, branch, registrant):
         """Set the official branch for the given pocket of this package.
 
@@ -321,7 +324,7 @@ class ISourcePackageEdit(Interface):
         """
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class ISourcePackage(ISourcePackagePublic, ISourcePackageEdit):
     """A source package associated to a particular distribution series."""
 

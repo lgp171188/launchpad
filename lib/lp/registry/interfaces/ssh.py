@@ -74,7 +74,7 @@ SSH_TEXT_TO_KEY_TYPE = {
     }
 
 
-@exported_as_webservice_entry('ssh_key')
+@exported_as_webservice_entry("ssh_key", as_of="beta")
 class ISSHKey(Interface):
     """SSH public key"""
 

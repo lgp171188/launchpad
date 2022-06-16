@@ -328,6 +328,7 @@ class IProductDriverRestricted(Interface):
     @export_factory_operation(
         IProductSeries, ['name', 'summary', 'branch', 'releasefileglob'])
     @export_operation_as('newSeries')
+    @operation_for_version("beta")
     def newSeries(owner, name, summary, branch=None, releasefileglob=None):
         """Creates a new `IProductSeries` for this `IProduct`.
 
@@ -812,6 +813,7 @@ class IProductView(
         name=TextLine(title=_("Name"), required=True))
     @operation_returns_entry(IProductSeries)
     @export_read_operation()
+    @operation_for_version("beta")
     def getSeries(name):
         """Return the series for this product for the given name, or None."""
 
@@ -819,6 +821,7 @@ class IProductView(
         version=TextLine(title=_("Version"), required=True))
     @operation_returns_entry(IProductRelease)
     @export_read_operation()
+    @operation_for_version("beta")
     def getRelease(version):
         """Return the release for this product that has the version given."""
 
@@ -841,6 +844,7 @@ class IProductView(
                               required=False, default=False))
     @export_read_operation()
     @export_operation_as('get_timeline')
+    @operation_for_version("beta")
     def getTimeline(include_inactive):
         """Return basic timeline data useful for creating a diagram.
 
@@ -895,7 +899,7 @@ class IProductEditRestricted(IOfficialBugTagTargetRestricted):
         """
 
 
-@exported_as_webservice_entry('project')
+@exported_as_webservice_entry("project", as_of="beta")
 class IProduct(
     IBugTarget, IHasBugSupervisor, IHasDrivers, IProductEditRestricted,
     IProductModerateRestricted, IProductDriverRestricted, IProductView,
@@ -988,6 +992,7 @@ class IProductSet(Interface):
                    'project_reviewed', 'licenses', 'license_info',
                    'registrant', 'bug_supervisor', 'driver'])
     @export_operation_as('new_project')
+    @operation_for_version("beta")
     def createProduct(owner, name, display_name, title, summary,
                       description=None, projectgroup=None, homepageurl=None,
                       screenshotsurl=None, wikiurl=None,
@@ -1022,6 +1027,7 @@ class IProductSet(Interface):
     @export_read_operation()
     @export_operation_as('licensing_search')
     @call_with(user=REQUEST_USER)
+    @operation_for_version("beta")
     def forReview(user,
                   search_text=None,
                   active=None,
@@ -1044,6 +1050,7 @@ class IProductSet(Interface):
     @operation_parameters(text=TextLine(title=_("Search text")))
     @operation_returns_collection_of(IProduct)
     @export_read_operation()
+    @operation_for_version("beta")
     def search(user, text=None):
         """Search through the Registry database for products that match the
         query terms. text is a piece of text in the title / summary /
@@ -1056,6 +1063,7 @@ class IProductSet(Interface):
     @operation_returns_collection_of(IProduct)
     @call_with(user=REQUEST_USER, quantity=None)
     @export_read_operation()
+    @operation_for_version("beta")
     def latest(user, quantity=5):
         """Return the latest projects registered in Launchpad.
 

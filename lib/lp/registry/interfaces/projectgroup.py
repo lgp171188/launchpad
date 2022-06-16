@@ -16,6 +16,7 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_collection,
     exported_as_webservice_entry,
+    operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
     )
@@ -350,7 +351,7 @@ class IProjectGroupPublic(
     product_milestones = Attribute('all the milestones for all the products.')
 
 
-@exported_as_webservice_entry('project_group')
+@exported_as_webservice_entry("project_group", as_of="beta")
 class IProjectGroup(IProjectGroupPublic,
                     IProjectGroupModerate,
                     IStructuralSubscriptionTarget,
@@ -399,6 +400,7 @@ class IProjectGroupSet(Interface):
     @operation_parameters(text=TextLine(title=_("Search text")))
     @operation_returns_collection_of(IProjectGroup)
     @export_read_operation()
+    @operation_for_version("beta")
     def search(text=None, search_products=False):
         """Search through the Registry database for projects that match the
         query terms. text is a piece of text in the title / summary /

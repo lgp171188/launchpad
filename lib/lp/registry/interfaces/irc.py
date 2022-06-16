@@ -23,7 +23,7 @@ from lp import _
 from lp.registry.interfaces.role import IHasOwner
 
 
-@exported_as_webservice_entry('irc_id')
+@exported_as_webservice_entry("irc_id", as_of="beta")
 class IIrcID(IHasOwner):
     """A person's nickname on an IRC network."""
     id = Int(title=_("Database ID"), required=True, readonly=True)

@@ -26,6 +26,7 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_entry,
     mutator_for,
+    operation_for_version,
     operation_parameters,
     )
 from lazr.restful.fields import (
@@ -333,7 +334,7 @@ class DistroMirrorRsyncURIField(DistroMirrorURIField):
         return getUtility(IDistributionMirrorSet).getByRsyncUrl(url)
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IDistributionMirror(Interface):
     """A mirror of a given distribution."""
 
@@ -452,6 +453,7 @@ class IDistributionMirror(Interface):
                       "visible to admins and the mirror's registrant).")))
 
     @export_read_operation()
+    @operation_for_version("beta")
     def canTransitionToCountryMirror():
         """Verify if a mirror can be set as a country mirror or return
         False."""
@@ -459,6 +461,7 @@ class IDistributionMirror(Interface):
     @mutator_for(country_dns_mirror)
     @operation_parameters(country_dns_mirror=copy_field(country_dns_mirror))
     @export_write_operation()
+    @operation_for_version("beta")
     def transitionToCountryMirror(country_dns_mirror):
         """Method run on changing country_dns_mirror."""
 
@@ -487,6 +490,7 @@ class IDistributionMirror(Interface):
         """
 
     @export_read_operation()
+    @operation_for_version("beta")
     def getOverallFreshness():
         """Return this mirror's overall freshness.
 
@@ -500,6 +504,7 @@ class IDistributionMirror(Interface):
         """
 
     @export_read_operation()
+    @operation_for_version("beta")
     def isOfficial():
         """Return True if this is an official mirror."""
 
