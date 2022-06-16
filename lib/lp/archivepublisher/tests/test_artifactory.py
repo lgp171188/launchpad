@@ -569,6 +569,9 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "launchpad.release-id": ["binary:%d" % bpr.id],
                 "launchpad.source-name": ["foo"],
                 "launchpad.source-version": ["1.0"],
+                "soss.source_url": [
+                    ci_build.git_repository.getCodebrowseUrl()],
+                "soss.commit_id": [ci_build.commit_sha1],
                 },
             path.properties)
         pool.updateProperties(bpph.pool_name, bpph.pool_version, bpf, bpphs)
@@ -579,6 +582,9 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "launchpad.source-version": ["1.0"],
                 "launchpad.channel": list(
                     sorted("%s:edge" % ds.name for ds in dses)),
+                "soss.source_url": [
+                    ci_build.git_repository.getCodebrowseUrl()],
+                "soss.commit_id": [ci_build.commit_sha1],
                 },
             path.properties)
 
@@ -623,6 +629,9 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "launchpad.release-id": ["binary:%d" % bpr.id],
                 "launchpad.source-name": ["foo"],
                 "launchpad.source-version": ["1.0"],
+                "soss.source_url": [
+                    ci_build.git_repository.getCodebrowseUrl()],
+                "soss.commit_id": [ci_build.commit_sha1],
                 },
             path.properties)
         pool.updateProperties(bpph.pool_name, bpph.pool_version, bpf, bpphs)
@@ -633,6 +642,9 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "launchpad.source-version": ["1.0"],
                 "launchpad.channel": list(
                     sorted("%s:edge" % ds.name for ds in dses)),
+                "soss.source_url": [
+                    ci_build.git_repository.getCodebrowseUrl()],
+                "soss.commit_id": [ci_build.commit_sha1],
                 },
             path.properties)
 
