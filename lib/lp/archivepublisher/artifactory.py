@@ -185,6 +185,17 @@ class ArtifactoryPoolEntry:
                     "%s:%s" % (
                         pub.distroseries.getSuite(pub.pocket), pub.channel)
                     for pub in publications})
+        # Additional metadata per
+        # https://docs.google.com/spreadsheets/d/15Xkdi-CRu2NiQfLoclP5PKW63Zw6syiuao8VJG7zxvw
+        # (private).
+        if IBinaryPackageFile.providedBy(self.pub_file):
+            ci_build = self.pub_file.binarypackagerelease.ci_build
+            if ci_build is not None:
+                properties.update({
+                    "soss.source_url": (
+                        ci_build.git_repository.getCodebrowseUrl()),
+                    "soss.commit_id": ci_build.commit_sha1,
+                    })
         return properties
 
     def addFile(self):

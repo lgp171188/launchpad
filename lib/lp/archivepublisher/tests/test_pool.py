@@ -68,9 +68,10 @@ class FakeLibraryFileAlias:
 
 class FakePackageRelease:
 
-    def __init__(self, release_id, user_defined_fields=None):
+    def __init__(self, release_id, user_defined_fields=None, ci_build=None):
         self.id = release_id
         self.user_defined_fields = user_defined_fields
+        self.ci_build = ci_build
 
 
 class FakeReleaseType(EnumeratedType):
@@ -83,12 +84,13 @@ class FakeReleaseType(EnumeratedType):
 class FakePackageReleaseFile:
 
     def __init__(self, contents, filename, release_type=FakeReleaseType.BINARY,
-                 release_id=1, user_defined_fields=None):
+                 release_id=1, user_defined_fields=None, ci_build=None):
         self.libraryfile = FakeLibraryFileAlias(contents, filename)
         if release_type == FakeReleaseType.SOURCE:
             self.sourcepackagereleaseID = release_id
             self.sourcepackagerelease = FakePackageRelease(
-                release_id, user_defined_fields=user_defined_fields)
+                release_id, user_defined_fields=user_defined_fields,
+                ci_build=ci_build)
             alsoProvides(self, ISourcePackageReleaseFile)
         elif release_type == FakeReleaseType.BINARY:
             self.binarypackagereleaseID = release_id

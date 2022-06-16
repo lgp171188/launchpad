@@ -117,12 +117,20 @@ class FakeArtifactoryFixture(Fixture):
 
     def _handle_upload(self, request):
         """Handle a request to upload a directory or file."""
-        parsed_url = urlparse(request.url[len(self.repo_url):])
+        # Artifactory and urlparse seem to disagree about how to parse URLs
+        # where parameters contain the "/" character, so split the
+        # parameters from the rest of the URL by hand.
+        url = request.url[len(self.repo_url):]
+        if ";" in url:
+            url, params = url.split(";", 1)
+        else:
+            params = ""
+        parsed_url = urlparse(url)
         path = parsed_url.path
         if path.endswith("/"):
             self.add_dir(path.rstrip("/"))
         elif path.rsplit("/", 1)[0] in self._fs:
-            properties = self._decode_properties(parsed_url.params)
+            properties = self._decode_properties(params)
             self.add_file(
                 path, request.body,
                 int(request.headers["Content-Length"]), properties)
