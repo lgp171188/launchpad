@@ -460,7 +460,8 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
     def test_edit_recipe(self):
         [old_git_ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, owner=self.person, git_ref=old_git_ref)
+            registrant=self.person, owner=self.person, git_ref=old_git_ref,
+            store_channels=["track1/stable/branch1", "track2/edge/branch1"])
         self.factory.makeTeam(
             name="new-team", displayname="New Team", members=[self.person])
         [new_git_ref] = self.factory.makeGitRefs()
@@ -495,6 +496,147 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
             "Builds of this charm recipe are not automatically uploaded to "
             "the store.\nEdit charm recipe",
             MatchesTagText(content, "store_upload"))
+
+    def test_edit_recipe_add_store_channel(self):
+        [old_git_ref] = self.factory.makeGitRefs()
+        recipe = self.factory.makeCharmRecipe(
+            registrant=self.person, owner=self.person, git_ref=old_git_ref,
+            store_channels=["track1/stable/branch1", "track2/edge/branch1"],
+            store_name='Store name', store_upload=True)
+        self.factory.makeTeam(
+            name="new-team", displayname="New Team", members=[self.person])
+        [new_git_ref] = self.factory.makeGitRefs()
+
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit charm recipe").click()
+        browser.getControl("Owner").value = ["new-team"]
+        browser.getControl(name="field.name").value = "new-name"
+        browser.getControl(name="field.git_ref.repository").value = (
+            new_git_ref.repository.identity)
+        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
+        browser.getControl(
+            "Automatically build when branch changes").selected = True
+        browser.getControl(
+            name="field.auto_build_channels.charmcraft").value = "edge"
+        browser.getControl(name="field.store_name").value = "new-store-name"
+        browser.getControl(
+            name="field.store_channels.track").value = "new-track"
+        browser.getControl(
+            name="field.store_channels.branch").value = "new-branch"
+        #browser.getControl(name="field.store_channels.risks").value = ["new-risk"]
+
+        browser.getControl("Update charm recipe").click()
+
+        content = find_main_content(browser.contents)
+        self.assertThat("Store channels:\n"
+                        "new-track/new-branch, track2/branch1"
+                        "\nEdit charm recipe",
+                        MatchesTagText(content, "store_channels"))
+        self.assertEqual("new-name", extract_text(content.h1))
+        self.assertThat("New Team", MatchesPickerText(content, "edit-owner"))
+        self.assertThat(
+            "Source:\n%s\nEdit charm recipe" % new_git_ref.display_name,
+            MatchesTagText(content, "source"))
+        self.assertThat(
+            "Build schedule:\n(?)\nBuilt automatically\nEdit charm recipe\n",
+            MatchesTagText(content, "auto_build"))
+        self.assertThat(
+            "Source snap channels for automatic builds:\nEdit charm recipe\n"
+            "charmcraft\nedge",
+            MatchesTagText(content, "auto_build_channels"))
+
+    def test_edit_recipe_edit_store_channel_list(self):
+        [old_git_ref] = self.factory.makeGitRefs()
+        recipe = self.factory.makeCharmRecipe(
+            registrant=self.person, owner=self.person, git_ref=old_git_ref,
+            store_channels=["track1/stable/branch1", "track2/edge/branch1"],
+            store_name='Store name', store_upload=True)
+        self.factory.makeTeam(
+            name="new-team", displayname="New Team", members=[self.person])
+        [new_git_ref] = self.factory.makeGitRefs()
+
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit charm recipe").click()
+        browser.getControl("Owner").value = ["new-team"]
+        browser.getControl(name="field.name").value = "new-name"
+        browser.getControl(name="field.git_ref.repository").value = (
+            new_git_ref.repository.identity)
+        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
+        browser.getControl(
+            "Automatically build when branch changes").selected = True
+        browser.getControl(
+            name="field.auto_build_channels.charmcraft").value = "edge"
+        browser.getControl(name="field.store_name").value = "new-store-name"
+        browser.getControl(name="field.track.0").value = "new-track"
+        browser.getControl(name="field.branch.0").value = "new-branch"
+        #browser.getControl(name="field.risks.0").value = ["new-risk"]
+
+        browser.getControl("Update charm recipe").click()
+
+        content = find_main_content(browser.contents)
+
+        self.assertThat("Store channels:\n"
+                        "new-track/new-branch, track2/branch1"
+                        "\nEdit charm recipe",
+                        MatchesTagText(content, "store_channels"))
+
+        self.assertEqual("new-name", extract_text(content.h1))
+        self.assertThat("New Team", MatchesPickerText(content, "edit-owner"))
+        self.assertThat(
+            "Source:\n%s\nEdit charm recipe" % new_git_ref.display_name,
+            MatchesTagText(content, "source"))
+        self.assertThat(
+            "Build schedule:\n(?)\nBuilt automatically\nEdit charm recipe\n",
+            MatchesTagText(content, "auto_build"))
+        self.assertThat(
+            "Source snap channels for automatic builds:\nEdit charm recipe\n"
+            "charmcraft\nedge",
+            MatchesTagText(content, "auto_build_channels"))
+
+    def test_edit_recipe_delete_store_channel(self):
+        [old_git_ref] = self.factory.makeGitRefs()
+        recipe = self.factory.makeCharmRecipe(
+            registrant=self.person, owner=self.person, git_ref=old_git_ref,
+            store_channels=["track1/stable/branch1", "track2/edge/branch1"],
+            store_name='Store name', store_upload=True)
+        self.factory.makeTeam(
+            name="new-team", displayname="New Team", members=[self.person])
+        [new_git_ref] = self.factory.makeGitRefs()
+
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit charm recipe").click()
+        browser.getControl("Owner").value = ["new-team"]
+        browser.getControl(name="field.name").value = "new-name"
+        browser.getControl(name="field.git_ref.repository").value = (
+            new_git_ref.repository.identity)
+        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
+        browser.getControl(
+            "Automatically build when branch changes").selected = True
+        browser.getControl(
+            name="field.auto_build_channels.charmcraft").value = "edge"
+        browser.getControl(name="field.delete.0").value = 1
+
+        browser.getControl("Update charm recipe").click()
+
+        content = find_main_content(browser.contents)
+
+        self.assertThat("Store channels:\n"
+                        "track2/branch1"
+                        "\nEdit charm recipe",
+                        MatchesTagText(content, "store_channels"))
+
+        self.assertEqual("new-name", extract_text(content.h1))
+        self.assertThat("New Team", MatchesPickerText(content, "edit-owner"))
+        self.assertThat(
+            "Source:\n%s\nEdit charm recipe" % new_git_ref.display_name,
+            MatchesTagText(content, "source"))
+        self.assertThat(
+            "Build schedule:\n(?)\nBuilt automatically\nEdit charm recipe\n",
+            MatchesTagText(content, "auto_build"))
+        self.assertThat(
+            "Source snap channels for automatic builds:\nEdit charm recipe\n"
+            "charmcraft\nedge",
+            MatchesTagText(content, "auto_build_channels"))
 
     def test_edit_recipe_sets_date_last_modified(self):
         # Editing a charm recipe sets the date_last_modified property.

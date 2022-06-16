@@ -23,12 +23,16 @@ from lazr.restful.interface import (
     )
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
+from zope.formlib.form import FormFields
 from zope.interface import (
     implementer,
     Interface,
     )
 from zope.schema import (
+    Bool,
+    Choice,
     Dict,
+    List,
     TextLine,
     )
 from zope.security.interfaces import Unauthorized
@@ -59,6 +63,10 @@ from lp.code.browser.widgets.gitref import GitRefWidget
 from lp.code.interfaces.gitref import IGitRef
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.interfaces.product import IProduct
+from lp.services.channels import (
+    channel_list_to_string,
+    channel_string_to_list,
+    )
 from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
 from lp.services.utils import seconds_since_epoch
@@ -422,6 +430,63 @@ class BaseCharmRecipeEditView(
 
     schema = ICharmRecipeEditSchema
 
+    def initialize(self):
+        super().initialize()
+
+    def _getFieldName(self, name, channel_index):
+        return "%s.%d" % (name, channel_index)
+
+    def getStoreWidgets(self, channel_index):
+        widgets_by_name = {widget.name: widget for widget in self.widgets}
+
+        track_field_name = (
+                "field." + self._getFieldName("track", channel_index))
+
+        branch_field_name = (
+                "field." + self._getFieldName("branch", channel_index))
+        risks_field_name = (
+                "field." + self._getFieldName("risks", channel_index))
+        delete_field_name = (
+                "field." + self._getFieldName("delete", channel_index))
+        risks = []
+        track, risk, branch = channel_string_to_list(
+            self.context.store_channels[channel_index])
+        risks.append(risk)
+
+        track_widget = widgets_by_name[track_field_name]
+        track_widget.setRenderedValue(track)
+        branch_widget = widgets_by_name[branch_field_name]
+        branch_widget.setRenderedValue(branch)
+        risks_widget = widgets_by_name[risks_field_name]
+        risks_widget.setRenderedValue(risks)
+        return {
+            "track": track_widget,
+            "branch": branch_widget,
+            "risks": risks_widget,
+            "delete": widgets_by_name[delete_field_name],
+        }
+
+    def setUpFields(self):
+        """See `LaunchpadFormView`."""
+        super().setUpFields()
+        for index in range(len(self.context.store_channels)):
+            self.form_fields += FormFields(TextLine(
+                __name__=self._getFieldName('track', index),
+                required=False))
+            self.form_fields += FormFields(List(
+                __name__=self._getFieldName('risks', index),
+                required=False,
+                value_type=Choice(vocabulary="SnapStoreChannel")))
+            self.form_fields += FormFields(TextLine(
+                __name__=self._getFieldName('branch', index),
+                required=False))
+            self.form_fields += FormFields(Bool(
+                __name__=self._getFieldName('delete', index),
+                readonly=False, default=False))
+
+    def setUpWidgets(self, context=None):
+        super().setUpWidgets(context=context)
+
     @property
     def cancel_url(self):
         return canonical_url(self.context)
@@ -463,6 +528,77 @@ class BaseCharmRecipeEditView(
             not self.context.store_upload or
             store_name != self.context.store_name)
 
+    def parseData(self, data):
+        """Rearrange form data to make it easier to process."""
+        parsed_data = {}
+        # The fields of the StoreChannelsWidget are the ones used to add
+        # a new row / store channel entry, we parse it here and if any of its
+        # data members are filled in we infer that the user id adding
+        # a new entry on the edit screen.
+        form_fields = data.keys()
+        if 'field.store_channels.track' in form_fields:
+            add_track = data["field.store_channels.track"]
+            del data["field.store_channels.track"]
+        else:
+            add_track = None
+        if 'field.store_channels.branch' in form_fields:
+            add_branch = data["field.store_channels.branch"]
+            del data["field.store_channels.branch"]
+        else:
+            add_branch = None
+        if 'field.store_channels.risk' in form_fields:
+            add_risk = data["field.store_channels.risk"]
+            del data["field.store_channels.risk"]
+        else:
+            add_risk = None
+        # parse data from the Add new channel data section of the form
+        # essentially the 3 fields of the StoreChannelsWidget
+        if add_track or add_branch or add_risk:
+            add_store_channels = channel_list_to_string(
+                add_track, add_branch, add_risk)
+            parsed_data.setdefault(None, {
+                "add_store_channels": add_store_channels,
+                "action": "add",
+            })
+        # parse data from the Edit existing channels section of the form
+        edited_store_channels = []
+        for index in range(len(self.context.store_channels)):
+            if not data["delete.%s" % index]:
+                if len(data["risks.%s" % index]) == 0:
+                    risk = None
+                else:
+                    risk = data["risks.%s" % index][0]
+                edited_store_channels.append(channel_list_to_string(
+                    data["track.%s" % index], risk,
+                    data["branch.%s" % index]))
+                parsed_data.setdefault('change', {
+                    "edited_store_channels": edited_store_channels,
+                })
+                del (data["track.%s" % index],
+                     data["risks.%s" % index],
+                     data["branch.%s" % index],
+                     data["delete.%s" % index])
+            else:
+                del (data["track.%s" % index],
+                     data["risks.%s" % index],
+                     data["branch.%s" % index],
+                     data["delete.%s" % index])
+
+        parsed_data.setdefault("recipe_fields", data)
+        return parsed_data
+
+    def updateRecipeFromData(self, parsed_data):
+        fields = parsed_data.keys()
+        self.updateContextFromData(parsed_data["recipe_fields"])
+        if "change" in fields:
+            self.context.store_channels = \
+                parsed_data["change"]["edited_store_channels"]
+        elif action == "add":
+            self.context.store_channels.append(
+                parsed_data["add_store_channels"])
+        else:
+            raise AssertionError("unknown action: %s" % action)
+
     @action("Update charm recipe", name="update")
     def request_action(self, action, data):
         if not data.get("auto_build", False):
@@ -474,12 +610,15 @@ class BaseCharmRecipeEditView(
                 del data["store_name"]
             if "store_channels" in data:
                 del data["store_channels"]
-        need_charmhub_reauth = self._needCharmhubReauth(data)
-        self.updateContextFromData(data)
-        if need_charmhub_reauth:
-            self.requestAuthorization(self.context)
-        else:
-            self.next_url = canonical_url(self.context)
+        parsed_data = self.parseData(data)
+        #need_charmhub_reauth = self._needCharmhubReauth(data)
+        self.updateRecipeFromData(parsed_data)
+
+        # if need_charmhub_reauth:
+        #     self.requestAuthorization(self.context)
+        # else:
+        #     self.next_url = canonical_url(self.context)
+        self.next_url = canonical_url(self.context)
 
     @property
     def adapters(self):

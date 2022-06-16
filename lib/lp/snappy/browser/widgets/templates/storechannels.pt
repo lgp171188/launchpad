@@ -43,12 +43,6 @@
                   use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
             </tal:widget>
           </td>
-          <td>
-            <tal:widget define="widget nocall:view/delete_widget">
-              <metal:block
-                  use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
-            </tal:widget>
-          </td>
         </tr>
       </table>
     </td>

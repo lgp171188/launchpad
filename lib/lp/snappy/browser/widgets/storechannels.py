@@ -104,9 +104,6 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                 tracks.add(track)
                 risks.append(risk)
                 branches.add(branch)
-            if len(tracks) != 1:
-                raise ValueError(
-                    "Channels belong to different tracks: %r" % value)
             if len(branches) != 1:
                 raise ValueError(
                     "Channels belong to different branches: %r" % value)
