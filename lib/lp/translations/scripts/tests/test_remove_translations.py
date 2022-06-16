@@ -389,9 +389,9 @@ class TestRemoveTranslations(TestCase):
             "TestDE", submitter=carlos)
         # Manually force creation date to something in the past
         removeSecurityProxy(new_nl_message).date_created = datetime(
-            2015, 5, 12, tzinfo=pytz.UTC)
+            2015, 5, 12, 14, 30, 15, tzinfo=pytz.UTC)
         removeSecurityProxy(new_de_message).date_created = datetime(
-            2015, 5, 12, tzinfo=pytz.UTC)
+            2015, 5, 12, 19, 38, 21, tzinfo=pytz.UTC)
 
         # This will restore invariant by deleting both messages created
         # above in this test
@@ -405,9 +405,9 @@ class TestRemoveTranslations(TestCase):
             "Second message Submitted by Carlos", "Second Test NL",
             "Second Test DE", submitter=carlos)
         removeSecurityProxy(new_nl_message).date_created = datetime(
-            2015, 5, 12, tzinfo=pytz.UTC)
+            2015, 5, 12, 3, 45, 33, tzinfo=pytz.UTC)
         removeSecurityProxy(new_de_message).date_created = datetime(
-            2015, 5, 12, tzinfo=pytz.UTC)
+            2015, 5, 12, 4, 56, 32, tzinfo=pytz.UTC)
         removeSecurityProxy(new_de_message).submitter = mark
 
         self._removeMessages(submitter=carlos, date_created='2015-05-12')
@@ -430,7 +430,7 @@ class TestRemoveTranslations(TestCase):
             "Third Test DE", submitter=carlos)
         # Manually force creation date to something in the past
         removeSecurityProxy(new_nl_message).date_created = datetime(
-            2015, 5, 12, tzinfo=pytz.UTC)
+            2015, 5, 12, 16, 42, 23, tzinfo=pytz.UTC)
 
         rowcount = self._removeMessages(submitter=carlos,
                                         date_created='2015-05-12')
