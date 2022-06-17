@@ -14,6 +14,7 @@ from datetime import (
     timedelta,
     )
 import email
+from operator import itemgetter
 
 from breezy.revision import NULL_REVISION
 import pytz
@@ -28,10 +29,13 @@ from storm.expr import (
     )
 from storm.locals import (
     Bool,
+    DateTime,
     Int,
     Min,
     Reference,
+    ReferenceSet,
     Storm,
+    Unicode,
     )
 from storm.store import Store
 from zope.component import getUtility
@@ -55,22 +59,12 @@ from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
     )
-from lp.services.database.datetimecol import UtcDateTimeCol
+from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
-from lp.services.database.sqlbase import (
-    quote,
-    SQLBase,
-    )
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    StringCol,
-    )
+from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressStatus,
@@ -79,28 +73,44 @@ from lp.services.identity.interfaces.emailaddress import (
 
 
 @implementer(IRevision)
-class Revision(SQLBase):
+class Revision(StormBase):
     """See IRevision."""
 
-    date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    log_body = StringCol(notNull=True)
+    __storm_table__ = "Revision"
 
-    revision_author_id = Int(name='revision_author', allow_none=False)
-    revision_author = Reference(revision_author_id, 'RevisionAuthor.id')
+    id = Int(primary=True)
 
-    revision_id = StringCol(notNull=True, alternateID=True,
-                            alternateMethodName='byRevisionID')
-    revision_date = UtcDateTimeCol(notNull=False)
+    date_created = DateTime(
+        name="date_created", allow_none=False, default=DEFAULT,
+        tzinfo=pytz.UTC)
+    log_body = Unicode(name="log_body", allow_none=False)
 
-    karma_allocated = BoolCol(default=False, notNull=True)
+    revision_author_id = Int(name="revision_author", allow_none=False)
+    revision_author = Reference(revision_author_id, "RevisionAuthor.id")
 
-    properties = SQLMultipleJoin('RevisionProperty', joinColumn='revision')
+    revision_id = Unicode(name="revision_id", allow_none=False)
+    revision_date = DateTime(
+        name="revision_date", allow_none=True, tzinfo=pytz.UTC)
+
+    karma_allocated = Bool(
+        name="karma_allocated", default=False, allow_none=False)
+
+    properties = ReferenceSet("id", "RevisionProperty.revision_id")
+
+    def __init__(self, log_body, revision_author, revision_id,
+                 revision_date=None, date_created=DEFAULT):
+        super().__init__()
+        self.log_body = log_body
+        self.revision_author = revision_author
+        self.revision_id = revision_id
+        self.revision_date = revision_date
+        self.date_created = date_created
 
     @property
     def parents(self):
         """See IRevision.parents"""
-        return shortlist(RevisionParent.selectBy(
-            revision=self, orderBy='sequence'))
+        return shortlist(IStore(RevisionParent).find(
+            RevisionParent, revision=self).order_by(RevisionParent.sequence))
 
     @property
     def parent_ids(self):
@@ -172,18 +182,32 @@ class Revision(SQLBase):
             result_set.order_by(Asc(BranchRevision.sequence))
         else:
             result_set.order_by(
-                Branch.ownerID != self.revision_author.personID,
+                Branch.ownerID != self.revision_author.person_id,
                 Asc(BranchRevision.sequence))
 
         return result_set.first()
 
 
 @implementer(IRevisionAuthor)
-class RevisionAuthor(SQLBase):
+class RevisionAuthor(StormBase):
 
-    _table = 'RevisionAuthor'
+    __storm_table__ = "RevisionAuthor"
 
-    name = StringCol(notNull=True, alternateID=True)
+    id = Int(primary=True)
+
+    name = Unicode(name="name", allow_none=False)
+
+    email = Unicode(name="email", allow_none=True, default=None)
+
+    person_id = Int(
+        name="person", allow_none=True, validator=validate_public_person,
+        default=None)
+    person = Reference(person_id, "Person.id")
+
+    def __init__(self, name, email=None):
+        super().__init__()
+        self.name = name
+        self.email = email
 
     @property
     def name_without_email(self):
@@ -196,10 +220,6 @@ class RevisionAuthor(SQLBase):
             return self.name
         return email.utils.parseaddr(self.name)[0]
 
-    email = StringCol(notNull=False, default=None)
-    person = ForeignKey(dbName='person', foreignKey='Person', notNull=False,
-                        storm_validator=validate_public_person, default=None)
-
     def linkToLaunchpadPerson(self):
         """See `IRevisionAuthor`."""
         if self.person is not None or self.email is None:
@@ -210,42 +230,59 @@ class RevisionAuthor(SQLBase):
             return False
         # Only accept an email address that is validated.
         if lp_email.status != EmailAddressStatus.NEW:
-            self.personID = lp_email.personID
+            self.person_id = lp_email.personID
             return True
         else:
             return False
 
 
 @implementer(IRevisionParent)
-class RevisionParent(SQLBase):
+class RevisionParent(StormBase):
     """The association between a revision and its parent."""
 
-    _table = 'RevisionParent'
+    __storm_table__ = "RevisionParent"
 
-    revision = ForeignKey(
-        dbName='revision', foreignKey='Revision', notNull=True)
+    id = Int(primary=True)
 
-    sequence = IntCol(notNull=True)
-    parent_id = StringCol(notNull=True)
+    revision_id = Int(name="revision", allow_none=False)
+    revision = Reference(revision_id, "Revision.id")
+
+    sequence = Int(allow_none=False)
+    parent_id = Unicode(allow_none=False)
+
+    def __init__(self, revision, sequence, parent_id):
+        super().__init__()
+        self.revision = revision
+        self.sequence = sequence
+        self.parent_id = parent_id
 
 
 @implementer(IRevisionProperty)
-class RevisionProperty(SQLBase):
+class RevisionProperty(StormBase):
     """A property on a revision. See IRevisionProperty."""
 
-    _table = 'RevisionProperty'
+    __storm_table__ = "RevisionProperty"
 
-    revision = ForeignKey(
-        dbName='revision', foreignKey='Revision', notNull=True)
-    name = StringCol(notNull=True)
-    value = StringCol(notNull=True)
+    id = Int(primary=True)
+
+    revision_id = Int(name="revision", allow_none=False)
+    revision = Reference(revision_id, "Revision.id")
+
+    name = Unicode(allow_none=False)
+    value = Unicode(allow_none=False)
+
+    def __init__(self, revision, name, value):
+        super().__init__()
+        self.revision = revision
+        self.name = name
+        self.value = value
 
 
 @implementer(IRevisionSet)
 class RevisionSet:
 
     def getByRevisionId(self, revision_id):
-        return Revision.selectOneBy(revision_id=revision_id)
+        return IStore(Revision).find(Revision, revision_id=revision_id).one()
 
     def _createRevisionAuthor(self, revision_author):
         """Extract out the email and check to see if it matches a Person."""
@@ -254,8 +291,11 @@ class RevisionSet:
         if '@' not in email_address:
             email_address = None
 
+        store = IMasterStore(RevisionAuthor)
         author = RevisionAuthor(name=revision_author, email=email_address)
+        store.add(author)
         author.linkToLaunchpadPerson()
+        store.flush()
         return author
 
     def new(self, revision_id, log_body, revision_date, revision_author,
@@ -395,12 +435,12 @@ class RevisionSet:
                 parent_data.append((db_id, sequence, parent_id))
         # Create all RevisionParent objects.
         create((
-            RevisionParent.revisionID, RevisionParent.sequence,
+            RevisionParent.revision_id, RevisionParent.sequence,
             RevisionParent.parent_id), parent_data)
 
         # Create all RevisionProperty objects.
         create((
-            RevisionProperty.revisionID, RevisionProperty.name,
+            RevisionProperty.revision_id, RevisionProperty.name,
             RevisionProperty.value), property_data)
 
     @staticmethod
@@ -413,15 +453,20 @@ class RevisionSet:
 
     def getTipRevisionsForBranches(self, branches):
         """See `IRevisionSet`."""
+        # Circular import.
+        from lp.code.model.branch import Branch
+
         # If there are no branch_ids, then return None.
         branch_ids = [branch.id for branch in branches]
         if not branch_ids:
             return None
-        return Revision.select("""
-            Branch.id in %s AND
-            Revision.revision_id = Branch.last_scanned_id
-            """ % quote(branch_ids),
-            clauseTables=['Branch'], prejoins=['revision_author'])
+        return DecoratedResultSet(
+            IStore(Revision).find(
+                (Revision, RevisionAuthor),
+                Branch.id.is_in(branch_ids),
+                Revision.revision_id == Branch.last_scanned_id,
+                Revision.revision_author_id == RevisionAuthor.id),
+            result_decorator=itemgetter(0))
 
     @staticmethod
     def getRecentRevisionsForProduct(product, days):
@@ -475,7 +520,7 @@ class RevisionSet:
         if person.is_team:
             origin.append(
                 Join(TeamParticipation,
-                     RevisionAuthor.personID == TeamParticipation.personID))
+                     RevisionAuthor.person_id == TeamParticipation.personID))
             person_condition = TeamParticipation.team == person
         else:
             person_condition = RevisionAuthor.person == person
@@ -623,7 +668,7 @@ class RevisionCache(Storm):
     revision_author_id = Int(name='revision_author', allow_none=False)
     revision_author = Reference(revision_author_id, 'RevisionAuthor.id')
 
-    revision_date = UtcDateTimeCol(notNull=True)
+    revision_date = DateTime(allow_none=False, tzinfo=pytz.UTC)
 
     product_id = Int(name='product', allow_none=True)
     product = Reference(product_id, 'Product.id')

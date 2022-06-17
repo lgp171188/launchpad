@@ -74,7 +74,7 @@ class GenericRevisionCollection:
         # is different.
         author = Func(
             'coalesce',
-            RevisionAuthor.personID,
+            RevisionAuthor.person_id,
             SQL(0) - RevisionAuthor.id)
         expressions = [
             RevisionCache.revision_author == RevisionAuthor.id]
@@ -140,7 +140,7 @@ class GenericRevisionCollection:
         if person.is_team:
             query = [
                 TeamParticipation.team == person,
-                RevisionAuthor.personID == TeamParticipation.personID]
+                RevisionAuthor.person_id == TeamParticipation.personID]
         else:
             query = [RevisionAuthor.person == person]
 

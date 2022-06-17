@@ -364,7 +364,8 @@ class TestBzrSync(BzrSyncTestCase):
         author = "Another Author <another@example.com>"
         self.commitRevision(committer=author)
         self.syncAndCount(new_revisions=1, new_numbers=1, new_authors=1)
-        db_author = RevisionAuthor.selectOneBy(name=author)
+        db_author = IStore(RevisionAuthor).find(
+            RevisionAuthor, name=author).one()
         self.assertEqual(db_author.name, author)
 
     def test_new_parent(self):
@@ -399,8 +400,8 @@ class TestBzrSync(BzrSyncTestCase):
                             timestamp=1000000000.0, timezone=28800)
         self.syncAndCount(
             new_revisions=2, new_numbers=2, new_parents=1, new_authors=2)
-        rev_1 = Revision.selectOneBy(revision_id='rev-1')
-        rev_2 = Revision.selectOneBy(revision_id='rev-2')
+        rev_1 = IStore(Revision).find(Revision, revision_id="rev-1").one()
+        rev_2 = IStore(Revision).find(Revision, revision_id="rev-2").one()
         UTC = pytz.timezone('UTC')
         dt = datetime.datetime.fromtimestamp(1000000000.0, UTC)
         self.assertEqual(rev_1.revision_date, dt)
