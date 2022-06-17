@@ -529,7 +529,8 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
 
         content = find_main_content(browser.contents)
         self.assertThat("Store channels:\n"
-                        "track1/stable/branch1, track2/edge/branch1, new-track/edge/new-branch"
+                        "track1/stable/branch1, track2/edge/branch1, "
+                        "new-track/edge/new-branch"
                         "\nEdit charm recipe",
                         MatchesTagText(content, "store_channels"))
         self.assertEqual("new-name", extract_text(content.h1))

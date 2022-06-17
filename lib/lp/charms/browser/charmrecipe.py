@@ -440,7 +440,6 @@ class BaseCharmRecipeEditView(
 
     def getStoreWidgets(self, channel_index):
         widgets_by_name = {widget.name: widget for widget in self.widgets}
-
         track_field_name = (
                 "field." + self._getFieldName("track", channel_index))
         branch_field_name = (
@@ -453,7 +452,6 @@ class BaseCharmRecipeEditView(
         track, risk, branch = channel_string_to_list(
             self.context.store_channels[channel_index])
         risks.append(risk)
-
         track_widget = widgets_by_name[track_field_name]
         track_widget.setRenderedValue(track)
         branch_widget = widgets_by_name[branch_field_name]
@@ -461,7 +459,6 @@ class BaseCharmRecipeEditView(
         risks_widget = widgets_by_name[risks_field_name]
         risks_widget.setRenderedValue(risks)
         risks_widget.orientation = 'horizontal'
-
         return {
             "track": track_widget,
             "branch": branch_widget,
@@ -469,9 +466,32 @@ class BaseCharmRecipeEditView(
             "delete": widgets_by_name[delete_field_name],
         }
 
+    def getAddStoreWidgets(self):
+        widgets_by_name = {widget.name: widget for widget in self.widgets}
+        track_widget = widgets_by_name["field.add_track"]
+        branch_widget = widgets_by_name["field.add_branch"]
+        risks_widget = widgets_by_name["field.add_risks"]
+        risks_widget.orientation = 'horizontal'
+        return {
+            "add_track": track_widget,
+            "add_branch": branch_widget,
+            "add_risks": risks_widget,
+        }
+
     def setUpFields(self):
         """See `LaunchpadFormView`."""
         super().setUpFields()
+        self.form_fields += FormFields(TextLine(
+            __name__='add_track',
+            required=False, title="Track"))
+        self.form_fields += FormFields(List(
+            __name__='add_risks',
+            required=False, title="Risk",
+            value_type=Choice(vocabulary="SnapStoreChannel")))
+        self.form_fields += FormFields(TextLine(
+            __name__='add_branch',
+            required=False, title="Branch"))
+
         for index in range(len(self.context.store_channels)):
             self.form_fields += FormFields(TextLine(
                 __name__=self._getFieldName('track', index),
@@ -490,7 +510,8 @@ class BaseCharmRecipeEditView(
     def setUpWidgets(self, context=None):
         for field in self.form_fields:
             if 'risk' in field.__name__:
-                field.custom_widget = CustomWidgetFactory(LabeledMultiCheckBoxWidget)
+                field.custom_widget = CustomWidgetFactory(
+                    LabeledMultiCheckBoxWidget)
             else:
                 super().setUpWidgets(context=context)
 
