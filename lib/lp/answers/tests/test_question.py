@@ -9,12 +9,12 @@ from zope.security.proxy import removeSecurityProxy
 from lp.answers.interfaces.questioncollection import IQuestionSet
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.testing import (
+    TestCaseWithFactory,
     admin_logged_in,
     anonymous_logged_in,
     celebrity_logged_in,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -26,30 +26,30 @@ class TestQuestionSecurity(TestCaseWithFactory):
         question = self.factory.makeQuestion()
         with anonymous_logged_in():
             with ExpectedException(Unauthorized):
-                question.title = 'foo anon'
+                question.title = "foo anon"
             with ExpectedException(Unauthorized):
-                question.description = 'foo anon'
+                question.description = "foo anon"
         with person_logged_in(self.factory.makePerson()):
             with ExpectedException(Unauthorized):
-                question.title = 'foo random'
+                question.title = "foo random"
             with ExpectedException(Unauthorized):
-                question.description = 'foo random'
+                question.description = "foo random"
         answer_contact = self.factory.makePerson()
         with person_logged_in(answer_contact):
-            answer_contact.addLanguage(getUtility(ILanguageSet)['en'])
+            answer_contact.addLanguage(getUtility(ILanguageSet)["en"])
             question.target.addAnswerContact(answer_contact, answer_contact)
             with ExpectedException(Unauthorized):
-                question.title = 'foo contact'
+                question.title = "foo contact"
             with ExpectedException(Unauthorized):
-                question.description = 'foo contact'
+                question.description = "foo contact"
         with person_logged_in(question.owner):
-            question.title = question.description = 'foo owner'
+            question.title = question.description = "foo owner"
         with person_logged_in(question.target.owner):
-            question.title = question.description = 'foo target owner'
+            question.title = question.description = "foo target owner"
         with admin_logged_in():
-            question.title = question.description = 'foo admin'
-        with celebrity_logged_in('registry_experts'):
-            question.title = question.description = 'foo registry'
+            question.title = question.description = "foo admin"
+        with celebrity_logged_in("registry_experts"):
+            question.title = question.description = "foo registry"
 
 
 class TestQuestionSearch(TestCaseWithFactory):

@@ -375,13 +375,14 @@ Also check the upload folders contain all the files we uploaded.
 Now let's see if all of the valid uploads are in the Upload queue marked
 as NEW and RELEASE.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.queue import PackageUploadSource
     >>> for name in package_names:
     ...     print(name)
     ...     spn = SourcePackageName.selectOneBy(name=name)
     ...     spr = SourcePackageRelease.selectOneBy(sourcepackagenameID=spn.id)
-    ...     us = PackageUploadSource.selectOneBy(
-    ...         sourcepackagereleaseID=spr.id)
+    ...     us = IStore(PackageUploadSource).find(
+    ...         PackageUploadSource, sourcepackagerelease=spr).one()
     ...     assert us.packageupload.status.name == 'NEW'
     ...     assert us.packageupload.pocket.name == 'RELEASE'
     drdsl

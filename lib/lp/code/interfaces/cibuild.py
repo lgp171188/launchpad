@@ -23,6 +23,7 @@ from lazr.restful.declarations import (
     operation_for_version,
     )
 from lazr.restful.fields import Reference
+from zope.interface import Attribute
 from zope.schema import (
     Bool,
     Datetime,
@@ -132,6 +133,10 @@ class ICIBuildView(IPackageBuildView, IPrivacy):
             "A mapping from job IDs to result tokens, retrieved from the "
             "builder.")))
 
+    binarypackages = Attribute(
+        "A list of binary packages that resulted from this build, ordered by "
+        "name.")
+
     def getConfiguration(logger=None):
         """Fetch a CI build's .launchpad.yaml from code hosting, if possible.
 
@@ -179,7 +184,8 @@ class ICIBuildView(IPackageBuildView, IPrivacy):
 
     def createBinaryPackageRelease(
             binarypackagename, version, summary, description, binpackageformat,
-            architecturespecific, installedsize=None, homepage=None):
+            architecturespecific, installedsize=None, homepage=None,
+            user_defined_fields=None):
         """Create and return a `BinaryPackageRelease` for this CI build.
 
         The new binary package release will be linked to this build.

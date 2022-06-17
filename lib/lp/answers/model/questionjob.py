@@ -4,33 +4,23 @@
 """Job classes related to QuestionJob."""
 
 __all__ = [
-    'QuestionJob',
-    ]
+    "QuestionJob",
+]
 
-from lazr.delegates import delegate_to
 import simplejson
 import six
+from lazr.delegates import delegate_to
 from storm.expr import And
-from storm.locals import (
-    Int,
-    Reference,
-    Unicode,
-    )
+from storm.locals import Int, Reference, Unicode
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 
-from lp.answers.enums import (
-    QuestionJobType,
-    QuestionRecipientSet,
-    )
+from lp.answers.enums import QuestionJobType, QuestionRecipientSet
 from lp.answers.interfaces.questionjob import (
     IQuestionEmailJob,
     IQuestionEmailJobSource,
     IQuestionJob,
-    )
+)
 from lp.answers.model.question import Question
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
@@ -45,7 +35,7 @@ from lp.services.mail.sendmail import (
     format_address,
     format_address_for_person,
     simple_sendmail,
-    )
+)
 from lp.services.propertycache import cachedproperty
 from lp.services.scripts import log
 
@@ -54,19 +44,19 @@ from lp.services.scripts import log
 class QuestionJob(StormBase):
     """A Job for queued question emails."""
 
-    __storm_table__ = 'QuestionJob'
+    __storm_table__ = "QuestionJob"
 
     id = Int(primary=True)
 
-    job_id = Int(name='job')
+    job_id = Int(name="job")
     job = Reference(job_id, Job.id)
 
     job_type = DBEnum(enum=QuestionJobType, allow_none=False)
 
-    question_id = Int(name='question')
+    question_id = Int(name="question")
     question = Reference(question_id, Question.id)
 
-    _json_data = Unicode('json_data')
+    _json_data = Unicode("json_data")
 
     def __init__(self, question, job_type, metadata):
         """Constructor.
@@ -86,7 +76,8 @@ class QuestionJob(StormBase):
     def __repr__(self):
         return (
             "<{self.__class__.__name__} for question {self.question.id}; "
-            "status={self.job.status}>").format(self=self)
+            "status={self.job.status}>"
+        ).format(self=self)
 
     @property
     def metadata(self):
@@ -95,7 +86,7 @@ class QuestionJob(StormBase):
 
     def makeDerived(self):
         if self.job_type != QuestionJobType.EMAIL:
-            raise ValueError('Unsupported Job type')
+            raise ValueError("Unsupported Job type")
         return QuestionEmailJob(self)
 
 
@@ -116,14 +107,15 @@ class QuestionEmailJob(BaseRunnableJob):
     def create(cls, question, user, recipient_set, subject, body, headers):
         """See `IQuestionJob`."""
         metadata = {
-            'user': user.id,
-            'recipient_set': recipient_set.name,
-            'subject': subject,
-            'body': body,
-            'headers': headers,
-            }
+            "user": user.id,
+            "recipient_set": recipient_set.name,
+            "subject": subject,
+            "body": body,
+            "headers": headers,
+        }
         job = QuestionJob(
-            question=question, job_type=cls.class_job_type, metadata=metadata)
+            question=question, job_type=cls.class_job_type, metadata=metadata
+        )
         derived = cls(job)
         derived.celeryRunOnCommit()
         return derived
@@ -134,29 +126,32 @@ class QuestionEmailJob(BaseRunnableJob):
         store = IMasterStore(QuestionJob)
         jobs = store.find(
             QuestionJob,
-            And(QuestionJob.job_type == cls.class_job_type,
-                QuestionJob.job_id.is_in(Job.ready_jobs)))
+            And(
+                QuestionJob.job_type == cls.class_job_type,
+                QuestionJob.job_id.is_in(Job.ready_jobs),
+            ),
+        )
         return (cls(job) for job in jobs)
 
     @cachedproperty
     def user(self):
         """See `IQuestionEmailJob`."""
-        return getUtility(IPersonSet).get(self.metadata['user'])
+        return getUtility(IPersonSet).get(self.metadata["user"])
 
     @property
     def subject(self):
         """See `IQuestionEmailJob`."""
-        return self.metadata['subject']
+        return self.metadata["subject"]
 
     @property
     def body(self):
         """See `IQuestionEmailJob`."""
-        return self.metadata['body']
+        return self.metadata["body"]
 
     @property
     def headers(self):
         """See `IQuestionEmailJob`."""
-        return self.metadata['headers']
+        return self.metadata["headers"]
 
     @property
     def log_name(self):
@@ -166,10 +161,12 @@ class QuestionEmailJob(BaseRunnableJob):
     def getOopsVars(self):
         """See `IRunnableJob`."""
         vars = BaseRunnableJob.getOopsVars(self)
-        vars.extend([
-            ('question', self.question.id),
-            ('user', self.user.name),
-            ])
+        vars.extend(
+            [
+                ("question", self.question.id),
+                ("user", self.user.name),
+            ]
+        )
         return vars
 
     def getErrorRecipients(self):
@@ -179,15 +176,18 @@ class QuestionEmailJob(BaseRunnableJob):
     @property
     def from_address(self):
         """See `IQuestionEmailJob`."""
-        address = 'question%s@%s' % (
-            self.question.id, config.answertracker.email_domain)
+        address = "question%s@%s" % (
+            self.question.id,
+            config.answertracker.email_domain,
+        )
         return format_address(self.user.displayname, address)
 
     @property
     def recipients(self):
         """See `IQuestionEmailJob`."""
         term = QuestionRecipientSet.getTermByToken(
-            self.metadata['recipient_set'])
+            self.metadata["recipient_set"]
+        )
         question_recipient_set = term.value
         if question_recipient_set == QuestionRecipientSet.ASKER:
             recipients = NotificationRecipientSet()
@@ -202,8 +202,10 @@ class QuestionEmailJob(BaseRunnableJob):
             recipients = self.question.getRecipients()
             owner = self.question.owner
             asker_recipients = [
-                recipient for recipient in recipients
-                if recipients.getReason(recipient)[0].subscriber == owner]
+                recipient
+                for recipient in recipients
+                if recipients.getReason(recipient)[0].subscriber == owner
+            ]
             recipients.remove(asker_recipients)
             return recipients
         elif question_recipient_set == QuestionRecipientSet.ASKER_SUBSCRIBER:
@@ -212,16 +214,17 @@ class QuestionEmailJob(BaseRunnableJob):
             return self.question.target.getAnswerContactRecipients(None)
         else:
             raise ValueError(
-                'Unsupported QuestionRecipientSet value: %s' %
-                question_recipient_set)
+                "Unsupported QuestionRecipientSet value: %s"
+                % question_recipient_set
+            )
 
     def buildBody(self, rationale):
         """See `IQuestionEmailJob`."""
         wrapper = MailWrapper()
         body_parts = [self.body, wrapper.format(rationale)]
-        if '\n-- ' not in self.body:
-            body_parts.insert(1, '-- ')
-        return '\n'.join(body_parts)
+        if "\n-- " not in self.body:
+            body_parts.insert(1, "-- ")
+        return "\n".join(body_parts)
 
     def run(self):
         """See `IRunnableJob`.
@@ -230,17 +233,21 @@ class QuestionEmailJob(BaseRunnableJob):
         """
         log.debug(
             "%s will send email for question %s.",
-            self.log_name, self.question.id)
+            self.log_name,
+            self.question.id,
+        )
         headers = self.headers
         recipients = self.recipients
         for email in recipients.getEmails():
             reason, header = recipients.getReason(email)
-            headers['X-Launchpad-Message-Rationale'] = header
-            headers['X-Launchpad-Message-For'] = reason.subscriber.name
+            headers["X-Launchpad-Message-Rationale"] = header
+            headers["X-Launchpad-Message-For"] = reason.subscriber.name
             formatted_body = self.buildBody(reason.getReason())
             simple_sendmail(
-                self.from_address, email, self.subject, formatted_body,
-                headers)
+                self.from_address, email, self.subject, formatted_body, headers
+            )
         log.debug(
             "%s has sent email for question %s.",
-            self.log_name, self.question.id)
+            self.log_name,
+            self.question.id,
+        )

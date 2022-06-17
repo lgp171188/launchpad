@@ -4,10 +4,10 @@
 """Interfaces for a Question."""
 
 __all__ = [
-    'IQuestionCollection',
-    'IQuestionSet',
-    'ISearchableByQuestionOwner',
-    ]
+    "IQuestionCollection",
+    "IQuestionSet",
+    "ISearchableByQuestionOwner",
+]
 
 from lazr.restful.declarations import (
     collection_default_content,
@@ -18,50 +18,46 @@ from lazr.restful.declarations import (
     operation_parameters,
     operation_returns_collection_of,
     operation_returns_entry,
-    )
+)
 from lazr.restful.fields import ReferenceChoice
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Int,
-    List,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Choice, Int, List, TextLine
 
 from lp import _
 from lp.answers.enums import (
     QUESTION_STATUS_DEFAULT_SEARCH,
     QuestionSort,
     QuestionStatus,
-    )
+)
 from lp.services.fields import PublicPersonChoice
 
 
 class IQuestionCollection(Interface):
-    """An object that can be used to search through a collection of questions.
-    """
+    """An object that can be used to search a collection of questions."""
 
     @operation_parameters(
-        search_text=TextLine(
-            title=_('Search text'), required=False),
+        search_text=TextLine(title=_("Search text"), required=False),
         status=List(
-            title=_('Status'), required=False,
-            value_type=Choice(vocabulary=QuestionStatus)),
+            title=_("Status"),
+            required=False,
+            value_type=Choice(vocabulary=QuestionStatus),
+        ),
         language=List(
-            title=_('Language'), required=False,
-            value_type=ReferenceChoice(vocabulary='Language')),
-        sort=Choice(
-            title=_('Sort'), required=False,
-            vocabulary=QuestionSort))
+            title=_("Language"),
+            required=False,
+            value_type=ReferenceChoice(vocabulary="Language"),
+        ),
+        sort=Choice(title=_("Sort"), required=False, vocabulary=QuestionSort),
+    )
     @operation_returns_collection_of(Interface)  # IQuestion.
     @export_read_operation()
-    @operation_for_version('devel')
-    def searchQuestions(search_text=None,
-                        status=list(QUESTION_STATUS_DEFAULT_SEARCH),
-                        language=None, sort=None):
+    @operation_for_version("devel")
+    def searchQuestions(
+        search_text=None,
+        status=list(QUESTION_STATUS_DEFAULT_SEARCH),
+        language=None,
+        sort=None,
+    ):
         """Return the questions from the collection matching search criteria.
 
         :param search_text: A string that is matched against the question
@@ -89,32 +85,40 @@ class ISearchableByQuestionOwner(IQuestionCollection):
     """Collection that support searching by question owner."""
 
     @operation_parameters(
-        search_text=TextLine(
-            title=_('Search text'), required=False),
+        search_text=TextLine(title=_("Search text"), required=False),
         status=List(
-            title=_('Status'), required=False,
-            value_type=Choice(vocabulary=QuestionStatus)),
+            title=_("Status"),
+            required=False,
+            value_type=Choice(vocabulary=QuestionStatus),
+        ),
         language=List(
-            title=_('Language'), required=False,
-            value_type=ReferenceChoice(vocabulary='Language')),
+            title=_("Language"),
+            required=False,
+            value_type=ReferenceChoice(vocabulary="Language"),
+        ),
         owner=PublicPersonChoice(
-            title=_('Owner'), required=False,
-            vocabulary='ValidPerson'),
+            title=_("Owner"), required=False, vocabulary="ValidPerson"
+        ),
         needs_attention_from=PublicPersonChoice(
-            title=_('Needs attentions from'), required=False,
-            vocabulary='ValidPerson'),
-        sort=Choice(
-            title=_('Sort'), required=False,
-            vocabulary=QuestionSort))
+            title=_("Needs attentions from"),
+            required=False,
+            vocabulary="ValidPerson",
+        ),
+        sort=Choice(title=_("Sort"), required=False, vocabulary=QuestionSort),
+    )
     @operation_returns_collection_of(Interface)  # IQuestion.
     @export_read_operation()
-    @operation_for_version('devel')
-    def searchQuestions(search_text=None,
-                        # Lp wants a sequence, but lazr.restful only supports
-                        # lists; cast the tuple as a list.
-                        status=list(QUESTION_STATUS_DEFAULT_SEARCH),
-                        language=None, sort=None, owner=None,
-                        needs_attention_from=None):
+    @operation_for_version("devel")
+    def searchQuestions(
+        search_text=None,
+        # Lp wants a sequence, but lazr.restful only supports
+        # lists; cast the tuple as a list.
+        status=list(QUESTION_STATUS_DEFAULT_SEARCH),
+        language=None,
+        sort=None,
+        owner=None,
+        needs_attention_from=None,
+    ):
         """Return the questions from the collection matching search criteria.
 
         :param search_text: A string that is matched against the question
@@ -142,16 +146,17 @@ class ISearchableByQuestionOwner(IQuestionCollection):
 class IQuestionSet(IQuestionCollection):
     """A utility that contain all the questions published in Launchpad."""
 
-    title = Attribute('Title')
+    title = Attribute("Title")
 
     @operation_parameters(
         question_id=Int(
-            title=_('The id of the question to get'),
-            required=True))
+            title=_("The id of the question to get"), required=True
+        )
+    )
     @operation_returns_entry(Interface)
     @export_read_operation()
     @export_operation_as("getByID")
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def get(question_id, default=None):
         """Return the question with the given id.
 

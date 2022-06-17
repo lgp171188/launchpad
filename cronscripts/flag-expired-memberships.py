@@ -7,19 +7,10 @@
 
 import _pythonpath  # noqa: F401
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
-
-import pytz
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.registry.interfaces.teammembership import (
-    DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT,
-    ITeamMembershipSet,
-    )
+from lp.registry.interfaces.teammembership import ITeamMembershipSet
 from lp.services.config import config
 from lp.services.scripts.base import (
     LaunchpadCronScript,
@@ -34,7 +25,7 @@ class ExpireMemberships(LaunchpadCronScript):
         """Flag expired team memberships and warn about impending expiration.
 
         Flag expired team memberships and send warnings for members whose
-        memberships are going to expire in one week (or less) from now.
+        team memberships are expiring soon.
         """
         membershipset = getUtility(ITeamMembershipSet)
         self.txn.begin()
@@ -42,11 +33,9 @@ class ExpireMemberships(LaunchpadCronScript):
         membershipset.handleMembershipsExpiringToday(reviewer, self.logger)
         self.txn.commit()
 
-        min_date_for_warning = datetime.now(pytz.timezone('UTC')) + timedelta(
-            days=DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT)
         self.txn.begin()
-        for membership in membershipset.getMembershipsToExpire(
-            min_date_for_warning):
+        memberships_to_warn = membershipset.getExpiringMembershipsToWarn()
+        for membership in memberships_to_warn:
             membership.sendExpirationWarningEmail()
             self.logger.debug("Sent warning email to %s in %s team."
                           % (membership.person.name, membership.team.name))

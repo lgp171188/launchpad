@@ -4274,7 +4274,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                  enhances=None, breaks=None,
                                  essential=False, installed_size=None,
                                  date_created=None, debug_package=None,
-                                 homepage=None):
+                                 homepage=None, user_defined_fields=None):
         """Make a `BinaryPackageRelease`."""
         if build is None and ci_build is None:
             build = self.makeBinaryPackageBuild()
@@ -4314,6 +4314,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             "architecturespecific": architecturespecific,
             "installedsize": installed_size,
             "homepage": homepage,
+            "user_defined_fields": user_defined_fields,
             }
         if build is not None:
             kwargs.update({

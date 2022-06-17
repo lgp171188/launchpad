@@ -417,6 +417,7 @@ class TestCIBuild(TestCaseWithFactory):
             installedsize=Equals(1024),
             homepage=Equals("https://example.com/"),
             ))
+        self.assertContentEqual([bpr], build.binarypackages)
 
 
 class TestCIBuildSet(TestCaseWithFactory):

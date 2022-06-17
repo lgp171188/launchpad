@@ -242,7 +242,7 @@ def get_comments_for_bugtask(bugtask, truncate=False, for_display=False,
         get_property_cache(comment._message).bugattachments = []
 
     for attachment in bugtask.bug.attachments_unpopulated:
-        message_id = attachment._messageID
+        message_id = attachment._message_id
         if message_id not in comments:
             # We are not showing this message.
             continue

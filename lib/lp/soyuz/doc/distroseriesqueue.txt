@@ -85,10 +85,11 @@ upload can not have that state.
 
 XXX cprov 20051209: need to build a broken upload to test it properly
 
+    >>> from lp.services.database.interfaces import IStore
     >>> for item in new_queue:
     ...     try:
     ...         item.setAccepted()
-    ...         item.syncUpdate()
+    ...         IStore(item).flush()
     ...     except QueueInconsistentStateError as info:
     ...         print(info)
 
@@ -105,7 +106,6 @@ XXX cprov 20051209: need to build a broken upload to test it properly
 
 Confirm we can now find ed published in hoary.
 
-    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.enums import PackagePublishingStatus
     >>> from lp.soyuz.model.publishing import SourcePackagePublishingHistory
     >>> for release in IStore(SourcePackagePublishingHistory).find(
@@ -388,7 +388,7 @@ The upload admin can not accept both since we check unique
 The database modification needs to be realised in the DB, otherwise
 the look up code won't be able to identify any duplications:
 
-    >>> dup_one.syncUpdate()
+    >>> IStore(dup_one).flush()
 
 As expected the second item acceptance will fail and the item will
 remain in the original queue
@@ -406,7 +406,7 @@ remain in the original queue
 The only available action will be rejection:
 
     >>> dup_two.setRejected()
-    >>> dup_one.syncUpdate()
+    >>> IStore(dup_one).flush()
     >>> dup_two.status.name
     'REJECTED'
 
@@ -415,14 +415,14 @@ test after the former accepted item was published (DONE queue)
 
     >>> dup_two.status = PassthroughStatusValue(
     ...     PackageUploadStatus.UNAPPROVED)
-    >>> dup_two.syncUpdate()
+    >>> IStore(dup_two).flush()
     >>> dup_two.status.name
     'UNAPPROVED'
 
     >>> dup_one.setDone()
     >>> dup_one.status == PackageUploadStatus.DONE
     True
-    >>> dup_one.syncUpdate()
+    >>> IStore(dup_one).flush()
 
 The protection code should also identify dups with items in DONE queue
 

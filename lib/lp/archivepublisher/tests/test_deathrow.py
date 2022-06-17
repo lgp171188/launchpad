@@ -54,7 +54,7 @@ class TestDeathRow(TestCase):
             pub.component.name,
             pub.pool_name,
             pub.pool_version,
-            pub_file.libraryfile.filename)
+            pub_file)
 
     def assertIsFile(self, path: Path) -> None:
         """Assert the path exists and is a regular file."""

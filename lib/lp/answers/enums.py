@@ -8,22 +8,17 @@
 # used by most of the schemas for question classes.
 
 __all__ = [
-    'QuestionAction',
-    'QuestionJobType',
-    'QuestionParticipation',
-    'QuestionPriority',
-    'QuestionRecipientSet',
-    'QUESTION_STATUS_DEFAULT_SEARCH',
-    'QuestionSort',
-    'QuestionStatus',
-    ]
+    "QuestionAction",
+    "QuestionJobType",
+    "QuestionParticipation",
+    "QuestionPriority",
+    "QuestionRecipientSet",
+    "QUESTION_STATUS_DEFAULT_SEARCH",
+    "QuestionSort",
+    "QuestionStatus",
+]
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    EnumeratedType,
-    Item,
-    )
+from lazr.enum import DBEnumeratedType, DBItem, EnumeratedType, Item
 
 
 class QuestionAction(DBEnumeratedType):
@@ -34,102 +29,140 @@ class QuestionAction(DBEnumeratedType):
     on the question.
     """
 
-    REQUESTINFO = DBItem(10, """
+    REQUESTINFO = DBItem(
+        10,
+        """
         Request for more information
 
         This message asks for more information about the question.
-        """)
+        """,
+    )
 
-    GIVEINFO = DBItem(20, """
+    GIVEINFO = DBItem(
+        20,
+        """
         Give more information
 
         In this message, the submitter provides more information about the
         question.
-        """)
+        """,
+    )
 
-    COMMENT = DBItem(30, """
+    COMMENT = DBItem(
+        30,
+        """
         Comment
 
         User commented on the message. This is use for example for messages
         added to a question in the SOLVED state.
-        """)
+        """,
+    )
 
-    ANSWER = DBItem(35, """
+    ANSWER = DBItem(
+        35,
+        """
         Answer
 
         This message provides an answer to the question.
-        """)
+        """,
+    )
 
-    CONFIRM = DBItem(40, """
+    CONFIRM = DBItem(
+        40,
+        """
         Confirm
 
         This message confirms that an answer solved the question.
-        """)
+        """,
+    )
 
-    REJECT = DBItem(50, """
+    REJECT = DBItem(
+        50,
+        """
         Reject
 
         This message rejects a question as invalid.
-        """)
+        """,
+    )
 
-    EXPIRE = DBItem(70, """
+    EXPIRE = DBItem(
+        70,
+        """
         Expire
 
         Automatic message created when the question is expired.
-        """)
+        """,
+    )
 
-    REOPEN = DBItem(80, """
+    REOPEN = DBItem(
+        80,
+        """
         Reopen
 
         Message from the submitter that reopens the question while providing
         more information.
-        """)
+        """,
+    )
 
-    SETSTATUS = DBItem(90, """
+    SETSTATUS = DBItem(
+        90,
+        """
         Change status
 
         Message from an administrator that explain why the question status
         was changed.
-        """)
+        """,
+    )
 
 
 class QuestionJobType(DBEnumeratedType):
     """Values that IQuestionJob.job_type can take."""
 
-    EMAIL = DBItem(0, """
+    EMAIL = DBItem(
+        0,
+        """
         Question email notification
 
         Notify question subscribers about a question via email.
-        """)
+        """,
+    )
 
 
 class QuestionRecipientSet(EnumeratedType):
     """The kinds of recipients who will receive notification."""
 
-    ASKER = Item("""
+    ASKER = Item(
+        """
         Asker
 
         The person who asked the question.
-        """)
+        """
+    )
 
-    SUBSCRIBER = Item("""
+    SUBSCRIBER = Item(
+        """
         Subscriber
 
         The question's direct and indirect subscribers, exception for
         the asker.
-        """)
+        """
+    )
 
-    ASKER_SUBSCRIBER = Item("""
+    ASKER_SUBSCRIBER = Item(
+        """
         Asker and Subscriber
 
         The question's direct and indirect subscribers, including the asker.
-        """)
+        """
+    )
 
-    CONTACT = Item("""
+    CONTACT = Item(
+        """
         Contact
 
         All the answer contacts for the question's target.
-        """)
+        """
+    )
 
 
 class QuestionParticipation(EnumeratedType):
@@ -138,35 +171,45 @@ class QuestionParticipation(EnumeratedType):
     This enumeration is part of the IPerson.searchTickets() API.
     """
 
-    OWNER = Item("""
+    OWNER = Item(
+        """
         Owner
 
         The person created the question.
-        """)
+        """
+    )
 
-    SUBSCRIBER = Item("""
+    SUBSCRIBER = Item(
+        """
         Subscriber
 
         The person subscribed to the question.
-        """)
+        """
+    )
 
-    ASSIGNEE = Item("""
+    ASSIGNEE = Item(
+        """
         Assignee
 
         The person is assigned to the question.
-        """)
+        """
+    )
 
-    COMMENTER = Item("""
+    COMMENTER = Item(
+        """
         Commenter
 
         The person commented on the question.
-        """)
+        """
+    )
 
-    ANSWERER = Item("""
+    ANSWERER = Item(
+        """
         Answerer
 
         The person answered the question.
-        """)
+        """
+    )
 
 
 class QuestionPriority(DBEnumeratedType):
@@ -176,36 +219,48 @@ class QuestionPriority(DBEnumeratedType):
     management system.
     """
 
-    WISHLIST = DBItem(0, """
+    WISHLIST = DBItem(
+        0,
+        """
         Wishlist
 
         This question is really a request for a new feature. We will not take
         it further as a question, it should be closed, and a specification
         created and managed in the Launchpad Specification tracker.
-        """)
+        """,
+    )
 
-    NORMAL = DBItem(10, """
+    NORMAL = DBItem(
+        10,
+        """
         Normal
 
         This question is of normal priority. We should respond to it in due
         course.
-        """)
+        """,
+    )
 
-    HIGH = DBItem(70, """
+    HIGH = DBItem(
+        70,
+        """
         High
 
         This question has been flagged as being of higher than normal
         priority. It should always be prioritized over a "normal" question.
-        """)
+        """,
+    )
 
-    EMERGENCY = DBItem(90, """
+    EMERGENCY = DBItem(
+        90,
+        """
         Emergency
 
         This question is classed as an emergency. No more than 5% of
         questions should fall into this category. Support engineers should
         ensure that there is somebody on this problem full time until it is
         resolved, or escalate it to the core technical and management team.
-        """)
+        """,
+    )
 
 
 class QuestionSort(EnumeratedType):
@@ -215,38 +270,48 @@ class QuestionSort(EnumeratedType):
     titles are formatted for nice display in browser code.
     """
 
-    RELEVANCY = Item("""
+    RELEVANCY = Item(
+        """
     by relevancy
 
     Sort by relevancy of the question toward the search text.
-    """)
+    """
+    )
 
-    STATUS = Item("""
+    STATUS = Item(
+        """
     by status
 
     Sort questions by status: Open, Needs information, Answered, Solved,
     Expired, Invalid.
 
     NEWEST_FIRST should be used as a secondary sort key.
-    """)
+    """
+    )
 
-    NEWEST_FIRST = Item("""
+    NEWEST_FIRST = Item(
+        """
     newest first
 
     Sort questions from newest to oldest.
-    """)
+    """
+    )
 
-    OLDEST_FIRST = Item("""
+    OLDEST_FIRST = Item(
+        """
     oldest first
 
     Sort questions from oldset to newest.
-    """)
+    """
+    )
 
-    RECENT_OWNER_ACTIVITY = Item("""
+    RECENT_OWNER_ACTIVITY = Item(
+        """
     recently updated first
 
     Sort questions that received new information from the owner first.
-    """)
+    """
+    )
 
 
 class QuestionStatus(DBEnumeratedType):
@@ -259,51 +324,72 @@ class QuestionStatus(DBEnumeratedType):
     to update that document for any pertinent changes.
     """
 
-    OPEN = DBItem(10, """
+    OPEN = DBItem(
+        10,
+        """
         Open
 
         The question is waiting for an answer. This could be a new question
         or a question where the given answer was refused by the submitter.
-        """)
+        """,
+    )
 
-    NEEDSINFO = DBItem(15, """
+    NEEDSINFO = DBItem(
+        15,
+        """
         Needs information
 
         A user requested more information from the submitter. The question
         will be moved back to the OPEN state once the submitter provides the
         answer.
-        """)
+        """,
+    )
 
-    ANSWERED = DBItem(18, """
+    ANSWERED = DBItem(
+        18,
+        """
         Answered
 
         An answer was given on this question. We assume that the answer
         is the correct one. The user will post back changing the question's
         status back to OPEN if that is not the case.
-        """)
+        """,
+    )
 
-    SOLVED = DBItem(20, """
+    SOLVED = DBItem(
+        20,
+        """
         Solved
 
         The submitter confirmed that an answer solved their question.
-        """)
+        """,
+    )
 
-    EXPIRED = DBItem(25, """
+    EXPIRED = DBItem(
+        25,
+        """
         Expired
 
         The question has been expired after 15 days without comments in the
         OPEN or NEEDSINFO state.
-        """)
+        """,
+    )
 
-    INVALID = DBItem(30, """
+    INVALID = DBItem(
+        30,
+        """
         Invalid
 
         This question isn't a valid question. It could be a duplicate
         question, spam or anything that should not appear in the
         Answer Tracker.
-        """)
+        """,
+    )
 
 
 QUESTION_STATUS_DEFAULT_SEARCH = (
-    QuestionStatus.OPEN, QuestionStatus.NEEDSINFO, QuestionStatus.ANSWERED,
-    QuestionStatus.SOLVED)
+    QuestionStatus.OPEN,
+    QuestionStatus.NEEDSINFO,
+    QuestionStatus.ANSWERED,
+    QuestionStatus.SOLVED,
+)

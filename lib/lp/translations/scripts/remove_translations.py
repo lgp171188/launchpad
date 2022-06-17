@@ -185,6 +185,10 @@ class RemoveTranslations(LaunchpadScript):
             '-r', '--reviewer', dest='reviewer',
             help="Reviewer match: delete only messages with this reviewer."),
         Option(
+            '-c', '--created', dest='date_created',
+            help="Date created match: delete only messages created "
+                 "on this date."),
+        Option(
             '-x', '--reject-license', action='store_true',
             dest='reject_license',
             help="Match submitters who rejected the licence agreement."),
@@ -295,6 +299,7 @@ class RemoveTranslations(LaunchpadScript):
             submitter=self.options.submitter,
             reject_license=self.options.reject_license,
             reviewer=self.options.reviewer,
+            date_created=self.options.date_created,
             ids=self.options.ids,
             potemplate=self.options.potemplate,
             language_code=self.options.language,
@@ -349,6 +354,7 @@ def warn_about_deleting_current_messages(cur, from_text, where_text, logger):
 
 
 def remove_translations(logger=None, submitter=None, reviewer=None,
+                        date_created=None,
                         reject_license=False, ids=None, potemplate=None,
                         language_code=None, not_language=False,
                         is_current_ubuntu=None, is_current_upstream=None,
@@ -358,6 +364,7 @@ def remove_translations(logger=None, submitter=None, reviewer=None,
     :param logger: Optional logger to write output to.
     :param submitter: Delete only messages submitted by this person.
     :param reviewer: Delete only messages reviewed by this person.
+    :param date_created: Delete only messages created on this date.
     :param reject_license: Delete only messages submitted by persons who
         have rejected the licensing agreement.
     :param ids: Delete only messages with these `TranslationMessage` ids.
@@ -384,6 +391,10 @@ def remove_translations(logger=None, submitter=None, reviewer=None,
     if reviewer is not None:
         conditions.add(
             'TranslationMessage.reviewer = %s' % sqlvalues(reviewer))
+    if date_created is not None:
+        conditions.add(
+            "date_trunc('day', TranslationMessage.date_created) = %s"
+            % sqlvalues(date_created))
     if reject_license:
         joins.add('TranslationRelicensingAgreement')
         conditions.add(

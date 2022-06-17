@@ -4,69 +4,67 @@
 """Interface for the Jobs system for questions."""
 
 __all__ = [
-    'IQuestionJob',
-    'IQuestionEmailJob',
-    'IQuestionEmailJobSource',
-    ]
+    "IQuestionJob",
+    "IQuestionEmailJob",
+    "IQuestionEmailJobSource",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Field,
-    Int,
-    Object,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Choice, Field, Int, Object
 
 from lp import _
 from lp.answers.enums import QuestionJobType
-from lp.services.job.interfaces.job import (
-    IJob,
-    IJobSource,
-    IRunnableJob,
-    )
+from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
 
 
 class IQuestionJob(Interface):
     """A Job related to a question."""
 
     id = Int(
-        title=_('DB ID'), required=True, readonly=True,
-        description=_("The tracking number for this job."))
+        title=_("DB ID"),
+        required=True,
+        readonly=True,
+        description=_("The tracking number for this job."),
+    )
 
     job = Object(
-        title=_('The common Job attributes'),
-        schema=IJob, required=True)
+        title=_("The common Job attributes"), schema=IJob, required=True
+    )
 
     job_type = Choice(
-        title=_('Job type'), vocabulary=QuestionJobType,
-        required=True, readonly=True)
+        title=_("Job type"),
+        vocabulary=QuestionJobType,
+        required=True,
+        readonly=True,
+    )
 
     question = Field(
         title=_("The question related to this job."),
-        description=_("An IQuestion."), required=True, readonly=True)
+        description=_("An IQuestion."),
+        required=True,
+        readonly=True,
+    )
 
-    metadata = Attribute('A dict of data about the job.')
+    metadata = Attribute("A dict of data about the job.")
 
 
 class IQuestionEmailJob(IQuestionJob, IRunnableJob):
 
-    user = Attribute('The `IPerson` who triggered the email.')
+    user = Attribute("The `IPerson` who triggered the email.")
 
-    subject = Attribute('The subject of the email.')
+    subject = Attribute("The subject of the email.")
 
-    body = Attribute(
-        'The body of the email that is common to all recipients.')
+    body = Attribute("The body of the email that is common to all recipients.")
 
     headers = Attribute(
-        'The headers of the email that are common to all recipients.')
+        "The headers of the email that are common to all recipients."
+    )
 
     from_address = Attribute(
-        'The formatted email address for the user and question.')
+        "The formatted email address for the user and question."
+    )
 
-    recipients = Attribute('The recipient of the email.')
+    recipients = Attribute("The recipient of the email.")
 
     def buildBody(rationale):
         """Return the formatted email body with the rationale included."""

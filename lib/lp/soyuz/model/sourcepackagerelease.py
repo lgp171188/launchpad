@@ -352,7 +352,7 @@ class SourcePackageRelease(SQLBase):
         origin = [
             PackageUploadSource,
             Join(PackageUpload,
-                 PackageUploadSource.packageuploadID == PackageUpload.id),
+                 PackageUploadSource.packageupload == PackageUpload.id),
             Join(LibraryFileAlias,
                  LibraryFileAlias.id == PackageUpload.changes_file_id),
             Join(LibraryFileContent,

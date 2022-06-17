@@ -583,9 +583,9 @@ class Archive(SQLBase):
             # Pre-cache related `PackageUpload`s and `PackageUploadSource`s
             # which are immediatelly used in the API context for checking
             # permissions on the returned entries.
-            uploads = load_related(PackageUpload, rows, ['packageuploadID'])
+            uploads = load_related(PackageUpload, rows, ['packageupload_id'])
             pu_sources = load_referencing(
-                PackageUploadSource, uploads, ['packageuploadID'])
+                PackageUploadSource, uploads, ['packageupload_id'])
             for pu_source in pu_sources:
                 upload = pu_source.packageupload
                 get_property_cache(upload).sources = [pu_source]
@@ -1692,8 +1692,8 @@ class Archive(SQLBase):
             clauses = (
                 SourcePackagePublishingHistory.archive == self.id,
                 SourcePackagePublishingHistory.sourcepackagereleaseID ==
-                    PackageUploadSource.sourcepackagereleaseID,
-                PackageUploadSource.packageuploadID == PackageUpload.id,
+                    PackageUploadSource.sourcepackagerelease_id,
+                PackageUploadSource.packageupload_id == PackageUpload.id,
                 PackageUpload.status == PackageUploadStatus.DONE,
                 PackageUpload.changes_file_id == LibraryFileAlias.id,
                 )

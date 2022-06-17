@@ -315,7 +315,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
         origin = [
             PackageUploadBuild,
             Join(PackageUpload,
-                 PackageUploadBuild.packageuploadID == PackageUpload.id),
+                 PackageUploadBuild.packageupload == PackageUpload.id),
             Join(LibraryFileAlias,
                  LibraryFileAlias.id == PackageUpload.changes_file_id),
             Join(LibraryFileContent,

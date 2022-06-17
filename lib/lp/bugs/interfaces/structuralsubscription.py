@@ -89,15 +89,17 @@ class IStructuralSubscriptionRestricted(Interface):
     """The restricted parts of a subscription to a Launchpad structure."""
 
     @export_factory_operation(Interface, [])
+    @operation_for_version("beta")
     def newBugFilter():
         """Returns a new `BugSubscriptionFilter` for this subscription."""
 
     @export_destructor_operation()
+    @operation_for_version("beta")
     def delete():
         """Delete this structural subscription filter."""
 
 
-@exported_as_webservice_entry(publish_web_link=False)
+@exported_as_webservice_entry(publish_web_link=False, as_of="beta")
 class IStructuralSubscription(
     IStructuralSubscriptionPublic, IStructuralSubscriptionRestricted):
     """A subscription to a Launchpad structure."""
@@ -230,7 +232,7 @@ class IStructuralSubscriptionTargetWrite(Interface):
         """
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IStructuralSubscriptionTarget(IStructuralSubscriptionTargetRead,
                                     IStructuralSubscriptionTargetWrite):
     """A Launchpad Structure allowing users to subscribe to it."""

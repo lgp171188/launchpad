@@ -7,10 +7,7 @@ from zope.component import getUtility
 
 from lp.app.errors import UserCannotUnsubscribePerson
 from lp.services.worlddata.interfaces.language import ILanguageSet
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -52,7 +49,8 @@ class TestQuestionSubscription(TestCaseWithFactory):
                 UserCannotUnsubscribePerson,
                 question.unsubscribe,
                 subscription.person,
-                unsubscriber)
+                unsubscriber,
+            )
 
 
 class TestQuestionSubscriptionCanBeUnsubscribedbyUser(TestCaseWithFactory):
@@ -69,7 +67,8 @@ class TestQuestionSubscriptionCanBeUnsubscribedbyUser(TestCaseWithFactory):
         """The subscriber has permission to unsubscribe."""
         subscription = self.factory.makeQuestionSubscription()
         self.assertTrue(
-            subscription.canBeUnsubscribedByUser(subscription.person))
+            subscription.canBeUnsubscribedByUser(subscription.person)
+        )
 
     def test_non_subscriber_fails(self):
         """An unrelated person can't unsubscribe a user."""
@@ -92,7 +91,8 @@ class TestQuestionSubscriptionCanBeUnsubscribedbyUser(TestCaseWithFactory):
         question = self.factory.makeQuestion(owner=question_owner)
         subscriber = self.factory.makePerson()
         subscription = self.factory.makeQuestionSubscription(
-            question=question, person=subscriber)
+            question=question, person=subscriber
+        )
         self.assertTrue(subscription.canBeUnsubscribedByUser(question_owner))
 
     def test_question_team_owner_can_unsubscribe(self):
@@ -104,11 +104,13 @@ class TestQuestionSubscriptionCanBeUnsubscribedbyUser(TestCaseWithFactory):
         team_owner = self.factory.makePerson()
         team_member = self.factory.makePerson()
         question_owner = self.factory.makeTeam(
-            owner=team_owner, members=[team_member])
+            owner=team_owner, members=[team_member]
+        )
         question = self.factory.makeQuestion(owner=question_owner)
         subscriber = self.factory.makePerson()
         subscription = self.factory.makeQuestionSubscription(
-            question=question, person=subscriber)
+            question=question, person=subscriber
+        )
         self.assertTrue(subscription.canBeUnsubscribedByUser(team_owner))
         self.assertTrue(subscription.canBeUnsubscribedByUser(team_member))
 
@@ -119,13 +121,14 @@ class TestQuestionSubscriptionCanBeUnsubscribedbyUser(TestCaseWithFactory):
         question = self.factory.makeQuestion(target=product)
         subscriber = self.factory.makePerson()
         subscription = self.factory.makeQuestionSubscription(
-            question=question, person=subscriber)
+            question=question, person=subscriber
+        )
         self.assertTrue(subscription.canBeUnsubscribedByUser(target_owner))
 
     def test_question_target_answer_contact_can_unsubscribe(self):
         """Question target answer contact can unsubscribe someone."""
         answer_contact = self.factory.makePerson()
-        english = getUtility(ILanguageSet)['en']
+        english = getUtility(ILanguageSet)["en"]
         with person_logged_in(answer_contact):
             answer_contact.addLanguage(english)
         distro_owner = self.factory.makePerson()
@@ -135,5 +138,6 @@ class TestQuestionSubscriptionCanBeUnsubscribedbyUser(TestCaseWithFactory):
         question = self.factory.makeQuestion(target=distro)
         subscriber = self.factory.makePerson()
         subscription = self.factory.makeQuestionSubscription(
-            question=question, person=subscriber)
+            question=question, person=subscriber
+        )
         self.assertTrue(subscription.canBeUnsubscribedByUser(answer_contact))

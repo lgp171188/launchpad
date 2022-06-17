@@ -45,9 +45,13 @@ class FakeLibraryFileContent:
 
 class FakeLibraryFileAlias:
 
-    def __init__(self, contents):
-        self.content = FakeLibraryFileContent(contents)
+    def __init__(self, contents, filename):
         self.contents = contents
+        self.filename = filename
+
+    @property
+    def content(self):
+        return FakeLibraryFileContent(self.contents)
 
     def open(self):
         self.loc = 0
@@ -62,6 +66,14 @@ class FakeLibraryFileAlias:
         pass
 
 
+class FakePackageRelease:
+
+    def __init__(self, release_id, user_defined_fields=None, ci_build=None):
+        self.id = release_id
+        self.user_defined_fields = user_defined_fields
+        self.ci_build = ci_build
+
+
 class FakeReleaseType(EnumeratedType):
 
     SOURCE = Item("Source")
@@ -71,13 +83,19 @@ class FakeReleaseType(EnumeratedType):
 @implementer(IPackageReleaseFile)
 class FakePackageReleaseFile:
 
-    def __init__(self, contents, release_type, release_id):
-        self.libraryfile = FakeLibraryFileAlias(contents)
+    def __init__(self, contents, filename, release_type=FakeReleaseType.BINARY,
+                 release_id=1, user_defined_fields=None, ci_build=None):
+        self.libraryfile = FakeLibraryFileAlias(contents, filename)
         if release_type == FakeReleaseType.SOURCE:
             self.sourcepackagereleaseID = release_id
+            self.sourcepackagerelease = FakePackageRelease(
+                release_id, user_defined_fields=user_defined_fields,
+                ci_build=ci_build)
             alsoProvides(self, ISourcePackageReleaseFile)
         elif release_type == FakeReleaseType.BINARY:
             self.binarypackagereleaseID = release_id
+            self.binarypackagerelease = FakePackageRelease(
+                release_id, user_defined_fields=user_defined_fields)
             alsoProvides(self, IBinaryPackageFile)
 
 
@@ -88,29 +106,26 @@ class PoolTestingFile:
         self.pool = pool
         self.source_name = source_name
         self.source_version = source_version
-        self.filename = filename
-        self.contents = source_name.encode("UTF-8")
-        self.release_type = release_type
-        self.release_id = release_id
+        self.pub_file = FakePackageReleaseFile(
+            source_name.encode(), filename, release_type=release_type,
+            release_id=release_id)
 
     def addToPool(self, component: str):
         return self.pool.addFile(
-            component, self.source_name, self.source_version, self.filename,
-            FakePackageReleaseFile(
-                self.contents, self.release_type, self.release_id))
+            component, self.source_name, self.source_version, self.pub_file)
 
     def removeFromPool(self, component: str) -> int:
         return self.pool.removeFile(
-            component, self.source_name, self.source_version, self.filename)
+            component, self.source_name, self.source_version, self.pub_file)
 
     def checkExists(self, component: str) -> bool:
         path = self.pool.pathFor(
-            component, self.source_name, self.source_version, self.filename)
+            component, self.source_name, self.source_version, self.pub_file)
         return path.exists()
 
     def checkIsLink(self, component: str) -> bool:
         path = self.pool.pathFor(
-            component, self.source_name, self.source_version, self.filename)
+            component, self.source_name, self.source_version, self.pub_file)
         return path.is_symlink()
 
     def checkIsFile(self, component: str) -> bool:

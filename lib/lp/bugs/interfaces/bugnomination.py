@@ -25,6 +25,7 @@ from lazr.restful.declarations import (
     export_write_operation,
     exported,
     exported_as_webservice_entry,
+    operation_for_version,
     REQUEST_USER,
     )
 from lazr.restful.fields import (
@@ -96,7 +97,7 @@ class BugNominationStatus(DBEnumeratedType):
         """)
 
 
-@exported_as_webservice_entry(publish_web_link=False)
+@exported_as_webservice_entry(as_of="beta", publish_web_link=False)
 class IBugNomination(IHasBug, IHasOwner):
     """A nomination for a bug to be fixed in a specific series.
 
@@ -139,6 +140,7 @@ class IBugNomination(IHasBug, IHasOwner):
 
     @call_with(approver=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def approve(approver):
         """Approve this bug for fixing in a series.
 
@@ -154,6 +156,7 @@ class IBugNomination(IHasBug, IHasOwner):
 
     @call_with(decliner=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def decline(decliner):
         """Decline this bug for fixing in a series.
 
@@ -178,6 +181,7 @@ class IBugNomination(IHasBug, IHasOwner):
 
     @call_with(person=REQUEST_USER)
     @export_read_operation()
+    @operation_for_version("beta")
     def canApprove(person):
         """Is this person allowed to approve the nomination?"""
 

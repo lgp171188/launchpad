@@ -29,7 +29,6 @@ from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.packageset import IPackagesetSet
-from lp.soyuz.model.queue import PackageUploadBuild
 from lp.testing import (
     admin_logged_in,
     ANONYMOUS,
@@ -184,8 +183,8 @@ class TestBuildViews(TestCaseWithFactory):
         package_upload = build.distro_series.createQueueEntry(
             PackagePublishingPocket.UPDATES, build.archive,
             'changes.txt', b'my changes')
-        # Old SQL Object: creating it, adds it automatically to the store.
-        PackageUploadBuild(packageupload=package_upload, build=build)
+        with person_logged_in(self.admin):
+            package_upload.addBuild(build)
         self.assertEqual(package_upload.status.name, 'NEW')
         build_view = getMultiAdapter(
             (build, self.empty_request), name="+index")

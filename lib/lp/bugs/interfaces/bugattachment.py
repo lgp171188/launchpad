@@ -20,6 +20,7 @@ from lazr.restful.declarations import (
     export_write_operation,
     exported,
     exported_as_webservice_entry,
+    operation_for_version,
     REQUEST_USER,
     )
 from lazr.restful.fields import Reference
@@ -81,13 +82,12 @@ class IBugAttachmentView(IHasBug):
               description=_(
                 'A short and descriptive description of the attachment'),
               required=True))
-    libraryfile = Bytes(title=_("The attachment content."),
-              required=True)
-    data = exported(
+    libraryfile = exported(
         Bytes(title=_("The attachment content."),
               required=True,
-              readonly=True))
-    _messageID = Int(title=_("Message ID"))
+              readonly=True),
+        exported_as="data")
+    _message_id = Int(title=_("Message ID"))
     message = exported(
         Reference(IMessage, title=_("The message that was created when we "
                                     "added this attachment.")))
@@ -100,7 +100,7 @@ class IBugAttachmentView(IHasBug):
         """Return the `ILibraryFileAlias` for the given file name.
 
         NotFoundError is raised if the given filename does not match
-        libraryfile.filename.
+        data.filename.
         """
 
 
@@ -115,11 +115,12 @@ class IBugAttachmentEdit(Interface):
 
     @call_with(user=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def removeFromBug(user):
         """Remove the attachment from the bug."""
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugAttachment(IBugAttachmentView, IBugAttachmentEdit):
     """A file attachment to an IBug.
 
@@ -128,14 +129,14 @@ class IBugAttachment(IBugAttachmentView, IBugAttachmentEdit):
             for attachment in bug.attachments:
                 buffer = attachment.data.open()
                 for line in buffer:
-                    print line
+                    print(line)
                 buffer.close()
 
         Launchpadlib example of accessing metadata about an attachment::
 
             attachment = bug.attachments[0]
-            print "title:", attachment.title
-            print "ispatch:", attachment.type
+            print("title:", attachment.title)
+            print("ispatch:", attachment.type)
 
         For information about the file-like object returned by
         attachment.data.open() see lazr.restfulclient's documentation of the
@@ -145,9 +146,9 @@ class IBugAttachment(IBugAttachmentView, IBugAttachmentEdit):
         the "message" attribute::
 
             message = attachment.message
-            print "subject:", message.subject.encode('utf-8')
-            print "owner:", message.owner.display_name.encode('utf-8')
-            print "created:", message.date_created
+            print("subject:", message.subject)
+            print("owner:", message.owner.display_name)
+            print("created:", message.date_created)
     """
 
 

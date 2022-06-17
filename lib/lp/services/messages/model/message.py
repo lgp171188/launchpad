@@ -35,6 +35,7 @@ from storm.locals import (
     Int,
     Max,
     Reference,
+    ReferenceSet,
     Store,
     Storm,
     Unicode,
@@ -126,7 +127,8 @@ class Message(SQLBase):
 
     raw = ForeignKey(foreignKey='LibraryFileAlias', dbName='raw',
                      default=None)
-    _bugattachments = SQLMultipleJoin('BugAttachment', joinColumn='_message')
+    _bugattachments = ReferenceSet(
+        "<primary key>", "BugAttachment._message_id")
 
     @cachedproperty
     def bugattachments(self):

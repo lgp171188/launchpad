@@ -4,8 +4,8 @@
 """Unit tests for the Answer Tracker Mail Notifications."""
 
 __all__ = [
-    'pop_questionemailjobs',
-    ]
+    "pop_questionemailjobs",
+]
 
 from unittest import TestCase
 
@@ -22,7 +22,7 @@ from lp.answers.notification import (
     QuestionModifiedOwnerNotification,
     QuestionNotification,
     QuestionUnsupportedLanguageNotification,
-    )
+)
 from lp.registry.interfaces.person import IPerson
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.testing import TestCaseWithFactory
@@ -32,7 +32,8 @@ from lp.testing.layers import DatabaseFunctionalLayer
 def pop_questionemailjobs():
     jobs = sorted(
         QuestionEmailJob.iterReady(),
-        key=lambda job: job.metadata["recipient_set"])
+        key=lambda job: job.metadata["recipient_set"],
+    )
     for job in jobs:
         job.start()
         job.complete()
@@ -72,6 +73,7 @@ class FakeUser:
 
 class FakeEvent:
     """A fake event."""
+
     user = FakeUser()
     object_before_modification = StubQuestion()
 
@@ -82,18 +84,19 @@ class QuestionModifiedDefaultNotificationTestCase(TestCase):
     def setUp(self):
         """Create a notification with a fake question."""
         self.notification = FakeQuestionModifiedNotification(
-            StubQuestion(), FakeEvent())
+            StubQuestion(), FakeEvent()
+        )
 
     def test_recipient_set(self):
         self.assertEqual(
-            QuestionRecipientSet.SUBSCRIBER,
-            self.notification.recipient_set)
+            QuestionRecipientSet.SUBSCRIBER, self.notification.recipient_set
+        )
 
     def test_getSubject(self):
         """getSubject() when there is no message added to the question."""
         self.assertEqual(
-            'Re: [Question #1]: Question title',
-            self.notification.getSubject())
+            "Re: [Question #1]: Question title", self.notification.getSubject()
+        )
 
     def test_user_is_event_user(self):
         """The notification user is always the event user."""
@@ -104,8 +107,7 @@ class QuestionModifiedDefaultNotificationTestCase(TestCase):
         self.assertNotEqual(question.owner, notification.user)
 
 
-class FakeQuestionModifiedOwnerNotification(
-                                           QuestionModifiedOwnerNotification):
+class FakeQuestionModifiedOwnerNotification(QuestionModifiedOwnerNotification):
     """A subclass that does not send emails."""
 
     def shouldNotify(self):
@@ -119,12 +121,13 @@ class QuestionModifiedOwnerNotificationTestCase(TestCase):
         self.question = StubQuestion()
         self.event = FakeEvent()
         self.notification = FakeQuestionModifiedOwnerNotification(
-            self.question, self.event)
+            self.question, self.event
+        )
 
     def test_recipient_set(self):
         self.assertEqual(
-            QuestionRecipientSet.ASKER,
-            self.notification.recipient_set)
+            QuestionRecipientSet.ASKER, self.notification.recipient_set
+        )
 
 
 class FakeQuestionAddedNotification(QuestionAddedNotification):
@@ -141,12 +144,14 @@ class QuestionAddedNotificationTestCase(TestCase):
         self.question = StubQuestion()
         self.event = FakeEvent()
         self.notification = FakeQuestionAddedNotification(
-            self.question, self.event)
+            self.question, self.event
+        )
 
     def test_recipient_set(self):
         self.assertEqual(
             QuestionRecipientSet.ASKER_SUBSCRIBER,
-            self.notification.recipient_set)
+            self.notification.recipient_set,
+        )
 
     def test_user_is_question_owner(self):
         """The notification user is always the question owner."""
@@ -155,7 +160,8 @@ class QuestionAddedNotificationTestCase(TestCase):
 
 
 class FakeQuestionUnsupportedLanguageNotification(
-                                     QuestionUnsupportedLanguageNotification):
+    QuestionUnsupportedLanguageNotification
+):
     """A subclass that does not send emails."""
 
     def shouldNotify(self):
@@ -169,12 +175,13 @@ class QuestionUnsupportedLanguageNotificationTestCase(TestCase):
         self.question = StubQuestion()
         self.event = FakeEvent()
         self.notification = FakeQuestionUnsupportedLanguageNotification(
-            self.question, self.event)
+            self.question, self.event
+        )
 
     def test_recipient_set(self):
         self.assertEqual(
-            QuestionRecipientSet.CONTACT,
-            self.notification.recipient_set)
+            QuestionRecipientSet.CONTACT, self.notification.recipient_set
+        )
 
 
 class FakeQuestionNotification(QuestionNotification):
@@ -183,7 +190,7 @@ class FakeQuestionNotification(QuestionNotification):
     recipient_set = QuestionRecipientSet.ASKER_SUBSCRIBER
 
     def getBody(self):
-        return 'body'
+        return "body"
 
 
 class QuestionNotificationTestCase(TestCaseWithFactory):
@@ -197,9 +204,14 @@ class QuestionNotificationTestCase(TestCaseWithFactory):
         product = self.factory.makeProduct()
         naked_question_set = removeSecurityProxy(getUtility(IQuestionSet))
         question = naked_question_set.new(
-            title='title', description='description', owner=asker,
-            language=getUtility(ILanguageSet)['en'],
-            product=product, distribution=None, sourcepackagename=None)
+            title="title",
+            description="description",
+            owner=asker,
+            language=getUtility(ILanguageSet)["en"],
+            product=product,
+            distribution=None,
+            sourcepackagename=None,
+        )
         return question
 
     def test_init_enqueue(self):
@@ -210,7 +222,8 @@ class QuestionNotificationTestCase(TestCaseWithFactory):
         notification = FakeQuestionNotification(question, event)
         self.assertEqual(
             notification.recipient_set.name,
-            notification.job.metadata['recipient_set'])
+            notification.job.metadata["recipient_set"],
+        )
         self.assertEqual(notification.question, notification.job.question)
         self.assertEqual(notification.user, notification.job.user)
         self.assertEqual(notification.getSubject(), notification.job.subject)

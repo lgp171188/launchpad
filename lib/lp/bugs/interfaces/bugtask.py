@@ -400,7 +400,7 @@ class IBugTaskDelete(Interface):
         """
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugTask(IHasBug, IBugTaskDelete):
     """A bug needing fixing in a particular product or package."""
 
@@ -621,6 +621,7 @@ class IBugTask(IHasBug, IBugTaskDelete):
     @operation_returns_collection_of(Interface)  # Actually IBug.
     @call_with(user=REQUEST_USER, limit=10)
     @export_read_operation()
+    @operation_for_version("beta")
     def findSimilarBugs(user, limit=10):
         """Return the list of possible duplicates for this BugTask."""
 
@@ -688,6 +689,7 @@ class IBugTask(IHasBug, IBugTaskDelete):
     @operation_parameters(new_milestone=copy_field(milestone))
     @call_with(user=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def transitionToMilestone(new_milestone, user):
         """Set the BugTask milestone.
 
@@ -700,6 +702,7 @@ class IBugTask(IHasBug, IBugTaskDelete):
     @operation_parameters(new_importance=copy_field(importance))
     @call_with(user=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def transitionToImportance(new_importance, user):
         """Set the BugTask importance.
 
@@ -724,6 +727,7 @@ class IBugTask(IHasBug, IBugTaskDelete):
         new_status=copy_field(status))
     @call_with(user=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def transitionToStatus(new_status, user):
         """Perform a workflow transition to the new_status.
 
@@ -752,6 +756,7 @@ class IBugTask(IHasBug, IBugTaskDelete):
     @mutator_for(assignee)
     @operation_parameters(assignee=copy_field(assignee))
     @export_write_operation()
+    @operation_for_version("beta")
     def transitionToAssignee(assignee, validate=True):
         """Perform a workflow transition to the given assignee.
 
@@ -771,6 +776,7 @@ class IBugTask(IHasBug, IBugTaskDelete):
     @operation_parameters(
         target=copy_field(target))
     @export_write_operation()
+    @operation_for_version("beta")
     def transitionToTarget(target, user):
         """Convert the bug task to a different bug target."""
 

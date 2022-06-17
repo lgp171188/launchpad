@@ -27,6 +27,7 @@ from itertools import (
 import lzma
 from operator import attrgetter
 import os
+import re
 import shutil
 
 from debian.deb822 import (
@@ -64,6 +65,7 @@ from lp.registry.interfaces.pocket import (
     )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distroseries import DistroSeries
+from lp.services.database.bulk import load
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.features import getFeatureFlag
@@ -87,11 +89,13 @@ from lp.soyuz.interfaces.publishing import (
     active_publishing_status,
     IPublishingSet,
     )
+from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
     SourcePackagePublishingHistory,
     )
+from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
 
 # Use this as the lock file name for all scripts that may manipulate
@@ -735,20 +739,26 @@ class Publisher:
         # suite/channel.  A more complete overhaul of the
         # publisher/dominator might be able to deal with this.
         publishing_set = getUtility(IPublishingSet)
+        releases_by_id = {}
         pubs_by_id = defaultdict(list)
         spphs_by_spr = defaultdict(list)
         bpphs_by_bpr = defaultdict(list)
         for spph in publishing_set.getSourcesForPublishing(
                 archive=self.archive):
             spphs_by_spr[spph.sourcepackagereleaseID].append(spph)
-            pubs_by_id["source:%d" % spph.sourcepackagereleaseID].append(spph)
+            release_id = "source:%d" % spph.sourcepackagereleaseID
+            releases_by_id.setdefault(release_id, spph.sourcepackagerelease)
+            pubs_by_id[release_id].append(spph)
         for bpph in publishing_set.getBinariesForPublishing(
                 archive=self.archive):
             bpphs_by_bpr[bpph.binarypackagereleaseID].append(bpph)
-            pubs_by_id["binary:%d" % bpph.binarypackagereleaseID].append(bpph)
+            release_id = "binary:%d" % bpph.binarypackagereleaseID
+            releases_by_id.setdefault(release_id, bpph.binarypackagerelease)
+            pubs_by_id[release_id].append(bpph)
         artifacts = self._diskpool.getAllArtifacts(
             self.archive.name, self.archive.repository_format)
 
+        plan = []
         for path, properties in sorted(artifacts.items()):
             release_id = properties.get("launchpad.release-id")
             source_name = properties.get("launchpad.source-name")
@@ -756,9 +766,35 @@ class Publisher:
             if not release_id or not source_name or not source_version:
                 # Skip any files that Launchpad didn't put in Artifactory.
                 continue
+            plan.append(
+                (source_name[0], source_version[0], release_id[0], properties))
+
+        # Releases that have been removed may still have corresponding
+        # artifacts but no corresponding publishing history rows.  Bulk-load
+        # any of these that we find so that we can track down the
+        # corresponding pool entries.
+        missing_sources = set()
+        missing_binaries = set()
+        for _, _, release_id, _ in plan:
+            if release_id in releases_by_id:
+                continue
+            match = re.match(r"^source:(\d+)$", release_id)
+            if match is not None:
+                missing_sources.add(int(match.group(1)))
+            else:
+                match = re.match(r"^binary:(\d+)$", release_id)
+                if match is not None:
+                    missing_binaries.add(int(match.group(1)))
+        for spr in load(SourcePackageRelease, missing_sources):
+            releases_by_id["source:%d" % spr.id] = spr
+        for bpr in load(BinaryPackageRelease, missing_binaries):
+            releases_by_id["binary:%d" % bpr.id] = bpr
+
+        for source_name, source_version, release_id, properties in plan:
             self._diskpool.updateProperties(
-                source_name[0], source_version[0], path.name,
-                pubs_by_id.get(release_id[0]), old_properties=properties)
+                source_name, source_version,
+                releases_by_id[release_id].files[0],
+                pubs_by_id.get(release_id), old_properties=properties)
 
     def D_writeReleaseFiles(self, is_careful):
         """Write out the Release files for the provided distribution.

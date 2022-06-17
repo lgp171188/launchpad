@@ -44,10 +44,12 @@ from zope.schema import (
 from lp import _
 
 
-# One week before a membership expires we send a notification to the member,
+# Four weeks before a membership expires we send a notification to the member,
 # either inviting them to renew their own membership or asking them to get a
-# team admin to do so, depending on the team's renewal policy.
-DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT = 7
+# team admin to do so, depending on the team's renewal policy. We repeat these
+# notifications weekly till the week in which the membership expires and then
+# we send daily notifications till the expiry date.
+DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT = 28
 
 
 class TeamMembershipStatus(DBEnumeratedType):
@@ -269,6 +271,16 @@ class ITeamMembershipSet(Interface):
         A TeamMembership should be expired when its expiry date is prior or
         equal to :when: and its status is either ADMIN or APPROVED.
         """
+
+    def getMembershipsExpiringOnDates(dates):
+        """Return all TeamMemberships expiring on the given dates."""
+
+    def getExpiringMembershipsToWarn():
+        """Return all TeamMemberships to be warned about expiration.
+
+        This includes the TeamMemberships expiring in <= 1 week and
+        TeamMemberships expiring in exactly 2 to the number of weeks in
+        DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT from now."""
 
     def new(person, team, status, user, dateexpires=None, comment=None):
         """Create and return a TeamMembership for the given person and team.

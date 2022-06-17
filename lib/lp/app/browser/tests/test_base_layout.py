@@ -90,9 +90,9 @@ class TestBaseLayout(TestCaseWithFactory):
         # The page's title starts with the view's page_title.
         self.assertTrue(head.title.string.startswith(view.page_title))
         # The shortcut icon for the browser chrome is provided.
-        link_tag = head.link
+        link_tag = head.find('link', rel='shortcut icon')
         self.assertEqual(['shortcut', 'icon'], link_tag['rel'])
-        self.assertEqual('/@@/launchpad.png', link_tag['href'])
+        self.assertEqual('/@@/favicon.ico?v=2022', link_tag['href'])
         # The template loads the common scripts.
         load_script = find_tag_by_id(head, 'base-layout-load-scripts').name
         self.assertEqual('script', load_script)

@@ -3,7 +3,7 @@
 
 """SQLBase implementation of  IAnswerContact."""
 
-__all__ = ['AnswerContact']
+__all__ = ["AnswerContact"]
 
 
 from zope.interface import implementer
@@ -18,16 +18,21 @@ from lp.services.database.sqlobject import ForeignKey
 class AnswerContact(SQLBase):
     """An entry for an answer contact for an `IQuestionTarget`."""
 
-    _defaultOrder = ['id']
-    _table = 'AnswerContact'
+    _defaultOrder = ["id"]
+    _table = "AnswerContact"
 
     person = ForeignKey(
-        dbName='person', notNull=True, foreignKey='Person',
-        storm_validator=validate_public_person)
-    product = ForeignKey(
-        dbName='product', notNull=False, foreignKey='Product')
+        dbName="person",
+        notNull=True,
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+    )
+    product = ForeignKey(dbName="product", notNull=False, foreignKey="Product")
     distribution = ForeignKey(
-        dbName='distribution', notNull=False, foreignKey='Distribution')
+        dbName="distribution", notNull=False, foreignKey="Distribution"
+    )
     sourcepackagename = ForeignKey(
-        dbName='sourcepackagename', notNull=False,
-        foreignKey='SourcePackageName')
+        dbName="sourcepackagename",
+        notNull=False,
+        foreignKey="SourcePackageName",
+    )

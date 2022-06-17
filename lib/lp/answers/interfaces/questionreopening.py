@@ -4,15 +4,11 @@
 """Interface for a QuestionReopening."""
 
 __all__ = [
-    'IQuestionReopening',
-    ]
+    "IQuestionReopening",
+]
 
 from zope.interface import Interface
-from zope.schema import (
-    Choice,
-    Datetime,
-    Object,
-    )
+from zope.schema import Choice, Datetime, Object
 
 from lp import _
 from lp.answers.enums import QuestionStatus
@@ -28,27 +24,46 @@ class IQuestionReopening(Interface):
     """
 
     question = Object(
-        title=_("The question reopened."), required=True, readonly=True,
-        schema=IQuestion)
+        title=_("The question reopened."),
+        required=True,
+        readonly=True,
+        schema=IQuestion,
+    )
 
     datecreated = Datetime(
-        title=_("The date this question was re-opened."), required=True,
-        readonly=True)
+        title=_("The date this question was re-opened."),
+        required=True,
+        readonly=True,
+    )
 
     reopener = Object(
-        title=_("The person who re-opened the question."), required=True,
-        readonly=True, schema=IPerson)
+        title=_("The person who re-opened the question."),
+        required=True,
+        readonly=True,
+        schema=IPerson,
+    )
 
     answerer = Object(
-        title=_("The person who, previously, was listed as the answerer of "
-                "the question."),
-        required=True, readonly=True, schema=IPerson)
+        title=_(
+            "The person who, previously, was listed as the answerer of "
+            "the question."
+        ),
+        required=True,
+        readonly=True,
+        schema=IPerson,
+    )
 
     date_solved = Datetime(
-        title=_("The date it had previously been solved."), required=True,
-        readonly=True)
+        title=_("The date it had previously been solved."),
+        required=True,
+        readonly=True,
+    )
 
     priorstate = Choice(
         title=_(
-            "The previous state of the question, before it was re-opened."),
-        vocabulary=QuestionStatus, required=True, readonly=True)
+            "The previous state of the question, before it was re-opened."
+        ),
+        vocabulary=QuestionStatus,
+        required=True,
+        readonly=True,
+    )
