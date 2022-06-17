@@ -3,9 +3,8 @@
 
 import re
 
-
-cveseq_regexp = r'(19|20)\d{2}\-\d{4,}'
-CVEREF_PATTERN = re.compile(r'(CVE|CAN)-(%s)' % cveseq_regexp)
+cveseq_regexp = r"(19|20)\d{2}\-\d{4,}"
+CVEREF_PATTERN = re.compile(r"(CVE|CAN)-(%s)" % cveseq_regexp)
 
 
 def valid_cve(name):

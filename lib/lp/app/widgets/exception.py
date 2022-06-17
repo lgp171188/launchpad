@@ -2,11 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from zope.browserpage import ViewPageTemplateFile
-from zope.formlib.interfaces import (
-    IWidgetInputError,
-    IWidgetInputErrorView,
-    WidgetInputError as _WidgetInputError,
-    )
+from zope.formlib.interfaces import IWidgetInputError, IWidgetInputErrorView
+from zope.formlib.interfaces import WidgetInputError as _WidgetInputError
 from zope.interface import implementer
 
 
@@ -32,7 +29,7 @@ class WidgetInputError(_WidgetInputError):
 
     def doc(self):
         """Returns a string that represents the error message."""
-        return ', '.join([v.doc() for v in self.errors])
+        return ", ".join([v.doc() for v in self.errors])
 
 
 @implementer(IWidgetInputErrorView)
@@ -43,4 +40,4 @@ class WidgetInputErrorView:
         self.context = context
         self.request = request
 
-    snippet = ViewPageTemplateFile('templates/error.pt')
+    snippet = ViewPageTemplateFile("templates/error.pt")

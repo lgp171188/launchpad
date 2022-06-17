@@ -19,5 +19,4 @@ from zope.formlib import itemswidgets
 # for first page load.
 import lp.app.versioninfo  # noqa: F401
 
-
 itemswidgets.EXPLICIT_EMPTY_SELECTION = False

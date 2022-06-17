@@ -4,26 +4,23 @@
 """Cross application type errors for launchpad."""
 
 __all__ = [
-    'GoneError',
-    'IncompatibleArguments',
-    'NameLookupFailed',
-    'NotFoundError',
-    'POSTToNonCanonicalURL',
-    'ServiceUsageForbidden',
-    'SubscriptionPrivacyViolation',
-    'TeamAccountNotClosable',
-    'TranslationUnavailable',
-    'UnexpectedFormData',
-    'UserCannotUnsubscribePerson',
-    ]
+    "GoneError",
+    "IncompatibleArguments",
+    "NameLookupFailed",
+    "NotFoundError",
+    "POSTToNonCanonicalURL",
+    "ServiceUsageForbidden",
+    "SubscriptionPrivacyViolation",
+    "TeamAccountNotClosable",
+    "TranslationUnavailable",
+    "UnexpectedFormData",
+    "UserCannotUnsubscribePerson",
+]
 
 import http.client
 
 from lazr.restful.declarations import error_status
-from zope.security.interfaces import (
-    ForbiddenAttribute,
-    Unauthorized,
-    )
+from zope.security.interfaces import ForbiddenAttribute, Unauthorized
 
 
 class TranslationUnavailable(Exception):

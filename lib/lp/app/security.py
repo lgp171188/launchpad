@@ -4,10 +4,10 @@
 """Base class to implement the Launchpad security policy."""
 
 __all__ = [
-    'AnonymousAuthorization',
-    'AuthorizationBase',
-    'DelegatedAuthorization',
-    ]
+    "AnonymousAuthorization",
+    "AuthorizationBase",
+    "DelegatedAuthorization",
+]
 
 from itertools import repeat
 
@@ -51,8 +51,9 @@ class AuthorizationBase:
         return checkPermission(obj, permission)
 
     def _checkAndFetchNext(self, obj, permission):
-        assert obj is not None or permission is not None, (
-            "Please specify either an object or permission to forward to.")
+        assert (
+            obj is not None or permission is not None
+        ), "Please specify either an object or permission to forward to."
         if obj is None:
             obj = self.obj
         if permission is None:
@@ -61,8 +62,7 @@ class AuthorizationBase:
         self.checkPermissionIsRegistered(obj, permission)
         return queryAdapter(obj, IAuthorization, permission)
 
-    def forwardCheckAuthenticated(self, user,
-                                  obj=None, permission=None):
+    def forwardCheckAuthenticated(self, user, obj=None, permission=None):
         """Forward request to another security adapter.
 
         Find a matching adapter and call checkAuthenticated on it. Intended
@@ -103,7 +103,8 @@ class AuthorizationBase:
 
 class AnonymousAuthorization(AuthorizationBase):
     """Allow any authenticated and unauthenticated user access."""
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
 
     def checkUnauthenticated(self):
         """Any unauthorized user can see this object."""
@@ -115,18 +116,17 @@ class AnonymousAuthorization(AuthorizationBase):
 
 
 class non_boolean_zip(zip):
-
     def __bool__(self):
         # XXX wgrant 2016-11-15: Guard against security adapters
         # accidentally using a delegation as a boolean authentication
         # result.
         raise Exception(
             "DelegatedAuthorization results can't be used in boolean "
-            "expressions.")
+            "expressions."
+        )
 
 
 class DelegatedAuthorization(AuthorizationBase):
-
     def __init__(self, obj, forwarded_object=None, permission=None):
         super().__init__(obj)
         self.forwarded_object = forwarded_object
@@ -142,7 +142,8 @@ class DelegatedAuthorization(AuthorizationBase):
         """
         if self.forwarded_object is None:
             raise ValueError(
-                "Either set forwarded_object or override iter_objects.")
+                "Either set forwarded_object or override iter_objects."
+            )
         yield self.forwarded_object
 
     def checkAuthenticated(self, user):

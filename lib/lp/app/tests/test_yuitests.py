@@ -5,19 +5,16 @@
 
 __all__ = []
 
-from lp.testing import (
-    build_yui_unittest_suite,
-    YUIUnitTestCase,
-    )
+from lp.testing import YUIUnitTestCase, build_yui_unittest_suite
 from lp.testing.layers import YUITestLayer
 
 
 class AppYUIUnitTestCase(YUIUnitTestCase):
 
     layer = YUITestLayer
-    suite_name = 'AppYUIUnitTests'
+    suite_name = "AppYUIUnitTests"
 
 
 def test_suite():
-    app_testing_path = 'lp/app'
+    app_testing_path = "lp/app"
     return build_yui_unittest_suite(app_testing_path, AppYUIUnitTestCase)

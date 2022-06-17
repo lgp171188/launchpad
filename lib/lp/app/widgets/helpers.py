@@ -9,7 +9,7 @@ import os
 def get_widget_template(filename):
     """Return the content of lib/lp/app/widgets/templates/<filename>."""
     here = os.path.dirname(__file__)
-    template_path = os.path.join(here, 'templates', filename)
+    template_path = os.path.join(here, "templates", filename)
     file = open(template_path)
     try:
         return file.read()

@@ -1,6 +1,7 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+
 def valid_debian_version(version):
     """
     Returns True if version is a valid debian version string
@@ -51,11 +52,15 @@ def valid_debian_version(version):
     True
     """
     import re
-    m = re.search("""^(?ix)
+
+    m = re.search(
+        """^(?ix)
         ([0-9]+:)?
         ([0-9a-z][a-z0-9+:.~-]*?)
         (-[a-z0-9+.~]+)?
-        $""", version)
+        $""",
+        version,
+    )
     if m is None:
         return False
     epoch, version, revision = m.groups()
@@ -71,7 +76,7 @@ def valid_debian_version(version):
 
 
 def sane_version(version):
-    '''A sane version number for use by ProductRelease and DistroSeries.
+    """A sane version number for use by ProductRelease and DistroSeries.
 
     We may make it less strict if required, but it would be nice if we can
     enforce simple version strings because we use them in URLs
@@ -98,11 +103,15 @@ def sane_version(version):
     True
     >>> sane_version('uncle-sam')
     True
-    '''
+    """
     import re
-    if re.search("""^(?ix)
+
+    if re.search(
+        """^(?ix)
         [0-9a-z]
         ( [0-9a-z] | [0-9a-z._-]*[0-9a-z] )*
-        $""", version):
+        $""",
+        version,
+    ):
         return True
     return False

@@ -7,25 +7,19 @@ Note that these are not interfaces to application content objects.
 """
 
 __all__ = [
-    'IHasIcon',
-    'IHasLogo',
-    'IHasMugshot',
-    'IHeadingContext',
-    'ILaunchpadCelebrities',
-    'ILaunchpadUsage',
-    'IPrivacy',
-    'IServiceUsage',
-    ]
+    "IHasIcon",
+    "IHasLogo",
+    "IHasMugshot",
+    "IHeadingContext",
+    "ILaunchpadCelebrities",
+    "ILaunchpadUsage",
+    "IPrivacy",
+    "IServiceUsage",
+]
 
 from lazr.restful.declarations import exported
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice
 
 from lp import _
 from lp.app.enums import ServiceUsage
@@ -36,6 +30,7 @@ class ILaunchpadCelebrities(Interface):
 
     Celebrities are SQLBase instances that have a well known name.
     """
+
     admin = Attribute("The 'admins' team.")
     software_center_agent = Attribute("The Software Center Agent.")
     bug_importer = Attribute("The bug importer.")
@@ -67,8 +62,7 @@ class ILaunchpadCelebrities(Interface):
     vcs_imports = Attribute("The 'vcs-imports' team.")
 
     def isCelebrityPerson(name):
-        """Return true if there is an IPerson celebrity with the given name.
-        """
+        """Return true if there is an IPerson celebrity with the given name."""
 
     def clearCache():
         """Clear any cached celebrities."""
@@ -82,57 +76,74 @@ class IServiceUsage(Interface):
     # implies an actual location not an answer of "Launchpad, externally, or
     # neither."
     answers_usage = Choice(
-        title=_('Type of service for answers application'),
+        title=_("Type of service for answers application"),
         description=_("Where does this pillar have an Answers forum?"),
         default=ServiceUsage.UNKNOWN,
-        vocabulary=ServiceUsage)
+        vocabulary=ServiceUsage,
+    )
     blueprints_usage = Choice(
-        title=_('Type of service for blueprints application'),
+        title=_("Type of service for blueprints application"),
         description=_("Where does this pillar host blueprints?"),
         default=ServiceUsage.UNKNOWN,
-        vocabulary=ServiceUsage)
+        vocabulary=ServiceUsage,
+    )
     codehosting_usage = Choice(
-        title=_('Type of service for hosting code'),
+        title=_("Type of service for hosting code"),
         description=_("Where does this pillar host code?"),
         default=ServiceUsage.UNKNOWN,
-        vocabulary=ServiceUsage)
-    translations_usage = exported(Choice(
-        title=_('Type of service for translations application'),
-        description=_("Where does this pillar do translations?"),
-        default=ServiceUsage.UNKNOWN,
-        vocabulary=ServiceUsage), as_of="devel")
+        vocabulary=ServiceUsage,
+    )
+    translations_usage = exported(
+        Choice(
+            title=_("Type of service for translations application"),
+            description=_("Where does this pillar do translations?"),
+            default=ServiceUsage.UNKNOWN,
+            vocabulary=ServiceUsage,
+        ),
+        as_of="devel",
+    )
     bug_tracking_usage = Choice(
-        title=_('Type of service for tracking bugs'),
+        title=_("Type of service for tracking bugs"),
         description=_("Where does this pillar track bugs?"),
         default=ServiceUsage.UNKNOWN,
-        vocabulary=ServiceUsage)
-    uses_launchpad = Bool(
-        title=_('Uses Launchpad for something.'))
+        vocabulary=ServiceUsage,
+    )
+    uses_launchpad = Bool(title=_("Uses Launchpad for something."))
 
 
 class ILaunchpadUsage(Interface):
     """How the project uses Launchpad."""
+
     official_answers = exported(
         Bool(
-            title=_('People can ask questions in Launchpad Answers'),
-            required=True))
+            title=_("People can ask questions in Launchpad Answers"),
+            required=True,
+        )
+    )
     official_blueprints = exported(
-        Bool(title=_('This project uses blueprints'), required=True))
+        Bool(title=_("This project uses blueprints"), required=True)
+    )
     official_codehosting = exported(
         Bool(
-            title=_('Code for this project is published in Bazaar branches on'
-                    ' Launchpad'),
-            required=True))
+            title=_(
+                "Code for this project is published in Bazaar branches on"
+                " Launchpad"
+            ),
+            required=True,
+        )
+    )
     official_malone = exported(
         Bool(
-            title=_('Bugs in this project are tracked in Launchpad'),
-            required=True),
-        exported_as='official_bugs')
-    official_anything = Bool(
-        title=_('Uses Launchpad for something'))
+            title=_("Bugs in this project are tracked in Launchpad"),
+            required=True,
+        ),
+        exported_as="official_bugs",
+    )
+    official_anything = Bool(title=_("Uses Launchpad for something"))
     enable_bug_expiration = Bool(
         title=_('Expire "Incomplete" bug reports when they become inactive'),
-        required=True)
+        required=True,
+    )
 
 
 class IHasIcon(Interface):
@@ -166,7 +177,9 @@ class IPrivacy(Interface):
         title=_("This is private"),
         required=False,
         description=_(
-            "Private objects are visible to members or subscribers."))
+            "Private objects are visible to members or subscribers."
+        ),
+    )
 
 
 class IHeadingContext(Interface):

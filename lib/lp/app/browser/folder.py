@@ -2,9 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'ExportedFolder',
-    'ExportedImageFolder',
-    ]
+    "ExportedFolder",
+    "ExportedImageFolder",
+]
 
 import errno
 import os
@@ -27,7 +27,7 @@ class File:
     def __init__(self, path, name):
         self.path = path
 
-        f = open(path, 'rb')
+        f = open(path, "rb")
         self.data = f.read()
         f.close()
         self.content_type, enc = guess_content_type(path, self.data)
@@ -50,7 +50,7 @@ class ExportedFolder:
     to True to change this.
     """
 
-    rev_part_re = re.compile('rev[0-9a-f]+$')
+    rev_part_re = re.compile("rev[0-9a-f]+$")
 
     export_subdirectories = False
 
@@ -68,7 +68,7 @@ class ExportedFolder:
 
         if not names:
             # Just the root directory, so make this a 404.
-            raise NotFound(self, '')
+            raise NotFound(self, "")
         elif len(names) > 1 and not self.export_subdirectories:
             # Too many path elements, so make this a 404.
             raise NotFound(self, self.names[-1])
@@ -78,7 +78,8 @@ class ExportedFolder:
             # because the Zope name traversal will sanitize './' and '../'
             # before setting the value of self.names.
             return self.prepareDataForServing(
-                os.path.join(self.folder, *names))
+                os.path.join(self.folder, *names)
+            )
 
     def prepareDataForServing(self, filename):
         """Set the response headers and return the data for this resource."""
@@ -97,8 +98,8 @@ class ExportedFolder:
         # TODO: Set an appropriate charset too.  There may be zope code we
         #       can reuse for this.
         response = self.request.response
-        response.setHeader('Content-Type', fileobj.content_type)
-        response.setHeader('Last-Modified', fileobj.lmh)
+        response.setHeader("Content-Type", fileobj.content_type)
+        response.setHeader("Last-Modified", fileobj.lmh)
         setCacheControl(response)
         return fileobj.data
 
@@ -110,8 +111,9 @@ class ExportedFolder:
         """Traverse to the given name."""
         # The two following constraints are enforced by the publisher.
         assert os.path.sep not in name, (
-            'traversed name contains os.path.sep: %s' % name)
-        assert name != '..', 'traversing to ..'
+            "traversed name contains os.path.sep: %s" % name
+        )
+        assert name != "..", "traversing to .."
         self.names.append(name)
         return self
 
@@ -122,7 +124,8 @@ class ExportedFolder:
     def folder(self):
         raise (
             NotImplementedError,
-            'Your subclass of ExportedFolder should have its own folder.')
+            "Your subclass of ExportedFolder should have its own folder.",
+        )
 
 
 class ExportedImageFolder(ExportedFolder):
@@ -133,7 +136,7 @@ class ExportedImageFolder(ExportedFolder):
     """
 
     # The extensions we consider.
-    image_extensions = ('.png', '.gif')
+    image_extensions = (".png", ".gif")
 
     def prepareDataForServing(self, filename):
         """Serve files without their extension.
@@ -142,7 +145,7 @@ class ExportedImageFolder(ExportedFolder):
         the same base name and has an image extension, it will be served.
         """
         root, ext = os.path.splitext(filename)
-        if ext == '' and not os.path.exists(root):
+        if ext == "" and not os.path.exists(root):
             for image_ext in self.image_extensions:
                 if os.path.exists(root + image_ext):
                     filename = filename + image_ext

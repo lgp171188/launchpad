@@ -8,19 +8,11 @@ import os
 
 from lp.services.features.testing import FeatureFixture
 from lp.services.testing import build_test_suite
-from lp.testing.layers import (
-    BingLaunchpadFunctionalLayer,
-    PageTestLayer,
-    )
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
-
+from lp.testing.layers import BingLaunchpadFunctionalLayer, PageTestLayer
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 here = os.path.dirname(os.path.realpath(__file__))
-bing_flag = FeatureFixture({'sitesearch.engine.name': 'bing'})
+bing_flag = FeatureFixture({"sitesearch.engine.name": "bing"})
 
 
 def setUp_bing(test):
@@ -37,19 +29,23 @@ def tearDown_bing(test):
 # that require something special like the librarian must run on a layer
 # that sets those services up.
 special = {
-    'launchpad-search-pages.txt(Bing)': LayeredDocFileSuite(
-        '../doc/launchpad-search-pages.txt',
-        id_extensions=['launchpad-search-pages.txt(Bing)'],
-        setUp=setUp_bing, tearDown=tearDown_bing,
+    "launchpad-search-pages.txt(Bing)": LayeredDocFileSuite(
+        "../doc/launchpad-search-pages.txt",
+        id_extensions=["launchpad-search-pages.txt(Bing)"],
+        setUp=setUp_bing,
+        tearDown=tearDown_bing,
         layer=BingLaunchpadFunctionalLayer,
-        stdout_logging_level=logging.WARNING),
+        stdout_logging_level=logging.WARNING,
+    ),
     # Run these doctests again with the default search engine.
-    'launchpad-search-pages.txt': LayeredDocFileSuite(
-        '../doc/launchpad-search-pages.txt',
-        setUp=setUp, tearDown=tearDown,
+    "launchpad-search-pages.txt": LayeredDocFileSuite(
+        "../doc/launchpad-search-pages.txt",
+        setUp=setUp,
+        tearDown=tearDown,
         layer=PageTestLayer,
-        stdout_logging_level=logging.WARNING),
-    }
+        stdout_logging_level=logging.WARNING,
+    ),
+}
 
 
 def test_suite():
