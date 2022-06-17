@@ -12,6 +12,7 @@ from lp.code.model.revision import (
     )
 from lp.registry.interfaces.person import IPersonSet
 from lp.scripts.garbo import RevisionAuthorEmailLinker
+from lp.services.database.interfaces import IStore
 from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
 from lp.services.log.logger import DevNullLogger
 from lp.testing import TestCase
@@ -139,7 +140,8 @@ class TestNewlyValidatedEmailsLinkRevisionAuthors(MakeHarryTestCase):
             self.author = RevisionSet()._createRevisionAuthor(
                 '"Harry Potter" <harry@canonical.com>')
         # Reget the revision author as we have crossed a transaction boundary.
-        self.author = RevisionAuthor.byName(self.author.name)
+        self.author = IStore(RevisionAuthor).find(
+            RevisionAuthor, name=self.author.name).one()
 
     def test_validated_email_updates(self):
         # A newly validated email for a user.

@@ -16,11 +16,15 @@ Interfaces
     >>> from lp.code.model.revision import (
     ...     Revision, RevisionAuthor, RevisionParent, RevisionSet)
     >>> from lp.code.model.branchrevision import BranchRevision
-    >>> verifyObject(IRevision, Revision.get(1))
+    >>> verifyObject(IRevision, IStore(Revision).find(Revision).any())
     True
-    >>> verifyObject(IRevisionAuthor, RevisionAuthor.get(1))
+    >>> verifyObject(
+    ...     IRevisionAuthor,
+    ...     IStore(RevisionAuthor).find(RevisionAuthor).any())
     True
-    >>> verifyObject(IRevisionParent, RevisionParent.get(1))
+    >>> verifyObject(
+    ...     IRevisionParent,
+    ...     IStore(RevisionParent).find(RevisionParent).any())
     True
     >>> verifyObject(IRevisionSet, RevisionSet())
     True
@@ -59,7 +63,6 @@ while the date_created is the time when the database record was created.
     >>> from datetime import datetime
     >>> from pytz import UTC
     >>> date = datetime(2005, 3, 8, 12, 0, tzinfo=UTC)
-    >>> from lp.code.model.revision import Revision
     >>> revision_1 = Revision(log_body=log_body_1,
     ...     revision_author=author, revision_id=revision_id_1,
     ...     revision_date=date)
