@@ -520,10 +520,10 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
             name="field.auto_build_channels.charmcraft").value = "edge"
         browser.getControl(name="field.store_name").value = "new-store-name"
         browser.getControl(
-            name="field.store_channels.track").value = "new-track"
+            name="field.add_track").value = "new-track"
         browser.getControl(
-            name="field.store_channels.branch").value = "new-branch"
-        browser.getControl(name="field.store_channels.risks").value = ["edge"]
+            name="field.add_branch").value = "new-branch"
+        browser.getControl(name="field.add_risks").value = ["edge"]
 
         browser.getControl("Update charm recipe").click()
 

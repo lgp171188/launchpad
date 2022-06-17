@@ -559,23 +559,32 @@ class BaseCharmRecipeEditView(
     def parseData(self, data):
         """Rearrange form data to make it easier to process."""
         parsed_data = {}
+        form_fields = data.keys()
         # The fields of the StoreChannelsWidget are the ones used to add
         # a new row / store channel entry, we parse it here and if any of its
         # data members are filled in we infer that the user id adding
         # a new entry on the edit screen.
-        form_fields = data.keys()
-        if 'store_channels' in form_fields:
-            add_track, add_risk, add_branch = channel_string_to_list(
-                data['store_channels'][0])
-            del data['store_channels']
-            # parse data from the Add new channel data section of the form
-            # essentially the 3 fields of the StoreChannelsWidget
-            if add_track or add_branch or add_risk:
-                add_store_channels = channel_list_to_string(
-                    add_track, add_risk, add_branch)
-                parsed_data.setdefault("add", {
-                    "add_store_channels": add_store_channels,
-                })
+        if 'add_track' in form_fields:
+            add_track = data['add_track']
+            del data['add_track']
+        else:
+            add_track = None
+        if 'add_branch' in form_fields:
+            add_branch = data['add_branch']
+            del data['add_branch']
+        else:
+            add_branch = None
+        if 'add_risks' in form_fields:
+            add_risk = data['add_risks']
+            del data['add_risks']
+        else:
+            add_risk = []
+        if add_track or add_branch or len(add_risk) > 0:
+            add_store_channels = channel_list_to_string(
+                add_track, add_risk[0], add_branch)
+            parsed_data.setdefault("add", {
+                "add_store_channels": add_store_channels,
+            })
 
         # parse data from the Edit existing channels section of the form
         edited_store_channels = []
@@ -624,7 +633,7 @@ class BaseCharmRecipeEditView(
             if "store_channels" in data:
                 del data["store_channels"]
         parsed_data = self.parseData(data)
-        #need_charmhub_reauth = self._needCharmhubReauth(data)
+        # need_charmhub_reauth = self._needCharmhubReauth(data)
         self.updateRecipeFromData(parsed_data)
 
         # if need_charmhub_reauth:
