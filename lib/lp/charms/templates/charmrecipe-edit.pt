@@ -67,29 +67,29 @@
           <tal:store_widgets
                 define="store_widgets python:view.getStoreWidgets(channel_index);
                     parity python:'even' if repeat['channel_index'].even() else 'odd'">            
-            <tr tal:attributes="class string:store_channel_row ${parity}">
-              <td>
+            <tr tal:attributes="class string:channel-row ${parity}">
+              <td class="channel-row-risks">
               <tal:widget define="widget nocall:store_widgets/risks"
                           condition="widget/context/value_type/vocabulary">
                 <metal:block
                   use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
               </tal:widget>
               </td>
-              <td class="store_channel_row_risk_branch"
+              <td class="channel-row-branch"
                   tal:define="widget nocall:store_widgets/branch">
                 <metal:widget use-macro="context/@@launchpad_form/widget_div" />
               </td>
-              <td class="store_channel_row_risk_track"
+              <td class="channel-row-track"
                   tal:define="widget nocall:store_widgets/track">
                 <metal:widget use-macro="context/@@launchpad_form/widget_div" />
               </td>
-              <td class="store_channel_row_risk_delete"
+              <td class="channel-row-delete"
                   tal:define="widget nocall:store_widgets/delete">
                 <metal:widget use-macro="context/@@launchpad_form/widget_div" />
               </td>
             </tr>
           </tal:store_widgets>
-        </div>       
+        </div>
          </tr>
       </table>
     </metal:formbody>

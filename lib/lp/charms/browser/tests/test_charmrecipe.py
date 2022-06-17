@@ -523,13 +523,13 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
             name="field.store_channels.track").value = "new-track"
         browser.getControl(
             name="field.store_channels.branch").value = "new-branch"
-        #browser.getControl(name="field.store_channels.risks").value = ["new-risk"]
+        browser.getControl(name="field.store_channels.risks").value = ["edge"]
 
         browser.getControl("Update charm recipe").click()
 
         content = find_main_content(browser.contents)
         self.assertThat("Store channels:\n"
-                        "new-track/new-branch, track2/branch1"
+                        "track1/stable/branch1, track2/edge/branch1, new-track/edge/new-branch"
                         "\nEdit charm recipe",
                         MatchesTagText(content, "store_channels"))
         self.assertEqual("new-name", extract_text(content.h1))
@@ -546,6 +546,8 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
             MatchesTagText(content, "auto_build_channels"))
 
     def test_edit_recipe_edit_store_channel_list(self):
+        # Verify we can edit the first store channel defined for this recipe
+        # from "track1/stable/branch1" to "new-track/candidate/new-branch"
         [old_git_ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeCharmRecipe(
             registrant=self.person, owner=self.person, git_ref=old_git_ref,
@@ -569,14 +571,14 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         browser.getControl(name="field.store_name").value = "new-store-name"
         browser.getControl(name="field.track.0").value = "new-track"
         browser.getControl(name="field.branch.0").value = "new-branch"
-        #browser.getControl(name="field.risks.0").value = ["new-risk"]
+        browser.getControl(name="field.risks.0").value = ["candidate"]
 
         browser.getControl("Update charm recipe").click()
 
         content = find_main_content(browser.contents)
 
         self.assertThat("Store channels:\n"
-                        "new-track/new-branch, track2/branch1"
+                        "new-track/candidate/new-branch, track2/edge/branch1"
                         "\nEdit charm recipe",
                         MatchesTagText(content, "store_channels"))
 
@@ -594,6 +596,8 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
             MatchesTagText(content, "auto_build_channels"))
 
     def test_edit_recipe_delete_store_channel(self):
+        # Verify we can delete a row in the store channels list:
+        # specifically the second one: "track2/edge/branch1"
         [old_git_ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeCharmRecipe(
             registrant=self.person, owner=self.person, git_ref=old_git_ref,
@@ -614,14 +618,14 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
             "Automatically build when branch changes").selected = True
         browser.getControl(
             name="field.auto_build_channels.charmcraft").value = "edge"
-        browser.getControl(name="field.delete.0").value = 1
+        browser.getControl(name="field.delete.1").value = 1
 
         browser.getControl("Update charm recipe").click()
 
         content = find_main_content(browser.contents)
 
         self.assertThat("Store channels:\n"
-                        "track2/branch1"
+                        "track1/stable/branch1"
                         "\nEdit charm recipe",
                         MatchesTagText(content, "store_channels"))
 
