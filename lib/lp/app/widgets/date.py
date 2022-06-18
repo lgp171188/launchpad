@@ -12,25 +12,22 @@ We should investigate zc.datewidget available from the Z3 SVN repository.
 """
 
 __all__ = [
-    'DateTimeWidget',
-    'DateWidget',
-    'DatetimeDisplayWidget',
-    ]
+    "DateTimeWidget",
+    "DateWidget",
+    "DatetimeDisplayWidget",
+]
 
 from datetime import datetime
 
 import pytz
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
-from zope.datetime import (
-    DateTimeError,
-    parse,
-    )
+from zope.datetime import DateTimeError, parse
 from zope.formlib.interfaces import (
     ConversionError,
     InputErrors,
     WidgetInputError,
-    )
+)
 from zope.formlib.textwidgets import TextWidget
 from zope.formlib.widget import DisplayWidget
 
@@ -117,7 +114,7 @@ class DateTimeWidget(TextWidget):
 
     """
 
-    timeformat = '%Y-%m-%d %H:%M:%S'
+    timeformat = "%Y-%m-%d %H:%M:%S"
     required_time_zone = None
     display_zone = True
     from_date = None
@@ -125,7 +122,7 @@ class DateTimeWidget(TextWidget):
     disabled = False
 
     # ZPT that renders our widget
-    __call__ = ViewPageTemplateFile('templates/datetime.pt')
+    __call__ = ViewPageTemplateFile("templates/datetime.pt")
 
     def __init__(self, context, request):
         super().__init__(context, request)
@@ -135,25 +132,34 @@ class DateTimeWidget(TextWidget):
     @property
     def supported_input_formats(self):
         date_formats = [
-            '%Y-%m-%d', '%m-%d-%Y', '%m-%d-%y',
-            '%m/%d/%Y', '%m/%d/%y',
-            '%d %b, %Y', '%d %b %Y', '%b %d, %Y', '%b %d %Y',
-            '%d %B, %Y', '%d %B %Y', '%B %d, %Y', 'B% %d %Y',
-            ]
+            "%Y-%m-%d",
+            "%m-%d-%Y",
+            "%m-%d-%y",
+            "%m/%d/%Y",
+            "%m/%d/%y",
+            "%d %b, %Y",
+            "%d %b %Y",
+            "%b %d, %Y",
+            "%b %d %Y",
+            "%d %B, %Y",
+            "%d %B %Y",
+            "%B %d, %Y",
+            "B% %d %Y",
+        ]
 
         time_formats = [
-            '%H:%M:%S',
-            '%H:%M',
-            '',
-            ]
+            "%H:%M:%S",
+            "%H:%M",
+            "",
+        ]
         outputs = []
         for fmt in time_formats:
-            outputs.extend(['%s %s' % (d, fmt) for d in date_formats])
+            outputs.extend(["%s %s" % (d, fmt) for d in date_formats])
 
         return [o.strip() for o in outputs]
 
-    #@property  XXX: do as a property when we have python2.5 for tests of
-    #properties
+    # @property  XXX: do as a property when we have python2.5 for tests of
+    # properties
     def time_zone(self):
         """The widget time zone.
 
@@ -204,9 +210,11 @@ class DateTimeWidget(TextWidget):
         """
         if self.required_time_zone is not None:
             return self.required_time_zone
-        assert self.system_time_zone is not None, (
-            'DateTime widget needs a time zone.')
+        assert (
+            self.system_time_zone is not None
+        ), "DateTime widget needs a time zone."
         return self.system_time_zone
+
     time_zone = property(time_zone, doc=time_zone.__doc__)
 
     @property
@@ -243,8 +251,8 @@ class DateTimeWidget(TextWidget):
         else:
             return None
 
-    #@property  XXX: do as a property when we have python2.5 for tests of
-    #properties
+    # @property  XXX: do as a property when we have python2.5 for tests of
+    # properties
     def daterange(self):
         """The javascript variable giving the allowed date range to pick.
 
@@ -299,16 +307,17 @@ class DateTimeWidget(TextWidget):
         self._align_date_constraints_with_time_zone()
         if not (self.from_date or self.to_date):
             return None
-        daterange = '['
+        daterange = "["
         if self.from_date is None:
-            daterange += 'null,'
+            daterange += "null,"
         else:
-            daterange += self.from_date.strftime('[%Y,%m,%d],')
+            daterange += self.from_date.strftime("[%Y,%m,%d],")
         if self.to_date is None:
-            daterange += 'null]'
+            daterange += "null]"
         else:
-            daterange += self.to_date.strftime('[%Y,%m,%d]]')
+            daterange += self.to_date.strftime("[%Y,%m,%d]]")
         return daterange
+
     daterange = property(daterange, doc=daterange.__doc__)
 
     def getInputValue(self):
@@ -321,16 +330,22 @@ class DateTimeWidget(TextWidget):
         if self.from_date is not None and value < self.from_date:
             limit = self.from_date.strftime(self.timeformat)
             self._error = WidgetInputError(
-                self.name, self.label,
+                self.name,
+                self.label,
                 LaunchpadValidationError(
-                  'Please pick a date after %s' % limit))
+                    "Please pick a date after %s" % limit
+                ),
+            )
             raise self._error
         if self.to_date is not None and value > self.to_date:
             limit = self.to_date.strftime(self.timeformat)
             self._error = WidgetInputError(
-                self.name, self.label,
+                self.name,
+                self.label,
                 LaunchpadValidationError(
-                    'Please pick a date before %s' % limit))
+                    "Please pick a date before %s" % limit
+                ),
+            )
             raise self._error
         return value
 
@@ -340,7 +355,7 @@ class DateTimeWidget(TextWidget):
             try:
                 datetime.strptime(input.strip(), fmt)
             except (ValueError) as e:
-                if 'unconverted data remains' in str(e):
+                if "unconverted data remains" in str(e):
                     return
                 else:
                     failure = e
@@ -348,7 +363,7 @@ class DateTimeWidget(TextWidget):
                 return
         try:
             if failure:
-                raise ConversionError('Invalid date value', failure)
+                raise ConversionError("Invalid date value", failure)
         finally:
             # Avoid traceback reference cycles.
             del failure
@@ -399,10 +414,9 @@ class DateTimeWidget(TextWidget):
             year, month, day, hour, minute, second, dummy_tz = parse(input)
             second, micro = divmod(second, 1.0)
             micro = round_half_up(micro * 1000000)
-            dt = datetime(year, month, day,
-                          hour, minute, int(second), micro)
+            dt = datetime(year, month, day, hour, minute, int(second), micro)
         except (DateTimeError, ValueError, IndexError) as v:
-            raise ConversionError('Invalid date value', v)
+            raise ConversionError("Invalid date value", v)
         return self.time_zone.localize(dt)
 
     def _toFormValue(self, value):
@@ -508,11 +522,11 @@ class DateWidget(DateTimeWidget):
 
     """
 
-    timeformat = '%Y-%m-%d'
-    time_zone = pytz.timezone('UTC')
+    timeformat = "%Y-%m-%d"
+    time_zone = pytz.timezone("UTC")
 
     # ZPT that renders our widget
-    __call__ = ViewPageTemplateFile('templates/date.pt')
+    __call__ = ViewPageTemplateFile("templates/date.pt")
 
     def _toFieldValue(self, input):
         """Return parsed input (datetime) as a date.

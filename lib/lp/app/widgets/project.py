@@ -10,13 +10,9 @@ from zope.formlib.interfaces import (
     IInputWidget,
     InputErrors,
     WidgetInputError,
-    )
+)
 from zope.formlib.utility import setUpWidget
-from zope.formlib.widget import (
-    BrowserWidget,
-    InputWidget,
-    renderElement,
-    )
+from zope.formlib.widget import BrowserWidget, InputWidget, renderElement
 from zope.interface import implementer
 from zope.schema import Choice
 
@@ -41,30 +37,44 @@ class ProjectScopeWidget(BrowserWidget, InputWidget):
         # use field.vocabularyName instead of the vocabulary parameter
         # otherwise VocabularyPickerWidget will fail.
         target_field = Choice(
-            __name__='target', title=field.title,
-            description=field.description, vocabulary=field.vocabularyName,
-            required=True)
+            __name__="target",
+            title=field.title,
+            description=field.description,
+            vocabulary=field.vocabularyName,
+            required=True,
+        )
         setUpWidget(
-            self, target_field.__name__, target_field, IInputWidget,
-            prefix=self.name)
+            self,
+            target_field.__name__,
+            target_field,
+            IInputWidget,
+            prefix=self.name,
+        )
         self.setUpOptions()
 
     def setUpOptions(self):
         """Set up options to be rendered."""
         self.options = {}
-        for option in ['all', 'project']:
+        for option in ["all", "project"]:
             attributes = dict(
-                type='radio', name=self.name, value=option,
-                id='%s.option.%s' % (self.name, option))
-            if self.request.form_ng.getOne(
-                     self.name, self.default_option) == option:
-                attributes['checked'] = 'checked'
-            if option == 'project':
-                attributes['onclick'] = (
-                    "document.getElementById('field.scope.target').focus();")
-            self.options[option] = renderElement('input', **attributes)
+                type="radio",
+                name=self.name,
+                value=option,
+                id="%s.option.%s" % (self.name, option),
+            )
+            if (
+                self.request.form_ng.getOne(self.name, self.default_option)
+                == option
+            ):
+                attributes["checked"] = "checked"
+            if option == "project":
+                attributes[
+                    "onclick"
+                ] = "document.getElementById('field.scope.target').focus();"
+            self.options[option] = renderElement("input", **attributes)
         self.target_widget.onKeyPress = (
-            "selectWidget('%s.option.project', event)" % self.name)
+            "selectWidget('%s.option.project', event)" % self.name
+        )
 
     def hasInput(self):
         """See zope.formlib.interfaces.IInputWidget."""
@@ -83,24 +93,30 @@ class ProjectScopeWidget(BrowserWidget, InputWidget):
     def getInputValue(self):
         """See zope.formlib.interfaces.IInputWidget."""
         scope = self.request.form_ng.getOne(self.name)
-        if scope == 'all':
+        if scope == "all":
             return None
-        elif scope == 'project':
+        elif scope == "project":
             if not self.request.form_ng.getOne(self.target_widget.name):
                 self._error = WidgetInputError(
-                    self.name, self.label,
-                    LaunchpadValidationError('Please enter a project name'))
+                    self.name,
+                    self.label,
+                    LaunchpadValidationError("Please enter a project name"),
+                )
                 raise self._error
             try:
                 return self.target_widget.getInputValue()
             except ConversionError:
                 entered_name = self.request.form_ng.getOne(
-                     "%s.target" % self.name)
+                    "%s.target" % self.name
+                )
                 self._error = WidgetInputError(
-                    self.name, self.label,
+                    self.name,
+                    self.label,
                     LaunchpadValidationError(
                         "There is no project named '%s' registered in"
-                        " Launchpad" % entered_name))
+                        " Launchpad" % entered_name
+                    ),
+                )
                 raise self._error
         elif self.required:
             raise UnexpectedFormData("No valid option was selected.")
@@ -114,29 +130,30 @@ class ProjectScopeWidget(BrowserWidget, InputWidget):
     def setRenderedValue(self, value):
         """See IWidget."""
         if value is None:
-            self.default_option = 'all'
+            self.default_option = "all"
             self.target_widget.setRenderedValue(None)
         else:
-            self.default_option = 'project'
+            self.default_option = "project"
             self.target_widget.setRenderedValue(value)
         self.setUpOptions()
 
     def __call__(self):
         """See zope.formlib.interfaces.IBrowserWidget."""
-        return "\n".join([
-            self.renderScopeOptions(),
-            self.target_widget()])
+        return "\n".join([self.renderScopeOptions(), self.target_widget()])
 
     def renderScopeOptions(self):
         """Render the HTML for the scope radio widgets."""
-        return dedent('''\
+        return dedent(
+            """\
         <label>
           %(all)s All projects
         </label>
         <label>
           %(project)s One project:
         </label>
-        ''' % self.options)
+        """
+            % self.options
+        )
 
     def error(self):
         """See zope.formlib.interfaces.IBrowserWidget"""

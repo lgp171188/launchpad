@@ -8,11 +8,7 @@ from textwrap import dedent
 
 from lp import _
 from lp.app.validators import LaunchpadValidationError
-from lp.services.webapp.escaping import (
-    html_escape,
-    structured,
-    )
-
+from lp.services.webapp.escaping import html_escape, structured
 
 valid_name_pattern = re.compile(r"^[a-z0-9][a-z0-9\+\.\-]+$")
 valid_bug_name_pattern = re.compile(r"^[a-z][a-z0-9\+\.\-]+$")
@@ -31,7 +27,7 @@ def sanitize_name(name):
     >>> print(sanitize_name('baz bar $fd'))
     bazbarfd
     """
-    return invalid_name_pattern.sub('', name)
+    return invalid_name_pattern.sub("", name)
 
 
 def valid_name(name):
@@ -70,12 +66,16 @@ def name_validator(name):
     LaunchpadValidationError.
     """
     if not valid_name(name):
-        message = _(dedent("""
+        message = _(
+            dedent(
+                """
             Invalid name '${name}'. Names must be at least two characters long
             and start with a letter or number. All letters must be lower-case.
             The characters <samp>+</samp>, <samp>-</samp> and <samp>.</samp>
-            are also allowed after the first character."""),
-            mapping={'name': html_escape(name)})
+            are also allowed after the first character."""
+            ),
+            mapping={"name": html_escape(name)},
+        )
 
         raise LaunchpadValidationError(structured(message))
     return True
@@ -86,12 +86,16 @@ def bug_name_validator(name):
     LaunchpadValidationError.
     """
     if not valid_bug_name(name):
-        message = _(dedent("""
+        message = _(
+            dedent(
+                """
             Invalid name '${name}'. Names must be at least two characters long
             and start with a letter. All letters must be lower-case.
             The characters <samp>+</samp>, <samp>-</samp> and <samp>.</samp>
-            are also allowed after the first character."""),
-            mapping={'name': html_escape(name)})
+            are also allowed after the first character."""
+            ),
+            mapping={"name": html_escape(name)},
+        )
 
         raise LaunchpadValidationError(structured(message))
     return True

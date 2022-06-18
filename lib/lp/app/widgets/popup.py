@@ -11,26 +11,20 @@ __all__ = [
     "SourcePackageNameWidgetBase",
     "UbuntuSourcePackageNameWidget",
     "VocabularyPickerWidget",
-    ]
+]
 
 import simplejson
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.interfaces import ConversionError
-from zope.formlib.itemswidgets import (
-    ItemsWidgetBase,
-    SingleDataHelper,
-    )
-from zope.schema.interfaces import (
-    IChoice,
-    InvalidValue,
-    )
+from zope.formlib.itemswidgets import ItemsWidgetBase, SingleDataHelper
+from zope.schema.interfaces import IChoice, InvalidValue
 
 from lp.app.browser.stringformatter import FormattersAPI
 from lp.app.browser.vocabulary import (
     get_person_picker_entry_metadata,
     vocabulary_filters,
-    )
+)
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.services.features import getFeatureFlag
@@ -42,28 +36,28 @@ from lp.services.webapp.escaping import structured
 class VocabularyPickerWidget(SingleDataHelper, ItemsWidgetBase):
     """Wrapper for the lazr-js picker/picker.js widget."""
 
-    __call__ = ViewPageTemplateFile('templates/form-picker.pt')
+    __call__ = ViewPageTemplateFile("templates/form-picker.pt")
 
-    picker_type = 'default'
+    picker_type = "default"
     # Provide default values for the following properties in case someone
     # creates a vocab picker for a person instead of using the derived
     # PersonPicker.
     show_assign_me_button = False
     show_remove_button = False
-    assign_me_text = 'Pick me'
-    remove_person_text = 'Remove person'
-    remove_team_text = 'Remove team'
+    assign_me_text = "Pick me"
+    remove_person_text = "Remove person"
+    remove_team_text = "Remove team"
     show_create_team_link = False
 
-    popup_name = 'popup-vocabulary-picker'
+    popup_name = "popup-vocabulary-picker"
 
     # Override inherited attributes for the form field.
-    displayWidth = '20'
-    displayMaxWidth = ''
-    default = ''
-    onKeyPress = ''
-    style = ''
-    cssClass = ''
+    displayWidth = "20"
+    displayMaxWidth = ""
+    default = ""
+    onKeyPress = ""
+    style = ""
+    cssClass = ""
 
     step_title = None
     # Defaults to self.vocabulary.displayname.
@@ -107,30 +101,32 @@ class VocabularyPickerWidget(SingleDataHelper, ItemsWidgetBase):
 
     def inputField(self):
         d = {
-            'formToken': self.formToken,
-            'name': self.input_id,
-            'displayWidth': self.displayWidth,
-            'displayMaxWidth': self.displayMaxWidth,
-            'onKeyPress': self.onKeyPress,
-            'style': self.style,
-            'cssClass': self.cssClass,
-            }
+            "formToken": self.formToken,
+            "name": self.input_id,
+            "displayWidth": self.displayWidth,
+            "displayMaxWidth": self.displayMaxWidth,
+            "onKeyPress": self.onKeyPress,
+            "style": self.style,
+            "cssClass": self.cssClass,
+        }
         return structured(
             """<input type="text" value="%(formToken)s" id="%(name)s"
                          name="%(name)s" size="%(displayWidth)s"
                          maxlength="%(displayMaxWidth)s"
                          onKeyPress="%(onKeyPress)s" style="%(style)s"
-                         class="%(cssClass)s" />""", **d).escapedtext
+                         class="%(cssClass)s" />""",
+            **d,
+        ).escapedtext
 
     @property
     def selected_value(self):
-        """ String representation of field value associated with the picker.
+        """String representation of field value associated with the picker.
 
         Default implementation is to return the 'name' attribute.
         """
         val = self._getFormValue()
         if val is not None:
-            return getattr(val, 'name', None)
+            return getattr(val, "name", None)
         return None
 
     @property
@@ -139,7 +135,7 @@ class VocabularyPickerWidget(SingleDataHelper, ItemsWidgetBase):
 
     @property
     def show_widget_id(self):
-        return 'show-widget-%s' % self.input_id.replace('.', '-')
+        return "show-widget-%s" % self.input_id.replace(".", "-")
 
     @property
     def config(self):
@@ -147,7 +143,8 @@ class VocabularyPickerWidget(SingleDataHelper, ItemsWidgetBase):
             picker_type=self.picker_type,
             selected_value=self.selected_value,
             selected_value_metadata=self.selected_value_metadata,
-            header=self.header_text, step_title=self.step_title_text,
+            header=self.header_text,
+            step_title=self.step_title_text,
             extra_no_results_message=self.extra_no_results_message,
             assign_me_text=self.assign_me_text,
             remove_person_text=self.remove_person_text,
@@ -158,7 +155,8 @@ class VocabularyPickerWidget(SingleDataHelper, ItemsWidgetBase):
             vocabulary_filters=self.vocabulary_filters,
             input_element=self.input_id,
             show_widget_id=self.show_widget_id,
-            show_create_team=self.show_create_team_link)
+            show_create_team=self.show_create_team_link,
+        )
 
     @property
     def json_config(self):
@@ -183,8 +181,8 @@ class VocabularyPickerWidget(SingleDataHelper, ItemsWidgetBase):
             # We need the vocabulary to get the supported filters.
             raise ValueError(
                 "The %r.%s interface attribute doesn't have its "
-                "vocabulary specified."
-                % (choice.context, choice.__name__))
+                "vocabulary specified." % (choice.context, choice.__name__)
+            )
         return vocabulary_filters(choice.vocabulary)
 
     @property
@@ -199,7 +197,8 @@ class VocabularyPickerWidget(SingleDataHelper, ItemsWidgetBase):
                 "The %r.%s interface attribute doesn't have its "
                 "vocabulary specified as a string, so it can't be loaded "
                 "by the vocabulary registry."
-                % (choice.context, choice.__name__))
+                % (choice.context, choice.__name__)
+            )
         return choice.vocabularyName
 
     @property
@@ -217,13 +216,18 @@ class VocabularyPickerWidget(SingleDataHelper, ItemsWidgetBase):
 
     def chooseLink(self):
         if self.nonajax_uri is None:
-            css = 'hidden'
+            css = "hidden"
         else:
-            css = ''
-        return ('<span class="%s">(<a id="%s" href="%s">'
-                'Find&hellip;</a>)%s</span>') % (
-            css, self.show_widget_id, self.nonajax_uri or '#',
-            self.extraChooseLink() or '')
+            css = ""
+        return (
+            '<span class="%s">(<a id="%s" href="%s">'
+            "Find&hellip;</a>)%s</span>"
+        ) % (
+            css,
+            self.show_widget_id,
+            self.nonajax_uri or "#",
+            self.extraChooseLink() or "",
+        )
 
     def extraChooseLink(self):
         return None
@@ -241,7 +245,7 @@ class PersonPickerWidget(VocabularyPickerWidget):
 
     show_assign_me_button = True
     show_remove_button = False
-    picker_type = 'person'
+    picker_type = "person"
 
     @property
     def selected_value_metadata(self):
@@ -250,18 +254,20 @@ class PersonPickerWidget(VocabularyPickerWidget):
 
     def extraChooseLink(self):
         if self.show_create_team_link:
-            return ('or (<a href="/people/+newteam">'
-                     'Create a new team&hellip;</a>)')
+            return (
+                'or (<a href="/people/+newteam">'
+                "Create a new team&hellip;</a>)"
+            )
         return None
 
     @property
     def nonajax_uri(self):
-        return '/people/'
+        return "/people/"
 
 
 class BugTrackerPickerWidget(VocabularyPickerWidget):
 
-    __call__ = ViewPageTemplateFile('templates/bugtracker-picker.pt')
+    __call__ = ViewPageTemplateFile("templates/bugtracker-picker.pt")
     link_template = """
         or (<a id="create-bugtracker-link"
         href="/bugs/bugtrackers/+newbugtracker"
@@ -273,7 +279,7 @@ class BugTrackerPickerWidget(VocabularyPickerWidget):
 
     @property
     def nonajax_uri(self):
-        return '/bugs/bugtrackers/'
+        return "/bugs/bugtrackers/"
 
 
 class SearchForUpstreamPopupWidget(VocabularyPickerWidget):
@@ -286,24 +292,27 @@ class SearchForUpstreamPopupWidget(VocabularyPickerWidget):
 
     @property
     def extra_no_results_message(self):
-        return ("<strong>Didn't find the project you were "
-                "looking for? "
-                '<a href="%s/+affects-new-product">Register it</a>.</strong>'
-                % canonical_url(self.context.context))
+        return (
+            "<strong>Didn't find the project you were "
+            "looking for? "
+            '<a href="%s/+affects-new-product">Register it</a>.</strong>'
+            % canonical_url(self.context.context)
+        )
 
 
 class DistributionSourcePackagePickerWidget(VocabularyPickerWidget):
     """Custom popup widget for choosing distribution/package combinations."""
 
     __call__ = ViewPageTemplateFile(
-        'templates/distributionsourcepackage-picker.pt')
+        "templates/distributionsourcepackage-picker.pt"
+    )
 
     @property
     def distribution_id(self):
-        return self._prefix + 'distribution'
+        return self._prefix + "distribution"
 
-    distribution_name = ''
-    distroseries_id = ''
+    distribution_name = ""
+    distroseries_id = ""
 
 
 class SourcePackageNameWidgetBase(DistributionSourcePackagePickerWidget):
@@ -318,12 +327,12 @@ class SourcePackageNameWidgetBase(DistributionSourcePackagePickerWidget):
     """
 
     # Pages that use this widget don't display the distribution.
-    distribution_id = ''
+    distribution_id = ""
 
     def __init__(self, field, vocabulary, request):
         super().__init__(field, vocabulary, request)
         self.cached_values = {}
-        if bool(getFeatureFlag('disclosure.dsp_picker.enabled')):
+        if bool(getFeatureFlag("disclosure.dsp_picker.enabled")):
             # The distribution may change later when we process form input,
             # but setting it here makes it easier to construct some views,
             # particularly edit views where we need to render the context.
@@ -346,14 +355,15 @@ class SourcePackageNameWidgetBase(DistributionSourcePackagePickerWidget):
         cached_value = self.cached_values.get(input)
         if cached_value:
             return cached_value
-        if bool(getFeatureFlag('disclosure.dsp_picker.enabled')):
+        if bool(getFeatureFlag("disclosure.dsp_picker.enabled")):
             try:
                 self.context.vocabulary.setDistribution(distribution)
                 return self.context.vocabulary.getTermByToken(input).value
             except LookupError:
                 raise ConversionError(
                     "Launchpad doesn't know of any source package named"
-                    " '%s' in %s." % (input, distribution.displayname))
+                    " '%s' in %s." % (input, distribution.displayname)
+                )
         # Else the untrusted SPN vocab was used so it needs secondary
         # verification.
         try:
@@ -364,7 +374,8 @@ class SourcePackageNameWidgetBase(DistributionSourcePackagePickerWidget):
             except InvalidValue:
                 raise ConversionError(
                     "Launchpad doesn't know of any source package named"
-                    " '%s' in %s." % (input, distribution.displayname))
+                    " '%s' in %s." % (input, distribution.displayname)
+                )
         self.cached_values[input] = source
         return source
 
@@ -372,7 +383,7 @@ class SourcePackageNameWidgetBase(DistributionSourcePackagePickerWidget):
 class UbuntuSourcePackageNameWidget(SourcePackageNameWidgetBase):
     """A widget to select Ubuntu packages."""
 
-    distribution_name = 'ubuntu'
+    distribution_name = "ubuntu"
 
     def getDistribution(self):
         """See `SourcePackageNameWidgetBase`"""

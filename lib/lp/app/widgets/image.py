@@ -7,21 +7,12 @@ from zope.component import getUtility
 from zope.contenttype import guess_content_type
 from zope.formlib import form
 from zope.formlib.interfaces import WidgetInputError
-from zope.formlib.widget import (
-    CustomWidgetFactory,
-    SimpleInputWidget,
-    )
+from zope.formlib.widget import CustomWidgetFactory, SimpleInputWidget
 from zope.formlib.widgets import FileWidget
 from zope.interface import implementer
-from zope.schema import (
-    Bytes,
-    Choice,
-    )
+from zope.schema import Bytes, Choice
 from zope.schema.interfaces import ValidationError
-from zope.schema.vocabulary import (
-    SimpleTerm,
-    SimpleVocabulary,
-    )
+from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 
 from lp import _
 from lp.app.validators import LaunchpadValidationError
@@ -30,7 +21,7 @@ from lp.services.fields import KEEP_SAME_IMAGE
 from lp.services.librarian.interfaces import (
     ILibraryFileAlias,
     ILibraryFileAliasSet,
-    )
+)
 from lp.services.webapp.interfaces import IAlwaysSubmittedWidget
 
 
@@ -48,8 +39,8 @@ class ImageChangeWidget(SimpleInputWidget):
     This widget should be used only on edit forms.
     """
 
-    EDIT_STYLE = 'editview'
-    ADD_STYLE = 'addview'
+    EDIT_STYLE = "editview"
+    ADD_STYLE = "addview"
 
     # The LibraryFileAlias representing the user-uploaded image, if any.
     _image_file_alias = None
@@ -60,18 +51,29 @@ class ImageChangeWidget(SimpleInputWidget):
         SimpleInputWidget.__init__(self, context, request)
         self.style = style
         fields = form.Fields(
-            Choice(__name__='action', source=self._getActionsVocabulary(),
-                   title=_('Action')),
-            Bytes(__name__='image', title=_('Image')))
-        fields['action'].custom_widget = CustomWidgetFactory(
-            LaunchpadRadioWidget)
-        fields['image'].custom_widget = CustomWidgetFactory(
-            LaunchpadFileWidget, displayWidth=15)
+            Choice(
+                __name__="action",
+                source=self._getActionsVocabulary(),
+                title=_("Action"),
+            ),
+            Bytes(__name__="image", title=_("Image")),
+        )
+        fields["action"].custom_widget = CustomWidgetFactory(
+            LaunchpadRadioWidget
+        )
+        fields["image"].custom_widget = CustomWidgetFactory(
+            LaunchpadFileWidget, displayWidth=15
+        )
         widgets = form.setUpWidgets(
-            fields, self.name, context, request, ignore_request=False,
-            data={'action': 'keep'})
-        self.action_widget = widgets['action']
-        self.image_widget = widgets['image']
+            fields,
+            self.name,
+            context,
+            request,
+            ignore_request=False,
+            data={"action": "keep"},
+        )
+        self.action_widget = widgets["action"]
+        self.image_widget = widgets["image"]
 
     def __call__(self):
         img = self.context.getCurrentImage()
@@ -82,8 +84,11 @@ class ImageChangeWidget(SimpleInputWidget):
             url = img.getURL()
         else:
             url = self.context.default_image_resource
-        html = ('<div><img id="%s" src="%s" alt="%s" /></div>\n'
-                % ('%s_current_img' % self.name, url, self.context.title))
+        html = '<div><img id="%s" src="%s" alt="%s" /></div>\n' % (
+            "%s_current_img" % self.name,
+            url,
+            self.context.title,
+        )
         html += "%s\n%s" % (self.action_widget(), self.image_widget())
         return html
 
@@ -93,20 +98,26 @@ class ImageChangeWidget(SimpleInputWidget):
     def _getActionsVocabulary(self):
         if self.style == self.ADD_STYLE:
             action_names = [
-                ('keep', 'Leave as default image (you can change it later)'),
-                ('change', 'Use this one')]
+                ("keep", "Leave as default image (you can change it later)"),
+                ("change", "Use this one"),
+            ]
         elif self.style == self.EDIT_STYLE:
             if self.context.getCurrentImage() is not None:
-                action_names = [('keep', 'Keep your selected image'),
-                                ('delete', 'Change back to default image'),
-                                ('change', 'Change to')]
+                action_names = [
+                    ("keep", "Keep your selected image"),
+                    ("delete", "Change back to default image"),
+                    ("change", "Change to"),
+                ]
             else:
-                action_names = [('keep', 'Leave as default image'),
-                                ('change', 'Change to')]
+                action_names = [
+                    ("keep", "Leave as default image"),
+                    ("change", "Change to"),
+                ]
         else:
             raise AssertionError(
                 "Style must be one of EDIT_STYLE or ADD_STYLE, got %s"
-                % self.style)
+                % self.style
+            )
         terms = [SimpleTerm(name, name, label) for name, label in action_names]
         return SimpleVocabulary(terms)
 
@@ -114,11 +125,14 @@ class ImageChangeWidget(SimpleInputWidget):
         self._error = None
         action = self.action_widget.getInputValue()
         form = self.request.form_ng
-        if action == 'change' and not form.getOne(self.image_widget.name):
+        if action == "change" and not form.getOne(self.image_widget.name):
             self._error = WidgetInputError(
-                self.name, self.label,
+                self.name,
+                self.label,
                 LaunchpadValidationError(
-                    _('Please specify the image you want to use.')))
+                    _("Please specify the image you want to use.")
+                ),
+            )
             raise self._error
         if action == "keep":
             if self.style == self.ADD_STYLE:
@@ -130,7 +144,8 @@ class ImageChangeWidget(SimpleInputWidget):
             else:
                 raise AssertionError(
                     "Style must be one of EDIT_STYLE or ADD_STYLE, got %s"
-                    % self.style)
+                    % self.style
+                )
         elif action == "change":
             self._image = form.getOne(self.image_widget.name)
             try:
@@ -150,18 +165,24 @@ class ImageChangeWidget(SimpleInputWidget):
             if existing_alias is not None:
                 assert existing_alias.filename == filename, (
                     "The existing LibraryFileAlias' name doesn't match the "
-                    "given image's name.")
+                    "given image's name."
+                )
                 assert existing_alias.content.filesize == len(content), (
                     "The existing LibraryFileAlias' size doesn't match "
-                    "the given image's size.")
+                    "the given image's size."
+                )
                 assert existing_alias.mimetype == type, (
                     "The existing LibraryFileAlias' type doesn't match "
-                    "the given image's type.")
+                    "the given image's type."
+                )
                 return existing_alias
 
             self._image_file_alias = getUtility(ILibraryFileAliasSet).create(
-                name=filename, size=len(content), file=BytesIO(content),
-                contentType=type)
+                name=filename,
+                size=len(content),
+                file=BytesIO(content),
+                contentType=type,
+            )
             return self._image_file_alias
         elif action == "delete":
             return None

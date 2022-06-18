@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'LinkCheckerAPI',
-    ]
+    "LinkCheckerAPI",
+]
 
 import simplejson
 from zope.component import getUtility
@@ -16,7 +16,7 @@ from lp.code.errors import (
     InvalidNamespace,
     NoLinkedBranch,
     NoSuchBranch,
-    )
+)
 from lp.code.interfaces.branchlookup import IBranchLookup
 from lp.code.interfaces.gitlookup import IGitLookup
 from lp.registry.interfaces.product import InvalidProductName
@@ -54,7 +54,7 @@ class LinkCheckerAPI(LaunchpadView):
 
     def __call__(self):
         result = {}
-        links_to_check_data = self.request.get('link_hrefs')
+        links_to_check_data = self.request.get("link_hrefs")
         if links_to_check_data is None:
             return simplejson.dumps(result)
         links_to_check = simplejson.loads(links_to_check_data)
@@ -64,7 +64,7 @@ class LinkCheckerAPI(LaunchpadView):
             link_info = self.link_checkers[link_type](links)
             result[link_type] = link_info
 
-        self.request.response.setHeader('Content-type', 'application/json')
+        self.request.response.setHeader("Content-type", "application/json")
         return simplejson.dumps(result)
 
     def check_branch_links(self, links):
@@ -73,15 +73,20 @@ class LinkCheckerAPI(LaunchpadView):
         bzr_branch_lookup = getUtility(IBranchLookup)
         git_branch_lookup = getUtility(IGitLookup)
         for link in links:
-            path = link.strip('/')[len('+code/'):]
+            path = link.strip("/")[len("+code/") :]
             if git_branch_lookup.getByPath(path)[0] is None:
                 try:
                     bzr_branch_lookup.getByLPPath(path)
-                except (CannotHaveLinkedBranch, InvalidNamespace,
-                        InvalidProductName, NoLinkedBranch, NoSuchBranch,
-                        NotFoundError) as e:
+                except (
+                    CannotHaveLinkedBranch,
+                    InvalidNamespace,
+                    InvalidProductName,
+                    NoLinkedBranch,
+                    NoSuchBranch,
+                    NotFoundError,
+                ) as e:
                     invalid_links[link] = self._error_message(e)
-        return {'invalid': invalid_links}
+        return {"invalid": invalid_links}
 
     def check_bug_links(self, links):
         """Checks links of the form /bugs/100"""
@@ -89,24 +94,25 @@ class LinkCheckerAPI(LaunchpadView):
         valid_links = {}
         user = self.user
         # List of all the bugs we are checking.
-        bugs_ids = {int(link[len('/bugs/'):]) for link in links}
+        bugs_ids = {int(link[len("/bugs/") :]) for link in links}
         if bugs_ids:
             params = BugTaskSearchParams(
-                user=user, status=None,
-                bug=any(*bugs_ids))
+                user=user, status=None, bug=any(*bugs_ids)
+            )
             bugtasks = getUtility(IBugTaskSet).search(params)
             for task in bugtasks:
-                valid_links['/bugs/' + str(task.bug.id)] = task.bug.title
+                valid_links["/bugs/" + str(task.bug.id)] = task.bug.title
                 # Remove valid bugs from the list of all the bugs.
                 if task.bug.id in bugs_ids:
                     bugs_ids.remove(task.bug.id)
             # We should now have only invalid bugs in bugs list
             for bug in bugs_ids:
-                invalid_links['/bugs/%d' % bug] = (
-                    "Bug %s cannot be found" % bug)
-        return {'valid': valid_links, 'invalid': invalid_links}
+                invalid_links["/bugs/%d" % bug] = (
+                    "Bug %s cannot be found" % bug
+                )
+        return {"valid": valid_links, "invalid": invalid_links}
 
     def _error_message(self, ex):
-        if hasattr(ex, 'display_message'):
+        if hasattr(ex, "display_message"):
             return ex.display_message
         return str(ex)

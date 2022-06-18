@@ -3,15 +3,9 @@
 
 """Tests for the TALES formatters."""
 
-from lp.app.browser.tales import (
-    ObjectFormatterAPI,
-    PillarFormatterAPI,
-    )
+from lp.app.browser.tales import ObjectFormatterAPI, PillarFormatterAPI
 from lp.services.webapp.publisher import canonical_url
-from lp.testing import (
-    FakeAdapterMixin,
-    TestCaseWithFactory,
-    )
+from lp.testing import FakeAdapterMixin, TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.views import create_view
 
@@ -21,90 +15,112 @@ class ObjectFormatterAPITestCase(TestCaseWithFactory, FakeAdapterMixin):
     layer = DatabaseFunctionalLayer
 
     def test_pagetitle_top_level(self):
-        project = self.factory.makeProduct(name='fnord')
-        view = create_view(project, name='+index', current_request=True)
+        project = self.factory.makeProduct(name="fnord")
+        view = create_view(project, name="+index", current_request=True)
         view.request.traversed_objects = [project, view]
         formatter = ObjectFormatterAPI(view)
-        self.assertEqual('Fnord in Launchpad', formatter.pagetitle())
+        self.assertEqual("Fnord in Launchpad", formatter.pagetitle())
 
     def test_pagetitle_vhost(self):
-        project = self.factory.makeProduct(name='fnord')
-        view = create_view(project, name='+bugs', rootsite='bugs',
-            current_request=True, server_url='https://bugs.launchpad.test/')
+        project = self.factory.makeProduct(name="fnord")
+        view = create_view(
+            project,
+            name="+bugs",
+            rootsite="bugs",
+            current_request=True,
+            server_url="https://bugs.launchpad.test/",
+        )
         view.request.traversed_objects = [project, view]
         formatter = ObjectFormatterAPI(view)
-        self.assertEqual('Bugs : Fnord', formatter.pagetitle())
+        self.assertEqual("Bugs : Fnord", formatter.pagetitle())
 
     def test_pagetitle_lower_level_default_view(self):
-        project = self.factory.makeProduct(name='fnord')
+        project = self.factory.makeProduct(name="fnord")
         view = create_view(
-            project.development_focus, name='+index', current_request=True)
+            project.development_focus, name="+index", current_request=True
+        )
         view.request.traversed_objects = [
-            project, project.development_focus, view]
+            project,
+            project.development_focus,
+            view,
+        ]
         formatter = ObjectFormatterAPI(view)
-        self.assertEqual('Series trunk : Fnord', formatter.pagetitle())
+        self.assertEqual("Series trunk : Fnord", formatter.pagetitle())
 
     def test_pagetitle_lower_level_named_view(self):
-        project = self.factory.makeProduct(name='fnord')
+        project = self.factory.makeProduct(name="fnord")
         view = create_view(
-            project.development_focus, name='+edit', current_request=True)
+            project.development_focus, name="+edit", current_request=True
+        )
         view.request.traversed_objects = [
-            project, project.development_focus, view]
+            project,
+            project.development_focus,
+            view,
+        ]
         formatter = ObjectFormatterAPI(view)
         self.assertEqual(
-            'Edit Fnord trunk series : Series trunk : Fnord',
-            formatter.pagetitle())
+            "Edit Fnord trunk series : Series trunk : Fnord",
+            formatter.pagetitle(),
+        )
 
     def test_pagetitle_last_breadcrumb_detail(self):
-        project = self.factory.makeProduct(name='fnord')
-        bug = self.factory.makeBug(target=project, title='bang')
+        project = self.factory.makeProduct(name="fnord")
+        bug = self.factory.makeBug(target=project, title="bang")
         view = create_view(
-            bug.bugtasks[0], name='+index', rootsite='bugs',
-            current_request=True, server_url='https://bugs.launchpad.test/')
+            bug.bugtasks[0],
+            name="+index",
+            rootsite="bugs",
+            current_request=True,
+            server_url="https://bugs.launchpad.test/",
+        )
         view.request.traversed_objects = [project, bug.bugtasks[0], view]
         formatter = ObjectFormatterAPI(view)
         self.assertEqual(
-            '%s \u201cbang\u201d : Bugs : Fnord' % bug.displayname,
-            formatter.pagetitle())
+            "%s \u201cbang\u201d : Bugs : Fnord" % bug.displayname,
+            formatter.pagetitle(),
+        )
 
     def test_pagetitle_last_breadcrumb_detail_too_long(self):
-        project = self.factory.makeProduct(name='fnord')
-        title = 'Bang out go the lights ' * 4
+        project = self.factory.makeProduct(name="fnord")
+        title = "Bang out go the lights " * 4
         bug = self.factory.makeBug(target=project, title=title)
         view = create_view(
-            bug.bugtasks[0], name='+index', rootsite='bugs',
-            current_request=True, server_url='https://bugs.launchpad.test/')
+            bug.bugtasks[0],
+            name="+index",
+            rootsite="bugs",
+            current_request=True,
+            server_url="https://bugs.launchpad.test/",
+        )
         view.request.traversed_objects = [project, bug.bugtasks[0], view]
         formatter = ObjectFormatterAPI(view)
-        detail = '%s \u201c%s\u201d' % (bug.displayname, title)
-        expected_title = '%s...\u201d : Bugs : Fnord' % detail[0:64]
+        detail = "%s \u201c%s\u201d" % (bug.displayname, title)
+        expected_title = "%s...\u201d : Bugs : Fnord" % detail[0:64]
         self.assertEqual(expected_title, formatter.pagetitle())
 
     def test_global_css(self):
         person = self.factory.makePerson()
         view = create_view(person, name="+index")
         formatter = ObjectFormatterAPI(view)
-        self.assertEqual('public', formatter.global_css())
+        self.assertEqual("public", formatter.global_css())
 
         view = create_view(person, name="+archivesubscriptions")
         formatter = ObjectFormatterAPI(view)
-        self.assertEqual(
-            'private',
-            formatter.global_css())
+        self.assertEqual("private", formatter.global_css())
 
 
 class TestPillarFormatterAPI(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    FORMATTER_CSS_CLASS = 'sprite product'
+    FORMATTER_CSS_CLASS = "sprite product"
 
     def setUp(self):
         super().setUp()
         self.product = self.factory.makeProduct()
         self.formatter = PillarFormatterAPI(self.product)
         self.product_url = canonical_url(
-            self.product, path_only_if_possible=True)
+            self.product, path_only_if_possible=True
+        )
 
     def test_link(self):
         # Calling PillarFormatterAPI.link() will return a link to the
@@ -113,10 +129,10 @@ class TestPillarFormatterAPI(TestCaseWithFactory):
         link = self.formatter.link(None)
         template = '<a href="%(url)s" class="%(css_class)s">%(summary)s</a>'
         mapping = {
-            'url': self.product_url,
-            'summary': self.product.displayname,
-            'css_class': self.FORMATTER_CSS_CLASS,
-            }
+            "url": self.product_url,
+            "summary": self.product.displayname,
+            "css_class": self.FORMATTER_CSS_CLASS,
+        }
         self.assertEqual(link, template % mapping)
 
     def test_link_with_displayname(self):
@@ -128,11 +144,11 @@ class TestPillarFormatterAPI(TestCaseWithFactory):
         template = (
             '<a href="%(url)s" class="%(css_class)s">%(summary)s</a>'
             '&nbsp;(<a href="%(url)s">%(name)s</a>)'
-            )
+        )
         mapping = {
-            'url': self.product_url,
-            'summary': self.product.displayname,
-            'name': self.product.name,
-            'css_class': self.FORMATTER_CSS_CLASS,
-            }
+            "url": self.product_url,
+            "summary": self.product.displayname,
+            "name": self.product.name,
+            "css_class": self.FORMATTER_CSS_CLASS,
+        }
         self.assertEqual(link, template % mapping)

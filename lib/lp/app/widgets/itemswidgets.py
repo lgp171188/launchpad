@@ -4,22 +4,19 @@
 """Widgets dealing with a choice of options."""
 
 __all__ = [
-    'CheckBoxMatrixWidget',
-    'LabeledMultiCheckBoxWidget',
-    'LaunchpadBooleanRadioWidget',
-    'LaunchpadDropdownWidget',
-    'LaunchpadRadioWidget',
-    'LaunchpadRadioWidgetWithDescription',
-    'PlainMultiCheckBoxWidget',
-    ]
+    "CheckBoxMatrixWidget",
+    "LabeledMultiCheckBoxWidget",
+    "LaunchpadBooleanRadioWidget",
+    "LaunchpadDropdownWidget",
+    "LaunchpadRadioWidget",
+    "LaunchpadRadioWidgetWithDescription",
+    "PlainMultiCheckBoxWidget",
+]
 
 import math
 
 from lazr.enum import IEnumeratedType
-from zope.formlib.itemswidgets import (
-    DropdownWidget,
-    RadioWidget,
-    )
+from zope.formlib.itemswidgets import DropdownWidget, RadioWidget
 from zope.formlib.widget import renderElement
 from zope.formlib.widgets import MultiCheckBoxWidget
 from zope.schema.interfaces import IChoice
@@ -38,7 +35,7 @@ class LaunchpadDropdownWidget(DropdownWidget):
 class PlainMultiCheckBoxWidget(MultiCheckBoxWidget):
     """MultiCheckBoxWidget that copes with CustomWidgetFactory."""
 
-    _joinButtonToMessageTemplate = '%s&nbsp;%s '
+    _joinButtonToMessageTemplate = "%s&nbsp;%s "
 
     def __init__(self, field, vocabulary, request):
         # XXX flacoste 2006-07-23 Workaround Zope3 bug #545:
@@ -57,21 +54,28 @@ class PlainMultiCheckBoxWidget(MultiCheckBoxWidget):
         if items is None:
             items = []
         self._disabled_items = [
-            self.vocabulary.getTerm(item).token for item in items]
+            self.vocabulary.getTerm(item).token for item in items
+        ]
 
     def _renderItem(self, index, text, value, name, cssClass, checked=False):
         """Render a checkbox and text without a label."""
         kw = {}
         if checked:
-            kw['checked'] = 'checked'
+            kw["checked"] = "checked"
         if value in self.disabled_items:
-            kw['disabled'] = 'disabled'
+            kw["disabled"] = "disabled"
         value = html_escape(value)
         text = html_escape(text)
-        id = '%s.%s' % (name, index)
+        id = "%s.%s" % (name, index)
         element = renderElement(
-            'input', value=value, name=name, id=id,
-            cssClass=cssClass, type='checkbox', **kw)
+            "input",
+            value=value,
+            name=name,
+            id=id,
+            cssClass=cssClass,
+            type="checkbox",
+            **kw,
+        )
         return self._joinButtonToMessageTemplate % (element, text)
 
 
@@ -81,26 +85,29 @@ class LabeledMultiCheckBoxWidget(PlainMultiCheckBoxWidget):
     """
 
     _joinButtonToMessageTemplate = (
-        '<label for="%s" style="font-weight: normal">%s&nbsp;%s</label> ')
+        '<label for="%s" style="font-weight: normal">%s&nbsp;%s</label> '
+    )
 
     def _renderItem(self, index, text, value, name, cssClass, checked=False):
         """Render a checkbox and text in a label with a style attribute."""
         kw = {}
         if checked:
-            kw['checked'] = 'checked'
+            kw["checked"] = "checked"
         if value in self.disabled_items:
-            kw['disabled'] = 'disabled'
+            kw["disabled"] = "disabled"
         value = html_escape(value)
         text = html_escape(text)
-        id = '%s.%s' % (name, index)
-        elem = renderElement('input',
-                             value=value,
-                             name=name,
-                             id=id,
-                             cssClass=cssClass,
-                             type='checkbox',
-                             **kw)
-        option_id = '%s.%s' % (self.name, index)
+        id = "%s.%s" % (name, index)
+        elem = renderElement(
+            "input",
+            value=value,
+            name=name,
+            id=id,
+            cssClass=cssClass,
+            type="checkbox",
+            **kw,
+        )
+        option_id = "%s.%s" % (self.name, index)
         return self._joinButtonToMessageTemplate % (option_id, elem, text)
 
 
@@ -115,23 +122,27 @@ class LaunchpadRadioWidget(RadioWidget):
         # because it is redundant (and not used in legacy tests).
         kw = {}
         if checked:
-            kw['checked'] = 'checked'
+            kw["checked"] = "checked"
         value = html_escape(value)
         text = html_escape(text)
-        id = '%s.%s' % (name, index)
-        elem = renderElement('input',
-                             value=value,
-                             name=name,
-                             id=id,
-                             cssClass=cssClass,
-                             type='radio',
-                             **kw)
-        if '<label' in text:
-            return '%s&nbsp;%s' % (elem, text)
+        id = "%s.%s" % (name, index)
+        elem = renderElement(
+            "input",
+            value=value,
+            name=name,
+            id=id,
+            cssClass=cssClass,
+            type="radio",
+            **kw,
+        )
+        if "<label" in text:
+            return "%s&nbsp;%s" % (elem, text)
         else:
-            return renderElement('label',
-                                 contents='%s&nbsp;%s' % (elem, text),
-                                 **{'style': 'font-weight: normal'})
+            return renderElement(
+                "label",
+                contents="%s&nbsp;%s" % (elem, text),
+                **{"style": "font-weight: normal"},
+            )
 
     def _div(self, cssClass, contents, **kw):
         return contents
@@ -144,26 +155,25 @@ class LaunchpadRadioWidgetWithDescription(LaunchpadRadioWidget):
     is shown as text on a line under the label.
     """
 
-    _labelWithDescriptionTemplate = (
-        '''<tr>
+    _labelWithDescriptionTemplate = """<tr>
              <td rowspan="2">%s</td>
              <td><label for="%s">%s</label></td>
            </tr>
            <tr>
              <td class="formHelp">%s</td>
            </tr>
-        ''')
-    _labelWithoutDescriptionTemplate = (
-        '''<tr>
+        """
+    _labelWithoutDescriptionTemplate = """<tr>
              <td>%s</td>
              <td><label for="%s">%s</label></td>
            </tr>
-        ''')
+        """
 
     def __init__(self, field, vocabulary, request):
         """Initialize the widget."""
-        assert IEnumeratedType.providedBy(vocabulary), (
-            'The vocabulary must implement IEnumeratedType')
+        assert IEnumeratedType.providedBy(
+            vocabulary
+        ), "The vocabulary must implement IEnumeratedType"
         super().__init__(field, vocabulary, request)
         self.extra_hint = None
         self.extra_hint_class = None
@@ -180,41 +190,51 @@ class LaunchpadRadioWidgetWithDescription(LaunchpadRadioWidget):
             return self._labelWithoutDescriptionTemplate % (elem, id, text)
         else:
             return self._labelWithDescriptionTemplate % (
-                elem, id, text, html_escape(description))
+                elem,
+                id,
+                text,
+                html_escape(description),
+            )
 
     def renderItem(self, index, text, value, name, cssClass):
         """Render an item of the list."""
         text = html_escape(text)
-        id = '%s.%s' % (name, index)
-        elem = renderElement('input',
-                             value=value,
-                             name=name,
-                             id=id,
-                             cssClass=cssClass,
-                             type='radio')
+        id = "%s.%s" % (name, index)
+        elem = renderElement(
+            "input",
+            value=value,
+            name=name,
+            id=id,
+            cssClass=cssClass,
+            type="radio",
+        )
         return self._renderRow(text, value, id, elem)
 
     def renderSelectedItem(self, index, text, value, name, cssClass):
         """Render a selected item of the list."""
         text = html_escape(text)
-        id = '%s.%s' % (name, index)
-        elem = renderElement('input',
-                             value=value,
-                             name=name,
-                             id=id,
-                             cssClass=cssClass,
-                             checked="checked",
-                             type='radio')
+        id = "%s.%s" % (name, index)
+        elem = renderElement(
+            "input",
+            value=value,
+            name=name,
+            id=id,
+            cssClass=cssClass,
+            checked="checked",
+            type="radio",
+        )
         return self._renderRow(text, value, id, elem)
 
     def renderExtraHint(self):
-        extra_hint_html = ''
-        extra_hint_class = ''
+        extra_hint_html = ""
+        extra_hint_class = ""
         if self.extra_hint_class:
             extra_hint_class = ' class="%s"' % self.extra_hint_class
         if self.extra_hint:
-            extra_hint_html = ('<div%s>%s</div>'
-                % (extra_hint_class, html_escape(self.extra_hint)))
+            extra_hint_html = "<div%s>%s</div>" % (
+                extra_hint_class,
+                html_escape(self.extra_hint),
+            )
         return extra_hint_html
 
     def renderValue(self, value):
@@ -222,10 +242,10 @@ class LaunchpadRadioWidgetWithDescription(LaunchpadRadioWidget):
         rendered_items = self.renderItems(value)
         extra_hint = self.renderExtraHint()
         return (
-            '%(extra_hint)s\n'
+            "%(extra_hint)s\n"
             '<table class="radio-button-widget">%(items)s</table>'
-            % {'extra_hint': extra_hint,
-               'items': ''.join(rendered_items)})
+            % {"extra_hint": extra_hint, "items": "".join(rendered_items)}
+        )
 
 
 class LaunchpadBooleanRadioWidget(LaunchpadRadioWidget):
@@ -237,20 +257,21 @@ class LaunchpadBooleanRadioWidget(LaunchpadRadioWidget):
     true_label and false_label attributes.
     """
 
-    TRUE = 'yes'
-    FALSE = 'no'
+    TRUE = "yes"
+    FALSE = "no"
 
     def __init__(self, field, request):
         """Initialize the widget."""
         vocabulary = SimpleVocabulary.fromItems(
-            ((self.TRUE, True), (self.FALSE, False)))
+            ((self.TRUE, True), (self.FALSE, False))
+        )
         super().__init__(field, vocabulary, request)
         # Suppress the missing value behaviour; this is a boolean field.
         self.required = True
         self._displayItemForMissingValue = False
         # Set the default labels for true and false values.
-        self.true_label = 'yes'
-        self.false_label = 'no'
+        self.true_label = "yes"
+        self.false_label = "no"
 
     def _renderItem(self, index, text, value, name, cssClass, checked=False):
         """Render the item with the preferred true and false labels."""
@@ -260,7 +281,8 @@ class LaunchpadBooleanRadioWidget(LaunchpadRadioWidget):
             # value == self.FALSE.
             text = self.false_label
         return super()._renderItem(
-            index, text, value, name, cssClass, checked=checked)
+            index, text, value, name, cssClass, checked=checked
+        )
 
 
 class CheckBoxMatrixWidget(LabeledMultiCheckBoxWidget):
@@ -275,27 +297,28 @@ class CheckBoxMatrixWidget(LabeledMultiCheckBoxWidget):
     def renderValue(self, value):
         """Render the checkboxes inside a <table>."""
         rendered_items = self.renderItems(value)
-        html = ['<table>']
-        if self.orientation == 'horizontal':
+        html = ["<table>"]
+        if self.orientation == "horizontal":
             for i in range(0, len(rendered_items), self.column_count):
-                html.append('<tr>')
+                html.append("<tr>")
                 for j in range(0, self.column_count):
                     index = i + j
                     if index >= len(rendered_items):
                         break
-                    html.append('<td>%s</td>' % rendered_items[index])
-                html.append('</tr>')
+                    html.append("<td>%s</td>" % rendered_items[index])
+                html.append("</tr>")
         else:
-            row_count = int(math.ceil(
-                len(rendered_items) / float(self.column_count)))
+            row_count = int(
+                math.ceil(len(rendered_items) / float(self.column_count))
+            )
             for i in range(0, row_count):
-                html.append('<tr>')
+                html.append("<tr>")
                 for j in range(0, self.column_count):
                     index = i + (j * row_count)
                     if index >= len(rendered_items):
                         break
-                    html.append('<td>%s</td>' % rendered_items[index])
-                html.append('</tr>')
+                    html.append("<td>%s</td>" % rendered_items[index])
+                html.append("</tr>")
 
-        html.append('</table>')
-        return '\n'.join(html)
+        html.append("</table>")
+        return "\n".join(html)

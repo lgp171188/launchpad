@@ -4,9 +4,9 @@
 """Multiple step views."""
 
 __all__ = [
-    'MultiStepView',
-    'StepView',
-    ]
+    "MultiStepView",
+    "StepView",
+]
 
 
 from zope.formlib import form
@@ -16,23 +16,19 @@ from zope.interface import Interface
 from zope.schema import TextLine
 
 from lp import _
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    )
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action
+from lp.services.webapp import LaunchpadView, canonical_url
 
 
 class _IStepMachinery(Interface):
     """A schema solely for the multistep wizard machinery."""
+
     __visited_steps__ = TextLine(
-        title=_('Visited steps'),
+        title=_("Visited steps"),
         description=_(
-            "Used to keep track of the steps visited in a multistep form.")
-        )
+            "Used to keep track of the steps visited in a multistep form."
+        ),
+    )
 
 
 class MultiStepView(LaunchpadView):
@@ -85,7 +81,7 @@ class MultiStepView(LaunchpadView):
     def initialize(self):
         """Initialize the view and handle stepping through sub-views."""
         view = self.first_step(self.context, self.request)
-        assert isinstance(view, StepView), 'Not a StepView: %s' % view
+        assert isinstance(view, StepView), "Not a StepView: %s" % view
         # We should be calling injectStepNameInRequest() after initialize() in
         # both this case and inside the loop below, otherwise the form will be
         # processed when it's first rendered, thus showing warning/error
@@ -102,14 +98,14 @@ class MultiStepView(LaunchpadView):
 
         action_required = None
         for name in self.request.form.keys():
-            if name.startswith('field.actions.'):
+            if name.startswith("field.actions."):
                 action_required = (name, self.request.form[name])
                 break
 
         action_taken = view.action_taken
         while view.next_step is not None:
             view = view.next_step(self.context, self.request)
-            assert isinstance(view, StepView), 'Not a StepView: %s' % view
+            assert isinstance(view, StepView), "Not a StepView: %s" % view
             view.initialize()
             view.step_number = self.step_number
             view.total_steps = self.total_steps
@@ -126,8 +122,8 @@ class MultiStepView(LaunchpadView):
             # in invalid form data via a dictionary instead of
             # using a test browser.
             raise AssertionError(
-                'MultiStepView did not find action for %s=%r'
-                % action_required)
+                "MultiStepView did not find action for %s=%r" % action_required
+            )
 
     def render(self):
         return self.view.render()
@@ -146,13 +142,15 @@ class StepView(LaunchpadFormView):
     If views want to change the label of their Continue button, they should
     override `main_action_label`.
     """
+
     # Use a custom widget in order to make it invisible.
     custom_widget___visited_steps__ = CustomWidgetFactory(
-        TextWidget, visible=False)
+        TextWidget, visible=False
+    )
 
     _field_names = []
-    step_name = ''
-    main_action_label = 'Continue'
+    step_name = ""
+    main_action_label = "Continue"
     next_step = None
 
     # Step information.  These get filled in by the controller view.
@@ -161,7 +159,7 @@ class StepView(LaunchpadFormView):
 
     # Define this here so it can be overridden in subclasses, if for some
     # crazy reason you need step names with vertical bars in them.
-    SEPARATOR = '|'
+    SEPARATOR = "|"
 
     def extendFields(self):
         """See `LaunchpadFormView`."""
@@ -170,7 +168,7 @@ class StepView(LaunchpadFormView):
     @property
     def field_names(self):
         """Do not override."""
-        return self._field_names + ['__visited_steps__']
+        return self._field_names + ["__visited_steps__"]
 
     def validateStep(self, data):
         """Validation specific to a given step.
@@ -182,7 +180,7 @@ class StepView(LaunchpadFormView):
     def main_action(self, data):
         raise NotImplementedError
 
-    @action(main_action_label, name='continue')
+    @action(main_action_label, name="continue")
     def continue_action(self, action, data):
         """The action of the continue button.
 
@@ -207,14 +205,14 @@ class StepView(LaunchpadFormView):
 
     def injectStepNameInRequest(self):
         """Inject this step's name into the request if necessary."""
-        visited_steps = self.request.form.get('field.__visited_steps__')
+        visited_steps = self.request.form.get("field.__visited_steps__")
         if not visited_steps:
-            self.request.form['field.__visited_steps__'] = self.step_name
+            self.request.form["field.__visited_steps__"] = self.step_name
         elif self.step_name not in visited_steps:
             steps = visited_steps.split(self.SEPARATOR)
             steps.append(self.step_name)
             new_steps = self.SEPARATOR.join(steps)
-            self.request.form['field.__visited_steps__'] = new_steps
+            self.request.form["field.__visited_steps__"] = new_steps
         else:
             # We already visited this step, so there's no need to inject our
             # step_name in the request again.
@@ -230,7 +228,7 @@ class StepView(LaunchpadFormView):
         that to find out whether or not to process them, so we use an extra
         hidden input to store the views the user has visited already.
         """
-        steps = data['__visited_steps__'].split('|')
+        steps = data["__visited_steps__"].split("|")
         return self.step_name in steps
 
     def render(self):
@@ -239,7 +237,7 @@ class StepView(LaunchpadFormView):
         actions = []
         for operation in self.actions:
             # Only change the label of our 'continue' action.
-            if operation.__name__ == 'field.actions.continue':
+            if operation.__name__ == "field.actions.continue":
                 operation.label = self.main_action_label
             actions.append(operation)
         self.actions = actions

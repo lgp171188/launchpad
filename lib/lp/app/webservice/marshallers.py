@@ -4,27 +4,18 @@
 """Launchpad-specific field marshallers for the web service."""
 
 __all__ = [
-    'TextFieldMarshaller',
-    ]
+    "TextFieldMarshaller",
+]
 
 
-from lazr.restful.interfaces import (
-    IEntry,
-    IFieldMarshaller,
-    )
+from lazr.restful.interfaces import IEntry, IFieldMarshaller
+from lazr.restful.marshallers import SimpleFieldMarshaller
 from lazr.restful.marshallers import (
-    SimpleFieldMarshaller,
     TextFieldMarshaller as LazrTextFieldMarshaller,
-    )
-from zope.component import (
-    getMultiAdapter,
-    getUtility,
-    )
+)
+from zope.component import getMultiAdapter, getUtility
 from zope.interface.interfaces import ComponentLookupError
-from zope.schema.interfaces import (
-    IField,
-    RequiredMissing,
-    )
+from zope.schema.interfaces import IField, RequiredMissing
 
 from lp.services.utils import obfuscate_email
 from lp.services.webapp.interfaces import ILaunchBag
@@ -39,7 +30,7 @@ class TextFieldMarshaller(LazrTextFieldMarshaller):
         Return the value as is.
         """
 
-        if (value is not None and getUtility(ILaunchBag).user is None):
+        if value is not None and getUtility(ILaunchBag).user is None:
             return obfuscate_email(value)
         return value
 
@@ -64,15 +55,18 @@ class InlineObjectFieldMarshaller(SimpleFieldMarshaller):
             field = self.field.schema[name]
             if IField.providedBy(field):
                 marshaller = getMultiAdapter(
-                    (field, self.request), IFieldMarshaller)
+                    (field, self.request), IFieldMarshaller
+                )
                 sub_value = getattr(value, name, field.default)
                 try:
                     sub_entry = getMultiAdapter(
-                        (sub_value, self.request), IEntry)
+                        (sub_value, self.request), IEntry
+                    )
                 except ComponentLookupError:
                     sub_entry = entry
                 result[marshaller.representation_name] = marshaller.unmarshall(
-                    sub_entry, sub_value)
+                    sub_entry, sub_value
+                )
         return result
 
     def _marshall_from_json_data(self, value):
@@ -82,10 +76,12 @@ class InlineObjectFieldMarshaller(SimpleFieldMarshaller):
             field = self.field.schema[name]
             if IField.providedBy(field):
                 marshaller = getMultiAdapter(
-                    (field, self.request), IFieldMarshaller)
+                    (field, self.request), IFieldMarshaller
+                )
                 if marshaller.representation_name in value:
                     template[name] = marshaller.marshall_from_json_data(
-                        value[marshaller.representation_name])
+                        value[marshaller.representation_name]
+                    )
                 elif field.required:
                     raise RequiredMissing(name)
         return self.field.schema(template)

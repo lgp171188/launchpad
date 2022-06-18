@@ -42,6 +42,7 @@ repos:
         files: |
           (?x)^lib/lp/(
             answers
+            |app
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
@@ -60,6 +61,7 @@ repos:
         exclude: |
           (?x)^lib/lp/(
             answers
+            |app
           )/
     -   id: isort
         alias: isort-black
@@ -68,6 +70,7 @@ repos:
         files: |
           (?x)^lib/lp/(
             answers
+            |app
           )/
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.9.2

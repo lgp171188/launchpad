@@ -5,43 +5,34 @@
 """
 
 __all__ = [
-    'action',
-    'has_structured_doc',
-    'LaunchpadEditFormView',
-    'LaunchpadFormView',
-    'render_radio_widget_part',
-    'ReturnToReferrerMixin',
-    'safe_action',
-    ]
+    "action",
+    "has_structured_doc",
+    "LaunchpadEditFormView",
+    "LaunchpadFormView",
+    "render_radio_widget_part",
+    "ReturnToReferrerMixin",
+    "safe_action",
+]
 
-from lazr.lifecycle.event import ObjectModifiedEvent
-from lazr.lifecycle.snapshot import Snapshot
 import simplejson
 import transaction
+from lazr.lifecycle.event import ObjectModifiedEvent
+from lazr.lifecycle.snapshot import Snapshot
 from zope.event import notify
 from zope.formlib import form
+
 # imported so it may be exported
 from zope.formlib.form import action
-from zope.formlib.interfaces import (
-    IInputWidget,
-    IWidgetFactory,
-    )
+from zope.formlib.interfaces import IInputWidget, IWidgetFactory
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import (
     CheckBoxWidget,
     DropdownWidget,
     RadioWidget,
     TextAreaWidget,
-    )
-from zope.interface import (
-    classImplements,
-    implementer,
-    providedBy,
-    )
-from zope.traversing.interfaces import (
-    ITraversable,
-    TraversalError,
-    )
+)
+from zope.interface import classImplements, implementer, providedBy
+from zope.traversing.interfaces import ITraversable, TraversalError
 
 from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import (
@@ -50,12 +41,8 @@ from lp.services.webapp.interfaces import (
     IMultiLineWidgetLayout,
     INotificationResponse,
     UnsafeFormGetSubmissionError,
-    )
-from lp.services.webapp.publisher import (
-    canonical_url,
-    LaunchpadView,
-    )
-
+)
+from lp.services.webapp.publisher import LaunchpadView, canonical_url
 
 classImplements(CheckBoxWidget, ICheckBoxWidgetLayout)
 classImplements(DropdownWidget, IAlwaysSubmittedWidget)
@@ -70,7 +57,7 @@ _first_widget_marker = object()
 class LaunchpadFormView(LaunchpadView):
 
     # The prefix used for all form inputs.
-    prefix = 'field'
+    prefix = "field"
 
     # The form schema
     schema = None
@@ -88,7 +75,7 @@ class LaunchpadFormView(LaunchpadView):
     # to disable setting of initial focus.
     initial_focus_widget = _first_widget_marker
 
-    label = ''
+    label = ""
 
     actions = ()
 
@@ -114,7 +101,8 @@ class LaunchpadFormView(LaunchpadView):
 
         data = {}
         errors, form_action = form.handleSubmit(
-            self.actions, data, self._validate)
+            self.actions, data, self._validate
+        )
 
         # no action selected, so return
         if form_action is None:
@@ -122,8 +110,8 @@ class LaunchpadFormView(LaunchpadView):
 
         # Check to see if an attempt was made to submit a non-safe
         # action with a GET query.
-        is_safe = getattr(form_action, 'is_safe', False)
-        if not is_safe and self.request.method != 'POST':
+        is_safe = getattr(form_action, "is_safe", False)
+        if not is_safe and self.request.method != "POST":
             raise UnsafeFormGetSubmissionError(form_action.__name__)
 
         if errors:
@@ -144,11 +132,14 @@ class LaunchpadFormView(LaunchpadView):
         """Add any notification messages to the response headers."""
         if not INotificationResponse.providedBy(request.response):
             return
-        notifications = ([(notification.level, notification.message)
-             for notification in request.response.notifications])
+        notifications = [
+            (notification.level, notification.message)
+            for notification in request.response.notifications
+        ]
         if notifications:
             request.response.setHeader(
-                'X-Lazr-Notifications', simplejson.dumps(notifications))
+                "X-Lazr-Notifications", simplejson.dumps(notifications)
+            )
 
     def render(self):
         """Return the body of the response.
@@ -181,10 +172,14 @@ class LaunchpadFormView(LaunchpadView):
         pass
 
     def setUpFields(self):
-        assert self.schema is not None, (
-            "Schema must be set for LaunchpadFormView")
-        self.form_fields = form.Fields(self.schema, for_input=self.for_input,
-                                       render_context=self.render_context)
+        assert (
+            self.schema is not None
+        ), "Schema must be set for LaunchpadFormView"
+        self.form_fields = form.Fields(
+            self.schema,
+            for_input=self.for_input,
+            render_context=self.render_context,
+        )
         self.extendFields()
         if self.field_names is not None:
             self.form_fields = self.form_fields.select(*self.field_names)
@@ -198,7 +193,8 @@ class LaunchpadFormView(LaunchpadView):
             # important for some existing forms.
             if field.custom_widget is None:
                 widget = getattr(
-                    self, 'custom_widget_%s' % field.__name__, None)
+                    self, "custom_widget_%s" % field.__name__, None
+                )
                 if widget is not None:
                     if IWidgetFactory.providedBy(widget):
                         field.custom_widget = widget
@@ -208,9 +204,14 @@ class LaunchpadFormView(LaunchpadView):
         if context is None:
             context = self.context
         self.widgets = form.setUpWidgets(
-            self.form_fields, self.prefix, context, self.request,
-            data=self.initial_values, adapters=self.adapters,
-            ignore_request=False)
+            self.form_fields,
+            self.prefix,
+            context,
+            self.request,
+            data=self.initial_values,
+            adapters=self.adapters,
+            ignore_request=False,
+        )
         for field_name, help_link in self.help_links.items():
             self.widgets[field_name].help_link = help_link
 
@@ -329,7 +330,8 @@ class LaunchpadFormView(LaunchpadView):
         for error in form.getWidgetsData(widgets, self.prefix, data):
             self.errors.append(error)
         for error in form.checkInvariants(
-                self.form_fields, data, self.invariant_context):
+            self.form_fields, data, self.invariant_context
+        ):
             self.addError(error)
         return self.errors
 
@@ -355,11 +357,11 @@ class LaunchpadFormView(LaunchpadView):
                     count += 1
 
         if count == 0:
-            return ''
+            return ""
         elif count == 1:
-            return 'There is 1 error.'
+            return "There is 1 error."
         else:
-            return 'There are %d errors.' % count
+            return "There are %d errors." % count
 
     def ajax_failure_handler(self, action, data, errors):
         """Called by the form if validate() finds any errors.
@@ -372,7 +374,7 @@ class LaunchpadFormView(LaunchpadView):
         if not self.request.is_ajax:
             return
         self.request.response.setStatus(400, "Validation")
-        self.request.response.setHeader('Content-type', 'application/json')
+        self.request.response.setHeader("Content-type", "application/json")
         errors = {}
         for widget in self.widgets:
             widget_error = self.getFieldError(widget.context.getName())
@@ -381,7 +383,8 @@ class LaunchpadFormView(LaunchpadView):
         return_data = dict(
             form_wide_errors=self.form_wide_errors,
             errors=errors,
-            error_summary=self.error_count)
+            error_summary=self.error_count,
+        )
         return simplejson.dumps(return_data)
 
     def validate(self, data):
@@ -420,16 +423,16 @@ class LaunchpadFormView(LaunchpadView):
                 widget = None
 
         if widget is None:
-            return ''
+            return ""
         else:
-            return ("<!--\n"
-                    "setFocusByName('%s');\n"
-                    "// -->" % widget.name)
+            return "<!--\n" "setFocusByName('%s');\n" "// -->" % widget.name
 
     def isSingleLineLayout(self, field_name):
         widget = self.widgets[field_name]
-        return not (IMultiLineWidgetLayout.providedBy(widget) or
-                    ICheckBoxWidgetLayout.providedBy(widget))
+        return not (
+            IMultiLineWidgetLayout.providedBy(widget)
+            or ICheckBoxWidgetLayout.providedBy(widget)
+        )
 
     def isMultiLineLayout(self, field_name):
         widget = self.widgets[field_name]
@@ -437,8 +440,9 @@ class LaunchpadFormView(LaunchpadView):
 
     def isCheckBoxLayout(self, field_name):
         widget = self.widgets[field_name]
-        return (ICheckBoxWidgetLayout.providedBy(widget) and
-                not IMultiLineWidgetLayout.providedBy(widget))
+        return ICheckBoxWidgetLayout.providedBy(
+            widget
+        ) and not IMultiLineWidgetLayout.providedBy(widget)
 
     def showOptionalMarker(self, field_name):
         """Should the (Optional) marker be shown?"""
@@ -449,14 +453,15 @@ class LaunchpadFormView(LaunchpadView):
             return False
 
         # Do not show for readonly fields.
-        context = getattr(widget, 'context', None)
-        if getattr(context, 'readonly', None):
+        context = getattr(widget, "context", None)
+        if getattr(context, "readonly", None):
             return False
 
         # Do not show the marker for required widgets or always submitted
         # widgets.  Everything else gets the marker.
-        return not (widget.required or
-                    IAlwaysSubmittedWidget.providedBy(widget))
+        return not (
+            widget.required or IAlwaysSubmittedWidget.providedBy(widget)
+        )
 
 
 class LaunchpadEditFormView(LaunchpadFormView):
@@ -479,15 +484,21 @@ class LaunchpadEditFormView(LaunchpadFormView):
             context = self.context
         if notify_modified:
             context_before_modification = Snapshot(
-                context, providing=providedBy(context))
+                context, providing=providedBy(context)
+            )
 
-        was_changed = form.applyChanges(context, self.form_fields,
-                                        data, self.adapters)
+        was_changed = form.applyChanges(
+            context, self.form_fields, data, self.adapters
+        )
         if was_changed and notify_modified:
-            field_names = [form_field.__name__
-                           for form_field in self.form_fields]
-            notify(ObjectModifiedEvent(
-                context, context_before_modification, field_names))
+            field_names = [
+                form_field.__name__ for form_field in self.form_fields
+            ]
+            notify(
+                ObjectModifiedEvent(
+                    context, context_before_modification, field_names
+                )
+            )
         return was_changed
 
 
@@ -532,23 +543,27 @@ class ReturnToReferrerMixin:
         """See `LaunchpadFormView`."""
         # The referer header we want is only available before the view's
         # form submits to itself. This field is a hidden input in the form.
-        referrer = self.request.form.get('_return_url')
+        referrer = self.request.form.get("_return_url")
         returnNotChanged = True
         if referrer is None:
             # "referer" is misspelled in the HTTP specification.
-            referrer = self.request.getHeader('referer')
+            referrer = self.request.getHeader("referer")
         else:
-            attribute_name = self.request.form.get('_return_attribute_name')
-            attribute_value = self.request.form.get('_return_attribute_value')
-            if (attribute_name is not None
+            attribute_name = self.request.form.get("_return_attribute_name")
+            attribute_value = self.request.form.get("_return_attribute_value")
+            if (
+                attribute_name is not None
                 and attribute_value is not None
-                and getattr(self.context, attribute_name) != attribute_value):
+                and getattr(self.context, attribute_name) != attribute_value
+            ):
                 returnNotChanged = False
 
-        if (referrer is not None
+        if (
+            referrer is not None
             and returnNotChanged
             and referrer.startswith(self.request.getApplicationURL())
-            and referrer != self.request.getHeader('location')):
+            and referrer != self.request.getHeader("location")
+        ):
             return referrer
         else:
             return canonical_url(self.context)
@@ -559,7 +574,7 @@ class ReturnToReferrerMixin:
 
 def has_structured_doc(field):
     """Set an annotation to mark that the field's doc should be structured."""
-    field.setTaggedValue('has_structured_doc', True)
+    field.setTaggedValue("has_structured_doc", True)
     return field
 
 
@@ -575,13 +590,14 @@ class WidgetHasStructuredDoc:
         self.widget = widget
 
     def traverse(self, name, furtherPath):
-        if name != 'has-structured-doc':
+        if name != "has-structured-doc":
             raise TraversalError("Unknown query %r" % name)
         if len(furtherPath) > 0:
             raise TraversalError(
                 "There should be no further path segments after "
-                "query:has-structured-doc")
-        return self.widget.context.queryTaggedValue('has_structured_doc')
+                "query:has-structured-doc"
+            )
+        return self.widget.context.queryTaggedValue("has_structured_doc")
 
 
 def render_radio_widget_part(widget, term_value, current_value, label=None):
@@ -599,5 +615,9 @@ def render_radio_widget_part(widget, term_value, current_value, label=None):
         label = term.title
     value = term.token
     return render(
-        index=term.value, text=label, value=value, name=widget.name,
-        cssClass='')
+        index=term.value,
+        text=label,
+        value=value,
+        name=widget.name,
+        cssClass="",
+    )

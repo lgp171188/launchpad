@@ -18,32 +18,32 @@ class TestMacroNontraversability(TestCaseWithFactory):
     # Names of some macros that are tested to ensure that they're not
     # accessable via URL.  This is not an exhaustive list.
     macro_names = (
-        'feed-entry-atom',
-        '+base-layout-macros',
-        '+main-template-macros',
-        'launchpad_form',
-        'launchpad_widget_macros',
-        '+forbidden-page-macros',
-        '+search-form',
+        "feed-entry-atom",
+        "+base-layout-macros",
+        "+main-template-macros",
+        "launchpad_form",
+        "launchpad_widget_macros",
+        "+forbidden-page-macros",
+        "+search-form",
         '+primary-search-form"',
-        'form-picker-macros',
-        '+filebug-macros',
-        '+bugtarget-macros-search',
-        'bugcomment-macros',
-        'bug-attachment-macros',
-        '+portlet-malone-bugmail-filtering-faq',
-        '+bugtask-macros-tableview',
-        'bugtask-macros-cve',
-        '+bmp-macros',
-        '+announcement-macros',
-        '+person-macros',
-        '+milestone-macros',
-        '+distributionmirror-macros',
-        '+timeline-macros',
-        '+macros',
-        '+translations-macros',
-        '+object-reassignment',
-        '+team-bugs-macro',
+        "form-picker-macros",
+        "+filebug-macros",
+        "+bugtarget-macros-search",
+        "bugcomment-macros",
+        "bug-attachment-macros",
+        "+portlet-malone-bugmail-filtering-faq",
+        "+bugtask-macros-tableview",
+        "bugtask-macros-cve",
+        "+bmp-macros",
+        "+announcement-macros",
+        "+person-macros",
+        "+milestone-macros",
+        "+distributionmirror-macros",
+        "+timeline-macros",
+        "+macros",
+        "+translations-macros",
+        "+object-reassignment",
+        "+team-bugs-macro",
     )
 
     @staticmethod
@@ -51,6 +51,7 @@ class TestMacroNontraversability(TestCaseWithFactory):
         def traverse_and_call():
             view = test_traverse(path)[1]
             view()
+
         try:
             traverse_and_call()
         except NotFound:
@@ -60,5 +61,7 @@ class TestMacroNontraversability(TestCaseWithFactory):
 
     def test_macro_names_not_traversable(self):
         for name in self.macro_names:
-            self.assertTrue(self.is_not_found('http://launchpad.test/' + name),
-                'macro name %r should not be URL accessable' % name)
+            self.assertTrue(
+                self.is_not_found("http://launchpad.test/" + name),
+                "macro name %r should not be URL accessable" % name,
+            )

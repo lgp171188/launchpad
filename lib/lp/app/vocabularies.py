@@ -22,21 +22,17 @@ The binding of name -> class is done in the configure.zcml
 """
 
 __all__ = [
-    'InformationTypeVocabulary',
-    ]
+    "InformationTypeVocabulary",
+]
 
 
 from lazr.enum import IEnumeratedType
 from zope.interface import implementer
-from zope.schema.vocabulary import (
-    SimpleTerm,
-    SimpleVocabulary,
-    )
+from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 
 
 @implementer(IEnumeratedType)
 class InformationTypeVocabulary(SimpleVocabulary):
-
     def __init__(self, types):
         terms = []
         for type in types:
