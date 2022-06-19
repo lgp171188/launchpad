@@ -5,26 +5,20 @@
 
 __all__ = [
     "ArtifactoryPool",
-    ]
+]
 
-from collections import defaultdict
 import logging
 import os
-from pathlib import (
-    Path,
-    PurePath,
-    )
 import tempfile
+from collections import defaultdict
+from pathlib import Path, PurePath
 from typing import Optional
 
+import requests
 from artifactory import ArtifactoryPath
 from dohq_artifactory.auth import XJFrogArtApiAuth
-import requests
 
-from lp.archivepublisher.diskpool import (
-    FileAddActionEnum,
-    poolify,
-    )
+from lp.archivepublisher.diskpool import FileAddActionEnum, poolify
 from lp.services.config import config
 from lp.services.librarian.utils import copy_and_close
 from lp.soyuz.enums import ArchiveRepositoryFormat
@@ -33,44 +27,55 @@ from lp.soyuz.interfaces.files import (
     IBinaryPackageFile,
     IPackageReleaseFile,
     ISourcePackageReleaseFile,
-    )
+)
 from lp.soyuz.interfaces.publishing import (
     IBinaryPackagePublishingHistory,
     NotInPool,
     PoolFileOverwriteError,
-    )
+)
 
 
-def _path_for(archive: IArchive, rootpath: ArtifactoryPath, source_name: str,
-              source_version: str, pub_file: IPackageReleaseFile) -> Path:
+def _path_for(
+    archive: IArchive,
+    rootpath: ArtifactoryPath,
+    source_name: str,
+    source_version: str,
+    pub_file: IPackageReleaseFile,
+) -> Path:
     repository_format = archive.repository_format
     if repository_format == ArchiveRepositoryFormat.DEBIAN:
         path = rootpath / poolify(source_name)
     elif repository_format == ArchiveRepositoryFormat.PYTHON:
         path = rootpath / source_name / source_version
     elif repository_format == ArchiveRepositoryFormat.CONDA:
-        user_defined_fields = (
-            pub_file.binarypackagerelease.user_defined_fields)
+        user_defined_fields = pub_file.binarypackagerelease.user_defined_fields
         subdir = next(
             (value for key, value in user_defined_fields if key == "subdir"),
-            None)
+            None,
+        )
         if subdir is None:
             raise AssertionError(
-                "Cannot publish a Conda package with no subdir")
+                "Cannot publish a Conda package with no subdir"
+            )
         path = rootpath / subdir
     else:
         raise AssertionError(
-            "Unsupported repository format: %r" % repository_format)
+            "Unsupported repository format: %r" % repository_format
+        )
     path = path / pub_file.libraryfile.filename
     return path
 
 
 class ArtifactoryPoolEntry:
-
-    def __init__(self, archive: IArchive, rootpath: ArtifactoryPath,
-                 source_name: str, source_version: str,
-                 pub_file: IPackageReleaseFile,
-                 logger: logging.Logger) -> None:
+    def __init__(
+        self,
+        archive: IArchive,
+        rootpath: ArtifactoryPath,
+        source_name: str,
+        source_version: str,
+        pub_file: IPackageReleaseFile,
+        logger: logging.Logger,
+    ) -> None:
         self.archive = archive
         self.rootpath = rootpath
         self.source_name = source_name
@@ -89,8 +94,12 @@ class ArtifactoryPoolEntry:
         # complications in terms of having to keep track of components just
         # in order to update an artifact's properties.
         return _path_for(
-            self.archive, self.rootpath, self.source_name, self.source_version,
-            self.pub_file)
+            self.archive,
+            self.rootpath,
+            self.source_name,
+            self.source_version,
+            self.pub_file,
+        )
 
     def makeReleaseID(self, pub_file: IPackageReleaseFile) -> str:
         """
@@ -113,11 +122,13 @@ class ArtifactoryPoolEntry:
     # Property names outside the "launchpad." namespace that we expect to
     # overwrite.  Any existing property names other than these will be left
     # alone.
-    owned_properties = frozenset({
-        "deb.architecture",
-        "deb.component",
-        "deb.distribution",
-        })
+    owned_properties = frozenset(
+        {
+            "deb.architecture",
+            "deb.component",
+            "deb.distribution",
+        }
+    )
 
     def calculateProperties(self, release_id, publications):
         """Return a dict of Artifactory properties to set for this file.
@@ -165,37 +176,51 @@ class ArtifactoryPoolEntry:
             archives = {publication.archive for publication in publications}
             if len(archives) > 1:
                 raise AssertionError(
-                    "Can't calculate properties across multiple archives: %s" %
-                    archives)
+                    "Can't calculate properties across multiple archives: %s"
+                    % archives
+                )
             repository_format = tuple(archives)[0].repository_format
             if repository_format == ArchiveRepositoryFormat.DEBIAN:
-                properties["deb.distribution"] = sorted({
-                    pub.distroseries.getSuite(pub.pocket)
-                    for pub in publications})
-                properties["deb.component"] = sorted({
-                    pub.component.name for pub in publications})
-                architectures = sorted({
-                    pub.distroarchseries.architecturetag
-                    for pub in publications
-                    if IBinaryPackagePublishingHistory.providedBy(pub)})
+                properties["deb.distribution"] = sorted(
+                    {
+                        pub.distroseries.getSuite(pub.pocket)
+                        for pub in publications
+                    }
+                )
+                properties["deb.component"] = sorted(
+                    {pub.component.name for pub in publications}
+                )
+                architectures = sorted(
+                    {
+                        pub.distroarchseries.architecturetag
+                        for pub in publications
+                        if IBinaryPackagePublishingHistory.providedBy(pub)
+                    }
+                )
                 if architectures:
                     properties["deb.architecture"] = architectures
             else:
-                properties["launchpad.channel"] = sorted({
-                    "%s:%s" % (
-                        pub.distroseries.getSuite(pub.pocket), pub.channel)
-                    for pub in publications})
+                properties["launchpad.channel"] = sorted(
+                    {
+                        "%s:%s"
+                        % (pub.distroseries.getSuite(pub.pocket), pub.channel)
+                        for pub in publications
+                    }
+                )
         # Additional metadata per
         # https://docs.google.com/spreadsheets/d/15Xkdi-CRu2NiQfLoclP5PKW63Zw6syiuao8VJG7zxvw
         # (private).
         if IBinaryPackageFile.providedBy(self.pub_file):
             ci_build = self.pub_file.binarypackagerelease.ci_build
             if ci_build is not None:
-                properties.update({
-                    "soss.source_url": (
-                        ci_build.git_repository.getCodebrowseUrl()),
-                    "soss.commit_id": ci_build.commit_sha1,
-                    })
+                properties.update(
+                    {
+                        "soss.source_url": (
+                            ci_build.git_repository.getCodebrowseUrl()
+                        ),
+                        "soss.commit_id": ci_build.commit_sha1,
+                    }
+                )
         return properties
 
     def addFile(self):
@@ -209,12 +234,14 @@ class ArtifactoryPoolEntry:
             sha1 = lfa.content.sha1
             if sha1 != file_hash:
                 raise PoolFileOverwriteError(
-                    "%s != %s for %s" % (sha1, file_hash, targetpath))
+                    "%s != %s for %s" % (sha1, file_hash, targetpath)
+                )
             return FileAddActionEnum.NONE
 
         self.debug("Deploying %s", targetpath)
         properties = self.calculateProperties(
-            self.makeReleaseID(self.pub_file), [])
+            self.makeReleaseID(self.pub_file), []
+        )
         fd, name = tempfile.mkstemp(prefix="temp-download.")
         f = os.fdopen(fd, "wb")
         try:
@@ -233,13 +260,16 @@ class ArtifactoryPoolEntry:
         release_id = old_properties.get("launchpad.release-id")
         if not release_id:
             raise AssertionError(
-                "Cannot update properties: launchpad.release-id is not in %s" %
-                old_properties)
+                "Cannot update properties: launchpad.release-id is not in %s"
+                % old_properties
+            )
         properties = self.calculateProperties(release_id[0], publications)
         new_properties = {
-            key: value for key, value in old_properties.items()
-            if not key.startswith("launchpad.") and
-               key not in self.owned_properties}
+            key: value
+            for key, value in old_properties.items()
+            if not key.startswith("launchpad.")
+            and key not in self.owned_properties
+        }
         new_properties.update(properties)
         if old_properties != new_properties:
             # We could use the ArtifactoryPath.properties setter, but that
@@ -248,7 +278,8 @@ class ArtifactoryPoolEntry:
             properties_to_remove = set(old_properties) - set(new_properties)
             if properties_to_remove:
                 targetpath.del_properties(
-                    properties_to_remove, recursive=False)
+                    properties_to_remove, recursive=False
+                )
             targetpath.set_properties(new_properties, recursive=False)
 
     def removeFile(self) -> int:
@@ -266,8 +297,9 @@ class ArtifactoryPool:
 
     results = FileAddActionEnum
 
-    def __init__(self, archive: IArchive, rootpath,
-                 logger: logging.Logger) -> None:
+    def __init__(
+        self, archive: IArchive, rootpath, logger: logging.Logger
+    ) -> None:
         self.archive = archive
         if not isinstance(rootpath, ArtifactoryPath):
             rootpath = ArtifactoryPath(rootpath)
@@ -290,7 +322,7 @@ class ArtifactoryPool:
             session.proxies = {
                 "http": config.launchpad.http_proxy,
                 "https": config.launchpad.http_proxy,
-                }
+            }
         if config.launchpad.ca_certificates_path is not None:
             session.verify = config.launchpad.ca_certificates_path
         write_creds = config.artifactory.write_credentials
@@ -300,15 +332,29 @@ class ArtifactoryPool:
             session.auth = XJFrogArtApiAuth(write_creds.split(":", 1)[1])
         return session
 
-    def _getEntry(self, source_name: str, source_version: str,
-                  pub_file: IPackageReleaseFile) -> ArtifactoryPoolEntry:
+    def _getEntry(
+        self,
+        source_name: str,
+        source_version: str,
+        pub_file: IPackageReleaseFile,
+    ) -> ArtifactoryPoolEntry:
         """See `DiskPool._getEntry`."""
         return ArtifactoryPoolEntry(
-            self.archive, self.rootpath, source_name, source_version, pub_file,
-            self.logger)
+            self.archive,
+            self.rootpath,
+            source_name,
+            source_version,
+            pub_file,
+            self.logger,
+        )
 
-    def pathFor(self, comp: str, source_name: str, source_version: str,
-                pub_file: Optional[IPackageReleaseFile] = None) -> Path:
+    def pathFor(
+        self,
+        comp: str,
+        source_name: str,
+        source_version: str,
+        pub_file: Optional[IPackageReleaseFile] = None,
+    ) -> Path:
         """Return the path for the given pool file."""
         # For Artifactory publication, we ignore the component.  There's
         # only marginal benefit in having it be explicitly represented in
@@ -316,10 +362,16 @@ class ArtifactoryPool:
         # complications in terms of having to keep track of components just
         # in order to update an artifact's properties.
         return _path_for(
-            self.archive, self.rootpath, source_name, source_version, pub_file)
+            self.archive, self.rootpath, source_name, source_version, pub_file
+        )
 
-    def addFile(self, component: str, source_name: str, source_version: str,
-                pub_file: IPackageReleaseFile):
+    def addFile(
+        self,
+        component: str,
+        source_name: str,
+        source_version: str,
+        pub_file: IPackageReleaseFile,
+    ):
         """Add a file with the given contents to the pool.
 
         `source_name`, `source_version`, and `filename` are used to
@@ -346,8 +398,13 @@ class ArtifactoryPool:
         entry = self._getEntry(source_name, source_version, pub_file)
         return entry.addFile()
 
-    def removeFile(self, component: str, source_name: str, source_version: str,
-                   pub_file: IPackageReleaseFile) -> int:
+    def removeFile(
+        self,
+        component: str,
+        source_name: str,
+        source_version: str,
+        pub_file: IPackageReleaseFile,
+    ) -> int:
         """Remove the specified file from the pool.
 
         There are two possible outcomes:
@@ -362,9 +419,14 @@ class ArtifactoryPool:
         entry = self._getEntry(source_name, source_version, pub_file)
         return entry.removeFile()
 
-    def updateProperties(self, source_name: str, source_version: str,
-                         pub_file: IPackageReleaseFile, publications,
-                         old_properties=None):
+    def updateProperties(
+        self,
+        source_name: str,
+        source_version: str,
+        pub_file: IPackageReleaseFile,
+        publications,
+        old_properties=None,
+    ):
         """Update a file's properties in Artifactory."""
         entry = self._getEntry(source_name, source_version, pub_file)
         entry.updateProperties(publications, old_properties=old_properties)
@@ -384,7 +446,7 @@ class ArtifactoryPool:
                 "*.dsc",
                 "*.tar.*",
                 "*.udeb",
-                ]
+            ]
         elif repository_format == ArchiveRepositoryFormat.PYTHON:
             return ["*.whl"]
         elif repository_format == ArchiveRepositoryFormat.CONDA:
@@ -394,7 +456,8 @@ class ArtifactoryPool:
             ]
         else:
             raise AssertionError(
-                "Unknown repository format %r" % repository_format)
+                "Unknown repository format %r" % repository_format
+            )
 
     def getAllArtifacts(self, repository_name, repository_format):
         """Get a mapping of all artifacts to their current properties.
@@ -413,13 +476,14 @@ class ArtifactoryPool:
                 "$or": [
                     {"name": {"$match": pattern}}
                     for pattern in self.getArtifactPatterns(repository_format)
-                    ],
-                },
+                ],
+            },
             ".include",
             # We don't use "repo", but the AQL documentation says that
             # non-admin users must include all of "name", "repo", and "path"
             # in the include directive.
-            ["repo", "path", "name", "property"])
+            ["repo", "path", "name", "property"],
+        )
         artifacts_by_path = {}
         for artifact in artifacts:
             path = PurePath(artifact["path"], artifact["name"])
@@ -430,5 +494,6 @@ class ArtifactoryPool:
             # and in an undefined order.  Always sort them to ensure that we
             # can compare properties reliably.
             artifacts_by_path[path] = {
-                key: sorted(values) for key, values in properties.items()}
+                key: sorted(values) for key, values in properties.items()
+            }
         return artifacts_by_path

@@ -40,10 +40,13 @@ class TestProcessDeathRow(TestCaseWithFactory):
         args = [script, "-v", "-p", self.primary_test_folder]
         args.extend(extra_args)
         process = subprocess.Popen(
-            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         stdout, stderr = process.communicate()
-        err_msg = ("process-deathrow returned %s:\n%s" %
-                   (process.returncode, stderr))
+        err_msg = "process-deathrow returned %s:\n%s" % (
+            process.returncode,
+            stderr,
+        )
         self.assertEqual(process.returncode, 0, err_msg)
 
         return (process.returncode, stdout, stderr)
@@ -71,20 +74,24 @@ class TestProcessDeathRow(TestCaseWithFactory):
         """
         ubuntutest = getUtility(IDistributionSet)["ubuntutest"]
         self.factory.makeDistroSeriesParent(
-            derived_series=ubuntutest.currentseries)
+            derived_series=ubuntutest.currentseries
+        )
         ut_alsautils = ubuntutest.getSourcePackage("alsa-utils")
         ut_alsautils_109a4 = ut_alsautils.getVersion("1.0.9a-4")
         primary_pubrecs = ut_alsautils_109a4.publishing_history
         self.primary_pubrec_ids = self.markPublishingForRemoval(
-            primary_pubrecs)
+            primary_pubrecs
+        )
 
         self.primary_test_folder = mkdtemp()
         package_folder = os.path.join(
-            self.primary_test_folder, "main", "a", "alsa-utils")
+            self.primary_test_folder, "main", "a", "alsa-utils"
+        )
         os.makedirs(package_folder)
 
         self.primary_package_path = os.path.join(
-            package_folder, "alsa-utils_1.0.9a-4.dsc")
+            package_folder, "alsa-utils_1.0.9a-4.dsc"
+        )
 
         self.writeContent(self.primary_package_path)
 
@@ -100,28 +107,31 @@ class TestProcessDeathRow(TestCaseWithFactory):
         Also create one respective file in disk, so it can be removed and
         verified.
         """
-        ubuntutest = getUtility(IDistributionSet)['ubuntutest']
+        ubuntutest = getUtility(IDistributionSet)["ubuntutest"]
 
-        cprov = getUtility(IPersonSet).getByName('cprov')
+        cprov = getUtility(IPersonSet).getByName("cprov")
         removeSecurityProxy(cprov.archive).distribution = ubuntutest
-        ppa_pubrecs = cprov.archive.getPublishedSources('iceweasel')
+        ppa_pubrecs = cprov.archive.getPublishedSources("iceweasel")
         self.ppa_pubrec_ids = self.markPublishingForRemoval(ppa_pubrecs)
 
-        mark = getUtility(IPersonSet).getByName('mark')
+        mark = getUtility(IPersonSet).getByName("mark")
         removeSecurityProxy(mark.archive).distribution = ubuntutest
-        ppa_pubrecs = mark.archive.getPublishedSources('iceweasel')
+        ppa_pubrecs = mark.archive.getPublishedSources("iceweasel")
         self.ppa_pubrec_ids.extend(self.markPublishingForRemoval(ppa_pubrecs))
 
         # Fill one of the files in cprov PPA just to ensure that deathrow
         # will be able to remove it. The other files can remain missing
         # in order to test if deathrow can cope with not-found files.
         self.ppa_test_folder = os.path.join(
-            config.personalpackagearchive.root, "cprov", cprov.archive.name)
+            config.personalpackagearchive.root, "cprov", cprov.archive.name
+        )
         package_folder = os.path.join(
-            self.ppa_test_folder, "ubuntutest/pool/main/i/iceweasel")
+            self.ppa_test_folder, "ubuntutest/pool/main/i/iceweasel"
+        )
         os.makedirs(package_folder)
         self.ppa_package_path = os.path.join(
-            package_folder, "iceweasel-1.0.dsc")
+            package_folder, "iceweasel-1.0.dsc"
+        )
         self.writeContent(self.ppa_package_path)
 
     def tearDownPPA(self):
@@ -139,7 +149,8 @@ class TestProcessDeathRow(TestCaseWithFactory):
             pubrec.status = PackagePublishingStatus.SUPERSEDED
             pubrec.dateremoved = None
             pubrec.scheduleddeletiondate = datetime.datetime(
-                1999, 1, 1, tzinfo=pytz.UTC)
+                1999, 1, 1, tzinfo=pytz.UTC
+            )
             pubrec_ids.append(pubrec.id)
         return pubrec_ids
 
@@ -149,18 +160,22 @@ class TestProcessDeathRow(TestCaseWithFactory):
         for pubrec_id in pubrec_ids:
             spph = store.get(SourcePackagePublishingHistory, pubrec_id)
             self.assertEqual(
-                spph.status, status, "ID %s -> %s (expected %s)" % (
-                spph.id, spph.status.title, status.title))
+                spph.status,
+                status,
+                "ID %s -> %s (expected %s)"
+                % (spph.id, spph.status.title, status.title),
+            )
 
     def probeRemoved(self, pubrec_ids):
         """Check if all source publishing records were removed."""
         store = IStore(SourcePackagePublishingHistory)
-        right_now = datetime.datetime.now(pytz.timezone('UTC'))
+        right_now = datetime.datetime.now(pytz.timezone("UTC"))
         for pubrec_id in pubrec_ids:
             spph = store.get(SourcePackagePublishingHistory, pubrec_id)
             self.assertTrue(
                 spph.dateremoved < right_now,
-                "ID %s -> not removed" % (spph.id))
+                "ID %s -> not removed" % (spph.id),
+            )
 
     def probeNotRemoved(self, pubrec_ids):
         """Check if all source publishing records were not removed."""
@@ -168,8 +183,8 @@ class TestProcessDeathRow(TestCaseWithFactory):
         for pubrec_id in pubrec_ids:
             spph = store.get(SourcePackagePublishingHistory, pubrec_id)
             self.assertTrue(
-                spph.dateremoved is None,
-                "ID %s -> removed" % (spph.id))
+                spph.dateremoved is None, "ID %s -> removed" % (spph.id)
+            )
 
     def test_getTargetArchives_ppa(self):
         """With --ppa, getTargetArchives returns all non-empty PPAs."""
@@ -178,15 +193,18 @@ class TestProcessDeathRow(TestCaseWithFactory):
         mark_archive = getUtility(IPersonSet).getByName("mark").archive
         # Private PPAs are included too.
         private_archive = self.factory.makeArchive(
-            distribution=ubuntutest, private=True)
+            distribution=ubuntutest, private=True
+        )
         self.factory.makeSourcePackagePublishingHistory(
-            archive=private_archive)
+            archive=private_archive
+        )
         # Empty PPAs are skipped.
         self.factory.makeArchive(distribution=ubuntutest)
         script = DeathRowProcessor(test_args=["-d", "ubuntutest", "--ppa"])
         self.assertContentEqual(
             [cprov_archive, mark_archive, private_archive],
-            script.getTargetArchives(ubuntutest))
+            script.getTargetArchives(ubuntutest),
+        )
 
     def test_getTargetArchives_main(self):
         """Without --ppa, getTargetArchives returns main archives."""
@@ -194,7 +212,8 @@ class TestProcessDeathRow(TestCaseWithFactory):
         script = DeathRowProcessor(test_args=["-d", "ubuntutest"])
         self.assertContentEqual(
             ubuntutest.all_distro_archives,
-            script.getTargetArchives(ubuntutest))
+            script.getTargetArchives(ubuntutest),
+        )
 
     def testDryRun(self):
         """Test we don't delete the file or change the db in dry run mode."""
@@ -203,10 +222,12 @@ class TestProcessDeathRow(TestCaseWithFactory):
         self.assertTrue(os.path.exists(self.ppa_package_path))
 
         self.probePublishingStatus(
-            self.primary_pubrec_ids, PackagePublishingStatus.SUPERSEDED)
+            self.primary_pubrec_ids, PackagePublishingStatus.SUPERSEDED
+        )
         self.probeNotRemoved(self.primary_pubrec_ids)
         self.probePublishingStatus(
-            self.ppa_pubrec_ids, PackagePublishingStatus.SUPERSEDED)
+            self.ppa_pubrec_ids, PackagePublishingStatus.SUPERSEDED
+        )
         self.probeNotRemoved(self.ppa_pubrec_ids)
 
     def testWetRun(self):
@@ -216,10 +237,12 @@ class TestProcessDeathRow(TestCaseWithFactory):
         self.assertTrue(os.path.exists(self.ppa_package_path))
 
         self.probePublishingStatus(
-            self.primary_pubrec_ids, PackagePublishingStatus.SUPERSEDED)
+            self.primary_pubrec_ids, PackagePublishingStatus.SUPERSEDED
+        )
         self.probeRemoved(self.primary_pubrec_ids)
         self.probePublishingStatus(
-            self.ppa_pubrec_ids, PackagePublishingStatus.SUPERSEDED)
+            self.ppa_pubrec_ids, PackagePublishingStatus.SUPERSEDED
+        )
         self.probeNotRemoved(self.ppa_pubrec_ids)
 
     def testPPARun(self):
@@ -230,19 +253,21 @@ class TestProcessDeathRow(TestCaseWithFactory):
         self.assertFalse(os.path.exists(self.ppa_package_path))
 
         self.probePublishingStatus(
-            self.primary_pubrec_ids, PackagePublishingStatus.SUPERSEDED)
+            self.primary_pubrec_ids, PackagePublishingStatus.SUPERSEDED
+        )
         self.probeNotRemoved(self.primary_pubrec_ids)
         self.probePublishingStatus(
-            self.ppa_pubrec_ids, PackagePublishingStatus.SUPERSEDED)
+            self.ppa_pubrec_ids, PackagePublishingStatus.SUPERSEDED
+        )
         self.probeRemoved(self.ppa_pubrec_ids)
 
     def testDerivedRun(self):
         self.runDeathRow([])
         self.assertTrue(os.path.exists(self.primary_package_path))
         self.assertTrue(os.path.exists(self.ppa_package_path))
-        self.runDeathRow(['--all-derived'])
+        self.runDeathRow(["--all-derived"])
         self.assertFalse(os.path.exists(self.primary_package_path))
         self.assertTrue(os.path.exists(self.ppa_package_path))
-        self.runDeathRow(['--all-derived', '--ppa'])
+        self.runDeathRow(["--all-derived", "--ppa"])
         self.assertFalse(os.path.exists(self.primary_package_path))
         self.assertFalse(os.path.exists(self.ppa_package_path))

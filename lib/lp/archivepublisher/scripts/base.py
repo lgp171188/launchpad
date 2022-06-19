@@ -5,8 +5,8 @@
 """Publisher script class."""
 
 __all__ = [
-    'PublisherScript',
-    ]
+    "PublisherScript",
+]
 
 from optparse import OptionValueError
 
@@ -17,15 +17,24 @@ from lp.services.scripts.base import LaunchpadCronScript
 
 
 class PublisherScript(LaunchpadCronScript):
-
     def addDistroOptions(self):
         self.parser.add_option(
-            "-d", "--distribution", dest="distribution", metavar="DISTRO",
-            default=None, help="The distribution to publish.")
+            "-d",
+            "--distribution",
+            dest="distribution",
+            metavar="DISTRO",
+            default=None,
+            help="The distribution to publish.",
+        )
 
         self.parser.add_option(
-            "-a", "--all-derived", action="store_true", dest="all_derived",
-            default=False, help="Publish all Ubuntu-derived distributions.")
+            "-a",
+            "--all-derived",
+            action="store_true",
+            dest="all_derived",
+            default=False,
+            help="Publish all Ubuntu-derived distributions.",
+        )
 
     def findSelectedDistro(self):
         """Find the `Distribution` named by the --distribution option.

@@ -11,28 +11,22 @@ from zope.security.interfaces import Unauthorized
 from lp.archivepublisher.interfaces.publisherconfig import (
     IPublisherConfig,
     IPublisherConfigSet,
-    )
+)
 from lp.archivepublisher.model.publisherconfig import PublisherConfig
 from lp.services.database.interfaces import IStore
-from lp.testing import (
-    ANONYMOUS,
-    login,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    ZopelessDatabaseLayer,
-    )
+from lp.testing import ANONYMOUS, TestCaseWithFactory, login
+from lp.testing.layers import DatabaseFunctionalLayer, ZopelessDatabaseLayer
 from lp.testing.sampledata import LAUNCHPAD_ADMIN
 
 
 class TestPublisherConfig(TestCaseWithFactory):
     """Test the `PublisherConfig` model."""
+
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
         TestCaseWithFactory.setUp(self)
-        self.distribution = self.factory.makeDistribution(name='conftest')
+        self.distribution = self.factory.makeDistribution(name="conftest")
 
     def test_verify_interface(self):
         # Test the interface for the model.
@@ -50,7 +44,7 @@ class TestPublisherConfig(TestCaseWithFactory):
             root_dir=ROOT_DIR,
             base_url=BASE_URL,
             copy_base_url=COPY_BASE_URL,
-            )
+        )
 
         self.assertEqual(self.distribution.name, pubconf.distribution.name)
         self.assertEqual(ROOT_DIR, pubconf.root_dir)
@@ -70,7 +64,8 @@ class TestPublisherConfig(TestCaseWithFactory):
     def test_getByDistribution(self):
         # Test that IPublisherConfigSet.getByDistribution works.
         pubconf = getUtility(IPublisherConfigSet).getByDistribution(
-            self.distribution)
+            self.distribution
+        )
         self.assertEqual(self.distribution.name, pubconf.distribution.name)
 
 

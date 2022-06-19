@@ -17,7 +17,7 @@ from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import (
     CustomUploadAlreadyExists,
     CustomUploadBadUmask,
-    )
+)
 from lp.archivepublisher.debian_installer import DebianInstallerUpload
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
@@ -36,10 +36,12 @@ class TestDebianInstaller(RunPartsMixin, TestCaseWithFactory):
         self.temp_dir = self.makeTemporaryDirectory()
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
-            self.distro)
+            self.distro
+        )
         db_pubconf.root_dir = self.temp_dir
         self.archive = self.factory.makeArchive(
-            distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
+            distribution=self.distro, purpose=ArchivePurpose.PRIMARY
+        )
         self.suite = "distroseries"
         # CustomUpload.installFiles requires a umask of 0o022.
         old_umask = os.umask(0o022)
@@ -50,17 +52,20 @@ class TestDebianInstaller(RunPartsMixin, TestCaseWithFactory):
         self.arch = "i386"
         self.path = os.path.join(
             self.temp_dir,
-            "debian-installer-images_%s_%s.tar.gz" % (self.version, self.arch))
+            "debian-installer-images_%s_%s.tar.gz" % (self.version, self.arch),
+        )
         self.buffer = open(self.path, "wb")
         self.tarfile = LaunchpadWriteTarFile(self.buffer)
 
     def addFile(self, path, contents):
         self.tarfile.add_file(
-            "installer-%s/%s/%s" % (self.arch, self.version, path), contents)
+            "installer-%s/%s/%s" % (self.arch, self.version, path), contents
+        )
 
     def addSymlink(self, path, target):
         self.tarfile.add_symlink(
-            "installer-%s/%s/%s" % (self.arch, self.version, path), target)
+            "installer-%s/%s/%s" % (self.arch, self.version, path), target
+        )
 
     def process(self):
         self.tarfile.close()
@@ -70,11 +75,16 @@ class TestDebianInstaller(RunPartsMixin, TestCaseWithFactory):
     def getInstallerPath(self, versioned_filename=None):
         pubconf = getPubConfig(self.archive)
         installer_path = os.path.join(
-            pubconf.archiveroot, "dists", self.suite, "main",
-            "installer-%s" % self.arch)
+            pubconf.archiveroot,
+            "dists",
+            self.suite,
+            "main",
+            "installer-%s" % self.arch,
+        )
         if versioned_filename is not None:
             installer_path = os.path.join(
-                installer_path, self.version, versioned_filename)
+                installer_path, self.version, versioned_filename
+            )
         return installer_path
 
     def test_basic(self):
@@ -103,18 +113,22 @@ class TestDebianInstaller(RunPartsMixin, TestCaseWithFactory):
         self.process()
         installer_path = self.getInstallerPath()
         self.assertContentEqual(
-            [self.version, "current"], os.listdir(installer_path))
+            [self.version, "current"], os.listdir(installer_path)
+        )
         self.assertEqual(
-            self.version, os.readlink(os.path.join(installer_path, "current")))
+            self.version, os.readlink(os.path.join(installer_path, "current"))
+        )
 
     def test_correct_file(self):
         # Files in the tarball are extracted correctly.
         self.openArchive()
-        directory = ("images/netboot/ubuntu-installer/i386/"
-                     "pxelinux.cfg.serial-9600")
+        directory = (
+            "images/netboot/ubuntu-installer/i386/" "pxelinux.cfg.serial-9600"
+        )
         filename = os.path.join(directory, "default")
         long_filename = os.path.join(
-            directory, "very_very_very_very_very_very_long_filename")
+            directory, "very_very_very_very_very_very_long_filename"
+        )
         self.addFile(filename, b"hey")
         self.addFile(long_filename, b"long")
         self.process()
@@ -134,11 +148,14 @@ class TestDebianInstaller(RunPartsMixin, TestCaseWithFactory):
         self.addSymlink(link_to_dir_path, link_to_dir_target)
         self.process()
         self.assertEqual(
-            foo_target, os.readlink(self.getInstallerPath(foo_path)))
+            foo_target, os.readlink(self.getInstallerPath(foo_path))
+        )
         self.assertEqual(
             link_to_dir_target,
-            os.path.normpath(os.readlink(
-                self.getInstallerPath(link_to_dir_path))))
+            os.path.normpath(
+                os.readlink(self.getInstallerPath(link_to_dir_path))
+            ),
+        )
 
     def test_top_level_permissions(self):
         # Top-level directories are set to mode 0o755 (see bug 107068).
@@ -149,30 +166,41 @@ class TestDebianInstaller(RunPartsMixin, TestCaseWithFactory):
         self.assertEqual(0o755, os.stat(installer_path).st_mode & 0o777)
         self.assertEqual(
             0o755,
-            os.stat(os.path.join(installer_path, os.pardir)).st_mode & 0o777)
+            os.stat(os.path.join(installer_path, os.pardir)).st_mode & 0o777,
+        )
 
     def test_extracted_permissions(self):
         # Extracted files and directories are set to 0o644/0o755.
         self.openArchive()
-        directory = ("images/netboot/ubuntu-installer/i386/"
-                     "pxelinux.cfg.serial-9600")
+        directory = (
+            "images/netboot/ubuntu-installer/i386/" "pxelinux.cfg.serial-9600"
+        )
         filename = os.path.join(directory, "default")
         self.addFile(filename, b"hey")
         self.process()
         self.assertEqual(
-            0o644, os.stat(self.getInstallerPath(filename)).st_mode & 0o777)
+            0o644, os.stat(self.getInstallerPath(filename)).st_mode & 0o777
+        )
         self.assertEqual(
-            0o755, os.stat(self.getInstallerPath(directory)).st_mode & 0o777)
+            0o755, os.stat(self.getInstallerPath(directory)).st_mode & 0o777
+        )
 
     def test_sign_with_external_run_parts(self):
         self.enableRunParts(distribution_name=self.distro.name)
-        with open(os.path.join(
-                self.parts_directory, self.distro.name, "sign.d",
-                "10-sign"), "w") as f:
-            f.write(dedent("""\
+        with open(
+            os.path.join(
+                self.parts_directory, self.distro.name, "sign.d", "10-sign"
+            ),
+            "w",
+        ) as f:
+            f.write(
+                dedent(
+                    """\
                 #! /bin/sh
                 touch "$OUTPUT_PATH"
-                """))
+                """
+                )
+            )
             os.fchmod(f.fileno(), 0o755)
         self.openArchive()
         self.addFile("images/list", b"a list")
@@ -180,13 +208,15 @@ class TestDebianInstaller(RunPartsMixin, TestCaseWithFactory):
         self.process()
         self.assertThat(
             self.getInstallerPath("images"),
-            DirContains(["list", "SHA256SUMS", "SHA256SUMS.gpg"]))
+            DirContains(["list", "SHA256SUMS", "SHA256SUMS.gpg"]),
+        )
 
     def test_getSeriesKey_extracts_architecture(self):
         # getSeriesKey extracts the architecture from an upload's filename.
         self.openArchive()
         self.assertEqual(
-            self.arch, DebianInstallerUpload.getSeriesKey(self.path))
+            self.arch, DebianInstallerUpload.getSeriesKey(self.path)
+        )
 
     def test_getSeriesKey_returns_None_on_mismatch(self):
         # getSeriesKey returns None if the filename does not match the
@@ -195,7 +225,9 @@ class TestDebianInstaller(RunPartsMixin, TestCaseWithFactory):
 
     def test_getSeriesKey_refuses_names_with_wrong_number_of_fields(self):
         # getSeriesKey requires exactly three fields.
-        self.assertIsNone(DebianInstallerUpload.getSeriesKey(
-            "package_1.0.tar.gz"))
-        self.assertIsNone(DebianInstallerUpload.getSeriesKey(
-            "one_two_three_four_5.tar.gz"))
+        self.assertIsNone(
+            DebianInstallerUpload.getSeriesKey("package_1.0.tar.gz")
+        )
+        self.assertIsNone(
+            DebianInstallerUpload.getSeriesKey("one_two_three_four_5.tar.gz")
+        )

@@ -17,12 +17,11 @@ from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.config import config
 from lp.soyuz.enums import (
-    archive_suffixes,
     ArchivePublishingMethod,
     ArchivePurpose,
     ArchiveRepositoryFormat,
-    )
-
+    archive_suffixes,
+)
 
 APT_FTPARCHIVE_PURPOSES = (ArchivePurpose.PRIMARY, ArchivePurpose.COPY)
 
@@ -36,85 +35,100 @@ def getPubConfig(archive):
     """
     pubconf = Config(archive)
     ppa_config = config.personalpackagearchive
-    db_pubconf = getUtility(
-        IPublisherConfigSet).getByDistribution(archive.distribution)
+    db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
+        archive.distribution
+    )
     if db_pubconf is None:
         return None
 
     pubconf.temproot = os.path.join(
-        db_pubconf.root_dir, '%s-temp' % archive.distribution.name)
+        db_pubconf.root_dir, "%s-temp" % archive.distribution.name
+    )
 
     if archive.publishing_method == ArchivePublishingMethod.ARTIFACTORY:
         if config.artifactory.base_url is None:
             raise AssertionError(
                 "Cannot publish to Artifactory because "
-                "config.artifactory.base_url is unset.")
+                "config.artifactory.base_url is unset."
+            )
         pubconf.distroroot = None
         # XXX cjwatson 2022-04-01: This assumes that only admins can
         # configure archives to publish to Artifactory, since Archive.name
         # isn't unique.  We may eventually need to use a new column with a
         # unique constraint, but this is enough to get us going for now.
         pubconf.archiveroot = "%s/%s" % (
-            config.artifactory.base_url.rstrip("/"), archive.name)
+            config.artifactory.base_url.rstrip("/"),
+            archive.name,
+        )
     elif archive.is_ppa:
         if archive.private:
             pubconf.distroroot = ppa_config.private_root
         else:
             pubconf.distroroot = ppa_config.root
         pubconf.archiveroot = os.path.join(
-            pubconf.distroroot, archive.owner.name, archive.name,
-            archive.distribution.name)
+            pubconf.distroroot,
+            archive.owner.name,
+            archive.name,
+            archive.distribution.name,
+        )
     elif archive.is_main:
         pubconf.distroroot = db_pubconf.root_dir
         pubconf.archiveroot = os.path.join(
-            pubconf.distroroot, archive.distribution.name)
+            pubconf.distroroot, archive.distribution.name
+        )
         pubconf.archiveroot += archive_suffixes[archive.purpose]
     elif archive.is_copy:
         pubconf.distroroot = db_pubconf.root_dir
         pubconf.archiveroot = os.path.join(
             pubconf.distroroot,
-            archive.distribution.name + '-' + archive.name,
-            archive.distribution.name)
+            archive.distribution.name + "-" + archive.name,
+            archive.distribution.name,
+        )
     else:
         raise AssertionError(
             "Unknown archive purpose %s when getting publisher config.",
-            archive.purpose)
+            archive.purpose,
+        )
 
     # There can be multiple copy archives, so the temp dir needs to be
     # within the archive.
     if archive.is_copy:
-        pubconf.temproot = pubconf.archiveroot + '-temp'
+        pubconf.temproot = pubconf.archiveroot + "-temp"
 
-    if (archive.publishing_method == ArchivePublishingMethod.LOCAL and
-            archive.purpose in APT_FTPARCHIVE_PURPOSES):
-        pubconf.overrideroot = pubconf.archiveroot + '-overrides'
-        pubconf.cacheroot = pubconf.archiveroot + '-cache'
-        pubconf.miscroot = pubconf.archiveroot + '-misc'
+    if (
+        archive.publishing_method == ArchivePublishingMethod.LOCAL
+        and archive.purpose in APT_FTPARCHIVE_PURPOSES
+    ):
+        pubconf.overrideroot = pubconf.archiveroot + "-overrides"
+        pubconf.cacheroot = pubconf.archiveroot + "-cache"
+        pubconf.miscroot = pubconf.archiveroot + "-misc"
     else:
         pubconf.overrideroot = None
         pubconf.cacheroot = None
         pubconf.miscroot = None
 
     if archive.is_main:
-        pubconf.signingroot = pubconf.archiveroot + '-uefi'
+        pubconf.signingroot = pubconf.archiveroot + "-uefi"
         if not os.path.exists(pubconf.signingroot):
-            pubconf.signingroot = pubconf.archiveroot + '-signing'
+            pubconf.signingroot = pubconf.archiveroot + "-signing"
         pubconf.signingautokey = False
     elif archive.is_ppa:
         signing_keys_root = os.path.join(ppa_config.signing_keys_root, "uefi")
         if not os.path.exists(signing_keys_root):
             signing_keys_root = os.path.join(
-                ppa_config.signing_keys_root, "signing")
-        pubconf.signingroot = os.path.join(signing_keys_root,
-            archive.owner.name, archive.name)
+                ppa_config.signing_keys_root, "signing"
+            )
+        pubconf.signingroot = os.path.join(
+            signing_keys_root, archive.owner.name, archive.name
+        )
         pubconf.signingautokey = True
     else:
         pubconf.signingroot = None
         pubconf.signingautokey = False
 
     if archive.repository_format == ArchiveRepositoryFormat.DEBIAN:
-        pubconf.poolroot = os.path.join(pubconf.archiveroot, 'pool')
-        pubconf.distsroot = os.path.join(pubconf.archiveroot, 'dists')
+        pubconf.poolroot = os.path.join(pubconf.archiveroot, "pool")
+        pubconf.distsroot = os.path.join(pubconf.archiveroot, "dists")
     else:
         pubconf.poolroot = pubconf.archiveroot
         pubconf.distsroot = None
@@ -126,13 +140,14 @@ def getPubConfig(archive):
     # for PPAs with the same owner and name. META_DATA uploads are only used
     # by a few PPAs, and only by USC, so we leave metaroot unset and
     # ignore the uploads for anything except Ubuntu PPAs.
-    ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    if (archive.publishing_method == ArchivePublishingMethod.LOCAL and
-            archive.is_ppa and archive.distribution == ubuntu):
-        meta_root = os.path.join(
-            pubconf.distroroot, archive.owner.name)
-        pubconf.metaroot = os.path.join(
-            meta_root, "meta", archive.name)
+    ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    if (
+        archive.publishing_method == ArchivePublishingMethod.LOCAL
+        and archive.is_ppa
+        and archive.distribution == ubuntu
+    ):
+        meta_root = os.path.join(pubconf.distroroot, archive.owner.name)
+        pubconf.metaroot = os.path.join(meta_root, "meta", archive.name)
     else:
         pubconf.metaroot = None
 
@@ -141,7 +156,7 @@ def getPubConfig(archive):
     # to the publisher (e.g. Contents generation) to publish files in a
     # race-free way.
     if archive.is_main:
-        pubconf.stagingroot = pubconf.archiveroot + '-staging'
+        pubconf.stagingroot = pubconf.archiveroot + "-staging"
     else:
         pubconf.stagingroot = None
 
@@ -161,8 +176,10 @@ class Config:
             # the same filesystem as the pool, since the pool is remote
             # anyway.
             lambda archive, rootpath, temppath, logger: ArtifactoryPool(
-                archive, rootpath, logger)),
-        }
+                archive, rootpath, logger
+            )
+        ),
+    }
 
     def __init__(self, archive):
         self.archive = archive
@@ -182,7 +199,7 @@ class Config:
             self.miscroot,
             self.temproot,
             self.stagingroot,
-            ]
+        ]
 
         for directory in required_directories:
             if directory is None:

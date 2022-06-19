@@ -9,36 +9,25 @@ import datetime
 
 import pytz
 from storm.expr import Exists
-from storm.locals import (
-    And,
-    ClassAlias,
-    Not,
-    Select,
-    )
+from storm.locals import And, ClassAlias, Not, Select
 
 from lp.archivepublisher.config import getPubConfig
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.librarian.model import (
-    LibraryFileAlias,
-    LibraryFileContent,
-    )
+from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.publishing import (
     IBinaryPackagePublishingHistory,
-    inactive_publishing_status,
     ISourcePackagePublishingHistory,
     MissingSymlinkInPool,
     NotInPool,
-    )
-from lp.soyuz.model.files import (
-    BinaryPackageFile,
-    SourcePackageReleaseFile,
-    )
+    inactive_publishing_status,
+)
+from lp.soyuz.model.files import BinaryPackageFile, SourcePackageReleaseFile
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
     SourcePackagePublishingHistory,
-    )
+)
 
 
 def getDeathRow(archive, log, pool_root_override):
@@ -87,17 +76,25 @@ class DeathRow:
         removed."""
         if dry_run:
             # Don't actually remove the files if we are dry running
-            def _mockRemoveFile(component_name, pool_name, pool_version,
-                                pub_file):
+            def _mockRemoveFile(
+                component_name, pool_name, pool_version, pub_file
+            ):
                 self.logger.debug(
-                    "(Not really!) removing %s %s/%s/%s" %
-                    (component_name, pool_name, pool_version,
-                     pub_file.libraryfile.filename))
+                    "(Not really!) removing %s %s/%s/%s"
+                    % (
+                        component_name,
+                        pool_name,
+                        pool_version,
+                        pub_file.libraryfile.filename,
+                    )
+                )
                 fullpath = self.diskpool.pathFor(
-                    component_name, pool_name, pool_version, pub_file)
+                    component_name, pool_name, pool_version, pub_file
+                )
                 if not fullpath.exists():
                     raise NotInPool
                 return fullpath.lstat().st_size
+
             self._removeFile = _mockRemoveFile
 
         source_files, binary_files = self._collectCondemned()
@@ -115,35 +112,51 @@ class DeathRow:
         Both sources and binaries are lists.
         """
         OtherSPPH = ClassAlias(SourcePackagePublishingHistory)
-        sources = list(IStore(SourcePackagePublishingHistory).find(
-            SourcePackagePublishingHistory,
-            SourcePackagePublishingHistory.archive == self.archive,
-            SourcePackagePublishingHistory.scheduleddeletiondate < UTC_NOW,
-            SourcePackagePublishingHistory.dateremoved == None,
-            Not(Exists(Select(
-                1, tables=[OtherSPPH],
-                where=And(
-                    SourcePackagePublishingHistory.sourcepackagereleaseID ==
-                        OtherSPPH.sourcepackagereleaseID,
-                    OtherSPPH.archiveID == self.archive.id,
-                    Not(OtherSPPH.status.is_in(inactive_publishing_status))),
-                )))).order_by(SourcePackagePublishingHistory.id))
+        other_active_spph = Select(
+            1,
+            tables=[OtherSPPH],
+            where=And(
+                SourcePackagePublishingHistory.sourcepackagereleaseID
+                == OtherSPPH.sourcepackagereleaseID,
+                OtherSPPH.archiveID == self.archive.id,
+                Not(OtherSPPH.status.is_in(inactive_publishing_status)),
+            ),
+        )
+        sources = list(
+            IStore(SourcePackagePublishingHistory)
+            .find(
+                SourcePackagePublishingHistory,
+                SourcePackagePublishingHistory.archive == self.archive,
+                SourcePackagePublishingHistory.scheduleddeletiondate < UTC_NOW,
+                SourcePackagePublishingHistory.dateremoved == None,
+                Not(Exists(other_active_spph)),
+            )
+            .order_by(SourcePackagePublishingHistory.id)
+        )
         self.logger.debug("%d Sources" % len(sources))
 
         OtherBPPH = ClassAlias(BinaryPackagePublishingHistory)
-        binaries = list(IStore(BinaryPackagePublishingHistory).find(
-            BinaryPackagePublishingHistory,
-            BinaryPackagePublishingHistory.archive == self.archive,
-            BinaryPackagePublishingHistory.scheduleddeletiondate < UTC_NOW,
-            BinaryPackagePublishingHistory.dateremoved == None,
-            Not(Exists(Select(
-                1, tables=[OtherBPPH],
-                where=And(
-                    BinaryPackagePublishingHistory.binarypackagereleaseID ==
-                        OtherBPPH.binarypackagereleaseID,
-                    OtherBPPH.archiveID == self.archive.id,
-                    Not(OtherBPPH.status.is_in(inactive_publishing_status))),
-                )))).order_by(BinaryPackagePublishingHistory.id))
+        other_active_bpph = Select(
+            1,
+            tables=[OtherBPPH],
+            where=And(
+                BinaryPackagePublishingHistory.binarypackagereleaseID
+                == OtherBPPH.binarypackagereleaseID,
+                OtherBPPH.archiveID == self.archive.id,
+                Not(OtherBPPH.status.is_in(inactive_publishing_status)),
+            ),
+        )
+        binaries = list(
+            IStore(BinaryPackagePublishingHistory)
+            .find(
+                BinaryPackagePublishingHistory,
+                BinaryPackagePublishingHistory.archive == self.archive,
+                BinaryPackagePublishingHistory.scheduleddeletiondate < UTC_NOW,
+                BinaryPackagePublishingHistory.dateremoved == None,
+                Not(Exists(other_active_bpph)),
+            )
+            .order_by(BinaryPackagePublishingHistory.id)
+        )
         self.logger.debug("%d Binaries" % len(binaries))
 
         return (sources, binaries)
@@ -160,34 +173,42 @@ class DeathRow:
         clauses = []
 
         if ISourcePackagePublishingHistory.implementedBy(publication_class):
-            clauses.extend([
-                SourcePackagePublishingHistory.archive == self.archive,
-                SourcePackagePublishingHistory.dateremoved == None,
-                SourcePackagePublishingHistory.sourcepackagerelease ==
-                    SourcePackageReleaseFile.sourcepackagereleaseID,
-                SourcePackageReleaseFile.libraryfile == LibraryFileAlias.id,
-                ])
+            clauses.extend(
+                [
+                    SourcePackagePublishingHistory.archive == self.archive,
+                    SourcePackagePublishingHistory.dateremoved == None,
+                    SourcePackagePublishingHistory.sourcepackagerelease
+                    == SourcePackageReleaseFile.sourcepackagereleaseID,
+                    SourcePackageReleaseFile.libraryfile
+                    == LibraryFileAlias.id,
+                ]
+            )
         elif IBinaryPackagePublishingHistory.implementedBy(publication_class):
-            clauses.extend([
-                BinaryPackagePublishingHistory.archive == self.archive,
-                BinaryPackagePublishingHistory.dateremoved == None,
-                BinaryPackagePublishingHistory.binarypackagerelease ==
-                    BinaryPackageFile.binarypackagereleaseID,
-                BinaryPackageFile.libraryfile == LibraryFileAlias.id,
-                ])
+            clauses.extend(
+                [
+                    BinaryPackagePublishingHistory.archive == self.archive,
+                    BinaryPackagePublishingHistory.dateremoved == None,
+                    BinaryPackagePublishingHistory.binarypackagerelease
+                    == BinaryPackageFile.binarypackagereleaseID,
+                    BinaryPackageFile.libraryfile == LibraryFileAlias.id,
+                ]
+            )
         else:
             raise AssertionError("%r is not supported." % publication_class)
 
-        clauses.extend([
-            LibraryFileAlias.content == LibraryFileContent.id,
-            LibraryFileAlias.filename == filename,
-            LibraryFileContent.md5 == file_md5,
-            ])
+        clauses.extend(
+            [
+                LibraryFileAlias.content == LibraryFileContent.id,
+                LibraryFileAlias.filename == filename,
+                LibraryFileContent.md5 == file_md5,
+            ]
+        )
 
         all_publications = IStore(publication_class).find(
-            publication_class, *clauses)
+            publication_class, *clauses
+        )
 
-        right_now = datetime.datetime.now(pytz.timezone('UTC'))
+        right_now = datetime.datetime.now(pytz.timezone("UTC"))
         for pub in all_publications:
             # Deny removal if any reference is still active.
             if pub.status not in inactive_publishing_status:
@@ -201,8 +222,9 @@ class DeathRow:
 
         return True
 
-    def _tryRemovingFromDisk(self, condemned_source_files,
-                             condemned_binary_files):
+    def _tryRemovingFromDisk(
+        self, condemned_source_files, condemned_binary_files
+    ):
         """Take the list of publishing records provided and unpublish them.
 
         You should only pass in entries you want to be unpublished because
@@ -235,7 +257,7 @@ class DeathRow:
                     pub_record.pool_name,
                     pub_record.pool_version,
                     pub_file,
-                    )
+                )
                 file_path = str(self.diskpool.pathFor(*pub_file_details))
 
                 # Check if the LibraryFileAlias in question was already
@@ -266,14 +288,17 @@ class DeathRow:
             checkPubRecord(pub_record, BinaryPackagePublishingHistory)
 
         self.logger.info(
-            "Removing %s files marked for reaping" % len(condemned_files))
+            "Removing %s files marked for reaping" % len(condemned_files)
+        )
 
         for condemned_file in sorted(condemned_files, reverse=True):
-            component_name, pool_name, pool_version, pub_file = (
-                details[condemned_file])
+            component_name, pool_name, pool_version, pub_file = details[
+                condemned_file
+            ]
             try:
                 bytes += self._removeFile(
-                    component_name, pool_name, pool_version, pub_file)
+                    component_name, pool_name, pool_version, pub_file
+                )
             except NotInPool as info:
                 # It's safe for us to let this slide because it means that
                 # the file is already gone.
@@ -292,7 +317,9 @@ class DeathRow:
     def _markPublicationRemoved(self, condemned_records):
         # Now that the os.remove() calls have been made, simply let every
         # now out-of-date record be marked as removed.
-        self.logger.debug("Marking %s condemned packages as removed." %
-                          len(condemned_records))
+        self.logger.debug(
+            "Marking %s condemned packages as removed."
+            % len(condemned_records)
+        )
         for record in condemned_records:
             record.dateremoved = UTC_NOW

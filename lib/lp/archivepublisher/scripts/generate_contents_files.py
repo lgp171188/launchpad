@@ -4,11 +4,11 @@
 """Archive Contents files generator."""
 
 __all__ = [
-    'GenerateContentsFiles',
-    ]
+    "GenerateContentsFiles",
+]
 
-from optparse import OptionValueError
 import os
+from optparse import OptionValueError
 
 from zope.component import getUtility
 
@@ -20,26 +20,25 @@ from lp.services.command_spawner import (
     CommandSpawner,
     OutputLineHandler,
     ReturnCodeReceiver,
-    )
+)
 from lp.services.config import config
 from lp.services.database.policy import (
     DatabaseBlockedPolicy,
     StandbyOnlyDatabasePolicy,
-    )
+)
 from lp.services.osutils import ensure_directory_exists
 from lp.services.scripts.base import (
     LaunchpadCronScript,
     LaunchpadScriptFailure,
-    )
+)
 from lp.services.utils import file_exists
 
-
 COMPONENTS = [
-    'main',
-    'restricted',
-    'universe',
-    'multiverse',
-    ]
+    "main",
+    "restricted",
+    "universe",
+    "multiverse",
+]
 
 
 def differ_in_content(one_file, other_file):
@@ -49,7 +48,7 @@ def differ_in_content(one_file, other_file):
     if any([one_exists, other_exists]):
         if one_exists != other_exists:
             return True
-        with open(one_file, 'rb') as one_f, open(other_file, 'rb') as other_f:
+        with open(one_file, "rb") as one_f, open(other_file, "rb") as other_f:
             return one_f.read() != other_f.read()
     else:
         return False
@@ -58,8 +57,8 @@ def differ_in_content(one_file, other_file):
 def get_template(template_name):
     """Return path of given template in this script's templates directory."""
     return os.path.join(
-        config.root, "cronscripts", "publishing", "gen-contents",
-        template_name)
+        config.root, "cronscripts", "publishing", "gen-contents", template_name
+    )
 
 
 def execute(logger, command, args=None):
@@ -73,7 +72,7 @@ def execute(logger, command, args=None):
     command_line = [command]
     if args is not None:
         command_line += args
-    description = ' '.join(command_line)
+    description = " ".join(command_line)
 
     logger.debug("Execute: %s", description)
     # Some of these commands can take a long time.  Use CommandSpawner
@@ -85,14 +84,18 @@ def execute(logger, command, args=None):
     receiver = ReturnCodeReceiver()
     spawner = CommandSpawner()
     spawner.start(
-        command_line, completion_handler=receiver,
-        stderr_handler=stderr_logger, stdout_handler=stdout_logger)
+        command_line,
+        completion_handler=receiver,
+        stderr_handler=stderr_logger,
+        stdout_handler=stdout_logger,
+    )
     spawner.complete()
     stdout_logger.finalize()
     stderr_logger.finalize()
     if receiver.returncode != 0:
         raise LaunchpadScriptFailure(
-            "Failure while running command: %s" % description)
+            "Failure while running command: %s" % description
+        )
 
 
 class GenerateContentsFiles(LaunchpadCronScript):
@@ -102,8 +105,12 @@ class GenerateContentsFiles(LaunchpadCronScript):
     def add_my_options(self):
         """See `LaunchpadScript`."""
         self.parser.add_option(
-            "-d", "--distribution", dest="distribution", default=None,
-            help="Distribution to generate Contents files for.")
+            "-d",
+            "--distribution",
+            dest="distribution",
+            default=None,
+            help="Distribution to generate Contents files for.",
+        )
 
     @property
     def name(self):
@@ -119,16 +126,18 @@ class GenerateContentsFiles(LaunchpadCronScript):
             raise OptionValueError("Specify a distribution.")
 
         self.distribution = getUtility(IDistributionSet).getByName(
-            self.options.distribution)
+            self.options.distribution
+        )
         if self.distribution is None:
             raise OptionValueError(
-                "Distribution '%s' not found." % self.options.distribution)
+                "Distribution '%s' not found." % self.options.distribution
+            )
 
     def setUpContentArchive(self):
         """Make sure the `content_archive` directories exist."""
         self.logger.debug("Ensuring that we have a private tree in place.")
-        for suffix in ['cache', 'misc']:
-            dirname = '-'.join([self.distribution.name, suffix])
+        for suffix in ["cache", "misc"]:
+            dirname = "-".join([self.distribution.name, suffix])
             path = os.path.join(self.content_archive, dirname)
             if not file_exists(path):
                 os.makedirs(path)
@@ -153,31 +162,34 @@ class GenerateContentsFiles(LaunchpadCronScript):
 
     def getDirs(self, archs):
         """Subdirectories needed for each component."""
-        return ['source', 'debian-installer'] + [
-            'binary-%s' % arch for arch in archs]
+        return ["source", "debian-installer"] + [
+            "binary-%s" % arch for arch in archs
+        ]
 
     def writeAptContentsConf(self, suites):
         """Write apt-contents.conf file."""
-        output_dirname = '%s-misc' % self.distribution.name
+        output_dirname = "%s-misc" % self.distribution.name
         output_path = os.path.join(
-            self.content_archive, output_dirname, "apt-contents.conf")
+            self.content_archive, output_dirname, "apt-contents.conf"
+        )
 
         parameters = {
-            'content_archive': self.content_archive,
-            'distribution': self.distribution.name,
+            "content_archive": self.content_archive,
+            "distribution": self.distribution.name,
         }
 
-        with open(output_path, 'w') as output_file:
-            header = get_template('apt_conf_header.template')
+        with open(output_path, "w") as output_file:
+            header = get_template("apt_conf_header.template")
             with open(header) as header_file:
                 output_file.write(header_file.read() % parameters)
 
-            with open(get_template(
-                    'apt_conf_dist.template')) as dist_template_file:
+            with open(
+                get_template("apt_conf_dist.template")
+            ) as dist_template_file:
                 dist_template = dist_template_file.read()
             for suite in suites:
-                parameters['suite'] = suite
-                parameters['architectures'] = ' '.join(self.getArchs(suite))
+                parameters["suite"] = suite
+                parameters["architectures"] = " ".join(self.getArchs(suite))
                 output_file.write(dist_template % parameters)
 
     def createComponentDirs(self, suites):
@@ -186,8 +198,13 @@ class GenerateContentsFiles(LaunchpadCronScript):
             for component in COMPONENTS:
                 for directory in self.getDirs(self.getArchs(suite)):
                     path = os.path.join(
-                        self.content_archive, self.distribution.name, 'dists',
-                        suite, component, directory)
+                        self.content_archive,
+                        self.distribution.name,
+                        "dists",
+                        suite,
+                        component,
+                        directory,
+                    )
                     if not file_exists(path):
                         self.logger.debug("Creating %s.", path)
                         os.makedirs(path)
@@ -198,11 +215,15 @@ class GenerateContentsFiles(LaunchpadCronScript):
         This method won't access the database.
         """
         if file_exists(override_root):
-            execute(self.logger, "cp", [
-                "-a",
-                override_root,
-                "%s/" % self.content_archive,
-                ])
+            execute(
+                self.logger,
+                "cp",
+                [
+                    "-a",
+                    override_root,
+                    "%s/" % self.content_archive,
+                ],
+            )
         else:
             self.logger.debug("Did not find overrides; not copying.")
 
@@ -212,12 +233,18 @@ class GenerateContentsFiles(LaunchpadCronScript):
         This method may take a long time to run.
         This method won't access the database.
         """
-        execute(self.logger, "apt-ftparchive", [
-            "generate",
-            os.path.join(
-                self.content_archive, "%s-misc" % distro_name,
-                "apt-contents.conf"),
-            ])
+        execute(
+            self.logger,
+            "apt-ftparchive",
+            [
+                "generate",
+                os.path.join(
+                    self.content_archive,
+                    "%s-misc" % distro_name,
+                    "apt-contents.conf",
+                ),
+            ],
+        )
 
     def generateContentsFiles(self, override_root, distro_name):
         """Generate Contents files.
@@ -231,14 +258,16 @@ class GenerateContentsFiles(LaunchpadCronScript):
             evaluated without accessing the database.
         """
         self.logger.debug(
-            "Running apt in private tree to generate new contents.")
+            "Running apt in private tree to generate new contents."
+        )
         self.copyOverrides(override_root)
         self.runAptFTPArchive(distro_name)
 
     def updateContentsFile(self, suite, arch):
         """Update Contents file, if it has changed."""
         contents_dir = os.path.join(
-            self.content_archive, self.distribution.name, 'dists', suite)
+            self.content_archive, self.distribution.name, "dists", suite
+        )
         staging_dir = os.path.join(self.config.stagingroot, suite)
         contents_filename = "Contents-%s" % arch
         last_contents = os.path.join(contents_dir, ".%s" % contents_filename)
@@ -248,12 +277,15 @@ class GenerateContentsFiles(LaunchpadCronScript):
         # re-fetch them unnecessarily.
         if differ_in_content(current_contents, last_contents):
             self.logger.debug(
-                "Staging new Contents file for %s/%s.", suite, arch)
+                "Staging new Contents file for %s/%s.", suite, arch
+            )
 
             new_contents = os.path.join(
-                contents_dir, "%s.gz" % contents_filename)
+                contents_dir, "%s.gz" % contents_filename
+            )
             contents_dest = os.path.join(
-                staging_dir, "%s.gz" % contents_filename)
+                staging_dir, "%s.gz" % contents_filename
+            )
 
             ensure_directory_exists(os.path.dirname(contents_dest))
             os.rename(current_contents, last_contents)
@@ -261,7 +293,8 @@ class GenerateContentsFiles(LaunchpadCronScript):
             os.chmod(contents_dest, 0o664)
         else:
             self.logger.debug(
-                "Skipping unmodified Contents file for %s/%s.", suite, arch)
+                "Skipping unmodified Contents file for %s/%s.", suite, arch
+            )
 
     def updateContentsFiles(self, suites):
         """Update all Contents files that have changed."""
@@ -280,7 +313,8 @@ class GenerateContentsFiles(LaunchpadCronScript):
         self.processOptions()
         self.config = getPubConfig(self.distribution.main_archive)
         self.content_archive = os.path.join(
-            self.config.distroroot, "contents-generation")
+            self.config.distroroot, "contents-generation"
+        )
         self.setUpContentArchive()
 
     def process(self):

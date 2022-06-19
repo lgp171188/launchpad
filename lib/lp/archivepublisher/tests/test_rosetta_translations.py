@@ -7,8 +7,8 @@ See also lp.soyuz.tests.test_distroseriesqueue_rosetta_translations for
 high-level tests of rosetta-translations upload and queue manipulation.
 """
 
-from storm.expr import Desc
 import transaction
+from storm.expr import Desc
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -23,23 +23,20 @@ from lp.soyuz.enums import (
     PackageUploadCustomFormat,
     PackageUploadStatus,
     SourcePackageFormat,
-    )
+)
 from lp.soyuz.interfaces.sourcepackageformat import (
     ISourcePackageFormatSelectionSet,
-    )
+)
 from lp.soyuz.model.packagetranslationsuploadjob import (
     PackageTranslationsUploadJob,
-    )
+)
 from lp.soyuz.model.queue import PackageUpload
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.model.translationpackagingjob import (
     TranslationPackagingJob,
-    )
+)
 
 
 class TestRosettaTranslations(TestCaseWithFactory):
@@ -50,25 +47,28 @@ class TestRosettaTranslations(TestCaseWithFactory):
         """Create an LibraryFileAlias containing dummy translation data."""
         if tar_content is None:
             tar_content = {
-                'source/po/foo.pot': b'Foo template',
-                'source/po/eo.po': b'Foo translation',
-                }
+                "source/po/foo.pot": b"Foo template",
+                "source/po/eo.po": b"Foo translation",
+            }
         tarfile_content = LaunchpadWriteTarFile.files_to_bytes(tar_content)
-        return self.factory.makeLibraryFileAlias(content=tarfile_content,
-                                                 filename=filename)
+        return self.factory.makeLibraryFileAlias(
+            content=tarfile_content, filename=filename
+        )
 
-    def makeAndPublishSourcePackage(self, sourcepackagename, distroseries,
-                                    archive=None):
+    def makeAndPublishSourcePackage(
+        self, sourcepackagename, distroseries, archive=None
+    ):
         self.factory.makeSourcePackage(
-            sourcepackagename=sourcepackagename,
-            distroseries=distroseries)
+            sourcepackagename=sourcepackagename, distroseries=distroseries
+        )
         if archive is None:
             archive = distroseries.main_archive
         spph = self.factory.makeSourcePackagePublishingHistory(
             distroseries=distroseries,
             archive=archive,
             sourcepackagename=sourcepackagename,
-            pocket=PackagePublishingPocket.RELEASE)
+            pocket=PackagePublishingPocket.RELEASE,
+        )
         return spph
 
     def makeJobElements(self, sourcepackagename=None):
@@ -76,14 +76,19 @@ class TestRosettaTranslations(TestCaseWithFactory):
         if sourcepackagename is None:
             sourcepackagename = "foo"
         sourcepackage_version = "3.8.2-1ubuntu1"
-        filename = "%s_%s_i386_translations.tar.gz" % (sourcepackagename,
-                                                       sourcepackage_version)
+        filename = "%s_%s_i386_translations.tar.gz" % (
+            sourcepackagename,
+            sourcepackage_version,
+        )
 
         spph = self.makeAndPublishSourcePackage(
-            sourcepackagename=sourcepackagename, distroseries=distroseries)
-        packageupload = removeSecurityProxy(self.factory.makePackageUpload(
-            distroseries=distroseries,
-            archive=distroseries.main_archive))
+            sourcepackagename=sourcepackagename, distroseries=distroseries
+        )
+        packageupload = removeSecurityProxy(
+            self.factory.makePackageUpload(
+                distroseries=distroseries, archive=distroseries.main_archive
+            )
+        )
         packageupload.addSource(spph.sourcepackagerelease)
 
         libraryfilealias = self.makeTranslationsLFA(filename=filename)
@@ -96,36 +101,49 @@ class TestRosettaTranslations(TestCaseWithFactory):
         distroseries = das.distroseries
         distroseries.nominatedarchindep = das
         archive = self.factory.makeArchive(
-            distribution=distroseries.distribution,
-            purpose=ArchivePurpose.PPA)
+            distribution=distroseries.distribution, purpose=ArchivePurpose.PPA
+        )
         getUtility(ISourcePackageFormatSelectionSet).add(
-            distroseries, SourcePackageFormat.FORMAT_1_0)
+            distroseries, SourcePackageFormat.FORMAT_1_0
+        )
 
         bpb = self.factory.makeBinaryPackageBuild(
-            distroarchseries=distroseries.nominatedarchindep, archive=archive,
-            pocket=PackagePublishingPocket.RELEASE)
+            distroarchseries=distroseries.nominatedarchindep,
+            archive=archive,
+            pocket=PackagePublishingPocket.RELEASE,
+        )
         bpr = self.factory.makeBinaryPackageRelease(build=bpb)
         self.factory.makeBinaryPackagePublishingHistory(
-            binarypackagerelease=bpr, distroarchseries=bpb.distro_arch_series,
-            archive=bpb.archive, pocket=bpb.pocket)
+            binarypackagerelease=bpr,
+            distroarchseries=bpb.distro_arch_series,
+            archive=bpb.archive,
+            pocket=bpb.pocket,
+        )
         bin_pu = self.factory.makePackageUpload(
-            status=PackageUploadStatus.DONE, archive=bpb.archive,
-            distroseries=distroseries)
+            status=PackageUploadStatus.DONE,
+            archive=bpb.archive,
+            distroseries=distroseries,
+        )
         bin_pu.addBuild(bpb)
 
         filename = "%s_%s_i386_translations.tar.gz" % (
             bpb.source_package_release.sourcepackagename.name,
-            sourcepackage_version)
+            sourcepackage_version,
+        )
 
         libraryfilealias = self.makeTranslationsLFA(filename=filename)
         bin_pu.addCustom(
-            libraryfilealias, PackageUploadCustomFormat.ROSETTA_TRANSLATIONS)
+            libraryfilealias, PackageUploadCustomFormat.ROSETTA_TRANSLATIONS
+        )
 
         # Create ancestry in the target to avoid hitting New.
         spph_target = self.factory.makeSourcePackagePublishingHistory(
             sourcepackagename=bpb.source_package_release.sourcepackagename,
-            version='0', archive=distroseries.main_archive,
-            distroseries=distroseries, pocket=PackagePublishingPocket.RELEASE)
+            version="0",
+            archive=distroseries.main_archive,
+            distroseries=distroseries,
+            pocket=PackagePublishingPocket.RELEASE,
+        )
 
         target_archive = distroseries.main_archive
 
@@ -138,47 +156,65 @@ class TestRosettaTranslations(TestCaseWithFactory):
         spr = bpb.source_package_release
         job = self.factory.makePlainPackageCopyJob(
             package_name=spr.sourcepackagename.name,
-            package_version=spr.version, source_archive=bpb.archive,
+            package_version=spr.version,
+            source_archive=bpb.archive,
             target_archive=distroseries.main_archive,
             target_distroseries=distroseries,
             target_pocket=PackagePublishingPocket.RELEASE,
-            requester=admin, include_binaries=True)
+            requester=admin,
+            include_binaries=True,
+        )
 
         job.run()
 
-        upload = IStore(PackageUpload).find(PackageUpload).order_by(
-            Desc(PackageUpload.id)).first()
+        upload = (
+            IStore(PackageUpload)
+            .find(PackageUpload)
+            .order_by(Desc(PackageUpload.id))
+            .first()
+        )
 
         return spr, upload, libraryfilealias
 
     def ensureDistroSeries(self, distribution_name, distroseries_name):
         distribution = getUtility(IDistributionSet).getByName(
-            distribution_name)
+            distribution_name
+        )
         if distribution is None:
             distribution = self.factory.makeDistribution(
-                name=distribution_name)
+                name=distribution_name
+            )
         try:
             distroseries = distribution[distroseries_name]
         except NotFoundError:
             distroseries = self.factory.makeDistroSeries(
-                distribution=distribution, name=distroseries_name)
+                distribution=distribution, name=distroseries_name
+            )
         return distroseries
 
-    def makeJobElementsForPPA(self, owner_name, distribution_name,
-                              distroseries_name, archive_name):
+    def makeJobElementsForPPA(
+        self, owner_name, distribution_name, distroseries_name, archive_name
+    ):
         owner = self.factory.makePerson(name=owner_name)
         distroseries = self.ensureDistroSeries(
-            distribution_name, distroseries_name)
+            distribution_name, distroseries_name
+        )
         archive = self.factory.makeArchive(
-            owner=owner, distribution=distroseries.distribution,
-            name=archive_name, purpose=ArchivePurpose.PPA)
+            owner=owner,
+            distribution=distroseries.distribution,
+            name=archive_name,
+            purpose=ArchivePurpose.PPA,
+        )
         sourcepackage_version = "3.8.2-1ubuntu1"
         filename = "foo_%s_i386_translations.tar.gz" % sourcepackage_version
         spph = self.makeAndPublishSourcePackage(
-            sourcepackagename="foo", distroseries=distroseries,
-            archive=archive)
-        packageupload = removeSecurityProxy(self.factory.makePackageUpload(
-            distroseries=distroseries, archive=archive))
+            sourcepackagename="foo", distroseries=distroseries, archive=archive
+        )
+        packageupload = removeSecurityProxy(
+            self.factory.makePackageUpload(
+                distroseries=distroseries, archive=archive
+            )
+        )
         packageupload.addSource(spph.sourcepackagerelease)
         libraryfilealias = self.makeTranslationsLFA(filename=filename)
         return spph.sourcepackagerelease, packageupload, libraryfilealias
@@ -191,8 +227,9 @@ class TestRosettaTranslations(TestCaseWithFactory):
 
     def test_malformed_filename_raises_parsePath_error(self):
         filename = "this_is_clearly_wrong_translations.tar.gz"
-        self.assertRaises(ValueError, RosettaTranslationsUpload.parsePath,
-                          filename)
+        self.assertRaises(
+            ValueError, RosettaTranslationsUpload.parsePath, filename
+        )
 
     def test_setComponents(self):
         rosetta_upload = RosettaTranslationsUpload()
@@ -236,8 +273,9 @@ class TestRosettaTranslations(TestCaseWithFactory):
         rosetta_upload = RosettaTranslationsUpload()
         self.assertIsNone(rosetta_upload.package_name)
 
-        self.assertRaises(AssertionError,
-                          rosetta_upload._findSourcePublication, None)
+        self.assertRaises(
+            AssertionError, rosetta_upload._findSourcePublication, None
+        )
 
     def process(self, packageupload, libraryfilealias):
         with dbuser("process_accepted"):
@@ -267,8 +305,11 @@ class TestRosettaTranslations(TestCaseWithFactory):
         self.assertEqual(spr.sourcepackagename, jobs[0].sourcepackagename)
 
     def test_correct_job_is_created_from_copy(self):
-        spr, packageupload, libraryfilealias = (
-            self.makeJobElementsFromCopyJob())
+        (
+            spr,
+            packageupload,
+            libraryfilealias,
+        ) = self.makeJobElementsFromCopyJob()
         transaction.commit()
         self.process(packageupload, libraryfilealias)
 
@@ -281,8 +322,11 @@ class TestRosettaTranslations(TestCaseWithFactory):
 
     def test_correct_job_is_created_from_redirected_ppa(self):
         spr, packageupload, libraryfilealias = self.makeJobElementsForPPA(
-            owner_name="ci-train-ppa-service", distribution_name="ubuntu",
-            distroseries_name="vivid", archive_name="stable-phone-overlay")
+            owner_name="ci-train-ppa-service",
+            distribution_name="ubuntu",
+            distroseries_name="vivid",
+            archive_name="stable-phone-overlay",
+        )
         self.ensureDistroSeries("ubuntu-rtm", "15.04")
         transaction.commit()
         self.process(packageupload, libraryfilealias)
@@ -296,8 +340,11 @@ class TestRosettaTranslations(TestCaseWithFactory):
 
     def test_unredirected_series_in_redirected_ppa_is_skipped(self):
         spr, packageupload, libraryfilealias = self.makeJobElementsForPPA(
-            owner_name="ci-train-ppa-service", distribution_name="ubuntu",
-            distroseries_name="wily", archive_name="stable-phone-overlay")
+            owner_name="ci-train-ppa-service",
+            distribution_name="ubuntu",
+            distroseries_name="wily",
+            archive_name="stable-phone-overlay",
+        )
         self.ensureDistroSeries("ubuntu-rtm", "15.04")
         transaction.commit()
         self.process(packageupload, libraryfilealias)
@@ -307,8 +354,11 @@ class TestRosettaTranslations(TestCaseWithFactory):
 
     def test_unredirected_ppa_is_skipped(self):
         spr, packageupload, libraryfilealias = self.makeJobElementsForPPA(
-            owner_name="ci-train-ppa-service", distribution_name="ubuntu",
-            distroseries_name="vivid", archive_name="landing-001")
+            owner_name="ci-train-ppa-service",
+            distribution_name="ubuntu",
+            distroseries_name="vivid",
+            archive_name="landing-001",
+        )
         self.ensureDistroSeries("ubuntu-rtm", "15.04")
         transaction.commit()
         self.process(packageupload, libraryfilealias)
@@ -330,8 +380,11 @@ class TestRosettaTranslations(TestCaseWithFactory):
         # distroseries, then an upload to a redirected PPA leaves Packaging
         # records untouched.
         spr, packageupload, libraryfilealias = self.makeJobElementsForPPA(
-            owner_name="ci-train-ppa-service", distribution_name="ubuntu",
-            distroseries_name="vivid", archive_name="stable-phone-overlay")
+            owner_name="ci-train-ppa-service",
+            distribution_name="ubuntu",
+            distroseries_name="vivid",
+            archive_name="stable-phone-overlay",
+        )
         self.ensureDistroSeries("ubuntu-rtm", "15.04")
         transaction.commit()
         sourcepackage = packageupload.distroseries.getSourcePackage(spr.name)
@@ -347,20 +400,26 @@ class TestRosettaTranslations(TestCaseWithFactory):
         current_upstream = self.factory.makeProductSeries()
         new_upstream = self.factory.makeProductSeries()
         spr, packageupload, libraryfilealias = self.makeJobElementsForPPA(
-            owner_name="ci-train-ppa-service", distribution_name="ubuntu",
-            distroseries_name="vivid", archive_name="stable-phone-overlay")
+            owner_name="ci-train-ppa-service",
+            distribution_name="ubuntu",
+            distroseries_name="vivid",
+            archive_name="stable-phone-overlay",
+        )
         redirected_series = self.ensureDistroSeries("ubuntu-rtm", "15.04")
         sourcepackage = redirected_series.getSourcePackage(spr.name)
         sourcepackage.setPackaging(current_upstream, person)
         original_series = self.ensureDistroSeries("ubuntu", "vivid")
         original_series.getSourcePackage(spr.name).setPackaging(
-            new_upstream, person)
+            new_upstream, person
+        )
         transaction.commit()
         self.assertEqual(
-            current_upstream, sourcepackage.packaging.productseries)
+            current_upstream, sourcepackage.packaging.productseries
+        )
         self.process(packageupload, libraryfilealias)
         self.assertEqual(
-            current_upstream, sourcepackage.packaging.productseries)
+            current_upstream, sourcepackage.packaging.productseries
+        )
 
     def test_copies_packaging_for_redirected_ppa(self):
         # If there is no suitable Packaging record in the redirected
@@ -369,12 +428,16 @@ class TestRosettaTranslations(TestCaseWithFactory):
         person = self.factory.makePerson()
         upstream = self.factory.makeProductSeries()
         spr, packageupload, libraryfilealias = self.makeJobElementsForPPA(
-            owner_name="ci-train-ppa-service", distribution_name="ubuntu",
-            distroseries_name="vivid", archive_name="stable-phone-overlay")
+            owner_name="ci-train-ppa-service",
+            distribution_name="ubuntu",
+            distroseries_name="vivid",
+            archive_name="stable-phone-overlay",
+        )
         redirected_series = self.ensureDistroSeries("ubuntu-rtm", "15.04")
         original_series = self.ensureDistroSeries("ubuntu", "vivid")
         original_series.getSourcePackage(spr.name).setPackaging(
-            upstream, person)
+            upstream, person
+        )
         transaction.commit()
         sourcepackage = redirected_series.getSourcePackage(spr.name)
         self.assertIsNone(sourcepackage.packaging)

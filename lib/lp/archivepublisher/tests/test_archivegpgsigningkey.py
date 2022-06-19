@@ -7,6 +7,7 @@ import os
 from textwrap import dedent
 from unittest import mock
 
+import treq
 from testtools.matchers import (
     Equals,
     FileContains,
@@ -14,24 +15,20 @@ from testtools.matchers import (
     MatchesStructure,
     Not,
     StartsWith,
-    )
+)
 from testtools.twistedsupport import (
     AsynchronousDeferredRunTest,
     AsynchronousDeferredRunTestForBrokenTwisted,
-    )
-import treq
-from twisted.internet import (
-    defer,
-    reactor,
-    )
+)
+from twisted.internet import defer, reactor
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    PUBLISHER_GPG_USES_SIGNING_SERVICE,
     IArchiveGPGSigningKey,
     ISignableArchive,
-    PUBLISHER_GPG_USES_SIGNING_SERVICE,
-    )
+)
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.registry.interfaces.gpg import IGPGKeySet
@@ -40,20 +37,14 @@ from lp.services.gpg.interfaces import IGPGHandler
 from lp.services.gpg.tests.test_gpghandler import FakeGenerateKey
 from lp.services.log.logger import BufferLogger
 from lp.services.osutils import write_file
-from lp.services.signing.enums import (
-    SigningKeyType,
-    SigningMode,
-    )
+from lp.services.signing.enums import SigningKeyType, SigningMode
 from lp.services.signing.interfaces.signingkey import ISigningKeySet
 from lp.services.signing.tests.helpers import SigningServiceClientFixture
 from lp.services.twistedsupport.testing import TReqFixture
 from lp.services.twistedsupport.treq import check_status
 from lp.soyuz.enums import ArchivePurpose
 from lp.testing import TestCaseWithFactory
-from lp.testing.gpgkeys import (
-    gpgkeysdir,
-    test_pubkey_from_email,
-    )
+from lp.testing.gpgkeys import gpgkeysdir, test_pubkey_from_email
 from lp.testing.keyserver import InProcessKeyServerFixture
 from lp.testing.layers import ZopelessDatabaseLayer
 
@@ -69,17 +60,20 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
         self.temp_dir = self.makeTemporaryDirectory()
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
-            self.distro)
+            self.distro
+        )
         db_pubconf.root_dir = self.temp_dir
         self.archive = self.factory.makeArchive(
-            distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
+            distribution=self.distro, purpose=ArchivePurpose.PRIMARY
+        )
         self.archive_root = getPubConfig(self.archive).archiveroot
         self.suite = "distroseries"
 
         yield self.useFixture(InProcessKeyServerFixture()).start()
-        key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
+        key_path = os.path.join(gpgkeysdir, "ppa-sample@canonical.com.sec")
         yield IArchiveGPGSigningKey(self.archive).setSigningKey(
-            key_path, async_keyserver=True)
+            key_path, async_keyserver=True
+        )
 
     def test_signFile_absolute_within_archive(self):
         filename = os.path.join(self.archive_root, "signme")
@@ -98,7 +92,8 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
         signer = ISignableArchive(self.archive)
         self.assertTrue(signer.can_sign)
         self.assertRaises(
-            AssertionError, signer.signFile, self.suite, filename)
+            AssertionError, signer.signFile, self.suite, filename
+        )
 
     def test_signFile_relative_within_archive(self):
         filename_relative = "signme"
@@ -119,18 +114,22 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
         signer = ISignableArchive(self.archive)
         self.assertTrue(signer.can_sign)
         self.assertRaises(
-            AssertionError, signer.signFile, self.suite, filename_relative)
+            AssertionError, signer.signFile, self.suite, filename_relative
+        )
 
     def test_signRepository_uses_signing_service(self):
         # If the appropriate feature rule is true, then we use the signing
         # service to sign files.
         self.useFixture(
-            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"}))
+            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"})
+        )
         signing_service_client = self.useFixture(
-            SigningServiceClientFixture(self.factory))
+            SigningServiceClientFixture(self.factory)
+        )
         self.factory.makeSigningKey(
             key_type=SigningKeyType.OPENPGP,
-            fingerprint=self.archive.signing_key_fingerprint)
+            fingerprint=self.archive.signing_key_fingerprint,
+        )
         logger = BufferLogger()
 
         suite_dir = os.path.join(self.archive_root, "dists", self.suite)
@@ -141,33 +140,49 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
         self.assertTrue(signer.can_sign)
         self.assertContentEqual(
             ["Release.gpg", "InRelease"],
-            signer.signRepository(self.suite, log=logger))
+            signer.signRepository(self.suite, log=logger),
+        )
         self.assertEqual("", logger.getLogBuffer())
-        signing_service_client.sign.assert_has_calls([
-            mock.call(
-                SigningKeyType.OPENPGP, self.archive.signing_key_fingerprint,
-                "Release", b"Release contents", SigningMode.DETACHED),
-            mock.call(
-                SigningKeyType.OPENPGP, self.archive.signing_key_fingerprint,
-                "Release", b"Release contents", SigningMode.CLEAR),
-            ])
+        signing_service_client.sign.assert_has_calls(
+            [
+                mock.call(
+                    SigningKeyType.OPENPGP,
+                    self.archive.signing_key_fingerprint,
+                    "Release",
+                    b"Release contents",
+                    SigningMode.DETACHED,
+                ),
+                mock.call(
+                    SigningKeyType.OPENPGP,
+                    self.archive.signing_key_fingerprint,
+                    "Release",
+                    b"Release contents",
+                    SigningMode.CLEAR,
+                ),
+            ]
+        )
         self.assertThat(
             os.path.join(suite_dir, "Release.gpg"),
-            FileContains("signed with key_type=OPENPGP mode=DETACHED"))
+            FileContains("signed with key_type=OPENPGP mode=DETACHED"),
+        )
         self.assertThat(
             os.path.join(suite_dir, "InRelease"),
-            FileContains("signed with key_type=OPENPGP mode=CLEAR"))
+            FileContains("signed with key_type=OPENPGP mode=CLEAR"),
+        )
 
     def test_signRepository_falls_back_from_signing_service(self):
         # If the signing service fails to sign a file, we fall back to
         # making local signatures if possible.
         self.useFixture(
-            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"}))
+            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"})
+        )
         signing_service_client = self.useFixture(
-            SigningServiceClientFixture(self.factory))
+            SigningServiceClientFixture(self.factory)
+        )
         self.factory.makeSigningKey(
             key_type=SigningKeyType.OPENPGP,
-            fingerprint=self.archive.signing_key_fingerprint)
+            fingerprint=self.archive.signing_key_fingerprint,
+        )
         logger = BufferLogger()
 
         suite_dir = os.path.join(self.archive_root, "dists", self.suite)
@@ -179,21 +194,32 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
         signing_service_client.sign.side_effect = Exception("boom")
         self.assertContentEqual(
             ["Release.gpg", "InRelease"],
-            signer.signRepository(self.suite, log=logger))
+            signer.signRepository(self.suite, log=logger),
+        )
         self.assertEqual(
             "ERROR Failed to sign archive using signing service; falling back "
-            "to local key\n", logger.getLogBuffer())
+            "to local key\n",
+            logger.getLogBuffer(),
+        )
         signing_service_client.sign.assert_called_once_with(
-            SigningKeyType.OPENPGP, self.archive.signing_key_fingerprint,
-            "Release", b"Release contents", SigningMode.DETACHED)
+            SigningKeyType.OPENPGP,
+            self.archive.signing_key_fingerprint,
+            "Release",
+            b"Release contents",
+            SigningMode.DETACHED,
+        )
         self.assertThat(
             os.path.join(suite_dir, "Release.gpg"),
             FileContains(
-                matcher=StartsWith("-----BEGIN PGP SIGNATURE-----\n")))
+                matcher=StartsWith("-----BEGIN PGP SIGNATURE-----\n")
+            ),
+        )
         self.assertThat(
             os.path.join(suite_dir, "InRelease"),
             FileContains(
-                matcher=StartsWith("-----BEGIN PGP SIGNED MESSAGE-----\n")))
+                matcher=StartsWith("-----BEGIN PGP SIGNED MESSAGE-----\n")
+            ),
+        )
 
 
 class TestSignableArchiveWithRunParts(RunPartsMixin, TestCaseWithFactory):
@@ -205,22 +231,31 @@ class TestSignableArchiveWithRunParts(RunPartsMixin, TestCaseWithFactory):
         self.temp_dir = self.makeTemporaryDirectory()
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
-            self.distro)
+            self.distro
+        )
         db_pubconf.root_dir = self.temp_dir
         self.archive = self.factory.makeArchive(
-            distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
+            distribution=self.distro, purpose=ArchivePurpose.PRIMARY
+        )
         self.archive_root = getPubConfig(self.archive).archiveroot
         self.suite = "distroseries"
         self.enableRunParts(distribution_name=self.distro.name)
-        with open(os.path.join(
-                self.parts_directory, self.distro.name, "sign.d",
-                "10-sign"), "w") as sign_script:
-            sign_script.write(dedent("""\
+        with open(
+            os.path.join(
+                self.parts_directory, self.distro.name, "sign.d", "10-sign"
+            ),
+            "w",
+        ) as sign_script:
+            sign_script.write(
+                dedent(
+                    """\
                 #! /bin/sh
                 echo "$MODE signature of $INPUT_PATH" \\
                      "($ARCHIVEROOT, $DISTRIBUTION/$SUITE)" \\
                     >"$OUTPUT_PATH"
-                """))
+                """
+                )
+            )
             os.fchmod(sign_script.fileno(), 0o755)
 
     def test_signRepository_runs_parts(self):
@@ -231,20 +266,33 @@ class TestSignableArchiveWithRunParts(RunPartsMixin, TestCaseWithFactory):
         signer = ISignableArchive(self.archive)
         self.assertTrue(signer.can_sign)
         self.assertContentEqual(
-            ["Release.gpg", "InRelease"], signer.signRepository(self.suite))
+            ["Release.gpg", "InRelease"], signer.signRepository(self.suite)
+        )
 
         self.assertThat(
             os.path.join(suite_dir, "Release.gpg"),
             FileContains(
-                "detached signature of %s (%s, %s/%s)\n" %
-                (release_path, self.archive_root, self.distro.name,
-                 self.suite)))
+                "detached signature of %s (%s, %s/%s)\n"
+                % (
+                    release_path,
+                    self.archive_root,
+                    self.distro.name,
+                    self.suite,
+                )
+            ),
+        )
         self.assertThat(
             os.path.join(suite_dir, "InRelease"),
             FileContains(
-                "clear signature of %s (%s, %s/%s)\n" %
-                (release_path, self.archive_root, self.distro.name,
-                 self.suite)))
+                "clear signature of %s (%s, %s/%s)\n"
+                % (
+                    release_path,
+                    self.archive_root,
+                    self.distro.name,
+                    self.suite,
+                )
+            ),
+        )
 
     def test_signRepository_honours_pubconf(self):
         pubconf = getPubConfig(self.archive)
@@ -258,20 +306,33 @@ class TestSignableArchiveWithRunParts(RunPartsMixin, TestCaseWithFactory):
         self.assertRaises(AssertionError, signer.signRepository, self.suite)
         self.assertContentEqual(
             ["Release.gpg", "InRelease"],
-            signer.signRepository(self.suite, pubconf=pubconf))
+            signer.signRepository(self.suite, pubconf=pubconf),
+        )
 
         self.assertThat(
             os.path.join(suite_dir, "Release.gpg"),
             FileContains(
-                "detached signature of %s (%s, %s/%s)\n" %
-                (release_path, self.archive_root, self.distro.name,
-                 self.suite)))
+                "detached signature of %s (%s, %s/%s)\n"
+                % (
+                    release_path,
+                    self.archive_root,
+                    self.distro.name,
+                    self.suite,
+                )
+            ),
+        )
         self.assertThat(
             os.path.join(suite_dir, "InRelease"),
             FileContains(
-                "clear signature of %s (%s, %s/%s)\n" %
-                (release_path, self.archive_root, self.distro.name,
-                 self.suite)))
+                "clear signature of %s (%s, %s/%s)\n"
+                % (
+                    release_path,
+                    self.archive_root,
+                    self.distro.name,
+                    self.suite,
+                )
+            ),
+        )
 
     def test_signFile_runs_parts(self):
         filename = os.path.join(self.archive_root, "signme")
@@ -284,8 +345,10 @@ class TestSignableArchiveWithRunParts(RunPartsMixin, TestCaseWithFactory):
         self.assertThat(
             "%s.gpg" % filename,
             FileContains(
-                "detached signature of %s (%s, %s/%s)\n" %
-                (filename, self.archive_root, self.distro.name, self.suite)))
+                "detached signature of %s (%s, %s/%s)\n"
+                % (filename, self.archive_root, self.distro.name, self.suite)
+            ),
+        )
 
 
 class TestArchiveGPGSigningKey(TestCaseWithFactory):
@@ -295,7 +358,8 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
     # to the test, so we need to spin the reactor at the end to finish
     # things off.
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=10000)
+        timeout=10000
+    )
 
     @defer.inlineCallbacks
     def setUp(self):
@@ -313,25 +377,33 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
         logger = BufferLogger()
         # Use a display name that matches the pregenerated sample key.
         owner = self.factory.makePerson(
-            displayname="Celso \xe1\xe9\xed\xf3\xfa Providelo")
+            displayname="Celso \xe1\xe9\xed\xf3\xfa Providelo"
+        )
         archive = self.factory.makeArchive(owner=owner)
         yield IArchiveGPGSigningKey(archive).generateSigningKey(
-            log=logger, async_keyserver=True)
+            log=logger, async_keyserver=True
+        )
         # The key is stored in the database.
         self.assertIsNotNone(archive.signing_key_owner)
         self.assertIsNotNone(archive.signing_key_fingerprint)
         # The key is stored as a GPGKey, not a SigningKey.
         self.assertIsNotNone(
             getUtility(IGPGKeySet).getByFingerprint(
-                archive.signing_key_fingerprint))
+                archive.signing_key_fingerprint
+            )
+        )
         self.assertIsNone(
             getUtility(ISigningKeySet).get(
-                SigningKeyType.OPENPGP, archive.signing_key_fingerprint))
+                SigningKeyType.OPENPGP, archive.signing_key_fingerprint
+            )
+        )
         # The key is uploaded to the keyserver.
         client = self.useFixture(TReqFixture(reactor)).client
         response = yield client.get(
             getUtility(IGPGHandler).getURLForKeyInServer(
-                archive.signing_key_fingerprint, "get"))
+                archive.signing_key_fingerprint, "get"
+            )
+        )
         yield check_status(response)
         content = yield treq.content(response)
         self.assertIn(b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n", content)
@@ -345,59 +417,81 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
         logger = BufferLogger()
         # Use a display name that matches the pregenerated sample key.
         owner = self.factory.makePerson(
-            displayname="Celso \xe1\xe9\xed\xf3\xfa Providelo")
+            displayname="Celso \xe1\xe9\xed\xf3\xfa Providelo"
+        )
         default_ppa = self.factory.makeArchive(owner=owner)
         another_ppa = self.factory.makeArchive(owner=owner)
         yield IArchiveGPGSigningKey(another_ppa).generateSigningKey(
-            log=logger, async_keyserver=True)
-        self.assertThat(default_ppa, MatchesStructure(
-            signing_key=Not(Is(None)),
-            signing_key_owner=Not(Is(None)),
-            signing_key_fingerprint=Not(Is(None))))
+            log=logger, async_keyserver=True
+        )
+        self.assertThat(
+            default_ppa,
+            MatchesStructure(
+                signing_key=Not(Is(None)),
+                signing_key_owner=Not(Is(None)),
+                signing_key_fingerprint=Not(Is(None)),
+            ),
+        )
         self.assertIsNotNone(
             getUtility(IGPGKeySet).getByFingerprint(
-                default_ppa.signing_key_fingerprint))
+                default_ppa.signing_key_fingerprint
+            )
+        )
         self.assertIsNone(
             getUtility(ISigningKeySet).get(
-                SigningKeyType.OPENPGP, default_ppa.signing_key_fingerprint))
-        self.assertThat(another_ppa, MatchesStructure.byEquality(
-            signing_key=default_ppa.signing_key,
-            signing_key_owner=default_ppa.signing_key_owner,
-            signing_key_fingerprint=default_ppa.signing_key_fingerprint))
+                SigningKeyType.OPENPGP, default_ppa.signing_key_fingerprint
+            )
+        )
+        self.assertThat(
+            another_ppa,
+            MatchesStructure.byEquality(
+                signing_key=default_ppa.signing_key,
+                signing_key_owner=default_ppa.signing_key_owner,
+                signing_key_fingerprint=default_ppa.signing_key_fingerprint,
+            ),
+        )
 
     @defer.inlineCallbacks
     def test_generateSigningKey_signing_service(self):
         # Generating a signing key on the signing service stores it in the
         # database and pushes it to the keyserver.
         self.useFixture(
-            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"}))
+            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"})
+        )
         signing_service_client = self.useFixture(
-            SigningServiceClientFixture(self.factory))
+            SigningServiceClientFixture(self.factory)
+        )
         signing_service_client.generate.side_effect = None
         test_key = test_pubkey_from_email("ftpmaster@canonical.com")
         signing_service_client.generate.return_value = {
             "fingerprint": "33C0A61893A5DC5EB325B29E415A12CAC2F30234",
             "public-key": test_key,
-            }
+        }
         logger = BufferLogger()
         archive = self.factory.makeArchive()
         yield IArchiveGPGSigningKey(archive).generateSigningKey(
-            log=logger, async_keyserver=True)
+            log=logger, async_keyserver=True
+        )
         # The key is stored in the database.
         self.assertIsNotNone(archive.signing_key_owner)
         self.assertIsNotNone(archive.signing_key_fingerprint)
         # The key is stored as a SigningKey, not a GPGKey.
         self.assertIsNone(
             getUtility(IGPGKeySet).getByFingerprint(
-                archive.signing_key_fingerprint))
+                archive.signing_key_fingerprint
+            )
+        )
         signing_key = getUtility(ISigningKeySet).get(
-            SigningKeyType.OPENPGP, archive.signing_key_fingerprint)
+            SigningKeyType.OPENPGP, archive.signing_key_fingerprint
+        )
         self.assertEqual(test_key, signing_key.public_key)
         # The key is uploaded to the keyserver.
         client = self.useFixture(TReqFixture(reactor)).client
         response = yield client.get(
             getUtility(IGPGHandler).getURLForKeyInServer(
-                archive.signing_key_fingerprint, "get"))
+                archive.signing_key_fingerprint, "get"
+            )
+        )
         yield check_status(response)
         content = yield treq.content(response)
         self.assertIn(test_key, content)
@@ -408,32 +502,47 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
         # PPA generates one for the user's default PPA first and then
         # propagates it.
         self.useFixture(
-            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"}))
+            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"})
+        )
         signing_service_client = self.useFixture(
-            SigningServiceClientFixture(self.factory))
+            SigningServiceClientFixture(self.factory)
+        )
         signing_service_client.generate.side_effect = None
         test_key = test_pubkey_from_email("ftpmaster@canonical.com")
         signing_service_client.generate.return_value = {
             "fingerprint": "33C0A61893A5DC5EB325B29E415A12CAC2F30234",
             "public-key": test_key,
-            }
+        }
         logger = BufferLogger()
         default_ppa = self.factory.makeArchive()
         another_ppa = self.factory.makeArchive(owner=default_ppa.owner)
         yield IArchiveGPGSigningKey(another_ppa).generateSigningKey(
-            log=logger, async_keyserver=True)
-        self.assertThat(default_ppa, MatchesStructure(
-            signing_key=Is(None),
-            signing_key_owner=Not(Is(None)),
-            signing_key_fingerprint=Not(Is(None))))
+            log=logger, async_keyserver=True
+        )
+        self.assertThat(
+            default_ppa,
+            MatchesStructure(
+                signing_key=Is(None),
+                signing_key_owner=Not(Is(None)),
+                signing_key_fingerprint=Not(Is(None)),
+            ),
+        )
         self.assertIsNone(
             getUtility(IGPGKeySet).getByFingerprint(
-                default_ppa.signing_key_fingerprint))
+                default_ppa.signing_key_fingerprint
+            )
+        )
         signing_key = getUtility(ISigningKeySet).get(
-            SigningKeyType.OPENPGP, default_ppa.signing_key_fingerprint)
+            SigningKeyType.OPENPGP, default_ppa.signing_key_fingerprint
+        )
         self.assertEqual(test_key, signing_key.public_key)
-        self.assertThat(another_ppa, MatchesStructure(
-            signing_key=Is(None),
-            signing_key_owner=Equals(default_ppa.signing_key_owner),
-            signing_key_fingerprint=Equals(
-                default_ppa.signing_key_fingerprint)))
+        self.assertThat(
+            another_ppa,
+            MatchesStructure(
+                signing_key=Is(None),
+                signing_key_owner=Equals(default_ppa.signing_key_owner),
+                signing_key_fingerprint=Equals(
+                    default_ppa.signing_key_fingerprint
+                ),
+            ),
+        )

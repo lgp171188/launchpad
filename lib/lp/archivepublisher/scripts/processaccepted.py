@@ -4,11 +4,11 @@
 """Helper functions for the process-accepted.py script."""
 
 __all__ = [
-    'ProcessAccepted',
-    ]
+    "ProcessAccepted",
+]
 
-from optparse import OptionValueError
 import sys
+from optparse import OptionValueError
 
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -19,15 +19,9 @@ from lp.services.limitedlist import LimitedList
 from lp.services.webapp.adapter import (
     clear_request_started,
     set_request_started,
-    )
-from lp.services.webapp.errorlog import (
-    ErrorReportingUtility,
-    ScriptRequest,
-    )
-from lp.soyuz.enums import (
-    ArchivePurpose,
-    PackageUploadStatus,
-    )
+)
+from lp.services.webapp.errorlog import ErrorReportingUtility, ScriptRequest
+from lp.soyuz.enums import ArchivePurpose, PackageUploadStatus
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.model.processacceptedbugsjob import close_bugs_for_queue_item
 from lp.soyuz.model.queue import PackageUpload
@@ -53,21 +47,31 @@ class ProcessAccepted(PublisherScript):
         self.addDistroOptions()
 
         self.parser.add_option(
-            "--ppa", action="store_true", dest="ppa", default=False,
-            help="Run only over PPA archives.")
+            "--ppa",
+            action="store_true",
+            dest="ppa",
+            default=False,
+            help="Run only over PPA archives.",
+        )
 
         self.parser.add_option(
-            "--copy-archives", action="store_true", dest="copy_archives",
-            default=False, help="Run only over COPY archives.")
+            "--copy-archives",
+            action="store_true",
+            dest="copy_archives",
+            default=False,
+            help="Run only over COPY archives.",
+        )
 
     def validateArguments(self):
         """Validate command-line arguments."""
         if self.options.ppa and self.options.copy_archives:
             raise OptionValueError(
-                "Specify only one of copy archives or ppa archives.")
+                "Specify only one of copy archives or ppa archives."
+            )
         if self.options.all_derived and self.options.distribution:
             raise OptionValueError(
-                "Can't combine --derived with a distribution name.")
+                "Can't combine --derived with a distribution name."
+            )
 
     def getTargetArchives(self, distribution):
         """Find archives to target based on given options."""
@@ -75,7 +79,8 @@ class ProcessAccepted(PublisherScript):
             return distribution.getPendingAcceptancePPAs()
         elif self.options.copy_archives:
             return getUtility(IArchiveSet).getArchivesForDistribution(
-                distribution, purposes=[ArchivePurpose.COPY])
+                distribution, purposes=[ArchivePurpose.COPY]
+            )
         else:
             return distribution.all_distro_archives
 
@@ -93,14 +98,15 @@ class ProcessAccepted(PublisherScript):
             queue_item.realiseUpload(self.logger)
         except Exception:
             message = "Failure processing queue_item %d" % queue_item.id
-            properties = [('error-explanation', message)]
+            properties = [("error-explanation", message)]
             request = ScriptRequest(properties)
             ErrorReportingUtility().raising(sys.exc_info(), request)
-            self.logger.error('%s (%s)', message, request.oopsid)
+            self.logger.error("%s (%s)", message, request.oopsid)
             return False
         else:
             self.logger.debug(
-                "Successfully processed queue item %d", queue_item.id)
+                "Successfully processed queue item %d", queue_item.id
+            )
             return True
 
     def processForDistro(self, distribution):
@@ -117,16 +123,20 @@ class ProcessAccepted(PublisherScript):
                 continue
             set_request_started(
                 request_statements=LimitedList(10000),
-                txn=self.txn, enable_timeout=False)
+                txn=self.txn,
+                enable_timeout=False,
+            )
             try:
                 for distroseries in distribution.series:
 
-                    self.logger.debug("Processing queue for %s %s" % (
-                        archive.reference, distroseries.name))
+                    self.logger.debug(
+                        "Processing queue for %s %s"
+                        % (archive.reference, distroseries.name)
+                    )
 
                     queue_items = distroseries.getPackageUploads(
-                        status=PackageUploadStatus.ACCEPTED,
-                        archive=archive).order_by(PackageUpload.id)
+                        status=PackageUploadStatus.ACCEPTED, archive=archive
+                    ).order_by(PackageUpload.id)
                     start = 0
 
                     # DistroSeries.getPackageUploads returns a
@@ -139,8 +149,11 @@ class ProcessAccepted(PublisherScript):
                     # explicitly order by ID and keep track of how far we've
                     # got.
                     while True:
-                        batch = list(removeSecurityProxy(queue_items).find(
-                            PackageUpload.id > start)[:self.batch_size])
+                        batch = list(
+                            removeSecurityProxy(queue_items).find(
+                                PackageUpload.id > start
+                            )[: self.batch_size]
+                        )
                         for queue_item in batch:
                             start = queue_item.id
                             if self.processQueueItem(queue_item):

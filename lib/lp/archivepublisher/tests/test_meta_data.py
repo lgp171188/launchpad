@@ -5,12 +5,8 @@
 
 import os
 
-from testtools.matchers import (
-    FileContains,
-    Not,
-    PathExists,
-    )
 import transaction
+from testtools.matchers import FileContains, Not, PathExists
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
@@ -41,8 +37,12 @@ class TestMetaData(TestCaseWithFactory):
         MetaDataUpload(logger=logger).process(packageupload, libraryfilealias)
         self.assertEqual("", logger.getLogBuffer())
         published_file = os.path.join(
-            getPubConfig(archive).distroroot, archive.owner.name, "meta",
-            archive.name, libraryfilealias.filename)
+            getPubConfig(archive).distroroot,
+            archive.owner.name,
+            "meta",
+            archive.name,
+            libraryfilealias.filename,
+        )
         self.assertThat(published_file, FileContains(content))
 
     def test_non_ubuntu_ppa(self):
@@ -51,15 +51,21 @@ class TestMetaData(TestCaseWithFactory):
         The meta-data directory is currently only defined for Ubuntu PPAs.
         """
         archive = self.factory.makeArchive(
-            distribution=self.factory.makeDistribution())
+            distribution=self.factory.makeDistribution()
+        )
         packageupload = self.factory.makePackageUpload(archive=archive)
         libraryfilealias = self.factory.makeLibraryFileAlias(db_only=True)
         logger = BufferLogger()
         MetaDataUpload(logger=logger).process(packageupload, libraryfilealias)
         self.assertEqual(
             "DEBUG Skipping meta-data for archive without metaroot.\n",
-            logger.getLogBuffer())
+            logger.getLogBuffer(),
+        )
         published_file = os.path.join(
-            getPubConfig(archive).distroroot, archive.owner.name, "meta",
-            archive.name, libraryfilealias.filename)
+            getPubConfig(archive).distroroot,
+            archive.owner.name,
+            "meta",
+            archive.name,
+            libraryfilealias.filename,
+        )
         self.assertThat(published_file, Not(PathExists()))

@@ -4,17 +4,15 @@
 """The processing of dist-upgrader tarballs."""
 
 __all__ = [
-    'DistUpgraderUpload',
-    ]
+    "DistUpgraderUpload",
+]
 
 import os
 
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import CustomUpload
-from lp.archivepublisher.debversion import (
-    BadUpstreamError,
-    Version as make_version,
-    )
+from lp.archivepublisher.debversion import BadUpstreamError
+from lp.archivepublisher.debversion import Version as make_version
 from lp.soyuz.interfaces.queue import CustomUploadError
 
 
@@ -51,6 +49,7 @@ class DistUpgraderUpload(CustomUpload):
 
     A 'current' symbolic link points to the most recent version.
     """
+
     custom_type = "dist-upgrader"
 
     @staticmethod
@@ -68,8 +67,12 @@ class DistUpgraderUpload(CustomUpload):
         self.setComponents(tarfile_path)
         pubconf = getPubConfig(archive)
         self.targetdir = os.path.join(
-            pubconf.archiveroot, 'dists', suite, 'main',
-            'dist-upgrader-%s' % self.arch)
+            pubconf.archiveroot,
+            "dists",
+            suite,
+            "main",
+            "dist-upgrader-%s" % self.arch,
+        )
 
     @classmethod
     def getSeriesKey(cls, tarfile_path):
@@ -97,8 +100,8 @@ class DistUpgraderUpload(CustomUpload):
             version = make_version(directory_name)
         except BadUpstreamError as exc:
             raise DistUpgraderBadVersion(self.tarfile_path, exc)
-        return version and not filename.startswith('current')
+        return version and not filename.startswith("current")
 
     def shouldSign(self, filename):
         """Sign *.tar.gz files."""
-        return filename.endswith('.tar.gz')
+        return filename.endswith(".tar.gz")

@@ -4,16 +4,13 @@
 """PublisherConfig interface."""
 
 __all__ = [
-    'IPublisherConfig',
-    'IPublisherConfigSet',
-    ]
+    "IPublisherConfig",
+    "IPublisherConfigSet",
+]
 
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Int,
-    TextLine,
-    )
+from zope.schema import Int, TextLine
 
 from lp import _
 from lp.registry.interfaces.distribution import IDistribution
@@ -22,23 +19,32 @@ from lp.registry.interfaces.distribution import IDistribution
 class IPublisherConfig(Interface):
     """`PublisherConfig` interface."""
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
 
     distribution = Reference(
-        IDistribution, title=_("Distribution"), required=True,
-        description=_("The Distribution for this configuration."))
+        IDistribution,
+        title=_("Distribution"),
+        required=True,
+        description=_("The Distribution for this configuration."),
+    )
 
     root_dir = TextLine(
-        title=_("Root Directory"), required=True,
-        description=_("The root directory for published archives."))
+        title=_("Root Directory"),
+        required=True,
+        description=_("The root directory for published archives."),
+    )
 
     base_url = TextLine(
-        title=_("Base URL"), required=True,
-        description=_("The base URL for published archives"))
+        title=_("Base URL"),
+        required=True,
+        description=_("The base URL for published archives"),
+    )
 
     copy_base_url = TextLine(
-        title=_("Copy Base URL"), required=True,
-        description=_("The base URL for published copy archives"))
+        title=_("Copy Base URL"),
+        required=True,
+        description=_("The base URL for published copy archives"),
+    )
 
 
 class IPublisherConfigSet(Interface):

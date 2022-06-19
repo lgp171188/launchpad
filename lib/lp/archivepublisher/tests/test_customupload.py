@@ -12,12 +12,7 @@ import unittest
 
 from fixtures import MonkeyPatch
 from testtools.deferredruntest import AsynchronousDeferredRunTest
-from testtools.matchers import (
-    Equals,
-    MatchesDict,
-    Not,
-    PathExists,
-    )
+from testtools.matchers import Equals, MatchesDict, Not, PathExists
 from twisted.internet import defer
 from zope.component import getUtility
 
@@ -27,19 +22,16 @@ from lp.archivepublisher.customupload import (
     CustomUploadTarballBadFile,
     CustomUploadTarballBadSymLink,
     CustomUploadTarballInvalidFileType,
-    )
+)
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
-    )
+)
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.services.gpg.interfaces import IGPGHandler
 from lp.services.osutils import write_file
 from lp.soyuz.enums import ArchivePurpose
-from lp.testing import (
-    TestCase,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCase, TestCaseWithFactory
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.keyserver import InProcessKeyServerFixture
@@ -47,16 +39,14 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class TestCustomUpload(unittest.TestCase):
-
     def setUp(self):
-        self.test_dir = tempfile.mkdtemp(prefix='archive_root_')
+        self.test_dir = tempfile.mkdtemp(prefix="archive_root_")
 
     def tearDown(self):
         shutil.rmtree(self.test_dir)
 
     def assertEntries(self, entries):
-        self.assertEqual(
-            entries, sorted(os.listdir(self.test_dir)))
+        self.assertEqual(entries, sorted(os.listdir(self.test_dir)))
 
     def testFixCurrentSymlink(self):
         """Test `CustomUpload.fixCurrentSymlink` behaviour.
@@ -74,32 +64,33 @@ class TestCustomUpload(unittest.TestCase):
         custom_processor.targetdir = self.test_dir
 
         # Let's create 4 entries named as valid versions.
-        os.mkdir(os.path.join(self.test_dir, '1.0'))
-        os.mkdir(os.path.join(self.test_dir, '1.1'))
-        os.mkdir(os.path.join(self.test_dir, '1.2'))
-        os.mkdir(os.path.join(self.test_dir, '1.3'))
-        self.assertEntries(['1.0', '1.1', '1.2', '1.3'])
+        os.mkdir(os.path.join(self.test_dir, "1.0"))
+        os.mkdir(os.path.join(self.test_dir, "1.1"))
+        os.mkdir(os.path.join(self.test_dir, "1.2"))
+        os.mkdir(os.path.join(self.test_dir, "1.3"))
+        self.assertEntries(["1.0", "1.1", "1.2", "1.3"])
 
         # `fixCurrentSymlink` will keep only the latest 3 and create a
         # 'current' symbolic link the highest one.
         custom_processor.fixCurrentSymlink()
-        self.assertEntries(['1.1', '1.2', '1.3', 'current'])
+        self.assertEntries(["1.1", "1.2", "1.3", "current"])
         self.assertEqual(
-            '1.3', os.readlink(os.path.join(self.test_dir, 'current')))
+            "1.3", os.readlink(os.path.join(self.test_dir, "current"))
+        )
 
         # When there is a invalid version present in the directory it is
         # ignored, since it was probably put there manually. The symbolic
         # link still pointing to the latest version.
-        os.mkdir(os.path.join(self.test_dir, '1.4'))
-        os.mkdir(os.path.join(self.test_dir, 'alpha-5'))
+        os.mkdir(os.path.join(self.test_dir, "1.4"))
+        os.mkdir(os.path.join(self.test_dir, "alpha-5"))
         custom_processor.fixCurrentSymlink()
-        self.assertEntries(['1.2', '1.3', '1.4', 'alpha-5', 'current'])
+        self.assertEntries(["1.2", "1.3", "1.4", "alpha-5", "current"])
         self.assertEqual(
-            '1.4', os.readlink(os.path.join(self.test_dir, 'current')))
+            "1.4", os.readlink(os.path.join(self.test_dir, "current"))
+        )
 
 
 class TestTarfileVerification(TestCase):
-
     def setUp(self):
         TestCase.setUp(self)
         self.tarfile_path = "/tmp/_verify_extract"
@@ -111,7 +102,7 @@ class TestTarfileVerification(TestCase):
     def createTarfile(self):
         self.tar_fileobj = io.BytesIO()
         tar_file = tarfile.open(name=None, mode="w", fileobj=self.tar_fileobj)
-        root_info = tarfile.TarInfo(name='./')
+        root_info = tarfile.TarInfo(name="./")
         root_info.type = tarfile.DIRTYPE
         tar_file.addfile(root_info)
         # Ordering matters here, addCleanup pushes onto a stack which is
@@ -141,9 +132,8 @@ class TestTarfileVerification(TestCase):
 
     def assertFails(self, exception, tar_file):
         self.assertRaises(
-            exception,
-            self.custom_processor.verifyBeforeExtracting,
-            tar_file)
+            exception, self.custom_processor.verifyBeforeExtracting, tar_file
+        )
 
     def assertPasses(self, tar_file):
         result = self.custom_processor.verifyBeforeExtracting(tar_file)
@@ -194,10 +184,10 @@ class TestTarfileVerification(TestCase):
         self.assertPasses(tar_file)
 
     def testRelativeSymlinkTargetInsideDirectoryDoesntRaise(self):
-        tar_file = self.createTarfileWithFile(
-            tarfile.DIRTYPE, name="testdir")
+        tar_file = self.createTarfileWithFile(tarfile.DIRTYPE, name="testdir")
         info = self.createSymlinkInfo(
-            name="testdir/symlink", target="../dummy")
+            name="testdir/symlink", target="../dummy"
+        )
         tar_file.addfile(info)
         self.assertPasses(tar_file)
 
@@ -219,7 +209,8 @@ class TestTarfileVerification(TestCase):
             tar_file.close()
             self.assertRaises(
                 CustomUploadTarballInvalidFileType,
-                self.custom_processor.extract)
+                self.custom_processor.extract,
+            )
         finally:
             shutil.rmtree(self.tarfile_path)
 
@@ -234,14 +225,15 @@ class TestSigning(TestCaseWithFactory, RunPartsMixin):
         self.temp_dir = self.makeTemporaryDirectory()
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
-            self.distro)
+            self.distro
+        )
         db_pubconf.root_dir = self.temp_dir
         self.archive = self.factory.makeArchive(
-            distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
+            distribution=self.distro, purpose=ArchivePurpose.PRIMARY
+        )
 
     def test_sign_without_signing_key(self):
-        filename = os.path.join(
-            getPubConfig(self.archive).archiveroot, "file")
+        filename = os.path.join(getPubConfig(self.archive).archiveroot, "file")
         self.assertIsNone(self.archive.signing_key)
         custom_processor = CustomUpload()
         custom_processor.sign(self.archive, "suite", filename)
@@ -249,14 +241,14 @@ class TestSigning(TestCaseWithFactory, RunPartsMixin):
 
     @defer.inlineCallbacks
     def test_sign_with_signing_key(self):
-        filename = os.path.join(
-            getPubConfig(self.archive).archiveroot, "file")
+        filename = os.path.join(getPubConfig(self.archive).archiveroot, "file")
         write_file(filename, b"contents")
         self.assertIsNone(self.archive.signing_key)
         self.useFixture(InProcessKeyServerFixture()).start()
-        key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
+        key_path = os.path.join(gpgkeysdir, "ppa-sample@canonical.com.sec")
         yield IArchiveGPGSigningKey(self.archive).setSigningKey(
-            key_path, async_keyserver=True)
+            key_path, async_keyserver=True
+        )
         self.assertIsNotNone(self.archive.signing_key)
         custom_processor = CustomUpload()
         custom_processor.sign(self.archive, "suite", filename)
@@ -264,9 +256,11 @@ class TestSigning(TestCaseWithFactory, RunPartsMixin):
             cleartext = cleartext_file.read()
             with open("%s.gpg" % filename, "rb") as signature_file:
                 signature = getUtility(IGPGHandler).getVerifiedSignature(
-                    cleartext, signature_file.read())
+                    cleartext, signature_file.read()
+                )
         self.assertEqual(
-            self.archive.signing_key.fingerprint, signature.fingerprint)
+            self.archive.signing_key.fingerprint, signature.fingerprint
+        )
 
     def test_sign_with_external_run_parts(self):
         self.enableRunParts(distribution_name=self.distro.name)
@@ -274,18 +268,26 @@ class TestSigning(TestCaseWithFactory, RunPartsMixin):
         filename = os.path.join(archiveroot, "file")
         write_file(filename, b"contents")
         self.assertIsNone(self.archive.signing_key)
-        run_parts_fixture = self.useFixture(MonkeyPatch(
-            "lp.archivepublisher.archivegpgsigningkey.run_parts",
-            FakeMethod()))
+        run_parts_fixture = self.useFixture(
+            MonkeyPatch(
+                "lp.archivepublisher.archivegpgsigningkey.run_parts",
+                FakeMethod(),
+            )
+        )
         custom_processor = CustomUpload()
         custom_processor.sign(self.archive, "suite", filename)
         args, kwargs = run_parts_fixture.new_value.calls[0]
         self.assertEqual((self.distro.name, "sign.d"), args)
-        self.assertThat(kwargs["env"], MatchesDict({
-            "ARCHIVEROOT": Equals(archiveroot),
-            "INPUT_PATH": Equals(filename),
-            "OUTPUT_PATH": Equals("%s.gpg" % filename),
-            "MODE": Equals("detached"),
-            "DISTRIBUTION": Equals(self.distro.name),
-            "SUITE": Equals("suite"),
-            }))
+        self.assertThat(
+            kwargs["env"],
+            MatchesDict(
+                {
+                    "ARCHIVEROOT": Equals(archiveroot),
+                    "INPUT_PATH": Equals(filename),
+                    "OUTPUT_PATH": Equals("%s.gpg" % filename),
+                    "MODE": Equals("detached"),
+                    "DISTRIBUTION": Equals(self.distro.name),
+                    "SUITE": Equals("suite"),
+                }
+            ),
+        )
