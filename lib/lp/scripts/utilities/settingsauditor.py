@@ -25,8 +25,6 @@ class SettingsAuditor:
     def __init__(self, data):
         self.data = data
         self.errors = {}
-        self.current_section = ''
-        self.observed_settings = defaultdict(lambda: 0)
 
     def _getHeader(self):
         """Removes the header comments from the security file.
@@ -44,12 +42,6 @@ class SettingsAuditor:
         data = data.split('\n')
         data = [d.strip() for d in data]
         return '\n'.join(d for d in data if not (d.startswith('#') or d == ''))
-
-    def _getSectionName(self, line):
-        if line.strip().startswith('['):
-            return self.section_regex.match(line).group()
-        else:
-            return None
 
     def _separateConfigBlocks(self):
         # We keep the copy of config_labels so we can keep them in order.

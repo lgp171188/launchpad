@@ -30,8 +30,6 @@ from lp.services.scripts import (
     )
 
 
-PGSQL_BASE = '/usr/share/postgresql'
-
 # tsearch2 ranking constants:
 A, B, C, D = 'ABCD'
 

@@ -304,7 +304,6 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         # Under no circumstances is it safe to execute actual commands.
         self.fake_call = FakeMethod(result=0)
-        self.fake_copyfile = FakeMethod(result=0)
         upload.callLog = FakeMethodCallLog(upload=upload)
         self.useFixture(MonkeyPatch("subprocess.call", self.fake_call))
         upload.process(self.archive, self.path, self.suite)

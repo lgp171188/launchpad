@@ -156,7 +156,6 @@ from lp.testing.pgsql import PgTestSetup
 import zcml
 
 
-COMMA = ','
 WAIT_INTERVAL = datetime.timedelta(seconds=180)
 
 
@@ -774,11 +773,6 @@ class DatabaseLayer(BaseLayer):
     @profiled
     def connect(cls):
         return cls._db_fixture.connect()
-
-    @classmethod
-    @profiled
-    def _dropDb(cls):
-        return cls._db_fixture.dropDb()
 
 
 class LibrarianLayer(DatabaseLayer):

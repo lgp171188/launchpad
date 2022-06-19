@@ -1416,16 +1416,6 @@ class BugTaskSearchBugsElsewhereTest(unittest.TestCase):
             self.firefox_upstream.target.bug_supervisor)
         flush_database_updates()
 
-    def _hasUpstreamTask(self, bug):
-        """Does this bug have an upstream task associated with it?
-
-        Returns True if yes, otherwise False.
-        """
-        for bugtask in bug.bugtasks:
-            if bugtask.product is not None:
-                return True
-        return False
-
 
 class BugTaskSetFindExpirableBugTasksTest(unittest.TestCase):
     """Test `BugTaskSet.findExpirableBugTasks()` behaviour."""

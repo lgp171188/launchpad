@@ -6,14 +6,13 @@ __all__ = [
     "DiskPoolEntry",
     "FileAddActionEnum",
     "poolify",
-    "unpoolify",
 ]
 
 import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 from lp.archivepublisher import HARDCODED_COMPONENT_ORDER
 from lp.services.librarian.utils import copy_and_close, sha1_from_path
@@ -36,19 +35,6 @@ def poolify(source: str, component: Optional[str] = None) -> Path:
     if component is not None:
         path = Path(component) / path
     return path
-
-
-def unpoolify(self, path: Path) -> Tuple[str, str, Optional[str]]:
-    """Take a path and unpoolify it.
-
-    Return a tuple of component, source, filename
-    """
-    p = path.parts
-    if len(p) < 3 or len(p) > 4:
-        raise ValueError("Path %s is not in a valid pool form" % path)
-    if len(p) == 4:
-        return p[0], p[2], p[3]
-    return p[0], p[2], None
 
 
 def relative_symlink(src_path: Path, dst_path: Path) -> None:

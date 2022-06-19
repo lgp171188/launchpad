@@ -1197,7 +1197,6 @@ class TestTrac(BugTrackerResponsesMixin, Trac):
     # that we can test batching and not batching correctly.
     batch_size = None
     batch_query_threshold = 10
-    csv_export_file = None
 
     def getExternalBugTrackerToUse(self):
         return self

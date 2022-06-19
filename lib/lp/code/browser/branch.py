@@ -582,11 +582,6 @@ class BranchView(InformationTypePortletMixin, FeedsMixin, BranchMirrorMixin,
                 len(self.dependent_branches) == 0)
 
     @property
-    def show_candidate_more_link(self):
-        """Only show the link if there are more than five."""
-        return len(self.landing_candidates) > 5
-
-    @property
     def show_rescan_link(self):
         """Only show the rescan button if the latest scan has failed"""
         scan_job = self.context.getLatestScanJob()

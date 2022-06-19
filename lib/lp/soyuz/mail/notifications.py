@@ -17,9 +17,6 @@ from lp.services.webapp.interfaces import ILaunchpadRoot
 from lp.services.webapp.publisher import canonical_url
 
 
-CC = "CC"
-
-
 @block_implicit_flushes
 def notify_new_ppa_subscription(subscription, event):
     """Notification that a new PPA subscription can be activated."""

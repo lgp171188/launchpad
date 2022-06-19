@@ -12,10 +12,6 @@ from zope.component import getUtility
 
 from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.registry.interfaces.person import IPersonSet
-from lp.services.config.fixture import (
-    ConfigFixture,
-    ConfigUseFixture,
-    )
 from lp.services.gpg.interfaces import GPGKeyAlgorithm
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
@@ -94,14 +90,3 @@ class GPGKeySetTests(TestCaseWithFactory):
 
         inactive_keys = keyset.getGPGKeysForPerson(person, active=False)
         self.assertThat(inactive_keys, HasLength(0))
-
-    def set_config_parameters(self, **kwargs):
-        config_name = self.getUniqueString()
-        config_fixture = self.useFixture(
-            ConfigFixture(
-                config_name,
-                LaunchpadFunctionalLayer.config_fixture.instance_name))
-        setting_lines = ['[launchpad]'] + \
-            ['%s: %s' % (k, v) for k, v in kwargs.items()]
-        config_fixture.add_section('\n'.join(setting_lines))
-        self.useFixture(ConfigUseFixture(config_name))
