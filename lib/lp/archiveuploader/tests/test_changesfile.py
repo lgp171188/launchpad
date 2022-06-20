@@ -5,13 +5,9 @@
 
 import os
 
-from debian.deb822 import Changes
 import six
-from testtools.matchers import (
-    Equals,
-    MatchesDict,
-    MatchesStructure,
-    )
+from debian.deb822 import Changes
+from testtools.matchers import Equals, MatchesDict, MatchesStructure
 from zope.component import getUtility
 
 from lp.archiveuploader.buildinfofile import BuildInfoFile
@@ -19,7 +15,7 @@ from lp.archiveuploader.changesfile import (
     CannotDetermineFileTypeError,
     ChangesFile,
     determine_file_class_and_name,
-    )
+)
 from lp.archiveuploader.dscfile import DSCFile
 from lp.archiveuploader.nascentuploadfile import (
     DdebBinaryUploadFile,
@@ -27,11 +23,11 @@ from lp.archiveuploader.nascentuploadfile import (
     SourceUploadFile,
     UdebBinaryUploadFile,
     UploadError,
-    )
+)
 from lp.archiveuploader.tests import (
     AbsolutelyAnythingGoesUploadPolicy,
     datadir,
-    )
+)
 from lp.archiveuploader.uploadpolicy import InsecureUploadPolicy
 from lp.archiveuploader.utils import merge_file_lists
 from lp.registry.interfaces.person import IPersonSet
@@ -39,43 +35,44 @@ from lp.services.log.logger import BufferLogger
 from lp.testing import TestCase
 from lp.testing.gpgkeys import import_public_test_keys
 from lp.testing.keyserver import KeyServerTac
-from lp.testing.layers import (
-    LaunchpadZopelessLayer,
-    ZopelessDatabaseLayer,
-    )
+from lp.testing.layers import LaunchpadZopelessLayer, ZopelessDatabaseLayer
 
 
 class TestDetermineFileClassAndName(TestCase):
-
     def testSourceFile(self):
         # A non-DSC source file is a SourceUploadFile.
         self.assertEqual(
-            ('foo', SourceUploadFile),
-            determine_file_class_and_name('foo_1.0.diff.gz'))
+            ("foo", SourceUploadFile),
+            determine_file_class_and_name("foo_1.0.diff.gz"),
+        )
 
     def testDSCFile(self):
         # A DSC is a DSCFile, since they're special.
         self.assertEqual(
-            ('foo', DSCFile),
-            determine_file_class_and_name('foo_1.0.dsc'))
+            ("foo", DSCFile), determine_file_class_and_name("foo_1.0.dsc")
+        )
 
     def testDEBFile(self):
         # A binary file is the appropriate PackageUploadFile subclass.
         self.assertEqual(
-            ('foo', DebBinaryUploadFile),
-            determine_file_class_and_name('foo_1.0_all.deb'))
+            ("foo", DebBinaryUploadFile),
+            determine_file_class_and_name("foo_1.0_all.deb"),
+        )
         self.assertEqual(
-            ('foo', DdebBinaryUploadFile),
-            determine_file_class_and_name('foo_1.0_all.ddeb'))
+            ("foo", DdebBinaryUploadFile),
+            determine_file_class_and_name("foo_1.0_all.ddeb"),
+        )
         self.assertEqual(
-            ('foo', UdebBinaryUploadFile),
-            determine_file_class_and_name('foo_1.0_all.udeb'))
+            ("foo", UdebBinaryUploadFile),
+            determine_file_class_and_name("foo_1.0_all.udeb"),
+        )
 
     def testBuildInfoFile(self):
         # A buildinfo file is a BuildInfoFile.
         self.assertEqual(
-            ('foo', BuildInfoFile),
-            determine_file_class_and_name('foo_1.0_all.buildinfo'))
+            ("foo", BuildInfoFile),
+            determine_file_class_and_name("foo_1.0_all.buildinfo"),
+        )
 
     def testUnmatchingFile(self):
         # Files with unknown extensions or none at all are not
@@ -83,84 +80,130 @@ class TestDetermineFileClassAndName(TestCase):
         self.assertRaises(
             CannotDetermineFileTypeError,
             determine_file_class_and_name,
-            'foo_1.0.notdsc')
+            "foo_1.0.notdsc",
+        )
         self.assertRaises(
-            CannotDetermineFileTypeError,
-            determine_file_class_and_name,
-            'foo')
+            CannotDetermineFileTypeError, determine_file_class_and_name, "foo"
+        )
 
 
 class TestMergeFileLists(TestCase):
-
     def test_all_hashes(self):
         # merge_file_lists returns a list of
         # (filename, {algo: hash}, size, component_and_section, priority).
         files = [
-            ('a', '1', 'd', 'e', 'foo.deb'), ('b', '2', 's', 'o', 'bar.dsc')]
-        checksums_sha1 = [('aa', '1', 'foo.deb'), ('bb', '2', 'bar.dsc')]
-        checksums_sha256 = [('aaa', '1', 'foo.deb'), ('bbb', '2', 'bar.dsc')]
+            ("a", "1", "d", "e", "foo.deb"),
+            ("b", "2", "s", "o", "bar.dsc"),
+        ]
+        checksums_sha1 = [("aa", "1", "foo.deb"), ("bb", "2", "bar.dsc")]
+        checksums_sha256 = [("aaa", "1", "foo.deb"), ("bbb", "2", "bar.dsc")]
         self.assertEqual(
-            [("foo.deb",
-              {'MD5': 'a', 'SHA1': 'aa', 'SHA256': 'aaa'}, '1', 'd', 'e'),
-             ("bar.dsc",
-              {'MD5': 'b', 'SHA1': 'bb', 'SHA256': 'bbb'}, '2', 's', 'o')],
-             merge_file_lists(files, checksums_sha1, checksums_sha256))
+            [
+                (
+                    "foo.deb",
+                    {"MD5": "a", "SHA1": "aa", "SHA256": "aaa"},
+                    "1",
+                    "d",
+                    "e",
+                ),
+                (
+                    "bar.dsc",
+                    {"MD5": "b", "SHA1": "bb", "SHA256": "bbb"},
+                    "2",
+                    "s",
+                    "o",
+                ),
+            ],
+            merge_file_lists(files, checksums_sha1, checksums_sha256),
+        )
 
     def test_all_hashes_for_dsc(self):
         # merge_file_lists in DSC mode returns a list of
         # (filename, {algo: hash}, size).
-        files = [
-            ('a', '1', 'foo.deb'), ('b', '2', 'bar.dsc')]
-        checksums_sha1 = [('aa', '1', 'foo.deb'), ('bb', '2', 'bar.dsc')]
-        checksums_sha256 = [('aaa', '1', 'foo.deb'), ('bbb', '2', 'bar.dsc')]
+        files = [("a", "1", "foo.deb"), ("b", "2", "bar.dsc")]
+        checksums_sha1 = [("aa", "1", "foo.deb"), ("bb", "2", "bar.dsc")]
+        checksums_sha256 = [("aaa", "1", "foo.deb"), ("bbb", "2", "bar.dsc")]
         self.assertEqual(
-            [("foo.deb", {'MD5': 'a', 'SHA1': 'aa', 'SHA256': 'aaa'}, '1'),
-             ("bar.dsc", {'MD5': 'b', 'SHA1': 'bb', 'SHA256': 'bbb'}, '2')],
-             merge_file_lists(
-                 files, checksums_sha1, checksums_sha256, changes=False))
+            [
+                ("foo.deb", {"MD5": "a", "SHA1": "aa", "SHA256": "aaa"}, "1"),
+                ("bar.dsc", {"MD5": "b", "SHA1": "bb", "SHA256": "bbb"}, "2"),
+            ],
+            merge_file_lists(
+                files, checksums_sha1, checksums_sha256, changes=False
+            ),
+        )
 
     def test_just_md5(self):
         # merge_file_lists copes with the omission of SHA1 or SHA256
         # hashes.
         files = [
-            ('a', '1', 'd', 'e', 'foo.deb'), ('b', '2', 's', 'o', 'bar.dsc')]
+            ("a", "1", "d", "e", "foo.deb"),
+            ("b", "2", "s", "o", "bar.dsc"),
+        ]
         self.assertEqual(
-            [("foo.deb", {'MD5': 'a'}, '1', 'd', 'e'),
-             ("bar.dsc", {'MD5': 'b'}, '2', 's', 'o')],
-             merge_file_lists(files, None, None))
+            [
+                ("foo.deb", {"MD5": "a"}, "1", "d", "e"),
+                ("bar.dsc", {"MD5": "b"}, "2", "s", "o"),
+            ],
+            merge_file_lists(files, None, None),
+        )
 
     def test_duplicate_filename_is_rejected(self):
         # merge_file_lists rejects fields with duplicated filenames.
         files = [
-            ('a', '1', 'd', 'e', 'foo.deb'), ('b', '2', 's', 'o', 'foo.deb')]
+            ("a", "1", "d", "e", "foo.deb"),
+            ("b", "2", "s", "o", "foo.deb"),
+        ]
         self.assertRaisesWithContent(
-            UploadError, "Duplicate filenames in Files field.",
-            merge_file_lists, files, None, None)
+            UploadError,
+            "Duplicate filenames in Files field.",
+            merge_file_lists,
+            files,
+            None,
+            None,
+        )
 
     def test_differing_file_lists_are_rejected(self):
         # merge_file_lists rejects Checksums-* fields which are present
         # but have a different set of filenames.
         files = [
-            ('a', '1', 'd', 'e', 'foo.deb'), ('b', '2', 's', 'o', 'bar.dsc')]
-        sha1s = [('aa', '1', 'foo.deb')]
-        sha256s = [('aaa', '1', 'foo.deb')]
+            ("a", "1", "d", "e", "foo.deb"),
+            ("b", "2", "s", "o", "bar.dsc"),
+        ]
+        sha1s = [("aa", "1", "foo.deb")]
+        sha256s = [("aaa", "1", "foo.deb")]
         self.assertRaisesWithContent(
-            UploadError, "Mismatch between Checksums-Sha1 and Files fields.",
-            merge_file_lists, files, sha1s, None)
+            UploadError,
+            "Mismatch between Checksums-Sha1 and Files fields.",
+            merge_file_lists,
+            files,
+            sha1s,
+            None,
+        )
         self.assertRaisesWithContent(
-            UploadError, "Mismatch between Checksums-Sha256 and Files fields.",
-            merge_file_lists, files, None, sha256s)
+            UploadError,
+            "Mismatch between Checksums-Sha256 and Files fields.",
+            merge_file_lists,
+            files,
+            None,
+            sha256s,
+        )
 
     def test_differing_file_sizes_are_rejected(self):
         # merge_file_lists rejects Checksums-* fields which are present
         # but have a different set of filenames.
-        files = [('a', '1', 'd', 'e', 'foo.deb')]
-        sha1s = [('aa', '1', 'foo.deb')]
-        sha1s_bad_size = [('aa', '2', 'foo.deb')]
+        files = [("a", "1", "d", "e", "foo.deb")]
+        sha1s = [("aa", "1", "foo.deb")]
+        sha1s_bad_size = [("aa", "2", "foo.deb")]
         self.assertEqual(1, len(merge_file_lists(files, sha1s, None)))
         self.assertRaisesWithContent(
-            UploadError, "Mismatch between Checksums-Sha1 and Files fields.",
-            merge_file_lists, files, sha1s_bad_size, None)
+            UploadError,
+            "Mismatch between Checksums-Sha1 and Files fields.",
+            merge_file_lists,
+            files,
+            sha1s_bad_size,
+            None,
+        )
 
 
 class ChangesFileTests(TestCase):
@@ -195,12 +238,15 @@ class ChangesFileTests(TestCase):
         contents["Changes"] = "Something changed"
         contents["Description"] = "\n An awesome package."
         contents["Changed-By"] = "Somebody <somebody@ubuntu.com>"
-        contents["Files"] = [{
-            "md5sum": "d2bd347b3fed184fe28e112695be491c",
-            "size": "1791",
-            "section": "python",
-            "priority": "optional",
-            "name": "dulwich_0.4.1-1_i386.deb"}]
+        contents["Files"] = [
+            {
+                "md5sum": "d2bd347b3fed184fe28e112695be491c",
+                "size": "1791",
+                "section": "python",
+                "priority": "optional",
+                "name": "dulwich_0.4.1-1_i386.deb",
+            }
+        ]
         return contents
 
     def test_newline_in_Binary_field(self):
@@ -208,8 +254,7 @@ class ChangesFileTests(TestCase):
         contents = self.getBaseChanges()
         contents["Binary"] = "binary1\n binary2 \n binary3"
         changes = self.createChangesFile("mypkg_0.1_i386.changes", contents)
-        self.assertEqual(
-            {"binary1", "binary2", "binary3"}, changes.binaries)
+        self.assertEqual({"binary1", "binary2", "binary3"}, changes.binaries)
 
     def test_checkFileName(self):
         # checkFileName() yields an UploadError if the filename is invalid.
@@ -224,64 +269,73 @@ class ChangesFileTests(TestCase):
     def test_filename(self):
         # Filename gets set to the basename of the changes file on disk.
         changes = self.createChangesFile(
-            "mypkg_0.1_i386.changes", self.getBaseChanges())
+            "mypkg_0.1_i386.changes", self.getBaseChanges()
+        )
         self.assertEqual("mypkg_0.1_i386.changes", changes.filename)
 
     def test_suite_name(self):
         # The suite name gets extracted from the changes file.
         changes = self.createChangesFile(
-            "mypkg_0.1_i386.changes", self.getBaseChanges())
+            "mypkg_0.1_i386.changes", self.getBaseChanges()
+        )
         self.assertEqual("nifty", changes.suite_name)
 
     def test_version(self):
         # The version gets extracted from the changes file.
         changes = self.createChangesFile(
-            "mypkg_0.1_i386.changes", self.getBaseChanges())
+            "mypkg_0.1_i386.changes", self.getBaseChanges()
+        )
         self.assertEqual("0.1", changes.version)
 
     def test_architectures(self):
         # The architectures get extracted from the changes file
         # and parsed correctly.
         changes = self.createChangesFile(
-            "mypkg_0.1_i386.changes", self.getBaseChanges())
+            "mypkg_0.1_i386.changes", self.getBaseChanges()
+        )
         self.assertEqual("i386", changes.architecture_line)
         self.assertEqual({"i386"}, changes.architectures)
 
     def test_source(self):
         # The source package name gets extracted from the changes file.
         changes = self.createChangesFile(
-            "mypkg_0.1_i386.changes", self.getBaseChanges())
+            "mypkg_0.1_i386.changes", self.getBaseChanges()
+        )
         self.assertEqual("mypkg", changes.source)
 
     def test_processAddresses(self):
         # processAddresses parses the changes file and sets the
         # changed_by field.
         contents = self.getBaseChanges()
-        changes = self.createChangesFile(
-            "mypkg_0.1_i386.changes", contents)
+        changes = self.createChangesFile("mypkg_0.1_i386.changes", contents)
         self.assertIsNone(changes.changed_by)
         errors = list(changes.processAddresses())
         self.assertEqual(0, len(errors), "Errors: %r" % errors)
         self.assertThat(
             changes.changed_by,
-            MatchesDict({
-                "name": Equals("Somebody"),
-                "email": Equals("somebody@ubuntu.com"),
-                "person": MatchesStructure.byEquality(displayname="Somebody"),
-                }))
+            MatchesDict(
+                {
+                    "name": Equals("Somebody"),
+                    "email": Equals("somebody@ubuntu.com"),
+                    "person": MatchesStructure.byEquality(
+                        displayname="Somebody"
+                    ),
+                }
+            ),
+        )
 
     def test_simulated_changelog(self):
         # The simulated_changelog property returns a changelog entry based on
         # the control fields.
         contents = self.getBaseChanges()
-        changes = self.createChangesFile(
-            "mypkg_0.1_i386.changes", contents)
+        changes = self.createChangesFile("mypkg_0.1_i386.changes", contents)
         self.assertEqual([], list(changes.processAddresses()))
         self.assertEqual(
             b"Something changed\n\n"
             b" -- Somebody <somebody@ubuntu.com>  "
             b"Fri, 25 Jun 2010 11:20:22 -0600",
-            changes.simulated_changelog)
+            changes.simulated_changelog,
+        )
 
     def test_requires_changed_by(self):
         # A changes file is rejected if it does not have a Changed-By field.
@@ -289,7 +343,10 @@ class ChangesFileTests(TestCase):
         del contents["Changed-By"]
         self.assertRaises(
             UploadError,
-            self.createChangesFile, "mypkg_0.1_i386.changes", contents)
+            self.createChangesFile,
+            "mypkg_0.1_i386.changes",
+            contents,
+        )
 
     def test_processFiles(self):
         # processFiles sets self.files to a list of NascentUploadFiles.
@@ -303,8 +360,12 @@ class ChangesFileTests(TestCase):
             MatchesStructure.byEquality(
                 filepath=changes.dirname + "/dulwich_0.4.1-1_i386.deb",
                 checksums=dict(MD5="d2bd347b3fed184fe28e112695be491c"),
-                size=1791, priority_name="optional",
-                component_name="main", section_name="python"))
+                size=1791,
+                priority_name="optional",
+                component_name="main",
+                section_name="python",
+            ),
+        )
 
     def test_processFiles_additional_checksums(self):
         # processFiles parses the Checksums-Sha1 and Checksums-Sha256
@@ -314,13 +375,18 @@ class ChangesFileTests(TestCase):
         sha1 = "378b3498ead213d35a82033a6e9196014a5ef25c"
         sha256 = (
             "39bb3bad01bf931b34f3983536c0f331e4b4e3e38fb78abfc75e5b09"
-            "efd6507f")
-        contents["Checksums-Sha1"] = [{
-            "sha1": sha1, "size": "1791",
-            "name": "dulwich_0.4.1-1_i386.deb"}]
-        contents["Checksums-Sha256"] = [{
-            "sha256": sha256, "size": "1791",
-            "name": "dulwich_0.4.1-1_i386.deb"}]
+            "efd6507f"
+        )
+        contents["Checksums-Sha1"] = [
+            {"sha1": sha1, "size": "1791", "name": "dulwich_0.4.1-1_i386.deb"}
+        ]
+        contents["Checksums-Sha256"] = [
+            {
+                "sha256": sha256,
+                "size": "1791",
+                "name": "dulwich_0.4.1-1_i386.deb",
+            }
+        ]
         changes = self.createChangesFile("mypkg_0.1_i386.changes", contents)
         self.assertEqual([], list(changes.processFiles()))
         [file] = changes.files
@@ -330,24 +396,30 @@ class ChangesFileTests(TestCase):
             MatchesStructure.byEquality(
                 filepath=changes.dirname + "/dulwich_0.4.1-1_i386.deb",
                 checksums=dict(MD5=md5, SHA1=sha1, SHA256=sha256),
-                size=1791, priority_name="optional",
-                component_name="main", section_name="python"))
+                size=1791,
+                priority_name="optional",
+                component_name="main",
+                section_name="python",
+            ),
+        )
 
     def test_processFiles_additional_checksums_must_match(self):
         # processFiles ensures that Files, Checksums-Sha1 and
         # Checksums-Sha256 all list the same files.
         contents = self.getBaseChanges()
-        contents["Checksums-Sha1"] = [{
-            "sha1": "aaa", "size": "1791", "name": "doesnotexist.deb"}]
+        contents["Checksums-Sha1"] = [
+            {"sha1": "aaa", "size": "1791", "name": "doesnotexist.deb"}
+        ]
         changes = self.createChangesFile("mypkg_0.1_i386.changes", contents)
         [error] = list(changes.processFiles())
         self.assertEqual(
-            "Mismatch between Checksums-Sha1 and Files fields.", error.args[0])
+            "Mismatch between Checksums-Sha1 and Files fields.", error.args[0]
+        )
 
     def test_processFiles_rejects_duplicate_filenames(self):
         # processFiles ensures that Files lists each file only once.
         contents = self.getBaseChanges()
-        contents['Files'].append(contents['Files'][0])
+        contents["Files"].append(contents["Files"][0])
         changes = self.createChangesFile("mypkg_0.1_i386.changes", contents)
         [error] = list(changes.processFiles())
         self.assertEqual("Duplicate filenames in Files field.", error.args[0])
@@ -365,20 +437,21 @@ class TestSignatureVerification(TestCase):
     def test_valid_signature_accepted(self):
         # A correctly signed changes file is accepted, and all its
         # content is parsed.
-        path = datadir('signatures/signed.changes')
+        path = datadir("signatures/signed.changes")
         changesfile = ChangesFile(path, InsecureUploadPolicy(), BufferLogger())
         self.assertEqual([], list(changesfile.parseChanges()))
         self.assertEqual(
-            getUtility(IPersonSet).getByEmail('foo.bar@canonical.com'),
-            changesfile.signer)
+            getUtility(IPersonSet).getByEmail("foo.bar@canonical.com"),
+            changesfile.signer,
+        )
         expected = "\\AFormat: 1.7\n.*foo_1.0-1.diff.gz\\Z"
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            expected,
-            six.ensure_text(changesfile.parsed_content))
+            expected, six.ensure_text(changesfile.parsed_content)
+        )
 
     def test_no_signature_rejected(self):
         # An unsigned changes file is rejected.
-        path = datadir('signatures/unsigned.changes')
+        path = datadir("signatures/unsigned.changes")
         changesfile = ChangesFile(path, InsecureUploadPolicy(), BufferLogger())
         errors = list(changesfile.parseChanges())
         self.assertIsInstance(errors[0], UploadError)
@@ -387,15 +460,16 @@ class TestSignatureVerification(TestCase):
     def test_prefix_ignored(self):
         # A signed changes file with an unsigned prefix has only the
         # signed part parsed.
-        path = datadir('signatures/prefixed.changes')
+        path = datadir("signatures/prefixed.changes")
         changesfile = ChangesFile(path, InsecureUploadPolicy(), BufferLogger())
         self.assertEqual([], list(changesfile.parseChanges()))
         self.assertEqual(
-            getUtility(IPersonSet).getByEmail('foo.bar@canonical.com'),
-            changesfile.signer)
+            getUtility(IPersonSet).getByEmail("foo.bar@canonical.com"),
+            changesfile.signer,
+        )
         expected = "\\AFormat: 1.7\n.*foo_1.0-1.diff.gz\\Z"
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            expected,
-            six.ensure_text(changesfile.parsed_content))
+            expected, six.ensure_text(changesfile.parsed_content)
+        )
         self.assertEqual("breezy", changesfile.suite_name)
         self.assertNotIn("evil", changesfile.changes_comment)

@@ -7,18 +7,14 @@ import unittest
 
 import apt_pkg
 
-from lp.archiveuploader.tagfiles import (
-    parse_tagfile,
-    TagFileParseError,
-    )
+from lp.archiveuploader.tagfiles import TagFileParseError, parse_tagfile
 from lp.archiveuploader.tests import datadir
 
 
 class Testtagfiles(unittest.TestCase):
-
     def testCheckParseChangesOkay(self):
         """lp.archiveuploader.tagfiles.parse_tagfile should work on a good
-           changes file
+        changes file
         """
         parse_tagfile(datadir("good-signed-changes"))
 
@@ -29,7 +25,7 @@ class Testtagfiles(unittest.TestCase):
         reject them if it can't understand.
         """
         parsed = parse_tagfile(datadir("bad-multiline-changes"))
-        self.assertEqual(b'unstable', parsed['Distribution'])
+        self.assertEqual(b"unstable", parsed["Distribution"])
 
     def testCheckParseMalformedMultiline(self):
         """Malformed but somewhat readable files do not raise an exception.
@@ -38,34 +34,38 @@ class Testtagfiles(unittest.TestCase):
         reject them if it can't understand.
         """
         parsed = parse_tagfile(datadir("bad-multiline-changes"))
-        self.assertEqual(b'unstable', parsed['Distribution'])
-        self.assertRaises(KeyError, parsed.__getitem__, 'Fish')
+        self.assertEqual(b"unstable", parsed["Distribution"])
+        self.assertRaises(KeyError, parsed.__getitem__, "Fish")
 
     def testCheckParseEmptyChangesRaises(self):
         """lp.archiveuploader.tagfiles.parse_chantges should raise
-           TagFileParseError on empty
+        TagFileParseError on empty
         """
-        self.assertRaises(TagFileParseError,
-                          parse_tagfile, datadir("empty-file"))
+        self.assertRaises(
+            TagFileParseError, parse_tagfile, datadir("empty-file")
+        )
 
     def testCheckParseMalformedSigRaises(self):
         """lp.archiveuploader.tagfiles.parse_chantges should raise
-           TagFileParseError on malformed signatures
+        TagFileParseError on malformed signatures
         """
-        self.assertRaises(TagFileParseError,
-                          parse_tagfile, datadir("malformed-sig-changes"))
+        self.assertRaises(
+            TagFileParseError, parse_tagfile, datadir("malformed-sig-changes")
+        )
 
     def testCheckParseUnterminatedSigRaises(self):
         """lp.archiveuploader.tagfiles.parse_changes should raise
-           TagFileParseError on unterminated signatures
+        TagFileParseError on unterminated signatures
         """
-        self.assertRaises(TagFileParseError,
-                          parse_tagfile,
-                          datadir("unterminated-sig-changes"))
+        self.assertRaises(
+            TagFileParseError,
+            parse_tagfile,
+            datadir("unterminated-sig-changes"),
+        )
 
     def testParseChangesNotVulnerableToArchExploit(self):
         """lp.archiveuploader.tagfiles.parse_tagfile should not be vulnerable
-           to tags outside of the signed portion
+        to tags outside of the signed portion
         """
         tf = parse_tagfile(datadir("changes-with-exploit-top"))
         self.assertRaises(KeyError, tf.__getitem__, "you")
@@ -74,7 +74,6 @@ class Testtagfiles(unittest.TestCase):
 
 
 class TestTagFileDebianPolicyCompat(unittest.TestCase):
-
     def setUp(self):
         """Parse the test file using apt_pkg for comparison."""
 
@@ -96,17 +95,16 @@ class TestTagFileDebianPolicyCompat(unittest.TestCase):
         """
 
         expected_bytes = (
-            b'test75874 anotherbinary\n'
-            b' andanother andonemore\n'
-            b'\tlastone')
+            b"test75874 anotherbinary\n"
+            b" andanother andonemore\n"
+            b"\tlastone"
+        )
 
         self.assertEqual(
-            expected_bytes,
-            self.apt_pkg_parsed_version.section['Binary'])
+            expected_bytes, self.apt_pkg_parsed_version.section["Binary"]
+        )
 
-        self.assertEqual(
-            expected_bytes,
-            self.parse_tagfile_version['Binary'])
+        self.assertEqual(expected_bytes, self.parse_tagfile_version["Binary"])
 
     def test_parse_tagfile_with_newline_delimited_field(self):
         """parse_tagfile should not leave leading or tailing '\n' when
@@ -122,19 +120,18 @@ class TestTagFileDebianPolicyCompat(unittest.TestCase):
         """  # noqa: E501
 
         expected_bytes = (
-            b'f26bb9b29b1108e53139da3584a4dc92 1511 test75874_0.1.tar.gz\n '
-            b'29c955ff520cea32ab3e0316306d0ac1 393742 '
-                b'pmount_0.9.7.orig.tar.gz\n'
-            b' 91a8f46d372c406fadcb57c6ff7016f3 5302 '
-                b'pmount_0.9.7-2ubuntu2.diff.gz')
+            b"f26bb9b29b1108e53139da3584a4dc92 1511 test75874_0.1.tar.gz\n "
+            b"29c955ff520cea32ab3e0316306d0ac1 393742 "
+            b"pmount_0.9.7.orig.tar.gz\n"
+            b" 91a8f46d372c406fadcb57c6ff7016f3 5302 "
+            b"pmount_0.9.7-2ubuntu2.diff.gz"
+        )
 
         self.assertEqual(
-            expected_bytes,
-            self.apt_pkg_parsed_version.section['Files'])
+            expected_bytes, self.apt_pkg_parsed_version.section["Files"]
+        )
 
-        self.assertEqual(
-            expected_bytes,
-            self.parse_tagfile_version['Files'])
+        self.assertEqual(expected_bytes, self.parse_tagfile_version["Files"])
 
     def test_parse_description_field(self):
         """Apt-pkg preserves the blank-line indicator and does not strip
@@ -151,16 +148,17 @@ class TestTagFileDebianPolicyCompat(unittest.TestCase):
             b" it will be displayed verbatim. Like this one:\n"
             b"  Example verbatim line.\n"
             b"    Another verbatim line.\n"
-            b" OK, back to normal.")
+            b" OK, back to normal."
+        )
 
         self.assertEqual(
-            expected_bytes,
-            self.apt_pkg_parsed_version.section['Description'])
+            expected_bytes, self.apt_pkg_parsed_version.section["Description"]
+        )
 
         # In the past our parse_tagfile function replaced blank-line
         # indicators in the description (' .\n') with new lines ('\n'),
         # but it is now compatible with ParseTagFiles (and ready to be
         # replaced by ParseTagFiles).
         self.assertEqual(
-            expected_bytes,
-            self.parse_tagfile_version['Description'])
+            expected_bytes, self.parse_tagfile_version["Description"]
+        )

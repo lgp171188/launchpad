@@ -7,25 +7,16 @@ import os.path
 
 from zope.component import getUtility
 
-from lp.archiveuploader.nascentupload import (
-    NascentUpload,
-    UploadError,
-    )
+from lp.archiveuploader.nascentupload import NascentUpload, UploadError
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.log.logger import DevNullLogger
-from lp.soyuz.enums import (
-    ArchivePermissionType,
-    SourcePackageFormat,
-    )
+from lp.soyuz.enums import ArchivePermissionType, SourcePackageFormat
 from lp.soyuz.interfaces.sourcepackageformat import (
     ISourcePackageFormatSelectionSet,
-    )
+)
 from lp.soyuz.model.archivepermission import ArchivePermission
 from lp.soyuz.scripts.packagecopier import do_copy
-from lp.testing import (
-    login,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, login
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.mail_helpers import pop_notifications
@@ -48,9 +39,9 @@ class FakeChangesFile:
         self.files = []
         self.filepath = file_path
         self.filename = os.path.basename(file_path)
-        self.architectures = ['i386']
-        self.suite_name = '-'.join([spph.distroseries.name, spph.pocket.name])
-        with open(file_path, 'rb') as f:
+        self.architectures = ["i386"]
+        self.suite_name = "-".join([spph.distroseries.name, spph.pocket.name])
+        with open(file_path, "rb") as f:
             self.raw_content = f.read()
         self.signingkey = None
 
@@ -74,32 +65,45 @@ class TestSyncNotification(TestCaseWithFactory):
     def makeSPPH(self, distroseries, maintainer_address):
         """Create a `SourcePackagePublishingHistory`."""
         return self.factory.makeSourcePackagePublishingHistory(
-            distroseries=distroseries, pocket=PackagePublishingPocket.RELEASE,
-            dsc_maintainer_rfc822=maintainer_address)
+            distroseries=distroseries,
+            pocket=PackagePublishingPocket.RELEASE,
+            dsc_maintainer_rfc822=maintainer_address,
+        )
 
     def makeUploader(self, person, archive, component):
         """Grant a person upload privileges for archive/component."""
         ArchivePermission(
-            person=person, archive=archive, component=component,
-            permission=ArchivePermissionType.UPLOAD)
+            person=person,
+            archive=archive,
+            component=component,
+            permission=ArchivePermissionType.UPLOAD,
+        )
 
     def syncSource(self, spph, target_distroseries, requester):
         """Sync `spph` into `target_distroseries`."""
         getUtility(ISourcePackageFormatSelectionSet).add(
-            target_distroseries, SourcePackageFormat.FORMAT_1_0)
+            target_distroseries, SourcePackageFormat.FORMAT_1_0
+        )
         target_archive = target_distroseries.main_archive
         self.makeUploader(requester, target_archive, spph.component)
         [synced_spph] = do_copy(
-            [spph], target_archive, target_distroseries,
-            pocket=spph.pocket, person=requester, close_bugs=False)
+            [spph],
+            target_archive,
+            target_distroseries,
+            pocket=spph.pocket,
+            person=requester,
+            close_bugs=False,
+        )
         return synced_spph
 
-    def makeChangesFile(self, spph, maintainer, maintainer_address,
-                        changer, changer_address):
+    def makeChangesFile(
+        self, spph, maintainer, maintainer_address, changer, changer_address
+    ):
         temp_dir = self.makeTemporaryDirectory()
         changes_file = os.path.join(
-            temp_dir, "%s.changes" % spph.source_package_name)
-        with open(changes_file, 'w') as changes:
+            temp_dir, "%s.changes" % spph.source_package_name
+        )
+        with open(changes_file, "w") as changes:
             changes.write(
                 "Maintainer: %s <%s>\n"
                 "Changed-By: %s <%s>\n"
@@ -108,35 +112,41 @@ class TestSyncNotification(TestCaseWithFactory):
                     maintainer_address,
                     changer.name,
                     changer_address,
-                    ))
+                )
+            )
         return FakeChangesFile(spph, changes_file)
 
-    def makeNascentUpload(self, spph, maintainer, maintainer_address,
-                          changer, changer_address):
+    def makeNascentUpload(
+        self, spph, maintainer, maintainer_address, changer, changer_address
+    ):
         """Create a `NascentUpload` for `spph`."""
         changes = self.makeChangesFile(
-            spph, maintainer, maintainer_address, changer, changer_address)
+            spph, maintainer, maintainer_address, changer, changer_address
+        )
         upload = NascentUpload(
-            changes, FakeUploadPolicy(spph), DevNullLogger())
+            changes, FakeUploadPolicy(spph), DevNullLogger()
+        )
         upload.queue_root = upload._createQueueEntry()
-        das = self.factory.makeDistroArchSeries(
-            distroseries=spph.distroseries)
+        das = self.factory.makeDistroArchSeries(distroseries=spph.distroseries)
         bpb = self.factory.makeBinaryPackageBuild(
             source_package_release=spph.sourcepackagerelease,
-            archive=spph.archive, distroarchseries=das, pocket=spph.pocket,
-            sourcepackagename=spph.sourcepackagename)
+            archive=spph.archive,
+            distroarchseries=das,
+            pocket=spph.pocket,
+            sourcepackagename=spph.sourcepackagename,
+        )
         upload.queue_root.addBuild(bpb)
         return upload
 
     def processAndRejectUpload(self, nascent_upload):
         nascent_upload.process()
         # Obtain the required privileges for do_reject.
-        login('foo.bar@canonical.com')
+        login("foo.bar@canonical.com")
         nascent_upload.do_reject(notify=True)
 
     def getNotifiedAddresses(self):
         """Get email addresses that were notified."""
-        return [message['to'] for message in pop_notifications()]
+        return [message["to"] for message in pop_notifications()]
 
     def test_failed_copy_builds_do_not_spam_upstream(self):
         """Failed builds do not spam people who are not responsible for them.
@@ -164,14 +174,19 @@ class TestSyncNotification(TestCaseWithFactory):
         original_spph = self.makeSPPH(dsp.parent_series, maintainer_address)
         sync_requester, syncer_address = self.makePersonWithEmail()
         synced_spph = self.syncSource(
-            original_spph, dsp.derived_series, sync_requester)
+            original_spph, dsp.derived_series, sync_requester
+        )
         nascent_upload = self.makeNascentUpload(
-            synced_spph, maintainer, maintainer_address,
-            changer, changer_address)
+            synced_spph,
+            maintainer,
+            maintainer_address,
+            changer,
+            changer_address,
+        )
         pop_notifications()
         self.processAndRejectUpload(nascent_upload)
 
-        notified_addresses = '\n'.join(self.getNotifiedAddresses())
+        notified_addresses = "\n".join(self.getNotifiedAddresses())
 
         self.assertNotIn(maintainer_address, notified_addresses)
         self.assertNotIn(changer_address, notified_addresses)

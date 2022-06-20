@@ -58,13 +58,13 @@ from lp.archiveuploader.livefsupload import LiveFSUpload
 from lp.archiveuploader.nascentupload import (
     EarlyReturnUploadError,
     NascentUpload,
-    )
+)
 from lp.archiveuploader.ocirecipeupload import OCIRecipeUpload
 from lp.archiveuploader.snapupload import SnapUpload
 from lp.archiveuploader.uploadpolicy import (
     BuildDaemonUploadPolicy,
     UploadPolicyError,
-    )
+)
 from lp.archiveuploader.utils import UploadError
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
@@ -72,7 +72,7 @@ from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
 from lp.code.interfaces.cibuild import ICIBuild
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
-    )
+)
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
@@ -81,33 +81,25 @@ from lp.services.log.logger import BufferLogger
 from lp.services.webapp.adapter import (
     clear_request_started,
     set_request_started,
-    )
-from lp.services.webapp.errorlog import (
-    ErrorReportingUtility,
-    ScriptRequest,
-    )
+)
+from lp.services.webapp.errorlog import ErrorReportingUtility, ScriptRequest
 from lp.snappy.interfaces.snapbuild import ISnapBuild
-from lp.soyuz.interfaces.archive import (
-    IArchiveSet,
-    NoSuchPPA,
-    )
+from lp.soyuz.interfaces.archive import IArchiveSet, NoSuchPPA
 from lp.soyuz.interfaces.livefsbuild import ILiveFSBuild
 
-
 __all__ = [
-    'UploadProcessor',
-    'parse_build_upload_leaf_name',
-    'parse_upload_path',
-    ]
+    "UploadProcessor",
+    "parse_build_upload_leaf_name",
+    "parse_upload_path",
+]
 
-UPLOAD_PATH_ERROR_TEMPLATE = (
-"""Launchpad failed to process the upload path '%(upload_path)s':
+UPLOAD_PATH_ERROR_TEMPLATE = """Launchpad failed to process the upload path '%(upload_path)s':
 
 %(path_error)s
 
 It is likely that you have a configuration problem with dput/dupload.
 %(extra_info)s
-""")
+"""
 
 
 def parse_build_upload_leaf_name(name):
@@ -131,9 +123,10 @@ class UploadStatusEnum:
               we send a rejection email and rollback.
     FAILED: nascentupload code raises an exception, no email, rollback
     """
-    ACCEPTED = 'accepted'
-    REJECTED = 'rejected'
-    FAILED = 'failed'
+
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    FAILED = "failed"
 
 
 class UploadPathError(Exception):
@@ -147,8 +140,17 @@ class PPAUploadPathError(Exception):
 class UploadProcessor:
     """Responsible for processing uploads. See module docstring."""
 
-    def __init__(self, base_fsroot, dry_run, no_mails, builds, keep,
-                 policy_for_distro, ztm, log):
+    def __init__(
+        self,
+        base_fsroot,
+        dry_run,
+        no_mails,
+        builds,
+        keep,
+        policy_for_distro,
+        ztm,
+        log,
+    ):
         """Create a new upload processor.
 
         :param base_fsroot: Root path for queue to use
@@ -191,13 +193,16 @@ class UploadProcessor:
 
             fsroot = os.path.join(self.base_fsroot, "incoming")
             uploads_to_process = self.locateDirectories(fsroot)
-            self.log.debug("Checked in %s, found %s"
-                           % (fsroot, uploads_to_process))
+            self.log.debug(
+                "Checked in %s, found %s" % (fsroot, uploads_to_process)
+            )
             for upload in uploads_to_process:
                 self.log.debug("Considering upload %s" % upload)
                 if leaf_name is not None and upload != leaf_name:
-                    self.log.debug("Skipping %s -- does not match %s" % (
-                        upload, leaf_name))
+                    self.log.debug(
+                        "Skipping %s -- does not match %s"
+                        % (upload, leaf_name)
+                    )
                     continue
                 set_request_started(enable_timeout=False)
                 try:
@@ -221,7 +226,8 @@ class UploadProcessor:
             alphabetically sorted.
         """
         return sorted(
-            entry.name for entry in os.scandir(fsroot) if entry.is_dir())
+            entry.name for entry in os.scandir(fsroot) if entry.is_dir()
+        )
 
 
 class UploadHandler:
@@ -269,11 +275,10 @@ class UploadHandler:
         changes_files = []
 
         for dirpath, dirnames, filenames in os.walk(self.upload_path):
-            relative_path = dirpath[len(self.upload_path) + 1:]
+            relative_path = dirpath[len(self.upload_path) + 1 :]
             for filename in filenames:
                 if filename.endswith(".changes"):
-                    changes_files.append(
-                        os.path.join(relative_path, filename))
+                    changes_files.append(os.path.join(relative_path, filename))
         return self.orderFilenames(changes_files)
 
     def processChangesFile(self, changes_file, logger=None):
@@ -304,23 +309,29 @@ class UploadHandler:
         relative_path = os.path.dirname(changes_file)
         upload_path_error = None
         try:
-            (distribution, suite_name,
-             archive) = parse_upload_path(relative_path)
+            (distribution, suite_name, archive) = parse_upload_path(
+                relative_path
+            )
         except UploadPathError as e:
             # pick some defaults to create the NascentUpload() object.
             # We will be rejecting the upload so it doesn't matter much.
-            distribution = getUtility(IDistributionSet)['ubuntu']
+            distribution = getUtility(IDistributionSet)["ubuntu"]
             suite_name = None
             archive = distribution.main_archive
             upload_path_error = UPLOAD_PATH_ERROR_TEMPLATE % (
-                dict(upload_path=relative_path, path_error=str(e),
-                     extra_info=(
-                         "Please update your dput/dupload configuration "
-                         "and then re-upload.")))
+                dict(
+                    upload_path=relative_path,
+                    path_error=str(e),
+                    extra_info=(
+                        "Please update your dput/dupload configuration "
+                        "and then re-upload."
+                    ),
+                )
+            )
         except PPAUploadPathError as e:
             # Again, pick some defaults but leave a hint for the rejection
             # emailer that it was a PPA failure.
-            distribution = getUtility(IDistributionSet)['ubuntu']
+            distribution = getUtility(IDistributionSet)["ubuntu"]
             suite_name = None
             # XXX cprov 20071212: using the first available PPA is not exactly
             # fine because it can confuse the code that sends rejection
@@ -329,11 +340,16 @@ class UploadHandler:
             # will break nascentupload ACL calculations.
             archive = distribution.getAllPPAs()[0]
             upload_path_error = UPLOAD_PATH_ERROR_TEMPLATE % (
-                dict(upload_path=relative_path, path_error=e.args[0],
-                     extra_info=(
-                         "Please check the documentation at "
-                         "https://help.launchpad.net/Packaging/PPA/Uploading "
-                         "and update your configuration.")))
+                dict(
+                    upload_path=relative_path,
+                    path_error=e.args[0],
+                    extra_info=(
+                        "Please check the documentation at "
+                        "https://help.launchpad.net/Packaging/PPA/Uploading "
+                        "and update your configuration."
+                    ),
+                )
+            )
         logger.debug("Finding fresh policy")
         policy = self._getPolicyForDistro(distribution)
         policy.archive = archive
@@ -349,15 +365,19 @@ class UploadHandler:
         # containing the changes file (and the other files referenced by it).
         changesfile_path = os.path.join(self.upload_path, changes_file)
         upload = NascentUpload.from_changesfile_path(
-            changesfile_path, policy, self.processor.log)
+            changesfile_path, policy, self.processor.log
+        )
 
         # Reject source upload to buildd upload paths.
         first_path = relative_path.split(os.path.sep)[0]
-        if (first_path.isdigit() and
-            policy.name != BuildDaemonUploadPolicy.name):
-            error_message = (
-                "Invalid upload path (%s) for this policy (%s)" %
-                (relative_path, policy.name))
+        if (
+            first_path.isdigit()
+            and policy.name != BuildDaemonUploadPolicy.name
+        ):
+            error_message = "Invalid upload path (%s) for this policy (%s)" % (
+                relative_path,
+                policy.name,
+            )
             upload.reject(error_message)
             logger.error(error_message)
 
@@ -375,16 +395,19 @@ class UploadHandler:
             try:
                 self._processUpload(upload)
             except UploadPolicyError as e:
-                upload.reject("UploadPolicyError escaped upload.process: "
-                              "%s " % e)
+                upload.reject(
+                    "UploadPolicyError escaped upload.process: " "%s " % e
+                )
                 logger.debug(
-                    "UploadPolicyError escaped upload.process", exc_info=True)
+                    "UploadPolicyError escaped upload.process", exc_info=True
+                )
             except EarlyReturnUploadError:
                 # An error occurred that prevented further error collection,
                 # add this fact to the list of errors.
                 upload.reject(
                     "Further error processing not possible because of "
-                    "a critical previous error.")
+                    "a critical previous error."
+                )
             except Exception as e:
                 # In case of unexpected unhandled exception, we'll
                 # *try* to reject the upload. This may fail and cause
@@ -405,8 +428,10 @@ class UploadHandler:
                 notify = False
             if upload.is_rejected:
                 result = UploadStatusEnum.REJECTED
-                if (upload.changes.signingkey is not None or
-                        upload.changes.parsed_content is not None):
+                if (
+                    upload.changes.signingkey is not None
+                    or upload.changes.parsed_content is not None
+                ):
                     # We got past the point of checking any required
                     # signature, so we can do a proper rejection.
                     upload.do_reject(notify)
@@ -415,14 +440,16 @@ class UploadHandler:
                     # one or we failed to verify it, so we have nobody to
                     # notify.  Just log it and move on.
                     logger.info(
-                        "Not sending rejection notice without a signing key.")
+                        "Not sending rejection notice without a signing key."
+                    )
                 self.processor.ztm.abort()
             else:
                 successful = self._acceptUpload(upload, notify)
                 if not successful:
                     result = UploadStatusEnum.REJECTED
                     logger.info(
-                        "Rejection during accept. Aborting partial accept.")
+                        "Rejection during accept. Aborting partial accept."
+                    )
                     self.processor.ztm.abort()
 
             if upload.is_rejected:
@@ -436,7 +463,8 @@ class UploadHandler:
             else:
                 logger.info(
                     "Committing the transaction and any mails associated "
-                    "with this upload.")
+                    "with this upload."
+                )
                 self.processor.ztm.commit()
         except BaseException:
             self.processor.ztm.abort()
@@ -480,9 +508,12 @@ class UploadHandler:
         pathname = os.path.basename(self.upload_path)
 
         target_path = os.path.join(
-            self.processor.base_fsroot, subdir_name, pathname)
-        logger.debug("Moving upload directory %s to %s" %
-            (self.upload_path, target_path))
+            self.processor.base_fsroot, subdir_name, pathname
+        )
+        logger.debug(
+            "Moving upload directory %s to %s"
+            % (self.upload_path, target_path)
+        )
         shutil.move(self.upload_path, target_path)
 
     @staticmethod
@@ -499,7 +530,6 @@ class UploadHandler:
 
 
 class UserUploadHandler(UploadHandler):
-
     def process(self):
         """Process an upload's changes files, and move it to a new directory.
 
@@ -514,27 +544,31 @@ class UserUploadHandler(UploadHandler):
 
         for changes_file in changes_files:
             self.processor.log.debug(
-                "Considering changefile %s" % changes_file)
+                "Considering changefile %s" % changes_file
+            )
             try:
-                results.add(self.processChangesFile(
-                    changes_file, self.processor.log))
+                results.add(
+                    self.processChangesFile(changes_file, self.processor.log)
+                )
             except Exception:
                 info = sys.exc_info()
                 message = (
-                    'Exception while processing upload %s' % self.upload_path)
-                properties = [('error-explanation', message)]
+                    "Exception while processing upload %s" % self.upload_path
+                )
+                properties = [("error-explanation", message)]
                 request = ScriptRequest(properties)
                 error_utility = ErrorReportingUtility()
                 error_utility.raising(info, request)
-                self.processor.log.error(
-                    '%s (%s)' % (message, request.oopsid))
+                self.processor.log.error("%s (%s)" % (message, request.oopsid))
                 results.add(UploadStatusEnum.FAILED)
         if len(results) == 0:
             destination = UploadStatusEnum.FAILED
         else:
             for destination in [
-                UploadStatusEnum.FAILED, UploadStatusEnum.REJECTED,
-                UploadStatusEnum.ACCEPTED]:
+                UploadStatusEnum.FAILED,
+                UploadStatusEnum.REJECTED,
+                UploadStatusEnum.ACCEPTED,
+            ]:
                 if destination in results:
                     break
         self.moveProcessedUpload(destination, self.processor.log)
@@ -555,7 +589,6 @@ class CannotGetBuild(Exception):
 
 
 class BuildUploadHandler(UploadHandler):
-
     def __init__(self, processor, fsroot, upload, build=None):
         """Constructor.
 
@@ -583,15 +616,17 @@ class BuildUploadHandler(UploadHandler):
             job_type, job_id = parse_build_upload_leaf_name(self.upload)
         except ValueError:
             raise CannotGetBuild(
-                "Unable to extract build id from leaf name %s, skipping." %
-                self.upload)
+                "Unable to extract build id from leaf name %s, skipping."
+                % self.upload
+            )
         try:
             return getUtility(ISpecificBuildFarmJobSource, job_type).getByID(
-                job_id)
+                job_id
+            )
         except NotFoundError:
             raise CannotGetBuild(
-                "Unable to find %s with id %d. Skipping." %
-                (job_type, job_id))
+                "Unable to find %s with id %d. Skipping." % (job_type, job_id)
+            )
 
     def processCIResult(self, logger=None):
         """Process a CI result upload."""
@@ -608,7 +643,8 @@ class BuildUploadHandler(UploadHandler):
             else:
                 logger.info(
                     "Committing the transaction and any mails associated "
-                    "with this upload.")
+                    "with this upload."
+                )
                 self.processor.ztm.commit()
             return UploadStatusEnum.ACCEPTED
         except UploadError as e:
@@ -633,7 +669,8 @@ class BuildUploadHandler(UploadHandler):
             else:
                 logger.info(
                     "Committing the transaction and any mails associated "
-                    "with this upload.")
+                    "with this upload."
+                )
                 self.processor.ztm.commit()
             return UploadStatusEnum.ACCEPTED
         except BaseException:
@@ -655,7 +692,8 @@ class BuildUploadHandler(UploadHandler):
             else:
                 logger.info(
                     "Committing the transaction and any mails associated "
-                    "with this upload.")
+                    "with this upload."
+                )
                 self.processor.ztm.commit()
             return UploadStatusEnum.ACCEPTED
         except UploadError as e:
@@ -672,7 +710,8 @@ class BuildUploadHandler(UploadHandler):
             logger = self.processor.log
         try:
             logger.info(
-                "Processing OCI Image upload {}".format(self.upload_path))
+                "Processing OCI Image upload {}".format(self.upload_path)
+            )
             OCIRecipeUpload(self.upload_path, logger).process(self.build)
 
             if self.processor.dry_run:
@@ -681,7 +720,8 @@ class BuildUploadHandler(UploadHandler):
             else:
                 logger.info(
                     "Committing the transaction and any mails associated "
-                    "with this upload.")
+                    "with this upload."
+                )
                 self.processor.ztm.commit()
             return UploadStatusEnum.ACCEPTED
         except UploadError as e:
@@ -706,7 +746,8 @@ class BuildUploadHandler(UploadHandler):
             else:
                 logger.info(
                     "Committing the transaction and any mails associated "
-                    "with this upload.")
+                    "with this upload."
+                )
                 self.processor.ztm.commit()
             return UploadStatusEnum.ACCEPTED
         except UploadError as e:
@@ -725,7 +766,8 @@ class BuildUploadHandler(UploadHandler):
         logger = BufferLogger()
         if self.build is None:
             self.processor.log.info(
-                "Build %s was deleted. Ignoring." % self.upload)
+                "Build %s was deleted. Ignoring." % self.upload
+            )
             self.moveUpload(UploadStatusEnum.FAILED, logger)
             return
         elif self.build.status == BuildStatus.BUILDING:
@@ -741,7 +783,8 @@ class BuildUploadHandler(UploadHandler):
             # accepted.
             self.processor.log.warning(
                 "Expected build status to be UPLOADING or BUILDING, was %s.",
-                self.build.status.name)
+                self.build.status.name,
+            )
             self.moveUpload(UploadStatusEnum.FAILED, logger)
             return
         try:
@@ -749,8 +792,10 @@ class BuildUploadHandler(UploadHandler):
             # and will handle below. We check so that we don't go to the
             # expense of doing an unnecessary upload. We don't just exit here
             # because we want the standard cleanup to occur.
-            recipe_deleted = (ISourcePackageRecipeBuild.providedBy(self.build)
-                and self.build.recipe is None)
+            recipe_deleted = (
+                ISourcePackageRecipeBuild.providedBy(self.build)
+                and self.build.recipe is None
+            )
             if recipe_deleted:
                 result = UploadStatusEnum.FAILED
             elif ILiveFSBuild.providedBy(self.build):
@@ -770,28 +815,30 @@ class BuildUploadHandler(UploadHandler):
                 result = self.processChangesFile(changes_file, logger)
         except Exception:
             info = sys.exc_info()
-            message = (
-                'Exception while processing upload %s' % self.upload_path)
-            properties = [('error-explanation', message)]
+            message = "Exception while processing upload %s" % self.upload_path
+            properties = [("error-explanation", message)]
             request = ScriptRequest(properties)
             error_utility = ErrorReportingUtility()
             error_utility.raising(info, request)
-            logger.error('%s (%s)' % (message, request.oopsid))
+            logger.error("%s (%s)" % (message, request.oopsid))
             result = UploadStatusEnum.FAILED
-        if (result != UploadStatusEnum.ACCEPTED or
-            not self.build.verifySuccessfulUpload()):
+        if (
+            result != UploadStatusEnum.ACCEPTED
+            or not self.build.verifySuccessfulUpload()
+        ):
             self.build.updateStatus(BuildStatus.FAILEDTOUPLOAD)
         if self.build.status != BuildStatus.FULLYBUILT:
             if recipe_deleted:
                 # For a deleted recipe, no need to notify that uploading has
                 # failed - we just log a warning.
                 self.processor.log.info(
-                    "Recipe for build %s was deleted. Ignoring." %
-                    self.upload)
+                    "Recipe for build %s was deleted. Ignoring." % self.upload
+                )
             else:
                 self.build.storeUploadLog(logger.getLogBuffer())
-                self.build.notify(extra_info="Uploading build %s failed." %
-                                  self.upload)
+                self.build.notify(
+                    extra_info="Uploading build %s failed." % self.upload
+                )
         else:
             self.build.notify()
         self.processor.ztm.commit()
@@ -822,20 +869,21 @@ def _getDistributionAndSuite(parts, exc_type):
     """
     # This assertion should never happens when this method is called from
     # 'parse_upload_path'.
-    assert len(parts) <= 2, (
-        "'%s' does not correspond to a [distribution[/suite]]."
-        % '/'.join(parts))
+    assert (
+        len(parts) <= 2
+    ), "'%s' does not correspond to a [distribution[/suite]]." % "/".join(
+        parts
+    )
 
     # Uploads with undefined distribution defaults to 'ubuntu'.
-    if len(parts) == 0 or parts[0] == '':
-        ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    if len(parts) == 0 or parts[0] == "":
+        ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
         return (ubuntu, None)
 
     distribution_name = parts[0]
     distribution = getUtility(IDistributionSet).getByName(distribution_name)
     if distribution is None:
-        raise exc_type(
-            "Could not find distribution '%s'." % distribution_name)
+        raise exc_type("Could not find distribution '%s'." % distribution_name)
 
     if len(parts) == 1:
         return (distribution, None)
@@ -881,17 +929,19 @@ def parse_upload_path(relative_path):
 
     first_path = parts[0]
 
-    if (not first_path.startswith('~') and not first_path.isdigit()
-        and len(parts) <= 2):
+    if (
+        not first_path.startswith("~")
+        and not first_path.isdigit()
+        and len(parts) <= 2
+    ):
         # Distribution upload (<distro>[/suite]). Always targeted to
         # the corresponding primary archive.
         distribution, suite_name = _getDistributionAndSuite(
-            parts, UploadPathError)
+            parts, UploadPathError
+        )
         archive = distribution.main_archive
 
-    elif (first_path.startswith('~') and
-          len(parts) >= 2 and
-          len(parts) <= 4):
+    elif first_path.startswith("~") and len(parts) >= 2 and len(parts) <= 4:
         # PPA uploads look like (~<person>/<distro>/<ppa_name>[/suite]).
         #
         # Additionally, three deprecated formats are still supported for
@@ -905,21 +955,22 @@ def parse_upload_path(relative_path):
         person = getUtility(IPersonSet).getByName(person_name)
         if person is None:
             raise PPAUploadPathError(
-                "Could not find person or team named '%s'." % person_name)
+                "Could not find person or team named '%s'." % person_name
+            )
 
         if len(parts) == 2:
-            distro_name = 'ubuntu'
+            distro_name = "ubuntu"
             suite = []
-            if parts[1] == 'ubuntu':
+            if parts[1] == "ubuntu":
                 # Old nameless path.
-                ppa_name = 'ppa'
+                ppa_name = "ppa"
             else:
                 # Old named but distroless path.
                 ppa_name = parts[1]
         else:
-            if parts[2] == 'ubuntu':
+            if parts[2] == "ubuntu":
                 # Old named path with PPA name before distro.
-                distro_name = 'ubuntu'
+                distro_name = "ubuntu"
                 ppa_name = parts[1]
             else:
                 # Modern path with distro, name, suite.
@@ -928,14 +979,16 @@ def parse_upload_path(relative_path):
             suite = parts[3:]
 
         distribution, suite_name = _getDistributionAndSuite(
-            [distro_name] + suite, PPAUploadPathError)
+            [distro_name] + suite, PPAUploadPathError
+        )
 
         try:
             archive = person.getPPAByName(distribution, ppa_name)
         except NoSuchPPA:
             raise PPAUploadPathError(
                 "Could not find a PPA owned by '%s' for '%s' named '%s'."
-                % (person.name, distribution.name, ppa_name))
+                % (person.name, distribution.name, ppa_name)
+            )
 
     elif first_path.isdigit():
         # This must be a binary upload from a build worker.
@@ -943,9 +996,11 @@ def parse_upload_path(relative_path):
             archive = getUtility(IArchiveSet).get(int(first_path))
         except SQLObjectNotFound:
             raise UploadPathError(
-                "Could not find archive with id=%s." % first_path)
+                "Could not find archive with id=%s." % first_path
+            )
         distribution, suite_name = _getDistributionAndSuite(
-            parts[1:], UploadPathError)
+            parts[1:], UploadPathError
+        )
     else:
         # Upload path does not match anything we support.
         raise UploadPathError("Path format mismatch.")
@@ -956,6 +1011,7 @@ def parse_upload_path(relative_path):
     if archive.distribution != distribution:
         raise PPAUploadPathError(
             "%s only supports uploads to '%s' distribution."
-            % (archive.displayname, archive.distribution.name))
+            % (archive.displayname, archive.distribution.name)
+        )
 
     return (distribution, suite_name, archive)

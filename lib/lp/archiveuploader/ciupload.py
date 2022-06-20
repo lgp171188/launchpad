@@ -5,7 +5,7 @@
 
 __all__ = [
     "CIUpload",
-    ]
+]
 
 import os
 
@@ -40,7 +40,8 @@ class CIUpload:
         # CI builds, but we need to fit into how the rest of the build farm
         # works.
         upload_path = os.path.join(
-            self.upload_path, str(build.archive.id), build.distribution.name)
+            self.upload_path, str(build.archive.id), build.distribution.name
+        )
         # we assume first level directories are job directories
         if os.path.isdir(upload_path):
             job_directories = [
@@ -50,13 +51,13 @@ class CIUpload:
             job_directories = []
         for job_directory in job_directories:
             artifacts[job_directory] = []
-            for dirpath, _, filenames in os.walk(os.path.join(
-                upload_path, job_directory
-            )):
+            for dirpath, _, filenames in os.walk(
+                os.path.join(upload_path, job_directory)
+            ):
                 for filename in filenames:
-                    artifacts[job_directory].append(os.path.join(
-                        dirpath, filename
-                    ))
+                    artifacts[job_directory].append(
+                        os.path.join(dirpath, filename)
+                    )
 
         for job_id in build.results:
             report = build.getOrCreateRevisionStatusReport(job_id)
@@ -68,8 +69,8 @@ class CIUpload:
                     report.setLog(f.read())
             except FileNotFoundError as e:
                 raise UploadError(
-                    "log file `%s` for job `%s` not found" % (
-                        e.filename, job_id)
+                    "log file `%s` for job `%s` not found"
+                    % (e.filename, job_id)
                 ) from e
 
             # attach artifacts

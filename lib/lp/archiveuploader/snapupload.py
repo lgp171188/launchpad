@@ -50,12 +50,14 @@ class SnapUpload:
             raise UploadError("Build did not produce any snap packages.")
 
         for snap_path in snap_paths:
-            with open(snap_path, 'rb') as file_to_upload:
+            with open(snap_path, "rb") as file_to_upload:
                 libraryfile = self.librarian.create(
-                    os.path.basename(snap_path), os.stat(snap_path).st_size,
+                    os.path.basename(snap_path),
+                    os.stat(snap_path).st_size,
                     file_to_upload,
                     filenameToContentType(snap_path),
-                    restricted=build.is_private)
+                    restricted=build.is_private,
+                )
             build.addFile(libraryfile)
 
         # The master verifies the status to confirm successful upload.
