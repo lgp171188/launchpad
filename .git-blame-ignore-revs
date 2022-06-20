@@ -60,3 +60,5 @@ c606443bdb2f342593c9a7c9437cb70c01f85f29
 8fd124775592a33c3d2ce9ef8111a9a5f1a5e089
 # apply black to lp.archivepublisher
 8885e7977012e4f376e23f52125784567aefebe4
+# apply black to lp.archiveuploader
+01c7f7112b20dab5c48373339d530a39f0dc859b
