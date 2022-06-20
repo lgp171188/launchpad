@@ -39,6 +39,7 @@ from lp.services.job.model.job import (
     Job,
     )
 from lp.services.job.runner import BaseRunnableJob
+from lp.services.librarian.interfaces.client import LibrarianServerError
 from lp.services.librarian.utils import copy_and_close
 from lp.soyuz.enums import (
     ArchiveJobType,
@@ -199,6 +200,9 @@ class ScanException(Exception):
 class CIBuildUploadJob(ArchiveJobDerived):
 
     class_job_type = ArchiveJobType.CI_BUILD_UPLOAD
+
+    retry_error_types = (LibrarianServerError,)
+    max_retries = 3
 
     config = config.ICIBuildUploadJobSource
 

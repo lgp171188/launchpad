@@ -4,6 +4,7 @@
 import os.path
 
 from debian.deb822 import Changes
+from fixtures import MockPatch
 from testtools.matchers import (
     Equals,
     Is,
@@ -23,6 +24,7 @@ from lp.services.job.tests import (
     block_on_job,
     pop_remote_notifications,
     )
+from lp.services.librarian.interfaces.client import LibrarianServerError
 from lp.services.mail.sendmail import format_address_for_person
 from lp.soyuz.enums import (
     ArchiveJobType,
@@ -550,6 +552,40 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
                 distroarchseries=Equals(das),
                 channel=Equals(channel))
             for channel in ("edge", "0.0.1/edge"))))
+
+    def test_librarian_server_error_retries(self):
+        # A run that gets an error from the librarian server schedules
+        # itself to be retried.
+        archive = self.factory.makeArchive()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+        build = self.factory.makeCIBuild(distro_arch_series=das)
+        report = build.getOrCreateRevisionStatusReport("build:0")
+        path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
+        with open(datadir(path), mode="rb") as f:
+            report.attach(name=os.path.basename(path), data=f.read())
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="0.0.1/edge")
+        transaction.commit()
+
+        def fake_open(*args):
+            raise LibrarianServerError
+
+        with dbuser(job.config.dbuser):
+            with MockPatch(
+                "lp.services.librarian.model.LibraryFileAlias.open", fake_open
+            ):
+                JobRunner([job]).runAll()
+
+        self.assertEqual(JobStatus.WAITING, job.job.status)
+
+        # Try again.  The job is retried, and this time it succeeds.
+        with dbuser(job.config.dbuser):
+            JobRunner([job]).runAll()
+
+        self.assertEqual(JobStatus.COMPLETED, job.job.status)
 
 
 class TestViaCelery(TestCaseWithFactory):
