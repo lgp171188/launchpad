@@ -1,10 +1,7 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = [
-    'SpecificationMessage',
-    'SpecificationMessageSet'
-    ]
+__all__ = ["SpecificationMessage", "SpecificationMessageSet"]
 
 from email.utils import make_msgid
 
@@ -13,27 +10,22 @@ from zope.interface import implementer
 from lp.blueprints.interfaces.specificationmessage import (
     ISpecificationMessage,
     ISpecificationMessageSet,
-    )
+)
 from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    )
-from lp.services.messages.model.message import (
-    Message,
-    MessageChunk,
-    )
+from lp.services.database.sqlobject import BoolCol, ForeignKey
+from lp.services.messages.model.message import Message, MessageChunk
 
 
 @implementer(ISpecificationMessage)
 class SpecificationMessage(SQLBase):
     """A table linking specifications and messages."""
 
-    _table = 'SpecificationMessage'
+    _table = "SpecificationMessage"
 
     specification = ForeignKey(
-        dbName='specification', foreignKey='Specification', notNull=True)
-    message = ForeignKey(dbName='message', foreignKey='Message', notNull=True)
+        dbName="specification", foreignKey="Specification", notNull=True
+    )
+    message = ForeignKey(dbName="message", foreignKey="Message", notNull=True)
     visible = BoolCol(notNull=True, default=True)
 
 
@@ -44,7 +36,8 @@ class SpecificationMessageSet:
     def createMessage(self, subject, spec, owner, content=None):
         """See ISpecificationMessageSet."""
         msg = Message(
-            owner=owner, rfc822msgid=make_msgid('blueprint'), subject=subject)
+            owner=owner, rfc822msgid=make_msgid("blueprint"), subject=subject
+        )
         MessageChunk(message=msg, content=content, sequence=1)
         return SpecificationMessage(specification=spec, message=msg)
 

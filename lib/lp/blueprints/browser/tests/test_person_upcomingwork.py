@@ -1,10 +1,7 @@
 # Copyright 2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 from operator import attrgetter
 
 from zope.security.proxy import removeSecurityProxy
@@ -12,22 +9,18 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.enums import InformationType
 from lp.blueprints.browser.person_upcomingwork import (
     GenericWorkItem,
-    getWorkItemsDueBefore,
     WorkItemContainer,
-    )
+    getWorkItemsDueBefore,
+)
 from lp.blueprints.enums import SpecificationWorkItemStatus
 from lp.testing import (
-    anonymous_logged_in,
     BrowserTestCase,
     TestCase,
     TestCaseWithFactory,
-    )
+    anonymous_logged_in,
+)
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.testing.pages import (
-    extract_text,
-    find_tag_by_id,
-    find_tags_by_class,
-    )
+from lp.testing.pages import extract_text, find_tag_by_id, find_tags_by_class
 from lp.testing.views import create_initialized_view
 
 
@@ -38,29 +31,35 @@ class Test_getWorkItemsDueBefore(TestCaseWithFactory):
     def setUp(self):
         super().setUp()
         self.today = datetime.today().date()
-        current_milestone = self.factory.makeMilestone(
-            dateexpected=self.today)
+        current_milestone = self.factory.makeMilestone(dateexpected=self.today)
         self.current_milestone = current_milestone
         self.future_milestone = self.factory.makeMilestone(
             product=current_milestone.product,
-            dateexpected=datetime(2060, 1, 1))
+            dateexpected=datetime(2060, 1, 1),
+        )
         self.team = self.factory.makeTeam()
 
     def test_basic(self):
         spec = self.factory.makeSpecification(
             product=self.current_milestone.product,
-            assignee=self.team.teamowner, milestone=self.current_milestone)
+            assignee=self.team.teamowner,
+            milestone=self.current_milestone,
+        )
         workitem = self.factory.makeSpecificationWorkItem(
-            title='workitem 1', specification=spec)
+            title="workitem 1", specification=spec
+        )
         bugtask = self.factory.makeBug(
-            milestone=self.current_milestone).bugtasks[0]
+            milestone=self.current_milestone
+        ).bugtasks[0]
         removeSecurityProxy(bugtask).assignee = self.team.teamowner
 
         workitems = getWorkItemsDueBefore(
-            self.team, self.current_milestone.dateexpected, user=None)
+            self.team, self.current_milestone.dateexpected, user=None
+        )
 
         self.assertEqual(
-            [self.current_milestone.dateexpected], list(workitems))
+            [self.current_milestone.dateexpected], list(workitems)
+        )
         containers = workitems[self.current_milestone.dateexpected]
         # We have one container for the work item from the spec and another
         # one for the bugtask.
@@ -71,8 +70,7 @@ class Test_getWorkItemsDueBefore(TestCaseWithFactory):
         self.assertEqual(bugtask, bugtask_container.items[0].actual_workitem)
 
         self.assertEqual(1, len(workitem_container.items))
-        self.assertEqual(
-            workitem, workitem_container.items[0].actual_workitem)
+        self.assertEqual(workitem, workitem_container.items[0].actual_workitem)
 
     def test_foreign_container(self):
         # This spec is targeted to a person who's not a member of our team, so
@@ -81,18 +79,24 @@ class Test_getWorkItemsDueBefore(TestCaseWithFactory):
         spec = self.factory.makeSpecification(
             product=self.current_milestone.product,
             milestone=self.current_milestone,
-            assignee=self.factory.makePerson())
+            assignee=self.factory.makePerson(),
+        )
         self.factory.makeSpecificationWorkItem(
-            title='workitem 1', specification=spec)
+            title="workitem 1", specification=spec
+        )
         workitem = self.factory.makeSpecificationWorkItem(
-            title='workitem 2', specification=spec,
-            assignee=self.team.teamowner)
+            title="workitem 2",
+            specification=spec,
+            assignee=self.team.teamowner,
+        )
 
         workitems = getWorkItemsDueBefore(
-            self.team, self.current_milestone.dateexpected, user=None)
+            self.team, self.current_milestone.dateexpected, user=None
+        )
 
         self.assertEqual(
-            [self.current_milestone.dateexpected], list(workitems))
+            [self.current_milestone.dateexpected], list(workitems)
+        )
         containers = workitems[self.current_milestone.dateexpected]
         self.assertEqual(1, len(containers))
         [container] = containers
@@ -102,21 +106,28 @@ class Test_getWorkItemsDueBefore(TestCaseWithFactory):
     def test_future_container(self):
         spec = self.factory.makeSpecification(
             product=self.current_milestone.product,
-            assignee=self.team.teamowner)
+            assignee=self.team.teamowner,
+        )
         # This workitem is targeted to a future milestone so it won't be in
         # our results below.
         self.factory.makeSpecificationWorkItem(
-            title='workitem 1', specification=spec,
-            milestone=self.future_milestone)
+            title="workitem 1",
+            specification=spec,
+            milestone=self.future_milestone,
+        )
         current_wi = self.factory.makeSpecificationWorkItem(
-            title='workitem 2', specification=spec,
-            milestone=self.current_milestone)
+            title="workitem 2",
+            specification=spec,
+            milestone=self.current_milestone,
+        )
 
         workitems = getWorkItemsDueBefore(
-            self.team, self.current_milestone.dateexpected, user=None)
+            self.team, self.current_milestone.dateexpected, user=None
+        )
 
         self.assertEqual(
-            [self.current_milestone.dateexpected], list(workitems))
+            [self.current_milestone.dateexpected], list(workitems)
+        )
         containers = workitems[self.current_milestone.dateexpected]
         self.assertEqual(1, len(containers))
         [container] = containers
@@ -129,41 +140,53 @@ class Test_getWorkItemsDueBefore(TestCaseWithFactory):
         # in both with only the relevant work items.
         spec = self.factory.makeSpecification(
             product=self.current_milestone.product,
-            assignee=self.team.teamowner)
+            assignee=self.team.teamowner,
+        )
         current_workitem = self.factory.makeSpecificationWorkItem(
-            title='workitem 1', specification=spec,
-            milestone=self.current_milestone)
+            title="workitem 1",
+            specification=spec,
+            milestone=self.current_milestone,
+        )
         future_workitem = self.factory.makeSpecificationWorkItem(
-            title='workitem 2', specification=spec,
-            milestone=self.future_milestone)
+            title="workitem 2",
+            specification=spec,
+            milestone=self.future_milestone,
+        )
 
         workitems = getWorkItemsDueBefore(
-            self.team, self.future_milestone.dateexpected, user=None)
+            self.team, self.future_milestone.dateexpected, user=None
+        )
 
         # Both milestone dates are present in the returned results.
         self.assertContentEqual(
-            [self.current_milestone.dateexpected,
-             self.future_milestone.dateexpected],
-            workitems.keys())
+            [
+                self.current_milestone.dateexpected,
+                self.future_milestone.dateexpected,
+            ],
+            workitems.keys(),
+        )
 
         # Current milestone date has a single specification
         # with only the matching work item.
         containers_current = workitems[self.current_milestone.dateexpected]
         self.assertContentEqual(
-            [spec], [container.spec for container in containers_current])
+            [spec], [container.spec for container in containers_current]
+        )
         self.assertContentEqual(
             [current_workitem],
-            [item.actual_workitem for item in containers_current[0].items])
+            [item.actual_workitem for item in containers_current[0].items],
+        )
 
         # Future milestone date has the same specification
         # containing only the work item targetted to future.
         containers_future = workitems[self.future_milestone.dateexpected]
         self.assertContentEqual(
-            [spec],
-            [container.spec for container in containers_future])
+            [spec], [container.spec for container in containers_future]
+        )
         self.assertContentEqual(
             [future_workitem],
-            [item.actual_workitem for item in containers_future[0].items])
+            [item.actual_workitem for item in containers_future[0].items],
+        )
 
 
 class TestGenericWorkItem(TestCaseWithFactory):
@@ -187,7 +210,8 @@ class TestGenericWorkItem(TestCaseWithFactory):
 
     def test_from_workitem(self):
         workitem = self.factory.makeSpecificationWorkItem(
-            milestone=self.milestone)
+            milestone=self.milestone
+        )
         generic_wi = GenericWorkItem.from_workitem(workitem)
         self.assertEqual(generic_wi.assignee, workitem.assignee)
         self.assertEqual(generic_wi.status, workitem.status)
@@ -198,9 +222,7 @@ class TestGenericWorkItem(TestCaseWithFactory):
 
 
 class TestWorkItemContainer(TestCase):
-
     class MockWorkItem:
-
         def __init__(self, is_complete, is_postponed):
             self.is_complete = is_complete
 
@@ -214,7 +236,7 @@ class TestWorkItemContainer(TestCase):
         container.append(self.MockWorkItem(True, False))
         container.append(self.MockWorkItem(False, False))
         container.append(self.MockWorkItem(False, True))
-        self.assertEqual('67', container.percent_done_or_postponed)
+        self.assertEqual("67", container.percent_done_or_postponed)
 
     def test_has_incomplete_work(self):
         # If there are incomplete work items,
@@ -240,9 +262,11 @@ class TestPersonUpcomingWork(BrowserTestCase):
         self.today = datetime.today().date()
         self.tomorrow = self.today + timedelta(days=1)
         self.today_milestone = self.factory.makeMilestone(
-            dateexpected=self.today)
+            dateexpected=self.today
+        )
         self.tomorrow_milestone = self.factory.makeMilestone(
-            dateexpected=self.tomorrow)
+            dateexpected=self.tomorrow
+        )
         self.team = self.factory.makeTeam()
 
     def test_basic_for_team(self):
@@ -250,33 +274,40 @@ class TestPersonUpcomingWork(BrowserTestCase):
         of a team.
         """
         workitem1 = self.factory.makeSpecificationWorkItem(
-            assignee=self.team.teamowner, milestone=self.today_milestone)
+            assignee=self.team.teamowner, milestone=self.today_milestone
+        )
         workitem2 = self.factory.makeSpecificationWorkItem(
-            assignee=self.team.teamowner, milestone=self.tomorrow_milestone)
+            assignee=self.team.teamowner, milestone=self.tomorrow_milestone
+        )
         bugtask1 = self.factory.makeBug(
-            milestone=self.today_milestone).bugtasks[0]
+            milestone=self.today_milestone
+        ).bugtasks[0]
         bugtask2 = self.factory.makeBug(
-            milestone=self.tomorrow_milestone).bugtasks[0]
+            milestone=self.tomorrow_milestone
+        ).bugtasks[0]
         for bugtask in [bugtask1, bugtask2]:
             removeSecurityProxy(bugtask).assignee = self.team.teamowner
 
         browser = self.getViewBrowser(
-            self.team, view_name='+upcomingwork', no_login=True)
+            self.team, view_name="+upcomingwork", no_login=True
+        )
 
         # Check that the two work items and bugtasks created above are shown
         # and grouped under the appropriate milestone date.
-        groups = find_tags_by_class(browser.contents, 'workitems-group')
+        groups = find_tags_by_class(browser.contents, "workitems-group")
         self.assertEqual(2, len(groups))
         todays_group = extract_text(groups[0])
         tomorrows_group = extract_text(groups[1])
         self.assertStartsWith(
-            todays_group, 'Work items due in %s' % self.today)
+            todays_group, "Work items due in %s" % self.today
+        )
         self.assertIn(workitem1.title, todays_group)
         with anonymous_logged_in():
             self.assertIn(bugtask1.bug.title, todays_group)
 
         self.assertStartsWith(
-            tomorrows_group, 'Work items due in %s' % self.tomorrow)
+            tomorrows_group, "Work items due in %s" % self.tomorrow
+        )
         self.assertIn(workitem2.title, tomorrows_group)
         with anonymous_logged_in():
             self.assertIn(bugtask2.bug.title, tomorrows_group)
@@ -284,37 +315,47 @@ class TestPersonUpcomingWork(BrowserTestCase):
     def test_no_xss_on_workitem_title(self):
         self.factory.makeSpecificationWorkItem(
             title="<script>window.alert('XSS')</script>",
-            assignee=self.team.teamowner, milestone=self.today_milestone)
+            assignee=self.team.teamowner,
+            milestone=self.today_milestone,
+        )
 
         browser = self.getViewBrowser(
-            self.team, view_name='+upcomingwork', no_login=True)
+            self.team, view_name="+upcomingwork", no_login=True
+        )
 
-        groups = find_tags_by_class(browser.contents, 'collapsible-body')
+        groups = find_tags_by_class(browser.contents, "collapsible-body")
         self.assertEqual(1, len(groups))
         tbody = groups[0]
-        title_td = tbody.find_all('td')[0]
+        title_td = tbody.find_all("td")[0]
         self.assertEqual(
             "<td>\n<span>&lt;script&gt;window.alert('XSS')&lt;/script&gt;"
-            "</span>\n</td>", str(title_td))
+            "</span>\n</td>",
+            str(title_td),
+        )
 
     def test_overall_progressbar(self):
         """Check that the per-date progress bar is present."""
         # Create two work items on separate specs. One of them is done and the
         # other is in progress.
         self.factory.makeSpecificationWorkItem(
-            assignee=self.team.teamowner, milestone=self.today_milestone,
-            status=SpecificationWorkItemStatus.DONE)
+            assignee=self.team.teamowner,
+            milestone=self.today_milestone,
+            status=SpecificationWorkItemStatus.DONE,
+        )
         self.factory.makeSpecificationWorkItem(
-            assignee=self.team.teamowner, milestone=self.today_milestone,
-            status=SpecificationWorkItemStatus.INPROGRESS)
+            assignee=self.team.teamowner,
+            milestone=self.today_milestone,
+            status=SpecificationWorkItemStatus.INPROGRESS,
+        )
 
         browser = self.getViewBrowser(
-            self.team, view_name='+upcomingwork', no_login=True)
+            self.team, view_name="+upcomingwork", no_login=True
+        )
 
         # The progress bar for the due date of today_milestone will show that
         # 50% of the work is done (1 out of 2 work items).
-        progressbar = find_tag_by_id(browser.contents, 'progressbar_0')
-        self.assertEqual('50%', progressbar.get('width'))
+        progressbar = find_tag_by_id(browser.contents, "progressbar_0")
+        self.assertEqual("50%", progressbar.get("width"))
 
     def test_container_progressbar(self):
         """Check that the per-blueprint progress bar is present."""
@@ -322,65 +363,82 @@ class TestPersonUpcomingWork(BrowserTestCase):
         # other is in progress. Here we create the specs explicitly and in
         # order to force spec1 to show up first on the page.
         spec1 = self.factory.makeSpecification(
-            product=self.today_milestone.product)
+            product=self.today_milestone.product
+        )
         spec2 = self.factory.makeSpecification(
-            product=self.today_milestone.product)
+            product=self.today_milestone.product
+        )
         spec3 = self.factory.makeSpecification(
-            product=self.today_milestone.product)
+            product=self.today_milestone.product
+        )
         self.factory.makeSpecificationWorkItem(
-            specification=spec1, assignee=self.team.teamowner,
+            specification=spec1,
+            assignee=self.team.teamowner,
             milestone=self.today_milestone,
-            status=SpecificationWorkItemStatus.DONE)
+            status=SpecificationWorkItemStatus.DONE,
+        )
         self.factory.makeSpecificationWorkItem(
-            specification=spec2, assignee=self.team.teamowner,
+            specification=spec2,
+            assignee=self.team.teamowner,
             milestone=self.today_milestone,
-            status=SpecificationWorkItemStatus.INPROGRESS)
+            status=SpecificationWorkItemStatus.INPROGRESS,
+        )
         self.factory.makeSpecificationWorkItem(
-            specification=spec3, assignee=self.team.teamowner,
+            specification=spec3,
+            assignee=self.team.teamowner,
             milestone=self.today_milestone,
-            status=SpecificationWorkItemStatus.POSTPONED)
+            status=SpecificationWorkItemStatus.POSTPONED,
+        )
 
         browser = self.getViewBrowser(
-            self.team, view_name='+upcomingwork', no_login=True)
+            self.team, view_name="+upcomingwork", no_login=True
+        )
 
         # The progress bar of the first blueprint will be complete as the sole
         # work item there is done, while the other is going to be empty as the
         # sole work item is still in progress.
         container1_progressbar = find_tag_by_id(
-            browser.contents, 'container_progressbar_0')
+            browser.contents, "container_progressbar_0"
+        )
         container2_progressbar = find_tag_by_id(
-            browser.contents, 'container_progressbar_1')
+            browser.contents, "container_progressbar_1"
+        )
         container3_progressbar = find_tag_by_id(
-            browser.contents, 'container_progressbar_2')
-        self.assertEqual('100%', container1_progressbar.get('width'))
-        self.assertEqual('0%', container2_progressbar.get('width'))
-        self.assertEqual('100%', container3_progressbar.get('width'))
+            browser.contents, "container_progressbar_2"
+        )
+        self.assertEqual("100%", container1_progressbar.get("width"))
+        self.assertEqual("0%", container2_progressbar.get("width"))
+        self.assertEqual("100%", container3_progressbar.get("width"))
 
     def test_basic_for_person(self):
-        """Check that the page shows the bugs/work items assigned to a person.
-        """
+        """The page shows the bugs/work items assigned to a person."""
         person = self.factory.makePerson()
         workitem = self.factory.makeSpecificationWorkItem(
-            assignee=person, milestone=self.today_milestone)
+            assignee=person, milestone=self.today_milestone
+        )
         bugtask = self.factory.makeBug(
-            milestone=self.tomorrow_milestone).bugtasks[0]
+            milestone=self.tomorrow_milestone
+        ).bugtasks[0]
         removeSecurityProxy(bugtask).assignee = person
 
         browser = self.getViewBrowser(
-            person, view_name='+upcomingwork', no_login=True)
+            person, view_name="+upcomingwork", no_login=True
+        )
 
         # Check that the two work items created above are shown and grouped
         # under the appropriate milestone date.
-        groups = find_tags_by_class(browser.contents, 'workitems-group')
+        groups = find_tags_by_class(browser.contents, "workitems-group")
         self.assertEqual(2, len(groups))
         todays_group = extract_text(groups[0])
         tomorrows_group = extract_text(groups[1])
         self.assertStartsWith(
-            todays_group, 'Work items due in %s' % self.today)
+            todays_group, "Work items due in %s" % self.today
+        )
         self.assertIn(workitem.title, todays_group)
 
         self.assertStartsWith(
-            tomorrows_group, 'Work items due in %s' % self.tomorrow)
+            tomorrows_group, "Work items due in %s" % self.tomorrow
+        )
         with anonymous_logged_in():
             self.assertIn(bugtask.bug.title, tomorrows_group)
 
@@ -388,24 +446,31 @@ class TestPersonUpcomingWork(BrowserTestCase):
         """Work items for non-public specs are filtered correctly."""
         person = self.factory.makePerson()
         proprietary_spec = self.factory.makeSpecification(
-            information_type=InformationType.PROPRIETARY)
+            information_type=InformationType.PROPRIETARY
+        )
         product = removeSecurityProxy(proprietary_spec).product
         today_milestone = self.factory.makeMilestone(
-            dateexpected=self.today, product=product)
+            dateexpected=self.today, product=product
+        )
         public_workitem = self.factory.makeSpecificationWorkItem(
-            assignee=person, milestone=today_milestone)
+            assignee=person, milestone=today_milestone
+        )
         proprietary_workitem = self.factory.makeSpecificationWorkItem(
-            assignee=person, milestone=today_milestone,
-            specification=proprietary_spec)
-        browser = self.getViewBrowser(
-            person, view_name='+upcomingwork')
+            assignee=person,
+            milestone=today_milestone,
+            specification=proprietary_spec,
+        )
+        browser = self.getViewBrowser(person, view_name="+upcomingwork")
         self.assertIn(public_workitem.specification.name, browser.contents)
-        self.assertNotIn(proprietary_workitem.specification.name,
-                         browser.contents)
+        self.assertNotIn(
+            proprietary_workitem.specification.name, browser.contents
+        )
         browser = self.getViewBrowser(
-            person, view_name='+upcomingwork', user=product.owner)
-        self.assertIn(proprietary_workitem.specification.name,
-                      browser.contents)
+            person, view_name="+upcomingwork", user=product.owner
+        )
+        self.assertIn(
+            proprietary_workitem.specification.name, browser.contents
+        )
 
 
 class TestPersonUpcomingWorkView(TestCaseWithFactory):
@@ -417,65 +482,82 @@ class TestPersonUpcomingWorkView(TestCaseWithFactory):
         self.today = datetime.today().date()
         self.tomorrow = self.today + timedelta(days=1)
         self.today_milestone = self.factory.makeMilestone(
-            dateexpected=self.today)
+            dateexpected=self.today
+        )
         self.tomorrow_milestone = self.factory.makeMilestone(
-            dateexpected=self.tomorrow)
+            dateexpected=self.tomorrow
+        )
         self.team = self.factory.makeTeam()
 
     def test_workitem_counts(self):
         self.factory.makeSpecificationWorkItem(
-            assignee=self.team.teamowner, milestone=self.today_milestone)
+            assignee=self.team.teamowner, milestone=self.today_milestone
+        )
         self.factory.makeSpecificationWorkItem(
-            assignee=self.team.teamowner, milestone=self.today_milestone)
+            assignee=self.team.teamowner, milestone=self.today_milestone
+        )
         self.factory.makeSpecificationWorkItem(
-            assignee=self.team.teamowner, milestone=self.tomorrow_milestone)
+            assignee=self.team.teamowner, milestone=self.tomorrow_milestone
+        )
 
-        view = create_initialized_view(self.team, '+upcomingwork')
+        view = create_initialized_view(self.team, "+upcomingwork")
         self.assertEqual(2, view.workitem_counts[self.today])
         self.assertEqual(1, view.workitem_counts[self.tomorrow])
 
     def test_bugtask_counts(self):
         bugtask1 = self.factory.makeBug(
-            milestone=self.today_milestone).bugtasks[0]
+            milestone=self.today_milestone
+        ).bugtasks[0]
         bugtask2 = self.factory.makeBug(
-            milestone=self.tomorrow_milestone).bugtasks[0]
+            milestone=self.tomorrow_milestone
+        ).bugtasks[0]
         bugtask3 = self.factory.makeBug(
-            milestone=self.tomorrow_milestone).bugtasks[0]
+            milestone=self.tomorrow_milestone
+        ).bugtasks[0]
         for bugtask in [bugtask1, bugtask2, bugtask3]:
             removeSecurityProxy(bugtask).assignee = self.team.teamowner
 
-        view = create_initialized_view(self.team, '+upcomingwork')
+        view = create_initialized_view(self.team, "+upcomingwork")
         self.assertEqual(1, view.bugtask_counts[self.today])
         self.assertEqual(2, view.bugtask_counts[self.tomorrow])
 
     def test_milestones_per_date(self):
         another_milestone_due_today = self.factory.makeMilestone(
-            dateexpected=self.today)
+            dateexpected=self.today
+        )
         self.factory.makeSpecificationWorkItem(
-            assignee=self.team.teamowner, milestone=self.today_milestone)
+            assignee=self.team.teamowner, milestone=self.today_milestone
+        )
         self.factory.makeSpecificationWorkItem(
-            assignee=self.team.teamowner,
-            milestone=another_milestone_due_today)
+            assignee=self.team.teamowner, milestone=another_milestone_due_today
+        )
         self.factory.makeSpecificationWorkItem(
-            assignee=self.team.teamowner, milestone=self.tomorrow_milestone)
+            assignee=self.team.teamowner, milestone=self.tomorrow_milestone
+        )
 
-        view = create_initialized_view(self.team, '+upcomingwork')
+        view = create_initialized_view(self.team, "+upcomingwork")
         self.assertEqual(
-            sorted([self.today_milestone, another_milestone_due_today],
-                   key=attrgetter('displayname')),
-            view.milestones_per_date[self.today])
+            sorted(
+                [self.today_milestone, another_milestone_due_today],
+                key=attrgetter("displayname"),
+            ),
+            view.milestones_per_date[self.today],
+        )
         self.assertEqual(
-            [self.tomorrow_milestone],
-            view.milestones_per_date[self.tomorrow])
+            [self.tomorrow_milestone], view.milestones_per_date[self.tomorrow]
+        )
 
     def test_work_item_containers_are_sorted_by_date(self):
         self.factory.makeSpecificationWorkItem(
-            assignee=self.team.teamowner, milestone=self.today_milestone)
+            assignee=self.team.teamowner, milestone=self.today_milestone
+        )
         self.factory.makeSpecificationWorkItem(
-            assignee=self.team.teamowner, milestone=self.tomorrow_milestone)
+            assignee=self.team.teamowner, milestone=self.tomorrow_milestone
+        )
 
-        view = create_initialized_view(self.team, '+upcomingwork')
+        view = create_initialized_view(self.team, "+upcomingwork")
         self.assertEqual(2, len(view.work_item_containers))
         self.assertEqual(
             [self.today, self.tomorrow],
-            [date for date, containers in view.work_item_containers])
+            [date for date, containers in view.work_item_containers],
+        )

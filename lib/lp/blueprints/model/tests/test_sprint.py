@@ -16,12 +16,9 @@ from lp.blueprints.enums import (
     SpecificationFilter,
     SpecificationPriority,
     SpecificationSort,
-    )
+)
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -38,15 +35,27 @@ class TestSpecifications(TestCaseWithFactory):
         super().setUp()
         self.date_decided = datetime.datetime.now(utc)
 
-    def makeSpec(self, sprint=None, date_decided=0, date_created=0,
-                 proposed=False, declined=False, title=None,
-                 status=NewSpecificationDefinitionStatus.NEW,
-                 name=None, priority=None, information_type=None):
+    def makeSpec(
+        self,
+        sprint=None,
+        date_decided=0,
+        date_created=0,
+        proposed=False,
+        declined=False,
+        title=None,
+        status=NewSpecificationDefinitionStatus.NEW,
+        name=None,
+        priority=None,
+        information_type=None,
+    ):
         if sprint is None:
             sprint = self.factory.makeSprint()
         blueprint = self.factory.makeSpecification(
-            title=title, status=status, name=name,
-            information_type=information_type)
+            title=title,
+            status=status,
+            name=name,
+            information_type=information_type,
+        )
         owner = removeSecurityProxy(blueprint).owner
         if priority is not None:
             removeSecurityProxy(blueprint).priority = priority
@@ -132,15 +141,21 @@ class TestSpecifications(TestCaseWithFactory):
     def test_priority_sort(self):
         # Sorting by priority works and is the default.
         # When priority is supplied, status is ignored.
-        blueprint1 = self.makeSpec(priority=SpecificationPriority.UNDEFINED,
-                                   status=SpecificationDefinitionStatus.NEW)
+        blueprint1 = self.makeSpec(
+            priority=SpecificationPriority.UNDEFINED,
+            status=SpecificationDefinitionStatus.NEW,
+        )
         sprint = blueprint1.sprints[0]
         blueprint2 = self.makeSpec(
-            sprint, priority=SpecificationPriority.NOTFORUS,
-            status=SpecificationDefinitionStatus.APPROVED)
+            sprint,
+            priority=SpecificationPriority.NOTFORUS,
+            status=SpecificationDefinitionStatus.APPROVED,
+        )
         blueprint3 = self.makeSpec(
-            sprint, priority=SpecificationPriority.LOW,
-            status=SpecificationDefinitionStatus.OBSOLETE)
+            sprint,
+            priority=SpecificationPriority.LOW,
+            status=SpecificationDefinitionStatus.OBSOLETE,
+        )
         result = sprint.specifications(None)
         self.assertEqual([blueprint3, blueprint1, blueprint2], list(result))
         result = sprint.specifications(None, sort=SpecificationSort.PRIORITY)
@@ -150,12 +165,15 @@ class TestSpecifications(TestCaseWithFactory):
         # Sorting by priority falls back to defintion_status.
         # When status is supplied, name is ignored.
         blueprint1 = self.makeSpec(
-            status=SpecificationDefinitionStatus.OBSOLETE, name='a')
+            status=SpecificationDefinitionStatus.OBSOLETE, name="a"
+        )
         sprint = blueprint1.sprints[0]
         blueprint2 = self.makeSpec(
-            sprint, status=SpecificationDefinitionStatus.APPROVED, name='c')
+            sprint, status=SpecificationDefinitionStatus.APPROVED, name="c"
+        )
         blueprint3 = self.makeSpec(
-            sprint, status=SpecificationDefinitionStatus.NEW, name='b')
+            sprint, status=SpecificationDefinitionStatus.NEW, name="b"
+        )
         result = sprint.specifications(None)
         self.assertEqual([blueprint2, blueprint3, blueprint1], list(result))
         result = sprint.specifications(None, sort=SpecificationSort.PRIORITY)
@@ -163,10 +181,10 @@ class TestSpecifications(TestCaseWithFactory):
 
     def test_priority_sort_fallback_name(self):
         # Sorting by priority falls back to name
-        blueprint1 = self.makeSpec(name='b')
+        blueprint1 = self.makeSpec(name="b")
         sprint = blueprint1.sprints[0]
-        blueprint2 = self.makeSpec(sprint, name='c')
-        blueprint3 = self.makeSpec(sprint, name='a')
+        blueprint2 = self.makeSpec(sprint, name="c")
+        blueprint3 = self.makeSpec(sprint, name="a")
         result = sprint.specifications(None)
         self.assertEqual([blueprint3, blueprint1, blueprint2], list(result))
         result = sprint.specifications(None, sort=SpecificationSort.PRIORITY)
@@ -174,12 +192,12 @@ class TestSpecifications(TestCaseWithFactory):
 
     def test_text_search(self):
         # Text searches work.
-        blueprint1 = self.makeSpec(title='abc')
+        blueprint1 = self.makeSpec(title="abc")
         sprint = blueprint1.sprints[0]
-        blueprint2 = self.makeSpec(sprint, title='def')
-        result = list_result(sprint, ['abc'])
+        blueprint2 = self.makeSpec(sprint, title="def")
+        result = list_result(sprint, ["abc"])
         self.assertEqual([blueprint1], result)
-        result = list_result(sprint, ['def'])
+        result = list_result(sprint, ["def"])
         self.assertEqual([blueprint2], result)
 
     def test_declined(self):
@@ -193,28 +211,37 @@ class TestSpecifications(TestCaseWithFactory):
     def test_proprietary_not_listed(self):
         # Proprietary blueprints are not listed for random users
         blueprint1 = self.makeSpec(
-            information_type=InformationType.PROPRIETARY)
+            information_type=InformationType.PROPRIETARY
+        )
         sprint = removeSecurityProxy(blueprint1).sprints[0]
         self.assertEqual([], list_result(sprint))
 
     def test_proprietary_listed_for_artifact_grant(self):
         # Proprietary blueprints are listed for users with an artifact grant.
         blueprint1 = self.makeSpec(
-            information_type=InformationType.PROPRIETARY)
+            information_type=InformationType.PROPRIETARY
+        )
         sprint = removeSecurityProxy(blueprint1).sprints[0]
         grant = self.factory.makeAccessArtifactGrant(
-            concrete_artifact=blueprint1)
+            concrete_artifact=blueprint1
+        )
         self.assertEqual([blueprint1], list_result(sprint, user=grant.grantee))
 
     def test_proprietary_listed_for_policy_grant(self):
         # Proprietary blueprints are listed for users with a policy grant.
         blueprint1 = self.makeSpec(
-            information_type=InformationType.PROPRIETARY)
+            information_type=InformationType.PROPRIETARY
+        )
         sprint = removeSecurityProxy(blueprint1).sprints[0]
         policy_source = getUtility(IAccessPolicySource)
         (policy,) = policy_source.find(
-            [(removeSecurityProxy(blueprint1).product,
-              InformationType.PROPRIETARY)])
+            [
+                (
+                    removeSecurityProxy(blueprint1).product,
+                    InformationType.PROPRIETARY,
+                )
+            ]
+        )
         grant = self.factory.makeAccessPolicyGrant(policy)
         self.assertEqual([blueprint1], list_result(sprint, user=grant.grantee))
 
@@ -224,19 +251,17 @@ class TestSprintAttendancesSort(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_attendances(self):
-        #Test the sorting of attendances to be by displayname rather than name
+        # Test the sorting of attendances to be by displayname rather than name
         sprint = self.factory.makeSprint()
-        bob = self.factory.makePerson(name='zbob', displayname='Bob')
-        ced = self.factory.makePerson(name='xed', displayname='ced')
-        dave = self.factory.makePerson(name='wdave', displayname='Dave')
+        bob = self.factory.makePerson(name="zbob", displayname="Bob")
+        ced = self.factory.makePerson(name="xed", displayname="ced")
+        dave = self.factory.makePerson(name="wdave", displayname="Dave")
         with person_logged_in(sprint.owner):
-            sprint.attend(
-                bob, sprint.time_starts, sprint.time_ends, True)
-            sprint.attend(
-                ced, sprint.time_starts, sprint.time_ends, True)
-            sprint.attend(
-                dave, sprint.time_starts, sprint.time_ends, True)
+            sprint.attend(bob, sprint.time_starts, sprint.time_ends, True)
+            sprint.attend(ced, sprint.time_starts, sprint.time_ends, True)
+            sprint.attend(dave, sprint.time_starts, sprint.time_ends, True)
         attendances = [bob.displayname, ced.displayname, dave.displayname]
-        people = [attendee.attendee.displayname for attendee in
-                  sprint.attendances]
+        people = [
+            attendee.attendee.displayname for attendee in sprint.attendances
+        ]
         self.assertEqual(attendances, people)

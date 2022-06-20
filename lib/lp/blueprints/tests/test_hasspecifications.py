@@ -23,84 +23,112 @@ class HasSpecificationsTests(TestCaseWithFactory):
         self.factory.makeSpecification(product=product, name="spec1")
         self.factory.makeSpecification(product=product, name="spec2")
         self.assertNamesOfSpecificationsAre(
-            ["spec1", "spec2"], product.visible_specifications)
+            ["spec1", "spec2"], product.visible_specifications
+        )
 
     def test_product_valid_specifications(self):
         product = self.factory.makeProduct()
         self.factory.makeSpecification(product=product, name="spec1")
         self.factory.makeSpecification(
-            product=product, name="spec2",
-            status=SpecificationDefinitionStatus.OBSOLETE)
+            product=product,
+            name="spec2",
+            status=SpecificationDefinitionStatus.OBSOLETE,
+        )
         self.assertNamesOfSpecificationsAre(
-            ["spec1"], product.valid_specifications())
+            ["spec1"], product.valid_specifications()
+        )
 
     def test_distribution_all_specifications(self):
         distribution = self.factory.makeDistribution()
         self.factory.makeSpecification(distribution=distribution, name="spec1")
         self.factory.makeSpecification(distribution=distribution, name="spec2")
         self.assertNamesOfSpecificationsAre(
-            ["spec1", "spec2"], distribution.visible_specifications)
+            ["spec1", "spec2"], distribution.visible_specifications
+        )
 
     def test_distribution_valid_specifications(self):
         distribution = self.factory.makeDistribution()
         self.factory.makeSpecification(distribution=distribution, name="spec1")
         self.factory.makeSpecification(
-            distribution=distribution, name="spec2",
-            status=SpecificationDefinitionStatus.OBSOLETE)
+            distribution=distribution,
+            name="spec2",
+            status=SpecificationDefinitionStatus.OBSOLETE,
+        )
         self.assertNamesOfSpecificationsAre(
-            ["spec1"], distribution.valid_specifications())
+            ["spec1"], distribution.valid_specifications()
+        )
 
     def test_distroseries_all_specifications(self):
-        distroseries = self.factory.makeDistroSeries(name='maudlin')
+        distroseries = self.factory.makeDistroSeries(name="maudlin")
         distribution = distroseries.distribution
         self.factory.makeSpecification(
-            distribution=distribution, name="spec1", goal=distroseries)
+            distribution=distribution, name="spec1", goal=distroseries
+        )
         self.factory.makeSpecification(
-            distribution=distribution, name="spec2", goal=distroseries)
+            distribution=distribution, name="spec2", goal=distroseries
+        )
         self.factory.makeSpecification(distribution=distribution, name="spec3")
         self.assertNamesOfSpecificationsAre(
-            ["spec1", "spec2"], distroseries.visible_specifications)
+            ["spec1", "spec2"], distroseries.visible_specifications
+        )
 
     def test_distroseries_valid_specifications(self):
-        distroseries = self.factory.makeDistroSeries(name='maudlin')
+        distroseries = self.factory.makeDistroSeries(name="maudlin")
         distribution = distroseries.distribution
         self.factory.makeSpecification(
-            distribution=distribution, name="spec1", goal=distroseries)
+            distribution=distribution, name="spec1", goal=distroseries
+        )
         self.factory.makeSpecification(
-            distribution=distribution, name="spec2", goal=distroseries)
+            distribution=distribution, name="spec2", goal=distroseries
+        )
         self.factory.makeSpecification(
-            distribution=distribution, name="spec3", goal=distroseries,
-            status=SpecificationDefinitionStatus.OBSOLETE)
+            distribution=distribution,
+            name="spec3",
+            goal=distroseries,
+            status=SpecificationDefinitionStatus.OBSOLETE,
+        )
         self.factory.makeSpecification(distribution=distribution, name="spec4")
         self.assertNamesOfSpecificationsAre(
-            ["spec1", "spec2"], distroseries.valid_specifications())
+            ["spec1", "spec2"], distroseries.valid_specifications()
+        )
 
     def test_productseries_all_specifications(self):
         product = self.factory.makeProduct()
         productseries = self.factory.makeProductSeries(
-            product=product, name="fooix-dev")
+            product=product, name="fooix-dev"
+        )
         self.factory.makeSpecification(
-            product=product, name="spec1", goal=productseries)
+            product=product, name="spec1", goal=productseries
+        )
         self.factory.makeSpecification(
-            product=product, name="spec2", goal=productseries)
+            product=product, name="spec2", goal=productseries
+        )
         self.factory.makeSpecification(product=product, name="spec3")
         self.assertNamesOfSpecificationsAre(
-            ["spec1", "spec2"], productseries.visible_specifications)
+            ["spec1", "spec2"], productseries.visible_specifications
+        )
 
     def test_productseries_valid_specifications(self):
         product = self.factory.makeProduct()
         productseries = self.factory.makeProductSeries(
-            product=product, name="fooix-dev")
+            product=product, name="fooix-dev"
+        )
         self.factory.makeSpecification(
-            product=product, name="spec1", goal=productseries)
+            product=product, name="spec1", goal=productseries
+        )
         self.factory.makeSpecification(
-            product=product, name="spec2", goal=productseries)
+            product=product, name="spec2", goal=productseries
+        )
         self.factory.makeSpecification(
-            product=product, name="spec3", goal=productseries,
-            status=SpecificationDefinitionStatus.OBSOLETE)
+            product=product,
+            name="spec3",
+            goal=productseries,
+            status=SpecificationDefinitionStatus.OBSOLETE,
+        )
         self.factory.makeSpecification(product=product, name="spec4")
         self.assertNamesOfSpecificationsAre(
-            ["spec1", "spec2"], productseries.valid_specifications())
+            ["spec1", "spec2"], productseries.valid_specifications()
+        )
 
     def test_projectgroup_all_specifications(self):
         projectgroup = self.factory.makeProject()
@@ -110,11 +138,14 @@ class HasSpecificationsTests(TestCaseWithFactory):
         product3 = self.factory.makeProduct(projectgroup=other_projectgroup)
         self.factory.makeSpecification(product=product1, name="spec1")
         self.factory.makeSpecification(
-            product=product2, name="spec2",
-            status=SpecificationDefinitionStatus.OBSOLETE)
+            product=product2,
+            name="spec2",
+            status=SpecificationDefinitionStatus.OBSOLETE,
+        )
         self.factory.makeSpecification(product=product3, name="spec3")
         self.assertNamesOfSpecificationsAre(
-            ["spec1", "spec2"], projectgroup.visible_specifications)
+            ["spec1", "spec2"], projectgroup.visible_specifications
+        )
 
     def test_projectgroup_valid_specifications(self):
         projectgroup = self.factory.makeProject()
@@ -124,35 +155,48 @@ class HasSpecificationsTests(TestCaseWithFactory):
         product3 = self.factory.makeProduct(projectgroup=other_projectgroup)
         self.factory.makeSpecification(product=product1, name="spec1")
         self.factory.makeSpecification(
-            product=product2, name="spec2",
-            status=SpecificationDefinitionStatus.OBSOLETE)
+            product=product2,
+            name="spec2",
+            status=SpecificationDefinitionStatus.OBSOLETE,
+        )
         self.factory.makeSpecification(product=product3, name="spec3")
         self.assertNamesOfSpecificationsAre(
-            ["spec1"], projectgroup.valid_specifications())
+            ["spec1"], projectgroup.valid_specifications()
+        )
 
     def test_person_all_specifications(self):
         person = self.factory.makePerson(name="james-w")
         product = self.factory.makeProduct()
         self.factory.makeSpecification(
-            product=product, name="spec1", drafter=person)
+            product=product, name="spec1", drafter=person
+        )
         self.factory.makeSpecification(
-            product=product, name="spec2", approver=person,
-            status=SpecificationDefinitionStatus.OBSOLETE)
+            product=product,
+            name="spec2",
+            approver=person,
+            status=SpecificationDefinitionStatus.OBSOLETE,
+        )
         self.factory.makeSpecification(product=product, name="spec3")
         self.assertNamesOfSpecificationsAre(
-            ["spec1", "spec2"], person.visible_specifications)
+            ["spec1", "spec2"], person.visible_specifications
+        )
 
     def test_person_valid_specifications(self):
         person = self.factory.makePerson(name="james-w")
         product = self.factory.makeProduct()
         self.factory.makeSpecification(
-            product=product, name="spec1", drafter=person)
+            product=product, name="spec1", drafter=person
+        )
         self.factory.makeSpecification(
-            product=product, name="spec2", approver=person,
-            status=SpecificationDefinitionStatus.OBSOLETE)
+            product=product,
+            name="spec2",
+            approver=person,
+            status=SpecificationDefinitionStatus.OBSOLETE,
+        )
         self.factory.makeSpecification(product=product, name="spec3")
         self.assertNamesOfSpecificationsAre(
-            ["spec1"], person.valid_specifications())
+            ["spec1"], person.valid_specifications()
+        )
 
 
 class HasSpecificationsSnapshotTestCase(TestCaseWithFactory):
@@ -162,7 +206,7 @@ class HasSpecificationsSnapshotTestCase(TestCaseWithFactory):
 
     def check_skipped(self, target):
         """Asserts that fields marked doNotSnapshot are skipped."""
-        skipped = ['all_specifications', 'valid_specifications']
+        skipped = ["all_specifications", "valid_specifications"]
         self.assertThat(target, DoesNotSnapshot(skipped, IHasSpecifications))
 
     def test_product(self):

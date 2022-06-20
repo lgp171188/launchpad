@@ -4,7 +4,7 @@
 from lp.blueprints.browser.specification import (
     SpecificationActionMenu,
     SpecificationContextMenu,
-    )
+)
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.menu import check_menu_links
@@ -12,6 +12,7 @@ from lp.testing.menu import check_menu_links
 
 class TestSpecificationMenus(TestCaseWithFactory):
     """Test specification menus links."""
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

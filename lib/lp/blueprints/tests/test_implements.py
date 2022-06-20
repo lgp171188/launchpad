@@ -6,16 +6,17 @@
 from lp.blueprints.interfaces.specificationtarget import (
     IHasSpecifications,
     ISpecificationTarget,
-    )
+)
 from lp.blueprints.interfaces.specificationworkitem import (
     ISpecificationWorkItem,
-    )
+)
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class ImplementsIHasSpecificationsTests(TestCaseWithFactory):
     """Test that various objects implement IHasSpecifications."""
+
     layer = DatabaseFunctionalLayer
 
     def test_product_implements_IHasSpecifications(self):
@@ -49,6 +50,7 @@ class ImplementsIHasSpecificationsTests(TestCaseWithFactory):
 
 class ImplementsISpecificationTargetTests(TestCaseWithFactory):
     """Test that various objects implement ISpecificationTarget."""
+
     layer = DatabaseFunctionalLayer
 
     def test_product_implements_ISpecificationTarget(self):

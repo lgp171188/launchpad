@@ -4,28 +4,25 @@
 """Views for SprintSpecification."""
 
 __all__ = [
-    'SprintSpecificationDecideView',
-    ]
+    "SprintSpecificationDecideView",
+]
 
 from lazr.restful.utils import smartquote
 
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp import LaunchpadView, canonical_url
 
 
 class SprintSpecificationDecideView(LaunchpadView):
-
     @property
     def label(self):
         return smartquote(
-            'Consider agenda item for "%s"' % self.context.sprint.title)
+            'Consider agenda item for "%s"' % self.context.sprint.title
+        )
 
     def initialize(self):
-        accept = self.request.form.get('accept')
-        decline = self.request.form.get('decline')
-        cancel = self.request.form.get('cancel')
+        accept = self.request.form.get("accept")
+        decline = self.request.form.get("decline")
+        cancel = self.request.form.get("cancel")
         decided = False
         if accept is not None:
             self.context.acceptBy(self.user)
@@ -35,4 +32,5 @@ class SprintSpecificationDecideView(LaunchpadView):
             decided = True
         if decided or cancel is not None:
             self.request.response.redirect(
-                canonical_url(self.context.specification))
+                canonical_url(self.context.specification)
+            )

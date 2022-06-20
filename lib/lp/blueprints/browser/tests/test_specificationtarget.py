@@ -5,52 +5,48 @@ from fixtures import FakeLogger
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.app.enums import (
-    InformationType,
-    ServiceUsage,
-    )
+from lp.app.enums import InformationType, ServiceUsage
 from lp.blueprints.browser.specificationtarget import HasSpecificationsView
 from lp.blueprints.interfaces.specification import ISpecificationSet
 from lp.blueprints.interfaces.specificationtarget import (
     IHasSpecifications,
     ISpecificationTarget,
-    )
+)
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.testing import (
     BrowserTestCase,
+    TestCaseWithFactory,
     login_person,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import IsConfiguredBatchNavigator
 from lp.testing.pages import find_tag_by_id
-from lp.testing.views import (
-    create_initialized_view,
-    create_view,
-    )
+from lp.testing.views import create_initialized_view, create_view
 
 
 class TestRegisterABlueprintButtonPortlet(TestCaseWithFactory):
     """Test specification menus links."""
+
     layer = DatabaseFunctionalLayer
 
     def verify_view(self, context, name):
-        view = create_view(
-            context, '+register-a-blueprint-button')
+        view = create_view(context, "+register-a-blueprint-button")
         self.assertEqual(
-            'http://blueprints.launchpad.test/%s/+addspec' % name,
-            view.target_url)
+            "http://blueprints.launchpad.test/%s/+addspec" % name,
+            view.target_url,
+        )
         self.assertTrue(
-            '<div id="involvement" class="portlet involvement">' in view())
+            '<div id="involvement" class="portlet involvement">' in view()
+        )
 
     def test_specificationtarget(self):
-        context = self.factory.makeProduct(name='almond')
+        context = self.factory.makeProduct(name="almond")
         self.assertTrue(ISpecificationTarget.providedBy(context))
         self.verify_view(context, context.name)
 
     def test_adaptable_to_specificationtarget(self):
-        context = self.factory.makeProject(name='hazelnut')
+        context = self.factory.makeProject(name="hazelnut")
         self.assertFalse(ISpecificationTarget.providedBy(context))
         self.verify_view(context, context.name)
 
@@ -58,13 +54,14 @@ class TestRegisterABlueprintButtonPortlet(TestCaseWithFactory):
         # Sprints are a special case. They are not ISpecificationTargets,
         # nor can they be adapted to a ISpecificationTarget,
         # but can create a spcification for a ISpecificationTarget.
-        context = self.factory.makeSprint(title='Walnut', name='walnut')
+        context = self.factory.makeSprint(title="Walnut", name="walnut")
         self.assertFalse(ISpecificationTarget.providedBy(context))
-        self.verify_view(context, 'sprints/%s' % context.name)
+        self.verify_view(context, "sprints/%s" % context.name)
 
 
 class TestHasSpecificationsViewInvolvement(TestCaseWithFactory):
     """Test specification menus links."""
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -77,12 +74,13 @@ class TestHasSpecificationsViewInvolvement(TestCaseWithFactory):
 
     def verify_involvment(self, context):
         self.assertTrue(IHasSpecifications.providedBy(context))
-        view = create_view(context, '+specs', principal=self.user)
+        view = create_view(context, "+specs", principal=self.user)
         self.assertTrue(
-            '<div id="involvement" class="portlet involvement">' in view())
+            '<div id="involvement" class="portlet involvement">' in view()
+        )
 
     def test_specificationtarget(self):
-        context = self.factory.makeProduct(name='almond')
+        context = self.factory.makeProduct(name="almond")
         naked_product = removeSecurityProxy(context)
         naked_product.blueprints_usage = ServiceUsage.LAUNCHPAD
         self.verify_involvment(context)
@@ -90,35 +88,38 @@ class TestHasSpecificationsViewInvolvement(TestCaseWithFactory):
     def test_adaptable_to_specificationtarget(self):
         # A project group should adapt to the products within to determine
         # involvment.
-        context = self.factory.makeProject(name='hazelnut')
+        context = self.factory.makeProject(name="hazelnut")
         product = self.factory.makeProduct(projectgroup=context)
         naked_product = removeSecurityProxy(product)
         naked_product.blueprints_usage = ServiceUsage.LAUNCHPAD
         self.verify_involvment(context)
 
     def test_sprint(self):
-        context = self.factory.makeSprint(title='Walnut', name='walnut')
+        context = self.factory.makeSprint(title="Walnut", name="walnut")
         self.verify_involvment(context)
 
     def test_person(self):
-        context = self.factory.makePerson(name='pistachio')
+        context = self.factory.makePerson(name="pistachio")
         self.assertTrue(IHasSpecifications.providedBy(context))
-        view = create_view(context, '+specs', principal=self.user)
+        view = create_view(context, "+specs", principal=self.user)
         self.assertFalse(
-            '<div id="involvement" class="portlet involvement">' in view())
+            '<div id="involvement" class="portlet involvement">' in view()
+        )
 
     def test_specs_batch(self):
         # Some pages turn up in very large contexts and so batch. E.g.
         # Distro:+assignments which uses SpecificationAssignmentsView, a
         # subclass.
         person = self.factory.makePerson()
-        view = create_initialized_view(person, name='+assignments')
+        view = create_initialized_view(person, name="+assignments")
         # Because +assignments is meant to provide an overview, we default to
         # 500 as the default batch size.
         self.assertThat(
             view.specs_batched,
             IsConfiguredBatchNavigator(
-                'specification', 'specifications', batch_size=500))
+                "specification", "specifications", batch_size=500
+            ),
+        )
 
 
 class TestAssignments(TestCaseWithFactory):
@@ -135,13 +136,18 @@ class TestAssignments(TestCaseWithFactory):
         product = self.factory.makeProduct()
         self.factory.makeSpecification(product=product)
         self.factory.makeSpecification(product=product)
-        view = create_initialized_view(product, name='+assignments',
-            query_string="batch=1")
+        view = create_initialized_view(
+            product, name="+assignments", query_string="batch=1"
+        )
         content = view.render()
-        self.assertEqual(['next'],
-            find_tag_by_id(content, 'upper-batch-nav-batchnav-next')['class'])
-        self.assertEqual(['next'],
-            find_tag_by_id(content, 'lower-batch-nav-batchnav-next')['class'])
+        self.assertEqual(
+            ["next"],
+            find_tag_by_id(content, "upper-batch-nav-batchnav-next")["class"],
+        )
+        self.assertEqual(
+            ["next"],
+            find_tag_by_id(content, "lower-batch-nav-batchnav-next")["class"],
+        )
 
 
 class TestHasSpecificationsTemplates(TestCaseWithFactory):
@@ -163,17 +169,17 @@ class TestHasSpecificationsTemplates(TestCaseWithFactory):
             ServiceUsage.EXTERNAL,
             ServiceUsage.NOT_APPLICABLE,
             ServiceUsage.LAUNCHPAD,
-            ]
+        ]
         correct_templates = [
             HasSpecificationsView.not_launchpad_template.filename,
             HasSpecificationsView.not_launchpad_template.filename,
             HasSpecificationsView.not_launchpad_template.filename,
             HasSpecificationsView.default_template.filename,
-            ]
+        ]
         used_templates = list()
         for config in test_configurations:
             naked_target.blueprints_usage = config
-            view = create_view(context, '+specs', principal=self.user)
+            view = create_view(context, "+specs", principal=self.user)
             used_templates.append(view.template.filename)
         self.assertEqual(correct_templates, used_templates)
 
@@ -185,8 +191,8 @@ class TestHasSpecificationsTemplates(TestCaseWithFactory):
         product = self.factory.makeProduct()
         product_series = self.factory.makeProductSeries(product=product)
         self._test_templates_for_configuration(
-            target=product,
-            context=product_series)
+            target=product, context=product_series
+        )
 
     def test_distribution(self):
         distribution = self.factory.makeDistribution()
@@ -195,18 +201,19 @@ class TestHasSpecificationsTemplates(TestCaseWithFactory):
     def test_distroseries(self):
         distribution = self.factory.makeDistribution()
         distro_series = self.factory.makeDistroSeries(
-            distribution=distribution)
+            distribution=distribution
+        )
         self._test_templates_for_configuration(
-            target=distribution,
-            context=distro_series)
+            target=distribution, context=distro_series
+        )
 
     def test_projectgroup(self):
         projectgroup = self.factory.makeProject()
         product1 = self.factory.makeProduct(projectgroup=projectgroup)
         self.factory.makeProduct(projectgroup=projectgroup)
         self._test_templates_for_configuration(
-            target=product1,
-            context=projectgroup)
+            target=product1, context=projectgroup
+        )
 
 
 class TestHasSpecificationsConfiguration(TestCaseWithFactory):
@@ -215,30 +222,30 @@ class TestHasSpecificationsConfiguration(TestCaseWithFactory):
 
     def test_cannot_configure_blueprints_product_no_edit_permission(self):
         product = self.factory.makeProduct()
-        view = create_initialized_view(product, '+specs')
+        view = create_initialized_view(product, "+specs")
         self.assertEqual(False, view.can_configure_blueprints)
 
     def test_can_configure_blueprints_product_with_edit_permission(self):
         product = self.factory.makeProduct()
         login_person(product.owner)
-        view = create_initialized_view(product, '+specs')
+        view = create_initialized_view(product, "+specs")
         self.assertEqual(True, view.can_configure_blueprints)
 
     def test_cant_configure_blueprints_distribution_no_edit_permission(self):
         distribution = self.factory.makeDistribution()
-        view = create_initialized_view(distribution, '+specs')
+        view = create_initialized_view(distribution, "+specs")
         self.assertEqual(False, view.can_configure_blueprints)
 
     def test_can_configure_blueprints_distribution_with_edit_permission(self):
         distribution = self.factory.makeDistribution()
         login_person(distribution.owner)
-        view = create_initialized_view(distribution, '+specs')
+        view = create_initialized_view(distribution, "+specs")
         self.assertEqual(True, view.can_configure_blueprints)
 
     def test_cannot_configure_blueprints_projectgroup(self):
         project_group = self.factory.makeProject()
         login_person(project_group.owner)
-        view = create_initialized_view(project_group, '+specs')
+        view = create_initialized_view(project_group, "+specs")
         self.assertEqual(False, view.can_configure_blueprints)
 
 
@@ -257,20 +264,20 @@ class TestSpecificationsRobots(TestCaseWithFactory):
 
     def _configure_project(self, usage):
         self.naked_product.blueprints_usage = usage
-        view = create_initialized_view(self.product, '+specs')
+        view = create_initialized_view(self.product, "+specs")
         soup = BeautifulSoup(view())
-        robots = soup.find('meta', attrs={'name': 'robots'})
+        robots = soup.find("meta", attrs={"name": "robots"})
         return soup, robots
 
     def _verify_robots_not_blocked(self, usage):
         soup, robots = self._configure_project(usage)
         self.assertTrue(robots is None)
-        self.assertTrue(soup.find(True, id='specs-unknown') is None)
+        self.assertTrue(soup.find(True, id="specs-unknown") is None)
 
     def _verify_robots_are_blocked(self, usage):
         soup, robots = self._configure_project(usage)
-        self.assertEqual('noindex,nofollow', robots['content'])
-        self.assertTrue(soup.find(True, id='specs-unknown') is not None)
+        self.assertEqual("noindex,nofollow", robots["content"])
+        self.assertTrue(soup.find(True, id="specs-unknown") is not None)
 
     def test_UNKNOWN_blocks_robots(self):
         self._verify_robots_are_blocked(ServiceUsage.UNKNOWN)
@@ -293,20 +300,20 @@ class SpecificationSetViewTestCase(TestCaseWithFactory):
     def test_search_specifications_form_rendering(self):
         # The view's template directly renders the form widgets.
         specification_set = getUtility(ISpecificationSet)
-        view = create_initialized_view(specification_set, '+index')
-        content = find_tag_by_id(view.render(), 'search-all-specifications')
-        self.assertIsNot(None, content.find(True, id='text'))
+        view = create_initialized_view(specification_set, "+index")
+        content = find_tag_by_id(view.render(), "search-all-specifications")
+        self.assertIsNot(None, content.find(True, id="text"))
+        self.assertIsNot(None, content.find(True, id="field.actions.search"))
+        self.assertIsNot(None, content.find(True, id="field.scope.option.all"))
         self.assertIsNot(
-            None, content.find(True, id='field.actions.search'))
+            None, content.find(True, id="field.scope.option.project")
+        )
+        target_widget = view.widgets["scope"].target_widget
         self.assertIsNot(
-            None, content.find(True, id='field.scope.option.all'))
-        self.assertIsNot(
-            None, content.find(True, id='field.scope.option.project'))
-        target_widget = view.widgets['scope'].target_widget
-        self.assertIsNot(
-            None, content.find(True, id=target_widget.show_widget_id))
+            None, content.find(True, id=target_widget.show_widget_id)
+        )
         text = str(content)
-        picker_vocab = 'DistributionOrProductOrProjectGroup'
+        picker_vocab = "DistributionOrProductOrProjectGroup"
         self.assertIn(picker_vocab, text)
         focus_script = "setFocusByName('field.search_text')"
         self.assertIn(focus_script, text)
@@ -320,17 +327,20 @@ class TestPrivacy(BrowserTestCase):
         # Proprietary specs are only listed for users who can see them.
         # Other users see the page, but not the private specs.
         proprietary = self.factory.makeSpecification(
-            information_type=InformationType.PROPRIETARY)
+            information_type=InformationType.PROPRIETARY
+        )
         product = removeSecurityProxy(proprietary).product
         public = self.factory.makeSpecification(product=product)
         with person_logged_in(product.owner):
             product.blueprints_usage = ServiceUsage.LAUNCHPAD
-            browser = self.getViewBrowser(product, '+specs')
+            browser = self.getViewBrowser(product, "+specs")
         self.assertIn(public.name, browser.contents)
         self.assertNotIn(
-            removeSecurityProxy(proprietary).name, browser.contents)
+            removeSecurityProxy(proprietary).name, browser.contents
+        )
         with person_logged_in(None):
-            browser = self.getViewBrowser(product, '+specs',
-                                          user=product.owner)
+            browser = self.getViewBrowser(
+                product, "+specs", user=product.owner
+            )
         self.assertIn(public.name, browser.contents)
         self.assertIn(removeSecurityProxy(proprietary).name, browser.contents)

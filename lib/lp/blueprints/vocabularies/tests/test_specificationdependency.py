@@ -9,10 +9,7 @@ There is also a doctest in specificationdepcandidates.rst.
 from zope.schema.vocabulary import getVocabularyRegistry
 
 from lp.services.webapp import canonical_url
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -23,7 +20,8 @@ class TestSpecificationDepCandidatesVocabulary(TestCaseWithFactory):
 
     def getVocabularyForSpec(self, spec):
         return getVocabularyRegistry().get(
-            spec, name='SpecificationDepCandidates')
+            spec, name="SpecificationDepCandidates"
+        )
 
     def test_getTermByToken_by_name_for_product(self):
         # Calling getTermByToken for a dependency vocab for a spec from a
@@ -33,8 +31,7 @@ class TestSpecificationDepCandidatesVocabulary(TestCaseWithFactory):
         spec = self.factory.makeSpecification(product=product)
         candidate = self.factory.makeSpecification(product=product)
         vocab = self.getVocabularyForSpec(spec)
-        self.assertEqual(
-            candidate, vocab.getTermByToken(candidate.name).value)
+        self.assertEqual(candidate, vocab.getTermByToken(candidate.name).value)
 
     def test_getTermByToken_by_name_for_distro(self):
         # Calling getTermByToken for a dependency vocab for a spec from a
@@ -44,18 +41,19 @@ class TestSpecificationDepCandidatesVocabulary(TestCaseWithFactory):
         spec = self.factory.makeSpecification(distribution=distro)
         candidate = self.factory.makeSpecification(distribution=distro)
         vocab = self.getVocabularyForSpec(spec)
-        self.assertEqual(
-            candidate, vocab.getTermByToken(candidate.name).value)
+        self.assertEqual(candidate, vocab.getTermByToken(candidate.name).value)
 
     def test_getTermByToken_by_url_for_product(self):
         # Calling getTermByToken with the full URL for a spec on a product
         # returns that spec, irrespective of the context's target.
         spec = self.factory.makeSpecification()
         candidate = self.factory.makeSpecification(
-            product=self.factory.makeProduct())
+            product=self.factory.makeProduct()
+        )
         vocab = self.getVocabularyForSpec(spec)
         self.assertEqual(
-            candidate, vocab.getTermByToken(canonical_url(candidate)).value)
+            candidate, vocab.getTermByToken(canonical_url(candidate)).value
+        )
 
     def test_getTermByToken_by_url_for_distro(self):
         # Calling getTermByToken with the full URL for a spec on a
@@ -63,10 +61,12 @@ class TestSpecificationDepCandidatesVocabulary(TestCaseWithFactory):
         # target.
         spec = self.factory.makeSpecification()
         candidate = self.factory.makeSpecification(
-            distribution=self.factory.makeDistribution())
+            distribution=self.factory.makeDistribution()
+        )
         vocab = self.getVocabularyForSpec(spec)
         self.assertEqual(
-            candidate, vocab.getTermByToken(canonical_url(candidate)).value)
+            candidate, vocab.getTermByToken(canonical_url(candidate)).value
+        )
 
     def test_getTermByToken_lookup_error_on_nonsense(self):
         # getTermByToken with the a string that does not name a spec raises
@@ -75,14 +75,16 @@ class TestSpecificationDepCandidatesVocabulary(TestCaseWithFactory):
         spec = self.factory.makeSpecification(product=product)
         vocab = self.getVocabularyForSpec(spec)
         self.assertRaises(
-            LookupError, vocab.getTermByToken, self.factory.getUniqueString())
+            LookupError, vocab.getTermByToken, self.factory.getUniqueString()
+        )
 
     def test_getTermByToken_lookup_error_on_url_with_invalid_pillar(self):
         # getTermByToken with the a string that looks like a blueprint URL but
         # has an invalid pillar name raises LookupError.
         spec = self.factory.makeSpecification()
         url = canonical_url(spec).replace(
-            spec.target.name, self.factory.getUniqueString())
+            spec.target.name, self.factory.getUniqueString()
+        )
         vocab = self.getVocabularyForSpec(spec)
         self.assertRaises(LookupError, vocab.getTermByToken, url)
 
@@ -91,7 +93,8 @@ class TestSpecificationDepCandidatesVocabulary(TestCaseWithFactory):
         # has an invalid spec name raises LookupError.
         spec = self.factory.makeSpecification()
         url = canonical_url(spec).replace(
-            spec.name, self.factory.getUniqueString())
+            spec.name, self.factory.getUniqueString()
+        )
         vocab = self.getVocabularyForSpec(spec)
         self.assertRaises(LookupError, vocab.getTermByToken, url)
 
@@ -113,7 +116,8 @@ class TestSpecificationDepCandidatesVocabulary(TestCaseWithFactory):
         candidate.createDependency(spec)
         vocab = self.getVocabularyForSpec(spec)
         self.assertRaises(
-            LookupError, vocab.getTermByToken, canonical_url(candidate))
+            LookupError, vocab.getTermByToken, canonical_url(candidate)
+        )
 
     def test_getTermByToken_by_name_disallows_context(self):
         # getTermByToken with the name of the vocab's context raises
@@ -128,7 +132,8 @@ class TestSpecificationDepCandidatesVocabulary(TestCaseWithFactory):
         spec = self.factory.makeSpecification()
         vocab = self.getVocabularyForSpec(spec)
         self.assertRaises(
-            LookupError, vocab.getTermByToken, canonical_url(spec))
+            LookupError, vocab.getTermByToken, canonical_url(spec)
+        )
 
     def test_getTermByToken_by_name_disallows_spec_for_other_target(self):
         # getTermByToken with the name of a spec with a different target
@@ -181,10 +186,10 @@ class TestSpecificationDepCandidatesVocabulary(TestCaseWithFactory):
         # If the searched for specs are on different targets, the ordering is
         # by name.
         spec = self.factory.makeSpecification()
-        foo_b = self.factory.makeSpecification(name='foo-b')
-        foo_a = self.factory.makeSpecification(name='foo-a')
+        foo_b = self.factory.makeSpecification(name="foo-b")
+        foo_a = self.factory.makeSpecification(name="foo-a")
         vocab = self.getVocabularyForSpec(spec)
-        results = vocab.searchForTerms('foo')
+        results = vocab.searchForTerms("foo")
         self.assertEqual(2, len(results))
         found = [item.value for item in results]
         self.assertEqual([foo_a, foo_b], found)
@@ -193,10 +198,10 @@ class TestSpecificationDepCandidatesVocabulary(TestCaseWithFactory):
         # Specs on the same product are returned first.
         widget = self.factory.makeProduct()
         spec = self.factory.makeSpecification(product=widget)
-        foo_b = self.factory.makeSpecification(name='foo-b', product=widget)
-        foo_a = self.factory.makeSpecification(name='foo-a')
+        foo_b = self.factory.makeSpecification(name="foo-b", product=widget)
+        foo_a = self.factory.makeSpecification(name="foo-a")
         vocab = self.getVocabularyForSpec(spec)
-        results = vocab.searchForTerms('foo')
+        results = vocab.searchForTerms("foo")
         self.assertEqual(2, len(results))
         found = [item.value for item in results]
         self.assertEqual([foo_b, foo_a], found)
@@ -208,13 +213,13 @@ class TestSpecificationDepCandidatesVocabulary(TestCaseWithFactory):
         spec = self.factory.makeSpecification(product=widget)
         with person_logged_in(widget.owner):
             spec.proposeGoal(widget.development_focus, widget.owner)
-        foo_c = self.factory.makeSpecification(name='foo-c', product=widget)
+        foo_c = self.factory.makeSpecification(name="foo-c", product=widget)
         with person_logged_in(widget.owner):
             foo_c.proposeGoal(widget.development_focus, widget.owner)
-        foo_b = self.factory.makeSpecification(name='foo-b', product=widget)
-        foo_a = self.factory.makeSpecification(name='foo-a')
+        foo_b = self.factory.makeSpecification(name="foo-b", product=widget)
+        foo_a = self.factory.makeSpecification(name="foo-a")
         vocab = self.getVocabularyForSpec(spec)
-        results = vocab.searchForTerms('foo')
+        results = vocab.searchForTerms("foo")
         self.assertEqual(3, len(results))
         found = [item.value for item in results]
         self.assertEqual([foo_c, foo_b, foo_a], found)
@@ -223,11 +228,10 @@ class TestSpecificationDepCandidatesVocabulary(TestCaseWithFactory):
         # Specs on the same distribution are returned first.
         mint = self.factory.makeDistribution()
         spec = self.factory.makeSpecification(distribution=mint)
-        foo_b = self.factory.makeSpecification(
-            name='foo-b', distribution=mint)
-        foo_a = self.factory.makeSpecification(name='foo-a')
+        foo_b = self.factory.makeSpecification(name="foo-b", distribution=mint)
+        foo_a = self.factory.makeSpecification(name="foo-a")
         vocab = self.getVocabularyForSpec(spec)
-        results = vocab.searchForTerms('foo')
+        results = vocab.searchForTerms("foo")
         self.assertEqual(2, len(results))
         found = [item.value for item in results]
         self.assertEqual([foo_b, foo_a], found)
@@ -240,15 +244,13 @@ class TestSpecificationDepCandidatesVocabulary(TestCaseWithFactory):
         spec = self.factory.makeSpecification(distribution=mint)
         with person_logged_in(mint.owner):
             spec.proposeGoal(next, mint.owner)
-        foo_c = self.factory.makeSpecification(
-            name='foo-c', distribution=mint)
+        foo_c = self.factory.makeSpecification(name="foo-c", distribution=mint)
         with person_logged_in(mint.owner):
             foo_c.proposeGoal(next, mint.owner)
-        foo_b = self.factory.makeSpecification(
-            name='foo-b', distribution=mint)
-        foo_a = self.factory.makeSpecification(name='foo-a')
+        foo_b = self.factory.makeSpecification(name="foo-b", distribution=mint)
+        foo_a = self.factory.makeSpecification(name="foo-a")
         vocab = self.getVocabularyForSpec(spec)
-        results = vocab.searchForTerms('foo')
+        results = vocab.searchForTerms("foo")
         self.assertEqual(3, len(results))
         found = [item.value for item in results]
         self.assertEqual([foo_c, foo_b, foo_a], found)

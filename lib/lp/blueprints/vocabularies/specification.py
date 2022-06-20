@@ -4,8 +4,8 @@
 """The vocabularies relating to specifications."""
 
 __all__ = [
-    'SpecificationVocabulary',
-    ]
+    "SpecificationVocabulary",
+]
 
 from operator import attrgetter
 
@@ -23,7 +23,7 @@ class SpecificationVocabulary(SQLObjectVocabularyBase):
     """
 
     _table = Specification
-    _orderBy = 'title'
+    _orderBy = "title"
 
     def __iter__(self):
         launchbag = getUtility(ILaunchBag)
@@ -38,8 +38,8 @@ class SpecificationVocabulary(SQLObjectVocabularyBase):
 
         if target is not None:
             for spec in sorted(
-                target.specifications(launchbag.user),
-                key=attrgetter('title')):
+                target.specifications(launchbag.user), key=attrgetter("title")
+            ):
                 # we will not show the current specification in the
                 # launchbag
                 if spec == launchbag.specification:
@@ -49,7 +49,7 @@ class SpecificationVocabulary(SQLObjectVocabularyBase):
                 # the widget is currently used to select new dependencies,
                 # and we do not want to introduce circular dependencies.
                 if launchbag.specification is not None:
-                    user = getattr(launchbag, 'user', None)
+                    user = getattr(launchbag, "user", None)
                     if spec in launchbag.specification.all_blocked(user=user):
                         continue
                 yield SimpleTerm(spec, spec.id, spec.title)

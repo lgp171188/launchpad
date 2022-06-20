@@ -4,18 +4,15 @@
 """Views for Specification Goal Setting."""
 
 __all__ = [
-    'GoalDecideView',
-    ]
+    "GoalDecideView",
+]
 
 from zope.component import getUtility
 
 from lp.blueprints.browser.specificationtarget import HasSpecificationsView
 from lp.blueprints.enums import SpecificationFilter
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp import LaunchpadView, canonical_url
 from lp.services.webapp.interfaces import ILaunchBag
 
 
@@ -53,45 +50,46 @@ class GoalDecideView(HasSpecificationsView, LaunchpadView):
         user = getUtility(ILaunchBag).user
         count = self.specs.count()
 
-        if 'SUBMIT_CANCEL' in form:
-            self.status_message = 'Cancelled'
+        if "SUBMIT_CANCEL" in form:
+            self.status_message = "Cancelled"
             self.request.response.redirect(canonical_url(self.context))
             return self.status_message
 
-        if 'SUBMIT_ACCEPT' not in form and 'SUBMIT_DECLINE' not in form:
-            self.status_message = ''
+        if "SUBMIT_ACCEPT" not in form and "SUBMIT_DECLINE" not in form:
+            self.status_message = ""
             return self.status_message
 
-        if self.request.method == 'POST':
-            if 'specification' not in form:
+        if self.request.method == "POST":
+            if "specification" not in form:
                 self.status_message = (
-                    'Please select specifications to accept or decline.')
+                    "Please select specifications to accept or decline."
+                )
                 return self.status_message
             # determine if we are accepting or declining
-            if 'SUBMIT_ACCEPT' in form:
-                assert 'SUBMIT_DECLINE' not in form
-                action = 'Accepted'
+            if "SUBMIT_ACCEPT" in form:
+                assert "SUBMIT_DECLINE" not in form
+                action = "Accepted"
             else:
-                assert 'SUBMIT_DECLINE' in form
-                action = 'Declined'
+                assert "SUBMIT_DECLINE" in form
+                action = "Declined"
 
-        selected_specs = form['specification']
+        selected_specs = form["specification"]
         if isinstance(selected_specs, str):
             # only a single item was selected, but we want to deal with a
             # list for the general case, so convert it to a list
             selected_specs = [selected_specs]
 
-        specs = [self.context.getSpecification(name)
-                 for name in selected_specs]
+        specs = [
+            self.context.getSpecification(name) for name in selected_specs
+        ]
         for spec in specs:
-            if action == 'Accepted':
+            if action == "Accepted":
                 spec.acceptBy(user)
             else:
                 spec.declineBy(user)
 
         # For example: "Accepted 26 specification(s)."
-        self.status_message = '%s %d specification(s).' % (
-            action, len(specs))
+        self.status_message = "%s %d specification(s)." % (action, len(specs))
         self.request.response.addNotification(self.status_message)
 
         if len(specs) >= count:
