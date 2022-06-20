@@ -495,17 +495,17 @@ class BaseCharmRecipeEditView(
         for index in range(len(self.context.store_channels)):
             self.form_fields += FormFields(TextLine(
                 __name__=self._getFieldName('track', index),
-                required=False, title="Track"))
+                required=False))
             self.form_fields += FormFields(List(
                 __name__=self._getFieldName('risks', index),
-                required=False, title="Risk",
+                required=False,
                 value_type=Choice(vocabulary="SnapStoreChannel")))
             self.form_fields += FormFields(TextLine(
                 __name__=self._getFieldName('branch', index),
-                required=False, title="Branch"))
+                required=False,))
             self.form_fields += FormFields(Bool(
                 __name__=self._getFieldName('delete', index),
-                readonly=False, default=False, title="Delete"))
+                readonly=False, default=False))
 
     def setUpWidgets(self, context=None):
         for field in self.form_fields:
@@ -514,6 +514,11 @@ class BaseCharmRecipeEditView(
                     LabeledMultiCheckBoxWidget)
             else:
                 super().setUpWidgets(context=context)
+        for widget in self.widgets:
+            if ('field.track' in widget.name or 'field.risks' in widget.name
+                    or 'field.branch' in widget.name
+                    or 'field.delete' in widget.name):
+                widget.display_label = False
 
     @property
     def cancel_url(self):
