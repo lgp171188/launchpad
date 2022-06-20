@@ -44,6 +44,7 @@ repos:
             answers
             |app
             |archivepublisher
+            |archiveuploader
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
@@ -64,6 +65,7 @@ repos:
             answers
             |app
             |archivepublisher
+            |archiveuploader
           )/
     -   id: isort
         alias: isort-black
@@ -74,6 +76,7 @@ repos:
             answers
             |app
             |archivepublisher
+            |archiveuploader
           )/
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.9.2

@@ -12,11 +12,8 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.archiveuploader.tests.test_uploadprocessor import (
     TestUploadProcessorBase,
-    )
-from lp.archiveuploader.uploadprocessor import (
-    UploadHandler,
-    UploadStatusEnum,
-    )
+)
+from lp.archiveuploader.uploadprocessor import UploadHandler, UploadStatusEnum
 from lp.buildmaster.enums import BuildStatus
 from lp.code.enums import RevisionStatusArtifactType
 from lp.code.interfaces.revisionstatus import IRevisionStatusReportSet
@@ -52,13 +49,11 @@ class TestCIBuildUploads(TestUploadProcessorBase):
 
         result = handler.processCIResult(self.log)
 
-        self.assertEqual(
-            UploadStatusEnum.REJECTED, result
-        )
+        self.assertEqual(UploadStatusEnum.REJECTED, result)
 
     def test_requires_upload_path(self):
         removeSecurityProxy(self.build).results = {
-            'build:0': {'result': 'SUCCEEDED'},
+            "build:0": {"result": "SUCCEEDED"},
         }
         os.makedirs(os.path.join(self.incoming_folder, "test"))
         handler = UploadHandler.forProcessor(
@@ -71,13 +66,11 @@ class TestCIBuildUploads(TestUploadProcessorBase):
         result = handler.processCIResult(self.log)
 
         # we explicitly provided no log file, which causes a rejected upload
-        self.assertEqual(
-            UploadStatusEnum.REJECTED, result
-        )
+        self.assertEqual(UploadStatusEnum.REJECTED, result)
 
     def test_requires_log_file(self):
         removeSecurityProxy(self.build).results = {
-            'build:0': {'result': 'SUCCEEDED'},
+            "build:0": {"result": "SUCCEEDED"},
         }
         os.makedirs(os.path.join(self.incoming_folder, "test"))
         handler = UploadHandler.forProcessor(
@@ -87,28 +80,32 @@ class TestCIBuildUploads(TestUploadProcessorBase):
             self.build,
         )
         upload_path = os.path.join(
-            self.incoming_folder, "test", str(self.build.archive.id),
-            self.build.distribution.name)
+            self.incoming_folder,
+            "test",
+            str(self.build.archive.id),
+            self.build.distribution.name,
+        )
         os.makedirs(upload_path)
 
         result = handler.processCIResult(self.log)
 
         # we explicitly provided no log file, which causes a rejected upload
-        self.assertEqual(
-            UploadStatusEnum.REJECTED, result
-        )
+        self.assertEqual(UploadStatusEnum.REJECTED, result)
 
     def test_no_artifacts(self):
         # It is possible for a job to produce no artifacts.
         removeSecurityProxy(self.build).results = {
-            'build:0': {
-                'log': 'test_file_hash',
-                'result': 'SUCCEEDED',
+            "build:0": {
+                "log": "test_file_hash",
+                "result": "SUCCEEDED",
             },
         }
         upload_path = os.path.join(
-            self.incoming_folder, "test", str(self.build.archive.id),
-            self.build.distribution.name)
+            self.incoming_folder,
+            "test",
+            str(self.build.archive.id),
+            self.build.distribution.name,
+        )
         write_file(os.path.join(upload_path, "build:0.log"), b"log content")
         report = self.build.getOrCreateRevisionStatusReport("build:0")
         handler = UploadHandler.forProcessor(
@@ -125,7 +122,7 @@ class TestCIBuildUploads(TestUploadProcessorBase):
         log_urls = report.getArtifactURLs(RevisionStatusArtifactType.LOG)
         self.assertEqual(
             {quote("build:0-%s.txt" % self.build.commit_sha1)},
-            {url.rsplit("/")[-1] for url in log_urls}
+            {url.rsplit("/")[-1] for url in log_urls},
         )
         self.assertEqual(
             [], report.getArtifactURLs(RevisionStatusArtifactType.BINARY)
@@ -133,14 +130,17 @@ class TestCIBuildUploads(TestUploadProcessorBase):
 
     def test_triggers_store_upload_for_completed_ci_builds(self):
         removeSecurityProxy(self.build).results = {
-            'build:0': {
-                'log': 'test_file_hash',
-                'result': 'SUCCEEDED',
+            "build:0": {
+                "log": "test_file_hash",
+                "result": "SUCCEEDED",
             },
         }
         upload_path = os.path.join(
-            self.incoming_folder, "test", str(self.build.archive.id),
-            self.build.distribution.name)
+            self.incoming_folder,
+            "test",
+            str(self.build.archive.id),
+            self.build.distribution.name,
+        )
 
         # create log file
         path = os.path.join(upload_path, "build:0.log")
@@ -174,26 +174,29 @@ class TestCIBuildUploads(TestUploadProcessorBase):
         log_urls = report.getArtifactURLs(RevisionStatusArtifactType.LOG)
         self.assertEqual(
             {quote("build:0-%s.txt" % self.build.commit_sha1)},
-            {url.rsplit("/")[-1] for url in log_urls}
+            {url.rsplit("/")[-1] for url in log_urls},
         )
         artifact_urls = report.getArtifactURLs(
             RevisionStatusArtifactType.BINARY
         )
         self.assertEqual(
             {"ci.whl", "test.whl"},
-            {url.rsplit("/")[-1] for url in artifact_urls}
+            {url.rsplit("/")[-1] for url in artifact_urls},
         )
 
     def test_creates_revision_status_report_if_not_present(self):
         removeSecurityProxy(self.build).results = {
-            'build:0': {
-                'log': 'test_file_hash',
-                'result': 'SUCCEEDED',
+            "build:0": {
+                "log": "test_file_hash",
+                "result": "SUCCEEDED",
             },
         }
         upload_path = os.path.join(
-            self.incoming_folder, "test", str(self.build.archive.id),
-            self.build.distribution.name)
+            self.incoming_folder,
+            "test",
+            str(self.build.archive.id),
+            self.build.distribution.name,
+        )
 
         # create log file
         path = os.path.join(upload_path, "build:0.log")
@@ -216,9 +219,9 @@ class TestCIBuildUploads(TestUploadProcessorBase):
 
         self.assertEqual(
             self.build,
-            getUtility(
-                IRevisionStatusReportSet
-            ).getByCIBuildAndTitle(self.build, "build:0").ci_build
+            getUtility(IRevisionStatusReportSet)
+            .getByCIBuildAndTitle(self.build, "build:0")
+            .ci_build,
         )
         self.assertEqual(UploadStatusEnum.ACCEPTED, result)
         self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)

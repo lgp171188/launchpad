@@ -5,7 +5,7 @@
 
 __all__ = [
     "CharmRecipeUpload",
-    ]
+]
 
 import os
 
@@ -51,10 +51,12 @@ class CharmRecipeUpload:
 
         for charm_path in charm_paths:
             libraryfile = self.librarian.create(
-                os.path.basename(charm_path), os.stat(charm_path).st_size,
+                os.path.basename(charm_path),
+                os.stat(charm_path).st_size,
                 open(charm_path, "rb"),
                 filenameToContentType(charm_path),
-                restricted=build.is_private)
+                restricted=build.is_private,
+            )
             build.addFile(libraryfile)
 
         # The master verifies the status to confirm successful upload.

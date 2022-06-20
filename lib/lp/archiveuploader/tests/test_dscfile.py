@@ -3,40 +3,27 @@
 
 """Test dscfile.py"""
 
-from collections import namedtuple
 import os
+from collections import namedtuple
 
 from lp.archiveuploader.dscfile import (
-    cleanup_unpacked_dir,
     DSCFile,
+    SignableTagFile,
+    cleanup_unpacked_dir,
     find_changelog,
     find_copyright,
     format_to_file_checker_map,
-    SignableTagFile,
     unpack_source,
-    )
+)
 from lp.archiveuploader.nascentuploadfile import UploadError
-from lp.archiveuploader.tests import (
-    datadir,
-    getPolicy,
-    )
+from lp.archiveuploader.tests import datadir, getPolicy
 from lp.archiveuploader.uploadpolicy import BuildDaemonUploadPolicy
 from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.registry.model.person import Person
-from lp.services.log.logger import (
-    BufferLogger,
-    DevNullLogger,
-    )
+from lp.services.log.logger import BufferLogger, DevNullLogger
 from lp.soyuz.enums import SourcePackageFormat
-from lp.testing import (
-    TestCase,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    LaunchpadZopelessLayer,
-    ZopelessDatabaseLayer,
-    )
-
+from lp.testing import TestCase, TestCaseWithFactory
+from lp.testing.layers import LaunchpadZopelessLayer, ZopelessDatabaseLayer
 
 ORIG_TARBALL = SourcePackageFileType.ORIG_TARBALL
 ORIG_TARBALL_SIGNATURE = SourcePackageFileType.ORIG_TARBALL_SIGNATURE
@@ -46,7 +33,6 @@ DIFF = SourcePackageFileType.DIFF
 
 
 class TestDscFile(TestCase):
-
     def setUp(self):
         super().setUp()
         self.tmpdir = self.makeTemporaryDirectory()
@@ -63,9 +49,11 @@ class TestDscFile(TestCase):
         processing the source packages."""
         os.symlink("/etc/passwd", self.copyright_path)
         error = self.assertRaises(
-            UploadError, find_copyright, self.tmpdir, DevNullLogger())
+            UploadError, find_copyright, self.tmpdir, DevNullLogger()
+        )
         self.assertEqual(
-            error.args[0], "Symbolic link for debian/copyright not allowed")
+            error.args[0], "Symbolic link for debian/copyright not allowed"
+        )
 
     def testGoodDebianCopyright(self):
         """Test that a proper copyright file will be accepted"""
@@ -74,7 +62,8 @@ class TestDscFile(TestCase):
             f.write(copyright)
 
         self.assertEqual(
-            copyright, find_copyright(self.tmpdir, DevNullLogger()))
+            copyright, find_copyright(self.tmpdir, DevNullLogger())
+        )
 
     def testBadDebianChangelog(self):
         """Test that a symlink as debian/changelog will fail.
@@ -84,9 +73,11 @@ class TestDscFile(TestCase):
         processing the source packages."""
         os.symlink("/etc/passwd", self.changelog_path)
         error = self.assertRaises(
-            UploadError, find_changelog, self.tmpdir, DevNullLogger())
+            UploadError, find_changelog, self.tmpdir, DevNullLogger()
+        )
         self.assertEqual(
-            error.args[0], "Symbolic link for debian/changelog not allowed")
+            error.args[0], "Symbolic link for debian/changelog not allowed"
+        )
 
     def testGoodDebianChangelog(self):
         """Test that a proper changelog file will be accepted"""
@@ -95,7 +86,8 @@ class TestDscFile(TestCase):
             f.write(changelog)
 
         self.assertEqual(
-            changelog, find_changelog(self.tmpdir, DevNullLogger()))
+            changelog, find_changelog(self.tmpdir, DevNullLogger())
+        )
 
     def testOversizedFile(self):
         """Test that a file larger than 10MiB will fail.
@@ -106,7 +98,7 @@ class TestDscFile(TestCase):
         which is incredibly unlikely to be hit by normal files in the
         archive"""
         dev_zero = open("/dev/zero")
-        ten_MiB = 10 * (2 ** 20)
+        ten_MiB = 10 * (2**20)
         empty_file = dev_zero.read(ten_MiB + 1)
         dev_zero.close()
 
@@ -115,13 +107,15 @@ class TestDscFile(TestCase):
         file.close()
 
         error = self.assertRaises(
-            UploadError, find_changelog, self.tmpdir, DevNullLogger())
+            UploadError, find_changelog, self.tmpdir, DevNullLogger()
+        )
         self.assertEqual(
-            error.args[0], "debian/changelog file too large, 10MiB max")
+            error.args[0], "debian/changelog file too large, 10MiB max"
+        )
 
 
 class FakeChangesFile:
-    architectures = ['source']
+    architectures = ["source"]
 
 
 class TestDSCFileWithDatabase(TestCaseWithFactory):
@@ -130,22 +124,34 @@ class TestDSCFileWithDatabase(TestCaseWithFactory):
 
     def test_checkFiles_verifies_additional_hashes(self):
         """Test that checkFiles detects SHA1 and SHA256 mismatches."""
-        policy = getPolicy(
-            name="sync", distro="ubuntu", distroseries="hoary")
-        path = datadir(os.path.join(
-            'suite', 'badhash_1.0-1_broken_dsc', 'badhash_1.0-1.dsc'))
+        policy = getPolicy(name="sync", distro="ubuntu", distroseries="hoary")
+        path = datadir(
+            os.path.join(
+                "suite", "badhash_1.0-1_broken_dsc", "badhash_1.0-1.dsc"
+            )
+        )
         dsc = DSCFile(
-            path, {}, 426, 'main/editors', 'priority',
-            'badhash', '1.0-1', FakeChangesFile(), policy, DevNullLogger())
+            path,
+            {},
+            426,
+            "main/editors",
+            "priority",
+            "badhash",
+            "1.0-1",
+            FakeChangesFile(),
+            policy,
+            DevNullLogger(),
+        )
         errors = [e.args[0] for e in dsc.verify()]
-        self.assertEqual(
-            ['File badhash_1.0-1.tar.gz mentioned in the changes has a SHA256'
-             ' mismatch. a29ec2370df83193c3fb2cc9e1287dbfe9feba04108ccfa490bb'
-             'e20ea66f3d08 != aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-             'aaaaaaaaaaaaaaaaa',
-             'Files specified in DSC are broken or missing, skipping package '
-             'unpack verification.'],
-            errors)
+        expected_errors = [
+            "File badhash_1.0-1.tar.gz mentioned in the changes has a SHA256"
+            " mismatch. a29ec2370df83193c3fb2cc9e1287dbfe9feba04108ccfa490bb"
+            "e20ea66f3d08 != aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "aaaaaaaaaaaaaaaaa",
+            "Files specified in DSC are broken or missing, skipping package "
+            "unpack verification.",
+        ]
+        self.assertEqual(expected_errors, errors)
 
 
 class TestSignableTagFile(TestCaseWithFactory):
@@ -156,43 +162,46 @@ class TestSignableTagFile(TestCaseWithFactory):
     def makeSignableTagFile(self):
         """Create a minimal `SignableTagFile` object."""
         FakePolicy = namedtuple(
-            'FakePolicy',
-            ['pocket', 'distroseries', 'create_people'])
+            "FakePolicy", ["pocket", "distroseries", "create_people"]
+        )
         tagfile = SignableTagFile()
         tagfile.logger = DevNullLogger()
         tagfile.policy = FakePolicy(None, None, create_people=True)
         tagfile._dict = {
-            'Source': 'arbitrary-source-package-name',
-            'Version': '1.0',
-            }
+            "Source": "arbitrary-source-package-name",
+            "Version": "1.0",
+        }
         return tagfile
 
     def test_parseAddress_finds_addressee(self):
         tagfile = self.makeSignableTagFile()
         email = self.factory.getUniqueEmailAddress()
         person = self.factory.makePerson(email=email)
-        self.assertEqual(person, tagfile.parseAddress(email)['person'])
+        self.assertEqual(person, tagfile.parseAddress(email)["person"])
 
     def test_parseAddress_creates_addressee_for_unknown_address(self):
         unknown_email = self.factory.getUniqueEmailAddress()
         results = self.makeSignableTagFile().parseAddress(unknown_email)
-        self.assertEqual(unknown_email, results['email'])
-        self.assertIsInstance(results['person'], Person)
+        self.assertEqual(unknown_email, results["email"])
+        self.assertIsInstance(results["person"], Person)
 
     def test_parseAddress_raises_UploadError_if_address_is_malformed(self):
         self.assertRaises(
             UploadError,
-            self.makeSignableTagFile().parseAddress, "invalid@bad@address")
+            self.makeSignableTagFile().parseAddress,
+            "invalid@bad@address",
+        )
 
     def test_parseAddress_decodes_utf8(self):
-        name = 'B\u0105r'
-        email = 'bar@example.com'
+        name = "B\u0105r"
+        email = "bar@example.com"
         results = self.makeSignableTagFile().parseAddress(
-            ('%s <%s>' % (name, email)).encode('utf-8'))
-        self.assertEqual(email, results['email'])
-        self.assertEqual(name, results['name'])
-        self.assertEqual(name, results['person'].displayname)
-        self.assertEqual(email, results['person'].guessedemails[0].email)
+            ("%s <%s>" % (name, email)).encode("utf-8")
+        )
+        self.assertEqual(email, results["email"])
+        self.assertEqual(name, results["name"])
+        self.assertEqual(name, results["person"].displayname)
+        self.assertEqual(email, results["person"].guessedemails[0].email)
 
 
 class TestDscFileLibrarian(TestCaseWithFactory):
@@ -201,34 +210,50 @@ class TestDscFileLibrarian(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def getDscFile(self, name):
-        dsc_path = datadir(os.path.join('suite', name, name + '.dsc'))
+        dsc_path = datadir(os.path.join("suite", name, name + ".dsc"))
 
         class Changes:
-            architectures = ['source']
+            architectures = ["source"]
+
         logger = BufferLogger()
         policy = BuildDaemonUploadPolicy()
         policy.distroseries = self.factory.makeDistroSeries()
         policy.archive = self.factory.makeArchive()
         policy.distro = policy.distroseries.distribution
-        return DSCFile(dsc_path, {}, 0, 'main/editors',
-            'priority', 'package', 'version', Changes, policy, logger)
+        return DSCFile(
+            dsc_path,
+            {},
+            0,
+            "main/editors",
+            "priority",
+            "package",
+            "version",
+            Changes,
+            policy,
+            logger,
+        )
 
     def test_ReadOnlyCWD(self):
         """Processing a file should work when cwd is read-only."""
         tempdir = self.useTempDir()
         os.chmod(tempdir, 0o555)
         try:
-            dsc_file = self.getDscFile('bar_1.0-1')
+            dsc_file = self.getDscFile("bar_1.0-1")
             list(dsc_file.verify())
         finally:
             os.chmod(tempdir, 0o755)
 
 
 class BaseTestSourceFileVerification(TestCase):
-
-    def assertErrorsForFiles(self, expected, files,
-                             components={}, component_signatures={},
-                             bzip2_count=0, xz_count=0):
+    def assertErrorsForFiles(
+        self,
+        expected,
+        files,
+        components={},
+        component_signatures={},
+        bzip2_count=0,
+        xz_count=0,
+    ):
         """Check problems with the given set of files for the given format.
 
         :param expected: a list of expected errors, as strings.
@@ -246,16 +271,31 @@ class BaseTestSourceFileVerification(TestCase):
             ORIG_TARBALL_SIGNATURE: 0,
             DIFF: 0,
             DEBIAN_TARBALL: 0,
-            }
+        }
         full_files.update(files)
         self.assertEqual(
             expected,
-            [str(e) for e in format_to_file_checker_map[self.format](
-                'foo_1.dsc', full_files, components, component_signatures,
-                bzip2_count, xz_count)])
+            [
+                str(e)
+                for e in format_to_file_checker_map[self.format](
+                    "foo_1.dsc",
+                    full_files,
+                    components,
+                    component_signatures,
+                    bzip2_count,
+                    xz_count,
+                )
+            ],
+        )
 
-    def assertFilesOK(self, files, components={}, component_signatures={},
-                      bzip2_count=0, xz_count=0):
+    def assertFilesOK(
+        self,
+        files,
+        components={},
+        component_signatures={},
+        bzip2_count=0,
+        xz_count=0,
+    ):
         """Check that the given set of files is OK for the given format.
 
         :param format: the `SourcePackageFormat` to check against.
@@ -267,17 +307,20 @@ class BaseTestSourceFileVerification(TestCase):
         :param xz_count: number of files using xz compression.
         """
         self.assertErrorsForFiles(
-            [], files, components, component_signatures, bzip2_count, xz_count)
+            [], files, components, component_signatures, bzip2_count, xz_count
+        )
 
 
 class Test10SourceFormatVerification(BaseTestSourceFileVerification):
 
     format = SourcePackageFormat.FORMAT_1_0
 
-    wrong_files_error = ('foo_1.dsc: must have exactly one tar.gz, or an '
-                         'orig.tar.gz and diff.gz')
-    bzip2_error = 'foo_1.dsc: is format 1.0 but uses bzip2 compression.'
-    xz_error = 'foo_1.dsc: is format 1.0 but uses xz compression.'
+    wrong_files_error = (
+        "foo_1.dsc: must have exactly one tar.gz, or an "
+        "orig.tar.gz and diff.gz"
+    )
+    bzip2_error = "foo_1.dsc: is format 1.0 but uses bzip2 compression."
+    xz_error = "foo_1.dsc: is format 1.0 but uses xz compression."
 
     def testFormat10Debian(self):
         # A 1.0 source can contain an original tarball and a Debian diff
@@ -286,7 +329,8 @@ class Test10SourceFormatVerification(BaseTestSourceFileVerification):
     def testFormat10DebianWithOrigSignature(self):
         # A 1.0 source can contain an original tarball signature.
         self.assertFilesOK(
-            {ORIG_TARBALL: 1, ORIG_TARBALL_SIGNATURE: 1, DIFF: 1})
+            {ORIG_TARBALL: 1, ORIG_TARBALL_SIGNATURE: 1, DIFF: 1}
+        )
 
     def testFormat10Native(self):
         # A 1.0 source can contain a native tarball.
@@ -298,78 +342,96 @@ class Test10SourceFormatVerification(BaseTestSourceFileVerification):
         # files or an original tarball signature without an original
         # tarball.
         for combination in (
-            {DIFF: 1}, {ORIG_TARBALL: 1}, {ORIG_TARBALL_SIGNATURE: 1},
-            {ORIG_TARBALL_SIGNATURE: 1, DIFF: 1}):
+            {DIFF: 1},
+            {ORIG_TARBALL: 1},
+            {ORIG_TARBALL_SIGNATURE: 1},
+            {ORIG_TARBALL_SIGNATURE: 1, DIFF: 1},
+        ):
             {ORIG_TARBALL: 1, DIFF: 1, NATIVE_TARBALL: 1},
             self.assertErrorsForFiles([self.wrong_files_error], combination)
 
         # A 1.0 source with component tarballs is invalid.
         self.assertErrorsForFiles(
-            [self.wrong_files_error], {ORIG_TARBALL: 1, DIFF: 1},
-            components={'foo': 1})
+            [self.wrong_files_error],
+            {ORIG_TARBALL: 1, DIFF: 1},
+            components={"foo": 1},
+        )
 
         # A 1.0 source with component tarball signatures is invalid.
         self.assertErrorsForFiles(
-            [self.wrong_files_error], {ORIG_TARBALL: 1, DIFF: 1},
-            component_signatures={'foo': 1})
+            [self.wrong_files_error],
+            {ORIG_TARBALL: 1, DIFF: 1},
+            component_signatures={"foo": 1},
+        )
 
     def testFormat10CannotUseBzip2(self):
         # 1.0 sources cannot use bzip2 compression.
         self.assertErrorsForFiles(
-            [self.bzip2_error], {NATIVE_TARBALL: 1}, {}, bzip2_count=1)
+            [self.bzip2_error], {NATIVE_TARBALL: 1}, {}, bzip2_count=1
+        )
 
     def testFormat10CannotUseXz(self):
         # 1.0 sources cannot use xz compression.
         self.assertErrorsForFiles(
-            [self.xz_error], {NATIVE_TARBALL: 1}, {}, xz_count=1)
+            [self.xz_error], {NATIVE_TARBALL: 1}, {}, xz_count=1
+        )
 
 
 class Test30QuiltSourceFormatVerification(BaseTestSourceFileVerification):
 
     format = SourcePackageFormat.FORMAT_3_0_QUILT
 
-    wrong_files_error = ('foo_1.dsc: must have only an orig.tar.*, a '
-                         'debian.tar.*, and optionally orig-*.tar.*')
-    comp_conflict_error = 'foo_1.dsc: has more than one orig-bar.tar.*.'
+    wrong_files_error = (
+        "foo_1.dsc: must have only an orig.tar.*, a "
+        "debian.tar.*, and optionally orig-*.tar.*"
+    )
+    comp_conflict_error = "foo_1.dsc: has more than one orig-bar.tar.*."
 
     def testFormat30Quilt(self):
         # A 3.0 (quilt) source must contain an orig tarball and a debian
         # tarball. It may also contain at most one component tarball (with
         # optional signature) for each component, and can use gzip, bzip2,
         # or xz compression.
-        for components in ({}, {'foo': 1}, {'foo': 1, 'bar': 1}):
+        for components in ({}, {"foo": 1}, {"foo": 1, "bar": 1}):
             for component_signatures in ({}, components):
                 for orig_signature in (0, 1):
                     for bzip2_count in (0, 1):
                         for xz_count in (0, 1):
                             self.assertFilesOK(
-                                {ORIG_TARBALL: 1,
-                                 ORIG_TARBALL_SIGNATURE: orig_signature,
-                                 DEBIAN_TARBALL: 1},
+                                {
+                                    ORIG_TARBALL: 1,
+                                    ORIG_TARBALL_SIGNATURE: orig_signature,
+                                    DEBIAN_TARBALL: 1,
+                                },
                                 components=components,
                                 component_signatures=component_signatures,
-                                bzip2_count=bzip2_count, xz_count=xz_count)
+                                bzip2_count=bzip2_count,
+                                xz_count=xz_count,
+                            )
 
     def testFormat30QuiltCannotHaveConflictingComponentTarballs(self):
         # Multiple conflicting tarballs for a single component are
         # invalid.
         self.assertErrorsForFiles(
             [self.comp_conflict_error],
-            {ORIG_TARBALL: 1, DEBIAN_TARBALL: 1}, {'foo': 1, 'bar': 2})
+            {ORIG_TARBALL: 1, DEBIAN_TARBALL: 1},
+            {"foo": 1, "bar": 2},
+        )
 
     def testFormat30QuiltCannotHaveWrongFiles(self):
         # 3.0 (quilt) sources may not have a diff or native tarball.
         for filetype in (DIFF, NATIVE_TARBALL):
             self.assertErrorsForFiles(
                 [self.wrong_files_error],
-                {ORIG_TARBALL: 1, DEBIAN_TARBALL: 1, filetype: 1})
+                {ORIG_TARBALL: 1, DEBIAN_TARBALL: 1, filetype: 1},
+            )
 
 
 class Test30NativeSourceFormatVerification(BaseTestSourceFileVerification):
 
     format = SourcePackageFormat.FORMAT_3_0_NATIVE
 
-    wrong_files_error = 'foo_1.dsc: must have only a tar.*.'
+    wrong_files_error = "foo_1.dsc: must have only a tar.*."
 
     def testFormat30Native(self):
         # 3.0 (native) sources must contain just a native tarball. They
@@ -382,17 +444,26 @@ class Test30NativeSourceFormatVerification(BaseTestSourceFileVerification):
         # 3.0 (quilt) sources may not have a diff, Debian tarball, orig
         # tarball, orig tarball signature, or any component tarballs.
         for filetype in (
-                DIFF, DEBIAN_TARBALL, ORIG_TARBALL, ORIG_TARBALL_SIGNATURE):
+            DIFF,
+            DEBIAN_TARBALL,
+            ORIG_TARBALL,
+            ORIG_TARBALL_SIGNATURE,
+        ):
             self.assertErrorsForFiles(
-                [self.wrong_files_error], {NATIVE_TARBALL: 1, filetype: 1})
+                [self.wrong_files_error], {NATIVE_TARBALL: 1, filetype: 1}
+            )
         # A 3.0 (native) source with component tarballs is invalid.
         self.assertErrorsForFiles(
-            [self.wrong_files_error], {NATIVE_TARBALL: 1},
-            components={'foo': 1})
+            [self.wrong_files_error],
+            {NATIVE_TARBALL: 1},
+            components={"foo": 1},
+        )
         # A 3.0 (native) source with component tarball signatures is invalid.
         self.assertErrorsForFiles(
-            [self.wrong_files_error], {NATIVE_TARBALL: 1},
-            component_signatures={'foo': 1})
+            [self.wrong_files_error],
+            {NATIVE_TARBALL: 1},
+            component_signatures={"foo": 1},
+        )
 
 
 class UnpackedDirTests(TestCase):
@@ -402,12 +473,14 @@ class UnpackedDirTests(TestCase):
         # unpack_source unpacks in a temporary directory and returns the
         # path.
         unpacked_dir = unpack_source(
-            datadir(os.path.join('suite', 'bar_1.0-1', 'bar_1.0-1.dsc')))
+            datadir(os.path.join("suite", "bar_1.0-1", "bar_1.0-1.dsc"))
+        )
         try:
             self.assertEqual(["bar-1.0"], os.listdir(unpacked_dir))
             self.assertContentEqual(
                 ["THIS_IS_BAR", "debian"],
-                os.listdir(os.path.join(unpacked_dir, "bar-1.0")))
+                os.listdir(os.path.join(unpacked_dir, "bar-1.0")),
+            )
         finally:
             cleanup_unpacked_dir(unpacked_dir)
 
