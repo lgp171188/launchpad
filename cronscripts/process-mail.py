@@ -31,7 +31,7 @@ class ProcessMail(LaunchpadCronScript):
                 raise
             raise LaunchpadScriptFailure(
                 "No mail box is configured. "
-                "Please see mailbox.txt for info on how to configure one.")
+                "Please see mailbox.rst for info on how to configure one.")
 
 
 if __name__ == '__main__':

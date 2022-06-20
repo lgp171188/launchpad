@@ -102,23 +102,23 @@ def uploadQueueBugLinkedToQuestionSetUp(test):
 
 # Files that have special needs can construct their own suite
 special = {
-    'notifications-linked-private-bug.txt': LayeredDocFileSuite(
-        'notifications-linked-private-bug.txt',
+    'notifications-linked-private-bug.rst': LayeredDocFileSuite(
+        'notifications-linked-private-bug.rst',
         setUp=bugLinkedToQuestionSetUp, tearDown=tearDown,
         layer=DatabaseFunctionalLayer),
-    'notifications-linked-bug.txt': LayeredDocFileSuite(
-        'notifications-linked-bug.txt',
+    'notifications-linked-bug.rst': LayeredDocFileSuite(
+        'notifications-linked-bug.rst',
         setUp=bugLinkedToQuestionSetUp, tearDown=tearDown,
         layer=DatabaseFunctionalLayer),
-    'notifications-linked-bug.txt-uploader': LayeredDocFileSuite(
-        'notifications-linked-bug.txt',
-        id_extensions=['notifications-linked-bug.txt-uploader'],
+    'notifications-linked-bug.rst-uploader': LayeredDocFileSuite(
+        'notifications-linked-bug.rst',
+        id_extensions=['notifications-linked-bug.rst-uploader'],
         setUp=uploaderBugLinkedToQuestionSetUp,
         tearDown=tearDown,
         layer=LaunchpadZopelessLayer),
-    'notifications-linked-bug.txt-queued': LayeredDocFileSuite(
-        'notifications-linked-bug.txt',
-        id_extensions=['notifications-linked-bug.txt-queued'],
+    'notifications-linked-bug.rst-queued': LayeredDocFileSuite(
+        'notifications-linked-bug.rst',
+        id_extensions=['notifications-linked-bug.rst-queued'],
         setUp=uploadQueueBugLinkedToQuestionSetUp,
         tearDown=tearDown,
         layer=LaunchpadZopelessLayer),

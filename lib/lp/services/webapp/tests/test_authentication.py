@@ -96,7 +96,7 @@ class TestCheckOAuthSignature(TestCaseWithFactory):
 def test_suite():
     suite = unittest.TestLoader().loadTestsFromName(__name__)
     suite.addTest(LayeredDocFileSuite(
-        'test_launchpad_login_source.txt',
+        'test_launchpad_login_source.rst',
         layer=LaunchpadFunctionalLayer,
         setUp=setUp, tearDown=tearDown))
     return suite

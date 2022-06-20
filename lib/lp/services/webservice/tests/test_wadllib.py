@@ -28,7 +28,7 @@ def test_suite():
     doctest_files = {}
     for docsdir in packages:
         for filename in os.listdir(os.path.join(topdir, docsdir)):
-            if os.path.splitext(filename)[1] == '.txt':
+            if os.path.splitext(filename)[1] == '.rst':
                 doctest_files[filename] = os.path.join(docsdir, filename)
     # Sort the tests.
     for filename in sorted(doctest_files):

@@ -251,7 +251,7 @@ class TestDistributionMirror(TestCaseWithFactory):
 class TestDistributionMirrorWebservice(TestCaseWithFactory):
     """Test the IDistributionMirror API.
 
-    Some tests already exist in distribution-mirror.txt.
+    Some tests already exist in distribution-mirror.rst.
     """
     layer = DatabaseFunctionalLayer
 

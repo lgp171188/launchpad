@@ -3,7 +3,7 @@
 
 """Unit tests for methods of CodeImportMachine.
 
-Other tests are in codeimport-machine.txt."""
+Other tests are in codeimport-machine.rst."""
 
 from zope.component import getUtility
 

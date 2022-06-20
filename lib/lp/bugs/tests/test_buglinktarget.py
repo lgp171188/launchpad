@@ -1,7 +1,7 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Test harness for running the buglinktarget.txt interface test
+"""Test harness for running the buglinktarget.rst interface test
 
 This module will run the interface test against the CVE, Specification,
 Question, and BranchMergeProposal implementations of that interface.
@@ -60,7 +60,7 @@ def test_suite():
 
     for name, setUpMethod in targets:
         test = LayeredDocFileSuite(
-            'buglinktarget.txt',
+            'buglinktarget.rst',
             id_extensions=[name],
             setUp=setUpMethod, tearDown=tearDown,
             layer=LaunchpadFunctionalLayer)

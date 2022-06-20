@@ -86,8 +86,8 @@ repos:
     -   id: eslint
         args: [--quiet]
 -   repo: https://git.launchpad.net/lp-lint-doctest
-    rev: '0.3'
+    rev: '0.4'
     hooks:
     -   id: lp-lint-doctest
         args: [--allow-option-flag, IGNORE_EXCEPTION_MODULE_IN_PYTHON2]
-        exclude: ^doc/.*|.*/testfiles/.*|bingsearchservice-mapping\.txt
+        exclude: ^doc/.*

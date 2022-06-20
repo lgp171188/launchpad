@@ -1,0 +1,395 @@
+Canonical URL examples
+======================
+
+Here we have a bunch of examples of canonical urls of database and other
+objects.
+
+Ideally, we'd check that the URLs we have here can be accessed through the
+publisher.  We'll do that later.  For now, we'll just check that the URLs
+are what we expect them to be for various example objects.
+
+    >>> from zope.component import getUtility
+    >>> from lp.services.webapp import canonical_url
+    >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+    >>> celebs = getUtility(ILaunchpadCelebrities)
+
+The examples are divided into sections by theme.  Each section starts with
+the imports necessary for that section, where further imports are needed.
+The proceeds with an example of the IFooSet url, then its contents, and
+so on.
+
+
+Application homepages
+---------------------
+
+    >>> from lp.code.interfaces.codehosting import IBazaarApplication
+    >>> from lp.services.webapp.interfaces import ILaunchpadRoot
+    >>> from lp.answers.interfaces.questioncollection import IQuestionSet
+    >>> from lp.bugs.interfaces.malone import IMaloneApplication
+
+The Launchpad homepage.
+
+    >>> print(canonical_url(getUtility(ILaunchpadRoot)))
+    http://launchpad.test/
+
+The Malone homepage.
+
+    >>> print(canonical_url(getUtility(IMaloneApplication)))
+    http://launchpad.test/bugs
+
+The Bazaar homepage.
+
+    >>> print(canonical_url(getUtility(IBazaarApplication)))
+    http://code.launchpad.test/+code
+
+The Answer Tracker
+
+    >>> print(canonical_url(getUtility(IQuestionSet)))
+    http://answers.launchpad.test/questions
+
+Launchpad Translations (Rosetta) canonical_url examples are in
+lib/lp/translations/doc/canonical_url_examples.rst.
+
+
+Persons and Teams
+-----------------
+
+    >>> from lp.registry.interfaces.codeofconduct import (
+    ...     ICodeOfConductSet,
+    ...     ISignedCodeOfConductSet,
+    ...     )
+    >>> from lp.registry.interfaces.person import IPersonSet
+
+The IPersonSet.
+
+    >>> print(canonical_url(getUtility(IPersonSet)))
+    http://launchpad.test/people
+
+An IPerson.
+
+    >>> print(canonical_url(getUtility(IPersonSet).getByName('mark')))
+    http://launchpad.test/~mark
+
+An ITeam.
+
+    >>> print(canonical_url(celebs.rosetta_experts))
+    http://launchpad.test/~rosetta-admins
+
+An ICodeOfConductSet
+
+    >>> cocset = getUtility(ICodeOfConductSet)
+    >>> print(canonical_url(cocset))
+    http://launchpad.test/codeofconduct
+
+An ISignedCodeOfConductSet
+
+    >>> signedcocset = getUtility(ISignedCodeOfConductSet)
+    >>> print(canonical_url(signedcocset))
+    http://launchpad.test/codeofconduct/console
+
+An ISignedCodeOfConduct
+
+    >>> print(canonical_url(signedcocset['1']))
+    http://launchpad.test/codeofconduct/console/1
+
+An ICodeOfConduct
+
+    >>> print(canonical_url(cocset['2.0']))
+    http://launchpad.test/codeofconduct/2.0
+
+
+Distributions, distroseriess and so on
+--------------------------------------
+
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
+
+The IDistributionSet.
+
+    >>> distroset = getUtility(IDistributionSet)
+
+    >>> print(canonical_url(distroset))
+    http://launchpad.test/distros
+
+An IDistribution.
+
+    >>> print(canonical_url(celebs.ubuntu))
+    http://launchpad.test/ubuntu
+
+An IDistroSeries.
+
+    >>> hoary = celebs.ubuntu.getSeries('hoary')
+    >>> print(canonical_url(hoary))
+    http://launchpad.test/ubuntu/hoary
+
+An ISourcePackage.
+
+    >>> print(canonical_url(hoary.getSourcePackage('evolution')))
+    http://launchpad.test/ubuntu/hoary/+source/evolution
+
+An IDistributionSourcePackage.
+
+    >>> from lp.registry.interfaces.sourcepackagename import (
+    ...     ISourcePackageNameSet)
+    >>> sourcepackagenameset = getUtility(ISourcePackageNameSet)
+    >>> ubuntu_firefox = celebs.ubuntu.getSourcePackage(
+    ...     sourcepackagenameset['mozilla-firefox'])
+    >>> print(canonical_url(ubuntu_firefox))
+    http://launchpad.test/ubuntu/+source/mozilla-firefox
+
+
+Projects groups and products
+----------------------------
+
+    >>> from lp.registry.interfaces.product import IProductSet
+    >>> from lp.registry.interfaces.projectgroup import IProjectGroupSet
+
+The IProjectGroupSet.
+
+    >>> print(canonical_url(getUtility(IProjectGroupSet)))
+    http://launchpad.test/projectgroups
+
+An IProjectGroup.
+
+    >>> print(canonical_url(getUtility(IProjectGroupSet)['apache']))
+    http://launchpad.test/apache
+
+The IProductSet.
+
+    >>> productset = getUtility(IProductSet)
+    >>> print(canonical_url(productset))
+    http://launchpad.test/projects
+
+An IProduct.
+
+    >>> evolution_product = productset['evolution']
+    >>> print(canonical_url(evolution_product))
+    http://launchpad.test/evolution
+
+An IProductSeries.
+
+    >>> evolution_trunk_series = evolution_product.getSeries('trunk')
+    >>> print(canonical_url(evolution_trunk_series))
+    http://launchpad.test/evolution/trunk
+
+An IProductRelease.
+
+    >>> evolution_release = evolution_trunk_series.getRelease('2.1.6')
+    >>> print(canonical_url(evolution_release))
+    http://launchpad.test/evolution/trunk/2.1.6
+
+
+Bugs and bugtasks
+-----------------
+
+    >>> from lp.bugs.interfaces.bug import IBugSet
+    >>> from lp.bugs.interfaces.bugtask import IBugTaskSet
+
+The IBugSet.
+
+    >>> print(canonical_url(getUtility(IBugSet)))
+    http://launchpad.test/bugs/bugs
+
+An IBug.
+
+    >>> print(canonical_url(getUtility(IBugSet).get(1)))
+    http://bugs.launchpad.test/bugs/1
+
+An IBugTask on a product.
+
+    >>> print(canonical_url(getUtility(IBugTaskSet).get(2)))
+    http://bugs.launchpad.test/firefox/+bug/1
+
+An IMessage on a bug.
+
+    >>> print(canonical_url(getUtility(IBugSet).get(1).messages[0]))
+    http://bugs.launchpad.test/firefox/+bug/1/comments/0
+
+An IMessage on a question.
+
+    >>> print(canonical_url(getUtility(IQuestionSet).get(6).messages[0]))
+    http://answers.launchpad.test/firefox/+question/6/messages/1
+
+An IBugTask on a distribution source package.
+
+    >>> distro_task = getUtility(IBugTaskSet).get(4)
+    >>> print(canonical_url(distro_task))
+    http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/1
+
+An IBugTask on a distribution without a sourcepackage.
+
+    >>> from lp.testing import login
+    >>> login("foo.bar@canonical.com")
+
+    >>> temp_target = distro_task.target
+    >>> distro_task.transitionToTarget(
+    ...     distro_task.target.distribution, getUtility(ILaunchBag).user)
+    >>> print(canonical_url(distro_task))
+    http://bugs.launchpad.test/debian/+bug/1
+    >>> distro_task.transitionToTarget(
+    ...     temp_target, getUtility(ILaunchBag).user)
+
+An IBugTask on a distribution series source package.
+
+    >>> distro_series_task = getUtility(IBugTaskSet).get(19)
+    >>> print(canonical_url(distro_series_task))
+    http://bugs.launchpad.test/debian/sarge/+source/mozilla-firefox/+bug/3
+
+An IBugTask on a distribution series without a sourcepackage.
+
+    >>> temp_target = distro_series_task.target
+    >>> distro_series_task.transitionToTarget(
+    ...     distro_series_task.target.distroseries,
+    ...     getUtility(ILaunchBag).user)
+    >>> print(canonical_url(distro_series_task))
+    http://bugs.launchpad.test/debian/sarge/+bug/3
+    >>> distro_series_task.transitionToTarget(
+    ...     temp_target, getUtility(ILaunchBag).user)
+
+A private bug, as an anonymous user! (We'll temporarily subscribe to the bug,
+to ensure that at least one person has the perms to edit it while it's set
+private.)
+
+    >>> from lp.services.webapp.interfaces import ILaunchBag
+    >>> current_user = getUtility(ILaunchBag).user
+    >>> subscription = distro_series_task.bug.subscribe(
+    ...     current_user, current_user)
+
+    >>> distro_series_task.bug.setPrivate(True, getUtility(ILaunchBag).user)
+    True
+
+    >>> login(ANONYMOUS)
+
+    >>> print(canonical_url(distro_series_task.bug))
+    http://bugs.launchpad.test/bugs/3
+
+A private bugtask, as an anonymous user.
+
+    >>> print(canonical_url(distro_series_task))
+    http://bugs.launchpad.test/debian/sarge/+source/mozilla-firefox/+bug/3
+
+    >>> login("foo.bar@canonical.com")
+    >>> distro_series_task.bug.setPrivate(False, getUtility(ILaunchBag).user)
+    True
+    >>> distro_series_task.bug.unsubscribe(current_user, current_user)
+
+An IBugWatchSet.
+
+    This doesn't work, because BugWatchSet.bug is an int, not an IBug object.
+
+    xxx bug_one_watches = BugWatchSet(bug=1)
+    xxx print(canonical_url(bug_one_watches))
+    http://launchpad.test/bugs/1/watches
+
+An IBugComment.
+
+    >>> from lp.bugs.browser.bugcomment import BugComment
+    >>> bug_one = getUtility(IBugSet).get(1)
+    >>> bugtask_one = bug_one.bugtasks[0]
+    >>> bug_comment = BugComment(
+    ...     1, bug_one.initial_message, bugtask_one, True)
+    >>> print(canonical_url(bug_comment))
+    http://bugs.launchpad.test/firefox/+bug/1/comments/1
+
+An IBugNomination.
+
+    >>> from lp.bugs.interfaces.bugnomination import IBugNominationSet
+    >>> bug_nomination = getUtility(IBugNominationSet).get(1)
+    >>> print(canonical_url(bug_nomination))
+    http://bugs.launchpad.test/bugs/1/nominations/1
+
+
+Remote Bug Trackers and Remote Bugs
+-----------------------------------
+
+    >>> from lp.bugs.browser.bugtracker import RemoteBug
+    >>> from lp.bugs.interfaces.bugtracker import IBugTrackerSet
+
+An IBugTrackerSet.
+
+    >>> print(canonical_url(getUtility(IBugTrackerSet)))
+    http://bugs.launchpad.test/bugs/bugtrackers
+
+A remote bug tracker.
+
+    >>> mozilla_bugtracker = getUtility(IBugTrackerSet)['mozilla.org']
+    >>> print(canonical_url(mozilla_bugtracker))
+    http://bugs.launchpad.test/bugs/bugtrackers/mozilla.org
+
+A bug from a remote bug tracker.
+
+    >>> remote_bug = RemoteBug(mozilla_bugtracker, '42',
+    ...                        mozilla_bugtracker.getBugsWatching('42'))
+    >>> print(canonical_url(remote_bug))
+    http://bugs.launchpad.test/bugs/bugtrackers/mozilla.org/42
+
+
+Branches
+--------
+
+An IBranch.
+
+    >>> from lp.code.interfaces.branchlookup import IBranchLookup
+
+    >>> branch = getUtility(IBranchLookup).get(10)
+
+    >>> print(canonical_url(branch))
+    http://code.launchpad.test/~mark/firefox/release-0.9.2
+
+An IBugBranch.
+
+    >>> bug = getUtility(IBugSet).get(1)
+    >>> bug.linkBranch(branch, getUtility(IPersonSet).getByName('mark'))
+    >>> [bug_branch] = bug.linked_bugbranches
+    >>> print(canonical_url(bug_branch))
+    http://launchpad.test/~mark/firefox/release-0.9.2/+bug/1
+
+
+BranchMergeProposals
+--------------------
+
+Set up example Branch Merge Proposal
+
+    >>> mainline = getUtility(IBranchLookup).get(15)
+    >>> release26 = getUtility(IBranchLookup).get(16)
+    >>> merge_proposal = mainline.addLandingTarget(mainline.owner, release26)
+
+Branch merge proposals should have a canonical URL.  (Based on their source
+branch.)
+
+    >>> print(canonical_url(merge_proposal))
+    http://code.launchpad.test/~name12/gnome-terminal/main/+merge/...
+
+Create example CodeReviewComment.
+
+    >>> comment = merge_proposal.createComment(
+    ...     release26.owner, 'My subject', 'My content')
+
+CodeReviewComment should have a canonical URL.  (It should extend the URL of
+the merge proposal)
+
+    >>> print(canonical_url(comment))
+    http://code....test/~name12/gnome-terminal/main/+merge/.../comments/...
+
+
+Code Imports
+------------
+
+Code imports have a canonical URL which is a subordinate of the branch
+that they import to.
+
+    >>> from lp.code.interfaces.codeimport import ICodeImportSet
+    >>> code_import = getUtility(ICodeImportSet).get(1)
+    >>> print(canonical_url(code_import))
+    http://code.launchpad.test/~vcs-imports/gnome-terminal/import/+code-import
+
+Specifications
+--------------
+
+    >>> from lp.blueprints.interfaces.specification import ISpecificationSet
+    >>> spec_set = getUtility(ISpecificationSet)
+    >>> print(canonical_url(spec_set))
+    http://blueprints.launchpad.test/
+
+    >>> print(canonical_url(
+    ...     celebs.ubuntu.getSpecification('media-integrity-check')))
+    http://blueprints.launchpad.test/ubuntu/+spec/media-integrity-check

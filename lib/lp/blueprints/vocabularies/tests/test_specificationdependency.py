@@ -3,7 +3,7 @@
 
 """Tests for `SpecificationDepCandidatesVocabulary`.
 
-There is also a doctest in specificationdepcandidates.txt.
+There is also a doctest in specificationdepcandidates.rst.
 """
 
 from zope.schema.vocabulary import getVocabularyRegistry

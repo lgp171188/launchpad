@@ -1,7 +1,7 @@
 # Copyright 2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Test harness for running decoratedresultset.txt."""
+"""Test harness for running decoratedresultset.rst."""
 
 __all__ = []
 
@@ -19,7 +19,7 @@ def test_suite():
     suite = unittest.TestSuite()
 
     test = LayeredDocFileSuite(
-        'decoratedresultset.txt',
+        'decoratedresultset.rst',
         setUp=setUp, tearDown=tearDown,
         layer=DatabaseFunctionalLayer)
     suite.addTest(test)

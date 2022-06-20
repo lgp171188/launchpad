@@ -248,7 +248,7 @@ class TestRemoveTranslations(TestCase):
         # something we normally do.  Actually we should test under
         # rosettaadmin, but that user does not have all the privileges
         # needed to set up this test.  A separate doctest
-        # remove-translations-by.txt tests a realistic run of the
+        # remove-translations-by.rst tests a realistic run of the
         # remove-translations-by.py script under the actual rosettaadmin
         # db user.
         switch_dbuser('postgres')

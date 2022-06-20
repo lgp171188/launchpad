@@ -49,7 +49,7 @@ def test_suite():
     suite.addTest(loader.loadTestsFromTestCase(TestEmailObfuscated))
     suite.addTest(
         LayeredDocFileSuite(
-            "question-subscribe_me.txt",
+            "question-subscribe_me.rst",
             setUp=setUp,
             tearDown=tearDown,
             layer=DatabaseFunctionalLayer,
@@ -57,7 +57,7 @@ def test_suite():
     )
     suite.addTest(
         LayeredDocFileSuite(
-            "views.txt",
+            "views.rst",
             setUp=setUp,
             tearDown=tearDown,
             layer=DatabaseFunctionalLayer,
@@ -65,7 +65,7 @@ def test_suite():
     )
     suite.addTest(
         LayeredDocFileSuite(
-            "faq-views.txt",
+            "faq-views.rst",
             setUp=setUp,
             tearDown=tearDown,
             layer=DatabaseFunctionalLayer,

@@ -107,7 +107,7 @@ class BasePublishingRecordView(LaunchpadView):
     # The reason we define the map below outside the only function that uses
     # it (date_last_changed()) is that this allows us to test whether the map
     # covers all PackagePublishingStatus enumeration values.
-    # The pertinent tests in doc/publishing-pages.txt will fail if we add a
+    # The pertinent tests in doc/publishing-pages.rst will fail if we add a
     # new value to the PackagePublishingStatus enumeration but do not update
     # this map.
     timestamp_map = {

@@ -23,13 +23,13 @@ from lp.testing.systemdocs import (
 here = os.path.dirname(os.path.realpath(__file__))
 
 special = {
-    'script-monitoring.txt': LayeredDocFileSuite(
-            '../doc/script-monitoring.txt',
+    'script-monitoring.rst': LayeredDocFileSuite(
+            '../doc/script-monitoring.rst',
             setUp=setUp, tearDown=tearDown,
             layer=LaunchpadZopelessLayer,
             ),
-    'launchpad-scripts.txt': LayeredDocFileSuite(
-            '../doc/launchpad-scripts.txt',
+    'launchpad-scripts.rst': LayeredDocFileSuite(
+            '../doc/launchpad-scripts.rst',
             setUp=setGlobs,
             layer=DatabaseLayer,
             ),

@@ -10,4 +10,4 @@ from lp.testing.systemdocs import (
 
 
 def test_suite():
-    return LayeredDocFileSuite('test_preferredcharsets.txt', setUp=setGlobs)
+    return LayeredDocFileSuite('test_preferredcharsets.rst', setUp=setGlobs)

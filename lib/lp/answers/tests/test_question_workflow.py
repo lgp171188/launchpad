@@ -4,7 +4,7 @@
 """Test the question workflow methods.
 
 Comprehensive tests for the question workflow methods. A narrative kind of
-documentation is done in the ../../doc/answer-tracker-workflow.txt Doctest,
+documentation is done in the ../../doc/answer-tracker-workflow.rst Doctest,
 but testing all the possible transitions makes the documentation more heavy
 than necessary. This is tested here.
 """

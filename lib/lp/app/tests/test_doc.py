@@ -33,20 +33,20 @@ def tearDown_bing(test):
 
 
 special = {
-    "tales.txt": LayeredDocFileSuite(
-        "../doc/tales.txt",
+    "tales.rst": LayeredDocFileSuite(
+        "../doc/tales.rst",
         setUp=setUp,
         tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
     ),
-    "menus.txt": LayeredDocFileSuite(
-        "../doc/menus.txt",
+    "menus.rst": LayeredDocFileSuite(
+        "../doc/menus.rst",
         setUp=setGlobs,
         layer=None,
     ),
     "stories/launchpad-search(Bing)": PageTestSuite(
         "../stories/launchpad-search/",
-        id_extensions=["site-search.txt(Bing)"],
+        id_extensions=["site-search.rst(Bing)"],
         setUp=setUp_bing,
         tearDown=tearDown_bing,
     ),

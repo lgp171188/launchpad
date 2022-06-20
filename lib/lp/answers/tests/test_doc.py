@@ -87,31 +87,31 @@ def create_interface_test_suite(test_file, targets):
 
 
 special = {
-    "questiontarget.txt": create_interface_test_suite(
-        "questiontarget.txt",
+    "questiontarget.rst": create_interface_test_suite(
+        "questiontarget.rst",
         [
             ("product", productSetUp),
             ("distribution", distributionSetUp),
             ("distributionsourcepackage", distributionsourcepackageSetUp),
         ],
     ),
-    "faqtarget.txt": create_interface_test_suite(
-        "faqtarget.txt",
+    "faqtarget.rst": create_interface_test_suite(
+        "faqtarget.rst",
         [
             ("product", productSetUp),
             ("distribution", distributionSetUp),
         ],
     ),
-    "faqcollection.txt": create_interface_test_suite(
-        "faqcollection.txt",
+    "faqcollection.rst": create_interface_test_suite(
+        "faqcollection.rst",
         [
             ("product", productSetUp),
             ("distribution", distributionSetUp),
             ("project", projectSetUp),
         ],
     ),
-    "emailinterface.txt": LayeredDocFileSuite(
-        "emailinterface.txt",
+    "emailinterface.rst": LayeredDocFileSuite(
+        "emailinterface.rst",
         setUp=setUp,
         tearDown=tearDown,
         layer=ProcessMailLayer,

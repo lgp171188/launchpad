@@ -194,7 +194,7 @@ class BugNotificationSet:
             status=status)
         store = Store.of(bug_notification)
         # XXX jamesh 2008-05-21: these flushes are to fix ordering
-        # problems in the bugnotification-sending.txt tests.
+        # problems in the bugnotification-sending.rst tests.
         store.flush()
 
         bulk.create(

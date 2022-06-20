@@ -1,7 +1,7 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Test harness for running the mbox_mailer.txt tests."""
+"""Test harness for running the mbox_mailer.rst tests."""
 
 import doctest
 import os
@@ -34,6 +34,6 @@ def teardown(testobj):
 
 def test_suite():
     return LayeredDocFileSuite(
-        'mbox_mailer.txt',
+        'mbox_mailer.rst',
         setUp=setup, tearDown=teardown,
         optionflags=doctest.ELLIPSIS, stdout_logging=False)

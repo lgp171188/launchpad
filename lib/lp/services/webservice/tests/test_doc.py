@@ -30,18 +30,18 @@ def layerlessTearDown(test):
 
 
 special = {
-    'webservice-configuration.txt': LayeredDocFileSuite(
-        '../doc/webservice-configuration.txt',
+    'webservice-configuration.rst': LayeredDocFileSuite(
+        '../doc/webservice-configuration.rst',
         setUp=setGlobs, tearDown=layerlessTearDown,
         layer=None),
     # This test is actually run twice to prove that the AppServerLayer
     # properly isolates the database between tests.
-    'launchpadlib.txt': LayeredDocFileSuite(
-        '../doc/launchpadlib.txt',
+    'launchpadlib.rst': LayeredDocFileSuite(
+        '../doc/launchpadlib.rst',
         layer=AppServerLayer, setUp=browser.setUp),
-    'launchpadlib.txt-2': LayeredDocFileSuite(
-        '../doc/launchpadlib.txt',
-        id_extensions=['launchpadlib.txt-2'],
+    'launchpadlib.rst-2': LayeredDocFileSuite(
+        '../doc/launchpadlib.rst',
+        id_extensions=['launchpadlib.rst-2'],
         layer=AppServerLayer, setUp=browser.setUp),
     }
 

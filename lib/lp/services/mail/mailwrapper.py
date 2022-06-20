@@ -21,7 +21,7 @@ class MailWrapper:
 
     Note that MailWrapper doesn't guarantee that all lines will be less
     than :width:, sometimes it's better not to break long lines in
-    emails. See textformatting.txt for more information.
+    emails. See textformatting.rst for more information.
     """
 
     def __init__(self, width=72, indent='', indent_first_line=True):

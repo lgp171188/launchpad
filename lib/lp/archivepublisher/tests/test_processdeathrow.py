@@ -3,7 +3,7 @@
 
 """Functional tests for process-death-row.py script.
 
-See lib/canonical/launchpad/doc/deathrow.txt for more detailed tests
+See lib/lp/archivepublisher/tests/deathrow.rst for more detailed tests
 of the module functionality; here we just aim to test that the script
 processes its arguments and handles dry-run correctly.
 """

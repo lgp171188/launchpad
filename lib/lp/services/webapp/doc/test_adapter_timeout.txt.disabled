@@ -1,7 +1,7 @@
 The lp.services.webapp.adapter code constrains the amount of time that
 a request can take.
 
-The document webapp/ftests/test_adapter.txt shows its
+The document lib/lp/services/webapp/doc/test_adapter.rst shows its
 behaviour in detail.  This document shows the behaviour within the context of a
 page test.
 

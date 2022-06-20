@@ -19,12 +19,12 @@ here = os.path.dirname(os.path.realpath(__file__))
 
 
 special = {
-    'limitedlist.txt': LayeredDocFileSuite(
-        '../doc/limitedlist.txt',
+    'limitedlist.rst': LayeredDocFileSuite(
+        '../doc/limitedlist.rst',
         setUp=setGlobs,
         layer=BaseLayer),
-    'propertycache.txt': LayeredDocFileSuite(
-        '../doc/propertycache.txt',
+    'propertycache.rst': LayeredDocFileSuite(
+        '../doc/propertycache.rst',
         setUp=setGlobs,
         layer=BaseLayer),
     }

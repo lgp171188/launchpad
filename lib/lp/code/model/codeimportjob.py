@@ -406,7 +406,7 @@ class CodeImportJobWorkflow:
             "The CodeImportJob associated with %s is %s."
             % (import_job.code_import.target.unique_name,
                import_job.state.name))
-        # Cribbing from codeimport-job.txt, this method does four things:
+        # Cribbing from codeimport-job.rst, this method does four things:
         # 1) deletes the passed in job,
         # 2) creates a CodeImportResult with a status of 'RECLAIMED',
         # 3) creates a new, already due, job for the code import, and

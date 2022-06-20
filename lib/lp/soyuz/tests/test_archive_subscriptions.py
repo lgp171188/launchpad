@@ -37,7 +37,7 @@ from lp.testing.views import create_initialized_view
 class TestArchiveSubscriptions(TestCaseWithFactory):
     """Edge-case tests for private PPA subscribers.
 
-    See also lib/lp/soyuz/stories/ppa/xx-private-ppa-subscription-stories.txt
+    See also lib/lp/soyuz/stories/ppa/xx-private-ppa-subscription-stories.rst
     """
 
     layer = DatabaseFunctionalLayer

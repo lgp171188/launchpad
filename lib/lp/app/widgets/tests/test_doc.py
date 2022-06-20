@@ -14,8 +14,8 @@ from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 here = os.path.dirname(os.path.realpath(__file__))
 
 special = {
-    "image-widget.txt": LayeredDocFileSuite(
-        "../doc/image-widget.txt",
+    "image-widget.rst": LayeredDocFileSuite(
+        "../doc/image-widget.rst",
         setUp=setUp,
         tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,

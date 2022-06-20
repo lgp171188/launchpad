@@ -501,7 +501,7 @@ class ObjectFactory(metaclass=AutoDecorate(default_master_store)):
                 .replace('.', '-'))
             if source.startswith(
                     '<doctest '):
-                # Like '-<doctest xx-build-summary-txt[10]>'.
+                # Like '-<doctest xx-build-summary-rst[10]>'.
                 source = (source
                     .replace('<doctest ', '')
                     .replace('[', '')

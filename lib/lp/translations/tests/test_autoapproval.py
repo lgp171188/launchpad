@@ -3,7 +3,7 @@
 
 """Unit tests for translation import queue auto-approval.
 
-This test overlaps with the one in doc/translationimportqueue.txt.
+This test overlaps with the one in doc/translationimportqueue.rst.
 Documentation-style tests go in there, ones that go systematically
 through the possibilities should go here.
 """

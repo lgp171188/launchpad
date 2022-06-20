@@ -29,17 +29,17 @@ def tearDown_bing(test):
 # that require something special like the librarian must run on a layer
 # that sets those services up.
 special = {
-    "launchpad-search-pages.txt(Bing)": LayeredDocFileSuite(
-        "../doc/launchpad-search-pages.txt",
-        id_extensions=["launchpad-search-pages.txt(Bing)"],
+    "launchpad-search-pages.rst(Bing)": LayeredDocFileSuite(
+        "../doc/launchpad-search-pages.rst",
+        id_extensions=["launchpad-search-pages.rst(Bing)"],
         setUp=setUp_bing,
         tearDown=tearDown_bing,
         layer=BingLaunchpadFunctionalLayer,
         stdout_logging_level=logging.WARNING,
     ),
     # Run these doctests again with the default search engine.
-    "launchpad-search-pages.txt": LayeredDocFileSuite(
-        "../doc/launchpad-search-pages.txt",
+    "launchpad-search-pages.rst": LayeredDocFileSuite(
+        "../doc/launchpad-search-pages.rst",
         setUp=setUp,
         tearDown=tearDown,
         layer=PageTestLayer,
