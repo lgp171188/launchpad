@@ -45,7 +45,7 @@ def build_doctest_suite(base_dir, tests_path, special_tests={},
         # Add doctests using default setup/teardown.
         filenames = [filename
                      for filename in os.listdir(testsdir)
-                     if (filename.endswith('.txt')
+                     if (filename.endswith('.rst')
                          and filename not in special_tests)]
         # Sort the list to give a predictable order.
         filenames.sort()

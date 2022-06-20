@@ -21,12 +21,12 @@ here = os.path.dirname(os.path.realpath(__file__))
 
 
 special = {
-    'builder.txt': LayeredDocFileSuite(
-        '../doc/builder.txt',
+    'builder.rst': LayeredDocFileSuite(
+        '../doc/builder.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer),
-    'buildqueue.txt': LayeredDocFileSuite(
-        '../doc/buildqueue.txt',
+    'buildqueue.rst': LayeredDocFileSuite(
+        '../doc/buildqueue.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer),
     }

@@ -160,7 +160,7 @@ mQGiBEJdmOcRBADkNJPTBuCIefBdRAhvWyD9SSVHh8GHQWS7l9sRLEsirQkKz1yB
             '/pks/lookup?fingerprint=on&op=get&search=0xDFD20544')
 
     def test_add_key(self):
-        # A key submit form via POST (see doc/gpghandler.txt for more
+        # A key submit form via POST (see doc/gpghandler.rst for more
         # information).
         return self.assertContentMatches(
             '/pks/add',

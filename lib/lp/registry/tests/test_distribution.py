@@ -1616,7 +1616,7 @@ class DistributionOCIProjectAdminPermission(TestCaseWithFactory):
 class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
     """Test the IDistribution API.
 
-    Some tests already exist in xx-distribution.txt.
+    Some tests already exist in xx-distribution.rst.
     """
     layer = DatabaseFunctionalLayer
 

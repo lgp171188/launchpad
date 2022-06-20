@@ -29,10 +29,10 @@ class TestMakeStoryTest(unittest.TestCase):
         shutil.rmtree(self.tempdir)
 
     def test_dir_construction_and_trivial_running(self):
-        test_filename = os.path.join(self.tempdir, 'xx-foo.txt')
+        test_filename = os.path.join(self.tempdir, 'xx-foo.rst')
         test_file = open(test_filename, 'wt')
         test_file.close()
-        test_filename = os.path.join(self.tempdir, 'xx-bar.txt')
+        test_filename = os.path.join(self.tempdir, 'xx-bar.rst')
         test_file = open(test_filename, 'wt')
         test_file.close()
         # The test directory is looked up relative to the calling
@@ -43,4 +43,4 @@ class TestMakeStoryTest(unittest.TestCase):
 
         # Each unnumbered file appears as an independent test.
         ids = set(map(os.path.basename, map(methodcaller('id'), tests)))
-        self.assertEqual({'xx-bar.txt', 'xx-foo.txt'}, ids)
+        self.assertEqual({'xx-bar.rst', 'xx-foo.rst'}, ids)

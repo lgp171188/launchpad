@@ -709,7 +709,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
 
         This notification will contain useful information about
         the record in question (all states are supported), see
-        doc/build-notification.txt for further information.
+        doc/build-notification.rst for further information.
         """
         if not config.builddmaster.send_build_notification:
             return

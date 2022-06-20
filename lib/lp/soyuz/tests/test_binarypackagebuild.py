@@ -517,7 +517,7 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
     """Test cases for BinaryPackageBuild on the webservice.
 
     NB. Note that most tests are currently in
-    lib/lp/soyuz/stories/webservice/xx-builds.txt but unit tests really
+    lib/lp/soyuz/stories/webservice/xx-builds.rst but unit tests really
     ought to be here instead.
     """
 

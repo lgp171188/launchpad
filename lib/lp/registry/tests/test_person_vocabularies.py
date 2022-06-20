@@ -173,7 +173,7 @@ class TestValidPersonOrTeamVocabulary(ValidPersonOrTeamVocabularyMixin,
                                       TestCaseWithFactory):
     """Test that the ValidPersonOrTeamVocabulary behaves as expected.
 
-    Most tests are in lib/lp/registry/doc/vocabularies.txt.
+    Most tests are in lib/lp/registry/doc/vocabularies.rst.
     """
 
     layer = DatabaseFunctionalLayer

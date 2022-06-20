@@ -39,7 +39,7 @@ class PackageDiffAlreadyRequested(PackageDiffRequestException):
 class IPackageDiff(Interface):
     """Package diff request and storage.
 
-    See `doc/package-diff.txt` for details about the attributes.
+    See `doc/package-diff.rst` for details about the attributes.
     """
     id = Attribute("The PackageDiff unique number.")
 

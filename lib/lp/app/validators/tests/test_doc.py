@@ -12,7 +12,7 @@ from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 def test_suite():
     suite = unittest.TestSuite()
     test = LayeredDocFileSuite(
-        "validation.txt",
+        "validation.rst",
         setUp=setUp,
         tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,

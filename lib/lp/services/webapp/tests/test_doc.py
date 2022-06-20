@@ -25,31 +25,31 @@ here = os.path.dirname(os.path.realpath(__file__))
 
 
 special = {
-    'canonical_url.txt': LayeredDocFileSuite(
-        '../doc/canonical_url.txt',
+    'canonical_url.rst': LayeredDocFileSuite(
+        '../doc/canonical_url.rst',
         setUp=setUp, tearDown=tearDown,
         layer=FunctionalLayer,),
-    'notification-text-escape.txt': LayeredDocFileSuite(
-        '../doc/notification-text-escape.txt',
+    'notification-text-escape.rst': LayeredDocFileSuite(
+        '../doc/notification-text-escape.rst',
         setUp=test_notifications.setUp,
         tearDown=test_notifications.tearDown,
         stdout_logging=False, layer=None),
-    'test_adapter.txt': LayeredDocFileSuite(
-        '../doc/test_adapter.txt',
+    'test_adapter.rst': LayeredDocFileSuite(
+        '../doc/test_adapter.rst',
         setUp=setGlobs,
         layer=LaunchpadFunctionalLayer),
 # XXX Julian 2009-05-13, bug=376171
 # Temporarily disabled because of intermittent failures.
-#    'test_adapter_timeout.txt': LayeredDocFileSuite(
-#        '../doc/test_adapter_timeout.txt',
+#    'test_adapter_timeout.rst': LayeredDocFileSuite(
+#        '../doc/test_adapter_timeout.rst',
 #        setUp=setUp, tearDown=tearDown,
 #        layer=LaunchpadFunctionalLayer),
-    'test_adapter_permissions.txt': LayeredDocFileSuite(
-        '../doc/test_adapter_permissions.txt',
+    'test_adapter_permissions.rst': LayeredDocFileSuite(
+        '../doc/test_adapter_permissions.rst',
         setUp=setGlobs,
         layer=LaunchpadFunctionalLayer),
-    'uri.txt': LayeredDocFileSuite(
-        '../doc/uri.txt',
+    'uri.rst': LayeredDocFileSuite(
+        '../doc/uri.rst',
         setUp=setUp, tearDown=tearDown,
         layer=FunctionalLayer),
     }

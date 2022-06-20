@@ -1427,7 +1427,7 @@ class TestCheckTeamParticipationScriptPerformance(TestCaseWithFactory):
 def test_suite():
     suite = TestLoader().loadTestsFromName(__name__)
     bug_249185 = LayeredDocFileSuite(
-        'bug-249185.txt', optionflags=default_optionflags,
+        'bug-249185.rst', optionflags=default_optionflags,
         layer=DatabaseFunctionalLayer,
         setUp=setUp, tearDown=tearDown)
     suite.addTest(bug_249185)

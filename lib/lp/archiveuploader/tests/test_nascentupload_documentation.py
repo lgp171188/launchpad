@@ -112,7 +112,7 @@ def test_suite():
     filenames = [
         filename
         for filename in os.listdir(tests_dir)
-        if filename.lower().endswith('.txt')
+        if filename.lower().endswith('.rst')
         ]
 
     for filename in sorted(filenames):

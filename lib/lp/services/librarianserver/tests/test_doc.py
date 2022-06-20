@@ -135,13 +135,13 @@ def upload_request(request):
 here = os.path.dirname(os.path.realpath(__file__))
 
 special = {
-    'librarian-report.txt': LayeredDocFileSuite(
-            '../doc/librarian-report.txt',
+    'librarian-report.rst': LayeredDocFileSuite(
+            '../doc/librarian-report.rst',
             setUp=setUp, tearDown=tearDown,
             layer=LaunchpadZopelessLayer
             ),
-    'upload.txt': LayeredDocFileSuite(
-            '../doc/upload.txt',
+    'upload.rst': LayeredDocFileSuite(
+            '../doc/upload.rst',
             setUp=setUp, tearDown=tearDown,
             layer=LaunchpadZopelessLayer,
             globs={'upload_request': upload_request},

@@ -16,8 +16,8 @@ report (or a part of) can be piped in, for example by pasting it:
 
   % bin/retest
   Tests with failures:
-     lib/lp/registry/browser/tests/sourcepackage-views.txt
-     lib/lp/registry/tests/../stories/product/xx-product-package-pages.txt
+     lib/lp/registry/browser/tests/sourcepackage-views.rst
+     lib/lp/registry/tests/../stories/product/xx-product-package-pages.rst
   Total: ... tests, 2 failures, 0 errors in ...
 
 """
@@ -52,7 +52,7 @@ def get_test_name(test):
     """Get the test name of a failed test.
 
     If the test is part of a numbered story,
-    e.g. 'stories/gpg-coc/01-claimgpgp.txt', then return the directory name
+    e.g. 'stories/gpg-coc/01-claimgpgp.rst', then return the directory name
     since all of the stories must be run together.
     """
     match = STORY_RE.match(test)

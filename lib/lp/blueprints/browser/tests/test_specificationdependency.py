@@ -3,7 +3,7 @@
 
 """Tests for the specification dependency views.
 
-There are also tests in lp/blueprints/stories/blueprints/xx-dependencies.txt.
+There are also tests in lp/blueprints/stories/blueprints/xx-dependencies.rst.
 """
 
 from lp.app.enums import InformationType

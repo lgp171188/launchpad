@@ -35,52 +35,52 @@ def peopleKarmaTearDown(test):
     tearDown(test)
 
 special = {
-    'distribution-mirror.txt': LayeredDocFileSuite(
-        '../doc/distribution-mirror.txt',
+    'distribution-mirror.rst': LayeredDocFileSuite(
+        '../doc/distribution-mirror.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
-    'person-karma.txt': LayeredDocFileSuite(
-        '../doc/person-karma.txt',
+    'person-karma.rst': LayeredDocFileSuite(
+        '../doc/person-karma.rst',
         setUp=setUp, tearDown=peopleKarmaTearDown,
         layer=LaunchpadFunctionalLayer,
         stdout_logging_level=logging.WARNING
         ),
-    'product.txt': LayeredDocFileSuite(
-        '../doc/product.txt',
+    'product.rst': LayeredDocFileSuite(
+        '../doc/product.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
-    'private-team-roles.txt': LayeredDocFileSuite(
-        '../doc/private-team-roles.txt',
+    'private-team-roles.rst': LayeredDocFileSuite(
+        '../doc/private-team-roles.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
-    'productrelease.txt': LayeredDocFileSuite(
-        '../doc/productrelease.txt',
+    'productrelease.rst': LayeredDocFileSuite(
+        '../doc/productrelease.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
-    'productrelease-file-download.txt': LayeredDocFileSuite(
-        '../doc/productrelease-file-download.txt',
+    'productrelease-file-download.rst': LayeredDocFileSuite(
+        '../doc/productrelease-file-download.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
-    'standing.txt': LayeredDocFileSuite(
-        '../doc/standing.txt',
+    'standing.rst': LayeredDocFileSuite(
+        '../doc/standing.rst',
         layer=LaunchpadZopelessLayer,
         setUp=setUp, tearDown=tearDown,
         ),
-    'karmacache.txt': LayeredDocFileSuite(
-        '../doc/karmacache.txt',
+    'karmacache.rst': LayeredDocFileSuite(
+        '../doc/karmacache.rst',
         layer=LaunchpadZopelessLayer,
         setUp=setUp, tearDown=tearDown),
-    'sourcepackage.txt': LayeredDocFileSuite(
-        '../doc/sourcepackage.txt',
+    'sourcepackage.rst': LayeredDocFileSuite(
+        '../doc/sourcepackage.rst',
         layer=LaunchpadFunctionalLayer,
         setUp=setUp, tearDown=tearDown),
-    'distribution-sourcepackage.txt': LayeredDocFileSuite(
-        '../doc/distribution-sourcepackage.txt',
+    'distribution-sourcepackage.rst': LayeredDocFileSuite(
+        '../doc/distribution-sourcepackage.rst',
         layer=LaunchpadZopelessLayer,
         setUp=setUp, tearDown=tearDown),
     }

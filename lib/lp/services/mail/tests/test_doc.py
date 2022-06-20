@@ -45,8 +45,8 @@ class ProcessMailLayer(LaunchpadZopelessLayer):
 
 
 special = {
-    'emailauthentication.txt': LayeredDocFileSuite(
-        '../doc/emailauthentication.txt',
+    'emailauthentication.rst': LayeredDocFileSuite(
+        '../doc/emailauthentication.rst',
         setUp=setUp, tearDown=tearDown,
         layer=ProcessMailLayer,
         stdout_logging=False)

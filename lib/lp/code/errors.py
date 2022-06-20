@@ -101,7 +101,7 @@ class BranchExists(BranchCreationException):
     def __init__(self, existing_branch):
         # XXX: TimPenhey 2009-07-12 bug=405214: This error
         # message logic is incorrect, but the exact text is being tested
-        # in branch-xmlrpc.txt.
+        # in branch-xmlrpc.rst.
         params = {'name': existing_branch.name}
         if existing_branch.product is None:
             params['maybe_junk'] = 'junk '

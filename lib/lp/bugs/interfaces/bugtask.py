@@ -799,7 +799,7 @@ class IBugTask(IHasBug, IBugTaskDelete):
 
           product=firefox; status=New; importance=Critical; assignee=None;
 
-        See doc/bugmail-headers.txt for a complete explanation and more
+        See doc/bugmail-headers.rst for a complete explanation and more
         examples.
         """
 

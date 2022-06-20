@@ -405,7 +405,7 @@ def test_suite():
     suite.addTest(DocTestSuite('lp.services.mail.incoming'))
     suite.addTest(
         LayeredDocFileSuite(
-            'incomingmail.txt',
+            'incomingmail.rst',
             setUp=setUp,
             tearDown=tearDown,
             layer=LaunchpadZopelessLayer,
