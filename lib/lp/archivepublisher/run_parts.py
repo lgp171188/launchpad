@@ -4,14 +4,14 @@
 """Publisher support for running programs from a plug-in directory."""
 
 __all__ = [
-    'execute_subprocess',
-    'find_run_parts_dir',
-    'run_parts',
-    ]
+    "execute_subprocess",
+    "find_run_parts_dir",
+    "run_parts",
+]
 
 import os
-from shlex import quote as shell_quote
 import subprocess
+from shlex import quote as shell_quote
 
 from lp.services.config import config
 from lp.services.scripts.base import LaunchpadScriptFailure
@@ -70,7 +70,8 @@ def run_parts(distribution_name, parts, log=None, env=None):
         return
     cmd = ["run-parts", "--", parts_dir]
     failure = LaunchpadScriptFailure(
-        "Failure while executing run-parts %s." % parts_dir)
+        "Failure while executing run-parts %s." % parts_dir
+    )
     full_env = dict(os.environ)
     if env is not None:
         full_env.update(env)

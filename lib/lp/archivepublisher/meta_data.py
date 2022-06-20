@@ -5,7 +5,7 @@
 
 __all__ = [
     "MetaDataUpload",
-    ]
+]
 
 import os
 
@@ -22,6 +22,7 @@ class MetaDataUpload(CustomUpload):
     seen even when the archive is private, and allows commercial customers
     to browse contents for potential later purchase.
     """
+
     custom_type = "meta-data"
 
     @classmethod
@@ -35,7 +36,8 @@ class MetaDataUpload(CustomUpload):
         if pubconf.metaroot is None:
             if self.logger is not None:
                 self.logger.debug(
-                    "Skipping meta-data for archive without metaroot.")
+                    "Skipping meta-data for archive without metaroot."
+                )
             return
 
         dest_file = os.path.join(pubconf.metaroot, libraryfilealias.filename)

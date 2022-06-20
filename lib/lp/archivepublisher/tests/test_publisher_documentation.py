@@ -10,11 +10,7 @@ import unittest
 from lp.services.config import config
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 
 def archivePublisherSetUp(test):
@@ -29,18 +25,21 @@ def test_suite():
     filenames = [
         filename
         for filename in os.listdir(tests_dir)
-        if filename.lower().endswith('.txt')
-        ]
+        if filename.lower().endswith(".txt")
+    ]
 
     for filename in sorted(filenames):
         test = LayeredDocFileSuite(
-            filename, setUp=archivePublisherSetUp, tearDown=tearDown,
+            filename,
+            setUp=archivePublisherSetUp,
+            tearDown=tearDown,
             layer=LaunchpadZopelessLayer,
-            stdout_logging_level=logging.WARNING)
+            stdout_logging_level=logging.WARNING,
+        )
         suite.addTest(test)
 
     return suite
 
 
-if __name__ == '__main__':
-    unittest.main(defaultTest='test_suite')
+if __name__ == "__main__":
+    unittest.main(defaultTest="test_suite")

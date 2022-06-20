@@ -3,12 +3,9 @@
 
 """Test cases for copying signing keys between archives."""
 
-from testtools.content import text_content
-from testtools.matchers import (
-    MatchesSetwise,
-    MatchesStructure,
-    )
 import transaction
+from testtools.content import text_content
+from testtools.matchers import MatchesSetwise, MatchesStructure
 
 from lp.archivepublisher.scripts.copy_signingkeys import CopySigningKeysScript
 from lp.services.config import config
@@ -35,8 +32,10 @@ class TestCopySigningKeysScript(TestCaseWithFactory):
         try:
             with CapturedOutput() as captured:
                 script = CopySigningKeysScript(
-                    "copy-signingkeys", dbuser=config.archivepublisher.dbuser,
-                    test_args=test_args)
+                    "copy-signingkeys",
+                    dbuser=config.archivepublisher.dbuser,
+                    test_args=test_args,
+                )
                 script.processOptions()
         except SystemExit:
             exited = True
@@ -50,11 +49,12 @@ class TestCopySigningKeysScript(TestCaseWithFactory):
             self.addDetail("stderr", text_content(stderr))
         if expect_exit:
             if not exited:
-                raise AssertionError('Script unexpectedly exited successfully')
+                raise AssertionError("Script unexpectedly exited successfully")
         else:
             if exited:
                 raise AssertionError(
-                    'Script unexpectedly exited unsuccessfully')
+                    "Script unexpectedly exited unsuccessfully"
+                )
             self.assertEqual("", stderr)
             script.logger = BufferLogger()
             return script
@@ -63,7 +63,9 @@ class TestCopySigningKeysScript(TestCaseWithFactory):
         return IStore(ArchiveSigningKey).find(
             ArchiveSigningKey,
             ArchiveSigningKey.archive_id.is_in(
-                archive.id for archive in archives))
+                archive.id for archive in archives
+            ),
+        )
 
     def test_getArchive(self):
         archives = [self.factory.makeArchive() for _ in range(2)]
@@ -87,17 +89,21 @@ class TestCopySigningKeysScript(TestCaseWithFactory):
         archives = [self.factory.makeArchive() for _ in range(2)]
         self.assertRaisesWithContent(
             LaunchpadScriptFailure,
-            "Could not find series 'nonexistent' in %s." % (
-                archives[0].distribution.display_name),
+            "Could not find series 'nonexistent' in %s."
+            % (archives[0].distribution.display_name),
             self.makeScript,
-            test_args=["-s", "nonexistent"], archives=archives)
+            test_args=["-s", "nonexistent"],
+            archives=archives,
+        )
 
     def test_getSeries(self):
         archives = [self.factory.makeArchive() for _ in range(2)]
         distro_series = self.factory.makeDistroSeries(
-            distribution=archives[0].distribution)
+            distribution=archives[0].distribution
+        )
         script = self.makeScript(
-            test_args=["-s", distro_series.name], archives=archives)
+            test_args=["-s", distro_series.name], archives=archives
+        )
         self.assertEqual(distro_series, script.series)
 
     def test_wrong_number_of_arguments(self):
@@ -110,239 +116,355 @@ class TestCopySigningKeysScript(TestCaseWithFactory):
         signing_keys = [
             self.factory.makeSigningKey(key_type=key_type)
             for key_type in (
-                SigningKeyType.UEFI, SigningKeyType.KMOD, SigningKeyType.OPAL)]
+                SigningKeyType.UEFI,
+                SigningKeyType.KMOD,
+                SigningKeyType.OPAL,
+            )
+        ]
         for signing_key in signing_keys[:2]:
             self.factory.makeArchiveSigningKey(
-                archive=archives[0], signing_key=signing_key)
+                archive=archives[0], signing_key=signing_key
+            )
         distro_series = self.factory.makeDistroSeries(
-            distribution=archives[0].distribution)
+            distribution=archives[0].distribution
+        )
         self.factory.makeArchiveSigningKey(
-            archive=archives[0], distro_series=distro_series,
-            signing_key=signing_keys[1])
+            archive=archives[0],
+            distro_series=distro_series,
+            signing_key=signing_keys[1],
+        )
         self.factory.makeArchiveSigningKey(
-            archive=archives[2], signing_key=signing_keys[2])
+            archive=archives[2], signing_key=signing_keys[2]
+        )
         script = self.makeScript(archives=archives[:2])
         script.main()
         expected_log = [
-            "INFO Copying UEFI signing key %s from %s / None to %s / None" % (
+            "INFO Copying UEFI signing key %s from %s / None to %s / None"
+            % (
                 signing_keys[0].fingerprint,
-                archives[0].reference, archives[1].reference),
-            "INFO Copying Kmod signing key %s from %s / None to %s / None" % (
+                archives[0].reference,
+                archives[1].reference,
+            ),
+            "INFO Copying Kmod signing key %s from %s / None to %s / None"
+            % (
                 signing_keys[1].fingerprint,
-                archives[0].reference, archives[1].reference),
+                archives[0].reference,
+                archives[1].reference,
+            ),
             "INFO No OPAL signing key for %s / None" % archives[0].reference,
             "INFO No SIPL signing key for %s / None" % archives[0].reference,
             "INFO No FIT signing key for %s / None" % archives[0].reference,
-            "INFO No OpenPGP signing key for %s / None" %
-                archives[0].reference,
-            "INFO No CV2 Kernel signing key for %s / None" %
-                archives[0].reference,
-            "INFO No Android Kernel signing key for %s / None" %
-            archives[0].reference,
-            ]
+            "INFO No OpenPGP signing key for %s / None"
+            % archives[0].reference,
+            "INFO No CV2 Kernel signing key for %s / None"
+            % archives[0].reference,
+            "INFO No Android Kernel signing key for %s / None"
+            % archives[0].reference,
+        ]
         self.assertEqual(
-            expected_log, script.logger.content.as_text().splitlines())
+            expected_log, script.logger.content.as_text().splitlines()
+        )
         self.assertThat(
             self.findKeys(archives),
             MatchesSetwise(
                 MatchesStructure.byEquality(
-                    archive=archives[0], earliest_distro_series=None,
-                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
+                    archive=archives[0],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.UEFI,
+                    signing_key=signing_keys[0],
+                ),
                 MatchesStructure.byEquality(
-                    archive=archives[0], earliest_distro_series=None,
-                    key_type=SigningKeyType.KMOD, signing_key=signing_keys[1]),
+                    archive=archives[0],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.KMOD,
+                    signing_key=signing_keys[1],
+                ),
                 MatchesStructure.byEquality(
-                    archive=archives[0], earliest_distro_series=distro_series,
-                    key_type=SigningKeyType.KMOD, signing_key=signing_keys[1]),
+                    archive=archives[0],
+                    earliest_distro_series=distro_series,
+                    key_type=SigningKeyType.KMOD,
+                    signing_key=signing_keys[1],
+                ),
                 MatchesStructure.byEquality(
-                    archive=archives[1], earliest_distro_series=None,
-                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
+                    archive=archives[1],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.UEFI,
+                    signing_key=signing_keys[0],
+                ),
                 MatchesStructure.byEquality(
-                    archive=archives[1], earliest_distro_series=None,
-                    key_type=SigningKeyType.KMOD, signing_key=signing_keys[1]),
+                    archive=archives[1],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.KMOD,
+                    signing_key=signing_keys[1],
+                ),
                 MatchesStructure.byEquality(
-                    archive=archives[2], earliest_distro_series=None,
-                    key_type=SigningKeyType.OPAL, signing_key=signing_keys[2]),
-                ))
+                    archive=archives[2],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.OPAL,
+                    signing_key=signing_keys[2],
+                ),
+            ),
+        )
 
     def test_copy_by_key_type(self):
         archives = [self.factory.makeArchive() for _ in range(3)]
         signing_keys = [
             self.factory.makeSigningKey(key_type=key_type)
-            for key_type in (SigningKeyType.UEFI, SigningKeyType.KMOD)]
+            for key_type in (SigningKeyType.UEFI, SigningKeyType.KMOD)
+        ]
         for signing_key in signing_keys:
             self.factory.makeArchiveSigningKey(
-                archive=archives[0], signing_key=signing_key)
+                archive=archives[0], signing_key=signing_key
+            )
         distro_series = self.factory.makeDistroSeries(
-            distribution=archives[0].distribution)
+            distribution=archives[0].distribution
+        )
         self.factory.makeArchiveSigningKey(
-            archive=archives[0], distro_series=distro_series,
-            signing_key=signing_keys[0])
+            archive=archives[0],
+            distro_series=distro_series,
+            signing_key=signing_keys[0],
+        )
         script = self.makeScript(
-            test_args=["--key-type", "UEFI"], archives=archives[:2])
+            test_args=["--key-type", "UEFI"], archives=archives[:2]
+        )
         script.main()
         expected_log = [
-            "INFO Copying UEFI signing key %s from %s / None to %s / None" % (
+            "INFO Copying UEFI signing key %s from %s / None to %s / None"
+            % (
                 signing_keys[0].fingerprint,
-                archives[0].reference, archives[1].reference),
-            ]
+                archives[0].reference,
+                archives[1].reference,
+            ),
+        ]
         self.assertEqual(
-            expected_log, script.logger.content.as_text().splitlines())
+            expected_log, script.logger.content.as_text().splitlines()
+        )
         self.assertThat(
             self.findKeys(archives),
             MatchesSetwise(
                 MatchesStructure.byEquality(
-                    archive=archives[0], earliest_distro_series=None,
-                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
+                    archive=archives[0],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.UEFI,
+                    signing_key=signing_keys[0],
+                ),
                 MatchesStructure.byEquality(
-                    archive=archives[0], earliest_distro_series=None,
-                    key_type=SigningKeyType.KMOD, signing_key=signing_keys[1]),
+                    archive=archives[0],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.KMOD,
+                    signing_key=signing_keys[1],
+                ),
                 MatchesStructure.byEquality(
-                    archive=archives[0], earliest_distro_series=distro_series,
-                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
+                    archive=archives[0],
+                    earliest_distro_series=distro_series,
+                    key_type=SigningKeyType.UEFI,
+                    signing_key=signing_keys[0],
+                ),
                 MatchesStructure.byEquality(
-                    archive=archives[1], earliest_distro_series=None,
-                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
-                ))
+                    archive=archives[1],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.UEFI,
+                    signing_key=signing_keys[0],
+                ),
+            ),
+        )
 
     def test_copy_by_series(self):
         distribution = self.factory.makeDistribution()
         archives = [
             self.factory.makeArchive(distribution=distribution)
-            for _ in range(3)]
+            for _ in range(3)
+        ]
         signing_keys = [
             self.factory.makeSigningKey(key_type=key_type)
-            for key_type in (SigningKeyType.UEFI, SigningKeyType.KMOD)]
+            for key_type in (SigningKeyType.UEFI, SigningKeyType.KMOD)
+        ]
         distro_serieses = [
             self.factory.makeDistroSeries(distribution=distribution)
-            for _ in range(2)]
+            for _ in range(2)
+        ]
         for signing_key in signing_keys:
             self.factory.makeArchiveSigningKey(
-                archive=archives[0], distro_series=distro_serieses[0],
-                signing_key=signing_key)
+                archive=archives[0],
+                distro_series=distro_serieses[0],
+                signing_key=signing_key,
+            )
         self.factory.makeArchiveSigningKey(
-            archive=archives[0], signing_key=signing_keys[0])
+            archive=archives[0], signing_key=signing_keys[0]
+        )
         self.factory.makeArchiveSigningKey(
-            archive=archives[0], distro_series=distro_serieses[1],
-            signing_key=signing_keys[0])
+            archive=archives[0],
+            distro_series=distro_serieses[1],
+            signing_key=signing_keys[0],
+        )
         script = self.makeScript(
-            test_args=["-s", distro_serieses[0].name], archives=archives[:2])
+            test_args=["-s", distro_serieses[0].name], archives=archives[:2]
+        )
         script.main()
         expected_log = [
-            "INFO Copying UEFI signing key %s from %s / %s to %s / %s" % (
+            "INFO Copying UEFI signing key %s from %s / %s to %s / %s"
+            % (
                 signing_keys[0].fingerprint,
-                archives[0].reference, distro_serieses[0].name,
-                archives[1].reference, distro_serieses[0].name),
-            "INFO Copying Kmod signing key %s from %s / %s to %s / %s" % (
+                archives[0].reference,
+                distro_serieses[0].name,
+                archives[1].reference,
+                distro_serieses[0].name,
+            ),
+            "INFO Copying Kmod signing key %s from %s / %s to %s / %s"
+            % (
                 signing_keys[1].fingerprint,
-                archives[0].reference, distro_serieses[0].name,
-                archives[1].reference, distro_serieses[0].name),
-            "INFO No OPAL signing key for %s / %s" % (
-                archives[0].reference, distro_serieses[0].name),
-            "INFO No SIPL signing key for %s / %s" % (
-                archives[0].reference, distro_serieses[0].name),
-            "INFO No FIT signing key for %s / %s" % (
-                archives[0].reference, distro_serieses[0].name),
-            "INFO No OpenPGP signing key for %s / %s" % (
-                archives[0].reference, distro_serieses[0].name),
-            "INFO No CV2 Kernel signing key for %s / %s" % (
-                archives[0].reference, distro_serieses[0].name),
-            "INFO No Android Kernel signing key for %s / %s" % (
-                archives[0].reference, distro_serieses[0].name),
-            ]
+                archives[0].reference,
+                distro_serieses[0].name,
+                archives[1].reference,
+                distro_serieses[0].name,
+            ),
+            "INFO No OPAL signing key for %s / %s"
+            % (archives[0].reference, distro_serieses[0].name),
+            "INFO No SIPL signing key for %s / %s"
+            % (archives[0].reference, distro_serieses[0].name),
+            "INFO No FIT signing key for %s / %s"
+            % (archives[0].reference, distro_serieses[0].name),
+            "INFO No OpenPGP signing key for %s / %s"
+            % (archives[0].reference, distro_serieses[0].name),
+            "INFO No CV2 Kernel signing key for %s / %s"
+            % (archives[0].reference, distro_serieses[0].name),
+            "INFO No Android Kernel signing key for %s / %s"
+            % (archives[0].reference, distro_serieses[0].name),
+        ]
         self.assertEqual(
-            expected_log, script.logger.content.as_text().splitlines())
+            expected_log, script.logger.content.as_text().splitlines()
+        )
         self.assertThat(
             self.findKeys(archives),
             MatchesSetwise(
                 MatchesStructure.byEquality(
-                    archive=archives[0], earliest_distro_series=None,
-                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
+                    archive=archives[0],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.UEFI,
+                    signing_key=signing_keys[0],
+                ),
                 MatchesStructure.byEquality(
                     archive=archives[0],
                     earliest_distro_series=distro_serieses[0],
-                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
+                    key_type=SigningKeyType.UEFI,
+                    signing_key=signing_keys[0],
+                ),
                 MatchesStructure.byEquality(
                     archive=archives[0],
                     earliest_distro_series=distro_serieses[0],
-                    key_type=SigningKeyType.KMOD, signing_key=signing_keys[1]),
+                    key_type=SigningKeyType.KMOD,
+                    signing_key=signing_keys[1],
+                ),
                 MatchesStructure.byEquality(
                     archive=archives[0],
                     earliest_distro_series=distro_serieses[1],
-                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
+                    key_type=SigningKeyType.UEFI,
+                    signing_key=signing_keys[0],
+                ),
                 MatchesStructure.byEquality(
                     archive=archives[1],
                     earliest_distro_series=distro_serieses[0],
-                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
+                    key_type=SigningKeyType.UEFI,
+                    signing_key=signing_keys[0],
+                ),
                 MatchesStructure.byEquality(
                     archive=archives[1],
                     earliest_distro_series=distro_serieses[0],
-                    key_type=SigningKeyType.KMOD, signing_key=signing_keys[1]),
-                ))
+                    key_type=SigningKeyType.KMOD,
+                    signing_key=signing_keys[1],
+                ),
+            ),
+        )
 
     def test_copy_refuses_overwrite(self):
         archives = [self.factory.makeArchive() for _ in range(2)]
         signing_keys = [
             self.factory.makeSigningKey(key_type=SigningKeyType.UEFI)
-            for _ in range(2)]
+            for _ in range(2)
+        ]
         for archive, signing_key in zip(archives, signing_keys):
             self.factory.makeArchiveSigningKey(
-                archive=archive, signing_key=signing_key)
+                archive=archive, signing_key=signing_key
+            )
         script = self.makeScript(
-            test_args=["--key-type", "UEFI"], archives=archives[:2])
+            test_args=["--key-type", "UEFI"], archives=archives[:2]
+        )
         script.main()
         expected_log = [
-            "WARNING UEFI signing key for %s / None already exists" %
-                archives[1].reference,
-            ]
+            "WARNING UEFI signing key for %s / None already exists"
+            % archives[1].reference,
+        ]
         self.assertEqual(
-            expected_log, script.logger.content.as_text().splitlines())
+            expected_log, script.logger.content.as_text().splitlines()
+        )
         self.assertThat(
             self.findKeys(archives),
             MatchesSetwise(
                 MatchesStructure.byEquality(
-                    archive=archives[0], earliest_distro_series=None,
-                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
+                    archive=archives[0],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.UEFI,
+                    signing_key=signing_keys[0],
+                ),
                 MatchesStructure.byEquality(
-                    archive=archives[1], earliest_distro_series=None,
-                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[1]),
-            ))
+                    archive=archives[1],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.UEFI,
+                    signing_key=signing_keys[1],
+                ),
+            ),
+        )
 
     def test_copy_forced_overwrite(self):
         archives = [self.factory.makeArchive() for _ in range(2)]
         signing_keys = [
             self.factory.makeSigningKey(key_type=SigningKeyType.UEFI)
-            for _ in range(2)]
+            for _ in range(2)
+        ]
         for archive, signing_key in zip(archives, signing_keys):
             self.factory.makeArchiveSigningKey(
-                archive=archive, signing_key=signing_key)
+                archive=archive, signing_key=signing_key
+            )
         script = self.makeScript(
             test_args=["--key-type", "UEFI", "--overwrite"],
-            archives=archives[:2])
+            archives=archives[:2],
+        )
         script.main()
 
         expected_log = [
-            "WARNING UEFI signing key for %s / None being overwritten" % (
-                archives[1].reference),
-            "INFO Copying UEFI signing key %s from %s / %s to %s / %s" % (
+            "WARNING UEFI signing key for %s / None being overwritten"
+            % (archives[1].reference),
+            "INFO Copying UEFI signing key %s from %s / %s to %s / %s"
+            % (
                 signing_keys[0].fingerprint,
-                archives[0].reference, None,
-                archives[1].reference, None),
-            ]
+                archives[0].reference,
+                None,
+                archives[1].reference,
+                None,
+            ),
+        ]
         self.assertEqual(
-            expected_log, script.logger.content.as_text().splitlines())
+            expected_log, script.logger.content.as_text().splitlines()
+        )
         self.assertThat(
             self.findKeys(archives),
             MatchesSetwise(
                 # First archive keeps its signing keys.
                 MatchesStructure.byEquality(
-                    archive=archives[0], earliest_distro_series=None,
-                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
+                    archive=archives[0],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.UEFI,
+                    signing_key=signing_keys[0],
+                ),
                 # Second archive uses the same signing_key from first archive.
                 MatchesStructure.byEquality(
-                    archive=archives[1], earliest_distro_series=None,
-                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
-                ))
+                    archive=archives[1],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.UEFI,
+                    signing_key=signing_keys[0],
+                ),
+            ),
+        )
 
     def runScript(self, args=None):
         transaction.commit()
@@ -358,10 +480,12 @@ class TestCopySigningKeysScript(TestCaseWithFactory):
         archives = [self.factory.makeArchive() for _ in range(2)]
         signing_keys = [
             self.factory.makeSigningKey(key_type=key_type)
-            for key_type in (SigningKeyType.UEFI, SigningKeyType.KMOD)]
+            for key_type in (SigningKeyType.UEFI, SigningKeyType.KMOD)
+        ]
         for signing_key in signing_keys[:2]:
             self.factory.makeArchiveSigningKey(
-                archive=archives[0], signing_key=signing_key)
+                archive=archives[0], signing_key=signing_key
+            )
 
         self.runScript(args=[archive.reference for archive in archives])
 
@@ -369,15 +493,28 @@ class TestCopySigningKeysScript(TestCaseWithFactory):
             self.findKeys(archives),
             MatchesSetwise(
                 MatchesStructure.byEquality(
-                    archive=archives[0], earliest_distro_series=None,
-                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
+                    archive=archives[0],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.UEFI,
+                    signing_key=signing_keys[0],
+                ),
                 MatchesStructure.byEquality(
-                    archive=archives[0], earliest_distro_series=None,
-                    key_type=SigningKeyType.KMOD, signing_key=signing_keys[1]),
+                    archive=archives[0],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.KMOD,
+                    signing_key=signing_keys[1],
+                ),
                 MatchesStructure.byEquality(
-                    archive=archives[1], earliest_distro_series=None,
-                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
+                    archive=archives[1],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.UEFI,
+                    signing_key=signing_keys[0],
+                ),
                 MatchesStructure.byEquality(
-                    archive=archives[1], earliest_distro_series=None,
-                    key_type=SigningKeyType.KMOD, signing_key=signing_keys[1]),
-                ))
+                    archive=archives[1],
+                    earliest_distro_series=None,
+                    key_type=SigningKeyType.KMOD,
+                    signing_key=signing_keys[1],
+                ),
+            ),
+        )

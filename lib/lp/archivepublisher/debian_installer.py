@@ -7,8 +7,8 @@
 # Daniel Silverstone who should be the first point of contact for it.
 
 __all__ = [
-    'DebianInstallerUpload',
-    ]
+    "DebianInstallerUpload",
+]
 
 import os
 import shutil
@@ -18,7 +18,7 @@ from lp.archivepublisher.customupload import CustomUpload
 
 
 class DebianInstallerUpload(CustomUpload):
-    """ Debian Installer custom upload.
+    """Debian Installer custom upload.
 
     The debian-installer filename must be of the form:
 
@@ -36,6 +36,7 @@ class DebianInstallerUpload(CustomUpload):
 
     A 'current' symbolic link points to the most recent version.
     """
+
     custom_type = "installer"
 
     @staticmethod
@@ -53,8 +54,12 @@ class DebianInstallerUpload(CustomUpload):
         self.setComponents(tarfile_path)
         pubconf = getPubConfig(archive)
         self.targetdir = os.path.join(
-            pubconf.archiveroot, 'dists', suite, 'main',
-            'installer-%s' % self.arch)
+            pubconf.archiveroot,
+            "dists",
+            suite,
+            "main",
+            "installer-%s" % self.arch,
+        )
 
     @classmethod
     def getSeriesKey(cls, tarfile_path):
@@ -67,14 +72,16 @@ class DebianInstallerUpload(CustomUpload):
         CustomUpload.extract(self)
         # We now have a valid unpacked installer directory, but it's one level
         # deeper than it should be. Move it up and remove the debris.
-        unpack_dir = 'installer-%s' % self.arch
-        os.rename(os.path.join(self.tmpdir, unpack_dir, self.version),
-                  os.path.join(self.tmpdir, self.version))
+        unpack_dir = "installer-%s" % self.arch
+        os.rename(
+            os.path.join(self.tmpdir, unpack_dir, self.version),
+            os.path.join(self.tmpdir, self.version),
+        )
         shutil.rmtree(os.path.join(self.tmpdir, unpack_dir))
 
     def shouldInstall(self, filename):
-        return filename.startswith('%s/' % self.version)
+        return filename.startswith("%s/" % self.version)
 
     def shouldSign(self, filename):
         """Sign checksums files."""
-        return filename.endswith('SUMS')
+        return filename.endswith("SUMS")

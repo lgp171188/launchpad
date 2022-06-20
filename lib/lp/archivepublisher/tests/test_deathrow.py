@@ -3,9 +3,9 @@
 
 """Tests for deathrow class."""
 
-from pathlib import Path
 import shutil
 import tempfile
+from pathlib import Path
 
 from zope.component import getUtility
 
@@ -36,12 +36,13 @@ class TestDeathRow(TestCase):
         Created the temporary 'pool' and 'temp' directories and register
         a 'cleanup' to purge them after the test runs.
         """
-        pool_path = tempfile.mkdtemp('-pool')
-        temp_path = tempfile.mkdtemp('-pool-tmp')
+        pool_path = tempfile.mkdtemp("-pool")
+        temp_path = tempfile.mkdtemp("-pool-tmp")
 
         def clean_pool(pool_path, temp_path):
             shutil.rmtree(pool_path)
             shutil.rmtree(temp_path)
+
         self.addCleanup(clean_pool, pool_path, temp_path)
 
         logger = BufferLogger()
@@ -51,34 +52,26 @@ class TestDeathRow(TestCase):
     def getDiskPoolPath(self, pub, pub_file, diskpool):
         """Return the absolute path to a published file in the disk pool/."""
         return diskpool.pathFor(
-            pub.component.name,
-            pub.pool_name,
-            pub.pool_version,
-            pub_file)
+            pub.component.name, pub.pool_name, pub.pool_version, pub_file
+        )
 
     def assertIsFile(self, path: Path) -> None:
         """Assert the path exists and is a regular file."""
-        self.assertTrue(
-            path.exists(),
-            "File %s does not exist" % path.name)
+        self.assertTrue(path.exists(), "File %s does not exist" % path.name)
         self.assertFalse(
-            path.is_symlink(),
-            "File %s is a symbolic link" % path.name)
+            path.is_symlink(), "File %s is a symbolic link" % path.name
+        )
 
     def assertIsLink(self, path: Path) -> None:
         """Assert the path exists and is a symbolic link."""
+        self.assertTrue(path.exists(), "File %s does not exist" % path.name)
         self.assertTrue(
-            path.exists(),
-            "File %s does not exist" % path.name)
-        self.assertTrue(
-            path.is_symlink(),
-            "File %s is a not symbolic link" % path.name)
+            path.is_symlink(), "File %s is a not symbolic link" % path.name
+        )
 
     def assertDoesNotExist(self, path: Path) -> None:
         """Assert the path does not exit."""
-        self.assertFalse(
-            path.exists(),
-            "File %s exists" % path.name)
+        self.assertFalse(path.exists(), "File %s exists" % path.name)
 
     def test_MissingSymLinkInPool(self):
         # When a publication is promoted from 'universe' to 'main' and
@@ -89,16 +82,17 @@ class TestDeathRow(TestCase):
         # updated to match the disk status.
 
         # Setup an `SoyuzTestPublisher` and a `DeathRow` instance.
-        ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-        hoary = ubuntu.getSeries('hoary')
+        ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+        hoary = ubuntu.getSeries("hoary")
         stp = self.getTestPublisher(hoary)
         deathrow = self.getDeathRow(hoary.main_archive)
 
         # Create a source publication with a since file (DSC) in
         # 'universe' and promote it to 'main'.
-        source_universe = stp.getPubSource(component='universe')
+        source_universe = stp.getPubSource(component="universe")
         source_main = source_universe.changeOverride(
-            new_component=getUtility(IComponentSet)['main'])
+            new_component=getUtility(IComponentSet)["main"]
+        )
         test_publications = (source_universe, source_main)
 
         # Commit for exposing the just-created librarian files.
@@ -111,10 +105,12 @@ class TestDeathRow(TestCase):
             pub.publish(deathrow.diskpool, deathrow.logger)
         [main_dsc_path] = [
             self.getDiskPoolPath(source_main, pub_file, deathrow.diskpool)
-            for pub_file in source_main.files]
+            for pub_file in source_main.files
+        ]
         [universe_dsc_path] = [
             self.getDiskPoolPath(source_universe, pub_file, deathrow.diskpool)
-            for pub_file in source_universe.files]
+            for pub_file in source_universe.files
+        ]
         self.assertIsFile(main_dsc_path)
         self.assertIsLink(universe_dsc_path)
 
@@ -136,8 +132,9 @@ class TestDeathRow(TestCase):
         for pub in test_publications:
             self.assertTrue(
                 pub.dateremoved is not None,
-                '%s (%s) is not marked as removed.'
-                % (pub.displayname, pub.component.name))
+                "%s (%s) is not marked as removed."
+                % (pub.displayname, pub.component.name),
+            )
 
         self.assertDoesNotExist(main_dsc_path)
         self.assertDoesNotExist(universe_dsc_path)

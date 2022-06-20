@@ -11,8 +11,8 @@ to enable developers to publish indexes of DDTP contents.
 """
 
 __all__ = [
-    'DdtpTarballUpload',
-    ]
+    "DdtpTarballUpload",
+]
 
 import os
 
@@ -48,6 +48,7 @@ class DdtpTarballUpload(CustomUpload):
 
     Old contents will be preserved.
     """
+
     custom_type = "ddtp-tarball"
 
     @staticmethod
@@ -66,10 +67,12 @@ class DdtpTarballUpload(CustomUpload):
         self.setComponents(tarfile_path)
         self.archive = archive
         self.distro_series, _ = getUtility(IDistroSeriesSet).fromSuite(
-            archive.distribution, suite)
+            archive.distribution, suite
+        )
         pubconf = getPubConfig(archive)
         self.targetdir = os.path.join(
-            pubconf.archiveroot, 'dists', suite, self.component)
+            pubconf.archiveroot, "dists", suite, self.component
+        )
 
     @classmethod
     def getSeriesKey(cls, tarfile_path):
@@ -90,20 +93,24 @@ class DdtpTarballUpload(CustomUpload):
         # conditions depending on the archive purpose) may be configured to
         # create its own Translation-en files.  If so, we must take care not
         # to allow ddtp-tarball custom uploads to collide with those.
-        if (filename == "i18n/Translation-en" or
-                filename.startswith("i18n/Translation-en.")):
+        if filename == "i18n/Translation-en" or filename.startswith(
+            "i18n/Translation-en."
+        ):
             # Compare with the step C condition in
             # PublishDistro.publishArchive.
             if self.archive.purpose in (
-                    ArchivePurpose.PRIMARY, ArchivePurpose.COPY):
+                ArchivePurpose.PRIMARY,
+                ArchivePurpose.COPY,
+            ):
                 # See FTPArchiveHandler.writeAptConfig.
                 if not self.distro_series.include_long_descriptions:
                     return False
             else:
                 # See Publisher._writeComponentIndexes.
-                if (not self.distro_series.include_long_descriptions and
-                        getFeatureFlag(
-                            "soyuz.ppa.separate_long_descriptions")):
+                if (
+                    not self.distro_series.include_long_descriptions
+                    and getFeatureFlag("soyuz.ppa.separate_long_descriptions")
+                ):
                     return False
         return True
 

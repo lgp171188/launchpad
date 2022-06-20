@@ -17,11 +17,11 @@ from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import (
     CustomUploadAlreadyExists,
     CustomUploadBadUmask,
-    )
+)
 from lp.archivepublisher.dist_upgrader import (
     DistUpgraderBadVersion,
     DistUpgraderUpload,
-    )
+)
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
@@ -39,10 +39,12 @@ class TestDistUpgrader(RunPartsMixin, TestCaseWithFactory):
         self.temp_dir = self.makeTemporaryDirectory()
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
-            self.distro)
+            self.distro
+        )
         db_pubconf.root_dir = self.temp_dir
         self.archive = self.factory.makeArchive(
-            distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
+            distribution=self.distro, purpose=ArchivePurpose.PRIMARY
+        )
         self.suite = "distroseries"
         # CustomUpload.installFiles requires a umask of 0o022.
         old_umask = os.umask(0o022)
@@ -50,7 +52,8 @@ class TestDistUpgrader(RunPartsMixin, TestCaseWithFactory):
 
     def openArchive(self, version):
         self.path = os.path.join(
-            self.temp_dir, "dist-upgrader_%s_all.tar.gz" % version)
+            self.temp_dir, "dist-upgrader_%s_all.tar.gz" % version
+        )
         self.buffer = open(self.path, "wb")
         self.tarfile = LaunchpadWriteTarFile(self.buffer)
 
@@ -62,8 +65,12 @@ class TestDistUpgrader(RunPartsMixin, TestCaseWithFactory):
     def getUpgraderPath(self):
         pubconf = getPubConfig(self.archive)
         return os.path.join(
-            pubconf.archiveroot, "dists", self.suite, "main",
-            "dist-upgrader-all")
+            pubconf.archiveroot,
+            "dists",
+            self.suite,
+            "main",
+            "dist-upgrader-all",
+        )
 
     def test_basic(self):
         # Processing a simple correct tar file works.
@@ -92,13 +99,15 @@ class TestDistUpgrader(RunPartsMixin, TestCaseWithFactory):
         self.process()
         upgrader_path = self.getUpgraderPath()
         self.assertContentEqual(
-            ["20060302.0120", "current"], os.listdir(upgrader_path))
+            ["20060302.0120", "current"], os.listdir(upgrader_path)
+        )
         self.assertEqual(
             "20060302.0120",
-            os.readlink(os.path.join(upgrader_path, "current")))
+            os.readlink(os.path.join(upgrader_path, "current")),
+        )
         self.assertContentEqual(
-            ["hello"],
-            os.listdir(os.path.join(upgrader_path, "20060302.0120")))
+            ["hello"], os.listdir(os.path.join(upgrader_path, "20060302.0120"))
+        )
 
     def test_bad_version(self):
         # Bad versions in the tarball are refused.
@@ -108,13 +117,20 @@ class TestDistUpgrader(RunPartsMixin, TestCaseWithFactory):
 
     def test_sign_with_external_run_parts(self):
         self.enableRunParts(distribution_name=self.distro.name)
-        with open(os.path.join(
-                self.parts_directory, self.distro.name, "sign.d",
-                "10-sign"), "w") as f:
-            f.write(dedent("""\
+        with open(
+            os.path.join(
+                self.parts_directory, self.distro.name, "sign.d", "10-sign"
+            ),
+            "w",
+        ) as f:
+            f.write(
+                dedent(
+                    """\
                 #! /bin/sh
                 touch "$OUTPUT_PATH"
-                """))
+                """
+                )
+            )
             os.fchmod(f.fileno(), 0o755)
         self.openArchive("20060302.0120")
         self.tarfile.add_file("20060302.0120/list", b"a list")
@@ -122,7 +138,8 @@ class TestDistUpgrader(RunPartsMixin, TestCaseWithFactory):
         self.process()
         self.assertThat(
             os.path.join(self.getUpgraderPath(), "20060302.0120"),
-            DirContains(["list", "foo.tar.gz", "foo.tar.gz.gpg"]))
+            DirContains(["list", "foo.tar.gz", "foo.tar.gz.gpg"]),
+        )
 
     def test_getSeriesKey_extracts_architecture(self):
         # getSeriesKey extracts the architecture from an upload's filename.
@@ -136,7 +153,9 @@ class TestDistUpgrader(RunPartsMixin, TestCaseWithFactory):
 
     def test_getSeriesKey_refuses_names_with_wrong_number_of_fields(self):
         # getSeriesKey requires exactly three fields.
-        self.assertIsNone(DistUpgraderUpload.getSeriesKey(
-            "package_1.0.tar.gz"))
-        self.assertIsNone(DistUpgraderUpload.getSeriesKey(
-            "one_two_three_four_5.tar.gz"))
+        self.assertIsNone(
+            DistUpgraderUpload.getSeriesKey("package_1.0.tar.gz")
+        )
+        self.assertIsNone(
+            DistUpgraderUpload.getSeriesKey("one_two_three_four_5.tar.gz")
+        )

@@ -4,48 +4,42 @@
 """Database class for table PublisherConfig."""
 
 __all__ = [
-    'PublisherConfig',
-    'PublisherConfigSet',
-    ]
+    "PublisherConfig",
+    "PublisherConfigSet",
+]
 
-from storm.locals import (
-    Int,
-    Reference,
-    Storm,
-    Unicode,
-    )
+from storm.locals import Int, Reference, Storm, Unicode
 from zope.interface import implementer
 
 from lp.archivepublisher.interfaces.publisherconfig import (
     IPublisherConfig,
     IPublisherConfigSet,
-    )
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+)
+from lp.services.database.interfaces import IMasterStore, IStore
 
 
 @implementer(IPublisherConfig)
 class PublisherConfig(Storm):
     """See `IArchiveAuthToken`."""
-    __storm_table__ = 'PublisherConfig'
+
+    __storm_table__ = "PublisherConfig"
 
     id = Int(primary=True)
 
-    distribution_id = Int(name='distribution', allow_none=False)
-    distribution = Reference(distribution_id, 'Distribution.id')
+    distribution_id = Int(name="distribution", allow_none=False)
+    distribution = Reference(distribution_id, "Distribution.id")
 
-    root_dir = Unicode(name='root_dir', allow_none=False)
+    root_dir = Unicode(name="root_dir", allow_none=False)
 
-    base_url = Unicode(name='base_url', allow_none=False)
+    base_url = Unicode(name="base_url", allow_none=False)
 
-    copy_base_url = Unicode(name='copy_base_url', allow_none=False)
+    copy_base_url = Unicode(name="copy_base_url", allow_none=False)
 
 
 @implementer(IPublisherConfigSet)
 class PublisherConfigSet:
     """See `IPublisherConfigSet`."""
+
     title = "Soyuz Publisher Configurations"
 
     def new(self, distribution, root_dir, base_url, copy_base_url):
@@ -61,6 +55,11 @@ class PublisherConfigSet:
 
     def getByDistribution(self, distribution):
         """See `IArchiveAuthTokenSet`."""
-        return IStore(PublisherConfig).find(
-            PublisherConfig,
-            PublisherConfig.distribution_id == distribution.id).one()
+        return (
+            IStore(PublisherConfig)
+            .find(
+                PublisherConfig,
+                PublisherConfig.distribution_id == distribution.id,
+            )
+            .one()
+        )

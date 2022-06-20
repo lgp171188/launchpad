@@ -4,24 +4,21 @@
 """ArchiveGPGSigningKey interface."""
 
 __all__ = [
-    'CannotSignArchive',
-    'IArchiveGPGSigningKey',
-    'ISignableArchive',
-    'PUBLISHER_GPG_USES_SIGNING_SERVICE',
-    ]
+    "CannotSignArchive",
+    "IArchiveGPGSigningKey",
+    "ISignableArchive",
+    "PUBLISHER_GPG_USES_SIGNING_SERVICE",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.schema import Object
 
 from lp import _
 from lp.soyuz.interfaces.archive import IArchive
 
-
 PUBLISHER_GPG_USES_SIGNING_SERVICE = (
-    'archivepublisher.gpg.signing_service.enabled')
+    "archivepublisher.gpg.signing_service.enabled"
+)
 
 
 class CannotSignArchive(Exception):
@@ -35,11 +32,12 @@ class ISignableArchive(Interface):
     """
 
     archive = Object(
-        title=_('Corresponding IArchive'), required=True, schema=IArchive)
+        title=_("Corresponding IArchive"), required=True, schema=IArchive
+    )
 
     can_sign = Attribute("True if this archive is set up for signing.")
 
-    def signRepository(suite, pubconf=None, suffix='', log=None):
+    def signRepository(suite, pubconf=None, suffix="", log=None):
         """Sign the corresponding repository.
 
         :param suite: suite name to be signed.

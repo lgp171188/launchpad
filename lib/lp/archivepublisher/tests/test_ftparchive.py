@@ -4,25 +4,17 @@
 """Tests for ftparchive.py"""
 
 import difflib
-from functools import partial
 import gzip
 import os
-from pathlib import Path
 import re
 import shutil
-from textwrap import dedent
 import time
+from functools import partial
+from pathlib import Path
+from textwrap import dedent
 
-from debian.deb822 import (
-    Packages,
-    Sources,
-    )
-from testtools.matchers import (
-    Equals,
-    FileContains,
-    LessThan,
-    MatchesListwise,
-    )
+from debian.deb822 import Packages, Sources
+from testtools.matchers import Equals, FileContains, LessThan, MatchesListwise
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
@@ -30,29 +22,23 @@ from lp.archivepublisher.diskpool import DiskPool
 from lp.archivepublisher.model.ftparchive import (
     AptFTPArchiveFailure,
     FTPArchiveHandler,
-    )
+)
 from lp.archivepublisher.publishing import Publisher
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
-from lp.services.log.logger import (
-    BufferLogger,
-    DevNullLogger,
-    )
+from lp.services.log.logger import BufferLogger, DevNullLogger
 from lp.services.osutils import write_file
 from lp.soyuz.enums import (
     BinaryPackageFormat,
     IndexCompressionType,
     PackagePublishingPriority,
     PackagePublishingStatus,
-    )
+)
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import switch_dbuser
-from lp.testing.layers import (
-    LaunchpadZopelessLayer,
-    ZopelessDatabaseLayer,
-    )
+from lp.testing.layers import LaunchpadZopelessLayer, ZopelessDatabaseLayer
 
 
 class SamplePublisher:
@@ -60,7 +46,7 @@ class SamplePublisher:
 
     def __init__(self, archive):
         self.archive = archive
-        self.subcomponents = ['debian-installer']
+        self.subcomponents = ["debian-installer"]
 
     def isAllowed(self, distroseries, pocket):
         return True
@@ -89,13 +75,13 @@ class TestFTPArchive(TestCaseWithFactory):
         super().setUp()
         switch_dbuser(config.archivepublisher.dbuser)
 
-        self._distribution = getUtility(IDistributionSet)['ubuntutest']
+        self._distribution = getUtility(IDistributionSet)["ubuntutest"]
         self._archive = self._distribution.main_archive
         self._config = getPubConfig(self._archive)
         self._config.setupArchiveDirs()
         self._sampledir = os.path.join(
-            config.root, "lib", "lp", "archivepublisher", "tests",
-            "apt-data")
+            config.root, "lib", "lp", "archivepublisher", "tests", "apt-data"
+        )
         self._distsdir = self._config.distsroot
         self._confdir = self._config.miscroot
         self._pooldir = self._config.poolroot
@@ -104,7 +90,8 @@ class TestFTPArchive(TestCaseWithFactory):
         self._tempdir = self._config.temproot
         self._logger = BufferLogger()
         self._dp = DiskPool(
-            self._archive, self._pooldir, self._tempdir, self._logger)
+            self._archive, self._pooldir, self._tempdir, self._logger
+        )
         self._publisher = SamplePublisher(self._archive)
 
     def tearDown(self):
@@ -127,11 +114,18 @@ class TestFTPArchive(TestCaseWithFactory):
         # difflib to get a line-by-line comparison that makes it much more
         # immediately obvious what the differences are.
         diff_lines = difflib.ndiff(
-            sample_text.splitlines(), result_text.splitlines())
-        self.assertEqual(sample_text, result_text, '\n'.join(diff_lines))
+            sample_text.splitlines(), result_text.splitlines()
+        )
+        self.assertEqual(sample_text, result_text, "\n".join(diff_lines))
 
-    def _verifyDeb822(self, filename, directory, deb822_factory,
-                      result_suffix="", result_open_func=open):
+    def _verifyDeb822(
+        self,
+        filename,
+        directory,
+        deb822_factory,
+        result_suffix="",
+        result_open_func=open,
+    ):
         """Compare the given file and the respective sample as deb822 files."""
         result_path = os.path.join(directory, filename) + result_suffix
         with result_open_func(result_path) as result_file:
@@ -140,18 +134,21 @@ class TestFTPArchive(TestCaseWithFactory):
         with open(sample_path) as sample_file:
             sample = list(deb822_factory(sample_file))
         self.assertThat(
-            result, MatchesListwise([Equals(stanza) for stanza in sample]))
+            result, MatchesListwise([Equals(stanza) for stanza in sample])
+        )
 
     def _verifyEmpty(self, path, open_func=partial(open, mode="rb")):
         """Assert that the given file is empty."""
         with open_func(path) as result_file:
             self.assertEqual(b"", result_file.read())
 
-    def _addRepositoryFile(self, component, source_name, source_version,
-                           leafname, samplename=None):
+    def _addRepositoryFile(
+        self, component, source_name, source_version, leafname, samplename=None
+    ):
         """Create a repository file."""
         fullpath = self._dp.pathFor(
-            component, source_name, source_version, file=leafname)
+            component, source_name, source_version, file=leafname
+        )
         fullpath.parent.mkdir(parents=True, exist_ok=True)
         if samplename is None:
             samplename = leafname
@@ -160,37 +157,62 @@ class TestFTPArchive(TestCaseWithFactory):
 
     def _setUpFTPArchiveHandler(self):
         return FTPArchiveHandler(
-            self._logger, self._config, self._dp, self._distribution,
-            self._publisher)
+            self._logger,
+            self._config,
+            self._dp,
+            self._distribution,
+            self._publisher,
+        )
 
     def _setUpSampleDataFTPArchiveHandler(self):
         # Reconfigure FTPArchiveHandler to retrieve sampledata records.
         fa = self._setUpFTPArchiveHandler()
-        ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-        hoary = ubuntu.getSeries('hoary')
+        ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+        hoary = ubuntu.getSeries("hoary")
         fa.distro = ubuntu
         fa.publisher.archive = hoary.main_archive
         return fa, hoary
 
-    def _publishDefaultOverrides(self, fa, component, section='devel',
-                                 phased_update_percentage=None,
-                                 binpackageformat=BinaryPackageFormat.DEB):
-        source_overrides = FakeSelectResult([('tiny', component, section)])
-        binary_overrides = FakeSelectResult([(
-            'tiny', component, section, 'i386',
-            PackagePublishingPriority.EXTRA, binpackageformat,
-            phased_update_percentage)])
+    def _publishDefaultOverrides(
+        self,
+        fa,
+        component,
+        section="devel",
+        phased_update_percentage=None,
+        binpackageformat=BinaryPackageFormat.DEB,
+    ):
+        source_overrides = FakeSelectResult([("tiny", component, section)])
+        binary_overrides = FakeSelectResult(
+            [
+                (
+                    "tiny",
+                    component,
+                    section,
+                    "i386",
+                    PackagePublishingPriority.EXTRA,
+                    binpackageformat,
+                    phased_update_percentage,
+                )
+            ]
+        )
         fa.publishOverrides(
-            self._distribution['hoary-test'], PackagePublishingPocket.RELEASE,
-            source_overrides, binary_overrides)
+            self._distribution["hoary-test"],
+            PackagePublishingPocket.RELEASE,
+            source_overrides,
+            binary_overrides,
+        )
 
     def _publishDefaultFileLists(self, fa, component):
-        source_files = FakeSelectResult([('tiny', 'tiny_0.1.dsc', component)])
+        source_files = FakeSelectResult([("tiny", "tiny_0.1.dsc", component)])
         binary_files = FakeSelectResult(
-            [('tiny', 'tiny_0.1_i386.deb', component, 'binary-i386')])
+            [("tiny", "tiny_0.1_i386.deb", component, "binary-i386")]
+        )
         fa.publishFileLists(
-            self._distribution['hoary-test'], PackagePublishingPocket.RELEASE,
-            source_files, binary_files)
+            self._distribution["hoary-test"],
+            PackagePublishingPocket.RELEASE,
+            source_files,
+            binary_files,
+        )
 
     def test_createEmptyPocketRequests_preserves_existing(self):
         # createEmptyPocketRequests leaves existing override and file list
@@ -198,48 +220,52 @@ class TestFTPArchive(TestCaseWithFactory):
         # processes (e.g. generate-contents-files) reading those files in
         # parallel.
         publisher = Publisher(
-            self._logger, self._config, self._dp, self._archive)
+            self._logger, self._config, self._dp, self._archive
+        )
         fa = FTPArchiveHandler(
-            self._logger, self._config, self._dp, self._distribution,
-            publisher)
+            self._logger, self._config, self._dp, self._distribution, publisher
+        )
         lists = (
-            'hoary-test-updates_main_source',
-            'hoary-test-updates_main_binary-i386',
-            'hoary-test-updates_main_debian-installer_binary-i386',
-            'override.hoary-test-updates.main',
-            'override.hoary-test-updates.extra.main',
-            'override.hoary-test-updates.main.src',
-            )
+            "hoary-test-updates_main_source",
+            "hoary-test-updates_main_binary-i386",
+            "hoary-test-updates_main_debian-installer_binary-i386",
+            "override.hoary-test-updates.main",
+            "override.hoary-test-updates.extra.main",
+            "override.hoary-test-updates.main.src",
+        )
         for listname in lists:
             write_file(
                 os.path.join(self._config.overrideroot, listname),
-                b'previous contents\n')
+                b"previous contents\n",
+            )
 
         fa.createEmptyPocketRequests(fullpublish=True)
 
         for listname in lists:
             self.assertThat(
                 os.path.join(self._config.overrideroot, listname),
-                FileContains('previous contents\n'))
+                FileContains("previous contents\n"),
+            )
 
     def test_getSourcesForOverrides(self):
         # getSourcesForOverrides returns a list of tuples containing:
         # (sourcename, component, section)
         fa, hoary = self._setUpSampleDataFTPArchiveHandler()
         published_sources = fa.getSourcesForOverrides(
-            hoary, PackagePublishingPocket.RELEASE)
+            hoary, PackagePublishingPocket.RELEASE
+        )
 
         # For the above query, we are depending on the sample data to
         # contain seven rows of SourcePackagePublishingHistory data.
         expectedSources = [
-            ('linux-source-2.6.15', 'main', 'base'),
-            ('libstdc++', 'main', 'base'),
-            ('cnews', 'universe', 'base'),
-            ('alsa-utils', 'main', 'base'),
-            ('pmount', 'main', 'editors'),
-            ('netapplet', 'main', 'web'),
-            ('evolution', 'main', 'editors'),
-            ]
+            ("linux-source-2.6.15", "main", "base"),
+            ("libstdc++", "main", "base"),
+            ("cnews", "universe", "base"),
+            ("alsa-utils", "main", "base"),
+            ("pmount", "main", "editors"),
+            ("netapplet", "main", "web"),
+            ("evolution", "main", "editors"),
+        ]
         self.assertEqual(expectedSources, list(published_sources))
 
     def test_getBinariesForOverrides(self):
@@ -248,14 +274,28 @@ class TestFTPArchive(TestCaseWithFactory):
         # phased_update_percentage)
         fa, hoary = self._setUpSampleDataFTPArchiveHandler()
         published_binaries = fa.getBinariesForOverrides(
-            hoary, PackagePublishingPocket.RELEASE)
+            hoary, PackagePublishingPocket.RELEASE
+        )
         expectedBinaries = [
-            ('pmount', 'main', 'base', 'hppa',
-             PackagePublishingPriority.EXTRA, BinaryPackageFormat.DEB, None),
-            ('pmount', 'universe', 'editors', 'i386',
-             PackagePublishingPriority.IMPORTANT, BinaryPackageFormat.DEB,
-             None),
-            ]
+            (
+                "pmount",
+                "main",
+                "base",
+                "hppa",
+                PackagePublishingPriority.EXTRA,
+                BinaryPackageFormat.DEB,
+                None,
+            ),
+            (
+                "pmount",
+                "universe",
+                "editors",
+                "i386",
+                PackagePublishingPriority.IMPORTANT,
+                BinaryPackageFormat.DEB,
+                None,
+            ),
+        ]
         self.assertEqual(expectedBinaries, list(published_binaries))
 
     def test_getBinariesForOverrides_with_no_architectures(self):
@@ -263,17 +303,18 @@ class TestFTPArchive(TestCaseWithFactory):
         # (no architectures), returning an empty ResultSet.
         fa = self._setUpFTPArchiveHandler()
 
-        breezy_autotest = self._distribution.getSeries('breezy-autotest')
+        breezy_autotest = self._distribution.getSeries("breezy-autotest")
         self.assertEqual([], list(breezy_autotest.architectures))
 
         published_binaries = fa.getBinariesForOverrides(
-            breezy_autotest, PackagePublishingPocket.RELEASE)
+            breezy_autotest, PackagePublishingPocket.RELEASE
+        )
         self.assertEqual([], list(published_binaries))
 
     def test_publishOverrides(self):
         # publishOverrides write the expected files on disk.
         fa = self._setUpFTPArchiveHandler()
-        self._publishDefaultOverrides(fa, 'main')
+        self._publishDefaultOverrides(fa, "main")
 
         # Check that the overrides lists generated by LP exist and have the
         # expected contents.
@@ -287,13 +328,15 @@ class TestFTPArchive(TestCaseWithFactory):
 
         sentinel = ("hello/i386", "Task", "minimal")
         extra_overrides = os.path.join(
-            self._confdir, "more-extra.override.hoary-test.main")
+            self._confdir, "more-extra.override.hoary-test.main"
+        )
         with open(extra_overrides, "w") as extra_override_file:
             print("  ".join(sentinel), file=extra_override_file)
-        self._publishDefaultOverrides(fa, 'universe')
+        self._publishDefaultOverrides(fa, "universe")
 
         result_path = os.path.join(
-            self._overdir, "override.hoary-test.extra.universe")
+            self._overdir, "override.hoary-test.extra.universe"
+        )
         with open(result_path) as result_file:
             self.assertIn("\t".join(sentinel), result_file.read().splitlines())
 
@@ -301,20 +344,24 @@ class TestFTPArchive(TestCaseWithFactory):
         # Publications with a non-None phased update percentage produce
         # Phased-Update-Percentage extra overrides.
         fa = self._setUpFTPArchiveHandler()
-        self._publishDefaultOverrides(fa, 'main', phased_update_percentage=50)
+        self._publishDefaultOverrides(fa, "main", phased_update_percentage=50)
 
         path = os.path.join(self._overdir, "override.hoary-test.extra.main")
         with open(path) as result_file:
             self.assertIn(
                 "tiny/i386\tPhased-Update-Percentage\t50",
-                result_file.read().splitlines())
+                result_file.read().splitlines(),
+            )
 
     def test_publishOverrides_udebs(self):
         # udeb overrides appear in a separate file.
         fa = self._setUpFTPArchiveHandler()
         self._publishDefaultOverrides(
-            fa, 'main', section='debian-installer',
-            binpackageformat=BinaryPackageFormat.UDEB)
+            fa,
+            "main",
+            section="debian-installer",
+            binpackageformat=BinaryPackageFormat.UDEB,
+        )
 
         # The main override file is empty.
         stat = os.stat(os.path.join(self._overdir, "override.hoary-test.main"))
@@ -322,17 +369,20 @@ class TestFTPArchive(TestCaseWithFactory):
 
         # The binary shows up in the d-i override file.
         path = os.path.join(
-            self._overdir, "override.hoary-test.main.debian-installer")
+            self._overdir, "override.hoary-test.main.debian-installer"
+        )
         with open(path) as result_file:
             self.assertEqual(
                 ["tiny\textra\tdebian-installer"],
-                result_file.read().splitlines())
+                result_file.read().splitlines(),
+            )
 
     def test_publishOverrides_ddebs_disabled(self):
         # ddebs aren't indexed if Archive.publish_debug_symbols is unset.
         fa = self._setUpFTPArchiveHandler()
         self._publishDefaultOverrides(
-            fa, 'main', binpackageformat=BinaryPackageFormat.DDEB)
+            fa, "main", binpackageformat=BinaryPackageFormat.DDEB
+        )
 
         # The main override file is empty, and there's no ddeb override
         # file.
@@ -340,15 +390,18 @@ class TestFTPArchive(TestCaseWithFactory):
         self.assertEqual(0, stat.st_size)
         self.assertFalse(
             os.path.exists(
-                os.path.join(self._overdir, "override.hoary-test.main.debug")))
+                os.path.join(self._overdir, "override.hoary-test.main.debug")
+            )
+        )
 
     def test_publishOverrides_ddebs(self):
         # ddebs are indexed in a subcomponent if
         # Archive.publish_debug_symbols is set.
         fa = self._setUpFTPArchiveHandler()
-        fa.publisher.subcomponents.append('debug')
+        fa.publisher.subcomponents.append("debug")
         self._publishDefaultOverrides(
-            fa, 'main', binpackageformat=BinaryPackageFormat.DDEB)
+            fa, "main", binpackageformat=BinaryPackageFormat.DDEB
+        )
 
         # The main override file is empty.
         stat = os.stat(os.path.join(self._overdir, "override.hoary-test.main"))
@@ -358,7 +411,8 @@ class TestFTPArchive(TestCaseWithFactory):
         path = os.path.join(self._overdir, "override.hoary-test.main.debug")
         with open(path) as result_file:
             self.assertEqual(
-                ["tiny\textra\tdevel"], result_file.read().splitlines())
+                ["tiny\textra\tdevel"], result_file.read().splitlines()
+            )
 
     def test_publishOverrides_empties_missing_components(self):
         # publishOverrides writes empty overrides files for components that
@@ -366,14 +420,17 @@ class TestFTPArchive(TestCaseWithFactory):
         fa = self._setUpFTPArchiveHandler()
         empty_overrides = []
         for component in ("restricted", "universe", "multiverse"):
-            empty_overrides.extend([
-                "override.hoary-test.%s" % component,
-                "override.hoary-test.%s.src" % component,
-                "override.hoary-test.extra.%s" % component,
-                ])
+            empty_overrides.extend(
+                [
+                    "override.hoary-test.%s" % component,
+                    "override.hoary-test.%s.src" % component,
+                    "override.hoary-test.extra.%s" % component,
+                ]
+            )
         for override in empty_overrides:
             write_file(
-                os.path.join(self._overdir, override), b"previous contents\n")
+                os.path.join(self._overdir, override), b"previous contents\n"
+            )
 
         self._publishDefaultOverrides(fa, "main")
 
@@ -385,13 +442,15 @@ class TestFTPArchive(TestCaseWithFactory):
 
     def test_generateOverrides(self):
         # generateOverrides generates all the overrides from start to finish.
-        self._distribution = getUtility(IDistributionSet).getByName('ubuntu')
+        self._distribution = getUtility(IDistributionSet).getByName("ubuntu")
         self._archive = self._distribution.main_archive
         self._publisher = SamplePublisher(self._archive)
         fa = self._setUpFTPArchiveHandler()
         pubs = self._archive.getAllPublishedBinaries(
-            name="pmount", status=PackagePublishingStatus.PUBLISHED,
-            distroarchseries=self._distribution.getSeries("hoary")["hppa"])
+            name="pmount",
+            status=PackagePublishingStatus.PUBLISHED,
+            distroarchseries=self._distribution.getSeries("hoary")["hppa"],
+        )
         for pub in pubs:
             pub.changeOverride(new_phased_update_percentage=30).setPublished()
         fa.generateOverrides(fullpublish=True)
@@ -403,23 +462,29 @@ class TestFTPArchive(TestCaseWithFactory):
             self.assertIn("pmount\teditors\n", result_file.readlines())
         result_path = os.path.join(self._overdir, "override.hoary.extra.main")
         with open(result_path) as result_file:
-            self.assertEqual(dedent("""\
+            self.assertEqual(
+                dedent(
+                    """\
                 pmount\tOrigin\tUbuntu
                 pmount\tBugs\thttps://bugs.launchpad.net/ubuntu/+filebug
                 pmount/hppa\tPhased-Update-Percentage\t30
-                """), result_file.read())
+                """
+                ),
+                result_file.read(),
+            )
 
     def test_getSourceFiles(self):
         # getSourceFiles returns a list of tuples containing:
         # (sourcename, filename, component)
         fa, hoary = self._setUpSampleDataFTPArchiveHandler()
         sources_files = fa.getSourceFiles(
-            hoary, PackagePublishingPocket.RELEASE)
+            hoary, PackagePublishingPocket.RELEASE
+        )
         expected_files = [
-            ('alsa-utils', 'alsa-utils_1.0.9a-4ubuntu1.dsc', 'main'),
-            ('evolution', 'evolution-1.0.tar.gz', 'main'),
-            ('netapplet', 'netapplet_1.0.0.orig.tar.gz', 'main'),
-            ]
+            ("alsa-utils", "alsa-utils_1.0.9a-4ubuntu1.dsc", "main"),
+            ("evolution", "evolution-1.0.tar.gz", "main"),
+            ("netapplet", "netapplet_1.0.0.orig.tar.gz", "main"),
+        ]
         self.assertEqual(expected_files, list(sources_files))
 
     def test_getBinaryFiles(self):
@@ -427,20 +492,27 @@ class TestFTPArchive(TestCaseWithFactory):
         # (sourcename, filename, component, architecture)
         fa, hoary = self._setUpSampleDataFTPArchiveHandler()
         binary_files = fa.getBinaryFiles(
-            hoary, PackagePublishingPocket.RELEASE)
+            hoary, PackagePublishingPocket.RELEASE
+        )
         expected_files = [
-            ('pmount', 'pmount_1.9-1_all.deb', 'main', 'binary-hppa'),
-            ]
+            ("pmount", "pmount_1.9-1_all.deb", "main", "binary-hppa"),
+        ]
         self.assertEqual(expected_files, list(binary_files))
 
     def makeDDEBPub(self, series):
         self.factory.makeBinaryPackagePublishingHistory(
-            binarypackagename='foo', sourcepackagename='foo', version='666',
-            archive=series.main_archive, distroarchseries=series['hppa'],
+            binarypackagename="foo",
+            sourcepackagename="foo",
+            version="666",
+            archive=series.main_archive,
+            distroarchseries=series["hppa"],
             pocket=PackagePublishingPocket.RELEASE,
-            component='main', with_debug=True, with_file=True,
+            component="main",
+            with_debug=True,
+            with_file=True,
             status=PackagePublishingStatus.PUBLISHED,
-            architecturespecific=True)
+            architecturespecific=True,
+        )
 
     def test_getBinaryFiles_ddebs_disabled(self):
         # getBinaryFiles excludes ddebs unless publish_debug_symbols is
@@ -448,11 +520,12 @@ class TestFTPArchive(TestCaseWithFactory):
         fa, hoary = self._setUpSampleDataFTPArchiveHandler()
         self.makeDDEBPub(hoary)
         binary_files = fa.getBinaryFiles(
-            hoary, PackagePublishingPocket.RELEASE)
+            hoary, PackagePublishingPocket.RELEASE
+        )
         expected_files = [
-            ('foo', 'foo_666_hppa.deb', 'main', 'binary-hppa'),
-            ('pmount', 'pmount_1.9-1_all.deb', 'main', 'binary-hppa'),
-            ]
+            ("foo", "foo_666_hppa.deb", "main", "binary-hppa"),
+            ("pmount", "pmount_1.9-1_all.deb", "main", "binary-hppa"),
+        ]
         self.assertEqual(expected_files, list(binary_files))
 
     def test_getBinaryFiles_ddebs_enabled(self):
@@ -462,18 +535,19 @@ class TestFTPArchive(TestCaseWithFactory):
         fa.publisher.archive.publish_debug_symbols = True
         self.makeDDEBPub(hoary)
         binary_files = fa.getBinaryFiles(
-            hoary, PackagePublishingPocket.RELEASE)
+            hoary, PackagePublishingPocket.RELEASE
+        )
         expected_files = [
-            ('foo', 'foo-dbgsym_666_hppa.ddeb', 'main', 'binary-hppa'),
-            ('foo', 'foo_666_hppa.deb', 'main', 'binary-hppa'),
-            ('pmount', 'pmount_1.9-1_all.deb', 'main', 'binary-hppa'),
-            ]
+            ("foo", "foo-dbgsym_666_hppa.ddeb", "main", "binary-hppa"),
+            ("foo", "foo_666_hppa.deb", "main", "binary-hppa"),
+            ("pmount", "pmount_1.9-1_all.deb", "main", "binary-hppa"),
+        ]
         self.assertEqual(expected_files, list(binary_files))
 
     def test_publishFileLists(self):
         # publishFileLists writes the expected files on disk.
         fa = self._setUpFTPArchiveHandler()
-        self._publishDefaultFileLists(fa, 'main')
+        self._publishDefaultFileLists(fa, "main")
 
         # Check that the file lists generated by LP exist and have the
         # expected contents.
@@ -486,13 +560,16 @@ class TestFTPArchive(TestCaseWithFactory):
         fa = self._setUpFTPArchiveHandler()
         empty_filelists = []
         for component in ("restricted", "universe", "multiverse"):
-            empty_filelists.extend([
-                "hoary-test_%s_source" % component,
-                "hoary-test_%s_binary-i386" % component,
-                ])
+            empty_filelists.extend(
+                [
+                    "hoary-test_%s_source" % component,
+                    "hoary-test_%s_binary-i386" % component,
+                ]
+            )
         for filelist in empty_filelists:
             write_file(
-                os.path.join(self._listdir, filelist), b"previous contents\n")
+                os.path.join(self._listdir, filelist), b"previous contents\n"
+            )
 
         self._publishDefaultFileLists(fa, "main")
 
@@ -506,25 +583,27 @@ class TestFTPArchive(TestCaseWithFactory):
 
         # Setup FTPArchiveHandler with a real Publisher for Ubuntutest.
         publisher = Publisher(
-            self._logger, self._config, self._dp, self._archive)
-        fa = FTPArchiveHandler(self._logger, self._config, self._dp,
-                               self._distribution, publisher)
+            self._logger, self._config, self._dp, self._archive
+        )
+        fa = FTPArchiveHandler(
+            self._logger, self._config, self._dp, self._distribution, publisher
+        )
         fa.createEmptyPocketRequests(fullpublish=True)
 
         # Calculate overrides and filelists.
-        self._publishDefaultOverrides(fa, 'main')
-        self._publishDefaultFileLists(fa, 'main')
+        self._publishDefaultOverrides(fa, "main")
+        self._publishDefaultFileLists(fa, "main")
 
         # Add mentioned files in the repository pool/.
-        self._addRepositoryFile('main', 'tiny', '0.1', 'tiny_0.1.dsc')
-        self._addRepositoryFile('main', 'tiny', '0.1', 'tiny_0.1.tar.gz')
-        self._addRepositoryFile('main', 'tiny', '0.1', 'tiny_0.1_i386.deb')
+        self._addRepositoryFile("main", "tiny", "0.1", "tiny_0.1.dsc")
+        self._addRepositoryFile("main", "tiny", "0.1", "tiny_0.1.tar.gz")
+        self._addRepositoryFile("main", "tiny", "0.1", "tiny_0.1_i386.deb")
 
         # When include_long_descriptions is set, apt.conf has
         # LongDescription "true" for that series.
-        hoary_test = self._distribution.getSeries('hoary-test')
+        hoary_test = self._distribution.getSeries("hoary-test")
         self.assertTrue(hoary_test.include_long_descriptions)
-        breezy_autotest = self._distribution.getSeries('breezy-autotest')
+        breezy_autotest = self._distribution.getSeries("breezy-autotest")
         breezy_autotest.include_long_descriptions = False
 
         # XXX cprov 2007-03-21: Relying on byte-to-byte configuration file
@@ -543,17 +622,27 @@ class TestFTPArchive(TestCaseWithFactory):
             "Packages",
             os.path.join(self._distsdir, "hoary-test", "main", "binary-i386"),
             Packages.iter_paragraphs,
-            result_suffix=".gz", result_open_func=gzip.open)
+            result_suffix=".gz",
+            result_open_func=gzip.open,
+        )
         self._verifyEmpty(
             os.path.join(
-                self._distsdir, "hoary-test", "main", "debian-installer",
-                "binary-i386", "Packages.gz"),
-            open_func=gzip.open)
+                self._distsdir,
+                "hoary-test",
+                "main",
+                "debian-installer",
+                "binary-i386",
+                "Packages.gz",
+            ),
+            open_func=gzip.open,
+        )
         self._verifyDeb822(
             "Sources",
             os.path.join(self._distsdir, "hoary-test", "main", "source"),
             Sources.iter_paragraphs,
-            result_suffix=".gz", result_open_func=gzip.open)
+            result_suffix=".gz",
+            result_open_func=gzip.open,
+        )
 
         # XXX cprov 2007-03-21: see above, byte-to-byte configuration
         # comparing is weak.
@@ -580,27 +669,32 @@ class TestFTPArchive(TestCaseWithFactory):
         #  * a-f runs based on this config without any errors
         #  * a-f *only* creates the wanted archive indexes.
         allowed_suites = set()
-        allowed_suites.add('hoary-test-updates')
+        allowed_suites.add("hoary-test-updates")
 
         publisher = Publisher(
-            self._logger, self._config, self._dp,
-            allowed_suites=allowed_suites, archive=self._archive)
+            self._logger,
+            self._config,
+            self._dp,
+            allowed_suites=allowed_suites,
+            archive=self._archive,
+        )
 
-        fa = FTPArchiveHandler(self._logger, self._config, self._dp,
-                               self._distribution, publisher)
+        fa = FTPArchiveHandler(
+            self._logger, self._config, self._dp, self._distribution, publisher
+        )
 
         fa.createEmptyPocketRequests(fullpublish=True)
 
         # createEmptyPocketRequests creates empty override and file
         # listings.
         lists = (
-            'hoary-test-updates_main_source',
-            'hoary-test-updates_main_binary-i386',
-            'hoary-test-updates_main_debian-installer_binary-i386',
-            'override.hoary-test-updates.main',
-            'override.hoary-test-updates.extra.main',
-            'override.hoary-test-updates.main.src',
-            )
+            "hoary-test-updates_main_source",
+            "hoary-test-updates_main_binary-i386",
+            "hoary-test-updates_main_debian-installer_binary-i386",
+            "override.hoary-test-updates.main",
+            "override.hoary-test-updates.extra.main",
+            "override.hoary-test-updates.main.src",
+        )
 
         for listname in lists:
             path = os.path.join(self._config.overrideroot, listname)
@@ -612,41 +706,93 @@ class TestFTPArchive(TestCaseWithFactory):
         self.assertTrue(os.path.exists(apt_conf))
         with open(apt_conf) as apt_conf_file:
             apt_conf_content = apt_conf_file.read()
-        with open(os.path.join(
-                self._sampledir, 'apt_conf_single_empty_suite_test')) as f:
+        with open(
+            os.path.join(self._sampledir, "apt_conf_single_empty_suite_test")
+        ) as f:
             sample_content = f.read()
         self.assertEqual(apt_conf_content, sample_content)
 
         # XXX cprov 2007-03-21: see above, do not run a-f on dev machines.
         fa.runApt(apt_conf)
-        self.assertTrue(os.path.exists(
-            os.path.join(self._distsdir, "hoary-test-updates", "main",
-                         "binary-i386", "Packages.gz")))
-        self.assertTrue(os.path.exists(
-            os.path.join(self._distsdir, "hoary-test-updates", "main",
-                         "debian-installer", "binary-i386", "Packages.gz")))
-        self.assertTrue(os.path.exists(
-            os.path.join(self._distsdir, "hoary-test-updates", "main",
-                         "source", "Sources.gz")))
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(
+                    self._distsdir,
+                    "hoary-test-updates",
+                    "main",
+                    "binary-i386",
+                    "Packages.gz",
+                )
+            )
+        )
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(
+                    self._distsdir,
+                    "hoary-test-updates",
+                    "main",
+                    "debian-installer",
+                    "binary-i386",
+                    "Packages.gz",
+                )
+            )
+        )
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(
+                    self._distsdir,
+                    "hoary-test-updates",
+                    "main",
+                    "source",
+                    "Sources.gz",
+                )
+            )
+        )
 
-        self.assertFalse(os.path.exists(
-            os.path.join(self._distsdir, "hoary-test", "main",
-                         "binary-i386", "Packages.gz")))
-        self.assertFalse(os.path.exists(
-            os.path.join(self._distsdir, "hoary-test", "main",
-                         "debian-installer", "binary-i386", "Packages.gz")))
-        self.assertFalse(os.path.exists(
-            os.path.join(self._distsdir, "hoary-test", "main",
-                         "source", "Sources.gz")))
+        self.assertFalse(
+            os.path.exists(
+                os.path.join(
+                    self._distsdir,
+                    "hoary-test",
+                    "main",
+                    "binary-i386",
+                    "Packages.gz",
+                )
+            )
+        )
+        self.assertFalse(
+            os.path.exists(
+                os.path.join(
+                    self._distsdir,
+                    "hoary-test",
+                    "main",
+                    "debian-installer",
+                    "binary-i386",
+                    "Packages.gz",
+                )
+            )
+        )
+        self.assertFalse(
+            os.path.exists(
+                os.path.join(
+                    self._distsdir,
+                    "hoary-test",
+                    "main",
+                    "source",
+                    "Sources.gz",
+                )
+            )
+        )
 
     def test_generateConfig_index_compressors_changed(self):
         # If index_compressors changes between runs, then old compressed
         # files are removed.
         publisher = Publisher(
-            self._logger, self._config, self._dp, self._archive)
+            self._logger, self._config, self._dp, self._archive
+        )
         fa = FTPArchiveHandler(
-            self._logger, self._config, self._dp, self._distribution,
-            publisher)
+            self._logger, self._config, self._dp, self._distribution, publisher
+        )
         fa.createEmptyPocketRequests(fullpublish=True)
         self._publishDefaultOverrides(fa, "main")
         self._publishDefaultFileLists(fa, "main")
@@ -659,8 +805,12 @@ class TestFTPArchive(TestCaseWithFactory):
             pass
         os.symlink("signed", os.path.join(comp_dir, "uefi"))
         os.makedirs(os.path.join(comp_dir, "i18n"))
-        for name in ("Translation-de", "Translation-de.gz", "Translation-en",
-                     "Translation-en.Z"):
+        for name in (
+            "Translation-de",
+            "Translation-de.gz",
+            "Translation-en",
+            "Translation-en.Z",
+        ):
             with open(os.path.join(comp_dir, "i18n", name), "w"):
                 pass
         self._distribution["hoary-test"].include_long_descriptions = False
@@ -669,50 +819,72 @@ class TestFTPArchive(TestCaseWithFactory):
         apt_conf = fa.generateConfig(fullpublish=True)
         with open(apt_conf) as apt_conf_file:
             self.assertIn(
-                'Packages::Compress "gzip bzip2";', apt_conf_file.read())
+                'Packages::Compress "gzip bzip2";', apt_conf_file.read()
+            )
         fa.runApt(apt_conf)
         self.assertContentEqual(
             ["Packages.gz", "Packages.bz2"],
-            os.listdir(os.path.join(comp_dir, "binary-i386")))
+            os.listdir(os.path.join(comp_dir, "binary-i386")),
+        )
         self.assertContentEqual(
             ["Packages.gz", "Packages.bz2"],
-            os.listdir(os.path.join(
-                comp_dir, "debian-installer", "binary-i386")))
+            os.listdir(
+                os.path.join(comp_dir, "debian-installer", "binary-i386")
+            ),
+        )
         self.assertContentEqual(
             ["Sources.gz", "Sources.bz2"],
-            os.listdir(os.path.join(comp_dir, "source")))
+            os.listdir(os.path.join(comp_dir, "source")),
+        )
         self.assertContentEqual(
-            ["Translation-de", "Translation-de.gz", "Translation-en.gz",
-             "Translation-en.bz2"],
-            os.listdir(os.path.join(comp_dir, "i18n")))
+            [
+                "Translation-de",
+                "Translation-de.gz",
+                "Translation-en.gz",
+                "Translation-en.bz2",
+            ],
+            os.listdir(os.path.join(comp_dir, "i18n")),
+        )
 
         # Try again, this time with gzip and xz compressors.  There are no
         # bzip2 leftovers, but other files are left untouched.
         self._distribution["hoary-test"].index_compressors = [
-            IndexCompressionType.GZIP, IndexCompressionType.XZ]
+            IndexCompressionType.GZIP,
+            IndexCompressionType.XZ,
+        ]
         apt_conf = fa.generateConfig(fullpublish=True)
         with open(apt_conf) as apt_conf_file:
             self.assertIn(
-                'Packages::Compress "gzip xz";', apt_conf_file.read())
+                'Packages::Compress "gzip xz";', apt_conf_file.read()
+            )
         fa.runApt(apt_conf)
         self.assertContentEqual(
             ["Packages.gz", "Packages.xz"],
-            os.listdir(os.path.join(comp_dir, "binary-i386")))
+            os.listdir(os.path.join(comp_dir, "binary-i386")),
+        )
         self.assertContentEqual(
             ["Packages.gz", "Packages.xz"],
-            os.listdir(os.path.join(
-                comp_dir, "debian-installer", "binary-i386")))
+            os.listdir(
+                os.path.join(comp_dir, "debian-installer", "binary-i386")
+            ),
+        )
         self.assertContentEqual(
             ["Sources.gz", "Sources.xz"],
-            os.listdir(os.path.join(comp_dir, "source")))
+            os.listdir(os.path.join(comp_dir, "source")),
+        )
         self.assertEqual(
-            ["stuff"],
-            os.listdir(os.path.join(comp_dir, "signed")))
+            ["stuff"], os.listdir(os.path.join(comp_dir, "signed"))
+        )
         self.assertEqual(["stuff"], os.listdir(os.path.join(comp_dir, "uefi")))
         self.assertContentEqual(
-            ["Translation-de", "Translation-de.gz", "Translation-en.gz",
-             "Translation-en.xz"],
-            os.listdir(os.path.join(comp_dir, "i18n")))
+            [
+                "Translation-de",
+                "Translation-de.gz",
+                "Translation-en.gz",
+                "Translation-en.xz",
+            ],
+            os.listdir(os.path.join(comp_dir, "i18n")),
+        )
 
     def test_cleanCaches_noop_if_recent(self):
         # cleanCaches does nothing if it was run recently.
@@ -732,22 +904,30 @@ class TestFTPArchive(TestCaseWithFactory):
         for series in self._distribution.series:
             series.status = SeriesStatus.OBSOLETE
         stable = self.factory.makeDistroSeries(
-            distribution=self._distribution, status=SeriesStatus.CURRENT)
+            distribution=self._distribution, status=SeriesStatus.CURRENT
+        )
         unstable = self.factory.makeDistroSeries(
-            distribution=self._distribution)
+            distribution=self._distribution
+        )
         for ds, arch in (
-            (stable, "i386"), (stable, "armel"),
-            (unstable, "i386"), (unstable, "armhf")):
+            (stable, "i386"),
+            (stable, "armel"),
+            (unstable, "i386"),
+            (unstable, "armhf"),
+        ):
             self.factory.makeDistroArchSeries(
-                distroseries=ds, architecturetag=arch)
+                distroseries=ds, architecturetag=arch
+            )
         self._publisher = Publisher(
-            self._logger, self._config, self._dp, self._archive)
+            self._logger, self._config, self._dp, self._archive
+        )
         fa = self._setUpFTPArchiveHandler()
         fa.cleanCaches()
         path = os.path.join(self._config.miscroot, "apt-cleanup.conf")
         with open(path) as config_file:
             arch_lines = [
-                line for line in config_file if " Architectures " in line]
+                line for line in config_file if " Architectures " in line
+            ]
         self.assertNotEqual([], arch_lines)
         for line in arch_lines:
             match = re.search(r' Architectures "(.*)"', line)
@@ -759,31 +939,55 @@ class TestFTPArchive(TestCaseWithFactory):
     def test_cleanCaches(self):
         # cleanCaches does real work.
         self._publisher = Publisher(
-            self._logger, self._config, self._dp, self._archive)
+            self._logger, self._config, self._dp, self._archive
+        )
         fa = self._setUpFTPArchiveHandler()
         fa.createEmptyPocketRequests(fullpublish=True)
 
         # Set up an initial repository.
         source_overrides = FakeSelectResult([("tiny", "main", "devel")])
-        binary_overrides = FakeSelectResult([(
-            "bin%d" % i, "main", "misc", "i386",
-            PackagePublishingPriority.EXTRA, BinaryPackageFormat.DEB, None)
-            for i in range(50)])
+        binary_overrides = FakeSelectResult(
+            [
+                (
+                    "bin%d" % i,
+                    "main",
+                    "misc",
+                    "i386",
+                    PackagePublishingPriority.EXTRA,
+                    BinaryPackageFormat.DEB,
+                    None,
+                )
+                for i in range(50)
+            ]
+        )
         fa.publishOverrides(
-            self._distribution["hoary-test"], PackagePublishingPocket.RELEASE,
-            source_overrides, binary_overrides)
+            self._distribution["hoary-test"],
+            PackagePublishingPocket.RELEASE,
+            source_overrides,
+            binary_overrides,
+        )
         source_files = FakeSelectResult([("tiny", "tiny_0.1.dsc", "main")])
-        binary_files = FakeSelectResult([(
-            "bin%d" % i, "bin%d_1_i386.deb" % i, "main", "binary-i386")
-            for i in range(50)])
+        binary_files = FakeSelectResult(
+            [
+                ("bin%d" % i, "bin%d_1_i386.deb" % i, "main", "binary-i386")
+                for i in range(50)
+            ]
+        )
         fa.publishFileLists(
-            self._distribution["hoary-test"], PackagePublishingPocket.RELEASE,
-            source_files, binary_files)
+            self._distribution["hoary-test"],
+            PackagePublishingPocket.RELEASE,
+            source_files,
+            binary_files,
+        )
         self._addRepositoryFile("main", "tiny", "0.1", "tiny_0.1.dsc")
         for i in range(50):
             self._addRepositoryFile(
-                "main", "bin%d" % i, "1", "bin%d_1_i386.deb" % i,
-                samplename="tiny_0.1_i386.deb")
+                "main",
+                "bin%d" % i,
+                "1",
+                "bin%d_1_i386.deb" % i,
+                samplename="tiny_0.1_i386.deb",
+            )
         apt_conf = fa.generateConfig(fullpublish=True)
         fa.runApt(apt_conf)
 
@@ -791,7 +995,8 @@ class TestFTPArchive(TestCaseWithFactory):
         # something to do.
         for i in range(49):
             self._dp.pathFor(
-                "main", "bin%d" % i, "1", file="bin%d_1_i386.deb" % i).unlink()
+                "main", "bin%d" % i, "1", file="bin%d_1_i386.deb" % i
+            ).unlink()
 
         cache_path = os.path.join(self._config.cacheroot, "packages-i386.db")
         old_cache_size = os.stat(cache_path).st_size
