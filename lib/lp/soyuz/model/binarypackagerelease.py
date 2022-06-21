@@ -8,6 +8,7 @@ __all__ = [
 
 from operator import attrgetter
 import re
+from typing import Any
 
 import simplejson
 from storm.locals import (
@@ -69,9 +70,23 @@ wheel_name_pattern = re.compile(
 conda_name_pattern = re.compile(r"^[a-z0-9][a-z0-9.+_-]*$")
 
 
-def _validate_bpr_name(obj, attr, value):
-    # Validate that a BinaryPackageRelease's BinaryPackageName is
-    # appropriate for its format.
+def _validate_bpr_name(obj: IBinaryPackageRelease, attr: str, value: Any):
+    """Validate that a BPR's BinaryPackageName is appropriate for its format.
+
+    The constraints that apply to binary package names vary depending on the
+    package format, so we enforce them when creating a
+    `BinaryPackageRelease` since at that point we know the format.
+
+    The interface of this function is as required by Storm's property
+    validator system, although this function is currently called manually by
+    `BinaryPackageRelease.__init__` until such time as we port
+    `BinaryPackageRelease` to the native Storm model style in order that we
+    can control initialization order.
+
+    :param obj: The context `IBinaryPackageRelease`.
+    :param attr: The name of the attribute being checked.
+    :param value: The ID of the `BinaryPackageName` being set.
+    """
     if not isinstance(value, int):
         raise AssertionError(
             "Expected int for BinaryPackageName foreign key reference, got %r"
