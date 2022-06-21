@@ -199,6 +199,27 @@ class ArtifactoryPoolEntry:
                 )
                 if architectures:
                     properties["deb.architecture"] = architectures
+                if release_id.startswith("source:"):
+                    # Artifactory doesn't support publishing Sources files
+                    # for Debian-format source packages
+                    # (https://www.jfrog.com/jira/browse/RTFACT-9206), and
+                    # so also doesn't automatically populate name and
+                    # version properties for them.  Partially work around
+                    # this by setting those properties manually (although
+                    # this doesn't cause Sources files to exist).
+                    properties["deb.name"] = self.source_name
+                    properties["deb.version"] = self.source_version
+                    # Debian-format source packages have a license path
+                    # required by policy.
+                    properties["soss.license"] = "debian/copyright"
+                elif release_id.startswith("binary:"):
+                    # Debian-format binary packages have a license path
+                    # required by policy (although examining it may require
+                    # dereferencing symlinks).
+                    properties["soss.license"] = (
+                        "/usr/share/doc/%s/copyright"
+                        % publications[0].binary_package_name
+                    )
             else:
                 properties["launchpad.channel"] = sorted(
                     {

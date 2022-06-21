@@ -377,6 +377,9 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "launchpad.source-version": ["1.0"],
                 "deb.distribution": list(sorted(ds.name for ds in dses)),
                 "deb.component": ["main"],
+                "deb.name": [spr.name],
+                "deb.version": [spr.version],
+                "soss.license": ["debian/copyright"],
             },
             path.properties,
         )
@@ -450,6 +453,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "deb.distribution": list(sorted(ds.name for ds in dses)),
                 "deb.component": ["main"],
                 "deb.architecture": [processor.name],
+                "soss.license": ["/usr/share/doc/foo/copyright"],
             },
             path.properties,
         )
@@ -519,6 +523,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "deb.architecture": list(
                     sorted(das.architecturetag for das in dases)
                 ),
+                "soss.license": ["/usr/share/doc/foo/copyright"],
             },
             path.properties,
         )
@@ -888,6 +893,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "deb.component": ["main"],
                 "deb.architecture": [das.architecturetag],
                 "deb.version": ["1.0"],
+                "soss.license": ["/usr/share/doc/foo/copyright"],
             },
             path.properties,
         )
