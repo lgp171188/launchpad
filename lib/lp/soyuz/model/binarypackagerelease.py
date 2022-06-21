@@ -20,7 +20,7 @@ from storm.locals import (
 from zope.component import getUtility
 from zope.interface import implementer
 
-from lp.app.validators.name import valid_name_pattern
+from lp.app.validators.name import valid_name_pattern as debian_name_pattern
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
@@ -94,10 +94,10 @@ def _validate_bpr_name(obj, attr, value):
     else:
         # Fall back to Launchpad's traditional name validation, which
         # coincides with the rules for Debian-format package names.
-        if not valid_name_pattern.match(name):
+        if not debian_name_pattern.match(name):
             raise BinaryPackageReleaseNameLinkageError(
                 "Invalid package name '%s'; must match /%s/"
-                % (name, valid_name_pattern.pattern))
+                % (name, debian_name_pattern.pattern))
 
 
 @implementer(IBinaryPackageRelease)
