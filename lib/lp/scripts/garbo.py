@@ -1805,7 +1805,7 @@ class PopulateSnapBuildStoreRevision(TunableLoop):
 
 class RevisionStatusReportPruner(BulkPruner):
     """Removes old revision status reports and their artifacts."""
-    older_than = 30  # artifacts older than 30 days
+    older_than = 90  # artifacts older than 90 days
     target_table_class = RevisionStatusArtifact
     ids_to_prune_query = """
         SELECT DISTINCT RevisionStatusArtifact.id
