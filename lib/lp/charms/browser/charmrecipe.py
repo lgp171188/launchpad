@@ -483,14 +483,14 @@ class BaseCharmRecipeEditView(
         super().setUpFields()
         self.form_fields += FormFields(TextLine(
             __name__='add_track',
-            required=False, title="Track"))
+            required=False))
         self.form_fields += FormFields(List(
             __name__='add_risks',
-            required=False, title="Risk",
+            required=False,
             value_type=Choice(vocabulary="SnapStoreChannel")))
         self.form_fields += FormFields(TextLine(
             __name__='add_branch',
-            required=False, title="Branch"))
+            required=False))
 
         for index in range(len(self.context.store_channels)):
             self.form_fields += FormFields(TextLine(
@@ -517,7 +517,8 @@ class BaseCharmRecipeEditView(
         for widget in self.widgets:
             if ('field.track' in widget.name or 'field.risks' in widget.name
                     or 'field.branch' in widget.name
-                    or 'field.delete' in widget.name):
+                    or 'field.delete' in widget.name
+                    or 'field.add_' in widget.name):
                 widget.display_label = False
 
     @property
