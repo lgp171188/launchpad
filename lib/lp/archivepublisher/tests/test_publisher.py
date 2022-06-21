@@ -4253,11 +4253,14 @@ class TestArtifactoryPublishing(TestPublisherBase):
             {
                 "deb.component": ["main"],
                 "deb.distribution": ["breezy-autotest"],
+                "deb.name": ["hello"],
+                "deb.version": ["1.0"],
                 "launchpad.release-id": [
                     "source:%d" % source.sourcepackagereleaseID
                 ],
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
+                "soss.license": ["debian/copyright"],
             },
             source_path.properties,
         )
@@ -4277,6 +4280,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 ],
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
+                "soss.license": ["/usr/share/doc/hello/copyright"],
             },
             binary_path.properties,
         )
@@ -4338,11 +4342,14 @@ class TestArtifactoryPublishing(TestPublisherBase):
             {
                 "deb.component": ["main"],
                 "deb.distribution": ["breezy-autotest", "hoary-test"],
+                "deb.name": ["hello"],
+                "deb.version": ["1.0"],
                 "launchpad.release-id": [
                     "source:%d" % source.sourcepackagereleaseID
                 ],
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
+                "soss.license": ["debian/copyright"],
             },
             source_path.properties,
         )
@@ -4356,6 +4363,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 ],
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
+                "soss.license": ["/usr/share/doc/hello/copyright"],
             },
             binary_path.properties,
         )
@@ -4409,11 +4417,14 @@ class TestArtifactoryPublishing(TestPublisherBase):
         # included in indexes.
         self.assertEqual(
             {
+                "deb.name": ["hello"],
+                "deb.version": ["1.0"],
                 "launchpad.release-id": [
                     "source:%d" % source.sourcepackagereleaseID
                 ],
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
+                "soss.license": ["debian/copyright"],
             },
             source_path.properties,
         )
@@ -4424,6 +4435,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 ],
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
+                "soss.license": ["/usr/share/doc/hello/copyright"],
             },
             binary_path.properties,
         )
