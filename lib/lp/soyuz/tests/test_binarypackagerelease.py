@@ -3,8 +3,13 @@
 
 """Test BinaryPackageRelease."""
 
+from psycopg2.errors import CheckViolation
+
 from lp.soyuz.enums import BinaryPackageFormat
-from lp.soyuz.interfaces.binarypackagerelease import IBinaryPackageRelease
+from lp.soyuz.interfaces.binarypackagerelease import (
+    BinaryPackageReleaseNameLinkageError,
+    IBinaryPackageRelease,
+    )
 from lp.soyuz.interfaces.publishing import PackagePublishingPriority
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadFunctionalLayer
@@ -61,3 +66,78 @@ class TestBinaryPackageRelease(TestCaseWithFactory):
         # does not have to be valid.
         bpr = self.factory.makeBinaryPackageRelease(homepage="<invalid<url")
         self.assertEqual("<invalid<url", bpr.homepage)
+
+    def test_deb_name(self):
+        self.factory.makeBinaryPackageRelease(binarypackagename="foo")
+        try:
+            self.assertRaises(
+                BinaryPackageReleaseNameLinkageError,
+                self.factory.makeBinaryPackageRelease,
+                binarypackagename="foo_bar")
+        except CheckViolation:
+            # Temporarily allow this until the BinaryPackageName.name DB
+            # constraint is relaxed.
+            pass
+
+    def test_wheel_name(self):
+        self.factory.makeBinaryPackageRelease(
+            binarypackagename="foo", binpackageformat=BinaryPackageFormat.WHL)
+        try:
+            self.factory.makeBinaryPackageRelease(
+                binarypackagename="Foo_bar",
+                binpackageformat=BinaryPackageFormat.WHL)
+            self.assertRaises(
+                BinaryPackageReleaseNameLinkageError,
+                self.factory.makeBinaryPackageRelease,
+                binarypackagename="foo_bar+",
+                binpackageformat=BinaryPackageFormat.WHL)
+        except CheckViolation:
+            # Temporarily allow this until the BinaryPackageName.name DB
+            # constraint is relaxed.
+            pass
+
+    def test_conda_v1_name(self):
+        self.factory.makeBinaryPackageRelease(
+            binarypackagename="foo",
+            binpackageformat=BinaryPackageFormat.CONDA_V1)
+        try:
+            self.factory.makeBinaryPackageRelease(
+                binarypackagename="foo-bar_baz",
+                binpackageformat=BinaryPackageFormat.CONDA_V1)
+            self.assertRaises(
+                BinaryPackageReleaseNameLinkageError,
+                self.factory.makeBinaryPackageRelease,
+                binarypackagename="Foo",
+                binpackageformat=BinaryPackageFormat.CONDA_V1)
+            self.assertRaises(
+                BinaryPackageReleaseNameLinkageError,
+                self.factory.makeBinaryPackageRelease,
+                binarypackagename="foo_bar#",
+                binpackageformat=BinaryPackageFormat.CONDA_V1)
+        except CheckViolation:
+            # Temporarily allow this until the BinaryPackageName.name DB
+            # constraint is relaxed.
+            pass
+
+    def test_conda_v2_name(self):
+        self.factory.makeBinaryPackageRelease(
+            binarypackagename="foo",
+            binpackageformat=BinaryPackageFormat.CONDA_V2)
+        try:
+            self.factory.makeBinaryPackageRelease(
+                binarypackagename="foo-bar_baz",
+                binpackageformat=BinaryPackageFormat.CONDA_V2)
+            self.assertRaises(
+                BinaryPackageReleaseNameLinkageError,
+                self.factory.makeBinaryPackageRelease,
+                binarypackagename="Foo",
+                binpackageformat=BinaryPackageFormat.CONDA_V2)
+            self.assertRaises(
+                BinaryPackageReleaseNameLinkageError,
+                self.factory.makeBinaryPackageRelease,
+                binarypackagename="foo_bar#",
+                binpackageformat=BinaryPackageFormat.CONDA_V2)
+        except CheckViolation:
+            # Temporarily allow this until the BinaryPackageName.name DB
+            # constraint is relaxed.
+            pass

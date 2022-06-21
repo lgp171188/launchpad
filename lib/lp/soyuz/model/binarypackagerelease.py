@@ -7,6 +7,7 @@ __all__ = [
     ]
 
 from operator import attrgetter
+import re
 
 import simplejson
 from storm.locals import (
@@ -19,9 +20,11 @@ from storm.locals import (
 from zope.component import getUtility
 from zope.interface import implementer
 
+from lp.app.validators.name import valid_name_pattern
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import (
     BoolCol,
@@ -40,13 +43,61 @@ from lp.soyuz.enums import (
     PackagePublishingPriority,
     )
 from lp.soyuz.interfaces.binarypackagerelease import (
+    BinaryPackageReleaseNameLinkageError,
     IBinaryPackageRelease,
     IBinaryPackageReleaseDownloadCount,
     )
 from lp.soyuz.interfaces.binarysourcereference import (
     IBinarySourceReferenceSet,
     )
+from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.files import BinaryPackageFile
+
+
+# https://packaging.python.org/en/latest/specifications/core-metadata/#id6
+wheel_name_pattern = re.compile(
+    r"^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])$", re.IGNORECASE)
+
+# There doesn't seem to be a very useful specification for Conda's package
+# name syntax:
+# https://docs.conda.io/projects/conda-build/en/latest/resources/package-spec.html
+# just says 'The lowercase name of the package. May contain the "-"
+# character'.  conda_build.metadata.MetaData.name implements a few specific
+# checks, but apparently in terms of which characters are forbidden rather
+# than which characters are allowed.  For now, constrain this to something
+# reasonably conservative and hope that this is OK.
+conda_name_pattern = re.compile(r"^[a-z0-9][a-z0-9.+_-]*$")
+
+
+def _validate_bpr_name(obj, attr, value):
+    # Validate that a BinaryPackageRelease's BinaryPackageName is
+    # appropriate for its format.
+    if not isinstance(value, int):
+        raise AssertionError(
+            "Expected int for BinaryPackageName foreign key reference, got %r"
+            % type(value))
+
+    name = IStore(BinaryPackageName).get(BinaryPackageName, value).name
+    if obj.binpackageformat == BinaryPackageFormat.WHL:
+        if not wheel_name_pattern.match(name):
+            raise BinaryPackageReleaseNameLinkageError(
+                "Invalid Python wheel name '%s'; must match /%s/i"
+                % (name, wheel_name_pattern.pattern))
+    elif obj.binpackageformat in (
+        BinaryPackageFormat.CONDA_V1,
+        BinaryPackageFormat.CONDA_V2,
+    ):
+        if not conda_name_pattern.match(name):
+            raise BinaryPackageReleaseNameLinkageError(
+                "Invalid Conda name '%s'; must match /%s/"
+                % (name, conda_name_pattern.pattern))
+    else:
+        # Fall back to Launchpad's traditional name validation, which
+        # coincides with the rules for Debian-format package names.
+        if not valid_name_pattern.match(name):
+            raise BinaryPackageReleaseNameLinkageError(
+                "Invalid package name '%s'; must match /%s/"
+                % (name, valid_name_pattern.pattern))
 
 
 @implementer(IBinaryPackageRelease)
@@ -99,6 +150,13 @@ class BinaryPackageRelease(SQLBase):
                 kwargs['user_defined_fields'])
             del kwargs['user_defined_fields']
         super().__init__(*args, **kwargs)
+        # XXX cjwatson 2022-06-21: Ideally we'd set this up as a Storm
+        # validator, but that's difficult to arrange with SQLBase since we
+        # can't guarantee that self.binpackageformat will be set before
+        # self.binarypackagename, so just call it by hand here using the
+        # calling convention for validators.
+        _validate_bpr_name(
+            self, "binarypackagename", self.binarypackagename.id)
 
     @cachedproperty
     def built_using_references(self):
