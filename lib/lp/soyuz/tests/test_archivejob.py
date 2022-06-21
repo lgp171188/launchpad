@@ -603,7 +603,8 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
     def test_librarian_server_error_retries(self):
         # A run that gets an error from the librarian server schedules
         # itself to be retried.
-        archive = self.factory.makeArchive()
+        archive = self.factory.makeArchive(
+            repository_format=ArchiveRepositoryFormat.PYTHON)
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
@@ -664,9 +665,12 @@ class TestViaCelery(TestCaseWithFactory):
         # CIBuildUploadJob runs under Celery.
         self.useFixture(FeatureFixture(
             {"jobs.celery.enabled_classes": "CIBuildUploadJob"}))
-        build = self.factory.makeCIBuild()
-        das = build.distro_arch_series
-        archive = das.distroseries.main_archive
+        archive = self.factory.makeArchive(
+            repository_format=ArchiveRepositoryFormat.PYTHON)
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+        build = self.factory.makeCIBuild(distro_arch_series=das)
         report = build.getOrCreateRevisionStatusReport("build:0")
         path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
         with open(datadir(path), mode="rb") as f:
