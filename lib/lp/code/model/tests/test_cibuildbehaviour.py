@@ -324,7 +324,10 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                 "SOME_PATH": "/bin/zip"}),
             apt_repositories=json.dumps([
                 "deb https://%(read_auth)s@canonical.example.com/artifactory/soss-deb-stable focal main universe",  # noqa: E501
-                "deb https://public_ppa.example.net/repository focal main"])
+                "deb https://public_ppa.example.net/repository focal main"]),
+            plugin_settings=json.dumps({
+                "miniconda_conda_channel": "https://%(read_auth)s@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
+                "foo": "bar"}),
         )
         package = self.factory.makeDistributionSourcePackage(
             distribution=self.factory.makeDistribution(name="soss")
@@ -358,14 +361,20 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
             "environment_variables": Equals(
                 {
                     "PIP_INDEX_URL":"https://user:pass@canonical.example.com/artifactory/api/pypi/soss-python-stable/simple/",  # noqa: E501
-                    "SOME_PATH":"/bin/zip",
+                    "SOME_PATH": "/bin/zip",
                 }),
             "apt_repositories": Equals(
                 [
                     'deb https://user:pass@canonical.example.com/artifactory/soss-deb-stable focal main universe',  # noqa: E501
                     'deb https://public_ppa.example.net/repository focal main'
                 ]
-            )
+            ),
+            "plugin_settings": Equals(
+                {
+                    "miniconda_conda_channel": "https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
+                    "foo": "bar",
+                }),
+
             }))
 
     @defer.inlineCallbacks
