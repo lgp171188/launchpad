@@ -154,6 +154,32 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
 
+    def test_repr_no_channel(self):
+        archive = self.factory.makeArchive()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        build = self.factory.makeCIBuild()
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE)
+        self.assertEqual(
+            "<CIBuildUploadJob to upload %r to %s %s>" % (
+                build, archive.reference, distroseries.name),
+            repr(job))
+
+    def test_repr_channel(self):
+        archive = self.factory.makeArchive()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        build = self.factory.makeCIBuild()
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="edge")
+        self.assertEqual(
+            "<CIBuildUploadJob to upload %r to %s %s {edge}>" % (
+                build, archive.reference, distroseries.name),
+            repr(job))
+
     def test_getOopsVars(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
