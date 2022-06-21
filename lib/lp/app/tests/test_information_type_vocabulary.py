@@ -11,11 +11,11 @@ from lp.testing import TestCase
 
 
 class TestInformationTypeVocabulary(TestCase):
-
     def test_vocabulary_items_custom(self):
         # The vocab is given a custom set of types to include.
         vocab = InformationTypeVocabulary(
-            [InformationType.PUBLICSECURITY, InformationType.USERDATA])
+            [InformationType.PUBLICSECURITY, InformationType.USERDATA]
+        )
         self.assertIn(InformationType.USERDATA, vocab)
         self.assertIn(InformationType.PUBLICSECURITY, vocab)
         self.assertNotIn(InformationType.PUBLIC, vocab)
@@ -23,9 +23,11 @@ class TestInformationTypeVocabulary(TestCase):
     def test_getTermByToken(self):
         vocab = InformationTypeVocabulary([InformationType.PUBLIC])
         self.assertThat(
-            vocab.getTermByToken('PUBLIC'),
+            vocab.getTermByToken("PUBLIC"),
             MatchesStructure.byEquality(
                 value=InformationType.PUBLIC,
-                token='PUBLIC',
-                title='Public',
-                description=InformationType.PUBLIC.description))
+                token="PUBLIC",
+                title="Public",
+                description=InformationType.PUBLIC.description,
+            ),
+        )

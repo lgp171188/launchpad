@@ -2,28 +2,21 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'DiskPool',
-    'DiskPoolEntry',
-    'FileAddActionEnum',
-    'poolify',
-    'unpoolify',
-    ]
+    "DiskPool",
+    "DiskPoolEntry",
+    "FileAddActionEnum",
+    "poolify",
+    "unpoolify",
+]
 
 import logging
 import os
-from pathlib import Path
 import tempfile
-from typing import (
-    Optional,
-    Tuple,
-    Union,
-    )
+from pathlib import Path
+from typing import Optional, Tuple, Union
 
 from lp.archivepublisher import HARDCODED_COMPONENT_ORDER
-from lp.services.librarian.utils import (
-    copy_and_close,
-    sha1_from_path,
-    )
+from lp.services.librarian.utils import copy_and_close, sha1_from_path
 from lp.services.propertycache import cachedproperty
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.files import IPackageReleaseFile
@@ -31,7 +24,7 @@ from lp.soyuz.interfaces.publishing import (
     MissingSymlinkInPool,
     NotInPool,
     PoolFileOverwriteError,
-    )
+)
 
 
 def poolify(source: str, component: Optional[str] = None) -> Path:
@@ -64,8 +57,9 @@ def relative_symlink(src_path: Path, dst_path: Path) -> None:
     dst_path = Path(os.path.normpath(str(dst_path)))
     common_prefix = Path(os.path.commonpath([str(src_path), str(dst_path)]))
     backward_elems = [os.path.pardir] * (
-        len(dst_path.parts) - len(common_prefix.parts) - 1)
-    forward_elems = src_path.parts[len(common_prefix.parts):]
+        len(dst_path.parts) - len(common_prefix.parts) - 1
+    )
+    forward_elems = src_path.parts[len(common_prefix.parts) :]
     src_path = Path(*backward_elems, *forward_elems)
     dst_path.symlink_to(src_path)
 
@@ -77,6 +71,7 @@ class FileAddActionEnum:
     SYMLINK_ADDED: we created a symlink to another copy of the same file
     NONE: no action was necessary or taken.
     """
+
     FILE_ADDED = "file_added"
     SYMLINK_ADDED = "symlink_added"
     NONE = "none"
@@ -98,8 +93,12 @@ class _diskpool_atomicfile:
     the filename is present in the pool, it is definitely complete.
     """
 
-    def __init__(self, targetfilename: Path, mode: str,
-                 rootpath: Union[str, Path] = "/tmp") -> None:
+    def __init__(
+        self,
+        targetfilename: Path,
+        mode: str,
+        rootpath: Union[str, Path] = "/tmp",
+    ) -> None:
         # atomicfile implements the file object interface, but it is only
         # really used (or useful) for writing binary files, which is why we
         # keep the mode constructor argument but assert it's sane below.
@@ -138,10 +137,17 @@ class DiskPoolEntry:
     Remaining files in the 'temppath' indicated installation failures and
     require manual removal after further investigation.
     """
-    def __init__(self, archive: IArchive, rootpath: Path, temppath: Path,
-                 source_name: str, source_version: str,
-                 pub_file: IPackageReleaseFile,
-                 logger: logging.Logger) -> None:
+
+    def __init__(
+        self,
+        archive: IArchive,
+        rootpath: Path,
+        temppath: Path,
+        source_name: str,
+        source_version: str,
+        pub_file: IPackageReleaseFile,
+        logger: logging.Logger,
+    ) -> None:
         self.archive = archive
         self.rootpath = rootpath
         self.temppath = temppath
@@ -169,11 +175,14 @@ class DiskPoolEntry:
     def pathFor(self, component: str) -> Path:
         """Return the path for this file in the given component."""
         return (
-            self.rootpath / poolify(self.source_name, component) /
-            self.pub_file.libraryfile.filename)
+            self.rootpath
+            / poolify(self.source_name, component)
+            / self.pub_file.libraryfile.filename
+        )
 
-    def preferredComponent(self, add: Optional[str] = None,
-                           remove: Optional[str] = None) -> Optional[str]:
+    def preferredComponent(
+        self, add: Optional[str] = None, remove: Optional[str] = None
+    ) -> Optional[str]:
         """Return the appropriate component for the real file.
 
         If add is passed, add it to the list before calculating.
@@ -212,19 +221,21 @@ class DiskPoolEntry:
             # There's something on disk. Check hash.
             sha1 = lfa.content.sha1
             if sha1 != self.file_hash:
-                raise PoolFileOverwriteError('%s != %s for %s' %
-                    (sha1, self.file_hash,
-                     self.pathFor(self.file_component)))
+                raise PoolFileOverwriteError(
+                    "%s != %s for %s"
+                    % (sha1, self.file_hash, self.pathFor(self.file_component))
+                )
 
-            if (component == self.file_component
-                or component in self.symlink_components):
+            if (
+                component == self.file_component
+                or component in self.symlink_components
+            ):
                 # The file is already here
                 return FileAddActionEnum.NONE
             else:
                 # The file is present in a different component,
                 # make a symlink.
-                relative_symlink(
-                    self.pathFor(self.file_component), targetpath)
+                relative_symlink(self.pathFor(self.file_component), targetpath)
                 self.symlink_components.add(component)
                 # Then fix to ensure the right component is linked.
                 self._sanitiseLinks()
@@ -234,11 +245,14 @@ class DiskPoolEntry:
         # If we get to here, we want to write the file.
         assert not targetpath.exists()
 
-        self.debug("Making new file in %s for %s/%s" %
-                   (component, self.source_name, lfa.filename))
+        self.debug(
+            "Making new file in %s for %s/%s"
+            % (component, self.source_name, lfa.filename)
+        )
 
         file_to_write = _diskpool_atomicfile(
-            targetpath, "wb", rootpath=self.temppath)
+            targetpath, "wb", rootpath=self.temppath
+        )
         lfa.open()
         copy_and_close(lfa, file_to_write)
         self.file_component = component
@@ -258,14 +272,17 @@ class DiskPoolEntry:
         filename = self.pub_file.libraryfile.filename
         if not self.file_component:
             raise NotInPool(
-                "File for removing %s %s/%s is not in pool, skipping." %
-                (component, self.source_name, filename))
+                "File for removing %s %s/%s is not in pool, skipping."
+                % (component, self.source_name, filename)
+            )
 
         # Okay, it's there, if it's a symlink then we need to remove
         # it simply.
         if component in self.symlink_components:
-            self.debug("Removing %s %s/%s as it is a symlink"
-                       % (component, self.source_name, filename))
+            self.debug(
+                "Removing %s %s/%s as it is a symlink"
+                % (component, self.source_name, filename)
+            )
             # ensure we are removing a symbolic link and
             # it is published in one or more components
             link_path = self.pathFor(component)
@@ -274,14 +291,17 @@ class DiskPoolEntry:
 
         if component != self.file_component:
             raise MissingSymlinkInPool(
-                "Symlink for %s/%s in %s is missing, skipping." %
-                (self.source_name, filename, component))
+                "Symlink for %s/%s in %s is missing, skipping."
+                % (self.source_name, filename, component)
+            )
 
         # It's not a symlink, this means we need to check whether we
         # have symlinks or not.
         if len(self.symlink_components) == 0:
-            self.debug("Removing %s/%s from %s" %
-                       (self.source_name, filename, component))
+            self.debug(
+                "Removing %s/%s from %s"
+                % (self.source_name, filename, component)
+            )
         else:
             # The target for removal is the real file, and there are symlinks
             # pointing to it. In order to avoid breakage, we need to first
@@ -323,11 +343,14 @@ class DiskPoolEntry:
         filename = self.pub_file.libraryfile.filename
         if targetcomponent not in self.symlink_components:
             raise ValueError(
-                "Target component '%s' is not a symlink for %s" %
-                             (targetcomponent, filename))
+                "Target component '%s' is not a symlink for %s"
+                % (targetcomponent, filename)
+            )
 
-        self.debug("Shuffling symlinks so primary for %s is in %s" %
-                   (filename, targetcomponent))
+        self.debug(
+            "Shuffling symlinks so primary for %s is in %s"
+            % (filename, targetcomponent)
+        )
 
         # Okay, so first up, we unlink the targetcomponent symlink.
         targetpath = self.pathFor(targetcomponent)
@@ -395,26 +418,43 @@ class DiskPool:
     'rootpath' and 'temppath' must be in the same filesystem, see
     DiskPoolEntry for further information.
     """
+
     results = FileAddActionEnum
 
-    def __init__(self, archive: IArchive, rootpath, temppath,
-                 logger: logging.Logger) -> None:
+    def __init__(
+        self, archive: IArchive, rootpath, temppath, logger: logging.Logger
+    ) -> None:
         self.archive = archive
         self.rootpath = Path(rootpath)
         self.temppath = Path(temppath) if temppath is not None else None
         self.entries = {}
         self.logger = logger
 
-    def _getEntry(self, source_name: str, source_version: str,
-                  pub_file: IPackageReleaseFile) -> DiskPoolEntry:
+    def _getEntry(
+        self,
+        source_name: str,
+        source_version: str,
+        pub_file: IPackageReleaseFile,
+    ) -> DiskPoolEntry:
         """Return a new DiskPoolEntry for the given source and file."""
         return DiskPoolEntry(
-            self.archive, self.rootpath, self.temppath, source_name,
-            source_version, pub_file, self.logger)
+            self.archive,
+            self.rootpath,
+            self.temppath,
+            source_name,
+            source_version,
+            pub_file,
+            self.logger,
+        )
 
-    def pathFor(self, comp: str, source_name: str, source_version: str,
-                pub_file: Optional[IPackageReleaseFile] = None,
-                file: Optional[str] = None) -> Path:
+    def pathFor(
+        self,
+        comp: str,
+        source_name: str,
+        source_version: str,
+        pub_file: Optional[IPackageReleaseFile] = None,
+        file: Optional[str] = None,
+    ) -> Path:
         """Return the path for the given pool file."""
         if file is None:
             file = pub_file.libraryfile.filename
@@ -422,8 +462,13 @@ class DiskPool:
             raise AssertionError("Must pass either pub_file or file")
         return self.rootpath / poolify(source_name, comp) / file
 
-    def addFile(self, component: str, source_name: str, source_version: str,
-                pub_file: IPackageReleaseFile):
+    def addFile(
+        self,
+        component: str,
+        source_name: str,
+        source_version: str,
+        pub_file: IPackageReleaseFile,
+    ):
         """Add a file with the given contents to the pool.
 
         `component`, `source_name`, `source_version`, and `pub_file` are
@@ -456,8 +501,13 @@ class DiskPool:
         entry = self._getEntry(source_name, source_version, pub_file)
         return entry.addFile(component)
 
-    def removeFile(self, component: str, source_name: str, source_version: str,
-                   pub_file: IPackageReleaseFile) -> int:
+    def removeFile(
+        self,
+        component: str,
+        source_name: str,
+        source_version: str,
+        pub_file: IPackageReleaseFile,
+    ) -> int:
         """Remove the specified file from the pool.
 
         There are three possible outcomes:

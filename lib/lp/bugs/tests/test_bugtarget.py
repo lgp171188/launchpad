@@ -5,7 +5,7 @@
 
 This module runs the interface test against the Product, ProductSeries
 ProjectGroup, DistributionSourcePackage, and DistroSeries implementations
-IBugTarget. It runs the bugtarget-questiontarget.txt test.
+IBugTarget. It runs the bugtarget-questiontarget.rst test.
 """
 
 __all__ = []
@@ -182,7 +182,7 @@ def test_suite():
         distributionSeriesSetUp,
         ]
 
-    testname = 'bugtarget-questiontarget.txt'
+    testname = 'bugtarget-questiontarget.rst'
     for setUpMethod in setUpMethods:
         id_ext = "%s-%s" % (testname, setUpMethod.__name__)
         test = LayeredDocFileSuite(

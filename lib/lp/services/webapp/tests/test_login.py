@@ -1,6 +1,6 @@
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-"""Test harness for running the new-login.txt tests."""
+"""Test harness for running the login.rst tests."""
 
 __all__ = [
     'FakeOpenIDConsumer',
@@ -944,5 +944,5 @@ def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.TestLoader().loadTestsFromName(__name__))
     suite.addTest(LayeredDocFileSuite(
-        'login.txt', setUp=setUp, layer=AppServerLayer))
+        'login.rst', setUp=setUp, layer=AppServerLayer))
     return suite

@@ -24,8 +24,8 @@ here = os.path.dirname(os.path.realpath(__file__))
 
 # Files that have special needs can construct their own suite
 special = {
-    'gettext_po_parser.txt': LayeredDocFileSuite(
-        '../doc/gettext_po_parser.txt',
+    'gettext_po_parser.rst': LayeredDocFileSuite(
+        '../doc/gettext_po_parser.rst',
         setUp=setGlobs, stdout_logging=False)
     }
 
@@ -52,7 +52,7 @@ def test_suite():
     filenames = sorted(
         filename
         for filename in os.listdir(testsdir)
-            if (os.path.splitext(filename)[1] == '.txt' and
+            if (os.path.splitext(filename)[1] == '.rst' and
                 filename not in special)
         )
 

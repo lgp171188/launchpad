@@ -10,28 +10,18 @@ __all__ = [
     "findPolicyByName",
     "IArchiveUploadPolicy",
     "UploadPolicyError",
-    ]
+]
 
 from textwrap import dedent
 
-from lazr.enum import (
-    EnumeratedType,
-    Item,
-    )
-from zope.component import (
-    getGlobalSiteManager,
-    getUtility,
-    )
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from lazr.enum import EnumeratedType, Item
+from zope.component import getGlobalSiteManager, getUtility
+from zope.interface import Interface, implementer
 
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.soyuz.enums import ArchivePurpose
-
 
 # Number of seconds in an hour (used later)
 HOURS = 3600
@@ -73,7 +63,7 @@ class AbstractUploadPolicy:
     to verify them.
     """
 
-    name = 'abstract'
+    name = "abstract"
     options = None
     accepted_type = None  # Must be defined in subclasses.
     redirect_warning = None
@@ -102,30 +92,37 @@ class AbstractUploadPolicy:
         if upload.sourceful and upload.binaryful:
             if self.accepted_type != ArchiveUploadType.MIXED_ONLY:
                 upload.reject(
-                    "Source/binary (i.e. mixed) uploads are not allowed.")
+                    "Source/binary (i.e. mixed) uploads are not allowed."
+                )
 
         elif upload.sourceful:
             if self.accepted_type != ArchiveUploadType.SOURCE_ONLY:
                 upload.reject(
-                    "Sourceful uploads are not accepted by this policy.")
+                    "Sourceful uploads are not accepted by this policy."
+                )
 
         elif upload.binaryful:
             if self.accepted_type != ArchiveUploadType.BINARY_ONLY:
-                message = dedent("""
+                message = dedent(
+                    """
                     Upload rejected because it contains binary packages.
                     Ensure you are using `debuild -S`, or an equivalent
                     command, to generate only the source package before
-                    re-uploading.""")
+                    re-uploading."""
+                )
 
                 if upload.is_ppa:
-                    message += dedent("""
+                    message += dedent(
+                        """
                         See https://help.launchpad.net/Packaging/PPA for
-                        more information.""")
+                        more information."""
+                    )
                 upload.reject(message)
 
         else:
             raise AssertionError(
-                "Upload is not sourceful, binaryful or mixed.")
+                "Upload is not sourceful, binaryful or mixed."
+            )
 
     def setOptions(self, options):
         """Store the options for later."""
@@ -145,7 +142,8 @@ class AbstractUploadPolicy:
             return
 
         self.distroseries, self.pocket = self.distro.getDistroSeriesAndPocket(
-            dr_name, follow_aliases=True)
+            dr_name, follow_aliases=True
+        )
 
         if self.archive is None:
             self.archive = self.distroseries.main_archive
@@ -155,7 +153,8 @@ class AbstractUploadPolicy:
         if self.archive.is_copy:
             if upload.sourceful:
                 upload.reject(
-                    "Source uploads to copy archives are not allowed.")
+                    "Source uploads to copy archives are not allowed."
+                )
             elif upload.binaryful:
                 # Buildd binary uploads (resulting from successful builds)
                 # to copy archives may go into *any* pocket.
@@ -167,7 +166,8 @@ class AbstractUploadPolicy:
     def policySpecificChecks(self, upload):
         """Implement any policy-specific checks in child."""
         raise NotImplementedError(
-            "Policy specific checks must be implemented in child policies.")
+            "Policy specific checks must be implemented in child policies."
+        )
 
     def autoApprove(self, upload):
         """Return whether the upload should be automatically approved.
@@ -186,7 +186,7 @@ class AbstractUploadPolicy:
 class InsecureUploadPolicy(AbstractUploadPolicy):
     """The insecure upload policy is used by the txpkgupload interface."""
 
-    name = 'insecure'
+    name = "insecure"
     accepted_type = ArchiveUploadType.SOURCE_ONLY
 
     def __init__(self):
@@ -202,12 +202,16 @@ class InsecureUploadPolicy(AbstractUploadPolicy):
         Distribution.redirect_release_uploads is set.
         """
         super().setDistroSeriesAndPocket(dr_name)
-        if (self.archive.purpose == ArchivePurpose.PRIMARY and
-            self.distro.redirect_release_uploads and
-            self.pocket == PackagePublishingPocket.RELEASE):
+        if (
+            self.archive.purpose == ArchivePurpose.PRIMARY
+            and self.distro.redirect_release_uploads
+            and self.pocket == PackagePublishingPocket.RELEASE
+        ):
             self.pocket = PackagePublishingPocket.PROPOSED
             self.redirect_warning = "Redirecting %s to %s-proposed." % (
-                self.distroseries, self.distroseries)
+                self.distroseries,
+                self.distroseries,
+            )
 
     def checkArchiveSizeQuota(self, upload):
         """Reject the upload if target archive size quota will be exceeded.
@@ -226,7 +230,7 @@ class InsecureUploadPolicy(AbstractUploadPolicy):
             upload_size += uploadfile.size
 
         # All value in bytes.
-        MEGA = 2 ** 20
+        MEGA = 2**20
         limit_size = self.archive.authorized_size * MEGA
         current_size = self.archive.estimated_size
         new_size = current_size + upload_size
@@ -235,15 +239,17 @@ class InsecureUploadPolicy(AbstractUploadPolicy):
             upload.reject(
                 "PPA exceeded its size limit (%.2f of %.2f MiB). "
                 "Ask a question in https://answers.launchpad.net/soyuz/ "
-                "if you need more space." % (
-                new_size / MEGA, self.archive.authorized_size))
+                "if you need more space."
+                % (new_size / MEGA, self.archive.authorized_size)
+            )
         elif new_size > 0.95 * limit_size:
             # Warning users about a PPA over 95 % of the size limit.
             upload.warn(
                 "PPA exceeded 95 %% of its size limit (%.2f of %.2f MiB). "
                 "Ask a question in https://answers.launchpad.net/soyuz/ "
-                "if you need more space." % (
-                new_size / MEGA, self.archive.authorized_size))
+                "if you need more space."
+                % (new_size / MEGA, self.archive.authorized_size)
+            )
         else:
             # No need to warn user about their PPA's size.
             pass
@@ -259,7 +265,8 @@ class InsecureUploadPolicy(AbstractUploadPolicy):
         # BuildPackageJob.postprocessCandidate.
         if self.pocket == PackagePublishingPocket.SECURITY:
             upload.reject(
-                "This upload queue does not permit SECURITY uploads.")
+                "This upload queue does not permit SECURITY uploads."
+            )
 
     def autoApprove(self, upload):
         """The insecure policy auto-approves RELEASE/PROPOSED pocket stuff.
@@ -278,10 +285,12 @@ class InsecureUploadPolicy(AbstractUploadPolicy):
         auto_approve_pockets = (
             PackagePublishingPocket.RELEASE,
             PackagePublishingPocket.PROPOSED,
-            )
+        )
         if self.pocket in auto_approve_pockets:
-            if (self.distroseries.isUnstable() and
-                self.distroseries.status != SeriesStatus.FROZEN):
+            if (
+                self.distroseries.isUnstable()
+                and self.distroseries.status != SeriesStatus.FROZEN
+            ):
                 return True
         return False
 
@@ -289,7 +298,7 @@ class InsecureUploadPolicy(AbstractUploadPolicy):
 class BuildDaemonUploadPolicy(AbstractUploadPolicy):
     """The build daemon upload policy is invoked by the worker scanner."""
 
-    name = 'buildd'
+    name = "buildd"
 
     def __init__(self):
         super().__init__()
@@ -313,10 +322,12 @@ class BuildDaemonUploadPolicy(AbstractUploadPolicy):
         if upload.sourceful and upload.binaryful:
             if self.accepted_type != ArchiveUploadType.MIXED_ONLY:
                 upload.reject(
-                    "Source/binary (i.e. mixed) uploads are not allowed.")
+                    "Source/binary (i.e. mixed) uploads are not allowed."
+                )
         elif not upload.sourceful and not upload.binaryful:
             raise AssertionError(
-                "Upload is not sourceful, binaryful or mixed.")
+                "Upload is not sourceful, binaryful or mixed."
+            )
 
     def autoApprove(self, upload):
         """Check that all custom files in this upload can be auto-approved."""
@@ -332,7 +343,7 @@ class BuildDaemonUploadPolicy(AbstractUploadPolicy):
 class SyncUploadPolicy(AbstractUploadPolicy):
     """This policy is invoked when processing sync uploads."""
 
-    name = 'sync'
+    name = "sync"
     accepted_type = ArchiveUploadType.SOURCE_ONLY
 
     def __init__(self):
@@ -358,8 +369,10 @@ def register_archive_upload_policy_adapters():
     policies = [
         BuildDaemonUploadPolicy,
         InsecureUploadPolicy,
-        SyncUploadPolicy]
+        SyncUploadPolicy,
+    ]
     sm = getGlobalSiteManager()
     for policy in policies:
         sm.registerUtility(
-            component=policy, provided=IArchiveUploadPolicy, name=policy.name)
+            component=policy, provided=IArchiveUploadPolicy, name=policy.name
+        )

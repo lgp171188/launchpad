@@ -29,7 +29,7 @@ of these, we only ever allow one.
 
 There are test helpers in `lp.testing._login`.
 
-See also lib/canonical/launchpad/doc/webapp-authorization.txt.
+See also lib/lp/services/webapp/doc/webapp-authorization.rst.
 """
 
 from zope.authentication.interfaces import IUnauthenticatedPrincipal

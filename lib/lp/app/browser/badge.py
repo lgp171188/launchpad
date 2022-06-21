@@ -9,16 +9,13 @@ Badges are shown in two main places:
 """
 
 __all__ = [
-    'Badge',
-    'HasBadgeBase',
-    'IHasBadges',
-    'STANDARD_BADGES',
-    ]
+    "Badge",
+    "HasBadgeBase",
+    "IHasBadges",
+    "STANDARD_BADGES",
+]
 
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 
 from lp.services.privacy.interfaces import IObjectPrivacy
 
@@ -30,8 +27,9 @@ class Badge:
     views, and as larger images on the object content pages.
     """
 
-    def __init__(self, icon_image=None, heading_image=None,
-                 alt='', title='', id=''):
+    def __init__(
+        self, icon_image=None, heading_image=None, alt="", title="", id=""
+    ):
         self.small_image = icon_image
         self.large_image = heading_image
         self.alt = alt
@@ -39,17 +37,19 @@ class Badge:
         self.id = id
 
     def copy(self):
-        return Badge(self.small_image, self.large_image, self.alt,
-                     self.title, self.id)
+        return Badge(
+            self.small_image, self.large_image, self.alt, self.title, self.id
+        )
 
     def renderIconImage(self):
         """Render the small image as an HTML img tag."""
         if self.small_image:
-            return ('<img alt="%s" width="14" height="14" src="%s"'
-                    ' title="%s"/>'
-                    % (self.alt, self.small_image, self.title))
+            return (
+                '<img alt="%s" width="14" height="14" src="%s"'
+                ' title="%s"/>' % (self.alt, self.small_image, self.title)
+            )
         else:
-            return ''
+            return ""
 
     def renderHeadingImage(self):
         """Render the large image as an HTML img tag."""
@@ -57,33 +57,56 @@ class Badge:
             if self.id:
                 id_attribute = 'id="%s"' % self.id
             else:
-                id_attribute = ''
-            return ('<img alt="%s" width="32" height="32" src="%s"'
-                    ' title="%s" %s/>' % (
-                    self.alt, self.large_image, self.title, id_attribute))
+                id_attribute = ""
+            return (
+                '<img alt="%s" width="32" height="32" src="%s"'
+                ' title="%s" %s/>'
+                % (self.alt, self.large_image, self.title, id_attribute)
+            )
         else:
-            return ''
+            return ""
 
 
 STANDARD_BADGES = {
-    'bug': Badge('/@@/bug', '/@@/bug-large',
-                 'bug', 'Linked to a bug', 'bugbadge'),
-    'blueprint': Badge('/@@/blueprint', None,
-                       '(Linked to a blueprint)', 'Linked to a blueprint'),
-    'branch': Badge('/@@/branch', '/@@/branch-large',
-                    '(Linked to a branch)', 'Linked to a branch',
-                    'branchbadge'),
-    'private': Badge('/@@/private', '/@@/private-large',
-                     '(Private)', 'Private', 'privatebadge'),
-    'security': Badge('/@@/security', '/@@/security-large',
-                      '(Security vulnerability)', 'Security vulnerability',
-                      'securitybadge'),
-    'mergeproposal': Badge('/@@/merge-proposal-icon',
-                           '/@@/merge-proposal-large',
-                           '(Has a merge proposal)', 'Has a merge proposal',
-                           'mpbadge'),
-    'patch': Badge(None, None, '(Has a patch)', 'Has a patch', 'haspatch'),
-    }
+    "bug": Badge(
+        "/@@/bug", "/@@/bug-large", "bug", "Linked to a bug", "bugbadge"
+    ),
+    "blueprint": Badge(
+        "/@@/blueprint",
+        None,
+        "(Linked to a blueprint)",
+        "Linked to a blueprint",
+    ),
+    "branch": Badge(
+        "/@@/branch",
+        "/@@/branch-large",
+        "(Linked to a branch)",
+        "Linked to a branch",
+        "branchbadge",
+    ),
+    "private": Badge(
+        "/@@/private",
+        "/@@/private-large",
+        "(Private)",
+        "Private",
+        "privatebadge",
+    ),
+    "security": Badge(
+        "/@@/security",
+        "/@@/security-large",
+        "(Security vulnerability)",
+        "Security vulnerability",
+        "securitybadge",
+    ),
+    "mergeproposal": Badge(
+        "/@@/merge-proposal-icon",
+        "/@@/merge-proposal-large",
+        "(Has a merge proposal)",
+        "Has a merge proposal",
+        "mpbadge",
+    ),
+    "patch": Badge(None, None, "(Has a patch)", "Has a patch", "haspatch"),
+}
 
 
 class IHasBadges(Interface):
@@ -97,8 +120,7 @@ class IHasBadges(Interface):
     """
 
     def getVisibleBadges():
-        """Return a list of `Badge` objects that the logged in user can see.
-        """
+        """Return a list of `Badge` objects that the logged in user can see."""
 
 
 @implementer(IHasBadges)
@@ -113,7 +135,7 @@ class HasBadgeBase:
     """
 
     # All private objects should show the private badge.
-    badges = ('private',)
+    badges = ("private",)
 
     # This class is now a default adapter for IHasBadges.
     def __init__(self, context):

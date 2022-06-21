@@ -5,12 +5,8 @@
 
 from optparse import OptionValueError
 
-from testtools.matchers import (
-    EndsWith,
-    LessThan,
-    MatchesListwise,
-    )
 import transaction
+from testtools.matchers import EndsWith, LessThan, MatchesListwise
 
 from lp.archivepublisher.scripts.processaccepted import ProcessAccepted
 from lp.registry.interfaces.series import SeriesStatus
@@ -21,13 +17,10 @@ from lp.soyuz.enums import (
     ArchivePurpose,
     PackagePublishingStatus,
     PackageUploadStatus,
-    )
+)
 from lp.soyuz.model.queue import PackageUpload
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import (
-    StormStatementRecorder,
-    TestCaseWithFactory,
-    )
+from lp.testing import StormStatementRecorder, TestCaseWithFactory
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 
@@ -49,22 +42,26 @@ class TestProcessAccepted(TestCaseWithFactory):
         """Return a ProcessAccepted instance."""
         if test_args is None:
             test_args = []
-        test_args.extend(['-d', self.distro.name])
+        test_args.extend(["-d", self.distro.name])
         script = ProcessAccepted("process accepted", test_args=test_args)
         script.logger = BufferLogger()
         script.txn = self.layer.txn
         return script
 
-    def createWaitingAcceptancePackage(self, distroseries, archive=None,
-                                       sourcename=None):
+    def createWaitingAcceptancePackage(
+        self, distroseries, archive=None, sourcename=None
+    ):
         """Create some pending publications."""
         if archive is None:
             archive = self.distro.main_archive
         if sourcename is None:
             sourcename = self.test_package_name
         return self.stp.getPubSource(
-            archive=archive, sourcename=sourcename, distroseries=distroseries,
-            spr_only=True)
+            archive=archive,
+            sourcename=sourcename,
+            distroseries=distroseries,
+            spr_only=True,
+        )
 
     def test_robustness(self):
         """Test that a broken package doesn't block the publication of other
@@ -76,11 +73,13 @@ class TestProcessAccepted(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries(distribution=self.distro)
         # This creates a broken publication.
         self.createWaitingAcceptancePackage(
-            distroseries=distroseries, sourcename="notaccepted")
+            distroseries=distroseries, sourcename="notaccepted"
+        )
         distroseries.status = SeriesStatus.SUPPORTED
         # Also upload some other things.
         other_distroseries = self.factory.makeDistroSeries(
-            distribution=self.distro)
+            distribution=self.distro
+        )
         self.createWaitingAcceptancePackage(distroseries=other_distroseries)
         script = self.getScript([])
         switch_dbuser(self.dbuser)
@@ -88,7 +87,8 @@ class TestProcessAccepted(TestCaseWithFactory):
 
         # The other source should be published now.
         published_main = self.distro.main_archive.getPublishedSources(
-            name=self.test_package_name)
+            name=self.test_package_name
+        )
         self.assertEqual(published_main.count(), 1)
 
         # And an oops should be filed for the first.
@@ -96,60 +96,70 @@ class TestProcessAccepted(TestCaseWithFactory):
         error_report = self.oopses[0]
         expected_error = "Failure processing queue_item"
         self.assertStartsWith(
-                error_report['req_vars']['error-explanation'],
-                expected_error)
+            error_report["req_vars"]["error-explanation"], expected_error
+        )
 
     def test_accept_copy_archives(self):
         """Test that publications in a copy archive are accepted properly."""
         # Upload some pending packages in a copy archive.
         distroseries = self.factory.makeDistroSeries(distribution=self.distro)
         copy_archive = self.factory.makeArchive(
-            distribution=self.distro, purpose=ArchivePurpose.COPY)
+            distribution=self.distro, purpose=ArchivePurpose.COPY
+        )
         copy_archive.publish = True
         copy_source = self.createWaitingAcceptancePackage(
-            archive=copy_archive, distroseries=distroseries)
+            archive=copy_archive, distroseries=distroseries
+        )
         # Also upload some stuff in the main archive.
         self.createWaitingAcceptancePackage(distroseries=distroseries)
 
         # Before accepting, the package should not be published at all.
         published_copy = copy_archive.getPublishedSources(
-            name=self.test_package_name)
+            name=self.test_package_name
+        )
         self.assertTrue(published_copy.is_empty())
 
         # Accept the packages.
-        script = self.getScript(['--copy-archives'])
+        script = self.getScript(["--copy-archives"])
         switch_dbuser(self.dbuser)
         script.main()
 
         # Packages in main archive should not be accepted and published.
         published_main = self.distro.main_archive.getPublishedSources(
-            name=self.test_package_name)
+            name=self.test_package_name
+        )
         self.assertTrue(published_main.is_empty())
 
         # Check the copy archive source was accepted.
         published_copy = copy_archive.getPublishedSources(
-            name=self.test_package_name).one()
+            name=self.test_package_name
+        ).one()
         self.assertEqual(
-            published_copy.status, PackagePublishingStatus.PENDING)
+            published_copy.status, PackagePublishingStatus.PENDING
+        )
         self.assertEqual(copy_source, published_copy.sourcepackagerelease)
 
     def test_skips_non_publishing_copy_archives(self):
         # The script skips copy archives that have the publish flag disabled.
         distroseries = self.factory.makeDistroSeries(distribution=self.distro)
         copy_archive = self.factory.makeArchive(
-            distribution=self.distro, purpose=ArchivePurpose.COPY)
+            distribution=self.distro, purpose=ArchivePurpose.COPY
+        )
         self.createWaitingAcceptancePackage(
-            archive=copy_archive, distroseries=distroseries)
+            archive=copy_archive, distroseries=distroseries
+        )
         published_copy = copy_archive.getPublishedSources(
-            name=self.test_package_name)
+            name=self.test_package_name
+        )
         self.assertTrue(published_copy.is_empty())
 
-        script = self.getScript(['--copy-archives'])
+        script = self.getScript(["--copy-archives"])
         switch_dbuser(self.dbuser)
         script.main()
 
         published_copy = copy_archive.getPublishedSources(
-            name=self.test_package_name)
+            name=self.test_package_name
+        )
         self.assertTrue(published_copy.is_empty())
 
     def test_commits_after_each_item(self):
@@ -157,30 +167,38 @@ class TestProcessAccepted(TestCaseWithFactory):
         uploads = [
             self.createWaitingAcceptancePackage(
                 distroseries=self.factory.makeDistroSeries(
-                    distribution=self.distro),
-                sourcename='source%d' % i)
-            for i in range(3)]
+                    distribution=self.distro
+                ),
+                sourcename="source%d" % i,
+            )
+            for i in range(3)
+        ]
 
         class UploadCheckingSynchronizer:
 
             commit_count = 0
 
             def beforeCompletion(inner_self, txn):
-                self.done_count = len([
-                    upload for upload in uploads
-                    if upload.package_upload.status ==
-                        PackageUploadStatus.DONE])
+                self.done_count = len(
+                    [
+                        upload
+                        for upload in uploads
+                        if upload.package_upload.status
+                        == PackageUploadStatus.DONE
+                    ]
+                )
 
             def afterCompletion(inner_self, txn):
                 try:
-                    if txn.status != 'Committed':
+                    if txn.status != "Committed":
                         return
                     inner_self.commit_count += 1
                     # We actually commit twice for each upload: once for the
                     # queue item itself, and again to close its bugs.
                     self.assertIn(
                         min(len(uploads) * 2, inner_self.commit_count),
-                        (self.done_count * 2, (self.done_count * 2) - 1))
+                        (self.done_count * 2, (self.done_count * 2) - 1),
+                    )
                 finally:
                     self.done_count = None
 
@@ -195,30 +213,36 @@ class TestProcessAccepted(TestCaseWithFactory):
     def test_commits_work(self):
         upload = self.factory.makeSourcePackageUpload(
             distroseries=self.factory.makeDistroSeries(
-                distribution=self.distro))
+                distribution=self.distro
+            )
+        )
         upload_id = upload.id
         self.getScript([]).main()
         self.layer.txn.abort()
         self.assertEqual(
-            upload, IStore(PackageUpload).get(PackageUpload, upload_id))
+            upload, IStore(PackageUpload).get(PackageUpload, upload_id)
+        )
 
     def test_validateArguments_requires_no_distro_for_derived_run(self):
-        ProcessAccepted(test_args=['--all-derived']).validateArguments()
+        ProcessAccepted(test_args=["--all-derived"]).validateArguments()
         # The test is that this does not raise an exception.
         pass
 
     def test_validateArguments_does_not_accept_distro_for_derived_run(self):
         distro = self.factory.makeDistribution()
         script = ProcessAccepted(
-            test_args=['--all-derived', '-d', distro.name])
+            test_args=["--all-derived", "-d", distro.name]
+        )
         self.assertRaises(OptionValueError, script.validateArguments)
 
     def test_processes_in_batches(self):
         distroseries = self.factory.makeDistroSeries(distribution=self.distro)
         uploads = [
             self.createWaitingAcceptancePackage(
-                distroseries=distroseries, sourcename='source%d' % i)
-            for i in range(5)]
+                distroseries=distroseries, sourcename="source%d" % i
+            )
+            for i in range(5)
+        ]
 
         script = self.getScript([])
         script.batch_size = 2
@@ -228,13 +252,22 @@ class TestProcessAccepted(TestCaseWithFactory):
 
         for upload in uploads:
             published = self.distro.main_archive.getPublishedSources(
-                name=upload.name).one()
+                name=upload.name
+            ).one()
             self.assertEqual(PackagePublishingStatus.PENDING, published.status)
         # The script made three queries for PackageUploads, each of which
         # was limited to the batch size.
         self.assertThat(
-            [stmt for stmt in recorder.statements
-             if 'SELECT DISTINCT PackageUpload' in stmt],
-            MatchesListwise([
-                EndsWith('LIMIT 2'), EndsWith('LIMIT 2'), EndsWith('LIMIT 2'),
-                ]))
+            [
+                stmt
+                for stmt in recorder.statements
+                if "SELECT DISTINCT PackageUpload" in stmt
+            ],
+            MatchesListwise(
+                [
+                    EndsWith("LIMIT 2"),
+                    EndsWith("LIMIT 2"),
+                    EndsWith("LIMIT 2"),
+                ]
+            ),
+        )

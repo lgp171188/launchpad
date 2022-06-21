@@ -9,12 +9,9 @@ from lazr.restful.interfaces import (
     IFieldHTMLRenderer,
     IReference,
     IWebServiceClientRequest,
-    )
+)
 from zope import component
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 from zope.schema.interfaces import IText
 
 from lp.app.browser.stringformatter import FormattersAPI
@@ -30,9 +27,10 @@ def reference_xhtml_representation(context, field, request):
         # The value is a webservice link to the object, we want field value.
         obj = getattr(context, field.__name__, None)
         try:
-            return format_link(obj, empty_value='')
+            return format_link(obj, empty_value="")
         except NotImplementedError:
             return value
+
     return render
 
 
@@ -41,5 +39,7 @@ def reference_xhtml_representation(context, field, request):
 def text_xhtml_representation(context, field, request):
     """Render text as XHTML using the webservice."""
     return lambda text: (
-        '' if text is None
-        else FormattersAPI(text).text_to_html(linkify_text=True))
+        ""
+        if text is None
+        else FormattersAPI(text).text_to_html(linkify_text=True)
+    )

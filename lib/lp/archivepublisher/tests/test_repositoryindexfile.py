@@ -17,7 +17,6 @@ from lp.soyuz.enums import IndexCompressionType
 
 
 class TestRepositoryArchiveIndex(unittest.TestCase):
-
     def setUp(self):
         """Create temporary directories to be used in tests.
 
@@ -43,9 +42,10 @@ class TestRepositoryArchiveIndex(unittest.TestCase):
                 IndexCompressionType.GZIP,
                 IndexCompressionType.BZIP2,
                 IndexCompressionType.XZ,
-                ]
+            ]
         return RepositoryIndexFile(
-            os.path.join(self.root, filename), self.temp_root, compressors)
+            os.path.join(self.root, filename), self.temp_root, compressors
+        )
 
     def testWorkflow(self):
         """`RepositoryIndexFile` workflow.
@@ -61,7 +61,7 @@ class TestRepositoryArchiveIndex(unittest.TestCase):
         Additionally, the resulting files are made readable and writable by
         their group and readable by others.
         """
-        repo_file = self.getRepoFile('boing')
+        repo_file = self.getRepoFile("boing")
 
         self.assertEqual(0, len(os.listdir(self.root)))
         self.assertEqual(3, len(os.listdir(self.temp_root)))
@@ -73,13 +73,15 @@ class TestRepositoryArchiveIndex(unittest.TestCase):
 
         resulting_files = sorted(os.listdir(self.root))
         self.assertEqual(
-            ['boing.bz2', 'boing.gz', 'boing.xz'], resulting_files)
+            ["boing.bz2", "boing.gz", "boing.xz"], resulting_files
+        )
 
         for filename in resulting_files:
             file_path = os.path.join(self.root, filename)
             mode = stat.S_IMODE(os.stat(file_path).st_mode)
             self.assertTrue(
-                (stat.S_IWGRP | stat.S_IRGRP | stat.S_IROTH) & mode)
+                (stat.S_IWGRP | stat.S_IRGRP | stat.S_IROTH) & mode
+            )
 
     def testWrite(self):
         """`RepositoryIndexFile` writing.
@@ -89,20 +91,20 @@ class TestRepositoryArchiveIndex(unittest.TestCase):
         is closed both resulting files have the same contents, one plain and
         other compressed.
         """
-        repo_file = self.getRepoFile('boing')
-        repo_file.write(b'hello')
+        repo_file = self.getRepoFile("boing")
+        repo_file.write(b"hello")
         repo_file.close()
 
-        with gzip.open(os.path.join(self.root, 'boing.gz')) as gzip_file:
+        with gzip.open(os.path.join(self.root, "boing.gz")) as gzip_file:
             gzip_content = gzip_file.read()
-        with bz2.BZ2File(os.path.join(self.root, 'boing.bz2')) as bz2_file:
+        with bz2.BZ2File(os.path.join(self.root, "boing.bz2")) as bz2_file:
             bz2_content = bz2_file.read()
-        with lzma.open(os.path.join(self.root, 'boing.xz')) as xz_file:
+        with lzma.open(os.path.join(self.root, "boing.xz")) as xz_file:
             xz_content = xz_file.read()
 
         self.assertEqual(gzip_content, bz2_content)
         self.assertEqual(gzip_content, xz_content)
-        self.assertEqual(b'hello', gzip_content)
+        self.assertEqual(b"hello", gzip_content)
 
         # gzip is compressed as if with "-n", ensuring that the hash
         # doesn't change just because we're compressing at a different
@@ -113,11 +115,14 @@ class TestRepositoryArchiveIndex(unittest.TestCase):
     def testCompressors(self):
         """`RepositoryIndexFile` honours the supplied list of compressors."""
         repo_file = self.getRepoFile(
-            'boing',
+            "boing",
             compressors=[
-                IndexCompressionType.UNCOMPRESSED, IndexCompressionType.XZ])
+                IndexCompressionType.UNCOMPRESSED,
+                IndexCompressionType.XZ,
+            ],
+        )
         repo_file.close()
-        self.assertEqual(['boing', 'boing.xz'], sorted(os.listdir(self.root)))
+        self.assertEqual(["boing", "boing.xz"], sorted(os.listdir(self.root)))
 
     def testUnreferencing(self):
         """`RepositoryIndexFile` unreferencing.
@@ -125,7 +130,7 @@ class TestRepositoryArchiveIndex(unittest.TestCase):
         When a `RepositoryIndexFile` is unreferenced it takes care of
         removing the created files in the 'temp_root'.
         """
-        repo_file = self.getRepoFile('boing')
+        repo_file = self.getRepoFile("boing")
 
         self.assertEqual(0, len(os.listdir(self.root)))
         self.assertEqual(3, len(os.listdir(self.temp_root)))
@@ -137,39 +142,45 @@ class TestRepositoryArchiveIndex(unittest.TestCase):
 
     def testRootCreation(self):
         """`RepositoryIndexFile` creates given 'root' path if necessary."""
-        missing_root = os.path.join(self.root, 'donotexist')
+        missing_root = os.path.join(self.root, "donotexist")
         compressors = [
             IndexCompressionType.GZIP,
             IndexCompressionType.BZIP2,
             IndexCompressionType.XZ,
-            ]
+        ]
         repo_file = RepositoryIndexFile(
-            os.path.join(missing_root, 'boing'), self.temp_root, compressors)
+            os.path.join(missing_root, "boing"), self.temp_root, compressors
+        )
 
         self.assertFalse(os.path.exists(missing_root))
 
         repo_file.close()
 
         self.assertEqual(
-            ['boing.bz2', 'boing.gz', 'boing.xz'],
-            sorted(os.listdir(missing_root)))
+            ["boing.bz2", "boing.gz", "boing.xz"],
+            sorted(os.listdir(missing_root)),
+        )
 
     def testMissingTempRoot(self):
         """`RepositoryIndexFile` cannot be given a missing 'temp_root'."""
-        missing_temp_root = os.path.join(self.temp_root, 'donotexist')
+        missing_temp_root = os.path.join(self.temp_root, "donotexist")
         self.assertRaises(
-            AssertionError, RepositoryIndexFile,
-            os.path.join(self.root, 'boing'), missing_temp_root,
-            [IndexCompressionType.UNCOMPRESSED])
+            AssertionError,
+            RepositoryIndexFile,
+            os.path.join(self.root, "boing"),
+            missing_temp_root,
+            [IndexCompressionType.UNCOMPRESSED],
+        )
 
     def testRemoveOld(self):
         """`RepositoryIndexFile` removes old index files."""
-        old_path = os.path.join(self.root, 'boing')
-        with open(old_path, 'w'):
+        old_path = os.path.join(self.root, "boing")
+        with open(old_path, "w"):
             pass
-        self.assertEqual(['boing'], sorted(os.listdir(self.root)))
-        repo_file = self.getRepoFile('boing')
+        self.assertEqual(["boing"], sorted(os.listdir(self.root)))
+        repo_file = self.getRepoFile("boing")
         repo_file.close()
         self.assertEqual(
-            ['boing.bz2', 'boing.gz', 'boing.xz'],
-            sorted(os.listdir(self.root)))
+            ["boing.bz2", "boing.gz", "boing.xz"],
+            sorted(os.listdir(self.root)),
+        )

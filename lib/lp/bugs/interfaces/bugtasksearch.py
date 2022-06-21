@@ -145,7 +145,7 @@ class BugTaskSearchParams:
 
     For a more thorough treatment, check out:
 
-        lib/lp/bugs/doc/bugtask-search.txt
+        lib/lp/bugs/doc/bugtask-search.rst
     """
 
     product = None

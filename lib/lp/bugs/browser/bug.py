@@ -400,7 +400,7 @@ class MaloneView(LaunchpadFormView):
     schema = IFrontPageBugTaskSearch
     field_names = ['searchtext', 'scope']
 
-    # Test: standalone/xx-slash-malone-slash-bugs.txt
+    # Test: standalone/xx-slash-malone-slash-bugs.rst
     error_message = None
 
     page_title = 'Launchpad Bugs'

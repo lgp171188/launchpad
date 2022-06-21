@@ -3,7 +3,7 @@
 
 """Parse logging command line arguments and output some log messages.
 
-Used by test_logger.txt.
+Used by test_logger.rst.
 """
 
 __all__ = []

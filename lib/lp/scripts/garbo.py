@@ -910,7 +910,7 @@ class RevisionAuthorEmailLinker(TunableLoop):
         result = self.author_store.find(
             RevisionAuthor,
             RevisionAuthor.id >= self.next_author_id,
-            RevisionAuthor.personID == None,
+            RevisionAuthor.person_id == None,
             RevisionAuthor.email != None)
         result.order_by(RevisionAuthor.id)
         authors = list(result[:chunk_size])
@@ -931,10 +931,10 @@ class RevisionAuthorEmailLinker(TunableLoop):
 
         if emails:
             for author in authors:
-                personID = emails.get(author.email.lower())
-                if personID is None:
+                person_id = emails.get(author.email.lower())
+                if person_id is None:
                     continue
-                author.personID = personID
+                author.person_id = person_id
 
         self.next_author_id = authors[-1].id + 1
         transaction.commit()

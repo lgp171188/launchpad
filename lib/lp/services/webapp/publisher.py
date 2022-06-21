@@ -142,7 +142,7 @@ class stepthrough(DecoratorAnnotator):
 
       launchpad.net/.../+foo/name
 
-    See also doc/navigation.txt.
+    See also doc/navigation.rst.
 
     This sets an attribute on the decorated function, equivalent to:
 
@@ -169,7 +169,7 @@ class stepto(DecoratorAnnotator):
 
       launchpad.net/.../+foo
 
-    See also doc/navigation.txt.
+    See also doc/navigation.rst.
 
     This sets an attribute on the decorated function, equivalent to:
 

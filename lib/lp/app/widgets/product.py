@@ -4,12 +4,12 @@
 """Widgets related to IProduct."""
 
 __all__ = [
-    'GhostCheckBoxWidget',
-    'GhostWidget',
-    'LicenseWidget',
-    'ProductBugTrackerWidget',
-    'ProductNameWidget',
-    ]
+    "GhostCheckBoxWidget",
+    "GhostWidget",
+    "LicenseWidget",
+    "ProductBugTrackerWidget",
+    "ProductNameWidget",
+]
 
 import math
 
@@ -20,32 +20,26 @@ from zope.formlib.boolwidgets import CheckBoxWidget
 from zope.formlib.interfaces import IInputWidget
 from zope.formlib.textwidgets import TextWidget
 from zope.formlib.utility import setUpWidget
-from zope.formlib.widget import (
-    CustomWidgetFactory,
-    renderElement,
-    )
-from zope.schema import (
-    Choice,
-    Text,
-    )
+from zope.formlib.widget import CustomWidgetFactory, renderElement
+from zope.schema import Choice, Text
 
 from lp.app.validators import LaunchpadValidationError
 from lp.app.validators.email import email_validator
 from lp.app.widgets.itemswidgets import (
     CheckBoxMatrixWidget,
     LaunchpadRadioWidget,
-    )
+)
 from lp.app.widgets.popup import BugTrackerPickerWidget
 from lp.app.widgets.textwidgets import (
     DescriptionWidget,
     StrippedTextWidget,
     URIComponentWidget,
-    )
+)
 from lp.bugs.interfaces.bugtracker import (
     BugTrackerType,
     IBugTracker,
     IBugTrackerSet,
-    )
+)
 from lp.registry.interfaces.product import IProduct
 from lp.services.fields import StrippedTextLine
 from lp.services.webapp import canonical_url
@@ -57,58 +51,75 @@ from lp.services.webapp.vhosts import allvhosts
 class ProductBugTrackerWidget(LaunchpadRadioWidget):
     """Widget for selecting a product bug tracker."""
 
-    _joinButtonToMessageTemplate = '%s&nbsp;%s'
-    template = ViewPageTemplateFile('templates/product-bug-tracker.pt')
+    _joinButtonToMessageTemplate = "%s&nbsp;%s"
+    template = ViewPageTemplateFile("templates/product-bug-tracker.pt")
 
     def __init__(self, field, vocabulary, request):
         LaunchpadRadioWidget.__init__(self, field, vocabulary, request)
 
         # Bug tracker widget.
         self.bugtracker = Choice(
-            vocabulary="WebBugTracker",
-            __name__='bugtracker')
+            vocabulary="WebBugTracker", __name__="bugtracker"
+        )
         self.bugtracker_widget = CustomWidgetFactory(BugTrackerPickerWidget)
         setUpWidget(
-            self, 'bugtracker', self.bugtracker, IInputWidget,
-            prefix=self.name, value=field.context.bugtracker,
-            context=field.context)
+            self,
+            "bugtracker",
+            self.bugtracker,
+            IInputWidget,
+            prefix=self.name,
+            value=field.context.bugtracker,
+            context=field.context,
+        )
         self.bugtracker_widget.onKeyPress = (
-            "selectWidget('%s.2', event);" % self.name)
+            "selectWidget('%s.2', event);" % self.name
+        )
 
         # Upstream email address field and widget.
         ## This is to make email address bug trackers appear
         ## separately from the main bug tracker list.
         self.upstream_email_address = StrippedTextLine(
-            required=False, constraint=email_validator,
-            __name__='upstream_email_address')
-        self.upstream_email_address_widget = (
-            CustomWidgetFactory(StrippedTextWidget))
+            required=False,
+            constraint=email_validator,
+            __name__="upstream_email_address",
+        )
+        self.upstream_email_address_widget = CustomWidgetFactory(
+            StrippedTextWidget
+        )
         setUpWidget(
-            self, 'upstream_email_address', self.upstream_email_address,
-            IInputWidget, prefix=self.name, value='',
-            context=self.upstream_email_address.context)
+            self,
+            "upstream_email_address",
+            self.upstream_email_address,
+            IInputWidget,
+            prefix=self.name,
+            value="",
+            context=self.upstream_email_address.context,
+        )
         ## Select the corresponding radio option automatically if
         ## the user starts typing.
         if self.upstream_email_address_widget.extra is None:
-            self.upstream_email_address_widget.extra = ''
+            self.upstream_email_address_widget.extra = ""
         self.upstream_email_address_widget.extra += (
-            ''' onkeypress="selectWidget('%s.3', event);"\n''' % self.name)
+            """ onkeypress="selectWidget('%s.3', event);"\n""" % self.name
+        )
 
     def _renderItem(self, index, text, value, name, cssClass, checked=False):
         # This form has a custom need to render their labels separately,
         # because of a Firefox problem: see comment in renderItems.
         kw = {}
         if checked:
-            kw['checked'] = 'checked'
-        id = '%s.%s' % (name, index)
-        elem = renderElement('input',
-                             value=value,
-                             name=name,
-                             id=id,
-                             cssClass=cssClass,
-                             type='radio',
-                             **kw)
-        return '%s&nbsp;%s' % (elem, text)
+            kw["checked"] = "checked"
+        id = "%s.%s" % (name, index)
+        elem = renderElement(
+            "input",
+            value=value,
+            name=name,
+            id=id,
+            cssClass=cssClass,
+            type="radio",
+            **kw,
+        )
+        return "%s&nbsp;%s" % (elem, text)
 
     def _toFieldValue(self, form_value):
         if form_value == "malone":
@@ -119,12 +130,14 @@ class ProductBugTrackerWidget(LaunchpadRadioWidget):
             email_address = self.upstream_email_address_widget.getInputValue()
             if email_address is None or len(email_address) == 0:
                 self.upstream_email_address_widget._error = (
-                    LaunchpadValidationError(
-                        'Please enter an email address.'))
+                    LaunchpadValidationError("Please enter an email address.")
+                )
                 raise self.upstream_email_address_widget._error
             bugtracker = getUtility(IBugTrackerSet).ensureBugTracker(
-                'mailto:%s' % email_address, getUtility(ILaunchBag).user,
-                BugTrackerType.EMAILADDRESS)
+                "mailto:%s" % email_address,
+                getUtility(ILaunchBag).user,
+                BugTrackerType.EMAILADDRESS,
+            )
             return bugtracker
         elif form_value == "project":
             return None
@@ -139,14 +152,16 @@ class ProductBugTrackerWidget(LaunchpadRadioWidget):
 
     def _renderLabel(self, text, index):
         """Render a label for the option with the specified index."""
-        option_id = '%s.%s' % (self.name, index)
+        option_id = "%s.%s" % (self.name, index)
         return '<label for="%s" style="font-weight: normal">%s</label>' % (
-            option_id, text)
+            option_id,
+            text,
+        )
 
     def error(self):
         """Concatenate errors from this widget and sub-widgets."""
         errors = [super().error(), self.upstream_email_address_widget.error()]
-        return '; '.join(err for err in errors if len(err) > 0)
+        return "; ".join(err for err in errors if len(err) > 0)
 
     def renderItems(self, value):
         """Custom-render the radio-buttons and dependent widgets.
@@ -168,8 +183,12 @@ class ProductBugTrackerWidget(LaunchpadRadioWidget):
 
         # Bugs tracked in Launchpad Bugs.
         malone_item_arguments = dict(
-            index=0, text=self._renderLabel("In Launchpad", 0),
-            value="malone", name=self.name, cssClass=self.cssClass)
+            index=0,
+            text=self._renderLabel("In Launchpad", 0),
+            value="malone",
+            name=self.name,
+            cssClass=self.cssClass,
+        )
 
         # Project or somewhere else.
         projectgroup = product.projectgroup
@@ -180,41 +199,58 @@ class ProductBugTrackerWidget(LaunchpadRadioWidget):
                 'In the %s bug tracker (<a href="%s">%s</a>)',
                 projectgroup.displayname,
                 canonical_url(projectgroup.bugtracker),
-                projectgroup.bugtracker.title).escapedtext
+                projectgroup.bugtracker.title,
+            ).escapedtext
         projectgroup_bugtracker_arguments = dict(
             index=1,
             text=self._renderLabel(projectgroup_bugtracker_caption, 1),
-            value="project", name=self.name, cssClass=self.cssClass)
+            value="project",
+            name=self.name,
+            cssClass=self.cssClass,
+        )
 
         # External bug tracker.
         ## The bugtracker widget can't be within the <label> tag,
         ## since Firefox doesn't cope with it well.
         external_bugtracker_text = "%s %s" % (
             self._renderLabel("In a registered bug tracker:", 2),
-            self.bugtracker_widget())
+            self.bugtracker_widget(),
+        )
         external_bugtracker_arguments = dict(
-            index=2, text=external_bugtracker_text,
-            value="external", name=self.name, cssClass=self.cssClass)
+            index=2,
+            text=external_bugtracker_text,
+            value="external",
+            name=self.name,
+            cssClass=self.cssClass,
+        )
 
         # Upstream email address (special-case bug tracker).
-        if (IBugTracker.providedBy(value) and
-            value.bugtrackertype == BugTrackerType.EMAILADDRESS):
+        if (
+            IBugTracker.providedBy(value)
+            and value.bugtrackertype == BugTrackerType.EMAILADDRESS
+        ):
             self.upstream_email_address_widget.setRenderedValue(
-                value.baseurl.lstrip('mailto:'))
+                value.baseurl.lstrip("mailto:")
+            )
         external_bugtracker_email_text = "%s %s" % (
             self._renderLabel("By emailing an upstream bug contact:\n", 3),
-            self.upstream_email_address_widget())
+            self.upstream_email_address_widget(),
+        )
         external_bugtracker_email_arguments = dict(
-            index=3, text=external_bugtracker_email_text,
-            value="external-email", name=self.name, cssClass=self.cssClass)
+            index=3,
+            text=external_bugtracker_email_text,
+            value="external-email",
+            name=self.name,
+            cssClass=self.cssClass,
+        )
 
         # All the choices arguments in order.
         all_arguments = {
-            'launchpad': malone_item_arguments,
-            'external_bugtracker': external_bugtracker_arguments,
-            'external_email': external_bugtracker_email_arguments,
-            'unknown': projectgroup_bugtracker_arguments,
-            }
+            "launchpad": malone_item_arguments,
+            "external_bugtracker": external_bugtracker_arguments,
+            "external_email": external_bugtracker_email_arguments,
+            "unknown": projectgroup_bugtracker_arguments,
+        }
 
         # Figure out the selected choice.
         if value == field.malone_marker:
@@ -222,9 +258,10 @@ class ProductBugTrackerWidget(LaunchpadRadioWidget):
         elif value != self.context.missing_value:
             # value will be 'external-email' if there was an error on
             # upstream_email_address_widget.
-            if (value == 'external-email' or (
-                    IBugTracker.providedBy(value) and
-                    value.bugtrackertype == BugTrackerType.EMAILADDRESS)):
+            if value == "external-email" or (
+                IBugTracker.providedBy(value)
+                and value.bugtrackertype == BugTrackerType.EMAILADDRESS
+            ):
                 selected = external_bugtracker_email_arguments
             else:
                 selected = external_bugtracker_arguments
@@ -244,22 +281,32 @@ class ProductBugTrackerWidget(LaunchpadRadioWidget):
         self.bug_trackers = dict(self.renderItems(value))
         self.product = self.context.context
         # The view must also use GhostWidget for the 'remote_product' field.
-        self.remote_product = copy_field(IProduct['remote_product'])
+        self.remote_product = copy_field(IProduct["remote_product"])
         self.remote_product_widget = CustomWidgetFactory(TextWidget)
         setUpWidget(
-            self, 'remote_product', self.remote_product, IInputWidget,
-            prefix='field', value=self.product.remote_product,
-            context=self.product)
+            self,
+            "remote_product",
+            self.remote_product,
+            IInputWidget,
+            prefix="field",
+            value=self.product.remote_product,
+            context=self.product,
+        )
         # The view must also use GhostWidget for the 'enable_bug_expiration'
         # field.
         self.enable_bug_expiration = copy_field(
-            IProduct['enable_bug_expiration'])
-        self.enable_bug_expiration_widget = CustomWidgetFactory(
-            CheckBoxWidget)
+            IProduct["enable_bug_expiration"]
+        )
+        self.enable_bug_expiration_widget = CustomWidgetFactory(CheckBoxWidget)
         setUpWidget(
-            self, 'enable_bug_expiration', self.enable_bug_expiration,
-            IInputWidget, prefix='field',
-            value=self.product.enable_bug_expiration, context=self.product)
+            self,
+            "enable_bug_expiration",
+            self.enable_bug_expiration,
+            IInputWidget,
+            prefix="field",
+            value=self.product.enable_bug_expiration,
+            context=self.product,
+        )
         return self.template()
 
 
@@ -270,40 +317,41 @@ class LicenseWidget(CheckBoxMatrixWidget):
     can display radio buttons to show that the licence field is
     optional for pre-existing products that have never had a licence set.
     """
-    template = ViewPageTemplateFile('templates/license.pt')
+
+    template = ViewPageTemplateFile("templates/license.pt")
     allow_pending_license = False
 
     CATEGORIES = {
-        'AFFERO': 'recommended',
-        'APACHE': 'recommended',
-        'BSD': 'recommended',
-        'GNU_GPL_V2': 'recommended',
-        'GNU_GPL_V3': 'recommended',
-        'GNU_LGPL_V2_1': 'recommended',
-        'GNU_LGPL_V3': 'recommended',
-        'MIT': 'recommended',
-        'CC_0': 'recommended',
-        'ACADEMIC': 'more',
-        'ARTISTIC': 'more',
-        'ARTISTIC_2_0': 'more',
-        'COMMON_PUBLIC': 'more',
-        'ECLIPSE': 'more',
-        'EDUCATIONAL_COMMUNITY': 'more',
-        'GNU_FDL_NO_OPTIONS': 'more',
-        'MPL': 'more',
-        'OFL': 'more',
-        'OPEN_SOFTWARE': 'more',
-        'PHP': 'more',
-        'PUBLIC_DOMAIN': 'more',
-        'PYTHON': 'more',
-        'ZPL': 'more',
-        'CC_BY': 'more',
-        'CC_BY_SA': 'more',
-        'PERL': 'deprecated',
-        'OTHER_PROPRIETARY': 'special',
-        'OTHER_OPEN_SOURCE': 'special',
-        'DONT_KNOW': 'special',
-        }
+        "AFFERO": "recommended",
+        "APACHE": "recommended",
+        "BSD": "recommended",
+        "GNU_GPL_V2": "recommended",
+        "GNU_GPL_V3": "recommended",
+        "GNU_LGPL_V2_1": "recommended",
+        "GNU_LGPL_V3": "recommended",
+        "MIT": "recommended",
+        "CC_0": "recommended",
+        "ACADEMIC": "more",
+        "ARTISTIC": "more",
+        "ARTISTIC_2_0": "more",
+        "COMMON_PUBLIC": "more",
+        "ECLIPSE": "more",
+        "EDUCATIONAL_COMMUNITY": "more",
+        "GNU_FDL_NO_OPTIONS": "more",
+        "MPL": "more",
+        "OFL": "more",
+        "OPEN_SOFTWARE": "more",
+        "PHP": "more",
+        "PUBLIC_DOMAIN": "more",
+        "PYTHON": "more",
+        "ZPL": "more",
+        "CC_BY": "more",
+        "CC_BY_SA": "more",
+        "PERL": "deprecated",
+        "OTHER_PROPRIETARY": "special",
+        "OTHER_OPEN_SOURCE": "special",
+        "DONT_KNOW": "special",
+    }
 
     items_by_category = None
 
@@ -316,17 +364,22 @@ class LicenseWidget(CheckBoxMatrixWidget):
         # below) and creating a custom widget here.  It's a pretty simple text
         # widget so create that now.  The fun part is that it's all within the
         # same form, so posts work correctly.
-        self.license_info = Text(__name__='license_info')
+        self.license_info = Text(__name__="license_info")
         self.license_info_widget = CustomWidgetFactory(DescriptionWidget)
         # The initial value of the license_info widget will be taken from the
         # field's context when available.  This will be the IProduct when
         # we're editing an existing project, but when we're creating a new
         # one, it'll be an IProductSet, which does not have license_info.
-        initial_value = getattr(field.context, 'license_info', None)
+        initial_value = getattr(field.context, "license_info", None)
         setUpWidget(
-            self, 'license_info', self.license_info, IInputWidget,
-            prefix='field', value=initial_value,
-            context=field.context)
+            self,
+            "license_info",
+            self.license_info,
+            IInputWidget,
+            prefix="field",
+            value=initial_value,
+            context=field.context,
+        )
         self.source_package_release = None
         # These will get filled in by _categorize().  They are the number of
         # selected licences in the category.  The actual count doesn't matter,
@@ -349,8 +402,8 @@ class LicenseWidget(CheckBoxMatrixWidget):
         else:
             return structured(
                 '%s&nbsp;<a href="%s" class="sprite external-link action-icon"'
-                '>view licence</a>'
-                % (value, term.value.url))
+                ">view licence</a>" % (value, term.value.url)
+            )
 
     def renderItem(self, index, text, value, name, cssClass):
         """See `ItemsEditWidgetBase`."""
@@ -361,11 +414,12 @@ class LicenseWidget(CheckBoxMatrixWidget):
     def renderSelectedItem(self, index, text, value, name, cssClass):
         """See `ItemsEditWidgetBase`."""
         rendered = super().renderSelectedItem(
-            index, text, value, name, cssClass)
+            index, text, value, name, cssClass
+        )
         category = self._categorize(value, rendered)
         # Increment the category counter.  This is used by the template to
         # determine whether a category should start opened or not.
-        attribute_name = category + '_count'
+        attribute_name = category + "_count"
         setattr(self, attribute_name, getattr(self, attribute_name) + 1)
         return rendered
 
@@ -376,10 +430,10 @@ class LicenseWidget(CheckBoxMatrixWidget):
         # When allow_pending_license is set, we'll see a radio button labeled
         # "I haven't specified the licence yet".  In that case, do not show
         # the "I don't know" option.
-        if self.allow_pending_license and value == 'DONT_KNOW':
+        if self.allow_pending_license and value == "DONT_KNOW":
             return
         category = self.CATEGORIES.get(value)
-        assert category is not None, 'Uncategorized value: %s' % value
+        assert category is not None, "Uncategorized value: %s" % value
         self.items_by_category.setdefault(category, []).append(rendered)
         return category
 
@@ -389,32 +443,33 @@ class LicenseWidget(CheckBoxMatrixWidget):
         # value though since we'll be building up our checkbox tables
         # manually.
         super().__call__()
-        self.recommended = self._renderTable('recommended', 3)
-        self.more = self._renderTable('more', 3)
-        self.deprecated = self._renderTable('deprecated')
-        self.special = self._renderTable('special')
+        self.recommended = self._renderTable("recommended", 3)
+        self.more = self._renderTable("more", 3)
+        self.deprecated = self._renderTable("deprecated")
+        self.special = self._renderTable("special")
         return self.template()
 
     def _renderTable(self, category, column_count=1):
         # The tables are wrapped in divs, since IE8 does not respond
         # to setting the table's height to zero.
-        attribute_name = category + '_count'
+        attribute_name = category + "_count"
         attr_count = getattr(self, attribute_name)
-        klass = 'expanded' if attr_count > 0 else ''
+        klass = "expanded" if attr_count > 0 else ""
         html = [
-            '<div id="%s" class="hide-on-load %s"><table>' % (category, klass)]
+            '<div id="%s" class="hide-on-load %s"><table>' % (category, klass)
+        ]
         rendered_items = self.items_by_category[category]
         row_count = int(math.ceil(len(rendered_items) / float(column_count)))
         for i in range(0, row_count):
-            html.append('<tr>')
+            html.append("<tr>")
             for j in range(0, column_count):
                 index = i + (j * row_count)
                 if index >= len(rendered_items):
                     break
-                html.append('<td>%s</td>' % rendered_items[index])
-            html.append('</tr>')
-        html.append('</table></div>')
-        return '\n'.join(html)
+                html.append("<td>%s</td>" % rendered_items[index])
+            html.append("</tr>")
+        html.append("</table></div>")
+        return "\n".join(html)
 
 
 class ProductNameWidget(URIComponentWidget):
@@ -425,21 +480,22 @@ class ProductNameWidget(URIComponentWidget):
 
     @property
     def base_url(self):
-        return allvhosts.configs['mainsite'].rooturl
+        return allvhosts.configs["mainsite"].rooturl
 
 
 class GhostMixin:
     """A simple widget that has no HTML."""
+
     visible = False
     # This suppresses the stuff above the widget.
     display_label = False
     # This suppresses the stuff underneath the widget.
-    hint = ''
+    hint = ""
 
     # This suppresses all of the widget's HTML.
     def __call__(self):
         """See `SimpleInputWidget`."""
-        return ''
+        return ""
 
     hidden = __call__
 

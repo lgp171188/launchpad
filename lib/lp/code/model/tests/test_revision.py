@@ -248,9 +248,9 @@ class TestRevisionSet(TestCaseWithFactory):
         self.assertEqual({'prop1': 'foo'}, rev_1.getProperties())
         rev_2 = self.revision_set.getByRevisionId('rev-2')
         self.assertEqual(['rev-1'], rev_2.parent_ids)
-        # Really, less than 9 is great, but if the count improves, we should
+        # Really, less than 8 is great, but if the count improves, we should
         # tighten this restriction.
-        self.assertThat(recorder, HasQueryCount(Equals(8)))
+        self.assertThat(recorder, HasQueryCount(Equals(7)))
 
     def test_acquireRevisionAuthors(self):
         # AcquireRevisionAuthors creates new authors only if none exists with

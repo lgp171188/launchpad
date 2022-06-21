@@ -2,16 +2,16 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'IndexStanzaFields',
-    'build_binary_stanza_fields',
-    'build_source_stanza_fields',
-    'build_translations_stanza_fields',
-    ]
+    "IndexStanzaFields",
+    "build_binary_stanza_fields",
+    "build_source_stanza_fields",
+    "build_translations_stanza_fields",
+]
 
-from collections import OrderedDict
 import hashlib
 import os.path
 import re
+from collections import OrderedDict
 
 from lp.soyuz.model.publishing import makePoolPath
 
@@ -34,8 +34,7 @@ class IndexStanzaFields:
         self.fields.append((name, value))
 
     def extend(self, entries):
-        """Extend the internal list with the key-value pairs in entries.
-        """
+        """Extend the internal list with the key-value pairs in entries."""
         for name, value in entries:
             self.append(name, value)
 
@@ -51,8 +50,8 @@ class IndexStanzaFields:
                 continue
 
             # do not add separation space for the special file list fields.
-            if name not in ('Files', 'Checksums-Sha1', 'Checksums-Sha256'):
-                value = ' %s' % value
+            if name not in ("Files", "Checksums-Sha1", "Checksums-Sha256"):
+                value = " %s" % value
 
             # XXX Michael Nelson 20090930 bug=436182. We have an issue
             # in the upload parser that has
@@ -72,13 +71,13 @@ class IndexStanzaFields:
             # followed by a white-space character has a space inserted.
             value = re.sub(r"\n(\S)", r"\n \1", value)
 
-            output_lines.append('%s:%s' % (name, value))
+            output_lines.append("%s:%s" % (name, value))
 
-        return '\n'.join(output_lines)
+        return "\n".join(output_lines)
 
 
 def format_file_list(lst):
-    return ''.join('\n %s %s %s' % ((h,) + f) for (h, f) in lst)
+    return "".join("\n %s %s %s" % ((h,) + f) for (h, f) in lst)
 
 
 def format_description(summary, description):
@@ -91,7 +90,7 @@ def format_description(summary, description):
     #  ...
     #  <DESCRIPTION LN>
     descr_lines = [line.lstrip() for line in description.splitlines()]
-    bin_description = '%s\n %s' % (summary, '\n '.join(descr_lines))
+    bin_description = "%s\n %s" % (summary, "\n ".join(descr_lines))
     return bin_description
 
 
@@ -103,49 +102,55 @@ def build_source_stanza_fields(spr, component, section):
     sha1_list = []
     sha256_list = []
     for spf in spr.files:
-        common = (
-            spf.libraryfile.content.filesize, spf.libraryfile.filename)
+        common = (spf.libraryfile.content.filesize, spf.libraryfile.filename)
         files_list.append((spf.libraryfile.content.md5, common))
         sha1_list.append((spf.libraryfile.content.sha1, common))
         sha256_list.append((spf.libraryfile.content.sha256, common))
-    user_defined_fields = OrderedDict([
-        (key.lower(), (key, value))
-        for key, value in spr.user_defined_fields])
+    user_defined_fields = OrderedDict(
+        [(key.lower(), (key, value)) for key, value in spr.user_defined_fields]
+    )
     # Filling stanza options.
     fields = IndexStanzaFields()
-    fields.append('Package', spr.name)
-    fields.append('Binary', spr.dsc_binaries)
-    fields.append('Version', spr.version)
-    fields.append('Section', section.name)
-    fields.append('Maintainer', spr.dsc_maintainer_rfc822)
-    fields.append('Build-Depends', spr.builddepends)
-    fields.append('Build-Depends-Indep', spr.builddependsindep)
-    if 'build-depends-arch' in user_defined_fields:
+    fields.append("Package", spr.name)
+    fields.append("Binary", spr.dsc_binaries)
+    fields.append("Version", spr.version)
+    fields.append("Section", section.name)
+    fields.append("Maintainer", spr.dsc_maintainer_rfc822)
+    fields.append("Build-Depends", spr.builddepends)
+    fields.append("Build-Depends-Indep", spr.builddependsindep)
+    if "build-depends-arch" in user_defined_fields:
         fields.append(
-            'Build-Depends-Arch',
-            user_defined_fields.pop('build-depends-arch')[1])
-    fields.append('Build-Conflicts', spr.build_conflicts)
-    fields.append('Build-Conflicts-Indep', spr.build_conflicts_indep)
-    if 'build-conflicts-arch' in user_defined_fields:
+            "Build-Depends-Arch",
+            user_defined_fields.pop("build-depends-arch")[1],
+        )
+    fields.append("Build-Conflicts", spr.build_conflicts)
+    fields.append("Build-Conflicts-Indep", spr.build_conflicts_indep)
+    if "build-conflicts-arch" in user_defined_fields:
         fields.append(
-            'Build-Conflicts-Arch',
-            user_defined_fields.pop('build-conflicts-arch')[1])
-    fields.append('Architecture', spr.architecturehintlist)
-    fields.append('Standards-Version', spr.dsc_standards_version)
-    fields.append('Format', spr.dsc_format)
-    fields.append('Directory', pool_path)
-    fields.append('Files', format_file_list(files_list))
-    fields.append('Checksums-Sha1', format_file_list(sha1_list))
-    fields.append('Checksums-Sha256', format_file_list(sha256_list))
-    fields.append('Homepage', spr.homepage)
+            "Build-Conflicts-Arch",
+            user_defined_fields.pop("build-conflicts-arch")[1],
+        )
+    fields.append("Architecture", spr.architecturehintlist)
+    fields.append("Standards-Version", spr.dsc_standards_version)
+    fields.append("Format", spr.dsc_format)
+    fields.append("Directory", pool_path)
+    fields.append("Files", format_file_list(files_list))
+    fields.append("Checksums-Sha1", format_file_list(sha1_list))
+    fields.append("Checksums-Sha256", format_file_list(sha256_list))
+    fields.append("Homepage", spr.homepage)
     fields.extend(user_defined_fields.values())
 
     return fields
 
 
-def build_binary_stanza_fields(bpr, component, section, priority,
-                               phased_update_percentage,
-                               separate_long_descriptions=False):
+def build_binary_stanza_fields(
+    bpr,
+    component,
+    section,
+    priority,
+    phased_update_percentage,
+    separate_long_descriptions=False,
+):
     """Build a map of fields to be included in a Packages file.
 
     :param separate_long_descriptions: if True, the long description will
@@ -161,12 +166,14 @@ def build_binary_stanza_fields(bpr, component, section, priority,
     bin_sha1 = bin_file.libraryfile.content.sha1
     bin_sha256 = bin_file.libraryfile.content.sha256
     bin_filepath = os.path.join(
-        makePoolPath(spr.name, component.name), bin_filename)
+        makePoolPath(spr.name, component.name), bin_filename
+    )
     description = format_description(bpr.summary, bpr.description)
     # Our formatted description isn't \n-terminated, but apt
     # considers the trailing \n to be part of the data to hash.
     bin_description_md5 = hashlib.md5(
-        description.encode('utf-8') + b'\n').hexdigest()
+        description.encode("utf-8") + b"\n"
+    ).hexdigest()
     if separate_long_descriptions:
         # If distroseries.include_long_descriptions is False, the
         # description should be the summary
@@ -180,46 +187,46 @@ def build_binary_stanza_fields(bpr, component, section, priority,
     if bpr.architecturespecific:
         architecture = bpr.build.distro_arch_series.architecturetag
     else:
-        architecture = 'all'
+        architecture = "all"
 
     essential = None
     if bpr.essential:
-        essential = 'yes'
+        essential = "yes"
 
     source = None
     if bpr.version != spr.version:
-        source = '%s (%s)' % (spr.name, spr.version)
+        source = "%s (%s)" % (spr.name, spr.version)
     elif bpr.name != spr.name:
         source = spr.name
 
     fields = IndexStanzaFields()
-    fields.append('Package', bpr.name)
-    fields.append('Source', source)
-    fields.append('Priority', priority.title.lower())
-    fields.append('Section', section.name)
-    fields.append('Installed-Size', bpr.installedsize)
-    fields.append('Maintainer', spr.dsc_maintainer_rfc822)
-    fields.append('Architecture', architecture)
-    fields.append('Version', bpr.version)
-    fields.append('Recommends', bpr.recommends)
-    fields.append('Replaces', bpr.replaces)
-    fields.append('Suggests', bpr.suggests)
-    fields.append('Provides', bpr.provides)
-    fields.append('Depends', bpr.depends)
-    fields.append('Conflicts', bpr.conflicts)
-    fields.append('Pre-Depends', bpr.pre_depends)
-    fields.append('Enhances', bpr.enhances)
-    fields.append('Breaks', bpr.breaks)
-    fields.append('Essential', essential)
-    fields.append('Filename', bin_filepath)
-    fields.append('Size', bin_size)
-    fields.append('MD5sum', bin_md5)
-    fields.append('SHA1', bin_sha1)
-    fields.append('SHA256', bin_sha256)
-    fields.append('Phased-Update-Percentage', phased_update_percentage)
-    fields.append('Description', bin_description)
+    fields.append("Package", bpr.name)
+    fields.append("Source", source)
+    fields.append("Priority", priority.title.lower())
+    fields.append("Section", section.name)
+    fields.append("Installed-Size", bpr.installedsize)
+    fields.append("Maintainer", spr.dsc_maintainer_rfc822)
+    fields.append("Architecture", architecture)
+    fields.append("Version", bpr.version)
+    fields.append("Recommends", bpr.recommends)
+    fields.append("Replaces", bpr.replaces)
+    fields.append("Suggests", bpr.suggests)
+    fields.append("Provides", bpr.provides)
+    fields.append("Depends", bpr.depends)
+    fields.append("Conflicts", bpr.conflicts)
+    fields.append("Pre-Depends", bpr.pre_depends)
+    fields.append("Enhances", bpr.enhances)
+    fields.append("Breaks", bpr.breaks)
+    fields.append("Essential", essential)
+    fields.append("Filename", bin_filepath)
+    fields.append("Size", bin_size)
+    fields.append("MD5sum", bin_md5)
+    fields.append("SHA1", bin_sha1)
+    fields.append("SHA256", bin_sha256)
+    fields.append("Phased-Update-Percentage", phased_update_percentage)
+    fields.append("Description", bin_description)
     if separate_long_descriptions:
-        fields.append('Description-md5', bin_description_md5)
+        fields.append("Description-md5", bin_description_md5)
     if bpr.user_defined_fields:
         fields.extend(bpr.user_defined_fields)
 
@@ -242,12 +249,13 @@ def build_translations_stanza_fields(bpr, packages):
     # Our formatted description isn't \n-terminated, but apt
     # considers the trailing \n to be part of the data to hash.
     bin_description_md5 = hashlib.md5(
-        bin_description.encode('utf-8') + b'\n').hexdigest()
+        bin_description.encode("utf-8") + b"\n"
+    ).hexdigest()
     if (bpr.name, bin_description_md5) not in packages:
         fields = IndexStanzaFields()
-        fields.append('Package', bpr.name)
-        fields.append('Description-md5', bin_description_md5)
-        fields.append('Description-en', bin_description)
+        fields.append("Package", bpr.name)
+        fields.append("Description-md5", bin_description_md5)
+        fields.append("Description-en", bin_description)
         packages.add((bpr.name, bin_description_md5))
 
         return fields

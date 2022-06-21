@@ -9,22 +9,18 @@ import os
 
 from lp.services.testing import build_test_suite
 from lp.testing.layers import LaunchpadFunctionalLayer
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
-
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 here = os.path.dirname(os.path.realpath(__file__))
 
 special = {
-    'image-widget.txt': LayeredDocFileSuite(
-        '../doc/image-widget.txt',
-        setUp=setUp, tearDown=tearDown,
+    "image-widget.rst": LayeredDocFileSuite(
+        "../doc/image-widget.rst",
+        setUp=setUp,
+        tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
-        ),
-    }
+    ),
+}
 
 
 def test_suite():

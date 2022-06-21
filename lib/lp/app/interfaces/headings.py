@@ -4,9 +4,9 @@
 """Marker interfaces that define how to generate headings for a view."""
 
 __all__ = [
-    'IHeadingBreadcrumb',
-    'IMajorHeadingView',
-    ]
+    "IHeadingBreadcrumb",
+    "IMajorHeadingView",
+]
 
 
 from zope.interface import Interface

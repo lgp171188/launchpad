@@ -542,7 +542,7 @@ class LaunchpadBrowserPublication(
             getUtility(IStoreSelector).pop()
         except IndexError:
             # We have to cope with no database policy being installed
-            # to allow doc/webapp-publication.txt tests to pass. These
+            # to allow doc/webapp-publication.rst tests to pass. These
             # tests rely on calling the afterCall hook without first
             # calling beforeTraversal or doing proper cleanup.
             pass

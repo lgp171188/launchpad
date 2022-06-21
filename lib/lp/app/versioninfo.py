@@ -26,12 +26,12 @@ that such errors are caught at start-up.
 """
 
 __all__ = [
-    'branch_nick',
-    'date',
-    'display_revision',
-    'revision',
-    'versioninfo',
-    ]
+    "branch_nick",
+    "date",
+    "display_revision",
+    "revision",
+    "versioninfo",
+]
 
 
 def read_version_info():
@@ -40,7 +40,7 @@ def read_version_info():
     except ImportError:
         return None
     else:
-        return getattr(launchpadversioninfo, 'version_info', None)
+        return getattr(launchpadversioninfo, "version_info", None)
 
 
 versioninfo = read_version_info()
@@ -52,11 +52,11 @@ if versioninfo is None:
     date = None
     branch_nick = None
 else:
-    if 'revno' in versioninfo:
-        revision = versioninfo.get('revno')
+    if "revno" in versioninfo:
+        revision = versioninfo.get("revno")
         display_revision = revision
     else:
-        revision = versioninfo.get('revision_id')
+        revision = versioninfo.get("revision_id")
         display_revision = revision[:7]
-    date = versioninfo.get('date')
-    branch_nick = versioninfo.get('branch_nick')
+    date = versioninfo.get("date")
+    branch_nick = versioninfo.get("branch_nick")

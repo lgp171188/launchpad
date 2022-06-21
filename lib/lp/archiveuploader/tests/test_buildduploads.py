@@ -9,16 +9,13 @@ from zope.component import getUtility
 
 from lp.archiveuploader.tests.test_uploadprocessor import (
     TestUploadProcessorBase,
-    )
+)
 from lp.archiveuploader.uploadprocessor import UploadHandler
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.constants import UTC_NOW
-from lp.soyuz.enums import (
-    PackagePublishingStatus,
-    PackageUploadStatus,
-    )
+from lp.soyuz.enums import PackagePublishingStatus, PackageUploadStatus
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.publishing import IPublishingSet
 from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
@@ -26,12 +23,12 @@ from lp.testing.gpgkeys import import_public_test_keys
 
 
 class TestStagedBinaryUploadBase(TestUploadProcessorBase):
-    name = 'baz'
-    version = '1.0-1'
+    name = "baz"
+    version = "1.0-1"
     distribution_name = None
     distroseries_name = None
     pocket = None
-    policy = 'buildd'
+    policy = "buildd"
     no_mails = True
 
     @property
@@ -78,7 +75,8 @@ class TestStagedBinaryUploadBase(TestUploadProcessorBase):
         # Set up the uploadprocessor with appropriate options and logger
         self.uploadprocessor = self.getUploadProcessor(self.layer.txn)
         self.build_uploadprocessor = self.getUploadProcessor(
-            self.layer.txn, builds=True)
+            self.layer.txn, builds=True
+        )
         self.builds_before_upload = BinaryPackageBuild.select().count()
         self.source_queue = None
         self._uploadSource()
@@ -87,30 +85,35 @@ class TestStagedBinaryUploadBase(TestUploadProcessorBase):
     def assertBuildsCreated(self, amount):
         """Assert that a given 'amount' of build records was created."""
         builds_count = BinaryPackageBuild.select().count()
-        self.assertEqual(
-            self.builds_before_upload + amount, builds_count)
+        self.assertEqual(self.builds_before_upload + amount, builds_count)
 
     def _prepareUpload(self, upload_dir):
         """Place a copy of the upload directory into incoming queue."""
-        os.system("cp -a %s %s" %
-            (os.path.join(self.test_files_dir, upload_dir),
-             os.path.join(self.queue_folder, "incoming")))
+        os.system(
+            "cp -a %s %s"
+            % (
+                os.path.join(self.test_files_dir, upload_dir),
+                os.path.join(self.queue_folder, "incoming"),
+            )
+        )
 
     def _uploadSource(self):
         """Upload and Accept (if necessary) the base source."""
         self._prepareUpload(self.source_dir)
         fsroot = os.path.join(self.queue_folder, "incoming")
         handler = UploadHandler.forProcessor(
-            self.uploadprocessor, fsroot, self.source_dir)
+            self.uploadprocessor, fsroot, self.source_dir
+        )
         handler.processChangesFile(self.source_changesfile)
         queue_item = self.uploadprocessor.last_processed_upload.queue_root
         self.assertTrue(
             queue_item is not None,
-            "Source Upload Failed\nGot: %s" % self.log.getLogBuffer())
+            "Source Upload Failed\nGot: %s" % self.log.getLogBuffer(),
+        )
         acceptable_statuses = [
             PackageUploadStatus.NEW,
             PackageUploadStatus.UNAPPROVED,
-            ]
+        ]
         if queue_item.status in acceptable_statuses:
             queue_item.setAccepted()
         # Store source queue item for future use.
@@ -125,13 +128,15 @@ class TestStagedBinaryUploadBase(TestUploadProcessorBase):
         self._prepareUpload(self.binary_dir)
         fsroot = os.path.join(self.queue_folder, "incoming")
         handler = UploadHandler.forProcessor(
-            self.build_uploadprocessor, fsroot, self.binary_dir, build=build)
+            self.build_uploadprocessor, fsroot, self.binary_dir, build=build
+        )
         handler.processChangesFile(self.getBinaryChangesfileFor(archtag))
         last_processed = self.build_uploadprocessor.last_processed_upload
         queue_item = last_processed.queue_root
         self.assertTrue(
             queue_item is not None,
-            "Binary Upload Failed\nGot: %s" % self.log.getLogBuffer())
+            "Binary Upload Failed\nGot: %s" % self.log.getLogBuffer(),
+        )
         self.assertEqual(1, len(queue_item.builds))
         return queue_item.builds[0].build
 
@@ -139,8 +144,11 @@ class TestStagedBinaryUploadBase(TestUploadProcessorBase):
         """Create a build record attached to the base source."""
         spr = self.source_queue.sources[0].sourcepackagerelease
         build = getUtility(IBinaryPackageBuildSet).new(
-            spr, self.distroseries.main_archive, self.distroseries[archtag],
-            self.pocket)
+            spr,
+            self.distroseries.main_archive,
+            self.distroseries[archtag],
+            self.pocket,
+        )
         self.layer.txn.commit()
         return build
 
@@ -165,12 +173,13 @@ class TestBuilddUploads(TestStagedBinaryUploadBase):
     This class allows uploads to ubuntu/breezy in i386 & powerpc
     architectures.
     """
-    name = 'foo'
-    version = '1.0-1'
-    distribution_name = 'ubuntu'
-    distroseries_name = 'breezy'
+
+    name = "foo"
+    version = "1.0-1"
+    distribution_name = "ubuntu"
+    distroseries_name = "breezy"
     pocket = PackagePublishingPocket.RELEASE
-    policy = 'buildd'
+    policy = "buildd"
     no_mails = True
 
     def setupBreezy(self):
@@ -178,9 +187,9 @@ class TestBuilddUploads(TestStagedBinaryUploadBase):
         TestStagedBinaryUploadBase.setupBreezy(self)
         self.switchToAdmin()
         ppc = getUtility(IProcessorSet).new(
-            name='powerpc', title='PowerPC', description='not yet')
-        self.breezy.newArch(
-            'powerpc', ppc, True, self.breezy.owner)
+            name="powerpc", title="PowerPC", description="not yet"
+        )
+        self.breezy.newArch("powerpc", ppc, True, self.breezy.owner)
         self.switchToUploader()
 
     def setUp(self):
@@ -197,15 +206,19 @@ class TestBuilddUploads(TestStagedBinaryUploadBase):
         self.layer.txn.commit()
 
         real_policy = self.policy
-        self.policy = 'insecure'
+        self.policy = "insecure"
         super().setUp()
         # Publish the source package release so it can be found by
         # NascentUploadFile.findSourcePackageRelease().
         spr = self.source_queue.sources[0].sourcepackagerelease
         getUtility(IPublishingSet).newSourcePublication(
-            self.distroseries.main_archive, spr,
-            self.distroseries, spr.component,
-            spr.section, PackagePublishingPocket.RELEASE)
+            self.distroseries.main_archive,
+            spr,
+            self.distroseries,
+            spr.component,
+            spr.section,
+            PackagePublishingPocket.RELEASE,
+        )
         self.policy = real_policy
 
     def _publishBuildQueueItem(self, queue_item):
@@ -221,8 +234,7 @@ class TestBuilddUploads(TestStagedBinaryUploadBase):
     def _setupUploadProcessorForBuild(self):
         """Setup an UploadProcessor instance for a given buildd context."""
         self.options.context = self.policy
-        self.uploadprocessor = self.getUploadProcessor(
-            self.layer.txn)
+        self.uploadprocessor = self.getUploadProcessor(self.layer.txn)
 
     def testDelayedBinaryUpload(self):
         """Check if Soyuz copes with delayed binary uploads.
@@ -234,16 +246,17 @@ class TestBuilddUploads(TestStagedBinaryUploadBase):
         Find more information on bug #89846.
         """
         # Upload i386 binary.
-        build_candidate = self._createBuild('i386')
+        build_candidate = self._createBuild("i386")
         self._setupUploadProcessorForBuild()
-        build_used = self._uploadBinary('i386', build_candidate)
+        build_used = self._uploadBinary("i386", build_candidate)
 
         self.assertEqual(build_used.id, build_candidate.id)
         self.assertBuildsCreated(1)
         self.assertEqual(
-            'i386 build of foo 1.0-1 in ubuntu breezy RELEASE',
-            build_used.title)
-        self.assertEqual('FULLYBUILT', build_used.status.name)
+            "i386 build of foo 1.0-1 in ubuntu breezy RELEASE",
+            build_used.title,
+        )
+        self.assertEqual("FULLYBUILT", build_used.status.name)
 
         # Force immediate publication.
         last_processed = self.build_uploadprocessor.last_processed_upload
@@ -251,13 +264,14 @@ class TestBuilddUploads(TestStagedBinaryUploadBase):
         self._publishBuildQueueItem(queue_item)
 
         # Upload powerpc binary
-        build_candidate = self._createBuild('powerpc')
+        build_candidate = self._createBuild("powerpc")
         self._setupUploadProcessorForBuild()
-        build_used = self._uploadBinary('powerpc', build_candidate)
+        build_used = self._uploadBinary("powerpc", build_candidate)
 
         self.assertEqual(build_used.id, build_candidate.id)
         self.assertBuildsCreated(2)
         self.assertEqual(
-            'powerpc build of foo 1.0-1 in ubuntu breezy RELEASE',
-            build_used.title)
-        self.assertEqual('FULLYBUILT', build_used.status.name)
+            "powerpc build of foo 1.0-1 in ubuntu breezy RELEASE",
+            build_used.title,
+        )
+        self.assertEqual("FULLYBUILT", build_used.status.name)

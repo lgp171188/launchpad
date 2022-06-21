@@ -3,7 +3,7 @@
 
 """Tests for lp.services.profile.
 
-See doc.txt for an end-user description of the functionality.
+See profiling.rst for an end-user description of the functionality.
 """
 
 import glob
@@ -177,7 +177,7 @@ class TestCleanupProfiler(BaseTest):
 class TestRequestStartHandler(TestCleanupProfiler):
     """Tests for the start handler of the profiler integration.
 
-    See lib/canonical/doc/profiling.txt for an end-user description of
+    See lib/lp/services/profile/profiling.rst for an end-user description of
     the functionality.
     """
 
@@ -452,7 +452,7 @@ class TestBasicRequestEndHandler(BaseRequestEndHandlerTest):
     If the start-request handler is broken, these tests will fail too, so fix
     the tests in the above test case first.
 
-    See lib/canonical/doc/profiling.txt for an end-user description
+    See lib/lp/services/profile/profiling.rst for an end-user description
     of the functionality.
     """
 
@@ -531,7 +531,7 @@ class TestCallgrindProfilerRequestEndHandler(BaseRequestEndHandlerTest):
     If the start-request handler is broken, these tests will fail too, so fix
     the tests in the above test case first.
 
-    See lib/canonical/doc/profiling.txt for an end-user description
+    See lib/lp/services/profile/profiling.rst for an end-user description
     of the functionality.
     """
 
@@ -563,7 +563,7 @@ class TestPStatsProfilerRequestEndHandler(
     If the start-request handler is broken, these tests will fail too, so fix
     the tests in the above test case first.
 
-    See lib/canonical/doc/profiling.txt for an end-user description
+    See lib/lp/services/profile/profiling.rst for an end-user description
     of the functionality.
     """
 
@@ -600,7 +600,7 @@ class TestMemoryProfilerRequestEndHandler(BaseRequestEndHandlerTest):
     If the start-request handler is broken, these tests will fail too, so fix
     the tests in the above test case first.
 
-    See lib/canonical/doc/profiling.txt for an end-user description
+    See lib/lp/services/profile/profiling.rst for an end-user description
     of the functionality.
     """
 
@@ -655,7 +655,7 @@ class TestOOPSRequestEndHandler(BaseRequestEndHandlerTest):
     If the start-request handler is broken, these tests will fail too, so fix
     the tests in the above test case first.
 
-    See lib/canonical/doc/profiling.txt for an end-user description
+    See lib/lp/services/profile/profiling.rst for an end-user description
     of the functionality.
     """
 
@@ -795,7 +795,7 @@ def test_suite():
     suite = unittest.TestSuite()
 
     doctest = LayeredDocFileSuite(
-        './profiling.txt',
+        './profiling.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer, stdout_logging_level=logging.WARNING)
     suite.addTest(doctest)

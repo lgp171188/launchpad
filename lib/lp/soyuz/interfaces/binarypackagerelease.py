@@ -4,11 +4,15 @@
 """Binary package release interfaces."""
 
 __all__ = [
+    'BinaryPackageReleaseNameLinkageError',
     'IBinaryPackageRelease',
     'IBinaryPackageReleaseDownloadCount',
     ]
 
+import http.client
+
 from lazr.restful.declarations import (
+    error_status,
     exported,
     exported_as_webservice_entry,
     )
@@ -35,6 +39,11 @@ from lp import _
 from lp.app.validators.version import valid_debian_version
 from lp.services.worlddata.interfaces.country import ICountry
 from lp.soyuz.interfaces.archive import IArchive
+
+
+@error_status(http.client.BAD_REQUEST)
+class BinaryPackageReleaseNameLinkageError(ValueError):
+    """A binary package name is inappropriate for this release's format."""
 
 
 class IBinaryPackageRelease(Interface):

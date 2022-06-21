@@ -8,8 +8,8 @@ infrastructure to enable developers to publish translations.
 """
 
 __all__ = [
-    'RosettaTranslationsUpload',
-    ]
+    "RosettaTranslationsUpload",
+]
 
 from zope.component import getUtility
 
@@ -21,15 +21,15 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.soyuz.interfaces.archive import MAIN_ARCHIVE_PURPOSES
 from lp.soyuz.interfaces.packagetranslationsuploadjob import (
     IPackageTranslationsUploadJobSource,
-    )
-
+)
 
 # Translations uploaded to certain specialised PPAs are redirected to
 # specialised distroseries instead.
 REDIRECTED_PPAS = {
-    "~ci-train-ppa-service/ubuntu/stable-phone-overlay":
-        {"vivid": ("ubuntu-rtm", "15.04")},
-    }
+    "~ci-train-ppa-service/ubuntu/stable-phone-overlay": {
+        "vivid": ("ubuntu-rtm", "15.04")
+    },
+}
 
 
 class RosettaTranslationsUpload(CustomUpload):
@@ -41,6 +41,7 @@ class RosettaTranslationsUpload(CustomUpload):
     For this reason, all methods from CustomUpload that deal with files are
     bypassed.
     """
+
     custom_type = "rosetta-translations"
 
     package_name = None
@@ -66,7 +67,8 @@ class RosettaTranslationsUpload(CustomUpload):
             redirect = REDIRECTED_PPAS[packageupload.archive.reference]
             if packageupload.distroseries.name in redirect:
                 distro_name, distroseries_name = redirect[
-                    packageupload.distroseries.name]
+                    packageupload.distroseries.name
+                ]
                 distro = getUtility(IDistributionSet).getByName(distro_name)
                 distroseries = distro[distroseries_name]
 
@@ -75,24 +77,28 @@ class RosettaTranslationsUpload(CustomUpload):
                 self.logger.debug(
                     "Skipping translations since its purpose is not "
                     "in MAIN_ARCHIVE_PURPOSES and the archive is not "
-                    "whitelisted.")
+                    "whitelisted."
+                )
             return
 
         # If the distroseries is 11.10 (oneiric) or later, the valid names
         # check is not required.  (See bug 788685.)
-        do_names_check = Version(distroseries.version) < Version('11.10')
+        do_names_check = Version(distroseries.version) < Version("11.10")
 
         latest_publication = self._findSourcePublication(packageupload)
         component_name = latest_publication.component.name
         spr = latest_publication.sourcepackagerelease
 
         valid_pockets = (
-            PackagePublishingPocket.RELEASE, PackagePublishingPocket.SECURITY,
-            PackagePublishingPocket.UPDATES, PackagePublishingPocket.PROPOSED)
-        valid_components = ('main', 'restricted')
-        if (packageupload.pocket not in valid_pockets or
-            (do_names_check and
-                component_name not in valid_components)):
+            PackagePublishingPocket.RELEASE,
+            PackagePublishingPocket.SECURITY,
+            PackagePublishingPocket.UPDATES,
+            PackagePublishingPocket.PROPOSED,
+        )
+        valid_components = ("main", "restricted")
+        if packageupload.pocket not in valid_pockets or (
+            do_names_check and component_name not in valid_components
+        ):
             # XXX: CarlosPerelloMarin 2006-02-16 bug=31665:
             # This should be implemented using a more general rule to accept
             # different policies depending on the distribution.
@@ -108,20 +114,25 @@ class RosettaTranslationsUpload(CustomUpload):
             sourcepackage = distroseries.getSourcePackage(spr.name)
             if sourcepackage is not None and sourcepackage.packaging is None:
                 original_sourcepackage = (
-                    packageupload.distroseries.getSourcePackage(spr.name))
+                    packageupload.distroseries.getSourcePackage(spr.name)
+                )
                 if original_sourcepackage is not None:
                     original_packaging = original_sourcepackage.packaging
                     if original_packaging is not None:
                         sourcepackage.setPackaging(
                             original_packaging.productseries,
-                            original_packaging.owner)
+                            original_packaging.owner,
+                        )
 
-        blamee = (packageupload.findPersonToNotify() or
-                  latest_publication.creator or
-                  getUtility(ILaunchpadCelebrities).rosetta_experts)
+        blamee = (
+            packageupload.findPersonToNotify()
+            or latest_publication.creator
+            or getUtility(ILaunchpadCelebrities).rosetta_experts
+        )
 
         getUtility(IPackageTranslationsUploadJobSource).create(
-            distroseries, libraryfilealias, spr.sourcepackagename, blamee)
+            distroseries, libraryfilealias, spr.sourcepackagename, blamee
+        )
 
     @staticmethod
     def parsePath(tarfile_name):
@@ -129,8 +140,9 @@ class RosettaTranslationsUpload(CustomUpload):
         bits = tarfile_name.split("_")
         if len(bits) != 4:
             raise ValueError(
-                "%s is not NAME_VERSION_ARCH_translations.tar.gz" %
-                tarfile_name)
+                "%s is not NAME_VERSION_ARCH_translations.tar.gz"
+                % tarfile_name
+            )
         return tuple(bits)
 
     def setComponents(self, tarfile_name):
@@ -154,6 +166,8 @@ class RosettaTranslationsUpload(CustomUpload):
             # publication for any package. We don't want that.
             raise AssertionError("package_name should not be None.")
         return packageupload.archive.getPublishedSources(
-            name=self.package_name, exact_match=True,
+            name=self.package_name,
+            exact_match=True,
             distroseries=packageupload.distroseries,
-            pocket=packageupload.pocket).first()
+            pocket=packageupload.pocket,
+        ).first()

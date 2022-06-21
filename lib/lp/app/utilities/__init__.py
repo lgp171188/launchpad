@@ -3,14 +3,11 @@
 
 
 __all__ = [
-    'json_dump_information_types',
-    ]
+    "json_dump_information_types",
+]
 
 
-from lp.app.enums import (
-    InformationType,
-    PRIVATE_INFORMATION_TYPES,
-    )
+from lp.app.enums import PRIVATE_INFORMATION_TYPES, InformationType
 
 
 def json_dump_information_types(cache, information_types):
@@ -19,12 +16,12 @@ def json_dump_information_types(cache, information_types):
     order = list(InformationType.sort_order)
     for term in information_types:
         dump[term.name] = {
-            'value': term.name,
-            'description': term.description,
-            'name': term.title,
-            'order': order.index(term.name),
-            'is_private': (term in PRIVATE_INFORMATION_TYPES),
-            'description_css_class': 'choice-description',
+            "value": term.name,
+            "description": term.description,
+            "name": term.title,
+            "order": order.index(term.name),
+            "is_private": (term in PRIVATE_INFORMATION_TYPES),
+            "description_css_class": "choice-description",
         }
 
-    cache.objects['information_type_data'] = dump
+    cache.objects["information_type_data"] = dump

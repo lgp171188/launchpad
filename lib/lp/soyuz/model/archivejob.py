@@ -39,9 +39,11 @@ from lp.services.job.model.job import (
     Job,
     )
 from lp.services.job.runner import BaseRunnableJob
+from lp.services.librarian.interfaces.client import LibrarianServerError
 from lp.services.librarian.utils import copy_and_close
 from lp.soyuz.enums import (
     ArchiveJobType,
+    ArchiveRepositoryFormat,
     BinaryPackageFileType,
     BinaryPackageFormat,
     PackageUploadStatus,
@@ -200,6 +202,9 @@ class CIBuildUploadJob(ArchiveJobDerived):
 
     class_job_type = ArchiveJobType.CI_BUILD_UPLOAD
 
+    retry_error_types = (LibrarianServerError,)
+    max_retries = 3
+
     config = config.ICIBuildUploadJobSource
 
     # XXX cjwatson 2022-06-10: There doesn't seem to be a very clear
@@ -212,6 +217,21 @@ class CIBuildUploadJob(ArchiveJobDerived):
         BinaryPackageFormat.WHL: BinaryPackageFileType.WHL,
         BinaryPackageFormat.CONDA_V1: BinaryPackageFileType.CONDA_V1,
         BinaryPackageFormat.CONDA_V2: BinaryPackageFileType.CONDA_V2,
+        }
+
+    # We're only interested in uploading certain kinds of packages to
+    # certain kinds of archives.
+    binary_format_by_repository_format = {
+        ArchiveRepositoryFormat.DEBIAN: {
+            BinaryPackageFormat.DEB,
+            BinaryPackageFormat.UDEB,
+            BinaryPackageFormat.DDEB,
+            },
+        ArchiveRepositoryFormat.PYTHON: {BinaryPackageFormat.WHL},
+        ArchiveRepositoryFormat.CONDA: {
+            BinaryPackageFormat.CONDA_V1,
+            BinaryPackageFormat.CONDA_V2,
+            },
         }
 
     @classmethod
@@ -332,6 +352,9 @@ class CIBuildUploadJob(ArchiveJobDerived):
             releases_by_name = {
                 release.binarypackagename: release
                 for release in self.ci_build.binarypackages}
+            allowed_binary_formats = (
+                self.binary_format_by_repository_format.get(
+                    self.archive.repository_format, set()))
             binaries = {}
             for artifact in getUtility(
                     IRevisionStatusArtifactSet).findByCIBuild(self.ci_build):
@@ -345,6 +368,12 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 if metadata is None:
                     logger.info("No upload handler for %s" % name)
                     continue
+                binpackageformat = metadata["binpackageformat"]
+                if binpackageformat not in allowed_binary_formats:
+                    logger.info(
+                        "Skipping %s (not relevant to %s archives)" % (
+                            name, self.archive.repository_format))
+                    continue
                 logger.info(
                     "Uploading %s to %s %s (%s)" % (
                         name, self.archive.reference,
@@ -353,8 +382,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 metadata["binarypackagename"] = bpn = (
                     getUtility(IBinaryPackageNameSet).ensure(metadata["name"]))
                 del metadata["name"]
-                filetype = self.filetype_by_format[
-                    metadata["binpackageformat"]]
+                filetype = self.filetype_by_format[binpackageformat]
                 bpr = releases_by_name.get(bpn)
                 if bpr is None:
                     bpr = self.ci_build.createBinaryPackageRelease(**metadata)

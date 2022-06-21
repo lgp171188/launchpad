@@ -41,10 +41,13 @@ class LiveFSUpload:
             for livefs_file in sorted(filenames):
                 livefs_path = os.path.join(dirpath, livefs_file)
                 libraryfile = self.librarian.create(
-                    livefs_file, os.stat(livefs_path).st_size,
+                    livefs_file,
+                    os.stat(livefs_path).st_size,
                     open(livefs_path, "rb"),
                     filenameToContentType(livefs_path),
-                    restricted=build.is_private, allow_zero_length=True)
+                    restricted=build.is_private,
+                    allow_zero_length=True,
+                )
                 build.addFile(libraryfile)
 
         # The master verifies the status to confirm successful upload.

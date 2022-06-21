@@ -12,7 +12,7 @@ from lp.archivepublisher.debversion import (
     BadUpstreamError,
     Version,
     VersionError,
-    )
+)
 
 
 class VersionTests(unittest.TestCase):
@@ -27,7 +27,7 @@ class VersionTests(unittest.TestCase):
         "1.5.4-1.woody.0",
         "1.6-0+1.5a-4",
         "1.3~rc1-4",
-        )
+    )
 
     # Known less-than comparisons
     COMPARISONS = (
@@ -52,7 +52,7 @@ class VersionTests(unittest.TestCase):
         ("1~", "1"),
         ("1~", "1~a"),
         ("1~a", "1~b"),
-        )
+    )
 
     def testAcceptsString(self):
         """Version should accept a string input."""
@@ -128,7 +128,6 @@ class VersionTests(unittest.TestCase):
         self.assertEqual(Version("1.0"), Version("0:1.0"))
 
     def notestNullRevisionIsZero(self):
-        """Version should treat an omitted revision as being equal to zero.
-        """
+        """Version should treat an omitted revision as being equal to zero."""
         self.assertEqual(Version("1.0"), Version("1.0-0"))
         self.assertTrue(Version("1.0") == Version("1.0-0"))

@@ -26,28 +26,28 @@ here = os.path.dirname(os.path.realpath(__file__))
 
 
 special = {
-    'poexport-queue.txt': LayeredDocFileSuite(
-        '../doc/poexport-queue.txt',
+    'poexport-queue.rst': LayeredDocFileSuite(
+        '../doc/poexport-queue.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
-    'translationimportqueue.txt': LayeredDocFileSuite(
-        '../doc/translationimportqueue.txt',
+    'translationimportqueue.rst': LayeredDocFileSuite(
+        '../doc/translationimportqueue.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
-    'rosetta-karma.txt': LayeredDocFileSuite(
-        '../doc/rosetta-karma.txt',
+    'rosetta-karma.rst': LayeredDocFileSuite(
+        '../doc/rosetta-karma.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
-    'translationmessage-destroy.txt': LayeredDocFileSuite(
-        '../doc/translationmessage-destroy.txt',
+    'translationmessage-destroy.rst': LayeredDocFileSuite(
+        '../doc/translationmessage-destroy.rst',
         setUp=setGlobs,
         layer=LaunchpadZopelessLayer,
         ),
-    'translationsoverview.txt': LayeredDocFileSuite(
-        '../doc/translationsoverview.txt',
+    'translationsoverview.rst': LayeredDocFileSuite(
+        '../doc/translationsoverview.rst',
         setUp=setGlobs,
         layer=LaunchpadZopelessLayer,
         ),
@@ -77,7 +77,7 @@ def test_suite():
     # Add tests using default setup/teardown
     filenames = [filename
                  for filename in os.listdir(testsdir)
-                 if filename.endswith('.txt') and filename not in special]
+                 if filename.endswith('.rst') and filename not in special]
     # Sort the list to give a predictable order.
     filenames.sort()
     for filename in filenames:

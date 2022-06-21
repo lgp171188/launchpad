@@ -6,22 +6,20 @@
 import unittest
 
 from lp.testing.layers import LaunchpadFunctionalLayer
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 
 def test_suite():
     suite = unittest.TestSuite()
     test = LayeredDocFileSuite(
-        'validation.txt',
-        setUp=setUp, tearDown=tearDown,
-        layer=LaunchpadFunctionalLayer)
+        "validation.rst",
+        setUp=setUp,
+        tearDown=tearDown,
+        layer=LaunchpadFunctionalLayer,
+    )
     suite.addTest(test)
     return suite
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

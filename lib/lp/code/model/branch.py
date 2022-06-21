@@ -1177,7 +1177,8 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         tip_revision_id = self.last_scanned_id
         if tip_revision_id is None:
             return None
-        return Revision.selectOneBy(revision_id=tip_revision_id)
+        return IStore(Revision).find(
+            Revision, revision_id=tip_revision_id).one()
 
     def updateScannedDetails(self, db_revision, revision_count):
         """See `IBranch`."""

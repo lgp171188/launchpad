@@ -101,59 +101,59 @@ def uploadQueueTearDown(test):
 
 
 special = {
-    'package-cache.txt': LayeredDocFileSuite(
-        '../doc/package-cache.txt',
+    'package-cache.rst': LayeredDocFileSuite(
+        '../doc/package-cache.rst',
         setUp=statisticianSetUp, tearDown=statisticianTearDown,
         layer=LaunchpadZopelessLayer
         ),
-    'distroarchseriesbinarypackage.txt': LayeredDocFileSuite(
-        '../doc/distroarchseriesbinarypackage.txt',
+    'distroarchseriesbinarypackage.rst': LayeredDocFileSuite(
+        '../doc/distroarchseriesbinarypackage.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadZopelessLayer
         ),
-    'closing-bugs-from-changelogs.txt': LayeredDocFileSuite(
-        '../doc/closing-bugs-from-changelogs.txt',
+    'closing-bugs-from-changelogs.rst': LayeredDocFileSuite(
+        '../doc/closing-bugs-from-changelogs.rst',
         setUp=uploadQueueSetUp,
         tearDown=uploadQueueTearDown,
         layer=LaunchpadZopelessLayer
         ),
-    'closing-bugs-from-changelogs.txt-uploader': LayeredDocFileSuite(
-        '../doc/closing-bugs-from-changelogs.txt',
-        id_extensions=['closing-bugs-from-changelogs.txt-uploader'],
+    'closing-bugs-from-changelogs.rst-uploader': LayeredDocFileSuite(
+        '../doc/closing-bugs-from-changelogs.rst',
+        id_extensions=['closing-bugs-from-changelogs.rst-uploader'],
         setUp=uploaderBugsSetUp,
         tearDown=uploaderBugsTearDown,
         layer=LaunchpadZopelessLayer
         ),
-    'soyuz-set-of-uploads.txt': LayeredDocFileSuite(
-        '../doc/soyuz-set-of-uploads.txt',
+    'soyuz-set-of-uploads.rst': LayeredDocFileSuite(
+        '../doc/soyuz-set-of-uploads.rst',
         setUp=setUp,
         layer=LaunchpadZopelessLayer,
         ),
-    'package-relationship.txt': LayeredDocFileSuite(
-        '../doc/package-relationship.txt',
+    'package-relationship.rst': LayeredDocFileSuite(
+        '../doc/package-relationship.rst',
         stdout_logging=False, layer=None),
-    'publishing.txt': LayeredDocFileSuite(
-        '../doc/publishing.txt',
+    'publishing.rst': LayeredDocFileSuite(
+        '../doc/publishing.rst',
         setUp=setUp,
         layer=LaunchpadZopelessLayer,
         ),
-    'build-failedtoupload-workflow.txt': LayeredDocFileSuite(
-        '../doc/build-failedtoupload-workflow.txt',
+    'build-failedtoupload-workflow.rst': LayeredDocFileSuite(
+        '../doc/build-failedtoupload-workflow.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
         ),
-    'distroseriesqueue.txt': LayeredDocFileSuite(
-        '../doc/distroseriesqueue.txt',
+    'distroseriesqueue.rst': LayeredDocFileSuite(
+        '../doc/distroseriesqueue.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
         ),
-    'distroseriesqueue-notify.txt': LayeredDocFileSuite(
-        '../doc/distroseriesqueue-notify.txt',
+    'distroseriesqueue-notify.rst': LayeredDocFileSuite(
+        '../doc/distroseriesqueue-notify.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
         ),
-    'distroseriesqueue-translations.txt': LayeredDocFileSuite(
-        '../doc/distroseriesqueue-translations.txt',
+    'distroseriesqueue-translations.rst': LayeredDocFileSuite(
+        '../doc/distroseriesqueue-translations.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
         ),
@@ -183,7 +183,7 @@ def test_suite():
     # Add tests using default setup/teardown
     filenames = [filename
                  for filename in os.listdir(testsdir)
-                 if filename.endswith('.txt') and filename not in special]
+                 if filename.endswith('.rst') and filename not in special]
 
     # Sort the list to give a predictable order.
     filenames.sort()

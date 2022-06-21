@@ -115,8 +115,8 @@ class TestClosingBugs(TestCaseWithFactory):
     start a unification in a single file and those other tests need
     migrating here.
     See also:
-        * lib/lp/soyuz/doc/closing-bugs-from-changelogs.txt
-        * lib/lp/archiveuploader/tests/nascentupload-closing-bugs.txt
+        * lib/lp/soyuz/doc/closing-bugs-from-changelogs.rst
+        * lib/lp/archiveuploader/tests/nascentupload-closing-bugs.rst
     """
     layer = LaunchpadZopelessLayer
 

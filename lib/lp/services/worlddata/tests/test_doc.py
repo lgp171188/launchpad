@@ -18,8 +18,8 @@ from lp.testing.systemdocs import (
 
 here = os.path.dirname(os.path.realpath(__file__))
 special = {
-    'language.txt': LayeredDocFileSuite(
-        '../doc/language.txt',
+    'language.rst': LayeredDocFileSuite(
+        '../doc/language.rst',
         layer=LaunchpadZopelessLayer,
         setUp=setUp, tearDown=tearDown),
     }

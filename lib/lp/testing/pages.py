@@ -440,7 +440,7 @@ def extract_text(content, extract_image_text=False, skip_tags=None,
 def parse_relationship_section(content):
     """Parser package relationship section.
 
-    See package-relationship-pages.txt and related.
+    See package-relationship-pages.rst and related.
     """
     soup = BeautifulSoup(content)
     section = soup.find('ul')
@@ -925,7 +925,7 @@ def PageTestSuite(storydir, package=None, setUp=setUpGlobs, **kw):
     filenames = {
         filename
         for filename in os.listdir(abs_storydir)
-        if filename.lower().endswith('.txt')}
+        if filename.lower().endswith('.rst')}
 
     suite = unittest.TestSuite()
     # Add tests to the suite individually.

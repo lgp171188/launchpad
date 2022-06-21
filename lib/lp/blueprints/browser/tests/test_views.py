@@ -102,7 +102,7 @@ def test_suite():
     # Add tests using default setup/teardown
     filenames = [filename
                  for filename in os.listdir(testsdir)
-                 if filename.endswith('.txt')]
+                 if filename.endswith('.rst')]
     # Sort the list to give a predictable order.
     filenames.sort()
     for filename in filenames:

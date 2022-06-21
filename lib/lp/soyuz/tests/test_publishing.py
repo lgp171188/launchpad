@@ -1462,7 +1462,7 @@ class TestBinaryGetOtherPublications(TestNativePublishingBase):
 class TestGetOtherPublicationsForSameSource(TestNativePublishingBase):
     """Test parts of the BinaryPackagePublishingHistory model.
 
-    See also lib/lp/soyuz/doc/publishing.txt
+    See also lib/lp/soyuz/doc/publishing.rst
     """
 
     layer = LaunchpadZopelessLayer

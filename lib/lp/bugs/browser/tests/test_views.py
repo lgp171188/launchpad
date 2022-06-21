@@ -24,9 +24,9 @@ here = os.path.dirname(os.path.realpath(__file__))
 
 
 special_test_layer = {
-    'bug-views.txt': LaunchpadFunctionalLayer,
-    'bugtarget-filebug-views.txt': LaunchpadFunctionalLayer,
-    'bugtask-target-link-titles.txt': LaunchpadFunctionalLayer,
+    'bug-views.rst': LaunchpadFunctionalLayer,
+    'bugtarget-filebug-views.rst': LaunchpadFunctionalLayer,
+    'bugtask-target-link-titles.rst': LaunchpadFunctionalLayer,
     }
 
 
@@ -37,7 +37,7 @@ def test_suite():
     # Add tests using default setup/teardown
     filenames = [filename
                  for filename in os.listdir(testsdir)
-                 if filename.endswith('.txt')]
+                 if filename.endswith('.rst')]
     # Sort the list to give a predictable order.
     filenames.sort()
     for filename in filenames:

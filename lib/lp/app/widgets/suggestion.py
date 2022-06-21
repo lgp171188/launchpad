@@ -4,32 +4,20 @@
 """Widgets related to IBranch."""
 
 __all__ = [
-    'RecipeOwnerWidget',
-    'TargetBranchWidget',
-    'TargetGitRepositoryWidget',
-    ]
+    "RecipeOwnerWidget",
+    "TargetBranchWidget",
+    "TargetGitRepositoryWidget",
+]
 
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 from pytz import utc
-from zope.component import (
-    getMultiAdapter,
-    getUtility,
-    )
-from zope.formlib.interfaces import (
-    IInputWidget,
-    InputErrors,
-    )
+from zope.component import getMultiAdapter, getUtility
+from zope.formlib.interfaces import IInputWidget, InputErrors
 from zope.formlib.utility import setUpWidget
 from zope.formlib.widget import renderElement
-from zope.schema.vocabulary import (
-    SimpleTerm,
-    SimpleVocabulary,
-    )
+from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 
 from lp.app.widgets.itemswidgets import LaunchpadRadioWidget
 from lp.code.interfaces.gitcollection import IGitCollection
@@ -37,10 +25,7 @@ from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.registry.interfaces.person import IPerson
 from lp.services.webapp import canonical_url
-from lp.services.webapp.escaping import (
-    html_escape,
-    structured,
-    )
+from lp.services.webapp.escaping import html_escape, structured
 from lp.services.webapp.interfaces import ILaunchBag
 
 
@@ -55,16 +40,24 @@ class SuggestionWidget(LaunchpadRadioWidget):
         # Create the vocabulary and pass that to the radio button
         # constructor.
         self.suggestion_vocab = self._generateSuggestionVocab(
-            field.context, vocabulary)
+            field.context, vocabulary
+        )
 
         LaunchpadRadioWidget.__init__(
-            self, field, self.suggestion_vocab, request)
+            self, field, self.suggestion_vocab, request
+        )
 
         self.other_selection_widget = getMultiAdapter(
-            (field, request), IInputWidget)
+            (field, request), IInputWidget
+        )
         setUpWidget(
-            self, 'other_selection', field, IInputWidget,
-            prefix=self.name, context=field.context)
+            self,
+            "other_selection",
+            field,
+            IInputWidget,
+            prefix=self.name,
+            context=field.context,
+        )
 
         # If there are suggestions to show explicitly, then we want to select
         # the 'Other' selection item when the user chooses a non-suggested
@@ -81,9 +74,7 @@ class SuggestionWidget(LaunchpadRadioWidget):
             suggestions not present in this vocabulary are ignored.
         """
         suggestions = cls._getSuggestions(context)
-        terms = [
-            term for term in full_vocabulary
-            if term.value in suggestions]
+        terms = [term for term in full_vocabulary if term.value in suggestions]
         return SimpleVocabulary(terms)
 
     def _shouldRenderSuggestions(self):
@@ -91,7 +82,7 @@ class SuggestionWidget(LaunchpadRadioWidget):
         return len(self.suggestion_vocab) > 0
 
     def _optionId(self, index):
-        return '%s.%d' % (html_escape(self.name), index)
+        return "%s.%d" % (html_escape(self.name), index)
 
     def _otherId(self):
         """Return the id of the "Other" option."""
@@ -142,7 +133,9 @@ class SuggestionWidget(LaunchpadRadioWidget):
         """Render a label for the option with the specified index."""
         label = structured(
             '<label for="%s" style="font-weight: normal">%s</label>',
-            self._optionId(index), text)
+            self._optionId(index),
+            text,
+        )
         return label
 
     def _renderSuggestionLabel(self, value, index):
@@ -171,27 +164,35 @@ class SuggestionWidget(LaunchpadRadioWidget):
                 renderfunc = self.renderItem
             text = self._renderSuggestionLabel(suggestion, index)
             render_args = dict(
-                index=index, text=text, value=term.token,
-                name=self.name, cssClass=self.cssClass)
+                index=index,
+                text=text,
+                value=term.token,
+                name=self.name,
+                cssClass=self.cssClass,
+            )
             items.append(renderfunc(**render_args))
 
         # Lastly render the other option.
         index = len(items)
         other_selection_text = "%s %s" % (
             html_escape(self._renderLabel("Other:", index)),
-            self.other_selection_widget())
+            self.other_selection_widget(),
+        )
         other_selection_onclick = (
-            "this.form['%s'].focus()" % self.other_selection_widget.name)
+            "this.form['%s'].focus()" % self.other_selection_widget.name
+        )
 
-        elem = renderElement('input',
-                             value="other",
-                             name=self.name,
-                             id='%s.%s' % (self.name, index),
-                             cssClass=self.cssClass,
-                             type='radio',
-                             onClick=other_selection_onclick)
+        elem = renderElement(
+            "input",
+            value="other",
+            name=self.name,
+            id="%s.%s" % (self.name, index),
+            cssClass=self.cssClass,
+            type="radio",
+            onClick=other_selection_onclick,
+        )
 
-        other_radio_button = '%s&nbsp;%s' % (elem, other_selection_text)
+        other_radio_button = "%s&nbsp;%s" % (elem, other_selection_text)
 
         items.append(other_radio_button)
 
@@ -232,13 +233,13 @@ class TargetBranchWidget(SuggestionWidget):
         default_target = branch.target.default_merge_target
         logged_in_user = getUtility(ILaunchBag).user
         since = datetime.now(utc) - timedelta(days=90)
-        collection = branch.target.collection.targetedBy(logged_in_user,
-            since)
+        collection = branch.target.collection.targetedBy(logged_in_user, since)
         collection = collection.visibleByUser(logged_in_user)
         # May actually need some eager loading, but the API isn't fine grained
         # yet.
         branches = collection.getBranches(eager_load=False).config(
-            distinct=True)
+            distinct=True
+        )
         target_branches = list(branches.config(limit=5))
         # If there is a development focus branch, make sure it is always
         # shown, and as the first item.
@@ -253,8 +254,7 @@ class TargetBranchWidget(SuggestionWidget):
 
         terms = []
         for branch in target_branches:
-            terms.append(SimpleTerm(
-                    branch, branch.unique_name))
+            terms.append(SimpleTerm(branch, branch.unique_name))
 
         return SimpleVocabulary(terms)
 
@@ -269,11 +269,14 @@ class TargetBranchWidget(SuggestionWidget):
         if branch == self.context.context.target.default_merge_target:
             text += "&ndash; <em>development focus</em>"
         label = (
-            '<label for="%s" style="font-weight: normal">' + text +
-            '</label>')
+            '<label for="%s" style="font-weight: normal">' + text + "</label>"
+        )
         return structured(
-            label, self._optionId(index), branch.displayname,
-            canonical_url(branch))
+            label,
+            self._optionId(index),
+            branch.displayname,
+            canonical_url(branch),
+        )
 
     def _autoselectOther(self):
         """Select "other" on keypress."""
@@ -315,16 +318,19 @@ class TargetGitRepositoryWidget(SuggestionWidget):
         else:
             repository_set = getUtility(IGitRepositorySet)
             default_target = repository_set.getDefaultRepository(
-                repository.target)
+                repository.target
+            )
             logged_in_user = getUtility(ILaunchBag).user
             since = datetime.now(utc) - timedelta(days=90)
             collection = IGitCollection(repository.target).targetedBy(
-                logged_in_user, since)
+                logged_in_user, since
+            )
             collection = collection.visibleByUser(logged_in_user)
             # May actually need some eager loading, but the API isn't fine
             # grained yet.
             repositories = collection.getRepositories(eager_load=False).config(
-                distinct=True)
+                distinct=True
+            )
             target_repositories = list(repositories.config(limit=5))
             # If there is a default repository, make sure it is always
             # shown, and as the first item.
@@ -350,15 +356,19 @@ class TargetGitRepositoryWidget(SuggestionWidget):
         if not IPerson.providedBy(repository.target):
             repository_set = getUtility(IGitRepositorySet)
             default_target = repository_set.getDefaultRepository(
-                repository.target)
+                repository.target
+            )
             if repository == default_target:
                 text += "&ndash; <em>default repository</em>"
         label = (
-            '<label for="%s" style="font-weight: normal">' + text +
-            '</label>')
+            '<label for="%s" style="font-weight: normal">' + text + "</label>"
+        )
         return structured(
-            label, self._optionId(index), repository.display_name,
-            canonical_url(repository))
+            label,
+            self._optionId(index),
+            repository.display_name,
+            canonical_url(repository),
+        )
 
     def _autoselectOther(self):
         """Select "other" on keypress."""

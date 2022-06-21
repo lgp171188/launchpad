@@ -51,34 +51,34 @@ def zopelessLaunchpadSecurityTearDown(test):
 
 
 special = {
-    'codeimport-machine.txt': LayeredDocFileSuite(
-        '../doc/codeimport-machine.txt',
+    'codeimport-machine.rst': LayeredDocFileSuite(
+        '../doc/codeimport-machine.rst',
         setUp=zopelessLaunchpadSecuritySetUp,
         tearDown=zopelessLaunchpadSecurityTearDown,
         layer=LaunchpadZopelessLayer,
         ),
-    'revision.txt': LayeredDocFileSuite(
-        '../doc/revision.txt',
+    'revision.rst': LayeredDocFileSuite(
+        '../doc/revision.rst',
         setUp=branchscannerSetUp, tearDown=tearDown,
         layer=LaunchpadZopelessLayer
         ),
-    'codeimport-result.txt': LayeredDocFileSuite(
-        '../doc/codeimport-result.txt',
+    'codeimport-result.rst': LayeredDocFileSuite(
+        '../doc/codeimport-result.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
-    'branch-merge-proposal-notifications.txt': LayeredDocFileSuite(
-        '../doc/branch-merge-proposal-notifications.txt',
+    'branch-merge-proposal-notifications.rst': LayeredDocFileSuite(
+        '../doc/branch-merge-proposal-notifications.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
         ),
-    'branch-notifications.txt': LayeredDocFileSuite(
-        '../doc/branch-notifications.txt',
+    'branch-notifications.rst': LayeredDocFileSuite(
+        '../doc/branch-notifications.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
         ),
-    'codereviewcomment.txt': LayeredDocFileSuite(
-        '../doc/codereviewcomment.txt',
+    'codereviewcomment.rst': LayeredDocFileSuite(
+        '../doc/codereviewcomment.rst',
         setUp=setUp, tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
         ),

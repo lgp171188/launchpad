@@ -49,37 +49,37 @@ class LayeredDocFileSuiteTests(unittest.TestCase):
 
     def test_creates_test_suites(self):
         """LayeredDocFileSuite creates test suites."""
-        self.makeTestFile('foo.txt')
-        self.makeTestFile('bar.txt')
+        self.makeTestFile('foo.rst')
+        self.makeTestFile('bar.rst')
         base = os.path.basename(self.tempdir)
         suite = LayeredDocFileSuite(
-            [os.path.join(base, 'foo.txt'),
-             os.path.join(base, 'bar.txt')])
+            [os.path.join(base, 'foo.rst'),
+             os.path.join(base, 'bar.rst')])
         self.assertTrue(isinstance(suite, unittest.TestSuite))
 
         [foo_test, bar_test] = list(suite)
         self.assertTrue(isinstance(foo_test, unittest.TestCase))
-        self.assertEqual(os.path.basename(foo_test.id()), 'foo.txt')
+        self.assertEqual(os.path.basename(foo_test.id()), 'foo.rst')
         self.assertTrue(isinstance(bar_test, unittest.TestCase))
-        self.assertEqual(os.path.basename(bar_test.id()), 'bar.txt')
+        self.assertEqual(os.path.basename(bar_test.id()), 'bar.rst')
         self.runSuite(suite, num_tests=2)
 
     def test_set_layer(self):
         """A layer can be applied to the created tests."""
-        self.makeTestFile('foo.txt')
+        self.makeTestFile('foo.rst')
         base = os.path.basename(self.tempdir)
         # By default, no layer is applied to the suite.
-        suite = LayeredDocFileSuite(os.path.join(base, 'foo.txt'))
+        suite = LayeredDocFileSuite(os.path.join(base, 'foo.rst'))
         self.assertFalse(hasattr(suite, 'layer'))
         # But if one is passed as a keyword argument, it is applied:
         suite = LayeredDocFileSuite(
-            os.path.join(base, 'foo.txt'), layer='some layer')
+            os.path.join(base, 'foo.rst'), layer='some layer')
         self.assertEqual(suite.layer, 'some layer')
 
     def test_stdout_logging(self):
         """LayeredDocFileSuite handles logging."""
         base = os.path.basename(self.tempdir)
-        self.makeTestFile('foo.txt', """
+        self.makeTestFile('foo.rst', """
             >>> import logging
             >>> logging.info("An info message (not printed)")
             >>> logging.warning("A warning message")
@@ -87,49 +87,49 @@ class LayeredDocFileSuiteTests(unittest.TestCase):
         """)
         # Create a suite with logging turned on.
         suite = LayeredDocFileSuite(
-            os.path.join(base, 'foo.txt'),
+            os.path.join(base, 'foo.rst'),
             stdout_logging=True, stdout_logging_level=logging.WARNING)
         self.runSuite(suite)
         # And one with it turned off.
-        self.makeTestFile('foo.txt', """
+        self.makeTestFile('foo.rst', """
             >>> import logging
             >>> logging.info("An info message (not printed)")
             >>> logging.warning("A warning message")
         """)
         suite = LayeredDocFileSuite(
-            os.path.join(base, 'foo.txt'),
+            os.path.join(base, 'foo.rst'),
             stdout_logging=False, stdout_logging_level=logging.WARNING)
         self.runSuite(suite)
 
     def test_optionflags(self):
         """A default set of option flags are applied to doc tests."""
-        self.makeTestFile('foo.txt')
+        self.makeTestFile('foo.rst')
         base = os.path.basename(self.tempdir)
-        suite = LayeredDocFileSuite(os.path.join(base, 'foo.txt'))
+        suite = LayeredDocFileSuite(os.path.join(base, 'foo.rst'))
         [foo_test] = list(suite)
         self.assertEqual(foo_test._dt_optionflags, default_optionflags)
         # If the optionflags argument is passed, it takes precedence:
         suite = LayeredDocFileSuite(
-            os.path.join(base, 'foo.txt'), optionflags=doctest.ELLIPSIS)
+            os.path.join(base, 'foo.rst'), optionflags=doctest.ELLIPSIS)
         [foo_test] = list(suite)
         self.assertEqual(foo_test._dt_optionflags, doctest.ELLIPSIS)
 
     def test_strip_prefix(self):
         """The Launchpad tree root is stripped from test names."""
-        self.makeTestFile('foo.txt')
+        self.makeTestFile('foo.rst')
         base = os.path.basename(self.tempdir)
         # Set the Launchpad tree root to our temporary directory and
         # create a test suite.
         config.root = self.tempdir
-        suite = LayeredDocFileSuite(os.path.join(base, 'foo.txt'))
+        suite = LayeredDocFileSuite(os.path.join(base, 'foo.rst'))
         [foo_test] = list(suite)
         # The test ID and string representation have the prefix
         # stripped off.
-        self.assertEqual(foo_test.id(), 'foo.txt')
-        self.assertEqual(str(foo_test), 'foo.txt')
+        self.assertEqual(foo_test.id(), 'foo.rst')
+        self.assertEqual(str(foo_test), 'foo.rst')
         # Tests outside of the Launchpad tree root are left as is:
         config.root = '/nonexistent'
-        suite = LayeredDocFileSuite(os.path.join(base, 'foo.txt'))
+        suite = LayeredDocFileSuite(os.path.join(base, 'foo.rst'))
         [foo_test] = list(suite)
         self.assertTrue(str(foo_test).startswith(self.orig_root))
 

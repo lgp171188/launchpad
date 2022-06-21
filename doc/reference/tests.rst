@@ -68,8 +68,8 @@ Browser View Tests
 ------------------
 
 View objects are usually documented that way along other system objects in
-files named ``*-pages.txt`` or in
-``lib/lp/<app>/browser/tests/*-views.txt``.
+files named ``*-pages.rst`` or in
+``lib/lp/<app>/browser/tests/*-views.rst``.
 
 The browser tests directory contains both doctest files for documenting the
 use of browser view classes and unit tests (e.g. ``test_*.py``) for
@@ -100,7 +100,7 @@ The basic conventions for testable documentation are:
 
 * The file should have a first-level title element.  An expansion of the
   filename is usually a good start.  For example, the file
-  ``bugcomment.txt`` could have this title:
+  ``bugcomment.rst`` could have this title:
 
 .. code-block:: rst
 

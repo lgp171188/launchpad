@@ -1,7 +1,7 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Runn test_logger.txt."""
+"""Run test_logger.rst."""
 
 __all__ = []
 
@@ -56,7 +56,7 @@ def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(
         LayeredDocFileSuite(
-            'test_logger.txt',
+            'test_logger.rst',
             setUp=setGlobs, layer=BaseLayer))
     suite.addTest(
         unittest.TestLoader().loadTestsFromName(__name__))

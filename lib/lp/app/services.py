@@ -4,16 +4,13 @@
 """Factory used to get named services."""
 
 __all__ = [
-    'ServiceFactory',
-    ]
+    "ServiceFactory",
+]
 
 from zope.component import getUtility
 from zope.interface import implementer
 
-from lp.app.interfaces.services import (
-    IService,
-    IServiceFactory,
-    )
+from lp.app.interfaces.services import IService, IServiceFactory
 from lp.services.webapp.publisher import Navigation
 
 

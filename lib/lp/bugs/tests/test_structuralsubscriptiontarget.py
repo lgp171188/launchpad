@@ -553,7 +553,7 @@ def test_suite():
         distroSeriesSourcePackageSetUp,
         ]
 
-    testname = 'structural-subscription-target.txt'
+    testname = 'structural-subscription-target.rst'
     for setUpMethod in setUpMethods:
         id_ext = "%s-%s" % (testname, setUpMethod.__name__)
         test = LayeredDocFileSuite(

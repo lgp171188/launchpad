@@ -71,6 +71,21 @@ def build_apt_repositories(distribution_name: str) -> list:
     return rv
 
 
+def build_plugin_settings(distribution_name: str) -> dict:
+    # - load key/value pairs from JSON Object
+    # - replace authentication placeholder
+    try:
+        pairs = config["cibuild."+distribution_name]["plugin_settings"]
+    except NoSectionError:
+        return {}
+    if pairs is None:
+        return {}
+    rv = {}
+    for key, value in json.loads(pairs).items():
+        rv[key] = replace_auth_placeholder(value)
+    return rv
+
+
 @adapter(ICIBuild)
 @implementer(IBuildFarmJobBehaviour)
 class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
@@ -139,6 +154,8 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             args["environment_variables"] = build_environment_variables(
                 distribution_name)
             args["apt_repositories"] = build_apt_repositories(
+                distribution_name)
+            args["plugin_settings"] = build_plugin_settings(
                 distribution_name)
         return args
 

@@ -4,24 +4,21 @@
 """Enumerations and related utilities used in the lp/app modules."""
 
 __all__ = [
-    'FREE_INFORMATION_TYPES',
-    'FREE_PRIVATE_INFORMATION_TYPES',
-    'InformationType',
-    'NON_EMBARGOED_INFORMATION_TYPES',
-    'PRIVATE_INFORMATION_TYPES',
-    'PROPRIETARY_INFORMATION_TYPES',
-    'PILLAR_INFORMATION_TYPES',
-    'PUBLIC_INFORMATION_TYPES',
-    'PUBLIC_PROPRIETARY_INFORMATION_TYPES',
-    'SECURITY_INFORMATION_TYPES',
-    'ServiceUsage',
-    'service_uses_launchpad',
-    ]
+    "FREE_INFORMATION_TYPES",
+    "FREE_PRIVATE_INFORMATION_TYPES",
+    "InformationType",
+    "NON_EMBARGOED_INFORMATION_TYPES",
+    "PRIVATE_INFORMATION_TYPES",
+    "PROPRIETARY_INFORMATION_TYPES",
+    "PILLAR_INFORMATION_TYPES",
+    "PUBLIC_INFORMATION_TYPES",
+    "PUBLIC_PROPRIETARY_INFORMATION_TYPES",
+    "SECURITY_INFORMATION_TYPES",
+    "ServiceUsage",
+    "service_uses_launchpad",
+]
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 
 
 class InformationType(DBEnumeratedType):
@@ -31,73 +28,107 @@ class InformationType(DBEnumeratedType):
     Launchpad artifacts, including bugs and branches.
     """
 
-    PUBLIC = DBItem(1, """
+    PUBLIC = DBItem(
+        1,
+        """
         Public
 
         Everyone can see this information.
-        """)
+        """,
+    )
 
-    PUBLICSECURITY = DBItem(2, """
+    PUBLICSECURITY = DBItem(
+        2,
+        """
         Public Security
 
         Everyone can see this security related information.
-        """)
+        """,
+    )
 
-    PRIVATESECURITY = DBItem(3, """
+    PRIVATESECURITY = DBItem(
+        3,
+        """
         Private Security
 
        Only the security group can see this information.
-        """)
+        """,
+    )
 
-    USERDATA = DBItem(4, """
+    USERDATA = DBItem(
+        4,
+        """
         Private
 
         Only shared with users permitted to see private user information.
-        """)
+        """,
+    )
 
-    PROPRIETARY = DBItem(5, """
+    PROPRIETARY = DBItem(
+        5,
+        """
         Proprietary
 
         Only shared with users permitted to see proprietary information.
-        """)
+        """,
+    )
 
-    EMBARGOED = DBItem(6, """
+    EMBARGOED = DBItem(
+        6,
+        """
         Embargoed
 
         Only shared with users permitted to see embargoed information.
-        """)
+        """,
+    )
+
 
 PUBLIC_INFORMATION_TYPES = (
-    InformationType.PUBLIC, InformationType.PUBLICSECURITY)
+    InformationType.PUBLIC,
+    InformationType.PUBLICSECURITY,
+)
 
 PRIVATE_INFORMATION_TYPES = (
-    InformationType.PRIVATESECURITY, InformationType.USERDATA,
-    InformationType.PROPRIETARY, InformationType.EMBARGOED)
+    InformationType.PRIVATESECURITY,
+    InformationType.USERDATA,
+    InformationType.PROPRIETARY,
+    InformationType.EMBARGOED,
+)
 
-NON_EMBARGOED_INFORMATION_TYPES = (
-    PUBLIC_INFORMATION_TYPES +
-    (InformationType.PRIVATESECURITY, InformationType.USERDATA,
-     InformationType.PROPRIETARY))
+NON_EMBARGOED_INFORMATION_TYPES = PUBLIC_INFORMATION_TYPES + (
+    InformationType.PRIVATESECURITY,
+    InformationType.USERDATA,
+    InformationType.PROPRIETARY,
+)
 
 SECURITY_INFORMATION_TYPES = (
-    InformationType.PUBLICSECURITY, InformationType.PRIVATESECURITY)
+    InformationType.PUBLICSECURITY,
+    InformationType.PRIVATESECURITY,
+)
 
 FREE_PRIVATE_INFORMATION_TYPES = (
-    InformationType.PRIVATESECURITY, InformationType.USERDATA)
+    InformationType.PRIVATESECURITY,
+    InformationType.USERDATA,
+)
 
 FREE_INFORMATION_TYPES = (
-    PUBLIC_INFORMATION_TYPES + FREE_PRIVATE_INFORMATION_TYPES)
+    PUBLIC_INFORMATION_TYPES + FREE_PRIVATE_INFORMATION_TYPES
+)
 
 PROPRIETARY_INFORMATION_TYPES = (
-    InformationType.PROPRIETARY, InformationType.EMBARGOED)
+    InformationType.PROPRIETARY,
+    InformationType.EMBARGOED,
+)
 
 # The information types unrelated to user data or security
 PUBLIC_PROPRIETARY_INFORMATION_TYPES = (
-    (InformationType.PUBLIC,) + PROPRIETARY_INFORMATION_TYPES
-)
+    InformationType.PUBLIC,
+) + PROPRIETARY_INFORMATION_TYPES
 
 PILLAR_INFORMATION_TYPES = (
-    InformationType.PUBLIC, InformationType.PROPRIETARY)
+    InformationType.PUBLIC,
+    InformationType.PROPRIETARY,
+)
 
 
 class ServiceUsage(DBEnumeratedType):
@@ -107,30 +138,42 @@ class ServiceUsage(DBEnumeratedType):
     bug tracking, translations, code hosting, blueprint, and answers.
     """
 
-    UNKNOWN = DBItem(10, """
+    UNKNOWN = DBItem(
+        10,
+        """
     Unknown
 
     The maintainers have not indicated usage.  This value is the default for
     new pillars.
-    """)
+    """,
+    )
 
-    LAUNCHPAD = DBItem(20, """
+    LAUNCHPAD = DBItem(
+        20,
+        """
     Launchpad
 
     Launchpad is used to provide this service.
-    """)
+    """,
+    )
 
-    EXTERNAL = DBItem(30, """
+    EXTERNAL = DBItem(
+        30,
+        """
     External
 
     The service is provided external to Launchpad.
-    """)
+    """,
+    )
 
-    NOT_APPLICABLE = DBItem(40, """
+    NOT_APPLICABLE = DBItem(
+        40,
+        """
     Not Applicable
 
     The pillar does not use this type of service in Launchpad or externally.
-    """)
+    """,
+    )
 
 
 def service_uses_launchpad(usage_enum):

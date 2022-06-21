@@ -5,7 +5,7 @@
 Cached properties for situations where a property is computed once and then
 returned each time it is asked for.
 
-See `doc/propertycache.txt` for documentation.
+See `doc/propertycache.rst` for documentation.
 """
 
 __all__ = [
@@ -131,7 +131,7 @@ class CachedProperty:
 def cachedproperty(name_or_function):
     """Decorator to create a cached property.
 
-    See `doc/propertycache.txt` for usage.
+    See `doc/propertycache.rst` for usage.
     """
     if isinstance(name_or_function, str):
         name = name_or_function

@@ -4,8 +4,8 @@
 """Interfaces for the Launchpad security policy."""
 
 __all__ = [
-    'IAuthorization',
-    ]
+    "IAuthorization",
+]
 
 from zope.interface import Interface
 
