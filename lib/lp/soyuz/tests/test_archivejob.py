@@ -28,6 +28,7 @@ from lp.services.librarian.interfaces.client import LibrarianServerError
 from lp.services.mail.sendmail import format_address_for_person
 from lp.soyuz.enums import (
     ArchiveJobType,
+    ArchiveRepositoryFormat,
     BinaryPackageFileType,
     BinaryPackageFormat,
     PackageUploadStatus,
@@ -318,7 +319,8 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         self.assertEqual(expected, job._scanFile(datadir(path)))
 
     def test_run_indep(self):
-        archive = self.factory.makeArchive()
+        archive = self.factory.makeArchive(
+            repository_format=ArchiveRepositoryFormat.PYTHON)
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
         dases = [
@@ -365,7 +367,8 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             for das in dases)))
 
     def test_run_arch(self):
-        archive = self.factory.makeArchive()
+        archive = self.factory.makeArchive(
+            repository_format=ArchiveRepositoryFormat.PYTHON)
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
         dases = [
@@ -411,7 +414,8 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
                 distroarchseries=Equals(dases[0]))))
 
     def test_run_conda(self):
-        archive = self.factory.makeArchive()
+        archive = self.factory.makeArchive(
+            repository_format=ArchiveRepositoryFormat.CONDA)
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
         dases = [
@@ -457,7 +461,8 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
                 distroarchseries=Equals(dases[0]))))
 
     def test_run_conda_v2(self):
-        archive = self.factory.makeArchive()
+        archive = self.factory.makeArchive(
+            repository_format=ArchiveRepositoryFormat.CONDA)
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
         dases = [
@@ -506,7 +511,8 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         # A `CIBuildUploadJob` can be run even if the build in question was
         # already uploaded somewhere, and in that case may add publications
         # in other locations for the same package.
-        archive = self.factory.makeArchive()
+        archive = self.factory.makeArchive(
+            repository_format=ArchiveRepositoryFormat.PYTHON)
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
@@ -552,6 +558,47 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
                 distroarchseries=Equals(das),
                 channel=Equals(channel))
             for channel in ("edge", "0.0.1/edge"))))
+
+    def test_skips_disallowed_binary_formats(self):
+        # A CI job might build multiple types of packages, of which only
+        # some are interesting to upload to archives with a given repository
+        # format.  Others are skipped.
+        archive = self.factory.makeArchive(
+            repository_format=ArchiveRepositoryFormat.PYTHON)
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+        build = self.factory.makeCIBuild(distro_arch_series=das)
+        wheel_report = build.getOrCreateRevisionStatusReport("build-wheel:0")
+        wheel_path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
+        conda_path = "conda-v2-arch/dist/linux-64/conda-v2-arch-0.1-0.conda"
+        with open(datadir(wheel_path), mode="rb") as f:
+            wheel_report.attach(
+                name=os.path.basename(wheel_path), data=f.read())
+        conda_report = build.getOrCreateRevisionStatusReport("build-conda:0")
+        with open(datadir(conda_path), mode="rb") as f:
+            conda_report.attach(
+                name=os.path.basename(conda_path), data=f.read())
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="edge")
+        transaction.commit()
+
+        with dbuser(job.config.dbuser):
+            JobRunner([job]).runAll()
+
+        self.assertThat(archive.getAllPublishedBinaries(), MatchesSetwise(
+            MatchesStructure(
+                binarypackagename=MatchesStructure.byEquality(
+                    name="wheel-indep"),
+                binarypackagerelease=MatchesStructure(
+                    ci_build=Equals(build),
+                    binarypackagename=MatchesStructure.byEquality(
+                        name="wheel-indep"),
+                    version=Equals("0.0.1"),
+                    binpackageformat=Equals(BinaryPackageFormat.WHL)),
+                binarypackageformat=Equals(BinaryPackageFormat.WHL),
+                distroarchseries=Equals(das))))
 
     def test_librarian_server_error_retries(self):
         # A run that gets an error from the librarian server schedules
