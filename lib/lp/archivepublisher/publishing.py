@@ -844,7 +844,7 @@ class Publisher:
             self._diskpool.updateProperties(
                 source_name,
                 source_version,
-                releases_by_id[release_id].files[0],
+                releases_by_id[release_id].files,
                 pubs_by_id.get(release_id),
                 old_properties=properties,
             )

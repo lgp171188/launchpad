@@ -12,7 +12,7 @@ import os
 import tempfile
 from collections import defaultdict
 from pathlib import Path, PurePath
-from typing import Optional
+from typing import List, Optional
 
 import requests
 from artifactory import ArtifactoryPath
@@ -444,13 +444,14 @@ class ArtifactoryPool:
         self,
         source_name: str,
         source_version: str,
-        pub_file: IPackageReleaseFile,
+        pub_files: List[IPackageReleaseFile],
         publications,
         old_properties=None,
     ):
         """Update a file's properties in Artifactory."""
-        entry = self._getEntry(source_name, source_version, pub_file)
-        entry.updateProperties(publications, old_properties=old_properties)
+        for pub_file in pub_files:
+            entry = self._getEntry(source_name, source_version, pub_file)
+            entry.updateProperties(publications, old_properties=old_properties)
 
     def getArtifactPatterns(self, repository_format):
         """Get patterns matching artifacts in a repository of this format.

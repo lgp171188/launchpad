@@ -4297,6 +4297,10 @@ class TestArtifactoryPublishing(TestPublisherBase):
             archive=self.archive,
             architecturehintlist="i386",
         )
+        # getPubSource adds a .dsc; add a .tar.xz too.
+        source.sourcepackagerelease.addFile(
+            self.addMockFile("hello_1.0.tar.xz", b"A tarball")
+        )
         binary = self.getPubBinaries(
             binaryname="hello",
             version="1.0",
@@ -4308,9 +4312,13 @@ class TestArtifactoryPublishing(TestPublisherBase):
         publisher.A_publish(False)
         publisher.C_updateArtifactoryProperties(False)
 
-        source_path = self.disk_pool.rootpath / "h" / "hello" / "hello_1.0.dsc"
+        dsc_path = self.disk_pool.rootpath / "h" / "hello" / "hello_1.0.dsc"
         self.assertEqual(
-            ["breezy-autotest"], source_path.properties["deb.distribution"]
+            ["breezy-autotest"], dsc_path.properties["deb.distribution"]
+        )
+        tar_path = self.disk_pool.rootpath / "h" / "hello" / "hello_1.0.tar.xz"
+        self.assertEqual(
+            ["breezy-autotest"], tar_path.properties["deb.distribution"]
         )
         binary_path = (
             self.disk_pool.rootpath
@@ -4351,7 +4359,22 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.source-version": ["1.0"],
                 "soss.license": ["debian/copyright"],
             },
-            source_path.properties,
+            dsc_path.properties,
+        )
+        self.assertEqual(
+            {
+                "deb.component": ["main"],
+                "deb.distribution": ["breezy-autotest", "hoary-test"],
+                "deb.name": ["hello"],
+                "deb.version": ["1.0"],
+                "launchpad.release-id": [
+                    "source:%d" % source.sourcepackagereleaseID
+                ],
+                "launchpad.source-name": ["hello"],
+                "launchpad.source-version": ["1.0"],
+                "soss.license": ["debian/copyright"],
+            },
+            tar_path.properties,
         )
         self.assertEqual(
             {
