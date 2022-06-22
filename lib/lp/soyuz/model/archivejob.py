@@ -248,6 +248,20 @@ class CIBuildUploadJob(ArchiveJobDerived):
         derived.job.requester = requester
         return derived
 
+    def __repr__(self):
+        """Returns an informative representation of the job."""
+        parts = [
+            "%s to upload %r to %s %s" % (
+                self.__class__.__name__,
+                self.ci_build,
+                self.archive.reference,
+                self.target_distroseries.getSuite(self.target_pocket),
+                ),
+            ]
+        if self.target_channel is not None:
+            parts.append(" {%s}" % self.target_channel)
+        return "<%s>" % "".join(parts)
+
     def getOopsVars(self):
         vars = super().getOopsVars()
         vars.extend([

@@ -23,6 +23,15 @@ For the containers, these instructions should work with Ubuntu 16.04 LTS or
 later.  We currently test on 16.04 and 18.04, with the aim of upgrading
 production to 18.04 soon.  20.04 is known not to work yet.
 
+.. note::
+   Ubuntu 22.04 ships with cgroups v2 enabled by default. Since the 16.04
+   release is too old to support it, the container doesn't get set up properly
+   as per the profile and isn't usable for setting up Launchpad. So to re-enable
+   cgroups v1, set the `systemd.unified_cgroup_hierarchy=0` kernel parameter.
+   For GRUB, this can be done by editing `/etc/default/grub` and
+   appending the parameter to the `GRUB_CMDLINE_LINUX_DEFAULT` value,
+   running `update-grub` after that, and rebooting.
+
 Launchpad requires at least Python 3.5 (i.e. newer than Ubuntu 14.04 LTS).
 
 We'd like Launchpad to run on other operating systems, especially `Debian

@@ -2091,15 +2091,15 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertEqual(build1._store_upload_revision, 1)
 
     def test_RevisionStatusReportPruner(self):
-        # Artifacts for report1 are older than 30 days
+        # Artifacts for report1 are older than 90 days
         # and we expect the garbo job to delete them.
-        # Artifacts for report2 are newer then 30 days and
+        # Artifacts for report2 are newer than 90 days and
         # we expect them to survive the garbo job.
         switch_dbuser('testadmin')
         now = datetime.now(UTC)
         report1 = removeSecurityProxy(self.factory.makeRevisionStatusReport())
         report2 = self.factory.makeRevisionStatusReport()
-        report1.date_created = now - timedelta(days=60)
+        report1.date_created = now - timedelta(days=120)
         repo1 = report1.git_repository
         repo2 = report2.git_repository
         artifact1_1 = self.factory.makeRevisionStatusArtifact(
