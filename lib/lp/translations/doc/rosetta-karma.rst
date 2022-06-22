@@ -392,7 +392,9 @@ Now, let's ensure that we've covered every one of Rosetta's karma
 actions.
 
     >>> from lp.registry.model.karma import KarmaCategory
-    >>> translation_category = KarmaCategory.byName('translations')
+    >>> from lp.services.database.interfaces import IStore
+    >>> translation_category = IStore(KarmaCategory).find(
+    ...     KarmaCategory, name="translations").one()
     >>> for karma_action in translation_category.karmaactions:
     ...     assert karma_action in karma_helper.added_karma_actions, (
     ...         '%s was not test!' % karma_action.name)

@@ -56,6 +56,7 @@ from lp.registry.model.person import (
     get_recipients,
     Person,
     )
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     flush_database_caches,
     flush_database_updates,
@@ -1233,7 +1234,8 @@ class KarmaTestMixin:
             total = 0
             # Insert category total for person and project.
             for category_name, value in category_name_values:
-                category = KarmaCategory.byName(category_name)
+                category = IStore(KarmaCategory).find(
+                    KarmaCategory, name=category_name).one()
                 self.cache_manager.new(
                     value, person.id, category.id, product_id=product.id)
                 total += value
@@ -1249,7 +1251,7 @@ class KarmaTestMixin:
         must be retrieved again.
         """
         with dbuser('karma'):
-            KarmaTotalCache(person=person.id, karma_total=total)
+            KarmaTotalCache(person=person, karma_total=total)
 
 
 class TestPersonKarma(TestCaseWithFactory, KarmaTestMixin):

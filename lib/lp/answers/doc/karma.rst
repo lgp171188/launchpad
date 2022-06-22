@@ -12,7 +12,9 @@ actions we consider to be a reasonable contribution.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.product import IProductSet
     >>> from lp.registry.model.karma import KarmaCategory
-    >>> answers_category = KarmaCategory.byName('answers')
+    >>> from lp.services.database.interfaces import IStore
+    >>> answers_category = IStore(KarmaCategory).find(
+    ...     KarmaCategory, name="answers").one()
     >>> answers_karma_actions = answers_category.karmaactions
     >>> for action in sorted(answers_karma_actions, key=attrgetter('title')):
     ...     print(action.title)

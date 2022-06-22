@@ -127,17 +127,17 @@ It will thus not be listed in the "...other untrusted versions of..." portlet.
     # karma for their efforts.
     >>> from lp.registry.model.karma import KarmaTotalCache
     >>> from lp.testing.dbuser import dbuser
-    >>> ppa_beta_owner_id = ppa_beta.owner.id
-    >>> ppa_nightly_owner_id = ppa_nightly.owner.id
-    >>> ppa_disabled_owner_id = ppa_disabled.owner.id
+    >>> ppa_beta_owner = ppa_beta.owner
+    >>> ppa_nightly_owner = ppa_nightly.owner
+    >>> ppa_disabled_owner = ppa_disabled.owner
     >>> ppa_disabled.disable()
     >>> with dbuser('karma'):
     ...     cache_entry = KarmaTotalCache(
-    ...         person=ppa_beta_owner_id, karma_total=200)
+    ...         person=ppa_beta_owner, karma_total=200)
     ...     cache_entry = KarmaTotalCache(
-    ...         person=ppa_nightly_owner_id, karma_total=201)
+    ...         person=ppa_nightly_owner, karma_total=201)
     ...     cache_entry = KarmaTotalCache(
-    ...         person=ppa_disabled_owner_id, karma_total=202)
+    ...         person=ppa_disabled_owner, karma_total=202)
 
     >>> logout()
 

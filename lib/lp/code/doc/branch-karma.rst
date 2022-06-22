@@ -9,7 +9,9 @@ branches.  We want to encourage the linking of information, and so
 give karma for it.
 
     >>> from lp.registry.model.karma import KarmaCategory
-    >>> code_category = KarmaCategory.byName('code')
+    >>> from lp.services.database.interfaces import IStore
+    >>> code_category = IStore(KarmaCategory).find(
+    ...     KarmaCategory, name="code").one()
     >>> code_karma_actions = code_category.karmaactions
     >>> for summary in sorted(
     ...     [action.summary for action in code_karma_actions]):

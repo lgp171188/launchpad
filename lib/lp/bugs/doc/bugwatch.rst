@@ -326,13 +326,13 @@ The Bug Watch Updater didn't receive any karma for the changed bug
 tasks, because it's not a valid person and only valid persons can get karma.
 
     >>> from lp.registry.model.karma import Karma
-    >>> Karma.selectBy(personID=bug_watch_updater_user.id).count()
+    >>> from lp.services.database.interfaces import IStore
+    >>> IStore(Karma).find(Karma, person=bug_watch_updater_user).count()
     0
 
 Finally, let's make sure that bug notifications were added:
 
     >>> from lp.bugs.model.bugnotification import BugNotification
-    >>> from lp.services.database.interfaces import IStore
     >>> unsent_notifications = IStore(BugNotification).find(
     ...     BugNotification, date_emailed=None).order_by(BugNotification.id)
 
