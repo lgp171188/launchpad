@@ -363,8 +363,8 @@ class CIBuildUploadJob(ArchiveJobDerived):
         """See `IRunnableJob`."""
         logger = logging.getLogger()
         with tempfile.TemporaryDirectory(prefix="ci-build-copy-job") as tmpdir:
-            releases_by_name = {
-                release.binarypackagename: release
+            releases = {
+                (release.binarypackagename, release.binpackageformat): release
                 for release in self.ci_build.binarypackages}
             allowed_binary_formats = (
                 self.binary_format_by_repository_format.get(
@@ -397,7 +397,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
                     getUtility(IBinaryPackageNameSet).ensure(metadata["name"]))
                 del metadata["name"]
                 filetype = self.filetype_by_format[binpackageformat]
-                bpr = releases_by_name.get(bpn)
+                bpr = releases.get((bpn, binpackageformat))
                 if bpr is None:
                     bpr = self.ci_build.createBinaryPackageRelease(**metadata)
                 for bpf in bpr.files:

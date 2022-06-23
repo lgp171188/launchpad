@@ -12,12 +12,28 @@ from lp.blueprints.interfaces.specification import ISpecificationDelta
 class SpecificationDelta:
     """See lp.blueprints.interfaces.specification.ISpecificationDelta."""
 
-    def __init__(self, specification, user, title=None,
-        summary=None, whiteboard=None, specurl=None, productseries=None,
-        distroseries=None, milestone=None, name=None, priority=None,
-        definition_status=None, target=None, bugs_linked=None,
-        bugs_unlinked=None, approver=None, assignee=None, drafter=None,
-        workitems_text=None):
+    def __init__(
+        self,
+        specification,
+        user,
+        title=None,
+        summary=None,
+        whiteboard=None,
+        specurl=None,
+        productseries=None,
+        distroseries=None,
+        milestone=None,
+        name=None,
+        priority=None,
+        definition_status=None,
+        target=None,
+        bugs_linked=None,
+        bugs_unlinked=None,
+        approver=None,
+        assignee=None,
+        drafter=None,
+        workitems_text=None,
+    ):
         self.specification = specification
         self.user = user
         self.title = title

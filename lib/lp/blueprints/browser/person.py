@@ -2,17 +2,14 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'PersonSpecsMenu',
-    'PersonSpecWorkloadTableView',
-    'PersonSpecWorkloadView',
-    ]
+    "PersonSpecsMenu",
+    "PersonSpecWorkloadTableView",
+    "PersonSpecWorkloadView",
+]
 
 from lp.registry.interfaces.person import IPerson
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp import (
-    Link,
-    NavigationMenu,
-    )
+from lp.services.webapp import Link, NavigationMenu
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.publisher import LaunchpadView
 
@@ -20,40 +17,48 @@ from lp.services.webapp.publisher import LaunchpadView
 class PersonSpecsMenu(NavigationMenu):
 
     usedfor = IPerson
-    facet = 'specifications'
-    links = ['assignee', 'drafter', 'approver',
-             'subscriber', 'registrant', 'workload']
+    facet = "specifications"
+    links = [
+        "assignee",
+        "drafter",
+        "approver",
+        "subscriber",
+        "registrant",
+        "workload",
+    ]
 
     def registrant(self):
-        text = 'Registrant'
-        summary = 'List specs registered by %s' % self.context.displayname
-        return Link('+specs?role=registrant', text, summary, icon='blueprint')
+        text = "Registrant"
+        summary = "List specs registered by %s" % self.context.displayname
+        return Link("+specs?role=registrant", text, summary, icon="blueprint")
 
     def approver(self):
-        text = 'Approver'
-        summary = 'List specs with %s is supposed to approve' % (
-            self.context.displayname)
-        return Link('+specs?role=approver', text, summary, icon='blueprint')
+        text = "Approver"
+        summary = "List specs with %s is supposed to approve" % (
+            self.context.displayname
+        )
+        return Link("+specs?role=approver", text, summary, icon="blueprint")
 
     def assignee(self):
-        text = 'Assignee'
-        summary = 'List specs for which %s is the assignee' % (
-            self.context.displayname)
-        return Link('+specs?role=assignee', text, summary, icon='blueprint')
+        text = "Assignee"
+        summary = "List specs for which %s is the assignee" % (
+            self.context.displayname
+        )
+        return Link("+specs?role=assignee", text, summary, icon="blueprint")
 
     def drafter(self):
-        text = 'Drafter'
-        summary = 'List specs drafted by %s' % self.context.displayname
-        return Link('+specs?role=drafter', text, summary, icon='blueprint')
+        text = "Drafter"
+        summary = "List specs drafted by %s" % self.context.displayname
+        return Link("+specs?role=drafter", text, summary, icon="blueprint")
 
     def subscriber(self):
-        text = 'Subscriber'
-        return Link('+specs?role=subscriber', text, icon='blueprint')
+        text = "Subscriber"
+        return Link("+specs?role=subscriber", text, icon="blueprint")
 
     def workload(self):
-        text = 'Workload'
-        summary = 'Show all specification work assigned'
-        return Link('+specworkload', text, summary, icon='info')
+        text = "Workload"
+        summary = "Show all specification work assigned"
+        return Link("+specworkload", text, summary, icon="info")
 
 
 class PersonSpecWorkloadView(LaunchpadView):
@@ -64,7 +69,7 @@ class PersonSpecWorkloadView(LaunchpadView):
     batching with their individual specifications.
     """
 
-    label = 'Blueprint workload'
+    label = "Blueprint workload"
 
     @cachedproperty
     def members(self):
@@ -88,7 +93,7 @@ class PersonSpecWorkloadTableView(LaunchpadView):
     in a single table.
     """
 
-    page_title = 'Blueprint workload'
+    page_title = "Blueprint workload"
 
     class PersonSpec:
         """One record from the workload list."""
@@ -107,5 +112,7 @@ class PersonSpecWorkloadTableView(LaunchpadView):
         Return a structure that lists the specs for which this person is the
         approver, the assignee or the drafter.
         """
-        return [PersonSpecWorkloadTableView.PersonSpec(spec, self.context)
-                for spec in self.context.specifications(self.user)]
+        return [
+            PersonSpecWorkloadTableView.PersonSpec(spec, self.context)
+            for spec in self.context.specifications(self.user)
+        ]
