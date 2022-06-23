@@ -5,8 +5,9 @@
 # Initial setup for PPA cronscripts.
 
 # DO NOT set LPCONFIG here, it should come from the crontab or the shell.
-# Define common variables.
+# Define common variables (also used by cron.daily-ppa).
 PPAROOT=/srv/launchpad.net/ppa-archive
+# shellcheck disable=SC2034  # not used here, but used by cron.daily-ppa
 P3AROOT=/srv/launchpad.net/private-ppa-archive
 LOCKFILE=$PPAROOT/.lock
 # Default lockfile options, retry once if it's locked.
