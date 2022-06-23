@@ -54,7 +54,8 @@ class BaseMissingObjectWebService:
     """Base test of NotFound errors for top-level webservice objects."""
 
     layer = DatabaseFunctionalLayer
-    object_type = None
+
+    object_type = None  # type: str
 
     def test_object_not_found(self):
         """Missing top-level objects generate 404s but not OOPS."""

@@ -158,8 +158,7 @@ class DateTimeWidget(TextWidget):
 
         return [o.strip() for o in outputs]
 
-    # @property  XXX: do as a property when we have python2.5 for tests of
-    # properties
+    @property
     def time_zone(self):
         """The widget time zone.
 
@@ -215,8 +214,6 @@ class DateTimeWidget(TextWidget):
         ), "DateTime widget needs a time zone."
         return self.system_time_zone
 
-    time_zone = property(time_zone, doc=time_zone.__doc__)
-
     @property
     def time_zone_name(self):
         """The name of the widget time zone for display in the widget."""
@@ -251,8 +248,7 @@ class DateTimeWidget(TextWidget):
         else:
             return None
 
-    # @property  XXX: do as a property when we have python2.5 for tests of
-    # properties
+    @property
     def daterange(self):
         """The javascript variable giving the allowed date range to pick.
 
@@ -317,8 +313,6 @@ class DateTimeWidget(TextWidget):
         else:
             daterange += self.to_date.strftime("[%Y,%m,%d]]")
         return daterange
-
-    daterange = property(daterange, doc=daterange.__doc__)
 
     def getInputValue(self):
         """Return the date, if it is in the allowed date range."""

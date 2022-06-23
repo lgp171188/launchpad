@@ -11,12 +11,12 @@ Badges are shown in two main places:
 __all__ = [
     "Badge",
     "HasBadgeBase",
-    "IHasBadges",
     "STANDARD_BADGES",
 ]
 
-from zope.interface import Interface, implementer
+from zope.interface import implementer
 
+from lp.app.browser.interfaces import IHasBadges
 from lp.services.privacy.interfaces import IObjectPrivacy
 
 
@@ -107,20 +107,6 @@ STANDARD_BADGES = {
     ),
     "patch": Badge(None, None, "(Has a patch)", "Has a patch", "haspatch"),
 }
-
-
-class IHasBadges(Interface):
-    """A method to determine visible badges.
-
-    Badges are used to show connections between different content objects, for
-    example a BugBranch is a link between a bug and a branch.  To represent
-    this link a bug has a branch badge, and the branch has a bug badge.
-
-    Badges should honour the visibility of the linked objects.
-    """
-
-    def getVisibleBadges():
-        """Return a list of `Badge` objects that the logged in user can see."""
 
 
 @implementer(IHasBadges)

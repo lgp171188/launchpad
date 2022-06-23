@@ -10,9 +10,10 @@ __all__ = [
 ]
 
 from itertools import repeat
+from typing import Optional, Type
 
 from zope.component import queryAdapter
-from zope.interface import implementer
+from zope.interface import Interface, implementer
 from zope.security.permission import checkPermission
 
 from lp.app.interfaces.security import IAuthorization
@@ -20,8 +21,8 @@ from lp.app.interfaces.security import IAuthorization
 
 @implementer(IAuthorization)
 class AuthorizationBase:
-    permission = None
-    usedfor = None
+    permission = None  # type: Optional[str]
+    usedfor = None  # type: Optional[Type[Interface]]
 
     def __init__(self, obj):
         self.obj = obj

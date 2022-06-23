@@ -32,7 +32,7 @@ from zope.traversing.interfaces import (
 )
 
 from lp import _
-from lp.app.browser.badge import IHasBadges
+from lp.app.browser.interfaces import IHasBadges
 from lp.app.browser.stringformatter import FormattersAPI
 from lp.app.enums import PRIVATE_INFORMATION_TYPES
 from lp.app.interfaces.launchpad import (
