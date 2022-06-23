@@ -9,10 +9,9 @@ but testing all the possible transitions makes the documentation more heavy
 than necessary. This is tested here.
 """
 
-__all__ = []
-
 import traceback
 from datetime import datetime, timedelta
+from typing import List
 
 from lazr.lifecycle.interfaces import IObjectCreatedEvent, IObjectModifiedEvent
 from pytz import UTC
@@ -39,6 +38,8 @@ from lp.testing import (
 )
 from lp.testing.fixture import ZopeEventHandlerFixture
 from lp.testing.layers import DatabaseFunctionalLayer
+
+__all__ = []  # type: List[str]
 
 
 class BaseAnswerTrackerWorkflowTestCase(TestCase):

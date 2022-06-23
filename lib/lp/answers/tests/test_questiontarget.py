@@ -2,8 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests related to IQuestionTarget."""
-
-__all__ = []
+from typing import List
 
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -17,6 +16,8 @@ from lp.testing import (
     person_logged_in,
 )
 from lp.testing.layers import DatabaseFunctionalLayer
+
+__all__ = []  # type: List[str]
 
 
 class QuestionTargetAnswerContactTestCase(TestCaseWithFactory):

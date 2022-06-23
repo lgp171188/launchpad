@@ -8,7 +8,10 @@ __all__ = [
     "SearchFAQsView",
 ]
 
+from typing import Type
 from urllib.parse import urlencode
+
+from zope.interface import Interface
 
 from lp import _
 from lp.answers.enums import QUESTION_STATUS_DEFAULT_SEARCH, QuestionSort
@@ -28,7 +31,7 @@ from lp.services.webapp.menu import enabled_with_permission
 class FAQCollectionMenu(NavigationMenu):
     """Base menu definition for `IFAQCollection`."""
 
-    usedfor = IFAQCollection
+    usedfor = IFAQCollection  # type: Type[Interface]
     facet = "answers"
     links = ["list_all", "create_faq"]
 
@@ -82,7 +85,9 @@ class SearchFAQsView(LaunchpadFormView):
         else:
             return _("FAQs for $displayname", mapping=replacements)
 
-    label = page_title
+    @property
+    def label(self):
+        return self.page_title
 
     @property
     def empty_listing_message(self):
