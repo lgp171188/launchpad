@@ -22,6 +22,7 @@ run-child() {
 # Load local settings.
 if [ -e "$HOME/.rocketfuel-env.sh" ]
 then
+    # shellcheck disable=SC1091
     source "$HOME/.rocketfuel-env.sh"
 else
     echo "Please run rocketfuel-setup first." >&2

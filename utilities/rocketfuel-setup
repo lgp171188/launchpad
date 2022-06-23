@@ -223,6 +223,7 @@ LP_SOURCEDEPS_PATH=\$(eval echo \${LP_SOURCEDEPS_PATH})
 " > "$HOME/.rocketfuel-env.sh"
 fi
 
+# shellcheck disable=SC1091
 if ! source "$HOME/.rocketfuel-env.sh"; then
     echo "Something went wrong with rocketfuel-setup!"
     exit 1
