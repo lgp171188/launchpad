@@ -1,3 +1,58 @@
 [tool.black]
 line-length = 79
 target-version = ['py35']
+
+[tool.mypy]
+python_version = "3.5"
+exclude = [
+    '/interfaces/',
+    'interfaces\.py$',
+]
+
+[[tool.mypy.overrides]]
+module = "zope.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "twisted.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "storm.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "lazr.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "testtools.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "responses"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "transaction"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "soupmatchers"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "defusedxml.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "testscenarios.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pystache"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "fixtures"
+ignore_missing_imports = true
