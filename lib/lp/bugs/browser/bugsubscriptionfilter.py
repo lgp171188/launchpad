@@ -115,14 +115,14 @@ class BugSubscriptionFilterEditViewBase(
     """Base class for edit or create views of `IBugSubscriptionFilter`."""
 
     schema = IBugSubscriptionFilter
-    field_names = (
+    field_names = [
         "description",
         "statuses",
         "importances",
         "information_types",
         "tags",
         "find_all_tags",
-    )
+    ]
 
     custom_widget_description = CustomWidgetFactory(
         TextWidget, displayWidth=50
@@ -159,7 +159,9 @@ class BugSubscriptionFilterEditViewBase(
         """Return to the user's structural subscriptions page."""
         return canonical_url(self.user, view_name="+structural-subscriptions")
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
 
 class BugSubscriptionFilterEditView(BugSubscriptionFilterEditViewBase):

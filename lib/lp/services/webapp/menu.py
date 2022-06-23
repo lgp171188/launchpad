@@ -19,6 +19,7 @@ __all__ = [
 ]
 
 import types
+from typing import List
 
 from lazr.delegates import delegate_to
 from lazr.restful.utils import get_current_browser_request
@@ -198,7 +199,7 @@ MENU_ANNOTATION_KEY = "lp.services.webapp.menu.links"
 class MenuBase(UserAttributeCache):
     """Base class for facets and menus."""
 
-    links = None
+    links = None  # type: List[str]
     extra_attributes = None
     enable_only = ALL_LINKS
     _baseclassname = "MenuBase"
@@ -400,7 +401,7 @@ class NavigationMenu(MenuBase):
 
     _baseclassname = "NavigationMenu"
 
-    title = None
+    title = None  # type: str
     disabled = False
 
     def initLink(self, linkname, request_url):

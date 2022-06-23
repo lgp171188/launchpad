@@ -30,8 +30,8 @@ from lp.bugs.externalbugtracker.github import (
     BadGitHubURL,
     GitHub,
     GitHubExceededRateLimit,
-    IGitHubRateLimit,
 )
+from lp.bugs.externalbugtracker.interfaces import IGitHubRateLimit
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.interfaces.bugtracker import BugTrackerType
 from lp.bugs.interfaces.externalbugtracker import IExternalBugTracker

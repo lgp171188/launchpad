@@ -58,7 +58,7 @@ class EmailCommand:
     Both name the values in the args list are strings.
     """
 
-    _numberOfArguments = None
+    _numberOfArguments = None  # type: int
 
     # Should command arguments be converted to lowercase?
     case_insensitive_args = True

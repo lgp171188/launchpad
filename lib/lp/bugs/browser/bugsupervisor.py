@@ -54,7 +54,9 @@ class BugSupervisorEditView(LaunchpadEditFormView):
         """See `LaunchpadFormView`."""
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     @action("Change", name="change")
     def change_action(self, action, data):

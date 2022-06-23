@@ -303,8 +303,8 @@ class TestBugTaskStatusTransitionForPrivilegedUserBase:
 
     layer = DatabaseFunctionalLayer
 
-    def setUp(self):
-        super().setUp()
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, **kwargs)
         # Creation of task and target are deferred to subclasses.
         self.task = None
         self.person = None

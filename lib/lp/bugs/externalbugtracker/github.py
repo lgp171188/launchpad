@@ -7,7 +7,6 @@ __all__ = [
     "BadGitHubURL",
     "GitHub",
     "GitHubRateLimit",
-    "IGitHubRateLimit",
 ]
 
 import http.client
@@ -18,7 +17,6 @@ from urllib.parse import urlencode, urlunsplit
 import pytz
 import requests
 from zope.component import getUtility
-from zope.interface import Interface
 
 from lp.bugs.externalbugtracker import (
     BugTrackerConnectError,
@@ -28,6 +26,7 @@ from lp.bugs.externalbugtracker import (
     UnparsableBugTrackerVersion,
 )
 from lp.bugs.externalbugtracker.base import LP_USER_AGENT
+from lp.bugs.externalbugtracker.interfaces import IGitHubRateLimit
 from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.bugs.interfaces.externalbugtracker import UNKNOWN_REMOTE_IMPORTANCE
 from lp.services.config import config
@@ -46,24 +45,6 @@ class GitHubExceededRateLimit(BugWatchUpdateError):
             self.host,
             time.ctime(self.reset),
         )
-
-
-class IGitHubRateLimit(Interface):
-    """Interface for rate-limit tracking for the GitHub Issues API."""
-
-    def checkLimit(url, token=None):
-        """A context manager that checks the remote host's rate limit.
-
-        :param url: The URL being requested.
-        :param token: If not None, an OAuth token to use as authentication
-            to the remote host when asking it for the current rate limit.
-        :return: A suitable `Authorization` header (from the context
-            manager's `__enter__` method).
-        :raises GitHubExceededRateLimit: if the rate limit was exceeded.
-        """
-
-    def clearCache():
-        """Forget any cached rate limits."""
 
 
 class GitHubRateLimit:

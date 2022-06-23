@@ -40,6 +40,7 @@ __all__ = [
 
 
 from operator import attrgetter
+from typing import Type
 from urllib.parse import urlunsplit
 
 from breezy import urlutils
@@ -1410,7 +1411,7 @@ class ProductBrandingView(BrandingChangeView):
 
 @implementer(IProductEditMenu)
 class ProductConfigureBase(ReturnToReferrerMixin, LaunchpadEditFormView):
-    schema = IProduct
+    schema = IProduct  # type: Type[Interface]
     usage_fieldname = None
 
     def setUpFields(self):

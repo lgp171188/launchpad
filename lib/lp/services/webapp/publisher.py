@@ -29,6 +29,12 @@ import http.client
 import json
 import re
 from cgi import FieldStorage
+from typing import (
+    Any,
+    Dict,
+    Optional,
+    Type,
+)
 from urllib.parse import urlparse
 from wsgiref.headers import Headers
 
@@ -517,7 +523,7 @@ class LaunchpadView(UserAttributeCache):
         return None
 
     # Names of feature flags which affect a view.
-    related_features = ()
+    related_features = {}  # type: Dict[str, bool]
 
     @property
     def related_feature_info(self):
@@ -899,7 +905,7 @@ class Navigation:
         self.request = request
 
     # Set this if you want to set a new layer before doing any traversal.
-    newlayer = None
+    newlayer = None  # type: Optional[Type[Any]]
 
     def traverse(self, name):
         """Override this method to handle traversal.
