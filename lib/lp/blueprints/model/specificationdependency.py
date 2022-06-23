@@ -1,13 +1,13 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['SpecificationDependency']
+__all__ = ["SpecificationDependency"]
 
 from zope.interface import implementer
 
 from lp.blueprints.interfaces.specificationdependency import (
     ISpecificationDependency,
-    )
+)
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import ForeignKey
 
@@ -16,8 +16,10 @@ from lp.services.database.sqlobject import ForeignKey
 class SpecificationDependency(SQLBase):
     """A link between a spec and a bug."""
 
-    _table = 'SpecificationDependency'
-    specification = ForeignKey(dbName='specification',
-        foreignKey='Specification', notNull=True)
-    dependency = ForeignKey(dbName='dependency',
-        foreignKey='Specification', notNull=True)
+    _table = "SpecificationDependency"
+    specification = ForeignKey(
+        dbName="specification", foreignKey="Specification", notNull=True
+    )
+    dependency = ForeignKey(
+        dbName="dependency", foreignKey="Specification", notNull=True
+    )

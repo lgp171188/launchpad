@@ -4,9 +4,9 @@
 """Specification message interfaces."""
 
 __all__ = [
-    'ISpecificationMessage',
-    'ISpecificationMessageSet',
-    ]
+    "ISpecificationMessage",
+    "ISpecificationMessageSet",
+]
 
 from lazr.restful.fields import Reference
 from zope.interface import Interface
@@ -19,11 +19,13 @@ from lp.services.messages.interfaces.message import IMessage
 class ISpecificationMessage(Interface):
     """A link between a specification and a message."""
 
-    specification = Reference(schema=ISpecification,
-        title="The specification.")
+    specification = Reference(
+        schema=ISpecification, title="The specification."
+    )
     message = Reference(schema=IMessage, title="The message.")
-    visible = Bool(title="Is this message visible?", required=False,
-        default=True)
+    visible = Bool(
+        title="Is this message visible?", required=False, default=True
+    )
 
 
 class ISpecificationMessageSet(Interface):

@@ -1,10 +1,7 @@
 # Copyright 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.views import create_initialized_view
 
@@ -25,7 +22,8 @@ class SpecificationPortletSubscribersContentsTestCase(TestCaseWithFactory):
             sub2 = spec.subscribe(subscriber1, subscriber)
             sub3 = spec.subscribe(subscriber2, subscriber)
             view = create_initialized_view(
-                spec, name="+blueprint-portlet-subscribers-content")
+                spec, name="+blueprint-portlet-subscribers-content"
+            )
             self.assertEqual([sub1, sub3, sub2], view.sorted_subscriptions)
 
 
@@ -40,8 +38,10 @@ class TestSpecificationPortletSubcribersIds(TestCaseWithFactory):
         with person_logged_in(person):
             spec.subscribe(subscriber, subscriber)
             view = create_initialized_view(
-                spec, name="+blueprint-portlet-subscribers-ids")
+                spec, name="+blueprint-portlet-subscribers-ids"
+            )
             subscriber_ids = {
-                    subscriber.name: 'subscriber-%s' % subscriber.id
-                    for subscriber in [person, subscriber]}
+                subscriber.name: "subscriber-%s" % subscriber.id
+                for subscriber in [person, subscriber]
+            }
             self.assertEqual(subscriber_ids, view.subscriber_ids)

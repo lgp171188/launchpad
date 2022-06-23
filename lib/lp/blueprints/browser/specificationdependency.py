@@ -4,34 +4,28 @@
 """Views for SpecificationDependency."""
 
 __all__ = [
-    'SpecificationDependencyAddView',
-    'SpecificationDependencyRemoveView',
-    'SpecificationDependencyTreeView',
-    ]
+    "SpecificationDependencyAddView",
+    "SpecificationDependencyRemoveView",
+    "SpecificationDependencyTreeView",
+]
 
 from lazr.restful.interface import copy_field
 from zope.interface import Interface
 
 from lp import _
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action
 from lp.blueprints.interfaces.specificationdependency import (
     ISpecificationDependency,
     ISpecificationDependencyRemoval,
-    )
+)
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp import LaunchpadView, canonical_url
 
 
 class AddSpecificationDependencySchema(Interface):
 
     dependency = copy_field(
-        ISpecificationDependency['dependency'],
+        ISpecificationDependency["dependency"],
         readonly=False,
         description=_(
             "If another blueprint needs to be fully implemented "
@@ -39,12 +33,14 @@ class AddSpecificationDependencySchema(Interface):
             "dependency here so Launchpad knows about it and can "
             "give you an accurate project plan.  You can enter the "
             "name of a blueprint that has the same target, or the "
-            "URL of any blueprint."))
+            "URL of any blueprint."
+        ),
+    )
 
 
 class SpecificationDependencyAddView(LaunchpadFormView):
     schema = AddSpecificationDependencySchema
-    label = _('Depends On')
+    label = _("Depends On")
 
     def validate(self, data):
         """See `LaunchpadFormView.validate`.
@@ -53,17 +49,18 @@ class SpecificationDependencyAddView(LaunchpadFormView):
         widget -- it will be the infamously inscrutable 'Invalid Value' -- we
         replace it here.
         """
-        if self.getFieldError('dependency'):
-            token = self.request.form.get(self.widgets['dependency'].name)
+        if self.getFieldError("dependency"):
+            token = self.request.form.get(self.widgets["dependency"].name)
             self.setFieldError(
-                'dependency',
+                "dependency",
                 'There is no blueprint named "%s" in %s, or '
-                '%s isn\'t valid dependency of that blueprint.' %
-                (token, self.context.target.name, self.context.name))
+                "%s isn't valid dependency of that blueprint."
+                % (token, self.context.target.name, self.context.name),
+            )
 
-    @action(_('Continue'), name='linkdependency')
+    @action(_("Continue"), name="linkdependency")
     def linkdependency_action(self, action, data):
-        self.context.createDependency(data['dependency'])
+        self.context.createDependency(data["dependency"])
 
     @property
     def next_url(self):
@@ -76,13 +73,13 @@ class SpecificationDependencyAddView(LaunchpadFormView):
 
 class SpecificationDependencyRemoveView(LaunchpadFormView):
     schema = ISpecificationDependencyRemoval
-    label = 'Remove a dependency'
-    field_names = ['dependency']
+    label = "Remove a dependency"
+    field_names = ["dependency"]
     for_input = True
 
-    @action('Continue', name='continue')
+    @action("Continue", name="continue")
     def continue_action(self, action, data):
-        self.context.removeDependency(data['dependency'])
+        self.context.removeDependency(data["dependency"])
         self.next_url = canonical_url(self.context)
 
     @property

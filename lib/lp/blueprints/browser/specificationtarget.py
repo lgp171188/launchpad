@@ -4,32 +4,23 @@
 """ISpecificationTarget browser views."""
 
 __all__ = [
-    'HasSpecificationsMenuMixin',
-    'HasSpecificationsView',
-    'RegisterABlueprintButtonPortlet',
-    'SpecificationAssignmentsView',
-    'SpecificationDocumentationView',
-    ]
+    "HasSpecificationsMenuMixin",
+    "HasSpecificationsView",
+    "RegisterABlueprintButtonPortlet",
+    "SpecificationAssignmentsView",
+    "SpecificationDocumentationView",
+]
 
 from operator import itemgetter
 
 from lazr.restful.utils import smartquote
 from zope.browserpage import ViewPageTemplateFile
-from zope.component import (
-    getMultiAdapter,
-    queryMultiAdapter,
-    )
+from zope.component import getMultiAdapter, queryMultiAdapter
 
 from lp import _
 from lp.app.enums import service_uses_launchpad
-from lp.app.interfaces.launchpad import (
-    IPrivacy,
-    IServiceUsage,
-    )
-from lp.blueprints.enums import (
-    SpecificationFilter,
-    SpecificationSort,
-    )
+from lp.app.interfaces.launchpad import IPrivacy, IServiceUsage
+from lp.blueprints.enums import SpecificationFilter, SpecificationSort
 from lp.blueprints.interfaces.specificationtarget import ISpecificationTarget
 from lp.blueprints.interfaces.sprint import ISprint
 from lp.registry.interfaces.distribution import IDistribution
@@ -40,69 +31,62 @@ from lp.registry.interfaces.productseries import IProductSeries
 from lp.registry.interfaces.projectgroup import (
     IProjectGroup,
     IProjectGroupSeries,
-    )
+)
 from lp.registry.interfaces.role import IHasDrivers
 from lp.services.config import config
 from lp.services.helpers import shortlist
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp import LaunchpadView, canonical_url
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import BatchNavigator
-from lp.services.webapp.menu import (
-    enabled_with_permission,
-    Link,
-    )
+from lp.services.webapp.menu import Link, enabled_with_permission
 
 
 class HasSpecificationsMenuMixin:
-
     def listall(self):
         """Return a link to show all blueprints."""
-        text = 'List all blueprints'
-        return Link('+specs?show=all', text, icon='blueprint')
+        text = "List all blueprints"
+        return Link("+specs?show=all", text, icon="blueprint")
 
     def listaccepted(self):
         """Return a link to show the approved goals."""
-        text = 'List approved blueprints'
-        return Link('+specs?acceptance=accepted', text, icon='blueprint')
+        text = "List approved blueprints"
+        return Link("+specs?acceptance=accepted", text, icon="blueprint")
 
     def listproposed(self):
         """Return a link to show the proposed goals."""
-        text = 'List proposed blueprints'
-        return Link('+specs?acceptance=proposed', text, icon='blueprint')
+        text = "List proposed blueprints"
+        return Link("+specs?acceptance=proposed", text, icon="blueprint")
 
     def listdeclined(self):
         """Return a link to show the declined goals."""
-        text = 'List declined blueprints'
-        return Link('+specs?acceptance=declined', text, icon='blueprint')
+        text = "List declined blueprints"
+        return Link("+specs?acceptance=declined", text, icon="blueprint")
 
     def doc(self):
-        text = 'List documentation'
-        return Link('+documentation', text, icon='info')
+        text = "List documentation"
+        return Link("+documentation", text, icon="info")
 
     def setgoals(self):
         """Return a link to set the series goals."""
-        text = 'Set series goals'
-        return Link('+setgoals', text, icon='edit')
+        text = "Set series goals"
+        return Link("+setgoals", text, icon="edit")
 
     def assignments(self):
         """Return a link to show the people assigned to the blueprint."""
-        text = 'Assignments'
-        return Link('+assignments', text, icon='person')
+        text = "Assignments"
+        return Link("+assignments", text, icon="person")
 
     def new(self):
         """Return a link to register a blueprint."""
-        text = 'Register a blueprint'
-        return Link('+addspec', text, icon='add')
+        text = "Register a blueprint"
+        return Link("+addspec", text, icon="add")
 
-    @enabled_with_permission('launchpad.View')
+    @enabled_with_permission("launchpad.View")
     def register_sprint(self):
-        text = 'Register a meeting'
-        summary = 'Register a developer sprint, summit, or gathering'
-        return Link('/sprints/+new', text, summary=summary, icon='add')
+        text = "Register a meeting"
+        summary = "Register a developer sprint, summit, or gathering"
+        return Link("/sprints/+new", text, summary=summary, icon="add")
 
 
 class HasSpecificationsView(LaunchpadView):
@@ -147,9 +131,11 @@ class HasSpecificationsView(LaunchpadView):
     # * Disabled
     # * Unknown
     default_template = ViewPageTemplateFile(
-        '../templates/hasspecifications-specs.pt')
+        "../templates/hasspecifications-specs.pt"
+    )
     not_launchpad_template = ViewPageTemplateFile(
-        '../templates/unknown-specs.pt')
+        "../templates/unknown-specs.pt"
+    )
 
     @property
     def template(self):
@@ -158,23 +144,25 @@ class HasSpecificationsView(LaunchpadView):
         # zope.browserpage.simpleviewclass.simple class that is magically
         # mixed in by the browser:page zcml directive the template defined in
         # the directive should be used.
-        if hasattr(self, 'index'):
+        if hasattr(self, "index"):
             return super().template
 
         # Sprints and Persons don't have a usage enum for blueprints, so we
         # have to fallback to the default.
-        if (ISprint.providedBy(self.context)
-            or IPerson.providedBy(self.context)):
+        if ISprint.providedBy(self.context) or IPerson.providedBy(
+            self.context
+        ):
             return self.default_template
 
         # ProjectGroups are a special case, as their products may be a
         # combination of usage settings. To deal with this, check all
         # products via the involvment menu.
-        if (IProjectGroup.providedBy(self.context)
-            or IProjectGroupSeries.providedBy(self.context)):
+        if IProjectGroup.providedBy(
+            self.context
+        ) or IProjectGroupSeries.providedBy(self.context):
             involvement = getMultiAdapter(
-                (self.context, self.request),
-                name='+get-involved')
+                (self.context, self.request), name="+get-involved"
+            )
             if service_uses_launchpad(involvement.blueprints_usage):
                 return self.default_template
             else:
@@ -214,42 +202,42 @@ class HasSpecificationsView(LaunchpadView):
             self.show_milestone = True
             self.show_target = True
             self.show_series = True
-        elif (IProductSeries.providedBy(self.context) or
-              IDistroSeries.providedBy(self.context)):
+        elif IProductSeries.providedBy(
+            self.context
+        ) or IDistroSeries.providedBy(self.context):
             self.is_series = True
             self.show_milestone = True
         elif ISprint.providedBy(self.context):
             self.is_sprint = True
             self.show_target = True
         else:
-            raise AssertionError('Unknown blueprint listing site.')
+            raise AssertionError("Unknown blueprint listing site.")
 
         if IHasDrivers.providedBy(self.context):
             self.has_drivers = True
 
         self.batchnav = BatchNavigator(
-            self.specs, self.request,
-            size=config.launchpad.default_batch_size)
+            self.specs, self.request, size=config.launchpad.default_batch_size
+        )
 
     @property
     def can_configure_blueprints(self):
-        """Can the user configure blueprints for the `ISpecificationTarget`.
-        """
+        """Can the user configure blueprints for the `ISpecificationTarget`."""
         target = self.context
         if IProduct.providedBy(target) or IDistribution.providedBy(target):
-            return check_permission('launchpad.Edit', self.context)
+            return check_permission("launchpad.Edit", self.context)
         else:
             return False
 
     @property
     def label(self):
-        mapping = {'name': self.context.displayname}
+        mapping = {"name": self.context.displayname}
         if self.is_person:
-            return _('Blueprints involving $name', mapping=mapping)
+            return _("Blueprints involving $name", mapping=mapping)
         else:
-            return _('Blueprints for $name', mapping=mapping)
+            return _("Blueprints for $name", mapping=mapping)
 
-    page_title = 'Blueprints'
+    page_title = "Blueprints"
 
     @cachedproperty
     def has_any_specifications(self):
@@ -265,9 +253,9 @@ class HasSpecificationsView(LaunchpadView):
 
     @cachedproperty
     def searchtext(self):
-        st = self.request.form.get('searchtext')
+        st = self.request.form.get("searchtext")
         if st is None:
-            st = self.request.form.get('field.searchtext')
+            st = self.request.form.get("field.searchtext")
         return st
 
     @cachedproperty
@@ -288,23 +276,23 @@ class HasSpecificationsView(LaunchpadView):
         This method will interpret the show= part based on the kind of
         object that is the context of this request.
         """
-        show = self.request.form.get('show')
-        acceptance = self.request.form.get('acceptance')
-        role = self.request.form.get('role')
-        informational = self.request.form.get('informational', False)
+        show = self.request.form.get("show")
+        acceptance = self.request.form.get("acceptance")
+        role = self.request.form.get("role")
+        informational = self.request.form.get("informational", False)
 
         filter = []
 
         # include text for filtering if it was given
         if self.searchtext is not None and len(self.searchtext) > 0:
-            filter.append(self.searchtext.replace('%', '%%'))
+            filter.append(self.searchtext.replace("%", "%%"))
 
         # filter on completeness
-        if show == 'all':
+        if show == "all":
             filter.append(SpecificationFilter.ALL)
-        elif show == 'complete':
+        elif show == "complete":
             filter.append(SpecificationFilter.COMPLETE)
-        elif show == 'incomplete':
+        elif show == "incomplete":
             filter.append(SpecificationFilter.INCOMPLETE)
 
         # filter for informational status
@@ -314,39 +302,41 @@ class HasSpecificationsView(LaunchpadView):
         # filter on relationship or role. the underlying class will give us
         # the aggregate of everything if we don't explicitly select one or
         # more
-        if role == 'registrant':
+        if role == "registrant":
             filter.append(SpecificationFilter.CREATOR)
-        elif role == 'assignee':
+        elif role == "assignee":
             filter.append(SpecificationFilter.ASSIGNEE)
-        elif role == 'drafter':
+        elif role == "drafter":
             filter.append(SpecificationFilter.DRAFTER)
-        elif role == 'approver':
+        elif role == "approver":
             filter.append(SpecificationFilter.APPROVER)
-        elif role == 'subscriber':
+        elif role == "subscriber":
             filter.append(SpecificationFilter.SUBSCRIBER)
 
         # filter for acceptance state
-        if acceptance == 'declined':
+        if acceptance == "declined":
             filter.append(SpecificationFilter.DECLINED)
-        elif show == 'proposed':
+        elif show == "proposed":
             filter.append(SpecificationFilter.PROPOSED)
-        elif show == 'accepted':
+        elif show == "accepted":
             filter.append(SpecificationFilter.ACCEPTED)
 
         return filter
 
     @property
     def specs(self):
-        if (IPrivacy.providedBy(self.context)
-                and self.context.private
-                and not check_permission('launchpad.View', self.context)):
+        if (
+            IPrivacy.providedBy(self.context)
+            and self.context.private
+            and not check_permission("launchpad.View", self.context)
+        ):
             return []
         return self.context.specifications(self.user, filter=self.spec_filter)
 
     @cachedproperty
     def specs_batched(self):
         navigator = BatchNavigator(self.specs, self.request, size=500)
-        navigator.setHeadings('specification', 'specifications')
+        navigator.setHeadings("specification", "specifications")
         return navigator
 
     @cachedproperty
@@ -355,8 +345,10 @@ class HasSpecificationsView(LaunchpadView):
 
     @cachedproperty
     def documentation(self):
-        filter = [SpecificationFilter.COMPLETE,
-                  SpecificationFilter.INFORMATIONAL]
+        filter = [
+            SpecificationFilter.COMPLETE,
+            SpecificationFilter.INFORMATIONAL,
+        ]
         return shortlist(self.context.specifications(self.user, filter=filter))
 
     @cachedproperty
@@ -385,12 +377,12 @@ class HasSpecificationsView(LaunchpadView):
                 category = categories[spec.definition_status]
             else:
                 category = {}
-                category['status'] = spec.definition_status
-                category['specs'] = []
+                category["status"] = spec.definition_status
+                category["specs"] = []
                 categories[spec.definition_status] = category
-            category['specs'].append(spec)
+            category["specs"].append(spec)
         categories = categories.values()
-        return sorted(categories, key=itemgetter('definition_status'))
+        return sorted(categories, key=itemgetter("definition_status"))
 
     def getLatestSpecifications(self, quantity=5):
         """Return <quantity> latest specs created for this target.
@@ -398,29 +390,38 @@ class HasSpecificationsView(LaunchpadView):
         Only ACCEPTED specifications are returned.  This list is used by the
         +portlet-latestspecs view.
         """
-        return self.context.specifications(self.user,
-            sort=SpecificationSort.DATE, quantity=quantity,
-            need_people=False, need_branches=False, need_workitems=False)
+        return self.context.specifications(
+            self.user,
+            sort=SpecificationSort.DATE,
+            quantity=quantity,
+            need_people=False,
+            need_branches=False,
+            need_workitems=False,
+        )
 
 
 class SpecificationAssignmentsView(HasSpecificationsView):
     """View for +assignments pages."""
+
     page_title = "Assignments"
 
     @property
     def label(self):
         return smartquote(
-            'Blueprint assignments for "%s"' % self.context.displayname)
+            'Blueprint assignments for "%s"' % self.context.displayname
+        )
 
 
 class SpecificationDocumentationView(HasSpecificationsView):
     """View for blueprints +documentation page."""
+
     page_title = "Documentation"
 
     @property
     def label(self):
-        return smartquote('Current documentation for "%s"' %
-                          self.context.displayname)
+        return smartquote(
+            'Current documentation for "%s"' % self.context.displayname
+        )
 
 
 class RegisterABlueprintButtonPortlet:
@@ -430,8 +431,7 @@ class RegisterABlueprintButtonPortlet:
     def target_url(self):
         """The +addspec URL for the specifiation target or None"""
         # Check if the context has an +addspec view available.
-        if queryMultiAdapter(
-            (self.context, self.request), name='+addspec'):
+        if queryMultiAdapter((self.context, self.request), name="+addspec"):
             target = self.context
         else:
             # otherwise find an adapter to ISpecificationTarget which will.
@@ -440,12 +440,14 @@ class RegisterABlueprintButtonPortlet:
             return None
         else:
             return canonical_url(
-                target, rootsite='blueprints', view_name='+addspec')
+                target, rootsite="blueprints", view_name="+addspec"
+            )
 
     def __call__(self):
         if self.target_url is None:
-            return ''
-        return """
+            return ""
+        return (
+            """
             <div id="involvement" class="portlet involvement">
               <ul>
                 <li class="first">
@@ -454,4 +456,6 @@ class RegisterABlueprintButtonPortlet:
                 </li>
               </ul>
             </div>
-            """ % self.target_url
+            """
+            % self.target_url
+        )
