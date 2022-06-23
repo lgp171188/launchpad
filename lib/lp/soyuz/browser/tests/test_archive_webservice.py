@@ -131,6 +131,24 @@ class TestArchiveWebservice(TestCaseWithFactory):
         # A random user can't delete someone else's PPA.
         self.assertEqual(401, ws.delete(ppa_url).status)
 
+    def test_publishing_enabled(self):
+        with admin_logged_in():
+            archive = self.factory.makeArchive()
+            archive_url = api_url(archive)
+            ws = webservice_for_person(
+                self.factory.makePerson(),
+                permission=OAuthPermission.WRITE_PUBLIC)
+            ws_archive = self.getWebserviceJSON(ws, archive_url)
+
+        self.assertTrue(ws_archive["can_be_published"])
+
+        response = ws.patch(
+            archive_url, "application/json",
+            json.dumps({"can_be_published": False}))
+        self.assertThat(response, MatchesStructure(
+            status=Equals(400),
+            body=Contains(b"You tried to modify a read-only attribute")))
+
 
 class TestSigningKey(TestCaseWithFactory):
     """Test signing-key-related information for archives.
