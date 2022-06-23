@@ -35,7 +35,7 @@ done
 
 if [ -z "$lpusername" ]; then
   # Establish LP username
-  whoami=`whoami`
+  whoami=$(whoami)
   printf "What is your Launchpad username? [$whoami] "
   read lpusername
   if [ -z "$lpusername" ]; then
