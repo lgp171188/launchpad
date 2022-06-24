@@ -167,6 +167,14 @@ class ArtifactoryPoolEntry:
         above example might end up as `"launchpad.channel": ["focal:stable",
         "jammy:candidate"]`.  This can easily be matched by AQL queries and
         used to generate more specific repositories.
+
+        Note that all the property values here must be sorted lists, even if
+        those are single-item lists.  If we use simple strings, then things
+        mostly work because `artifactory.encode_properties` will still
+        encode them properly, but they won't match the values returned by
+        the AQL search via `ArtifactoryPool.getAllArtifacts`, and so
+        `updateProperties` will always try to update them even if there
+        aren't really any changes.
         """
         properties = {}
         properties["launchpad.release-id"] = [release_id]
