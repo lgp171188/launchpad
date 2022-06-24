@@ -453,12 +453,11 @@ class IArchiveSubscriberView(Interface):
         description=_("Whether or not to update the apt repository.  If "
             "disabled, nothing will be published.  If the archive is "
             "private then additionally no builds will be dispatched."))
-    can_be_published = exported(Bool(
+    can_be_published = Bool(
         title=_("Can be published"), required=True,
         description=_(
             "True if this archive can be published, considering both the "
-            "explicit publish flag and any other constraints."),
-        readonly=True))
+            "explicit publish flag and any other constraints."))
     series_with_sources = Attribute(
         "DistroSeries to which this archive has published sources")
     signing_key_owner = Reference(
@@ -817,6 +816,12 @@ class IArchiveView(IHasBuildRecords):
     repository_format = Choice(
         title=_("Repository format"), vocabulary=ArchiveRepositoryFormat,
         required=True, readonly=False)
+
+    api_publish = exported(Bool(
+        title=_("Publishing enabled"),
+        required=False, readonly=False,
+        description=_("Whether or not publishing is enabled.")),
+        exported_as="publish")
 
     @call_with(check_permissions=True, user=REQUEST_USER)
     @operation_parameters(

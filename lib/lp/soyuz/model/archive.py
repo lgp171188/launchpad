@@ -467,6 +467,19 @@ class Archive(SQLBase):
             self.signing_key_fingerprint is not None)
 
     @property
+    def api_publish(self):
+        """See `IArchive`."""
+        return self.publish
+
+    @api_publish.setter
+    def api_publish(self, value):
+        if value:
+            if self.status == ArchiveStatus.ACTIVE:
+                self.publish = value
+        else:
+            self.publish = value
+
+    @property
     def reference(self):
         template = ARCHIVE_REFERENCE_TEMPLATES.get(self.purpose)
         if template is None:

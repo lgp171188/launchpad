@@ -136,18 +136,55 @@ class TestArchiveWebservice(TestCaseWithFactory):
             archive = self.factory.makeArchive()
             archive_url = api_url(archive)
             ws = webservice_for_person(
-                self.factory.makePerson(),
-                permission=OAuthPermission.WRITE_PUBLIC)
-            ws_archive = self.getWebserviceJSON(ws, archive_url)
+                archive.owner, permission=OAuthPermission.WRITE_PRIVATE,
+                default_api_version="devel")
 
-        self.assertTrue(ws_archive["can_be_published"])
+        ws_archive = self.getWebserviceJSON(ws, archive_url)
 
+        # It's exposed via API.
+        self.assertTrue(ws_archive["publish"])
+
+        # Setting it to False works.
         response = ws.patch(
             archive_url, "application/json",
-            json.dumps({"can_be_published": False}))
-        self.assertThat(response, MatchesStructure(
-            status=Equals(400),
-            body=Contains(b"You tried to modify a read-only attribute")))
+            json.dumps({
+                "publish": False,
+                }))
+        self.assertEqual(209, response.status)
+
+        ws_archive = self.getWebserviceJSON(ws, archive_url)
+        self.assertFalse(ws_archive["publish"])
+
+        # Setting it back to True works because archive is Active.
+        ws.patch(
+            archive_url, "application/json",
+            json.dumps({
+                "publish": True,
+                }))
+        ws_archive = self.getWebserviceJSON(ws, archive_url)
+        self.assertTrue(ws_archive["publish"])
+
+        # Setting it to True with archive status 
+        # different from Active won't work.
+        response = ws.delete(archive_url)
+        self.assertEqual(200, response.status)
+        ws_archive = self.getWebserviceJSON(ws, archive_url)
+        self.assertEqual('Deleting', ws_archive["status"])
+        ws.patch(
+            archive_url, "application/json",
+            json.dumps({
+                "publish": False,
+                }))
+        ws_archive = self.getWebserviceJSON(ws, archive_url)
+        self.assertFalse(ws_archive["publish"])
+
+        ws.patch(
+            archive_url, "application/json",
+            json.dumps({
+                "publish": True,
+                }))
+        ws_archive = self.getWebserviceJSON(ws, archive_url)
+        self.assertFalse(ws_archive["publish"])
 
 
 class TestSigningKey(TestCaseWithFactory):
