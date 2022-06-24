@@ -137,8 +137,8 @@ class LaunchpadScript:
 
     lock = None
     txn = None
-    usage = None
-    description = None
+    usage = ""
+    description = ""
     lockfilepath = None
     loglevel = logging.INFO
 

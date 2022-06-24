@@ -64,3 +64,27 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "feedparser"
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "apt_pkg"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "debian.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "treq"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "gpgme"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "artifactory"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "dohq_artifactory.*"
+ignore_missing_imports = true

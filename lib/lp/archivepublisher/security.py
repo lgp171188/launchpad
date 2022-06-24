@@ -2,11 +2,12 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Security adapters for the archivepublisher package."""
-
-__all__ = []
+from typing import List
 
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfig
 from lp.security import AdminByAdminsTeam
+
+__all__ = []  # type: List[str]
 
 
 class ViewPublisherConfig(AdminByAdminsTeam):

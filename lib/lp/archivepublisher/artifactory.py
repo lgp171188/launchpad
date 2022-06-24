@@ -12,7 +12,7 @@ import os
 import tempfile
 from collections import defaultdict
 from pathlib import Path, PurePath
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 from urllib.parse import quote_plus
 
 import requests
@@ -42,7 +42,7 @@ def _path_for(
     source_name: str,
     source_version: str,
     pub_file: IPackageReleaseFile,
-) -> Path:
+) -> ArtifactoryPath:
     repository_format = archive.repository_format
     if repository_format == ArchiveRepositoryFormat.DEBIAN:
         path = rootpath / poolify(source_name)
@@ -89,7 +89,7 @@ class ArtifactoryPoolEntry:
     def debug(self, *args, **kwargs) -> None:
         self.logger.debug(*args, **kwargs)
 
-    def pathFor(self, component: Optional[str] = None) -> Path:
+    def pathFor(self, component: Optional[str] = None) -> ArtifactoryPath:
         """Return the path for this file in the given component."""
         # For Artifactory publication, we ignore the component.  There's
         # only marginal benefit in having it be explicitly represented in
@@ -116,9 +116,13 @@ class ArtifactoryPoolEntry:
         be set as the "launchpad.release-id" property to keep track of this.
         """
         if ISourcePackageReleaseFile.providedBy(pub_file):
-            return "source:%d" % pub_file.sourcepackagereleaseID
+            return "source:{:d}".format(
+                pub_file.sourcepackagereleaseID
+            )  # type: ignore
         elif IBinaryPackageFile.providedBy(pub_file):
-            return "binary:%d" % pub_file.binarypackagereleaseID
+            return "binary:{:d}".format(
+                pub_file.binarypackagereleaseID
+            )  # type: ignore
         else:
             raise AssertionError("Unsupported file: %r" % pub_file)
 
@@ -416,6 +420,8 @@ class ArtifactoryPool:
         # the pool structure, and doing so would introduce significant
         # complications in terms of having to keep track of components just
         # in order to update an artifact's properties.
+        if TYPE_CHECKING:
+            assert pub_file is not None
         return _path_for(
             self.archive, self.rootpath, source_name, source_version, pub_file
         )

@@ -113,7 +113,7 @@ class CustomUpload:
     """Base class for custom upload handlers"""
 
     # This should be set as a class property on each subclass.
-    custom_type = None
+    custom_type = None  # type: str
 
     @classmethod
     def publish(cls, packageupload, libraryfilealias, logger=None):
