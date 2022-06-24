@@ -19,7 +19,7 @@ __all__ = [
 ]
 
 import types
-from typing import List
+from typing import Sequence
 
 from lazr.delegates import delegate_to
 from lazr.restful.utils import get_current_browser_request
@@ -199,7 +199,7 @@ MENU_ANNOTATION_KEY = "lp.services.webapp.menu.links"
 class MenuBase(UserAttributeCache):
     """Base class for facets and menus."""
 
-    links = None  # type: List[str]
+    links = None  # type: Sequence[str]
     extra_attributes = None
     enable_only = ALL_LINKS
     _baseclassname = "MenuBase"

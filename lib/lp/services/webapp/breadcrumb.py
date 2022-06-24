@@ -23,7 +23,7 @@ class Breadcrumb:
     This class is intended for use as an adapter.
     """
 
-    text = None
+    text = None  # type: str
     _detail = None
     _url = None
     inside = None

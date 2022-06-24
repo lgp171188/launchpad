@@ -9,6 +9,8 @@ __all__ = [
     "SpecificationBranchURL",
 ]
 
+from typing import List
+
 from zope.interface import implementer
 
 from lp import _
@@ -45,7 +47,7 @@ class SpecificationBranchStatusView(LaunchpadEditFormView):
     """Edit the summary of the SpecificationBranch link."""
 
     schema = ISpecificationBranch
-    field_names = []
+    field_names = []  # type: List[str]
     label = _("Delete link between specification and branch")
 
     def initialize(self):
@@ -84,7 +86,9 @@ class BranchLinkToSpecificationView(LaunchpadFormView):
     def next_url(self):
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     @action(_("Continue"), name="continue")
     def continue_action(self, action, data):

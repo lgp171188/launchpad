@@ -39,6 +39,7 @@ __all__ = [
 import os
 from operator import attrgetter
 from subprocess import PIPE, Popen
+from typing import List
 
 import six
 from lazr.restful.interface import copy_field, use_template
@@ -965,7 +966,9 @@ class SpecificationInformationTypeEditView(LaunchpadFormView):
         """Return the next URL to call when this call completes."""
         return None
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     @property
     def initial_values(self):
@@ -1043,7 +1046,7 @@ class SpecificationGoalDecideView(LaunchpadFormView):
     """
 
     schema = Interface
-    field_names = []
+    field_names = []  # type: List[str]
 
     @property
     def label(self):
@@ -1061,7 +1064,9 @@ class SpecificationGoalDecideView(LaunchpadFormView):
     def next_url(self):
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
 
 class ISpecificationRetargetingSchema(Interface):
@@ -1645,7 +1650,9 @@ class SpecificationLinkBranchView(LaunchpadFormView):
     def next_url(self):
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
 
 class SpecificationSetView(AppFrontPageSearchView, HasSpecificationsView):
