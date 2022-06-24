@@ -91,6 +91,9 @@ class TestBinaryPackageRelease(TestCaseWithFactory):
         self.factory.makeBinaryPackageRelease(
             binarypackagename="foo-bar_baz",
             binpackageformat=BinaryPackageFormat.CONDA_V1)
+        self.factory.makeBinaryPackageRelease(
+            binarypackagename="_foo",
+            binpackageformat=BinaryPackageFormat.CONDA_V1)
         self.assertRaises(
             BinaryPackageReleaseNameLinkageError,
             self.factory.makeBinaryPackageRelease,
@@ -108,6 +111,9 @@ class TestBinaryPackageRelease(TestCaseWithFactory):
             binpackageformat=BinaryPackageFormat.CONDA_V2)
         self.factory.makeBinaryPackageRelease(
             binarypackagename="foo-bar_baz",
+            binpackageformat=BinaryPackageFormat.CONDA_V2)
+        self.factory.makeBinaryPackageRelease(
+            binarypackagename="_foo",
             binpackageformat=BinaryPackageFormat.CONDA_V2)
         self.assertRaises(
             BinaryPackageReleaseNameLinkageError,
