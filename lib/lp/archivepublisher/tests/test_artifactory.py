@@ -897,3 +897,56 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             },
             path.properties,
         )
+
+    def test_updateProperties_encodes_special_characters(self):
+        pool = self.makePool(ArchiveRepositoryFormat.PYTHON)
+        ds = self.factory.makeDistroSeries(
+            distribution=pool.archive.distribution
+        )
+        das = self.factory.makeDistroArchSeries(distroseries=ds)
+        spr = self.factory.makeSourcePackageRelease(
+            archive=pool.archive,
+            sourcepackagename="foo",
+            version="1.0",
+            format=SourcePackageType.SDIST,
+        )
+        bpph = self.factory.makeBinaryPackagePublishingHistory(
+            archive=pool.archive,
+            distroarchseries=das,
+            pocket=PackagePublishingPocket.RELEASE,
+            component="main",
+            source_package_release=spr,
+            binarypackagename="foo",
+            binpackageformat=BinaryPackageFormat.WHL,
+            architecturespecific=False,
+            channel="edge",
+        )
+        bpr = bpph.binarypackagerelease
+        bpf = self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpr,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="foo-1.0-py3-none-any.whl"
+            ),
+            filetype=BinaryPackageFileType.WHL,
+        )
+        bpphs = [bpph]
+        transaction.commit()
+        pool.addFile(
+            None, bpr.sourcepackagename, bpr.sourcepackageversion, bpf
+        )
+        path = pool.rootpath / "foo" / "1.0" / "foo-1.0-py3-none-any.whl"
+        self.assertTrue(path.exists())
+        self.assertFalse(path.is_symlink())
+        # Simulate Artifactory scanning the package.
+        self.artifactory._fs["/foo/1.0/foo-1.0-py3-none-any.whl"][
+            "properties"
+        ]["pypi.summary"] = ["text with special characters: ;=|,\\"]
+
+        pool.updateProperties(
+            bpr.sourcepackagename, bpr.sourcepackageversion, [bpf], bpphs
+        )
+
+        self.assertEqual(
+            ["text with special characters: ;=|,\\"],
+            path.properties["pypi.summary"],
+        )
