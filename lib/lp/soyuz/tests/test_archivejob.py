@@ -6,6 +6,7 @@ import os.path
 from debian.deb822 import Changes
 from fixtures import MockPatch
 from testtools.matchers import (
+    ContainsDict,
     Equals,
     Is,
     MatchesSetwise,
@@ -16,6 +17,7 @@ import transaction
 from lp.code.enums import RevisionStatusArtifactType
 from lp.code.model.revisionstatus import RevisionStatusArtifact
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
@@ -660,6 +662,44 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             JobRunner([job]).runAll()
 
         self.assertEqual(JobStatus.COMPLETED, job.job.status)
+
+    def test_run_failed(self):
+        # A failed run sets the job status to FAILED and notifies the
+        # requester.
+        archive = self.factory.makeArchive(
+            repository_format=ArchiveRepositoryFormat.PYTHON)
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+        build = self.factory.makeCIBuild(distro_arch_series=das)
+        report = build.getOrCreateRevisionStatusReport("build:0")
+        path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
+        with open(datadir(path), mode="rb") as f:
+            # Use an invalid file name to force a scan failure.
+            report.attach(name="_invalid.whl", data=f.read())
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="0.0.1/edge")
+        transaction.commit()
+
+        with dbuser(job.config.dbuser):
+            JobRunner([job]).runAll()
+
+        self.assertEqual(JobStatus.FAILED, job.job.status)
+        [notification] = self.assertEmailQueueLength(1)
+        self.assertThat(dict(notification), ContainsDict({
+            "From": Equals(config.canonical.noreply_from_address),
+            "To": Equals(
+                format_address_for_person(build.git_repository.owner)),
+            "Subject": Equals(
+                "Launchpad error while uploading %s to %s" %
+                (build.title, archive.reference)),
+            }))
+        self.assertEqual(
+            "Launchpad encountered an error during the following operation: "
+            "uploading %s to %s.  Failed to scan _invalid.whl" % (
+                build.title, archive.reference),
+            notification.get_payload(decode=True).decode())
 
 
 class TestViaCelery(TestCaseWithFactory):

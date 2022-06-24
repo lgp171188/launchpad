@@ -41,6 +41,7 @@ from lp.services.job.model.job import (
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.librarian.interfaces.client import LibrarianServerError
 from lp.services.librarian.utils import copy_and_close
+from lp.services.mail.sendmail import format_address_for_person
 from lp.soyuz.enums import (
     ArchiveJobType,
     ArchiveRepositoryFormat,
@@ -202,6 +203,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
 
     class_job_type = ArchiveJobType.CI_BUILD_UPLOAD
 
+    user_error_types = (ScanException,)
     retry_error_types = (LibrarianServerError,)
     max_retries = 3
 
@@ -274,6 +276,14 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 )])
         return vars
 
+    def getOperationDescription(self):
+        """See `IRunnableJob`."""
+        return "uploading %s to %s" % (
+            self.ci_build.title, self.archive.reference)
+
+    def getErrorRecipients(self):
+        return [format_address_for_person(self.requester)]
+
     @property
     def ci_build(self):
         return getUtility(ICIBuildSet).getByID(self.metadata["ci_build_id"])
@@ -310,12 +320,13 @@ class CIBuildUploadJob(ArchiveJobDerived):
     def _scanFile(self, path):
         # XXX cjwatson 2022-06-10: We should probably start splitting this
         # up some more.
+        name = os.path.basename(path)
         if path.endswith(".whl"):
             try:
                 parsed_path = parse_wheel_filename(path)
                 wheel = Wheel(path)
             except Exception as e:
-                raise ScanException("Failed to scan %s" % path) from e
+                raise ScanException("Failed to scan %s" % name) from e
             return {
                 "name": wheel.name,
                 "version": wheel.version,
@@ -333,7 +344,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
                     about = json.loads(
                         tar.extractfile("info/about.json").read().decode())
             except Exception as e:
-                raise ScanException("Failed to scan %s" % path) from e
+                raise ScanException("Failed to scan %s" % name) from e
             scanned = {"binpackageformat": BinaryPackageFormat.CONDA_V1}
             scanned.update(self._scanCondaMetadata(index, about))
             return scanned
@@ -352,7 +363,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
                         about = json.loads(
                             tar.extractfile("info/about.json").read().decode())
             except Exception as e:
-                raise ScanException("Failed to scan %s" % path) from e
+                raise ScanException("Failed to scan %s" % name) from e
             scanned = {"binpackageformat": BinaryPackageFormat.CONDA_V2}
             scanned.update(self._scanCondaMetadata(index, about))
             return scanned
