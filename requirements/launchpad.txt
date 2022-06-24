@@ -40,7 +40,9 @@ defusedxml==0.6.0
 distro==1.4.0
 dkimpy==1.0.4
 dnspython==1.16.0
-dohq-artifactory==0.7.630
+# https://code.launchpad.net/~launchpad/dohq-artifactory/+git/dohq-artifactory/+ref/0.7.630
+# lp1 Fix the version determination code in setup.py.
+dohq-artifactory==0.7.630+lp1
 dulwich==0.19.16
 eggtestinfo==0.3
 enum34==1.1.6
