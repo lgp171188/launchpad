@@ -13,6 +13,7 @@ import tempfile
 from collections import defaultdict
 from pathlib import Path, PurePath
 from typing import List, Optional
+from urllib.parse import quote_plus
 
 import requests
 from artifactory import ArtifactoryPath
@@ -271,6 +272,12 @@ class ArtifactoryPoolEntry:
         properties = self.calculateProperties(
             self.makeReleaseID(self.pub_file), []
         )
+        # Property values must be URL-quoted for
+        # `ArtifactoryPath.deploy_file`; it does not handle that itself.
+        properties = {
+            key: [quote_plus(v) for v in value]
+            for key, value in properties.items()
+        }
         fd, name = tempfile.mkstemp(prefix="temp-download.")
         f = os.fdopen(fd, "wb")
         try:

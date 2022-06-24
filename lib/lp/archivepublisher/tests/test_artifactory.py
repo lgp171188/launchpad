@@ -131,8 +131,8 @@ class TestArtifactoryPool(TestCase):
         foo = ArtifactoryPoolTestingFile(
             pool=pool,
             source_name="foo",
-            source_version="1.0",
-            filename="foo-1.0.deb",
+            source_version="1.0+1",
+            filename="foo-1.0+1.deb",
             release_type=FakeReleaseType.BINARY,
             release_id=1,
         )
@@ -144,7 +144,7 @@ class TestArtifactoryPool(TestCase):
             {
                 "launchpad.release-id": ["binary:1"],
                 "launchpad.source-name": ["foo"],
-                "launchpad.source-version": ["1.0"],
+                "launchpad.source-version": ["1.0+1"],
             },
             foo.getProperties(),
         )
