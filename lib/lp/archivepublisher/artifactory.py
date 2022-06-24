@@ -207,19 +207,19 @@ class ArtifactoryPoolEntry:
                     # version properties for them.  Partially work around
                     # this by setting those properties manually (although
                     # this doesn't cause Sources files to exist).
-                    properties["deb.name"] = self.source_name
-                    properties["deb.version"] = self.source_version
+                    properties["deb.name"] = [self.source_name]
+                    properties["deb.version"] = [self.source_version]
                     # Debian-format source packages have a license path
                     # required by policy.
-                    properties["soss.license"] = "debian/copyright"
+                    properties["soss.license"] = ["debian/copyright"]
                 elif release_id.startswith("binary:"):
                     # Debian-format binary packages have a license path
                     # required by policy (although examining it may require
                     # dereferencing symlinks).
-                    properties["soss.license"] = (
+                    properties["soss.license"] = [
                         "/usr/share/doc/%s/copyright"
                         % publications[0].binary_package_name
-                    )
+                    ]
             else:
                 properties["launchpad.channel"] = sorted(
                     {
@@ -236,10 +236,10 @@ class ArtifactoryPoolEntry:
             if ci_build is not None:
                 properties.update(
                     {
-                        "soss.source_url": (
+                        "soss.source_url": [
                             ci_build.git_repository.getCodebrowseUrl()
-                        ),
-                        "soss.commit_id": ci_build.commit_sha1,
+                        ],
+                        "soss.commit_id": [ci_build.commit_sha1],
                     }
                 )
         return properties
@@ -292,6 +292,19 @@ class ArtifactoryPoolEntry:
             and key not in self.owned_properties
         }
         new_properties.update(properties)
+        # https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API
+        # claims that ",", backslash, "|", and "=" require quoting with a
+        # leading URL-encoded backslash.  The artifactory module quotes ",",
+        # "|", and "=" (and handles URL-encoding at a lower layer).  In
+        # practice, backslash must apparently not be quoted, and ";" must be
+        # quoted as otherwise ";" within items will be confused with a
+        # property separator.  This is not very satisfactory as we're
+        # essentially playing core wars with the artifactory module, but
+        # this solves the problem for now.
+        new_properties = {
+            key: [v.replace(";", r"\;") for v in value]
+            for key, value in new_properties.items()
+        }
         if old_properties != new_properties:
             # We could use the ArtifactoryPath.properties setter, but that
             # will fetch the old properties again when we already have them
