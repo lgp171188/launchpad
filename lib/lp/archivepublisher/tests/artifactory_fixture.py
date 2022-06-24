@@ -112,15 +112,36 @@ class FakeArtifactoryFixture(Fixture):
         else:
             return 404, {}, "Unable to find item"
 
+    def _split(self, delimiter, text):
+        """Split text on a delimiter the way that Artifactory does.
+
+        We need to skip delimiters quoted by a leading backslash.
+        """
+        assert delimiter in ",|=;"
+        return re.findall(r"((?:\\[,|=;]|[^%s])+)" % delimiter, text)
+
+    def _unquote(self, text):
+        """Unquote something the way that Artifactory does.
+
+        This is poorly-documented.
+        https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API
+        says "In order to supply special characters (comma (,), backslash
+        (\\), pipe (|), equals (=)) as key/value you must add an encoded
+        backslash (%5C) before them"; but in practice semicolon also needs
+        to be quoted in this way to avoid being confused with a property
+        separator, and quoting a backslash like this simply results in a
+        double backslash.
+        """
+        return re.sub(r"\\([,|=;])", r"\1", unquote(text))
+
     def _decode_properties(self, encoded):
         """Decode properties that were encoded as part of a request."""
         properties = {}
-        for param in encoded.split(";"):
-            key, value = param.split("=", 1)
-            # XXX cjwatson 2022-04-19: Check whether this unquoting approach
-            # actually matches the artifactory module and Artifactory
-            # itself.
-            properties[unquote(key)] = [unquote(v) for v in value.split(",")]
+        for param in self._split(";", encoded):
+            key, value = re.match(r"((?:\\[,|=;]|[^=])+)=(.*)", param).groups()
+            properties[self._unquote(key)] = [
+                self._unquote(v) for v in self._split(",", value)
+            ]
         return properties
 
     def _handle_upload(self, request):
