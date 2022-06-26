@@ -67,7 +67,7 @@ wheel_name_pattern = re.compile(
 # checks, but apparently in terms of which characters are forbidden rather
 # than which characters are allowed.  For now, constrain this to something
 # reasonably conservative and hope that this is OK.
-conda_name_pattern = re.compile(r"^[a-z0-9][a-z0-9.+_-]*$")
+conda_name_pattern = re.compile(r"^[a-z0-9_][a-z0-9.+_-]*$")
 
 
 def _validate_bpr_name(obj: IBinaryPackageRelease, attr: str, value: Any):
@@ -104,7 +104,7 @@ def _validate_bpr_name(obj: IBinaryPackageRelease, attr: str, value: Any):
     ):
         if not conda_name_pattern.match(name):
             raise BinaryPackageReleaseNameLinkageError(
-                "Invalid Conda name '%s'; must match /%s/"
+                "Invalid Conda package name '%s'; must match /%s/"
                 % (name, conda_name_pattern.pattern))
     else:
         # Fall back to Launchpad's traditional name validation, which
