@@ -178,6 +178,7 @@ from lp.registry.interfaces.jabber import (
     IJabberID,
     IJabberIDSet,
     )
+from lp.registry.interfaces.karma import IKarmaActionSet
 from lp.registry.interfaces.mailinglist import (
     IMailingListSet,
     MailingListStatus,
@@ -226,7 +227,6 @@ from lp.registry.interfaces.wikiname import (
 from lp.registry.model.codeofconduct import SignedCodeOfConduct
 from lp.registry.model.karma import (
     Karma,
-    KarmaAction,
     KarmaAssignedEvent,
     KarmaCache,
     KarmaCategory,
@@ -1013,12 +1013,12 @@ class Person(
             ProductSet,
             )
         tableset = Store.of(self).using(
-            KarmaCache, LeftJoin(Product, Product.id == KarmaCache.productID),
+            KarmaCache, LeftJoin(Product, Product.id == KarmaCache.product_id),
             LeftJoin(Distribution, Distribution.id ==
-                     KarmaCache.distributionID))
+                     KarmaCache.distribution_id))
         result = tableset.find(
             (Product, Distribution, KarmaCache.karmavalue),
-             KarmaCache.personID == self.id,
+             KarmaCache.person == self.id,
              KarmaCache.category == None,
              KarmaCache.projectgroup == None,
              Or(
@@ -1209,8 +1209,9 @@ class Person(
             """ % replacements
         cur = cursor()
         cur.execute(query)
-        ids = ",".join(str(id) for [id] in cur.fetchall())
-        return KarmaCategory.select("id IN (%s)" % ids)
+        ids = [id for [id] in cur.fetchall()]
+        return IStore(KarmaCategory).find(
+            KarmaCategory, KarmaCategory.id.is_in(ids))
 
     @property
     def karma_category_caches(self):
@@ -1231,7 +1232,8 @@ class Person(
     def karma(self):
         """See `IPerson`."""
         # May also be loaded from _members
-        cache = KarmaTotalCache.selectOneBy(person=self)
+        cache = IStore(KarmaTotalCache).find(
+            KarmaTotalCache, person=self).one()
         if cache is None:
             # Newly created accounts may not be in the cache yet, meaning the
             # karma updater script hasn't run since the account was created.
@@ -1288,9 +1290,8 @@ class Person(
             raise AssertionError(
                 'You must provide either a product or a distribution.')
 
-        try:
-            action = KarmaAction.byName(action_name)
-        except SQLObjectNotFound:
+        action = getUtility(IKarmaActionSet).getByName(action_name)
+        if action is None:
             raise AssertionError(
                 "No KarmaAction found with name '%s'." % action_name)
 
@@ -1300,13 +1301,14 @@ class Person(
             person=self, action=action, product=product,
             distribution=distribution, sourcepackagename=sourcepackagename,
             datecreated=datecreated)
+        Store.of(karma).flush()
         notify(KarmaAssignedEvent(self, karma))
         return karma
 
     def latestKarma(self, quantity=25):
         """See `IPerson`."""
-        return Karma.selectBy(person=self,
-            orderBy='-datecreated')[:quantity]
+        return IStore(Karma).find(Karma, person=self).order_by(
+            Desc(Karma.datecreated))[:quantity]
 
     # This is to cache TeamParticipation information as that's used tons of
     # times in each request.

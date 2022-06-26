@@ -603,11 +603,14 @@ class TestPersonViewKarma(TestCaseWithFactory):
         self.view = PersonView(
             person, LaunchpadTestRequest())
         self._makeKarmaCache(
-            person, product, KarmaCategory.byName('bugs'))
+            person, product,
+            IStore(KarmaCategory).find(KarmaCategory, name="bugs").one())
         self._makeKarmaCache(
-            person, product, KarmaCategory.byName('answers'))
+            person, product,
+            IStore(KarmaCategory).find(KarmaCategory, name="answers").one())
         self._makeKarmaCache(
-            person, product, KarmaCategory.byName('code'))
+            person, product,
+            IStore(KarmaCategory).find(KarmaCategory, name="code").one())
 
     def test_karma_category_sort(self):
         categories = self.view.contributed_categories

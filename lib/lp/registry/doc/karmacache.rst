@@ -14,6 +14,7 @@ which runs daily. The script does that by using the IKarmaCacheManager API.
     >>> from lp.registry.interfaces.karma import IKarmaCacheManager
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.model.karma import KarmaCategory
+    >>> from lp.services.database.interfaces import IStore
 
     >>> switch_dbuser('karma')
     >>> karmacachemanager = getUtility(IKarmaCacheManager)
@@ -25,7 +26,7 @@ This is done using the new() method:
 
     >>> value = 199
     >>> person = getUtility(IPersonSet).getByName('salgado')
-    >>> bugs = KarmaCategory.byName('bugs')
+    >>> bugs = IStore(KarmaCategory).find(KarmaCategory, name="bugs").one()
 
     # The 'karma' dbuser doesn't have access to the Product table, so we'll
     # use firefox's id directly instead of trying to fetch the product from

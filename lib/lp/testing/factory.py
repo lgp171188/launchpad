@@ -710,7 +710,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if karma is not None:
             with dbuser('karma'):
                 # Give the user karma to make the user non-probationary.
-                KarmaTotalCache(person=person.id, karma_total=karma)
+                KarmaTotalCache(person=person, karma_total=karma)
         # Ensure updated ValidPersonCache
         flush_database_updates()
         return person

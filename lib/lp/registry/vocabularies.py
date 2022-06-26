@@ -209,6 +209,7 @@ from lp.services.webapp.vocabulary import (
     IHugeVocabulary,
     NamedSQLObjectVocabulary,
     NamedStormHugeVocabulary,
+    NamedStormVocabulary,
     SQLObjectVocabularyBase,
     StormVocabularyBase,
     VocabularyFilter,
@@ -264,10 +265,10 @@ class BasePersonVocabulary:
             return term
 
 
-class KarmaCategoryVocabulary(NamedSQLObjectVocabulary):
+class KarmaCategoryVocabulary(NamedStormVocabulary):
     """All `IKarmaCategory` objects vocabulary."""
     _table = KarmaCategory
-    _orderBy = 'name'
+    _order_by = "name"
 
 
 @implementer(IHugeVocabulary)

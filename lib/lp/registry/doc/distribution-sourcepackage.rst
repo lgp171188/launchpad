@@ -294,15 +294,15 @@ versions of a given source package have been published in.
 
     # Give the creators of the above source packages some
     # karma for their efforts.
-    >>> ppa_beta_owner_id = ppa_beta.owner.id
-    >>> ppa_nightly_owner_id = ppa_nightly.owner.id
+    >>> ppa_beta_owner = ppa_beta.owner
+    >>> ppa_nightly_owner = ppa_nightly.owner
 
     >>> from lp.testing.dbuser import switch_dbuser
     >>> switch_dbuser('karma')
     >>> from lp.registry.model.karma import KarmaTotalCache
-    >>> cache_entry = KarmaTotalCache(person=ppa_beta_owner_id,
+    >>> cache_entry = KarmaTotalCache(person=ppa_beta_owner,
     ...     karma_total=200)
-    >>> cache_entry = KarmaTotalCache(person=ppa_nightly_owner_id,
+    >>> cache_entry = KarmaTotalCache(person=ppa_nightly_owner,
     ...     karma_total=201)
     >>> switch_dbuser('launchpad')
 
