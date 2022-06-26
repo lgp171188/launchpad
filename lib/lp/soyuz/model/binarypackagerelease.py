@@ -104,7 +104,7 @@ def _validate_bpr_name(obj: IBinaryPackageRelease, attr: str, value: Any):
     ):
         if not conda_name_pattern.match(name):
             raise BinaryPackageReleaseNameLinkageError(
-                "Invalid Conda name '%s'; must match /%s/"
+                "Invalid Conda package name '%s'; must match /%s/"
                 % (name, conda_name_pattern.pattern))
     else:
         # Fall back to Launchpad's traditional name validation, which
