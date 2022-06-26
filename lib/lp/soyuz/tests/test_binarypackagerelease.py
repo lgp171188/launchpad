@@ -10,13 +10,13 @@ from lp.soyuz.interfaces.binarypackagerelease import (
     )
 from lp.soyuz.interfaces.publishing import PackagePublishingPriority
 from lp.testing import TestCaseWithFactory
-from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestBinaryPackageRelease(TestCaseWithFactory):
     """Tests for BinaryPackageRelease."""
 
-    layer = LaunchpadFunctionalLayer
+    layer = DatabaseFunctionalLayer
 
     def test_provides(self):
         build = self.factory.makeBinaryPackageBuild()
@@ -65,26 +65,40 @@ class TestBinaryPackageRelease(TestCaseWithFactory):
         bpr = self.factory.makeBinaryPackageRelease(homepage="<invalid<url")
         self.assertEqual("<invalid<url", bpr.homepage)
 
-    def test_deb_name(self):
+
+class TestBinaryPackageReleaseNameConstraints(TestCaseWithFactory):
+    """Test name constraints on binary packages of various formats."""
+
+    layer = DatabaseFunctionalLayer
+
+    def test_deb_name_allowed(self):
         self.factory.makeBinaryPackageRelease(binarypackagename="foo")
-        self.assertRaises(
+
+    def test_deb_name_underscore_disallowed(self):
+        self.assertRaisesWithContent(
             BinaryPackageReleaseNameLinkageError,
+            r"Invalid package name 'foo_bar'; must match "
+            r"/^[a-z0-9][a-z0-9\+\.\-]+$/",
             self.factory.makeBinaryPackageRelease,
             binarypackagename="foo_bar")
 
-    def test_wheel_name(self):
+    def test_wheel_name_allowed(self):
         self.factory.makeBinaryPackageRelease(
             binarypackagename="foo", binpackageformat=BinaryPackageFormat.WHL)
         self.factory.makeBinaryPackageRelease(
             binarypackagename="Foo_bar",
             binpackageformat=BinaryPackageFormat.WHL)
-        self.assertRaises(
+
+    def test_wheel_name_plus_disallowed(self):
+        self.assertRaisesWithContent(
             BinaryPackageReleaseNameLinkageError,
+            r"Invalid Python wheel name 'foo_bar+'; must match "
+            r"/^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])$/i",
             self.factory.makeBinaryPackageRelease,
             binarypackagename="foo_bar+",
             binpackageformat=BinaryPackageFormat.WHL)
 
-    def test_conda_v1_name(self):
+    def test_conda_v1_name_allowed(self):
         self.factory.makeBinaryPackageRelease(
             binarypackagename="foo",
             binpackageformat=BinaryPackageFormat.CONDA_V1)
@@ -94,18 +108,26 @@ class TestBinaryPackageRelease(TestCaseWithFactory):
         self.factory.makeBinaryPackageRelease(
             binarypackagename="_foo",
             binpackageformat=BinaryPackageFormat.CONDA_V1)
-        self.assertRaises(
+
+    def test_conda_v1_name_capital_letter_disallowed(self):
+        self.assertRaisesWithContent(
             BinaryPackageReleaseNameLinkageError,
+            r"Invalid Conda package name 'Foo'; must match "
+            r"/^[a-z0-9_][a-z0-9.+_-]*$/",
             self.factory.makeBinaryPackageRelease,
             binarypackagename="Foo",
             binpackageformat=BinaryPackageFormat.CONDA_V1)
-        self.assertRaises(
+
+    def test_conda_v1_name_hash_disallowed(self):
+        self.assertRaisesWithContent(
             BinaryPackageReleaseNameLinkageError,
+            r"Invalid Conda package name 'foo_bar#'; must match "
+            r"/^[a-z0-9_][a-z0-9.+_-]*$/",
             self.factory.makeBinaryPackageRelease,
             binarypackagename="foo_bar#",
             binpackageformat=BinaryPackageFormat.CONDA_V1)
 
-    def test_conda_v2_name(self):
+    def test_conda_v2_name_allowed(self):
         self.factory.makeBinaryPackageRelease(
             binarypackagename="foo",
             binpackageformat=BinaryPackageFormat.CONDA_V2)
@@ -115,13 +137,21 @@ class TestBinaryPackageRelease(TestCaseWithFactory):
         self.factory.makeBinaryPackageRelease(
             binarypackagename="_foo",
             binpackageformat=BinaryPackageFormat.CONDA_V2)
-        self.assertRaises(
+
+    def test_conda_v2_name_capital_letter_disallowed(self):
+        self.assertRaisesWithContent(
             BinaryPackageReleaseNameLinkageError,
+            r"Invalid Conda package name 'Foo'; must match "
+            r"/^[a-z0-9_][a-z0-9.+_-]*$/",
             self.factory.makeBinaryPackageRelease,
             binarypackagename="Foo",
             binpackageformat=BinaryPackageFormat.CONDA_V2)
-        self.assertRaises(
+
+    def test_conda_v2_name_hash_disallowed(self):
+        self.assertRaisesWithContent(
             BinaryPackageReleaseNameLinkageError,
+            r"Invalid Conda package name 'foo_bar#'; must match "
+            r"/^[a-z0-9_][a-z0-9.+_-]*$/",
             self.factory.makeBinaryPackageRelease,
             binarypackagename="foo_bar#",
             binpackageformat=BinaryPackageFormat.CONDA_V2)
