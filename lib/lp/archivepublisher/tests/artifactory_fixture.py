@@ -11,9 +11,10 @@ import fnmatch
 import hashlib
 import json
 import re
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs, unquote, unquote_plus, urlparse
 
 import responses
 from fixtures import Fixture
@@ -88,7 +89,7 @@ class FakeArtifactoryFixture(Fixture):
 
     def _handle_download(self, request):
         """Handle a request to download an existing file."""
-        path = urlparse(request.url[len(self.repo_url) :]).path
+        path = unquote(urlparse(request.url[len(self.repo_url) :]).path)
         if path in self._fs and "size" in self._fs[path]:
             return (
                 200,
@@ -101,7 +102,7 @@ class FakeArtifactoryFixture(Fixture):
     def _handle_stat(self, request):
         """Handle a request to stat an existing file."""
         parsed_url = urlparse(request.url[len(self.api_url) :])
-        path = parsed_url.path
+        path = unquote(parsed_url.path)
         if path in self._fs:
             stat = {"repo": self.repository_name, "path": path}
             stat.update(self._fs[path])
@@ -134,8 +135,22 @@ class FakeArtifactoryFixture(Fixture):
         """
         return re.sub(r"\\([,|=;])", r"\1", unquote(text))
 
+    def _decode_matrix_parameters(self, encoded):
+        """Decode matrix parameters that were encoded as part of a request.
+
+        `ArtifactoryPath.deploy` encodes properties like this.
+        """
+        properties = defaultdict(list)
+        for param in encoded.split(";"):
+            key, value = param.split("=", 1)
+            properties[unquote_plus(key)].append(unquote_plus(value))
+        return properties
+
     def _decode_properties(self, encoded):
-        """Decode properties that were encoded as part of a request."""
+        """Decode properties that were encoded as part of a request.
+
+        `ArtifactoryPath.set_properties` encodes properties like this.
+        """
         properties = {}
         for param in self._split(";", encoded):
             key, value = re.match(r"((?:\\[,|=;]|[^=])+)=(.*)", param).groups()
@@ -155,11 +170,11 @@ class FakeArtifactoryFixture(Fixture):
         else:
             params = ""
         parsed_url = urlparse(url)
-        path = parsed_url.path
+        path = unquote(parsed_url.path)
         if path.endswith("/"):
             self.add_dir(path.rstrip("/"))
         elif path.rsplit("/", 1)[0] in self._fs:
-            properties = self._decode_properties(params)
+            properties = self._decode_matrix_parameters(params)
             self.add_file(
                 path,
                 request.body,
@@ -171,7 +186,7 @@ class FakeArtifactoryFixture(Fixture):
     def _handle_set_properties(self, request):
         """Handle a request to set properties on an existing file."""
         parsed_url = urlparse(request.url[len(self.api_url) :])
-        path = parsed_url.path
+        path = unquote(parsed_url.path)
         if path in self._fs:
             query = parse_qs(parsed_url.query)
             properties = self._decode_properties(query["properties"][0])
@@ -183,7 +198,7 @@ class FakeArtifactoryFixture(Fixture):
     def _handle_delete_properties(self, request):
         """Handle a request to delete properties from an existing file."""
         parsed_url = urlparse(request.url[len(self.api_url) :])
-        path = parsed_url.path
+        path = unquote(parsed_url.path)
         if path in self._fs:
             query = parse_qs(parsed_url.query)
             for key in query["properties"][0].split(","):
@@ -265,7 +280,7 @@ class FakeArtifactoryFixture(Fixture):
 
     def _handle_delete(self, request):
         """Handle a request to delete an existing file."""
-        path = urlparse(request.url[len(self.repo_url) :]).path
+        path = unquote(urlparse(request.url[len(self.repo_url) :]).path)
         if not path.endswith("/") and path in self._fs:
             self.remove_file(path)
         return 200, {}, ""
