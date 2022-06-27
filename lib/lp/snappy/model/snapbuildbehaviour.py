@@ -168,7 +168,9 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             timestamp = format_as_rfc3339(build_request.date_requested)
             args["build_request_timestamp"] = timestamp
 
-        args["target_architectures"] = build.target_architectures
+        args["target_architectures"] = removeSecurityProxy(
+            build.target_architectures
+        )
 
         return args
 

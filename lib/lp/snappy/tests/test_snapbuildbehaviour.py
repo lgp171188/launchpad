@@ -327,6 +327,21 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
             ]))
 
     @defer.inlineCallbacks
+    def test_extraBuildArgs_no_security_proxy(self):
+        # The result of  `extraBuildArgs` must not contain values wrapped with
+        # zope security proxy because they can't be marshalled for XML-RPC
+        # requests.
+        snap = self.factory.makeSnap()
+        request = self.factory.makeSnapBuildRequest(snap=snap)
+        job = self.makeJob(snap=snap, build_request=request)
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        for key, value in args.items():
+            self.assertFalse(
+                isProxy(value), "{} is a security proxy".format(key)
+            )
+
+    @defer.inlineCallbacks
     def test_extraBuildArgs_bzr(self):
         # extraBuildArgs returns appropriate arguments if asked to build a
         # job for a Bazaar branch.
