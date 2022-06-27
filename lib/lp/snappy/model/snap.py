@@ -13,6 +13,7 @@ from datetime import (
     timedelta,
     )
 from operator import attrgetter
+import typing as t
 from urllib.parse import urlsplit
 
 from breezy import urlutils
@@ -116,6 +117,7 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactGrantSource,
     IAccessArtifactSource,
     )
+from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
@@ -205,7 +207,10 @@ from lp.snappy.interfaces.snapbase import (
     ISnapBaseSet,
     NoSuchSnapBase,
     )
-from lp.snappy.interfaces.snapbuild import ISnapBuildSet
+from lp.snappy.interfaces.snapbuild import (
+    ISnapBuild,
+    ISnapBuildSet,
+    )
 from lp.snappy.interfaces.snapjob import ISnapRequestBuildsJobSource
 from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
@@ -213,6 +218,7 @@ from lp.snappy.model.snapbuild import SnapBuild
 from lp.snappy.model.snapjob import SnapJob
 from lp.snappy.model.snapsubscription import SnapSubscription
 from lp.soyuz.interfaces.archive import ArchiveDisabled
+from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 from lp.soyuz.model.archive import (
     Archive,
     get_enabled_archive_filter,
@@ -639,7 +645,11 @@ class Snap(Storm, WebhookTargetMixin):
             das.getChroot(pocket=pocket) is not None
             and self._isBuildableArchitectureAllowed(das, snap_base=snap_base))
 
-    def getAllowedArchitectures(self, distro_series=None, snap_base=None):
+    def getAllowedArchitectures(
+        self,
+        distro_series: t.Optional[IDistroSeries] = None,
+        snap_base = None
+    ) -> t.List[IDistroArchSeries]:
         """See `ISnap`."""
         if distro_series is None:
             distro_series = self.distro_series
@@ -783,13 +793,25 @@ class Snap(Storm, WebhookTargetMixin):
             # See rationale in `SnapBuildArchiveOwnerMismatch` docstring.
             raise SnapBuildArchiveOwnerMismatch()
 
-    def requestBuild(self, requester, archive, distro_arch_series, pocket,
-                     snap_base=None, channels=None, build_request=None):
+    def requestBuild(
+        self,
+        requester,
+        archive,
+        distro_arch_series,
+        pocket,
+        snap_base=None,
+        channels=None,
+        build_request=None,
+        target_architectures: t.Optional[t.List[str]] = None
+    ) -> ISnapBuild:
         """See `ISnap`."""
         self._checkRequestBuild(requester, archive)
         if not self._isArchitectureAllowed(
                 distro_arch_series, pocket, snap_base=snap_base):
             raise SnapBuildDisallowedArchitecture(distro_arch_series, pocket)
+
+        if target_architectures:
+            target_architectures = sorted(target_architectures)
 
         if not channels:
             channels_clause = Or(
@@ -802,6 +824,7 @@ class Snap(Storm, WebhookTargetMixin):
             SnapBuild.archive_id == archive.id,
             SnapBuild.distro_arch_series_id == distro_arch_series.id,
             SnapBuild.pocket == pocket,
+            SnapBuild.target_architectures == target_architectures,
             channels_clause,
             SnapBuild.status == BuildStatus.NEEDSBUILD)
         if pending.any() is not None:
@@ -810,7 +833,8 @@ class Snap(Storm, WebhookTargetMixin):
         build = getUtility(ISnapBuildSet).new(
             requester, self, archive, distro_arch_series, pocket,
             snap_base=snap_base, channels=channels,
-            build_request=build_request)
+            build_request=build_request,
+            target_architectures=target_architectures)
         build.queueBuild()
         notify(ObjectCreatedEvent(build, user=requester))
         return build
@@ -917,7 +941,7 @@ class Snap(Storm, WebhookTargetMixin):
                 if (architectures is None or
                     das.architecturetag in architectures))
             architectures_to_build = determine_architectures_to_build(
-                snapcraft_data, supported_arches.keys())
+                snapcraft_data, list(supported_arches.keys()))
         except Exception as e:
             if not allow_failures:
                 raise
@@ -938,7 +962,9 @@ class Snap(Storm, WebhookTargetMixin):
                 build = self.requestBuild(
                     requester, archive, supported_arches[arch], pocket,
                     snap_base=snap_base, channels=arch_channels,
-                    build_request=build_request)
+                    build_request=build_request,
+                    target_architectures=build_instance.target_architectures
+                )
                 if logger is not None:
                     logger.debug(
                         " - %s/%s/%s: Build requested.",

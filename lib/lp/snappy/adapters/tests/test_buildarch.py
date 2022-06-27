@@ -77,12 +77,14 @@ class TestSnapBuildInstance(WithScenarios, TestCase):
                 build_on="i386", build_to=["amd64", "i386"]),
             "supported_architectures": ["amd64", "i386", "armhf"],
             "expected_architecture": "i386",
+            "expected_target_architectures": ["amd64", "i386"],
             "expected_required": True,
             }),
         ("amd64", {
             "architecture": SnapArchitecture(build_on="amd64", build_to="all"),
             "supported_architectures": ["amd64", "i386", "armhf"],
             "expected_architecture": "amd64",
+            "expected_target_architectures": ["all"],
             "expected_required": True,
             }),
         ("amd64 priority", {
@@ -90,6 +92,7 @@ class TestSnapBuildInstance(WithScenarios, TestCase):
                 build_on=["amd64", "i386"], build_to="all"),
             "supported_architectures": ["amd64", "i386", "armhf"],
             "expected_architecture": "amd64",
+            "expected_target_architectures": ["all"],
             "expected_required": True,
             }),
         ("i386 priority", {
@@ -97,6 +100,7 @@ class TestSnapBuildInstance(WithScenarios, TestCase):
                 build_on=["amd64", "i386"], build_to="all"),
             "supported_architectures": ["i386", "amd64", "armhf"],
             "expected_architecture": "i386",
+            "expected_target_architectures": ["all"],
             "expected_required": True,
             }),
         ("optional", {
@@ -104,6 +108,7 @@ class TestSnapBuildInstance(WithScenarios, TestCase):
                 build_on="amd64", build_error="ignore"),
             "supported_architectures": ["amd64", "i386", "armhf"],
             "expected_architecture": "amd64",
+            "expected_target_architectures": ["amd64"],
             "expected_required": False,
             }),
         ]
@@ -112,6 +117,8 @@ class TestSnapBuildInstance(WithScenarios, TestCase):
         instance = SnapBuildInstance(
             self.architecture, self.supported_architectures)
         self.assertEqual(self.expected_architecture, instance.architecture)
+        self.assertEqual(self.expected_target_architectures,
+                         instance.target_architectures)
         self.assertEqual(self.expected_required, instance.required)
 
 
@@ -128,50 +135,91 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCase):
 
     # Scenarios taken from the architectures document:
     # https://forum.snapcraft.io/t/architectures/4972
+
     scenarios = [
         ("none", {
             "architectures": None,
             "supported_architectures": ["amd64", "i386", "armhf"],
             "expected": [
-                {"architecture": "amd64", "required": True},
-                {"architecture": "i386", "required": True},
-                {"architecture": "armhf", "required": True},
-                ],
-            }),
+                {
+                    "architecture": "amd64",
+                    "target_architectures": ["amd64"],
+                    "required": True,
+                },
+                {
+                    "architecture": "i386",
+                    "target_architectures": ["i386"],
+                    "required": True
+                },
+                {
+                    "architecture": "armhf",
+                    "target_architectures": ["armhf"],
+                    "required": True
+                },
+            ],
+        }),
         ("i386", {
             "architectures": [
                 {"build-on": "i386", "build-to": ["amd64", "i386"]},
-                ],
+            ],
             "supported_architectures": ["amd64", "i386", "armhf"],
-            "expected": [{"architecture": "i386", "required": True}],
-            }),
+            "expected": [
+                {
+                    "architecture": "i386",
+                    "target_architectures": ["amd64", "i386"],
+                    "required": True,
+                }
+            ],
+        }),
         ("amd64", {
             "architectures": [{"build-on": "amd64", "build-to": "all"}],
             "supported_architectures": ["amd64", "i386", "armhf"],
-            "expected": [{"architecture": "amd64", "required": True}],
-            }),
+            "expected": [
+                {
+                    "architecture": "amd64",
+                    "target_architectures": ["all"],
+                    "required": True
+                }
+            ],
+        }),
         ("amd64 and i386", {
             "architectures": [
                 {"build-on": "amd64", "build-to": "amd64"},
                 {"build-on": "i386", "build-to": "i386"},
-                ],
+            ],
             "supported_architectures": ["amd64", "i386", "armhf"],
             "expected": [
-                {"architecture": "amd64", "required": True},
-                {"architecture": "i386", "required": True},
-                ],
-            }),
+                {
+                    "architecture": "amd64",
+                    "target_architectures": ["amd64"],
+                    "required": True,
+                },
+                {
+                    "architecture": "i386",
+                    "target_architectures": ["i386"],
+                    "required": True,
+                },
+            ],
+        }),
         ("amd64 and i386 shorthand", {
             "architectures": [
                 {"build-on": "amd64"},
                 {"build-on": "i386"},
-                ],
+            ],
             "supported_architectures": ["amd64", "i386", "armhf"],
             "expected": [
-                {"architecture": "amd64", "required": True},
-                {"architecture": "i386", "required": True},
-                ],
-            }),
+                {
+                    "architecture": "amd64",
+                    "target_architectures": ["amd64"],
+                    "required": True,
+                },
+                {
+                    "architecture": "i386",
+                    "target_architectures": ["i386"],
+                    "required": True,
+                },
+            ],
+        }),
         ("amd64, i386, and armhf", {
             "architectures": [
                 {"build-on": "amd64", "build-to": "amd64"},
@@ -180,51 +228,95 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCase):
                     "build-on": "armhf",
                     "build-to": "armhf",
                     "build-error": "ignore",
-                    },
-                ],
+                },
+            ],
             "supported_architectures": ["amd64", "i386", "armhf"],
             "expected": [
-                {"architecture": "amd64", "required": True},
-                {"architecture": "i386", "required": True},
-                {"architecture": "armhf", "required": False},
-                ],
-            }),
+                {
+                    "architecture": "amd64",
+                    "target_architectures": ["amd64"],
+                    "required": True,
+                },
+                {
+                    "architecture": "i386",
+                    "target_architectures": ["i386"],
+                    "required": True,
+                },
+                {
+                    "architecture": "armhf",
+                    "target_architectures": ["armhf"],
+                    "required": False,
+                },
+            ],
+        }),
         ("amd64 priority", {
             "architectures": [
                 {"build-on": ["amd64", "i386"], "build-to": "all"},
-                ],
+            ],
             "supported_architectures": ["amd64", "i386", "armhf"],
-            "expected": [{"architecture": "amd64", "required": True}],
-            }),
+            "expected": [
+                {
+                    "architecture": "amd64",
+                    "target_architectures": ["all"],
+                    "required": True,
+                }
+            ],
+        }),
         ("i386 priority", {
             "architectures": [
                 {"build-on": ["amd64", "i386"], "build-to": "all"},
-                ],
+            ],
             "supported_architectures": ["i386", "amd64", "armhf"],
-            "expected": [{"architecture": "i386", "required": True}],
-            }),
+            "expected": [
+                {
+                    "architecture": "i386",
+                    "target_architectures": ["all"],
+                    "required": True,
+                }
+            ],
+        }),
         ("old style i386 priority", {
             "architectures": ["amd64", "i386"],
             "supported_architectures": ["i386", "amd64", "armhf"],
-            "expected": [{"architecture": "i386", "required": True}],
-            }),
+            "expected": [
+                {
+                    "architecture": "i386",
+                    "target_architectures": ["amd64", "i386"],
+                    "required": True
+                }
+            ],
+        }),
         ("old style amd64 priority", {
             "architectures": ["amd64", "i386"],
             "supported_architectures": ["amd64", "i386", "armhf"],
-            "expected": [{"architecture": "amd64", "required": True}],
-            }),
+            "expected": [
+                {
+                    "architecture": "amd64",
+                    "target_architectures": ["amd64", "i386"],
+                    "required": True,
+                }
+            ],
+        }),
         ("more architectures listed than are supported", {
             "architectures": [
                 {"build-on": "amd64"},
                 {"build-on": "i386"},
                 {"build-on": "armhf"},
-                ],
+            ],
             "supported_architectures": ["amd64", "i386"],
             "expected": [
-                {"architecture": "amd64", "required": True},
-                {"architecture": "i386", "required": True},
-                ],
-            })
+                {
+                    "architecture": "amd64",
+                    "target_architectures": ["amd64"],
+                    "required": True,
+                },
+                {
+                    "architecture": "i386",
+                    "target_architectures": ["i386"],
+                    "required": True,
+                },
+            ],
+        })
     ]
 
     def test_parser(self):
