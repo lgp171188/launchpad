@@ -25,8 +25,9 @@ from lp.translations.enums import RosettaImportStatus
 
 
 @exported_as_webservice_entry(
-    singular_name='object_with_translation_imports',
-    plural_name='objects_with_translation_imports')
+    singular_name="object_with_translation_imports",
+    plural_name="objects_with_translation_imports",
+    as_of="beta")
 class IHasTranslationImports(Interface):
     """An entity that has a translation import queue.
 

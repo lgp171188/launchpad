@@ -198,6 +198,7 @@ class ISourcePackageRecipeView(Interface):
         pocket=Choice(vocabulary=PackagePublishingPocket,))
     @operation_returns_entry(Interface)
     @export_write_operation()
+    @operation_for_version("beta")
     def requestBuild(archive, distroseries, requester, pocket):
         """Request that the recipe be built in to the specified archive.
 
@@ -213,6 +214,7 @@ class ISourcePackageRecipeView(Interface):
         """
 
     @export_write_operation()
+    @operation_for_version("beta")
     def performDailyBuild():
         """Perform a build into the daily build archive."""
 
@@ -286,6 +288,7 @@ class ISourcePackageRecipeEdit(Interface):
         recipe_text=copy_field(
             ISourcePackageRecipeView['recipe_text']))
     @export_write_operation()
+    @operation_for_version("beta")
     def setRecipeText(recipe_text):
         """Set the text of the recipe."""
 
@@ -309,7 +312,7 @@ class ISourcePackageRecipeDelete(Interface):
         """
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class ISourcePackageRecipe(ISourcePackageRecipeData,
     ISourcePackageRecipeEdit, ISourcePackageRecipeEditableAttributes,
     ISourcePackageRecipeView):

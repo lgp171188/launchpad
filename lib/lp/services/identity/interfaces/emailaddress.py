@@ -93,7 +93,7 @@ VALID_EMAIL_STATUSES = (
     EmailAddressStatus.PREFERRED)
 
 
-@exported_as_webservice_entry(plural_name='email_addresses')
+@exported_as_webservice_entry(plural_name="email_addresses", as_of="beta")
 class IEmailAddress(IHasOwner):
     """The object that stores the `IPerson`'s emails."""
 

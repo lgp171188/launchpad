@@ -84,7 +84,7 @@ class ISourcePackageRecipeBuildAdmin(IBuildFarmJobAdmin):
     """`ISourcePackageRecipeBuild` attributes that require launchpad.Admin."""
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class ISourcePackageRecipeBuild(ISourcePackageRecipeBuildView,
                                 ISourcePackageRecipeBuildEdit,
                                 ISourcePackageRecipeBuildAdmin,

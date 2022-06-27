@@ -221,7 +221,7 @@ class IBuilderEdit(Interface):
         """Update the clean status."""
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBuilder(IBuilderEdit, IBuilderView, IBuilderModerateAttributes):
     """Builder information and state.
 
@@ -275,6 +275,7 @@ class IBuilderSet(IBuilderSetAdmin):
         name=TextLine(title=_("Builder name"), required=True))
     @operation_returns_entry(IBuilder)
     @export_read_operation()
+    @operation_for_version("beta")
     def getByName(name):
         """Retrieve a builder by name"""
 

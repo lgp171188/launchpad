@@ -21,6 +21,7 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_collection,
     exported_as_webservice_entry,
+    operation_for_version,
     operation_returns_collection_of,
     )
 from zope.interface import (
@@ -55,7 +56,7 @@ class TextDirection(DBEnumeratedType):
         """)
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class ILanguage(Interface):
     """A Language."""
 
@@ -183,6 +184,7 @@ class ILanguageSet(Interface):
     @export_read_operation()
     @operation_returns_collection_of(ILanguage)
     @call_with(want_translators_count=True)
+    @operation_for_version("beta")
     def getAllLanguages(want_translators_count=False):
         """Return a result set of all ILanguages from Launchpad."""
 
