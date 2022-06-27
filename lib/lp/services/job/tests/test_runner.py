@@ -19,6 +19,11 @@ from lazr.jobrunner.jobrunner import (
     )
 from lazr.restful.utils import get_current_browser_request
 from pytz import UTC
+from storm.locals import (
+    Bool,
+    Int,
+    Reference,
+    )
 from testtools.matchers import (
     GreaterThan,
     LessThan,
@@ -30,7 +35,12 @@ import transaction
 from zope.interface import implementer
 
 from lp.services.config import config
-from lp.services.database.sqlbase import flush_database_updates
+from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import (
+    connect,
+    flush_database_updates,
+    )
+from lp.services.database.stormbase import StormBase
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import (
     IRunnableJob,
@@ -491,6 +501,87 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
             '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
         mo = re.search('^NullJob_%s_%s$' % (job.job_id, uuid_expr), task_id)
         self.assertIsNot(None, mo)
+
+
+@implementer(IRunnableJob)
+class DerivedJob(BaseRunnableJob, StormBase):
+    """A job using a separate database table with a reference to Job."""
+
+    __storm_table__ = "DerivedJob"
+
+    id = Int(primary=True)
+
+    job_id = Int(name="job", allow_none=False)
+    job = Reference(job_id, Job.id)
+
+    should_succeed = Bool(name="should_succeed", allow_none=False)
+
+    def __init__(self, should_succeed):
+        super().__init__()
+        self.job = Job()
+        self.should_succeed = should_succeed
+
+    def run(self):
+        if not self.should_succeed:
+            IStore(self).execute("SELECT 1/0")
+
+
+class TestJobRunnerDerivedJob(StatsMixin, TestCaseWithFactory):
+    """Test JobRunner's behaviour with a job using a separate DB table."""
+
+    layer = LaunchpadZopelessLayer
+
+    def setUp(self):
+        super().setUp()
+        con = connect()
+        cur = con.cursor()
+        cur.execute(dedent("""
+            CREATE TABLE DerivedJob (
+                id serial PRIMARY KEY,
+                job integer NOT NULL REFERENCES Job,
+                should_succeed boolean NOT NULL
+            )
+            """))
+        cur.execute("GRANT ALL ON DerivedJob TO launchpad_main")
+        cur.execute("GRANT ALL ON derivedjob_id_seq TO launchpad_main")
+        con.commit()
+        self.setUpStats()
+
+    def test_runJob(self):
+        """Status is set to completed when a job runs to completion."""
+        job = DerivedJob(should_succeed=True)
+        flush_database_updates()
+        runner = JobRunner([job])
+        runner.runJob(job, None)
+        self.assertEqual(JobStatus.COMPLETED, job.job.status)
+        self.assertEqual([job], runner.completed_jobs)
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[0][0],
+            ("job.start_count,env=test,type=DerivedJob",))
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[1][0],
+            ("job.complete_count,env=test,type=DerivedJob",))
+
+    def test_runAll_reports_oopses(self):
+        """When an error is encountered, report an oops and continue."""
+        job_1 = DerivedJob(should_succeed=False)
+        job_2 = DerivedJob(should_succeed=True)
+        flush_database_updates()
+        runner = JobRunner([job_1, job_2])
+        runner.runAll()
+        self.assertEqual([], pop_notifications())
+        self.assertEqual([job_2], runner.completed_jobs)
+        self.assertEqual([job_1], runner.incomplete_jobs)
+        self.assertEqual(JobStatus.FAILED, job_1.job.status)
+        self.assertEqual(JobStatus.COMPLETED, job_2.job.status)
+        oops = self.oopses[-1]
+        self.assertIn("division by zero", oops["tb_text"])
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[0][0],
+            ("job.start_count,env=test,type=DerivedJob",))
+        self.assertEqual(
+            self.stats_client.incr.call_args_list[1][0],
+            ("job.fail_count,env=test,type=DerivedJob",))
 
 
 class StaticJobSource(BaseRunnableJob):
