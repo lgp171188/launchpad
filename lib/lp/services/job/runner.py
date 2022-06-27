@@ -345,7 +345,17 @@ class BaseRunnableJob(BaseRunnableJobSource):
 
     def fail(self, manage_transaction=False):
         """See `IJob`."""
-        self.job.fail(manage_transaction=manage_transaction)
+        # The job may have failed due to an error in an SQL statement, and
+        # `self.job` may not have been loaded since it was invalidated by
+        # the commit in `BaseRunnableJob.start`.  To avoid hitting an
+        # `InFailedSqlTransaction` exception here, we manage the transaction
+        # manually so that the rollback happens before trying to load
+        # `self.job`.
+        if manage_transaction:
+            transaction.abort()
+        self.job.fail()
+        if manage_transaction:
+            transaction.commit()
         statsd = getUtility(IStatsdClient)
         statsd.incr('job.fail_count', labels={'type': self.__class__.__name__})
 
