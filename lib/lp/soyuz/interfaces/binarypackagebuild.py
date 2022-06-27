@@ -274,7 +274,8 @@ class IBinaryPackageBuildAdmin(IBuildFarmJobAdmin):
         """Change the build's score."""
 
 
-@exported_as_webservice_entry(singular_name='build', plural_name='builds')
+@exported_as_webservice_entry(
+    singular_name="build", plural_name="builds", as_of="beta")
 class IBinaryPackageBuild(
     IBinaryPackageBuildView, IBinaryPackageBuildEdit,
     IBinaryPackageBuildRestricted, IBinaryPackageBuildAdmin,

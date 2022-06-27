@@ -347,7 +347,7 @@ class IDistroArchSeriesModerate(Interface):
         """
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IDistroArchSeries(IDistroArchSeriesPublic, IDistroArchSeriesModerate):
     """An architecture for a distroseries."""
 

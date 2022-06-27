@@ -37,7 +37,7 @@ from lp.soyuz.interfaces.component import IComponent
 from lp.soyuz.interfaces.packageset import IPackageset
 
 
-@exported_as_webservice_entry(publish_web_link=False)
+@exported_as_webservice_entry(as_of="beta", publish_web_link=False)
 class IArchivePermission(Interface):
     """The interface for `ArchivePermission`."""
 

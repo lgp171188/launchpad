@@ -153,7 +153,7 @@ class IPackageUploadLog(Interface):
             required=False, readonly=True))
 
 
-@exported_as_webservice_entry(publish_web_link=False)
+@exported_as_webservice_entry(publish_web_link=False, as_of="beta")
 class IPackageUpload(Interface):
     """A Queue item for the archive uploader."""
 
@@ -240,7 +240,7 @@ class IPackageUpload(Interface):
             value_type=TextLine(),
             required=False,
             readonly=True),
-        ("devel", dict(exported=False)), exported=True)
+        ("devel", dict(exported=False)), as_of="beta", exported=True)
 
     copy_source_archive = exported(
         Reference(

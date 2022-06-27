@@ -57,7 +57,6 @@ class DuplicatePackagesetName(Exception):
     """Raised for packagesets with the same name and distroseries."""
 
 
-@exported_as_webservice_entry(publish_web_link=False)
 class IPackagesetViewOnly(IHasOwner):
     """A read-only interface for package sets."""
 
@@ -108,6 +107,7 @@ class IPackagesetViewOnly(IHasOwner):
         direct_inclusion=Bool(required=False))
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def setsIncludedBy(direct_inclusion=False):
         """Get all package sets that include this one.
 
@@ -122,6 +122,7 @@ class IPackagesetViewOnly(IHasOwner):
         direct_inclusion=Bool(required=False))
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def setsIncluded(direct_inclusion=False):
         """Get all package sets that are included by this one.
 
@@ -162,6 +163,7 @@ class IPackagesetViewOnly(IHasOwner):
     @operation_parameters(
         direct_inclusion=Bool(required=False))
     @export_read_operation()
+    @operation_for_version("beta")
     def getSourcesIncluded(direct_inclusion=False):
         """Get all source names associated with this package set.
 
@@ -196,6 +198,7 @@ class IPackagesetViewOnly(IHasOwner):
             title=_('The package set we are comparing to.'), required=True),
         direct_inclusion=Bool(required=False))
     @export_read_operation()
+    @operation_for_version("beta")
     def getSourcesSharedBy(other_package_set, direct_inclusion=False):
         """Get source package names also included by another package set.
 
@@ -220,6 +223,7 @@ class IPackagesetViewOnly(IHasOwner):
             title=_('The package set we are comparing to.'), required=True),
         direct_inclusion=Bool(required=False))
     @export_read_operation()
+    @operation_for_version("beta")
     def getSourcesNotSharedBy(other_package_set, direct_inclusion=False):
         """Get source package names not included by another package set.
 
@@ -240,6 +244,7 @@ class IPackagesetViewOnly(IHasOwner):
 
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def relatedSets():
         """Get all other package sets in this set's `PackagesetGroup`.
 
@@ -250,7 +255,6 @@ class IPackagesetViewOnly(IHasOwner):
         """
 
 
-@exported_as_webservice_entry(publish_web_link=False)
 class IPackagesetEdit(Interface):
     """A writeable interface for package sets."""
 
@@ -281,6 +285,7 @@ class IPackagesetEdit(Interface):
         names=List(
         title=_("A list of source package names."), value_type=TextLine()))
     @export_write_operation()
+    @operation_for_version("beta")
     def addSources(names):
         """Add the named source packages to this package set.
 
@@ -303,6 +308,7 @@ class IPackagesetEdit(Interface):
         names=List(
         title=_("A list of source package names."), value_type=TextLine()))
     @export_write_operation()
+    @operation_for_version("beta")
     def removeSources(names):
         """Remove the named source packages from this package set.
 
@@ -320,6 +326,7 @@ class IPackagesetEdit(Interface):
         names=List(
         title=_("A list of package set names."), value_type=TextLine()))
     @export_write_operation()
+    @operation_for_version("beta")
     def addSubsets(names):
         """Add the named package sets as subsets to this package set.
 
@@ -341,6 +348,7 @@ class IPackagesetEdit(Interface):
         names=List(
         title=_("A list of package set names."), value_type=TextLine()))
     @export_write_operation()
+    @operation_for_version("beta")
     def removeSubsets(names):
         """Remove the named package subsets from this package set.
 
@@ -360,7 +368,6 @@ class IPackagesetEdit(Interface):
         """Delete the package set."""
 
 
-@exported_as_webservice_entry(publish_web_link=False)
 class IPackagesetRestricted(Interface):
     """A writeable interface for restricted attributes of package sets."""
 
@@ -369,7 +376,7 @@ class IPackagesetRestricted(Interface):
         description=_("Build score bonus for packages in this package set.")))
 
 
-@exported_as_webservice_entry(publish_web_link=False)
+@exported_as_webservice_entry(publish_web_link=False, as_of="beta")
 class IPackageset(IPackagesetViewOnly, IPackagesetEdit, IPackagesetRestricted):
     """An interface for package sets."""
 
@@ -395,6 +402,7 @@ class IPackagesetSetEdit(Interface):
                 "The new package set will share the package set group "
                 "with this one.")))
     @export_factory_operation(IPackageset, [])
+    @operation_for_version("beta")
     def new(name, description, owner, distroseries, related_set=None):
         """Create a new package set.
 
@@ -421,6 +429,7 @@ class IPackagesetSet(IPackagesetSetEdit):
         distroseries=copy_field(IPackageset['distroseries']))
     @operation_returns_entry(IPackageset)
     @export_read_operation()
+    @operation_for_version("beta")
     def getByName(distroseries, name):
         """Return the single package set with the given name (if any).
 
@@ -481,6 +490,7 @@ class IPackagesetSet(IPackagesetSetEdit):
         direct_inclusion=Bool(required=False))
     @operation_returns_collection_of(IPackageset)
     @export_read_operation()
+    @operation_for_version("beta")
     def setsIncludingSource(sourcepackagename, distroseries=None,
                             direct_inclusion=False):
         """Get the package sets that include this source package.
