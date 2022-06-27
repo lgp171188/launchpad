@@ -186,13 +186,12 @@ class LanguageSet:
                 KarmaCategory,
                 And(
                     KarmaCategory.name == 'translations',
-                    KarmaCache.categoryID == KarmaCategory.id,
-                    KarmaCache.productID == None,
-                    KarmaCache.projectgroupID == None,
-                    KarmaCache.sourcepackagenameID == None,
-                    KarmaCache.distributionID == None)),
-            PersonLanguage.person_id ==
-                KarmaCache.personID)
+                    KarmaCache.category_id == KarmaCategory.id,
+                    KarmaCache.product == None,
+                    KarmaCache.projectgroup == None,
+                    KarmaCache.sourcepackagename == None,
+                    KarmaCache.distribution == None)),
+            PersonLanguage.person_id == KarmaCache.person_id)
 
     @property
     def _visible_languages(self):

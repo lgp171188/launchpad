@@ -32,14 +32,15 @@ all categories.
     name16: 8
 
     >>> from lp.registry.model.karma import KarmaCategory
-    >>> bugs = KarmaCategory.byName('bugs')
+    >>> from lp.services.database.interfaces import IStore
+    >>> bugs = IStore(KarmaCategory).find(KarmaCategory, name="bugs").one()
     >>> top_bugmasters = firefox.getTopContributors(category=bugs, limit=2)
     >>> for person, karmavalue in top_bugmasters:
     ...     print('%s: %d' % (person.name, karmavalue))
     name12: 66
     name16: 8
 
-    >>> specs = KarmaCategory.byName('specs')
+    >>> specs = IStore(KarmaCategory).find(KarmaCategory, name="specs").one()
     >>> top_speccers = firefox.getTopContributors(category=specs, limit=1)
     >>> for person, karmavalue in top_speccers:
     ...     print('%s: %d' % (person.name, karmavalue))

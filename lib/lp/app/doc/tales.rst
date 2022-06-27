@@ -73,7 +73,9 @@ is not an actual launchpad user.
 We also have image:icon for KarmaCategory:
 
     >>> from lp.registry.model.karma import KarmaCategory
-    >>> for category in KarmaCategory.select(orderBy='title'):
+    >>> from lp.services.database.interfaces import IStore
+    >>> for category in IStore(KarmaCategory).find(
+    ...         KarmaCategory).order_by("title"):
     ...     print(test_tales("category/image:icon", category=category))
     <img ... title="Answer Tracker" src="/@@/question" />
     <img ... title="Bazaar Branches" src="/@@/branch" />

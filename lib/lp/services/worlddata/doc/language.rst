@@ -242,24 +242,31 @@ have the language among their preferred languages.
     >>> translator_40.addLanguage(sr)
 
     # We need to fake some Karma.
-    >>> from lp.registry.model.karma import KarmaCategory, KarmaCache
+    >>> from lp.registry.interfaces.karma import IKarmaCacheManager
+    >>> from lp.registry.model.karma import KarmaCategory
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.testing.dbuser import switch_dbuser
 
     >>> switch_dbuser('karma')
-    >>> translations_category = KarmaCategory.selectOne(
-    ...     KarmaCategory.name=='translations')
-    >>> karma = KarmaCache(person=translator_30,
-    ...                    category=translations_category,
-    ...                    karmavalue=30)
-    >>> karma = KarmaCache(person=translator_10,
-    ...                    category=translations_category,
-    ...                    karmavalue=10)
-    >>> karma = KarmaCache(person=translator_20,
-    ...                    category=translations_category,
-    ...                    karmavalue=20)
-    >>> karma = KarmaCache(person=translator_40,
-    ...                    category=translations_category,
-    ...                    karmavalue=40)
+    >>> translations_category = IStore(KarmaCategory).find(
+    ...     KarmaCategory, name="translations").one()
+    >>> cache_manager = getUtility(IKarmaCacheManager)
+    >>> karma = cache_manager.new(
+    ...     person_id=translator_30.id,
+    ...     category_id=translations_category.id,
+    ...     value=30)
+    >>> karma = cache_manager.new(
+    ...     person_id=translator_10.id,
+    ...     category_id=translations_category.id,
+    ...     value=10)
+    >>> karma = cache_manager.new(
+    ...     person_id=translator_20.id,
+    ...     category_id=translations_category.id,
+    ...     value=20)
+    >>> karma = cache_manager.new(
+    ...     person_id=translator_40.id,
+    ...     category_id=translations_category.id,
+    ...     value=40)
     >>> switch_dbuser('launchpad')
     >>> for translator in sr.translators:
     ...   print(translator.name)

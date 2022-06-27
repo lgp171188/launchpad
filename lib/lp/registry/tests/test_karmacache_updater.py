@@ -10,6 +10,7 @@ from zope.component import getUtility
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
 from lp.registry.model.karma import KarmaCache
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import flush_database_caches
 from lp.testing import (
     ANONYMOUS,
@@ -33,7 +34,7 @@ class TestKarmaCacheUpdater(unittest.TestCase):
         self.layer.force_dirty_database()
 
     def _getCacheEntriesByPerson(self, person):
-        return KarmaCache.selectBy(person=person)
+        return IStore(KarmaCache).find(KarmaCache, person=person)
 
     def _runScript(self):
         process = subprocess.Popen(

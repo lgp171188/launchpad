@@ -222,7 +222,9 @@ actions, except for updating the obsolete "summary", "priority", and "Web
 links":
 
     >>> from lp.registry.model.karma import KarmaCategory
-    >>> bugs_category = KarmaCategory.byName('bugs')
+    >>> from lp.services.database.interfaces import IStore
+    >>> bugs_category = IStore(KarmaCategory).find(
+    ...     KarmaCategory, name="bugs").one()
     >>> bugs_karma_actions = bugs_category.karmaactions
     >>> summary_change = getUtility(
     ...     IKarmaActionSet).getByName('bugsummarychanged')

@@ -19,6 +19,7 @@ test too much.
     >>> from lp.registry.interfaces.product import IProductSet
     >>> from lp.registry.model.karma import KarmaCategory
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.translations.interfaces.translationsoverview import (
     ...     ITranslationsOverview)
     >>> from lp.testing.dbuser import switch_dbuser
@@ -100,7 +101,8 @@ Adding some translations karma attributed to Carlos will make
 alsa-utils displayed among the top translated pillars as well.
 
     >>> carlos = person_set.getByName('carlos')
-    >>> translations = KarmaCategory.byName('translations')
+    >>> translations = IStore(KarmaCategory).find(
+    ...     KarmaCategory, name="translations").one()
     >>> alsa_utils = product_set.getByName('alsa-utils')
 
     >>> start_karma_update()

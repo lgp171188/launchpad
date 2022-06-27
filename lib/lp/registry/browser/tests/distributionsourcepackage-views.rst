@@ -120,17 +120,19 @@ package.
     # karma for their efforts.
     >>> from lp.registry.model.karma import KarmaCategory
     >>> from lp.registry.model.karma import KarmaTotalCache
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.testing.dbuser import dbuser
-    >>> soyuz_category = KarmaCategory.byName('soyuz')
+    >>> soyuz_category = IStore(KarmaCategory).find(
+    ...     KarmaCategory, name="soyuz").one()
     >>> sourcepackagerelease = gedit_nightly_src_breezy.sourcepackagerelease
     >>> gedit_name = sourcepackagerelease.sourcepackagename
-    >>> ppa_beta_owner_id = ppa_beta.owner.id
-    >>> ppa_nightly_owner_id = ppa_nightly.owner.id
+    >>> ppa_beta_owner = ppa_beta.owner
+    >>> ppa_nightly_owner = ppa_nightly.owner
     >>> with dbuser('karma'):
     ...     cache_entry = KarmaTotalCache(
-    ...         person=ppa_beta_owner_id, karma_total=200)
+    ...         person=ppa_beta_owner, karma_total=200)
     ...     cache_entry = KarmaTotalCache(
-    ...         person=ppa_nightly_owner_id, karma_total=201)
+    ...         person=ppa_nightly_owner, karma_total=201)
 
     # Because our connection has been closed during the reconnect, we
     # need to get the distro and source package again.
