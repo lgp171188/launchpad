@@ -90,7 +90,7 @@ def bytes_to_tarfile(s):
     return tarfile.open('', 'r', BytesIO(s))
 
 
-def simple_popen2(command, input, env=None, in_bufsize=1024, out_bufsize=128):
+def simple_popen2(command, input, env=None):
     """Run a command, give it input on its standard input, and capture its
     standard output.
 

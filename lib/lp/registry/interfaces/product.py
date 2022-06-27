@@ -67,7 +67,6 @@ from zope.schema import (
     Text,
     TextLine,
     )
-from zope.schema.vocabulary import SimpleVocabulary
 
 from lp import _
 from lp.answers.interfaces.faqtarget import IFAQTarget
@@ -1122,10 +1121,6 @@ class IProductSet(Interface):
 
     def getSFLinkedProductsWithNoneRemoteProduct():
         """Get IProducts with a sourceforge project and no remote_product."""
-
-
-emptiness_vocabulary = SimpleVocabulary.fromItems(
-        [('Empty', True), ('Not Empty', False)])
 
 
 class IProductReviewSearch(Interface):

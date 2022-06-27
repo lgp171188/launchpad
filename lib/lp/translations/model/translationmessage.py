@@ -183,7 +183,6 @@ class DummyTranslationMessage(TranslationMessageMixIn):
         self.is_current_upstream = False
         self.is_empty = True
         self.was_obsolete_in_last_import = False
-        self.was_complete_in_last_import = False
         if self.potmsgset.msgid_plural is None:
             self.translations = [None]
         else:

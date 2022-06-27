@@ -1253,7 +1253,6 @@ class DummyPOFile(POFileMixIn):
 
         self.path = 'unknown'
         self.datecreated = datetime.datetime.now(UTC)
-        self.last_touched_pomsgset = None
         self.contributors = []
         self.from_sourcepackagename = None
         self.translation_messages = None

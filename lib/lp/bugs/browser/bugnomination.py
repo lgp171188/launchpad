@@ -9,9 +9,6 @@ __all__ = [
     'BugNominationEditView',
     'BugNominationTableRowView']
 
-import datetime
-
-import pytz
 from zope.component import getUtility
 from zope.interface import Interface
 
@@ -142,9 +139,6 @@ class BugNominationView(LaunchpadFormView):
 class BugNominationTableRowView(LaunchpadView):
     """Browser view class for rendering a nomination table row."""
 
-    # This method will be called to render the bug nomination.
-    renderNonConjoinedReplica = LaunchpadView.__call__
-
     def getNominationPerson(self):
         """Return the IPerson associated with this nomination.
 
@@ -170,25 +164,6 @@ class BugNominationTableRowView(LaunchpadView):
             assert (
                 "Expected nomination to be Proposed or Declined. "
                 "Got status: %s" % self.context.status.title)
-
-    def getNominationDurationSinceCreatedOrDecided(self):
-        """Return a duration since this nomination was created or decided.
-
-        So if the nomination is currently Proposed, the duration will be from
-        date_created to now, and if the nomination is Approved/Declined, the
-        duration will be from date_decided until now.
-
-        This allows us to present a human-readable version of how long ago
-        the nomination was created or approved/declined.
-        """
-        UTC = pytz.timezone('UTC')
-        now = datetime.datetime.now(UTC)
-        bugnomination = self.context
-
-        if bugnomination.date_decided:
-            return now - bugnomination.date_decided
-
-        return now - bugnomination.date_created
 
     def userCanMakeDecisionForNomination(self):
         """Can the user approve/decline this nomination?"""

@@ -23,7 +23,6 @@ from lp.registry.errors import (
     ProprietaryPillar,
     )
 from lp.registry.interfaces.distribution import IDistributionSet
-from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.productseries import (
     IProductSeries,
     IProductSeriesSet,
@@ -140,11 +139,9 @@ class TestProductSeriesSetPackaging(TestCaseWithFactory):
         # Set up productseries.
         self.person = self.factory.makePerson()
         self.product = self.factory.makeProduct(owner=self.person)
-        self.dev_focus = self.product.development_focus
         self.product_series = self.factory.makeProductSeries(self.product)
 
         # Set up distroseries.
-        self.distroseries_set = getUtility(IDistroSeriesSet)
         self.distribution_set = getUtility(IDistributionSet)
         self.ubuntu = self.distribution_set.getByName("ubuntu")
         self.debian = self.distribution_set.getByName("debian")

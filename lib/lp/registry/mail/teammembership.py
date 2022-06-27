@@ -36,15 +36,6 @@ from lp.services.webapp.url import urlappend
 class TeamMembershipRecipientReason(RecipientReason):
 
     @classmethod
-    def forInvitation(cls, admin, team, recipient, proposed_member, **kwargs):
-        header = cls.makeRationale(
-            "Invitation (%s)" % team.name, proposed_member)
-        reason = (
-            "You received this email because %%(lc_entity_is)s an admin of "
-            "the %s team." % proposed_member.displayname)
-        return cls(admin, recipient, header, reason, **kwargs)
-
-    @classmethod
     def forMember(cls, member, team, recipient, **kwargs):
         header = cls.makeRationale("Member (%s)" % team.name, member)
         reason = (

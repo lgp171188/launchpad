@@ -531,9 +531,6 @@ class OptionIsNotFromSimplePoll(Exception):
 class IVoteSet(Interface):
     """The set of all Vote objects."""
 
-    def newToken():
-        """Return a token that was never used in the Vote table."""
-
     def new(poll, option, preference, token, person):
         """Create a new Vote."""
 
