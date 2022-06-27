@@ -532,6 +532,7 @@ class IArchiveSubscriberView(Interface):
     # patch to avoid circular import.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def api_getPublishedSources(name=None, version=None, status=None,
                                 distroseries=None, pocket=None,
                                 exact_match=False, created_since_date=None,
@@ -636,6 +637,7 @@ class IArchiveSubscriberView(Interface):
     @operation_returns_collection_of(Interface)
     @export_operation_as("getPublishedBinaries")
     @export_read_operation()
+    @operation_for_version("beta")
     def getAllPublishedBinaries(name=None, version=None, status=None,
                                 distroarchseries=None, pocket=None,
                                 exact_match=False, created_since_date=None,
@@ -974,6 +976,7 @@ class IArchiveView(IHasBuildRecords):
         )
     @export_operation_as("checkUpload")
     @export_read_operation()
+    @operation_for_version("beta")
     def _checkUpload(person, distroseries, sourcepackagename, component,
             pocket, strict_component=True):
         """Wrapper around checkUpload for the web service API."""
@@ -1118,6 +1121,7 @@ class IArchiveView(IHasBuildRecords):
     # circular import.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getUploadersForPackageset(packageset, direct_permissions=True):
         """The `ArchivePermission` records for uploaders to the package set.
 
@@ -1136,6 +1140,7 @@ class IArchiveView(IHasBuildRecords):
     # circular import.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getPackagesetsForUploader(person):
         """The `ArchivePermission` records for the person's package sets.
 
@@ -1176,6 +1181,7 @@ class IArchiveView(IHasBuildRecords):
     # circular import.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getPackagesetsForSourceUploader(sourcepackagename, person):
         """The package set based permissions for a given source and uploader.
 
@@ -1206,6 +1212,7 @@ class IArchiveView(IHasBuildRecords):
     # circular import.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getPackagesetsForSource(
         sourcepackagename, direct_permissions=True):
         """All package set based permissions for the given source.
@@ -1234,6 +1241,7 @@ class IArchiveView(IHasBuildRecords):
         distroseries=Reference(
             IDistroSeries, title=_("The distro series"), required=False))
     @export_read_operation()
+    @operation_for_version("beta")
     def isSourceUploadAllowed(sourcepackagename, person, distroseries=None):
         """True if the person is allowed to upload the given source package.
 
@@ -1285,6 +1293,7 @@ class IArchiveView(IHasBuildRecords):
         include_needsbuild=Bool(
             title=_("Include builds with state NEEDSBUILD"), required=False))
     @export_read_operation()
+    @operation_for_version("beta")
     def getBuildCounters(include_needsbuild=True):
         """Return a dictionary containing the build counters for an archive.
 
@@ -1314,6 +1323,7 @@ class IArchiveView(IHasBuildRecords):
             title=_("A list of source publishing history record ids."),
             value_type=Int()))
     @export_read_operation()
+    @operation_for_version("beta")
     def getBuildSummariesForSourceIds(source_ids):
         """Return a dictionary containing a summary of the build statuses.
 
@@ -1332,6 +1342,7 @@ class IArchiveView(IHasBuildRecords):
         dependency=Reference(schema=Interface))  # Really IArchive. See below.
     @operation_returns_entry(schema=Interface)  # Really IArchiveDependency.
     @export_read_operation()
+    @operation_for_version("beta")
     def getArchiveDependency(dependency):
         """Return the `IArchiveDependency` object for the given dependency.
 
@@ -1355,6 +1366,7 @@ class IArchiveView(IHasBuildRecords):
     # Really IArchivePermission, set below to avoid circular import.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getPermissionsForPerson(person):
         """Return the `IArchivePermission` records applicable to the person.
 
@@ -1368,6 +1380,7 @@ class IArchiveView(IHasBuildRecords):
     # Really IArchivePermission, set below to avoid circular import.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getUploadersForPackage(source_package_name):
         """Return `IArchivePermission` records for the package's uploaders.
 
@@ -1381,6 +1394,7 @@ class IArchiveView(IHasBuildRecords):
     # Really IArchivePermission, set below to avoid circular import.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getUploadersForComponent(component_name=None):
         """Return `IArchivePermission` records for the component's uploaders.
 
@@ -1394,6 +1408,7 @@ class IArchiveView(IHasBuildRecords):
     # Really IArchivePermission, set below to avoid circular import.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getQueueAdminsForComponent(component_name):
         """Return `IArchivePermission` records for authorized queue admins.
 
@@ -1406,6 +1421,7 @@ class IArchiveView(IHasBuildRecords):
     # Really IArchivePermission, set below to avoid circular import.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getComponentsForQueueAdmin(person):
         """Return `IArchivePermission` for the person's queue admin
         components.
@@ -1711,6 +1727,7 @@ class IArchiveAppend(Interface):
                           " this source"),
             required=False))
     @export_write_operation()
+    @operation_for_version("beta")
     # Source_names is a string because exporting a SourcePackageName is
     # rather nonsensical as it only has id and name columns.
     def syncSources(source_names, from_archive, to_pocket, to_series=None,
@@ -1766,6 +1783,7 @@ class IArchiveAppend(Interface):
                           " this source"),
             required=False))
     @export_write_operation()
+    @operation_for_version("beta")
     # XXX Julian 2008-11-05
     # This method takes source_name and version as strings because
     # SourcePackageRelease is not exported on the API yet.  When it is,
@@ -1819,6 +1837,7 @@ class IArchiveAppend(Interface):
             description=_("Free text describing this subscription.")))
     # Really IArchiveSubscriber, set below to avoid circular import.
     @export_factory_operation(Interface, [])
+    @operation_for_version("beta")
     def newSubscription(subscriber, registrant, date_expires=None,
                         description=None):
         """Create a new subscribtion to this archive.
@@ -1883,6 +1902,7 @@ class IArchiveEdit(Interface):
             title=_("Source Package Name"), required=True))
     # Really IArchivePermission, set below to avoid circular import.
     @export_factory_operation(Interface, [])
+    @operation_for_version("beta")
     def newPackageUploader(person, source_package_name):
         """Add permisson for a person to upload a package to this archive.
 
@@ -1899,6 +1919,7 @@ class IArchiveEdit(Interface):
             title=_("Component Name"), required=True))
     # Really IArchivePermission, set below to avoid circular import.
     @export_factory_operation(Interface, [])
+    @operation_for_version("beta")
     def newComponentUploader(person, component_name):
         """Add permission for a person to upload to a component.
 
@@ -1939,6 +1960,7 @@ class IArchiveEdit(Interface):
             title=_("Component Name"), required=True))
     # Really IArchivePermission, set below to avoid circular import.
     @export_factory_operation(Interface, [])
+    @operation_for_version("beta")
     def newQueueAdmin(person, component_name):
         """Add permission for a person to administer a distroseries queue.
 
@@ -1987,6 +2009,7 @@ class IArchiveEdit(Interface):
     # Really IArchivePermission, set in _schema_circular_imports to avoid
     # circular import.
     @export_factory_operation(Interface, [])
+    @operation_for_version("beta")
     def newPackagesetUploader(person, packageset, explicit=False):
         """Add a package set based permission for a person.
 
@@ -2004,6 +2027,7 @@ class IArchiveEdit(Interface):
         source_package_name=TextLine(
             title=_("Source Package Name"), required=True))
     @export_write_operation()
+    @operation_for_version("beta")
     def deletePackageUploader(person, source_package_name):
         """Revoke permission for the person to upload the package.
 
@@ -2017,6 +2041,7 @@ class IArchiveEdit(Interface):
         component_name=TextLine(
             title=_("Component Name"), required=True))
     @export_write_operation()
+    @operation_for_version("beta")
     def deleteComponentUploader(person, component_name):
         """Revoke permission for the person to upload to the component.
 
@@ -2046,6 +2071,7 @@ class IArchiveEdit(Interface):
         component_name=TextLine(
             title=_("Component Name"), required=True))
     @export_write_operation()
+    @operation_for_version("beta")
     def deleteQueueAdmin(person, component_name):
         """Revoke permission for the person to administer distroseries queues.
 
@@ -2087,6 +2113,7 @@ class IArchiveEdit(Interface):
         explicit=Bool(
             title=_("Explicit"), required=False))
     @export_write_operation()
+    @operation_for_version("beta")
     def deletePackagesetUploader(person, packageset, explicit=False):
         """Revoke upload permissions for a person.
 
@@ -2309,7 +2336,7 @@ class IArchiveRestricted(Interface):
             "with a higher score will build sooner.")))
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IArchive(IArchivePublic, IArchiveAppend, IArchiveEdit, IArchiveDelete,
                IArchiveSubscriberView, IArchiveView, IArchiveAdmin,
                IArchiveRestricted):

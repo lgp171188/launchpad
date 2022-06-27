@@ -141,9 +141,6 @@ from lp.soyuz.interfaces.archivedependency import IArchiveDependency
 from lp.soyuz.interfaces.archivepermission import IArchivePermission
 from lp.soyuz.interfaces.archivesubscriber import IArchiveSubscriber
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuild
-from lp.soyuz.interfaces.binarypackagerelease import (
-    IBinaryPackageReleaseDownloadCount,
-    )
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 from lp.soyuz.interfaces.distroarchseriesfilter import IDistroArchSeriesFilter
@@ -152,10 +149,7 @@ from lp.soyuz.interfaces.livefsbuild import (
     ILiveFSBuild,
     ILiveFSFile,
     )
-from lp.soyuz.interfaces.packageset import (
-    IPackageset,
-    IPackagesetSet,
-    )
+from lp.soyuz.interfaces.packageset import IPackageset
 from lp.soyuz.interfaces.publishing import (
     IBinaryPackagePublishingHistory,
     IBinaryPackagePublishingHistoryEdit,
@@ -690,42 +684,6 @@ patch_reference_property(IAccessToken, 'git_repository', IGitRepository)
 #
 ###
 
-# IArchive
-patch_entry_explicit_version(IArchive, 'beta')
-patch_operations_explicit_version(
-    IArchive, 'beta', "_checkUpload", "deleteComponentUploader",
-    "deletePackageUploader", "deletePackagesetUploader", "deleteQueueAdmin",
-    "getAllPublishedBinaries", "getArchiveDependency", "getBuildCounters",
-    "getBuildSummariesForSourceIds", "getComponentsForQueueAdmin",
-    "getPackagesetsForSource", "getPackagesetsForSourceUploader",
-    "getPackagesetsForUploader", "getPermissionsForPerson",
-    "api_getPublishedSources", "getQueueAdminsForComponent",
-    "getUploadersForComponent", "getUploadersForPackage",
-    "getUploadersForPackageset", "isSourceUploadAllowed",
-    "newComponentUploader", "newPackageUploader", "newPackagesetUploader",
-    "newQueueAdmin", "newSubscription", "syncSource", "syncSources")
-
-# IArchiveDependency
-patch_entry_explicit_version(IArchiveDependency, 'beta')
-
-# IArchivePermission
-patch_entry_explicit_version(IArchivePermission, 'beta')
-
-# IArchiveSubscriber
-patch_entry_explicit_version(IArchiveSubscriber, 'beta')
-
-# IBinaryPackageBuild
-patch_entry_explicit_version(IBinaryPackageBuild, 'beta')
-
-# IBinaryPackagePublishingHistory
-patch_entry_explicit_version(IBinaryPackagePublishingHistory, 'beta')
-patch_operations_explicit_version(
-    IBinaryPackagePublishingHistory, 'beta', "getDailyDownloadTotals",
-    "getDownloadCount", "getDownloadCounts")
-
-# IBinaryPackageReleaseDownloadCount
-patch_entry_explicit_version(IBinaryPackageReleaseDownloadCount, 'beta')
-
 # IBranch
 patch_entry_explicit_version(IBranch, 'beta')
 
@@ -768,9 +726,6 @@ patch_entry_explicit_version(ICountry, 'beta')
 patch_operations_explicit_version(
     ICountrySet, 'beta', "getByCode", "getByName")
 
-# IDistroArchSeries
-patch_entry_explicit_version(IDistroArchSeries, 'beta')
-
 # IHasTranslationImports
 patch_entry_explicit_version(IHasTranslationImports, 'beta')
 
@@ -789,29 +744,8 @@ patch_entry_explicit_version(IPOFile, 'beta')
 # IPOTemplate
 patch_entry_explicit_version(IPOTemplate, 'beta')
 
-# IPackageUpload
-patch_entry_explicit_version(IPackageUpload, 'beta')
-
-# IPackageset
-patch_entry_explicit_version(IPackageset, 'beta')
-patch_operations_explicit_version(
-    IPackageset, 'beta', "addSources", "addSubsets", "getSourcesIncluded",
-    "getSourcesNotSharedBy", "getSourcesSharedBy", "relatedSets",
-    "removeSources", "removeSubsets", "setsIncluded", "setsIncludedBy")
-
-# IPackagesetSet
-patch_operations_explicit_version(
-    IPackagesetSet, 'beta', "getByName", "new", "setsIncludingSource")
-
 # IPreviewDiff
 patch_entry_explicit_version(IPreviewDiff, 'beta')
-
-# ISourcePackagePublishingHistory
-patch_entry_explicit_version(ISourcePackagePublishingHistory, 'beta')
-patch_operations_explicit_version(
-    ISourcePackagePublishingHistory, 'beta', "api_requestDeletion",
-    "binaryFileUrls", "changesFileUrl", "getBuilds", "getPublishedBinaries",
-    "packageDiffUrl", "sourceFileUrls")
 
 # ISourcePackageRecipe
 patch_entry_explicit_version(ISourcePackageRecipe, 'beta')

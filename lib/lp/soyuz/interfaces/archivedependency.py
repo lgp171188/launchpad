@@ -28,7 +28,7 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.soyuz.interfaces.archive import IArchive
 
 
-@exported_as_webservice_entry(publish_web_link=False)
+@exported_as_webservice_entry(as_of="beta", publish_web_link=False)
 class IArchiveDependency(Interface):
     """ArchiveDependency interface."""
 

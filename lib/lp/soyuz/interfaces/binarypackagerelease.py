@@ -121,7 +121,7 @@ class IBinaryPackageRelease(Interface):
         """
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBinaryPackageReleaseDownloadCount(Interface):
     """Daily download count of a binary package release in an archive."""
 

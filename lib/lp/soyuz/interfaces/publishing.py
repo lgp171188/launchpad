@@ -195,6 +195,7 @@ class IPublishingEdit(Interface):
         removal_comment=TextLine(title=_("Removal comment"), required=False))
     @export_operation_as("requestDeletion")
     @export_write_operation()
+    @operation_for_version("beta")
     def api_requestDeletion(removed_by, removal_comment=None):
         """Delete this source and its binaries.
 
@@ -418,6 +419,7 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
     # Really IBinaryPackagePublishingHistory, see below.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getPublishedBinaries():
         """Return all resulted `IBinaryPackagePublishingHistory`.
 
@@ -451,6 +453,7 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
     # Really IBuild (fixed in _schema_circular_imports.py)
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getBuilds():
         """Return a list of `IBuild` objects in this publishing context.
 
@@ -466,6 +469,7 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
         """
 
     @export_read_operation()
+    @operation_for_version("beta")
     def changesFileUrl():
         """The .changes file URL for this source publication.
 
@@ -551,6 +555,7 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
     @export_read_operation()
     @operation_parameters(
         include_meta=Bool(title=_("Include Metadata"), required=False))
+    @operation_for_version("beta")
     def sourceFileUrls(include_meta=False):
         """URLs for this source publication's uploaded source files.
 
@@ -560,6 +565,7 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
         """
 
     @export_read_operation()
+    @operation_for_version("beta")
     def binaryFileUrls():
         """URLs for this source publication's binary files.
 
@@ -569,6 +575,7 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
     @export_read_operation()
     @operation_parameters(
         to_version=TextLine(title=_("To Version"), required=True))
+    @operation_for_version("beta")
     def packageDiffUrl(to_version):
         """URL of the debdiff file between this and the supplied version.
 
@@ -600,7 +607,7 @@ class ISourcePackagePublishingHistoryEdit(IPublishingEdit):
         """
 
 
-@exported_as_webservice_entry(publish_web_link=False)
+@exported_as_webservice_entry(as_of="beta", publish_web_link=False)
 class ISourcePackagePublishingHistory(ISourcePackagePublishingHistoryPublic,
                                       ISourcePackagePublishingHistoryEdit):
     """A source package publishing history record."""
@@ -845,6 +852,7 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
         """
 
     @export_read_operation()
+    @operation_for_version("beta")
     def getDownloadCount():
         """Get the download count of this binary package in this archive.
 
@@ -855,6 +863,7 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
         end_date=Date(title=_("End date"), required=False))
     @operation_returns_collection_of(IBinaryPackageReleaseDownloadCount)
     @export_read_operation()
+    @operation_for_version("beta")
     def getDownloadCounts(start_date=None, end_date=None):
         """Get detailed download counts for this binary.
 
@@ -866,6 +875,7 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
         start_date=Date(title=_("Start date"), required=False),
         end_date=Date(title=_("End date"), required=False))
     @export_read_operation()
+    @operation_for_version("beta")
     def getDailyDownloadTotals(start_date=None, end_date=None):
         """Get the daily download counts for this binary.
 
@@ -921,7 +931,7 @@ class IBinaryPackagePublishingHistoryEdit(IPublishingEdit):
         """
 
 
-@exported_as_webservice_entry(publish_web_link=False)
+@exported_as_webservice_entry(as_of="beta", publish_web_link=False)
 class IBinaryPackagePublishingHistory(IBinaryPackagePublishingHistoryPublic,
                                       IBinaryPackagePublishingHistoryEdit):
     """A binary package publishing record."""
