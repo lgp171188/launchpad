@@ -11,6 +11,7 @@ from lazr.restful.declarations import (
     export_read_operation,
     exported,
     exported_as_webservice_entry,
+    operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
     REQUEST_USER,
@@ -51,7 +52,7 @@ __all__ = [
     ]
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IPillar(IHeadingContext):
     """An object that might be a project, a project group, or a distribution.
 
@@ -122,7 +123,7 @@ class IPillarName(Interface):
     pillar = Attribute('The pillar object')
 
 
-@exported_as_webservice_entry('pillars')
+@exported_as_webservice_entry("pillars", as_of="beta")
 class IPillarNameSet(Interface):
     """An object for searching across projects, project groups, and distros.
 
@@ -162,6 +163,7 @@ class IPillarNameSet(Interface):
                                     required=False))
     @operation_returns_collection_of(IPillar)
     @export_read_operation()
+    @operation_for_version("beta")
     def search(user, text, limit):
         """Return Projects/Project groups/Distros matching :text:.
 

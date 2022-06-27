@@ -22,7 +22,7 @@ from lp.registry.interfaces.role import IHasOwner
 from lp.services.fields import URIField
 
 
-@exported_as_webservice_entry(publish_web_link=False)
+@exported_as_webservice_entry(publish_web_link=False, as_of="beta")
 class IWikiName(IHasOwner):
     """Wiki for Users"""
     id = Int(title=_("Database ID"), required=True, readonly=True)

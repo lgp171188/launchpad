@@ -48,13 +48,13 @@ class IHasLocation(Interface):
             Float(title=_("The latitude of this object."),
                   required=False, readonly=True)),
         ('devel', dict(exported=False)),
-        exported=True)
+        as_of="beta", exported=True)
     longitude = exported(
         doNotSnapshot(
             Float(title=_("The longitude of this object."),
                   required=False, readonly=True)),
         ('devel', dict(exported=False)),
-        exported=True)
+        as_of="beta", exported=True)
     time_zone = exported(doNotSnapshot(
         Choice(title=_('The time zone of this object.'),
                required=False, readonly=True,

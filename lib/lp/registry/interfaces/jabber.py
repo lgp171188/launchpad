@@ -23,7 +23,7 @@ from lp import _
 from lp.registry.interfaces.role import IHasOwner
 
 
-@exported_as_webservice_entry('jabber_id')
+@exported_as_webservice_entry("jabber_id", as_of="beta")
 class IJabberID(IHasOwner):
     """Jabber specific user ID """
     id = Int(title=_("Database ID"), required=True, readonly=True)

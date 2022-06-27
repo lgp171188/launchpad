@@ -21,6 +21,7 @@ from lazr.restful.declarations import (
     export_read_operation,
     exported,
     exported_as_webservice_entry,
+    operation_for_version,
     operation_parameters,
     rename_parameters_as,
     )
@@ -123,6 +124,7 @@ class IProductSeriesEditRestricted(Interface):
     @rename_parameters_as(dateexpected='date_targeted')
     @export_factory_operation(
         IMilestone, ['name', 'dateexpected', 'summary', 'code_name'])
+    @operation_for_version("beta")
     def newMilestone(name, dateexpected=None, summary=None, code_name=None):
         """Create a new milestone for this ProjectSeries."""
 
@@ -327,6 +329,7 @@ class IProductSeriesView(
                               required=False, default=False))
     @export_read_operation()
     @export_operation_as('get_timeline')
+    @operation_for_version("beta")
     def getTimeline(include_inactive):
         """Return basic timeline data useful for creating a diagram.
 
@@ -334,7 +337,7 @@ class IProductSeriesView(
         """
 
 
-@exported_as_webservice_entry('project_series')
+@exported_as_webservice_entry("project_series", as_of="beta")
 class IProductSeries(IProductSeriesEditRestricted, IProductSeriesPublic,
                      IProductSeriesView, IProductSeriesLimitedView,
                      IStructuralSubscriptionTarget, IBugTarget):
@@ -344,7 +347,7 @@ class IProductSeries(IProductSeriesEditRestricted, IProductSeriesPublic,
 # XXX: EdwinGrubbs 2010-11-18 bug=677671
 # lazr.restful can't batch a DecoratedResultSet returning basic
 # python types such as dicts, so this interface is necessary.
-@exported_as_webservice_entry('timeline_project_series')
+@exported_as_webservice_entry("timeline_project_series", as_of="beta")
 class ITimelineProductSeries(Interface):
     """Minimal product series info for the timeline."""
 
