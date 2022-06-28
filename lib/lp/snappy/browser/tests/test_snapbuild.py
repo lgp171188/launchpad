@@ -40,6 +40,7 @@ from lp.testing.layers import (
 from lp.testing.pages import (
     extract_text,
     find_main_content,
+    find_tag_by_id,
     find_tags_by_class,
     )
 from lp.testing.views import create_initialized_view
@@ -88,71 +89,88 @@ class TestSnapBuildView(TestCaseWithFactory):
                 "revision ID", "li", attrs={"id": "revision-id"},
                 text=re.compile(r"^\s*Revision: dummy\s*$"))))
 
-    def test_store_upload_status_in_progress(self):
+    def test_no_store_status_if_not_fully_built(self):
+        build = self.factory.makeSnapBuild(status=BuildStatus.NEEDSBUILD)
+        getUtility(ISnapStoreUploadJobSource).create(build)
+        build_view = create_initialized_view(build, "+index")
+        self.assertIsNone(find_tag_by_id(build_view(), "store-status"))
+
+    def test_no_store_status_without_store_name(self):
         build = self.factory.makeSnapBuild(status=BuildStatus.FULLYBUILT)
         getUtility(ISnapStoreUploadJobSource).create(build)
         build_view = create_initialized_view(build, "+index")
-        self.assertThat(build_view(), soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                "store upload status", "li",
-                attrs={"id": "store-upload-status"},
-                text=re.compile(r"^\s*Store upload in progress\s*$"))))
+        self.assertIsNone(find_tag_by_id(build_view(), "store-status"))
+
+    def test_store_upload_status_in_progress(self):
+        build = self.factory.makeSnapBuild(
+            status=BuildStatus.FULLYBUILT, store_name="foo")
+        getUtility(ISnapStoreUploadJobSource).create(build)
+        build_view = create_initialized_view(build, "+index")
+        store_status = find_tag_by_id(build_view(), "store-status")
+        self.assertThat(store_status, soupmatchers.Tag(
+            "store upload status", "dd",
+            attrs={"id": "store-upload-status"},
+            text=re.compile(r"^\s*Store upload in progress\s*$")))
 
     def test_store_upload_status_completed(self):
-        build = self.factory.makeSnapBuild(status=BuildStatus.FULLYBUILT)
+        build = self.factory.makeSnapBuild(
+            status=BuildStatus.FULLYBUILT, store_name="foo")
         job = getUtility(ISnapStoreUploadJobSource).create(build)
         naked_job = removeSecurityProxy(job)
         naked_job.job._status = JobStatus.COMPLETED
         naked_job.store_url = "http://sca.example/dev/click-apps/1/rev/1/"
         build_view = create_initialized_view(build, "+index")
-        self.assertThat(build_view(), soupmatchers.HTMLContains(
-            soupmatchers.Within(
-                soupmatchers.Tag(
-                    "store upload status", "li",
-                    attrs={"id": "store-upload-status"}),
-                soupmatchers.Tag(
-                    "store link", "a", attrs={"href": job.store_url},
-                    text=re.compile(
-                        r"^\s*Manage this package in the store\s*$")))))
+        store_status = find_tag_by_id(build_view(), "store-status")
+        self.assertThat(store_status, soupmatchers.Within(
+            soupmatchers.Tag(
+                "store upload status", "dd",
+                attrs={"id": "store-upload-status"}),
+            soupmatchers.Tag(
+                "store link", "a", attrs={"href": job.store_url},
+                text=re.compile(
+                    r"^\s*Manage this package in the store\s*$"))))
 
     def test_store_upload_status_completed_no_url(self):
         # A package that has been uploaded to the store may lack a URL if
         # the upload was queued behind others for manual review.
-        build = self.factory.makeSnapBuild(status=BuildStatus.FULLYBUILT)
+        build = self.factory.makeSnapBuild(
+            status=BuildStatus.FULLYBUILT, store_name="foo")
         job = getUtility(ISnapStoreUploadJobSource).create(build)
         naked_job = removeSecurityProxy(job)
         naked_job.job._status = JobStatus.COMPLETED
         build_view = create_initialized_view(build, "+index")
-        self.assertThat(build_view(), soupmatchers.HTMLContains(
-            soupmatchers.Within(
-                soupmatchers.Tag(
-                    "store upload status", "li",
-                    attrs={"id": "store-upload-status"}),
-                soupmatchers.Tag(
-                    "store link", "a", attrs={"href": config.snappy.store_url},
-                    text=re.compile(r"^\s*Uploaded to the store\s*$")))))
+        store_status = find_tag_by_id(build_view(), "store-status")
+        self.assertThat(store_status, soupmatchers.Within(
+            soupmatchers.Tag(
+                "store upload status", "dd",
+                attrs={"id": "store-upload-status"}),
+            soupmatchers.Tag(
+                "store link", "a", attrs={"href": config.snappy.store_url},
+                text=re.compile(r"^\s*Uploaded to the store\s*$"))))
 
     def test_store_upload_status_failed(self):
-        build = self.factory.makeSnapBuild(status=BuildStatus.FULLYBUILT)
+        build = self.factory.makeSnapBuild(
+            status=BuildStatus.FULLYBUILT, store_name="foo")
         job = getUtility(ISnapStoreUploadJobSource).create(build)
         naked_job = removeSecurityProxy(job)
         naked_job.job._status = JobStatus.FAILED
         naked_job.error_message = "Scan failed."
         build_view = create_initialized_view(build, "+index")
-        self.assertThat(build_view(), soupmatchers.HTMLContains(
+        store_status = find_tag_by_id(build_view(), "store-status")
+        self.assertThat(store_status, soupmatchers.Tag(
+            "store upload status", "dd",
+            attrs={"id": "store-upload-status"}))
+        self.assertThat(store_status, soupmatchers.Within(
             soupmatchers.Tag(
-                "store upload status", "li",
-                attrs={"id": "store-upload-status"}),
-            soupmatchers.Within(
-                soupmatchers.Tag(
-                    "store upload error messages", "ul",
-                    attrs={"id": "store-upload-error-messages"}),
-                soupmatchers.Tag(
-                    "store upload error message", "li",
-                    text=re.compile(r"^\s*Scan failed.\s*$")))))
+                "store upload error messages", "ul",
+                attrs={"id": "store-upload-error-messages"}),
+            soupmatchers.Tag(
+                "store upload error message", "li",
+                text=re.compile(r"^\s*Scan failed.\s*$"))))
 
     def test_store_upload_status_failed_with_extended_error_message(self):
-        build = self.factory.makeSnapBuild(status=BuildStatus.FULLYBUILT)
+        build = self.factory.makeSnapBuild(
+            status=BuildStatus.FULLYBUILT, store_name="foo")
         job = getUtility(ISnapStoreUploadJobSource).create(build)
         naked_job = removeSecurityProxy(job)
         naked_job.job._status = JobStatus.FAILED
@@ -164,71 +182,62 @@ class TestSnapBuildView(TestCaseWithFactory):
             {"message": "Scan failed.", "link": "link1"},
             {"message": "Classic not allowed.", "link": "link2"}]
         build_view = create_initialized_view(build, "+index")
-        built_view = build_view()
-        self.assertThat(built_view, Not(soupmatchers.HTMLContains(
+        store_status = find_tag_by_id(build_view(), "store-status")
+        self.assertThat(store_status, Not(soupmatchers.Tag(
+            "store upload status", "dd",
+            attrs={"id": "store-upload-status"},
+            text=re.compile('.*This should not be shown.*'))))
+        error_messages = soupmatchers.Tag(
+            "store upload error messages", "ul",
+            attrs={"id": "store-upload-error-messages"})
+        self.assertThat(store_status, soupmatchers.Within(
             soupmatchers.Tag(
-                "store upload status", "li",
-                attrs={"id": "store-upload-status"},
-                text=re.compile('.*This should not be shown.*')))))
-        self.assertThat(built_view, soupmatchers.HTMLContains(
+                "store upload status", "dd",
+                attrs={"id": "store-upload-status"}),
+            error_messages))
+        self.assertThat(store_status, soupmatchers.Within(
+            error_messages,
+            soupmatchers.Tag(
+                "store upload error message", "li",
+                text=re.compile(".*The new version.*"))))
+        self.assertThat(store_status, soupmatchers.Within(
+            error_messages,
             soupmatchers.Within(
-                soupmatchers.Tag(
-                    "store upload status", "li",
-                    attrs={"id": "store-upload-status"}),
-                soupmatchers.Tag(
-                    "store upload error messages", "ul",
-                    attrs={"id": "store-upload-error-messages"}))))
-        self.assertThat(built_view, soupmatchers.HTMLContains(
-            soupmatchers.Within(
-                soupmatchers.Tag(
-                    "store upload error messages", "ul",
-                    attrs={"id": "store-upload-error-messages"}),
                 soupmatchers.Tag(
                     "store upload error message", "li",
-                    text=re.compile(".*The new version.*")))))
-        self.assertThat(built_view, soupmatchers.HTMLContains(
+                    text=re.compile(r".*Scan failed\..*")),
+                soupmatchers.Tag(
+                    "store upload error link", "a",
+                    attrs={"href": "link1"}, text="(?)"))))
+        self.assertThat(store_status, soupmatchers.Within(
+            error_messages,
             soupmatchers.Within(
                 soupmatchers.Tag(
-                    "store upload error messages", "ul",
-                    attrs={"id": "store-upload-error-messages"}),
-                soupmatchers.Within(
-                    soupmatchers.Tag(
-                        "store upload error message", "li",
-                        text=re.compile(r".*Scan failed\..*")),
-                    soupmatchers.Tag(
-                        "store upload error link", "a",
-                        attrs={"href": "link1"}, text="(?)")))))
-        self.assertThat(built_view, soupmatchers.HTMLContains(
-            soupmatchers.Within(
+                    "store upload error message", "li",
+                    text=re.compile(r".*Classic not allowed\..*")),
                 soupmatchers.Tag(
-                    "store upload error messages", "ul",
-                    attrs={"id": "store-upload-error-messages"}),
-                soupmatchers.Within(
-                    soupmatchers.Tag(
-                        "store upload error message", "li",
-                        text=re.compile(r".*Classic not allowed\..*")),
-                    soupmatchers.Tag(
-                        "store upload error link", "a",
-                        attrs={"href": "link2"}, text="(?)")))))
+                    "store upload error link", "a",
+                    attrs={"href": "link2"}, text="(?)"))))
 
     def test_store_upload_status_release_failed(self):
-        build = self.factory.makeSnapBuild(status=BuildStatus.FULLYBUILT)
+        build = self.factory.makeSnapBuild(
+            status=BuildStatus.FULLYBUILT, store_name="foo")
         job = getUtility(ISnapStoreUploadJobSource).create(build)
         naked_job = removeSecurityProxy(job)
         naked_job.job._status = JobStatus.FAILED
         naked_job.store_url = "http://sca.example/dev/click-apps/1/rev/1/"
         naked_job.error_message = "Failed to publish"
         build_view = create_initialized_view(build, "+index")
-        self.assertThat(build_view(), soupmatchers.HTMLContains(
-            soupmatchers.Within(
-                soupmatchers.Tag(
-                    "store upload status", "li",
-                    attrs={"id": "store-upload-status"},
-                    text=re.compile(
-                        r"^\s*Releasing package to channels failed:\s+"
-                        r"Failed to publish\s*$")),
-                soupmatchers.Tag(
-                    "store link", "a", attrs={"href": job.store_url}))))
+        store_status = find_tag_by_id(build_view(), "store-status")
+        self.assertThat(store_status, soupmatchers.Within(
+            soupmatchers.Tag(
+                "store upload status", "dd",
+                attrs={"id": "store-upload-status"},
+                text=re.compile(
+                    r"^\s*Releasing package to channels failed:\s+"
+                    r"Failed to publish\s*$")),
+            soupmatchers.Tag(
+                "store link", "a", attrs={"href": job.store_url})))
 
 
 class TestSnapBuildOperations(BrowserTestCase):
