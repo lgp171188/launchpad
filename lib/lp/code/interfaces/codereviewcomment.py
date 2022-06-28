@@ -101,7 +101,7 @@ class ICodeReviewCommentView(IMessageCommon):
         """
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class ICodeReviewComment(ICodeReviewCommentView, IMessageEdit):
     """A link between a merge proposal and a message."""
 

@@ -43,10 +43,7 @@ from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
     )
 from lp.bugs.interfaces.vulnerability import IVulnerability
-from lp.buildmaster.interfaces.builder import (
-    IBuilder,
-    IBuilderSet,
-    )
+from lp.buildmaster.interfaces.builder import IBuilder
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.code.interfaces.branch import (
@@ -120,20 +117,10 @@ from lp.services.messages.interfaces.messagerevision import IMessageRevision
 from lp.services.webservice.apihelpers import (
     patch_collection_property,
     patch_collection_return_type,
-    patch_entry_explicit_version,
     patch_entry_return_type,
     patch_list_parameter_type,
-    patch_operations_explicit_version,
     patch_plain_parameter_type,
     patch_reference_property,
-    )
-from lp.services.worlddata.interfaces.country import (
-    ICountry,
-    ICountrySet,
-    )
-from lp.services.worlddata.interfaces.language import (
-    ILanguage,
-    ILanguageSet,
     )
 from lp.snappy.interfaces.snapbase import ISnapBase
 from lp.soyuz.interfaces.archive import IArchive
@@ -171,9 +158,7 @@ from lp.translations.interfaces.potemplate import (
     IPOTemplateSharingSubset,
     IPOTemplateSubset,
     )
-from lp.translations.interfaces.translationgroup import ITranslationGroup
 from lp.translations.interfaces.translationimportqueue import (
-    ITranslationImportQueue,
     ITranslationImportQueueEntry,
     )
 
@@ -247,6 +232,9 @@ patch_list_parameter_type(
 patch_entry_return_type(IBug, 'addNomination', IBugNomination)
 patch_entry_return_type(IBug, 'getNominationFor', IBugNomination)
 patch_collection_return_type(IBug, 'getNominations', IBugNomination)
+
+# IBuilder
+patch_reference_property(IBuilder, 'current_build', IBuildFarmJob)
 
 patch_reference_property(
     IPreviewDiff, 'branch_merge_proposal', IBranchMergeProposal)
@@ -671,100 +659,3 @@ patch_collection_property(
 
 # IAccessToken
 patch_reference_property(IAccessToken, 'git_repository', IGitRepository)
-
-
-###
-#
-# Our web service configuration requires that every entry, field, and
-# named operation explicitly name the version in which it first
-# appears. This code grandfathers in entries and named operations that
-# were defined before this rule came into effect. When you change an
-# interface in the future, you should add explicit version statements to
-# its definition and get rid of the patch calls here.
-#
-###
-
-# IBranch
-patch_entry_explicit_version(IBranch, 'beta')
-
-# IBranchMergeProposal
-patch_entry_explicit_version(IBranchMergeProposal, 'beta')
-patch_operations_explicit_version(
-    IBranchMergeProposal, 'beta', "createComment", "getComment",
-    "nominateReviewer", "setStatus")
-
-# IBranchSubscription
-patch_entry_explicit_version(IBranchSubscription, 'beta')
-patch_operations_explicit_version(
-    IBranchSubscription, 'beta', "canBeUnsubscribedByUser")
-
-# IBuilder
-patch_entry_explicit_version(IBuilder, 'beta')
-patch_reference_property(IBuilder, 'current_build', IBuildFarmJob)
-
-# IBuilderSet
-patch_operations_explicit_version(IBuilderSet, 'beta', "getByName")
-
-# ICodeImport
-patch_entry_explicit_version(ICodeImport, 'beta')
-patch_operations_explicit_version(
-    ICodeImport, 'beta', "requestImport")
-
-# ICodeReviewComment
-patch_entry_explicit_version(ICodeReviewComment, 'beta')
-
-# ICodeReviewVoteReference
-patch_entry_explicit_version(ICodeReviewVoteReference, 'beta')
-patch_operations_explicit_version(
-    ICodeReviewVoteReference, 'beta', "claimReview", "delete",
-    "reassignReview")
-
-# ICountry
-patch_entry_explicit_version(ICountry, 'beta')
-
-# ICountrySet
-patch_operations_explicit_version(
-    ICountrySet, 'beta', "getByCode", "getByName")
-
-# IHasTranslationImports
-patch_entry_explicit_version(IHasTranslationImports, 'beta')
-
-# ILanguage
-patch_entry_explicit_version(ILanguage, 'beta')
-
-# ILanguageSet
-patch_operations_explicit_version(ILanguageSet, 'beta', "getAllLanguages")
-
-# IMessage
-patch_entry_explicit_version(IMessage, 'beta')
-
-# IPOFile
-patch_entry_explicit_version(IPOFile, 'beta')
-
-# IPOTemplate
-patch_entry_explicit_version(IPOTemplate, 'beta')
-
-# IPreviewDiff
-patch_entry_explicit_version(IPreviewDiff, 'beta')
-
-# ISourcePackageRecipe
-patch_entry_explicit_version(ISourcePackageRecipe, 'beta')
-patch_operations_explicit_version(
-    ISourcePackageRecipe, 'beta', "performDailyBuild", "requestBuild",
-    "setRecipeText")
-
-# ISourcePackageRecipeBuild
-patch_entry_explicit_version(ISourcePackageRecipeBuild, 'beta')
-
-# ITranslationGroup
-patch_entry_explicit_version(ITranslationGroup, 'beta')
-
-# ITranslationImportQueue
-patch_operations_explicit_version(
-    ITranslationImportQueue, 'beta', "getAllEntries", "getFirstEntryToImport",
-    "getRequestTargets")
-
-# ITranslationImportQueueEntry
-patch_entry_explicit_version(ITranslationImportQueueEntry, 'beta')
-patch_operations_explicit_version(
-    ITranslationImportQueueEntry, 'beta', "setStatus")

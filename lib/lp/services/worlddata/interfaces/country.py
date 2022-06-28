@@ -15,6 +15,7 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_collection,
     exported_as_webservice_entry,
+    operation_for_version,
     operation_parameters,
     operation_returns_entry,
     )
@@ -35,7 +36,8 @@ from lp.services.fields import (
     )
 
 
-@exported_as_webservice_entry(plural_name='countries', publish_web_link=False)
+@exported_as_webservice_entry(
+    plural_name="countries", publish_web_link=False, as_of="beta")
 class ICountry(Interface):
     """The country description."""
 
@@ -78,6 +80,7 @@ class ICountrySet(Interface):
         name=TextLine(title=_("Name"), required=True))
     @operation_returns_entry(ICountry)
     @export_read_operation()
+    @operation_for_version("beta")
     def getByName(name):
         """Return a country by its name."""
 
@@ -85,6 +88,7 @@ class ICountrySet(Interface):
         code=TextLine(title=_("Code"), required=True))
     @operation_returns_entry(ICountry)
     @export_read_operation()
+    @operation_for_version("beta")
     def getByCode(code):
         """Return a country by its code."""
 

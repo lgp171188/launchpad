@@ -371,6 +371,7 @@ class IBranchMergeProposalView(Interface):
     # Really ICodeReviewComment.
     @operation_returns_entry(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getComment(id):
         """Return the CodeReviewComment with the specified ID.
 
@@ -569,6 +570,7 @@ class IBranchMergeProposalEdit(Interface):
                 "revision of the branch for the status change."),
             required=False))
     @export_write_operation()
+    @operation_for_version("beta")
     def setStatus(status, user, revision_id):
         """Set the state of the merge proposal to the specified status.
 
@@ -674,6 +676,7 @@ class IBranchMergeProposalEdit(Interface):
     # Really ICodeReviewVoteReference.
     @operation_returns_entry(Interface)
     @export_write_operation()
+    @operation_for_version("beta")
     def nominateReviewer(reviewer, registrant, review_type=None):
         """Set the specified person as a reviewer.
 
@@ -693,6 +696,7 @@ class IBranchMergeProposalAnyAllowedPerson(IBugLinkTarget):
     @call_with(owner=REQUEST_USER)
     # ICodeReviewComment supplied as Interface to avoid circular imports.
     @export_factory_operation(Interface, [])
+    @operation_for_version("beta")
     def createComment(owner, subject=None, content=None, vote=None,
                       review_type=None, parent=None,
                       previewdiff_id=None, inline_comments=None):
@@ -768,7 +772,7 @@ class IBranchMergeProposalAnyAllowedPerson(IBugLinkTarget):
         """Unlink a bug from this merge proposal."""
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBranchMergeProposal(IBranchMergeProposalPublic,
                            IBranchMergeProposalView, IBranchMergeProposalEdit,
                            IBranchMergeProposalAnyAllowedPerson):

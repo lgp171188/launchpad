@@ -19,6 +19,7 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_collection,
     exported_as_webservice_entry,
+    operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
     operation_returns_entry,
@@ -119,8 +120,9 @@ class SpecialTranslationImportTargetFilter(DBEnumeratedType):
 
 
 @exported_as_webservice_entry(
-    singular_name='translation_import_queue_entry',
-    plural_name='translation_import_queue_entries')
+    singular_name="translation_import_queue_entry",
+    plural_name="translation_import_queue_entries",
+    as_of="beta")
 class ITranslationImportQueueEntry(Interface):
     """An entry of the Translation Import Queue."""
 
@@ -249,6 +251,7 @@ class ITranslationImportQueueEntry(Interface):
     @call_with(user=REQUEST_USER)
     @operation_parameters(new_status=copy_field(status))
     @export_write_operation()
+    @operation_for_version("beta")
     def setStatus(new_status, user):
         """Transition to a new status if possible.
 
@@ -363,6 +366,7 @@ class ITranslationImportQueue(Interface):
         import_status=copy_field(ITranslationImportQueueEntry['status']))
     @operation_returns_collection_of(ITranslationImportQueueEntry)
     @export_read_operation()
+    @operation_for_version("beta")
     def getAllEntries(target=None, import_status=None, file_extensions=None):
         """Return all entries this import queue has.
 
@@ -380,6 +384,7 @@ class ITranslationImportQueue(Interface):
     @export_read_operation()
     @operation_parameters(target=Reference(schema=IHasTranslationImports))
     @operation_returns_entry(ITranslationImportQueueEntry)
+    @operation_for_version("beta")
     def getFirstEntryToImport(target=None):
         """Return the first entry of the queue ready to be imported.
 
@@ -393,6 +398,7 @@ class ITranslationImportQueue(Interface):
         status=copy_field(ITranslationImportQueueEntry['status']))
     @operation_returns_collection_of(IHasTranslationImports)
     @call_with(user=REQUEST_USER)
+    @operation_for_version("beta")
     def getRequestTargets(user,  status=None):
         """List `Product`s and `DistroSeries` with pending imports.
 

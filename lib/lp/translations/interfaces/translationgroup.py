@@ -42,7 +42,8 @@ from lp.translations.enums import TranslationPermission
 
 
 @exported_as_webservice_entry(
-    singular_name='translation_group', plural_name='translation_groups')
+    singular_name="translation_group", plural_name="translation_groups",
+    as_of="beta")
 class ITranslationGroup(IHasOwner):
     """A TranslationGroup."""
 

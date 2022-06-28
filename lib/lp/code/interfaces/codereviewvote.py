@@ -13,6 +13,7 @@ from lazr.restful.declarations import (
     export_write_operation,
     exported,
     exported_as_webservice_entry,
+    operation_for_version,
     operation_parameters,
     REQUEST_USER,
     )
@@ -93,6 +94,7 @@ class ICodeReviewVoteReferenceEdit(Interface):
 
     @call_with(claimant=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def claimReview(claimant):
         """Change a pending review into a review for claimant.
 
@@ -120,6 +122,7 @@ class ICodeReviewVoteReferenceEdit(Interface):
             title=_("The person or team to assign to do the review."),
             schema=IPerson))
     @export_write_operation()
+    @operation_for_version("beta")
     def reassignReview(reviewer):
         """Reassign a pending review to someone else.
 
@@ -132,6 +135,7 @@ class ICodeReviewVoteReferenceEdit(Interface):
         """
 
     @export_destructor_operation()
+    @operation_for_version("beta")
     def delete():
         """Delete the pending review.
 
@@ -139,7 +143,7 @@ class ICodeReviewVoteReferenceEdit(Interface):
         """
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class ICodeReviewVoteReference(ICodeReviewVoteReferencePublic,
                                ICodeReviewVoteReferenceEdit):
     """A reference to a vote on a IBranchMergeProposal.
