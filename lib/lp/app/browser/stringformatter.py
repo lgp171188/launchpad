@@ -20,6 +20,8 @@ import sys
 from base64 import urlsafe_b64encode
 from itertools import zip_longest
 
+import bleach
+import bleach_allowlist
 import markdown
 import six
 from breezy.patches import hunk_from_header
@@ -1222,14 +1224,30 @@ class FormattersAPI:
             raise TraversalError(name)
 
 
+# Allow some additional tags used by the "tables" extension.
+markdown_tags = bleach_allowlist.markdown_tags + [
+    "table",
+    "tbody",
+    "td",
+    "tfoot",
+    "th",
+    "thead",
+    "tr",
+]
+
+
 def format_markdown(text):
     """Return html form of marked-up text."""
     # This returns whole paragraphs (in p tags), similarly to text_to_html.
-    md = markdown.Markdown(
-        safe_mode="escape",
-        extensions=[
-            "tables",
-            "nl2br",
-        ],
+    return bleach.clean(
+        markdown.markdown(
+            text,
+            extensions=[
+                "fenced_code",
+                "nl2br",
+                "tables",
+            ],
+        ),
+        markdown_tags,
+        bleach_allowlist.markdown_attrs,
     )
-    return md.convert(text)  # How easy was that?
