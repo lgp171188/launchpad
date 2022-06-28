@@ -54,6 +54,7 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import (
+    IncompatibleArchiveStatus,
     IncompatibleArguments,
     NotFoundError,
     )
@@ -473,11 +474,11 @@ class Archive(SQLBase):
 
     @api_publish.setter
     def api_publish(self, value):
-        if value:
-            if self.status == ArchiveStatus.ACTIVE:
-                self.publish = value
-        else:
-            self.publish = value
+        if value is True and self.status != ArchiveStatus.ACTIVE:
+            raise IncompatibleArchiveStatus(
+                "The publish flag can only be set to "
+                "True when the archive status is Active")
+        self.publish = value
 
     @property
     def reference(self):

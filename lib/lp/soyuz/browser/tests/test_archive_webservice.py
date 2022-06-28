@@ -131,7 +131,7 @@ class TestArchiveWebservice(TestCaseWithFactory):
         # A random user can't delete someone else's PPA.
         self.assertEqual(401, ws.delete(ppa_url).status)
 
-    def test_publishing_enabled(self):
+    def test_publishing_enabled_exposed(self):
         with admin_logged_in():
             archive = self.factory.makeArchive()
             archive_url = api_url(archive)
@@ -144,47 +144,66 @@ class TestArchiveWebservice(TestCaseWithFactory):
         # It's exposed via API.
         self.assertTrue(ws_archive["publish"])
 
+    def test_publishing_enabled_false(self):
+        with admin_logged_in():
+            archive = self.factory.makeArchive()
+            archive_url = api_url(archive)
+            ws = webservice_for_person(
+                archive.owner, permission=OAuthPermission.WRITE_PRIVATE,
+                default_api_version="devel")
+
         # Setting it to False works.
         response = ws.patch(
-            archive_url, "application/json",
-            json.dumps({
-                "publish": False,
-                }))
+            archive_url, "application/json", json.dumps({"publish": False}))
         self.assertEqual(209, response.status)
 
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         self.assertFalse(ws_archive["publish"])
 
+    def test_publishing_enabled_true_active(self):
+        with admin_logged_in():
+            archive = self.factory.makeArchive()
+            archive_url = api_url(archive)
+            ws = webservice_for_person(
+                archive.owner, permission=OAuthPermission.WRITE_PRIVATE,
+                default_api_version="devel")
+            response = ws.patch(
+                archive_url, "application/json",
+                json.dumps({"publish": False}))
+            self.assertEqual(209, response.status)
+
         # Setting it back to True works because archive is Active.
         ws.patch(
-            archive_url, "application/json",
-            json.dumps({
-                "publish": True,
-                }))
+            archive_url, "application/json", json.dumps({"publish": True}))
+
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         self.assertTrue(ws_archive["publish"])
 
-        # Setting it to True with archive status 
-        # different from Active won't work.
-        response = ws.delete(archive_url)
-        self.assertEqual(200, response.status)
-        ws_archive = self.getWebserviceJSON(ws, archive_url)
-        self.assertEqual('Deleting', ws_archive["status"])
-        ws.patch(
-            archive_url, "application/json",
-            json.dumps({
-                "publish": False,
-                }))
-        ws_archive = self.getWebserviceJSON(ws, archive_url)
-        self.assertFalse(ws_archive["publish"])
+    def test_publishing_enabled_true_not_active(self):
+        with admin_logged_in():
+            archive = self.factory.makeArchive()
+            archive_url = api_url(archive)
+            ws = webservice_for_person(
+                archive.owner, permission=OAuthPermission.WRITE_PRIVATE,
+                default_api_version="devel")
+            response = ws.patch(
+                    archive_url, "application/json",
+                    json.dumps({"publish": False}))
+            self.assertEqual(209, response.status)
+            response = ws.delete(archive_url)
+            self.assertEqual(200, response.status)
+            ws_archive = self.getWebserviceJSON(ws, archive_url)
+            self.assertEqual('Deleting', ws_archive["status"])
 
-        ws.patch(
-            archive_url, "application/json",
-            json.dumps({
-                "publish": True,
-                }))
-        ws_archive = self.getWebserviceJSON(ws, archive_url)
-        self.assertFalse(ws_archive["publish"])
+            # Setting it to True with archive status
+            # different from Active won't work.
+            response = ws.patch(
+                archive_url, "application/json", json.dumps({"publish": True}))
+
+            self.assertEqual(400, response.status)
+            self.assertEqual(b'The publish flag can only be set to '
+                             b'True when the archive status is Active',
+                             response.body)
 
 
 class TestSigningKey(TestCaseWithFactory):
