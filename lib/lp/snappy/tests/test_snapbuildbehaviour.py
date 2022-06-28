@@ -291,6 +291,17 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
 
     @defer.inlineCallbacks
     def test_requestProxyToken_unconfigured(self):
+        self.pushConfig("builddmaster", builder_proxy_host=None)
+        branch = self.factory.makeBranch()
+        job = self.makeJob(branch=branch)
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual([], self.proxy_api.tokens.requests)
+        self.assertNotIn("proxy_url", args)
+        self.assertNotIn("revocation_endpoint", args)
+
+    @defer.inlineCallbacks
+    def test_requestProxyToken_no_secret(self):
         self.pushConfig(
             "builddmaster", builder_proxy_auth_api_admin_secret=None)
         branch = self.factory.makeBranch()

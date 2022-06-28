@@ -86,9 +86,11 @@ class InProcessProxyAuthAPIFixture(fixtures.Fixture):
         config.push("in-process-proxy-auth-api-fixture", dedent("""
             [builddmaster]
             builder_proxy_auth_api_admin_secret: admin-secret
-            builder_proxy_auth_api_endpoint: http://%s:%s/tokens
-            """) %
-            (port.getHost().host, port.getHost().port))
+            builder_proxy_auth_api_admin_username: admin-launchpad.test
+            builder_proxy_auth_api_endpoint: http://{host}:{port}/tokens
+            builder_proxy_host: {host}
+            builder_proxy_port: {port}
+            """).format(host=port.getHost().host, port=port.getHost().port))
         self.addCleanup(config.pop, "in-process-proxy-auth-api-fixture")
 
 

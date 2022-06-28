@@ -220,6 +220,17 @@ class TestAsyncOCIRecipeBuildBehaviour(
 
     @defer.inlineCallbacks
     def test_requestProxyToken_unconfigured(self):
+        self.pushConfig("builddmaster", builder_proxy_host=None)
+        [ref] = self.factory.makeGitRefs()
+        job = self.makeJob(git_ref=ref)
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual([], self.proxy_api.tokens.requests)
+        self.assertNotIn("proxy_url", args)
+        self.assertNotIn("revocation_endpoint", args)
+
+    @defer.inlineCallbacks
+    def test_requestProxyToken_no_secret(self):
         self.pushConfig(
             "builddmaster", builder_proxy_auth_api_admin_secret=None)
         [ref] = self.factory.makeGitRefs()
