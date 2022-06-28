@@ -27,6 +27,7 @@ __all__ = [
 
 from cgi import FieldStorage
 import http.client
+import json
 import re
 from urllib.parse import urlparse
 from wsgiref.headers import Headers
@@ -40,7 +41,6 @@ from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.marshallers import URLDereferencingMixin
 from lazr.restful.tales import WebLayerAPI
 from lazr.restful.utils import get_current_browser_request
-import simplejson
 import six
 from zope.app.publisher.xmlrpc import IMethodPublisher
 from zope.component import (
@@ -496,7 +496,7 @@ class LaunchpadView(UserAttributeCache):
             cache['context'] = self.context
         if self.user is None:
             cache = obfuscate_structure(cache)
-        return simplejson.dumps(
+        return json.dumps(
             cache, cls=ResourceJSONEncoder,
             media_type=EntryResource.JSON_TYPE)
 
@@ -1093,7 +1093,7 @@ class RedirectionView(URLDereferencingMixin):
         if self.cache_view:
             return self.cache_view.getCacheJSON()
         else:
-            return simplejson.dumps({})
+            return json.dumps({})
 
     def __call__(self):
         self.request.response.redirect(self.target, status=self.status)

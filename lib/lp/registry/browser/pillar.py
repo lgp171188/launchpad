@@ -13,13 +13,12 @@ __all__ = [
     'PillarSharingView',
     ]
 
-
+import json
 from operator import attrgetter
 
 from lazr.restful import ResourceJSONEncoder
 from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.utils import get_current_web_service_request
-import simplejson
 from zope.component import getUtility
 from zope.interface import (
     implementer,
@@ -342,8 +341,7 @@ class PillarSharingView(LaunchpadView):
 
     @property
     def json_sharing_picker_config(self):
-        return simplejson.dumps(
-            self.sharing_picker_config, cls=ResourceJSONEncoder)
+        return json.dumps(self.sharing_picker_config, cls=ResourceJSONEncoder)
 
     def _getBatchNavigator(self, grantees):
         """Return the batch navigator to be used to batch the grantees."""

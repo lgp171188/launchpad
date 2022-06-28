@@ -26,6 +26,7 @@ __all__ = [
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import json
 import re
 
 from lazr.enum import (
@@ -40,7 +41,6 @@ from lazr.restful import (
     )
 from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
-from simplejson import dumps
 from zope import formlib
 from zope.component import (
     getMultiAdapter,
@@ -1007,7 +1007,7 @@ class BugSecrecyEditView(LaunchpadFormView, BugSubscriptionPortletDetails):
                     can_add_package_task_to_bug(bug))
                 self.request.response.setHeader(
                     'content-type', 'application/json')
-                return dumps(
+                return json.dumps(
                     result_data, cls=ResourceJSONEncoder,
                     media_type=EntryResource.JSON_TYPE)
             else:
