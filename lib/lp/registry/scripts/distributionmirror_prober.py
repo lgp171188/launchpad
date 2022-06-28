@@ -123,6 +123,9 @@ class RequestManager:
 
         def probe():
             if reactor.running:
+                # Defer the actual probe function call to the next tick of
+                # the reactor, since otherwise we can end up in very deep
+                # recursion and exhaust our stack.
                 return deferLater(reactor, 0, probe_func)
             else:
                 return probe_func()
