@@ -901,6 +901,12 @@ class TestMarkdown(TestCase):
             ),
         )
 
+    def test_escapes_html(self):
+        self.assertThat(
+            "<script>alert('XSS')</script>",
+            MarksDownAs("&lt;script&gt;alert('XSS')&lt;/script&gt;"),
+        )
+
 
 def test_suite():
     suite = unittest.TestSuite()
