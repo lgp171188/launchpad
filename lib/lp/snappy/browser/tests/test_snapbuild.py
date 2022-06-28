@@ -87,7 +87,7 @@ class TestSnapBuildView(TestCaseWithFactory):
         self.assertThat(build_view(), soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 "revision ID", "li", attrs={"id": "revision-id"},
-                text=re.compile(r"^\s*Revision: dummy\s*$"))))
+                text=re.compile(r"^\s*VCS revision: dummy\s*$"))))
 
     def test_no_store_status_if_not_fully_built(self):
         build = self.factory.makeSnapBuild(status=BuildStatus.NEEDSBUILD)
