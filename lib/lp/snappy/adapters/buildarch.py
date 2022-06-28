@@ -6,6 +6,13 @@ __all__ = [
     ]
 
 from collections import Counter
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Union,
+    )
 
 from lp.services.helpers import english_list
 
@@ -56,7 +63,12 @@ class UnsupportedBuildOnError(SnapArchitecturesParserError):
 class SnapArchitecture:
     """A single entry in the snapcraft.yaml 'architectures' list."""
 
-    def __init__(self, build_on, build_to=None, build_error=None):
+    def __init__(
+        self,
+        build_on: Union[str, List[str]],
+        build_to: Optional[Union[str, List[str]]] = None,
+        build_error: Optional[str] = None
+    ):
         """Create a new architecture entry.
 
         :param build_on: string or list; build-on property from
@@ -67,10 +79,12 @@ class SnapArchitecture:
             snapcraft.yaml.
         """
         self.build_on = (
-            [build_on] if isinstance(build_on, str) else build_on)
+            [build_on] if isinstance(build_on, str) else build_on
+        )  # type: List[str]
         if build_to:
             self.build_to = (
-                [build_to] if isinstance(build_to, str) else build_to)
+                [build_to] if isinstance(build_to, str) else build_to
+            )  # type: List[str]
         else:
             self.build_to = self.build_on
         self.build_error = build_error
@@ -83,9 +97,11 @@ class SnapArchitecture:
         except KeyError:
             raise MissingPropertyError("build-on")
 
+        build_to = properties.get("build-to", properties.get("run-on"))
+
         return cls(
             build_on=build_on,
-            build_to=properties.get("build-to", properties.get("run-on")),
+            build_to=build_to,
             build_error=properties.get("build-error"),
         )
 
@@ -97,11 +113,18 @@ class SnapBuildInstance:
 
       - architecture: The architecture tag that should be used to build the
             snap.
+      - target_architectures: The architecture tags of the snaps expected to
+            be produced by this recipe (which may differ from `architecture`
+            in the case of cross-building)
       - required: Whether or not failure to build should cause the entire
             set to fail.
     """
 
-    def __init__(self, architecture, supported_architectures):
+    def __init__(
+        self,
+        architecture: SnapArchitecture,
+        supported_architectures: List[str],
+    ):
         """Construct a new `SnapBuildInstance`.
 
         :param architecture: `SnapArchitecture` instance.
@@ -115,10 +138,14 @@ class SnapBuildInstance:
         except StopIteration:
             raise UnsupportedBuildOnError(architecture.build_on)
 
+        self.target_architectures = architecture.build_to
         self.required = architecture.build_error != "ignore"
 
 
-def determine_architectures_to_build(snapcraft_data, supported_arches):
+def determine_architectures_to_build(
+    snapcraft_data: Dict[str, Any],
+    supported_arches: List[str],
+) -> List[SnapBuildInstance]:
     """Return a list of architectures to build based on snapcraft.yaml.
 
     :param snapcraft_data: A parsed snapcraft.yaml.
@@ -126,7 +153,9 @@ def determine_architectures_to_build(snapcraft_data, supported_arches):
         we can create builds for.
     :return: a list of `SnapBuildInstance`s.
     """
-    architectures_list = snapcraft_data.get("architectures")
+    architectures_list = (
+        snapcraft_data.get("architectures")
+    )  # type: Optional[List]
 
     if architectures_list:
         # First, determine what style we're parsing.  Is it a list of

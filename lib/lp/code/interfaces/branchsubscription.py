@@ -12,6 +12,7 @@ from lazr.restful.declarations import (
     export_read_operation,
     exported,
     exported_as_webservice_entry,
+    operation_for_version,
     REQUEST_USER,
     )
 from lazr.restful.fields import Reference
@@ -31,7 +32,7 @@ from lp.code.interfaces.branch import IBranch
 from lp.services.fields import PersonChoice
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBranchSubscription(Interface):
     """The relationship between a person and a branch."""
 
@@ -88,5 +89,6 @@ class IBranchSubscription(Interface):
 
     @call_with(user=REQUEST_USER)
     @export_read_operation()
+    @operation_for_version("beta")
     def canBeUnsubscribedByUser(user):
         """Can the user unsubscribe the subscriber from the branch?"""

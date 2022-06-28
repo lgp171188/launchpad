@@ -32,7 +32,7 @@ from lp.services.gpg.interfaces import (
     )
 
 
-@exported_as_webservice_entry('gpg_key')
+@exported_as_webservice_entry('gpg_key', as_of="beta")
 class IGPGKey(IHasOwner):
     """OpenPGP support"""
 

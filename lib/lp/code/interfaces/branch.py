@@ -1246,7 +1246,7 @@ class IBranchEdit(IWebhookTarget):
         """
 
 
-@exported_as_webservice_entry(plural_name='branches')
+@exported_as_webservice_entry(plural_name="branches", as_of="beta")
 class IBranch(IBranchPublic, IBranchView, IBranchEdit,
               IBranchEditableAttributes, IBranchModerate,
               IBranchModerateAttributes, IBranchAnyone):

@@ -1895,7 +1895,7 @@ class IPersonSettings(IPersonSettingsViewRestricted, IPersonSettingsModerate):
     """A person's settings."""
 
 
-@exported_as_webservice_entry(plural_name='people')
+@exported_as_webservice_entry(plural_name="people", as_of="beta")
 class IPerson(IPersonPublic, IPersonLimitedView, IPersonViewRestricted,
               IPersonEditRestricted, IPersonModerate,
               IPersonModerateRestricted, IPersonSpecialRestricted,
@@ -2027,7 +2027,7 @@ class ITeamPublic(Interface):
         """
 
 
-@exported_as_webservice_entry('team')
+@exported_as_webservice_entry("team", as_of="beta")
 class ITeam(IPerson, ITeamPublic):
     """A group of people and other teams.
 

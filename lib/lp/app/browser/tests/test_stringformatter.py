@@ -16,11 +16,11 @@ from lp.app.browser.stringformatter import (
     parse_diff,
 )
 from lp.services.config import config
-from lp.services.features.testing import FeatureFixture
+from lp.services.features.testing import MemoryFeatureFixture
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import TestCase, TestCaseWithFactory
-from lp.testing.layers import DatabaseFunctionalLayer, ZopelessLayer
+from lp.testing.layers import BaseLayer, DatabaseFunctionalLayer, ZopelessLayer
 from lp.testing.pages import find_tags_by_class
 
 
@@ -830,11 +830,11 @@ class MarksDownAs(Matcher):
 class TestMarkdownDisabled(TestCase):
     """Feature flag can turn Markdown stuff off."""
 
-    layer = DatabaseFunctionalLayer  # Fixtures need the database for now
+    layer = BaseLayer
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture({"markdown.enabled": None}))
+        self.useFixture(MemoryFeatureFixture({"markdown.enabled": None}))
 
     def test_plain_text(self):
         self.assertThat(
@@ -850,14 +850,62 @@ class TestMarkdown(TestCase):
     configuration.
     """
 
-    layer = DatabaseFunctionalLayer  # Fixtures need the database for now
+    layer = BaseLayer
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture({"markdown.enabled": "on"}))
+        self.useFixture(MemoryFeatureFixture({"markdown.enabled": "on"}))
 
     def test_plain_text(self):
         self.assertThat("hello world", MarksDownAs("<p>hello world</p>"))
+
+    def test_fenced_code(self):
+        self.assertThat(
+            "```\nfoo = 1\n```\n",
+            MarksDownAs("<pre><code>foo = 1\n</code></pre>"),
+        )
+
+    def test_nl2br(self):
+        self.assertThat(
+            "hello\nworld\n\nanother paragraph\n",
+            MarksDownAs("<p>hello<br>\nworld</p>\n<p>another paragraph</p>"),
+        )
+
+    def test_tables(self):
+        self.assertThat(
+            dedent(
+                """\
+                Column 1 | Column 2
+                -------- | --------
+                Cell 1   | Cell 2
+                """
+            ),
+            MarksDownAs(
+                dedent(
+                    """\
+                    <table>
+                    <thead>
+                    <tr>
+                    <th>Column 1</th>
+                    <th>Column 2</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                    <td>Cell 1</td>
+                    <td>Cell 2</td>
+                    </tr>
+                    </tbody>
+                    </table>"""
+                )
+            ),
+        )
+
+    def test_escapes_html(self):
+        self.assertThat(
+            "<script>alert('XSS')</script>",
+            MarksDownAs("&lt;script&gt;alert('XSS')&lt;/script&gt;"),
+        )
 
 
 def test_suite():

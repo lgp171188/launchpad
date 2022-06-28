@@ -22,7 +22,6 @@ from lp.services.mail.mailwrapper import MailWrapper
 from lp.services.mail.sendmail import sendmail
 
 
-CC = "CC"
 MAX_RETURN_MESSAGE_SIZE = config.processmail.max_error_message_return_size
 
 

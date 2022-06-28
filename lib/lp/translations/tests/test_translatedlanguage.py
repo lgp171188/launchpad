@@ -391,8 +391,6 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
         # Changed count is 'updatescount' on POFile.
         # It has to be lower or equal to currentcount.
         naked_pofile.updatescount = 1
-        # new is rosettacount-updatescount.
-        naked_pofile.newcount = 0
         naked_pofile.unreviewed_count = 3
 
         translated_language.recalculateCounts()

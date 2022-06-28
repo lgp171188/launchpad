@@ -423,7 +423,8 @@ class ISnapView(Interface):
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
     def requestBuild(requester, archive, distro_arch_series, pocket,
-                     snap_base=None, channels=None, build_request=None):
+                     snap_base=None, channels=None, build_request=None,
+                     target_architectures=None):
         """Request that the snap package be built.
 
         :param requester: The person requesting the build.
@@ -435,6 +436,8 @@ class ISnapView(Interface):
             for this build.
         :param build_request: The `ISnapBuildRequest` job being processed,
             if any.
+        :param target_architectures: The optional list of target architectures
+            to build the snap for.
         :return: `ISnapBuild`.
         """
 

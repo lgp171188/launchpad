@@ -117,7 +117,7 @@ def validate_cvs_module(cvsmodule):
     return True
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class ICodeImport(Interface):
     """A code import to a Bazaar branch or Git repository."""
 
@@ -270,6 +270,7 @@ class ICodeImport(Interface):
 
     @call_with(requester=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def requestImport(requester, error_if_already_requested=False):
         """Request that an import be tried soon.
 

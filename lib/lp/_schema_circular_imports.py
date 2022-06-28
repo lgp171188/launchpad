@@ -43,10 +43,7 @@ from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
     )
 from lp.bugs.interfaces.vulnerability import IVulnerability
-from lp.buildmaster.interfaces.builder import (
-    IBuilder,
-    IBuilderSet,
-    )
+from lp.buildmaster.interfaces.builder import IBuilder
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.code.interfaces.branch import (
@@ -94,49 +91,20 @@ from lp.registry.interfaces.distroseriesdifference import (
 from lp.registry.interfaces.distroseriesdifferencecomment import (
     IDistroSeriesDifferenceComment,
     )
-from lp.registry.interfaces.gpg import IGPGKey
-from lp.registry.interfaces.irc import IIrcID
-from lp.registry.interfaces.jabber import IJabberID
-from lp.registry.interfaces.milestone import (
-    IHasMilestones,
-    IMilestone,
-    )
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonEditRestricted,
     IPersonLimitedView,
     IPersonViewRestricted,
-    ITeam,
     )
-from lp.registry.interfaces.pillar import (
-    IPillar,
-    IPillarNameSet,
-    )
-from lp.registry.interfaces.product import (
-    IProduct,
-    IProductSet,
-    )
-from lp.registry.interfaces.productrelease import (
-    IProductRelease,
-    IProductReleaseFile,
-    )
-from lp.registry.interfaces.productseries import (
-    IProductSeries,
-    ITimelineProductSeries,
-    )
-from lp.registry.interfaces.projectgroup import (
-    IProjectGroup,
-    IProjectGroupSet,
-    )
+from lp.registry.interfaces.product import IProduct
+from lp.registry.interfaces.productseries import IProductSeries
 from lp.registry.interfaces.sourcepackage import (
     ISourcePackage,
     ISourcePackageEdit,
     ISourcePackagePublic,
     )
-from lp.registry.interfaces.ssh import ISSHKey
-from lp.registry.interfaces.teammembership import ITeamMembership
-from lp.registry.interfaces.wikiname import IWikiName
 from lp.services.auth.interfaces import IAccessToken
 from lp.services.comments.interfaces.conversation import IComment
 from lp.services.fields import InlineObject
@@ -149,20 +117,10 @@ from lp.services.messages.interfaces.messagerevision import IMessageRevision
 from lp.services.webservice.apihelpers import (
     patch_collection_property,
     patch_collection_return_type,
-    patch_entry_explicit_version,
     patch_entry_return_type,
     patch_list_parameter_type,
-    patch_operations_explicit_version,
     patch_plain_parameter_type,
     patch_reference_property,
-    )
-from lp.services.worlddata.interfaces.country import (
-    ICountry,
-    ICountrySet,
-    )
-from lp.services.worlddata.interfaces.language import (
-    ILanguage,
-    ILanguageSet,
     )
 from lp.snappy.interfaces.snapbase import ISnapBase
 from lp.soyuz.interfaces.archive import IArchive
@@ -170,9 +128,6 @@ from lp.soyuz.interfaces.archivedependency import IArchiveDependency
 from lp.soyuz.interfaces.archivepermission import IArchivePermission
 from lp.soyuz.interfaces.archivesubscriber import IArchiveSubscriber
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuild
-from lp.soyuz.interfaces.binarypackagerelease import (
-    IBinaryPackageReleaseDownloadCount,
-    )
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 from lp.soyuz.interfaces.distroarchseriesfilter import IDistroArchSeriesFilter
@@ -181,10 +136,7 @@ from lp.soyuz.interfaces.livefsbuild import (
     ILiveFSBuild,
     ILiveFSFile,
     )
-from lp.soyuz.interfaces.packageset import (
-    IPackageset,
-    IPackagesetSet,
-    )
+from lp.soyuz.interfaces.packageset import IPackageset
 from lp.soyuz.interfaces.publishing import (
     IBinaryPackagePublishingHistory,
     IBinaryPackagePublishingHistoryEdit,
@@ -206,9 +158,7 @@ from lp.translations.interfaces.potemplate import (
     IPOTemplateSharingSubset,
     IPOTemplateSubset,
     )
-from lp.translations.interfaces.translationgroup import ITranslationGroup
 from lp.translations.interfaces.translationimportqueue import (
-    ITranslationImportQueue,
     ITranslationImportQueueEntry,
     )
 
@@ -282,6 +232,9 @@ patch_list_parameter_type(
 patch_entry_return_type(IBug, 'addNomination', IBugNomination)
 patch_entry_return_type(IBug, 'getNominationFor', IBugNomination)
 patch_collection_return_type(IBug, 'getNominations', IBugNomination)
+
+# IBuilder
+patch_reference_property(IBuilder, 'current_build', IBuildFarmJob)
 
 patch_reference_property(
     IPreviewDiff, 'branch_merge_proposal', IBranchMergeProposal)
@@ -706,273 +659,3 @@ patch_collection_property(
 
 # IAccessToken
 patch_reference_property(IAccessToken, 'git_repository', IGitRepository)
-
-
-###
-#
-# Our web service configuration requires that every entry, field, and
-# named operation explicitly name the version in which it first
-# appears. This code grandfathers in entries and named operations that
-# were defined before this rule came into effect. When you change an
-# interface in the future, you should add explicit version statements to
-# its definition and get rid of the patch calls here.
-#
-###
-
-# IArchive
-patch_entry_explicit_version(IArchive, 'beta')
-patch_operations_explicit_version(
-    IArchive, 'beta', "_checkUpload", "deleteComponentUploader",
-    "deletePackageUploader", "deletePackagesetUploader", "deleteQueueAdmin",
-    "getAllPublishedBinaries", "getArchiveDependency", "getBuildCounters",
-    "getBuildSummariesForSourceIds", "getComponentsForQueueAdmin",
-    "getPackagesetsForSource", "getPackagesetsForSourceUploader",
-    "getPackagesetsForUploader", "getPermissionsForPerson",
-    "api_getPublishedSources", "getQueueAdminsForComponent",
-    "getUploadersForComponent", "getUploadersForPackage",
-    "getUploadersForPackageset", "isSourceUploadAllowed",
-    "newComponentUploader", "newPackageUploader", "newPackagesetUploader",
-    "newQueueAdmin", "newSubscription", "syncSource", "syncSources")
-
-# IArchiveDependency
-patch_entry_explicit_version(IArchiveDependency, 'beta')
-
-# IArchivePermission
-patch_entry_explicit_version(IArchivePermission, 'beta')
-
-# IArchiveSubscriber
-patch_entry_explicit_version(IArchiveSubscriber, 'beta')
-
-# IBinaryPackageBuild
-patch_entry_explicit_version(IBinaryPackageBuild, 'beta')
-
-# IBinaryPackagePublishingHistory
-patch_entry_explicit_version(IBinaryPackagePublishingHistory, 'beta')
-patch_operations_explicit_version(
-    IBinaryPackagePublishingHistory, 'beta', "getDailyDownloadTotals",
-    "getDownloadCount", "getDownloadCounts")
-
-# IBinaryPackageReleaseDownloadCount
-patch_entry_explicit_version(IBinaryPackageReleaseDownloadCount, 'beta')
-
-# IBranch
-patch_entry_explicit_version(IBranch, 'beta')
-
-# IBranchMergeProposal
-patch_entry_explicit_version(IBranchMergeProposal, 'beta')
-patch_operations_explicit_version(
-    IBranchMergeProposal, 'beta', "createComment", "getComment",
-    "nominateReviewer", "setStatus")
-
-# IBranchSubscription
-patch_entry_explicit_version(IBranchSubscription, 'beta')
-patch_operations_explicit_version(
-    IBranchSubscription, 'beta', "canBeUnsubscribedByUser")
-
-# IBuilder
-patch_entry_explicit_version(IBuilder, 'beta')
-patch_reference_property(IBuilder, 'current_build', IBuildFarmJob)
-
-# IBuilderSet
-patch_operations_explicit_version(IBuilderSet, 'beta', "getByName")
-
-# ICodeImport
-patch_entry_explicit_version(ICodeImport, 'beta')
-patch_operations_explicit_version(
-    ICodeImport, 'beta', "requestImport")
-
-# ICodeReviewComment
-patch_entry_explicit_version(ICodeReviewComment, 'beta')
-
-# ICodeReviewVoteReference
-patch_entry_explicit_version(ICodeReviewVoteReference, 'beta')
-patch_operations_explicit_version(
-    ICodeReviewVoteReference, 'beta', "claimReview", "delete",
-    "reassignReview")
-
-# ICommercialSubscription
-patch_entry_explicit_version(ICommercialSubscription, 'beta')
-
-# ICountry
-patch_entry_explicit_version(ICountry, 'beta')
-
-# ICountrySet
-patch_operations_explicit_version(
-    ICountrySet, 'beta', "getByCode", "getByName")
-
-# IDistribution
-patch_operations_explicit_version(
-    IDistribution, 'beta', "getArchive", "getCountryMirror",
-    "getDevelopmentSeries", "getMirrorByName", "getSeries",
-    "getSourcePackage", "searchSourcePackages")
-
-# IDistributionMirror
-patch_entry_explicit_version(IDistributionMirror, 'beta')
-patch_operations_explicit_version(
-    IDistributionMirror, 'beta', "canTransitionToCountryMirror",
-    "getOverallFreshness", "isOfficial", "transitionToCountryMirror")
-
-# IDistributionSourcePackage
-patch_entry_explicit_version(IDistributionSourcePackage, 'beta')
-
-# IDistroArchSeries
-patch_entry_explicit_version(IDistroArchSeries, 'beta')
-
-# IDistroSeries
-patch_entry_explicit_version(IDistroSeries, 'beta')
-patch_operations_explicit_version(
-    IDistroSeries, 'beta', "initDerivedDistroSeries", "getDerivedSeries",
-    "getParentSeries", "getDistroArchSeries", "getPackageUploads",
-    "getSourcePackage", "newMilestone")
-
-# IDistroSeriesDifference
-patch_entry_explicit_version(IDistroSeriesDifference, 'beta')
-patch_operations_explicit_version(
-    IDistroSeriesDifference, 'beta', "addComment", "blocklist",
-    "requestPackageDiffs", "unblocklist")
-
-# IDistroSeriesDifferenceComment
-patch_entry_explicit_version(IDistroSeriesDifferenceComment, 'beta')
-
-# IGPGKey
-patch_entry_explicit_version(IGPGKey, 'beta')
-
-# IHasMilestones
-patch_entry_explicit_version(IHasMilestones, 'beta')
-
-# IHasTranslationImports
-patch_entry_explicit_version(IHasTranslationImports, 'beta')
-
-# IIrcID
-patch_entry_explicit_version(IIrcID, 'beta')
-
-# IJabberID
-patch_entry_explicit_version(IJabberID, 'beta')
-
-# ILanguage
-patch_entry_explicit_version(ILanguage, 'beta')
-
-# ILanguageSet
-patch_operations_explicit_version(ILanguageSet, 'beta', "getAllLanguages")
-
-# IMessage
-patch_entry_explicit_version(IMessage, 'beta')
-
-# IMilestone
-patch_entry_explicit_version(IMilestone, 'beta')
-
-# IPOFile
-patch_entry_explicit_version(IPOFile, 'beta')
-
-# IPOTemplate
-patch_entry_explicit_version(IPOTemplate, 'beta')
-
-# IPackageUpload
-patch_entry_explicit_version(IPackageUpload, 'beta')
-
-# IPackageset
-patch_entry_explicit_version(IPackageset, 'beta')
-patch_operations_explicit_version(
-    IPackageset, 'beta', "addSources", "addSubsets", "getSourcesIncluded",
-    "getSourcesNotSharedBy", "getSourcesSharedBy", "relatedSets",
-    "removeSources", "removeSubsets", "setsIncluded", "setsIncludedBy")
-
-# IPackagesetSet
-patch_operations_explicit_version(
-    IPackagesetSet, 'beta', "getByName", "new", "setsIncludingSource")
-
-# IPerson
-patch_entry_explicit_version(IPerson, 'beta')
-
-# IPillar
-patch_entry_explicit_version(IPillar, 'beta')
-
-# IPillarNameSet
-patch_entry_explicit_version(IPillarNameSet, 'beta')
-patch_operations_explicit_version(
-    IPillarNameSet, 'beta', "search")
-
-# IPreviewDiff
-patch_entry_explicit_version(IPreviewDiff, 'beta')
-
-# IProduct
-patch_entry_explicit_version(IProduct, 'beta')
-patch_operations_explicit_version(
-    IProduct, 'beta', "getRelease", "getSeries", "getTimeline", "newSeries")
-
-# IProductRelease
-patch_entry_explicit_version(IProductRelease, 'beta')
-patch_operations_explicit_version(
-    IProductRelease, 'beta', "addReleaseFile", "destroySelf")
-
-# IProductReleaseFile
-patch_entry_explicit_version(IProductReleaseFile, 'beta')
-patch_operations_explicit_version(
-    IProductReleaseFile, 'beta', "destroySelf")
-
-# IProductSeries
-patch_entry_explicit_version(IProductSeries, 'beta')
-patch_operations_explicit_version(
-    IProductSeries, 'beta', "getTimeline", "newMilestone")
-
-# IProductSet
-patch_operations_explicit_version(
-    IProductSet, 'beta', "createProduct", "forReview", "latest", "search")
-
-# IProjectGroup
-patch_entry_explicit_version(IProjectGroup, 'beta')
-
-# IProjectGroupSet
-patch_operations_explicit_version(
-    IProjectGroupSet, 'beta', "search")
-
-# ISSHKey
-patch_entry_explicit_version(ISSHKey, 'beta')
-
-# ISourcePackage
-patch_entry_explicit_version(ISourcePackage, 'beta')
-patch_operations_explicit_version(
-    ISourcePackage, 'beta', "getBranch", "linkedBranches", "setBranch")
-
-# ISourcePackagePublishingHistory
-patch_entry_explicit_version(ISourcePackagePublishingHistory, 'beta')
-patch_operations_explicit_version(
-    ISourcePackagePublishingHistory, 'beta', "api_requestDeletion",
-    "binaryFileUrls", "changesFileUrl", "getBuilds", "getPublishedBinaries",
-    "packageDiffUrl", "sourceFileUrls")
-
-# ISourcePackageRecipe
-patch_entry_explicit_version(ISourcePackageRecipe, 'beta')
-patch_operations_explicit_version(
-    ISourcePackageRecipe, 'beta', "performDailyBuild", "requestBuild",
-    "setRecipeText")
-
-# ISourcePackageRecipeBuild
-patch_entry_explicit_version(ISourcePackageRecipeBuild, 'beta')
-
-# ITeam
-patch_entry_explicit_version(ITeam, 'beta')
-
-# ITeamMembership
-patch_entry_explicit_version(ITeamMembership, 'beta')
-patch_operations_explicit_version(
-    ITeamMembership, 'beta', "setExpirationDate", "setStatus")
-
-# ITimelineProductSeries
-patch_entry_explicit_version(ITimelineProductSeries, 'beta')
-
-# ITranslationGroup
-patch_entry_explicit_version(ITranslationGroup, 'beta')
-
-# ITranslationImportQueue
-patch_operations_explicit_version(
-    ITranslationImportQueue, 'beta', "getAllEntries", "getFirstEntryToImport",
-    "getRequestTargets")
-
-# ITranslationImportQueueEntry
-patch_entry_explicit_version(ITranslationImportQueueEntry, 'beta')
-patch_operations_explicit_version(
-    ITranslationImportQueueEntry, 'beta', "setStatus")
-
-# IWikiName
-patch_entry_explicit_version(IWikiName, 'beta')

@@ -112,10 +112,6 @@ credits_message_str = ('This is a dummy translation so that the '
                        'credits are counted as translated.')
 
 
-# Marker for "no incumbent message found yet."
-incumbent_unknown = object()
-
-
 def dictify_translations(translations):
     """Represent `translations` as a normalized dict.
 

@@ -238,8 +238,12 @@ class TestSnap(TestCaseWithFactory):
             distroseries=distroarchseries.distroseries,
             processors=[distroarchseries.processor])
         build = snap.requestBuild(
-            snap.owner, snap.distro_series.main_archive, distroarchseries,
-            PackagePublishingPocket.UPDATES)
+            snap.owner,
+            snap.distro_series.main_archive,
+            distroarchseries,
+            PackagePublishingPocket.UPDATES,
+            target_architectures=["amd64", "i386"],
+        )
         self.assertTrue(ISnapBuild.providedBy(build))
         self.assertThat(build, MatchesStructure(
             requester=Equals(snap.owner),
@@ -249,7 +253,8 @@ class TestSnap(TestCaseWithFactory):
             snap_base=Is(None),
             channels=Is(None),
             status=Equals(BuildStatus.NEEDSBUILD),
-            ))
+            target_architectures=Equals(["amd64", "i386"]),
+        ))
         store = Store.of(build)
         store.flush()
         build_queue = store.find(
@@ -359,6 +364,19 @@ class TestSnap(TestCaseWithFactory):
             SnapBuildAlreadyPending, snap.requestBuild,
             snap.owner, snap.distro_series.main_archive, arches[0],
             PackagePublishingPocket.UPDATES, channels={"core": "edge"})
+        # target_architectures are taken into account when looking for pending
+        # builds. the order of the list should not matter.
+        snap.requestBuild(
+            snap.owner, snap.distro_series.main_archive, arches[0],
+            PackagePublishingPocket.UPDATES,
+            target_architectures=["i386", "amd64"]
+        )
+        self.assertRaises(
+            SnapBuildAlreadyPending, snap.requestBuild,
+            snap.owner, snap.distro_series.main_archive, arches[0],
+            PackagePublishingPocket.UPDATES,
+            target_architectures=["amd64", "i386"]
+        )
         # Changing the status of the old build allows a new build.
         old_build.updateStatus(BuildStatus.BUILDING)
         old_build.updateStatus(BuildStatus.FULLYBUILT)
@@ -4193,16 +4211,22 @@ class TestSnapWebservice(TestCaseWithFactory):
                 distroseries=distroseries, processor=processor))
             das_urls.append(api_url(dases[-1]))
         archive = self.factory.makeArchive()
-        archive_url = api_url(archive)
         snap = self.makeSnap(
             distroseries=distroseries,
             processors=[das.processor for das in dases[:2]],
             auto_build_archive=archive,
             auto_build_pocket=PackagePublishingPocket.PROPOSED)
-        response = self.webservice.named_post(
-            snap["self_link"], "requestBuild", archive=archive_url,
-            distro_arch_series=das_urls[0], pocket="Proposed")
-        self.assertEqual(201, response.status)
+        with person_logged_in(self.person):
+            db_snap = getUtility(ISnapSet).getByName(
+                self.person, snap["name"]
+            )
+            db_snap.requestBuild(
+                self.person,
+                archive,
+                dases[0],
+                pocket=PackagePublishingPocket.PROPOSED,
+                target_architectures=[dases[0].architecturetag],
+            )
         response = self.webservice.named_post(
             snap["self_link"], "requestAutoBuilds")
         self.assertEqual(200, response.status)

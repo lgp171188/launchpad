@@ -26,6 +26,7 @@ from lazr.restful.declarations import (
     export_write_operation,
     exported,
     exported_as_webservice_entry,
+    operation_for_version,
     operation_parameters,
     REQUEST_USER,
     )
@@ -173,6 +174,7 @@ class IProductReleaseFileEditRestricted(Interface):
 
     @export_write_operation()
     @export_operation_as('delete')
+    @operation_for_version("beta")
     def destroySelf():
         """Delete the product release file."""
 
@@ -213,7 +215,8 @@ class IProductReleaseFilePublic(Interface):
                  required=True, readonly=True))
 
 
-@exported_as_webservice_entry("project_release_file", publish_web_link=False)
+@exported_as_webservice_entry(
+    "project_release_file", publish_web_link=False, as_of="beta")
 class IProductReleaseFile(IProductReleaseFileEditRestricted,
                           IProductReleaseFilePublic):
     """A file associated with a ProductRelease."""
@@ -233,6 +236,7 @@ class IProductReleaseEditRestricted(Interface):
         file_type=copy_field(IProductReleaseFile['filetype'], required=False))
     @export_factory_operation(IProductReleaseFile, ['description'])
     @export_operation_as('add_file')
+    @operation_for_version("beta")
     def addReleaseFile(filename, file_content, content_type,
                        uploader, signature_filename=None,
                        signature_content=None,
@@ -257,6 +261,7 @@ class IProductReleaseEditRestricted(Interface):
 
     @export_write_operation()
     @export_operation_as('delete')
+    @operation_for_version("beta")
     def destroySelf():
         """Delete this release.
 
@@ -373,7 +378,7 @@ class IProductReleaseView(Interface):
         """Does the release have a file that matches the name?"""
 
 
-@exported_as_webservice_entry('project_release')
+@exported_as_webservice_entry("project_release", as_of="beta")
 class IProductRelease(IProductReleaseEditRestricted, IProductReleaseView,
                       IProductReleasePublic):
     """A specific release (i.e. version) of a product.

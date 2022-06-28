@@ -15,6 +15,7 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_collection,
     exported_as_webservice_entry,
+    operation_for_version,
     operation_parameters,
     rename_parameters_as,
     )
@@ -54,10 +55,12 @@ class ITemporaryBlobStorage(Interface):
     file_alias = Attribute("Link to actual storage of blob")
 
     @export_read_operation()
+    @operation_for_version("beta")
     def hasBeenProcessed():
         """Return True if this blob has been processed."""
 
     @export_read_operation()
+    @operation_for_version("beta")
     def getProcessedData():
         """Returns a dict containing the processed blob data."""
 
@@ -79,6 +82,7 @@ class ITemporaryStorageManager(Interface):
     @rename_parameters_as(uuid='token')
     @operation_parameters(uuid=copy_field(ITemporaryBlobStorage['uuid']))
     @export_read_operation()
+    @operation_for_version("beta")
     def fetch(uuid):
         """Retrieve a TemporaryBlobStorage by uuid."""
 

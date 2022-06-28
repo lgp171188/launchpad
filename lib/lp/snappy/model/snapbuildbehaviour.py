@@ -10,6 +10,8 @@ __all__ = [
     'SnapBuildBehaviour',
     ]
 
+import typing
+
 from twisted.internet import defer
 from zope.component import adapter
 from zope.interface import implementer
@@ -101,11 +103,11 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             config.builddmaster.authentication_timeout)
 
     @defer.inlineCallbacks
-    def extraBuildArgs(self, logger=None):
+    def extraBuildArgs(self, logger=None) -> typing.Dict[str, typing.Any]:
         """
         Return the extra arguments required by the worker for the given build.
         """
-        build = self.build
+        build = self.build  # type: ISnapBuild
         args = yield super().extraBuildArgs(logger=logger)
         yield self.addProxyArgs(args, build.snap.allow_internet)
         args["name"] = build.snap.store_name or build.snap.name
@@ -165,6 +167,11 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             # (matching snapd, SAS and snapcraft representation)
             timestamp = format_as_rfc3339(build_request.date_requested)
             args["build_request_timestamp"] = timestamp
+
+        args["target_architectures"] = removeSecurityProxy(
+            build.target_architectures
+        )
+
         return args
 
     def verifySuccessfulBuild(self):

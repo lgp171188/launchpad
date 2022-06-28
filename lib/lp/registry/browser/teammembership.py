@@ -41,7 +41,6 @@ class TeamMembershipEditView(LaunchpadView):
         super().__init__(context, request)
         self.errormessage = ""
         self.prefix = 'membership'
-        self.max_year = 2050
         fields = form.Fields(Date(
             __name__='expirationdate', title=_('Expiration date')))
         expiration_field = fields['expirationdate']

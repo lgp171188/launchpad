@@ -517,6 +517,7 @@ class IDistributionView(
         name=TextLine(title=_("Archive name"), required=True))
     @operation_returns_entry(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getArchive(name):
         """Return the distribution archive with the given name.
 
@@ -529,6 +530,7 @@ class IDistributionView(
     @operation_returns_collection_of(Interface)
     @export_operation_as(name="getDevelopmentSeries")
     @export_read_operation()
+    @operation_for_version("beta")
     def getDevelopmentSeries():
         """Return the DistroSeries which are marked as in development."""
 
@@ -548,6 +550,7 @@ class IDistributionView(
     @operation_returns_entry(Interface)
     @call_with(follow_aliases=True)
     @export_read_operation()
+    @operation_for_version("beta")
     def getSeries(name_or_version, follow_aliases=False):
         """Return the series with the name or version given.
 
@@ -591,6 +594,7 @@ class IDistributionView(
         name=TextLine(title=_("Name"), required=True))
     @operation_returns_entry(IDistributionMirror)
     @export_read_operation()
+    @operation_for_version("beta")
     def getMirrorByName(name):
         """Return the mirror with the given name for this distribution or None
         if it's not found.
@@ -601,6 +605,7 @@ class IDistributionView(
         mirror_type=copy_field(IDistributionMirror['content'], required=True))
     @operation_returns_entry(IDistributionMirror)
     @export_read_operation()
+    @operation_for_version("beta")
     def getCountryMirror(country, mirror_type):
         """Return the country DNS mirror for a country and content type."""
 
@@ -644,6 +649,7 @@ class IDistributionView(
     # _schema_circular_imports.py.
     @operation_returns_entry(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getSourcePackage(name):
         """Return a DistributionSourcePackage with the given name for this
         distribution, or None.
@@ -684,6 +690,7 @@ class IDistributionView(
     # _schema_circular_imports.py.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def searchSourcePackages(
         text, has_packaging=None, publishing_distroseries=None):
         """Search for source packages that correspond to the given text.

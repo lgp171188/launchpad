@@ -51,8 +51,9 @@ class LanguageNotFound(NotFoundError):
 
 
 @exported_as_webservice_entry(
-    singular_name='translation_template',
-    plural_name='translation_templates')
+    singular_name="translation_template",
+    plural_name="translation_templates",
+    as_of="beta")
 class IPOTemplate(IRosettaStats):
     """A translation template."""
 

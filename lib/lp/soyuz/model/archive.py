@@ -1154,7 +1154,6 @@ class Archive(SQLBase):
         if not check_permission('launchpad.View', dependency):
             raise ArchiveDependencyError(
                 "You don't have permission to use this dependency.")
-            return
         if not dependency.enabled:
             raise ArchiveDependencyError("Dependencies must not be disabled.")
         if dependency.distribution != self.distribution:

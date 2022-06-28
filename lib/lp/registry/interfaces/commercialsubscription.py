@@ -28,7 +28,7 @@ from lp import _
 from lp.services.fields import PublicPersonChoice
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class ICommercialSubscription(Interface):
     """A Commercial Subscription for a Product.
 

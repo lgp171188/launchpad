@@ -23,6 +23,7 @@ from storm.locals import (
     Desc,
     Int,
     JSON,
+    List,
     Or,
     Reference,
     Select,
@@ -156,6 +157,10 @@ class SnapBuild(PackageBuildMixin, Storm):
     distro_arch_series = Reference(
         distro_arch_series_id, 'DistroArchSeries.id')
 
+    target_architectures = List(
+        'target_architectures', allow_none=True
+    )
+
     pocket = DBEnum(enum=PackagePublishingPocket, allow_none=False)
 
     snap_base_id = Int(name='snap_base', allow_none=True)
@@ -197,7 +202,8 @@ class SnapBuild(PackageBuildMixin, Storm):
     def __init__(self, build_farm_job, requester, snap, archive,
                  distro_arch_series, pocket, snap_base, channels,
                  processor, virtualized, date_created,
-                 store_upload_metadata=None, build_request=None):
+                 store_upload_metadata=None, build_request=None,
+                 target_architectures=None):
         """Construct a `SnapBuild`."""
         super().__init__()
         self.build_farm_job = build_farm_job
@@ -212,6 +218,7 @@ class SnapBuild(PackageBuildMixin, Storm):
         self.virtualized = virtualized
         self.date_created = date_created
         self.store_upload_metadata = store_upload_metadata
+        self.target_architectures = target_architectures
         if build_request is not None:
             self.build_request_id = build_request.id
         self.status = BuildStatus.NEEDSBUILD
@@ -522,7 +529,8 @@ class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def new(self, requester, snap, archive, distro_arch_series, pocket,
             snap_base=None, channels=None, date_created=DEFAULT,
-            store_upload_metadata=None, build_request=None):
+            store_upload_metadata=None, build_request=None,
+            target_architectures=None):
         """See `ISnapBuildSet`."""
         store = IMasterStore(SnapBuild)
         build_farm_job = getUtility(IBuildFarmJobSource).new(
@@ -534,7 +542,8 @@ class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
             not distro_arch_series.processor.supports_nonvirtualized
             or snap.require_virtualized or archive.require_virtualized,
             date_created, store_upload_metadata=store_upload_metadata,
-            build_request=build_request)
+            build_request=build_request,
+            target_architectures=target_architectures)
         store.add(snapbuild)
         store.flush()
         return snapbuild

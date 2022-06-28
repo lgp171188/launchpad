@@ -158,7 +158,7 @@ class IMessageView(IMessageCommon):
         """Return None because messages are not threaded over the API."""
 
 
-@exported_as_webservice_entry('message')
+@exported_as_webservice_entry("message", as_of="beta")
 class IMessage(IMessageEdit, IMessageView):
     """A Message."""
 

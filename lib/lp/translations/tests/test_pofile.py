@@ -2499,7 +2499,6 @@ class TestPOFileToTranslationFileDataAdapter(TestCaseWithFactory):
         Content-Transfer-Encoding: 8bit
         Plural-Forms: %s""")
 
-    western_plural = "nplurals=2; plural=(n != 1)"
     other_2_plural = "nplurals=2; plural=(n > 0)"
     generic_plural = "nplurals=INTEGER; plural=EXPRESSION"
     serbian3_plural = ("nplurals=3; plural=(n%10==1 && n%100!=11 "

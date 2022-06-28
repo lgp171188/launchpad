@@ -26,7 +26,6 @@ class GettextPOImporter:
     """Support class to import gettext .po files."""
 
     def __init__(self, context=None):
-        self.basepath = None
         self.productseries = None
         self.distroseries = None
         self.sourcepackagename = None
@@ -48,7 +47,6 @@ class GettextPOImporter:
 
     def parse(self, translation_import_queue_entry):
         """See `ITranslationFormatImporter`."""
-        self.basepath = translation_import_queue_entry.path
         self.productseries = translation_import_queue_entry.productseries
         self.distroseries = translation_import_queue_entry.distroseries
         self.sourcepackagename = (

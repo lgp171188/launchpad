@@ -46,7 +46,8 @@ from lp.translations.interfaces.translationsperson import ITranslationsPerson
 
 @exported_as_webservice_entry(
     singular_name="translation_file",
-    plural_name="translation_files")
+    plural_name="translation_files",
+    as_of="beta")
 class IPOFile(IRosettaStats):
     """A translation file."""
 

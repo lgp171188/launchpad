@@ -20,6 +20,7 @@ bcrypt==3.1.7
 beautifulsoup4==4.7.1
 billiard==3.6.4.0
 bleach==3.1.0
+bleach-allowlist==1.0.3
 breezy==3.1.0
 bson==0.5.9
 boto3==1.16.63
@@ -73,13 +74,13 @@ lazr.delegates==2.0.4
 lazr.enum==1.2.1
 lazr.jobrunner==0.17
 lazr.lifecycle==1.2.1
-lazr.restful==1.1.0
+lazr.restful==2.0.1
 lazr.restfulclient==0.14.4
 lazr.sshserver==0.1.13
 lazr.uri==1.0.6
 lpjsmin==0.6
 m2r==0.1.13
-Markdown==2.3.1
+Markdown==3.2.2
 martian==1.3.post1
 maxminddb==1.5.1
 meliae==0.5.1

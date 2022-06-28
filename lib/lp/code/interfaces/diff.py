@@ -82,7 +82,7 @@ class IIncrementalDiff(Interface):
         IRevision, readonly=True, title=_('The new revision of the diff.'))
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IPreviewDiff(IDiff):
     """A diff generated to show actual diff between two branches.
 

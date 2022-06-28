@@ -29,7 +29,7 @@ from lp.registry.interfaces.distroseriesdifference import (
 from lp.services.messages.interfaces.message import IMessage
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IDistroSeriesDifferenceComment(Interface):
     """A comment for a distroseries difference record."""
 

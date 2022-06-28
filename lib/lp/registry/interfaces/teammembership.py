@@ -24,6 +24,7 @@ from lazr.restful.declarations import (
     export_write_operation,
     exported,
     exported_as_webservice_entry,
+    operation_for_version,
     operation_parameters,
     REQUEST_USER,
     )
@@ -116,7 +117,7 @@ class TeamMembershipStatus(DBEnumeratedType):
 ACTIVE_STATES = [TeamMembershipStatus.ADMIN, TeamMembershipStatus.APPROVED]
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class ITeamMembership(Interface):
     """TeamMembership for Users.
 
@@ -198,6 +199,7 @@ class ITeamMembership(Interface):
     @call_with(user=REQUEST_USER)
     @operation_parameters(date=copy_field(dateexpires))
     @export_write_operation()
+    @operation_for_version("beta")
     def setExpirationDate(date, user):
         """Set this membership's expiration date.
 
@@ -242,6 +244,7 @@ class ITeamMembership(Interface):
                             "For use by Launchpad administrators only."),
                             required=False, default=False))
     @export_write_operation()
+    @operation_for_version("beta")
     def setStatus(status, user, comment=None, silent=False):
         """Set the status of this membership.
 

@@ -694,6 +694,10 @@ class TestSnapBuild(TestCaseWithFactory):
                 logger.output, LogsScheduledWebhooks([
                     (hook, "snap:build:0.1", MatchesDict(expected_payload))]))
 
+    def test_can_have_target_architectures(self):
+        build = self.factory.makeSnapBuild(target_architectures=["amd64"])
+        self.assertEqual(build.target_architectures, ["amd64"])
+
 
 class TestSnapBuildSet(TestCaseWithFactory):
 
