@@ -12,6 +12,7 @@ __all__ = [
 
 from fnmatch import fnmatchcase
 import importlib
+import json
 import os
 import sys
 from textwrap import dedent
@@ -20,7 +21,6 @@ import unittest
 
 from lazr.restful import ResourceJSONEncoder
 from lazr.restful.utils import get_current_browser_request
-import simplejson
 from zope.component import getUtility
 from zope.exceptions.exceptionformatter import format_exception
 from zope.interface import implementer
@@ -406,12 +406,11 @@ class YUITestFixtureControllerView(LaunchpadView):
                 'Content-Type', 'application/json')
             # We use the ProxyFactory so that the restful
             # redaction code is always used.
-            result = simplejson.dumps(
-                ProxyFactory(data), cls=ResourceJSONEncoder)
+            result = json.dumps(ProxyFactory(data), cls=ResourceJSONEncoder)
         return result
 
     def renderTEARDOWN(self):
-        data = simplejson.loads(self.request.form['data'])
+        data = json.loads(self.request.form['data'])
         fixtures = self.get_fixtures()
         try:
             for fixture_name in reversed(self.fixtures):
