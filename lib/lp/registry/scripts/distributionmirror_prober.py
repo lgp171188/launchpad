@@ -36,6 +36,7 @@ from twisted.internet.defer import (
     DeferredSemaphore,
     )
 from twisted.internet.ssl import VerificationError
+from twisted.internet.task import deferLater
 from twisted.python.failure import Failure
 from twisted.web.client import (
     Agent,
@@ -119,7 +120,14 @@ class RequestManager:
                 self.overall_semaphore,
                 DeferredSemaphore(self.max_parallel_per_host))
             self.host_locks[host] = multi_lock
-        return multi_lock.run(probe_func)
+
+        def probe():
+            if reactor.running:
+                return deferLater(reactor, 0, probe_func)
+            else:
+                return probe_func()
+
+        return multi_lock.run(probe)
 
 
 class MultiLock(defer._ConcurrencyPrimitive):
