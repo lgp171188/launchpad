@@ -17,7 +17,7 @@ from lp.bugs.adapters.bugchange import (
     CveUnlinkedFromBug,
     MergeProposalLinkedToBug,
     MergeProposalUnlinkedFromBug,
-    )
+)
 from lp.bugs.enums import BugNotificationLevel
 from lp.bugs.interfaces.bug import IBug
 from lp.bugs.interfaces.bugactivity import IBugActivitySet
@@ -30,7 +30,6 @@ from lp.registry.interfaces.productrelease import IProductRelease
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.sqlbase import block_implicit_flushes
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
-
 
 vocabulary_registry = getVocabularyRegistry()
 
@@ -79,7 +78,7 @@ def what_changed(object_modified_event):
         val_before = getattr(before, fieldname, None)
         val_after = getattr(after, fieldname, None)
 
-        #XXX Bjorn Tillenius 2005-06-09: This shouldn't be necessary.
+        # XXX Bjorn Tillenius 2005-06-09: This shouldn't be necessary.
         # peel off the zope stuff
         if isProxy(val_before):
             val_before = removeSecurityProxy(val_before)
@@ -102,10 +101,13 @@ def record_bug_added(bug, object_created_event):
         datechanged=UTC_NOW,
         person=IPerson(object_created_event.user),
         whatchanged="bug",
-        message="added bug")
+        message="added bug",
+    )
     bug.addCommentNotification(
-        bug.initial_message, activity=activity,
-        level=BugNotificationLevel.LIFECYCLE)
+        bug.initial_message,
+        activity=activity,
+        level=BugNotificationLevel.LIFECYCLE,
+    )
 
 
 @block_implicit_flushes
@@ -115,7 +117,9 @@ def record_cve_linked_to_bug(bug, event):
         return
     bug.addChange(
         CveLinkedToBug(
-            when=None, person=IPerson(event.user), cve=event.other_object))
+            when=None, person=IPerson(event.user), cve=event.other_object
+        )
+    )
 
 
 @block_implicit_flushes
@@ -125,7 +129,9 @@ def record_cve_unlinked_from_bug(bug, event):
         return
     bug.addChange(
         CveUnlinkedFromBug(
-            when=None, person=IPerson(event.user), cve=event.other_object))
+            when=None, person=IPerson(event.user), cve=event.other_object
+        )
+    )
 
 
 @block_implicit_flushes
@@ -135,8 +141,12 @@ def record_merge_proposal_linked_to_bug(bug, event):
         return
     bug.addChange(
         MergeProposalLinkedToBug(
-            when=None, person=IPerson(event.user),
-            merge_proposal=event.other_object, bug=event.object))
+            when=None,
+            person=IPerson(event.user),
+            merge_proposal=event.other_object,
+            bug=event.object,
+        )
+    )
 
 
 @block_implicit_flushes
@@ -146,8 +156,12 @@ def record_merge_proposal_unlinked_from_bug(bug, event):
         return
     bug.addChange(
         MergeProposalUnlinkedFromBug(
-            when=None, person=IPerson(event.user),
-            merge_proposal=event.other_object, bug=event.object))
+            when=None,
+            person=IPerson(event.user),
+            merge_proposal=event.other_object,
+            bug=event.object,
+        )
+    )
 
 
 @block_implicit_flushes
@@ -158,13 +172,15 @@ def record_bugsubscription_added(bugsubscription_added, object_created_event):
             bug=bugsubscription_added.bug,
             datechanged=UTC_NOW,
             person=IPerson(object_created_event.user),
-            whatchanged='bug',
-            message='added subscriber %s' % subscribed_user.displayname)
+            whatchanged="bug",
+            message="added subscriber %s" % subscribed_user.displayname,
+        )
 
 
 @block_implicit_flushes
-def record_bugsubscription_edited(bugsubscription_edited,
-                                  object_modified_event):
+def record_bugsubscription_edited(
+    bugsubscription_edited, object_modified_event
+):
     changes = what_changed(object_modified_event)
     if changes:
         for changed_field in changes.keys():
@@ -173,10 +189,11 @@ def record_bugsubscription_edited(bugsubscription_edited,
                 bug=bugsubscription_edited.bug,
                 datechanged=UTC_NOW,
                 person=IPerson(object_modified_event.user),
-                whatchanged="subscriber %s" % (
-                    bugsubscription_edited.person.displayname),
+                whatchanged="subscriber %s"
+                % (bugsubscription_edited.person.displayname),
                 oldvalue=oldvalue,
-                newvalue=newvalue)
+                newvalue=newvalue,
+            )
 
 
 @block_implicit_flushes
@@ -197,7 +214,8 @@ def notify_bugtask_deleted(bugtask, event):
     bugtask must be in IBugTask. event must be anIObjectDeletedEvent.
     """
     bugtask.bug.addChange(
-        BugTaskDeleted(UTC_NOW, IPerson(event.user), bugtask))
+        BugTaskDeleted(UTC_NOW, IPerson(event.user), bugtask)
+    )
 
 
 @block_implicit_flushes

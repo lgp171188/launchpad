@@ -4,18 +4,14 @@
 """Mantis ExternalBugTracker utility."""
 
 __all__ = [
-    'Mantis',
-    'mantis_login_hook',
-    ]
+    "Mantis",
+    "mantis_login_hook",
+]
 
 import csv
 import logging
 import re
-from urllib.parse import (
-    parse_qsl,
-    urlencode,
-    urlunparse,
-    )
+from urllib.parse import parse_qsl, urlencode, urlunparse
 
 from bs4.element import Comment
 from requests.cookies import RequestsCookieJar
@@ -29,16 +25,10 @@ from lp.bugs.externalbugtracker import (
     LookupTree,
     UnknownRemoteStatusError,
     UnparsableBugData,
-    )
-from lp.bugs.interfaces.bugtask import (
-    BugTaskImportance,
-    BugTaskStatus,
-    )
+)
+from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.bugs.interfaces.externalbugtracker import UNKNOWN_REMOTE_IMPORTANCE
-from lp.services.beautifulsoup import (
-    BeautifulSoup,
-    SoupStrainer,
-    )
+from lp.services.beautifulsoup import BeautifulSoup, SoupStrainer
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp.url import urlparse
 
@@ -66,25 +56,29 @@ def mantis_login_hook(response, *args, **kwargs):
     """
     if response.status_code not in (301, 302, 303, 307):
         return response
-    if 'Location' not in response.headers:
+    if "Location" not in response.headers:
         return response
 
-    url = response.headers['Location']
+    url = response.headers["Location"]
     scheme, host, path, params, query, fragment = urlparse(url)
 
     # If we can, skip the login page and submit credentials directly.  The
     # query should contain a 'return' parameter which, if our credentials
     # are accepted, means we'll be redirected back whence we came.  In other
     # words, we'll end up back at the bug page we first requested.
-    login_page = '/login_page.php'
+    login_page = "/login_page.php"
     if path.endswith(login_page):
-        path = path[:-len(login_page)] + '/login.php'
-        query_list = [('username', 'guest'), ('password', 'guest')]
+        path = path[: -len(login_page)] + "/login.php"
+        query_list = [("username", "guest"), ("password", "guest")]
         query_list.extend(parse_qsl(query, True))
-        if not any(name == 'return' for name, _ in query_list):
+        if not any(name == "return" for name, _ in query_list):
             raise BugTrackerConnectError(
-                url, ("Mantis redirected us to the login page "
-                      "but did not set a return path."))
+                url,
+                (
+                    "Mantis redirected us to the login page "
+                    "but did not set a return path."
+                ),
+            )
 
         query = urlencode(query_list, True)
         url = urlunparse((scheme, host, path, params, query, fragment))
@@ -97,7 +91,7 @@ def mantis_login_hook(response, *args, **kwargs):
     # this page because we may end up annoying admins with spurious login
     # attempts.
 
-    response.headers['Location'] = url
+    response.headers["Location"] = url
     return response
 
 
@@ -129,9 +123,9 @@ class MantisBugBatchParser:
                 return None
             bug[header] = data
         try:
-            bug['id'] = int(bug['id'])
+            bug["id"] = int(bug["id"])
         except ValueError:
-            self.logger.warning("Encountered invalid bug ID: %r." % bug['id'])
+            self.logger.warning("Encountered invalid bug ID: %r." % bug["id"])
             return None
         return bug
 
@@ -144,12 +138,14 @@ class MantisBugBatchParser:
         except StopIteration:
             raise UnparsableBugData("Missing header line")
         missing_headers = [
-            name for name in ('id', 'status', 'resolution')
-            if name not in headers]
+            name
+            for name in ("id", "status", "resolution")
+            if name not in headers
+        ]
         if missing_headers:
             raise UnparsableBugData(
-                "CSV header %r missing fields: %r" % (
-                    headers, missing_headers))
+                "CSV header %r missing fields: %r" % (headers, missing_headers)
+            )
         return headers
 
     def getBugs(self):
@@ -159,7 +155,7 @@ class MantisBugBatchParser:
             for bug_line in self.reader:
                 bug = self.processCSVBugLine(bug_line, headers)
                 if bug is not None:
-                    bugs[bug['id']] = bug
+                    bugs[bug["id"]] = bug
             return bugs
         except csv.Error as error:
             raise UnparsableBugData("Exception parsing CSV file: %s." % error)
@@ -182,11 +178,12 @@ class Mantis(ExternalBugTracker):
     def makeRequest(self, method, url, hooks=None, **kwargs):
         """See `ExternalBugTracker`."""
         hooks = dict(hooks) if hooks is not None else {}
-        if not isinstance(hooks.setdefault('response', []), list):
-            hooks['response'] = [hooks['response']]
-        hooks['response'].append(mantis_login_hook)
+        if not isinstance(hooks.setdefault("response", []), list):
+            hooks["response"] = [hooks["response"]]
+        hooks["response"].append(mantis_login_hook)
         return super().makeRequest(
-            method, url, cookies=self._cookie_jar, hooks=hooks, **kwargs)
+            method, url, cookies=self._cookie_jar, hooks=hooks, **kwargs
+        )
 
     @cachedproperty
     def csv_data(self):
@@ -206,39 +203,39 @@ class Mantis(ExternalBugTracker):
         # necessary, but it's easy to prepare the complete set from a
         # view_all_bugs.php form dump so let's keep it complete.
         data = {
-           'type': '1',
-           'page_number': '1',
-           'view_type': 'simple',
-           'reporter_id[]': '0',
-           'user_monitor[]': '0',
-           'handler_id[]': '0',
-           'show_category[]': '0',
-           'show_severity[]': '0',
-           'show_resolution[]': '0',
-           'show_profile[]': '0',
-           'show_status[]': '0',
-           # Some of the more modern Mantis trackers use
-           # a value of 'hide_status[]': '-2' here but it appears that
-           # [none] works. Oops, older Mantis uses 'none' here. Gross!
-           'hide_status[]': '[none]',
-           'show_build[]': '0',
-           'show_version[]': '0',
-           'fixed_in_version[]': '0',
-           'show_priority[]': '0',
-           'per_page': '50',
-           'view_state': '0',
-           'sticky_issues': 'on',
-           'highlight_changed': '6',
-           'relationship_type': '-1',
-           'relationship_bug': '0',
-           # Hack around the fact that the sorting parameter has
-           # changed over time.
-           'sort': 'last_updated',
-           'sort_0': 'last_updated',
-           'dir': 'DESC',
-           'dir_0': 'DESC',
-           'search': '',
-           'filter': 'Apply Filter',
+            "type": "1",
+            "page_number": "1",
+            "view_type": "simple",
+            "reporter_id[]": "0",
+            "user_monitor[]": "0",
+            "handler_id[]": "0",
+            "show_category[]": "0",
+            "show_severity[]": "0",
+            "show_resolution[]": "0",
+            "show_profile[]": "0",
+            "show_status[]": "0",
+            # Some of the more modern Mantis trackers use
+            # a value of 'hide_status[]': '-2' here but it appears that
+            # [none] works. Oops, older Mantis uses 'none' here. Gross!
+            "hide_status[]": "[none]",
+            "show_build[]": "0",
+            "show_version[]": "0",
+            "fixed_in_version[]": "0",
+            "show_priority[]": "0",
+            "per_page": "50",
+            "view_state": "0",
+            "sticky_issues": "on",
+            "highlight_changed": "6",
+            "relationship_type": "-1",
+            "relationship_bug": "0",
+            # Hack around the fact that the sorting parameter has
+            # changed over time.
+            "sort": "last_updated",
+            "sort_0": "last_updated",
+            "dir": "DESC",
+            "dir_0": "DESC",
+            "search": "",
+            "filter": "Apply Filter",
         }
         try:
             self._postPage("view_all_set.php?f=3", data)
@@ -255,8 +252,10 @@ class Mantis(ExternalBugTracker):
             # when the csv_export.php page is accessed. Since the
             # bug data may be nevertheless available from ordinary
             # web pages, we simply ignore this error.
-            if (value.error.response is not None and
-                    value.error.response.status_code == 500):
+            if (
+                value.error.response is not None
+                and value.error.response.status_code == 500
+            ):
                 return None
             raise
 
@@ -283,8 +282,10 @@ class Mantis(ExternalBugTracker):
         """
         self.bugs = {}
 
-        if (len(bug_ids) > self.batch_query_threshold and
-            self.canUseCSVExports()):
+        if (
+            len(bug_ids) > self.batch_query_threshold
+            and self.canUseCSVExports()
+        ):
             # We only query for batches of bugs if the remote Mantis
             # instance supports CSV exports, otherwise we default to
             # screen-scraping on a per bug basis regardless of how many bugs
@@ -304,25 +305,28 @@ class Mantis(ExternalBugTracker):
         # _checkForApplicationError) then we could be much more
         # specific than this.
         bug_page = BeautifulSoup(
-            self._getPage('view.php?id=%s' % bug_id).text,
-            parse_only=SoupStrainer('table'))
+            self._getPage("view.php?id=%s" % bug_id).text,
+            parse_only=SoupStrainer("table"),
+        )
 
         app_error = self._checkForApplicationError(bug_page)
         if app_error:
             app_error_code, app_error_message = app_error
             # 1100 is ERROR_BUG_NOT_FOUND in Mantis (see
             # mantisbt/core/constant_inc.php).
-            if app_error_code == '1100':
+            if app_error_code == "1100":
                 return None, None
             else:
                 raise BugWatchUpdateError(
-                    "Mantis APPLICATION ERROR #%s: %s" % (
-                    app_error_code, app_error_message))
+                    "Mantis APPLICATION ERROR #%s: %s"
+                    % (app_error_code, app_error_message)
+                )
 
         bug = {
-            'id': bug_id,
-            'status': self._findValueRightOfKey(bug_page, 'Status'),
-            'resolution': self._findValueRightOfKey(bug_page, 'Resolution')}
+            "id": bug_id,
+            "status": self._findValueRightOfKey(bug_page, "Status"),
+            "resolution": self._findValueRightOfKey(bug_page, "Resolution"),
+        }
 
         return int(bug_id), bug
 
@@ -353,12 +357,15 @@ class Mantis(ExternalBugTracker):
         returned, both unicode strings.
         """
         app_error = page_soup.find(
-            text=lambda node: (node.startswith('APPLICATION ERROR ')
-                               and 'form-title' in node.parent.get('class', [])
-                               and not isinstance(node, Comment)))
+            text=lambda node: (
+                node.startswith("APPLICATION ERROR ")
+                and "form-title" in node.parent.get("class", [])
+                and not isinstance(node, Comment)
+            )
+        )
         if app_error:
-            app_error_code = ''.join(c for c in app_error if c.isdigit())
-            app_error_message = app_error.find_next('p')
+            app_error_code = "".join(c for c in app_error if c.isdigit())
+            app_error_message = app_error.find_next("p")
             if app_error_message is not None:
                 app_error_message = app_error_message.string
             return app_error_code, app_error_message
@@ -382,15 +389,18 @@ class Mantis(ExternalBugTracker):
         This method does not compensate for colspan or rowspan.
         """
         key_node = page_soup.find(
-            text=lambda node: (node.strip() == key
-                               and not isinstance(node, Comment)))
+            text=lambda node: (
+                node.strip() == key and not isinstance(node, Comment)
+            )
+        )
         if key_node is None:
             raise UnparsableBugData("Key %r not found." % (key,))
 
-        value_cell = key_node.find_next('td')
+        value_cell = key_node.find_next("td")
         if value_cell is None:
             raise UnparsableBugData(
-                "Value cell for key %r not found." % (key,))
+                "Value cell for key %r not found." % (key,)
+            )
 
         value_node = value_cell.string
         if value_node is None:
@@ -410,8 +420,9 @@ class Mantis(ExternalBugTracker):
     def getRemoteStatus(self, bug_id):
         if not bug_id.isdigit():
             raise InvalidBugId(
-                "Mantis (%s) bug number not an integer: %s" % (
-                    self.baseurl, bug_id))
+                "Mantis (%s) bug number not an integer: %s"
+                % (self.baseurl, bug_id)
+            )
 
         try:
             bug = self.bugs[int(bug_id)]
@@ -432,23 +443,34 @@ class Mantis(ExternalBugTracker):
         """
         return BugTaskImportance.UNKNOWN
 
-    _status_lookup_titles = 'Mantis status', 'Mantis resolution'
-    _status_lookup = (
-        LookupTree(
-            ('assigned', BugTaskStatus.INPROGRESS),
-            ('feedback', BugTaskStatus.INCOMPLETE),
-            ('new', BugTaskStatus.NEW),
-            ('confirmed', 'ackowledged', BugTaskStatus.CONFIRMED),
-            ('resolved', 'closed',
-                LookupTree(
-                    ('reopened', BugTaskStatus.NEW),
-                    ('fixed', 'open', 'no change required',
-                     BugTaskStatus.FIXRELEASED),
-                    ('unable to reproduce', 'not fixable', 'suspended',
-                     'duplicate', BugTaskStatus.INVALID),
-                    ("won't fix", BugTaskStatus.WONTFIX))),
-            )
-        )
+    _status_lookup_titles = "Mantis status", "Mantis resolution"
+    _status_lookup = LookupTree(
+        ("assigned", BugTaskStatus.INPROGRESS),
+        ("feedback", BugTaskStatus.INCOMPLETE),
+        ("new", BugTaskStatus.NEW),
+        ("confirmed", "ackowledged", BugTaskStatus.CONFIRMED),
+        (
+            "resolved",
+            "closed",
+            LookupTree(
+                ("reopened", BugTaskStatus.NEW),
+                (
+                    "fixed",
+                    "open",
+                    "no change required",
+                    BugTaskStatus.FIXRELEASED,
+                ),
+                (
+                    "unable to reproduce",
+                    "not fixable",
+                    "suspended",
+                    "duplicate",
+                    BugTaskStatus.INVALID,
+                ),
+                ("won't fix", BugTaskStatus.WONTFIX),
+            ),
+        ),
+    )
 
     def convertRemoteStatus(self, status_and_resolution):
         status, importance = status_and_resolution.split(": ", 1)

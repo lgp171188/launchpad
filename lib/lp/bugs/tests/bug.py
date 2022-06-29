@@ -3,13 +3,10 @@
 
 """Helper functions for bug-related doctests and pagetests."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
-from operator import attrgetter
 import re
 import textwrap
+from datetime import datetime, timedelta
+from operator import attrgetter
 
 from pytz import UTC
 from zope.component import getUtility
@@ -17,10 +14,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.interfaces.bug import CreateBugParams
-from lp.bugs.interfaces.bugtask import (
-    BugTaskStatus,
-    IBugTaskSet,
-    )
+from lp.bugs.interfaces.bugtask import BugTaskStatus, IBugTaskSet
 from lp.bugs.interfaces.bugwatch import IBugWatchSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.beautifulsoup import BeautifulSoup
@@ -30,23 +24,24 @@ from lp.testing.pages import (
     find_main_content,
     find_tag_by_id,
     find_tags_by_class,
-    )
+)
 
 
 def print_direct_subscribers(bug_page):
     """Print the direct subscribers listed in a portlet."""
-    print_subscribers(bug_page, 'Maybe', reverse=True)
+    print_subscribers(bug_page, "Maybe", reverse=True)
 
 
 def print_also_notified(bug_page):
     """Print the structural and duplicate subscribers listed in a portlet."""
-    print('Also notified:')
-    print_subscribers(bug_page, 'Maybe')
+    print("Also notified:")
+    print_subscribers(bug_page, "Maybe")
 
 
 def print_subscribers(bug_page, subscription_level=None, reverse=False):
     """Print the subscribers listed in the subscribers JSON portlet."""
     from simplejson import loads
+
     details = loads(bug_page)
 
     if details is None:
@@ -56,14 +51,16 @@ def print_subscribers(bug_page, subscription_level=None, reverse=False):
         lines = []
         for subscription in details:
             level_matches = (
-                (not reverse and
-                 subscription['subscription_level'] == subscription_level) or
-                (reverse and
-                 subscription['subscription_level'] != subscription_level))
+                not reverse
+                and subscription["subscription_level"] == subscription_level
+            ) or (
+                reverse
+                and subscription["subscription_level"] != subscription_level
+            )
             if subscription_level is None or level_matches:
-                subscriber = subscription['subscriber']
-                line = subscriber['display_name']
-                if subscriber['can_edit']:
+                subscriber = subscription["subscriber"]
+                line = subscriber["display_name"]
+                if subscriber["can_edit"]:
                     line += " (Unsubscribe)"
                 lines.append(line)
         print("\n".join(sorted(lines)))
@@ -72,22 +69,23 @@ def print_subscribers(bug_page, subscription_level=None, reverse=False):
 def print_bug_affects_table(content, highlighted_only=False):
     """Print information about all the bug tasks in the 'affects' table.
 
-        :param highlighted_only: Only print the highlighted row
+    :param highlighted_only: Only print the highlighted row
     """
     main_content = find_main_content(content)
-    affects_table = main_content.find('table', {'class': 'listing'})
+    affects_table = main_content.find("table", {"class": "listing"})
     if highlighted_only:
-        tr_attrs = {'class': 'highlight'}
+        tr_attrs = {"class": "highlight"}
     else:
         tr_attrs = {}
     tr_tags = affects_table.tbody.find_all(
-        'tr', attrs=tr_attrs, recursive=False)
+        "tr", attrs=tr_attrs, recursive=False
+    )
     for tr in tr_tags:
         if tr.td.table:
             # Don't print the bugtask edit form.
             continue
         # Strip zero-width white-spaces.
-        print(extract_text(tr).replace('\u200B', ''))
+        print(extract_text(tr).replace("\u200B", ""))
 
 
 def print_remote_bugtasks(content):
@@ -95,12 +93,12 @@ def print_remote_bugtasks(content):
 
     For each remote bugtask, print the target and the bugwatch.
     """
-    affects_table = find_tags_by_class(content, 'listing')[0]
-    for span in affects_table.find_all('span'):
+    affects_table = find_tags_by_class(content, "listing")[0]
+    for span in affects_table.find_all("span"):
         for key, value in span.attrs.items():
-            if 'bug-remote' in value:
-                target = extract_text(span.find_all_previous('td')[-2])
-                print(target, extract_text(span.find_next('a')))
+            if "bug-remote" in value:
+                target = extract_text(span.find_all_previous("td")[-2])
+                print(target, extract_text(span.find_next("a")))
 
 
 def print_bugs_list(content, list_id):
@@ -112,51 +110,68 @@ def print_bugs_list(content, list_id):
     cope with it.
     """
     bugs_list = find_tag_by_id(content, list_id).find_all(
-        None, {'class': 'similar-bug'})
+        None, {"class": "similar-bug"}
+    )
     for node in bugs_list:
         # Also strip zero-width spaces out.
-        print(extract_text(node).replace('\u200B', ''))
+        print(extract_text(node).replace("\u200B", ""))
 
 
 def print_bugtasks(text, show_heat=None):
     """Print all the bugtasks in the text."""
-    print('\n'.join(extract_bugtasks(text, show_heat=show_heat)))
+    print("\n".join(extract_bugtasks(text, show_heat=show_heat)))
 
 
 def extract_bugtasks(text, show_heat=None):
     """Extracts a list of strings for all the bugtasks in the text."""
     main_content = find_main_content(text)
-    listing = main_content.find('div', {'id': 'bugs-table-listing'})
+    listing = main_content.find("div", {"id": "bugs-table-listing"})
     if listing is None:
         return []
     rows = []
-    for bugtask in listing('div', {'class': 'buglisting-row'}):
+    for bugtask in listing("div", {"class": "buglisting-row"}):
         bug_nr = extract_text(
-            bugtask.find(None, {'class': 'bugnumber'})).replace('#', '')
-        title = extract_text(bugtask.find(None, {'class': 'bugtitle'}))
+            bugtask.find(None, {"class": "bugnumber"})
+        ).replace("#", "")
+        title = extract_text(bugtask.find(None, {"class": "bugtitle"}))
         status = extract_text(
-            bugtask.find(None, {'class': re.compile('status')}))
+            bugtask.find(None, {"class": re.compile("status")})
+        )
         importance = extract_text(
-            bugtask.find(None, {'class': re.compile('importance')}))
+            bugtask.find(None, {"class": re.compile("importance")})
+        )
         affects = extract_text(
             bugtask.find(
                 None,
-                {'class': re.compile(
-                    'None|(sprite product|distribution|package-source) field')
-                }))
+                {
+                    "class": re.compile(
+                        "None|"
+                        "(sprite product|distribution|package-source) field"
+                    )
+                },
+            )
+        )
         row_items = [bug_nr, title, affects, importance, status]
         if show_heat:
             heat = extract_text(
-                bugtask.find(None, {'class': 'bug-heat-icons'}))
+                bugtask.find(None, {"class": "bug-heat-icons"})
+            )
             row_items.append(heat)
-        rows.append(' '.join(row_items))
+        rows.append(" ".join(row_items))
     return rows
 
 
 def create_old_bug(
-    title, days_old, target, status=BugTaskStatus.INCOMPLETE,
-    with_message=True, external_bugtracker=None, assignee=None,
-    milestone=None, duplicateof=None):
+    title,
+    days_old,
+    target,
+    status=BugTaskStatus.INCOMPLETE,
+    with_message=True,
+    external_bugtracker=None,
+    assignee=None,
+    milestone=None,
+    duplicateof=None,
+):
     """Create an aged bug.
 
     :title: A string. The bug title for testing.
@@ -167,26 +182,32 @@ def create_old_bug(
     :external_bugtracker: An external bug tracker which is watched for this
         bug.
     """
-    no_priv = getUtility(IPersonSet).getByEmail('no-priv@canonical.com')
+    no_priv = getUtility(IPersonSet).getByEmail("no-priv@canonical.com")
     params = CreateBugParams(
-        owner=no_priv, title=title, comment='Something is broken.')
+        owner=no_priv, title=title, comment="Something is broken."
+    )
     bug = target.createBug(params)
     if duplicateof is not None:
         bug.markAsDuplicate(duplicateof)
-    sample_person = getUtility(IPersonSet).getByEmail('test@canonical.com')
+    sample_person = getUtility(IPersonSet).getByEmail("test@canonical.com")
     if with_message is True:
         bug.newMessage(
-            owner=sample_person, subject='Something is broken.',
-            content='Can you provide more information?')
+            owner=sample_person,
+            subject="Something is broken.",
+            content="Can you provide more information?",
+        )
     bugtask = bug.bugtasks[0]
-    bugtask.transitionToStatus(
-        status, sample_person)
+    bugtask.transitionToStatus(status, sample_person)
     if assignee is not None:
         bugtask.transitionToAssignee(assignee)
     bugtask.milestone = milestone
     if external_bugtracker is not None:
-        getUtility(IBugWatchSet).createBugWatch(bug=bug, owner=sample_person,
-            bugtracker=external_bugtracker, remotebug='1234')
+        getUtility(IBugWatchSet).createBugWatch(
+            bug=bug,
+            owner=sample_person,
+            bugtracker=external_bugtracker,
+            remotebug="1234",
+        )
     date = datetime.now(UTC) - timedelta(days=days_old)
     removeSecurityProxy(bug).date_last_updated = date
     return bugtask
@@ -195,24 +216,31 @@ def create_old_bug(
 def summarize_bugtasks(bugtasks):
     """Summarize a sequence of bugtasks."""
     bugtaskset = getUtility(IBugTaskSet)
-    expirable_bugtasks = list(bugtaskset.findExpirableBugTasks(
-        config.malone.days_before_expiration,
-        getUtility(ILaunchpadCelebrities).janitor))
-    print('ROLE  EXPIRE  AGE  STATUS  ASSIGNED  DUP  MILE  REPLIES')
-    for bugtask in sorted(set(bugtasks), key=attrgetter('id')):
+    expirable_bugtasks = list(
+        bugtaskset.findExpirableBugTasks(
+            config.malone.days_before_expiration,
+            getUtility(ILaunchpadCelebrities).janitor,
+        )
+    )
+    print("ROLE  EXPIRE  AGE  STATUS  ASSIGNED  DUP  MILE  REPLIES")
+    for bugtask in sorted(set(bugtasks), key=attrgetter("id")):
         if len(bugtask.bug.bugtasks) == 1:
             title = bugtask.bug.title
         else:
             title = bugtask.target.name
-        print('%s  %s  %s  %s  %s  %s  %s  %s' % (
-            title,
-            bugtask in expirable_bugtasks,
-            (datetime.now(UTC) - bugtask.bug.date_last_updated).days,
-            bugtask.status.title,
-            bugtask.assignee is not None,
-            bugtask.bug.duplicateof is not None,
-            bugtask.milestone is not None,
-            bugtask.bug.messages.count() == 1))
+        print(
+            "%s  %s  %s  %s  %s  %s  %s  %s"
+            % (
+                title,
+                bugtask in expirable_bugtasks,
+                (datetime.now(UTC) - bugtask.bug.date_last_updated).days,
+                bugtask.status.title,
+                bugtask.assignee is not None,
+                bugtask.bug.duplicateof is not None,
+                bugtask.milestone is not None,
+                bugtask.bug.messages.count() == 1,
+            )
+        )
 
 
 def print_upstream_linking_form(browser):
@@ -226,26 +254,28 @@ def print_upstream_linking_form(browser):
     soup = BeautifulSoup(browser.contents)
 
     link_upstream_how_radio_control = browser.getControl(
-        name='field.link_upstream_how')
+        name="field.link_upstream_how"
+    )
     link_upstream_how_buttons = soup.find_all(
-        'input', {'name': 'field.link_upstream_how'})
+        "input", {"name": "field.link_upstream_how"}
+    )
 
-    wrapper = textwrap.TextWrapper(width=65, subsequent_indent='    ')
+    wrapper = textwrap.TextWrapper(width=65, subsequent_indent="    ")
     for button in link_upstream_how_buttons:
         # Print the radio button.
-        label = button.find_parent('label')
+        label = button.find_parent("label")
         if label is None:
-            label = soup.find('label', {'for': button['id']})
-        if button.get('value') in link_upstream_how_radio_control.value:
-            print(wrapper.fill('(*) %s' % extract_text(label)))
+            label = soup.find("label", {"for": button["id"]})
+        if button.get("value") in link_upstream_how_radio_control.value:
+            print(wrapper.fill("(*) %s" % extract_text(label)))
         else:
-            print(wrapper.fill('( ) %s' % extract_text(label)))
+            print(wrapper.fill("( ) %s" % extract_text(label)))
         # Print related text field, if found. Assumes that the text
         # field is in the same table row as the radio button.
-        text_field = button.find_parent('tr').find('input', {'type': 'text'})
+        text_field = button.find_parent("tr").find("input", {"type": "text"})
         if text_field is not None:
-            text_control = browser.getControl(name=text_field.get('name'))
-            print('    [%s]' % text_control.value.ljust(10))
+            text_control = browser.getControl(name=text_field.get("name"))
+            print("    [%s]" % text_control.value.ljust(10))
 
 
 def print_bugfilters_portlet_unfilled(browser, target):
@@ -260,9 +290,8 @@ def print_bugfilters_portlet_unfilled(browser, target):
     :param target   entity from whose bugs page to fetch the portlet
                     (e.g., http://bugs.launchpad.test/TARGET/...)
     """
-    browser.open(
-        'http://bugs.launchpad.test/%s/+portlet-bugfilters' % target)
-    ul = BeautifulSoup(browser.contents).find('ul', 'data-list')
+    browser.open("http://bugs.launchpad.test/%s/+portlet-bugfilters" % target)
+    ul = BeautifulSoup(browser.contents).find("ul", "data-list")
     print_ul(ul)
 
 
@@ -280,24 +309,25 @@ def print_bugfilters_portlet_filled(browser, target):
                     (e.g., http://bugs.launchpad.test/TARGET/...)
     """
     browser.open(
-        'http://bugs.launchpad.test'
-        '/%s/+bugtarget-portlet-bugfilters-stats' % target)
-    ul = BeautifulSoup(browser.contents).find('ul', 'data-list')
+        "http://bugs.launchpad.test"
+        "/%s/+bugtarget-portlet-bugfilters-stats" % target
+    )
+    ul = BeautifulSoup(browser.contents).find("ul", "data-list")
     print_ul(ul)
 
 
 def print_ul(ul):
     """Print the data from a list."""
     li_content = []
-    for li in ul.find_all('li'):
+    for li in ul.find_all("li"):
         li_content.append(extract_text(li))
     if len(li_content) > 0:
-        print('\n'.join(li_content))
+        print("\n".join(li_content))
 
 
 def print_bug_tag_anchors(anchors):
     """The the bug tags in the iterable of anchors."""
     for anchor in anchors:
-        href = anchor['href']
-        if href != '+edit' and '/+help-bugs/tag-help.html' not in href:
-            print(' '.join(anchor['class']), anchor.contents[0])
+        href = anchor["href"]
+        if href != "+edit" and "/+help-bugs/tag-help.html" not in href:
+            print(" ".join(anchor["class"]), anchor.contents[0])

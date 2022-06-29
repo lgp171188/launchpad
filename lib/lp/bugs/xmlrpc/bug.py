@@ -6,7 +6,7 @@
 __all__ = [
     "ExternalBugTrackerTokenAPI",
     "FileBugAPI",
-    ]
+]
 
 from zope.component import getUtility
 from zope.interface import implementer
@@ -20,10 +20,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadXMLRPCView,
-    )
+from lp.services.webapp import LaunchpadXMLRPCView, canonical_url
 from lp.xmlrpc import faults
 
 
@@ -50,13 +47,13 @@ class FileBugAPI(LaunchpadXMLRPCView):
 
         Either product or distro must be provided.
         """
-        product = params.get('product')
-        distro = params.get('distro')
-        package = params.get('package')
-        summary = params.get('summary')
-        comment = params.get('comment')
-        security_related = params.get('security_related')
-        subscribers = params.get('subscribers')
+        product = params.get("product")
+        distro = params.get("distro")
+        package = params.get("package")
+        summary = params.get("summary")
+        comment = params.get("comment")
+        security_related = params.get("security_related")
+        subscribers = params.get("subscribers")
 
         if product and distro:
             return faults.FileBugGotProductAndDistro()
@@ -74,7 +71,8 @@ class FileBugAPI(LaunchpadXMLRPCView):
             if package:
                 try:
                     spname = distro_object.guessPublishedSourcePackageName(
-                        package)
+                        package
+                    )
                 except NotFoundError:
                     return faults.NoSuchPackage(package)
 
@@ -85,10 +83,10 @@ class FileBugAPI(LaunchpadXMLRPCView):
             return faults.FileBugMissingProductOrDistribution()
 
         if not summary:
-            return faults.RequiredParameterMissing('summary')
+            return faults.RequiredParameterMissing("summary")
 
         if not comment:
-            return faults.RequiredParameterMissing('comment')
+            return faults.RequiredParameterMissing("comment")
 
         # Convert arguments into values that IBugTarget.createBug
         # understands.
@@ -99,7 +97,8 @@ class FileBugAPI(LaunchpadXMLRPCView):
                 subscriber = personset.getByEmail(subscriber_email)
                 if not subscriber:
                     return faults.NoSuchPerson(
-                        type="subscriber", email_address=subscriber_email)
+                        type="subscriber", email_address=subscriber_email
+                    )
                 else:
                     subscriber_list.append(subscriber)
 
@@ -109,9 +108,12 @@ class FileBugAPI(LaunchpadXMLRPCView):
             information_type = None
 
         params = CreateBugParams(
-            owner=self.user, title=summary, comment=comment,
+            owner=self.user,
+            title=summary,
+            comment=comment,
             information_type=information_type,
-            subscribers=subscriber_list)
+            subscribers=subscriber_list,
+        )
 
         bug = target.createBug(params)
 
@@ -128,7 +130,10 @@ class ExternalBugTrackerTokenAPI(LaunchpadXMLRPCView):
         The `LoginToken` will be of `LoginTokenType` BUGTRACKER.
         """
         login_token = getUtility(ILoginTokenSet).new(
-            None, None, 'externalbugtrackers@launchpad.net',
-            LoginTokenType.BUGTRACKER)
+            None,
+            None,
+            "externalbugtrackers@launchpad.net",
+            LoginTokenType.BUGTRACKER,
+        )
 
         return login_token.token

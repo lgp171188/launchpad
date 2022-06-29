@@ -12,13 +12,27 @@ from lp.bugs.interfaces.bug import IBugDelta
 class BugDelta:
     """See `IBugDelta`."""
 
-    def __init__(self, bug, bugurl, user,
-                 title=None, description=None, name=None,
-                 private=None, security_related=None, information_type=None,
-                 duplicateof=None, external_reference=None, bugwatch=None,
-                 cve=None, attachment=None, tags=None,
-                 added_bugtasks=None, bugtask_deltas=None,
-                 bug_before_modification=None):
+    def __init__(
+        self,
+        bug,
+        bugurl,
+        user,
+        title=None,
+        description=None,
+        name=None,
+        private=None,
+        security_related=None,
+        information_type=None,
+        duplicateof=None,
+        external_reference=None,
+        bugwatch=None,
+        cve=None,
+        attachment=None,
+        tags=None,
+        added_bugtasks=None,
+        bugtask_deltas=None,
+        bug_before_modification=None,
+    ):
         self.bug = bug
         self.bug_before_modification = bug_before_modification
         self.bugurl = bugurl

@@ -6,17 +6,14 @@
 from zope.component import getUtility
 
 from lp.app.enums import InformationType
-from lp.bugs.interfaces.bugtask import (
-    BugTaskStatus,
-    BugTaskStatusSearch,
-    )
+from lp.bugs.interfaces.bugtask import BugTaskStatus, BugTaskStatusSearch
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.testing import (
+    TestCaseWithFactory,
     login,
     login_celebrity,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -27,7 +24,7 @@ class TestBugIndexedMessages(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        login('foo.bar@canonical.com')
+        login("foo.bar@canonical.com")
 
         bug_1 = self.factory.makeBug()
         self.bug_2 = self.factory.makeBug()
@@ -61,13 +58,13 @@ class TestUserCanSetCommentVisibility(TestCaseWithFactory):
 
     def test_registry_admin_can_toggle_comment_visibility(self):
         # Members of registry experts can set bug comment visibility.
-        person = login_celebrity('registry_experts')
+        person = login_celebrity("registry_experts")
         bug = self.factory.makeBug()
         self.assertTrue(bug.userCanSetCommentVisibility(person))
 
     def test_admin_can_toggle_comment_visibility(self):
         # Admins can set bug comment visibility.
-        person = login_celebrity('admin')
+        person = login_celebrity("admin")
         bug = self.factory.makeBug()
         self.assertTrue(bug.userCanSetCommentVisibility(person))
 
@@ -75,10 +72,14 @@ class TestUserCanSetCommentVisibility(TestCaseWithFactory):
         person = self.factory.makePerson()
         product = self.factory.makeProduct()
         bug = self.factory.makeBug(target=product)
-        policy = getUtility(IAccessPolicySource).find(
-            [(product, InformationType.USERDATA)]).one()
+        policy = (
+            getUtility(IAccessPolicySource)
+            .find([(product, InformationType.USERDATA)])
+            .one()
+        )
         self.factory.makeAccessPolicyGrant(
-            policy=policy, grantor=product.owner, grantee=person)
+            policy=policy, grantor=product.owner, grantee=person
+        )
         self.assertTrue(bug.userCanSetCommentVisibility(person))
 
 
@@ -100,28 +101,28 @@ class TestBugLinkMessageSetsIncompleteStatus(TestCaseWithFactory):
 
     def test_incomplete_with_response_untouched(self):
         bugtask = self.factory.makeBugTask(
-            status=BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE)
+            status=BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE
+        )
+        self.assertEqual(BugTaskStatus.INCOMPLETE, bugtask.status)
         self.assertEqual(
-            BugTaskStatus.INCOMPLETE, bugtask.status)
-        self.assertEqual(
-            BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE, bugtask._status)
+            BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE, bugtask._status
+        )
         with person_logged_in(bugtask.owner):
             bugtask.bug.linkMessage(self.factory.makeMessage())
+        self.assertEqual(BugTaskStatus.INCOMPLETE, bugtask.status)
         self.assertEqual(
-            BugTaskStatus.INCOMPLETE, bugtask.status)
-        self.assertEqual(
-            BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE, bugtask._status)
+            BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE, bugtask._status
+        )
 
     def test_incomplete_without_response_updated(self):
-        bugtask = self.factory.makeBugTask(
-            status=BugTaskStatus.INCOMPLETE)
+        bugtask = self.factory.makeBugTask(status=BugTaskStatus.INCOMPLETE)
+        self.assertEqual(BugTaskStatus.INCOMPLETE, bugtask.status)
         self.assertEqual(
-            BugTaskStatus.INCOMPLETE, bugtask.status)
-        self.assertEqual(
-            BugTaskStatusSearch.INCOMPLETE_WITHOUT_RESPONSE, bugtask._status)
+            BugTaskStatusSearch.INCOMPLETE_WITHOUT_RESPONSE, bugtask._status
+        )
         with person_logged_in(bugtask.owner):
             bugtask.bug.linkMessage(self.factory.makeMessage())
+        self.assertEqual(BugTaskStatus.INCOMPLETE, bugtask.status)
         self.assertEqual(
-            BugTaskStatus.INCOMPLETE, bugtask.status)
-        self.assertEqual(
-            BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE, bugtask._status)
+            BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE, bugtask._status
+        )

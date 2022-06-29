@@ -10,38 +10,38 @@ which tells `lazr.restful` that it should look for webservice exports here.
 """
 
 __all__ = [
-    'BugNominationStatusError',
-    'IBug',
-    'IBugActivity',
-    'IBugAttachment',
-    'IBugBranch',
-    'IBugLinkTarget',
-    'IBugNomination',
-    'IBugSubscription',
-    'IBugSubscriptionFilter',
-    'IBugTarget',
-    'IBugTask',
-    'IBugTracker',
-    'IBugTrackerComponent',
-    'IBugTrackerComponentGroup',
-    'IBugTrackerSet',
-    'IBugWatch',
-    'ICve',
-    'ICveSet',
-    'IHasBugs',
-    'IMaloneApplication',
-    'IStructuralSubscription',
-    'IStructuralSubscriptionTarget',
-    'IllegalRelatedBugTasksParams',
-    'IllegalTarget',
-    'IVulnerability',
-    'NominationError',
-    'NominationSeriesObsoleteError',
-    'UserCannotEditBugTaskAssignee',
-    'UserCannotEditBugTaskImportance',
-    'UserCannotEditBugTaskMilestone',
-    'UserCannotEditBugTaskStatus',
-    ]
+    "BugNominationStatusError",
+    "IBug",
+    "IBugActivity",
+    "IBugAttachment",
+    "IBugBranch",
+    "IBugLinkTarget",
+    "IBugNomination",
+    "IBugSubscription",
+    "IBugSubscriptionFilter",
+    "IBugTarget",
+    "IBugTask",
+    "IBugTracker",
+    "IBugTrackerComponent",
+    "IBugTrackerComponentGroup",
+    "IBugTrackerSet",
+    "IBugWatch",
+    "ICve",
+    "ICveSet",
+    "IHasBugs",
+    "IMaloneApplication",
+    "IStructuralSubscription",
+    "IStructuralSubscriptionTarget",
+    "IllegalRelatedBugTasksParams",
+    "IllegalTarget",
+    "IVulnerability",
+    "NominationError",
+    "NominationSeriesObsoleteError",
+    "UserCannotEditBugTaskAssignee",
+    "UserCannotEditBugTaskImportance",
+    "UserCannotEditBugTaskMilestone",
+    "UserCannotEditBugTaskStatus",
+]
 
 # XXX: JonathanLange 2010-11-09 bug=673083: Legacy work-around for circular
 # import bugs.  Break this up into a per-package thing.
@@ -56,13 +56,10 @@ from lp.bugs.interfaces.bugnomination import (
     IBugNomination,
     NominationError,
     NominationSeriesObsoleteError,
-    )
+)
 from lp.bugs.interfaces.bugsubscription import IBugSubscription
 from lp.bugs.interfaces.bugsubscriptionfilter import IBugSubscriptionFilter
-from lp.bugs.interfaces.bugtarget import (
-    IBugTarget,
-    IHasBugs,
-    )
+from lp.bugs.interfaces.bugtarget import IBugTarget, IHasBugs
 from lp.bugs.interfaces.bugtask import (
     IBugTask,
     IllegalTarget,
@@ -70,25 +67,21 @@ from lp.bugs.interfaces.bugtask import (
     UserCannotEditBugTaskImportance,
     UserCannotEditBugTaskMilestone,
     UserCannotEditBugTaskStatus,
-    )
+)
 from lp.bugs.interfaces.bugtasksearch import IllegalRelatedBugTasksParams
 from lp.bugs.interfaces.bugtracker import (
     IBugTracker,
     IBugTrackerComponent,
     IBugTrackerComponentGroup,
     IBugTrackerSet,
-    )
+)
 from lp.bugs.interfaces.bugwatch import IBugWatch
-from lp.bugs.interfaces.cve import (
-    ICve,
-    ICveSet,
-    )
+from lp.bugs.interfaces.cve import ICve, ICveSet
 from lp.bugs.interfaces.malone import IMaloneApplication
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscription,
     IStructuralSubscriptionTarget,
-    )
+)
 from lp.bugs.interfaces.vulnerability import IVulnerability
-
 
 _schema_circular_imports

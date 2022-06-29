@@ -3,7 +3,7 @@
 
 """Round ExternalBugTracker utility."""
 
-__all__ = ['Roundup']
+__all__ = ["Roundup"]
 
 import csv
 from urllib.parse import quote_plus
@@ -17,16 +17,12 @@ from lp.bugs.externalbugtracker import (
     LookupTree,
     UnknownRemoteStatusError,
     UnparsableBugData,
-    )
-from lp.bugs.interfaces.bugtask import (
-    BugTaskImportance,
-    BugTaskStatus,
-    )
+)
+from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.bugs.interfaces.externalbugtracker import UNKNOWN_REMOTE_IMPORTANCE
 
-
-PYTHON_BUGS_HOSTNAME = 'bugs.python.org'
-MPLAYERHQ_BUGS_HOSTNAME = 'roundup.mplayerhq.hu'
+PYTHON_BUGS_HOSTNAME = "bugs.python.org"
+MPLAYERHQ_BUGS_HOSTNAME = "roundup.mplayerhq.hu"
 
 
 def create_query_string(items):
@@ -36,32 +32,33 @@ def create_query_string(items):
     specify the safe characters. Roundup likes URLs with @s in them,
     and they work just fine unquoted.
     """
-    return '&'.join(
-        '%s=%s' % (quote_plus(key, '@'), quote_plus(value))
-        for (key, value) in items)
+    return "&".join(
+        "%s=%s" % (quote_plus(key, "@"), quote_plus(value))
+        for (key, value) in items
+    )
 
 
 class Roundup(ExternalBugTracker):
     """An ExternalBugTracker descendant for handling Roundup bug trackers."""
 
     _status_fields_map = {
-        PYTHON_BUGS_HOSTNAME: ('status', 'resolution'),
-        MPLAYERHQ_BUGS_HOSTNAME: ('status', 'substatus'),
-        }
+        PYTHON_BUGS_HOSTNAME: ("status", "resolution"),
+        MPLAYERHQ_BUGS_HOSTNAME: ("status", "substatus"),
+    }
 
     # Our mapping of Roundup => Launchpad statuses. Roundup statuses
     # are integer-only and highly configurable.  Therefore we map the
     # statuses available by default.
     _status_lookup_standard = LookupTree(
-        (1, BugTaskStatus.NEW),           # Roundup status 'unread'
-        (2, BugTaskStatus.CONFIRMED),     # Roundup status 'deferred'
-        (3, BugTaskStatus.INCOMPLETE),    # Roundup status 'chatting'
-        (4, BugTaskStatus.INCOMPLETE),    # Roundup status 'need-eg'
-        (5, BugTaskStatus.INPROGRESS),    # Roundup status 'in-progress'
-        (6, BugTaskStatus.INPROGRESS),    # Roundup status 'testing'
+        (1, BugTaskStatus.NEW),  # Roundup status 'unread'
+        (2, BugTaskStatus.CONFIRMED),  # Roundup status 'deferred'
+        (3, BugTaskStatus.INCOMPLETE),  # Roundup status 'chatting'
+        (4, BugTaskStatus.INCOMPLETE),  # Roundup status 'need-eg'
+        (5, BugTaskStatus.INPROGRESS),  # Roundup status 'in-progress'
+        (6, BugTaskStatus.INPROGRESS),  # Roundup status 'testing'
         (7, BugTaskStatus.FIXCOMMITTED),  # Roundup status 'done-cbb'
-        (8, BugTaskStatus.FIXRELEASED),   # Roundup status 'resolved'
-        )
+        (8, BugTaskStatus.FIXRELEASED),  # Roundup status 'resolved'
+    )
 
     # Python bugtracker statuses come in two parts: status and
     # resolution. Both of these are integer values.
@@ -69,32 +66,40 @@ class Roundup(ExternalBugTracker):
         # Open issues (status=1). We also use this as a fallback for
         # statuses 2 and 3, for which the mappings are different only
         # in a few instances.
-        (None, BugTaskStatus.NEW),        # No resolution
-        (1, BugTaskStatus.CONFIRMED),     # Resolution: accepted
-        (2, BugTaskStatus.CONFIRMED),     # Resolution: duplicate
+        (None, BugTaskStatus.NEW),  # No resolution
+        (1, BugTaskStatus.CONFIRMED),  # Resolution: accepted
+        (2, BugTaskStatus.CONFIRMED),  # Resolution: duplicate
         (3, BugTaskStatus.FIXCOMMITTED),  # Resolution: fixed
-        (4, BugTaskStatus.INVALID),       # Resolution: invalid
-        (5, BugTaskStatus.CONFIRMED),     # Resolution: later
-        (6, BugTaskStatus.INVALID),       # Resolution: out-of-date
-        (7, BugTaskStatus.CONFIRMED),     # Resolution: postponed
-        (8, BugTaskStatus.WONTFIX),       # Resolution: rejected
-        (9, BugTaskStatus.CONFIRMED),     # Resolution: remind
-        (10, BugTaskStatus.WONTFIX),      # Resolution: wontfix
-        (11, BugTaskStatus.INVALID),      # Resolution: works for me
-        )
+        (4, BugTaskStatus.INVALID),  # Resolution: invalid
+        (5, BugTaskStatus.CONFIRMED),  # Resolution: later
+        (6, BugTaskStatus.INVALID),  # Resolution: out-of-date
+        (7, BugTaskStatus.CONFIRMED),  # Resolution: postponed
+        (8, BugTaskStatus.WONTFIX),  # Resolution: rejected
+        (9, BugTaskStatus.CONFIRMED),  # Resolution: remind
+        (10, BugTaskStatus.WONTFIX),  # Resolution: wontfix
+        (11, BugTaskStatus.INVALID),  # Resolution: works for me
+    )
     _status_lookup_python = LookupTree(
         (1, _status_lookup_python_1),
-        (2, LookupTree(
-            (None, BugTaskStatus.WONTFIX),     # No resolution
-            (1, BugTaskStatus.FIXCOMMITTED),   # Resolution: accepted
-            (3, BugTaskStatus.FIXRELEASED),    # Resolution: fixed
-            (7, BugTaskStatus.WONTFIX),        # Resolution: postponed
-            _status_lookup_python_1)),         # Failback
-        (3, LookupTree(
-            (None, BugTaskStatus.INCOMPLETE),  # No resolution
-            (7, BugTaskStatus.WONTFIX),        # Resolution: postponed
-            _status_lookup_python_1)),         # Failback
-        )
+        (
+            2,
+            LookupTree(
+                (None, BugTaskStatus.WONTFIX),  # No resolution
+                (1, BugTaskStatus.FIXCOMMITTED),  # Resolution: accepted
+                (3, BugTaskStatus.FIXRELEASED),  # Resolution: fixed
+                (7, BugTaskStatus.WONTFIX),  # Resolution: postponed
+                _status_lookup_python_1,
+            ),
+        ),  # Failback
+        (
+            3,
+            LookupTree(
+                (None, BugTaskStatus.INCOMPLETE),  # No resolution
+                (7, BugTaskStatus.WONTFIX),  # Resolution: postponed
+                _status_lookup_python_1,
+            ),
+        ),  # Failback
+    )
 
     # Status tree for roundup.mplayerhq.hu Roundup instances. This is
     # a mapping of all statuses that have ever been used (as of
@@ -109,14 +114,19 @@ class Roundup(ExternalBugTracker):
     #
     _status_lookup_mplayerhq = LookupTree(
         # status (new)
-        (1, LookupTree(
+        (
+            1,
+            LookupTree(
                 # substatus (new, open)
                 (1, 2, BugTaskStatus.NEW),
                 # substatus (analyzed)
                 (4, BugTaskStatus.TRIAGED),
-                )),
+            ),
+        ),
         # status (open)
-        (2, LookupTree(
+        (
+            2,
+            LookupTree(
                 # substatus (open)
                 (2, BugTaskStatus.NEW),
                 # substatus (reproduced)
@@ -129,9 +139,12 @@ class Roundup(ExternalBugTracker):
                 (10, BugTaskStatus.FIXCOMMITTED),
                 # substatus (implemented)
                 (13, BugTaskStatus.INPROGRESS),
-                )),
+            ),
+        ),
         # status (closed)
-        (3, LookupTree(
+        (
+            3,
+            LookupTree(
                 # substatus (analyzed, needs_more_info, approved,
                 #            duplicate, invalid, works_for_me, reject)
                 (4, 5, 6, 8, 9, 12, BugTaskStatus.INVALID),
@@ -139,18 +152,22 @@ class Roundup(ExternalBugTracker):
                 (10, 13, 15, BugTaskStatus.FIXRELEASED),
                 # substatus (wont_fix, wont_implement, reject)
                 (11, 14, 16, BugTaskStatus.WONTFIX),
-                )),
-        )
+            ),
+        ),
+    )
 
     # Combine custom mappings with the standard mappings, using the
     # remote host as the first key into the tree.
     _status_lookup_titles = (
-        'Remote host', 'Roundup status', 'Roundup resolution')
+        "Remote host",
+        "Roundup status",
+        "Roundup resolution",
+    )
     _status_lookup = LookupTree(
         (PYTHON_BUGS_HOSTNAME, _status_lookup_python),
         (MPLAYERHQ_BUGS_HOSTNAME, _status_lookup_mplayerhq),
         (_status_lookup_standard,),  # Default
-        )
+    )
 
     def __init__(self, baseurl):
         """Create a new Roundup instance.
@@ -164,9 +181,10 @@ class Roundup(ExternalBugTracker):
         super().__init__(baseurl)
         self.host = URI(self.baseurl).host
 
-        self._status_fields = (
-            self._status_fields_map.get(self.host, ('status',)))
-        fields = ('title', 'id', 'activity') + self._status_fields
+        self._status_fields = self._status_fields_map.get(
+            self.host, ("status",)
+        )
+        fields = ("title", "id", "activity") + self._status_fields
 
         # Roundup is quite particular about URLs, so although several
         # of the parameters below seem redundant or irrelevant, they
@@ -180,12 +198,12 @@ class Roundup(ExternalBugTracker):
             ("@filter", "id"),
             ("@pagesize", "50"),
             ("@startwith", "0"),
-            ]
+        ]
 
     def getSingleBugExportURL(self, bug_id):
         """Return the URL for single bug CSV export."""
         query = list(self.query_base)
-        query.append(('id', str(bug_id)))
+        query.append(("id", str(bug_id)))
         return "%s/issue?%s" % (self.baseurl, create_query_string(query))
 
     def getBatchBugExportURL(self):
@@ -205,8 +223,7 @@ class Roundup(ExternalBugTracker):
         try:
             bug_id = int(bug_id)
         except ValueError:
-            raise InvalidBugId(
-                "bug_id must be an integer: %s." % str(bug_id))
+            raise InvalidBugId("bug_id must be an integer: %s." % str(bug_id))
 
         try:
             return self.bugs[bug_id]
@@ -218,7 +235,8 @@ class Roundup(ExternalBugTracker):
         bug_id = int(bug_id)
         query_url = self.getSingleBugExportURL(bug_id)
         reader = csv.DictReader(
-            self._getPage(query_url).iter_lines(decode_unicode=True))
+            self._getPage(query_url).iter_lines(decode_unicode=True)
+        )
         return (bug_id, next(reader))
 
     def getRemoteBugBatch(self, bug_ids):
@@ -231,15 +249,16 @@ class Roundup(ExternalBugTracker):
         #      tracker for a potentially massive number of bugs.
         query_url = self.getBatchBugExportURL()
         remote_bugs = csv.DictReader(
-            self._getPage(query_url).iter_lines(decode_unicode=True))
+            self._getPage(query_url).iter_lines(decode_unicode=True)
+        )
         bugs = {}
         for remote_bug in remote_bugs:
             # We're only interested in the bug if it's one of the ones in
             # bug_ids.
-            if remote_bug['id'] not in bug_ids:
+            if remote_bug["id"] not in bug_ids:
                 continue
 
-            bugs[int(remote_bug['id'])] = remote_bug
+            bugs[int(remote_bug["id"])] = remote_bug
 
         return bugs
 
@@ -265,10 +284,11 @@ class Roundup(ExternalBugTracker):
                 field_values.append(remote_bug[field])
             else:
                 raise UnparsableBugData(
-                    "Remote bug %s does not define a value for %s." % (
-                        bug_id, field))
+                    "Remote bug %s does not define a value for %s."
+                    % (bug_id, field)
+                )
 
-        return ':'.join(field_values)
+        return ":".join(field_values)
 
     def convertRemoteImportance(self, remote_importance):
         """See `ExternalBugTracker`.
@@ -282,12 +302,13 @@ class Roundup(ExternalBugTracker):
     def convertRemoteStatus(self, remote_status):
         """See `IExternalBugTracker`."""
         fields = self._status_fields
-        field_values = remote_status.split(':')
+        field_values = remote_status.split(":")
 
         if len(field_values) != len(fields):
             raise UnknownRemoteStatusError(
-                "%d field(s) expected, got %d: %s" % (
-                    len(fields), len(field_values), remote_status))
+                "%d field(s) expected, got %d: %s"
+                % (len(fields), len(field_values), remote_status)
+            )
 
         for index, field_value in enumerate(field_values):
             if field_value == "None":
@@ -296,8 +317,9 @@ class Roundup(ExternalBugTracker):
                 field_values[index] = int(field_value)
             else:
                 raise UnknownRemoteStatusError(
-                    "Unrecognized value for field %d (%s): %s" % (
-                        (index + 1), fields[index], field_value))
+                    "Unrecognized value for field %d (%s): %s"
+                    % ((index + 1), fields[index], field_value)
+                )
 
         try:
             return self._status_lookup.find(self.host, *field_values)

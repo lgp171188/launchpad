@@ -4,33 +4,23 @@
 """An XMLRPC transport which uses requests."""
 
 __all__ = [
-    'RequestsTransport',
-    ]
+    "RequestsTransport",
+]
 
 
 from io import BytesIO
-from urllib.parse import (
-    urlparse,
-    urlunparse,
-    )
-from xmlrpc.client import (
-    ProtocolError,
-    Transport,
-    )
+from urllib.parse import urlparse, urlunparse
+from xmlrpc.client import ProtocolError, Transport
 
-from defusedxml.xmlrpc import monkey_patch
 import requests
-from requests.cookies import RequestsCookieJar
 import six
+from defusedxml.xmlrpc import monkey_patch
+from requests.cookies import RequestsCookieJar
 
 from lp.bugs.externalbugtracker.base import repost_on_redirect_hook
 from lp.services.config import config
-from lp.services.timeout import (
-    override_timeout,
-    urlfetch,
-    )
+from lp.services.timeout import override_timeout, urlfetch
 from lp.services.utils import traceback_info
-
 
 # Protect against various XML parsing vulnerabilities.
 monkey_patch()
@@ -54,8 +44,9 @@ class RequestsTransport(Transport):
     def __init__(self, endpoint, cookie_jar=None):
         Transport.__init__(self, use_datetime=True)
         self.scheme, self.host = urlparse(endpoint)[:2]
-        assert self.scheme in ('http', 'https'), (
-            "Unsupported URL scheme: %s" % self.scheme)
+        assert self.scheme in ("http", "https"), (
+            "Unsupported URL scheme: %s" % self.scheme
+        )
         if cookie_jar is None:
             cookie_jar = RequestsCookieJar()
         self.cookie_jar = cookie_jar
@@ -63,31 +54,44 @@ class RequestsTransport(Transport):
 
     def setCookie(self, cookie_str):
         """Set a cookie for the transport to use in future connections."""
-        name, value = cookie_str.split('=')
+        name, value = cookie_str.split("=")
         self.cookie_jar.set(
-            name, value, domain=self.host, path='', expires=False,
-            discard=None, rest=None)
+            name,
+            value,
+            domain=self.host,
+            path="",
+            expires=False,
+            discard=None,
+            rest=None,
+        )
 
     def request(self, host, handler, request_body, verbose=0):
         """Make an XMLRPC request.
 
         Uses the configured proxy server to make the connection.
         """
-        url = urlunparse((self.scheme, host, handler, '', '', ''))
+        url = urlunparse((self.scheme, host, handler, "", "", ""))
         # httplib can raise a UnicodeDecodeError when using a Unicode
         # URL, a non-ASCII body and a proxy. http://bugs.python.org/issue12398
         url = six.ensure_binary(url)
         try:
             with override_timeout(self.timeout):
                 response = urlfetch(
-                    url, method='POST', headers={'Content-Type': 'text/xml'},
-                    data=request_body, cookies=self.cookie_jar,
-                    hooks={'response': repost_on_redirect_hook},
-                    use_proxy=True)
+                    url,
+                    method="POST",
+                    headers={"Content-Type": "text/xml"},
+                    data=request_body,
+                    cookies=self.cookie_jar,
+                    hooks={"response": repost_on_redirect_hook},
+                    use_proxy=True,
+                )
         except requests.HTTPError as e:
             raise ProtocolError(
-                url.decode('utf-8'), e.response.status_code, e.response.reason,
-                e.response.headers)
+                url.decode("utf-8"),
+                e.response.status_code,
+                e.response.reason,
+                e.response.headers,
+            )
         else:
             traceback_info(response.text)
             return self.parse_response(BytesIO(response.content))

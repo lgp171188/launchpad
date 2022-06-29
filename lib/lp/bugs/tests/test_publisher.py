@@ -20,7 +20,8 @@ class TestRegistration(TestCase):
         # The request constructed for requests to the bugs hostname provides
         # BugsLayer.
         request, publication = get_request_and_publication(
-            host=config.vhost.bugs.hostname)
+            host=config.vhost.bugs.hostname
+        )
         self.assertProvides(request, BugsLayer)
 
     def test_bugs_host_has_api(self):
@@ -28,7 +29,8 @@ class TestRegistration(TestCase):
         # requests.
         request, publication = get_request_and_publication(
             host=config.vhost.bugs.hostname,
-            extra_environment={'PATH_INFO': '/api/1.0'})
+            extra_environment={"PATH_INFO": "/api/1.0"},
+        )
         # XXX MichaelHudson, 2010-07-20, bug=607664: WebServiceLayer only
         # actually provides WebServiceLayer in the sense of verifyObject after
         # traversal has started.

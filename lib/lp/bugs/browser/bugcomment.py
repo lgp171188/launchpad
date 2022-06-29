@@ -4,34 +4,24 @@
 """Bug comment browser view classes."""
 
 __all__ = [
-    'BugComment',
-    'BugCommentBoxExpandedReplyView',
-    'BugCommentBoxView',
-    'BugCommentBreadcrumb',
-    'BugCommentView',
-    'BugCommentXHTMLRepresentation',
-    'build_comments_from_chunks',
-    'group_comments_with_activity',
-    ]
+    "BugComment",
+    "BugCommentBoxExpandedReplyView",
+    "BugCommentBoxView",
+    "BugCommentBreadcrumb",
+    "BugCommentView",
+    "BugCommentXHTMLRepresentation",
+    "build_comments_from_chunks",
+    "group_comments_with_activity",
+]
 
 from datetime import timedelta
-from itertools import (
-    chain,
-    groupby,
-    )
+from itertools import chain, groupby
 from operator import itemgetter
 
 from lazr.delegates import delegate_to
 from lazr.restful.interfaces import IWebServiceClientRequest
-from zope.component import (
-    adapter,
-    getMultiAdapter,
-    getUtility,
-    )
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.component import adapter, getMultiAdapter, getUtility
+from zope.interface import Interface, implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.bugs.interfaces.bugattachment import BugAttachmentType
@@ -41,29 +31,26 @@ from lp.services.comments.browser.messagecomment import MessageComment
 from lp.services.config import config
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.messages.interfaces.message import IMessage
-from lp.services.propertycache import (
-    cachedproperty,
-    get_property_cache,
-    )
+from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp import (
-    canonical_url,
     LaunchpadView,
     Navigation,
+    canonical_url,
     stepthrough,
-    )
+)
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import ILaunchBag
-
 
 COMMENT_ACTIVITY_GROUPING_WINDOW = timedelta(minutes=5)
 
 
 class BugCommentNavigation(Navigation):
     """Navigation for the `IBugComment`."""
+
     usedfor = IBugComment
 
-    @stepthrough('revisions')
+    @stepthrough("revisions")
     def traverse_revisions(self, revision):
         try:
             revision = int(revision)
@@ -73,8 +60,13 @@ class BugCommentNavigation(Navigation):
 
 
 def build_comments_from_chunks(
-        bugtask, truncate=False, slice_info=None, show_spam_controls=False,
-        user=None, hide_first=False):
+    bugtask,
+    truncate=False,
+    slice_info=None,
+    show_spam_controls=False,
+    user=None,
+    hide_first=False,
+):
     """Build BugComments from MessageChunks.
 
     :param truncate: Perform truncation of large messages.
@@ -85,7 +77,7 @@ def build_comments_from_chunks(
     comments = {}
     for bugmessage, message, chunk in chunks:
         cache = get_property_cache(message)
-        if getattr(cache, 'chunks', None) is None:
+        if getattr(cache, "chunks", None) is None:
             cache.chunks = []
         # Soft-deleted messages will have None chunk here. Skip cache
         # filling in this case.
@@ -94,15 +86,19 @@ def build_comments_from_chunks(
         bug_comment = comments.get(message.id)
         if bug_comment is None:
             if bugmessage.index == 0 and hide_first:
-                display = 'hide'
+                display = "hide"
             elif truncate:
-                display = 'truncate'
+                display = "truncate"
             else:
-                display = 'full'
+                display = "full"
             bug_comment = BugComment(
-                bugmessage.index, message, bugtask,
-                show_spam_controls=show_spam_controls, user=user,
-                display=display)
+                bugmessage.index,
+                message,
+                bugtask,
+                show_spam_controls=show_spam_controls,
+                user=user,
+                display=display,
+            )
             comments[message.id] = bug_comment
             # This code path is currently only used from a BugTask view which
             # has already loaded all the bug watches. If we start lazy loading
@@ -111,7 +107,8 @@ def build_comments_from_chunks(
             if bugmessage.bugwatch_id is not None:
                 bug_comment.bugwatch = bugmessage.bugwatch
                 bug_comment.synchronized = (
-                    bugmessage.remote_comment_id is not None)
+                    bugmessage.remote_comment_id is not None
+                )
     return comments
 
 
@@ -133,14 +130,26 @@ def group_comments_with_activity(comments, activities):
     else:
         max_index = 0
     comments = (
-        (comment.datecreated, comment.index,
-            comment.owner, comment_kind, comment)
-        for comment in comments)
+        (
+            comment.datecreated,
+            comment.index,
+            comment.owner,
+            comment_kind,
+            comment,
+        )
+        for comment in comments
+    )
     activity_kind = "activity"
     activity = (
-        (activity.datechanged, max_index,
-            activity.person, activity_kind, activity)
-        for activity in activities)
+        (
+            activity.datechanged,
+            max_index,
+            activity.person,
+            activity_kind,
+            activity,
+        )
+        for activity in activities
+    )
 
     # when an action and a comment happen at the same time, the action comes
     # second, when two events are tied the comment index is used to
@@ -166,11 +175,14 @@ def group_comments_with_activity(comments, activities):
         for date, _, actor, kind, event in events:
             window_ended = (
                 # A window may contain only one comment.
-                (window_comment is not None and kind is comment_kind) or
+                (window_comment is not None and kind is comment_kind)
+                or
                 # All events must have happened within a given timeframe.
-                (window_end is None or date >= window_end) or
+                (window_end is None or date >= window_end)
+                or
                 # All events within the window must belong to the same actor.
-                (window_actor is None or actor != window_actor))
+                (window_actor is None or actor != window_actor)
+            )
             if window_ended:
                 window_comment, window_actor = None, actor
                 window_index, window_end = window_index + 1, date + window
@@ -181,14 +193,15 @@ def group_comments_with_activity(comments, activities):
     event_windows = gen_event_windows(events)
     event_windows_grouper = groupby(event_windows, itemgetter(0))
     for window_index, window_group in event_windows_grouper:
-        window_group = [
-            (kind, event) for (index, kind, event) in window_group]
+        window_group = [(kind, event) for (index, kind, event) in window_group]
         for kind, event in window_group:
             if kind is comment_kind:
                 window_comment = event
                 window_comment.activity.extend(
-                    event for (kind, event) in window_group
-                    if kind is activity_kind)
+                    event
+                    for (kind, event) in window_group
+                    if kind is activity_kind
+                )
                 yield window_comment
                 # There's only one comment per window.
                 break
@@ -197,7 +210,7 @@ def group_comments_with_activity(comments, activities):
 
 
 @implementer(IBugComment)
-@delegate_to(IMessage, context='_message')
+@delegate_to(IMessage, context="_message")
 class BugComment(MessageComment):
     """Data structure that holds all data pertaining to a bug comment.
 
@@ -211,9 +224,16 @@ class BugComment(MessageComment):
     """
 
     def __init__(
-            self, index, message, bugtask, activity=None,
-            show_spam_controls=False, user=None, display='full'):
-        if display == 'truncate':
+        self,
+        index,
+        message,
+        bugtask,
+        activity=None,
+        show_spam_controls=False,
+        user=None,
+        display="full",
+    ):
+        if display == "truncate":
             comment_limit = config.malone.max_comment_size
         else:
             comment_limit = None
@@ -237,12 +257,15 @@ class BugComment(MessageComment):
         # We use a feature flag to control users deleting their own comments.
         user_owns_comment = user is not None and user == self.owner
         self.show_spam_controls = show_spam_controls or user_owns_comment
-        self.hide_text = (display == 'hide')
+        self.hide_text = display == "hide"
 
     @cachedproperty
     def bugattachments(self):
-        return [attachment for attachment in self._message.bugattachments if
-         attachment.type != BugAttachmentType.PATCH]
+        return [
+            attachment
+            for attachment in self._message.bugattachments
+            if attachment.type != BugAttachmentType.PATCH
+        ]
 
     @property
     def show_for_admin(self):
@@ -259,7 +282,7 @@ class BugComment(MessageComment):
     @cachedproperty
     def text_for_display(self):
         if self.hide_text:
-            return ''
+            return ""
         else:
             return super().text_for_display
 
@@ -273,8 +296,12 @@ class BugComment(MessageComment):
             return False
         if self.title != other.title:
             return False
-        if (self.bugattachments or self.patches or other.bugattachments or
-            other.patches):
+        if (
+            self.bugattachments
+            or self.patches
+            or other.bugattachments
+            or other.patches
+        ):
             # We shouldn't collapse comments which have attachments;
             # there's really no possible identity in that case.
             return False
@@ -283,23 +310,24 @@ class BugComment(MessageComment):
     def isEmpty(self):
         """Return True if text_for_display is empty."""
 
-        return (len(self.text_for_display) == 0 and
-            len(self.bugattachments) == 0 and len(self.patches) == 0)
+        return (
+            len(self.text_for_display) == 0
+            and len(self.bugattachments) == 0
+            and len(self.patches) == 0
+        )
 
     @property
     def add_comment_url(self):
-        return canonical_url(self.bugtask, view_name='+addcomment')
+        return canonical_url(self.bugtask, view_name="+addcomment")
 
     @property
     def download_url(self):
-        return canonical_url(self, view_name='+download')
+        return canonical_url(self, view_name="+download")
 
     @property
     def show_activity(self):
         """Return True if the activity should be shown for this comment."""
-        return bool(
-            len(self.activity) > 0 or
-            self.bugwatch)
+        return bool(len(self.activity) > 0 or self.bugwatch)
 
 
 class BugCommentView(LaunchpadView):
@@ -326,8 +354,10 @@ class BugCommentView(LaunchpadView):
         return self.comment.show_spam_controls
 
     def page_title(self):
-        return 'Comment %d for bug %d' % (
-            self.comment.index, self.context.bug.id)
+        return "Comment %d for bug %d" % (
+            self.comment.index,
+            self.context.bug.id,
+        )
 
     @property
     def page_description(self):
@@ -339,10 +369,11 @@ class BugCommentBoxViewMixin:
 
     @property
     def show_spam_controls(self):
-        if hasattr(self.context, 'show_spam_controls'):
+        if hasattr(self.context, "show_spam_controls"):
             return self.context.show_spam_controls
-        elif (hasattr(self, 'comment') and
-            hasattr(self.comment, 'show_spam_controls')):
+        elif hasattr(self, "comment") and hasattr(
+            self.comment, "show_spam_controls"
+        ):
             return self.comment.show_spam_controls
         else:
             return False
@@ -350,7 +381,8 @@ class BugCommentBoxViewMixin:
     def proxiedUrlOfLibraryFileAlias(self, attachment):
         """Return the proxied URL for the Librarian file of the attachment."""
         return ProxiedLibraryFileAlias(
-            attachment.libraryfile, attachment).http_url
+            attachment.libraryfile, attachment
+        ).http_url
 
 
 class BugCommentBoxView(LaunchpadView, BugCommentBoxViewMixin):
@@ -360,7 +392,7 @@ class BugCommentBoxView(LaunchpadView, BugCommentBoxViewMixin):
 
     @property
     def can_edit(self):
-        return check_permission('launchpad.Edit', self.context)
+        return check_permission("launchpad.Edit", self.context)
 
 
 class BugCommentBoxExpandedReplyView(LaunchpadView, BugCommentBoxViewMixin):
@@ -383,7 +415,8 @@ class BugCommentXHTMLRepresentation:
     def __call__(self):
         """Render `BugComment` as XHTML using the webservice."""
         comment_view = getMultiAdapter(
-            (self.comment, self.request), name="+box")
+            (self.comment, self.request), name="+box"
+        )
         return comment_view()
 
 

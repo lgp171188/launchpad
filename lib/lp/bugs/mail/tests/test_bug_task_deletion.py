@@ -21,7 +21,7 @@ class TestDeletionNotification(TestCaseWithFactory):
 
     def setUp(self):
         # Run the tests as a logged-in user.
-        super().setUp(user='test@canonical.com')
+        super().setUp(user="test@canonical.com")
         self.user = getUtility(ILaunchBag).user
         product = self.factory.makeProduct(owner=self.user)
         self.bug_task = self.factory.makeBugTask(target=product)
@@ -30,11 +30,17 @@ class TestDeletionNotification(TestCaseWithFactory):
         """Test X-Launchpad-Bug-Modifier appears when a bugtask is deleted."""
         self.bug_task.delete(self.user)
         transaction.commit()
-        latest_notification = IStore(BugNotification).find(
-            BugNotification).order_by(BugNotification.id).last()
+        latest_notification = (
+            IStore(BugNotification)
+            .find(BugNotification)
+            .order_by(BugNotification.id)
+            .last()
+        )
         notifications, omitted, messages = construct_email_notifications(
-            [latest_notification])
-        self.assertEqual(len(notifications), 1,
-                         'email notification not created')
-        headers = [msg['X-Launchpad-Bug-Modifier'] for msg in messages]
+            [latest_notification]
+        )
+        self.assertEqual(
+            len(notifications), 1, "email notification not created"
+        )
+        headers = [msg["X-Launchpad-Bug-Modifier"] for msg in messages]
         self.assertEqual(len(headers), len(messages))

@@ -11,16 +11,16 @@ from lp.bugs.interfaces.bugnomination import (
     BugNominationStatusError,
     IBugNomination,
     IBugNominationSet,
-    )
+)
 from lp.services.features.testing import FeatureFixture
 from lp.soyuz.interfaces.publishing import PackagePublishingStatus
 from lp.testing import (
+    TestCaseWithFactory,
     celebrity_logged_in,
     login,
     logout,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -42,7 +42,7 @@ class BugNominationTestCase(TestCaseWithFactory):
         self.assertIsNone(nomination.productseries)
         self.assertEqual(BugNominationStatus.PROPOSED, nomination.status)
         self.assertIsNone(nomination.date_decided)
-        self.assertEqual('UTC', nomination.date_created.tzname())
+        self.assertEqual("UTC", nomination.date_created.tzname())
 
     def test_target_distroseries(self):
         # The target property returns the distroseries if it is not None.
@@ -113,7 +113,9 @@ class BugNominationTestCase(TestCaseWithFactory):
             nomination.approve(series.product.owner)
             self.assertRaises(
                 BugNominationStatusError,
-                nomination.decline, series.product.owner)
+                nomination.decline,
+                series.product.owner,
+            )
 
     def test_approve_productseries(self):
         # Approving a product nomination creates a productseries bug task.
@@ -127,7 +129,8 @@ class BugNominationTestCase(TestCaseWithFactory):
         self.assertEqual(series.product.owner, nomination.decider)
         expected_targets = [bt.target for bt in bug_tasks] + [series]
         self.assertContentEqual(
-            expected_targets, [bt.target for bt in nomination.bug.bugtasks])
+            expected_targets, [bt.target for bt in nomination.bug.bugtasks]
+        )
 
     def test_approve_distroseries_source_package(self):
         # Approving a package nomination creates a distroseries
@@ -143,7 +146,8 @@ class BugNominationTestCase(TestCaseWithFactory):
         self.assertEqual(series.distribution.owner, nomination.decider)
         expected_targets = [bt.target for bt in bug_tasks] + [target]
         self.assertContentEqual(
-            expected_targets, [bt.target for bt in nomination.bug.bugtasks])
+            expected_targets, [bt.target for bt in nomination.bug.bugtasks]
+        )
 
     def test_approve_distroseries_source_package_many(self):
         # Approving a package nomination creates a distroseries
@@ -154,14 +158,16 @@ class BugNominationTestCase(TestCaseWithFactory):
         target2 = self.factory.makeSourcePackage(distroseries=series)
         bug = self.factory.makeBug(target=target.distribution_sourcepackage)
         self.factory.makeBugTask(
-            bug=bug, target=target2.distribution_sourcepackage)
+            bug=bug, target=target2.distribution_sourcepackage
+        )
         bug_tasks = bug.bugtasks
         with person_logged_in(series.distribution.owner):
             nomination = self.factory.makeBugNomination(bug=bug, target=target)
             nomination.approve(series.distribution.owner)
         expected_targets = [bt.target for bt in bug_tasks] + [target, target2]
         self.assertContentEqual(
-            expected_targets, [bt.target for bt in bug.bugtasks])
+            expected_targets, [bt.target for bt in bug.bugtasks]
+        )
 
     def test_approve_twice(self):
         # Approving a nomination twice is a no-op.
@@ -173,7 +179,7 @@ class BugNominationTestCase(TestCaseWithFactory):
         date_decided = nomination.date_decided
         self.assertIsNotNone(date_decided)
         self.assertEqual(series.product.owner, nomination.decider)
-        with celebrity_logged_in('admin') as admin:
+        with celebrity_logged_in("admin") as admin:
             nomination.approve(admin)
         self.assertEqual(date_decided, nomination.date_decided)
         self.assertEqual(series.product.owner, nomination.decider)
@@ -187,15 +193,20 @@ class BugNominationTestCase(TestCaseWithFactory):
             nomination = self.factory.makeBugNomination(target=target)
             nomination.approve(series.distribution.owner)
         target2 = self.factory.makeSourcePackage(
-            distroseries=series, publish=True)
+            distroseries=series, publish=True
+        )
         product_target = nomination.bug.bugtasks[0].target
         expected_targets = [
-            product_target, target2, target2.distribution_sourcepackage]
+            product_target,
+            target2,
+            target2.distribution_sourcepackage,
+        ]
         bug_task = nomination.bug.bugtasks[-1]
         with person_logged_in(series.distribution.owner):
             bug_task.transitionToTarget(target2, series.distribution.owner)
         self.assertContentEqual(
-            expected_targets, [bt.target for bt in nomination.bug.bugtasks])
+            expected_targets, [bt.target for bt in nomination.bug.bugtasks]
+        )
 
 
 class CanBeNominatedForTestMixin:
@@ -205,8 +216,8 @@ class CanBeNominatedForTestMixin:
 
     def setUp(self):
         super().setUp()
-        login('foo.bar@canonical.com')
-        self.eric = self.factory.makePerson(name='eric')
+        login("foo.bar@canonical.com")
+        self.eric = self.factory.makePerson(name="eric")
         self.setUpTarget()
 
     def tearDown(self):
@@ -244,7 +255,8 @@ class CanBeNominatedForTestMixin:
 
 
 class TestBugCanBeNominatedForProductSeries(
-    CanBeNominatedForTestMixin, TestCaseWithFactory):
+    CanBeNominatedForTestMixin, TestCaseWithFactory
+):
     """Test IBug.canBeNominated for IProductSeries nominations."""
 
     def setUpTarget(self):
@@ -255,7 +267,8 @@ class TestBugCanBeNominatedForProductSeries(
 
 
 class TestBugCanBeNominatedForDistroSeries(
-    CanBeNominatedForTestMixin, TestCaseWithFactory):
+    CanBeNominatedForTestMixin, TestCaseWithFactory
+):
     """Test IBug.canBeNominated for IDistroSeries nominations."""
 
     def setUpTarget(self):
@@ -264,7 +277,8 @@ class TestBugCanBeNominatedForDistroSeries(
         self.bug = self.factory.makeBug()
         self.bug.addTask(self.eric, self.series.distribution)
         self.milestone = self.factory.makeMilestone(
-            distribution=self.series.distribution)
+            distribution=self.series.distribution
+        )
         self.random_series = self.factory.makeDistroSeries()
 
     def test_not_canBeNominatedFor_source_package(self):
@@ -280,11 +294,13 @@ class TestBugCanBeNominatedForDistroSeries(
         sp_bug = self.factory.makeBug()
         spn = self.factory.makeSourcePackageName()
         self.factory.makeSourcePackagePublishingHistory(
-            distroseries=self.series, sourcepackagename=spn)
+            distroseries=self.series, sourcepackagename=spn
+        )
 
         self.assertFalse(sp_bug.canBeNominatedFor(self.series))
         sp_bug.addTask(
-            self.eric, self.series.distribution.getSourcePackage(spn))
+            self.eric, self.series.distribution.getSourcePackage(spn)
+        )
         self.assertTrue(sp_bug.canBeNominatedFor(self.series))
 
 
@@ -294,13 +310,14 @@ class TestCanApprove(TestCaseWithFactory):
 
     def test_normal_user_cannot_approve(self):
         nomination = self.factory.makeBugNomination(
-            target=self.factory.makeProductSeries())
+            target=self.factory.makeProductSeries()
+        )
         self.assertFalse(nomination.canApprove(self.factory.makePerson()))
 
     def test_privileged_users_can_approve(self):
         product = self.factory.makeProduct(driver=self.factory.makePerson())
         series = self.factory.makeProductSeries(product=product)
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             series.driver = self.factory.makePerson()
         nomination = self.factory.makeBugNomination(target=series)
         self.assertTrue(nomination.canApprove(product.owner))
@@ -310,7 +327,7 @@ class TestCanApprove(TestCaseWithFactory):
     def test_bug_supervisors_can_approve_with_feature_flag(self):
         product = self.factory.makeProduct(driver=self.factory.makePerson())
         series = self.factory.makeProductSeries(product=product)
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             product.bug_supervisor = self.factory.makePerson()
             product.driver = self.factory.makePerson()
             series.driver = self.factory.makePerson()
@@ -321,8 +338,9 @@ class TestCanApprove(TestCaseWithFactory):
         self.assertTrue(nomination.canApprove(product.driver))
         self.assertTrue(nomination.canApprove(series.driver))
 
-        with FeatureFixture({
-                'bugs.nominations.bug_supervisors_can_target': 'on'}):
+        with FeatureFixture(
+            {"bugs.nominations.bug_supervisors_can_target": "on"}
+        ):
             self.assertTrue(nomination.canApprove(product.bug_supervisor))
             self.assertTrue(nomination.canApprove(product.driver))
             self.assertTrue(nomination.canApprove(series.driver))
@@ -333,20 +351,24 @@ class TestCanApprove(TestCaseWithFactory):
             distroseries=series,
             sourcepackagename=sourcepackagename,
             component=component,
-            status=PackagePublishingStatus.PUBLISHED)
+            status=PackagePublishingStatus.PUBLISHED,
+        )
 
     def test_component_uploader_can_approve(self):
         # A component uploader can approve a nomination for a package in
         # that component, but not those in other components
         series = self.factory.makeDistroSeries()
         package_name = self.factory.makeSourcePackageName()
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             perm = series.main_archive.newComponentUploader(
-                self.factory.makePerson(), self.factory.makeComponent())
+                self.factory.makePerson(), self.factory.makeComponent()
+            )
             other_perm = series.main_archive.newComponentUploader(
-                self.factory.makePerson(), self.factory.makeComponent())
+                self.factory.makePerson(), self.factory.makeComponent()
+            )
         nomination = self.factory.makeBugNomination(
-            target=series.getSourcePackage(package_name))
+            target=series.getSourcePackage(package_name)
+        )
 
         # Publish the package in one of the uploaders' components. The
         # uploader for the other component cannot approve the nomination.
@@ -358,9 +380,10 @@ class TestCanApprove(TestCaseWithFactory):
         # An uploader for any component can approve a nomination without
         # a package.
         series = self.factory.makeDistroSeries()
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             perm = series.main_archive.newComponentUploader(
-                self.factory.makePerson(), self.factory.makeComponent())
+                self.factory.makePerson(), self.factory.makeComponent()
+            )
         nomination = self.factory.makeBugNomination(target=series)
 
         self.assertFalse(nomination.canApprove(self.factory.makePerson()))
@@ -371,14 +394,16 @@ class TestCanApprove(TestCaseWithFactory):
         # but not others.
         series = self.factory.makeDistroSeries()
         package_name = self.factory.makeSourcePackageName()
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             perm = series.main_archive.newPackageUploader(
-                self.factory.makePerson(), package_name)
+                self.factory.makePerson(), package_name
+            )
             other_perm = series.main_archive.newPackageUploader(
-                self.factory.makePerson(),
-                self.factory.makeSourcePackageName())
+                self.factory.makePerson(), self.factory.makeSourcePackageName()
+            )
         nomination = self.factory.makeBugNomination(
-            target=series.getSourcePackage(package_name))
+            target=series.getSourcePackage(package_name)
+        )
 
         self.assertFalse(nomination.canApprove(other_perm.person))
         self.assertTrue(nomination.canApprove(perm.person))
@@ -389,12 +414,15 @@ class TestCanApprove(TestCaseWithFactory):
         series = self.factory.makeDistroSeries()
         package_name = self.factory.makeSourcePackageName()
         ps = self.factory.makePackageset(
-            distroseries=series, packages=[package_name])
-        with celebrity_logged_in('admin'):
+            distroseries=series, packages=[package_name]
+        )
+        with celebrity_logged_in("admin"):
             perm = series.main_archive.newPackagesetUploader(
-                self.factory.makePerson(), ps)
+                self.factory.makePerson(), ps
+            )
         nomination = self.factory.makeBugNomination(
-            target=series.getSourcePackage(package_name))
+            target=series.getSourcePackage(package_name)
+        )
 
         self.assertFalse(nomination.canApprove(self.factory.makePerson()))
         self.assertTrue(nomination.canApprove(perm.person))
@@ -406,16 +434,20 @@ class TestCanApprove(TestCaseWithFactory):
         series = self.factory.makeDistroSeries()
         package_name = self.factory.makeSourcePackageName()
         comp_package_name = self.factory.makeSourcePackageName()
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             package_perm = series.main_archive.newPackageUploader(
-                self.factory.makePerson(), package_name)
+                self.factory.makePerson(), package_name
+            )
             comp_perm = series.main_archive.newComponentUploader(
-                self.factory.makePerson(), self.factory.makeComponent())
+                self.factory.makePerson(), self.factory.makeComponent()
+            )
         nomination = self.factory.makeBugNomination(
-            target=series.getSourcePackage(package_name))
+            target=series.getSourcePackage(package_name)
+        )
         self.factory.makeBugTask(
             bug=nomination.bug,
-            target=series.distribution.getSourcePackage(comp_package_name))
+            target=series.distribution.getSourcePackage(comp_package_name),
+        )
 
         self.publishSource(series, package_name, comp_perm.component)
         self.assertFalse(nomination.canApprove(self.factory.makePerson()))

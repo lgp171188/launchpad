@@ -3,18 +3,18 @@
 """Top-level __init__ for the checkwatches package."""
 
 __all__ = [
-    'CheckWatchesCronScript',
-    'CheckwatchesMaster',
-    'externalbugtracker',
-    'SerialScheduler',
-    'TwistedThreadScheduler',
-    ]
+    "CheckWatchesCronScript",
+    "CheckwatchesMaster",
+    "externalbugtracker",
+    "SerialScheduler",
+    "TwistedThreadScheduler",
+]
 
 # We do this to maintain backwards compatibility with tests.
 from lp.bugs.scripts.checkwatches.core import (
     CheckWatchesCronScript,
     CheckwatchesMaster,
-    externalbugtracker,
     SerialScheduler,
     TwistedThreadScheduler,
-    )
+    externalbugtracker,
+)

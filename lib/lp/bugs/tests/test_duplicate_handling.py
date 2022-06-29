@@ -19,7 +19,7 @@ class TestDuplicateAttributes(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super().setUp(user='test@canonical.com')
+        super().setUp(user="test@canonical.com")
 
     def setDuplicateofDirectly(self, bug, duplicateof):
         """Helper method to set duplicateof directly."""
@@ -30,7 +30,8 @@ class TestDuplicateAttributes(TestCaseWithFactory):
         bug = self.factory.makeBug()
         dupe_bug = self.factory.makeBug()
         self.assertRaises(
-            ForbiddenAttribute, self.setDuplicateofDirectly, bug, dupe_bug)
+            ForbiddenAttribute, self.setDuplicateofDirectly, bug, dupe_bug
+        )
 
 
 class TestMarkDuplicateValidation(TestCaseWithFactory):
@@ -39,7 +40,7 @@ class TestMarkDuplicateValidation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super().setUp(user='test@canonical.com')
+        super().setUp(user="test@canonical.com")
         self.bug = self.factory.makeBug()
         self.dupe_bug = self.factory.makeBug()
         self.dupe_bug.markAsDuplicate(self.bug)
@@ -54,19 +55,26 @@ class TestMarkDuplicateValidation(TestCaseWithFactory):
     def test_error_on_duplicate_to_duplicate(self):
         # Test that a bug cannot be marked a duplicate of
         # a bug that is already itself a duplicate.
-        msg = dedent("""
+        msg = dedent(
+            """
             Bug %s is already a duplicate of bug %s. You
             can only mark a bug report as duplicate of one that
             isn't a duplicate itself.
-            """ % (
-                self.dupe_bug.id, self.dupe_bug.duplicateof.id))
+            """
+            % (self.dupe_bug.id, self.dupe_bug.duplicateof.id)
+        )
         self.assertDuplicateError(
-            self.possible_dupe, self.dupe_bug, html_escape(msg))
+            self.possible_dupe, self.dupe_bug, html_escape(msg)
+        )
 
     def test_error_duplicate_to_itself(self):
         # Test that a bug cannot be marked its own duplicate
-        msg = html_escape(dedent("""
-            You can't mark a bug as a duplicate of itself."""))
+        msg = html_escape(
+            dedent(
+                """
+            You can't mark a bug as a duplicate of itself."""
+            )
+        )
         self.assertDuplicateError(self.bug, self.bug, msg)
 
 
@@ -76,7 +84,7 @@ class TestMoveDuplicates(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super().setUp(user='test@canonical.com')
+        super().setUp(user="test@canonical.com")
 
     def test_duplicates_are_moved(self):
         # Confirm that a bug with two duplicates can be marked

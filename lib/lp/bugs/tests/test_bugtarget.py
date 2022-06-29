@@ -21,30 +21,29 @@ from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.product import IProductSet
 from lp.registry.interfaces.projectgroup import IProjectGroupSet
 from lp.services.webapp.interfaces import ILaunchBag
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 
 def bugtarget_filebug(bugtarget, summary, status=None):
     """File a bug as the current user on the bug target and return it."""
-    return bugtarget.createBug(CreateBugParams(
-        getUtility(ILaunchBag).user, summary, comment=summary, status=status))
+    return bugtarget.createBug(
+        CreateBugParams(
+            getUtility(ILaunchBag).user,
+            summary,
+            comment=summary,
+            status=status,
+        )
+    )
 
 
 def productSetUp(test):
     """Setup the `IProduct` test."""
     setUp(test)
-    test.globs['bugtarget'] = getUtility(IProductSet).getByName('firefox')
-    test.globs['filebug'] = bugtarget_filebug
-    test.globs['question_target'] = test.globs['bugtarget']
+    test.globs["bugtarget"] = getUtility(IProductSet).getByName("firefox")
+    test.globs["filebug"] = bugtarget_filebug
+    test.globs["question_target"] = test.globs["bugtarget"]
 
 
 def project_filebug(project, summary, status=None):
@@ -63,8 +62,8 @@ def projectSetUp(test):
     """Setup the `IProjectGroup` test."""
     setUp(test)
     projectgroups = getUtility(IProjectGroupSet)
-    test.globs['bugtarget'] = projectgroups.getByName('mozilla')
-    test.globs['filebug'] = project_filebug
+    test.globs["bugtarget"] = projectgroups.getByName("mozilla")
+    test.globs["filebug"] = project_filebug
 
 
 def productseries_filebug(productseries, summary, status=None):
@@ -76,38 +75,40 @@ def productseries_filebug(productseries, summary, status=None):
     """
     bug = bugtarget_filebug(productseries.product, summary, status=status)
     getUtility(IBugTaskSet).createTask(
-        bug, getUtility(ILaunchBag).user, productseries, status=status)
+        bug, getUtility(ILaunchBag).user, productseries, status=status
+    )
     return bug
 
 
 def productSeriesSetUp(test):
     """Setup the `IProductSeries` test."""
     setUp(test)
-    firefox = getUtility(IProductSet).getByName('firefox')
-    test.globs['bugtarget'] = firefox.getSeries('trunk')
-    test.globs['filebug'] = productseries_filebug
-    test.globs['question_target'] = firefox
+    firefox = getUtility(IProductSet).getByName("firefox")
+    test.globs["bugtarget"] = firefox.getSeries("trunk")
+    test.globs["filebug"] = productseries_filebug
+    test.globs["question_target"] = firefox
 
 
 def distributionSetUp(test):
     """Setup the `IDistribution` test."""
     setUp(test)
-    test.globs['bugtarget'] = getUtility(IDistributionSet).getByName('ubuntu')
-    test.globs['filebug'] = bugtarget_filebug
-    test.globs['question_target'] = test.globs['bugtarget']
+    test.globs["bugtarget"] = getUtility(IDistributionSet).getByName("ubuntu")
+    test.globs["filebug"] = bugtarget_filebug
+    test.globs["question_target"] = test.globs["bugtarget"]
 
 
 def distributionSourcePackageSetUp(test):
     """Setup the `IDistributionSourcePackage` test."""
     setUp(test)
-    ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    test.globs['bugtarget'] = ubuntu.getSourcePackage('mozilla-firefox')
-    test.globs['filebug'] = bugtarget_filebug
-    test.globs['question_target'] = test.globs['bugtarget']
+    ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    test.globs["bugtarget"] = ubuntu.getSourcePackage("mozilla-firefox")
+    test.globs["filebug"] = bugtarget_filebug
+    test.globs["question_target"] = test.globs["bugtarget"]
 
 
-def distroseries_filebug(distroseries, summary, sourcepackagename=None,
-                          status=None):
+def distroseries_filebug(
+    distroseries, summary, sourcepackagename=None, status=None
+):
     """File a bug on a distroseries.
 
     Since bugs can't be filed on distroseriess directly, a bug will
@@ -119,24 +120,28 @@ def distroseries_filebug(distroseries, summary, sourcepackagename=None,
         target = target.getSourcePackage(sourcepackagename)
     bug = bugtarget_filebug(distroseries.distribution, summary, status=status)
     getUtility(IBugTaskSet).createTask(
-        bug, getUtility(ILaunchBag).user, target, status=status)
+        bug, getUtility(ILaunchBag).user, target, status=status
+    )
     return bug
 
 
 def distributionSeriesSetUp(test):
     """Setup the `IDistroSeries` test."""
     setUp(test)
-    ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    test.globs['bugtarget'] = ubuntu.getSeries('hoary')
-    test.globs['filebug'] = distroseries_filebug
-    test.globs['question_target'] = ubuntu
+    ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    test.globs["bugtarget"] = ubuntu.getSeries("hoary")
+    test.globs["filebug"] = distroseries_filebug
+    test.globs["question_target"] = ubuntu
 
 
 def sourcepackage_filebug(source_package, summary, status=None):
     """File a bug on a source package in a distroseries."""
     bug = distroseries_filebug(
-        source_package.distroseries, summary,
-        sourcepackagename=source_package.sourcepackagename, status=status)
+        source_package.distroseries,
+        summary,
+        sourcepackagename=source_package.sourcepackagename,
+        status=status,
+    )
     return bug
 
 
@@ -180,16 +185,18 @@ def test_suite():
         distributionSetUp,
         distributionSourcePackageSetUp,
         distributionSeriesSetUp,
-        ]
+    ]
 
-    testname = 'bugtarget-questiontarget.rst'
+    testname = "bugtarget-questiontarget.rst"
     for setUpMethod in setUpMethods:
         id_ext = "%s-%s" % (testname, setUpMethod.__name__)
         test = LayeredDocFileSuite(
             testname,
             id_extensions=[id_ext],
-            setUp=setUpMethod, tearDown=tearDown,
-            layer=DatabaseFunctionalLayer)
+            setUp=setUpMethod,
+            tearDown=tearDown,
+            layer=DatabaseFunctionalLayer,
+        )
         suite.addTest(test)
 
     suite.addTest(unittest.TestLoader().loadTestsFromName(__name__))

@@ -19,54 +19,55 @@ from lp.blueprints.interfaces.specification import ISpecificationSet
 from lp.bugs.interfaces.cve import ICveSet
 from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.layers import LaunchpadFunctionalLayer
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 
 def questionSetUp(test):
     setUp(test)
-    test.globs['target'] = getUtility(IQuestionSet).get(1)
+    test.globs["target"] = getUtility(IQuestionSet).get(1)
 
 
 def cveSetUp(test):
     setUp(test)
-    test.globs['target'] = getUtility(ICveSet)['2005-2730']
+    test.globs["target"] = getUtility(ICveSet)["2005-2730"]
 
 
 def specificationSetUp(test):
     setUp(test)
-    test.globs['target'] = getUtility(ISpecificationSet).getByURL(
-        'http://wiki.mozilla.org/Firefox:1.1_Product_Team')
+    test.globs["target"] = getUtility(ISpecificationSet).getByURL(
+        "http://wiki.mozilla.org/Firefox:1.1_Product_Team"
+    )
 
 
 def branchMergeProposalSetUp(test):
     setUp(test)
     factory = LaunchpadObjectFactory()
-    test.globs['target'] = ProxyFactory(
-        factory.makeBranchMergeProposalForGit())
+    test.globs["target"] = ProxyFactory(
+        factory.makeBranchMergeProposalForGit()
+    )
 
 
 def test_suite():
     suite = unittest.TestSuite()
 
-    targets = [('cve', cveSetUp),
-               ('question', questionSetUp),
-               ('specification', specificationSetUp),
-               ('branchmergeproposal', branchMergeProposalSetUp),
-               ]
+    targets = [
+        ("cve", cveSetUp),
+        ("question", questionSetUp),
+        ("specification", specificationSetUp),
+        ("branchmergeproposal", branchMergeProposalSetUp),
+    ]
 
     for name, setUpMethod in targets:
         test = LayeredDocFileSuite(
-            'buglinktarget.rst',
+            "buglinktarget.rst",
             id_extensions=[name],
-            setUp=setUpMethod, tearDown=tearDown,
-            layer=LaunchpadFunctionalLayer)
+            setUp=setUpMethod,
+            tearDown=tearDown,
+            layer=LaunchpadFunctionalLayer,
+        )
         suite.addTest(test)
     return suite
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

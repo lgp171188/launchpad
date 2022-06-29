@@ -4,24 +4,15 @@
 """BugSummary interfaces."""
 
 __all__ = [
-    'IBugSummary',
-    'IBugSummaryDimension',
-    ]
+    "IBugSummary",
+    "IBugSummaryDimension",
+]
 
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Choice,
-    Int,
-    Object,
-    Text,
-    )
+from zope.schema import Bool, Choice, Int, Object, Text
 
 from lp import _
-from lp.bugs.interfaces.bugtask import (
-    BugTaskImportance,
-    BugTaskStatusSearch,
-    )
+from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatusSearch
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.milestone import IMilestone
@@ -64,9 +55,11 @@ class IBugSummary(Interface):
     milestone = Object(IMilestone, readonly=True)
 
     status = Choice(
-        title=_('Status'), vocabulary=BugTaskStatusSearch, readonly=True)
+        title=_("Status"), vocabulary=BugTaskStatusSearch, readonly=True
+    )
     importance = Choice(
-        title=_('Importance'), vocabulary=BugTaskImportance, readonly=True)
+        title=_("Importance"), vocabulary=BugTaskImportance, readonly=True
+    )
 
     tag = Text(readonly=True)
 

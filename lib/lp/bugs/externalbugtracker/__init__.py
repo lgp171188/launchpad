@@ -4,32 +4,32 @@
 """__init__ module for the externalbugtracker package."""
 
 __all__ = [
-    'BATCH_SIZE_UNLIMITED',
-    'BugNotFound',
-    'BugTrackerConnectError',
-    'BugWatchUpdateError',
-    'BugWatchUpdateWarning',
-    'Bugzilla',
-    'DebBugs',
-    'DebBugsDatabaseNotFound',
-    'ExternalBugTracker',
-    'GitHub',
-    'GitLab',
-    'InvalidBugId',
-    'LookupTree',
-    'Mantis',
-    'PrivateRemoteBug',
-    'RequestTracker',
-    'Roundup',
-    'SourceForge',
-    'Trac',
-    'UnknownBugTrackerTypeError',
-    'UnknownRemoteStatusError',
-    'UnparsableBugData',
-    'UnparsableBugTrackerVersion',
-    'UnsupportedBugTrackerVersion',
-    'get_external_bugtracker',
-    ]
+    "BATCH_SIZE_UNLIMITED",
+    "BugNotFound",
+    "BugTrackerConnectError",
+    "BugWatchUpdateError",
+    "BugWatchUpdateWarning",
+    "Bugzilla",
+    "DebBugs",
+    "DebBugsDatabaseNotFound",
+    "ExternalBugTracker",
+    "GitHub",
+    "GitLab",
+    "InvalidBugId",
+    "LookupTree",
+    "Mantis",
+    "PrivateRemoteBug",
+    "RequestTracker",
+    "Roundup",
+    "SourceForge",
+    "Trac",
+    "UnknownBugTrackerTypeError",
+    "UnknownRemoteStatusError",
+    "UnparsableBugData",
+    "UnparsableBugTrackerVersion",
+    "UnsupportedBugTrackerVersion",
+    "get_external_bugtracker",
+]
 
 from lp.bugs.externalbugtracker.base import (
     BATCH_SIZE_UNLIMITED,
@@ -46,12 +46,9 @@ from lp.bugs.externalbugtracker.base import (
     UnparsableBugData,
     UnparsableBugTrackerVersion,
     UnsupportedBugTrackerVersion,
-    )
+)
 from lp.bugs.externalbugtracker.bugzilla import Bugzilla
-from lp.bugs.externalbugtracker.debbugs import (
-    DebBugs,
-    DebBugsDatabaseNotFound,
-    )
+from lp.bugs.externalbugtracker.debbugs import DebBugs, DebBugsDatabaseNotFound
 from lp.bugs.externalbugtracker.github import GitHub
 from lp.bugs.externalbugtracker.gitlab import GitLab
 from lp.bugs.externalbugtracker.mantis import Mantis
@@ -60,7 +57,6 @@ from lp.bugs.externalbugtracker.rt import RequestTracker
 from lp.bugs.externalbugtracker.sourceforge import SourceForge
 from lp.bugs.externalbugtracker.trac import Trac
 from lp.bugs.interfaces.bugtracker import BugTrackerType
-
 
 BUG_TRACKER_CLASSES = {
     BugTrackerType.BUGZILLA: Bugzilla,
@@ -72,7 +68,7 @@ BUG_TRACKER_CLASSES = {
     BugTrackerType.ROUNDUP: Roundup,
     BugTrackerType.RT: RequestTracker,
     BugTrackerType.SOURCEFORGE: SourceForge,
-    }
+}
 
 
 def get_external_bugtracker(bugtracker):
@@ -82,5 +78,4 @@ def get_external_bugtracker(bugtracker):
     if bugtracker_class is not None:
         return bugtracker_class(bugtracker.baseurl)
     else:
-        raise UnknownBugTrackerTypeError(bugtrackertype.name,
-            bugtracker.name)
+        raise UnknownBugTrackerTypeError(bugtrackertype.name, bugtracker.name)

@@ -4,6 +4,7 @@
 """Interfaces pertaining to the launchpad Malone application."""
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     collection_default_content,
     export_factory_operation,
@@ -11,24 +12,19 @@ from lazr.restful.declarations import (
     exported_as_webservice_collection,
     operation_for_version,
     operation_parameters,
-    REQUEST_USER,
-    )
+)
 from lazr.restful.fields import Reference
 from lazr.restful.interface import copy_field
 from zope.interface import Attribute
 
 from lp.bugs.interfaces.bug import IBug
-from lp.bugs.interfaces.bugtarget import (
-    IBugTarget,
-    IHasBugs,
-    )
+from lp.bugs.interfaces.bugtarget import IBugTarget, IHasBugs
 from lp.services.webapp.interfaces import ILaunchpadApplication
 
-
 __all__ = [
-    'IMaloneApplication',
-    'IPrivateMaloneApplication',
-    ]
+    "IMaloneApplication",
+    "IPrivateMaloneApplication",
+]
 
 
 @exported_as_webservice_collection(IBug)
@@ -37,11 +33,10 @@ class IMaloneApplication(ILaunchpadApplication, IHasBugs):
 
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        bug_id=copy_field(IBug['id']),
-        related_bug=Reference(schema=IBug)
+        bug_id=copy_field(IBug["id"]), related_bug=Reference(schema=IBug)
     )
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getBugData(user, bug_id, related_bug=None):
         """Search bugtasks matching the specified criteria.
 
@@ -54,10 +49,13 @@ class IMaloneApplication(ILaunchpadApplication, IHasBugs):
     bug_count = Attribute("The number of bugs recorded in Launchpad")
     bugwatch_count = Attribute("The number of links to external bug trackers")
     bugtask_count = Attribute("The number of bug tasks in Launchpad")
-    projects_with_bugs_count = Attribute("The number of products and "
-        "distributions which have bugs in Launchpad.")
-    shared_bug_count = Attribute("The number of bugs that span multiple "
-        "products and distributions")
+    projects_with_bugs_count = Attribute(
+        "The number of products and "
+        "distributions which have bugs in Launchpad."
+    )
+    shared_bug_count = Attribute(
+        "The number of bugs that span multiple " "products and distributions"
+    )
     bugtracker_count = Attribute("The number of bug trackers in Launchpad")
     top_bugtrackers = Attribute("The BugTrackers with the most watches.")
 
@@ -68,15 +66,34 @@ class IMaloneApplication(ILaunchpadApplication, IHasBugs):
     @call_with(owner=REQUEST_USER)
     @operation_parameters(
         target=Reference(
-            schema=IBugTarget, required=True,
+            schema=IBugTarget,
+            required=True,
             title="The project, distribution or source package that has "
-                  "this bug."))
+            "this bug.",
+        )
+    )
     @export_factory_operation(
-        IBug, ['title', 'description', 'tags', 'information_type',
-               'security_related', 'private'])
+        IBug,
+        [
+            "title",
+            "description",
+            "tags",
+            "information_type",
+            "security_related",
+            "private",
+        ],
+    )
     @operation_for_version("beta")
-    def createBug(owner, title, description, target, information_type=None,
-                  tags=None, security_related=None, private=None):
+    def createBug(
+        owner,
+        title,
+        description,
+        target,
+        information_type=None,
+        tags=None,
+        security_related=None,
+        private=None,
+    ):
         """Create a bug (with an appropriate bugtask) and return it.
 
         :param target: The Project, Distribution or DistributionSourcePackage

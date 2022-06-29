@@ -6,14 +6,9 @@
 from lp.registry.browser.distribution import DistributionBugsMenu
 from lp.registry.browser.distributionsourcepackage import (
     DistributionSourcePackageBugsMenu,
-    )
+)
 from lp.registry.browser.product import ProductBugsMenu
-from lp.testing import (
-    ANONYMOUS,
-    login,
-    login_person,
-    TestCaseWithFactory,
-    )
+from lp.testing import ANONYMOUS, TestCaseWithFactory, login, login_person
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.views import create_initialized_view
 
@@ -24,7 +19,7 @@ class TestConfigureBugTrackerBase(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        login('test@canonical.com')
+        login("test@canonical.com")
         self.target = self.makeTarget()
         self.menu = self.getMenu()
         self.view = create_initialized_view(self.target, name="+index")
@@ -37,7 +32,6 @@ class TestConfigureBugTrackerBase(TestCaseWithFactory):
 
 
 class TestConfigureBugTrackerProduct(TestConfigureBugTrackerBase):
-
     def makeTarget(self):
         return self.factory.makeProduct(name="vuvuzela")
 
@@ -50,12 +44,12 @@ class TestConfigureBugTrackerProduct(TestConfigureBugTrackerBase):
         self.assertTrue(link.enabled, "Link not enabled")
 
     def test_link_visible_to_admin(self):
-        login('foo.bar@canonical.com')
+        login("foo.bar@canonical.com")
         link = self.menu.configure_bugtracker()
         self.assertTrue(link.enabled, "Link not enabled")
 
     def test_not_visible_to_regular_user(self):
-        login('no-priv@canonical.com')
+        login("no-priv@canonical.com")
         link = self.menu.configure_bugtracker()
         self.assertFalse(link.enabled, "Link enabled")
 
@@ -66,7 +60,6 @@ class TestConfigureBugTrackerProduct(TestConfigureBugTrackerBase):
 
 
 class TestConfigureBugTrackerDistro(TestConfigureBugTrackerBase):
-
     def makeTarget(self):
         return self.factory.makeDistribution()
 
@@ -75,11 +68,10 @@ class TestConfigureBugTrackerDistro(TestConfigureBugTrackerBase):
 
     def test_link_not_present(self):
         login_person(self.getOwner())
-        self.assertFalse(hasattr(self.menu, 'configure_bugtracker'))
+        self.assertFalse(hasattr(self.menu, "configure_bugtracker"))
 
 
 class TestConfigureBugTrackerDSP(TestConfigureBugTrackerDistro):
-
     def makeTarget(self):
         return self.factory.makeDistributionSourcePackage()
 

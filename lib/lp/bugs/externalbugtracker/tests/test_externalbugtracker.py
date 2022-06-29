@@ -4,26 +4,26 @@
 """Test the externalbugtracker package."""
 
 import responses
+import transaction
 from testtools.matchers import (
     ContainsDict,
     Equals,
     MatchesListwise,
     MatchesStructure,
-    )
-import transaction
+)
 from zope.interface import implementer
 
 from lp.bugs.externalbugtracker.base import (
+    LP_USER_AGENT,
     BugTrackerConnectError,
     ExternalBugTracker,
-    LP_USER_AGENT,
-    )
+)
 from lp.bugs.externalbugtracker.debbugs import DebBugs
 from lp.bugs.interfaces.externalbugtracker import (
     ISupportsBackLinking,
     ISupportsCommentImport,
     ISupportsCommentPushing,
-    )
+)
 from lp.testing import TestCase
 from lp.testing.layers import ZopelessDatabaseLayer
 
@@ -52,7 +52,7 @@ class TestCheckwatchesConfig(TestCase):
         # If the global config checkwatches.sync_comments is True,
         # external bug trackers will set their sync_comments attribute
         # according to their support of comment syncing.
-        self.pushConfig('checkwatches', sync_comments=True)
+        self.pushConfig("checkwatches", sync_comments=True)
         # A plain tracker will never support syncing comments.
         tracker = ExternalBugTracker(self.base_url)
         self.assertFalse(tracker.sync_comments)
@@ -69,7 +69,7 @@ class TestCheckwatchesConfig(TestCase):
         # If the global config checkwatches.sync_comments is False,
         # external bug trackers will always set their sync_comments
         # attribute to False.
-        self.pushConfig('checkwatches', sync_comments=False)
+        self.pushConfig("checkwatches", sync_comments=False)
         tracker = ExternalBugTracker(self.base_url)
         self.assertFalse(tracker.sync_comments)
         tracker = BackLinkingExternalBugTracker(self.base_url)
@@ -84,7 +84,8 @@ class TestCheckwatchesConfig(TestCase):
         # separate config variable, sync_debbugs_comments. DebBugs
         # supports comment pushing and import.
         self.pushConfig(
-            'checkwatches', sync_comments=True, sync_debbugs_comments=True)
+            "checkwatches", sync_comments=True, sync_debbugs_comments=True
+        )
         tracker = DebBugs(self.base_url)
         self.assertTrue(tracker.sync_comments)
         # When either sync_comments or sync_debbugs_comments is False
@@ -92,8 +93,10 @@ class TestCheckwatchesConfig(TestCase):
         # to not support any form of comment syncing.
         for state in ((True, False), (False, True), (False, False)):
             self.pushConfig(
-                'checkwatches', sync_comments=state[0],
-                sync_debbugs_comments=state[1])
+                "checkwatches",
+                sync_comments=state[0],
+                sync_debbugs_comments=state[1],
+            )
             tracker = DebBugs(self.base_url)
             self.assertFalse(tracker.sync_comments)
 
@@ -120,17 +123,29 @@ class TestCheckwatchesConfig(TestCase):
         bugtracker = ExternalBugTracker(base_url)
         transaction.commit()
         responses.add(
-            "POST", base_url + form, status=302,
-            headers={"Location": base_url + target})
+            "POST",
+            base_url + form,
+            status=302,
+            headers={"Location": base_url + target},
+        )
         responses.add("GET", base_url + target, body=fake_form)
 
         bugtracker._postPage(form, {})
 
         requests = [call.request for call in responses.calls]
-        self.assertThat(requests, MatchesListwise([
-            MatchesStructure.byEquality(method="POST", path_url="/" + form),
-            MatchesStructure.byEquality(method="GET", path_url="/" + target),
-            ]))
+        self.assertThat(
+            requests,
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(
+                        method="POST", path_url="/" + form
+                    ),
+                    MatchesStructure.byEquality(
+                        method="GET", path_url="/" + target
+                    ),
+                ]
+            ),
+        )
 
     @responses.activate
     def test_postPage_can_repost_on_redirect(self):
@@ -145,17 +160,29 @@ class TestCheckwatchesConfig(TestCase):
         bugtracker = ExternalBugTracker(base_url)
         transaction.commit()
         responses.add(
-            "POST", base_url + form, status=302,
-            headers={"Location": base_url + target})
+            "POST",
+            base_url + form,
+            status=302,
+            headers={"Location": base_url + target},
+        )
         responses.add("POST", base_url + target, body=fake_form)
 
         bugtracker._postPage(form, form={}, repost_on_redirect=True)
 
         requests = [call.request for call in responses.calls]
-        self.assertThat(requests, MatchesListwise([
-            MatchesStructure.byEquality(method="POST", path_url="/" + form),
-            MatchesStructure.byEquality(method="POST", path_url="/" + target),
-            ]))
+        self.assertThat(
+            requests,
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(
+                        method="POST", path_url="/" + form
+                    ),
+                    MatchesStructure.byEquality(
+                        method="POST", path_url="/" + target
+                    ),
+                ]
+            ),
+        )
 
 
 class TestExternalBugTracker(TestCase):
@@ -172,19 +199,28 @@ class TestExternalBugTracker(TestCase):
         responses.add("POST", base_url + "some-url", status=404)
         self.assertRaises(
             BugTrackerConnectError,
-            bugtracker._postPage, 'some-url', {'post-data': 'here'})
+            bugtracker._postPage,
+            "some-url",
+            {"post-data": "here"},
+        )
 
     @responses.activate
     def test_postPage_sends_host(self):
         # When posting, a Host header is sent.
-        base_host = 'example.com'
-        base_url = 'http://%s/' % base_host
+        base_host = "example.com"
+        base_url = "http://%s/" % base_host
         bugtracker = ExternalBugTracker(base_url)
         transaction.commit()
         responses.add("POST", base_url + "some-url")
-        bugtracker._postPage('some-url', {'post-data': 'here'})
-        self.assertThat(responses.calls[-1].request, MatchesStructure(
-            headers=ContainsDict({
-                "User-Agent": Equals(LP_USER_AGENT),
-                "Host": Equals(base_host),
-                })))
+        bugtracker._postPage("some-url", {"post-data": "here"})
+        self.assertThat(
+            responses.calls[-1].request,
+            MatchesStructure(
+                headers=ContainsDict(
+                    {
+                        "User-Agent": Equals(LP_USER_AGENT),
+                        "Host": Equals(base_host),
+                    }
+                )
+            ),
+        )

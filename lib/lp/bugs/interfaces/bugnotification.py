@@ -4,23 +4,15 @@
 """Bug notifications."""
 
 __all__ = [
-    'IBugNotification',
-    'IBugNotificationFilter',
-    'IBugNotificationRecipient',
-    'IBugNotificationSet',
-    ]
+    "IBugNotification",
+    "IBugNotificationFilter",
+    "IBugNotificationRecipient",
+    "IBugNotificationSet",
+]
 
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, TextLine
 
 from lp import _
 from lp.bugs.enums import BugNotificationStatus
@@ -32,36 +24,40 @@ from lp.services.fields import BugField
 class IBugNotification(IHasOwner):
     """A textual representation of bug changes."""
 
-    id = Attribute('id')
+    id = Attribute("id")
     message = Attribute(
         "The message containing the text representation of the changes"
-        " to the bug.")
+        " to the bug."
+    )
     activity = Attribute(
         "The bug activity object corresponding to this notification.  Will "
         "be None for older notification objects, and will be None if the "
         "bugchange object that provides the data for the change returns None "
-        "for getBugActivity.")
-    bug = BugField(title="The bug this notification is for.",
-                   required=True)
+        "for getBugActivity."
+    )
+    bug = BugField(title="The bug this notification is for.", required=True)
     is_comment = Bool(
-        title="Comment", description="Is the message a comment?",
-        required=True)
+        title="Comment", description="Is the message a comment?", required=True
+    )
     date_emailed = Datetime(
         title="Date emailed",
         description="When was the notification sent? None, if it hasn't"
-                     " been sent yet.",
-        required=False)
+        " been sent yet.",
+        required=False,
+    )
     recipients = Attribute(
-        "The people to which this notification should be sent.")
+        "The people to which this notification should be sent."
+    )
     status = Choice(
-            title=_("Status"), required=True,
-            vocabulary=BugNotificationStatus,
-            default=BugNotificationStatus.PENDING,
-            description=_(
-                "The status of this bug notification."),
-            )
+        title=_("Status"),
+        required=True,
+        vocabulary=BugNotificationStatus,
+        default=BugNotificationStatus.PENDING,
+        description=_("The status of this bug notification."),
+    )
     bug_filters = Attribute(
-        "List of bug filters that caused this notification.")
+        "List of bug filters that caused this notification."
+    )
 
 
 class IBugNotificationSet(Interface):
@@ -104,16 +100,19 @@ class IBugNotificationRecipient(Interface):
     """A recipient of a bug notification."""
 
     bug_notification = Attribute(
-        "The bug notification this recipient should receive.")
-    person = Attribute(
-        "The person to send the bug notification to.")
+        "The bug notification this recipient should receive."
+    )
+    person = Attribute("The person to send the bug notification to.")
     reason_header = TextLine(
-        title=_('Reason header'),
-        description=_("The value for the "
-                      "`X-Launchpad-Message-Rationale` header."))
+        title=_("Reason header"),
+        description=_(
+            "The value for the " "`X-Launchpad-Message-Rationale` header."
+        ),
+    )
     reason_body = TextLine(
-        title=_('Reason body'),
-        description=_("The reason for this notification."))
+        title=_("Reason body"),
+        description=_("The reason for this notification."),
+    )
 
 
 class IBugNotificationFilter(Interface):
@@ -122,9 +121,13 @@ class IBugNotificationFilter(Interface):
     bug_notification = Reference(
         IBugNotification,
         title=_("Bug notification"),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
 
     bug_subscription_filter = Reference(
         IBugSubscriptionFilter,
         title=_("Bug subscription filter"),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )

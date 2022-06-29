@@ -2,31 +2,21 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BugSubscriptionFilter',
-    'BugSubscriptionFilterInformationType',
-    'BugSubscriptionFilterImportance',
-    'BugSubscriptionFilterMute',
-    'BugSubscriptionFilterStatus',
-    'BugSubscriptionFilterTag',
-    ]
+    "BugSubscriptionFilter",
+    "BugSubscriptionFilterInformationType",
+    "BugSubscriptionFilterImportance",
+    "BugSubscriptionFilterMute",
+    "BugSubscriptionFilterStatus",
+    "BugSubscriptionFilterTag",
+]
 
 import http.client
 from itertools import chain
 
-from lazr.restful.declarations import error_status
 import pytz
-from storm.expr import (
-    Exists,
-    Not,
-    Select,
-    SQL,
-    )
-from storm.properties import (
-    Bool,
-    DateTime,
-    Int,
-    Unicode,
-    )
+from lazr.restful.declarations import error_status
+from storm.expr import SQL, Exists, Not, Select
+from storm.properties import Bool, DateTime, Int, Unicode
 from storm.references import Reference
 from storm.store import Store
 from zope.interface import implementer
@@ -36,11 +26,8 @@ from lp.bugs.enums import BugNotificationLevel
 from lp.bugs.interfaces.bugsubscriptionfilter import (
     IBugSubscriptionFilter,
     IBugSubscriptionFilterMute,
-    )
-from lp.bugs.interfaces.bugtask import (
-    BugTaskImportance,
-    BugTaskStatus,
-    )
+)
+from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.registry.interfaces.person import validate_person
 from lp.services import searchbuilder
 from lp.services.database.constants import UTC_NOW
@@ -64,27 +51,35 @@ class BugSubscriptionFilter(StormBase):
     id = Int(primary=True)
 
     structural_subscription_id = Int(
-        "structuralsubscription", allow_none=False)
+        "structuralsubscription", allow_none=False
+    )
     structural_subscription = Reference(
-        structural_subscription_id, "StructuralSubscription.id")
+        structural_subscription_id, "StructuralSubscription.id"
+    )
 
     bug_notification_level = DBEnum(
         enum=BugNotificationLevel,
         default=BugNotificationLevel.COMMENTS,
-        allow_none=False)
+        allow_none=False,
+    )
     find_all_tags = Bool(allow_none=False, default=False)
     include_any_tags = Bool(allow_none=False, default=False)
     exclude_any_tags = Bool(allow_none=False, default=False)
 
     other_parameters = Unicode()
 
-    description = Unicode('description')
+    description = Unicode("description")
 
-    def __init__(self, structural_subscription,
-                 bug_notification_level=BugNotificationLevel.COMMENTS,
-                 find_all_tags=False,
-                 include_any_tags=False, exclude_any_tags=False,
-                 other_parameters=None, description=None):
+    def __init__(
+        self,
+        structural_subscription,
+        bug_notification_level=BugNotificationLevel.COMMENTS,
+        find_all_tags=False,
+        include_any_tags=False,
+        exclude_any_tags=False,
+        other_parameters=None,
+        description=None,
+    ):
         super().__init__()
         self.structural_subscription = structural_subscription
         self.bug_notification_level = bug_notification_level
@@ -97,7 +92,8 @@ class BugSubscriptionFilter(StormBase):
     def _get_collection(self, cls, attribute):
         kind = getattr(cls, attribute)
         return frozenset(
-            IStore(cls).find(cls, cls.filter == self).values(kind))
+            IStore(cls).find(cls, cls.filter == self).values(kind)
+        )
 
     def _set_collection(self, cls, enum, attribute, current_set, desired_set):
         desired_set = frozenset(desired_set)
@@ -115,33 +111,48 @@ class BugSubscriptionFilter(StormBase):
         # Remove unused.
         kind = getattr(cls, attribute)
         store.find(
-            cls, cls.filter == self, kind.is_in(
-                current_set.difference(desired_set))).remove()
+            cls,
+            cls.filter == self,
+            kind.is_in(current_set.difference(desired_set)),
+        ).remove()
 
     def _get_statuses(self):
-        return self._get_collection(BugSubscriptionFilterStatus, 'status')
+        return self._get_collection(BugSubscriptionFilterStatus, "status")
 
     def _set_statuses(self, statuses):
         self._set_collection(
-            BugSubscriptionFilterStatus, BugTaskStatus, 'status',
-            self.statuses, statuses)
+            BugSubscriptionFilterStatus,
+            BugTaskStatus,
+            "status",
+            self.statuses,
+            statuses,
+        )
 
     statuses = property(
-        _get_statuses, _set_statuses, doc=(
-            "A frozenset of statuses filtered on."))
+        _get_statuses,
+        _set_statuses,
+        doc=("A frozenset of statuses filtered on."),
+    )
 
     def _get_importances(self):
         return self._get_collection(
-            BugSubscriptionFilterImportance, 'importance')
+            BugSubscriptionFilterImportance, "importance"
+        )
 
     def _set_importances(self, importances):
         self._set_collection(
-            BugSubscriptionFilterImportance, BugTaskImportance, 'importance',
-            self.importances, importances)
+            BugSubscriptionFilterImportance,
+            BugTaskImportance,
+            "importance",
+            self.importances,
+            importances,
+        )
 
     importances = property(
-        _get_importances, _set_importances, doc=(
-            "A frozenset of importances filtered on."))
+        _get_importances,
+        _set_importances,
+        doc=("A frozenset of importances filtered on."),
+    )
 
     def _get_tags(self):
         """Return a frozenset of tags to filter on."""
@@ -154,7 +165,9 @@ class BugSubscriptionFilter(StormBase):
             tag_filter.qualified_tag
             for tag_filter in IStore(BugSubscriptionFilterTag).find(
                 BugSubscriptionFilterTag,
-                BugSubscriptionFilterTag.filter == self))
+                BugSubscriptionFilterTag.filter == self,
+            )
+        )
         return frozenset(chain(wildcards, tags))
 
     def _set_tags(self, tags):
@@ -190,7 +203,9 @@ class BugSubscriptionFilter(StormBase):
             tag_filter.qualified_tag: tag_filter
             for tag_filter in store.find(
                 BugSubscriptionFilterTag,
-                BugSubscriptionFilterTag.filter == self)}
+                BugSubscriptionFilterTag.filter == self,
+            )
+        }
         # Remove unused tags.
         for tag in set(current_tag_filters).difference(tags):
             tag_filter = current_tag_filters.pop(tag)
@@ -204,21 +219,28 @@ class BugSubscriptionFilter(StormBase):
             store.add(tag_filter)
 
     tags = property(
-        _get_tags, _set_tags, doc=(
-            "A frozenset of tags filtered on."))
+        _get_tags, _set_tags, doc=("A frozenset of tags filtered on.")
+    )
 
     def _get_information_types(self):
         return self._get_collection(
-            BugSubscriptionFilterInformationType, 'information_type')
+            BugSubscriptionFilterInformationType, "information_type"
+        )
 
     def _set_information_types(self, information_types):
         self._set_collection(
-            BugSubscriptionFilterInformationType, InformationType,
-            'information_type', self.information_types, information_types)
+            BugSubscriptionFilterInformationType,
+            InformationType,
+            "information_type",
+            self.information_types,
+            information_types,
+        )
 
     information_types = property(
-        _get_information_types, _set_information_types, doc=(
-            "A frozenset of information_types filtered on."))
+        _get_information_types,
+        _set_information_types,
+        doc=("A frozenset of information_types filtered on."),
+    )
 
     def delete(self):
         """See `IBugSubscriptionFilter`."""
@@ -227,37 +249,46 @@ class BugSubscriptionFilter(StormBase):
 
     @classmethod
     def deleteMultiple(cls, ids):
-        from lp.bugs.model.structuralsubscription import (
-            StructuralSubscription,
-            )
+        from lp.bugs.model.structuralsubscription import StructuralSubscription
+
         store = IStore(BugSubscriptionFilter)
         structsub_ids = list(
             store.find(
                 BugSubscriptionFilter.structural_subscription_id,
-                BugSubscriptionFilter.id.is_in(ids)))
+                BugSubscriptionFilter.id.is_in(ids),
+            )
+        )
         kinds = [
-            BugSubscriptionFilterImportance, BugSubscriptionFilterStatus,
-            BugSubscriptionFilterTag, BugSubscriptionFilterInformationType]
+            BugSubscriptionFilterImportance,
+            BugSubscriptionFilterStatus,
+            BugSubscriptionFilterTag,
+            BugSubscriptionFilterInformationType,
+        ]
         for kind in kinds:
             store.find(kind, kind.filter_id.is_in(ids)).remove()
         store.find(
-            BugSubscriptionFilter,
-            BugSubscriptionFilter.id.is_in(ids)).remove()
+            BugSubscriptionFilter, BugSubscriptionFilter.id.is_in(ids)
+        ).remove()
         # Now delete any structural subscriptions that have no filters.
         # Take out a SHARE lock on the filters that we use as evidence
         # for keeping structsubs, to ensure that they haven't been
         # deleted under us.
         filter_expr = Select(
-            1, tables=[BugSubscriptionFilter],
+            1,
+            tables=[BugSubscriptionFilter],
             where=(
                 BugSubscriptionFilter.structural_subscription_id
-                    == StructuralSubscription.id))
+                == StructuralSubscription.id
+            ),
+        )
         locked_filter_expr = SQL(
-            convert_storm_clause_to_string(filter_expr) + ' FOR SHARE')
+            convert_storm_clause_to_string(filter_expr) + " FOR SHARE"
+        )
         store.find(
             StructuralSubscription,
             StructuralSubscription.id.is_in(structsub_ids),
-            Not(Exists(locked_filter_expr))).remove()
+            Not(Exists(locked_filter_expr)),
+        ).remove()
 
     def isMuteAllowed(self, person):
         """See `IBugSubscriptionFilter`."""
@@ -267,16 +298,18 @@ class BugSubscriptionFilter(StormBase):
         # address (because if the team does, then the mute would be
         # ineffectual).
         return (
-            subscriber.is_team and
-            person.inTeam(subscriber) and
-            subscriber.preferredemail is None)
+            subscriber.is_team
+            and person.inTeam(subscriber)
+            and subscriber.preferredemail is None
+        )
 
     def muted(self, person):
         store = Store.of(self)
         existing_mutes = store.find(
             BugSubscriptionFilterMute,
             BugSubscriptionFilterMute.filter_id == self.id,
-            BugSubscriptionFilterMute.person_id == person.id)
+            BugSubscriptionFilterMute.person_id == person.id,
+        )
         if not existing_mutes.is_empty():
             return existing_mutes.one().date_created
 
@@ -286,16 +319,19 @@ class BugSubscriptionFilter(StormBase):
         if subscriber.is_team and subscriber.preferredemail:
             raise MuteNotAllowed(
                 "This subscription cannot be muted because team %s has a "
-                "contact address." % subscriber.name)
+                "contact address." % subscriber.name
+            )
         if not self.isMuteAllowed(person):
             raise MuteNotAllowed(
-                "This subscription cannot be muted for %s" % person.name)
+                "This subscription cannot be muted for %s" % person.name
+            )
 
         store = Store.of(self)
         existing_mutes = store.find(
             BugSubscriptionFilterMute,
             BugSubscriptionFilterMute.filter_id == self.id,
-            BugSubscriptionFilterMute.person_id == person.id)
+            BugSubscriptionFilterMute.person_id == person.id,
+        )
         if existing_mutes.is_empty():
             mute = BugSubscriptionFilterMute()
             mute.person = person
@@ -308,7 +344,8 @@ class BugSubscriptionFilter(StormBase):
         existing_mutes = store.find(
             BugSubscriptionFilterMute,
             BugSubscriptionFilterMute.filter_id == self.id,
-            BugSubscriptionFilterMute.person_id == person.id)
+            BugSubscriptionFilterMute.person_id == person.id,
+        )
         existing_mutes.remove()
 
 
@@ -330,18 +367,18 @@ class BugSubscriptionFilterMute(StormBase):
     filter_id = Int("filter", allow_none=False)
     filter = Reference(filter_id, "BugSubscriptionFilter.id")
 
-    __storm_primary__ = 'person_id', 'filter_id'
+    __storm_primary__ = "person_id", "filter_id"
 
     date_created = DateTime(
-        "date_created", allow_none=False, default=UTC_NOW,
-        tzinfo=pytz.UTC)
+        "date_created", allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC
+    )
 
 
 class BugSubscriptionFilterStatus(StormBase):
     """Statuses to filter."""
 
     __storm_table__ = "BugSubscriptionFilterStatus"
-    __storm_primary__ = ('filter_id', 'status')
+    __storm_primary__ = ("filter_id", "status")
 
     filter_id = Int("filter", allow_none=False)
     filter = Reference(filter_id, "BugSubscriptionFilter.id")
@@ -353,7 +390,7 @@ class BugSubscriptionFilterImportance(StormBase):
     """Importances to filter."""
 
     __storm_table__ = "BugSubscriptionFilterImportance"
-    __storm_primary__ = ('filter_id', 'importance')
+    __storm_primary__ = ("filter_id", "importance")
 
     filter_id = Int("filter", allow_none=False)
     filter = Reference(filter_id, "BugSubscriptionFilter.id")
@@ -387,7 +424,7 @@ class BugSubscriptionFilterInformationType(StormBase):
     """Information types to filter."""
 
     __storm_table__ = "BugSubscriptionFilterInformationType"
-    __storm_primary__ = ('filter_id', 'information_type')
+    __storm_primary__ = ("filter_id", "information_type")
 
     filter_id = Int("filter", allow_none=False)
     filter = Reference(filter_id, "BugSubscriptionFilter.id")

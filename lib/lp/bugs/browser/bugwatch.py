@@ -4,20 +4,17 @@
 """IBugWatch-related browser views."""
 
 __all__ = [
-    'BugWatchSetNavigation',
-    'BugWatchActivityPortletView',
-    'BugWatchEditView',
-    'BugWatchView'
-    ]
+    "BugWatchSetNavigation",
+    "BugWatchActivityPortletView",
+    "BugWatchEditView",
+    "BugWatchView",
+]
 
 from zope.component import getUtility
 from zope.interface import Interface
 
 from lp import _
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action
 from lp.app.widgets.textwidgets import URIWidget
 from lp.bugs.browser.bugtask import get_comments_for_bugtask
 from lp.bugs.interfaces.bugwatch import (
@@ -26,14 +23,10 @@ from lp.bugs.interfaces.bugwatch import (
     IBugWatchSet,
     NoBugTrackerFound,
     UnrecognizedBugTrackerURL,
-    )
+)
 from lp.services.database.constants import UTC_NOW
 from lp.services.fields import URIField
-from lp.services.webapp import (
-    canonical_url,
-    GetitemNavigation,
-    LaunchpadView,
-    )
+from lp.services.webapp import GetitemNavigation, LaunchpadView, canonical_url
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import ILaunchBag
@@ -51,9 +44,11 @@ class BugWatchView(LaunchpadView):
 
     @property
     def page_title(self):
-        return 'Comments imported to bug #%d from %s bug #%s' % (
-            self.context.bug.id, self.context.bugtracker.title,
-            self.context.remotebug)
+        return "Comments imported to bug #%d from %s bug #%s" % (
+            self.context.bug.id,
+            self.context.bugtracker.title,
+            self.context.remotebug,
+        )
 
     @property
     def comments(self):
@@ -62,8 +57,9 @@ class BugWatchView(LaunchpadView):
         If the current user is not a member of the Launchpad developers
         team, no comments will be returned.
         """
-        bug_comments = get_comments_for_bugtask(self.context.bug.bugtasks[0],
-            truncate=True)
+        bug_comments = get_comments_for_bugtask(
+            self.context.bug.bugtasks[0], truncate=True
+        )
 
         # Filter out those comments that don't pertain to this bug
         # watch.
@@ -79,31 +75,37 @@ class BugWatchEditForm(Interface):
     """Form definition for the bug watch edit view."""
 
     url = URIField(
-        title=_('URL'), required=True,
-        allowed_schemes=['http', 'https', 'mailto'],
-        description=_("The URL at which to view the remote bug, or the "
-                      "email address to which this bug has been "
-                      "forwarded (as a mailto: URL)."))
+        title=_("URL"),
+        required=True,
+        allowed_schemes=["http", "https", "mailto"],
+        description=_(
+            "The URL at which to view the remote bug, or the "
+            "email address to which this bug has been "
+            "forwarded (as a mailto: URL)."
+        ),
+    )
 
 
 class BugWatchEditView(LaunchpadFormView):
     """View for editing a bug watch."""
 
     schema = BugWatchEditForm
-    field_names = ['url']
+    field_names = ["url"]
     custom_widget_url = URIWidget
 
     @property
     def page_title(self):
         """The page title."""
-        return 'Edit bug watch for bug %s in %s on bug #%d' % (
-            self.context.remotebug, self.context.bugtracker.title,
-            self.context.bug.id)
+        return "Edit bug watch for bug %s in %s on bug #%d" % (
+            self.context.remotebug,
+            self.context.bugtracker.title,
+            self.context.bug.id,
+        )
 
     @property
     def initial_values(self):
         """See `LaunchpadFormView.`"""
-        return {'url': self.context.url}
+        return {"url": self.context.url}
 
     @property
     def watch_has_activity(self):
@@ -112,55 +114,68 @@ class BugWatchEditView(LaunchpadFormView):
 
     def validate(self, data):
         """See `LaunchpadFormView.`"""
-        if 'url' not in data:
+        if "url" not in data:
             return
         try:
-            bugtracker, bug = getUtility(
-                IBugWatchSet).extractBugTrackerAndBug(data['url'])
+            bugtracker, bug = getUtility(IBugWatchSet).extractBugTrackerAndBug(
+                data["url"]
+            )
         except (NoBugTrackerFound, UnrecognizedBugTrackerURL):
-            self.setFieldError('url', 'Invalid bug tracker URL.')
+            self.setFieldError("url", "Invalid bug tracker URL.")
 
-    @action('Change', name='change')
+    @action("Change", name="change")
     def change_action(self, action, data):
         bugtracker, remote_bug = getUtility(
-            IBugWatchSet).extractBugTrackerAndBug(data['url'])
+            IBugWatchSet
+        ).extractBugTrackerAndBug(data["url"])
         self.context.bugtracker = bugtracker
         self.context.remotebug = remote_bug
 
     def bugWatchIsUnlinked(self, action):
         """Return whether the bug watch is unlinked."""
         return (
-            len(self.context.bugtasks) == 0 and
-            self.context.getBugMessages().is_empty())
+            len(self.context.bugtasks) == 0
+            and self.context.getBugMessages().is_empty()
+        )
 
-    @action('Delete Bug Watch', name='delete', condition=bugWatchIsUnlinked,
-            validator='validate_cancel')
+    @action(
+        "Delete Bug Watch",
+        name="delete",
+        condition=bugWatchIsUnlinked,
+        validator="validate_cancel",
+    )
     def delete_action(self, action, data):
         bugwatch = self.context
         # Build the notification first, whilst we still have the data.
         notification_message = structured(
             'The <a href="%(url)s">%(bugtracker)s #%(remote_bug)s</a>'
-            ' bug watch has been deleted.',
-            url=bugwatch.url, bugtracker=bugwatch.bugtracker.name,
-            remote_bug=bugwatch.remotebug)
+            " bug watch has been deleted.",
+            url=bugwatch.url,
+            bugtracker=bugwatch.bugtracker.name,
+            remote_bug=bugwatch.remotebug,
+        )
         bugwatch.bug.removeWatch(bugwatch, self.user)
         self.request.response.addInfoNotification(notification_message)
 
     def showResetActionCondition(self, action):
         """Return True if the reset action can be shown to this user."""
-        return check_permission('launchpad.Admin', self.context)
+        return check_permission("launchpad.Admin", self.context)
 
-    @action('Reset this watch', name='reset',
-            condition=showResetActionCondition)
+    @action(
+        "Reset this watch", name="reset", condition=showResetActionCondition
+    )
     def reset_action(self, action, data):
         bug_watch = self.context
         bug_watch.reset()
         self.request.response.addInfoNotification(
             structured(
-            'The <a href="%(url)s">%(bugtracker)s #%(remote_bug)s</a>'
-            ' bug watch has been reset.',
-            url=bug_watch.url, bugtracker=bug_watch.bugtracker.name,
-            remote_bug=bug_watch.remotebug))
+                'The <a href="%(url)s">%(bugtracker)s #%(remote_bug)s</a>'
+                " bug watch has been reset.",
+                url=bug_watch.url,
+                bugtracker=bug_watch.bugtracker.name,
+                remote_bug=bug_watch.remotebug,
+            )
+        )
 
     @property
     def next_url(self):
@@ -178,7 +193,7 @@ class BugWatchActivityPortletView(LaunchpadFormView):
         """Return True if the current user can reschedule the bug watch."""
         return self.context.can_be_rescheduled
 
-    @action('Update Now', name='reschedule', condition=userCanReschedule)
+    @action("Update Now", name="reschedule", condition=userCanReschedule)
     def reschedule_action(self, action, data):
         """Schedule the current bug watch for immediate checking."""
         bugwatch = self.context
@@ -186,9 +201,12 @@ class BugWatchActivityPortletView(LaunchpadFormView):
         self.request.response.addInfoNotification(
             structured(
                 'The <a href="%(url)s">%(bugtracker)s #%(remote_bug)s</a> '
-                'bug watch has been scheduled for immediate checking.',
-                url=bugwatch.url, bugtracker=bugwatch.bugtracker.name,
-                remote_bug=bugwatch.remotebug))
+                "bug watch has been scheduled for immediate checking.",
+                url=bugwatch.url,
+                bugtracker=bugwatch.bugtracker.name,
+                remote_bug=bugwatch.remotebug,
+            )
+        )
 
     @property
     def next_url(self):
@@ -207,14 +225,17 @@ class BugWatchActivityPortletView(LaunchpadFormView):
             else:
                 icon = "/@@/no"
                 completion_message = (
-                    "failed with error '%s'" % activity.result.title)
+                    "failed with error '%s'" % activity.result.title
+                )
 
-            activity_items.append({
-                'icon': icon,
-                'date': activity.activity_date,
-                'completion_message': completion_message,
-                'result_text': activity.result.title,
-                'oops_id': activity.oops_id,
-                })
+            activity_items.append(
+                {
+                    "icon": icon,
+                    "date": activity.activity_date,
+                    "completion_message": completion_message,
+                    "result_text": activity.result.title,
+                    "oops_id": activity.oops_id,
+                }
+            )
 
         return activity_items

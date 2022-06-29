@@ -8,7 +8,7 @@ from lp.bugs.adapters.bugchange import (
     BugDescriptionChange,
     get_bug_change_class,
     get_bug_changes,
-    )
+)
 from lp.bugs.adapters.bugdelta import BugDelta
 from lp.bugs.enums import BugNotificationLevel
 from lp.bugs.interfaces.bugtask import BugTaskStatus
@@ -34,9 +34,11 @@ class BugChangeTestCase(TestCaseWithFactory):
             expected = BUG_CHANGE_LOOKUP[field_name]
             received = get_bug_change_class(bug, field_name)
             self.assertEqual(
-                expected, received,
+                expected,
+                received,
                 "Expected %s from get_bug_change_class() for field name %s. "
-                "Got %s." % (expected, field_name, received))
+                "Got %s." % (expected, field_name, received),
+            )
 
 
 class BugChangeLevelTestCase(TestCaseWithFactory):
@@ -53,19 +55,18 @@ class BugChangeLevelTestCase(TestCaseWithFactory):
         if user is None:
             user = self.user
         return BugDelta(
-            bug=self.bug,
-            bugurl=canonical_url(self.bug),
-            user=user,
-            **kwargs)
+            bug=self.bug, bugurl=canonical_url(self.bug), user=user, **kwargs
+        )
 
     def test_change_level_metadata_description(self):
         # Changing a bug description is considered to have change_level
         # of BugNotificationLevel.METADATA.
         bug_delta = self.createDelta(
             description={
-                'new': 'new description',
-                'old': self.bug.description,
-                })
+                "new": "new description",
+                "old": self.bug.description,
+            }
+        )
 
         change = list(get_bug_changes(bug_delta))[0]
         self.assertTrue(isinstance(change, BugDescriptionChange))
@@ -77,11 +78,11 @@ class BugChangeLevelTestCase(TestCaseWithFactory):
         bugtask_delta = BugTaskDelta(
             bugtask=self.bugtask,
             status={
-                'old': BugTaskStatus.NEW,
-                'new': BugTaskStatus.FIXRELEASED,
-                })
-        bug_delta = self.createDelta(
-            bugtask_deltas=bugtask_delta)
+                "old": BugTaskStatus.NEW,
+                "new": BugTaskStatus.FIXRELEASED,
+            },
+        )
+        bug_delta = self.createDelta(bugtask_deltas=bugtask_delta)
 
         change = list(get_bug_changes(bug_delta))[0]
         self.assertEqual(BugNotificationLevel.LIFECYCLE, change.change_level)
@@ -92,11 +93,11 @@ class BugChangeLevelTestCase(TestCaseWithFactory):
         bugtask_delta = BugTaskDelta(
             bugtask=self.bugtask,
             status={
-                'old': BugTaskStatus.FIXRELEASED,
-                'new': BugTaskStatus.TRIAGED,
-                })
-        bug_delta = self.createDelta(
-            bugtask_deltas=bugtask_delta)
+                "old": BugTaskStatus.FIXRELEASED,
+                "new": BugTaskStatus.TRIAGED,
+            },
+        )
+        bug_delta = self.createDelta(bugtask_deltas=bugtask_delta)
 
         change = list(get_bug_changes(bug_delta))[0]
         self.assertEqual(BugNotificationLevel.LIFECYCLE, change.change_level)
@@ -107,11 +108,11 @@ class BugChangeLevelTestCase(TestCaseWithFactory):
         bugtask_delta = BugTaskDelta(
             bugtask=self.bugtask,
             status={
-                'old': BugTaskStatus.TRIAGED,
-                'new': BugTaskStatus.FIXCOMMITTED,
-                })
-        bug_delta = self.createDelta(
-            bugtask_deltas=bugtask_delta)
+                "old": BugTaskStatus.TRIAGED,
+                "new": BugTaskStatus.FIXCOMMITTED,
+            },
+        )
+        bug_delta = self.createDelta(bugtask_deltas=bugtask_delta)
 
         change = list(get_bug_changes(bug_delta))[0]
         self.assertEqual(BugNotificationLevel.METADATA, change.change_level)
@@ -122,11 +123,11 @@ class BugChangeLevelTestCase(TestCaseWithFactory):
         bugtask_delta = BugTaskDelta(
             bugtask=self.bugtask,
             status={
-                'old': BugTaskStatus.OPINION,
-                'new': BugTaskStatus.WONTFIX,
-                })
-        bug_delta = self.createDelta(
-            bugtask_deltas=bugtask_delta)
+                "old": BugTaskStatus.OPINION,
+                "new": BugTaskStatus.WONTFIX,
+            },
+        )
+        bug_delta = self.createDelta(bugtask_deltas=bugtask_delta)
 
         change = list(get_bug_changes(bug_delta))[0]
         self.assertEqual(BugNotificationLevel.METADATA, change.change_level)
@@ -136,13 +137,15 @@ class BugChangeLevelTestCase(TestCaseWithFactory):
         # simple BugNotificationLevel.METADATA change.
         duplicate_of = self.factory.makeBug()
         duplicate_of.default_bugtask.transitionToStatus(
-            BugTaskStatus.NEW, self.user)
+            BugTaskStatus.NEW, self.user
+        )
         bug_delta = self.createDelta(
             user=self.bug.owner,
             duplicateof={
-                'old': None,
-                'new': duplicate_of,
-                })
+                "old": None,
+                "new": duplicate_of,
+            },
+        )
 
         change = list(get_bug_changes(bug_delta))[0]
         self.assertEqual(BugNotificationLevel.METADATA, change.change_level)
@@ -152,13 +155,15 @@ class BugChangeLevelTestCase(TestCaseWithFactory):
         # a BugNotificationLevel.LIFECYCLE change.
         duplicate_of = self.factory.makeBug()
         duplicate_of.default_bugtask.transitionToStatus(
-            BugTaskStatus.FIXRELEASED, self.user)
+            BugTaskStatus.FIXRELEASED, self.user
+        )
         bug_delta = self.createDelta(
             user=self.bug.owner,
             duplicateof={
-                'old': None,
-                'new': duplicate_of,
-                })
+                "old": None,
+                "new": duplicate_of,
+            },
+        )
 
         change = list(get_bug_changes(bug_delta))[0]
         self.assertEqual(BugNotificationLevel.LIFECYCLE, change.change_level)
@@ -168,13 +173,15 @@ class BugChangeLevelTestCase(TestCaseWithFactory):
         # simple BugNotificationLevel.METADATA change.
         duplicate_of = self.factory.makeBug()
         duplicate_of.default_bugtask.transitionToStatus(
-            BugTaskStatus.NEW, self.user)
+            BugTaskStatus.NEW, self.user
+        )
         bug_delta = self.createDelta(
             user=self.bug.owner,
             duplicateof={
-                'new': None,
-                'old': duplicate_of,
-                })
+                "new": None,
+                "old": duplicate_of,
+            },
+        )
 
         change = list(get_bug_changes(bug_delta))[0]
         self.assertEqual(BugNotificationLevel.METADATA, change.change_level)
@@ -184,12 +191,11 @@ class BugChangeLevelTestCase(TestCaseWithFactory):
         # a BugNotificationLevel.LIFECYCLE change.
         duplicate_of = self.factory.makeBug()
         duplicate_of.default_bugtask.transitionToStatus(
-            BugTaskStatus.FIXRELEASED, self.user)
+            BugTaskStatus.FIXRELEASED, self.user
+        )
         bug_delta = self.createDelta(
-            user=self.bug.owner,
-            duplicateof={
-                'new': None,
-                'old': duplicate_of})
+            user=self.bug.owner, duplicateof={"new": None, "old": duplicate_of}
+        )
 
         change = list(get_bug_changes(bug_delta))[0]
         self.assertEqual(BugNotificationLevel.LIFECYCLE, change.change_level)

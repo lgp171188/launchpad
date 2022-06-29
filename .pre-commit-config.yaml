@@ -46,6 +46,7 @@ repos:
             |archivepublisher
             |archiveuploader
             |blueprints
+            |bugs
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
@@ -68,6 +69,7 @@ repos:
             |archivepublisher
             |archiveuploader
             |blueprints
+            |bugs
           )/
     -   id: isort
         alias: isort-black
@@ -80,6 +82,7 @@ repos:
             |archivepublisher
             |archiveuploader
             |blueprints
+            |bugs
           )/
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.9.2

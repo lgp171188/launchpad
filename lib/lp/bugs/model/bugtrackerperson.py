@@ -4,17 +4,12 @@
 """BugTrackerPerson database class."""
 
 __all__ = [
-    'BugTrackerPerson',
-    ]
+    "BugTrackerPerson",
+]
 
 import pytz
 import six
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    Unicode,
-    )
+from storm.locals import DateTime, Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.bugs.interfaces.bugtrackerperson import IBugTrackerPerson
@@ -25,20 +20,21 @@ from lp.services.database.stormbase import StormBase
 @implementer(IBugTrackerPerson)
 class BugTrackerPerson(StormBase):
     """See `IBugTrackerPerson`."""
-    __storm_table__ = 'BugTrackerPerson'
+
+    __storm_table__ = "BugTrackerPerson"
     id = Int(primary=True)
 
-    bugtracker_id = Int(name='bugtracker', allow_none=False)
-    bugtracker = Reference(bugtracker_id, 'BugTracker.id')
+    bugtracker_id = Int(name="bugtracker", allow_none=False)
+    bugtracker = Reference(bugtracker_id, "BugTracker.id")
 
-    person_id = Int(name='person', allow_none=False)
-    person = Reference(person_id, 'Person.id')
+    person_id = Int(name="person", allow_none=False)
+    person = Reference(person_id, "Person.id")
 
     name = Unicode(allow_none=False)
 
     date_created = DateTime(
-        tzinfo=pytz.UTC, name='date_created', allow_none=False,
-        default=UTC_NOW)
+        tzinfo=pytz.UTC, name="date_created", allow_none=False, default=UTC_NOW
+    )
 
     def __init__(self, name, bugtracker, person):
         self.bugtracker = bugtracker

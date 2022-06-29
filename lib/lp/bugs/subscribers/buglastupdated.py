@@ -5,8 +5,8 @@
 
 from datetime import datetime
 
-from lazr.lifecycle.interfaces import IObjectModifiedEvent
 import pytz
+from lazr.lifecycle.interfaces import IObjectModifiedEvent
 from zope.security.proxy import removeSecurityProxy
 
 from lp.bugs.interfaces.bug import IBug
@@ -26,5 +26,6 @@ def update_bug_date_last_updated(object, event):
         raise AssertionError(
             "Unable to retrieve current bug to update 'date last updated'. "
             "Event handler expects object implementing IBug or IHasBug. "
-            "Got: %s" % repr(object))
+            "Got: %s" % repr(object)
+        )
     removeSecurityProxy(bug).date_last_updated = datetime.now(pytz.UTC)

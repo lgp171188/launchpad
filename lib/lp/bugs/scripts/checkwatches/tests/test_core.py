@@ -2,9 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Checkwatches unit tests."""
 
-from datetime import datetime
 import threading
 import unittest
+from datetime import datetime
 from xmlrpc.client import ProtocolError
 
 import transaction
@@ -14,37 +14,27 @@ from lp.answers.interfaces.questioncollection import IQuestionSet
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.externalbugtracker.bugzilla import BugzillaAPI
 from lp.bugs.interfaces.bug import IBugSet
-from lp.bugs.interfaces.bugtask import (
-    BugTaskStatus,
-    IBugTaskSet,
-    )
-from lp.bugs.interfaces.bugtracker import (
-    BugTrackerType,
-    IBugTrackerSet,
-    )
+from lp.bugs.interfaces.bugtask import BugTaskStatus, IBugTaskSet
+from lp.bugs.interfaces.bugtracker import BugTrackerType, IBugTrackerSet
 from lp.bugs.interfaces.bugwatch import BugWatchActivityStatus
 from lp.bugs.scripts import checkwatches
 from lp.bugs.scripts.checkwatches.base import WorkingBase
 from lp.bugs.scripts.checkwatches.core import (
-    CheckwatchesMaster,
     LOGIN,
+    CheckwatchesMaster,
     TwistedThreadScheduler,
-    )
+)
 from lp.bugs.scripts.checkwatches.remotebugupdater import RemoteBugUpdater
 from lp.bugs.tests.externalbugtracker import (
-    new_bugtracker,
     TestBugzillaAPIXMLRPCTransport,
     TestExternalBugTracker,
-    )
+    new_bugtracker,
+)
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
-from lp.testing import (
-    RunIsolatedTest,
-    TestCase,
-    TestCaseWithFactory,
-    )
+from lp.testing import RunIsolatedTest, TestCase, TestCaseWithFactory
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 
@@ -65,8 +55,8 @@ class NonConnectingBugzillaAPI(BugzillaAPI):
     """A non-connected version of the BugzillaAPI ExternalBugTracker."""
 
     bugs = {
-        1: {'product': 'test-product'},
-        }
+        1: {"product": "test-product"},
+    }
 
     def getCurrentDBTime(self):
         return None
@@ -98,18 +88,22 @@ class TestCheckwatchesWithSyncableGnomeProducts(TestCaseWithFactory):
         # We monkey-patch externalbugtracker.get_external_bugtracker()
         # so that it always returns what we want.
         self.original_get_external_bug_tracker = (
-            checkwatches.core.externalbugtracker.get_external_bugtracker)
+            checkwatches.core.externalbugtracker.get_external_bugtracker
+        )
         checkwatches.core.externalbugtracker.get_external_bugtracker = (
-            always_BugzillaAPIWithoutProducts_get_external_bugtracker)
+            always_BugzillaAPIWithoutProducts_get_external_bugtracker
+        )
 
         # Create an updater with a limited set of syncable gnome
         # products.
         self.updater = checkwatches.CheckwatchesMaster(
-            transaction.manager, BufferLogger(), ['test-product'])
+            transaction.manager, BufferLogger(), ["test-product"]
+        )
 
     def tearDown(self):
         checkwatches.externalbugtracker.get_external_bugtracker = (
-            self.original_get_external_bug_tracker)
+            self.original_get_external_bug_tracker
+        )
         super().tearDown()
 
     def test_bug_496988(self):
@@ -118,9 +112,11 @@ class TestCheckwatchesWithSyncableGnomeProducts(TestCaseWithFactory):
         # cause the script to abort.
         gnome_bugzilla = getUtility(ILaunchpadCelebrities).gnome_bugzilla
         bug_watch_1 = self.factory.makeBugWatch(
-            remote_bug=1, bugtracker=gnome_bugzilla)
+            remote_bug=1, bugtracker=gnome_bugzilla
+        )
         bug_watch_2 = self.factory.makeBugWatch(
-            remote_bug=2, bugtracker=gnome_bugzilla)
+            remote_bug=2, bugtracker=gnome_bugzilla
+        )
 
         # The bug watch updater expects to begin and end all
         # transactions.
@@ -129,7 +125,8 @@ class TestCheckwatchesWithSyncableGnomeProducts(TestCaseWithFactory):
         # Calling this method shouldn't raise a KeyError, even though
         # there's no bug 2 on the bug tracker that we pass to it.
         self.updater._getExternalBugTrackersAndWatches(
-            gnome_bugzilla, [bug_watch_1, bug_watch_2])
+            gnome_bugzilla, [bug_watch_1, bug_watch_2]
+        )
 
     def test__getExternalBugTrackersAndWatches(self):
         # When there are no syncable products defined, only one remote
@@ -140,23 +137,29 @@ class TestCheckwatchesWithSyncableGnomeProducts(TestCaseWithFactory):
         # If there are syncable GNOME products set, two remote systems
         # are returned from _getExternalBugTrackersAndWatches().
         remote_systems_and_watches = (
-            self.updater._getExternalBugTrackersAndWatches(
-                gnome_bugzilla, []))
+            self.updater._getExternalBugTrackersAndWatches(gnome_bugzilla, [])
+        )
         self.assertEqual(2, len(remote_systems_and_watches))
         # One will have comment syncing enabled.
         self.assertTrue(
-            any(remote_system.sync_comments
-                for (remote_system, watches) in remote_systems_and_watches))
+            any(
+                remote_system.sync_comments
+                for (remote_system, watches) in remote_systems_and_watches
+            )
+        )
         # One will have comment syncing disabled.
         self.assertTrue(
-            any(not remote_system.sync_comments
-                for (remote_system, watches) in remote_systems_and_watches))
+            any(
+                not remote_system.sync_comments
+                for (remote_system, watches) in remote_systems_and_watches
+            )
+        )
         # When there are no syncable products, only one remote system
         # is returned, and comment syncing is disabled.
         self.updater._syncable_gnome_products = []
         remote_systems_and_watches = (
-            self.updater._getExternalBugTrackersAndWatches(
-                gnome_bugzilla, []))
+            self.updater._getExternalBugTrackersAndWatches(gnome_bugzilla, [])
+        )
         self.assertEqual(1, len(remote_systems_and_watches))
         [(remote_system, watches)] = remote_systems_and_watches
         self.assertFalse(remote_system.sync_comments)
@@ -168,7 +171,8 @@ class BrokenCheckwatchesMaster(CheckwatchesMaster):
 
     def _getExternalBugTrackersAndWatches(self, bug_tracker, bug_watches):
         raise ProtocolError(
-            "http://example.com/", self.error_code, "Borked", "")
+            "http://example.com/", self.error_code, "Borked", ""
+        )
 
 
 class TestCheckwatchesMaster(TestCaseWithFactory):
@@ -188,7 +192,8 @@ class TestCheckwatchesMaster(TestCaseWithFactory):
         # Use a test XML-RPC transport to ensure no connections happen.
         test_transport = TestBugzillaAPIXMLRPCTransport(bug_tracker.baseurl)
         remote_system = NonConnectingBugzillaAPI(
-            bug_tracker.baseurl, xmlrpc_transport=test_transport)
+            bug_tracker.baseurl, xmlrpc_transport=test_transport
+        )
 
         working_base = WorkingBase()
         working_base.init(LOGIN, transaction.manager, BufferLogger())
@@ -197,8 +202,13 @@ class TestCheckwatchesMaster(TestCaseWithFactory):
             # we want to know that an oops was raised
             oops_count = len(self.oopses)
             updater = NoBugWatchesByRemoteBugUpdater(
-                working_base, remote_system, bug_watch.remotebug,
-                [bug_watch.id], [], datetime.now())
+                working_base,
+                remote_system,
+                bug_watch.remotebug,
+                [bug_watch.id],
+                [],
+                datetime.now(),
+            )
 
             # Calling updateRemoteBug() shouldn't raise a KeyError,
             # even though with our broken updater
@@ -210,11 +220,9 @@ class TestCheckwatchesMaster(TestCaseWithFactory):
             # being raised.
             self.assertEqual(oops_count + 1, len(self.oopses))
             last_oops = self.oopses[-1]
-            self.assertStartsWith(
-                last_oops['value'], 'Spurious remote bug ID')
+            self.assertStartsWith(last_oops["value"], "Spurious remote bug ID")
 
     def test_suggest_batch_size(self):
-
         class RemoteSystem:
             pass
 
@@ -236,40 +244,47 @@ class TestCheckwatchesMaster(TestCaseWithFactory):
         # errors. An XML-RPC request that fails with one of those is
         # logged as a connection failure, not an OOPS.
         master = BrokenCheckwatchesMaster(
-            transaction.manager, logger=BufferLogger())
+            transaction.manager, logger=BufferLogger()
+        )
         master.error_code = 503
         (bug_tracker, bug_watches) = self.factory.makeBugTrackerWithWatches(
-            base_url='http://example.com/')
+            base_url="http://example.com/"
+        )
         transaction.commit()
         master._updateBugTracker(bug_tracker)
         for bug_watch in bug_watches:
             self.assertEqual(
                 BugWatchActivityStatus.CONNECTION_ERROR,
-                bug_watch.last_error_type)
+                bug_watch.last_error_type,
+            )
         self.assertEqual(
             "INFO 'Connection Error' error updating http://example.com/: "
             "<ProtocolError for http://example.com/: 503 Borked>\n",
-            master.logger.getLogBuffer())
+            master.logger.getLogBuffer(),
+        )
 
     def test_xmlrpc_other_errors_set_activity_properly(self):
         # HTTP status codes that indicate anything other than a
         # connection error still aren't OOPSes. They are logged as an
         # unknown error instead.
         master = BrokenCheckwatchesMaster(
-            transaction.manager, logger=BufferLogger())
+            transaction.manager, logger=BufferLogger()
+        )
         master.error_code = 403
         (bug_tracker, bug_watches) = self.factory.makeBugTrackerWithWatches(
-            base_url='http://example.com/')
+            base_url="http://example.com/"
+        )
         transaction.commit()
         master._updateBugTracker(bug_tracker)
         for bug_watch in bug_watches:
             self.assertEqual(
-                BugWatchActivityStatus.UNKNOWN,
-                bug_watch.last_error_type)
+                BugWatchActivityStatus.UNKNOWN, bug_watch.last_error_type
+            )
         self.assertEqual(
             "INFO 'Unknown' error updating http://example.com/: "
             "<ProtocolError for http://example.com/: 403 Borked>\n",
-            master.logger.getLogBuffer())
+            master.logger.getLogBuffer(),
+        )
 
 
 class TestUpdateBugsWithLinkedQuestions(unittest.TestCase):
@@ -286,8 +301,7 @@ class TestUpdateBugsWithLinkedQuestions(unittest.TestCase):
         bug_with_question = getUtility(IBugSet).get(10)
         question = getUtility(IQuestionSet).get(1)
 
-        sample_person = getUtility(IPersonSet).getByEmail(
-            'test@canonical.com')
+        sample_person = getUtility(IPersonSet).getByEmail("test@canonical.com")
         question.linkBug(bug_with_question, sample_person)
 
         # We subscribe launchpad_developers to the question since this
@@ -295,7 +309,8 @@ class TestUpdateBugsWithLinkedQuestions(unittest.TestCase):
         # then use this to test the updating of a question with indirect
         # subscribers from a bug watch.
         question.subscribe(
-            getUtility(ILaunchpadCelebrities).launchpad_developers)
+            getUtility(ILaunchpadCelebrities).launchpad_developers
+        )
 
         # We now need to switch to the checkwatches DB user so that
         # we're testing with the correct set of permissions.
@@ -305,10 +320,13 @@ class TestUpdateBugsWithLinkedQuestions(unittest.TestCase):
         # watch and by extension a bug tracker.
         bugtracker = new_bugtracker(BugTrackerType.ROUNDUP)
         self.bugtask_with_question = getUtility(IBugTaskSet).createTask(
-            bug_with_question, sample_person,
-            getUtility(IProductSet).getByName('firefox'))
+            bug_with_question,
+            sample_person,
+            getUtility(IProductSet).getByName("firefox"),
+        )
         self.bugwatch_with_question = bug_with_question.addWatch(
-            bugtracker, '1', getUtility(ILaunchpadCelebrities).janitor)
+            bugtracker, "1", getUtility(ILaunchpadCelebrities).janitor
+        )
         self.bugtask_with_question.bugwatch = self.bugwatch_with_question
         transaction.commit()
 
@@ -321,39 +339,45 @@ class TestUpdateBugsWithLinkedQuestions(unittest.TestCase):
         """
         # We need to check that the bug task we created in setUp() is
         # still being referenced by our bug watch.
-        self.assertEqual(self.bugwatch_with_question.bugtasks[0].id,
-            self.bugtask_with_question.id)
+        self.assertEqual(
+            self.bugwatch_with_question.bugtasks[0].id,
+            self.bugtask_with_question.id,
+        )
 
         # We can now update the bug watch, which will in turn update the
         # bug task and the linked question.
-        self.bugwatch_with_question.updateStatus('some status',
-            BugTaskStatus.INPROGRESS)
-        self.assertEqual(self.bugwatch_with_question.bugtasks[0].status,
+        self.bugwatch_with_question.updateStatus(
+            "some status", BugTaskStatus.INPROGRESS
+        )
+        self.assertEqual(
+            self.bugwatch_with_question.bugtasks[0].status,
             BugTaskStatus.INPROGRESS,
-            "BugTask status is inconsistent. Expected %s but got %s" %
-            (BugTaskStatus.INPROGRESS.title,
-            self.bugtask_with_question.status.title))
+            "BugTask status is inconsistent. Expected %s but got %s"
+            % (
+                BugTaskStatus.INPROGRESS.title,
+                self.bugtask_with_question.status.title,
+            ),
+        )
 
 
 class TestSchedulerBase:
-
     def test_args_and_kwargs(self):
-
         def func(name, aptitude):
             self.assertEqual("Robin Hood", name)
             self.assertEqual("Riding through the glen", aptitude)
 
         # Positional args specified when adding a job are passed to
         # the job function at run time.
-        self.scheduler.schedule(
-            func, "Robin Hood", "Riding through the glen")
+        self.scheduler.schedule(func, "Robin Hood", "Riding through the glen")
         # Keyword args specified when adding a job are passed to the
         # job function at run time.
         self.scheduler.schedule(
-            func, name="Robin Hood", aptitude="Riding through the glen")
+            func, name="Robin Hood", aptitude="Riding through the glen"
+        )
         # Positional and keyword args can both be specified.
         self.scheduler.schedule(
-            func, "Robin Hood", aptitude="Riding through the glen")
+            func, "Robin Hood", aptitude="Riding through the glen"
+        )
         # Run everything.
         self.scheduler.run()
 
@@ -369,20 +393,14 @@ class TestSerialScheduler(TestSchedulerBase, unittest.TestCase):
         # the scheduler.
         numbers = [1, 2, 3]
         # Remove 3 and check.
-        self.scheduler.schedule(
-            list.remove, numbers, 3)
-        self.scheduler.schedule(
-            lambda: self.assertEqual([1, 2], numbers))
+        self.scheduler.schedule(list.remove, numbers, 3)
+        self.scheduler.schedule(lambda: self.assertEqual([1, 2], numbers))
         # Remove 1 and check.
-        self.scheduler.schedule(
-            list.remove, numbers, 1)
-        self.scheduler.schedule(
-            lambda: self.assertEqual([2], numbers))
+        self.scheduler.schedule(list.remove, numbers, 1)
+        self.scheduler.schedule(lambda: self.assertEqual([2], numbers))
         # Remove 2 and check.
-        self.scheduler.schedule(
-            list.remove, numbers, 2)
-        self.scheduler.schedule(
-            lambda: self.assertEqual([], numbers))
+        self.scheduler.schedule(list.remove, numbers, 2)
+        self.scheduler.schedule(lambda: self.assertEqual([], numbers))
         # Run the scheduler.
         self.scheduler.run()
 
@@ -400,7 +418,8 @@ class TestTwistedThreadScheduler(TestSchedulerBase, TestCase):
     def setUp(self):
         super().setUp()
         self.scheduler = checkwatches.TwistedThreadScheduler(
-            num_threads=5, install_signal_handlers=False)
+            num_threads=5, install_signal_handlers=False
+        )
 
 
 class OutputFileForThreads:
@@ -428,7 +447,7 @@ class ExternalBugTrackerForThreads(TestExternalBugTracker):
 
     def getRemoteStatus(self, bug_id):
         self.output_file.write("getRemoteStatus(bug_id='%s')" % bug_id)
-        return 'UNKNOWN'
+        return "UNKNOWN"
 
     def getCurrentDBTime(self):
         return None
@@ -466,40 +485,59 @@ class TestTwistedThreadSchedulerInPlace(TestCaseWithFactory):
         self.owner = self.factory.makePerson()
         self.trackers = [
             getUtility(IBugTrackerSet).ensureBugTracker(
-                "http://butterscotch.example.com", self.owner,
-                BugTrackerType.BUGZILLA, name="butterscotch"),
+                "http://butterscotch.example.com",
+                self.owner,
+                BugTrackerType.BUGZILLA,
+                name="butterscotch",
+            ),
             getUtility(IBugTrackerSet).ensureBugTracker(
-                "http://strawberry.example.com", self.owner,
-                BugTrackerType.BUGZILLA, name="strawberry"),
-            ]
+                "http://strawberry.example.com",
+                self.owner,
+                BugTrackerType.BUGZILLA,
+                name="strawberry",
+            ),
+        ]
         self.bug = self.factory.makeBug(owner=self.owner)
         for tracker in self.trackers:
             for num in (1, 2, 3):
                 self.factory.makeBugWatch(
                     "%s-%d" % (tracker.name, num),
-                    tracker, self.bug, self.owner)
+                    tracker,
+                    self.bug,
+                    self.owner,
+                )
         # Commit so that threads all see the same database state.
         transaction.commit()
         # Prepare the updater with the Twisted scheduler.
         output_file = OutputFileForThreads()
         threaded_bug_watch_updater = CheckwatchesMasterForThreads(output_file)
         threaded_bug_watch_scheduler = TwistedThreadScheduler(
-            num_threads=10, install_signal_handlers=False)
+            num_threads=10, install_signal_handlers=False
+        )
         # Run the updater.
         threaded_bug_watch_updater.updateBugTrackers(
-            bug_tracker_names=['butterscotch', 'strawberry'],
-            batch_size=5, scheduler=threaded_bug_watch_scheduler)
+            bug_tracker_names=["butterscotch", "strawberry"],
+            batch_size=5,
+            scheduler=threaded_bug_watch_scheduler,
+        )
         # The thread names should match the tracker names.
         self.assertEqual(
-            ['butterscotch', 'strawberry'], sorted(output_file.output))
+            ["butterscotch", "strawberry"], sorted(output_file.output)
+        )
         # Check that getRemoteStatus() was called.
         self.assertEqual(
-            ["getRemoteStatus(bug_id='butterscotch-1')",
-             "getRemoteStatus(bug_id='butterscotch-2')",
-             "getRemoteStatus(bug_id='butterscotch-3')"],
-            output_file.output['butterscotch'])
+            [
+                "getRemoteStatus(bug_id='butterscotch-1')",
+                "getRemoteStatus(bug_id='butterscotch-2')",
+                "getRemoteStatus(bug_id='butterscotch-3')",
+            ],
+            output_file.output["butterscotch"],
+        )
         self.assertEqual(
-            ["getRemoteStatus(bug_id='strawberry-1')",
-             "getRemoteStatus(bug_id='strawberry-2')",
-             "getRemoteStatus(bug_id='strawberry-3')"],
-            output_file.output['strawberry'])
+            [
+                "getRemoteStatus(bug_id='strawberry-1')",
+                "getRemoteStatus(bug_id='strawberry-2')",
+                "getRemoteStatus(bug_id='strawberry-3')",
+            ],
+            output_file.output["strawberry"],
+        )

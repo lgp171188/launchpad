@@ -6,16 +6,12 @@
 from zope.security.interfaces import ForbiddenAttribute
 
 from lp.bugs.interfaces.bugtarget import ISeriesBugTarget
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class BugTargetBugFilingDuplicateSearchAlwaysOn:
-    """A base class for tests of bug targets where dupes are always searched.
-    """
+    """Base class for tests of bug targets where dupes are always searched."""
 
     def test_enable_bugfiling_duplicate_search(self):
         # enable_bugfiling_duplicate_search is always True.
@@ -25,12 +21,17 @@ class BugTargetBugFilingDuplicateSearchAlwaysOn:
         # enable_bugfiling_duplicate_search is a read-only attribute
         with person_logged_in(self.bugtarget.owner):
             self.assertRaises(
-                ForbiddenAttribute, setattr, self.bugtarget,
-                'enable_bugfiling_duplicate_search', False)
+                ForbiddenAttribute,
+                setattr,
+                self.bugtarget,
+                "enable_bugfiling_duplicate_search",
+                False,
+            )
 
 
-class TestDistribution(BugTargetBugFilingDuplicateSearchAlwaysOn,
-                       TestCaseWithFactory):
+class TestDistribution(
+    BugTargetBugFilingDuplicateSearchAlwaysOn, TestCaseWithFactory
+):
     """Tests for distributions as bug targets."""
 
     layer = DatabaseFunctionalLayer
@@ -43,8 +44,9 @@ class TestDistribution(BugTargetBugFilingDuplicateSearchAlwaysOn,
         self.assertEqual(self.bugtarget, self.bugtarget.pillar)
 
 
-class TestDistroSeries(BugTargetBugFilingDuplicateSearchAlwaysOn,
-                       TestCaseWithFactory):
+class TestDistroSeries(
+    BugTargetBugFilingDuplicateSearchAlwaysOn, TestCaseWithFactory
+):
     """Tests for distributions as bug targets."""
 
     layer = DatabaseFunctionalLayer
@@ -56,7 +58,8 @@ class TestDistroSeries(BugTargetBugFilingDuplicateSearchAlwaysOn,
     def test_bugtarget_parent(self):
         self.assertTrue(ISeriesBugTarget.providedBy(self.bugtarget))
         self.assertEqual(
-            self.bugtarget.distribution, self.bugtarget.bugtarget_parent)
+            self.bugtarget.distribution, self.bugtarget.bugtarget_parent
+        )
 
     def test_pillar(self):
         self.assertEqual(self.bugtarget.distribution, self.bugtarget.pillar)
@@ -65,8 +68,9 @@ class TestDistroSeries(BugTargetBugFilingDuplicateSearchAlwaysOn,
         self.assertEqual(self.bugtarget, self.bugtarget.series)
 
 
-class TestProjectGroup(BugTargetBugFilingDuplicateSearchAlwaysOn,
-                       TestCaseWithFactory):
+class TestProjectGroup(
+    BugTargetBugFilingDuplicateSearchAlwaysOn, TestCaseWithFactory
+):
     """Tests for distributions as bug targets."""
 
     layer = DatabaseFunctionalLayer
@@ -77,8 +81,7 @@ class TestProjectGroup(BugTargetBugFilingDuplicateSearchAlwaysOn,
 
 
 class BugTargetBugFilingDuplicateSearchSettable:
-    """A base class for tests of bug targets where dupe search is settable.
-    """
+    """A base class for tests of bug targets where dupe search is settable."""
 
     def test_enable_bugfiling_duplicate_search_default(self):
         # The default value of enable_bugfiling_duplicate_search is True.
@@ -91,8 +94,9 @@ class BugTargetBugFilingDuplicateSearchSettable:
         self.assertFalse(self.bugtarget.enable_bugfiling_duplicate_search)
 
 
-class TestProduct(BugTargetBugFilingDuplicateSearchSettable,
-                  TestCaseWithFactory):
+class TestProduct(
+    BugTargetBugFilingDuplicateSearchSettable, TestCaseWithFactory
+):
     """Tests for products as bug targets."""
 
     layer = DatabaseFunctionalLayer
@@ -101,14 +105,16 @@ class TestProduct(BugTargetBugFilingDuplicateSearchSettable,
         super().setUp()
         self.bug_supervisor = self.factory.makePerson()
         self.bugtarget = self.factory.makeProduct(
-            bug_supervisor=self.bug_supervisor)
+            bug_supervisor=self.bug_supervisor
+        )
 
     def test_pillar(self):
         self.assertEqual(self.bugtarget, self.bugtarget.pillar)
 
 
-class TestDistributionSourcePackage(BugTargetBugFilingDuplicateSearchSettable,
-                                    TestCaseWithFactory):
+class TestDistributionSourcePackage(
+    BugTargetBugFilingDuplicateSearchSettable, TestCaseWithFactory
+):
     """Tests for distributionsourcepackages as bug targets."""
 
     layer = DatabaseFunctionalLayer
@@ -117,9 +123,11 @@ class TestDistributionSourcePackage(BugTargetBugFilingDuplicateSearchSettable,
         super().setUp()
         self.bug_supervisor = self.factory.makePerson()
         distribution = self.factory.makeDistribution(
-            bug_supervisor=self.bug_supervisor)
+            bug_supervisor=self.bug_supervisor
+        )
         self.bugtarget = self.factory.makeDistributionSourcePackage(
-            distribution=distribution)
+            distribution=distribution
+        )
 
     def test_pillar(self):
         self.assertEqual(self.bugtarget.distribution, self.bugtarget.pillar)
@@ -143,8 +151,9 @@ class BugTargetBugFilingDuplicateSearchInherited:
         self.assertFalse(self.bugtarget.enable_bugfiling_duplicate_search)
 
 
-class TestProductSeries(BugTargetBugFilingDuplicateSearchInherited,
-                        TestCaseWithFactory):
+class TestProductSeries(
+    BugTargetBugFilingDuplicateSearchInherited, TestCaseWithFactory
+):
     """Tests for product serieses as bug targets."""
 
     layer = DatabaseFunctionalLayer
@@ -154,12 +163,15 @@ class TestProductSeries(BugTargetBugFilingDuplicateSearchInherited,
         self.bug_supervisor = self.factory.makePerson()
         self.bugtarget = self.factory.makeProductSeries(
             product=self.factory.makeProduct(
-                bug_supervisor=self.bug_supervisor))
+                bug_supervisor=self.bug_supervisor
+            )
+        )
 
     def test_bugtarget_parent(self):
         self.assertTrue(ISeriesBugTarget.providedBy(self.bugtarget))
         self.assertEqual(
-            self.bugtarget.product, self.bugtarget.bugtarget_parent)
+            self.bugtarget.product, self.bugtarget.bugtarget_parent
+        )
 
     def test_pillar(self):
         self.assertEqual(self.bugtarget.product, self.bugtarget.pillar)
@@ -168,8 +180,9 @@ class TestProductSeries(BugTargetBugFilingDuplicateSearchInherited,
         self.assertEqual(self.bugtarget, self.bugtarget.series)
 
 
-class TestSourcePackage(BugTargetBugFilingDuplicateSearchInherited,
-                       TestCaseWithFactory):
+class TestSourcePackage(
+    BugTargetBugFilingDuplicateSearchInherited, TestCaseWithFactory
+):
     """Tests for product serieses as bug targets."""
 
     layer = DatabaseFunctionalLayer
@@ -178,21 +191,24 @@ class TestSourcePackage(BugTargetBugFilingDuplicateSearchInherited,
         super().setUp()
         self.bug_supervisor = self.factory.makePerson()
         distribution = self.factory.makeDistribution(
-            bug_supervisor=self.bug_supervisor)
-        distroseries = self.factory.makeDistroSeries(
-            distribution=distribution)
+            bug_supervisor=self.bug_supervisor
+        )
+        distroseries = self.factory.makeDistroSeries(distribution=distribution)
         self.bugtarget = self.factory.makeSourcePackage(
-            distroseries=distroseries)
+            distroseries=distroseries
+        )
 
     def test_bugtarget_parent(self):
         self.assertTrue(ISeriesBugTarget.providedBy(self.bugtarget))
         self.assertEqual(
             self.bugtarget.distribution_sourcepackage,
-            self.bugtarget.bugtarget_parent)
+            self.bugtarget.bugtarget_parent,
+        )
 
     def test_pillar(self):
         self.assertEqual(
-            self.bugtarget.distroseries.distribution, self.bugtarget.pillar)
+            self.bugtarget.distroseries.distribution, self.bugtarget.pillar
+        )
 
     def test_series(self):
         self.assertEqual(self.bugtarget.distroseries, self.bugtarget.series)

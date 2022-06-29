@@ -3,26 +3,14 @@
 
 """Tests for Bug Views."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import re
+from datetime import datetime, timedelta
 
 import pytz
 import simplejson
-from soupmatchers import (
-    HTMLContains,
-    Tag,
-    Within,
-    )
+from soupmatchers import HTMLContains, Tag, Within
 from storm.store import Store
-from testtools.matchers import (
-    Contains,
-    Equals,
-    MatchesAll,
-    Not,
-    )
+from testtools.matchers import Contains, Equals, MatchesAll, Not
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
@@ -35,30 +23,24 @@ from lp.registry.enums import BugSharingPolicy
 from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyGrantSource,
     IAccessPolicySource,
-    )
+)
 from lp.registry.interfaces.person import PersonVisibility
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.interfaces import IOpenLaunchBag
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
-    admin_logged_in,
     BrowserTestCase,
-    login_person,
-    person_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+    admin_logged_in,
+    login_person,
+    person_logged_in,
+)
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import find_tag_by_id
-from lp.testing.views import (
-    create_initialized_view,
-    create_view,
-    )
+from lp.testing.views import create_initialized_view, create_view
 
 
 class TestPrivateBugLinks(BrowserTestCase):
@@ -67,25 +49,29 @@ class TestPrivateBugLinks(BrowserTestCase):
 
     def test_private_master_not_linked_without_permission(self):
         bug = self.factory.makeBug(
-            information_type=InformationType.PRIVATESECURITY)
+            information_type=InformationType.PRIVATESECURITY
+        )
         dupe = self.factory.makeBug()
         with admin_logged_in():
             dupe.markAsDuplicate(bug)
         with person_logged_in(dupe.owner):
             getUtility(IOpenLaunchBag).add(dupe.default_bugtask)
             html = create_initialized_view(
-                dupe.default_bugtask, "+index", principal=dupe.owner)()
-        dupe_warning = find_tag_by_id(html, 'warning-comment-on-duplicate')
+                dupe.default_bugtask, "+index", principal=dupe.owner
+            )()
+        dupe_warning = find_tag_by_id(html, "warning-comment-on-duplicate")
         # There is no link in the dupe_warning.
-        self.assertTrue('href' not in dupe_warning)
+        self.assertTrue("href" not in dupe_warning)
 
     def test_private_dupes_not_linked_without_permission(self):
         bug = self.factory.makeBug()
         publidupe = self.factory.makeBug()
         visidupe = self.factory.makeBug(
-            information_type=InformationType.PRIVATESECURITY)
+            information_type=InformationType.PRIVATESECURITY
+        )
         invisidupe = self.factory.makeBug(
-            information_type=InformationType.PRIVATESECURITY)
+            information_type=InformationType.PRIVATESECURITY
+        )
         with admin_logged_in():
             publidupe.markAsDuplicate(bug)
             visidupe.markAsDuplicate(bug)
@@ -94,11 +80,13 @@ class TestPrivateBugLinks(BrowserTestCase):
         with person_logged_in(bug.owner):
             getUtility(IOpenLaunchBag).add(bug.default_bugtask)
             html = create_initialized_view(
-                bug.default_bugtask, "+index", principal=bug.owner)()
+                bug.default_bugtask, "+index", principal=bug.owner
+            )()
         # The public dupe and subscribed private dupe are listed, but
         # the unsubscribed one is not.
         dupes_portlet = Tag(
-            "dupes portlet", "div", attrs={"id": "portlet-duplicates"})
+            "dupes portlet", "div", attrs={"id": "portlet-duplicates"}
+        )
         self.assertThat(
             html,
             MatchesAll(
@@ -106,22 +94,37 @@ class TestPrivateBugLinks(BrowserTestCase):
                     Within(
                         dupes_portlet,
                         Tag(
-                            "public dupe", "a",
+                            "public dupe",
+                            "a",
                             text=re.compile("Bug #%d" % publidupe.id),
-                            attrs={"class": "sprite bug"})),
+                            attrs={"class": "sprite bug"},
+                        ),
+                    ),
                     Within(
                         dupes_portlet,
                         Tag(
-                            "private dupe", "a",
+                            "private dupe",
+                            "a",
                             text=re.compile("Bug #%d" % visidupe.id),
-                            attrs={"class": "sprite bug private"}))),
-                Not(HTMLContains(Tag(
-                    "invisible dupe", "a",
-                    text=re.compile("Bug #%d" % invisidupe.id))))))
+                            attrs={"class": "sprite bug private"},
+                        ),
+                    ),
+                ),
+                Not(
+                    HTMLContains(
+                        Tag(
+                            "invisible dupe",
+                            "a",
+                            text=re.compile("Bug #%d" % invisidupe.id),
+                        )
+                    )
+                ),
+            ),
+        )
 
 
 class TestAlsoAffectsLinks(BrowserTestCase):
-    """ Tests the rendering of the Also Affects links on the bug index view.
+    """Tests the rendering of the Also Affects links on the bug index view.
 
     The links are rendered with a css class 'private-disallow' if they are
     not valid for proprietary bugs.
@@ -134,18 +137,19 @@ class TestAlsoAffectsLinks(BrowserTestCase):
         # disallowed.
         owner = self.factory.makePerson()
         product = self.factory.makeProduct(
-            bug_sharing_policy=BugSharingPolicy.PROPRIETARY)
+            bug_sharing_policy=BugSharingPolicy.PROPRIETARY
+        )
         bug = self.factory.makeBug(
-            target=product, owner=owner,
-            information_type=InformationType.PROPRIETARY)
+            target=product,
+            owner=owner,
+            information_type=InformationType.PROPRIETARY,
+        )
         url = canonical_url(bug, rootsite="bugs")
         browser = self.getUserBrowser(url, user=owner)
-        also_affects = find_tag_by_id(
-            browser.contents, 'also-affects-product')
-        self.assertIn('private-disallow', also_affects['class'])
-        also_affects = find_tag_by_id(
-            browser.contents, 'also-affects-package')
-        self.assertIn('private-disallow', also_affects['class'])
+        also_affects = find_tag_by_id(browser.contents, "also-affects-product")
+        self.assertIn("private-disallow", also_affects["class"])
+        also_affects = find_tag_by_id(browser.contents, "also-affects-package")
+        self.assertIn("private-disallow", also_affects["class"])
 
     def test_also_affects_links_distro_bug(self):
         # We expect that only the Also Affects Project link is disallowed.
@@ -156,17 +160,16 @@ class TestAlsoAffectsLinks(BrowserTestCase):
         # a Proprietary distro bug.
         bug = self.factory.makeBug(
             target=distro,
-            information_type=InformationType.PRIVATESECURITY, owner=owner)
-        removeSecurityProxy(bug).information_type = (
-            InformationType.PROPRIETARY)
+            information_type=InformationType.PRIVATESECURITY,
+            owner=owner,
+        )
+        removeSecurityProxy(bug).information_type = InformationType.PROPRIETARY
         url = canonical_url(bug, rootsite="bugs")
         browser = self.getUserBrowser(url, user=owner)
-        also_affects = find_tag_by_id(
-            browser.contents, 'also-affects-product')
-        self.assertIn('private-disallow', also_affects['class'])
-        also_affects = find_tag_by_id(
-            browser.contents, 'also-affects-package')
-        self.assertNotIn('private-disallow', also_affects['class'])
+        also_affects = find_tag_by_id(browser.contents, "also-affects-product")
+        self.assertIn("private-disallow", also_affects["class"])
+        also_affects = find_tag_by_id(browser.contents, "also-affects-package")
+        self.assertNotIn("private-disallow", also_affects["class"])
 
 
 class TestEmailObfuscated(BrowserTestCase):
@@ -179,9 +182,11 @@ class TestEmailObfuscated(BrowserTestCase):
     def getBrowserForBugWithEmail(self, no_login):
         self.bug = self.factory.makeBug(
             title="Title with %s contained" % self.email_address,
-            description="Description with %s contained." % self.email_address)
+            description="Description with %s contained." % self.email_address,
+        )
         return self.getViewBrowser(
-            self.bug, rootsite="bugs", no_login=no_login)
+            self.bug, rootsite="bugs", no_login=no_login
+        )
 
     def test_user_sees_email_address(self):
         """A logged-in user can see the email address on the page."""
@@ -196,22 +201,30 @@ class TestEmailObfuscated(BrowserTestCase):
     def test_bug_description_in_meta_description_anonymous(self):
         browser = self.getBrowserForBugWithEmail(no_login=True)
         soup = BeautifulSoup(browser.contents)
-        meat = soup.find('meta', dict(name='description'))
-        self.assertThat(meat['content'], MatchesAll(
-            Contains('Description with'),
-            Not(Contains('@')),
-            Contains('...')))  # Ellipsis from hidden address.
+        meat = soup.find("meta", dict(name="description"))
+        self.assertThat(
+            meat["content"],
+            MatchesAll(
+                Contains("Description with"),
+                Not(Contains("@")),
+                Contains("..."),
+            ),
+        )  # Ellipsis from hidden address.
 
     def test_bug_description_in_meta_description_not_anonymous(self):
         browser = self.getBrowserForBugWithEmail(no_login=False)
         soup = BeautifulSoup(browser.contents)
-        meat = soup.find('meta', dict(name='description'))
+        meat = soup.find("meta", dict(name="description"))
         # Even logged in users get email stripped from the metadata, in case
         # they use a tool that copies it out.
-        self.assertThat(meat['content'], MatchesAll(
-            Contains('Description with'),
-            Not(Contains('@')),
-            Contains('...')))  # Ellipsis from hidden address.
+        self.assertThat(
+            meat["content"],
+            MatchesAll(
+                Contains("Description with"),
+                Not(Contains("@")),
+                Contains("..."),
+            ),
+        )  # Ellipsis from hidden address.
 
 
 class TestBugPortletSubscribers(TestCaseWithFactory):
@@ -233,17 +246,18 @@ class TestBugPortletSubscribers(TestCaseWithFactory):
     def test_edit_subscriptions_link_shown(self):
         request = LaunchpadTestRequest()
         view = create_initialized_view(
-            self.bug, name="+portlet-subscription", request=request)
+            self.bug, name="+portlet-subscription", request=request
+        )
         html = view.render()
-        self.assertTrue('menu-link-editsubscriptions' in html)
-        self.assertTrue('/+subscriptions' in html)
+        self.assertTrue("menu-link-editsubscriptions" in html)
+        self.assertTrue("/+subscriptions" in html)
 
     def _hasCSSClass(self, html, element_id, css_class):
         # Return True if element with ID `element_id` in `html` has
         # a CSS class `css_class`.
         soup = BeautifulSoup(html)
-        element = soup.find(attrs={'id': element_id})
-        return css_class in element.get('class', [])
+        element = soup.find(attrs={"id": element_id})
+        return css_class in element.get("class", [])
 
     def test_bug_mute_for_individual_structural_subscription(self):
         # If the person has a structural subscription to the pillar,
@@ -253,18 +267,24 @@ class TestBugPortletSubscribers(TestCaseWithFactory):
             self.target.addBugSubscription(person, person)
             self.assertFalse(self.bug.isMuted(person))
             view = create_initialized_view(
-                self.bug, name="+portlet-subscription")
-            self.assertTrue(view.user_should_see_mute_link,
-                            "User should see mute link.")
+                self.bug, name="+portlet-subscription"
+            )
+            self.assertTrue(
+                view.user_should_see_mute_link, "User should see mute link."
+            )
             contents = view.render()
-            self.assertTrue('mute_subscription' in contents,
-                            "'mute_subscription' not in contents.")
+            self.assertTrue(
+                "mute_subscription" in contents,
+                "'mute_subscription' not in contents.",
+            )
             self.assertFalse(
-                self._hasCSSClass(
-                    contents, 'mute-link-container', 'hidden'))
+                self._hasCSSClass(contents, "mute-link-container", "hidden")
+            )
             create_initialized_view(
-                self.bug.default_bugtask, name="+mute",
-                form={'field.actions.mute': 'Mute bug mail'})
+                self.bug.default_bugtask,
+                name="+mute",
+                form={"field.actions.mute": "Mute bug mail"},
+            )
             self.assertTrue(self.bug.isMuted(person))
 
     def test_mute_subscription_link_shown_for_team_subscription(self):
@@ -279,21 +299,28 @@ class TestBugPortletSubscribers(TestCaseWithFactory):
         with person_logged_in(person):
             self.assertFalse(self.bug.isMuted(person))
             self.assertTrue(
-                self.bug.personIsAlsoNotifiedSubscriber(
-                    person), "Person should be a notified subscriber")
+                self.bug.personIsAlsoNotifiedSubscriber(person),
+                "Person should be a notified subscriber",
+            )
             view = create_initialized_view(
-                self.bug, name="+portlet-subscription")
-            self.assertTrue(view.user_should_see_mute_link,
-                            "User should see mute link.")
+                self.bug, name="+portlet-subscription"
+            )
+            self.assertTrue(
+                view.user_should_see_mute_link, "User should see mute link."
+            )
             contents = view.render()
-            self.assertTrue('mute_subscription' in contents,
-                            "'mute_subscription' not in contents.")
+            self.assertTrue(
+                "mute_subscription" in contents,
+                "'mute_subscription' not in contents.",
+            )
             self.assertFalse(
-                self._hasCSSClass(
-                    contents, 'mute-link-container', 'hidden'))
+                self._hasCSSClass(contents, "mute-link-container", "hidden")
+            )
             create_initialized_view(
-                self.bug.default_bugtask, name="+mute",
-                form={'field.actions.mute': 'Mute bug mail'})
+                self.bug.default_bugtask,
+                name="+mute",
+                form={"field.actions.mute": "Mute bug mail"},
+            )
             self.assertTrue(self.bug.isMuted(person))
 
     def test_mute_subscription_link_hidden_for_non_subscribers(self):
@@ -304,27 +331,27 @@ class TestBugPortletSubscribers(TestCaseWithFactory):
             # The user isn't subscribed or muted already.
             self.assertFalse(self.bug.isSubscribed(person))
             self.assertFalse(self.bug.isMuted(person))
-            self.assertFalse(
-                self.bug.personIsAlsoNotifiedSubscriber(person))
+            self.assertFalse(self.bug.personIsAlsoNotifiedSubscriber(person))
             view = create_initialized_view(
-                self.bug, name="+portlet-subscription")
+                self.bug, name="+portlet-subscription"
+            )
             self.assertFalse(view.user_should_see_mute_link)
             html = view.render()
-            self.assertTrue('mute_subscription' in html)
+            self.assertTrue("mute_subscription" in html)
             # The template uses user_should_see_mute_link to decide
             # whether or not to display the mute link.
             self.assertTrue(
-                self._hasCSSClass(html, 'mute-link-container', 'hidden'),
-                'No "hidden" CSS class in mute-link-container.')
+                self._hasCSSClass(html, "mute-link-container", "hidden"),
+                'No "hidden" CSS class in mute-link-container.',
+            )
 
     def test_mute_subscription_link_not_rendered_for_anonymous(self):
         # If a person is not already subscribed to a bug in some way,
         # the mute link will not be displayed to them.
-        view = create_initialized_view(
-            self.bug, name="+portlet-subscription")
+        view = create_initialized_view(self.bug, name="+portlet-subscription")
         self.assertFalse(view.user_should_see_mute_link)
         html = view.render()
-        self.assertFalse('mute_subscription' in html)
+        self.assertFalse("mute_subscription" in html)
 
     def test_mute_subscription_link_shown_if_muted(self):
         # If a person is muted but not otherwise subscribed, they should still
@@ -334,20 +361,22 @@ class TestBugPortletSubscribers(TestCaseWithFactory):
             self.bug.mute(person, person)
             # The user isn't subscribed already, but is muted.
             self.assertFalse(self.bug.isSubscribed(person))
-            self.assertFalse(
-                self.bug.personIsAlsoNotifiedSubscriber(
-                    person))
+            self.assertFalse(self.bug.personIsAlsoNotifiedSubscriber(person))
             self.assertTrue(self.bug.isMuted(person))
             view = create_initialized_view(
-                self.bug, name="+portlet-subscription")
+                self.bug, name="+portlet-subscription"
+            )
             self.assertTrue(
-                view.user_should_see_mute_link, "User should see mute link.")
+                view.user_should_see_mute_link, "User should see mute link."
+            )
             contents = view.render()
             self.assertTrue(
-                'mute_subscription' in contents,
-                "'mute_subscription' not in contents.")
+                "mute_subscription" in contents,
+                "'mute_subscription' not in contents.",
+            )
             self.assertFalse(
-                self._hasCSSClass(contents, 'mute-link-container', 'hidden'))
+                self._hasCSSClass(contents, "mute-link-container", "hidden")
+            )
 
     def test_bug_portlet_subscription_query_count(self):
         # Bug:+portlet-subscription doesn't make O(n) queries based on the
@@ -365,7 +394,8 @@ class TestBugPortletSubscribers(TestCaseWithFactory):
             launchbag.add(bug.default_bugtask)
             with StormStatementRecorder() as recorder:
                 view = create_initialized_view(
-                    bug, name='+portlet-subscription', principal=user)
+                    bug, name="+portlet-subscription", principal=user
+                )
                 view.render()
         self.assertThat(recorder, HasQueryCount(Equals(14)))
 
@@ -375,8 +405,9 @@ class TestBugSecrecyViews(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def createInitializedSecrecyView(self, person=None, bug=None,
-                                     request=None):
+    def createInitializedSecrecyView(
+        self, person=None, bug=None, request=None
+    ):
         """Create and return an initialized BugSecrecyView."""
         if person is None:
             person = self.factory.makePerson()
@@ -384,10 +415,14 @@ class TestBugSecrecyViews(TestCaseWithFactory):
             bug = self.factory.makeBug()
         with person_logged_in(person):
             return create_initialized_view(
-                bug.default_bugtask, name='+secrecy', form={
-                    'field.information_type': 'USERDATA',
-                    'field.actions.change': 'Change',
-                    }, request=request)
+                bug.default_bugtask,
+                name="+secrecy",
+                form={
+                    "field.information_type": "USERDATA",
+                    "field.actions.change": "Change",
+                },
+                request=request,
+            )
 
     def test_notification_shown_if_marking_private_and_not_subscribed(self):
         # If a user who is not subscribed to a bug marks that bug as
@@ -399,8 +434,8 @@ class TestBugSecrecyViews(TestCaseWithFactory):
         task = removeSecurityProxy(bug).default_bugtask
         self.assertEqual(1, len(view.request.response.notifications))
         notification = view.request.response.notifications[0].message
-        mute_url = canonical_url(task, view_name='+mute')
-        subscribe_url = canonical_url(task, view_name='+subscribe')
+        mute_url = canonical_url(task, view_name="+mute")
+        subscribe_url = canonical_url(task, view_name="+subscribe")
         self.assertIn(mute_url, notification)
         self.assertIn(subscribe_url, notification)
 
@@ -425,8 +460,9 @@ class TestBugSecrecyViews(TestCaseWithFactory):
         view = self.createInitializedSecrecyView(person, bug)
         self.assertContentEqual([], view.request.response.notifications)
 
-    def _assert_secrecy_view_ajax_render(self, bug, new_type,
-                                         validate_change, person=None):
+    def _assert_secrecy_view_ajax_render(
+        self, bug, new_type, validate_change, person=None
+    ):
         # When the bug secrecy view is called from an ajax request, it should
         # provide a json encoded dict when rendered. The dict contains bug
         # subscription information resulting from the update to the bug
@@ -437,28 +473,33 @@ class TestBugSecrecyViews(TestCaseWithFactory):
         with person_logged_in(person):
             bug.subscribe(person, person)
 
-        extra = {'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'}
+        extra = {"HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}
         request = LaunchpadTestRequest(
-            method='POST', form={
-                'field.actions.change': 'Change',
-                'field.information_type': new_type,
-                'field.validate_change':
-                    'on' if validate_change else 'off'},
-            **extra)
+            method="POST",
+            form={
+                "field.actions.change": "Change",
+                "field.information_type": new_type,
+                "field.validate_change": "on" if validate_change else "off",
+            },
+            **extra,
+        )
         view = self.createInitializedSecrecyView(person, bug, request)
         result_data = simplejson.loads(view.render())
 
-        cache_data = result_data['cache_data']
-        self.assertFalse(cache_data['other_subscription_notifications'])
-        subscription_data = cache_data['subscription']
+        cache_data = result_data["cache_data"]
+        self.assertFalse(cache_data["other_subscription_notifications"])
+        subscription_data = cache_data["subscription"]
         self.assertEqual(
-            'http://launchpad.test/api/devel/bugs/%s' % bug.id,
-            subscription_data['bug_link'])
+            "http://launchpad.test/api/devel/bugs/%s" % bug.id,
+            subscription_data["bug_link"],
+        )
         self.assertEqual(
-            'http://launchpad.test/api/devel/~%s' % person.name,
-            subscription_data['person_link'])
+            "http://launchpad.test/api/devel/~%s" % person.name,
+            subscription_data["person_link"],
+        )
         self.assertEqual(
-            'Discussion', subscription_data['bug_notification_level'])
+            "Discussion", subscription_data["bug_notification_level"]
+        )
         return result_data
 
     def test_secrecy_view_ajax_render(self):
@@ -468,29 +509,33 @@ class TestBugSecrecyViews(TestCaseWithFactory):
         with person_logged_in(bug.owner):
             bug.unsubscribe(bug.owner, bug.owner)
         result_data = self._assert_secrecy_view_ajax_render(
-            bug, 'USERDATA', True, person=self.factory.makePerson())
-        [subscriber_data] = result_data['subscription_data']
+            bug, "USERDATA", True, person=self.factory.makePerson()
+        )
+        [subscriber_data] = result_data["subscription_data"]
         subscriber = removeSecurityProxy(bug).owner
         self.assertEqual(
-            subscriber.name, subscriber_data['subscriber']['name'])
-        self.assertEqual('Discussion', subscriber_data['subscription_level'])
+            subscriber.name, subscriber_data["subscriber"]["name"]
+        )
+        self.assertEqual("Discussion", subscriber_data["subscription_level"])
 
     def test_secrecy_view_ajax_can_add_tasks(self):
         # The return data contains flags indicating whether project and package
         # tasks can be added.
         bug = self.factory.makeBug()
         result_data = self._assert_secrecy_view_ajax_render(
-            bug, 'USERDATA', True)
-        self.assertTrue(result_data['can_add_project_task'])
-        self.assertTrue(result_data['can_add_package_task'])
+            bug, "USERDATA", True
+        )
+        self.assertTrue(result_data["can_add_project_task"])
+        self.assertTrue(result_data["can_add_package_task"])
 
     def test_secrecy_view_ajax_render_no_check(self):
         # An information type change request is processed as expected when the
         # bug will become invisible but and no visibility check is performed.
         product = self.factory.makeProduct(
-            bug_sharing_policy=BugSharingPolicy.PUBLIC_OR_PROPRIETARY)
+            bug_sharing_policy=BugSharingPolicy.PUBLIC_OR_PROPRIETARY
+        )
         bug = self.factory.makeBug(target=product)
-        self._assert_secrecy_view_ajax_render(bug, 'PROPRIETARY', False)
+        self._assert_secrecy_view_ajax_render(bug, "PROPRIETARY", False)
 
     def test_secrecy_view_ajax_render_invisible_bug(self):
         # When a bug is to be changed to an information type where it will
@@ -498,24 +543,31 @@ class TestBugSecrecyViews(TestCaseWithFactory):
         # is returned.
         bug_owner = self.factory.makePerson()
         product = self.factory.makeProduct(
-            bug_sharing_policy=BugSharingPolicy.PUBLIC_OR_PROPRIETARY)
+            bug_sharing_policy=BugSharingPolicy.PUBLIC_OR_PROPRIETARY
+        )
         bug = self.factory.makeBug(target=product, owner=bug_owner)
         userdata_policy = getUtility(IAccessPolicySource).find(
-            [(product, InformationType.USERDATA)])
+            [(product, InformationType.USERDATA)]
+        )
         getUtility(IAccessPolicyGrantSource).revokeByPolicy(userdata_policy)
 
-        extra = {'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'}
+        extra = {"HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}
         request = LaunchpadTestRequest(
-            method='POST', form={
-                'field.actions.change': 'Change',
-                'field.information_type': 'USERDATA',
-                'field.validate_change': 'on'},
-            **extra)
+            method="POST",
+            form={
+                "field.actions.change": "Change",
+                "field.information_type": "USERDATA",
+                "field.validate_change": "on",
+            },
+            **extra,
+        )
         with person_logged_in(bug_owner):
             view = create_initialized_view(
-                bug.default_bugtask, name='+secrecy', request=request)
+                bug.default_bugtask, name="+secrecy", request=request
+            )
         self.assertEqual(
-            '400 Bug Visibility', view.request.response.getStatusString())
+            "400 Bug Visibility", view.request.response.getStatusString()
+        )
 
     def test_set_information_type(self):
         # Test that the bug's information_type can be updated using the
@@ -523,9 +575,13 @@ class TestBugSecrecyViews(TestCaseWithFactory):
         bug = self.factory.makeBug()
         with person_logged_in(bug.owner):
             view = create_initialized_view(
-                bug.default_bugtask, name='+secrecy', form={
-                    'field.information_type': 'USERDATA',
-                    'field.actions.change': 'Change'})
+                bug.default_bugtask,
+                name="+secrecy",
+                form={
+                    "field.information_type": "USERDATA",
+                    "field.actions.change": "Change",
+                },
+            )
         self.assertEqual([], view.errors)
         self.assertEqual(InformationType.USERDATA, bug.information_type)
 
@@ -534,31 +590,34 @@ class TestBugSecrecyViews(TestCaseWithFactory):
         bug = self.factory.makeBug()
         with person_logged_in(bug.owner):
             view = create_initialized_view(
-                bug.default_bugtask, name='+secrecy',
-                principal=bug.owner)
+                bug.default_bugtask, name="+secrecy", principal=bug.owner
+            )
             html = view.render()
             soup = BeautifulSoup(html)
-        self.assertEqual('Private', soup.find('label', text="Private").string)
+        self.assertEqual("Private", soup.find("label", text="Private").string)
 
     def test_bugtask_view_user_with_grant_on_bug_for_private_product(self):
         # The regular bug view is properly rendered even if the user
         # does not have permissions to view every detail of a product.
         owner = self.factory.makePerson()
         product = self.factory.makeProduct(
-            owner=owner,
-            information_type=InformationType.PROPRIETARY)
+            owner=owner, information_type=InformationType.PROPRIETARY
+        )
         user = self.factory.makePerson()
         with person_logged_in(owner):
             bug = self.factory.makeBug(
-                target=product, information_type=InformationType.PROPRIETARY)
-            getUtility(IService, 'sharing').ensureAccessGrants(
-                [user], owner, bugs=[bug])
+                target=product, information_type=InformationType.PROPRIETARY
+            )
+            getUtility(IService, "sharing").ensureAccessGrants(
+                [user], owner, bugs=[bug]
+            )
             launchbag = getUtility(IOpenLaunchBag)
             launchbag.add(bug)
             launchbag.add(bug.default_bugtask)
         with person_logged_in(user):
             view = create_initialized_view(
-                bug.default_bugtask, name='+index', principal=user)
+                bug.default_bugtask, name="+index", principal=user
+            )
             contents = view.render()
             self.assertTrue(bug.title in contents)
 
@@ -578,25 +637,27 @@ class TestBugSecrecyViews(TestCaseWithFactory):
         with person_logged_in(target_owner):
             bug.lock(who=target_owner, status=BugLockStatus.COMMENT_ONLY)
         self.assertRaises(
-            Unauthorized, self.createInitializedSecrecyView, bug=bug)
+            Unauthorized, self.createInitializedSecrecyView, bug=bug
+        )
 
 
 class TestBugTextViewPrivateTeams(TestCaseWithFactory):
-    """ Test for rendering BugTextView with private team artifacts.
+    """Test for rendering BugTextView with private team artifacts.
 
     If an authenticated user can see the bug, they can see a the name of
     private teams which are assignees or subscribers.
     """
+
     layer = DatabaseFunctionalLayer
 
     def _makeBug(self):
         owner = self.factory.makePerson()
         private_assignee = self.factory.makeTeam(
-            name='bugassignee',
-            visibility=PersonVisibility.PRIVATE)
+            name="bugassignee", visibility=PersonVisibility.PRIVATE
+        )
         private_subscriber = self.factory.makeTeam(
-            name='bugsubscriber',
-            visibility=PersonVisibility.PRIVATE)
+            name="bugsubscriber", visibility=PersonVisibility.PRIVATE
+        )
 
         bug = self.factory.makeBug(owner=owner)
         with person_logged_in(owner):
@@ -607,31 +668,31 @@ class TestBugTextViewPrivateTeams(TestCaseWithFactory):
     def test_unauthenticated_view(self):
         # Unauthenticated users cannot see private assignees or subscribers.
         bug, assignee, subscriber = self._makeBug()
-        bug_view = create_initialized_view(bug, name='+text')
+        bug_view = create_initialized_view(bug, name="+text")
         view_text = bug_view.render()
         # We don't see the assignee.
-        self.assertIn(
-            "assignee: \n", view_text)
+        self.assertIn("assignee: \n", view_text)
         # Nor do we see the subscriber.
         self.assertNotIn(
-            removeSecurityProxy(subscriber).unique_displayname, view_text)
+            removeSecurityProxy(subscriber).unique_displayname, view_text
+        )
 
     def test_authenticated_view(self):
         # Authenticated users can see private assignees or subscribers.
         bug, assignee, subscriber = self._makeBug()
         request = LaunchpadTestRequest()
-        bug_view = create_view(bug, name='+text', request=request)
+        bug_view = create_view(bug, name="+text", request=request)
         any_person = self.factory.makePerson()
         login_person(any_person, request)
         bug_view.initialize()
         view_text = bug_view.render()
         naked_subscriber = removeSecurityProxy(subscriber)
-        self.assertIn(
-            "assignee: %s" % assignee.unique_displayname, view_text)
+        self.assertIn("assignee: %s" % assignee.unique_displayname, view_text)
         self.assertTextMatchesExpressionIgnoreWhitespace(
             "subscribers:\n.*%s \\(%s\\)"
             % (naked_subscriber.displayname, naked_subscriber.name),
-            view_text)
+            view_text,
+        )
 
 
 class TestBugCanonicalUrl(BrowserTestCase):
@@ -639,13 +700,14 @@ class TestBugCanonicalUrl(BrowserTestCase):
 
     See https://bugs.launchpad.net/launchpad/+bug/808282
     """
+
     layer = DatabaseFunctionalLayer
 
     def _create_bug_with_url(self):
         bug = self.factory.makeBug()
         # Hardcode this to be sure we've really got what we expected, with no
         # confusion about lp's own url generation machinery.
-        expected_url = 'http://bugs.launchpad.test/bugs/%d' % bug.id
+        expected_url = "http://bugs.launchpad.test/bugs/%d" % bug.id
 
         return bug, expected_url
 
@@ -655,10 +717,14 @@ class TestBugCanonicalUrl(BrowserTestCase):
 
         self.assertThat(
             browser.contents,
-            HTMLContains(Tag(
-                'link rel=canonical',
-                'link',
-                dict(rel='canonical', href=expected_url))))
+            HTMLContains(
+                Tag(
+                    "link rel=canonical",
+                    "link",
+                    dict(rel="canonical", href=expected_url),
+                )
+            ),
+        )
 
     def test_bug_opengraph_canonical_url(self):
         # As test_bug_canonical_url, but ensure it's used correctly in
@@ -668,14 +734,19 @@ class TestBugCanonicalUrl(BrowserTestCase):
 
         self.assertThat(
             browser.contents,
-            HTMLContains(Tag(
-                'meta property=og:url',
-                'meta',
-                {'property': 'og:url', 'content': expected_url})))
+            HTMLContains(
+                Tag(
+                    "meta property=og:url",
+                    "meta",
+                    {"property": "og:url", "content": expected_url},
+                )
+            ),
+        )
 
 
 class TestBugMessageAddFormView(TestCaseWithFactory):
     """Tests for the add message to bug view."""
+
     layer = LaunchpadFunctionalLayer
 
     def test_whitespaces_message(self):
@@ -683,12 +754,13 @@ class TestBugMessageAddFormView(TestCaseWithFactory):
         # considered valid.
         bug = self.factory.makeBug()
         form = {
-            'field.comment': ' ',
-            'field.actions.save': 'Post Comment',
-            }
+            "field.comment": " ",
+            "field.actions.save": "Post Comment",
+        }
         view = create_initialized_view(
-            bug.default_bugtask, '+addcomment', form=form)
-        expected_error = 'Either a comment or attachment must be provided.'
+            bug.default_bugtask, "+addcomment", form=form
+        )
+        expected_error = "Either a comment or attachment must be provided."
         self.assertEqual(view.errors[0], expected_error)
 
     def test_whitespaces_message_with_attached_file(self):
@@ -696,14 +768,15 @@ class TestBugMessageAddFormView(TestCaseWithFactory):
         # is attached then the request has to be considered valid.
         bug = self.factory.makeBug()
         form = {
-            'field.comment': ' ',
-            'field.actions.save': 'Post Comment',
-            'field.filecontent': self.factory.makeFakeFileUpload(),
-            'field.patch.used': '',
-            }
+            "field.comment": " ",
+            "field.actions.save": "Post Comment",
+            "field.filecontent": self.factory.makeFakeFileUpload(),
+            "field.patch.used": "",
+        }
         login_person(self.factory.makePerson())
         view = create_initialized_view(
-            bug.default_bugtask, '+addcomment', form=form)
+            bug.default_bugtask, "+addcomment", form=form
+        )
         self.assertEqual(0, len(view.errors))
 
 
@@ -721,65 +794,79 @@ class TestBugMarkAsDuplicateView(TestCaseWithFactory):
     def test_remove_link_not_shown_if_no_duplicate(self):
         with person_logged_in(self.bug_owner):
             view = create_initialized_view(
-                self.bug.default_bugtask, name="+duplicate",
-                principal=self.bug_owner)
+                self.bug.default_bugtask,
+                name="+duplicate",
+                principal=self.bug_owner,
+            )
             soup = BeautifulSoup(view.render())
-        self.assertIsNone(soup.find(attrs={'id': 'field.actions.remove'}))
+        self.assertIsNone(soup.find(attrs={"id": "field.actions.remove"}))
 
     def test_remove_link_shown_if_duplicate(self):
         with person_logged_in(self.bug_owner):
             self.bug.markAsDuplicate(self.duplicate_bug)
             view = create_initialized_view(
-                self.bug.default_bugtask, name="+duplicate",
-                principal=self.bug_owner)
+                self.bug.default_bugtask,
+                name="+duplicate",
+                principal=self.bug_owner,
+            )
             soup = BeautifulSoup(view.render())
-        self.assertIsNotNone(
-            soup.find(attrs={'id': 'field.actions.remove'}))
+        self.assertIsNotNone(soup.find(attrs={"id": "field.actions.remove"}))
 
     def test_create_duplicate(self):
         with person_logged_in(self.bug_owner):
             form = {
-                'field.actions.change': 'Set Duplicate',
-                'field.duplicateof': '%s' % self.duplicate_bug.id
-                }
+                "field.actions.change": "Set Duplicate",
+                "field.duplicateof": "%s" % self.duplicate_bug.id,
+            }
             create_initialized_view(
-                self.bug.default_bugtask, name="+duplicate",
-                principal=self.bug_owner, form=form)
+                self.bug.default_bugtask,
+                name="+duplicate",
+                principal=self.bug_owner,
+                form=form,
+            )
         self.assertEqual(self.duplicate_bug, self.bug.duplicateof)
 
     def test_remove_duplicate(self):
         with person_logged_in(self.bug_owner):
             self.bug.markAsDuplicate(self.duplicate_bug)
             form = {
-                'field.actions.remove': 'Remove Duplicate',
-                }
+                "field.actions.remove": "Remove Duplicate",
+            }
             create_initialized_view(
-                self.bug.default_bugtask, name="+duplicate",
-                principal=self.bug_owner, form=form)
+                self.bug.default_bugtask,
+                name="+duplicate",
+                principal=self.bug_owner,
+                form=form,
+            )
         self.assertIsNone(self.bug.duplicateof)
 
     def test_ajax_create_duplicate(self):
         # An ajax request to create a duplicate returns the new bugtask table.
         with person_logged_in(self.bug_owner):
             extra = {
-                'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
-                }
+                "HTTP_X_REQUESTED_WITH": "XMLHttpRequest",
+            }
             form = {
-                'field.actions.change': 'Set Duplicate',
-                'field.duplicateof': '%s' % self.duplicate_bug.id
-                }
+                "field.actions.change": "Set Duplicate",
+                "field.duplicateof": "%s" % self.duplicate_bug.id,
+            }
             view = create_initialized_view(
-                self.bug.default_bugtask, name="+duplicate",
-                principal=self.bug_owner, form=form, **extra)
+                self.bug.default_bugtask,
+                name="+duplicate",
+                principal=self.bug_owner,
+                form=form,
+                **extra,
+            )
             result_html = view.render()
 
         self.assertEqual(self.duplicate_bug, self.bug.duplicateof)
         self.assertEqual(
-            view.request.response.getHeader('content-type'), 'text/html')
+            view.request.response.getHeader("content-type"), "text/html"
+        )
         soup = BeautifulSoup(result_html)
         table = soup.find(
-            'table',
-            {'id': 'affected-software', 'class': 'duplicate listing'})
+            "table", {"id": "affected-software", "class": "duplicate listing"}
+        )
         self.assertIsNotNone(table)
 
     def test_ajax_remove_duplicate(self):
@@ -787,24 +874,29 @@ class TestBugMarkAsDuplicateView(TestCaseWithFactory):
         with person_logged_in(self.bug_owner):
             self.bug.markAsDuplicate(self.duplicate_bug)
             extra = {
-                'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
-                }
+                "HTTP_X_REQUESTED_WITH": "XMLHttpRequest",
+            }
             form = {
-                'field.actions.remove': 'Remove Duplicate',
-                }
+                "field.actions.remove": "Remove Duplicate",
+            }
 
             view = create_initialized_view(
-                self.bug.default_bugtask, name="+duplicate",
-                principal=self.bug_owner, form=form, **extra)
+                self.bug.default_bugtask,
+                name="+duplicate",
+                principal=self.bug_owner,
+                form=form,
+                **extra,
+            )
             result_html = view.render()
 
         self.assertIsNone(self.bug.duplicateof)
         self.assertEqual(
-            view.request.response.getHeader('content-type'), 'text/html')
+            view.request.response.getHeader("content-type"), "text/html"
+        )
         soup = BeautifulSoup(result_html)
         table = soup.find(
-            'table',
-            {'id': 'affected-software', 'class': 'listing'})
+            "table", {"id": "affected-software", "class": "listing"}
+        )
         self.assertIsNotNone(table)
 
     def test_locked_target_owner(self):
@@ -815,10 +907,13 @@ class TestBugMarkAsDuplicateView(TestCaseWithFactory):
             form = {
                 "field.actions.change": "Set Duplicate",
                 "field.duplicateof": str(self.duplicate_bug.id),
-                }
+            }
             create_initialized_view(
-                self.bug.default_bugtask, name="+duplicate",
-                principal=target_owner, form=form)
+                self.bug.default_bugtask,
+                name="+duplicate",
+                principal=target_owner,
+                form=form,
+            )
         self.assertEqual(self.duplicate_bug, self.bug.duplicateof)
 
     def test_locked_unprivileged(self):
@@ -831,11 +926,15 @@ class TestBugMarkAsDuplicateView(TestCaseWithFactory):
             form = {
                 "field.actions.change": "Set Duplicate",
                 "field.duplicateof": str(self.duplicate_bug.id),
-                }
+            }
             self.assertRaises(
-                Unauthorized, create_initialized_view,
-                self.bug.default_bugtask, name="+duplicate",
-                principal=self.bug_owner, form=form)
+                Unauthorized,
+                create_initialized_view,
+                self.bug.default_bugtask,
+                name="+duplicate",
+                principal=self.bug_owner,
+                form=form,
+            )
 
 
 class TestBugActivityView(TestCaseWithFactory):
@@ -850,13 +949,20 @@ class TestBugActivityView(TestCaseWithFactory):
         with person_logged_in(bug.owner):
             attachment = self.factory.makeBugAttachment(bug=bug)
             for i in range(10):
-                bug.addChange(BugAttachmentChange(
-                    ten_minutes_ago, self.factory.makePerson(), 'attachment',
-                    None, attachment))
+                bug.addChange(
+                    BugAttachmentChange(
+                        ten_minutes_ago,
+                        self.factory.makePerson(),
+                        "attachment",
+                        None,
+                        attachment,
+                    )
+                )
         Store.of(bug).invalidate()
         with StormStatementRecorder() as recorder:
             view = create_initialized_view(
-                bug.default_bugtask, name='+activity')
+                bug.default_bugtask, name="+activity"
+            )
             view.render()
         self.assertThat(recorder, HasQueryCount(Equals(5)))
 
@@ -871,14 +977,18 @@ class TestMainBugView(BrowserTestCase):
         self.product_owner = self.factory.makePerson()
         self.proprietary_product = self.factory.makeProduct(
             owner=self.product_owner,
-            information_type=InformationType.PROPRIETARY)
+            information_type=InformationType.PROPRIETARY,
+        )
         with person_logged_in(self.product_owner):
             self.series = self.factory.makeProductSeries(
-                product=self.proprietary_product)
+                product=self.proprietary_product
+            )
             self.milestone = self.factory.makeMilestone(
-                product=self.proprietary_product)
+                product=self.proprietary_product
+            )
             self.bug = self.factory.makeBug(
-                target=self.proprietary_product, owner=self.product_owner)
+                target=self.proprietary_product, owner=self.product_owner
+            )
             self.bug.subscribe(self.user, subscribed_by=self.product_owner)
 
     def test_bug_page_user_with_aag_proprietary_product(self):
@@ -895,7 +1005,8 @@ class TestMainBugView(BrowserTestCase):
         # milestone.
         with person_logged_in(self.product_owner):
             self.bug.default_bugtask.transitionToMilestone(
-                self.milestone, self.product_owner)
+                self.milestone, self.product_owner
+            )
         with person_logged_in(self.user):
             url = canonical_url(self.bug)
             # No exception is raised when the page is rendered.
@@ -905,8 +1016,7 @@ class TestMainBugView(BrowserTestCase):
         # A user with an artifact grant for a bug targeted to a private
         # product series can view the bug page.
         with person_logged_in(self.product_owner):
-            self.factory.makeBugTask(
-                bug=self.bug, target=self.series)
+            self.factory.makeBugTask(bug=self.bug, target=self.series)
         with person_logged_in(self.user):
             url = canonical_url(self.bug)
             # No exception is raised when the page is rendered.

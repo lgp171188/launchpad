@@ -23,7 +23,7 @@ class TestModificationNotification(TestCaseWithFactory):
 
     def setUp(self):
         # Run the tests as a logged-in user.
-        super().setUp(user='test@canonical.com')
+        super().setUp(user="test@canonical.com")
         self.user = getUtility(ILaunchBag).user
         self.product = self.factory.makeProduct(owner=self.user)
         self.bug = self.factory.makeBug(target=self.product)
@@ -31,15 +31,22 @@ class TestModificationNotification(TestCaseWithFactory):
 
     def test_for_bug_modifier_header(self):
         """Test X-Launchpad-Bug-Modifier appears when a bug is modified."""
-        with notify_modified(self.bug_task, ['status'], user=self.user):
+        with notify_modified(self.bug_task, ["status"], user=self.user):
             self.bug_task.transitionToStatus(
-                BugTaskStatus.CONFIRMED, self.user)
+                BugTaskStatus.CONFIRMED, self.user
+            )
         transaction.commit()
-        latest_notification = IStore(BugNotification).find(
-            BugNotification).order_by(BugNotification.id).last()
+        latest_notification = (
+            IStore(BugNotification)
+            .find(BugNotification)
+            .order_by(BugNotification.id)
+            .last()
+        )
         notifications, omitted, messages = construct_email_notifications(
-            [latest_notification])
-        self.assertEqual(len(notifications), 1,
-                         'email notification not created')
-        headers = [msg['X-Launchpad-Bug-Modifier'] for msg in messages]
+            [latest_notification]
+        )
+        self.assertEqual(
+            len(notifications), 1, "email notification not created"
+        )
+        headers = [msg["X-Launchpad-Bug-Modifier"] for msg in messages]
         self.assertEqual(len(headers), len(messages))
