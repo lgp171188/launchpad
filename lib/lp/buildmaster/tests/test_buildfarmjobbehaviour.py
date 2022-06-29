@@ -3,12 +3,12 @@
 
 """Unit tests for BuildFarmJobBehaviourBase."""
 
-from collections import OrderedDict
-from datetime import datetime
 import hashlib
 import os
 import shutil
 import tempfile
+from collections import OrderedDict
+from datetime import datetime
 
 import six
 from testtools import ExpectedException
@@ -18,37 +18,31 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.archiveuploader.uploadprocessor import parse_build_upload_leaf_name
-from lp.buildmaster.enums import (
-    BuildBaseImageType,
-    BuildStatus,
-    )
+from lp.buildmaster.enums import BuildBaseImageType, BuildStatus
 from lp.buildmaster.interactor import (
     BuilderInteractor,
     shut_down_default_process_pool,
-    )
+)
 from lp.buildmaster.interfaces.builder import BuildDaemonError
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
-    )
+)
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
-    )
+)
 from lp.buildmaster.tests.mock_workers import (
     MockBuilder,
     OkWorker,
     WaitingWorker,
-    )
+)
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
 from lp.services.statsd.tests import StatsMixin
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
-from lp.testing import (
-    TestCase,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCase, TestCaseWithFactory
 from lp.testing.dbuser import dbuser
 from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.fakemethod import FakeMethod
@@ -56,49 +50,46 @@ from lp.testing.layers import (
     LaunchpadZopelessLayer,
     ZopelessDatabaseLayer,
     ZopelessLayer,
-    )
+)
 from lp.testing.mail_helpers import pop_notifications
 
 
 class FakeBuildFarmJob:
     """Dummy BuildFarmJob."""
 
-    build_cookie = 'PACKAGEBUILD-1'
-    title = 'some job for something'
+    build_cookie = "PACKAGEBUILD-1"
+    title = "some job for something"
 
 
 class FakeLibraryFileContent:
-
     def __init__(self, filename):
         self.sha1 = hashlib.sha1(six.ensure_binary(filename)).hexdigest()
 
 
 class FakeLibraryFileAlias:
-
     def __init__(self, filename):
         self.filename = filename
         self.content = FakeLibraryFileContent(filename)
-        self.http_url = 'http://librarian.test/%s' % filename
+        self.http_url = "http://librarian.test/%s" % filename
 
 
 class FakePocketChroot:
-
     def __init__(self, chroot, image_type):
         self.chroot = chroot
         self.image_type = image_type
 
 
 class FakeDistroArchSeries:
-
     def __init__(self):
         self.images = {
-            BuildBaseImageType.CHROOT: 'chroot-fooix-bar-y86.tar.gz',
-            }
+            BuildBaseImageType.CHROOT: "chroot-fooix-bar-y86.tar.gz",
+        }
 
     def getPocketChroot(self, pocket, exact_pocket=False, image_type=None):
         if image_type in self.images:
             return FakePocketChroot(
-                FakeLibraryFileAlias(self.images[image_type]), image_type)
+                FakeLibraryFileAlias(self.images[image_type]), image_type
+            )
         else:
             return None
 
@@ -118,17 +109,21 @@ class TestBuildFarmJobBehaviourBase(TestCaseWithFactory):
 
     def _makeBuild(self):
         """Create a `Build` object."""
-        x86 = getUtility(IProcessorSet).getByName('386')
+        x86 = getUtility(IProcessorSet).getByName("386")
         distroarchseries = self.factory.makeDistroArchSeries(
-            architecturetag='x86', processor=x86)
+            architecturetag="x86", processor=x86
+        )
         distroseries = distroarchseries.distroseries
         archive = self.factory.makeArchive(
-            distribution=distroseries.distribution)
+            distribution=distroseries.distribution
+        )
         pocket = PackagePublishingPocket.RELEASE
         spr = self.factory.makeSourcePackageRelease(
-            distroseries=distroseries, archive=archive)
+            distroseries=distroseries, archive=archive
+        )
         return getUtility(IBinaryPackageBuildSet).new(
-            spr, archive, distroarchseries, pocket)
+            spr, archive, distroarchseries, pocket
+        )
 
     def test_getUploadDirLeaf(self):
         # getUploadDirLeaf returns the current time, followed by the build
@@ -136,10 +131,12 @@ class TestBuildFarmJobBehaviourBase(TestCaseWithFactory):
         now = datetime.now()
         build_cookie = self.factory.getUniqueString()
         upload_leaf = self._makeBehaviour().getUploadDirLeaf(
-            build_cookie, now=now)
+            build_cookie, now=now
+        )
         self.assertEqual(
-            '%s-%s' % (now.strftime("%Y%m%d-%H%M%S"), build_cookie),
-            upload_leaf)
+            "%s-%s" % (now.strftime("%Y%m%d-%H%M%S"), build_cookie),
+            upload_leaf,
+        )
 
     def test_extraBuildArgs_virtualized(self):
         # If the builder is virtualized, extraBuildArgs sends
@@ -161,15 +158,18 @@ class TestBuildFarmJobBehaviourBase(TestCaseWithFactory):
         worker_status = {"build_status": "BuildStatus.BUILDING"}
         self.assertEqual(
             "BUILDING",
-            BuildFarmJobBehaviourBase.extractBuildStatus(worker_status))
+            BuildFarmJobBehaviourBase.extractBuildStatus(worker_status),
+        )
 
     def test_extractBuildStatus_malformed(self):
         # extractBuildStatus errors out when the status string is not
         # of the form it expects.
         worker_status = {"build_status": "BUILDING"}
         self.assertRaises(
-            AssertionError, BuildFarmJobBehaviourBase.extractBuildStatus,
-            worker_status)
+            AssertionError,
+            BuildFarmJobBehaviourBase.extractBuildStatus,
+            worker_status,
+        )
 
 
 class TestDispatchBuildToWorker(StatsMixin, TestCase):
@@ -178,33 +178,58 @@ class TestDispatchBuildToWorker(StatsMixin, TestCase):
     run_tests_with = AsynchronousDeferredRunTest
 
     def makeBehaviour(self, das):
-        files = OrderedDict([
-            ('foo.dsc', {'url': 'http://host/foo.dsc', 'sha1': '0'}),
-            ('bar.tar', {
-                'url': 'http://host/bar.tar', 'sha1': '0',
-                'username': 'admin', 'password': 'sekrit'}),
-            ])
+        files = OrderedDict(
+            [
+                ("foo.dsc", {"url": "http://host/foo.dsc", "sha1": "0"}),
+                (
+                    "bar.tar",
+                    {
+                        "url": "http://host/bar.tar",
+                        "sha1": "0",
+                        "username": "admin",
+                        "password": "sekrit",
+                    },
+                ),
+            ]
+        )
 
         behaviour = BuildFarmJobBehaviourBase(FakeBuildFarmJob())
         behaviour.composeBuildRequest = FakeMethod(
-            ('foobuild', das, PackagePublishingPocket.RELEASE, files,
-             {'some': 'arg', 'archives': ['http://admin:sekrit@blah/']}))
+            (
+                "foobuild",
+                das,
+                PackagePublishingPocket.RELEASE,
+                files,
+                {"some": "arg", "archives": ["http://admin:sekrit@blah/"]},
+            )
+        )
         return behaviour
 
     def assertDispatched(self, worker, logger, chroot_filename, image_type):
         # The worker's been asked to cache the chroot and both source
         # files, and then to start the build.
         expected_calls = [
-            ('ensurepresent',
-             'http://librarian.test/%s' % chroot_filename, '', ''),
-            ('ensurepresent', 'http://host/foo.dsc', '', ''),
-            ('ensurepresent', 'http://host/bar.tar', 'admin', 'sekrit'),
-            ('build', 'PACKAGEBUILD-1', 'foobuild',
-             hashlib.sha1(six.ensure_binary(chroot_filename)).hexdigest(),
-             ['foo.dsc', 'bar.tar'],
-             {'archives': ['http://admin:sekrit@blah/'],
-              'image_type': image_type,
-              'some': 'arg'})]
+            (
+                "ensurepresent",
+                "http://librarian.test/%s" % chroot_filename,
+                "",
+                "",
+            ),
+            ("ensurepresent", "http://host/foo.dsc", "", ""),
+            ("ensurepresent", "http://host/bar.tar", "admin", "sekrit"),
+            (
+                "build",
+                "PACKAGEBUILD-1",
+                "foobuild",
+                hashlib.sha1(six.ensure_binary(chroot_filename)).hexdigest(),
+                ["foo.dsc", "bar.tar"],
+                {
+                    "archives": ["http://admin:sekrit@blah/"],
+                    "image_type": image_type,
+                    "some": "arg",
+                },
+            ),
+        ]
         self.assertEqual(expected_calls, worker.call_log)
 
         # And details have been logged, including the build arguments
@@ -214,13 +239,15 @@ class TestDispatchBuildToWorker(StatsMixin, TestCase):
             "INFO Preparing job PACKAGEBUILD-1 (some job for something) on "
             "http://fake:0000.\n"
             "INFO Dispatching job PACKAGEBUILD-1 (some job for something) to "
-            "http://fake:0000:\n{")
-        self.assertIn('http://<redacted>@blah/', logger.getLogBuffer())
-        self.assertNotIn('sekrit', logger.getLogBuffer())
+            "http://fake:0000:\n{",
+        )
+        self.assertIn("http://<redacted>@blah/", logger.getLogBuffer())
+        self.assertNotIn("sekrit", logger.getLogBuffer())
         self.assertEndsWith(
             logger.getLogBuffer(),
             "INFO Job PACKAGEBUILD-1 (some job for something) started on "
-            "http://fake:0000: BuildStatus.BUILDING PACKAGEBUILD-1\n")
+            "http://fake:0000: BuildStatus.BUILDING PACKAGEBUILD-1\n",
+        )
 
     @defer.inlineCallbacks
     def test_dispatchBuildToWorker(self):
@@ -232,14 +259,15 @@ class TestDispatchBuildToWorker(StatsMixin, TestCase):
         yield behaviour.dispatchBuildToWorker(logger)
 
         self.assertDispatched(
-            worker, logger, 'chroot-fooix-bar-y86.tar.gz', 'chroot')
+            worker, logger, "chroot-fooix-bar-y86.tar.gz", "chroot"
+        )
 
     @defer.inlineCallbacks
     def test_dispatchBuildToWorker_with_other_image_available(self):
         # If a base image is available but isn't in the behaviour's image
         # types, it isn't used.
         das = FakeDistroArchSeries()
-        das.images[BuildBaseImageType.LXD] = 'lxd-fooix-bar-y86.tar.gz'
+        das.images[BuildBaseImageType.LXD] = "lxd-fooix-bar-y86.tar.gz"
         behaviour = self.makeBehaviour(das)
         builder = MockBuilder()
         worker = OkWorker()
@@ -248,15 +276,18 @@ class TestDispatchBuildToWorker(StatsMixin, TestCase):
         yield behaviour.dispatchBuildToWorker(logger)
 
         self.assertDispatched(
-            worker, logger, 'chroot-fooix-bar-y86.tar.gz', 'chroot')
+            worker, logger, "chroot-fooix-bar-y86.tar.gz", "chroot"
+        )
 
     @defer.inlineCallbacks
     def test_dispatchBuildToWorker_lxd(self):
         das = FakeDistroArchSeries()
-        das.images[BuildBaseImageType.LXD] = 'lxd-fooix-bar-y86.tar.gz'
+        das.images[BuildBaseImageType.LXD] = "lxd-fooix-bar-y86.tar.gz"
         behaviour = self.makeBehaviour(das)
         behaviour.image_types = [
-            BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
+            BuildBaseImageType.LXD,
+            BuildBaseImageType.CHROOT,
+        ]
         builder = MockBuilder()
         worker = OkWorker()
         logger = BufferLogger()
@@ -264,13 +295,16 @@ class TestDispatchBuildToWorker(StatsMixin, TestCase):
         yield behaviour.dispatchBuildToWorker(logger)
 
         self.assertDispatched(
-            worker, logger, 'lxd-fooix-bar-y86.tar.gz', 'lxd')
+            worker, logger, "lxd-fooix-bar-y86.tar.gz", "lxd"
+        )
 
     @defer.inlineCallbacks
     def test_dispatchBuildToWorker_fallback(self):
         behaviour = self.makeBehaviour(FakeDistroArchSeries())
         behaviour.image_types = [
-            BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
+            BuildBaseImageType.LXD,
+            BuildBaseImageType.CHROOT,
+        ]
         builder = MockBuilder()
         worker = OkWorker()
         logger = BufferLogger()
@@ -278,7 +312,8 @@ class TestDispatchBuildToWorker(StatsMixin, TestCase):
         yield behaviour.dispatchBuildToWorker(logger)
 
         self.assertDispatched(
-            worker, logger, 'chroot-fooix-bar-y86.tar.gz', 'chroot')
+            worker, logger, "chroot-fooix-bar-y86.tar.gz", "chroot"
+        )
 
     @defer.inlineCallbacks
     def test_dispatchBuildToWorker_stats(self):
@@ -292,8 +327,11 @@ class TestDispatchBuildToWorker(StatsMixin, TestCase):
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ('build.count,builder_name=mock-builder,env=test,'
-             'job_type=UNKNOWN',))
+            (
+                "build.count,builder_name=mock-builder,env=test,"
+                "job_type=UNKNOWN",
+            ),
+        )
 
 
 class TestGetUploadMethodsMixin:
@@ -309,7 +347,8 @@ class TestGetUploadMethodsMixin:
         super().setUp()
         self.build = self.makeBuild()
         self.behaviour = IBuildFarmJobBehaviour(
-            self.build.buildqueue_record.specific_build)
+            self.build.buildqueue_record.specific_build
+        )
 
     def test_getUploadDirLeafCookie_parseable(self):
         # getUploadDirLeaf should return a directory name
@@ -317,7 +356,8 @@ class TestGetUploadMethodsMixin:
         upload_leaf = self.behaviour.getUploadDirLeaf(self.build.build_cookie)
         (job_type, job_id) = parse_build_upload_leaf_name(upload_leaf)
         self.assertEqual(
-            (self.build.job_type.name, self.build.id), (job_type, job_id))
+            (self.build.job_type.name, self.build.id), (job_type, job_id)
+        )
 
 
 class TestVerifySuccessfulBuildMixin:
@@ -338,7 +378,8 @@ class TestVerifySuccessfulBuildMixin:
         # says is modifiable.
         build = self.makeBuild()
         behaviour = IBuildFarmJobBehaviour(
-            build.buildqueue_record.specific_build)
+            build.buildqueue_record.specific_build
+        )
         behaviour.verifySuccessfulBuild()
 
     def test_verifySuccessfulBuild_denies_unmodifiable_suite(self):
@@ -346,7 +387,8 @@ class TestVerifySuccessfulBuildMixin:
         # archive says is unmodifiable.
         build = self.makeUnmodifiableBuild()
         behaviour = IBuildFarmJobBehaviour(
-            build.buildqueue_record.specific_build)
+            build.buildqueue_record.specific_build
+        )
         self.assertRaises(AssertionError, behaviour.verifySuccessfulBuild)
 
 
@@ -368,32 +410,38 @@ class TestHandleStatusMixin:
         # handleStatus_OK can get a reference to the worker.
         self.builder = self.factory.makeBuilder()
         self.build.buildqueue_record.markAsBuilding(self.builder)
-        self.worker = WaitingWorker('BuildStatus.OK')
-        self.worker.valid_files['test_file_hash'] = ''
+        self.worker = WaitingWorker("BuildStatus.OK")
+        self.worker.valid_files["test_file_hash"] = ""
         self.interactor = BuilderInteractor()
         self.behaviour = self.interactor.getBuildBehaviour(
-            self.build.buildqueue_record, self.builder, self.worker)
+            self.build.buildqueue_record, self.builder, self.worker
+        )
         self.addCleanup(shut_down_default_process_pool)
 
         # We overwrite the buildmaster root to use a temp directory.
         tempdir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tempdir)
         self.upload_root = tempdir
-        tmp_builddmaster_root = """
+        tmp_builddmaster_root = (
+            """
         [builddmaster]
         root: %s
-        """ % self.upload_root
-        config.push('tmp_builddmaster_root', tmp_builddmaster_root)
+        """
+            % self.upload_root
+        )
+        config.push("tmp_builddmaster_root", tmp_builddmaster_root)
 
         # We stub out our builds getUploaderCommand() method so
         # we can check whether it was called as well as
         # verifySuccessfulUpload().
         removeSecurityProxy(self.build).verifySuccessfulUpload = FakeMethod(
-            result=True)
+            result=True
+        )
 
     def assertResultCount(self, count, result):
         self.assertEqual(
-            1, len(os.listdir(os.path.join(self.upload_root, result))))
+            1, len(os.listdir(os.path.join(self.upload_root, result)))
+        )
 
     @defer.inlineCallbacks
     def test_handleStatus_BUILDING(self):
@@ -406,17 +454,23 @@ class TestHandleStatusMixin:
         removeSecurityProxy(self.build).updateStatus = FakeMethod()
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
-                self.build.buildqueue_record, worker_status)
+                self.build.buildqueue_record, worker_status
+            )
         self.assertEqual(None, self.build.log)
         self.assertEqual(0, len(os.listdir(self.upload_root)))
         self.assertEqual(
-            [((initial_status,),
-              {"builder": self.builder, "worker_status": worker_status})],
-            removeSecurityProxy(self.build).updateStatus.calls)
+            [
+                (
+                    (initial_status,),
+                    {"builder": self.builder, "worker_status": worker_status},
+                )
+            ],
+            removeSecurityProxy(self.build).updateStatus.calls,
+        )
         self.assertEqual(0, len(pop_notifications()), "Notifications received")
         self.assertEqual(
-            self.build.buildqueue_record,
-            getUtility(IBuildQueueSet).get(bq_id))
+            self.build.buildqueue_record, getUtility(IBuildQueueSet).get(bq_id)
+        )
 
     @defer.inlineCallbacks
     def test_handleStatus_WAITING_OK_normal_file(self):
@@ -426,9 +480,12 @@ class TestHandleStatusMixin:
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
                 self.build.buildqueue_record,
-                {'builder_status': 'BuilderStatus.WAITING',
-                 'build_status': 'BuildStatus.OK',
-                 'filemap': {'myfile.py': 'test_file_hash'}})
+                {
+                    "builder_status": "BuilderStatus.WAITING",
+                    "build_status": "BuildStatus.OK",
+                    "filemap": {"myfile.py": "test_file_hash"},
+                },
+            )
         self.assertEqual(BuildStatus.UPLOADING, self.build.status)
         self.assertResultCount(1, "incoming")
 
@@ -437,28 +494,34 @@ class TestHandleStatusMixin:
         # A filemap that tries to write to files outside of the upload
         # directory will not be collected.
         with ExpectedException(
-                BuildDaemonError,
-                "Build returned a file named '/tmp/myfile.py'."):
+            BuildDaemonError, "Build returned a file named '/tmp/myfile.py'."
+        ):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record,
-                    {'builder_status': 'BuilderStatus.WAITING',
-                     'build_status': 'BuildStatus.OK',
-                     'filemap': {'/tmp/myfile.py': 'test_file_hash'}})
+                    {
+                        "builder_status": "BuilderStatus.WAITING",
+                        "build_status": "BuildStatus.OK",
+                        "filemap": {"/tmp/myfile.py": "test_file_hash"},
+                    },
+                )
 
     @defer.inlineCallbacks
     def test_handleStatus_WAITING_OK_relative_filepath(self):
         # A filemap that tries to write to files outside of
         # the upload directory will not be collected.
         with ExpectedException(
-                BuildDaemonError,
-                "Build returned a file named '../myfile.py'."):
+            BuildDaemonError, "Build returned a file named '../myfile.py'."
+        ):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record,
-                    {'builder_status': 'BuilderStatus.WAITING',
-                     'build_status': 'BuildStatus.OK',
-                     'filemap': {'../myfile.py': 'test_file_hash'}})
+                    {
+                        "builder_status": "BuilderStatus.WAITING",
+                        "build_status": "BuildStatus.OK",
+                        "filemap": {"../myfile.py": "test_file_hash"},
+                    },
+                )
 
     @defer.inlineCallbacks
     def test_handleStatus_WAITING_OK_sets_build_log(self):
@@ -467,9 +530,12 @@ class TestHandleStatusMixin:
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
                 self.build.buildqueue_record,
-                {'builder_status': 'BuilderStatus.WAITING',
-                 'build_status': 'BuildStatus.OK',
-                 'filemap': {'myfile.py': 'test_file_hash'}})
+                {
+                    "builder_status": "BuilderStatus.WAITING",
+                    "build_status": "BuildStatus.OK",
+                    "filemap": {"myfile.py": "test_file_hash"},
+                },
+            )
         self.assertNotEqual(None, self.build.log)
 
     @defer.inlineCallbacks
@@ -477,20 +543,26 @@ class TestHandleStatusMixin:
         # An email notification is sent for a given build status if
         # notifications are allowed for that status.
         expected_notification = (
-            status in self.behaviour.ALLOWED_STATUS_NOTIFICATIONS)
+            status in self.behaviour.ALLOWED_STATUS_NOTIFICATIONS
+        )
 
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
                 self.build.buildqueue_record,
-                {'builder_status': 'BuilderStatus.WAITING',
-                 'build_status': 'BuildStatus.%s' % status})
+                {
+                    "builder_status": "BuilderStatus.WAITING",
+                    "build_status": "BuildStatus.%s" % status,
+                },
+            )
 
         if expected_notification:
             self.assertNotEqual(
-                0, len(pop_notifications()), "Notifications received")
+                0, len(pop_notifications()), "Notifications received"
+            )
         else:
             self.assertEqual(
-                0, len(pop_notifications()), "Notifications received")
+                0, len(pop_notifications()), "Notifications received"
+            )
 
     def test_handleStatus_WAITING_DEPFAIL_notifies(self):
         return self._test_handleStatus_WAITING_notifies("DEPFAIL")
@@ -507,8 +579,11 @@ class TestHandleStatusMixin:
             self.build.updateStatus(BuildStatus.CANCELLING)
             yield self.behaviour.handleStatus(
                 self.build.buildqueue_record,
-                {"builder_status": "BuilderStatus.WAITING",
-                 "build_status": "BuildStatus.ABORTED"})
+                {
+                    "builder_status": "BuilderStatus.WAITING",
+                    "build_status": "BuildStatus.ABORTED",
+                },
+            )
         self.assertEqual(0, len(pop_notifications()), "Notifications received")
         self.assertEqual(BuildStatus.CANCELLED, self.build.status)
 
@@ -516,16 +591,21 @@ class TestHandleStatusMixin:
     def test_handleStatus_WAITING_ABORTED_illegal_when_building(self):
         self.builder.vm_host = "fake_vm_host"
         self.behaviour = self.interactor.getBuildBehaviour(
-            self.build.buildqueue_record, self.builder, self.worker)
+            self.build.buildqueue_record, self.builder, self.worker
+        )
         with dbuser(config.builddmaster.dbuser):
             self.build.updateStatus(BuildStatus.BUILDING)
             with ExpectedException(
-                    BuildDaemonError,
-                    "Build returned unexpected status: %r" % 'ABORTED'):
+                BuildDaemonError,
+                "Build returned unexpected status: %r" % "ABORTED",
+            ):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record,
-                    {"builder_status": "BuilderStatus.WAITING",
-                     "build_status": "BuildStatus.ABORTED"})
+                    {
+                        "builder_status": "BuilderStatus.WAITING",
+                        "build_status": "BuildStatus.ABORTED",
+                    },
+                )
 
     @defer.inlineCallbacks
     def test_handleStatus_WAITING_ABORTED_cancelling_sets_build_log(self):
@@ -535,8 +615,11 @@ class TestHandleStatusMixin:
             self.build.updateStatus(BuildStatus.CANCELLING)
             yield self.behaviour.handleStatus(
                 self.build.buildqueue_record,
-                {"builder_status": "BuilderStatus.WAITING",
-                 "build_status": "BuildStatus.ABORTED"})
+                {
+                    "builder_status": "BuilderStatus.WAITING",
+                    "build_status": "BuildStatus.ABORTED",
+                },
+            )
         self.assertNotEqual(None, self.build.log)
 
     @defer.inlineCallbacks
@@ -546,40 +629,54 @@ class TestHandleStatusMixin:
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
                 self.build.buildqueue_record,
-                {'builder_status': 'BuilderStatus.WAITING',
-                 'build_status': 'BuildStatus.OK',
-                 'filemap': {'myfile.py': 'test_file_hash'}})
+                {
+                    "builder_status": "BuilderStatus.WAITING",
+                    "build_status": "BuildStatus.OK",
+                    "filemap": {"myfile.py": "test_file_hash"},
+                },
+            )
         self.assertNotEqual(None, self.build.date_finished)
 
     @defer.inlineCallbacks
     def test_givenback_collection(self):
         with ExpectedException(
-                BuildDaemonError,
-                "Build returned unexpected status: %r" % 'GIVENBACK'):
+            BuildDaemonError,
+            "Build returned unexpected status: %r" % "GIVENBACK",
+        ):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record,
-                    {"builder_status": "BuilderStatus.WAITING",
-                     "build_status": "BuildStatus.GIVENBACK"})
+                    {
+                        "builder_status": "BuilderStatus.WAITING",
+                        "build_status": "BuildStatus.GIVENBACK",
+                    },
+                )
 
     @defer.inlineCallbacks
     def test_builderfail_collection(self):
         with ExpectedException(
-                BuildDaemonError,
-                "Build returned unexpected status: %r" % 'BUILDERFAIL'):
+            BuildDaemonError,
+            "Build returned unexpected status: %r" % "BUILDERFAIL",
+        ):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record,
-                    {"builder_status": "BuilderStatus.WAITING",
-                     "build_status": "BuildStatus.BUILDERFAIL"})
+                    {
+                        "builder_status": "BuilderStatus.WAITING",
+                        "build_status": "BuildStatus.BUILDERFAIL",
+                    },
+                )
 
     @defer.inlineCallbacks
     def test_invalid_status_collection(self):
         with ExpectedException(
-                BuildDaemonError,
-                "Build returned unexpected status: %r" % 'BORKED'):
+            BuildDaemonError, "Build returned unexpected status: %r" % "BORKED"
+        ):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record,
-                    {"builder_status": "BuilderStatus.WAITING",
-                     "build_status": "BuildStatus.BORKED"})
+                    {
+                        "builder_status": "BuilderStatus.WAITING",
+                        "build_status": "BuildStatus.BORKED",
+                    },
+                )

@@ -13,13 +13,15 @@ class TestProcessorNavigation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_processor_url(self):
-        quantum = self.factory.makeProcessor('quantum')
+        quantum = self.factory.makeProcessor("quantum")
         self.assertEqual(
-            '/+processors/quantum',
-            canonical_url(quantum, force_local_path=True))
+            "/+processors/quantum",
+            canonical_url(quantum, force_local_path=True),
+        )
 
     def test_processor_navigation(self):
-        quantum = self.factory.makeProcessor('quantum')
+        quantum = self.factory.makeProcessor("quantum")
         obj, view, request = test_traverse(
-            'http://api.launchpad.test/devel/+processors/quantum')
+            "http://api.launchpad.test/devel/+processors/quantum"
+        )
         self.assertEqual(quantum, obj)

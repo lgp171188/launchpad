@@ -4,25 +4,21 @@
 """Interface for package-specific builds."""
 
 __all__ = [
-    'IPackageBuild',
-    'IPackageBuildView',
-    ]
+    "IPackageBuild",
+    "IPackageBuildView",
+]
 
 
 from lazr.restful.declarations import exported
 from lazr.restful.fields import Reference
 from zope.interface import Attribute
-from zope.schema import (
-    Choice,
-    Object,
-    TextLine,
-    )
+from zope.schema import Choice, Object, TextLine
 
 from lp import _
 from lp.buildmaster.interfaces.buildfarmjob import (
     IBuildFarmJob,
     IBuildFarmJobView,
-    )
+)
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -35,43 +31,66 @@ class IPackageBuildView(IBuildFarmJobView):
 
     archive = exported(
         Reference(
-            title=_('Archive'), schema=IArchive,
-            required=True, readonly=True,
-            description=_('The Archive context for this build.')))
+            title=_("Archive"),
+            schema=IArchive,
+            required=True,
+            readonly=True,
+            description=_("The Archive context for this build."),
+        )
+    )
 
     pocket = exported(
         Choice(
-            title=_('Pocket'), required=True,
+            title=_("Pocket"),
+            required=True,
             vocabulary=PackagePublishingPocket,
-            description=_('The build targeted pocket.')))
+            description=_("The build targeted pocket."),
+        )
+    )
 
     upload_log = Object(
-        schema=ILibraryFileAlias, required=False,
-        title=_('The LibraryFileAlias containing the upload log for a'
-                'build resulting in an upload that could not be processed '
-                'successfully. Otherwise it will be None.'))
+        schema=ILibraryFileAlias,
+        required=False,
+        title=_(
+            "The LibraryFileAlias containing the upload log for a"
+            "build resulting in an upload that could not be processed "
+            "successfully. Otherwise it will be None."
+        ),
+    )
 
     upload_log_url = exported(
         TextLine(
-            title=_("Upload Log URL"), required=False,
-            description=_("A URL for failed upload logs."
-                          "Will be None if there was no failure.")))
+            title=_("Upload Log URL"),
+            required=False,
+            description=_(
+                "A URL for failed upload logs."
+                "Will be None if there was no failure."
+            ),
+        )
+    )
 
     current_component = Attribute(
-        'Component where the source related to this build was last '
-        'published.')
+        "Component where the source related to this build was last "
+        "published."
+    )
 
     distribution = exported(
         Reference(
             schema=IDistribution,
-            title=_("Distribution"), required=True,
-            description=_("Shortcut for its distribution.")))
+            title=_("Distribution"),
+            required=True,
+            description=_("Shortcut for its distribution."),
+        )
+    )
 
     distro_series = exported(
         Reference(
             schema=IDistroSeries,
-            title=_("Distribution series"), required=True,
-            description=_("Shortcut for its distribution series.")))
+            title=_("Distribution series"),
+            required=True,
+            description=_("Shortcut for its distribution series."),
+        )
+    )
 
     def verifySuccessfulUpload() -> bool:
         """Verify that the upload of this build completed successfully."""
