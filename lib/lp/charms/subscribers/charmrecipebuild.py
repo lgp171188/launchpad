@@ -6,9 +6,7 @@
 from zope.component import getUtility
 
 from lp.buildmaster.enums import BuildStatus
-from lp.charms.interfaces.charmrecipe import (
-    CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
-    )
+from lp.charms.interfaces.charmrecipe import CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
 from lp.charms.interfaces.charmrecipebuildjob import ICharmhubUploadJobSource
 from lp.services.features import getFeatureFlag
@@ -23,12 +21,17 @@ def _trigger_charm_recipe_build_webhook(build, action):
         payload = {
             "recipe_build": canonical_url(build, force_local_path=True),
             "action": action,
-            }
-        payload.update(compose_webhook_payload(
-            ICharmRecipeBuild, build,
-            ["recipe", "build_request", "status", "store_upload_status"]))
+        }
+        payload.update(
+            compose_webhook_payload(
+                ICharmRecipeBuild,
+                build,
+                ["recipe", "build_request", "status", "store_upload_status"],
+            )
+        )
         getUtility(IWebhookSet).trigger(
-            build.recipe, "charm-recipe:build:0.1", payload)
+            build.recipe, "charm-recipe:build:0.1", payload
+        )
 
 
 def charm_recipe_build_created(build, event):
@@ -41,16 +44,20 @@ def charm_recipe_build_modified(build, event):
     if event.edited_fields is not None:
         status_changed = "status" in event.edited_fields
         store_upload_status_changed = (
-            "store_upload_status" in event.edited_fields)
+            "store_upload_status" in event.edited_fields
+        )
         if status_changed or store_upload_status_changed:
             _trigger_charm_recipe_build_webhook(build, "status-changed")
         if status_changed:
             if build.status == BuildStatus.FULLYBUILT:
-                if (build.recipe.can_upload_to_store and
-                        build.recipe.store_upload):
+                if (
+                    build.recipe.can_upload_to_store
+                    and build.recipe.store_upload
+                ):
                     log.info("Scheduling upload of %r to the store." % build)
                     getUtility(ICharmhubUploadJobSource).create(build)
                 else:
                     log.info(
-                        "%r is not configured for upload to the store." %
-                        build.recipe)
+                        "%r is not configured for upload to the store."
+                        % build.recipe
+                    )

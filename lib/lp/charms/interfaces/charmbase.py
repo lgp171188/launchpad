@@ -8,11 +8,12 @@ __all__ = [
     "ICharmBase",
     "ICharmBaseSet",
     "NoSuchCharmBase",
-    ]
+]
 
 import http.client
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     collection_default_content,
     error_status,
@@ -26,20 +27,10 @@ from lazr.restful.declarations import (
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
-    REQUEST_USER,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference
 from zope.interface import Interface
-from zope.schema import (
-    Datetime,
-    Dict,
-    Int,
-    List,
-    TextLine,
-    )
+from zope.schema import Datetime, Dict, Int, List, TextLine
 
 from lp import _
 from lp.app.errors import NotFoundError
@@ -54,7 +45,8 @@ class DuplicateCharmBase(Exception):
 
     def __init__(self, distro_series):
         super().__init__(
-            "%s is already in use by another base." % distro_series)
+            "%s is already in use by another base." % distro_series
+        )
 
 
 class NoSuchCharmBase(NotFoundError):
@@ -73,23 +65,37 @@ class ICharmBaseView(Interface):
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    date_created = exported(Datetime(
-        title=_("Date created"), required=True, readonly=True))
+    date_created = exported(
+        Datetime(title=_("Date created"), required=True, readonly=True)
+    )
 
-    registrant = exported(PublicPersonChoice(
-        title=_("Registrant"), required=True, readonly=True,
-        vocabulary="ValidPersonOrTeam",
-        description=_("The person who registered this base.")))
+    registrant = exported(
+        PublicPersonChoice(
+            title=_("Registrant"),
+            required=True,
+            readonly=True,
+            vocabulary="ValidPersonOrTeam",
+            description=_("The person who registered this base."),
+        )
+    )
 
-    distro_series = exported(Reference(
-        IDistroSeries, title=_("Distro series"),
-        required=True, readonly=True))
+    distro_series = exported(
+        Reference(
+            IDistroSeries,
+            title=_("Distro series"),
+            required=True,
+            readonly=True,
+        )
+    )
 
-    processors = exported(CollectionField(
-        title=_("Processors"),
-        description=_("The architectures that the charm base supports."),
-        value_type=Reference(schema=IProcessor),
-        readonly=True))
+    processors = exported(
+        CollectionField(
+            title=_("Processors"),
+            description=_("The architectures that the charm base supports."),
+            value_type=Reference(schema=IProcessor),
+            readonly=True,
+        )
+    )
 
 
 class ICharmBaseEditableAttributes(Interface):
@@ -98,24 +104,30 @@ class ICharmBaseEditableAttributes(Interface):
     Anyone can view these attributes, but they need launchpad.Edit to change.
     """
 
-    build_snap_channels = exported(Dict(
-        title=_("Source snap channels for builds"),
-        key_type=TextLine(), required=True, readonly=False,
-        description=_(
-            "A dictionary mapping snap names to channels to use when building "
-            "charm recipes that specify this base.  The special '_byarch' key "
-            "may have a mapping of architecture names to mappings of snap "
-            "names to channels, which if present override the channels "
-            "declared at the top level when building for those "
-            "architectures.")))
+    build_snap_channels = exported(
+        Dict(
+            title=_("Source snap channels for builds"),
+            key_type=TextLine(),
+            required=True,
+            readonly=False,
+            description=_(
+                "A dictionary mapping snap names to channels to use when "
+                "building charm recipes that specify this base.  The special "
+                "'_byarch' key may have a mapping of architecture names to "
+                "mappings of snap names to channels, which if present "
+                "override the channels declared at the top level when "
+                "building for those architectures."
+            ),
+        )
+    )
 
 
 class ICharmBaseEdit(Interface):
     """`ICharmBase` methods that require launchpad.Edit permission."""
 
     @operation_parameters(
-        processors=List(
-            value_type=Reference(schema=IProcessor), required=True))
+        processors=List(value_type=Reference(schema=IProcessor), required=True)
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def setProcessors(processors):
@@ -141,12 +153,20 @@ class ICharmBaseSetEdit(Interface):
     @call_with(registrant=REQUEST_USER)
     @operation_parameters(
         processors=List(
-            value_type=Reference(schema=IProcessor), required=False))
+            value_type=Reference(schema=IProcessor), required=False
+        )
+    )
     @export_factory_operation(
-        ICharmBase, ["distro_series", "build_snap_channels"])
+        ICharmBase, ["distro_series", "build_snap_channels"]
+    )
     @operation_for_version("devel")
-    def new(registrant, distro_series, build_snap_channels, processors=None,
-            date_created=None):
+    def new(
+        registrant,
+        distro_series,
+        build_snap_channels,
+        processors=None,
+        date_created=None,
+    ):
         """Create an `ICharmBase`."""
 
 
@@ -162,7 +182,9 @@ class ICharmBaseSet(ICharmBaseSetEdit):
 
     @operation_parameters(
         distro_series=Reference(
-            schema=IDistroSeries, title=_("Distro series"), required=True))
+            schema=IDistroSeries, title=_("Distro series"), required=True
+        )
+    )
     @operation_returns_entry(ICharmBase)
     @export_read_operation()
     @operation_for_version("devel")

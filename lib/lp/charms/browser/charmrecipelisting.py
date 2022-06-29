@@ -7,7 +7,7 @@ __all__ = [
     "GitCharmRecipeListingView",
     "PersonCharmRecipeListingView",
     "ProjectCharmRecipeListingView",
-    ]
+]
 
 from functools import partial
 
@@ -35,14 +35,17 @@ class CharmRecipeListingView(LaunchpadView, FeedsMixin):
     @property
     def label(self):
         return "Charm recipes for %(displayname)s" % {
-            "displayname": self.context.displayname}
+            "displayname": self.context.displayname
+        }
 
     def initialize(self):
         super().initialize()
         recipes = getUtility(ICharmRecipeSet).findByContext(
-            self.context, visible_by_user=self.user)
+            self.context, visible_by_user=self.user
+        )
         loader = partial(
-            getUtility(ICharmRecipeSet).preloadDataForRecipes, user=self.user)
+            getUtility(ICharmRecipeSet).preloadDataForRecipes, user=self.user
+        )
         self.recipes = DecoratedResultSet(recipes, pre_iter_hook=loader)
 
     @cachedproperty
@@ -57,7 +60,8 @@ class GitCharmRecipeListingView(CharmRecipeListingView):
     @property
     def label(self):
         return "Charm recipes for %(display_name)s" % {
-            "display_name": self.context.display_name}
+            "display_name": self.context.display_name
+        }
 
 
 class PersonCharmRecipeListingView(CharmRecipeListingView):

@@ -5,15 +5,15 @@
 
 __all__ = [
     "CharmhubClient",
-    ]
+]
 
 from base64 import b64encode
 from urllib.parse import quote
 
+import requests
 from lazr.restful.utils import get_current_browser_request
 from pymacaroons import Macaroon
 from pymacaroons.serializers import JsonSerializer
-import requests
 from requests_toolbelt import MultipartEncoder
 from zope.component import getUtility
 from zope.interface import implementer
@@ -28,12 +28,9 @@ from lp.charms.interfaces.charmhubclient import (
     UnauthorizedUploadResponse,
     UploadFailedResponse,
     UploadNotReviewedYetResponse,
-    )
+)
 from lp.services.config import config
-from lp.services.crypto.interfaces import (
-    CryptoError,
-    IEncryptedContainer,
-    )
+from lp.services.crypto.interfaces import CryptoError, IEncryptedContainer
 from lp.services.librarian.utils import EncodableLibraryFileAlias
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.timeout import urlfetch
@@ -46,13 +43,15 @@ def _get_macaroon(recipe):
     macaroon_raw = store_secrets.get("exchanged_encrypted")
     if macaroon_raw is None:
         raise UnauthorizedUploadResponse(
-            "{} is not authorized for upload to Charmhub".format(recipe))
+            "{} is not authorized for upload to Charmhub".format(recipe)
+        )
     container = getUtility(IEncryptedContainer, "charmhub-secrets")
     try:
         return container.decrypt(macaroon_raw).decode()
     except CryptoError as e:
         raise UnauthorizedUploadResponse(
-            "Failed to decrypt macaroon: {}".format(e))
+            "Failed to decrypt macaroon: {}".format(e)
+        )
 
 
 @implementer(ICharmhubClient)
@@ -80,7 +79,8 @@ class CharmhubClient:
                 if "error-list" in response_data:
                     error_message = "\n".join(
                         error["message"]
-                        for error in response_data["error-list"])
+                        for error in response_data["error-list"]
+                    )
         detail = requests_error.response.content.decode(errors="replace")
         can_retry = requests_error.response.status_code in (502, 503, 504)
         return error_class(error_message, detail=detail, can_retry=can_retry)
@@ -92,20 +92,24 @@ class CharmhubClient:
         request_url = urlappend(config.charms.charmhub_url, "v1/tokens")
         request = get_current_browser_request()
         timeline_action = get_request_timeline(request).start(
-            "request-charm-upload-macaroon", package_name, allow_nested=True)
+            "request-charm-upload-macaroon", package_name, allow_nested=True
+        )
         try:
             response = urlfetch(
-                request_url, method="POST",
+                request_url,
+                method="POST",
                 json={
                     "description": "{} for {}".format(
-                        package_name, config.vhost.mainsite.hostname),
+                        package_name, config.vhost.mainsite.hostname
+                    ),
                     "packages": [{"type": "charm", "name": package_name}],
                     "permissions": [
                         "package-manage-releases",
                         "package-manage-revisions",
                         "package-view-revisions",
-                        ],
-                    })
+                    ],
+                },
+            )
             response_data = response.json()
             if "macaroon" not in response_data:
                 raise BadRequestPackageUploadResponse(response.text)
@@ -116,27 +120,39 @@ class CharmhubClient:
             timeline_action.finish()
 
     @classmethod
-    def exchangeMacaroons(cls, root_macaroon_raw,
-                          unbound_discharge_macaroon_raw):
+    def exchangeMacaroons(
+        cls, root_macaroon_raw, unbound_discharge_macaroon_raw
+    ):
         """See `ICharmhubClient`."""
         assert config.charms.charmhub_url is not None
         root_macaroon = Macaroon.deserialize(
-            root_macaroon_raw, JsonSerializer())
+            root_macaroon_raw, JsonSerializer()
+        )
         unbound_discharge_macaroon = Macaroon.deserialize(
-            unbound_discharge_macaroon_raw, JsonSerializer())
+            unbound_discharge_macaroon_raw, JsonSerializer()
+        )
         discharge_macaroon_raw = root_macaroon.prepare_for_request(
-            unbound_discharge_macaroon).serialize(JsonSerializer())
+            unbound_discharge_macaroon
+        ).serialize(JsonSerializer())
         request_url = urlappend(
-            config.charms.charmhub_url, "v1/tokens/exchange")
+            config.charms.charmhub_url, "v1/tokens/exchange"
+        )
         request = get_current_browser_request()
         timeline_action = get_request_timeline(request).start(
-            "exchange-macaroons", "", allow_nested=True)
+            "exchange-macaroons", "", allow_nested=True
+        )
         try:
-            all_macaroons = b64encode("[{}, {}]".format(
-                root_macaroon_raw, discharge_macaroon_raw).encode()).decode()
+            all_macaroons = b64encode(
+                "[{}, {}]".format(
+                    root_macaroon_raw, discharge_macaroon_raw
+                ).encode()
+            ).decode()
             response = urlfetch(
-                request_url, method="POST",
-                headers={"Macaroons": all_macaroons}, json={})
+                request_url,
+                method="POST",
+                headers={"Macaroons": all_macaroons},
+                json={},
+            )
             response_data = response.json()
             if "macaroon" not in response_data:
                 raise BadExchangeMacaroonsResponse(response.text)
@@ -151,25 +167,34 @@ class CharmhubClient:
         """Upload a single file to Charmhub's storage."""
         assert config.charms.charmhub_storage_url is not None
         unscanned_upload_url = urlappend(
-            config.charms.charmhub_storage_url, "unscanned-upload/")
+            config.charms.charmhub_storage_url, "unscanned-upload/"
+        )
         lfa.open()
         try:
             lfa_wrapper = EncodableLibraryFileAlias(lfa)
             encoder = MultipartEncoder(
                 fields={
                     "binary": (
-                        lfa.filename, lfa_wrapper, "application/octet-stream"),
-                    })
+                        lfa.filename,
+                        lfa_wrapper,
+                        "application/octet-stream",
+                    ),
+                }
+            )
             request = get_current_browser_request()
             timeline_action = get_request_timeline(request).start(
-                "charm-storage-push", lfa.filename, allow_nested=True)
+                "charm-storage-push", lfa.filename, allow_nested=True
+            )
             try:
                 response = urlfetch(
-                    unscanned_upload_url, method="POST", data=encoder,
+                    unscanned_upload_url,
+                    method="POST",
+                    data=encoder,
                     headers={
                         "Content-Type": encoder.content_type,
                         "Accept": "application/json",
-                        })
+                    },
+                )
                 response_data = response.json()
                 if not response_data.get("successful", False):
                     raise UploadFailedResponse(response.text)
@@ -188,17 +213,21 @@ class CharmhubClient:
         assert recipe.can_upload_to_store
         push_url = urlappend(
             config.charms.charmhub_url,
-            "v1/charm/{}/revisions".format(quote(recipe.store_name)))
+            "v1/charm/{}/revisions".format(quote(recipe.store_name)),
+        )
         macaroon_raw = _get_macaroon(recipe)
         data = {"upload-id": upload_id}
         request = get_current_browser_request()
         timeline_action = get_request_timeline(request).start(
-            "charm-push", recipe.store_name, allow_nested=True)
+            "charm-push", recipe.store_name, allow_nested=True
+        )
         try:
             response = urlfetch(
-                push_url, method="POST",
+                push_url,
+                method="POST",
                 headers={"Authorization": "Macaroon {}".format(macaroon_raw)},
-                json=data)
+                json=data,
+            )
             response_data = response.json()
             return response_data["status-url"]
         except requests.HTTPError as e:
@@ -213,15 +242,18 @@ class CharmhubClient:
     def checkStatus(cls, build, status_url):
         """See `ICharmhubClient`."""
         status_url = urlappend(
-            config.charms.charmhub_url, status_url.lstrip("/"))
+            config.charms.charmhub_url, status_url.lstrip("/")
+        )
         macaroon_raw = _get_macaroon(build.recipe)
         request = get_current_browser_request()
         timeline_action = get_request_timeline(request).start(
-            "charm-check-status", status_url, allow_nested=True)
+            "charm-check-status", status_url, allow_nested=True
+        )
         try:
             response = urlfetch(
                 status_url,
-                headers={"Authorization": "Macaroon {}".format(macaroon_raw)})
+                headers={"Authorization": "Macaroon {}".format(macaroon_raw)},
+            )
             response_data = response.json()
             # We're asking for a single upload ID, so the response should
             # only have one revision.
@@ -231,11 +263,13 @@ class CharmhubClient:
             if revision["status"] == "approved":
                 if revision["revision"] is None:
                     raise ReviewFailedResponse(
-                        "Review passed but did not assign a revision.")
+                        "Review passed but did not assign a revision."
+                    )
                 return revision["revision"]
             elif revision["status"] == "rejected":
                 error_message = "\n".join(
-                    error["message"] for error in revision["errors"])
+                    error["message"] for error in revision["errors"]
+                )
                 raise ReviewFailedResponse(error_message)
             else:
                 raise UploadNotReviewedYetResponse()
@@ -254,19 +288,24 @@ class CharmhubClient:
         assert recipe.store_channels
         release_url = urlappend(
             config.charms.charmhub_url,
-            "v1/charm/{}/releases".format(quote(recipe.store_name)))
+            "v1/charm/{}/releases".format(quote(recipe.store_name)),
+        )
         macaroon_raw = _get_macaroon(recipe)
         data = [
             {"channel": channel, "revision": revision}
-            for channel in recipe.store_channels]
+            for channel in recipe.store_channels
+        ]
         request = get_current_browser_request()
         timeline_action = get_request_timeline(request).start(
-            "charm-release", recipe.store_name, allow_nested=True)
+            "charm-release", recipe.store_name, allow_nested=True
+        )
         try:
             urlfetch(
-                release_url, method="POST",
+                release_url,
+                method="POST",
                 headers={"Authorization": "Macaroon {}".format(macaroon_raw)},
-                json=data)
+                json=data,
+            )
         except requests.HTTPError as e:
             raise cls._makeCharmhubError(ReleaseFailedResponse, e)
         finally:

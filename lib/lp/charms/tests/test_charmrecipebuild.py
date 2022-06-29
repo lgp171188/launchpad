@@ -4,24 +4,21 @@
 """Test charm package build features."""
 
 import base64
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 from urllib.request import urlopen
 
+import pytz
+import six
 from fixtures import FakeLogger
 from nacl.public import PrivateKey
 from pymacaroons import Macaroon
-import pytz
-import six
 from testtools.matchers import (
     ContainsDict,
     Equals,
     Is,
     MatchesDict,
     MatchesStructure,
-    )
+)
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -36,18 +33,15 @@ from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_PRIVATE_FEATURE_FLAG,
     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
-    )
+)
 from lp.charms.interfaces.charmrecipebuild import (
     CannotScheduleStoreUpload,
     CharmRecipeBuildStoreUploadStatus,
     ICharmRecipeBuild,
     ICharmRecipeBuildSet,
-    )
+)
 from lp.charms.interfaces.charmrecipebuildjob import ICharmhubUploadJobSource
-from lp.registry.enums import (
-    PersonVisibility,
-    TeamMembershipPolicy,
-    )
+from lp.registry.enums import PersonVisibility, TeamMembershipPolicy
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.crypto.interfaces import IEncryptedContainer
@@ -59,22 +53,18 @@ from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     ANONYMOUS,
+    StormStatementRecorder,
+    TestCaseWithFactory,
     api_url,
     login,
     logout,
     person_logged_in,
-    StormStatementRecorder,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.dbuser import dbuser
-from lp.testing.layers import (
-    LaunchpadFunctionalLayer,
-    LaunchpadZopelessLayer,
-    )
+from lp.testing.layers import LaunchpadFunctionalLayer, LaunchpadZopelessLayer
 from lp.testing.mail_helpers import pop_notifications
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import webservice_for_person
-
 
 expected_body = """\
  * Charm Recipe: charm-1
@@ -106,26 +96,37 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
     def test___repr__(self):
         # CharmRecipeBuild has an informative __repr__.
         self.assertEqual(
-            "<CharmRecipeBuild ~%s/%s/+charm/%s/+build/%s>" % (
-                self.build.recipe.owner.name, self.build.recipe.project.name,
-                self.build.recipe.name, self.build.id),
-            repr(self.build))
+            "<CharmRecipeBuild ~%s/%s/+charm/%s/+build/%s>"
+            % (
+                self.build.recipe.owner.name,
+                self.build.recipe.project.name,
+                self.build.recipe.name,
+                self.build.id,
+            ),
+            repr(self.build),
+        )
 
     def test_title(self):
         # CharmRecipeBuild has an informative title.
         das = self.build.distro_arch_series
         self.assertEqual(
-            "%s build of /~%s/%s/+charm/%s" % (
-                das.architecturetag, self.build.recipe.owner.name,
-                self.build.recipe.project.name, self.build.recipe.name),
-            self.build.title)
+            "%s build of /~%s/%s/+charm/%s"
+            % (
+                das.architecturetag,
+                self.build.recipe.owner.name,
+                self.build.recipe.project.name,
+                self.build.recipe.name,
+            ),
+            self.build.title,
+        )
 
     def test_queueBuild(self):
         # CharmRecipeBuild can create the queue entry for itself.
         bq = self.build.queueBuild()
         self.assertProvides(bq, IBuildQueue)
         self.assertEqual(
-            self.build.build_farm_job, removeSecurityProxy(bq)._build_farm_job)
+            self.build.build_farm_job, removeSecurityProxy(bq)._build_farm_job
+        )
         self.assertEqual(self.build, bq.specific_build)
         self.assertEqual(self.build.virtualized, bq.virtualized)
         self.assertIsNotNone(bq.processor)
@@ -134,17 +135,24 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
     def test_is_private(self):
         # A CharmRecipeBuild is private iff its recipe or owner are.
         self.assertFalse(self.build.is_private)
-        self.useFixture(FeatureFixture({
-            CHARM_RECIPE_ALLOW_CREATE: "on",
-            CHARM_RECIPE_PRIVATE_FEATURE_FLAG: "on",
-            }))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    CHARM_RECIPE_ALLOW_CREATE: "on",
+                    CHARM_RECIPE_PRIVATE_FEATURE_FLAG: "on",
+                }
+            )
+        )
         private_team = self.factory.makeTeam(
             membership_policy=TeamMembershipPolicy.MODERATED,
-            visibility=PersonVisibility.PRIVATE)
+            visibility=PersonVisibility.PRIVATE,
+        )
         with person_logged_in(private_team.teamowner):
             build = self.factory.makeCharmRecipeBuild(
-                requester=private_team.teamowner, owner=private_team,
-                information_type=InformationType.PROPRIETARY)
+                requester=private_team.teamowner,
+                owner=private_team,
+                information_type=InformationType.PROPRIETARY,
+            )
             self.assertTrue(build.is_private)
 
     def test_can_be_retried(self):
@@ -155,7 +163,7 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
             BuildStatus.FAILEDTOUPLOAD,
             BuildStatus.CANCELLED,
             BuildStatus.SUPERSEDED,
-            ]
+        ]
         for status in BuildStatus.items:
             build = self.factory.makeCharmRecipeBuild(status=status)
             if status in ok_cases:
@@ -166,7 +174,8 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
     def test_can_be_retried_obsolete_series(self):
         # Builds for obsolete series cannot be retried.
         distroseries = self.factory.makeDistroSeries(
-            status=SeriesStatus.OBSOLETE)
+            status=SeriesStatus.OBSOLETE
+        )
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
         build = self.factory.makeCharmRecipeBuild(distro_arch_series=das)
         self.assertFalse(build.can_be_retried)
@@ -176,7 +185,7 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
         ok_cases = [
             BuildStatus.BUILDING,
             BuildStatus.NEEDSBUILD,
-            ]
+        ]
         for status in BuildStatus.items:
             build = self.factory.makeCharmRecipeBuild()
             build.queueBuild()
@@ -227,32 +236,40 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
         # Previous successful builds of the same recipe are used for
         # estimates.
         self.factory.makeCharmRecipeBuild(
-            requester=self.build.requester, recipe=self.build.recipe,
+            requester=self.build.requester,
+            recipe=self.build.recipe,
             distro_arch_series=self.build.distro_arch_series,
-            status=BuildStatus.FULLYBUILT, duration=timedelta(seconds=335))
+            status=BuildStatus.FULLYBUILT,
+            duration=timedelta(seconds=335),
+        )
         for i in range(3):
             self.factory.makeCharmRecipeBuild(
-                requester=self.build.requester, recipe=self.build.recipe,
+                requester=self.build.requester,
+                recipe=self.build.recipe,
                 distro_arch_series=self.build.distro_arch_series,
                 status=BuildStatus.FAILEDTOBUILD,
-                duration=timedelta(seconds=20))
+                duration=timedelta(seconds=20),
+            )
         self.assertEqual(335, self.build.estimateDuration().seconds)
 
     def test_build_cookie(self):
         build = self.factory.makeCharmRecipeBuild()
-        self.assertEqual('CHARMRECIPEBUILD-%d' % build.id, build.build_cookie)
+        self.assertEqual("CHARMRECIPEBUILD-%d" % build.id, build.build_cookie)
 
     def test_getFileByName_logs(self):
         # getFileByName returns the logs when requested by name.
         self.build.setLog(
-            self.factory.makeLibraryFileAlias(filename="buildlog.txt.gz"))
+            self.factory.makeLibraryFileAlias(filename="buildlog.txt.gz")
+        )
         self.assertEqual(
-            self.build.log, self.build.getFileByName("buildlog.txt.gz"))
+            self.build.log, self.build.getFileByName("buildlog.txt.gz")
+        )
         self.assertRaises(NotFoundError, self.build.getFileByName, "foo")
         self.build.storeUploadLog("uploaded")
         self.assertEqual(
             self.build.upload_log,
-            self.build.getFileByName(self.build.upload_log.filename))
+            self.build.getFileByName(self.build.upload_log.filename),
+        )
 
     def test_getFileByName_uploaded_files(self):
         # getFileByName returns uploaded files when requested by name.
@@ -263,7 +280,8 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
             lfas.append(lfa)
             self.build.addFile(lfa)
         self.assertContentEqual(
-            lfas, [row[1] for row in self.build.getFiles()])
+            lfas, [row[1] for row in self.build.getFiles()]
+        )
         for filename, lfa in zip(filenames, lfas):
             self.assertEqual(lfa, self.build.getFileByName(filename))
         self.assertRaises(NotFoundError, self.build.getFileByName, "missing")
@@ -279,77 +297,119 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
         self.build.updateStatus(BuildStatus.BUILDING, worker_status={})
         self.assertIsNone(self.build.revision_id)
         self.build.updateStatus(
-            BuildStatus.BUILDING, worker_status={"revision_id": "dummy"})
+            BuildStatus.BUILDING, worker_status={"revision_id": "dummy"}
+        )
         self.assertEqual("dummy", self.build.revision_id)
 
     def test_updateStatus_triggers_webhooks(self):
         # Updating the status of a CharmRecipeBuild triggers webhooks on the
         # corresponding CharmRecipe.
-        self.useFixture(FeatureFixture({
-            CHARM_RECIPE_ALLOW_CREATE: "on",
-            CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
-            }))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    CHARM_RECIPE_ALLOW_CREATE: "on",
+                    CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                }
+            )
+        )
         logger = self.useFixture(FakeLogger())
         hook = self.factory.makeWebhook(
-            target=self.build.recipe, event_types=["charm-recipe:build:0.1"])
+            target=self.build.recipe, event_types=["charm-recipe:build:0.1"]
+        )
         self.build.updateStatus(BuildStatus.FULLYBUILT)
         expected_payload = {
-            "recipe_build": Equals(canonical_url(
-                self.build, force_local_path=True)),
+            "recipe_build": Equals(
+                canonical_url(self.build, force_local_path=True)
+            ),
             "action": Equals("status-changed"),
-            "recipe": Equals(canonical_url(
-                self.build.recipe, force_local_path=True)),
-            "build_request": Equals(canonical_url(
-                self.build.build_request, force_local_path=True)),
+            "recipe": Equals(
+                canonical_url(self.build.recipe, force_local_path=True)
+            ),
+            "build_request": Equals(
+                canonical_url(self.build.build_request, force_local_path=True)
+            ),
             "status": Equals("Successfully built"),
             "store_upload_status": Equals("Unscheduled"),
-            }
+        }
         delivery = hook.deliveries.one()
         self.assertThat(
-            delivery, MatchesStructure(
+            delivery,
+            MatchesStructure(
                 event_type=Equals("charm-recipe:build:0.1"),
-                payload=MatchesDict(expected_payload)))
+                payload=MatchesDict(expected_payload),
+            ),
+        )
         with dbuser(config.IWebhookDeliveryJobSource.dbuser):
             self.assertEqual(
-                "<WebhookDeliveryJob for webhook %d on %r>" % (
-                    hook.id, hook.target),
-                repr(delivery))
+                "<WebhookDeliveryJob for webhook %d on %r>"
+                % (hook.id, hook.target),
+                repr(delivery),
+            )
             self.assertThat(
-                logger.output, LogsScheduledWebhooks([
-                    (hook, "charm-recipe:build:0.1",
-                     MatchesDict(expected_payload))]))
+                logger.output,
+                LogsScheduledWebhooks(
+                    [
+                        (
+                            hook,
+                            "charm-recipe:build:0.1",
+                            MatchesDict(expected_payload),
+                        )
+                    ]
+                ),
+            )
 
     def test_updateStatus_no_change_does_not_trigger_webhooks(self):
         # An updateStatus call that changes details such as the revision_id
         # but that doesn't change the build's status attribute does not
         # trigger webhooks.
-        self.useFixture(FeatureFixture({
-            CHARM_RECIPE_ALLOW_CREATE: "on",
-            CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
-            }))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    CHARM_RECIPE_ALLOW_CREATE: "on",
+                    CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                }
+            )
+        )
         logger = self.useFixture(FakeLogger())
         hook = self.factory.makeWebhook(
-            target=self.build.recipe, event_types=["charm-recipe:build:0.1"])
+            target=self.build.recipe, event_types=["charm-recipe:build:0.1"]
+        )
         builder = self.factory.makeBuilder()
         self.build.updateStatus(BuildStatus.BUILDING)
         expected_logs = [
-            (hook, "charm-recipe:build:0.1", ContainsDict({
-                "action": Equals("status-changed"),
-                "status": Equals("Currently building"),
-                }))]
+            (
+                hook,
+                "charm-recipe:build:0.1",
+                ContainsDict(
+                    {
+                        "action": Equals("status-changed"),
+                        "status": Equals("Currently building"),
+                    }
+                ),
+            )
+        ]
         self.assertEqual(1, hook.deliveries.count())
         self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
         self.build.updateStatus(
-            BuildStatus.BUILDING, builder=builder,
-            worker_status={"revision_id": "1"})
+            BuildStatus.BUILDING,
+            builder=builder,
+            worker_status={"revision_id": "1"},
+        )
         self.assertEqual(1, hook.deliveries.count())
         self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
         self.build.updateStatus(BuildStatus.UPLOADING)
         expected_logs.append(
-            (hook, "charm-recipe:build:0.1", ContainsDict({
-                "action": Equals("status-changed"),
-                "status": Equals("Uploading build"),
-                })))
+            (
+                hook,
+                "charm-recipe:build:0.1",
+                ContainsDict(
+                    {
+                        "action": Equals("status-changed"),
+                        "status": Equals("Uploading build"),
+                    }
+                ),
+            )
+        )
         self.assertEqual(2, hook.deliveries.count())
         self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
 
@@ -362,7 +422,8 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
         # "exchanged_encrypted" is present, so don't bother setting up
         # encryption keys here.
         self.build.recipe.store_secrets = {
-            "exchanged_encrypted": Macaroon().serialize()}
+            "exchanged_encrypted": Macaroon().serialize()
+        }
         with dbuser(config.builddmaster.dbuser):
             self.build.updateStatus(BuildStatus.FAILEDTOBUILD)
         self.assertContentEqual([], self.build.store_upload_jobs)
@@ -376,10 +437,14 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
         self.assertEqual(0, len(list(self.build.store_upload_jobs)))
         self.assertIn(
             "<CharmRecipe ~%s/%s/+charm/%s> is not configured for upload to "
-            "the store." % (
-                self.build.recipe.owner.name, self.build.recipe.project.name,
-                self.build.recipe.name),
-            logger.output.splitlines())
+            "the store."
+            % (
+                self.build.recipe.owner.name,
+                self.build.recipe.project.name,
+                self.build.recipe.name,
+            ),
+            logger.output.splitlines(),
+        )
 
     def test_updateStatus_fullybuilt_triggers_store_uploads(self):
         # A completed build triggers store uploads.
@@ -391,21 +456,28 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
         # "exchanged_encrypted" is present, so don't bother setting up
         # encryption keys here.
         self.build.recipe.store_secrets = {
-            "exchanged_encrypted": Macaroon().serialize()}
+            "exchanged_encrypted": Macaroon().serialize()
+        }
         with dbuser(config.builddmaster.dbuser):
             self.build.updateStatus(BuildStatus.FULLYBUILT)
         self.assertEqual(1, len(list(self.build.store_upload_jobs)))
         self.assertIn(
             "Scheduling upload of <CharmRecipeBuild "
-            "~%s/%s/+charm/%s/+build/%d> to the store." % (
-                self.build.recipe.owner.name, self.build.recipe.project.name,
-                self.build.recipe.name, self.build.id),
-            logger.output.splitlines())
+            "~%s/%s/+charm/%s/+build/%d> to the store."
+            % (
+                self.build.recipe.owner.name,
+                self.build.recipe.project.name,
+                self.build.recipe.name,
+                self.build.id,
+            ),
+            logger.output.splitlines(),
+        )
 
     def test_notify_fullybuilt(self):
         # notify does not send mail when a recipe build completes normally.
         build = self.factory.makeCharmRecipeBuild(
-            status=BuildStatus.FULLYBUILT)
+            status=BuildStatus.FULLYBUILT
+        )
         build.notify()
         self.assertEqual(0, len(pop_notifications()))
 
@@ -415,42 +487,60 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
         project = self.factory.makeProduct(name="charm-project")
         distribution = self.factory.makeDistribution(name="distro")
         distroseries = self.factory.makeDistroSeries(
-            distribution=distribution, name="unstable")
+            distribution=distribution, name="unstable"
+        )
         processor = getUtility(IProcessorSet).getByName("386")
         das = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag="i386",
-            processor=processor)
+            distroseries=distroseries,
+            architecturetag="i386",
+            processor=processor,
+        )
         build = self.factory.makeCharmRecipeBuild(
-            name="charm-1", requester=person, owner=person, project=project,
-            distro_arch_series=das, status=BuildStatus.FAILEDTOBUILD,
+            name="charm-1",
+            requester=person,
+            owner=person,
+            project=project,
+            distro_arch_series=das,
+            status=BuildStatus.FAILEDTOBUILD,
             builder=self.factory.makeBuilder(name="bob"),
-            duration=timedelta(minutes=10))
+            duration=timedelta(minutes=10),
+        )
         build.setLog(self.factory.makeLibraryFileAlias())
         build.notify()
         [notification] = pop_notifications()
         self.assertEqual(
-            config.canonical.noreply_from_address, notification["From"])
+            config.canonical.noreply_from_address, notification["From"]
+        )
         self.assertEqual(
-            "Person <%s>" % person.preferredemail.email, notification["To"])
+            "Person <%s>" % person.preferredemail.email, notification["To"]
+        )
         subject = notification["Subject"].replace("\n ", " ")
         self.assertEqual(
             "[Charm recipe build #%d] i386 build of "
-            "/~person/charm-project/+charm/charm-1" % build.id, subject)
+            "/~person/charm-project/+charm/charm-1" % build.id,
+            subject,
+        )
         self.assertEqual(
-            "Requester", notification["X-Launchpad-Message-Rationale"])
+            "Requester", notification["X-Launchpad-Message-Rationale"]
+        )
         self.assertEqual(person.name, notification["X-Launchpad-Message-For"])
         self.assertEqual(
             "charm-recipe-build-status",
-            notification["X-Launchpad-Notification-Type"])
+            notification["X-Launchpad-Notification-Type"],
+        )
         self.assertEqual(
-            "FAILEDTOBUILD", notification["X-Launchpad-Build-State"])
+            "FAILEDTOBUILD", notification["X-Launchpad-Build-State"]
+        )
         body, footer = six.ensure_text(
-            notification.get_payload(decode=True)).split("\n-- \n")
+            notification.get_payload(decode=True)
+        ).split("\n-- \n")
         self.assertEqual(expected_body % (build.log_url, ""), body)
         self.assertEqual(
             "http://launchpad.test/~person/charm-project/+charm/charm-1/"
             "+build/%d\n"
-            "You are the requester of the build.\n" % build.id, footer)
+            "You are the requester of the build.\n" % build.id,
+            footer,
+        )
 
     def addFakeBuildLog(self, build):
         build.setLog(self.factory.makeLibraryFileAlias("mybuildlog.txt"))
@@ -460,10 +550,15 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
         self.addFakeBuildLog(self.build)
         self.assertEqual(
             "http://launchpad.test/~%s/%s/+charm/%s/+build/%d/+files/"
-            "mybuildlog.txt" % (
-                self.build.recipe.owner.name, self.build.recipe.project.name,
-                self.build.recipe.name, self.build.id),
-            self.build.log_url)
+            "mybuildlog.txt"
+            % (
+                self.build.recipe.owner.name,
+                self.build.recipe.project.name,
+                self.build.recipe.name,
+                self.build.id,
+            ),
+            self.build.log_url,
+        )
 
     def test_eta(self):
         # CharmRecipeBuild.eta returns a non-None value when it should, or
@@ -498,59 +593,72 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
             "charms",
             charmhub_url="http://charmhub.example/",
             charmhub_secrets_public_key=base64.b64encode(
-                bytes(self.private_key.public_key)).decode())
+                bytes(self.private_key.public_key)
+            ).decode(),
+        )
         self.build.recipe.store_name = self.factory.getUniqueUnicode()
         container = getUtility(IEncryptedContainer, "charmhub-secrets")
         self.build.recipe.store_secrets = {
             "exchanged_encrypted": removeSecurityProxy(
-                container.encrypt(Macaroon().serialize().encode())),
-            }
+                container.encrypt(Macaroon().serialize().encode())
+            ),
+        }
 
     def test_store_upload_status_unscheduled(self):
         build = self.factory.makeCharmRecipeBuild(
-            status=BuildStatus.FULLYBUILT)
+            status=BuildStatus.FULLYBUILT
+        )
         self.assertEqual(
             CharmRecipeBuildStoreUploadStatus.UNSCHEDULED,
-            build.store_upload_status)
+            build.store_upload_status,
+        )
 
     def test_store_upload_status_pending(self):
         build = self.factory.makeCharmRecipeBuild(
-            status=BuildStatus.FULLYBUILT)
+            status=BuildStatus.FULLYBUILT
+        )
         getUtility(ICharmhubUploadJobSource).create(build)
         self.assertEqual(
             CharmRecipeBuildStoreUploadStatus.PENDING,
-            build.store_upload_status)
+            build.store_upload_status,
+        )
 
     def test_store_upload_status_uploaded(self):
         build = self.factory.makeCharmRecipeBuild(
-            status=BuildStatus.FULLYBUILT)
+            status=BuildStatus.FULLYBUILT
+        )
         job = getUtility(ICharmhubUploadJobSource).create(build)
         naked_job = removeSecurityProxy(job)
         naked_job.job._status = JobStatus.COMPLETED
         self.assertEqual(
             CharmRecipeBuildStoreUploadStatus.UPLOADED,
-            build.store_upload_status)
+            build.store_upload_status,
+        )
 
     def test_store_upload_status_failed_to_upload(self):
         build = self.factory.makeCharmRecipeBuild(
-            status=BuildStatus.FULLYBUILT)
+            status=BuildStatus.FULLYBUILT
+        )
         job = getUtility(ICharmhubUploadJobSource).create(build)
         naked_job = removeSecurityProxy(job)
         naked_job.job._status = JobStatus.FAILED
         self.assertEqual(
             CharmRecipeBuildStoreUploadStatus.FAILEDTOUPLOAD,
-            build.store_upload_status)
+            build.store_upload_status,
+        )
 
     def test_store_upload_status_failed_to_release(self):
         build = self.factory.makeCharmRecipeBuild(
-            status=BuildStatus.FULLYBUILT)
+            status=BuildStatus.FULLYBUILT
+        )
         job = getUtility(ICharmhubUploadJobSource).create(build)
         naked_job = removeSecurityProxy(job)
         naked_job.job._status = JobStatus.FAILED
         naked_job.store_revision = 1
         self.assertEqual(
             CharmRecipeBuildStoreUploadStatus.FAILEDTORELEASE,
-            build.store_upload_status)
+            build.store_upload_status,
+        )
 
     def test_scheduleStoreUpload(self):
         # A build not previously uploaded to the store can be uploaded
@@ -559,7 +667,8 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
         self.build.updateStatus(BuildStatus.FULLYBUILT)
         self.factory.makeCharmFile(
             build=self.build,
-            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+            library_file=self.factory.makeLibraryFileAlias(db_only=True),
+        )
         self.build.scheduleStoreUpload()
         [job] = getUtility(ICharmhubUploadJobSource).iterReady()
         self.assertEqual(JobStatus.WAITING, job.job.status)
@@ -575,9 +684,11 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
             CannotScheduleStoreUpload,
             "Cannot upload this charm to Charmhub because it is not properly "
             "configured.",
-            self.build.scheduleStoreUpload)
+            self.build.scheduleStoreUpload,
+        )
         self.assertEqual(
-            [], list(getUtility(ICharmhubUploadJobSource).iterReady()))
+            [], list(getUtility(ICharmhubUploadJobSource).iterReady())
+        )
 
     def test_scheduleStoreUpload_no_files(self):
         # A build with no files cannot be uploaded to the store.
@@ -586,9 +697,11 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
         self.assertRaisesWithContent(
             CannotScheduleStoreUpload,
             "Cannot upload this charm because it has no files.",
-            self.build.scheduleStoreUpload)
+            self.build.scheduleStoreUpload,
+        )
         self.assertEqual(
-            [], list(getUtility(ICharmhubUploadJobSource).iterReady()))
+            [], list(getUtility(ICharmhubUploadJobSource).iterReady())
+        )
 
     def test_scheduleStoreUpload_already_in_progress(self):
         # A build with an upload already in progress will not have another
@@ -597,14 +710,17 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
         self.build.updateStatus(BuildStatus.FULLYBUILT)
         self.factory.makeCharmFile(
             build=self.build,
-            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+            library_file=self.factory.makeLibraryFileAlias(db_only=True),
+        )
         old_job = getUtility(ICharmhubUploadJobSource).create(self.build)
         self.assertRaisesWithContent(
             CannotScheduleStoreUpload,
             "An upload of this charm is already in progress.",
-            self.build.scheduleStoreUpload)
+            self.build.scheduleStoreUpload,
+        )
         self.assertEqual(
-            [old_job], list(getUtility(ICharmhubUploadJobSource).iterReady()))
+            [old_job], list(getUtility(ICharmhubUploadJobSource).iterReady())
+        )
 
     def test_scheduleStoreUpload_already_uploaded(self):
         # A build with an upload that has already completed will not have
@@ -613,57 +729,81 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
         self.build.updateStatus(BuildStatus.FULLYBUILT)
         self.factory.makeCharmFile(
             build=self.build,
-            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+            library_file=self.factory.makeLibraryFileAlias(db_only=True),
+        )
         old_job = getUtility(ICharmhubUploadJobSource).create(self.build)
         removeSecurityProxy(old_job).job._status = JobStatus.COMPLETED
         self.assertRaisesWithContent(
             CannotScheduleStoreUpload,
             "Cannot upload this charm because it has already been uploaded.",
-            self.build.scheduleStoreUpload)
+            self.build.scheduleStoreUpload,
+        )
         self.assertEqual(
-            [], list(getUtility(ICharmhubUploadJobSource).iterReady()))
+            [], list(getUtility(ICharmhubUploadJobSource).iterReady())
+        )
 
     def test_scheduleStoreUpload_triggers_webhooks(self):
         # Scheduling a store upload triggers webhooks on the corresponding
         # recipe.
-        self.useFixture(FeatureFixture({
-            CHARM_RECIPE_ALLOW_CREATE: "on",
-            CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
-            }))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    CHARM_RECIPE_ALLOW_CREATE: "on",
+                    CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                }
+            )
+        )
         logger = self.useFixture(FakeLogger())
         self.setUpStoreUpload()
         self.build.updateStatus(BuildStatus.FULLYBUILT)
         self.factory.makeCharmFile(
             build=self.build,
-            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+            library_file=self.factory.makeLibraryFileAlias(db_only=True),
+        )
         hook = self.factory.makeWebhook(
-            target=self.build.recipe, event_types=["charm-recipe:build:0.1"])
+            target=self.build.recipe, event_types=["charm-recipe:build:0.1"]
+        )
         self.build.scheduleStoreUpload()
         expected_payload = {
-            "recipe_build": Equals(canonical_url(
-                self.build, force_local_path=True)),
+            "recipe_build": Equals(
+                canonical_url(self.build, force_local_path=True)
+            ),
             "action": Equals("status-changed"),
-            "recipe": Equals(canonical_url(
-                self.build.recipe, force_local_path=True)),
-            "build_request": Equals(canonical_url(
-                self.build.build_request, force_local_path=True)),
+            "recipe": Equals(
+                canonical_url(self.build.recipe, force_local_path=True)
+            ),
+            "build_request": Equals(
+                canonical_url(self.build.build_request, force_local_path=True)
+            ),
             "status": Equals("Successfully built"),
             "store_upload_status": Equals("Pending"),
-            }
+        }
         delivery = hook.deliveries.one()
         self.assertThat(
-            delivery, MatchesStructure(
+            delivery,
+            MatchesStructure(
                 event_type=Equals("charm-recipe:build:0.1"),
-                payload=MatchesDict(expected_payload)))
+                payload=MatchesDict(expected_payload),
+            ),
+        )
         with dbuser(config.IWebhookDeliveryJobSource.dbuser):
             self.assertEqual(
-                "<WebhookDeliveryJob for webhook %d on %r>" % (
-                    hook.id, hook.target),
-                repr(delivery))
+                "<WebhookDeliveryJob for webhook %d on %r>"
+                % (hook.id, hook.target),
+                repr(delivery),
+            )
             self.assertThat(
-                logger.output, LogsScheduledWebhooks([
-                    (hook, "charm-recipe:build:0.1",
-                     MatchesDict(expected_payload))]))
+                logger.output,
+                LogsScheduledWebhooks(
+                    [
+                        (
+                            hook,
+                            "charm-recipe:build:0.1",
+                            MatchesDict(expected_payload),
+                        )
+                    ]
+                ),
+            )
 
 
 class TestCharmRecipeBuildSet(TestCaseWithFactory):
@@ -679,24 +819,31 @@ class TestCharmRecipeBuildSet(TestCaseWithFactory):
         self.assertEqual(
             build,
             getUtility(ICharmRecipeBuildSet).getByBuildFarmJob(
-                build.build_farm_job))
+                build.build_farm_job
+            ),
+        )
 
     def test_getByBuildFarmJob_returns_None_when_missing(self):
         bpb = self.factory.makeBinaryPackageBuild()
         self.assertIsNone(
             getUtility(ICharmRecipeBuildSet).getByBuildFarmJob(
-                bpb.build_farm_job))
+                bpb.build_farm_job
+            )
+        )
 
     def test_getByBuildFarmJobs_works(self):
         builds = [self.factory.makeCharmRecipeBuild() for i in range(10)]
         self.assertContentEqual(
             builds,
             getUtility(ICharmRecipeBuildSet).getByBuildFarmJobs(
-                [build.build_farm_job for build in builds]))
+                [build.build_farm_job for build in builds]
+            ),
+        )
 
     def test_getByBuildFarmJobs_works_empty(self):
         self.assertContentEqual(
-            [], getUtility(ICharmRecipeBuildSet).getByBuildFarmJobs([]))
+            [], getUtility(ICharmRecipeBuildSet).getByBuildFarmJobs([])
+        )
 
     def test_virtualized_recipe_requires(self):
         recipe = self.factory.makeCharmRecipe(require_virtualized=True)
@@ -708,7 +855,8 @@ class TestCharmRecipeBuildSet(TestCaseWithFactory):
         distro_arch_series = self.factory.makeDistroArchSeries()
         distro_arch_series.processor.supports_nonvirtualized = False
         target = self.factory.makeCharmRecipeBuild(
-            distro_arch_series=distro_arch_series, recipe=recipe)
+            distro_arch_series=distro_arch_series, recipe=recipe
+        )
         self.assertTrue(target.virtualized)
 
     def test_virtualized_no_support(self):
@@ -716,7 +864,8 @@ class TestCharmRecipeBuildSet(TestCaseWithFactory):
         distro_arch_series = self.factory.makeDistroArchSeries()
         distro_arch_series.processor.supports_nonvirtualized = True
         target = self.factory.makeCharmRecipeBuild(
-            recipe=recipe, distro_arch_series=distro_arch_series)
+            recipe=recipe, distro_arch_series=distro_arch_series
+        )
         self.assertFalse(target.virtualized)
 
 
@@ -726,13 +875,18 @@ class TestCharmRecipeBuildWebservice(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture({
-            CHARM_RECIPE_ALLOW_CREATE: "on",
-            CHARM_RECIPE_PRIVATE_FEATURE_FLAG: "on",
-            }))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    CHARM_RECIPE_ALLOW_CREATE: "on",
+                    CHARM_RECIPE_PRIVATE_FEATURE_FLAG: "on",
+                }
+            )
+        )
         self.person = self.factory.makePerson()
         self.webservice = webservice_for_person(
-            self.person, permission=OAuthPermission.WRITE_PRIVATE)
+            self.person, permission=OAuthPermission.WRITE_PRIVATE
+        )
         self.webservice.default_api_version = "devel"
         login(ANONYMOUS)
 
@@ -743,31 +897,40 @@ class TestCharmRecipeBuildWebservice(TestCaseWithFactory):
         # The basic properties of a charm recipe build are sensible.
         db_build = self.factory.makeCharmRecipeBuild(
             requester=self.person,
-            date_created=datetime(2021, 9, 15, 16, 21, 0, tzinfo=pytz.UTC))
+            date_created=datetime(2021, 9, 15, 16, 21, 0, tzinfo=pytz.UTC),
+        )
         build_url = api_url(db_build)
         logout()
         build = self.webservice.get(build_url).jsonBody()
         with person_logged_in(self.person):
-            self.assertThat(build, ContainsDict({
-                "requester_link": Equals(self.getURL(self.person)),
-                "recipe_link": Equals(self.getURL(db_build.recipe)),
-                "distro_arch_series_link": Equals(
-                    self.getURL(db_build.distro_arch_series)),
-                "arch_tag": Equals(
-                    db_build.distro_arch_series.architecturetag),
-                "channels": Is(None),
-                "score": Is(None),
-                "can_be_rescored": Is(False),
-                "can_be_retried": Is(False),
-                "can_be_cancelled": Is(False),
-                }))
+            self.assertThat(
+                build,
+                ContainsDict(
+                    {
+                        "requester_link": Equals(self.getURL(self.person)),
+                        "recipe_link": Equals(self.getURL(db_build.recipe)),
+                        "distro_arch_series_link": Equals(
+                            self.getURL(db_build.distro_arch_series)
+                        ),
+                        "arch_tag": Equals(
+                            db_build.distro_arch_series.architecturetag
+                        ),
+                        "channels": Is(None),
+                        "score": Is(None),
+                        "can_be_rescored": Is(False),
+                        "can_be_retried": Is(False),
+                        "can_be_cancelled": Is(False),
+                    }
+                ),
+            )
 
     def test_public(self):
         # A charm recipe build with a public recipe is itself public.
         db_build = self.factory.makeCharmRecipeBuild()
         build_url = api_url(db_build)
         unpriv_webservice = webservice_for_person(
-            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC
+        )
         unpriv_webservice.default_api_version = "devel"
         logout()
         self.assertEqual(200, self.webservice.get(build_url).status)
@@ -779,7 +942,8 @@ class TestCharmRecipeBuildWebservice(TestCaseWithFactory):
         db_build.queueBuild()
         build_url = api_url(db_build)
         unpriv_webservice = webservice_for_person(
-            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC
+        )
         unpriv_webservice.default_api_version = "devel"
         logout()
         build = self.webservice.get(build_url).jsonBody()
@@ -799,19 +963,23 @@ class TestCharmRecipeBuildWebservice(TestCaseWithFactory):
         db_build.queueBuild()
         build_url = api_url(db_build)
         buildd_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).buildd_admin])
+            member_of=[getUtility(ILaunchpadCelebrities).buildd_admin]
+        )
         buildd_admin_webservice = webservice_for_person(
-            buildd_admin, permission=OAuthPermission.WRITE_PUBLIC)
+            buildd_admin, permission=OAuthPermission.WRITE_PUBLIC
+        )
         buildd_admin_webservice.default_api_version = "devel"
         logout()
         build = self.webservice.get(build_url).jsonBody()
         self.assertEqual(2510, build["score"])
         self.assertTrue(build["can_be_rescored"])
         response = self.webservice.named_post(
-            build["self_link"], "rescore", score=5000)
+            build["self_link"], "rescore", score=5000
+        )
         self.assertEqual(401, response.status)
         response = buildd_admin_webservice.named_post(
-            build["self_link"], "rescore", score=5000)
+            build["self_link"], "rescore", score=5000
+        )
         self.assertEqual(200, response.status)
         build = self.webservice.get(build_url).jsonBody()
         self.assertEqual(5000, build["score"])
