@@ -100,3 +100,7 @@ repos:
     -   id: lp-lint-doctest
         args: [--allow-option-flag, IGNORE_EXCEPTION_MODULE_IN_PYTHON2]
         exclude: ^doc/.*
+-   repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.8.0.4
+    hooks:
+    -   id: shellcheck
