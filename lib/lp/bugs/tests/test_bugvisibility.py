@@ -4,14 +4,8 @@
 """Tests for visibility of a bug."""
 
 from lp.app.enums import InformationType
-from lp.testing import (
-    celebrity_logged_in,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    ZopelessDatabaseLayer,
-    )
+from lp.testing import TestCaseWithFactory, celebrity_logged_in
+from lp.testing.layers import DatabaseFunctionalLayer, ZopelessDatabaseLayer
 
 
 class TestPublicBugVisibility(TestCaseWithFactory):
@@ -44,16 +38,20 @@ class TestPrivateBugVisibility(TestCaseWithFactory):
         self.owner = self.factory.makePerson(name="bugowner")
         self.product_owner = self.factory.makePerson(name="productowner")
         self.product = self.factory.makeProduct(
-            name="regular-product", owner=self.product_owner)
+            name="regular-product", owner=self.product_owner
+        )
         self.bug_team = self.factory.makeTeam(
-            name="bugteam", owner=self.product.owner)
+            name="bugteam", owner=self.product.owner
+        )
         self.bug_team_member = self.factory.makePerson(name="bugteammember")
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.bug_team.addMember(self.bug_team_member, self.product.owner)
             self.product.bug_supervisor = self.bug_team
         self.bug = self.factory.makeBug(
-            owner=self.owner, target=self.product,
-            information_type=InformationType.USERDATA)
+            owner=self.owner,
+            target=self.product,
+            information_type=InformationType.USERDATA,
+        )
 
     def test_privateBugRegularUser(self):
         # A regular (non-privileged) user can not view a private bug.
@@ -71,7 +69,7 @@ class TestPrivateBugVisibility(TestCaseWithFactory):
     def test_privateBugSubscriber(self):
         # A person subscribed to a private bug can see it.
         user = self.factory.makePerson()
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.bug.subscribe(user, self.owner)
         self.assertTrue(self.bug.userCanView(user))
 
@@ -82,7 +80,7 @@ class TestPrivateBugVisibility(TestCaseWithFactory):
     def test_privateBugUnsubscribeRevokesVisibility(self):
         # A person unsubscribed from a private bug can no longer see it.
         user = self.factory.makePerson()
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.bug.subscribe(user, self.owner)
             self.assertTrue(self.bug.userCanView(user))
             self.bug.unsubscribe(user, self.owner)
@@ -92,6 +90,6 @@ class TestPrivateBugVisibility(TestCaseWithFactory):
         # When a user is subscribed to a bug, they are granted access.
         user = self.factory.makePerson()
         self.assertFalse(self.bug.userCanView(user))
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.bug.subscribe(user, self.owner)
             self.assertTrue(self.bug.userCanView(user))

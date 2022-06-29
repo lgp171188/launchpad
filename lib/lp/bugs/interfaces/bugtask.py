@@ -4,42 +4,39 @@
 """Bug task interfaces."""
 
 __all__ = [
-    'BUG_SUPERVISOR_BUGTASK_STATUSES',
-    'BugTaskImportance',
-    'BugTaskStatus',
-    'BugTaskStatusSearch',
-    'BugTaskStatusSearchDisplay',
-    'CannotDeleteBugtask',
-    'DB_INCOMPLETE_BUGTASK_STATUSES',
-    'DB_UNRESOLVED_BUGTASK_STATUSES',
-    'get_bugtask_status',
-    'IAddBugTaskForm',
-    'IAddBugTaskWithProductCreationForm',
-    'IBugTask',
-    'IBugTaskDelete',
-    'IBugTaskDelta',
-    'IBugTaskSet',
-    'ICreateQuestionFromBugTaskForm',
-    'IllegalTarget',
-    'IRemoveQuestionFromBugTaskForm',
-    'normalize_bugtask_status',
-    'RESOLVED_BUGTASK_STATUSES',
-    'UNRESOLVED_BUGTASK_STATUSES',
-    'UserCannotEditBugTaskAssignee',
-    'UserCannotEditBugTaskImportance',
-    'UserCannotEditBugTaskMilestone',
-    'UserCannotEditBugTaskStatus',
-    'valid_remote_bug_url',
-    ]
+    "BUG_SUPERVISOR_BUGTASK_STATUSES",
+    "BugTaskImportance",
+    "BugTaskStatus",
+    "BugTaskStatusSearch",
+    "BugTaskStatusSearchDisplay",
+    "CannotDeleteBugtask",
+    "DB_INCOMPLETE_BUGTASK_STATUSES",
+    "DB_UNRESOLVED_BUGTASK_STATUSES",
+    "get_bugtask_status",
+    "IAddBugTaskForm",
+    "IAddBugTaskWithProductCreationForm",
+    "IBugTask",
+    "IBugTaskDelete",
+    "IBugTaskDelta",
+    "IBugTaskSet",
+    "ICreateQuestionFromBugTaskForm",
+    "IllegalTarget",
+    "IRemoveQuestionFromBugTaskForm",
+    "normalize_bugtask_status",
+    "RESOLVED_BUGTASK_STATUSES",
+    "UNRESOLVED_BUGTASK_STATUSES",
+    "UserCannotEditBugTaskAssignee",
+    "UserCannotEditBugTaskImportance",
+    "UserCannotEditBugTaskMilestone",
+    "UserCannotEditBugTaskStatus",
+    "valid_remote_bug_url",
+]
 
 import http.client
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    use_template,
-    )
+from lazr.enum import DBEnumeratedType, DBItem, use_template
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     error_status,
     export_destructor_operation,
@@ -52,28 +49,12 @@ from lazr.restful.declarations import (
     operation_parameters,
     operation_returns_collection_of,
     rename_parameters_as,
-    REQUEST_USER,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    ReferenceChoice,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference, ReferenceChoice
 from lazr.restful.interface import copy_field
 from zope.component import getUtility
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Field,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, Field, Int, Text, TextLine
 from zope.security.interfaces import Unauthorized
 
 from lp import _
@@ -84,7 +65,7 @@ from lp.bugs.interfaces.bugwatch import (
     IBugWatchSet,
     NoBugTrackerFound,
     UnrecognizedBugTrackerURL,
-    )
+)
 from lp.bugs.interfaces.hasbug import IHasBug
 from lp.services.fields import (
     BugField,
@@ -92,7 +73,7 @@ from lp.services.fields import (
     ProductNameField,
     StrippedTextLine,
     Summary,
-    )
+)
 from lp.services.webservice.apihelpers import patch_collection_property
 
 
@@ -104,47 +85,68 @@ class BugTaskImportance(DBEnumeratedType):
     harm caused by the bug, and how often it is encountered.
     """
 
-    UNKNOWN = DBItem(999, """
+    UNKNOWN = DBItem(
+        999,
+        """
         Unknown
 
         The importance of this bug is not known.
-        """)
+        """,
+    )
 
-    UNDECIDED = DBItem(5, """
+    UNDECIDED = DBItem(
+        5,
+        """
         Undecided
 
         Not decided yet. Maybe needs more discussion.
-        """)
+        """,
+    )
 
-    CRITICAL = DBItem(50, """
+    CRITICAL = DBItem(
+        50,
+        """
         Critical
 
         Fix now or as soon as possible.
-        """)
+        """,
+    )
 
-    HIGH = DBItem(40, """
+    HIGH = DBItem(
+        40,
+        """
         High
 
         Schedule to be fixed soon.
-        """)
+        """,
+    )
 
-    MEDIUM = DBItem(30, """
+    MEDIUM = DBItem(
+        30,
+        """
         Medium
 
         Fix when convenient, or schedule to fix later.
-        """)
+        """,
+    )
 
-    LOW = DBItem(20, """
+    LOW = DBItem(
+        20,
+        """
         Low
 
         Fix when convenient.
-        """)
+        """,
+    )
 
-    WISHLIST = DBItem(10, """
+    WISHLIST = DBItem(
+        10,
+        """
         Wishlist
 
         Not a bug. It's an enhancement/new feature.
-        """)
+        """,
+    )
 
 
 class BugTaskStatus(DBEnumeratedType):
@@ -153,88 +155,127 @@ class BugTaskStatus(DBEnumeratedType):
     The various possible states for a bugfix in a specific place.
     """
 
-    NEW = DBItem(10, """
+    NEW = DBItem(
+        10,
+        """
         New
 
         Not looked at yet.
-        """)
+        """,
+    )
 
     # INCOMPLETE is never actually stored now: INCOMPLETE_WITH_RESPONSE and
     # INCOMPLETE_WITHOUT_RESPONSE are mapped to INCOMPLETE on read, and on
     # write INCOMPLETE is mapped to INCOMPLETE_WITHOUT_RESPONSE. This permits
     # An index on the INCOMPLETE_WITH*_RESPONSE queries that the webapp
     # generates.
-    INCOMPLETE = DBItem(15, """
+    INCOMPLETE = DBItem(
+        15,
+        """
         Incomplete
 
         Cannot be verified, the reporter needs to give more info.
-        """)
+        """,
+    )
 
-    OPINION = DBItem(16, """
+    OPINION = DBItem(
+        16,
+        """
         Opinion
 
         Doesn't fit with the project, but can be discussed.
-        """)
+        """,
+    )
 
-    INVALID = DBItem(17, """
+    INVALID = DBItem(
+        17,
+        """
         Invalid
 
         Not a bug. May be a support request or spam.
-        """)
+        """,
+    )
 
-    WONTFIX = DBItem(18, """
+    WONTFIX = DBItem(
+        18,
+        """
         Won't Fix
 
         Doesn't fit with the project plans, sorry.
-        """)
+        """,
+    )
 
-    EXPIRED = DBItem(19, """
+    EXPIRED = DBItem(
+        19,
+        """
         Expired
 
         This bug is expired. There was no activity for a long time.
-        """)
+        """,
+    )
 
-    CONFIRMED = DBItem(20, """
+    CONFIRMED = DBItem(
+        20,
+        """
         Confirmed
 
         Verified by someone other than the reporter.
-        """)
+        """,
+    )
 
-    TRIAGED = DBItem(21, """
+    TRIAGED = DBItem(
+        21,
+        """
         Triaged
 
         Verified by the bug supervisor.
-        """)
+        """,
+    )
 
-    INPROGRESS = DBItem(22, """
+    INPROGRESS = DBItem(
+        22,
+        """
         In Progress
 
         The assigned person is working on it.
-        """)
+        """,
+    )
 
-    FIXCOMMITTED = DBItem(25, """
+    FIXCOMMITTED = DBItem(
+        25,
+        """
         Fix Committed
 
         Fixed, but not available until next release.
-        """)
+        """,
+    )
 
-    FIXRELEASED = DBItem(30, """
+    FIXRELEASED = DBItem(
+        30,
+        """
         Fix Released
 
         The fix was released.
-        """)
+        """,
+    )
 
-    DOESNOTEXIST = DBItem(35, """
+    DOESNOTEXIST = DBItem(
+        35,
+        """
         Does Not Exist
 
         Nothing is published for this bug target.
-        """)
+        """,
+    )
 
-    UNKNOWN = DBItem(999, """
+    UNKNOWN = DBItem(
+        999,
+        """
         Unknown
 
         The status of this bug is not known.
-        """)
+        """,
+    )
 
 
 class BugTaskStatusSearch(DBEnumeratedType):
@@ -242,21 +283,28 @@ class BugTaskStatusSearch(DBEnumeratedType):
 
     The various possible states for a bugfix in searches.
     """
-    use_template(BugTaskStatus, exclude=('UNKNOWN'))
 
-    INCOMPLETE_WITH_RESPONSE = DBItem(13, """
+    use_template(BugTaskStatus, exclude=("UNKNOWN"))
+
+    INCOMPLETE_WITH_RESPONSE = DBItem(
+        13,
+        """
         Incomplete (with response)
 
         This bug has new information since it was last marked
         as requiring a response.
-        """)
+        """,
+    )
 
-    INCOMPLETE_WITHOUT_RESPONSE = DBItem(14, """
+    INCOMPLETE_WITHOUT_RESPONSE = DBItem(
+        14,
+        """
         Incomplete (without response)
 
         This bug requires more information, but no additional
         details were supplied yet..
-        """)
+        """,
+    )
 
 
 def get_bugtask_status(status_id):
@@ -292,7 +340,8 @@ class BugTaskStatusSearchDisplay(DBEnumeratedType):
     The various possible states for a bugfix in advanced
     bug search forms.
     """
-    use_template(BugTaskStatusSearch, exclude=('INCOMPLETE'))
+
+    use_template(BugTaskStatusSearch, exclude=("INCOMPLETE"))
 
 
 UNRESOLVED_BUGTASK_STATUSES = (
@@ -301,18 +350,18 @@ UNRESOLVED_BUGTASK_STATUSES = (
     BugTaskStatus.CONFIRMED,
     BugTaskStatus.TRIAGED,
     BugTaskStatus.INPROGRESS,
-    BugTaskStatus.FIXCOMMITTED)
+    BugTaskStatus.FIXCOMMITTED,
+)
 
 # Actual values stored in the DB:
 DB_INCOMPLETE_BUGTASK_STATUSES = (
     BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE,
     BugTaskStatusSearch.INCOMPLETE_WITHOUT_RESPONSE,
-    )
+)
 
 DB_UNRESOLVED_BUGTASK_STATUSES = (
-    UNRESOLVED_BUGTASK_STATUSES +
-    DB_INCOMPLETE_BUGTASK_STATUSES
-    )
+    UNRESOLVED_BUGTASK_STATUSES + DB_INCOMPLETE_BUGTASK_STATUSES
+)
 
 RESOLVED_BUGTASK_STATUSES = (
     BugTaskStatus.FIXRELEASED,
@@ -321,14 +370,14 @@ RESOLVED_BUGTASK_STATUSES = (
     BugTaskStatus.WONTFIX,
     BugTaskStatus.EXPIRED,
     BugTaskStatus.DOESNOTEXIST,
-    )
+)
 
 BUG_SUPERVISOR_BUGTASK_STATUSES = (
     BugTaskStatus.WONTFIX,
     BugTaskStatus.EXPIRED,
     BugTaskStatus.TRIAGED,
     BugTaskStatus.DOESNOTEXIST,
-    )
+)
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -383,12 +432,13 @@ class IllegalTarget(Exception):
 
 class IBugTaskDelete(Interface):
     """An interface for operations allowed with the Delete permission."""
+
     def destroySelf():
         """Removes this BugTask from the database."""
 
     @export_destructor_operation()
     @call_with(who=REQUEST_USER)
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def delete(who):
         """Delete this bugtask.
 
@@ -405,33 +455,36 @@ class IBugTask(IHasBug, IBugTaskDelete):
     """A bug needing fixing in a particular product or package."""
 
     id = Int(title=_("Bug Task #"))
-    bug = exported(
-        BugField(title=_("Bug"), readonly=True))
+    bug = exported(BugField(title=_("Bug"), readonly=True))
     bug_id = Int(title=_("The bug ID for this bug task"))
-    product = Choice(
-        title=_('Project'), required=False, vocabulary='Product')
-    product_id = Attribute('The product ID')
+    product = Choice(title=_("Project"), required=False, vocabulary="Product")
+    product_id = Attribute("The product ID")
     productseries = Choice(
-        title=_('Series'), required=False, vocabulary='ProductSeries')
-    productseries_id = Attribute('The product series ID')
+        title=_("Series"), required=False, vocabulary="ProductSeries"
+    )
+    productseries_id = Attribute("The product series ID")
     sourcepackagename = Choice(
-        title=_("Package"), required=False,
-        vocabulary='SourcePackageName')
-    sourcepackagename_id = Attribute('The sourcepackagename ID')
+        title=_("Package"), required=False, vocabulary="SourcePackageName"
+    )
+    sourcepackagename_id = Attribute("The sourcepackagename ID")
     distribution = Choice(
-        title=_("Distribution"), required=False, vocabulary='Distribution')
-    distribution_id = Attribute('The distribution ID')
+        title=_("Distribution"), required=False, vocabulary="Distribution"
+    )
+    distribution_id = Attribute("The distribution ID")
     distroseries = Choice(
-        title=_("Series"), required=False,
-        vocabulary='DistroSeries')
-    distroseries_id = Attribute('The distroseries ID')
-    milestone = exported(ReferenceChoice(
-        title=_('Milestone'),
-        required=False,
-        readonly=True,
-        vocabulary='BugTaskMilestone',
-        schema=Interface))  # IMilestone
-    milestone_id = Attribute('The id of the milestone.')
+        title=_("Series"), required=False, vocabulary="DistroSeries"
+    )
+    distroseries_id = Attribute("The distroseries ID")
+    milestone = exported(
+        ReferenceChoice(
+            title=_("Milestone"),
+            required=False,
+            readonly=True,
+            vocabulary="BugTaskMilestone",
+            schema=Interface,
+        )
+    )  # IMilestone
+    milestone_id = Attribute("The id of the milestone.")
 
     # The status and importance's vocabularies do not
     # contain an UNKNOWN item in bugtasks that aren't linked to a remote
@@ -442,9 +495,14 @@ class IBugTask(IHasBug, IBugTaskDelete):
     # but the DB stores INCOMPLETE_WITH_RESPONSE and
     # INCOMPLETE_WITHOUT_RESPONSE for query efficiency.
     status = exported(
-        Choice(title=_('Status'), vocabulary=BugTaskStatus,
-               default=BugTaskStatus.NEW, readonly=True))
-    _status = Attribute('The actual status DB column used in queries.')
+        Choice(
+            title=_("Status"),
+            vocabulary=BugTaskStatus,
+            default=BugTaskStatus.NEW,
+            readonly=True,
+        )
+    )
+    _status = Attribute("The actual status DB column used in queries.")
     status_explanation = exported(
         Text(
             title=_("Status explanation"),
@@ -453,12 +511,17 @@ class IBugTask(IHasBug, IBugTaskDelete):
             ),
             required=False,
         ),
-        as_of="devel"
+        as_of="devel",
     )
 
     importance = exported(
-        Choice(title=_('Importance'), vocabulary=BugTaskImportance,
-               default=BugTaskImportance.UNDECIDED, readonly=True))
+        Choice(
+            title=_("Importance"),
+            vocabulary=BugTaskImportance,
+            default=BugTaskImportance.UNDECIDED,
+            readonly=True,
+        )
+    )
     importance_explanation = exported(
         Text(
             title=_("Importance explanation"),
@@ -467,135 +530,216 @@ class IBugTask(IHasBug, IBugTaskDelete):
             ),
             required=False,
         ),
-        as_of="devel"
+        as_of="devel",
     )
 
     assignee = exported(
         PersonChoice(
-            title=_('Assigned to'), required=False,
-            vocabulary='ValidAssignee',
-            readonly=True))
-    assignee_id = Int(title=_('The assignee ID (for eager loading)'))
+            title=_("Assigned to"),
+            required=False,
+            vocabulary="ValidAssignee",
+            readonly=True,
+        )
+    )
+    assignee_id = Int(title=_("The assignee ID (for eager loading)"))
     bugtargetdisplayname = exported(
-        Text(title=_("The short, descriptive name of the target"),
-             readonly=True),
-        exported_as='bug_target_display_name')
+        Text(
+            title=_("The short, descriptive name of the target"), readonly=True
+        ),
+        exported_as="bug_target_display_name",
+    )
     bugtargetname = exported(
-        Text(title=_("The target as presented in mail notifications"),
-             readonly=True),
-        exported_as='bug_target_name')
+        Text(
+            title=_("The target as presented in mail notifications"),
+            readonly=True,
+        ),
+        exported_as="bug_target_name",
+    )
     bugwatch = exported(
         ReferenceChoice(
-            title=_("Remote Bug Details"), required=False,
+            title=_("Remote Bug Details"),
+            required=False,
             schema=IBugWatch,
-            vocabulary='BugWatch', description=_(
+            vocabulary="BugWatch",
+            description=_(
                 "Select the bug watch that "
                 "represents this task in the relevant bug tracker. If none "
                 "of the bug watches represents this particular bug task, "
                 "leave it as (None). Linking the remote bug watch with the "
                 "task in this way means that a change in the remote bug "
                 "status will change the status of this bug task in "
-                "Launchpad.")),
-        exported_as='bug_watch')
+                "Launchpad."
+            ),
+        ),
+        exported_as="bug_watch",
+    )
     date_assigned = exported(
-        Datetime(title=_("Date Assigned"),
-                 description=_("The date on which this task was assigned "
-                               "to someone."),
-                 readonly=True,
-                 required=False))
+        Datetime(
+            title=_("Date Assigned"),
+            description=_(
+                "The date on which this task was assigned " "to someone."
+            ),
+            readonly=True,
+            required=False,
+        )
+    )
     datecreated = exported(
-        Datetime(title=_("Date Created"),
-                 description=_("The date on which this task was created."),
-                 readonly=True),
-        exported_as='date_created')
+        Datetime(
+            title=_("Date Created"),
+            description=_("The date on which this task was created."),
+            readonly=True,
+        ),
+        exported_as="date_created",
+    )
     date_confirmed = exported(
-        Datetime(title=_("Date Confirmed"),
-                 description=_("The date on which this task was marked "
-                               "Confirmed."),
-                 readonly=True,
-                 required=False))
+        Datetime(
+            title=_("Date Confirmed"),
+            description=_(
+                "The date on which this task was marked " "Confirmed."
+            ),
+            readonly=True,
+            required=False,
+        )
+    )
     date_incomplete = exported(
-        Datetime(title=_("Date Incomplete"),
-                 description=_("The date on which this task was marked "
-                               "Incomplete."),
-                 readonly=True,
-                 required=False))
+        Datetime(
+            title=_("Date Incomplete"),
+            description=_(
+                "The date on which this task was marked " "Incomplete."
+            ),
+            readonly=True,
+            required=False,
+        )
+    )
     date_inprogress = exported(
-        Datetime(title=_("Date In Progress"),
-                 description=_("The date on which this task was marked "
-                               "In Progress."),
-                 readonly=True,
-                 required=False),
-        exported_as='date_in_progress')
+        Datetime(
+            title=_("Date In Progress"),
+            description=_(
+                "The date on which this task was marked " "In Progress."
+            ),
+            readonly=True,
+            required=False,
+        ),
+        exported_as="date_in_progress",
+    )
     date_closed = exported(
-        Datetime(title=_("Date Closed"),
-                 description=_("The date on which this task was marked "
-                               "Fix Released, Invalid, Won't Fix, Expired or "
-                               "Opinion."),
-                 readonly=True,
-                 required=False))
+        Datetime(
+            title=_("Date Closed"),
+            description=_(
+                "The date on which this task was marked "
+                "Fix Released, Invalid, Won't Fix, Expired or "
+                "Opinion."
+            ),
+            readonly=True,
+            required=False,
+        )
+    )
     date_left_new = exported(
-        Datetime(title=_("Date left new"),
-                 description=_("The date on which this task was marked "
-                               "with a status higher than New."),
-                 readonly=True,
-                 required=False))
+        Datetime(
+            title=_("Date left new"),
+            description=_(
+                "The date on which this task was marked "
+                "with a status higher than New."
+            ),
+            readonly=True,
+            required=False,
+        )
+    )
     date_triaged = exported(
-        Datetime(title=_("Date Triaged"),
-                 description=_("The date on which this task was marked "
-                               "Triaged."),
-                 readonly=True,
-                 required=False))
+        Datetime(
+            title=_("Date Triaged"),
+            description=_(
+                "The date on which this task was marked " "Triaged."
+            ),
+            readonly=True,
+            required=False,
+        )
+    )
     date_fix_committed = exported(
-        Datetime(title=_("Date Fix Committed"),
-                 description=_("The date on which this task was marked "
-                               "Fix Committed."),
-                 readonly=True,
-                 required=False))
+        Datetime(
+            title=_("Date Fix Committed"),
+            description=_(
+                "The date on which this task was marked " "Fix Committed."
+            ),
+            readonly=True,
+            required=False,
+        )
+    )
     date_fix_released = exported(
-        Datetime(title=_("Date Fix Released"),
-                 description=_("The date on which this task was marked "
-                               "Fix Released."),
-                 readonly=True,
-                 required=False))
+        Datetime(
+            title=_("Date Fix Released"),
+            description=_(
+                "The date on which this task was marked " "Fix Released."
+            ),
+            readonly=True,
+            required=False,
+        )
+    )
     date_left_closed = exported(
-        Datetime(title=_("Date left closed"),
-                 description=_("The date on which this task was "
-                               "last reopened."),
-                 readonly=True,
-                 required=False))
-    age = Datetime(title=_("Age"),
-                   description=_("The age of this task, expressed as the "
-                                 "length of time between the creation date "
-                                 "and now."))
-    task_age = Int(title=_("Age of the bug task"),
-            description=_("The age of this task in seconds, a delta between "
-                         "now and the date the bug task was created."))
+        Datetime(
+            title=_("Date left closed"),
+            description=_("The date on which this task was " "last reopened."),
+            readonly=True,
+            required=False,
+        )
+    )
+    age = Datetime(
+        title=_("Age"),
+        description=_(
+            "The age of this task, expressed as the "
+            "length of time between the creation date "
+            "and now."
+        ),
+    )
+    task_age = Int(
+        title=_("Age of the bug task"),
+        description=_(
+            "The age of this task in seconds, a delta between "
+            "now and the date the bug task was created."
+        ),
+    )
     owner = exported(
-        Reference(title=_("The owner"), schema=Interface, readonly=True))
-    target = exported(Reference(
-        title=_('Target'), required=True, schema=Interface,  # IBugTarget
-        readonly=True,
-        description=_("The software in which this bug should be fixed.")))
+        Reference(title=_("The owner"), schema=Interface, readonly=True)
+    )
+    target = exported(
+        Reference(
+            title=_("Target"),
+            required=True,
+            schema=Interface,  # IBugTarget
+            readonly=True,
+            description=_("The software in which this bug should be fixed."),
+        )
+    )
     title = exported(
-        Text(title=_("The title of the bug related to this bugtask"),
-             readonly=True))
+        Text(
+            title=_("The title of the bug related to this bugtask"),
+            readonly=True,
+        )
+    )
     related_tasks = exported(
         CollectionField(
             description=_(
                 "IBugTasks related to this one, namely other "
-                "IBugTasks on the same IBug."),
+                "IBugTasks on the same IBug."
+            ),
             value_type=Reference(schema=Interface),  # Will be specified later
-            readonly=True))
+            readonly=True,
+        )
+    )
     pillar = Choice(
-        title=_('Pillar'),
-        description=_("The LP pillar (product or distribution) "
-                      "associated with this task."),
-        vocabulary='DistributionOrProduct', readonly=True)
+        title=_("Pillar"),
+        description=_(
+            "The LP pillar (product or distribution) "
+            "associated with this task."
+        ),
+        vocabulary="DistributionOrProduct",
+        readonly=True,
+    )
     other_affected_pillars = Attribute(
         "The other pillars (products or distributions) affected by this bug. "
         "This returns a list of pillars OTHER THAN the pillar associated "
-        "with this particular bug.")
+        "with this particular bug."
+    )
     # This property does various database queries. It is a property so a
     # "snapshot" of its value will be taken when a bugtask is modified, which
     # allows us to compare it to the current value and see if there are any
@@ -604,19 +748,29 @@ class IBugTask(IHasBug, IBugTaskDelete):
     # IBugTask because we currently only ever need this value for events
     # handled on IBugTask.
     bug_subscribers = Field(
-        title=_("A list of IPersons subscribed to the bug, whether directly "
-                "or indirectly."), readonly=True)
+        title=_(
+            "A list of IPersons subscribed to the bug, whether directly "
+            "or indirectly."
+        ),
+        readonly=True,
+    )
 
     conjoined_primary = Attribute(
-        "The series-specific bugtask in a conjoined relationship")
+        "The series-specific bugtask in a conjoined relationship"
+    )
     conjoined_replica = Attribute(
-        "The generic bugtask in a conjoined relationship")
+        "The generic bugtask in a conjoined relationship"
+    )
 
     is_complete = exported(
-        Bool(description=_(
+        Bool(
+            description=_(
                 "True or False depending on whether or not there is more "
-                "work required on this bug task."),
-             readonly=True))
+                "work required on this bug task."
+            ),
+            readonly=True,
+        )
+    )
 
     @operation_returns_collection_of(Interface)  # Actually IBug.
     @call_with(user=REQUEST_USER, limit=10)
@@ -685,7 +839,7 @@ class IBugTask(IHasBug, IBugTaskDelete):
         """
 
     @mutator_for(milestone)
-    @rename_parameters_as(new_milestone='milestone')
+    @rename_parameters_as(new_milestone="milestone")
     @operation_parameters(new_milestone=copy_field(milestone))
     @call_with(user=REQUEST_USER)
     @export_write_operation()
@@ -698,7 +852,7 @@ class IBugTask(IHasBug, IBugTaskDelete):
         """
 
     @mutator_for(importance)
-    @rename_parameters_as(new_importance='importance')
+    @rename_parameters_as(new_importance="importance")
     @operation_parameters(new_importance=copy_field(importance))
     @call_with(user=REQUEST_USER)
     @export_write_operation()
@@ -722,9 +876,8 @@ class IBugTask(IHasBug, IBugTaskDelete):
         """
 
     @mutator_for(status)
-    @rename_parameters_as(new_status='status')
-    @operation_parameters(
-        new_status=copy_field(status))
+    @rename_parameters_as(new_status="status")
+    @operation_parameters(new_status=copy_field(status))
     @call_with(user=REQUEST_USER)
     @export_write_operation()
     @operation_for_version("beta")
@@ -773,8 +926,7 @@ class IBugTask(IHasBug, IBugTaskDelete):
 
     @mutator_for(target)
     @call_with(user=REQUEST_USER)
-    @operation_parameters(
-        target=copy_field(target))
+    @operation_parameters(target=copy_field(target))
     @export_write_operation()
     @operation_for_version("beta")
     def transitionToTarget(target, user):
@@ -833,10 +985,10 @@ class IBugTask(IHasBug, IBugTaskDelete):
 
 # Set schemas that were impossible to specify during the definition of
 # IBugTask itself.
-patch_collection_property(IBugTask, 'related_tasks', IBugTask)
+patch_collection_property(IBugTask, "related_tasks", IBugTask)
 
 # We are forced to define this now to avoid circular import problems.
-patch_collection_property(IBugWatch, 'bugtasks', IBugTask)
+patch_collection_property(IBugWatch, "bugtasks", IBugTask)
 
 
 class IBugTaskDelta(Interface):
@@ -846,56 +998,63 @@ class IBugTaskDelta(Interface):
 
     Likewise, if sourcepackagename is not None, product must be None.
     """
+
     bugtask = Attribute("The modified IBugTask.")
     target = Attribute(
         """The change made to the IBugTarget for this task.
 
         The value is a dict like {'old' : IBugTarget, 'new' : IBugTarget},
         or None, if no change was made to the target.
-        """)
+        """
+    )
     status = Attribute(
         """The change made to the status for this task.
 
         The value is a dict like
         {'old' : BugTaskStatus.FOO, 'new' : BugTaskStatus.BAR}, or None,
         if no change was made to the status.
-        """)
+        """
+    )
     status_explanation = Attribute(
         """The change made to the status_explanation for this task.
 
         The value is a dict like
         {'old': 'foo', 'new': 'bar'}, or None, if no change was made to
         the status_explanation.
-        """)
+        """
+    )
     importance = Attribute(
         """The change made to the importance of this task.
 
         The value is a dict like
         {'old' : BugTaskImportance.FOO, 'new' : BugTaskImportance.BAR},
         or None, if no change was made to the importance.
-        """)
+        """
+    )
     importance_explanation = Attribute(
         """The change made to the importance_explanation for this task.
 
         The value is a dict like
         {'old': 'foo', 'new': 'bar'}, or None, if no change was made to
         the importance_explanation.
-        """)
+        """
+    )
     assignee = Attribute(
         """The change made to the assignee of this task.
 
         The value is a dict like {'old' : IPerson, 'new' : IPerson}, or None,
         if no change was made to the assignee.
-        """)
+        """
+    )
     bugwatch = Attribute("The bugwatch which governs this task.")
     milestone = Attribute("The milestone for which this task is scheduled.")
 
 
 class IBugTaskSet(Interface):
     """A utility to retrieving BugTasks."""
-    title = Attribute('Title')
-    orderby_expression = Attribute(
-        "The SQL expression for a sort key")
+
+    title = Attribute("Title")
+    orderby_expression = Attribute("The SQL expression for a sort key")
 
     def get(task_id):
         """Retrieve a BugTask with the given id.
@@ -939,8 +1098,9 @@ class IBugTaskSet(Interface):
             task in the database.
         """
 
-    def findSimilar(user, summary, product=None, distribution=None,
-                    sourcepackagename=None):
+    def findSimilar(
+        user, summary, product=None, distribution=None, sourcepackagename=None
+    ):
         """Find bugs similar to the given summary.
 
         The search is limited to the given product or distribution
@@ -997,12 +1157,26 @@ class IBugTaskSet(Interface):
         :return: A list of tuples containing (status_id, count).
         """
 
-    def createManyTasks(bug, owner, targets, status=None, importance=None,
-                   assignee=None, milestone=None):
+    def createManyTasks(
+        bug,
+        owner,
+        targets,
+        status=None,
+        importance=None,
+        assignee=None,
+        milestone=None,
+    ):
         """Create a series of bug tasks and return them."""
 
-    def createTask(bug, owner, target, status=None, importance=None,
-                   assignee=None, milestone=None):
+    def createTask(
+        bug,
+        owner,
+        target,
+        status=None,
+        importance=None,
+        assignee=None,
+        milestone=None,
+    ):
         """Create a bug task on a bug and return it.
 
         If the bug is public, bug supervisors will be automatically
@@ -1012,8 +1186,9 @@ class IBugTaskSet(Interface):
         distribution, series tasks will be created for them.
         """
 
-    def findExpirableBugTasks(min_days_old, user, bug=None, target=None,
-                              limit=None):
+    def findExpirableBugTasks(
+        min_days_old, user, bug=None, target=None, limit=None
+    ):
         """Return a list of bugtasks that are at least min_days_old.
 
         :param min_days_old: An int representing the minimum days of
@@ -1076,64 +1251,90 @@ def valid_remote_bug_url(value):
         pass
     except UnrecognizedBugTrackerURL:
         raise LaunchpadValidationError(
-            "Launchpad does not recognize the bug tracker at this URL.")
+            "Launchpad does not recognize the bug tracker at this URL."
+        )
     return True
 
 
 class ILinkPackaging(Interface):
     """Form for linking a source package to a project."""
+
     add_packaging = Bool(
-        title=_('Link the package to the upstream project?'),
-        description=_('Always suggest this project when adding an '
-                      'upstream bug for this package.'),
-        required=True, default=False)
+        title=_("Link the package to the upstream project?"),
+        description=_(
+            "Always suggest this project when adding an "
+            "upstream bug for this package."
+        ),
+        required=True,
+        default=False,
+    )
 
 
 class IAddBugTaskForm(ILinkPackaging):
     """Form for adding an upstream bugtask."""
+
     # It is tempting to replace the first three attributes here with their
     # counterparts from IUpstreamBugTask and IDistroBugTask.
     # BUT: This will cause OOPSes with adapters, hence IAddBugTask reinvents
     # the wheel somewhat. There is a test to ensure that this remains so.
-    product = Choice(title=_('Project'), required=True, vocabulary='Product')
+    product = Choice(title=_("Project"), required=True, vocabulary="Product")
     distribution = Choice(
-        title=_("Distribution"), required=True, vocabulary='Distribution')
+        title=_("Distribution"), required=True, vocabulary="Distribution"
+    )
     sourcepackagename = Choice(
-        title=_("Source Package Name"), required=False,
-        description=_("The source package in which the bug occurs. "
-                      "Leave blank if you are not sure."),
-        vocabulary='SourcePackageName')
+        title=_("Source Package Name"),
+        required=False,
+        description=_(
+            "The source package in which the bug occurs. "
+            "Leave blank if you are not sure."
+        ),
+        vocabulary="SourcePackageName",
+    )
     bug_url = StrippedTextLine(
-        title=_('URL'), required=False, constraint=valid_remote_bug_url,
-        description=_("The URL of this bug in the remote bug tracker."))
+        title=_("URL"),
+        required=False,
+        constraint=valid_remote_bug_url,
+        description=_("The URL of this bug in the remote bug tracker."),
+    )
 
 
 class IAddBugTaskWithProductCreationForm(ILinkPackaging):
 
     bug_url = StrippedTextLine(
-        title=_('Bug URL'), required=True, constraint=valid_remote_bug_url,
-        description=_("The URL of this bug in the remote bug tracker."))
-    display_name = TextLine(title=_('Project name'))
+        title=_("Bug URL"),
+        required=True,
+        constraint=valid_remote_bug_url,
+        description=_("The URL of this bug in the remote bug tracker."),
+    )
+    display_name = TextLine(title=_("Project name"))
     name = ProductNameField(
-        title=_('Project ID'), constraint=name_validator, required=True,
+        title=_("Project ID"),
+        constraint=name_validator,
+        required=True,
         description=_(
             "A short name starting with a lowercase letter or number, "
             "followed by letters, dots, hyphens or plusses. e.g. firefox, "
-            "linux, gnome-terminal."))
-    summary = Summary(title=_('Project summary'), required=True)
+            "linux, gnome-terminal."
+        ),
+    )
+    summary = Summary(title=_("Project summary"), required=True)
 
 
 class ICreateQuestionFromBugTaskForm(Interface):
     """Form for creating and question from a bug."""
+
     comment = Text(
-        title=_('Comment'),
-        description=_('An explanation of why the bug report is a question.'),
-        required=False)
+        title=_("Comment"),
+        description=_("An explanation of why the bug report is a question."),
+        required=False,
+    )
 
 
 class IRemoveQuestionFromBugTaskForm(Interface):
     """Form for removing a question created from a bug."""
+
     comment = Text(
-        title=_('Comment'),
-        description=_('An explanation of why the bug report is valid.'),
-        required=False)
+        title=_("Comment"),
+        description=_("An explanation of why the bug report is valid."),
+        required=False,
+    )

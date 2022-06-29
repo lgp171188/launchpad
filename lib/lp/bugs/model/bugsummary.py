@@ -4,42 +4,26 @@
 """BugSummary Storm database classes."""
 
 __all__ = [
-    'BugSummary',
-    'CombineBugSummaryConstraint',
-    'get_bugsummary_filter_for_user',
-    ]
+    "BugSummary",
+    "CombineBugSummaryConstraint",
+    "get_bugsummary_filter_for_user",
+]
 
 from storm.base import Storm
-from storm.expr import (
-    And,
-    Or,
-    Select,
-    SQL,
-    With,
-    )
-from storm.properties import (
-    Bool,
-    Int,
-    Unicode,
-    )
+from storm.expr import SQL, And, Or, Select, With
+from storm.properties import Bool, Int, Unicode
 from storm.references import Reference
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
-from lp.bugs.interfaces.bugsummary import (
-    IBugSummary,
-    IBugSummaryDimension,
-    )
+from lp.bugs.interfaces.bugsummary import IBugSummary, IBugSummaryDimension
 from lp.bugs.interfaces.bugtask import (
     BugTaskImportance,
     BugTaskStatus,
     BugTaskStatusSearch,
-    )
+)
 from lp.registry.interfaces.role import IPersonRoles
-from lp.registry.model.accesspolicy import (
-    AccessPolicy,
-    AccessPolicyGrant,
-    )
+from lp.registry.model.accesspolicy import AccessPolicy, AccessPolicyGrant
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.milestone import Milestone
@@ -55,41 +39,41 @@ from lp.services.database.enumcol import DBEnum
 class BugSummary(Storm):
     """BugSummary Storm database class."""
 
-    __storm_table__ = 'combinedbugsummary'
+    __storm_table__ = "combinedbugsummary"
 
     id = Int(primary=True)
     count = Int()
 
-    product_id = Int(name='product')
+    product_id = Int(name="product")
     product = Reference(product_id, Product.id)
 
-    productseries_id = Int(name='productseries')
+    productseries_id = Int(name="productseries")
     productseries = Reference(productseries_id, ProductSeries.id)
 
-    distribution_id = Int(name='distribution')
+    distribution_id = Int(name="distribution")
     distribution = Reference(distribution_id, Distribution.id)
 
-    distroseries_id = Int(name='distroseries')
+    distroseries_id = Int(name="distroseries")
     distroseries = Reference(distroseries_id, DistroSeries.id)
 
-    sourcepackagename_id = Int(name='sourcepackagename')
+    sourcepackagename_id = Int(name="sourcepackagename")
     sourcepackagename = Reference(sourcepackagename_id, SourcePackageName.id)
 
-    ociproject_id = Int(name='ociproject')
-    ociproject = Reference(ociproject_id, 'OCIProject.id')
+    ociproject_id = Int(name="ociproject")
+    ociproject = Reference(ociproject_id, "OCIProject.id")
 
-    milestone_id = Int(name='milestone')
+    milestone_id = Int(name="milestone")
     milestone = Reference(milestone_id, Milestone.id)
 
-    status = DBEnum(name='status', enum=(BugTaskStatus, BugTaskStatusSearch))
+    status = DBEnum(name="status", enum=(BugTaskStatus, BugTaskStatusSearch))
 
-    importance = DBEnum(name='importance', enum=BugTaskImportance)
+    importance = DBEnum(name="importance", enum=BugTaskImportance)
 
     tag = Unicode()
 
-    viewed_by_id = Int(name='viewed_by')
+    viewed_by_id = Int(name="viewed_by")
     viewed_by = Reference(viewed_by_id, Person.id)
-    access_policy_id = Int(name='access_policy')
+    access_policy_id = Int(name="access_policy")
     access_policy = Reference(access_policy_id, AccessPolicy.id)
 
     has_patch = Bool()
@@ -106,9 +90,9 @@ class CombineBugSummaryConstraint:
 
     def __init__(self, *dimensions):
         self.dimensions = map(
-            lambda x:
-            removeSecurityProxy(x.getBugSummaryContextWhereClause()),
-            dimensions)
+            lambda x: removeSecurityProxy(x.getBugSummaryContextWhereClause()),
+            dimensions,
+        )
 
     def getBugSummaryContextWhereClause(self):
         """See `IBugSummaryDimension`."""
@@ -127,8 +111,8 @@ def get_bugsummary_filter_for_user(user):
     # subscription they will see rather inflated counts. Admins get to
     # deal.
     public_filter = And(
-        BugSummary.viewed_by_id == None,
-        BugSummary.access_policy_id == None)
+        BugSummary.viewed_by_id == None, BugSummary.access_policy_id == None
+    )
     if user is None:
         return [], [public_filter]
     elif IPersonRoles(user).in_admin:
@@ -136,23 +120,33 @@ def get_bugsummary_filter_for_user(user):
     else:
         with_clauses = [
             With(
-                'teams',
+                "teams",
                 Select(
-                    TeamParticipation.teamID, tables=[TeamParticipation],
-                    where=(TeamParticipation.personID == user.id))),
+                    TeamParticipation.teamID,
+                    tables=[TeamParticipation],
+                    where=(TeamParticipation.personID == user.id),
+                ),
+            ),
             With(
-                'policies',
+                "policies",
                 Select(
                     AccessPolicyGrant.policy_id,
                     tables=[AccessPolicyGrant],
                     where=(
                         AccessPolicyGrant.grantee_id.is_in(
-                            SQL("SELECT team FROM teams"))))),
-            ]
-        where_clauses = [Or(
-            public_filter,
-            BugSummary.viewed_by_id.is_in(
-                SQL("SELECT team FROM teams")),
-            BugSummary.access_policy_id.is_in(
-                SQL("SELECT policy FROM policies")))]
+                            SQL("SELECT team FROM teams")
+                        )
+                    ),
+                ),
+            ),
+        ]
+        where_clauses = [
+            Or(
+                public_filter,
+                BugSummary.viewed_by_id.is_in(SQL("SELECT team FROM teams")),
+                BugSummary.access_policy_id.is_in(
+                    SQL("SELECT policy FROM policies")
+                ),
+            )
+        ]
         return with_clauses, where_clauses

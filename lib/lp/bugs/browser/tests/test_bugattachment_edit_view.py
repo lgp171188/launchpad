@@ -6,11 +6,11 @@ from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.testing import (
+    TestCaseWithFactory,
     login_admin,
     login_person,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.views import create_initialized_view
 
@@ -21,11 +21,11 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     CHANGE_FORM_DATA = {
-        'field.title': 'new description',
-        'field.patch': 'on',
-        'field.contenttype': 'application/whatever',
-        'field.actions.change': 'Change',
-        }
+        "field.title": "new description",
+        "field.patch": "on",
+        "field.contenttype": "application/whatever",
+        "field.actions.change": "Change",
+    }
 
     def setUp(self):
         super().setUp()
@@ -41,11 +41,16 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
         # pillar is different from the immediate target.  This can make a
         # difference for some security checks.
         self.bug.default_bugtask.transitionToTarget(
-            self.factory.makeDistributionSourcePackage(), self.bug_owner)
+            self.factory.makeDistributionSourcePackage(), self.bug_owner
+        )
         self.bugattachment = self.factory.makeBugAttachment(
-            bug=self.bug, filename='foo.diff', data=b'file content',
-            description='attachment description', content_type='text/plain',
-            is_patch=False)
+            bug=self.bug,
+            filename="foo.diff",
+            data=b"file content",
+            description="attachment description",
+            content_type="text/plain",
+            is_patch=False,
+        )
         # The Librarian server should know about the new file before
         # we start the tests.
         transaction.commit()
@@ -53,29 +58,35 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
     def test_user_changes_their_own_attachment(self):
         login_person(self.bugattachment.message.owner)
         create_initialized_view(
-            self.bugattachment, name='+edit', form=self.CHANGE_FORM_DATA)
-        self.assertEqual('new description', self.bugattachment.title)
+            self.bugattachment, name="+edit", form=self.CHANGE_FORM_DATA
+        )
+        self.assertEqual("new description", self.bugattachment.title)
         self.assertTrue(self.bugattachment.is_patch)
         self.assertEqual(
-            'application/whatever', self.bugattachment.libraryfile.mimetype)
+            "application/whatever", self.bugattachment.libraryfile.mimetype
+        )
 
     def test_admin_changes_any_attachment(self):
         login_admin()
         create_initialized_view(
-            self.bugattachment, name='+edit', form=self.CHANGE_FORM_DATA)
-        self.assertEqual('new description', self.bugattachment.title)
+            self.bugattachment, name="+edit", form=self.CHANGE_FORM_DATA
+        )
+        self.assertEqual("new description", self.bugattachment.title)
         self.assertTrue(self.bugattachment.is_patch)
         self.assertEqual(
-            'application/whatever', self.bugattachment.libraryfile.mimetype)
+            "application/whatever", self.bugattachment.libraryfile.mimetype
+        )
 
     def test_registry_expert_changes_any_attachment(self):
         login_person(self.registry_expert)
         create_initialized_view(
-            self.bugattachment, name='+edit', form=self.CHANGE_FORM_DATA)
-        self.assertEqual('new description', self.bugattachment.title)
+            self.bugattachment, name="+edit", form=self.CHANGE_FORM_DATA
+        )
+        self.assertEqual("new description", self.bugattachment.title)
         self.assertTrue(self.bugattachment.is_patch)
         self.assertEqual(
-            'application/whatever', self.bugattachment.libraryfile.mimetype)
+            "application/whatever", self.bugattachment.libraryfile.mimetype
+        )
 
     def test_pillar_bug_supervisor_changes_any_attachment(self):
         login_admin()
@@ -83,42 +94,48 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
         self.bug.default_bugtask.pillar.bug_supervisor = bug_supervisor
         login_person(bug_supervisor)
         create_initialized_view(
-            self.bugattachment, name='+edit', form=self.CHANGE_FORM_DATA)
-        self.assertEqual('new description', self.bugattachment.title)
+            self.bugattachment, name="+edit", form=self.CHANGE_FORM_DATA
+        )
+        self.assertEqual("new description", self.bugattachment.title)
         self.assertTrue(self.bugattachment.is_patch)
         self.assertEqual(
-            'application/whatever', self.bugattachment.libraryfile.mimetype)
+            "application/whatever", self.bugattachment.libraryfile.mimetype
+        )
 
     def test_other_user_changes_attachment_fails(self):
         random_user = self.factory.makePerson()
         login_person(random_user)
         create_initialized_view(
-            self.bugattachment, name='+edit', form=self.CHANGE_FORM_DATA)
-        self.assertEqual('attachment description', self.bugattachment.title)
+            self.bugattachment, name="+edit", form=self.CHANGE_FORM_DATA
+        )
+        self.assertEqual("attachment description", self.bugattachment.title)
         self.assertFalse(self.bugattachment.is_patch)
-        self.assertEqual('text/plain', self.bugattachment.libraryfile.mimetype)
+        self.assertEqual("text/plain", self.bugattachment.libraryfile.mimetype)
 
     DELETE_FORM_DATA = {
-        'field.actions.delete': 'Delete Attachment',
-        }
+        "field.actions.delete": "Delete Attachment",
+    }
 
     def test_delete_cannot_be_performed_by_other_users(self):
         user = self.factory.makePerson()
         login_person(user)
         create_initialized_view(
-            self.bugattachment, name='+edit', form=self.DELETE_FORM_DATA)
+            self.bugattachment, name="+edit", form=self.DELETE_FORM_DATA
+        )
         self.assertEqual(1, self.bug.attachments.count())
 
     def test_admin_can_delete_any_attachment(self):
         login_admin()
         create_initialized_view(
-            self.bugattachment, name='+edit', form=self.DELETE_FORM_DATA)
+            self.bugattachment, name="+edit", form=self.DELETE_FORM_DATA
+        )
         self.assertEqual(0, self.bug.attachments.count())
 
     def test_registry_expert_can_delete_any_attachment(self):
         login_person(self.registry_expert)
         create_initialized_view(
-            self.bugattachment, name='+edit', form=self.DELETE_FORM_DATA)
+            self.bugattachment, name="+edit", form=self.DELETE_FORM_DATA
+        )
         self.assertEqual(0, self.bug.attachments.count())
 
     def test_pillar_bug_supervisor_can_delete_any_attachment(self):
@@ -127,18 +144,25 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
         self.bug.default_bugtask.pillar.bug_supervisor = bug_supervisor
         login_person(bug_supervisor)
         create_initialized_view(
-            self.bugattachment, name='+edit', form=self.DELETE_FORM_DATA)
+            self.bugattachment, name="+edit", form=self.DELETE_FORM_DATA
+        )
         self.assertEqual(0, self.bug.attachments.count())
 
     def test_attachment_owner_can_delete_their_own_attachment(self):
         bug = self.factory.makeBug(owner=self.bug_owner)
         another_user = self.factory.makePerson()
         attachment = self.factory.makeBugAttachment(
-            bug=bug, owner=another_user, filename='foo.diff',
-            data=b'the file content', description='some file',
-            content_type='text/plain', is_patch=False)
+            bug=bug,
+            owner=another_user,
+            filename="foo.diff",
+            data=b"the file content",
+            description="some file",
+            content_type="text/plain",
+            is_patch=False,
+        )
 
         login_person(another_user)
         create_initialized_view(
-            attachment, name='+edit', form=self.DELETE_FORM_DATA)
+            attachment, name="+edit", form=self.DELETE_FORM_DATA
+        )
         self.assertEqual(0, bug.attachments.count())

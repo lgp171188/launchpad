@@ -4,10 +4,10 @@
 """Resources having to do with Launchpad bugs."""
 
 __all__ = [
-    'bugcomment_to_entry',
-    'bugtask_to_privacy',
-    'convert_to_information_type',
-    ]
+    "bugcomment_to_entry",
+    "bugtask_to_privacy",
+    "convert_to_information_type",
+]
 
 from lazr.restful.interfaces import IEntry
 from zope.component import getMultiAdapter
@@ -22,7 +22,8 @@ def bugcomment_to_entry(comment, version):
     real IMessage instances but IBugComment.
     """
     return getMultiAdapter(
-        (comment.bugtask.bug.messages[comment.index], version), IEntry)
+        (comment.bugtask.bug.messages[comment.index], version), IEntry
+    )
 
 
 def bugtask_to_privacy(bugtask):

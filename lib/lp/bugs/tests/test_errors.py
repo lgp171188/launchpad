@@ -12,11 +12,10 @@ from lp.testing.views import create_webservice_error_view
 
 
 class TestWebServiceErrors(TestCase):
-    """ Test that errors are correctly mapped to HTTP status codes."""
+    """Test that errors are correctly mapped to HTTP status codes."""
 
     layer = FunctionalLayer
 
     def test_InvalidDuplicateValue_expectation_failed(self):
-        error_view = create_webservice_error_view(
-            InvalidDuplicateValue("Dup"))
+        error_view = create_webservice_error_view(InvalidDuplicateValue("Dup"))
         self.assertEqual(EXPECTATION_FAILED, error_view.status)

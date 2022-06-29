@@ -4,28 +4,21 @@
 """Bug subscription interfaces."""
 
 __all__ = [
-    'IBugSubscription',
-    ]
+    "IBugSubscription",
+]
 
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     export_read_operation,
     exported,
     exported_as_webservice_entry,
     operation_for_version,
-    REQUEST_USER,
-    )
+)
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Datetime,
-    Int,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Choice, Datetime, Int
 
 from lp import _
 from lp.bugs.enums import BugNotificationLevel
@@ -37,42 +30,57 @@ from lp.services.webservice.apihelpers import patch_reference_property
 class IBugSubscription(Interface):
     """The relationship between a person and a bug."""
 
-    id = Int(title=_('ID'), readonly=True, required=True)
-    person = exported(PersonChoice(
-        title=_('Person'), required=True, vocabulary='ValidPersonOrTeam',
-        readonly=True, description=_("The person's Launchpad ID or "
-        "email address.")), as_of="beta")
-    bug = exported(Reference(
-        Interface, title=_("Bug"), required=True, readonly=True),
-        as_of="beta")
+    id = Int(title=_("ID"), readonly=True, required=True)
+    person = exported(
+        PersonChoice(
+            title=_("Person"),
+            required=True,
+            vocabulary="ValidPersonOrTeam",
+            readonly=True,
+            description=_("The person's Launchpad ID or " "email address."),
+        ),
+        as_of="beta",
+    )
+    bug = exported(
+        Reference(Interface, title=_("Bug"), required=True, readonly=True),
+        as_of="beta",
+    )
     # We mark this as doNotSnapshot() because it's a magically-generated
     # Storm attribute and it causes Snapshot to break.
     bugID = doNotSnapshot(Int(title="The bug id.", readonly=True))
     bug_notification_level = exported(
         Choice(
-            title=_("Bug notification level"), required=True,
+            title=_("Bug notification level"),
+            required=True,
             vocabulary=BugNotificationLevel,
             default=BugNotificationLevel.COMMENTS,
             description=_(
                 "The volume and type of bug notifications "
-                "this subscription will generate."),
+                "this subscription will generate."
             ),
-        as_of="devel")
+        ),
+        as_of="devel",
+    )
     date_created = exported(
-        Datetime(title=_('Date subscribed'), required=True, readonly=True),
-        as_of="beta")
+        Datetime(title=_("Date subscribed"), required=True, readonly=True),
+        as_of="beta",
+    )
     subscribed_by = exported(
         PersonChoice(
-            title=_('Subscribed by'), required=True,
-            vocabulary='ValidPersonOrTeam', readonly=True,
-            description=_("The person who created this subscription.")),
-        as_of="beta")
+            title=_("Subscribed by"),
+            required=True,
+            vocabulary="ValidPersonOrTeam",
+            readonly=True,
+            description=_("The person who created this subscription."),
+        ),
+        as_of="beta",
+    )
 
-    display_subscribed_by = Attribute(
-        "`subscribed_by` formatted for display.")
+    display_subscribed_by = Attribute("`subscribed_by` formatted for display.")
 
     display_duplicate_subscribed_by = Attribute(
-        "duplicate bug `subscribed_by` formatted for display.")
+        "duplicate bug `subscribed_by` formatted for display."
+    )
 
     @call_with(user=REQUEST_USER)
     @export_read_operation()
@@ -86,5 +94,4 @@ class IBugSubscription(Interface):
 # the value type for the `bug` reference.
 from lp.bugs.interfaces.bug import IBug  # noqa: E402
 
-
-patch_reference_property(IBugSubscription, 'bug', IBug)
+patch_reference_property(IBugSubscription, "bug", IBug)

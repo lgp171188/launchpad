@@ -2,15 +2,15 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'notify_bugtask_edited',
-    ]
+    "notify_bugtask_edited",
+]
 
 
 from lp.bugs.adapters.bugdelta import BugDelta
 from lp.bugs.subscribers.bug import (
     add_bug_change_notifications,
     send_bug_details_to_new_bug_subscribers,
-    )
+)
 from lp.registry.interfaces.person import IPerson
 from lp.services.database.sqlbase import block_implicit_flushes
 from lp.services.webapp.publisher import canonical_url
@@ -29,7 +29,8 @@ def notify_bugtask_edited(modified_bugtask, event):
         bug=event.object.bug,
         bugurl=canonical_url(event.object.bug),
         bugtask_deltas=bugtask_delta,
-        user=IPerson(event.user))
+        user=IPerson(event.user),
+    )
 
     event_creator = IPerson(event.user)
     previous_subscribers = event.object_before_modification.bug_subscribers
@@ -39,9 +40,15 @@ def notify_bugtask_edited(modified_bugtask, event):
     new_subs = cur_subs_set.difference(prev_subs_set)
 
     add_bug_change_notifications(
-        bug_delta, old_bugtask=event.object_before_modification,
-        new_subscribers=new_subs)
+        bug_delta,
+        old_bugtask=event.object_before_modification,
+        new_subscribers=new_subs,
+    )
 
     send_bug_details_to_new_bug_subscribers(
-        event.object.bug, previous_subscribers, current_subscribers,
-        event_creator=event_creator, modified_bugtask=modified_bugtask)
+        event.object.bug,
+        previous_subscribers,
+        current_subscribers,
+        event_creator=event_creator,
+        modified_bugtask=modified_bugtask,
+    )

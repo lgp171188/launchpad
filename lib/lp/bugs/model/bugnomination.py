@@ -8,17 +8,12 @@ particular distro series or product series. A bug may have zero, one,
 or more nominations.
 """
 
-__all__ = [
-    'BugNomination',
-    'BugNominationSet']
+__all__ = ["BugNomination", "BugNominationSet"]
 
 from datetime import datetime
 
 import pytz
-from storm.properties import (
-    DateTime,
-    Int,
-    )
+from storm.properties import DateTime, Int
 from storm.references import Reference
 from zope.component import getUtility
 from zope.interface import implementer
@@ -30,7 +25,7 @@ from lp.bugs.interfaces.bugnomination import (
     BugNominationStatusError,
     IBugNomination,
     IBugNominationSet,
-    )
+)
 from lp.bugs.interfaces.bugtask import IBugTaskSet
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import validate_public_person
@@ -51,12 +46,16 @@ class BugNomination(StormBase):
     id = Int(primary=True)
 
     owner_id = Int(
-        name="owner", allow_none=False, validator=validate_public_person)
+        name="owner", allow_none=False, validator=validate_public_person
+    )
     owner = Reference(owner_id, "Person.id")
 
     decider_id = Int(
-        name="decider", allow_none=True, default=None,
-        validator=validate_public_person)
+        name="decider",
+        allow_none=True,
+        default=None,
+        validator=validate_public_person,
+    )
     decider = Reference(decider_id, "Person.id")
 
     date_created = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
@@ -68,16 +67,27 @@ class BugNomination(StormBase):
     productseries_id = Int(name="productseries", allow_none=True, default=None)
     productseries = Reference(productseries_id, "ProductSeries.id")
 
-    bug_id = Int(name='bug', allow_none=False)
-    bug = Reference(bug_id, 'Bug.id')
+    bug_id = Int(name="bug", allow_none=False)
+    bug = Reference(bug_id, "Bug.id")
 
     status = DBEnum(
-        name='status', allow_none=False, enum=BugNominationStatus,
-        default=BugNominationStatus.PROPOSED)
+        name="status",
+        allow_none=False,
+        enum=BugNominationStatus,
+        default=BugNominationStatus.PROPOSED,
+    )
 
-    def __init__(self, bug, owner, decider=None, date_created=UTC_NOW,
-                 date_decided=None, distroseries=None,
-                 productseries=None, status=BugNominationStatus.PROPOSED):
+    def __init__(
+        self,
+        bug,
+        owner,
+        decider=None,
+        date_created=UTC_NOW,
+        date_decided=None,
+        distroseries=None,
+        productseries=None,
+        status=BugNominationStatus.PROPOSED,
+    ):
         self.owner = owner
         self.decider = decider
         self.date_created = date_created
@@ -99,7 +109,7 @@ class BugNomination(StormBase):
             return
         self.status = BugNominationStatus.APPROVED
         self.decider = approver
-        self.date_decided = datetime.now(pytz.timezone('UTC'))
+        self.date_decided = datetime.now(pytz.timezone("UTC"))
         targets = []
         if self.distroseries:
             # Figure out which packages are affected in this distro for
@@ -110,14 +120,16 @@ class BugNomination(StormBase):
                 if not task.distribution == distribution:
                     continue
                 if task.sourcepackagename is not None:
-                    targets.append(distroseries.getSourcePackage(
-                        task.sourcepackagename))
+                    targets.append(
+                        distroseries.getSourcePackage(task.sourcepackagename)
+                    )
                 else:
                     targets.append(distroseries)
         else:
             targets.append(self.productseries)
         bugtasks = getUtility(IBugTaskSet).createManyTasks(
-            self.bug, approver, targets)
+            self.bug, approver, targets
+        )
         for bug_task in bugtasks:
             self.bug.addChange(BugTaskAdded(UTC_NOW, approver, bug_task))
 
@@ -125,10 +137,11 @@ class BugNomination(StormBase):
         """See IBugNomination."""
         if self.isApproved():
             raise BugNominationStatusError(
-                "Cannot decline an approved nomination.")
+                "Cannot decline an approved nomination."
+            )
         self.status = BugNominationStatus.DECLINED
         self.decider = decliner
-        self.date_decided = datetime.now(pytz.timezone('UTC'))
+        self.date_decided = datetime.now(pytz.timezone("UTC"))
 
     def isProposed(self):
         """See IBugNomination."""
@@ -148,9 +161,11 @@ class BugNomination(StormBase):
         # yet a bugtask instance with the this target.
         BugTask = self.bug.bugtasks[0].__class__
 
-        if (getFeatureFlag('bugs.nominations.bug_supervisors_can_target') and
-                BugTask.userHasBugSupervisorPrivilegesContext(
-                    self.target, person)):
+        if getFeatureFlag(
+            "bugs.nominations.bug_supervisors_can_target"
+        ) and BugTask.userHasBugSupervisorPrivilegesContext(
+            self.target, person
+        ):
             return True
 
         if BugTask.userHasDriverPrivilegesContext(self.target, person):
@@ -163,20 +178,31 @@ class BugNomination(StormBase):
             # them all.
             package_names = []
             for bugtask in self.bug.bugtasks:
-                if (bugtask.distribution == distribution
-                    and bugtask.sourcepackagename is not None):
+                if (
+                    bugtask.distribution == distribution
+                    and bugtask.sourcepackagename is not None
+                ):
                     package_names.append(bugtask.sourcepackagename)
             if len(package_names) == 0:
                 # If the bug isn't targeted to a source package, allow
                 # any component uploader to approve the nomination, like
                 # a new package.
-                return distribution.main_archive.verifyUpload(
-                    person, None, None, None, strict_component=False) is None
+                return (
+                    distribution.main_archive.verifyUpload(
+                        person, None, None, None, strict_component=False
+                    )
+                    is None
+                )
             for name in package_names:
                 component = self.distroseries.getSourcePackage(
-                    name).latest_published_component
-                if distribution.main_archive.verifyUpload(
-                    person, name, component, self.distroseries) is None:
+                    name
+                ).latest_published_component
+                if (
+                    distribution.main_archive.verifyUpload(
+                        person, name, component, self.distroseries
+                    )
+                    is None
+                ):
                     return True
         return False
 

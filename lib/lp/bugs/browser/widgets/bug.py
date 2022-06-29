@@ -6,21 +6,14 @@ __all__ = [
     "BugTagsWidget",
     "BugWidget",
     "LargeBugTagsWidget",
-    ]
+]
 
 import re
 
 from simplejson import dumps
 from zope.component import getUtility
-from zope.formlib.interfaces import (
-    ConversionError,
-    WidgetInputError,
-    )
-from zope.formlib.textwidgets import (
-    IntWidget,
-    TextAreaWidget,
-    TextWidget,
-    )
+from zope.formlib.interfaces import ConversionError, WidgetInputError
+from zope.formlib.textwidgets import IntWidget, TextAreaWidget, TextWidget
 from zope.schema.interfaces import ConstraintNotSatisfied
 
 from lp.app.errors import NotFoundError
@@ -48,7 +41,7 @@ class BugWidget(IntWidget):
             input = input.strip()
             # Bug ids are often prefixed with '#', but getByNameOrID
             # doesn't accept such ids.
-            if input.startswith('#'):
+            if input.startswith("#"):
                 input = input[1:]
             try:
                 return getUtility(IBugSet).getByNameOrID(input)
@@ -97,8 +90,10 @@ class BugTagsWidgetBase:
             return self._tagsToFieldValue(None)
         else:
             return self._tagsToFieldValue(
-                tag.lower() for tag in re.split(r'[,\s]+', input)
-                if len(tag) != 0)
+                tag.lower()
+                for tag in re.split(r"[,\s]+", input)
+                if len(tag) != 0
+            )
 
     def getInputValue(self):
         try:
@@ -112,19 +107,22 @@ class BugTagsWidgetBase:
             for validation_error in validation_errors.args[0]:
                 if isinstance(validation_error, ConstraintNotSatisfied):
                     self._error = WidgetInputError(
-                        input_error.field_name, input_error.widget_title,
+                        input_error.field_name,
+                        input_error.widget_title,
                         LaunchpadValidationError(
                             "'%s' isn't a valid tag name. Tags must start "
                             "with a letter or number and be lowercase. The "
                             'characters "+", "-" and "." are also allowed '
                             "after the first character."
-                            % validation_error.args[0]))
+                            % validation_error.args[0]
+                        ),
+                    )
                 raise self._error
             else:
                 raise
 
     def _getInputValue(self):
-        raise NotImplementedError('_getInputValue must be overloaded')
+        raise NotImplementedError("_getInputValue must be overloaded")
 
 
 class BugTagsWidget(BugTagsWidgetBase, TextWidget):
@@ -153,20 +151,24 @@ class BugTagsWidget(BugTagsWidgetBase, TextWidget):
                      });
                 });
             </script>
-            """ % (self.official_tags_js, self.context.__name__)
+            """ % (
+            self.official_tags_js,
+            self.context.__name__,
+        )
         return input_markup + script_markup
 
     @property
     def official_tags_js(self):
         """Return the JavaScript of bug tags used by the bug tag completer."""
         bug_target = self.context.context
-        pillar_target = (
-            IProduct(bug_target, None) or IDistribution(bug_target, None))
+        pillar_target = IProduct(bug_target, None) or IDistribution(
+            bug_target, None
+        )
         if pillar_target is not None:
             official_tags = list(pillar_target.official_bug_tags)
         else:
             official_tags = []
-        return 'var official_tags = %s;' % dumps(official_tags)
+        return "var official_tags = %s;" % dumps(official_tags)
 
 
 class BugTagsFrozenSetWidget(BugTagsWidget):

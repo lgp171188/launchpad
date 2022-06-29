@@ -1,18 +1,10 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['BugAttachment', 'BugAttachmentSet']
+__all__ = ["BugAttachment", "BugAttachmentSet"]
 
-from lazr.lifecycle.event import (
-    ObjectCreatedEvent,
-    ObjectDeletedEvent,
-    )
-from storm.locals import (
-    Int,
-    Reference,
-    Store,
-    Unicode,
-    )
+from lazr.lifecycle.event import ObjectCreatedEvent, ObjectDeletedEvent
+from storm.locals import Int, Reference, Store, Unicode
 from zope.event import notify
 from zope.interface import implementer
 
@@ -21,7 +13,7 @@ from lp.bugs.interfaces.bugattachment import (
     BugAttachmentType,
     IBugAttachment,
     IBugAttachmentSet,
-    )
+)
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
@@ -39,16 +31,24 @@ class BugAttachment(StormBase):
     bug_id = Int(name="bug", allow_none=False)
     bug = Reference(bug_id, "Bug.id")
     type = DBEnum(
-        enum=BugAttachmentType, allow_none=False,
-        default=IBugAttachment['type'].default)
+        enum=BugAttachmentType,
+        allow_none=False,
+        default=IBugAttachment["type"].default,
+    )
     title = Unicode(allow_none=False)
     libraryfile_id = Int(name="libraryfile", allow_none=False)
     libraryfile = Reference(libraryfile_id, "LibraryFileAlias.id")
     _message_id = Int(name="message", allow_none=False)
     _message = Reference(_message_id, "Message.id")
 
-    def __init__(self, bug, title, libraryfile, message,
-                 type=IBugAttachment["type"].default):
+    def __init__(
+        self,
+        bug,
+        title,
+        libraryfile,
+        message,
+        type=IBugAttachment["type"].default,
+    ):
         super().__init__()
         self.bug = bug
         self.title = title
@@ -106,15 +106,26 @@ class BugAttachmentSet:
             raise NotFoundError(attach_id)
         return item
 
-    def create(self, bug, filealias, title, message,
-               attach_type=None, send_notifications=False):
+    def create(
+        self,
+        bug,
+        filealias,
+        title,
+        message,
+        attach_type=None,
+        send_notifications=False,
+    ):
         """See `IBugAttachmentSet`."""
         if attach_type is None:
             # XXX kiko 2005-08-03 bug=1659: this should use DEFAULT.
-            attach_type = IBugAttachment['type'].default
+            attach_type = IBugAttachment["type"].default
         attachment = BugAttachment(
-            bug=bug, libraryfile=filealias, type=attach_type, title=title,
-            message=message)
+            bug=bug,
+            libraryfile=filealias,
+            type=attach_type,
+            title=title,
+            message=message,
+        )
         # canonial_url(attachment) (called by notification subscribers
         # to generate the download URL of the attachments) blows up if
         # attachment.id is not (yet) set.

@@ -4,8 +4,8 @@
 """Code for handling bug notification recipients in bug mail."""
 
 __all__ = [
-    'BugNotificationRecipients',
-    ]
+    "BugNotificationRecipients",
+]
 
 from zope.interface import implementer
 
@@ -75,8 +75,10 @@ class BugNotificationRecipients(NotificationRecipientSet):
         """Registers a subscriber of a duplicate of this bug."""
         reason = "Subscriber of Duplicate"
         if person.is_team:
-            text = ("are a member of %s, which is subscribed "
-                    "to a duplicate bug report" % person.displayname)
+            text = (
+                "are a member of %s, which is subscribed "
+                "to a duplicate bug report" % person.displayname
+            )
             reason += " @%s" % person.name
         else:
             text = "are subscribed to a\nduplicate bug report"
@@ -88,8 +90,10 @@ class BugNotificationRecipients(NotificationRecipientSet):
         """Registers a direct subscriber of this bug."""
         reason = "Subscriber"
         if person.is_team:
-            text = ("are a member of %s, which is subscribed "
-                    "to the bug report" % person.displayname)
+            text = (
+                "are a member of %s, which is subscribed "
+                "to the bug report" % person.displayname
+            )
             reason += " @%s" % person.name
         else:
             text = "are subscribed to the bug report"
@@ -99,8 +103,10 @@ class BugNotificationRecipients(NotificationRecipientSet):
         """Registers an assignee of a bugtask of this bug."""
         reason = "Assignee"
         if person.is_team:
-            text = ("are a member of %s, which is a bug assignee"
-                    % person.displayname)
+            text = (
+                "are a member of %s, which is a bug assignee"
+                % person.displayname
+            )
             reason += " @%s" % person.name
         else:
             text = "are a bug assignee"
@@ -110,8 +116,10 @@ class BugNotificationRecipients(NotificationRecipientSet):
         """Registers a structural subscriber to this bug's target."""
         reason = "Subscriber (%s)" % target.displayname
         if person.is_team:
-            text = ("are a member of %s, which is subscribed to %s" %
-                (person.displayname, target.displayname))
+            text = "are a member of %s, which is subscribed to %s" % (
+                person.displayname,
+                target.displayname,
+            )
             reason += " @%s" % person.name
         else:
             text = "are subscribed to %s" % target.displayname
@@ -120,8 +128,7 @@ class BugNotificationRecipients(NotificationRecipientSet):
     def update(self, recipient_set):
         """See `INotificationRecipientSet`."""
         super().update(recipient_set)
-        self.subscription_filters.update(
-            recipient_set.subscription_filters)
+        self.subscription_filters.update(recipient_set.subscription_filters)
 
     def addFilter(self, subscription_filter):
         if subscription_filter is not None:

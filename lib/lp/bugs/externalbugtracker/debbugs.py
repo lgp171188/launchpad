@@ -3,19 +3,12 @@
 
 """Debbugs ExternalBugTracker utility."""
 
-__all__ = [
-    'DebBugs',
-    'DebBugsDatabaseNotFound'
-    ]
+__all__ = ["DebBugs", "DebBugsDatabaseNotFound"]
 
-from datetime import datetime
 import email
-from email.utils import (
-    mktime_tz,
-    parseaddr,
-    parsedate_tz,
-    )
 import os.path
+from datetime import datetime
+from email.utils import mktime_tz, parseaddr, parsedate_tz
 
 import pytz
 import transaction
@@ -29,17 +22,14 @@ from lp.bugs.externalbugtracker import (
     ExternalBugTracker,
     InvalidBugId,
     UnknownRemoteStatusError,
-    )
-from lp.bugs.interfaces.bugtask import (
-    BugTaskImportance,
-    BugTaskStatus,
-    )
+)
+from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.bugs.interfaces.externalbugtracker import (
+    UNKNOWN_REMOTE_IMPORTANCE,
     ISupportsBugImport,
     ISupportsCommentImport,
     ISupportsCommentPushing,
-    UNKNOWN_REMOTE_IMPORTANCE,
-    )
+)
 from lp.bugs.scripts import debbugs
 from lp.services.config import config
 from lp.services.database.isolation import ensure_no_transaction
@@ -47,10 +37,11 @@ from lp.services.mail.sendmail import simple_sendmail
 from lp.services.messages.interfaces.message import IMessageSet
 from lp.services.webapp import urlsplit
 
-
-debbugsstatusmap = {'open':      BugTaskStatus.NEW,
-                    'forwarded': BugTaskStatus.CONFIRMED,
-                    'done':      BugTaskStatus.FIXRELEASED}
+debbugsstatusmap = {
+    "open": BugTaskStatus.NEW,
+    "forwarded": BugTaskStatus.CONFIRMED,
+    "done": BugTaskStatus.FIXRELEASED,
+}
 
 
 class DebBugsDatabaseNotFound(BugTrackerConnectError):
@@ -58,14 +49,16 @@ class DebBugsDatabaseNotFound(BugTrackerConnectError):
 
 
 @implementer(
-    ISupportsBugImport, ISupportsCommentImport, ISupportsCommentPushing)
+    ISupportsBugImport, ISupportsCommentImport, ISupportsCommentPushing
+)
 class DebBugs(ExternalBugTracker):
     """A class that deals with communications with a debbugs db."""
 
     # We don't support different versions of debbugs.
     version = None
     debbugs_pl = os.path.join(
-        os.path.dirname(debbugs.__file__), 'debbugs-log.pl')
+        os.path.dirname(debbugs.__file__), "debbugs-log.pl"
+    )
 
     # Because we keep a local copy of debbugs, we remove the batch_size
     # limit so that all debbugs watches that need checking will be
@@ -76,34 +69,35 @@ class DebBugs(ExternalBugTracker):
         super().__init__(baseurl)
         # debbugs syncing can be enabled/disabled separately.
         self.sync_comments = (
-            self.sync_comments and
-            config.checkwatches.sync_debbugs_comments)
+            self.sync_comments and config.checkwatches.sync_debbugs_comments
+        )
 
         if db_location is None:
             self.db_location = config.malone.debbugs_db_location
         else:
             self.db_location = db_location
 
-        if not os.path.exists(os.path.join(self.db_location, 'db-h')):
+        if not os.path.exists(os.path.join(self.db_location, "db-h")):
             raise DebBugsDatabaseNotFound(
-                self.db_location, '"db-h" not found.')
+                self.db_location, '"db-h" not found.'
+            )
 
         # The debbugs database is split in two parts: a current
         # database, which is kept under the 'db-h' directory, and
         # the archived database, which is kept under 'archive'. The
         # archived database is used as a fallback, as you can see in
         # getRemoteStatus
-        self.debbugs_db = debbugs.Database(
-            self.db_location, self.debbugs_pl)
-        if os.path.exists(os.path.join(self.db_location, 'archive')):
+        self.debbugs_db = debbugs.Database(self.db_location, self.debbugs_pl)
+        if os.path.exists(os.path.join(self.db_location, "archive")):
             self.debbugs_db_archive = debbugs.Database(
-                self.db_location, self.debbugs_pl, subdir="archive")
+                self.db_location, self.debbugs_pl, subdir="archive"
+            )
 
     def getCurrentDBTime(self):
         """See `IExternalBugTracker`."""
         # We don't know the exact time for the Debbugs server, but we
         # trust it being correct.
-        return datetime.now(pytz.timezone('UTC'))
+        return datetime.now(pytz.timezone("UTC"))
 
     def initializeRemoteBugDB(self, bug_ids):
         """See `ExternalBugTracker`.
@@ -129,7 +123,7 @@ class DebBugs(ExternalBugTracker):
         optional tags. The tags are also separated with a space
         character.
         """
-        parts = remote_status.split(' ')
+        parts = remote_status.split(" ")
         if len(parts) < 2:
             raise UnknownRemoteStatusError(remote_status)
 
@@ -141,11 +135,15 @@ class DebBugs(ExternalBugTracker):
             malone_status = debbugsstatusmap[status]
         except KeyError:
             raise UnknownRemoteStatusError(remote_status)
-        if status == 'open':
+        if status == "open":
             confirmed_tags = [
-                'help', 'confirmed', 'upstream', 'fixed-upstream']
-            fix_committed_tags = ['pending', 'fixed', 'fixed-in-experimental']
-            if 'moreinfo' in tags:
+                "help",
+                "confirmed",
+                "upstream",
+                "fixed-upstream",
+            ]
+            fix_committed_tags = ["pending", "fixed", "fixed-in-experimental"]
+            if "moreinfo" in tags:
                 malone_status = BugTaskStatus.INCOMPLETE
             for confirmed_tag in confirmed_tags:
                 if confirmed_tag in tags:
@@ -155,7 +153,7 @@ class DebBugs(ExternalBugTracker):
                 if fix_committed_tag in tags:
                     malone_status = BugTaskStatus.FIXCOMMITTED
                     break
-            if 'wontfix' in tags:
+            if "wontfix" in tags:
                 malone_status = BugTaskStatus.WONTFIX
 
         return malone_status
@@ -163,7 +161,8 @@ class DebBugs(ExternalBugTracker):
     def _findBug(self, bug_id):
         if not bug_id.isdigit():
             raise InvalidBugId(
-                "Debbugs bug number not an integer: %s" % bug_id)
+                "Debbugs bug number not an integer: %s" % bug_id
+            )
         try:
             debian_bug = self.debbugs_db[int(bug_id)]
         except KeyError:
@@ -211,11 +210,12 @@ class DebBugs(ExternalBugTracker):
         debian_bug = self._findBug(bug_id)
         if not debian_bug.severity:
             # 'normal' is the default severity in debbugs.
-            severity = 'normal'
+            severity = "normal"
         else:
             severity = debian_bug.severity
-        new_remote_status = ' '.join(
-            [debian_bug.status, severity] + debian_bug.tags)
+        new_remote_status = " ".join(
+            [debian_bug.status, severity] + debian_bug.tags
+        )
         return new_remote_status
 
     def getBugReporter(self, remote_bug):
@@ -251,9 +251,11 @@ class DebBugs(ExternalBugTracker):
             # comments with no date, since we can't import those
             # correctly.
             comment_date = self._getDateForComment(parsed_comment)
-            if (comment_date is not None and
-                parsed_comment['message-id'] not in comment_ids):
-                comment_ids.append(parsed_comment['message-id'])
+            if (
+                comment_date is not None
+                and parsed_comment["message-id"] not in comment_ids
+            ):
+                comment_ids.append(parsed_comment["message-id"])
 
         return comment_ids
 
@@ -271,8 +273,8 @@ class DebBugs(ExternalBugTracker):
 
         for comment in debian_bug.comments:
             parsed_comment = email.message_from_bytes(comment)
-            if parsed_comment['message-id'] == comment_id:
-                return parseaddr(parsed_comment['from'])
+            if parsed_comment["message-id"] == comment_id:
+                return parseaddr(parsed_comment["from"])
 
     def _getDateForComment(self, parsed_comment):
         """Return the correct date for a comment.
@@ -288,30 +290,31 @@ class DebBugs(ExternalBugTracker):
         # that to get the date, if possible. We only use the
         # date received by this host (nominally bugs.debian.org)
         # since that's the one that's likely to be correct.
-        received_headers = parsed_comment.get_all('received')
+        received_headers = parsed_comment.get_all("received")
         if received_headers is not None:
             host_name = urlsplit(self.baseurl)[1]
 
             received_headers = [
-                header for header in received_headers
-                if host_name in header]
+                header for header in received_headers if host_name in header
+            ]
 
         # If there are too many - or too few - received headers then
         # something's gone wrong and we default back to using
         # the Date field.
         if received_headers is not None and len(received_headers) == 1:
             received_string = received_headers[0]
-            received_by, date_string = received_string.split(';', 2)
+            received_by, date_string = received_string.split(";", 2)
         else:
-            date_string = parsed_comment['date']
+            date_string = parsed_comment["date"]
 
         # We parse the date_string if we can, otherwise we just return
         # None.
         if date_string is not None:
             date_with_tz = parsedate_tz(date_string)
             timestamp = mktime_tz(date_with_tz)
-            msg_date = datetime.fromtimestamp(timestamp,
-                tz=pytz.timezone('UTC'))
+            msg_date = datetime.fromtimestamp(
+                timestamp, tz=pytz.timezone("UTC")
+            )
         else:
             msg_date = None
 
@@ -324,10 +327,14 @@ class DebBugs(ExternalBugTracker):
 
         for comment in debian_bug.comments:
             parsed_comment = email.message_from_bytes(comment)
-            if parsed_comment['message-id'] == comment_id:
+            if parsed_comment["message-id"] == comment_id:
                 msg_date = self._getDateForComment(parsed_comment)
-                message = getUtility(IMessageSet).fromEmail(comment, poster,
-                    parsed_message=parsed_comment, date_created=msg_date)
+                message = getUtility(IMessageSet).fromEmail(
+                    comment,
+                    poster,
+                    parsed_message=parsed_comment,
+                    date_created=msg_date,
+                )
 
                 transaction.commit()
                 return message
@@ -346,13 +353,17 @@ class DebBugs(ExternalBugTracker):
         host_name = urlsplit(self.baseurl)[1]
         to_addr = "%s@%s" % (remote_bug, host_name)
 
-        headers = {'Message-Id': rfc822msgid}
+        headers = {"Message-Id": rfc822msgid}
 
         # We str()ify to_addr since simple_sendmail expects ASCII
         # strings and gets awfully upset when it gets a unicode one.
         sent_msg_id = simple_sendmail(
-            'debbugs@bugs.launchpad.net', [str(to_addr)], subject,
-            comment_body, headers=headers)
+            "debbugs@bugs.launchpad.net",
+            [str(to_addr)],
+            subject,
+            comment_body,
+            headers=headers,
+        )
 
         # We add angle-brackets to the sent_msg_id because
         # simple_sendmail strips them out. We want to remain consistent

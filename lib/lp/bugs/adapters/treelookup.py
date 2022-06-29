@@ -31,9 +31,9 @@ on the eye, makes debugging easier, and means they can be customised.
 """
 
 __all__ = [
-    'LookupBranch',
-    'LookupTree',
-    ]
+    "LookupBranch",
+    "LookupTree",
+]
 
 import copy
 import string
@@ -98,18 +98,19 @@ class LookupBranch:
 
         This is mainly intended as an aid to development.
         """
-        format = 'branch(%s => %%s)'
+        format = "branch(%s => %%s)"
         if self.is_default:
-            format = format % '*'
+            format = format % "*"
         else:
-            format = format % ', '.join(
-                self._describe_key(key) for key in self.keys)
+            format = format % ", ".join(
+                self._describe_key(key) for key in self.keys
+            )
         if self.is_leaf:
             return format % self._describe_result(self.result)
         else:
             return format % self.result.describe(level)
 
-    _describe_key_chars = set(string.ascii_letters + string.digits + '-_+=*')
+    _describe_key_chars = set(string.ascii_letters + string.digits + "-_+=*")
 
     def _describe_key(self, key):
         """Return a pretty representation of a simple key.
@@ -133,9 +134,10 @@ class LookupBranch:
 
     def __repr__(self):
         """A machine-readable representation of this branch."""
-        return '%s(%s)' % (
+        return "%s(%s)" % (
             self.__class__.__name__,
-            ', '.join(repr(item) for item in (self.keys + (self.result,))))
+            ", ".join(repr(item) for item in (self.keys + (self.result,))),
+        )
 
 
 class LookupTree:
@@ -182,8 +184,8 @@ class LookupTree:
                     continue
                 branch = copy.copy(branch)
                 branch.keys = tuple(
-                    key for key in branch.keys
-                    if key not in prune)
+                    key for key in branch.keys if key not in prune
+                )
             pruned_branches.append(branch)
             seen_keys.update(branch.keys)
 
@@ -202,9 +204,9 @@ class LookupTree:
         default = False
         for branch in self.branches:
             if not isinstance(branch, LookupBranch):
-                raise TypeError('Not a LookupBranch: %r' % (branch,))
+                raise TypeError("Not a LookupBranch: %r" % (branch,))
             if default:
-                raise TypeError('Default branch must be last.')
+                raise TypeError("Default branch must be last.")
             default = branch.is_default
 
     def find(self, key, *more):
@@ -271,15 +273,18 @@ class LookupTree:
 
         This is mainly intended as an aid to development.
         """
-        indent = '    ' * level
-        format = indent + '%s'
-        return 'tree(\n%s\n%s)' % (
-            '\n'.join(format % branch.describe(level + 1)
-                      for branch in self.branches),
-            indent)
+        indent = "    " * level
+        format = indent + "%s"
+        return "tree(\n%s\n%s)" % (
+            "\n".join(
+                format % branch.describe(level + 1) for branch in self.branches
+            ),
+            indent,
+        )
 
     def __repr__(self):
         """A machine-readable representation of this tree."""
-        return '%s(%s)' % (
+        return "%s(%s)" % (
             self.__class__.__name__,
-            ', '.join(repr(branch) for branch in self.branches))
+            ", ".join(repr(branch) for branch in self.branches),
+        )

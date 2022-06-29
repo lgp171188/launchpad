@@ -17,21 +17,24 @@ class TestSubscribedBySomeoneElseNotification(TestCaseWithFactory):
 
     def setUp(self):
         # Run the tests as a logged-in user.
-        super().setUp(user='test@canonical.com')
+        super().setUp(user="test@canonical.com")
 
     def test_suppress_notify_false_does_notify(self):
         """Test notifications are sent when suppress_notify is False."""
         bug = self.factory.makeBug()
         person_subscribing = self.factory.makePerson(
-            name='foosuber', displayname='Foo Suber')
+            name="foosuber", displayname="Foo Suber"
+        )
         person_subscribed = self.factory.makePerson(
-            name='foosubed', displayname='Foo Subed')
+            name="foosubed", displayname="Foo Subed"
+        )
         self.assertEqual(len(stub.test_emails), 0)
         bug.subscribe(
-            person_subscribed, person_subscribing, suppress_notify=False)
+            person_subscribed, person_subscribing, suppress_notify=False
+        )
         transaction.commit()
         self.assertEqual(len(stub.test_emails), 1)
-        rationale = b'You have been subscribed to a public bug by Foo Suber'
+        rationale = b"You have been subscribed to a public bug by Foo Suber"
         msg = stub.test_emails[-1][2]
         self.assertIn(rationale, msg)
 
@@ -39,12 +42,15 @@ class TestSubscribedBySomeoneElseNotification(TestCaseWithFactory):
         """Test notifications aren't sent when suppress_notify is True."""
         bug = self.factory.makeBug()
         person_subscribing = self.factory.makePerson(
-            name='foosuber', displayname='Foo Suber')
+            name="foosuber", displayname="Foo Suber"
+        )
         person_subscribed = self.factory.makePerson(
-            name='foosubed', displayname='Foo Subed')
+            name="foosubed", displayname="Foo Subed"
+        )
         self.assertEqual(len(stub.test_emails), 0)
         bug.subscribe(
-            person_subscribed, person_subscribing, suppress_notify=True)
+            person_subscribed, person_subscribing, suppress_notify=True
+        )
         transaction.commit()
         self.assertEqual(len(stub.test_emails), 0)
 
@@ -52,9 +58,11 @@ class TestSubscribedBySomeoneElseNotification(TestCaseWithFactory):
         """Test notifications aren't sent when suppress_notify is undefined."""
         bug = self.factory.makeBug()
         person_subscribing = self.factory.makePerson(
-            name='foosuber', displayname='Foo Suber')
+            name="foosuber", displayname="Foo Suber"
+        )
         person_subscribed = self.factory.makePerson(
-            name='foosubed', displayname='Foo Subed')
+            name="foosubed", displayname="Foo Subed"
+        )
         self.assertEqual(len(stub.test_emails), 0)
         bug.subscribe(person_subscribed, person_subscribing)
         transaction.commit()

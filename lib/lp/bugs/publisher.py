@@ -4,29 +4,26 @@
 """Bugs' custom publication."""
 
 __all__ = [
-    'BugsBrowserRequest',
-    'BugsLayer',
-    'bugs_request_publication_factory',
-    'LaunchpadBugContainer',
-    ]
+    "BugsBrowserRequest",
+    "BugsLayer",
+    "bugs_request_publication_factory",
+    "LaunchpadBugContainer",
+]
 
 
 from zope.interface import implementer
 from zope.publisher.interfaces.browser import (
     IBrowserRequest,
     IDefaultBrowserLayer,
-    )
+)
 
-from lp.services.webapp.interfaces import (
-    IFacet,
-    ILaunchpadContainer,
-    )
+from lp.services.webapp.interfaces import IFacet, ILaunchpadContainer
 from lp.services.webapp.publication import LaunchpadBrowserPublication
 from lp.services.webapp.publisher import LaunchpadContainer
 from lp.services.webapp.servers import (
     LaunchpadBrowserRequest,
     VHostWebServiceRequestPublicationFactory,
-    )
+)
 
 
 @implementer(IFacet)
@@ -49,11 +46,11 @@ class BugsBrowserRequest(LaunchpadBrowserRequest):
 
 def bugs_request_publication_factory():
     return VHostWebServiceRequestPublicationFactory(
-        'bugs', BugsBrowserRequest, LaunchpadBrowserPublication)
+        "bugs", BugsBrowserRequest, LaunchpadBrowserPublication
+    )
 
 
 class LaunchpadBugContainer(LaunchpadContainer):
-
     def getParentContainers(self):
         """See `ILaunchpadContainer`."""
         # A bug is within any of its bugtasks' targets.

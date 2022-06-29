@@ -17,18 +17,18 @@ from lp.bugs.model.bug import (
     BugSubscriberSet,
     BugSubscriptionInfo,
     BugSubscriptionSet,
-    load_people,
     StructuralSubscriptionSet,
-    )
+    load_people,
+)
 from lp.bugs.security import (
     PublicToAllOrPrivateToExplicitSubscribersForBugTask,
-    )
+)
 from lp.registry.model.person import Person
 from lp.testing import (
-    person_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
-    )
+    person_logged_in,
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 
@@ -42,9 +42,10 @@ class TestLoadPeople(TestCaseWithFactory):
         expected = [
             self.factory.makePerson(),
             self.factory.makeTeam(),
-            ]
+        ]
         observed = load_people(
-            Person.id.is_in(person.id for person in expected))
+            Person.id.is_in(person.id for person in expected)
+        )
         self.assertContentEqual(expected, observed)
 
 
@@ -59,13 +60,15 @@ class TestSubscriptionRelatedSets(TestCaseWithFactory):
     def setUp(self):
         super().setUp()
         make_person = lambda displayname, name: (
-            self.factory.makePerson(displayname=displayname, name=name))
+            self.factory.makePerson(displayname=displayname, name=name)
+        )
         subscribers = {
-            name_pair: make_person(*name_pair)
-            for name_pair in self.name_pairs}
+            name_pair: make_person(*name_pair) for name_pair in self.name_pairs
+        }
         self.subscribers_set = frozenset(subscribers.values())
         self.subscribers_sorted = tuple(
-            subscribers[name_pair] for name_pair in self.name_pairs_sorted)
+            subscribers[name_pair] for name_pair in self.name_pairs_sorted
+        )
 
     def test_BugSubscriberSet(self):
         subscriber_set = BugSubscriberSet(self.subscribers_set)
@@ -78,16 +81,19 @@ class TestSubscriptionRelatedSets(TestCaseWithFactory):
         with person_logged_in(bug.owner):
             subscriptions = frozenset(
                 bug.subscribe(subscriber, subscriber)
-                for subscriber in self.subscribers_set)
+                for subscriber in self.subscribers_set
+            )
         subscription_set = BugSubscriptionSet(subscriptions)
         self.assertIsInstance(subscription_set, Set)
         self.assertEqual(subscriptions, subscription_set)
         # BugSubscriptionSet.sorted returns a tuple of subscriptions ordered
         # by subscribers.
         self.assertEqual(
-            self.subscribers_sorted, tuple(
-                subscription.person
-                for subscription in subscription_set.sorted))
+            self.subscribers_sorted,
+            tuple(
+                subscription.person for subscription in subscription_set.sorted
+            ),
+        )
         # BugSubscriptionSet.subscribers returns a BugSubscriberSet of the
         # subscription's subscribers.
         self.assertIsInstance(subscription_set.subscribers, BugSubscriberSet)
@@ -98,16 +104,20 @@ class TestSubscriptionRelatedSets(TestCaseWithFactory):
         with person_logged_in(product.owner):
             subscriptions = frozenset(
                 product.addSubscription(subscriber, subscriber)
-                for subscriber in self.subscribers_set)
+                for subscriber in self.subscribers_set
+            )
         subscription_set = StructuralSubscriptionSet(subscriptions)
         self.assertIsInstance(subscription_set, Set)
         self.assertEqual(subscriptions, subscription_set)
         # StructuralSubscriptionSet.sorted returns a tuple of subscriptions
         # ordered by subscribers.
         self.assertEqual(
-            self.subscribers_sorted, tuple(
+            self.subscribers_sorted,
+            tuple(
                 subscription.subscriber
-                for subscription in subscription_set.sorted))
+                for subscription in subscription_set.sorted
+            ),
+        )
         # StructuralSubscriptionSet.subscribers returns a BugSubscriberSet of
         # the subscription's subscribers.
         self.assertIsInstance(subscription_set.subscribers, BugSubscriberSet)
@@ -121,7 +131,8 @@ class TestBugSubscriptionInfo(TestCaseWithFactory):
     def setUp(self):
         super().setUp()
         self.target = self.factory.makeProduct(
-            bug_supervisor=self.factory.makePerson())
+            bug_supervisor=self.factory.makePerson()
+        )
         self.bug = self.factory.makeBug(target=self.target)
         # Unsubscribe the bug filer to make the tests more readable.
         with person_logged_in(self.bug.owner):
@@ -131,13 +142,12 @@ class TestBugSubscriptionInfo(TestCaseWithFactory):
         return BugSubscriptionInfo(self.bug, level)
 
     def _create_direct_subscriptions(self):
-        subscribers = (
-            self.factory.makePerson(),
-            self.factory.makePerson())
+        subscribers = (self.factory.makePerson(), self.factory.makePerson())
         with person_logged_in(self.bug.owner):
             subscriptions = tuple(
                 self.bug.subscribe(subscriber, subscriber)
-                for subscriber in subscribers)
+                for subscriber in subscribers
+            )
         return subscribers, subscriptions
 
     def test_forTask(self):
@@ -158,7 +168,7 @@ class TestBugSubscriptionInfo(TestCaseWithFactory):
         expected_cache = {
             info.cache_key: info,
             info_for_task.cache_key: info_for_task,
-            }
+        }
         self.assertEqual(expected_cache, info.cache)
         self.assertIs(info.cache, info_for_task.cache)
         # Calling `forTask` again looks in the cache first.
@@ -184,7 +194,7 @@ class TestBugSubscriptionInfo(TestCaseWithFactory):
         expected_cache = {
             info.cache_key: info,
             info_for_level.cache_key: info_for_level,
-            }
+        }
         self.assertEqual(expected_cache, info.cache)
         self.assertIs(info.cache, info_for_level.cache)
         # Calling `forLevel` again looks in the cache first.
@@ -226,15 +236,16 @@ class TestBugSubscriptionInfo(TestCaseWithFactory):
         info = self.getInfo(BugNotificationLevel.COMMENTS)
         self.assertContentEqual([sub2], info.direct_subscriptions)
         self.assertContentEqual(
-            [sub1, sub2], info.direct_subscriptions_at_all_levels)
+            [sub1, sub2], info.direct_subscriptions_at_all_levels
+        )
 
     def _create_duplicate_subscription(self):
         duplicate_bug = self.factory.makeBug(target=self.target)
         with person_logged_in(duplicate_bug.owner):
             duplicate_bug.markAsDuplicate(self.bug)
             duplicate_bug_subscription = (
-                duplicate_bug.getSubscriptionForPerson(
-                    duplicate_bug.owner))
+                duplicate_bug.getSubscriptionForPerson(duplicate_bug.owner)
+            )
         return duplicate_bug, duplicate_bug_subscription
 
     def test_duplicate(self):
@@ -242,20 +253,24 @@ class TestBugSubscriptionInfo(TestCaseWithFactory):
         found_subscriptions = self.getInfo().duplicate_subscriptions
         self.assertContentEqual([], found_subscriptions)
         self.assertContentEqual([], found_subscriptions.subscribers)
-        duplicate_bug, duplicate_bug_subscription = (
-            self._create_duplicate_subscription())
+        (
+            duplicate_bug,
+            duplicate_bug_subscription,
+        ) = self._create_duplicate_subscription()
         found_subscriptions = self.getInfo().duplicate_subscriptions
         self.assertContentEqual(
-            [duplicate_bug_subscription],
-            found_subscriptions)
+            [duplicate_bug_subscription], found_subscriptions
+        )
         self.assertContentEqual(
-            [duplicate_bug.owner],
-            found_subscriptions.subscribers)
+            [duplicate_bug.owner], found_subscriptions.subscribers
+        )
 
     def test_duplicate_muted(self):
         # If a duplicate is muted, it is not listed.
-        duplicate_bug, duplicate_bug_subscription = (
-            self._create_duplicate_subscription())
+        (
+            duplicate_bug,
+            duplicate_bug_subscription,
+        ) = self._create_duplicate_subscription()
         with person_logged_in(duplicate_bug.owner):
             duplicate_bug.mute(duplicate_bug.owner, duplicate_bug.owner)
         found_subscriptions = self.getInfo().duplicate_subscriptions
@@ -263,14 +278,18 @@ class TestBugSubscriptionInfo(TestCaseWithFactory):
 
     def test_duplicate_other_mute(self):
         # If some other bug is muted, the dupe is still listed.
-        duplicate_bug, duplicate_bug_subscription = (
-            self._create_duplicate_subscription())
+        (
+            duplicate_bug,
+            duplicate_bug_subscription,
+        ) = self._create_duplicate_subscription()
         with person_logged_in(duplicate_bug.owner):
             self.factory.makeBug().mute(
-                duplicate_bug.owner, duplicate_bug.owner)
+                duplicate_bug.owner, duplicate_bug.owner
+            )
         found_subscriptions = self.getInfo().duplicate_subscriptions
         self.assertContentEqual(
-            [duplicate_bug_subscription], found_subscriptions)
+            [duplicate_bug_subscription], found_subscriptions
+        )
 
     def test_duplicate_only(self):
         # The set of duplicate subscriptions where the subscriber has no other
@@ -279,30 +298,30 @@ class TestBugSubscriptionInfo(TestCaseWithFactory):
         with person_logged_in(duplicate_bug.owner):
             duplicate_bug.markAsDuplicate(self.bug)
             duplicate_bug_subscription = (
-                duplicate_bug.getSubscriptionForPerson(
-                    duplicate_bug.owner))
+                duplicate_bug.getSubscriptionForPerson(duplicate_bug.owner)
+            )
         found_subscriptions = self.getInfo().duplicate_only_subscriptions
         self.assertContentEqual(
-            [duplicate_bug_subscription],
-            found_subscriptions)
+            [duplicate_bug_subscription], found_subscriptions
+        )
         # If a user is subscribed to a duplicate bug and is a bugtask
         # assignee, for example, their duplicate subscription will not be
         # included.
         with person_logged_in(self.target.owner):
             self.bug.default_bugtask.transitionToAssignee(
-                duplicate_bug_subscription.person)
+                duplicate_bug_subscription.person
+            )
         found_subscriptions = self.getInfo().duplicate_only_subscriptions
         self.assertContentEqual([], found_subscriptions)
 
     def test_structural_subscriptions(self):
         # The set of structural subscriptions.
-        subscribers = (
-            self.factory.makePerson(),
-            self.factory.makePerson())
+        subscribers = (self.factory.makePerson(), self.factory.makePerson())
         with person_logged_in(self.bug.owner):
             subscriptions = tuple(
                 self.target.addBugSubscription(subscriber, subscriber)
-                for subscriber in subscribers)
+                for subscriber in subscribers
+            )
         found_subscriptions = self.getInfo().structural_subscriptions
         self.assertContentEqual(subscriptions, found_subscriptions)
 
@@ -314,15 +333,14 @@ class TestBugSubscriptionInfo(TestCaseWithFactory):
             self.bug.mute(subscriber, subscriber)
         with person_logged_in(self.bug.owner):
             subscription = self.target.addBugSubscription(
-                subscriber, subscriber)
+                subscriber, subscriber
+            )
         found_subscriptions = self.getInfo().structural_subscriptions
         self.assertContentEqual([subscription], found_subscriptions)
 
     def test_structural_subscribers(self):
         # The set of structural subscribers.
-        subscribers = (
-            self.factory.makePerson(),
-            self.factory.makePerson())
+        subscribers = (self.factory.makePerson(), self.factory.makePerson())
         with person_logged_in(self.bug.owner):
             for subscriber in subscribers:
                 self.target.addBugSubscription(subscriber, subscriber)
@@ -354,13 +372,13 @@ class TestBugSubscriptionInfo(TestCaseWithFactory):
             bugtask2.transitionToAssignee(bugtask2.owner)
         found_assignees = self.getInfo().all_assignees
         self.assertContentEqual(
-            [self.bug.owner, bugtask2.owner],
-            found_assignees)
+            [self.bug.owner, bugtask2.owner], found_assignees
+        )
         # Getting info for a specific bugtask will return the assignee for
         # that bugtask only.
         self.assertContentEqual(
-            [bugtask2.owner],
-            self.getInfo().forTask(bugtask2).all_assignees)
+            [bugtask2.owner], self.getInfo().forTask(bugtask2).all_assignees
+        )
 
     def _create_also_notified_subscribers(self):
         # Add an assignee, a bug supervisor and a structural subscriber.
@@ -374,15 +392,19 @@ class TestBugSubscriptionInfo(TestCaseWithFactory):
         structural_subscriber = self.factory.makePerson()
         with person_logged_in(structural_subscriber):
             bugtask.target.addSubscription(
-                structural_subscriber, structural_subscriber)
+                structural_subscriber, structural_subscriber
+            )
         return assignee, supervisor, structural_subscriber
 
     def test_also_notified_subscribers(self):
         # The set of also notified subscribers.
         found_subscribers = self.getInfo().also_notified_subscribers
         self.assertContentEqual([], found_subscribers)
-        assignee, supervisor, structural_subscriber = (
-            self._create_also_notified_subscribers())
+        (
+            assignee,
+            supervisor,
+            structural_subscriber,
+        ) = self._create_also_notified_subscribers()
         # Add a direct subscription.
         direct_subscriber = self.factory.makePerson()
         with person_logged_in(self.bug.owner):
@@ -391,19 +413,24 @@ class TestBugSubscriptionInfo(TestCaseWithFactory):
         # the assignee, supervisor and structural subscriber do.
         found_subscribers = self.getInfo().also_notified_subscribers
         self.assertContentEqual(
-            [assignee, structural_subscriber], found_subscribers)
+            [assignee, structural_subscriber], found_subscribers
+        )
 
     def test_also_notified_subscribers_muted(self):
         # If someone is muted, they are not listed in the
         # also_notified_subscribers.
-        assignee, supervisor, structural_subscriber = (
-            self._create_also_notified_subscribers())
+        (
+            assignee,
+            supervisor,
+            structural_subscriber,
+        ) = self._create_also_notified_subscribers()
         # As a control, we first show that the
         # the assignee, supervisor and structural subscriber do show up
         # when they are not muted.
         found_subscribers = self.getInfo().also_notified_subscribers
         self.assertContentEqual(
-            [assignee, structural_subscriber], found_subscribers)
+            [assignee, structural_subscriber], found_subscribers
+        )
         # Now we mute all of the subscribers.
         with person_logged_in(assignee):
             self.bug.mute(assignee, assignee)
@@ -435,7 +462,8 @@ class TestBugSubscriptionInfoPermissions(TestCaseWithFactory):
         # subscribers are permitted.
         adapter = queryAdapter(info, IAuthorization, "launchpad.View")
         self.assertIsInstance(
-            adapter, PublicToAllOrPrivateToExplicitSubscribersForBugTask)
+            adapter, PublicToAllOrPrivateToExplicitSubscribersForBugTask
+        )
 
 
 class TestBugSubscriptionInfoQueries(TestCaseWithFactory):
@@ -447,7 +475,8 @@ class TestBugSubscriptionInfoQueries(TestCaseWithFactory):
         self.target = self.factory.makeProduct()
         self.bug = self.factory.makeBug(target=self.target)
         self.info = BugSubscriptionInfo(
-            self.bug, BugNotificationLevel.LIFECYCLE)
+            self.bug, BugNotificationLevel.LIFECYCLE
+        )
         # Get the Storm cache into a known state.
         self.store = Store.of(self.bug)
         self.store.invalidate()
@@ -486,7 +515,8 @@ class TestBugSubscriptionInfoQueries(TestCaseWithFactory):
             getattr(self.info, set_name).subscribers.sorted
 
     def exercise_subscription_set_sorted_first(
-        self, set_name, counts=(1, 1, 0)):
+        self, set_name, counts=(1, 1, 0)
+    ):
         """Test the number of queries it takes to inspect a subscription set.
 
         This differs from `exercise_subscription_set` in its second step, when
@@ -510,16 +540,13 @@ class TestBugSubscriptionInfoQueries(TestCaseWithFactory):
             getattr(self.info, set_name).subscribers.sorted
 
     def test_direct_subscriptions(self):
-        self.exercise_subscription_set(
-            "direct_subscriptions")
+        self.exercise_subscription_set("direct_subscriptions")
 
     def test_direct_subscriptions_sorted_first(self):
-        self.exercise_subscription_set_sorted_first(
-            "direct_subscriptions")
+        self.exercise_subscription_set_sorted_first("direct_subscriptions")
 
     def test_direct_subscriptions_at_all_levels(self):
-        self.exercise_subscription_set(
-            "direct_subscriptions_at_all_levels")
+        self.exercise_subscription_set("direct_subscriptions_at_all_levels")
 
     def make_duplicate_bug(self):
         duplicate_bug = self.factory.makeBug(target=self.target)
@@ -528,13 +555,11 @@ class TestBugSubscriptionInfoQueries(TestCaseWithFactory):
 
     def test_duplicate_subscriptions(self):
         self.make_duplicate_bug()
-        self.exercise_subscription_set(
-            "duplicate_subscriptions")
+        self.exercise_subscription_set("duplicate_subscriptions")
 
     def test_duplicate_subscriptions_sorted_first(self):
         self.make_duplicate_bug()
-        self.exercise_subscription_set_sorted_first(
-            "duplicate_subscriptions")
+        self.exercise_subscription_set_sorted_first("duplicate_subscriptions")
 
     def test_duplicate_subscriptions_for_private_bug(self):
         self.make_duplicate_bug()
@@ -552,13 +577,13 @@ class TestBugSubscriptionInfoQueries(TestCaseWithFactory):
 
     def test_structural_subscriptions(self):
         self.add_structural_subscriber()
-        self.exercise_subscription_set(
-            "structural_subscriptions", (2, 1, 0))
+        self.exercise_subscription_set("structural_subscriptions", (2, 1, 0))
 
     def test_structural_subscriptions_sorted_first(self):
         self.add_structural_subscriber()
         self.exercise_subscription_set_sorted_first(
-            "structural_subscriptions", (2, 1, 0))
+            "structural_subscriptions", (2, 1, 0)
+        )
 
     def test_all_assignees(self):
         with self.exactly_x_queries(1):

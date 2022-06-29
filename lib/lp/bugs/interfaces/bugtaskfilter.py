@@ -4,22 +4,18 @@
 """Fiter bugtasks based on context."""
 
 __all__ = [
-    'filter_bugtasks_by_context',
-    'OrderedBugTask',
-    'simple_weight_calculator',
-    ]
+    "filter_bugtasks_by_context",
+    "OrderedBugTask",
+    "simple_weight_calculator",
+]
 
 
-from collections import (
-    defaultdict,
-    namedtuple,
-    )
+from collections import defaultdict, namedtuple
 from operator import attrgetter
 
 from lp.bugs.interfaces.bugtarget import IHasBugs
 
-
-OrderedBugTask = namedtuple('OrderedBugTask', 'rank id task')
+OrderedBugTask = namedtuple("OrderedBugTask", "rank id task")
 
 
 def simple_weight_calculator(bugtask):
@@ -67,4 +63,4 @@ def filter_bugtasks_by_context(context, bugtasks):
         bug_mapping[task.bug_id].append(weight_calculator(task))
 
     filtered = [sorted(tasks)[0].task for tasks in bug_mapping.values()]
-    return sorted(filtered, key=attrgetter('bug_id'))
+    return sorted(filtered, key=attrgetter("bug_id"))

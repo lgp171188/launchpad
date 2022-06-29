@@ -9,15 +9,12 @@ import transaction
 
 from lp.bugs.scripts.checkwatches.base import WorkingBase
 from lp.services.database.isolation import (
-    is_transaction_in_progress,
     TransactionInProgress,
-    )
+    is_transaction_in_progress,
+)
 from lp.services.log.logger import BufferLogger
 from lp.services.webapp.adapter import get_request_statements
-from lp.services.webapp.interaction import (
-    endInteraction,
-    queryInteraction,
-    )
+from lp.services.webapp.interaction import endInteraction, queryInteraction
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
 
@@ -27,10 +24,10 @@ class StubTransactionManager:
         self.log = []
 
     def abort(self):
-        self.log.append('abort')
+        self.log.append("abort")
 
     def commit(self):
-        self.log.append('commit')
+        self.log.append("commit")
 
 
 class TestWorkingBase(TestCaseWithFactory):
@@ -80,10 +77,10 @@ class TestWorkingBase(TestCaseWithFactory):
         with base.transaction:
             self.assertFalse(is_transaction_in_progress())
             self.assertEqual([], transaction_manager.log)
-            self.factory.makeEmail('numpty@example.com', self.person)
+            self.factory.makeEmail("numpty@example.com", self.person)
             self.assertTrue(is_transaction_in_progress())
             self.assertEqual([], transaction_manager.log)
-        self.assertEqual(['commit'], transaction_manager.log)
+        self.assertEqual(["commit"], transaction_manager.log)
 
     def test_transaction_with_open_transaction(self):
         # On entry, WorkingBase.transaction will raise an exception if
@@ -107,7 +104,7 @@ class TestWorkingBase(TestCaseWithFactory):
                 raise RuntimeError("Nothing really.")
         except RuntimeError:
             self.assertFalse(is_transaction_in_progress())
-            self.assertEqual(['abort'], transaction_manager.log)
+            self.assertEqual(["abort"], transaction_manager.log)
         else:
             self.fail("Exception not re-raised from context manager.")
 
@@ -116,23 +113,30 @@ class TestWorkingBase(TestCaseWithFactory):
         # statement logging on entry and stops it on exit.
         base = WorkingBase()
         base.init(self.email, transaction.manager, self.logger)
-        self.factory.makeEmail('numpty1@example.com', self.person)
+        self.factory.makeEmail("numpty1@example.com", self.person)
         self.assertEqual(
-            0, len(get_request_statements()),
+            0,
+            len(get_request_statements()),
             "The statement log should be empty because "
-            "logging is not enabled.")
+            "logging is not enabled.",
+        )
         with base.statement_logging:
             self.assertEqual(
-                0, len(get_request_statements()),
-                "There should be no statements in the log yet.")
-            self.factory.makeEmail('numpty2@example.com', self.person)
+                0,
+                len(get_request_statements()),
+                "There should be no statements in the log yet.",
+            )
+            self.factory.makeEmail("numpty2@example.com", self.person)
             self.assertTrue(
                 len(get_request_statements()) > 0,
-                "There should be at least one statement in the log.")
+                "There should be at least one statement in the log.",
+            )
         self.assertEqual(
-            0, len(get_request_statements()),
+            0,
+            len(get_request_statements()),
             "SQL statement log not cleared on exit "
-            "from base.statement_logging.")
+            "from base.statement_logging.",
+        )
 
     def test_initFromParent(self):
         base1 = WorkingBase()
@@ -154,14 +158,16 @@ class TestWorkingBaseErrorReporting(TestCaseWithFactory):
         base = WorkingBase()
         base.init(email, transaction.manager, logger)
         with base.statement_logging:
-            self.factory.makeEmail('numpty@example.com', person)
+            self.factory.makeEmail("numpty@example.com", person)
             self.assertTrue(
                 len(get_request_statements()) > 0,
-                "We need at least one statement in the SQL log.")
+                "We need at least one statement in the SQL log.",
+            )
             yield base
             self.assertTrue(
                 len(get_request_statements()) == 0,
-                "SQL statement log not cleared by WorkingBase.warning().")
+                "SQL statement log not cleared by WorkingBase.warning().",
+            )
 
     def test_sql_log_cleared_after_warning(self):
         with self._test_sql_log_cleared_after_x() as base:

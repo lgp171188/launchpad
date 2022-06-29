@@ -17,25 +17,21 @@ from lp.soyuz.tests.test_doc import (
     lobotomize_stevea,
     uploaderSetUp,
     uploadQueueSetUp,
-    )
-from lp.testing import (
-    login,
-    logout,
-    )
+)
+from lp.testing import login, logout
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import (
     DatabaseLayer,
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
-    )
+)
 from lp.testing.pages import PageTestSuite
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setGlobs,
     setUp,
     tearDown,
-    )
-
+)
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -85,7 +81,7 @@ def uploaderBugsSetUp(test):
     test_dbuser = config.uploader.dbuser
     switch_dbuser(test_dbuser)
     setUp(test)
-    test.globs['test_dbuser'] = test_dbuser
+    test.globs["test_dbuser"] = test_dbuser
 
 
 def uploaderBugsTearDown(test):
@@ -99,13 +95,13 @@ def uploadQueueTearDown(test):
 def noPrivSetUp(test):
     """Set up a test logged in as no-priv."""
     setUp(test)
-    login('no-priv@canonical.com')
+    login("no-priv@canonical.com")
 
 
 def bugtaskExpirationSetUp(test):
     """Setup globs for bug expiration."""
     setUp(test)
-    login('test@canonical.com')
+    login("test@canonical.com")
 
 
 def updateRemoteProductSetup(test):
@@ -122,364 +118,360 @@ def updateRemoteProductTeardown(test):
 
 def bugSetStatusSetUp(test):
     setUp(test)
-    test.globs['test_dbuser'] = config.processmail.dbuser
+    test.globs["test_dbuser"] = config.processmail.dbuser
 
 
 def bugmessageSetUp(test):
     setUp(test)
-    login('no-priv@canonical.com')
+    login("no-priv@canonical.com")
 
 
 def enableDSPPickerSetUp(test):
     setUp(test)
-    ff = FeatureFixture({'disclosure.dsp_picker.enabled': 'on'})
+    ff = FeatureFixture({"disclosure.dsp_picker.enabled": "on"})
     ff.setUp()
-    test.globs['dsp_picker_feature_fixture'] = ff
+    test.globs["dsp_picker_feature_fixture"] = ff
 
 
 def enableDSPPickerTearDown(test):
-    test.globs['dsp_picker_feature_fixture'].cleanUp()
+    test.globs["dsp_picker_feature_fixture"].cleanUp()
     tearDown(test)
 
 
 special = {
-    'cve-update.rst': LayeredDocFileSuite(
-        '../doc/cve-update.rst',
-        setUp=cveSetUp, tearDown=tearDown, layer=LaunchpadZopelessLayer
-        ),
-    'bug-heat.rst': LayeredDocFileSuite(
-        '../doc/bug-heat.rst',
-        setUp=setUp, tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'bugnotificationrecipients.rst-uploader': LayeredDocFileSuite(
-        '../doc/bugnotificationrecipients.rst',
-        id_extensions=['bugnotificationrecipients.rst-uploader'],
+    "cve-update.rst": LayeredDocFileSuite(
+        "../doc/cve-update.rst",
+        setUp=cveSetUp,
+        tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
+    ),
+    "bug-heat.rst": LayeredDocFileSuite(
+        "../doc/bug-heat.rst",
+        setUp=setUp,
+        tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
+    ),
+    "bugnotificationrecipients.rst-uploader": LayeredDocFileSuite(
+        "../doc/bugnotificationrecipients.rst",
+        id_extensions=["bugnotificationrecipients.rst-uploader"],
         setUp=uploaderBugsSetUp,
         tearDown=uploaderBugsTearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'bugnotificationrecipients.rst-queued': LayeredDocFileSuite(
-        '../doc/bugnotificationrecipients.rst',
-        id_extensions=['bugnotificationrecipients.rst-queued'],
+        layer=LaunchpadZopelessLayer,
+    ),
+    "bugnotificationrecipients.rst-queued": LayeredDocFileSuite(
+        "../doc/bugnotificationrecipients.rst",
+        id_extensions=["bugnotificationrecipients.rst-queued"],
         setUp=uploadQueueSetUp,
         tearDown=uploadQueueTearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'bugnotificationrecipients.rst-branchscanner': LayeredDocFileSuite(
-        '../doc/bugnotificationrecipients.rst',
-        id_extensions=['bugnotificationrecipients.rst-branchscanner'],
+        layer=LaunchpadZopelessLayer,
+    ),
+    "bugnotificationrecipients.rst-branchscanner": LayeredDocFileSuite(
+        "../doc/bugnotificationrecipients.rst",
+        id_extensions=["bugnotificationrecipients.rst-branchscanner"],
         setUp=branchscannerBugsSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'bugnotificationrecipients.rst': LayeredDocFileSuite(
-        '../doc/bugnotificationrecipients.rst',
-        id_extensions=['bugnotificationrecipients.rst'],
-        setUp=lobotomizeSteveASetUp, tearDown=tearDown,
-        layer=LaunchpadFunctionalLayer
-        ),
-    'bugnotification-threading.rst': LayeredDocFileSuite(
-        '../doc/bugnotification-threading.rst',
-        setUp=lobotomizeSteveASetUp, tearDown=tearDown,
-        layer=LaunchpadFunctionalLayer
-        ),
-    'bugnotification-sending.rst': LayeredDocFileSuite(
-        '../doc/bugnotification-sending.rst',
-        layer=LaunchpadZopelessLayer, setUp=bugNotificationSendingSetUp,
-        tearDown=bugNotificationSendingTearDown
-        ),
-    'bugmail-headers.rst': LayeredDocFileSuite(
-        '../doc/bugmail-headers.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "bugnotificationrecipients.rst": LayeredDocFileSuite(
+        "../doc/bugnotificationrecipients.rst",
+        id_extensions=["bugnotificationrecipients.rst"],
+        setUp=lobotomizeSteveASetUp,
+        tearDown=tearDown,
+        layer=LaunchpadFunctionalLayer,
+    ),
+    "bugnotification-threading.rst": LayeredDocFileSuite(
+        "../doc/bugnotification-threading.rst",
+        setUp=lobotomizeSteveASetUp,
+        tearDown=tearDown,
+        layer=LaunchpadFunctionalLayer,
+    ),
+    "bugnotification-sending.rst": LayeredDocFileSuite(
+        "../doc/bugnotification-sending.rst",
         layer=LaunchpadZopelessLayer,
         setUp=bugNotificationSendingSetUp,
-        tearDown=bugNotificationSendingTearDown),
-    'bug-export.rst': LayeredDocFileSuite(
-        '../doc/bug-export.rst',
-        setUp=setUp, tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'bug-set-status.rst': LayeredDocFileSuite(
-        '../doc/bug-set-status.rst',
-        id_extensions=['bug-set-status.rst'],
+        tearDown=bugNotificationSendingTearDown,
+    ),
+    "bugmail-headers.rst": LayeredDocFileSuite(
+        "../doc/bugmail-headers.rst",
+        layer=LaunchpadZopelessLayer,
+        setUp=bugNotificationSendingSetUp,
+        tearDown=bugNotificationSendingTearDown,
+    ),
+    "bug-export.rst": LayeredDocFileSuite(
+        "../doc/bug-export.rst",
+        setUp=setUp,
+        tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
+    ),
+    "bug-set-status.rst": LayeredDocFileSuite(
+        "../doc/bug-set-status.rst",
+        id_extensions=["bug-set-status.rst"],
         setUp=uploadQueueSetUp,
         tearDown=uploadQueueTearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'bug-set-status.rst-uploader': LayeredDocFileSuite(
-        '../doc/bug-set-status.rst',
-        id_extensions=['bug-set-status.rst-uploader'],
+        layer=LaunchpadZopelessLayer,
+    ),
+    "bug-set-status.rst-uploader": LayeredDocFileSuite(
+        "../doc/bug-set-status.rst",
+        id_extensions=["bug-set-status.rst-uploader"],
         setUp=uploaderBugsSetUp,
         tearDown=uploaderBugsTearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'bugtask-expiration.rst': LayeredDocFileSuite(
-        '../doc/bugtask-expiration.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "bugtask-expiration.rst": LayeredDocFileSuite(
+        "../doc/bugtask-expiration.rst",
         setUp=bugtaskExpirationSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'bugtask-package-widget.rst': LayeredDocFileSuite(
-        '../doc/bugtask-package-widget.rst',
-        id_extensions=['bugtask-package-widget.rst'],
-        setUp=setUp, tearDown=tearDown,
-        layer=LaunchpadFunctionalLayer
-        ),
-    'bugtask-package-widget.rst-dsp-picker': LayeredDocFileSuite(
-        '../doc/bugtask-package-widget.rst',
-        id_extensions=['bugtask-package-widget.rst-dsp-picker'],
-        setUp=enableDSPPickerSetUp, tearDown=enableDSPPickerTearDown,
-        layer=LaunchpadFunctionalLayer
-        ),
-    'bugmessage.rst': LayeredDocFileSuite(
-        '../doc/bugmessage.rst',
-        id_extensions=['bugmessage.rst'],
-        setUp=noPrivSetUp, tearDown=tearDown,
-        layer=LaunchpadFunctionalLayer
-        ),
-    'bugmessage.rst-queued': LayeredDocFileSuite(
-        '../doc/bugmessage.rst',
-        id_extensions=['bugmessage.rst-queued'],
+        layer=LaunchpadZopelessLayer,
+    ),
+    "bugtask-package-widget.rst": LayeredDocFileSuite(
+        "../doc/bugtask-package-widget.rst",
+        id_extensions=["bugtask-package-widget.rst"],
+        setUp=setUp,
+        tearDown=tearDown,
+        layer=LaunchpadFunctionalLayer,
+    ),
+    "bugtask-package-widget.rst-dsp-picker": LayeredDocFileSuite(
+        "../doc/bugtask-package-widget.rst",
+        id_extensions=["bugtask-package-widget.rst-dsp-picker"],
+        setUp=enableDSPPickerSetUp,
+        tearDown=enableDSPPickerTearDown,
+        layer=LaunchpadFunctionalLayer,
+    ),
+    "bugmessage.rst": LayeredDocFileSuite(
+        "../doc/bugmessage.rst",
+        id_extensions=["bugmessage.rst"],
+        setUp=noPrivSetUp,
+        tearDown=tearDown,
+        layer=LaunchpadFunctionalLayer,
+    ),
+    "bugmessage.rst-queued": LayeredDocFileSuite(
+        "../doc/bugmessage.rst",
+        id_extensions=["bugmessage.rst-queued"],
         setUp=uploadQueueSetUp,
         tearDown=uploadQueueTearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'bugmessage.rst-uploader': LayeredDocFileSuite(
-        '../doc/bugmessage.rst',
-        id_extensions=['bugmessage.rst-uploader'],
+        layer=LaunchpadZopelessLayer,
+    ),
+    "bugmessage.rst-uploader": LayeredDocFileSuite(
+        "../doc/bugmessage.rst",
+        id_extensions=["bugmessage.rst-uploader"],
         setUp=uploaderSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'bugmessage.rst-checkwatches': LayeredDocFileSuite(
-        '../doc/bugmessage.rst',
-        id_extensions=['bugmessage.rst-checkwatches'],
+        layer=LaunchpadZopelessLayer,
+    ),
+    "bugmessage.rst-checkwatches": LayeredDocFileSuite(
+        "../doc/bugmessage.rst",
+        id_extensions=["bugmessage.rst-checkwatches"],
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'bugtracker-person.rst': LayeredDocFileSuite(
-        '../doc/bugtracker-person.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "bugtracker-person.rst": LayeredDocFileSuite(
+        "../doc/bugtracker-person.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'bugwatch.rst':
-        LayeredDocFileSuite(
-        '../doc/bugwatch.rst',
-        setUp=setUp, tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'bug-watch-activity.rst':
-        LayeredDocFileSuite(
-        '../doc/bug-watch-activity.rst',
-        setUp=checkwatchesSetUp, tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'bugtracker.rst':
-        LayeredDocFileSuite(
-        '../doc/bugtracker.rst',
-        setUp=setUp, tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'checkwatches.rst':
-        LayeredDocFileSuite(
-        '../doc/checkwatches.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "bugwatch.rst": LayeredDocFileSuite(
+        "../doc/bugwatch.rst",
+        setUp=setUp,
+        tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
+    ),
+    "bug-watch-activity.rst": LayeredDocFileSuite(
+        "../doc/bug-watch-activity.rst",
+        setUp=checkwatchesSetUp,
+        tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
+    ),
+    "bugtracker.rst": LayeredDocFileSuite(
+        "../doc/bugtracker.rst",
+        setUp=setUp,
+        tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
+    ),
+    "checkwatches.rst": LayeredDocFileSuite(
+        "../doc/checkwatches.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
         stdout_logging_level=logging.WARNING,
-        layer=LaunchpadZopelessLayer
-        ),
-    'checkwatches-cli-switches.rst':
-        LayeredDocFileSuite(
-        '../doc/checkwatches-cli-switches.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "checkwatches-cli-switches.rst": LayeredDocFileSuite(
+        "../doc/checkwatches-cli-switches.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker.rst',
-        setUp=setUp, tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker.rst",
+        setUp=setUp,
+        tearDown=tearDown,
         stdout_logging_level=logging.WARNING,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-bug-imports.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-bug-imports.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-bug-imports.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-bug-imports.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-bugzilla.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-bugzilla.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-bugzilla.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-bugzilla.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-bugzilla-api.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-bugzilla-api.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-bugzilla-api.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-bugzilla-api.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-bugzilla-lp-plugin.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-bugzilla-lp-plugin.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-bugzilla-lp-plugin.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-bugzilla-lp-plugin.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-bugzilla-oddities.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-bugzilla-oddities.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-bugzilla-oddities.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-bugzilla-oddities.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-checkwatches.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-checkwatches.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-checkwatches.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-checkwatches.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-comment-imports.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-comment-imports.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-comment-imports.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-comment-imports.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-comment-pushing.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-comment-pushing.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-comment-pushing.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-comment-pushing.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-debbugs.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-debbugs.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-debbugs.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-debbugs.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-emailaddress.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-emailaddress.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-emailaddress.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-emailaddress.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-linking-back.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-linking-back.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-linking-back.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-linking-back.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
         stdout_logging_level=logging.ERROR,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-mantis-csv.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-mantis-csv.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-mantis-csv.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-mantis-csv.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-mantis.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-mantis.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-mantis.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-mantis.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-roundup-python-bugs.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-roundup-python-bugs.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-roundup-python-bugs.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-roundup-python-bugs.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-roundup.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-roundup.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-roundup.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-roundup.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-rt.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-rt.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-rt.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-rt.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-sourceforge.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-sourceforge.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-sourceforge.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-sourceforge.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-trac.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-trac.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-trac.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-trac.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'externalbugtracker-trac-lp-plugin.rst':
-        LayeredDocFileSuite(
-        '../doc/externalbugtracker-trac-lp-plugin.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "externalbugtracker-trac-lp-plugin.rst": LayeredDocFileSuite(
+        "../doc/externalbugtracker-trac-lp-plugin.rst",
         setUp=checkwatchesSetUp,
         tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'product-update-remote-product.rst': LayeredDocFileSuite(
-        '../doc/product-update-remote-product.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "product-update-remote-product.rst": LayeredDocFileSuite(
+        "../doc/product-update-remote-product.rst",
         setUp=updateRemoteProductSetup,
         tearDown=updateRemoteProductTeardown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'product-update-remote-product-script.rst': LayeredDocFileSuite(
-        '../doc/product-update-remote-product-script.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "product-update-remote-product-script.rst": LayeredDocFileSuite(
+        "../doc/product-update-remote-product-script.rst",
         setUp=updateRemoteProductSetup,
         tearDown=updateRemoteProductTeardown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'sourceforge-remote-products.rst': LayeredDocFileSuite(
-        '../doc/sourceforge-remote-products.rst',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "sourceforge-remote-products.rst": LayeredDocFileSuite(
+        "../doc/sourceforge-remote-products.rst",
         setUp=setGlobs,
         layer=LaunchpadZopelessLayer,
-        ),
-    'bug-set-status.rst-processmail': LayeredDocFileSuite(
-        '../doc/bug-set-status.rst',
-        id_extensions=['bug-set-status.rst-processmail'],
-        setUp=bugSetStatusSetUp, tearDown=tearDown,
+    ),
+    "bug-set-status.rst-processmail": LayeredDocFileSuite(
+        "../doc/bug-set-status.rst",
+        id_extensions=["bug-set-status.rst-processmail"],
+        setUp=bugSetStatusSetUp,
+        tearDown=tearDown,
         layer=ProcessMailLayer,
-        stdout_logging=False),
-    'bugmessage.rst-processmail': LayeredDocFileSuite(
-        '../doc/bugmessage.rst',
-        id_extensions=['bugmessage.rst-processmail'],
-        setUp=bugmessageSetUp, tearDown=tearDown,
+        stdout_logging=False,
+    ),
+    "bugmessage.rst-processmail": LayeredDocFileSuite(
+        "../doc/bugmessage.rst",
+        id_extensions=["bugmessage.rst-processmail"],
+        setUp=bugmessageSetUp,
+        tearDown=tearDown,
         layer=ProcessMailLayer,
-        stdout_logging=False),
-    'bugs-emailinterface.rst-processmail': LayeredDocFileSuite(
-        '../tests/bugs-emailinterface.rst',
-        id_extensions=['bugs-emailinterface.rst-processmail'],
-        setUp=setUp, tearDown=tearDown,
+        stdout_logging=False,
+    ),
+    "bugs-emailinterface.rst-processmail": LayeredDocFileSuite(
+        "../tests/bugs-emailinterface.rst",
+        id_extensions=["bugs-emailinterface.rst-processmail"],
+        setUp=setUp,
+        tearDown=tearDown,
         layer=ProcessMailLayer,
-        stdout_logging=False),
-    }
+        stdout_logging=False,
+    ),
+}
 
 
 def test_suite():
     suite = unittest.TestSuite()
 
-    stories_dir = os.path.join(os.path.pardir, 'stories')
+    stories_dir = os.path.join(os.path.pardir, "stories")
     suite.addTest(PageTestSuite(stories_dir))
     stories_path = os.path.join(here, stories_dir)
     for story_entry in os.scandir(stories_path):
@@ -489,27 +481,30 @@ def test_suite():
         suite.addTest(PageTestSuite(story_path))
 
     testsdir = os.path.abspath(
-        os.path.normpath(os.path.join(here, os.path.pardir, 'doc'))
-        )
+        os.path.normpath(os.path.join(here, os.path.pardir, "doc"))
+    )
 
     # Add special needs tests
     for key, special_suite in sorted(special.items()):
         suite.addTest(special_suite)
 
     # Add tests using default setup/teardown
-    filenames = [filename
-                 for filename in os.listdir(testsdir)
-                 if filename.endswith('.rst') and filename not in special]
+    filenames = [
+        filename
+        for filename in os.listdir(testsdir)
+        if filename.endswith(".rst") and filename not in special
+    ]
     # Sort the list to give a predictable order.
     filenames.sort()
     for filename in filenames:
-        path = os.path.join('../doc/', filename)
+        path = os.path.join("../doc/", filename)
         one_test = LayeredDocFileSuite(
             path,
-            setUp=setUp, tearDown=tearDown,
+            setUp=setUp,
+            tearDown=tearDown,
             layer=LaunchpadFunctionalLayer,
-            stdout_logging_level=logging.WARNING
-            )
+            stdout_logging_level=logging.WARNING,
+        )
         suite.addTest(one_test)
 
     return suite

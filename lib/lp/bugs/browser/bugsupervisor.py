@@ -4,16 +4,13 @@
 """Browser view for bug supervisor."""
 
 __all__ = [
-    'BugSupervisorEditView',
-    ]
+    "BugSupervisorEditView",
+]
 
 from lazr.restful.interface import copy_field
 from zope.interface import Interface
 
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadEditFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadEditFormView, action
 from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
 from lp.services.webapp.escaping import structured
 from lp.services.webapp.publisher import canonical_url
@@ -25,20 +22,22 @@ class BugSupervisorEditSchema(Interface):
     This is necessary to make an editable field for bug supervisor as it is
     defined as read-only in the interface to prevent setting it directly.
     """
+
     bug_supervisor = copy_field(
-        IHasBugSupervisor['bug_supervisor'], readonly=False)
+        IHasBugSupervisor["bug_supervisor"], readonly=False
+    )
 
 
 class BugSupervisorEditView(LaunchpadEditFormView):
     """Browser view class for editing the bug supervisor."""
 
     schema = BugSupervisorEditSchema
-    field_names = ['bug_supervisor']
+    field_names = ["bug_supervisor"]
 
     @property
     def label(self):
         """The form label."""
-        return 'Edit bug supervisor for %s' % self.context.displayname
+        return "Edit bug supervisor for %s" % self.context.displayname
 
     @property
     def page_title(self):
@@ -57,14 +56,15 @@ class BugSupervisorEditView(LaunchpadEditFormView):
 
     cancel_url = next_url
 
-    @action('Change', name='change')
+    @action("Change", name="change")
     def change_action(self, action, data):
         """Redirect to the target page with a success message."""
         self.updateContextFromData(data)
         if self.context.bug_supervisor is None:
             message = (
                 "Successfully cleared the bug supervisor. "
-                "You can set the bug supervisor again at any time.")
+                "You can set the bug supervisor again at any time."
+            )
         else:
-            message = structured('Bug supervisor privilege granted.')
+            message = structured("Bug supervisor privilege granted.")
         self.request.response.addNotification(message)

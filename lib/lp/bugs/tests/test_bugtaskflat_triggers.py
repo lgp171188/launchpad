@@ -16,54 +16,49 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactSource,
     IAccessPolicyArtifactSource,
     IAccessPolicySource,
-    )
+)
 from lp.services.database.interfaces import IStore
-from lp.testing import (
-    login_person,
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, login_person, person_logged_in
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import DatabaseFunctionalLayer
 
-
 BUGTASKFLAT_COLUMNS = (
-    'bugtask',
-    'bug',
-    'datecreated',
-    'latest_patch_uploaded',
-    'date_closed',
-    'date_last_updated',
-    'duplicateof',
-    'bug_owner',
-    'fti',
-    'information_type',
-    'heat',
-    'product',
-    'productseries',
-    'distribution',
-    'distroseries',
-    'sourcepackagename',
-    'status',
-    'importance',
-    'assignee',
-    'milestone',
-    'owner',
-    'active',
-    'access_policies',
-    'access_grants',
-    )
+    "bugtask",
+    "bug",
+    "datecreated",
+    "latest_patch_uploaded",
+    "date_closed",
+    "date_last_updated",
+    "duplicateof",
+    "bug_owner",
+    "fti",
+    "information_type",
+    "heat",
+    "product",
+    "productseries",
+    "distribution",
+    "distroseries",
+    "sourcepackagename",
+    "status",
+    "importance",
+    "assignee",
+    "milestone",
+    "owner",
+    "active",
+    "access_policies",
+    "access_grants",
+)
 
-BugTaskFlat = namedtuple('BugTaskFlat', BUGTASKFLAT_COLUMNS)
+BugTaskFlat = namedtuple("BugTaskFlat", BUGTASKFLAT_COLUMNS)
 
 
 class BugTaskFlatTestMixin(TestCaseWithFactory):
-
     def checkFlattened(self, bugtask, check_only=True):
-        if hasattr(bugtask, 'id'):
+        if hasattr(bugtask, "id"):
             bugtask = bugtask.id
         result = IStore(Bug).execute(
-            "SELECT bugtask_flatten(?, ?)", (bugtask, check_only))
+            "SELECT bugtask_flatten(?, ?)", (bugtask, check_only)
+        )
         return result.get_one()[0]
 
     def assertFlattened(self, bugtask):
@@ -79,12 +74,18 @@ class BugTaskFlatTestMixin(TestCaseWithFactory):
         self.assertTrue(self.checkFlattened(bugtask))
 
     def getBugTaskFlat(self, bugtask):
-        if hasattr(bugtask, 'id'):
+        if hasattr(bugtask, "id"):
             bugtask = bugtask.id
         assert bugtask is not None
-        result = IStore(Bug).execute(
-            "SELECT %s FROM bugtaskflat WHERE bugtask = ?"
-            % ', '.join(BUGTASKFLAT_COLUMNS), (bugtask,)).get_one()
+        result = (
+            IStore(Bug)
+            .execute(
+                "SELECT %s FROM bugtaskflat WHERE bugtask = ?"
+                % ", ".join(BUGTASKFLAT_COLUMNS),
+                (bugtask,),
+            )
+            .get_one()
+        )
         if result is not None:
             result = BugTaskFlat(*result)
         return result
@@ -97,7 +98,8 @@ class BugTaskFlatTestMixin(TestCaseWithFactory):
             information_type = InformationType.PUBLIC
         login_person(owner)
         bug = self.factory.makeBug(
-            information_type=information_type, owner=owner)
+            information_type=information_type, owner=owner
+        )
         return bug.default_bugtask
 
     @contextmanager
@@ -118,8 +120,10 @@ class BugTaskFlatTestMixin(TestCaseWithFactory):
         new_row = self.getBugTaskFlat(bugtask)
         self.assertFlattened(bugtask)
         changed_fields = [
-            field for field in BugTaskFlat._fields
-            if getattr(old_row, field) != getattr(new_row, field)]
+            field
+            for field in BugTaskFlat._fields
+            if getattr(old_row, field) != getattr(new_row, field)
+        ]
         self.assertEqual(expected_fields, changed_fields)
 
     @contextmanager
@@ -141,9 +145,10 @@ class TestBugTaskFlatten(BugTaskFlatTestMixin):
         # and optionally creates it.
         task = self.factory.makeBugTask()
         self.assertTrue(self.checkFlattened(task))
-        with dbuser('testadmin'):
+        with dbuser("testadmin"):
             IStore(Bug).execute(
-                "DELETE FROM BugTaskFlat WHERE bugtask = ?", (task.id,))
+                "DELETE FROM BugTaskFlat WHERE bugtask = ?", (task.id,)
+            )
         self.assertFlattens(task)
 
     def test_update(self):
@@ -151,17 +156,18 @@ class TestBugTaskFlatten(BugTaskFlatTestMixin):
         # date, and optionally updates it.
         task = self.factory.makeBugTask()
         self.assertTrue(self.checkFlattened(task))
-        with dbuser('testadmin'):
+        with dbuser("testadmin"):
             IStore(Bug).execute(
                 "UPDATE BugTaskFlat SET status = ? WHERE bugtask = ?",
-                (BugTaskStatus.UNKNOWN.value, task.id))
+                (BugTaskStatus.UNKNOWN.value, task.id),
+            )
         self.assertFlattens(task)
 
     def test_delete(self):
         # bugtask_flatten() returns true if the BugTaskFlat exists but
         # the task doesn't, and optionally deletes it.
         self.assertTrue(self.checkFlattened(200))
-        with dbuser('testadmin'):
+        with dbuser("testadmin"):
             IStore(Bug).execute(
                 "INSERT INTO bugtaskflat "
                 "(bug, bugtask, bug_owner, information_type, "
@@ -169,7 +175,8 @@ class TestBugTaskFlatten(BugTaskFlatTestMixin):
                 " active) "
                 "VALUES "
                 "(1, 200, 1, 1, "
-                " current_timestamp at time zone 'UTC', 999, 1, 1, 1, true);")
+                " current_timestamp at time zone 'UTC', 999, 1, 1, 1, true);"
+            )
         self.assertFlattens(200)
 
     def test_values(self):
@@ -178,7 +185,8 @@ class TestBugTaskFlatten(BugTaskFlatTestMixin):
             task.transitionToAssignee(self.factory.makePerson())
             task.transitionToMilestone(
                 self.factory.makeMilestone(product=task.product),
-                task.product.owner)
+                task.product.owner,
+            )
             task.bug.markAsDuplicate(self.factory.makeBug())
         flat = self.getBugTaskFlat(task)
         self.assertThat(
@@ -191,7 +199,8 @@ class TestBugTaskFlatten(BugTaskFlatTestMixin):
                 bug_owner=task.bug.owner.id,
                 information_type=task.bug.information_type.value,
                 date_last_updated=task.bug.date_last_updated.replace(
-                    tzinfo=None),
+                    tzinfo=None
+                ),
                 heat=task.bug.heat,
                 product=task.product.id,
                 productseries=None,
@@ -205,7 +214,9 @@ class TestBugTaskFlatten(BugTaskFlatTestMixin):
                 owner=task.owner.id,
                 active=task.product.active,
                 access_policies=None,
-                access_grants=None))
+                access_grants=None,
+            ),
+        )
         self.assertIsNot(None, flat.fti)
 
     def test_productseries_target(self):
@@ -215,8 +226,14 @@ class TestBugTaskFlatten(BugTaskFlatTestMixin):
         self.assertThat(
             flat,
             MatchesStructure.byEquality(
-                product=None, productseries=ps.id, distribution=None,
-                distroseries=None, sourcepackagename=None, active=True))
+                product=None,
+                productseries=ps.id,
+                distribution=None,
+                distroseries=None,
+                sourcepackagename=None,
+                active=True,
+            ),
+        )
 
     def test_distributionsourcepackage_target(self):
         dsp = self.factory.makeDistributionSourcePackage()
@@ -225,9 +242,14 @@ class TestBugTaskFlatten(BugTaskFlatTestMixin):
         self.assertThat(
             flat,
             MatchesStructure.byEquality(
-                product=None, productseries=None,
-                distribution=dsp.distribution.id, distroseries=None,
-                sourcepackagename=dsp.sourcepackagename.id, active=True))
+                product=None,
+                productseries=None,
+                distribution=dsp.distribution.id,
+                distroseries=None,
+                sourcepackagename=dsp.sourcepackagename.id,
+                active=True,
+            ),
+        )
 
     def test_sourcepackage_target(self):
         sp = self.factory.makeSourcePackage()
@@ -236,9 +258,14 @@ class TestBugTaskFlatten(BugTaskFlatTestMixin):
         self.assertThat(
             flat,
             MatchesStructure.byEquality(
-                product=None, productseries=None, distribution=None,
+                product=None,
+                productseries=None,
+                distribution=None,
                 distroseries=sp.distroseries.id,
-                sourcepackagename=sp.sourcepackagename.id, active=True))
+                sourcepackagename=sp.sourcepackagename.id,
+                active=True,
+            ),
+        )
 
     def test_product_active_flag_respected(self):
         # A bugtask created on a product or productseries respects the
@@ -266,11 +293,13 @@ class TestBugTaskFlatten(BugTaskFlatTestMixin):
         bugtask = self.makeLoggedInTask(private=True)
         flat = self.getBugTaskFlat(bugtask.id)
         [policy] = getUtility(IAccessPolicySource).find(
-            [(bugtask.pillar, InformationType.USERDATA)])
+            [(bugtask.pillar, InformationType.USERDATA)]
+        )
         self.assertContentEqual([policy.id], flat.access_policies)
         self.assertContentEqual(
             [p.id for p in bugtask.bug.getDirectSubscribers()],
-            flat.access_grants)
+            flat.access_grants,
+        )
 
 
 class TestBugTaskFlatTriggers(BugTaskFlatTestMixin):
@@ -293,7 +322,7 @@ class TestBugTaskFlatTriggers(BugTaskFlatTestMixin):
     def test_bugtask_change(self):
         # Triggers maintain BugTaskFlat when a task is changed.
         task = self.makeLoggedInTask()
-        with self.bugtaskflat_is_updated(task, ['status']):
+        with self.bugtaskflat_is_updated(task, ["status"]):
             task.transitionToStatus(BugTaskStatus.UNKNOWN, task.owner)
 
     def test_bugtask_change_unflattened(self):
@@ -305,25 +334,28 @@ class TestBugTaskFlatTriggers(BugTaskFlatTestMixin):
     def test_bug_change(self):
         # Triggers maintain BugTaskFlat when a bug is changed
         task = self.makeLoggedInTask()
-        with self.bugtaskflat_is_updated(task, ['information_type']):
-            removeSecurityProxy(task.bug).information_type = (
-                InformationType.PUBLICSECURITY)
+        with self.bugtaskflat_is_updated(task, ["information_type"]):
+            removeSecurityProxy(
+                task.bug
+            ).information_type = InformationType.PUBLICSECURITY
 
     def test_bug_make_private(self):
         # Triggers maintain BugTaskFlat when a bug is made private.
         task = self.makeLoggedInTask()
         with self.bugtaskflat_is_updated(
-            task, ['information_type', 'access_policies', 'access_grants']):
-            removeSecurityProxy(task.bug).information_type = (
-                InformationType.USERDATA)
+            task, ["information_type", "access_policies", "access_grants"]
+        ):
+            removeSecurityProxy(
+                task.bug
+            ).information_type = InformationType.USERDATA
 
     def test_bug_make_public(self):
         # Triggers maintain BugTaskFlat when a bug is made public.
         task = self.makeLoggedInTask(private=True)
         with self.bugtaskflat_is_updated(
-            task, [
-                'information_type', 'heat', 'access_policies',
-                'access_grants']):
+            task,
+            ["information_type", "heat", "access_policies", "access_grants"],
+        ):
             task.bug.setPrivate(False, task.owner)
 
     def test_bug_change_unflattened(self):
@@ -336,7 +368,7 @@ class TestBugTaskFlatTriggers(BugTaskFlatTestMixin):
         # Creating an AccessArtifactGrant updates the relevant bugs.
         task = self.makeLoggedInTask(private=True)
         [artifact] = getUtility(IAccessArtifactSource).find([task.bug])
-        with self.bugtaskflat_is_updated(task, ['access_grants']):
+        with self.bugtaskflat_is_updated(task, ["access_grants"]):
             self.factory.makeAccessArtifactGrant(artifact=artifact)
 
     def test_accessartifactgrant_update(self):
@@ -345,7 +377,7 @@ class TestBugTaskFlatTriggers(BugTaskFlatTestMixin):
         task = self.makeLoggedInTask(private=True)
         [artifact] = getUtility(IAccessArtifactSource).find([task.bug])
         grant = self.factory.makeAccessArtifactGrant(artifact=artifact)
-        with self.bugtaskflat_is_updated(task, ['access_grants']):
+        with self.bugtaskflat_is_updated(task, ["access_grants"]):
             removeSecurityProxy(grant).grantee = self.factory.makePerson()
 
     def test_accessartifactgrant_delete(self):
@@ -353,15 +385,14 @@ class TestBugTaskFlatTriggers(BugTaskFlatTestMixin):
         task = self.makeLoggedInTask(private=True)
         [artifact] = getUtility(IAccessArtifactSource).find([task.bug])
         self.factory.makeAccessArtifactGrant(artifact=artifact)
-        with self.bugtaskflat_is_updated(task, ['access_grants']):
-            getUtility(IAccessArtifactGrantSource).revokeByArtifact(
-                [artifact])
+        with self.bugtaskflat_is_updated(task, ["access_grants"]):
+            getUtility(IAccessArtifactGrantSource).revokeByArtifact([artifact])
 
     def test_accesspolicyartifact_create(self):
         # Creating an AccessPolicyArtifact updates the relevant bugtasks.
         task = self.makeLoggedInTask(private=True)
         [artifact] = getUtility(IAccessArtifactSource).find([task.bug])
-        with self.bugtaskflat_is_updated(task, ['access_policies']):
+        with self.bugtaskflat_is_updated(task, ["access_policies"]):
             self.factory.makeAccessPolicyArtifact(artifact=artifact)
 
     def test_accesspolicyartifact_update(self):
@@ -370,7 +401,7 @@ class TestBugTaskFlatTriggers(BugTaskFlatTestMixin):
         task = self.makeLoggedInTask(private=True)
         [artifact] = getUtility(IAccessArtifactSource).find([task.bug])
         link = self.factory.makeAccessPolicyArtifact(artifact=artifact)
-        with self.bugtaskflat_is_updated(task, ['access_policies']):
+        with self.bugtaskflat_is_updated(task, ["access_policies"]):
             removeSecurityProxy(link).policy = self.factory.makeAccessPolicy()
 
     def test_accesspolicyartifact_delete(self):
@@ -378,9 +409,10 @@ class TestBugTaskFlatTriggers(BugTaskFlatTestMixin):
         task = self.makeLoggedInTask(private=True)
         [artifact] = getUtility(IAccessArtifactSource).find([task.bug])
         self.factory.makeAccessPolicyArtifact(artifact=artifact)
-        with self.bugtaskflat_is_updated(task, ['access_policies']):
+        with self.bugtaskflat_is_updated(task, ["access_policies"]):
             getUtility(IAccessPolicyArtifactSource).deleteByArtifact(
-                [artifact])
+                [artifact]
+            )
 
     def test_access_create_public(self):
         # Creating a grant or policy link on a public bug has no effect.
@@ -399,7 +431,8 @@ class TestBugTaskFlatTriggers(BugTaskFlatTestMixin):
         # lists, not NULL.
         task = self.makeLoggedInTask(private=True)
         with self.bugtaskflat_is_updated(
-            task, ['access_policies', 'access_grants']):
+            task, ["access_policies", "access_grants"]
+        ):
             getUtility(IAccessArtifactSource).delete([task.bug])
         flat = self.getBugTaskFlat(task.id)
         self.assertEqual([], flat.access_policies)

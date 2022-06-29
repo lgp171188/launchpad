@@ -4,11 +4,11 @@
 """Bug feed (syndication) views."""
 
 __all__ = [
-    'BugFeed',
-    'BugTargetBugsFeed',
-    'PersonBugsFeed',
-    'SearchBugsFeed',
-    ]
+    "BugFeed",
+    "BugTargetBugsFeed",
+    "PersonBugsFeed",
+    "SearchBugsFeed",
+]
 
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -16,28 +16,22 @@ from zope.component import getUtility
 from lp.bugs.browser.buglisting import (
     BugsBugTaskSearchListingView,
     BugTargetView,
-    )
+)
 from lp.bugs.browser.person import PersonRelatedBugTaskSearchListingView
-from lp.bugs.interfaces.bug import (
-    IBug,
-    IBugSet,
-    )
+from lp.bugs.interfaces.bug import IBug, IBugSet
 from lp.bugs.interfaces.bugtarget import IHasBugs
 from lp.bugs.interfaces.bugtask import IBugTaskSet
 from lp.bugs.interfaces.malone import IMaloneApplication
 from lp.registry.interfaces.person import IPerson
 from lp.services.config import config
 from lp.services.feeds.feed import (
+    MINUTES,
     FeedBase,
     FeedEntry,
     FeedPerson,
     FeedTypedData,
-    MINUTES,
-    )
-from lp.services.webapp import (
-    canonical_url,
-    urlparse,
-    )
+)
+from lp.services.webapp import canonical_url, urlparse
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import ILaunchpadRoot
 from lp.services.webapp.publisher import LaunchpadView
@@ -52,7 +46,7 @@ class BugFeedContentView(LaunchpadView):
 
     def render(self):
         """Render the view."""
-        return ViewPageTemplateFile('templates/bug.pt')(self)
+        return ViewPageTemplateFile("templates/bug.pt")(self)
 
 
 class BugsFeedBase(FeedBase):
@@ -79,7 +73,8 @@ class BugsFeedBase(FeedBase):
             title=True,
             bugtargetdisplayname=True,
             importance=True,
-            status=True)
+            status=True,
+        )
 
     @property
     def logo(self):
@@ -87,9 +82,9 @@ class BugsFeedBase(FeedBase):
         return "%s/@@/bug" % self.site_url
 
     def _sortByDateCreated(self, bugs):
-        return sorted(bugs,
-                      key=lambda bug: (bug.datecreated, bug.id),
-                      reverse=True)
+        return sorted(
+            bugs, key=lambda bug: (bug.datecreated, bug.id), reverse=True
+        )
 
     def _getRawItems(self):
         """Get the raw set of items for the feed."""
@@ -104,8 +99,9 @@ class BugsFeedBase(FeedBase):
         # bugs should be done in the database query.
         bugs = self._getRawItems()
         for bug in bugs:
-            assert not bug.private, (
-                "Private bugs should not be retrieved for feeds.")
+            assert (
+                not bug.private
+            ), "Private bugs should not be retrieved for feeds."
         return self._sortByDateCreated(bugs)
 
     def _getItemsWorker(self):
@@ -120,22 +116,23 @@ class BugsFeedBase(FeedBase):
 
     def itemToFeedEntry(self, bug):
         """Convert the items to FeedEntries."""
-        title = FeedTypedData('[%s] %s' % (bug.id, bug.title))
+        title = FeedTypedData("[%s] %s" % (bug.id, bug.title))
         url = canonical_url(bug, rootsite=self.rootsite)
         content_view = BugFeedContentView(bug, self.request, self)
-        entry = FeedEntry(title=title,
-                          link_alternate=url,
-                          date_created=bug.datecreated,
-                          date_updated=bug.date_last_updated,
-                          date_published=bug.datecreated,
-                          authors=[FeedPerson(bug.owner, self.rootsite)],
-                          content=FeedTypedData(content_view.render(),
-                                                content_type="html"))
+        entry = FeedEntry(
+            title=title,
+            link_alternate=url,
+            date_created=bug.datecreated,
+            date_updated=bug.date_last_updated,
+            date_published=bug.datecreated,
+            authors=[FeedPerson(bug.owner, self.rootsite)],
+            content=FeedTypedData(content_view.render(), content_type="html"),
+        )
         return entry
 
     def renderHTML(self):
         """See `IFeed`."""
-        return ViewPageTemplateFile('templates/bug-html.pt')(self)
+        return ViewPageTemplateFile("templates/bug-html.pt")(self)
 
     def getBugsFromBugTasks(self, tasks):
         """Given a list of BugTasks return the list of associated bugs.
@@ -177,10 +174,11 @@ class BugFeed(BugsFeedBase):
                 # Bug cannot be seen so redirect to the bugs index page.
                 message_prefix = "The requested bug is private."
                 root = getUtility(ILaunchpadRoot)
-                redirect_url = canonical_url(root, rootsite='bugs')
+                redirect_url = canonical_url(root, rootsite="bugs")
 
             self.request.response.addErrorNotification(
-                message_prefix + " Feeds do not serve private bugs.")
+                message_prefix + " Feeds do not serve private bugs."
+            )
             self.request.response.redirect(redirect_url)
 
     @property
@@ -193,9 +191,7 @@ class BugFeed(BugsFeedBase):
         """See `IFeed`."""
         datecreated = self.context.datecreated.date().isoformat()
         url_path = urlparse(self.link_alternate)[2]
-        id_ = 'tag:launchpad.net,%s:%s' % (
-            datecreated,
-            url_path)
+        id_ = "tag:launchpad.net,%s:%s" % (datecreated, url_path)
         return id_
 
     def _getRawItems(self):
@@ -216,8 +212,8 @@ class BugTargetBugsFeed(BugsFeedBase):
         include the name in the output.
         """
         super().setupColumns()
-        if 'bugtargetdisplayname' in self.show_column:
-            del self.show_column['bugtargetdisplayname']
+        if "bugtargetdisplayname" in self.show_column:
+            del self.show_column["bugtargetdisplayname"]
 
     def _createView(self):
         """Create the delegate view used by this feed."""
@@ -235,20 +231,21 @@ class BugTargetBugsFeed(BugsFeedBase):
     def feed_id(self):
         """See `IFeed`."""
         # Get the creation date, if available.
-        if hasattr(self.context, 'date_created'):
+        if hasattr(self.context, "date_created"):
             datecreated = self.context.date_created.date().isoformat()
-        elif hasattr(self.context, 'datecreated'):
+        elif hasattr(self.context, "datecreated"):
             datecreated = self.context.datecreated.date().isoformat()
         else:
-            datecreated = '2008'
+            datecreated = "2008"
         if IMaloneApplication.providedBy(self.context):
-            url_path = ''
+            url_path = ""
         else:
             url_path = urlparse(self.link_alternate)[2]
-        id_ = 'tag:launchpad.net,%s:/%s%s' % (
+        id_ = "tag:launchpad.net,%s:/%s%s" % (
             datecreated,
             self.rootsite,
-            url_path)
+            url_path,
+        )
         return id_
 
     def _getRawItems(self):
@@ -281,7 +278,8 @@ class PersonBugsFeed(BugsFeedBase):
     def _createView(self):
         """Create the delegate view used by this feed."""
         return PersonRelatedBugTaskSearchListingView(
-            self.context, self.request)
+            self.context, self.request
+        )
 
     def _getRawItems(self):
         """Perform the search."""
@@ -290,8 +288,9 @@ class PersonBugsFeed(BugsFeedBase):
         # be initialized to setup the widgets.
         delegate_view.initialize()
         batch_navigator = delegate_view.search(
-            extra_params=dict(orderby='-datecreated'))
-        items = batch_navigator.batch.list[:self.quantity * 2]
+            extra_params=dict(orderby="-datecreated")
+        )
+        items = batch_navigator.batch.list[: self.quantity * 2]
         return self.getBugsFromBugTasks(items)
 
 
@@ -309,17 +308,18 @@ class SearchBugsFeed(BugsFeedBase):
     def _getRawItems(self):
         """Perform the search."""
         search_context = getUtility(IMaloneApplication)
-        delegate_view = BugsBugTaskSearchListingView(self.context,
-                                                     self.request)
+        delegate_view = BugsBugTaskSearchListingView(
+            self.context, self.request
+        )
         # Since the delegate_view derives from LaunchpadFormView the view must
         # be initialized to setup the widgets.
         delegate_view.initialize()
-        batch_navigator = delegate_view.search(searchtext=None,
-                                               context=search_context,
-                                               extra_params=None)
+        batch_navigator = delegate_view.search(
+            searchtext=None, context=search_context, extra_params=None
+        )
         # XXX: BradCrittenden 2008-03-25 bug=206811:
         # See description above.
-        items = batch_navigator.batch.list[:self.quantity * 2]
+        items = batch_navigator.batch.list[: self.quantity * 2]
         return self.getBugsFromBugTasks(items)
 
     @property
@@ -330,14 +330,19 @@ class SearchBugsFeed(BugsFeedBase):
     @property
     def link_self(self):
         """See `IFeed`."""
-        return "%s?%s" % (self.request.getURL(),
-                          self.request.get('QUERY_STRING'))
+        return "%s?%s" % (
+            self.request.getURL(),
+            self.request.get("QUERY_STRING"),
+        )
 
     @property
     def link_alternate(self):
         """See `IFeed`."""
-        return "%s/bugs/%s?%s" % (self.site_url, self.feedname,
-                             self.request.get('QUERY_STRING'))
+        return "%s/bugs/%s?%s" % (
+            self.site_url,
+            self.feedname,
+            self.request.get("QUERY_STRING"),
+        )
 
     @property
     def feed_id(self):
@@ -345,8 +350,6 @@ class SearchBugsFeed(BugsFeedBase):
         # We don't track the creation date for any given search query so we'll
         # just use a fixed, abbreviated date, which is allowed by the RFC.
         datecreated = "2008"
-        full_path = self.link_self[self.link_self.find('/+bugs'):]
-        id_ = 'tag:launchpad.net,%s:%s' % (
-            datecreated,
-            full_path)
+        full_path = self.link_self[self.link_self.find("/+bugs") :]
+        id_ = "tag:launchpad.net,%s:%s" % (datecreated, full_path)
         return id_

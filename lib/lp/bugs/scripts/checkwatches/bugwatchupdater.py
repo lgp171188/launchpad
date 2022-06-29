@@ -4,13 +4,13 @@
 """Classes and logic for the checkwatches BugWatchUpdater."""
 
 __all__ = [
-    'BugWatchUpdater',
-    ]
+    "BugWatchUpdater",
+]
 
 import sys
 
-from lazr.lifecycle.event import ObjectCreatedEvent
 import six
+from lazr.lifecycle.event import ObjectCreatedEvent
 from zope.component import getUtility
 from zope.event import notify
 
@@ -19,13 +19,10 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.externalbugtracker.base import BugWatchUpdateError
 from lp.bugs.interfaces.bug import IBugSet
 from lp.bugs.interfaces.bugwatch import BugWatchActivityStatus
-from lp.bugs.scripts.checkwatches.base import (
-    commit_before,
-    WorkingBase,
-    )
+from lp.bugs.scripts.checkwatches.base import WorkingBase, commit_before
 from lp.bugs.scripts.checkwatches.utilities import (
     get_remote_system_oops_properties,
-    )
+)
 from lp.registry.interfaces.person import PersonCreationRationale
 from lp.services.mail.helpers import get_email_template
 from lp.services.messages.interfaces.message import IMessageSet
@@ -44,35 +41,46 @@ class BugWatchUpdater(WorkingBase):
         self.remote_bug = self.bug_watch.remotebug
         self.local_bug = self.bug_watch.bug.id
         self.oops_properties = get_remote_system_oops_properties(
-            self.external_bugtracker)
-        self.oops_properties.extend([
-            ('URL', self.bug_watch.url),
-            ('bug_id', self.remote_bug),
-            ('local_ids', str(self.local_bug))])
+            self.external_bugtracker
+        )
+        self.oops_properties.extend(
+            [
+                ("URL", self.bug_watch.url),
+                ("bug_id", self.remote_bug),
+                ("local_ids", str(self.local_bug)),
+            ]
+        )
 
         self.can_import_comments = parent.can_import_comments
         self.can_push_comments = parent.can_push_comments
         self.can_back_link = parent.can_back_link
 
     @commit_before
-    def updateBugWatch(self, new_remote_status, new_malone_status,
-                       new_remote_importance, new_malone_importance):
+    def updateBugWatch(
+        self,
+        new_remote_status,
+        new_malone_status,
+        new_remote_importance,
+        new_malone_importance,
+    ):
         """Update the BugWatch."""
         with self.transaction:
             if new_malone_status is not None:
                 self.bug_watch.updateStatus(
-                    new_remote_status, new_malone_status)
+                    new_remote_status, new_malone_status
+                )
             if new_malone_importance is not None:
                 self.bug_watch.updateImportance(
-                    new_remote_importance, new_malone_importance)
+                    new_remote_importance, new_malone_importance
+                )
             # Only sync comments and backlink if the local bug isn't a
             # duplicate and the bug watch is associated with a bug task.
             # This helps us to avoid spamming both upstream and
             # ourselves.
             do_sync = (
-                self.bug_watch.bug.duplicateof is None and
-                len(self.bug_watch.bugtasks) > 0
-                )
+                self.bug_watch.bug.duplicateof is None
+                and len(self.bug_watch.bugtasks) > 0
+            )
 
         error_message = None
         error_status = None
@@ -80,8 +88,7 @@ class BugWatchUpdater(WorkingBase):
         if do_sync:
             try:
                 if self.can_import_comments:
-                    error_status = (
-                        BugWatchActivityStatus.COMMENT_IMPORT_FAILED)
+                    error_status = BugWatchActivityStatus.COMMENT_IMPORT_FAILED
                     self.importBugComments()
                 if self.can_push_comments:
                     error_status = BugWatchActivityStatus.COMMENT_PUSH_FAILED
@@ -92,11 +99,15 @@ class BugWatchUpdater(WorkingBase):
             except Exception as ex:
                 error_message = str(ex)
                 log_message = (
-                    "Failure updating bug %r on %s (local bug: %s)" %
-                    (self.remote_bug, self.external_bugtracker.baseurl,
-                    self.local_bug))
+                    "Failure updating bug %r on %s (local bug: %s)"
+                    % (
+                        self.remote_bug,
+                        self.external_bugtracker.baseurl,
+                        self.local_bug,
+                    )
+                )
                 if isinstance(ex, BugWatchUpdateError):
-                    self.logger.info('%s: %s' % (log_message, ex))
+                    self.logger.info("%s: %s" % (log_message, ex))
                 else:
                     oops_id = self.error(log_message, self.oops_properties)
             else:
@@ -104,7 +115,8 @@ class BugWatchUpdater(WorkingBase):
 
         with self.transaction:
             self.bug_watch.addActivity(
-                result=error_status, message=error_message, oops_id=oops_id)
+                result=error_status, message=error_message, oops_id=oops_id
+            )
             self.bug_watch.last_error_type = error_status
 
     @commit_before
@@ -116,27 +128,33 @@ class BugWatchUpdater(WorkingBase):
 
         # Construct a list of the comment IDs we want to import; i.e.
         # those which we haven't already imported.
-        all_comment_ids = self.external_bugtracker.getCommentIds(
-            remote_bug_id)
+        all_comment_ids = self.external_bugtracker.getCommentIds(remote_bug_id)
 
         with self.transaction:
             comment_ids_to_import = [
-                comment_id for comment_id in all_comment_ids
-                if not self.bug_watch.hasComment(comment_id)]
+                comment_id
+                for comment_id in all_comment_ids
+                if not self.bug_watch.hasComment(comment_id)
+            ]
 
         self.external_bugtracker.fetchComments(
-            remote_bug_id, comment_ids_to_import)
+            remote_bug_id, comment_ids_to_import
+        )
 
         with self.transaction:
             previous_imported_comments = (
-                self.bug_watch.getImportedBugMessages())
+                self.bug_watch.getImportedBugMessages()
+            )
             is_initial_import = previous_imported_comments.count() == 0
             imported_comments = []
 
             for comment_id in comment_ids_to_import:
-                displayname, email = (
-                    self.external_bugtracker.getPosterForComment(
-                        remote_bug_id, comment_id))
+                (
+                    displayname,
+                    email,
+                ) = self.external_bugtracker.getPosterForComment(
+                    remote_bug_id, comment_id
+                )
 
                 if displayname is None and email is None:
                     # If we don't have a displayname or an email address
@@ -146,32 +164,44 @@ class BugWatchUpdater(WorkingBase):
                         "Unable to import remote comment author. No email "
                         "address or display name found.",
                         get_remote_system_oops_properties(
-                            self.external_bugtracker),
-                        sys.exc_info())
+                            self.external_bugtracker
+                        ),
+                        sys.exc_info(),
+                    )
                     continue
 
                 poster = self.bug_watch.bugtracker.ensurePersonForSelf(
-                    displayname, email, PersonCreationRationale.BUGIMPORT,
-                    "when importing comments for %s." % self.bug_watch.title)
+                    displayname,
+                    email,
+                    PersonCreationRationale.BUGIMPORT,
+                    "when importing comments for %s." % self.bug_watch.title,
+                )
 
                 comment_message = (
                     self.external_bugtracker.getMessageForComment(
-                        remote_bug_id, comment_id, poster))
+                        remote_bug_id, comment_id, poster
+                    )
+                )
 
                 bug_message = self.bug_watch.addComment(
-                    comment_id, comment_message)
+                    comment_id, comment_message
+                )
                 imported_comments.append(bug_message)
 
             if len(imported_comments) > 0:
-                self.bug_watch_updater = (
-                    getUtility(ILaunchpadCelebrities).bug_watch_updater)
+                self.bug_watch_updater = getUtility(
+                    ILaunchpadCelebrities
+                ).bug_watch_updater
                 if is_initial_import:
                     notification_text = get_email_template(
-                        'bugwatch-initial-comment-import.txt', 'bugs') % dict(
-                            num_of_comments=len(imported_comments),
-                            bug_watch_url=self.bug_watch.url)
+                        "bugwatch-initial-comment-import.txt", "bugs"
+                    ) % dict(
+                        num_of_comments=len(imported_comments),
+                        bug_watch_url=self.bug_watch.url,
+                    )
                     comment_text_template = get_email_template(
-                        'bugwatch-comment.txt', 'bugs')
+                        "bugwatch-comment.txt", "bugs"
+                    )
 
                     for bug_message in imported_comments:
                         comment = bug_message.message
@@ -179,37 +209,47 @@ class BugWatchUpdater(WorkingBase):
                             comment_date=comment.datecreated.isoformat(),
                             commenter=comment.owner.displayname,
                             comment_text=comment.text_contents,
-                            comment_reply_url=canonical_url(comment))
+                            comment_reply_url=canonical_url(comment),
+                        )
                     notification_message = getUtility(IMessageSet).fromText(
                         subject=self.bug_watch.bug.followup_subject(),
                         content=notification_text,
-                        owner=self.bug_watch_updater)
+                        owner=self.bug_watch_updater,
+                    )
                     self.bug_watch.bug.addCommentNotification(
-                        notification_message)
+                        notification_message
+                    )
                 else:
                     for bug_message in imported_comments:
-                        notify(ObjectCreatedEvent(
-                            bug_message,
-                            user=self.bug_watch_updater))
+                        notify(
+                            ObjectCreatedEvent(
+                                bug_message, user=self.bug_watch_updater
+                            )
+                        )
 
-            self.logger.info("Imported %(count)i comments for remote bug "
+            self.logger.info(
+                "Imported %(count)i comments for remote bug "
                 "%(remotebug)s on %(bugtracker_url)s into Launchpad bug "
-                "%(bug_id)s." %
-                {'count': len(imported_comments),
-                 'remotebug': remote_bug_id,
-                 'bugtracker_url': self.external_bugtracker.baseurl,
-                 'bug_id': local_bug_id})
+                "%(bug_id)s."
+                % {
+                    "count": len(imported_comments),
+                    "remotebug": remote_bug_id,
+                    "bugtracker_url": self.external_bugtracker.baseurl,
+                    "bug_id": local_bug_id,
+                }
+            )
 
     def _formatRemoteComment(self, message):
         """Format a comment for a remote bugtracker and return it."""
         comment_template = get_email_template(
-            self.external_bugtracker.comment_template, 'bugs')
+            self.external_bugtracker.comment_template, "bugs"
+        )
 
         return comment_template % {
-            'launchpad_bug': self.bug_watch.bug.id,
-            'comment_author': message.owner.displayname,
-            'comment_body': message.text_contents,
-            }
+            "launchpad_bug": self.bug_watch.bug.id,
+            "comment_author": message.owner.displayname,
+            "comment_body": message.text_contents,
+        }
 
     @commit_before
     def pushBugComments(self):
@@ -239,27 +279,32 @@ class BugWatchUpdater(WorkingBase):
                 # about the Launchpad bug.
                 formatted_comment = self._formatRemoteComment(message)
 
-            remote_comment_id = (
-                self.external_bugtracker.addRemoteComment(
-                    remote_bug_id, formatted_comment,
-                    message_rfc822msgid))
+            remote_comment_id = self.external_bugtracker.addRemoteComment(
+                remote_bug_id, formatted_comment, message_rfc822msgid
+            )
 
-            assert remote_comment_id is not None, (
-                "A remote_comment_id must be specified.")
+            assert (
+                remote_comment_id is not None
+            ), "A remote_comment_id must be specified."
             with self.transaction:
                 unpushed_comment.remote_comment_id = six.ensure_text(
-                    remote_comment_id)
+                    remote_comment_id
+                )
 
             pushed_comments += 1
 
         if pushed_comments > 0:
-            self.logger.info("Pushed %(count)i comments to remote bug "
+            self.logger.info(
+                "Pushed %(count)i comments to remote bug "
                 "%(remotebug)s on %(bugtracker_url)s from Launchpad bug "
-                "%(bug_id)s" %
-                {'count': pushed_comments,
-                 'remotebug': remote_bug_id,
-                 'bugtracker_url': self.external_bugtracker.baseurl,
-                 'bug_id': local_bug_id})
+                "%(bug_id)s"
+                % {
+                    "count": pushed_comments,
+                    "remotebug": remote_bug_id,
+                    "bugtracker_url": self.external_bugtracker.baseurl,
+                    "bug_id": local_bug_id,
+                }
+            )
 
     @commit_before
     def linkLaunchpadBug(self):
@@ -270,13 +315,15 @@ class BugWatchUpdater(WorkingBase):
             remote_bug_id = self.bug_watch.remotebug
 
         current_launchpad_id = self.external_bugtracker.getLaunchpadBugId(
-            remote_bug_id)
+            remote_bug_id
+        )
 
         if current_launchpad_id is None:
             # If no bug is linked to the remote bug, link this one and
             # then stop.
             self.external_bugtracker.setLaunchpadBugId(
-                remote_bug_id, local_bug_id, local_bug_url)
+                remote_bug_id, local_bug_id, local_bug_url
+            )
             return
 
         elif current_launchpad_id == local_bug_id:
@@ -294,9 +341,11 @@ class BugWatchUpdater(WorkingBase):
             try:
                 with self.transaction:
                     other_launchpad_bug = getUtility(IBugSet).get(
-                        current_launchpad_id)
+                        current_launchpad_id
+                    )
                     other_bug_watch = other_launchpad_bug.getBugWatch(
-                        self.bug_watch.bugtracker, remote_bug_id)
+                        self.bug_watch.bugtracker, remote_bug_id
+                    )
             except NotFoundError:
                 # If we can't find the bug that's referenced by
                 # current_launchpad_id we simply set other_self.bug_watch to
@@ -306,4 +355,5 @@ class BugWatchUpdater(WorkingBase):
 
             if other_bug_watch is None:
                 self.external_bugtracker.setLaunchpadBugId(
-                    remote_bug_id, local_bug_id, local_bug_url)
+                    remote_bug_id, local_bug_id, local_bug_url
+                )

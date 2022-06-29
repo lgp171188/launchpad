@@ -10,49 +10,42 @@ import unittest
 from storm.expr import compile as compile_storm
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
-from zope.security.proxy import (
-    ProxyFactory,
-    removeSecurityProxy,
-    )
+from zope.security.proxy import ProxyFactory, removeSecurityProxy
 
 from lp.bugs.interfaces.bug import CreateBugParams
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
     IStructuralSubscriptionTargetHelper,
-    )
+)
 from lp.bugs.model.structuralsubscription import (
-    get_structural_subscriptions_for_target,
     StructuralSubscription,
-    )
+    get_structural_subscriptions_for_target,
+)
 from lp.bugs.tests.test_bugtarget import bugtarget_filebug
 from lp.registry.errors import (
     DeleteSubscriptionError,
     UserCannotSubscribePerson,
-    )
+)
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.product import IProductSet
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.testing import (
     ANONYMOUS,
+    TestCaseWithFactory,
     login,
     login_celebrity,
     login_person,
     person_logged_in,
-    TestCaseWithFactory,
     verifyObject,
-    )
+)
 from lp.testing.factory import is_security_proxied_or_harmless
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
-    )
+)
 from lp.testing.matchers import Provides
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 
 class RestrictedStructuralSubscriptionTestBase:
@@ -66,65 +59,83 @@ class RestrictedStructuralSubscriptionTestBase:
         self.team = self.factory.makeTeam(owner=self.team_owner)
 
     def test_target_implements_structural_subscription_target(self):
-        self.assertTrue(verifyObject(IStructuralSubscriptionTarget,
-                                     self.target))
+        self.assertTrue(
+            verifyObject(IStructuralSubscriptionTarget, self.target)
+        )
 
     def test_anonymous_cannot_subscribe_anyone(self):
         # only authenticated users can create structural subscriptions
         login(ANONYMOUS)
-        self.assertRaises(Unauthorized, getattr, self.target,
-                          'addBugSubscription')
+        self.assertRaises(
+            Unauthorized, getattr, self.target, "addBugSubscription"
+        )
 
     def test_person_structural_subscription_by_other_person(self):
         # a person can not subscribe someone else willy nilly
         login_person(self.ordinary_subscriber)
-        self.assertRaises(UserCannotSubscribePerson,
+        self.assertRaises(
+            UserCannotSubscribePerson,
             self.target.addBugSubscription,
-            self.team_owner, self.ordinary_subscriber)
+            self.team_owner,
+            self.ordinary_subscriber,
+        )
 
     def test_team_structural_subscription_by_non_team_member(self):
         # a person not related to a team cannot subscribe it
         login_person(self.ordinary_subscriber)
-        self.assertRaises(UserCannotSubscribePerson,
+        self.assertRaises(
+            UserCannotSubscribePerson,
             self.target.addBugSubscription,
-            self.team, self.ordinary_subscriber)
+            self.team,
+            self.ordinary_subscriber,
+        )
 
     def test_admin_can_subscribe_anyone(self):
         # a launchpad admin can create a structural subscription for
         # anyone
-        admin = login_celebrity('admin')
+        admin = login_celebrity("admin")
         self.assertIsInstance(
             self.target.addBugSubscription(self.ordinary_subscriber, admin),
-            StructuralSubscription)
+            StructuralSubscription,
+        )
 
     def test_secondary_structural_subscription(self):
         # creating a structural subscription a 2nd time returns the
         # first structural subscription
         login_person(self.bug_supervisor_subscriber)
         subscription1 = self.target.addBugSubscription(
-            self.bug_supervisor_subscriber, self.bug_supervisor_subscriber)
+            self.bug_supervisor_subscriber, self.bug_supervisor_subscriber
+        )
         subscription2 = self.target.addBugSubscription(
-            self.bug_supervisor_subscriber, self.bug_supervisor_subscriber)
+            self.bug_supervisor_subscriber, self.bug_supervisor_subscriber
+        )
         self.assertIs(subscription1.id, subscription2.id)
 
     def test_remove_structural_subscription(self):
         # an unprivileged user cannot unsubscribe a team
         login_person(self.ordinary_subscriber)
-        self.assertRaises(UserCannotSubscribePerson,
+        self.assertRaises(
+            UserCannotSubscribePerson,
             self.target.removeBugSubscription,
-            self.team, self.ordinary_subscriber)
+            self.team,
+            self.ordinary_subscriber,
+        )
 
     def test_remove_nonexistant_structural_subscription(self):
         # removing a nonexistant subscription raises a
         # DeleteSubscriptionError
         login_person(self.ordinary_subscriber)
-        self.assertRaises(DeleteSubscriptionError,
+        self.assertRaises(
+            DeleteSubscriptionError,
             self.target.removeBugSubscription,
-            self.ordinary_subscriber, self.ordinary_subscriber)
+            self.ordinary_subscriber,
+            self.ordinary_subscriber,
+        )
 
 
 class UnrestrictedStructuralSubscriptionTestBase(
-    RestrictedStructuralSubscriptionTestBase):
+    RestrictedStructuralSubscriptionTestBase
+):
     """
     Tests suitable for a target that does not restrict structural
     subscriptions.
@@ -135,44 +146,50 @@ class UnrestrictedStructuralSubscriptionTestBase(
         login_person(self.ordinary_subscriber)
         self.assertIsInstance(
             self.target.addBugSubscription(
-                self.ordinary_subscriber, self.ordinary_subscriber),
-            StructuralSubscription)
+                self.ordinary_subscriber, self.ordinary_subscriber
+            ),
+            StructuralSubscription,
+        )
 
     def test_remove_structural_subscription_by_ordinary_user(self):
         # ordinary users can unsubscribe themselves
         login_person(self.ordinary_subscriber)
         self.assertIsInstance(
             self.target.addBugSubscription(
-                self.ordinary_subscriber, self.ordinary_subscriber),
-            StructuralSubscription)
+                self.ordinary_subscriber, self.ordinary_subscriber
+            ),
+            StructuralSubscription,
+        )
         self.assertEqual(
             self.target.removeBugSubscription(
-                self.ordinary_subscriber, self.ordinary_subscriber),
-            None)
+                self.ordinary_subscriber, self.ordinary_subscriber
+            ),
+            None,
+        )
 
     def test_team_structural_subscription_by_team_owner(self):
         # team owners can subscribe their team
         login_person(self.team_owner)
         self.assertIsInstance(
-            self.target.addBugSubscription(
-                self.team, self.team_owner),
-            StructuralSubscription)
+            self.target.addBugSubscription(self.team, self.team_owner),
+            StructuralSubscription,
+        )
 
     def test_remove_team_structural_subscription_by_team_owner(self):
         # team owners can unsubscribe their team
         login_person(self.team_owner)
         self.assertIsInstance(
-            self.target.addBugSubscription(
-                self.team, self.team_owner),
-            StructuralSubscription)
+            self.target.addBugSubscription(self.team, self.team_owner),
+            StructuralSubscription,
+        )
         self.assertEqual(
-            self.target.removeBugSubscription(
-                self.team, self.team_owner),
-            None)
+            self.target.removeBugSubscription(self.team, self.team_owner), None
+        )
 
 
 class TestStructuralSubscriptionForDistro(
-    RestrictedStructuralSubscriptionTestBase, TestCaseWithFactory):
+    RestrictedStructuralSubscriptionTestBase, TestCaseWithFactory
+):
 
     layer = LaunchpadFunctionalLayer
 
@@ -185,44 +202,53 @@ class TestStructuralSubscriptionForDistro(
     def test_distribution_subscription_by_ordinary_user(self):
         # ordinary users can not subscribe themselves to a distribution
         login_person(self.ordinary_subscriber)
-        self.assertRaises(UserCannotSubscribePerson,
+        self.assertRaises(
+            UserCannotSubscribePerson,
             self.target.addBugSubscription,
-            self.ordinary_subscriber, self.ordinary_subscriber)
+            self.ordinary_subscriber,
+            self.ordinary_subscriber,
+        )
 
     def test_team_distribution_structural_subscription_by_team_owner(self):
         # team owners cannot subscribe their team to a distribution
         login_person(self.team_owner)
-        self.assertRaises(UserCannotSubscribePerson,
+        self.assertRaises(
+            UserCannotSubscribePerson,
             self.target.addBugSubscription,
-            self.team, self.team_owner)
+            self.team,
+            self.team_owner,
+        )
 
     def test_distribution_subscription_by_bug_supervisor(self):
         # bug supervisor can subscribe themselves
         login_person(self.bug_supervisor_subscriber)
         self.assertIsInstance(
             self.target.addBugSubscription(
-                    self.bug_supervisor_subscriber,
-                    self.bug_supervisor_subscriber),
-            StructuralSubscription)
+                self.bug_supervisor_subscriber, self.bug_supervisor_subscriber
+            ),
+            StructuralSubscription,
+        )
 
     def test_distribution_subscription_by_bug_supervisor_team(self):
         # team admins can subscribe team if team is bug supervisor
         removeSecurityProxy(self.target).bug_supervisor = self.team
         login_person(self.team_owner)
         self.assertIsInstance(
-                self.target.addBugSubscription(self.team, self.team_owner),
-                    StructuralSubscription)
+            self.target.addBugSubscription(self.team, self.team_owner),
+            StructuralSubscription,
+        )
 
     def test_distribution_unsubscription_by_bug_supervisor_team(self):
         # team admins can unsubscribe team if team is bug supervisor
         removeSecurityProxy(self.target).bug_supervisor = self.team
         login_person(self.team_owner)
         self.assertIsInstance(
-                self.target.addBugSubscription(self.team, self.team_owner),
-                    StructuralSubscription)
+            self.target.addBugSubscription(self.team, self.team_owner),
+            StructuralSubscription,
+        )
         self.assertEqual(
-                self.target.removeBugSubscription(self.team, self.team_owner),
-                    None)
+            self.target.removeBugSubscription(self.team, self.team_owner), None
+        )
 
     def test_distribution_subscription_without_bug_supervisor(self):
         # for a distribution without a bug supervisor anyone can
@@ -231,12 +257,15 @@ class TestStructuralSubscriptionForDistro(
         login_person(self.ordinary_subscriber)
         self.assertIsInstance(
             self.target.addBugSubscription(
-                self.ordinary_subscriber, self.ordinary_subscriber),
-            StructuralSubscription)
+                self.ordinary_subscriber, self.ordinary_subscriber
+            ),
+            StructuralSubscription,
+        )
 
 
 class TestStructuralSubscriptionForProduct(
-    UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory):
+    UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory
+):
 
     layer = LaunchpadFunctionalLayer
 
@@ -246,7 +275,8 @@ class TestStructuralSubscriptionForProduct(
 
 
 class TestStructuralSubscriptionForDistroSourcePackage(
-    UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory):
+    UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory
+):
 
     layer = LaunchpadFunctionalLayer
 
@@ -257,7 +287,8 @@ class TestStructuralSubscriptionForDistroSourcePackage(
 
 
 class TestStructuralSubscriptionForMilestone(
-    UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory):
+    UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory
+):
 
     layer = LaunchpadFunctionalLayer
 
@@ -268,7 +299,8 @@ class TestStructuralSubscriptionForMilestone(
 
 
 class TestStructuralSubscriptionForDistroSeries(
-    UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory):
+    UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory
+):
 
     layer = LaunchpadFunctionalLayer
 
@@ -279,7 +311,8 @@ class TestStructuralSubscriptionForDistroSeries(
 
 
 class TestStructuralSubscriptionForProjectGroup(
-    UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory):
+    UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory
+):
 
     layer = LaunchpadFunctionalLayer
 
@@ -290,7 +323,8 @@ class TestStructuralSubscriptionForProjectGroup(
 
 
 class TestStructuralSubscriptionForProductSeries(
-    UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory):
+    UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory
+):
 
     layer = LaunchpadFunctionalLayer
 
@@ -321,7 +355,8 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
         self.assertEqual(target.distribution, helper.pillar)
         self.assertEqual(
             "StructuralSubscription.distroseries = ?",
-            compile_storm(helper.join))
+            compile_storm(helper.join),
+        )
 
     def test_project_group(self):
         target = self.factory.makeProject(owner=self.person)
@@ -333,8 +368,8 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
         self.assertEqual(target, helper.pillar)
         self.assertEqual({"projectgroup": target}, helper.target_arguments)
         self.assertEqual(
-            "StructuralSubscription.project = ?",
-            compile_storm(helper.join))
+            "StructuralSubscription.project = ?", compile_storm(helper.join)
+        )
 
     def test_distribution_source_package(self):
         target = self.factory.makeDistributionSourcePackage()
@@ -344,16 +379,21 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
         self.assertEqual(target, helper.target)
         self.assertEqual(target.distribution, helper.target_parent)
         self.assertThat(
-            helper.target_parent, Provides(IStructuralSubscriptionTarget))
+            helper.target_parent, Provides(IStructuralSubscriptionTarget)
+        )
         self.assertEqual(target.distribution, helper.pillar)
         self.assertEqual(
-            {"distribution": target.distribution,
-             "sourcepackagename": target.sourcepackagename},
-            helper.target_arguments)
+            {
+                "distribution": target.distribution,
+                "sourcepackagename": target.sourcepackagename,
+            },
+            helper.target_arguments,
+        )
         self.assertEqual(
             "StructuralSubscription.distribution = ? AND "
             "StructuralSubscription.sourcepackagename = ?",
-            compile_storm(helper.join))
+            compile_storm(helper.join),
+        )
 
     def test_milestone(self):
         target = self.factory.makeMilestone()
@@ -363,12 +403,13 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
         self.assertEqual(target, helper.target)
         self.assertEqual(target.target, helper.target_parent)
         self.assertThat(
-            helper.target_parent, Provides(IStructuralSubscriptionTarget))
+            helper.target_parent, Provides(IStructuralSubscriptionTarget)
+        )
         self.assertEqual(target.target, helper.pillar)
         self.assertEqual({"milestone": target}, helper.target_arguments)
         self.assertEqual(
-            "StructuralSubscription.milestone = ?",
-            compile_storm(helper.join))
+            "StructuralSubscription.milestone = ?", compile_storm(helper.join)
+        )
 
     def test_product(self):
         target = self.factory.makeProduct(owner=self.person)
@@ -380,8 +421,8 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
         self.assertEqual(target, helper.pillar)
         self.assertEqual({"product": target}, helper.target_arguments)
         self.assertEqual(
-            "StructuralSubscription.product = ?",
-            compile_storm(helper.join))
+            "StructuralSubscription.product = ?", compile_storm(helper.join)
+        )
 
     def test_product_in_group(self):
         projectgroup = self.factory.makeProject(owner=self.person)
@@ -396,7 +437,8 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
         self.assertEqual(
             "StructuralSubscription.product = ? OR "
             "StructuralSubscription.project = ?",
-            compile_storm(helper.join))
+            compile_storm(helper.join),
+        )
 
     def test_product_series(self):
         target = self.factory.makeProductSeries(owner=self.person)
@@ -406,12 +448,14 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
         self.assertEqual(target, helper.target)
         self.assertEqual(target.product, helper.target_parent)
         self.assertThat(
-            helper.target_parent, Provides(IStructuralSubscriptionTarget))
+            helper.target_parent, Provides(IStructuralSubscriptionTarget)
+        )
         self.assertEqual(target.product, helper.pillar)
         self.assertEqual({"productseries": target}, helper.target_arguments)
         self.assertEqual(
             "StructuralSubscription.productseries = ?",
-            compile_storm(helper.join))
+            compile_storm(helper.join),
+        )
 
     def test_distribution(self):
         target = self.factory.makeDistribution(owner=self.person)
@@ -422,13 +466,14 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
         self.assertEqual(None, helper.target_parent)
         self.assertEqual(target, helper.pillar)
         self.assertEqual(
-            {"distribution": target,
-             "sourcepackagename": None},
-            helper.target_arguments)
+            {"distribution": target, "sourcepackagename": None},
+            helper.target_arguments,
+        )
         self.assertEqual(
             "StructuralSubscription.distribution = ? AND "
             "StructuralSubscription.sourcepackagename IS NULL",
-            compile_storm(helper.join))
+            compile_storm(helper.join),
+        )
 
 
 class TestGetAllStructuralSubscriptionsForTarget(TestCaseWithFactory):
@@ -445,7 +490,8 @@ class TestGetAllStructuralSubscriptionsForTarget(TestCaseWithFactory):
 
     def getSubscriptions(self):
         subscriptions = get_structural_subscriptions_for_target(
-            self.product, self.subscriber)
+            self.product, self.subscriber
+        )
         self.assertTrue(is_security_proxied_or_harmless(subscriptions))
         return subscriptions
 
@@ -454,24 +500,26 @@ class TestGetAllStructuralSubscriptionsForTarget(TestCaseWithFactory):
         self.assertEqual([], list(subscriptions))
 
     def test_self_subscription(self):
-        sub = self.product.addBugSubscription(
-            self.subscriber, self.subscriber)
+        sub = self.product.addBugSubscription(self.subscriber, self.subscriber)
         subscriptions = self.getSubscriptions()
         self.assertEqual([sub], list(subscriptions))
 
     def test_team_subscription(self):
         with person_logged_in(self.team.teamowner):
             sub = self.product.addBugSubscription(
-                self.team, self.team.teamowner)
+                self.team, self.team.teamowner
+            )
         subscriptions = self.getSubscriptions()
         self.assertEqual([sub], list(subscriptions))
 
     def test_both_subscriptions(self):
         self_sub = self.product.addBugSubscription(
-            self.subscriber, self.subscriber)
+            self.subscriber, self.subscriber
+        )
         with person_logged_in(self.team.teamowner):
             team_sub = self.product.addBugSubscription(
-                self.team, self.team.teamowner)
+                self.team, self.team.teamowner
+            )
         subscriptions = self.getSubscriptions()
         self.assertEqual({self_sub, team_sub}, set(subscriptions))
 
@@ -483,30 +531,32 @@ class TestGetAllStructuralSubscriptionsForTarget(TestCaseWithFactory):
         projectgroup = self.factory.makeProject()
         product = self.factory.makeProduct(projectgroup=projectgroup)
         projectgroup_sub = projectgroup.addBugSubscription(
-            self.subscriber, self.subscriber)
+            self.subscriber, self.subscriber
+        )
         subscriptions = get_structural_subscriptions_for_target(
-            product, self.subscriber)
+            product, self.subscriber
+        )
         self.assertEqual({projectgroup_sub}, set(subscriptions))
 
 
 def distributionSourcePackageSetUp(test):
     setUp(test)
-    ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    test.globs['target'] = ubuntu.getSourcePackage('evolution')
-    test.globs['other_target'] = ubuntu.getSourcePackage('pmount')
-    test.globs['filebug'] = bugtarget_filebug
+    ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    test.globs["target"] = ubuntu.getSourcePackage("evolution")
+    test.globs["other_target"] = ubuntu.getSourcePackage("pmount")
+    test.globs["filebug"] = bugtarget_filebug
 
 
 def productSetUp(test):
     setUp(test)
-    test.globs['target'] = getUtility(IProductSet).getByName('firefox')
-    test.globs['filebug'] = bugtarget_filebug
+    test.globs["target"] = getUtility(IProductSet).getByName("firefox")
+    test.globs["filebug"] = bugtarget_filebug
 
 
 def distributionSetUp(test):
     setUp(test)
-    test.globs['target'] = getUtility(IDistributionSet).getByName('ubuntu')
-    test.globs['filebug'] = bugtarget_filebug
+    test.globs["target"] = getUtility(IDistributionSet).getByName("ubuntu")
+    test.globs["filebug"] = bugtarget_filebug
 
 
 def milestone_filebug(milestone, summary, status=None):
@@ -517,27 +567,33 @@ def milestone_filebug(milestone, summary, status=None):
 
 def milestoneSetUp(test):
     setUp(test)
-    firefox = getUtility(IProductSet).getByName('firefox')
-    test.globs['target'] = firefox.getMilestone('1.0')
-    test.globs['filebug'] = milestone_filebug
+    firefox = getUtility(IProductSet).getByName("firefox")
+    test.globs["target"] = firefox.getMilestone("1.0")
+    test.globs["filebug"] = milestone_filebug
 
 
 def distroseries_sourcepackage_filebug(distroseries, summary, status=None):
     params = CreateBugParams(
-        getUtility(ILaunchBag).user, summary, comment=summary, status=status,
-        target=distroseries.distribution.getSourcePackage('alsa-utils'))
+        getUtility(ILaunchBag).user,
+        summary,
+        comment=summary,
+        status=status,
+        target=distroseries.distribution.getSourcePackage("alsa-utils"),
+    )
     bug = distroseries.distribution.createBug(params)
     nomination = bug.addNomination(
-        distroseries.distribution.owner, distroseries)
+        distroseries.distribution.owner, distroseries
+    )
     nomination.approve(distroseries.distribution.owner)
     return bug
 
 
 def distroSeriesSourcePackageSetUp(test):
     setUp(test)
-    test.globs['target'] = (
-        getUtility(IDistributionSet).getByName('ubuntu').getSeries('hoary'))
-    test.globs['filebug'] = distroseries_sourcepackage_filebug
+    test.globs["target"] = (
+        getUtility(IDistributionSet).getByName("ubuntu").getSeries("hoary")
+    )
+    test.globs["filebug"] = distroseries_sourcepackage_filebug
 
 
 def test_suite():
@@ -551,16 +607,18 @@ def test_suite():
         distributionSetUp,
         milestoneSetUp,
         distroSeriesSourcePackageSetUp,
-        ]
+    ]
 
-    testname = 'structural-subscription-target.rst'
+    testname = "structural-subscription-target.rst"
     for setUpMethod in setUpMethods:
         id_ext = "%s-%s" % (testname, setUpMethod.__name__)
         test = LayeredDocFileSuite(
             testname,
             id_extensions=[id_ext],
-            setUp=setUpMethod, tearDown=tearDown,
-            layer=LaunchpadFunctionalLayer)
+            setUp=setUpMethod,
+            tearDown=tearDown,
+            layer=LaunchpadFunctionalLayer,
+        )
         suite.addTest(test)
 
     return suite

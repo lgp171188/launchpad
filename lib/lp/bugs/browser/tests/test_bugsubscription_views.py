@@ -17,21 +17,18 @@ from lp.bugs.browser.bugsubscription import (
     BugSubscriptionAddView,
     BugSubscriptionListView,
     BugSubscriptionSubscribeSelfView,
-    )
+)
 from lp.bugs.enums import BugNotificationLevel
-from lp.registry.enums import (
-    PersonVisibility,
-    TeamMembershipPolicy,
-    )
+from lp.registry.enums import PersonVisibility, TeamMembershipPolicy
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.webapp import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
-    login_person,
-    person_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
-    )
+    login_person,
+    person_logged_in,
+)
 from lp.testing.deprecated import LaunchpadFormHarness
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.matchers import HasQueryCount
@@ -52,25 +49,30 @@ class BugsubscriptionPrivacyTests(TestCaseWithFactory):
     def _assert_subscription_fails(self, team):
         with person_logged_in(self.user):
             harness = LaunchpadFormHarness(
-                self.bug.default_bugtask, BugSubscriptionAddView)
-            form_data = {'field.person': team.name}
-            harness.submit('add', form_data)
+                self.bug.default_bugtask, BugSubscriptionAddView
+            )
+            form_data = {"field.person": team.name}
+            harness.submit("add", form_data)
         subscription = removeSecurityProxy(self.bug).getSubscriptionForPerson(
-            team)
-        error_msg = harness.getFieldError('person')
-        expected_msg = ('Open and delegated teams cannot be subscribed to '
-            'private bugs.')
+            team
+        )
+        error_msg = harness.getFieldError("person")
+        expected_msg = (
+            "Open and delegated teams cannot be subscribed to " "private bugs."
+        )
         self.assertEqual(expected_msg, error_msg)
         self.assertIs(None, subscription)
 
     def test_open_team_cannot_be_subscribed_to_private_bug(self):
         team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.OPEN)
+            membership_policy=TeamMembershipPolicy.OPEN
+        )
         self._assert_subscription_fails(team)
 
     def test_delegated_team_cannot_be_subscribed_to_private_bug(self):
         team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.DELEGATED)
+            membership_policy=TeamMembershipPolicy.DELEGATED
+        )
         self._assert_subscription_fails(team)
 
 
@@ -93,26 +95,27 @@ class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
         with person_logged_in(bug.owner):
             bug.unsubscribe(bug.owner, bug.owner)
 
-        displayed_levels = [
-            level for level in BugNotificationLevel.items]
+        displayed_levels = [level for level in BugNotificationLevel.items]
         for level in displayed_levels:
             person = self.factory.makePerson()
             with person_logged_in(person):
                 harness = LaunchpadFormHarness(
-                    bug.default_bugtask, BugSubscriptionSubscribeSelfView)
+                    bug.default_bugtask, BugSubscriptionSubscribeSelfView
+                )
                 form_data = {
-                    'field.subscription': person.name,
-                    'field.bug_notification_level': level.title,
-                    }
-                harness.submit('continue', form_data)
+                    "field.subscription": person.name,
+                    "field.bug_notification_level": level.title,
+                }
+                harness.submit("continue", form_data)
 
             subscription = bug.getSubscriptionForPerson(person)
             self.assertEqual(
-                level, subscription.bug_notification_level,
+                level,
+                subscription.bug_notification_level,
                 "Bug notification level of subscription should be %s, is "
-                "actually %s." % (
-                    level.title,
-                    subscription.bug_notification_level.title))
+                "actually %s."
+                % (level.title, subscription.bug_notification_level.title),
+            )
 
     def test_user_can_update_subscription(self):
         # A user can update their bug subscription using the
@@ -125,12 +128,13 @@ class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
             # subscribed at the METADATA level.
             level = BugNotificationLevel.METADATA
             harness = LaunchpadFormHarness(
-                bug.default_bugtask, BugSubscriptionSubscribeSelfView)
+                bug.default_bugtask, BugSubscriptionSubscribeSelfView
+            )
             form_data = {
-                'field.subscription': 'update-subscription',
-                'field.bug_notification_level': level.title,
-                }
-            harness.submit('continue', form_data)
+                "field.subscription": "update-subscription",
+                "field.bug_notification_level": level.title,
+            }
+            harness.submit("continue", form_data)
             self.assertFalse(harness.hasErrors())
 
         subscription = bug.getSubscriptionForPerson(person)
@@ -138,7 +142,8 @@ class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
             BugNotificationLevel.METADATA,
             subscription.bug_notification_level,
             "Bug notification level of subscription should be METADATA, is "
-            "actually %s." % subscription.bug_notification_level.title)
+            "actually %s." % subscription.bug_notification_level.title,
+        )
 
     def test_user_can_unsubscribe(self):
         # A user can unsubscribe from a bug using the
@@ -148,16 +153,19 @@ class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
         with person_logged_in(person):
             bug.subscribe(person, person)
             harness = LaunchpadFormHarness(
-                bug.default_bugtask, BugSubscriptionSubscribeSelfView)
+                bug.default_bugtask, BugSubscriptionSubscribeSelfView
+            )
             form_data = {
-                'field.subscription': person.name,
-                }
-            harness.submit('continue', form_data)
+                "field.subscription": person.name,
+            }
+            harness.submit("continue", form_data)
 
         subscription = bug.getSubscriptionForPerson(person)
         self.assertIs(
-            None, subscription,
-            "There should be no BugSubscription for this person.")
+            None,
+            subscription,
+            "There should be no BugSubscription for this person.",
+        )
 
     def test_field_values_set_correctly_for_existing_subscriptions(self):
         # When a user who is already subscribed to a bug visits the
@@ -172,28 +180,32 @@ class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
             # subscribing and checking the default value.
             level = BugNotificationLevel.METADATA
             harness = LaunchpadFormHarness(
-                bug.default_bugtask, BugSubscriptionSubscribeSelfView)
+                bug.default_bugtask, BugSubscriptionSubscribeSelfView
+            )
             form_data = {
-                'field.subscription': person.name,
-                'field.bug_notification_level': level.title,
-                }
-            harness.submit('continue', form_data)
+                "field.subscription": person.name,
+                "field.bug_notification_level": level.title,
+            }
+            harness.submit("continue", form_data)
 
             # The default value for the bug_notification_level field
             # should now be the same as the level used to subscribe
             # above.
             harness = LaunchpadFormHarness(
-                bug.default_bugtask, BugSubscriptionSubscribeSelfView)
-            bug_notification_level_widget = (
-                harness.view.widgets['bug_notification_level'])
+                bug.default_bugtask, BugSubscriptionSubscribeSelfView
+            )
+            bug_notification_level_widget = harness.view.widgets[
+                "bug_notification_level"
+            ]
             default_notification_level_value = (
-                bug_notification_level_widget._getDefault())
+                bug_notification_level_widget._getDefault()
+            )
             self.assertEqual(
                 BugNotificationLevel.METADATA,
                 default_notification_level_value,
                 "Default value for bug_notification_level should be "
-                "METADATA, is actually %s"
-                % default_notification_level_value)
+                "METADATA, is actually %s" % default_notification_level_value,
+            )
 
     def test_update_subscription_fails_if_user_not_subscribed(self):
         # If the user is not directly subscribed to the bug, trying to
@@ -203,13 +215,13 @@ class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
         person = self.factory.makePerson()
         with person_logged_in(person):
             harness = LaunchpadFormHarness(
-                bug.default_bugtask, BugSubscriptionSubscribeSelfView)
-            subscription_field = (
-                harness.view.form_fields['subscription'].field)
+                bug.default_bugtask, BugSubscriptionSubscribeSelfView
+            )
+            subscription_field = harness.view.form_fields["subscription"].field
             # The update-subscription option won't appear.
             self.assertNotIn(
-                'update-subscription',
-                subscription_field.vocabulary.by_token)
+                "update-subscription", subscription_field.vocabulary.by_token
+            )
 
     def test_update_subscription_fails_for_users_subscribed_via_teams(self):
         # If the user is not directly subscribed, but is subscribed via
@@ -221,13 +233,13 @@ class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
         with person_logged_in(person):
             bug.subscribe(team, person)
             harness = LaunchpadFormHarness(
-                bug.default_bugtask, BugSubscriptionSubscribeSelfView)
-            subscription_field = (
-                harness.view.form_fields['subscription'].field)
+                bug.default_bugtask, BugSubscriptionSubscribeSelfView
+            )
+            subscription_field = harness.view.form_fields["subscription"].field
             # The update-subscription option won't appear.
             self.assertNotIn(
-                'update-subscription',
-                subscription_field.vocabulary.by_token)
+                "update-subscription", subscription_field.vocabulary.by_token
+            )
 
     def test_bug_673288(self):
         # If the user is not directly subscribed, but is subscribed via
@@ -244,13 +256,13 @@ class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
             bug.subscribe(team, person)
 
             harness = LaunchpadFormHarness(
-                bug.default_bugtask, BugSubscriptionSubscribeSelfView)
-            subscription_field = (
-                harness.view.form_fields['subscription'].field)
+                bug.default_bugtask, BugSubscriptionSubscribeSelfView
+            )
+            subscription_field = harness.view.form_fields["subscription"].field
             # The update-subscription option won't appear.
             self.assertNotIn(
-                'update-subscription',
-                subscription_field.vocabulary.by_token)
+                "update-subscription", subscription_field.vocabulary.by_token
+            )
 
     def test_bug_notification_level_field_hidden_for_dupe_subs(self):
         # If the user is subscribed to the bug via a duplicate, the
@@ -262,9 +274,11 @@ class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
             duplicate.markAsDuplicate(bug)
             duplicate.subscribe(person, person)
             harness = LaunchpadFormHarness(
-                bug.default_bugtask, BugSubscriptionSubscribeSelfView)
+                bug.default_bugtask, BugSubscriptionSubscribeSelfView
+            )
             self.assertFalse(
-                harness.view.widgets['bug_notification_level'].visible)
+                harness.view.widgets["bug_notification_level"].visible
+            )
 
     def test_muted_subs_have_subscribe_option_and_unmute_option(self):
         # If a user has a muted subscription, but no previous
@@ -275,18 +289,21 @@ class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
 
         with person_logged_in(self.person):
             subscribe_view = create_initialized_view(
-                self.bug.default_bugtask, name='+subscribe')
-            subscription_widget = (
-                subscribe_view.widgets['subscription'])
+                self.bug.default_bugtask, name="+subscribe"
+            )
+            subscription_widget = subscribe_view.widgets["subscription"]
             update_term = subscription_widget.vocabulary.getTermByToken(
-                'update-subscription')
+                "update-subscription"
+            )
             self.assertEqual(
                 "unmute bug mail from this bug and subscribe me to this "
                 "bug, or",
-                update_term.title)
+                update_term.title,
+            )
             self.assertEqual(
                 "unmute bug mail from this bug.",
-                subscription_widget.vocabulary.getTerm(self.person).title)
+                subscription_widget.vocabulary.getTerm(self.person).title,
+            )
 
     def test_muted_subs_have_unmute_and_restore_option(self):
         # If a user has a muted subscription, the
@@ -294,21 +311,23 @@ class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
         # show an option to unmute the subscription and restore it to a
         # previous or new BugNotificationLevel.
         with person_logged_in(self.person):
-            self.bug.subscribe(self.person, self.person,
-                               level=BugNotificationLevel.COMMENTS)
+            self.bug.subscribe(
+                self.person, self.person, level=BugNotificationLevel.COMMENTS
+            )
             self.bug.mute(self.person, self.person)
 
         with person_logged_in(self.person):
             subscribe_view = create_initialized_view(
-                self.bug.default_bugtask, name='+subscribe')
-            subscription_widget = (
-                subscribe_view.widgets['subscription'])
+                self.bug.default_bugtask, name="+subscribe"
+            )
+            subscription_widget = subscribe_view.widgets["subscription"]
             update_term = subscription_widget.vocabulary.getTermByToken(
-                'update-subscription')
+                "update-subscription"
+            )
             self.assertEqual(
-                "unmute bug mail from this bug and restore my "
-                "subscription",
-                update_term.title)
+                "unmute bug mail from this bug and restore my " "subscription",
+                update_term.title,
+            )
 
     def test_unmute_unmutes(self):
         # Using the "Unmute bug mail" option when the user has muted their
@@ -318,19 +337,21 @@ class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
 
         with person_logged_in(self.person):
             form_data = {
-                'field.subscription': self.person.name,
+                "field.subscription": self.person.name,
                 # Although this isn't used we must pass it for the
                 # sake of form validation.
-                'field.actions.continue': 'Continue',
-                }
+                "field.actions.continue": "Continue",
+            }
             create_initialized_view(
-                self.bug.default_bugtask, form=form_data,
-                name='+subscribe')
+                self.bug.default_bugtask, form=form_data, name="+subscribe"
+            )
             self.assertFalse(self.bug.isMuted(self.person))
         subscription = self.bug.getSubscriptionForPerson(self.person)
         self.assertIs(
-            None, subscription,
-            "There should be no BugSubscription for this person.")
+            None,
+            subscription,
+            "There should be no BugSubscription for this person.",
+        )
 
     def test_unmute_and_subscribe(self):
         # Using the "unmute bug mail from this bug and subscribe me to this
@@ -340,35 +361,40 @@ class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
             self.bug.mute(self.person, self.person)
             level = BugNotificationLevel.METADATA
             form_data = {
-                'field.subscription': 'update-subscription',
-                'field.bug_notification_level': level.title,
+                "field.subscription": "update-subscription",
+                "field.bug_notification_level": level.title,
                 # Although this isn't used we must pass it for the
                 # sake of form validation.
-                'field.actions.continue': 'Continue',
-                }
+                "field.actions.continue": "Continue",
+            }
             create_initialized_view(
-                self.bug.default_bugtask, form=form_data,
-                name='+subscribe')
+                self.bug.default_bugtask, form=form_data, name="+subscribe"
+            )
             self.assertFalse(self.bug.isMuted(self.person))
         subscription = self.bug.getSubscriptionForPerson(self.person)
         self.assertEqual(
             BugNotificationLevel.METADATA,
             subscription.bug_notification_level,
             "Bug notification level of subscription should be METADATA, is "
-            "actually %s." % (subscription.bug_notification_level.title
-                              if subscription is not None
-                              else '[not subscribed!]'))
+            "actually %s."
+            % (
+                subscription.bug_notification_level.title
+                if subscription is not None
+                else "[not subscribed!]"
+            ),
+        )
 
     def test_bug_notification_level_field_has_widget_class(self):
         # The bug_notification_level widget has a widget_class property
         # that can be used to manipulate it with JavaScript.
         with person_logged_in(self.person):
             subscribe_view = create_initialized_view(
-                self.bug.default_bugtask, name='+subscribe')
-        widget_class = (
-            subscribe_view.widgets['bug_notification_level'].widget_class)
-        self.assertEqual(
-            'bug-notification-level-field', widget_class)
+                self.bug.default_bugtask, name="+subscribe"
+            )
+        widget_class = subscribe_view.widgets[
+            "bug_notification_level"
+        ].widget_class
+        self.assertEqual("bug-notification-level-field", widget_class)
 
     def test_unsubscribe_from_dupes(self):
         master = self.factory.makeBug()
@@ -380,17 +406,22 @@ class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
             master.subscribe(person, person)
             dupe.subscribe(person, person)
             import transaction
+
             transaction.commit()
 
             v = create_initialized_view(
-                master.default_bugtask, name="+subscribe",
+                master.default_bugtask,
+                name="+subscribe",
                 form={
                     "field.subscription": "0",
-                    "field.actions.continue": "Continue"})
+                    "field.actions.continue": "Continue",
+                },
+            )
             self.assertStartsWith(
                 v._getUnsubscribeNotification(person, [dupe]),
                 "You have been unsubscribed from bug %d and 1 duplicate"
-                % master.id)
+                % master.id,
+            )
 
 
 class BugSubscriptionsListViewTestCase(TestCaseWithFactory):
@@ -401,17 +432,18 @@ class BugSubscriptionsListViewTestCase(TestCaseWithFactory):
     def setUp(self):
         super().setUp()
         self.product = self.factory.makeProduct(
-            name='widgetsrus', displayname='Widgets R Us')
+            name="widgetsrus", displayname="Widgets R Us"
+        )
         self.bug = self.factory.makeBug(target=self.product)
         self.subscriber = self.factory.makePerson()
 
     def test_form_initializes(self):
         # It's a start.
         with person_logged_in(self.subscriber):
-            self.product.addBugSubscription(
-                self.subscriber, self.subscriber)
+            self.product.addBugSubscription(self.subscriber, self.subscriber)
             harness = LaunchpadFormHarness(
-                self.bug.default_bugtask, BugSubscriptionListView)
+                self.bug.default_bugtask, BugSubscriptionListView
+            )
             harness.view.initialize()
 
 
@@ -431,7 +463,8 @@ class BugMuteSelfViewTestCase(TestCaseWithFactory):
         with person_logged_in(self.person):
             self.assertFalse(self.bug.isMuted(self.person))
             view = create_initialized_view(
-                self.bug.default_bugtask, name="+mute")
+                self.bug.default_bugtask, name="+mute"
+            )
             self.assertFalse(view.is_muted)
 
     def test_is_muted_true(self):
@@ -441,7 +474,8 @@ class BugMuteSelfViewTestCase(TestCaseWithFactory):
             self.bug.mute(self.person, self.person)
             self.assertTrue(self.bug.isMuted(self.person))
             view = create_initialized_view(
-                self.bug.default_bugtask, name="+mute")
+                self.bug.default_bugtask, name="+mute"
+            )
             self.assertTrue(view.is_muted)
 
     def test_label_nonmuted(self):
@@ -450,7 +484,8 @@ class BugMuteSelfViewTestCase(TestCaseWithFactory):
             self.assertFalse(self.bug.isMuted(self.person))
             expected_label = "Mute bug mail for bug %s" % self.bug.id
             view = create_initialized_view(
-                self.bug.default_bugtask, name="+mute")
+                self.bug.default_bugtask, name="+mute"
+            )
             self.assertEqual(expected_label, view.label)
 
     def test_label_muted(self):
@@ -460,7 +495,8 @@ class BugMuteSelfViewTestCase(TestCaseWithFactory):
             self.assertTrue(self.bug.isMuted(self.person))
             expected_label = "Unmute bug mail for bug %s" % self.bug.id
             view = create_initialized_view(
-                self.bug.default_bugtask, name="+mute")
+                self.bug.default_bugtask, name="+mute"
+            )
             self.assertEqual(expected_label, view.label)
 
     def test_bug_mute_self_view_mutes_bug(self):
@@ -469,8 +505,10 @@ class BugMuteSelfViewTestCase(TestCaseWithFactory):
         with person_logged_in(self.person):
             self.assertFalse(self.bug.isMuted(self.person))
             create_initialized_view(
-                self.bug.default_bugtask, name="+mute",
-                form={'field.actions.mute': 'Mute bug mail'})
+                self.bug.default_bugtask,
+                name="+mute",
+                form={"field.actions.mute": "Mute bug mail"},
+            )
             self.assertTrue(self.bug.isMuted(self.person))
 
     def test_bug_mute_self_view_unmutes_bug(self):
@@ -480,13 +518,16 @@ class BugMuteSelfViewTestCase(TestCaseWithFactory):
             self.bug.mute(self.person, self.person)
             self.assertTrue(self.bug.isMuted(self.person))
             create_initialized_view(
-                self.bug.default_bugtask, name="+mute",
-                form={'field.actions.unmute': 'Unmute bug mail'})
+                self.bug.default_bugtask,
+                name="+mute",
+                form={"field.actions.unmute": "Unmute bug mail"},
+            )
             self.assertFalse(self.bug.isMuted(self.person))
 
 
 class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
     """Tests for IBug:+bug-portlet-subscribers-details view."""
+
     layer = LaunchpadFunctionalLayer
 
     def test_content_type(self):
@@ -497,8 +538,9 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
         harness.view.render()
 
         self.assertEqual(
-            harness.request.response.getHeader('content-type'),
-            'application/json')
+            harness.request.response.getHeader("content-type"),
+            "application/json",
+        )
 
     def test_bugtask(self):
         # This view works for the bug-task as well, when it renders
@@ -507,12 +549,14 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
 
         # It works even for anonymous users, so no log-in is needed.
         harness_bug = LaunchpadFormHarness(
-            bug, BugPortletSubscribersWithDetails)
+            bug, BugPortletSubscribersWithDetails
+        )
         bug_content = harness_bug.view.render()
 
         # It works even for anonymous users, so no log-in is needed.
         harness_bugtask = LaunchpadFormHarness(
-            bug.default_bugtask, BugPortletSubscribersWithDetails)
+            bug.default_bugtask, BugPortletSubscribersWithDetails
+        )
         bugtask_content = harness_bugtask.view.render()
 
         self.assertEqual(bug_content, bugtask_content)
@@ -535,69 +579,81 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
         # subscribers_list.js subscribers loading.
         bug = self._makeBugWithNoSubscribers()
         subscriber = self.factory.makePerson(
-            name='user', displayname='Subscriber Name')
+            name="user", displayname="Subscriber Name"
+        )
         with person_logged_in(subscriber):
-            bug.subscribe(subscriber, subscriber,
-                          level=BugNotificationLevel.LIFECYCLE)
+            bug.subscribe(
+                subscriber, subscriber, level=BugNotificationLevel.LIFECYCLE
+            )
         harness = LaunchpadFormHarness(bug, BugPortletSubscribersWithDetails)
         api_request = IWebServiceClientRequest(harness.request)
 
         expected_result = {
-            'subscriber': {
-                'name': 'user',
-                'display_name': 'Subscriber Name',
-                'is_team': False,
-                'can_edit': False,
-                'web_link': canonical_url(subscriber),
-                'self_link': absoluteURL(subscriber, api_request),
-                'display_subscribed_by': 'Self-subscribed',
-                },
-            'subscription_level': "Lifecycle",
-            }
+            "subscriber": {
+                "name": "user",
+                "display_name": "Subscriber Name",
+                "is_team": False,
+                "can_edit": False,
+                "web_link": canonical_url(subscriber),
+                "self_link": absoluteURL(subscriber, api_request),
+                "display_subscribed_by": "Self-subscribed",
+            },
+            "subscription_level": "Lifecycle",
+        }
         self.assertEqual(
-            [expected_result], json.loads(harness.view.subscriber_data_js))
+            [expected_result], json.loads(harness.view.subscriber_data_js)
+        )
 
     def test_data_person_subscription_other_subscriber(self):
         # Ensure subscriber_data_js does the correct thing when the person who
         # did the subscribing is someone else.
         bug = self._makeBugWithNoSubscribers()
         subscribed_by = self.factory.makePerson(
-            name="someone", displayname='Someone')
+            name="someone", displayname="Someone"
+        )
         subscriber = self.factory.makePerson(
-            name='user', displayname='Subscriber Name')
+            name="user", displayname="Subscriber Name"
+        )
         with person_logged_in(subscriber):
-            bug.subscribe(person=subscriber,
-                          subscribed_by=subscribed_by,
-                          level=BugNotificationLevel.LIFECYCLE)
+            bug.subscribe(
+                person=subscriber,
+                subscribed_by=subscribed_by,
+                level=BugNotificationLevel.LIFECYCLE,
+            )
         harness = LaunchpadFormHarness(bug, BugPortletSubscribersWithDetails)
         api_request = IWebServiceClientRequest(harness.request)
 
         expected_result = {
-            'subscriber': {
-                'name': 'user',
-                'display_name': 'Subscriber Name',
-                'is_team': False,
-                'can_edit': False,
-                'web_link': canonical_url(subscriber),
-                'self_link': absoluteURL(subscriber, api_request),
-                'display_subscribed_by': 'Subscribed by Someone (someone)',
-                },
-            'subscription_level': "Lifecycle",
-            }
+            "subscriber": {
+                "name": "user",
+                "display_name": "Subscriber Name",
+                "is_team": False,
+                "can_edit": False,
+                "web_link": canonical_url(subscriber),
+                "self_link": absoluteURL(subscriber, api_request),
+                "display_subscribed_by": "Subscribed by Someone (someone)",
+            },
+            "subscription_level": "Lifecycle",
+        }
         self.assertEqual(
-            [expected_result], json.loads(harness.view.subscriber_data_js))
+            [expected_result], json.loads(harness.view.subscriber_data_js)
+        )
 
     def test_data_person_subscription_other_subscriber_query_count(self):
         # All subscriber data should be retrieved with a single query.
         bug = self._makeBugWithNoSubscribers()
         subscribed_by = self.factory.makePerson(
-            name="someone", displayname='Someone')
+            name="someone", displayname="Someone"
+        )
         subscriber = self.factory.makePerson(
-            name='user', displayname='Subscriber Name')
+            name="user", displayname="Subscriber Name"
+        )
         with person_logged_in(subscriber):
-            bug.subscribe(person=subscriber,
-                          subscribed_by=subscribed_by,
-                          level=BugNotificationLevel.LIFECYCLE)
+            bug.subscribe(
+                person=subscriber,
+                subscribed_by=subscribed_by,
+                level=BugNotificationLevel.LIFECYCLE,
+            )
         harness = LaunchpadFormHarness(bug, BugPortletSubscribersWithDetails)
         # Invoke the view method, ignoring the results.
         Store.of(bug).invalidate()
@@ -610,30 +666,37 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
         # to true.
         bug = self._makeBugWithNoSubscribers()
         teamowner = self.factory.makePerson(
-            name="team-owner", displayname="Team Owner")
+            name="team-owner", displayname="Team Owner"
+        )
         subscriber = self.factory.makeTeam(
-            name='team', displayname='Team Name', owner=teamowner)
+            name="team", displayname="Team Name", owner=teamowner
+        )
         with person_logged_in(subscriber.teamowner):
-            bug.subscribe(subscriber, subscriber.teamowner,
-                          level=BugNotificationLevel.LIFECYCLE)
+            bug.subscribe(
+                subscriber,
+                subscriber.teamowner,
+                level=BugNotificationLevel.LIFECYCLE,
+            )
         harness = LaunchpadFormHarness(bug, BugPortletSubscribersWithDetails)
         api_request = IWebServiceClientRequest(harness.request)
 
         expected_result = {
-            'subscriber': {
-                'name': 'team',
-                'display_name': 'Team Name',
-                'is_team': True,
-                'can_edit': False,
-                'web_link': canonical_url(subscriber),
-                'self_link': absoluteURL(subscriber, api_request),
-                'display_subscribed_by':
-                    'Subscribed by Team Owner (team-owner)',
-                },
-            'subscription_level': "Lifecycle",
-            }
+            "subscriber": {
+                "name": "team",
+                "display_name": "Team Name",
+                "is_team": True,
+                "can_edit": False,
+                "web_link": canonical_url(subscriber),
+                "self_link": absoluteURL(subscriber, api_request),
+                "display_subscribed_by": (
+                    "Subscribed by Team Owner (team-owner)"
+                ),
+            },
+            "subscription_level": "Lifecycle",
+        }
         self.assertEqual(
-            [expected_result], json.loads(harness.view.subscriber_data_js))
+            [expected_result], json.loads(harness.view.subscriber_data_js)
+        )
 
     def _test_data_private_team_subscription(self, authenticated_user):
         # For a private team subscription, the team name and url are rendered
@@ -642,64 +705,85 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
 
         # Set up a private direct subscriber.
         teamowner = self.factory.makePerson(
-            name="team-owner", displayname="Team Owner")
+            name="team-owner", displayname="Team Owner"
+        )
         direct_subscriber = self.factory.makeTeam(
-            name='team', displayname='Team Name', owner=teamowner,
-            visibility=PersonVisibility.PRIVATE)
+            name="team",
+            displayname="Team Name",
+            owner=teamowner,
+            visibility=PersonVisibility.PRIVATE,
+        )
         with person_logged_in(teamowner):
-            bug.subscribe(direct_subscriber, direct_subscriber.teamowner,
-                          level=BugNotificationLevel.LIFECYCLE)
+            bug.subscribe(
+                direct_subscriber,
+                direct_subscriber.teamowner,
+                level=BugNotificationLevel.LIFECYCLE,
+            )
 
         # Set up a private indirect subscriber.
         indirect_teamowner = self.factory.makePerson(
-            name="indirect-team-owner", displayname="Indirect Team Owner")
+            name="indirect-team-owner", displayname="Indirect Team Owner"
+        )
         indirect_subscriber = self.factory.makeTeam(
-            name='indirect-team', displayname='Indirect Team Name',
-            owner=indirect_teamowner, visibility=PersonVisibility.PRIVATE)
+            name="indirect-team",
+            displayname="Indirect Team Name",
+            owner=indirect_teamowner,
+            visibility=PersonVisibility.PRIVATE,
+        )
         with person_logged_in(indirect_teamowner):
             bug.default_bugtask.target.addSubscription(
-                indirect_subscriber, indirect_teamowner)
+                indirect_subscriber, indirect_teamowner
+            )
 
         request = LaunchpadTestRequest()
         expected_result = []
         view = create_initialized_view(
-            bug, '+bug-portlet-subscribers-details', request=request)
+            bug, "+bug-portlet-subscribers-details", request=request
+        )
         if authenticated_user:
             any_person = self.factory.makePerson()
             login_person(any_person, request)
             api_request = IWebServiceClientRequest(request)
             naked_subscriber = removeSecurityProxy(direct_subscriber)
             naked_indirect_subscriber = removeSecurityProxy(
-                indirect_subscriber)
-            expected_result = [{
-                'subscriber': {
-                    'name': 'team',
-                    'display_name': 'Team Name',
-                    'is_team': True,
-                    'can_edit': False,
-                    'web_link': canonical_url(naked_subscriber,
-                        rootsite='mainsite'),
-                    'self_link': absoluteURL(naked_subscriber, api_request),
-                    'display_subscribed_by':
-                        'Subscribed by Team Owner (team-owner)',
+                indirect_subscriber
+            )
+            expected_result = [
+                {
+                    "subscriber": {
+                        "name": "team",
+                        "display_name": "Team Name",
+                        "is_team": True,
+                        "can_edit": False,
+                        "web_link": canonical_url(
+                            naked_subscriber, rootsite="mainsite"
+                        ),
+                        "self_link": absoluteURL(
+                            naked_subscriber, api_request
+                        ),
+                        "display_subscribed_by": (
+                            "Subscribed by Team Owner (team-owner)"
+                        ),
                     },
-                'subscription_level': "Lifecycle",
+                    "subscription_level": "Lifecycle",
                 },
                 {
-                'subscriber': {
-                    'name': 'indirect-team',
-                    'display_name': 'Indirect Team Name',
-                    'is_team': True,
-                    'can_edit': False,
-                    'web_link': canonical_url(naked_indirect_subscriber,
-                        rootsite='mainsite'),
-                    'self_link': absoluteURL(
-                        naked_indirect_subscriber, api_request),
+                    "subscriber": {
+                        "name": "indirect-team",
+                        "display_name": "Indirect Team Name",
+                        "is_team": True,
+                        "can_edit": False,
+                        "web_link": canonical_url(
+                            naked_indirect_subscriber, rootsite="mainsite"
+                        ),
+                        "self_link": absoluteURL(
+                            naked_indirect_subscriber, api_request
+                        ),
                     },
-                'subscription_level': "Maybe",
-                }]
-        self.assertEqual(
-            expected_result, json.loads(view.subscriber_data_js))
+                    "subscription_level": "Maybe",
+                },
+            ]
+        self.assertEqual(expected_result, json.loads(view.subscriber_data_js))
 
     def test_data_private_team_subscription_authenticated_user(self):
         # For a logged in user, private team subscriptions are rendered.
@@ -714,32 +798,40 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
         # set to true for team owner.
         bug = self._makeBugWithNoSubscribers()
         teamowner = self.factory.makePerson(
-            name="team-owner", displayname="Team Owner")
+            name="team-owner", displayname="Team Owner"
+        )
         subscriber = self.factory.makeTeam(
-            name='team', displayname='Team Name', owner=teamowner)
+            name="team", displayname="Team Name", owner=teamowner
+        )
         with person_logged_in(subscriber.teamowner):
-            bug.subscribe(subscriber, subscriber.teamowner,
-                          level=BugNotificationLevel.LIFECYCLE)
+            bug.subscribe(
+                subscriber,
+                subscriber.teamowner,
+                level=BugNotificationLevel.LIFECYCLE,
+            )
             harness = LaunchpadFormHarness(
-                bug, BugPortletSubscribersWithDetails)
+                bug, BugPortletSubscribersWithDetails
+            )
         api_request = IWebServiceClientRequest(harness.request)
 
         expected_result = {
-            'subscriber': {
-                'name': 'team',
-                'display_name': 'Team Name',
-                'is_team': True,
-                'can_edit': True,
-                'web_link': canonical_url(subscriber),
-                'self_link': absoluteURL(subscriber, api_request),
-                'display_subscribed_by':
-                    'Subscribed by Team Owner (team-owner)',
-                },
-            'subscription_level': "Lifecycle",
-            }
+            "subscriber": {
+                "name": "team",
+                "display_name": "Team Name",
+                "is_team": True,
+                "can_edit": True,
+                "web_link": canonical_url(subscriber),
+                "self_link": absoluteURL(subscriber, api_request),
+                "display_subscribed_by": (
+                    "Subscribed by Team Owner (team-owner)"
+                ),
+            },
+            "subscription_level": "Lifecycle",
+        }
         with person_logged_in(subscriber.teamowner):
             self.assertEqual(
-                [expected_result], json.loads(harness.view.subscriber_data_js))
+                [expected_result], json.loads(harness.view.subscriber_data_js)
+            )
 
     def test_data_team_subscription_member_looks(self):
         # For a team subscription, subscriber_data_js has can_edit
@@ -747,33 +839,41 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
         bug = self._makeBugWithNoSubscribers()
         member = self.factory.makePerson()
         teamowner = self.factory.makePerson(
-            name="team-owner", displayname="Team Owner")
+            name="team-owner", displayname="Team Owner"
+        )
         subscriber = self.factory.makeTeam(
-            name='team', displayname='Team Name', owner=teamowner,
-            members=[member])
+            name="team",
+            displayname="Team Name",
+            owner=teamowner,
+            members=[member],
+        )
         with person_logged_in(subscriber.teamowner):
-            bug.subscribe(subscriber, subscriber.teamowner,
-                          level=BugNotificationLevel.LIFECYCLE)
-        harness = LaunchpadFormHarness(
-            bug, BugPortletSubscribersWithDetails)
+            bug.subscribe(
+                subscriber,
+                subscriber.teamowner,
+                level=BugNotificationLevel.LIFECYCLE,
+            )
+        harness = LaunchpadFormHarness(bug, BugPortletSubscribersWithDetails)
         api_request = IWebServiceClientRequest(harness.request)
 
         expected_result = {
-            'subscriber': {
-                'name': 'team',
-                'display_name': 'Team Name',
-                'is_team': True,
-                'can_edit': True,
-                'web_link': canonical_url(subscriber),
-                'self_link': absoluteURL(subscriber, api_request),
-                'display_subscribed_by':
-                    'Subscribed by Team Owner (team-owner)',
-                },
-            'subscription_level': "Lifecycle",
-            }
+            "subscriber": {
+                "name": "team",
+                "display_name": "Team Name",
+                "is_team": True,
+                "can_edit": True,
+                "web_link": canonical_url(subscriber),
+                "self_link": absoluteURL(subscriber, api_request),
+                "display_subscribed_by": (
+                    "Subscribed by Team Owner (team-owner)"
+                ),
+            },
+            "subscription_level": "Lifecycle",
+        }
         with person_logged_in(subscriber.teamowner):
             self.assertEqual(
-                [expected_result], json.loads(harness.view.subscriber_data_js))
+                [expected_result], json.loads(harness.view.subscriber_data_js)
+            )
 
     def test_data_subscription_lp_admin(self):
         # For a subscription, subscriber_data_js has can_edit
@@ -781,72 +881,81 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
         bug = self._makeBugWithNoSubscribers()
         member = self.factory.makePerson()
         subscriber = self.factory.makePerson(
-            name='user', displayname='Subscriber Name')
+            name="user", displayname="Subscriber Name"
+        )
         with person_logged_in(member):
-            bug.subscribe(subscriber, subscriber,
-                          level=BugNotificationLevel.LIFECYCLE)
-        harness = LaunchpadFormHarness(
-            bug, BugPortletSubscribersWithDetails)
+            bug.subscribe(
+                subscriber, subscriber, level=BugNotificationLevel.LIFECYCLE
+            )
+        harness = LaunchpadFormHarness(bug, BugPortletSubscribersWithDetails)
         api_request = IWebServiceClientRequest(harness.request)
 
         expected_result = {
-            'subscriber': {
-                'name': 'user',
-                'display_name': 'Subscriber Name',
-                'is_team': False,
-                'can_edit': True,
-                'web_link': canonical_url(subscriber),
-                'self_link': absoluteURL(subscriber, api_request),
-                'display_subscribed_by': 'Self-subscribed',
-                },
-            'subscription_level': "Lifecycle",
-            }
+            "subscriber": {
+                "name": "user",
+                "display_name": "Subscriber Name",
+                "is_team": False,
+                "can_edit": True,
+                "web_link": canonical_url(subscriber),
+                "self_link": absoluteURL(subscriber, api_request),
+                "display_subscribed_by": "Self-subscribed",
+            },
+            "subscription_level": "Lifecycle",
+        }
 
         # Login as admin
         admin = getUtility(IPersonSet).find(ADMIN_EMAIL).any()
         with person_logged_in(admin):
             self.assertEqual(
-                [expected_result], json.loads(harness.view.subscriber_data_js))
+                [expected_result], json.loads(harness.view.subscriber_data_js)
+            )
 
     def test_data_person_subscription_subscriber(self):
         # For a subscription, subscriber_data_js has can_edit
         # set to true for the subscriber.
         bug = self._makeBugWithNoSubscribers()
         subscriber = self.factory.makePerson(
-            name='user', displayname='Subscriber Name')
+            name="user", displayname="Subscriber Name"
+        )
         subscribed_by = self.factory.makePerson(
-            name='someone', displayname='Someone')
+            name="someone", displayname="Someone"
+        )
         with person_logged_in(subscriber):
-            bug.subscribe(subscriber, subscribed_by,
-                          level=BugNotificationLevel.LIFECYCLE)
+            bug.subscribe(
+                subscriber, subscribed_by, level=BugNotificationLevel.LIFECYCLE
+            )
         harness = LaunchpadFormHarness(bug, BugPortletSubscribersWithDetails)
         api_request = IWebServiceClientRequest(harness.request)
 
         expected_result = {
-            'subscriber': {
-                'name': 'user',
-                'display_name': 'Subscriber Name',
-                'is_team': False,
-                'can_edit': True,
-                'web_link': canonical_url(subscriber),
-                'self_link': absoluteURL(subscriber, api_request),
-                'display_subscribed_by': 'Subscribed by Someone (someone)',
-                },
-            'subscription_level': "Lifecycle",
-            }
+            "subscriber": {
+                "name": "user",
+                "display_name": "Subscriber Name",
+                "is_team": False,
+                "can_edit": True,
+                "web_link": canonical_url(subscriber),
+                "self_link": absoluteURL(subscriber, api_request),
+                "display_subscribed_by": "Subscribed by Someone (someone)",
+            },
+            "subscription_level": "Lifecycle",
+        }
         with person_logged_in(subscribed_by):
             self.assertEqual(
-                [expected_result], json.loads(harness.view.subscriber_data_js))
+                [expected_result], json.loads(harness.view.subscriber_data_js)
+            )
 
     def test_data_person_subscription_user_excluded(self):
         # With the subscriber logged in, they are not included in the results.
         bug = self._makeBugWithNoSubscribers()
         subscriber = self.factory.makePerson(
-            name='a-person', displayname='Subscriber Name')
+            name="a-person", displayname="Subscriber Name"
+        )
 
         with person_logged_in(subscriber):
-            bug.subscribe(subscriber, subscriber,
-                          level=BugNotificationLevel.LIFECYCLE)
+            bug.subscribe(
+                subscriber, subscriber, level=BugNotificationLevel.LIFECYCLE
+            )
             harness = LaunchpadFormHarness(
-                bug, BugPortletSubscribersWithDetails)
+                bug, BugPortletSubscribersWithDetails
+            )
             self.assertEqual([], json.loads(harness.view.subscriber_data_js))

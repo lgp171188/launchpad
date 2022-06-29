@@ -1,31 +1,18 @@
 # Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from storm.expr import (
-    Alias,
-    And,
-    Cast,
-    Count,
-    Join,
-    Or,
-    Select,
-    Union,
-    With,
-    )
-from storm.properties import Bool
 import transaction
+from storm.expr import Alias, And, Cast, Count, Join, Or, Select, Union, With
+from storm.properties import Bool
 
-from lp.app.enums import (
-    PRIVATE_INFORMATION_TYPES,
-    PUBLIC_INFORMATION_TYPES,
-    )
+from lp.app.enums import PRIVATE_INFORMATION_TYPES, PUBLIC_INFORMATION_TYPES
 from lp.bugs.model.bug import BugTag
 from lp.bugs.model.bugsummary import BugSummary
 from lp.bugs.model.bugtask import (
+    BugTask,
     bug_target_from_key,
     bug_target_to_key,
-    BugTask,
-    )
+)
 from lp.bugs.model.bugtaskflat import BugTaskFlat
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
@@ -48,36 +35,59 @@ class RawBugSummary(BugSummary):
 
     BugSummary is actually based on the combinedbugsummary view.
     """
-    __storm_table__ = 'bugsummary'
+
+    __storm_table__ = "bugsummary"
 
 
 class BugSummaryJournal(BugSummary):
     """Just the necessary columns of BugSummaryJournal."""
+
     # It's not really BugSummary, but the schema is the same.
-    __storm_table__ = 'bugsummaryjournal'
+    __storm_table__ = "bugsummaryjournal"
 
 
 def get_bugsummary_targets():
     """Get the current set of targets represented in BugSummary."""
-    return set(IStore(RawBugSummary).find(
-        (RawBugSummary.product_id, RawBugSummary.productseries_id,
-         RawBugSummary.distribution_id, RawBugSummary.distroseries_id,
-         RawBugSummary.sourcepackagename_id, RawBugSummary.ociproject_id
-         )).config(distinct=True))
+    return set(
+        IStore(RawBugSummary)
+        .find(
+            (
+                RawBugSummary.product_id,
+                RawBugSummary.productseries_id,
+                RawBugSummary.distribution_id,
+                RawBugSummary.distroseries_id,
+                RawBugSummary.sourcepackagename_id,
+                RawBugSummary.ociproject_id,
+            )
+        )
+        .config(distinct=True)
+    )
 
 
 def get_bugtask_targets():
     """Get the current set of targets represented in BugTask."""
-    new_targets = set(IStore(BugTask).find(
-        (BugTask.product_id, BugTask.productseries_id,
-         BugTask.distribution_id, BugTask.distroseries_id,
-         BugTask.sourcepackagename_id, BugTask.ociproject_id
-         )).config(distinct=True))
+    new_targets = set(
+        IStore(BugTask)
+        .find(
+            (
+                BugTask.product_id,
+                BugTask.productseries_id,
+                BugTask.distribution_id,
+                BugTask.distroseries_id,
+                BugTask.sourcepackagename_id,
+                BugTask.ociproject_id,
+            )
+        )
+        .config(distinct=True)
+    )
     # BugSummary counts package tasks in the packageless totals, so
     # ensure that there's also a packageless total for each distro(series).
-    new_targets.update({
-        (p, ps, d, ds, None, None)
-        for (p, ps, d, ds, spn, ocip) in new_targets})
+    new_targets.update(
+        {
+            (p, ps, d, ds, None, None)
+            for (p, ps, d, ds, spn, ocip) in new_targets
+        }
+    )
     return new_targets
 
 
@@ -85,11 +95,20 @@ def load_target(pid, psid, did, dsid, spnid, ociproject_id):
     store = IStore(Product)
     p, ps, d, ds, spn, ociproject = map(
         lambda cls_id: (
-            store.get(cls_id[0], cls_id[1]) if cls_id[1] is not None
-            else None),
-        zip((Product, ProductSeries, Distribution, DistroSeries,
-             SourcePackageName, OCIProject),
-            (pid, psid, did, dsid, spnid, ociproject_id)))
+            store.get(cls_id[0], cls_id[1]) if cls_id[1] is not None else None
+        ),
+        zip(
+            (
+                Product,
+                ProductSeries,
+                Distribution,
+                DistroSeries,
+                SourcePackageName,
+                OCIProject,
+            ),
+            (pid, psid, did, dsid, spnid, ociproject_id),
+        ),
+    )
     return bug_target_from_key(p, ps, d, ds, spn, ociproject)
 
 
@@ -97,21 +116,21 @@ def format_target(target):
     id = target.pillar.name
     series = (
         (ISeriesMixin.providedBy(target) and target)
-        or getattr(target, 'distroseries', None)
-        or getattr(target, 'productseries', None))
+        or getattr(target, "distroseries", None)
+        or getattr(target, "productseries", None)
+    )
     if series:
-        id += '/%s' % series.name
-    spn = getattr(target, 'sourcepackagename', None)
+        id += "/%s" % series.name
+    spn = getattr(target, "sourcepackagename", None)
     if spn:
-        id += '/+source/%s' % spn.name
+        id += "/+source/%s" % spn.name
     return id
 
 
 def _get_bugsummary_constraint_bits(target):
     raw_key = bug_target_to_key(target)
     # Map to ID columns to work around Storm bug #682989.
-    return {
-        '%s_id' % k: v.id if v else None for (k, v) in raw_key.items()}
+    return {"%s_id" % k: v.id if v else None for (k, v) in raw_key.items()}
 
 
 def get_bugsummary_constraint(target, cls=RawBugSummary):
@@ -119,7 +138,8 @@ def get_bugsummary_constraint(target, cls=RawBugSummary):
     # Map to ID columns to work around Storm bug #682989.
     return [
         getattr(cls, k) == v
-        for (k, v) in _get_bugsummary_constraint_bits(target).items()]
+        for (k, v) in _get_bugsummary_constraint_bits(target).items()
+    ]
 
 
 def get_bugtaskflat_constraint(target):
@@ -128,15 +148,16 @@ def get_bugtaskflat_constraint(target):
     # For the purposes of BugSummary, DSP/SP and OCI project tasks count for
     # their distro(series).
     if IDistribution.providedBy(target) or IDistroSeries.providedBy(target):
-        del raw_key['sourcepackagename']
-        del raw_key['ociproject']
+        del raw_key["sourcepackagename"]
+        del raw_key["ociproject"]
     # For bugsummary, ociprojects count to their products.
     if IProduct.providedBy(target):
-        del raw_key['ociproject']
+        del raw_key["ociproject"]
     # Map to ID columns to work around Storm bug #682989.
     return [
-        getattr(BugTaskFlat, '%s_id' % k) == (v.id if v else None)
-        for (k, v) in raw_key.items()]
+        getattr(BugTaskFlat, "%s_id" % k) == (v.id if v else None)
+        for (k, v) in raw_key.items()
+    ]
 
 
 def get_bugsummary_rows(target):
@@ -147,18 +168,26 @@ def get_bugsummary_rows(target):
     bugsummary and bugsummaryjournal.
     """
     return IStore(RawBugSummary).find(
-        (RawBugSummary.status, RawBugSummary.milestone_id,
-         RawBugSummary.importance, RawBugSummary.has_patch, RawBugSummary.tag,
-         RawBugSummary.viewed_by_id, RawBugSummary.access_policy_id,
-         RawBugSummary.count),
-        *get_bugsummary_constraint(target))
+        (
+            RawBugSummary.status,
+            RawBugSummary.milestone_id,
+            RawBugSummary.importance,
+            RawBugSummary.has_patch,
+            RawBugSummary.tag,
+            RawBugSummary.viewed_by_id,
+            RawBugSummary.access_policy_id,
+            RawBugSummary.count,
+        ),
+        *get_bugsummary_constraint(target),
+    )
 
 
 def get_bugsummaryjournal_rows(target):
     """Find the `BugSummaryJournal` rows for the given `IBugTarget`."""
     return IStore(BugSummaryJournal).find(
         BugSummaryJournal,
-        *get_bugsummary_constraint(target, cls=BugSummaryJournal))
+        *get_bugsummary_constraint(target, cls=BugSummaryJournal),
+    )
 
 
 def calculate_bugsummary_changes(old, new):
@@ -190,19 +219,36 @@ def calculate_bugsummary_changes(old, new):
 def apply_bugsummary_changes(target, added, updated, removed):
     """Apply a set of BugSummary changes to the DB."""
     bits = _get_bugsummary_constraint_bits(target)
-    target_key = tuple(map(
-        bits.get,
-        ('product_id', 'productseries_id', 'distribution_id',
-         'distroseries_id', 'sourcepackagename_id', 'ociproject_id')))
+    target_key = tuple(
+        map(
+            bits.get,
+            (
+                "product_id",
+                "productseries_id",
+                "distribution_id",
+                "distroseries_id",
+                "sourcepackagename_id",
+                "ociproject_id",
+            ),
+        )
+    )
     target_cols = (
-        RawBugSummary.product_id, RawBugSummary.productseries_id,
-        RawBugSummary.distribution_id, RawBugSummary.distroseries_id,
-        RawBugSummary.sourcepackagename_id, RawBugSummary.ociproject_id)
+        RawBugSummary.product_id,
+        RawBugSummary.productseries_id,
+        RawBugSummary.distribution_id,
+        RawBugSummary.distroseries_id,
+        RawBugSummary.sourcepackagename_id,
+        RawBugSummary.ociproject_id,
+    )
     key_cols = (
-        RawBugSummary.status, RawBugSummary.milestone_id,
-        RawBugSummary.importance, RawBugSummary.has_patch,
-        RawBugSummary.tag, RawBugSummary.viewed_by_id,
-        RawBugSummary.access_policy_id)
+        RawBugSummary.status,
+        RawBugSummary.milestone_id,
+        RawBugSummary.importance,
+        RawBugSummary.has_patch,
+        RawBugSummary.tag,
+        RawBugSummary.viewed_by_id,
+        RawBugSummary.access_policy_id,
+    )
 
     # Postgres doesn't do bulk updates, so do a delete+add.
     for key, count in updated.items():
@@ -215,34 +261,34 @@ def apply_bugsummary_changes(target, added, updated, removed):
         removed = removed[100:]
         exprs = [
             map(lambda k_v: k_v[0] == k_v[1], zip(key_cols, key))
-            for key in chunk]
+            for key in chunk
+        ]
         IStore(RawBugSummary).find(
             RawBugSummary,
             Or(*[And(*expr) for expr in exprs]),
-            *get_bugsummary_constraint(target)).remove()
+            *get_bugsummary_constraint(target),
+        ).remove()
 
     # Add any new rows. We know this scales up to tens of thousands, so just
     # do it in one hit.
     if added:
         create(
             target_cols + key_cols + (RawBugSummary.count,),
-            [target_key + key + (count,)
-             for key, count in added.items()])
+            [target_key + key + (count,) for key, count in added.items()],
+        )
 
 
 def rebuild_bugsummary_for_target(target, log):
     log.debug("Rebuilding %s" % format_target(target))
-    existing = {
-        v[:-1]: v[-1] for v in get_bugsummary_rows(target)}
-    expected = {
-        v[:-1]: v[-1] for v in calculate_bugsummary_rows(target)}
+    existing = {v[:-1]: v[-1] for v in get_bugsummary_rows(target)}
+    expected = {v[:-1]: v[-1] for v in calculate_bugsummary_rows(target)}
     added, updated, removed = calculate_bugsummary_changes(existing, expected)
     if added:
-        log.debug('Added %r' % added)
+        log.debug("Added %r" % added)
     if updated:
-        log.debug('Updated %r' % updated)
+        log.debug("Updated %r" % updated)
     if removed:
-        log.debug('Removed %r' % removed)
+        log.debug("Removed %r" % removed)
     apply_bugsummary_changes(target, added, updated, removed)
     # We've just made bugsummary match reality, ignoring any
     # bugsummaryjournal rows. So any journal rows are at best redundant,
@@ -259,85 +305,122 @@ def calculate_bugsummary_rows(target):
     # relevant target and to exclude duplicates, and with has_patch
     # calculated.
     relevant_tasks = With(
-        'relevant_task',
+        "relevant_task",
         Select(
-            (BugTaskFlat.bug_id, BugTaskFlat.information_type,
-             BugTaskFlat.status, BugTaskFlat.milestone_id,
-             BugTaskFlat.importance,
-             Alias(BugTaskFlat.latest_patch_uploaded != None, 'has_patch'),
-             BugTaskFlat.access_grants, BugTaskFlat.access_policies),
+            (
+                BugTaskFlat.bug_id,
+                BugTaskFlat.information_type,
+                BugTaskFlat.status,
+                BugTaskFlat.milestone_id,
+                BugTaskFlat.importance,
+                Alias(BugTaskFlat.latest_patch_uploaded != None, "has_patch"),
+                BugTaskFlat.access_grants,
+                BugTaskFlat.access_policies,
+            ),
             tables=[BugTaskFlat],
             where=And(
                 BugTaskFlat.duplicateof_id == None,
-                *get_bugtaskflat_constraint(target))))
+                *get_bugtaskflat_constraint(target),
+            ),
+        ),
+    )
 
     # Storm class to reference the CTE.
     class RelevantTask(BugTaskFlat):
-        __storm_table__ = 'relevant_task'
+        __storm_table__ = "relevant_task"
 
         has_patch = Bool()
 
     # Storm class to reference the union.
     class BugSummaryPrototype(RawBugSummary):
-        __storm_table__ = 'bugsummary_prototype'
+        __storm_table__ = "bugsummary_prototype"
 
     # Prepare a union for all combination of privacy and taggedness.
     # It'll return a full set of
     # (status, milestone, importance, has_patch, tag, viewed_by, access_policy)
     # rows.
     common_cols = (
-        RelevantTask.status, RelevantTask.milestone_id,
-        RelevantTask.importance, RelevantTask.has_patch)
-    null_tag = Alias(Cast(None, 'text'), 'tag')
-    null_viewed_by = Alias(Cast(None, 'integer'), 'viewed_by')
-    null_policy = Alias(Cast(None, 'integer'), 'access_policy')
+        RelevantTask.status,
+        RelevantTask.milestone_id,
+        RelevantTask.importance,
+        RelevantTask.has_patch,
+    )
+    null_tag = Alias(Cast(None, "text"), "tag")
+    null_viewed_by = Alias(Cast(None, "integer"), "viewed_by")
+    null_policy = Alias(Cast(None, "integer"), "access_policy")
 
     tag_join = Join(BugTag, BugTag.bug_id == RelevantTask.bug_id)
 
     public_constraint = RelevantTask.information_type.is_in(
-        PUBLIC_INFORMATION_TYPES)
+        PUBLIC_INFORMATION_TYPES
+    )
     private_constraint = RelevantTask.information_type.is_in(
-        PRIVATE_INFORMATION_TYPES)
+        PRIVATE_INFORMATION_TYPES
+    )
 
     unions = Union(
         # Public, tagless
         Select(
             common_cols + (null_tag, null_viewed_by, null_policy),
-            tables=[RelevantTask], where=public_constraint),
+            tables=[RelevantTask],
+            where=public_constraint,
+        ),
         # Public, tagged
         Select(
             common_cols + (BugTag.tag, null_viewed_by, null_policy),
-            tables=[RelevantTask, tag_join], where=public_constraint),
+            tables=[RelevantTask, tag_join],
+            where=public_constraint,
+        ),
         # Private, access grant, tagless
         Select(
-            common_cols +
-            (null_tag, Unnest(RelevantTask.access_grants), null_policy),
-            tables=[RelevantTask], where=private_constraint),
+            common_cols
+            + (null_tag, Unnest(RelevantTask.access_grants), null_policy),
+            tables=[RelevantTask],
+            where=private_constraint,
+        ),
         # Private, access grant, tagged
         Select(
-            common_cols +
-            (BugTag.tag, Unnest(RelevantTask.access_grants), null_policy),
-            tables=[RelevantTask, tag_join], where=private_constraint),
+            common_cols
+            + (BugTag.tag, Unnest(RelevantTask.access_grants), null_policy),
+            tables=[RelevantTask, tag_join],
+            where=private_constraint,
+        ),
         # Private, access policy, tagless
         Select(
-            common_cols +
-            (null_tag, null_viewed_by, Unnest(RelevantTask.access_policies)),
-            tables=[RelevantTask], where=private_constraint),
+            common_cols
+            + (null_tag, null_viewed_by, Unnest(RelevantTask.access_policies)),
+            tables=[RelevantTask],
+            where=private_constraint,
+        ),
         # Private, access policy, tagged
         Select(
-            common_cols +
-            (BugTag.tag, null_viewed_by, Unnest(RelevantTask.access_policies)),
-            tables=[RelevantTask, tag_join], where=private_constraint),
-        all=True)
+            common_cols
+            + (
+                BugTag.tag,
+                null_viewed_by,
+                Unnest(RelevantTask.access_policies),
+            ),
+            tables=[RelevantTask, tag_join],
+            where=private_constraint,
+        ),
+        all=True,
+    )
 
     # Select the relevant bits of the prototype rows and aggregate them.
     proto_key_cols = (
-        BugSummaryPrototype.status, BugSummaryPrototype.milestone_id,
-        BugSummaryPrototype.importance, BugSummaryPrototype.has_patch,
-        BugSummaryPrototype.tag, BugSummaryPrototype.viewed_by_id,
-        BugSummaryPrototype.access_policy_id)
-    origin = IStore(BugTaskFlat).with_(relevant_tasks).using(
-        Alias(unions, 'bugsummary_prototype'))
+        BugSummaryPrototype.status,
+        BugSummaryPrototype.milestone_id,
+        BugSummaryPrototype.importance,
+        BugSummaryPrototype.has_patch,
+        BugSummaryPrototype.tag,
+        BugSummaryPrototype.viewed_by_id,
+        BugSummaryPrototype.access_policy_id,
+    )
+    origin = (
+        IStore(BugTaskFlat)
+        .with_(relevant_tasks)
+        .using(Alias(unions, "bugsummary_prototype"))
+    )
     results = origin.find(proto_key_cols + (Count(),))
     results = results.group_by(*proto_key_cols).order_by(*proto_key_cols)
     return results
@@ -351,7 +434,8 @@ class BugSummaryRebuildTunableLoop(TunableLoop):
         super().__init__(log, abort_time)
         self.dry_run = dry_run
         self.targets = list(
-            get_bugsummary_targets().union(get_bugtask_targets()))
+            get_bugsummary_targets().union(get_bugtask_targets())
+        )
         self.offset = 0
 
     def isDone(self):
@@ -359,7 +443,7 @@ class BugSummaryRebuildTunableLoop(TunableLoop):
 
     def __call__(self, chunk_size):
         chunk_size = int(chunk_size)
-        chunk = self.targets[self.offset:self.offset + chunk_size]
+        chunk = self.targets[self.offset : self.offset + chunk_size]
 
         for target_key in chunk:
             target = load_target(*target_key)

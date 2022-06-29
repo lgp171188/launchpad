@@ -4,9 +4,9 @@
 """Utility functions for checkwatches."""
 
 __all__ = [
-    'get_bugwatcherrortype_for_error',
-    'get_remote_system_oops_properties',
-    ]
+    "get_bugwatcherrortype_for_error",
+    "get_remote_system_oops_properties",
+]
 
 import socket
 from xmlrpc.client import ProtocolError
@@ -20,24 +20,30 @@ from lp.bugs.externalbugtracker import (
     UnparsableBugData,
     UnparsableBugTrackerVersion,
     UnsupportedBugTrackerVersion,
-    )
+)
 from lp.bugs.interfaces.bugwatch import BugWatchActivityStatus
 
-
 _exception_to_bugwatcherrortype = [
-   (BugTrackerConnectError, BugWatchActivityStatus.CONNECTION_ERROR),
-   (PrivateRemoteBug, BugWatchActivityStatus.PRIVATE_REMOTE_BUG),
-   (UnparsableBugData, BugWatchActivityStatus.UNPARSABLE_BUG),
-   (UnparsableBugTrackerVersion,
-    BugWatchActivityStatus.UNPARSABLE_BUG_TRACKER),
-   (UnsupportedBugTrackerVersion,
-    BugWatchActivityStatus.UNSUPPORTED_BUG_TRACKER),
-   (UnknownBugTrackerTypeError,
-    BugWatchActivityStatus.UNSUPPORTED_BUG_TRACKER),
-   (InvalidBugId, BugWatchActivityStatus.INVALID_BUG_ID),
-   (BugNotFound, BugWatchActivityStatus.BUG_NOT_FOUND),
-   (PrivateRemoteBug, BugWatchActivityStatus.PRIVATE_REMOTE_BUG),
-   (socket.timeout, BugWatchActivityStatus.TIMEOUT)]
+    (BugTrackerConnectError, BugWatchActivityStatus.CONNECTION_ERROR),
+    (PrivateRemoteBug, BugWatchActivityStatus.PRIVATE_REMOTE_BUG),
+    (UnparsableBugData, BugWatchActivityStatus.UNPARSABLE_BUG),
+    (
+        UnparsableBugTrackerVersion,
+        BugWatchActivityStatus.UNPARSABLE_BUG_TRACKER,
+    ),
+    (
+        UnsupportedBugTrackerVersion,
+        BugWatchActivityStatus.UNSUPPORTED_BUG_TRACKER,
+    ),
+    (
+        UnknownBugTrackerTypeError,
+        BugWatchActivityStatus.UNSUPPORTED_BUG_TRACKER,
+    ),
+    (InvalidBugId, BugWatchActivityStatus.INVALID_BUG_ID),
+    (BugNotFound, BugWatchActivityStatus.BUG_NOT_FOUND),
+    (PrivateRemoteBug, BugWatchActivityStatus.PRIVATE_REMOTE_BUG),
+    (socket.timeout, BugWatchActivityStatus.TIMEOUT),
+]
 
 
 def get_bugwatcherrortype_for_error(error):
@@ -65,9 +71,9 @@ def get_remote_system_oops_properties(remote_system):
         OOPS properties should be extracted.
     """
     return [
-        ('batch_size', remote_system.batch_size),
-        ('batch_query_threshold', remote_system.batch_query_threshold),
-        ('sync_comments', remote_system.sync_comments),
-        ('externalbugtracker', remote_system.__class__.__name__),
-        ('baseurl', remote_system.baseurl),
-        ]
+        ("batch_size", remote_system.batch_size),
+        ("batch_query_threshold", remote_system.batch_query_threshold),
+        ("sync_comments", remote_system.sync_comments),
+        ("externalbugtracker", remote_system.__class__.__name__),
+        ("baseurl", remote_system.baseurl),
+    ]

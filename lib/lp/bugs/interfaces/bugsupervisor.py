@@ -4,8 +4,8 @@
 """Interface for objects which have a bug Supervisor."""
 
 __all__ = [
-    'IHasBugSupervisor',
-    ]
+    "IHasBugSupervisor",
+]
 
 from lazr.restful.declarations import exported
 from zope.interface import Interface
@@ -16,9 +16,15 @@ from lp.services.fields import PersonChoice
 
 class IHasBugSupervisor(Interface):
 
-    bug_supervisor = exported(PersonChoice(
-        title=_("Bug Supervisor"),
-        description=_(
-            "The Launchpad id of the person or team (preferred) responsible "
-            "for bug management."),
-        required=False, vocabulary='ValidPersonOrTeam', readonly=False))
+    bug_supervisor = exported(
+        PersonChoice(
+            title=_("Bug Supervisor"),
+            description=_(
+                "The Launchpad id of the person or team (preferred) "
+                "responsible for bug management."
+            ),
+            required=False,
+            vocabulary="ValidPersonOrTeam",
+            readonly=False,
+        )
+    )

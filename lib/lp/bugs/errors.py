@@ -4,8 +4,8 @@
 """Errors used in the lp/bugs modules."""
 
 __all__ = [
-    'InvalidDuplicateValue',
-    'InvalidSearchParameters',
+    "InvalidDuplicateValue",
+    "InvalidSearchParameters",
 ]
 
 import http.client
