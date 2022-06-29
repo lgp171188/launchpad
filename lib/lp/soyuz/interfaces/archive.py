@@ -819,6 +819,15 @@ class IArchiveView(IHasBuildRecords):
         title=_("Repository format"), vocabulary=ArchiveRepositoryFormat,
         required=True, readonly=False)
 
+    api_publish = exported(Bool(
+        title=_("Publishing enabled"),
+        required=True, readonly=False,
+        description=_("Whether or not to update the apt repository.  If "
+                      "disabled, nothing will be published.  If the archive "
+                      "is private then additionally no builds will "
+                      "be dispatched.")),
+        exported_as="publish")
+
     @call_with(check_permissions=True, user=REQUEST_USER)
     @operation_parameters(
         processors=List(

@@ -5,6 +5,7 @@
 
 __all__ = [
     "GoneError",
+    "IncompatibleArchiveStatus",
     "IncompatibleArguments",
     "NameLookupFailed",
     "NotFoundError",
@@ -92,6 +93,12 @@ class ServiceUsageForbidden(Exception):
 @error_status(http.client.BAD_REQUEST)
 class IncompatibleArguments(Exception):
     """Raised when incompatible arguments are passed to a method."""
+
+
+@error_status(http.client.BAD_REQUEST)
+class IncompatibleArchiveStatus(Exception):
+    """Raised when attempting to set a PPA to publishable
+    when its status is not Active."""
 
 
 # Slam a 401 response code onto all ForbiddenAttribute errors.

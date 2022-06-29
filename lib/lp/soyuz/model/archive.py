@@ -54,6 +54,7 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import (
+    IncompatibleArchiveStatus,
     IncompatibleArguments,
     NotFoundError,
     )
@@ -465,6 +466,18 @@ class Archive(SQLBase):
             not config.personalpackagearchive.require_signing_keys or
             (not self.is_ppa and not self.is_copy) or
             self.signing_key_fingerprint is not None)
+
+    @property
+    def api_publish(self):
+        """See `IArchive`."""
+        return self.publish
+
+    @api_publish.setter
+    def api_publish(self, value):
+        if value is True and self.status != ArchiveStatus.ACTIVE:
+            raise IncompatibleArchiveStatus(
+                "Deleted PPAs can't be enabled.")
+        self.publish = value
 
     @property
     def reference(self):

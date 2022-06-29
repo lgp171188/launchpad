@@ -350,9 +350,9 @@
         <require
             permission="launchpad.Edit"
             interface="lp.soyuz.interfaces.archive.IArchiveEdit"
-            set_attributes="build_debug_symbols description displayname
-                            publish publish_debug_symbols status
-                            suppress_subscription_notifications"/>
+            set_attributes="api_publish build_debug_symbols description 
+                            displayname publish publish_debug_symbols 
+                            status suppress_subscription_notifications"/>
         <require
             permission="launchpad.Delete"
             interface="lp.soyuz.interfaces.archive.IArchiveDelete"/>
