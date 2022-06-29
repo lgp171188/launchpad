@@ -8,10 +8,7 @@ from lazr.lifecycle.snapshot import Snapshot
 
 from lp.bugs.interfaces.bug import IBug
 from lp.bugs.subscribers.bugactivity import what_changed
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -28,9 +25,8 @@ class TestWhatChanged(TestCaseWithFactory):
         bug_before_modification = Snapshot(bug, providing=IBug)
         with person_logged_in(bug.owner):
             bug.setPrivate(True, bug.owner)
-        event = ObjectModifiedEvent(
-            bug, bug_before_modification, ['private'])
-        expected_changes = {'private': ['False', 'True']}
+        event = ObjectModifiedEvent(bug, bug_before_modification, ["private"])
+        expected_changes = {"private": ["False", "True"]}
         changes = what_changed(event)
         self.assertEqual(expected_changes, changes)
 
@@ -43,7 +39,8 @@ class TestWhatChanged(TestCaseWithFactory):
         with person_logged_in(bug.owner):
             bug.setPrivate(True, bug.owner)
         event = ObjectModifiedEvent(
-            bug, bug_before_modification, [IBug['private']])
-        expected_changes = {'private': ['False', 'True']}
+            bug, bug_before_modification, [IBug["private"]]
+        )
+        expected_changes = {"private": ["False", "True"]}
         changes = what_changed(event)
         self.assertEqual(expected_changes, changes)

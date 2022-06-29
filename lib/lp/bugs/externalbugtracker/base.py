@@ -4,32 +4,29 @@
 """External bugtrackers."""
 
 __all__ = [
-    'BATCH_SIZE_UNLIMITED',
-    'BugNotFound',
-    'BugTrackerAuthenticationError',
-    'BugTrackerConnectError',
-    'BugWatchUpdateError',
-    'BugWatchUpdateWarning',
-    'ExternalBugTracker',
-    'InvalidBugId',
-    'LookupTree',
-    'LP_USER_AGENT',
-    'PrivateRemoteBug',
-    'repost_on_redirect_hook',
-    'UnknownBugTrackerTypeError',
-    'UnknownRemoteImportanceError',
-    'UnknownRemoteStatusError',
-    'UnknownRemoteValueError',
-    'UnparsableBugData',
-    'UnparsableBugTrackerVersion',
-    'UnsupportedBugTrackerVersion',
-    ]
+    "BATCH_SIZE_UNLIMITED",
+    "BugNotFound",
+    "BugTrackerAuthenticationError",
+    "BugTrackerConnectError",
+    "BugWatchUpdateError",
+    "BugWatchUpdateWarning",
+    "ExternalBugTracker",
+    "InvalidBugId",
+    "LookupTree",
+    "LP_USER_AGENT",
+    "PrivateRemoteBug",
+    "repost_on_redirect_hook",
+    "UnknownBugTrackerTypeError",
+    "UnknownRemoteImportanceError",
+    "UnknownRemoteStatusError",
+    "UnknownRemoteValueError",
+    "UnparsableBugData",
+    "UnparsableBugTrackerVersion",
+    "UnsupportedBugTrackerVersion",
+]
 
 
-from urllib.parse import (
-    urljoin,
-    urlparse,
-    )
+from urllib.parse import urljoin, urlparse
 
 import requests
 from zope.interface import implementer
@@ -41,15 +38,14 @@ from lp.bugs.interfaces.externalbugtracker import (
     ISupportsBackLinking,
     ISupportsCommentImport,
     ISupportsCommentPushing,
-    )
+)
 from lp.services.config import config
 from lp.services.database.isolation import ensure_no_transaction
 from lp.services.timeout import (
     override_timeout,
     raise_for_status_redacted,
     urlfetch,
-    )
-
+)
 
 # The user agent we send in our requests
 LP_USER_AGENT = "Launchpad Bugscraper/0.2 (https://bugs.launchpad.net/)"
@@ -131,12 +127,14 @@ class UnknownRemoteValueError(BugWatchUpdateWarning):
 
 class UnknownRemoteImportanceError(UnknownRemoteValueError):
     """The remote bug's importance isn't mapped to a `BugTaskImportance`."""
-    field_name = 'importance'
+
+    field_name = "importance"
 
 
 class UnknownRemoteStatusError(UnknownRemoteValueError):
     """The remote bug's status isn't mapped to a `BugTaskStatus`."""
-    field_name = 'status'
+
+    field_name = "status"
 
 
 class PrivateRemoteBug(BugWatchUpdateWarning):
@@ -162,17 +160,17 @@ class ExternalBugTracker:
     batch_size = None
     batch_query_threshold = config.checkwatches.batch_query_threshold
     timeout = config.checkwatches.default_socket_timeout
-    comment_template = 'default_remotecomment_template.txt'
+    comment_template = "default_remotecomment_template.txt"
     url_opener = None
 
     def __init__(self, baseurl):
-        self.baseurl = baseurl.rstrip('/')
+        self.baseurl = baseurl.rstrip("/")
         self.basehost = urlparse(baseurl).netloc
-        self.sync_comments = (
-            config.checkwatches.sync_comments and (
-                ISupportsCommentPushing.providedBy(self) or
-                ISupportsCommentImport.providedBy(self) or
-                ISupportsBackLinking.providedBy(self)))
+        self.sync_comments = config.checkwatches.sync_comments and (
+            ISupportsCommentPushing.providedBy(self)
+            or ISupportsCommentImport.providedBy(self)
+            or ISupportsBackLinking.providedBy(self)
+        )
 
     def getExternalBugTrackerToUse(self):
         """See `IExternalBugTracker`."""
@@ -249,7 +247,7 @@ class ExternalBugTracker:
     def _getHeaders(self):
         # For some reason, bugs.kde.org doesn't allow the regular urllib
         # user-agent string (Python-urllib/2.x) to access their bugzilla.
-        return {'User-Agent': LP_USER_AGENT, 'Host': self.basehost}
+        return {"User-Agent": LP_USER_AGENT, "Host": self.basehost}
 
     @ensure_no_transaction
     def makeRequest(self, method, url, **kwargs):
@@ -274,7 +272,8 @@ class ExternalBugTracker:
                 url += "/"
             url = urljoin(url, page)
             response = self.makeRequest(
-                "GET", url, headers=self._getHeaders(), **kwargs)
+                "GET", url, headers=self._getHeaders(), **kwargs
+            )
             raise_for_status_redacted(response)
             return response
         except requests.RequestException as e:
@@ -293,16 +292,18 @@ class ExternalBugTracker:
         :return: A `requests.Response` object.
         """
         hooks = (
-            {'response': repost_on_redirect_hook}
-            if repost_on_redirect else None)
+            {"response": repost_on_redirect_hook}
+            if repost_on_redirect
+            else None
+        )
         try:
             url = self.baseurl
             if not url.endswith("/"):
                 url += "/"
             url = urljoin(url, page)
             response = self.makeRequest(
-                "POST", url, headers=self._getHeaders(), data=form,
-                hooks=hooks)
+                "POST", url, headers=self._getHeaders(), data=form, hooks=hooks
+            )
             raise_for_status_redacted(response)
             return response
         except requests.RequestException as e:
@@ -320,11 +321,13 @@ class LookupBranch(treelookup.LookupBranch):
 
         :raises TypeError: If the branch is invalid.
         """
-        if (not isinstance(self.result, treelookup.LookupTree) and
-            self.result not in BugTaskStatus):
+        if (
+            not isinstance(self.result, treelookup.LookupTree)
+            and self.result not in BugTaskStatus
+        ):
             raise TypeError(
-                'Result is not a member of BugTaskStatus: %r' % (
-                    self.result))
+                "Result is not a member of BugTaskStatus: %r" % (self.result)
+            )
         super()._verify()
 
     def _describe_result(self, result):
@@ -344,13 +347,14 @@ class LookupTree(treelookup.LookupTree):
         max_depth = self.max_depth
 
         def line(columns):
-            return '|| %s ||' % ' || '.join(columns)
+            return "|| %s ||" % " || ".join(columns)
 
         if titles is not None:
             if len(titles) != (max_depth + 1):
                 raise ValueError(
-                    "Table of %d columns needs %d titles, but %d given." % (
-                        (max_depth + 1), (max_depth + 1), len(titles)))
+                    "Table of %d columns needs %d titles, but %d given."
+                    % ((max_depth + 1), (max_depth + 1), len(titles))
+                )
             yield line("'''%s'''" % (title) for title in titles)
 
         def diff(last, now):
@@ -371,7 +375,7 @@ class LookupTree(treelookup.LookupTree):
                 if all:
                     yield elem_now
                 elif elem_last == elem_now:
-                    yield ''
+                    yield ""
                 else:
                     # We found a difference. Force the return of all
                     # subsequent elements in `now`.
@@ -387,7 +391,8 @@ class LookupTree(treelookup.LookupTree):
                     columns.append("* (''any'')")
                 else:
                     columns.append(
-                        " '''or''' ".join(str(key) for key in branch.keys))
+                        " '''or''' ".join(str(key) for key in branch.keys)
+                    )
             columns.extend(["- (''ignored'')"] * (max_depth - len(path)))
             columns.append(result.title)
             if last_columns is None:

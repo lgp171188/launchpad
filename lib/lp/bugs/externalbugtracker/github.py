@@ -4,19 +4,16 @@
 """GitHub ExternalBugTracker utility."""
 
 __all__ = [
-    'BadGitHubURL',
-    'GitHub',
-    'GitHubRateLimit',
-    'IGitHubRateLimit',
-    ]
+    "BadGitHubURL",
+    "GitHub",
+    "GitHubRateLimit",
+    "IGitHubRateLimit",
+]
 
-from contextlib import contextmanager
 import http.client
 import time
-from urllib.parse import (
-    urlencode,
-    urlunsplit,
-    )
+from contextlib import contextmanager
+from urllib.parse import urlencode, urlunsplit
 
 import pytz
 import requests
@@ -29,31 +26,26 @@ from lp.bugs.externalbugtracker import (
     ExternalBugTracker,
     UnknownRemoteStatusError,
     UnparsableBugTrackerVersion,
-    )
+)
 from lp.bugs.externalbugtracker.base import LP_USER_AGENT
-from lp.bugs.interfaces.bugtask import (
-    BugTaskImportance,
-    BugTaskStatus,
-    )
+from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.bugs.interfaces.externalbugtracker import UNKNOWN_REMOTE_IMPORTANCE
 from lp.services.config import config
 from lp.services.database.isolation import ensure_no_transaction
-from lp.services.timeout import (
-    override_timeout,
-    urlfetch,
-    )
+from lp.services.timeout import override_timeout, urlfetch
 from lp.services.webapp.url import urlsplit
 
 
 class GitHubExceededRateLimit(BugWatchUpdateError):
-
     def __init__(self, host, reset):
         self.host = host
         self.reset = reset
 
     def __str__(self):
         return "Rate limit for %s exceeded (resets at %s)" % (
-            self.host, time.ctime(self.reset))
+            self.host,
+            time.ctime(self.reset),
+        )
 
 
 class IGitHubRateLimit(Interface):
@@ -86,7 +78,7 @@ class GitHubRateLimit:
             "User-Agent": LP_USER_AGENT,
             "Host": host,
             "Accept": "application/vnd.github.v3+json",
-            }
+        }
         if auth_header is not None:
             headers["Authorization"] = auth_header
         url = "https://%s/rate_limit" % host
@@ -104,7 +96,8 @@ class GitHubRateLimit:
         host = urlsplit(url).netloc
         if (host, token) not in self._limits:
             self._limits[(host, token)] = self._update(
-                host, timeout, auth_header=auth_header)
+                host, timeout, auth_header=auth_header
+            )
         limit = self._limits[(host, token)]
         if not limit["remaining"]:
             raise GitHubExceededRateLimit(host, limit["reset"])
@@ -132,7 +125,7 @@ class GitHub(ExternalBugTracker):
         path = path.rstrip("/")
         if not path.endswith("/issues"):
             raise BadGitHubURL(baseurl)
-        path = "/repos" + path[:-len("/issues")]
+        path = "/repos" + path[: -len("/issues")]
         baseurl = urlunsplit(("https", host, path, query, fragment))
         super().__init__(baseurl)
         self.cached_bugs = {}
@@ -150,7 +143,8 @@ class GitHub(ExternalBugTracker):
     def getModifiedRemoteBugs(self, bug_ids, last_accessed):
         """See `IExternalBugTracker`."""
         modified_bugs = self.getRemoteBugBatch(
-            bug_ids, last_accessed=last_accessed)
+            bug_ids, last_accessed=last_accessed
+        )
         self.cached_bugs.update(modified_bugs)
         return list(modified_bugs)
 
@@ -158,8 +152,9 @@ class GitHub(ExternalBugTracker):
         """See `ExternalBugTracker`."""
         bug_id = int(bug_id)
         if bug_id not in self.cached_bugs:
-            self.cached_bugs[bug_id] = (
-                self._getPage("issues/%s" % bug_id).json())
+            self.cached_bugs[bug_id] = self._getPage(
+                "issues/%s" % bug_id
+            ).json()
         return bug_id, self.cached_bugs[bug_id]
 
     def getRemoteBugBatch(self, bug_ids, last_accessed=None):
@@ -172,13 +167,16 @@ class GitHub(ExternalBugTracker):
         bug_ids = [int(bug_id) for bug_id in bug_ids]
         bugs = {
             bug_id: self.cached_bugs[bug_id]
-            for bug_id in bug_ids if bug_id in self.cached_bugs}
+            for bug_id in bug_ids
+            if bug_id in self.cached_bugs
+        }
         if set(bugs) == set(bug_ids):
             return bugs
         params = [("state", "all")]
         if last_accessed is not None:
             since = last_accessed.astimezone(pytz.UTC).strftime(
-                "%Y-%m-%dT%H:%M:%SZ")
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
             params.append(("since", since))
         page = "issues?%s" % urlencode(params)
         for remote_bug in self._getCollection(page):
@@ -224,25 +222,27 @@ class GitHub(ExternalBugTracker):
         headers["Accept"] = "application/vnd.github.v3+json"
         return headers
 
-    def makeRequest(self, method, url, headers=None, last_accessed=None,
-                    **kwargs):
+    def makeRequest(
+        self, method, url, headers=None, last_accessed=None, **kwargs
+    ):
         """See `ExternalBugTracker`."""
         if headers is None:
             headers = {}
         if last_accessed is not None:
-            headers["If-Modified-Since"] = (
-                last_accessed.astimezone(pytz.UTC).strftime(
-                    "%a, %d %b %Y %H:%M:%S GMT"))
+            headers["If-Modified-Since"] = last_accessed.astimezone(
+                pytz.UTC
+            ).strftime("%a, %d %b %Y %H:%M:%S GMT")
         with getUtility(IGitHubRateLimit).checkLimit(
-                url, self.timeout,
-                token=self.credentials["token"]) as auth_header:
+            url, self.timeout, token=self.credentials["token"]
+        ) as auth_header:
             headers["Authorization"] = auth_header
             return super().makeRequest(method, url, headers=headers)
 
     def _getPage(self, page, last_accessed=None, **kwargs):
         """See `ExternalBugTracker`."""
         return super()._getPage(
-            page, last_accessed=last_accessed, token=self.credentials["token"])
+            page, last_accessed=last_accessed, token=self.credentials["token"]
+        )
 
     def _getCollection(self, base_page, last_accessed=None):
         """Yield each item from a batched remote collection.
@@ -255,9 +255,11 @@ class GitHub(ExternalBugTracker):
             try:
                 response = self._getPage(page, last_accessed=last_accessed)
             except BugTrackerConnectError as e:
-                if (e.error.response is not None and
-                    e.error.response.status_code ==
-                        http.client.NOT_MODIFIED):
+                if (
+                    e.error.response is not None
+                    and e.error.response.status_code
+                    == http.client.NOT_MODIFIED
+                ):
                     return
                 else:
                     raise

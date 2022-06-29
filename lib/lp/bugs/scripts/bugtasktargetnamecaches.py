@@ -3,41 +3,41 @@
 
 """A utility module for the update-bugtasktargetnamecaches.py cronscript."""
 
-__all__ = ['BugTaskTargetNameCacheUpdater']
+__all__ = ["BugTaskTargetNameCacheUpdater"]
 
 from collections import defaultdict
 
 from zope.interface import implementer
 
-from lp.bugs.model.bugtask import (
-    bug_target_from_key,
-    BugTask,
-    )
+from lp.bugs.model.bugtask import BugTask, bug_target_from_key
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.ociproject import OCIProject
 from lp.registry.model.product import Product
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStandbyStore,
-    )
-from lp.services.looptuner import (
-    ITunableLoop,
-    LoopTuner,
-    )
-
+from lp.services.database.interfaces import IMasterStore, IStandbyStore
+from lp.services.looptuner import ITunableLoop, LoopTuner
 
 # These two tuples must be in the same order. They specify the ID
 # columns to get from BugTask, and the classes that they correspond to.
 target_columns = (
-    BugTask.product_id, BugTask.productseries_id, BugTask.distribution_id,
-    BugTask.distroseries_id, BugTask.sourcepackagename_id,
-    BugTask.ociproject_id, BugTask.targetnamecache)
+    BugTask.product_id,
+    BugTask.productseries_id,
+    BugTask.distribution_id,
+    BugTask.distroseries_id,
+    BugTask.sourcepackagename_id,
+    BugTask.ociproject_id,
+    BugTask.targetnamecache,
+)
 target_classes = (
-    Product, ProductSeries, Distribution, DistroSeries, SourcePackageName,
-    OCIProject)
+    Product,
+    ProductSeries,
+    Distribution,
+    DistroSeries,
+    SourcePackageName,
+    OCIProject,
+)
 
 
 @implementer(ITunableLoop)
@@ -105,7 +105,8 @@ class BugTaskTargetNameCachesTunableLoop:
             # If the ID is None, don't even try to get an object.
             target_objects = (
                 (store.get(cls, id) if id is not None else None)
-                for cls, id in zip(target_classes, target_bits))
+                for cls, id in zip(target_classes, target_bits)
+            )
             target = bug_target_from_key(*target_objects)
             new_name = target.bugtargetdisplayname
             cached_names.discard(new_name)
@@ -113,14 +114,17 @@ class BugTaskTargetNameCachesTunableLoop:
             # a single query.
             if len(cached_names) > 0:
                 self.logger.info(
-                    "Updating %r to '%s'." % (tuple(cached_names), new_name))
+                    "Updating %r to '%s'." % (tuple(cached_names), new_name)
+                )
                 self.total_updated += len(cached_names)
                 conditions = (
-                    col == id for col, id in zip(target_columns, target_bits))
+                    col == id for col, id in zip(target_columns, target_bits)
+                )
                 to_update = store.find(
                     BugTask,
                     BugTask.targetnamecache.is_in(cached_names),
-                    *conditions)
+                    *conditions,
+                )
                 to_update.set(targetnamecache=new_name)
 
         self.logger.info("Checked %i targets." % len(chunk))
@@ -139,7 +143,8 @@ class BugTaskTargetNameCacheUpdater:
         """Update the bugtask target name caches."""
         self.logger.info("Updating targetname cache of bugtasks.")
         loop = BugTaskTargetNameCachesTunableLoop(
-            self.transaction, self.logger)
+            self.transaction, self.logger
+        )
 
         # We use the LoopTuner class to try and get an ideal number of
         # bugtasks updated for each iteration of the loop (see the

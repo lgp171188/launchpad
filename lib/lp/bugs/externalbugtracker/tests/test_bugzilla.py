@@ -3,18 +3,15 @@
 
 """Tests for the Bugzilla BugTracker."""
 
-from xml.parsers.expat import ExpatError
 import xmlrpc.client
+from xml.parsers.expat import ExpatError
 
 import responses
 import transaction
 
 from lp.bugs.externalbugtracker.base import UnparsableBugData
 from lp.bugs.externalbugtracker.bugzilla import Bugzilla
-from lp.testing import (
-    TestCase,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCase, TestCaseWithFactory
 from lp.testing.layers import ZopelessLayer
 
 
@@ -28,19 +25,26 @@ class TestBugzillaGetRemoteBugBatch(TestCaseWithFactory):
     @responses.activate
     def test_post_to_search_form_does_not_crash(self):
         responses.add(
-            "POST", self.base_url + "xml.cgi",
-            body="<bugzilla>%s</bugzilla>" % self.factory.getUniqueString())
+            "POST",
+            self.base_url + "xml.cgi",
+            body="<bugzilla>%s</bugzilla>" % self.factory.getUniqueString(),
+        )
         bugzilla = Bugzilla(self.base_url)
         bugzilla.getRemoteBugBatch([])
 
     @responses.activate
     def test_repost_on_redirect_does_not_crash(self):
         responses.add(
-            "POST", self.base_url + "xml.cgi", status=302,
-            headers={"Location": self.base_url + "buglist.cgi"})
+            "POST",
+            self.base_url + "xml.cgi",
+            status=302,
+            headers={"Location": self.base_url + "buglist.cgi"},
+        )
         responses.add(
-            "POST", self.base_url + "buglist.cgi",
-            body="<bugzilla>%s</bugzilla>" % self.factory.getUniqueString())
+            "POST",
+            self.base_url + "buglist.cgi",
+            body="<bugzilla>%s</bugzilla>" % self.factory.getUniqueString(),
+        )
         bugzilla = Bugzilla(self.base_url)
         bugzilla.getRemoteBugBatch([])
 
@@ -76,7 +80,8 @@ class TestBugzillaSniffing(TestCase):
                 raise ExpatError("mismatched tag")
 
         bugzilla._test_xmlrpc_proxy = xmlrpc.client.ServerProxy(
-            '%s/xmlrpc.cgi' % bugzilla.baseurl, transport=Transport())
+            "%s/xmlrpc.cgi" % bugzilla.baseurl, transport=Transport()
+        )
 
         # We must abort any existing transactions before attempting to call
         # the _remoteSystemHas*() functions because they require that none be

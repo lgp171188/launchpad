@@ -4,10 +4,10 @@
 """Views for IBugLinkTarget."""
 
 __all__ = [
-    'BugLinkView',
-    'BugLinksListingView',
-    'BugsUnlinkView',
-    ]
+    "BugLinkView",
+    "BugLinksListingView",
+    "BugsUnlinkView",
+]
 
 from collections import defaultdict
 
@@ -19,23 +19,14 @@ from zope.interface import providedBy
 from zope.security.interfaces import Unauthorized
 
 from lp import _
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.bugs.browser.buglisting import BugListingBatchNavigator
-from lp.bugs.interfaces.buglink import (
-    IBugLinkForm,
-    IUnlinkBugsForm,
-    )
+from lp.bugs.interfaces.buglink import IBugLinkForm, IUnlinkBugsForm
 from lp.bugs.interfaces.bugtask import IBugTaskSet
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.services.config import config
-from lp.services.propertycache import (
-    cachedproperty,
-    get_property_cache,
-    )
+from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.searchbuilder import any
 from lp.services.webapp import canonical_url
 from lp.services.webapp.authorization import check_permission
@@ -45,41 +36,46 @@ from lp.services.webapp.publisher import LaunchpadView
 class BugLinkView(LaunchpadFormView):
     """This view is used to link bugs to any IBugLinkTarget."""
 
-    label = _('Link a bug report')
+    label = _("Link a bug report")
     schema = IBugLinkForm
     page_title = label
 
-    focused_element_id = 'bug'
+    focused_element_id = "bug"
 
     @property
     def cancel_url(self):
         """See `LaunchpadFormview`."""
         return canonical_url(self.context)
 
-    @action(_('Link'))
+    @action(_("Link"))
     def linkBug(self, action, data):
         """Link to the requested bug. Publish an ObjectModifiedEvent and
         display a notification.
         """
         response = self.request.response
         target_unmodified = Snapshot(
-            self.context, providing=providedBy(self.context))
-        bug = data['bug']
+            self.context, providing=providedBy(self.context)
+        )
+        bug = data["bug"]
         try:
             self.context.linkBug(bug, user=self.user)
         except Unauthorized:
             # XXX flacoste 2006-08-23 bug=57470: This should use proper _().
             self.setFieldError(
-                'bug',
-                'You are not allowed to link to private bug #%d.' % bug.id)
+                "bug",
+                "You are not allowed to link to private bug #%d." % bug.id,
+            )
             return
-        bug_props = {'bugid': bug.id, 'title': bug.title}
+        bug_props = {"bugid": bug.id, "title": bug.title}
         response.addNotification(
-            _('Added link to bug #$bugid: '
-              '\N{left double quotation mark}$title'
-              '\N{right double quotation mark}.', mapping=bug_props))
-        notify(ObjectModifiedEvent(
-            self.context, target_unmodified, ['bugs']))
+            _(
+                "Added link to bug #$bugid: "
+                "\N{left double quotation mark}$title"
+                "\N{right double quotation mark}.",
+                mapping=bug_props,
+            )
+        )
+        notify(ObjectModifiedEvent(self.context, target_unmodified, ["bugs"]))
         self.next_url = canonical_url(self.context)
 
 
@@ -107,29 +103,39 @@ class BugLinksListingView(LaunchpadView):
         tags = bugtask_set.getBugTaskTags(bugtasks)
         people = bugtask_set.getBugTaskPeople(bugtasks)
         links = []
-        columns_to_show = ["id", "summary", "bugtargetdisplayname",
-            "importance", "status"]
+        columns_to_show = [
+            "id",
+            "summary",
+            "bugtargetdisplayname",
+            "importance",
+            "status",
+        ]
         for bug, tasks in bugs.items():
-            navigator = BugListingBatchNavigator(tasks, self.request,
+            navigator = BugListingBatchNavigator(
+                tasks,
+                self.request,
                 columns_to_show=columns_to_show,
-                size=config.malone.buglist_batch_size)
+                size=config.malone.buglist_batch_size,
+            )
             get_property_cache(navigator).bug_badge_properties = badges
             get_property_cache(navigator).tags_for_batch = tags
             get_property_cache(navigator).bugtask_people = people
-            links.append({
-                'bug': bug,
-                'title': bug.title,
-                'can_view_bug': True,
-                'tasks': tasks,
-                'batch_navigator': navigator,
-                })
+            links.append(
+                {
+                    "bug": bug,
+                    "title": bug.title,
+                    "can_view_bug": True,
+                    "tasks": tasks,
+                    "batch_navigator": navigator,
+                }
+            )
         return links
 
 
 class BugsUnlinkView(LaunchpadFormView):
     """This view is used to remove bug links from any IBugLinkTarget."""
 
-    label = _('Remove links to bug reports')
+    label = _("Remove links to bug reports")
     schema = IUnlinkBugsForm
     custom_widget_bugs = LabeledMultiCheckBoxWidget
     page_title = label
@@ -139,27 +145,35 @@ class BugsUnlinkView(LaunchpadFormView):
         """See `LaunchpadFormview`."""
         return canonical_url(self.context)
 
-    @action(_('Remove'))
+    @action(_("Remove"))
     def unlinkBugs(self, action, data):
         response = self.request.response
         target_unmodified = Snapshot(
-            self.context, providing=providedBy(self.context))
-        for bug in data['bugs']:
-            replacements = {'bugid': bug.id}
+            self.context, providing=providedBy(self.context)
+        )
+        for bug in data["bugs"]:
+            replacements = {"bugid": bug.id}
             try:
                 self.context.unlinkBug(bug, user=self.user)
                 response.addNotification(
-                    _('Removed link to bug #$bugid.', mapping=replacements))
+                    _("Removed link to bug #$bugid.", mapping=replacements)
+                )
             except Unauthorized:
                 response.addErrorNotification(
-                    _('Cannot remove link to private bug #$bugid.',
-                      mapping=replacements))
-        notify(ObjectModifiedEvent(self.context, target_unmodified, ['bugs']))
+                    _(
+                        "Cannot remove link to private bug #$bugid.",
+                        mapping=replacements,
+                    )
+                )
+        notify(ObjectModifiedEvent(self.context, target_unmodified, ["bugs"]))
         self.next_url = canonical_url(self.context)
 
     def bugsWithPermission(self):
         """Return the bugs that the user has permission to remove. This
         exclude private bugs to which the user doesn't have any permission.
         """
-        return [bug for bug in self.context.bugs
-                if check_permission('launchpad.View', bug)]
+        return [
+            bug
+            for bug in self.context.bugs
+            if check_permission("launchpad.View", bug)
+        ]

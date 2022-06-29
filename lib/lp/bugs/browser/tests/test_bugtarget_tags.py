@@ -13,13 +13,15 @@ class TestBugTargetTags(WithScenarios, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     scenarios = [
-        ("product + group", {"factory_name": 'makeProductAndGroup'}),
-        ("product", {"factory_name": 'makeProduct'}),
-        ("distribution", {"factory_name": 'makeDistribution'}),
-        ("ociproject of product", {
-            "factory_name": 'makeOCIProjectFromProduct'}),
-        ("ociproject of distro", {"factory_name": 'makeOCIProjectFromDistro'}),
-        ]
+        ("product + group", {"factory_name": "makeProductAndGroup"}),
+        ("product", {"factory_name": "makeProduct"}),
+        ("distribution", {"factory_name": "makeDistribution"}),
+        (
+            "ociproject of product",
+            {"factory_name": "makeOCIProjectFromProduct"},
+        ),
+        ("ociproject of distro", {"factory_name": "makeOCIProjectFromDistro"}),
+    ]
 
     def makeProductAndGroup(self):
         project_group = self.factory.makeProject()
@@ -52,31 +54,28 @@ class TestBugTargetTags(WithScenarios, TestCaseWithFactory):
     def test_no_tags(self):
         self.factory.makeBug(target=self.bug_target)
         view = create_view(
-            self.view_context,
-            name="+bugtarget-portlet-tags-content")
-        self.assertEqual([], [tag['tag'] for tag in view.tags_cloud_data])
+            self.view_context, name="+bugtarget-portlet-tags-content"
+        )
+        self.assertEqual([], [tag["tag"] for tag in view.tags_cloud_data])
 
     def test_tags(self):
-        self.factory.makeBug(target=self.bug_target, tags=['foo'])
+        self.factory.makeBug(target=self.bug_target, tags=["foo"])
         view = create_view(
-            self.view_context,
-            name="+bugtarget-portlet-tags-content")
-        self.assertEqual(
-            ['foo'],
-            [tag['tag'] for tag in view.tags_cloud_data])
+            self.view_context, name="+bugtarget-portlet-tags-content"
+        )
+        self.assertEqual(["foo"], [tag["tag"] for tag in view.tags_cloud_data])
 
     def test_tags_order(self):
         """Test that the tags are ordered by most used first"""
-        self.factory.makeBug(target=self.bug_target, tags=['tag-last'])
+        self.factory.makeBug(target=self.bug_target, tags=["tag-last"])
         for counter in range(0, 2):
-            self.factory.makeBug(
-                target=self.bug_target, tags=['tag-middle'])
+            self.factory.makeBug(target=self.bug_target, tags=["tag-middle"])
         for counter in range(0, 3):
-            self.factory.makeBug(
-                target=self.bug_target, tags=['tag-first'])
+            self.factory.makeBug(target=self.bug_target, tags=["tag-first"])
         view = create_view(
-            self.view_context,
-            name="+bugtarget-portlet-tags-content")
+            self.view_context, name="+bugtarget-portlet-tags-content"
+        )
         self.assertEqual(
-            ['tag-first', 'tag-middle', 'tag-last'],
-            [tag['tag'] for tag in view.tags_cloud_data])
+            ["tag-first", "tag-middle", "tag-last"],
+            [tag["tag"] for tag in view.tags_cloud_data],
+        )

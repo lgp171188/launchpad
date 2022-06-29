@@ -2,38 +2,23 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BugTracker',
-    'BugTrackerAlias',
-    'BugTrackerAliasSet',
-    'BugTrackerComponent',
-    'BugTrackerComponentGroup',
-    'BugTrackerSet',
-    ]
+    "BugTracker",
+    "BugTrackerAlias",
+    "BugTrackerAliasSet",
+    "BugTrackerComponent",
+    "BugTrackerComponentGroup",
+    "BugTrackerSet",
+]
 
 from datetime import datetime
 from itertools import chain
-from urllib.parse import (
-    quote,
-    urlsplit,
-    urlunsplit,
-    )
+from urllib.parse import quote, urlsplit, urlunsplit
 
+import six
 from lazr.uri import URI
 from pytz import timezone
-import six
-from storm.expr import (
-    Count,
-    Desc,
-    Not,
-    )
-from storm.locals import (
-    Bool,
-    Int,
-    Reference,
-    ReferenceSet,
-    SQL,
-    Unicode,
-    )
+from storm.expr import Count, Desc, Not
+from storm.locals import SQL, Bool, Int, Reference, ReferenceSet, Unicode
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -43,6 +28,7 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.validators.email import valid_email
 from lp.app.validators.name import sanitize_name
 from lp.bugs.interfaces.bugtracker import (
+    SINGLE_PRODUCT_BUGTRACKERTYPES,
     BugTrackerType,
     IBugTracker,
     IBugTrackerAlias,
@@ -50,36 +36,26 @@ from lp.bugs.interfaces.bugtracker import (
     IBugTrackerComponent,
     IBugTrackerComponentGroup,
     IBugTrackerSet,
-    SINGLE_PRODUCT_BUGTRACKERTYPES,
-    )
+)
 from lp.bugs.interfaces.bugtrackerperson import BugTrackerPersonAlreadyExists
 from lp.bugs.model.bug import Bug
 from lp.bugs.model.bugmessage import BugMessage
 from lp.bugs.model.bugtrackerperson import BugTrackerPerson
 from lp.bugs.model.bugwatch import BugWatch
-from lp.registry.interfaces.person import (
-    IPersonSet,
-    validate_public_person,
-    )
-from lp.registry.model.product import (
-    Product,
-    ProductSet,
-    )
+from lp.registry.interfaces.person import IPersonSet, validate_public_person
+from lp.registry.model.product import Product, ProductSet
 from lp.registry.model.projectgroup import ProjectGroup
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    flush_database_updates,
-    SQLBase,
-    )
+from lp.services.database.sqlbase import SQLBase, flush_database_updates
 from lp.services.database.sqlobject import (
+    OR,
     BoolCol,
     ForeignKey,
-    OR,
     SQLMultipleJoin,
     SQLObjectNotFound,
     StringCol,
-    )
+)
 from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
 
@@ -100,7 +76,7 @@ def base_url_permutations(base_url):
      'http://example.org/bar', 'http://example.org/bar/',
      'https://example.org/bar', 'https://example.org/bar/']
     """
-    http_schemes = ['http', 'https']
+    http_schemes = ["http", "https"]
     url_scheme, netloc, path, query, fragment = urlsplit(base_url)
     if not url_scheme or url_scheme in http_schemes:
         possible_schemes = http_schemes
@@ -111,18 +87,18 @@ def base_url_permutations(base_url):
     # If there's no netloc, try to make one out of the first segment of the
     # path.
     if not netloc:
-        netloc, _, path = path.partition('/')
+        netloc, _, path = path.partition("/")
     # Ensure that the path starts with a single slash.
-    path = '/' + path.lstrip('/')
+    path = "/" + path.lstrip("/")
     alternative_urls = [base_url]
     for scheme in possible_schemes:
         url = urlunsplit((scheme, netloc, path, query, fragment))
         if url != base_url:
             alternative_urls.append(url)
-        if url.endswith('/'):
+        if url.endswith("/"):
             alternative_urls.append(url[:-1])
         else:
-            alternative_urls.append(url + '/')
+            alternative_urls.append(url + "/")
     return alternative_urls
 
 
@@ -133,25 +109,28 @@ def make_bugtracker_name(uri):
         e.g. http://bugs.example.com or mailto:bugs@example.com
     """
     base_uri = URI(uri)
-    if base_uri.scheme == 'mailto':
+    if base_uri.scheme == "mailto":
         if valid_email(base_uri.path):
-            base_name = base_uri.path.split('@', 1)[0]
+            base_name = base_uri.path.split("@", 1)[0]
         else:
             raise AssertionError(
-                'Not a valid email address: %s' % base_uri.path)
-    elif base_uri.host == 'github.com' and base_uri.path.endswith('/issues'):
-        repository_id = base_uri.path[:-len('/issues')].lstrip('/')
-        base_name = 'github-' + repository_id.replace('/', '-').lower()
-    elif (('gitlab' in base_uri.host or
-           base_uri.host == 'salsa.debian.org') and
-          base_uri.path.endswith('/issues')):
-        repository_id = base_uri.path[:-len('/issues')].lstrip('/')
-        base_name = '%s-%s' % (
-            base_uri.host, repository_id.replace('/', '-').lower())
+                "Not a valid email address: %s" % base_uri.path
+            )
+    elif base_uri.host == "github.com" and base_uri.path.endswith("/issues"):
+        repository_id = base_uri.path[: -len("/issues")].lstrip("/")
+        base_name = "github-" + repository_id.replace("/", "-").lower()
+    elif (
+        "gitlab" in base_uri.host or base_uri.host == "salsa.debian.org"
+    ) and base_uri.path.endswith("/issues"):
+        repository_id = base_uri.path[: -len("/issues")].lstrip("/")
+        base_name = "%s-%s" % (
+            base_uri.host,
+            repository_id.replace("/", "-").lower(),
+        )
     else:
         base_name = base_uri.host
 
-    return 'auto-%s' % sanitize_name(base_name)
+    return "auto-%s" % sanitize_name(base_name)
 
 
 def make_bugtracker_title(uri):
@@ -161,14 +140,15 @@ def make_bugtracker_title(uri):
         e.g. http://bugs.example.com or mailto:bugs@example.com
     """
     base_uri = URI(uri)
-    if base_uri.scheme == 'mailto':
+    if base_uri.scheme == "mailto":
         if valid_email(base_uri.path):
-            local_part, domain = base_uri.path.split('@', 1)
-            domain_parts = domain.split('.')
-            return 'Email to %s@%s' % (local_part, domain_parts[0])
+            local_part, domain = base_uri.path.split("@", 1)
+            domain_parts = domain.split(".")
+            return "Email to %s@%s" % (local_part, domain_parts[0])
         else:
             raise AssertionError(
-                'Not a valid email address: %s' % base_uri.path)
+                "Not a valid email address: %s" % base_uri.path
+            )
     else:
         return base_uri.host + base_uri.path
 
@@ -181,35 +161,33 @@ class BugTrackerComponent(StormBase):
     they affect.  This class provides a mapping of this upstream component
     to the corresponding source package in the distro.
     """
-    __storm_table__ = 'BugTrackerComponent'
+
+    __storm_table__ = "BugTrackerComponent"
 
     id = Int(primary=True)
     name = Unicode(allow_none=False)
 
-    component_group_id = Int('component_group')
+    component_group_id = Int("component_group")
     component_group = Reference(
-        component_group_id,
-        'BugTrackerComponentGroup.id')
+        component_group_id, "BugTrackerComponentGroup.id"
+    )
 
     is_visible = Bool(allow_none=False)
     is_custom = Bool(allow_none=False)
 
-    distribution_id = Int('distribution')
-    distribution = Reference(
-        distribution_id,
-        'Distribution.id')
+    distribution_id = Int("distribution")
+    distribution = Reference(distribution_id, "Distribution.id")
 
-    source_package_name_id = Int('source_package_name')
+    source_package_name_id = Int("source_package_name")
     source_package_name = Reference(
-        source_package_name_id,
-        'SourcePackageName.id')
+        source_package_name_id, "SourcePackageName.id"
+    )
 
     def _get_distro_source_package(self):
         """Retrieves the corresponding source package"""
         if self.distribution is None or self.source_package_name is None:
             return None
-        return self.distribution.getSourcePackage(
-            self.source_package_name)
+        return self.distribution.getSourcePackage(self.source_package_name)
 
     def _set_distro_source_package(self, dsp):
         """Links this component to its corresponding source package"""
@@ -224,7 +202,8 @@ class BugTrackerComponent(StormBase):
         _get_distro_source_package,
         _set_distro_source_package,
         None,
-        """The distribution's source package for this component""")
+        """The distribution's source package for this component""",
+    )
 
 
 @implementer(IBugTrackerComponentGroup)
@@ -234,16 +213,18 @@ class BugTrackerComponentGroup(StormBase):
     Some bug trackers organize sets of components into higher level
     groups, such as Bugzilla's 'product'.
     """
-    __storm_table__ = 'BugTrackerComponentGroup'
+
+    __storm_table__ = "BugTrackerComponentGroup"
 
     id = Int(primary=True)
     name = Unicode(allow_none=False)
-    bug_tracker_id = Int('bug_tracker')
-    bug_tracker = Reference(bug_tracker_id, 'BugTracker.id')
+    bug_tracker_id = Int("bug_tracker")
+    bug_tracker = Reference(bug_tracker_id, "BugTracker.id")
     components = ReferenceSet(
         id,
         BugTrackerComponent.component_group_id,
-        order_by=BugTrackerComponent.name)
+        order_by=BugTrackerComponent.name,
+    )
 
     def addComponent(self, component_name):
         """Adds a component that is synced from a remote bug tracker"""
@@ -269,19 +250,28 @@ class BugTrackerComponentGroup(StormBase):
             return None
         elif component_name.isdigit():
             component_id = int(component_name)
-            return Store.of(self).find(
-                BugTrackerComponent,
-                BugTrackerComponent.id == component_id,
-                BugTrackerComponent.component_group == self.id).one()
+            return (
+                Store.of(self)
+                .find(
+                    BugTrackerComponent,
+                    BugTrackerComponent.id == component_id,
+                    BugTrackerComponent.component_group == self.id,
+                )
+                .one()
+            )
         else:
-            return Store.of(self).find(
-                BugTrackerComponent,
-                BugTrackerComponent.name == component_name,
-                BugTrackerComponent.component_group == self.id).one()
+            return (
+                Store.of(self)
+                .find(
+                    BugTrackerComponent,
+                    BugTrackerComponent.name == component_name,
+                    BugTrackerComponent.component_group == self.id,
+                )
+                .one()
+            )
 
     def addCustomComponent(self, component_name):
-        """Adds a component locally that isn't synced from a remote tracker
-        """
+        """Adds a component locally that isn't synced from a remote tracker"""
 
         component = BugTrackerComponent()
         component.name = component_name
@@ -305,92 +295,118 @@ class BugTracker(SQLBase):
     distinct BugTrackers.
     """
 
-    _table = 'BugTracker'
+    _table = "BugTracker"
 
     bugtrackertype = DBEnum(
-        name='bugtrackertype', enum=BugTrackerType, allow_none=False)
+        name="bugtrackertype", enum=BugTrackerType, allow_none=False
+    )
     name = StringCol(notNull=True, unique=True)
     title = StringCol(notNull=True)
     summary = StringCol(notNull=False)
     baseurl = StringCol(notNull=True)
-    active = Bool(
-        name='active', allow_none=False, default=True)
+    active = Bool(name="active", allow_none=False, default=True)
 
     owner = ForeignKey(
-        dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+        dbName="owner",
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        notNull=True,
+    )
     contactdetails = StringCol(notNull=False)
     has_lp_plugin = BoolCol(notNull=False, default=False)
     products = SQLMultipleJoin(
-        'Product', joinColumn='bugtracker', orderBy='name')
+        "Product", joinColumn="bugtracker", orderBy="name"
+    )
     watches = SQLMultipleJoin(
-        'BugWatch', joinColumn='bugtracker', orderBy='-datecreated',
-        prejoins=['bug'])
+        "BugWatch",
+        joinColumn="bugtracker",
+        orderBy="-datecreated",
+        prejoins=["bug"],
+    )
 
     _filing_url_patterns = {
         BugTrackerType.BUGZILLA: (
             "%(base_url)s/enter_bug.cgi?product=%(remote_product)s"
-            "&short_desc=%(summary)s&long_desc=%(description)s"),
+            "&short_desc=%(summary)s&long_desc=%(description)s"
+        ),
         BugTrackerType.GITHUB: (
-            "%(base_url)s/new?title=%(summary)s&body=%(description)s"),
+            "%(base_url)s/new?title=%(summary)s&body=%(description)s"
+        ),
         BugTrackerType.GITLAB: (
             "%(base_url)s/new"
-            "?issue[title]=%(summary)s&issue[description]=%(description)s"),
+            "?issue[title]=%(summary)s&issue[description]=%(description)s"
+        ),
         BugTrackerType.GOOGLE_CODE: (
-            "%(base_url)s/entry?summary=%(summary)s&"
-            "comment=%(description)s"),
+            "%(base_url)s/entry?summary=%(summary)s&" "comment=%(description)s"
+        ),
         BugTrackerType.MANTIS: (
             "%(base_url)s/bug_report_advanced_page.php"
-            "?summary=%(summary)s&description=%(description)s"),
+            "?summary=%(summary)s&description=%(description)s"
+        ),
         BugTrackerType.PHPPROJECT: (
             "%(base_url)s/report.php"
-            "?in[sdesc]=%(summary)s&in[ldesc]=%(description)s"),
+            "?in[sdesc]=%(summary)s&in[ldesc]=%(description)s"
+        ),
         BugTrackerType.ROUNDUP: (
             "%(base_url)s/issue?@template=item&title=%(summary)s"
-            "&@note=%(description)s"),
+            "&@note=%(description)s"
+        ),
         BugTrackerType.RT: (
             "%(base_url)s/Ticket/Create.html?Queue=%(remote_product)s"
-            "&Subject=%(summary)s&Content=%(description)s"),
+            "&Subject=%(summary)s&Content=%(description)s"
+        ),
         BugTrackerType.SAVANE: (
-            "%(base_url)s/bugs/?func=additem&group=%(remote_product)s"),
+            "%(base_url)s/bugs/?func=additem&group=%(remote_product)s"
+        ),
         BugTrackerType.SOURCEFORGE: (
             "%(base_url)s/%(tracker)s/?func=add&"
-            "group_id=%(group_id)s&atid=%(at_id)s"),
+            "group_id=%(group_id)s&atid=%(at_id)s"
+        ),
         BugTrackerType.TRAC: (
             "%(base_url)s/newticket?summary=%(summary)s&"
-            "description=%(description)s"),
-        }
+            "description=%(description)s"
+        ),
+    }
 
     _search_url_patterns = {
         BugTrackerType.BUGZILLA: (
             "%(base_url)s/query.cgi?product=%(remote_product)s"
-            "&short_desc=%(summary)s"),
+            "&short_desc=%(summary)s"
+        ),
         BugTrackerType.GITHUB: (
             "%(base_url)s?utf8=%%E2%%9C%%93"
-            "&q=is%%3Aissue%%20is%%3Aopen%%20%(summary)s"),
+            "&q=is%%3Aissue%%20is%%3Aopen%%20%(summary)s"
+        ),
         BugTrackerType.GITLAB: (
             "%(base_url)s?scope=all&utf8=%%E2%%9C%%93&state=opened"
-            "&search=%(summary)s"),
+            "&search=%(summary)s"
+        ),
         BugTrackerType.GOOGLE_CODE: "%(base_url)s/list?q=%(summary)s",
         BugTrackerType.DEBBUGS: (
             "%(base_url)s/cgi-bin/search.cgi?phrase=%(summary)s"
             "&attribute_field=package&attribute_operator=STROREQ"
-            "&attribute_value=%(remote_product)s"),
+            "&attribute_value=%(remote_product)s"
+        ),
         BugTrackerType.MANTIS: "%(base_url)s/view_all_bug_page.php",
         BugTrackerType.PHPPROJECT: (
-            "%(base_url)s/search.php?search_for=%(summary)s"),
+            "%(base_url)s/search.php?search_for=%(summary)s"
+        ),
         BugTrackerType.ROUNDUP: (
-            "%(base_url)s/issue?@template=search&@search_text=%(summary)s"),
+            "%(base_url)s/issue?@template=search&@search_text=%(summary)s"
+        ),
         BugTrackerType.RT: (
             "%(base_url)s/Search/Build.html?Query=Queue = "
-            "'%(remote_product)s' AND Subject LIKE '%(summary)s'"),
+            "'%(remote_product)s' AND Subject LIKE '%(summary)s'"
+        ),
         BugTrackerType.SAVANE: (
-            "%(base_url)s/bugs/?func=search&group=%(remote_product)s"),
+            "%(base_url)s/bugs/?func=search&group=%(remote_product)s"
+        ),
         BugTrackerType.SOURCEFORGE: (
             "%(base_url)s/search/?group_id=%(group_id)s"
-            "&some_word=%(summary)s&type_of_search=artifact"),
+            "&some_word=%(summary)s&type_of_search=artifact"
+        ),
         BugTrackerType.TRAC: "%(base_url)s/search?ticket=on&q=%(summary)s",
-        }
+    }
 
     @property
     def _custom_filing_url_patterns(self):
@@ -399,8 +415,9 @@ class BugTracker(SQLBase):
         return {
             gnome_bugzilla: (
                 "%(base_url)s/enter_bug.cgi?product=%(remote_product)s"
-                "&short_desc=%(summary)s&comment=%(description)s"),
-            }
+                "&short_desc=%(summary)s&comment=%(description)s"
+            ),
+        }
 
     @property
     def latestwatches(self):
@@ -415,10 +432,15 @@ class BugTracker(SQLBase):
         else:
             return False
 
-    def getBugFilingAndSearchLinks(self, remote_product, summary=None,
-                                   description=None, remote_component=None):
+    def getBugFilingAndSearchLinks(
+        self,
+        remote_product,
+        summary=None,
+        description=None,
+        remote_component=None,
+    ):
         """See `IBugTracker`."""
-        bugtracker_urls = {'bug_filing_url': None, 'bug_search_url': None}
+        bugtracker_urls = {"bug_filing_url": None, "bug_search_url": None}
 
         if remote_product is None and self.multi_product:
             # Don't try to return anything if remote_product is required
@@ -428,11 +450,11 @@ class BugTracker(SQLBase):
         if remote_product is None:
             # Turn the remote product into an empty string so that
             # quote() doesn't blow up later on.
-            remote_product = ''
+            remote_product = ""
 
         if remote_component is None:
             # Ditto for remote component.
-            remote_component = ''
+            remote_component = ""
 
         if self in self._custom_filing_url_patterns:
             # Some bugtrackers are customised to accept different
@@ -441,27 +463,29 @@ class BugTracker(SQLBase):
             bug_filing_pattern = self._custom_filing_url_patterns[self]
         else:
             bug_filing_pattern = self._filing_url_patterns.get(
-                self.bugtrackertype, None)
+                self.bugtrackertype, None
+            )
 
         bug_search_pattern = self._search_url_patterns.get(
-            self.bugtrackertype, None)
+            self.bugtrackertype, None
+        )
 
         # Make sure that we don't put > 1 '/' in returned URLs.
-        base_url = self.baseurl.rstrip('/')
+        base_url = self.baseurl.rstrip("/")
 
         # If summary or description are None, convert them to empty
         # strings to that we don't try to pass anything to the upstream
         # bug tracker.
         if summary is None:
-            summary = ''
+            summary = ""
         if description is None:
-            description = ''
+            description = ""
 
         # UTF-8 encode the description and summary so that quote()
         # doesn't break if they contain unicode characters it doesn't
         # understand.
-        summary = summary.encode('utf-8')
-        description = description.encode('utf-8')
+        summary = summary.encode("utf-8")
+        description = description.encode("utf-8")
 
         if self.bugtrackertype == BugTrackerType.SOURCEFORGE:
             try:
@@ -469,7 +493,7 @@ class BugTracker(SQLBase):
                 # file a bug, rather than a product name. remote_product
                 # should be an ampersand-separated string in the form
                 # 'group_id&atid'
-                group_id, at_id = remote_product.split('&')
+                group_id, at_id = remote_product.split("&")
             except ValueError:
                 # If remote_product contains something that's not valid
                 # in a SourceForge context we just return early.
@@ -479,34 +503,36 @@ class BugTracker(SQLBase):
             # is to the new bug tracker rather than the old one.
             sf_celeb = getUtility(ILaunchpadCelebrities).sourceforge_tracker
             if self == sf_celeb:
-                tracker = 'tracker2'
+                tracker = "tracker2"
             else:
-                tracker = 'tracker'
+                tracker = "tracker"
 
             url_components = {
-                'base_url': base_url,
-                'tracker': quote(tracker),
-                'group_id': quote(group_id),
-                'at_id': quote(at_id),
-                'summary': quote(summary),
-                'description': quote(description),
-                }
+                "base_url": base_url,
+                "tracker": quote(tracker),
+                "group_id": quote(group_id),
+                "at_id": quote(at_id),
+                "summary": quote(summary),
+                "description": quote(description),
+            }
 
         else:
             url_components = {
-                'base_url': base_url,
-                'remote_product': quote(remote_product),
-                'remote_component': quote(remote_component),
-                'summary': quote(summary),
-                'description': quote(description),
-                }
+                "base_url": base_url,
+                "remote_product": quote(remote_product),
+                "remote_component": quote(remote_component),
+                "summary": quote(summary),
+                "description": quote(description),
+            }
 
         if bug_filing_pattern is not None:
-            bugtracker_urls['bug_filing_url'] = (
-                bug_filing_pattern % url_components)
+            bugtracker_urls["bug_filing_url"] = (
+                bug_filing_pattern % url_components
+            )
         if bug_search_pattern is not None:
-            bugtracker_urls['bug_search_url'] = (
-                bug_search_pattern % url_components)
+            bugtracker_urls["bug_search_url"] = (
+                bug_search_pattern % url_components
+            )
 
         return bugtracker_urls
 
@@ -518,11 +544,16 @@ class BugTracker(SQLBase):
         if self.bugtrackertype == BugTrackerType.EMAILADDRESS:
             return []
         return shortlist(
-            Store.of(self).find(
+            Store.of(self)
+            .find(
                 Bug,
-                BugWatch.bugID == Bug.id, BugWatch.bugtrackerID == self.id,
-                BugWatch.remotebug == remotebug).config(
-                    distinct=True).order_by(Bug.datecreated))
+                BugWatch.bugID == Bug.id,
+                BugWatch.bugtrackerID == self.id,
+                BugWatch.remotebug == remotebug,
+            )
+            .config(distinct=True)
+            .order_by(Bug.datecreated)
+        )
 
     @property
     def watches_ready_to_check(self):
@@ -530,15 +561,21 @@ class BugTracker(SQLBase):
             BugWatch,
             BugWatch.bugtracker == self,
             Not(BugWatch.next_check == None),
-            BugWatch.next_check <= datetime.now(timezone('UTC')))
+            BugWatch.next_check <= datetime.now(timezone("UTC")),
+        )
 
     @property
     def watches_with_unpushed_comments(self):
-        return Store.of(self).find(
-            BugWatch,
-            BugWatch.bugtracker == self,
-            BugMessage.bugwatch == BugWatch.id,
-            BugMessage.remote_comment_id == None).config(distinct=True)
+        return (
+            Store.of(self)
+            .find(
+                BugWatch,
+                BugWatch.bugtracker == self,
+                BugMessage.bugwatch == BugWatch.id,
+                BugMessage.remote_comment_id == None,
+            )
+            .config(distinct=True)
+        )
 
     @property
     def watches_needing_update(self):
@@ -548,13 +585,14 @@ class BugTracker(SQLBase):
             `watches_with_unpushed_comments`.
         """
         return self.watches_ready_to_check.union(
-            self.watches_with_unpushed_comments)
+            self.watches_with_unpushed_comments
+        )
 
     # Join to return a list of BugTrackerAliases relating to this
     # BugTracker.
     _bugtracker_aliases = ReferenceSet(
-        '<primary key>',
-        'BugTrackerAlias.bugtracker_id')
+        "<primary key>", "BugTrackerAlias.bugtracker_id"
+    )
 
     def _get_aliases(self):
         """See `IBugTracker.aliases`."""
@@ -573,7 +611,8 @@ class BugTracker(SQLBase):
             alias_urls = set(alias_urls)
 
         current_aliases_by_url = {
-            alias.base_url: alias for alias in self._bugtracker_aliases}
+            alias.base_url: alias for alias in self._bugtracker_aliases
+        }
         # Make a set of the keys, i.e. a set of current URLs.
         current_alias_urls = set(current_aliases_by_url)
 
@@ -589,27 +628,40 @@ class BugTracker(SQLBase):
             alias.delete()
 
     aliases = property(
-        _get_aliases, _set_aliases, None,
+        _get_aliases,
+        _set_aliases,
+        None,
         """A list of the alias URLs. See `IBugTracker`.
 
         The aliases are found by querying BugTrackerAlias. Assign an
         iterable of URLs or None to set or remove aliases.
-        """)
+        """,
+    )
 
     @property
     def imported_bug_messages(self):
         """See `IBugTracker`."""
-        return Store.of(self).find(
-            BugMessage,
-            BugMessage.bugwatch_id == BugWatch.id,
-            BugWatch.bugtrackerID == self.id).order_by(BugMessage.id)
+        return (
+            Store.of(self)
+            .find(
+                BugMessage,
+                BugMessage.bugwatch_id == BugWatch.id,
+                BugWatch.bugtrackerID == self.id,
+            )
+            .order_by(BugMessage.id)
+        )
 
     def getLinkedPersonByName(self, name):
         """Return the Person with a given name on this bugtracker."""
-        person = IStore(BugTrackerPerson).find(
-            BugTrackerPerson,
-            BugTrackerPerson.name == name,
-            BugTrackerPerson.bugtracker == self).one()
+        person = (
+            IStore(BugTrackerPerson)
+            .find(
+                BugTrackerPerson,
+                BugTrackerPerson.name == name,
+                BugTrackerPerson.bugtracker == self,
+            )
+            .one()
+        )
         return person
 
     def linkPersonToSelf(self, name, person):
@@ -617,22 +669,26 @@ class BugTracker(SQLBase):
         # Check that this name isn't already in use for this bugtracker.
         if self.getLinkedPersonByName(name) is not None:
             raise BugTrackerPersonAlreadyExists(
-                "Name '%s' is already in use for bugtracker '%s'." %
-                (name, self.name))
+                "Name '%s' is already in use for bugtracker '%s'."
+                % (name, self.name)
+            )
 
         bugtracker_person = BugTrackerPerson(
-            name=name, bugtracker=self, person=person)
+            name=name, bugtracker=self, person=person
+        )
 
         return bugtracker_person
 
     def ensurePersonForSelf(
-        self, display_name, email, rationale, creation_comment):
+        self, display_name, email, rationale, creation_comment
+    ):
         """Return a Person that is linked to this bug tracker."""
         # If we have an email address to work with we can use
         # ensurePerson() to get the Person we need.
         if email is not None:
             return getUtility(IPersonSet).ensurePerson(
-                email, display_name, rationale, creation_comment)
+                email, display_name, rationale, creation_comment
+            )
 
         # First, see if there's already a BugTrackerPerson for this
         # display_name on this bugtracker. If there is, return it.
@@ -642,8 +698,10 @@ class BugTracker(SQLBase):
             return bugtracker_person.person
 
         # Generate a valid Launchpad name for the Person.
-        base_canonical_name = (
-            "%s-%s" % (sanitize_name(display_name.lower()), self.name))
+        base_canonical_name = "%s-%s" % (
+            sanitize_name(display_name.lower()),
+            self.name,
+        )
         canonical_name = base_canonical_name
 
         person_set = getUtility(IPersonSet)
@@ -653,8 +711,11 @@ class BugTracker(SQLBase):
             canonical_name = "%s-%s" % (base_canonical_name, index)
 
         person = person_set.createPersonWithoutEmail(
-            canonical_name, rationale, creation_comment,
-            displayname=display_name)
+            canonical_name,
+            rationale,
+            creation_comment,
+            displayname=display_name,
+        )
 
         # Link the Person to the bugtracker for future reference.
         bugtracker_person = self.linkPersonToSelf(display_name, person)
@@ -665,12 +726,13 @@ class BugTracker(SQLBase):
         """See `IBugTracker`."""
         if new_next_check is None:
             new_next_check = SQL(
-                "now() at time zone 'UTC' + (random() * interval '1 day')")
+                "now() at time zone 'UTC' + (random() * interval '1 day')"
+            )
 
         store = Store.of(self)
         store.find(BugWatch, BugWatch.bugtracker == self).set(
-            next_check=new_next_check, lastchecked=None,
-            last_error_type=None)
+            next_check=new_next_check, lastchecked=None, last_error_type=None
+        )
 
     def addRemoteComponentGroup(self, component_group_name):
         """See `IBugTracker`."""
@@ -693,9 +755,11 @@ class BugTracker(SQLBase):
 
         component_groups = Store.of(self).find(
             BugTrackerComponentGroup,
-            BugTrackerComponentGroup.bug_tracker == self.id)
+            BugTrackerComponentGroup.bug_tracker == self.id,
+        )
         component_groups = component_groups.order_by(
-            BugTrackerComponentGroup.name)
+            BugTrackerComponentGroup.name
+        )
         return component_groups
 
     def getRemoteComponentGroup(self, component_group_name):
@@ -708,37 +772,56 @@ class BugTracker(SQLBase):
             component_group_id = int(component_group_name)
             component_group = store.find(
                 BugTrackerComponentGroup,
-                BugTrackerComponentGroup.id == component_group_id).one()
+                BugTrackerComponentGroup.id == component_group_id,
+            ).one()
         else:
             component_group = store.find(
                 BugTrackerComponentGroup,
-                BugTrackerComponentGroup.name == component_group_name).one()
+                BugTrackerComponentGroup.name == component_group_name,
+            ).one()
         return component_group
 
     def getRemoteComponentForDistroSourcePackageName(
-        self, distribution, sourcepackagename):
+        self, distribution, sourcepackagename
+    ):
         """See `IBugTracker`."""
         if distribution is None:
             return None
         dsp = distribution.getSourcePackage(sourcepackagename)
         if dsp is None:
             return None
-        return Store.of(self).find(
-            BugTrackerComponent,
-            BugTrackerComponent.distribution == distribution.id,
-            BugTrackerComponent.source_package_name ==
-            dsp.sourcepackagename.id).one()
+        return (
+            Store.of(self)
+            .find(
+                BugTrackerComponent,
+                BugTrackerComponent.distribution == distribution.id,
+                BugTrackerComponent.source_package_name
+                == dsp.sourcepackagename.id,
+            )
+            .one()
+        )
 
     def getRelatedPillars(self, user=None):
         """See `IBugTracker`."""
-        products = IStore(Product).find(
-            Product,
-            Product.bugtrackerID == self.id, Product.active == True,
-            ProductSet.getProductPrivacyFilter(user)).order_by(Product.name)
-        groups = IStore(ProjectGroup).find(
-            ProjectGroup,
-            ProjectGroup.bugtrackerID == self.id,
-            ProjectGroup.active == True).order_by(ProjectGroup.name)
+        products = (
+            IStore(Product)
+            .find(
+                Product,
+                Product.bugtrackerID == self.id,
+                Product.active == True,
+                ProductSet.getProductPrivacyFilter(user),
+            )
+            .order_by(Product.name)
+        )
+        groups = (
+            IStore(ProjectGroup)
+            .find(
+                ProjectGroup,
+                ProjectGroup.bugtrackerID == self.id,
+                ProjectGroup.active == True,
+            )
+            .order_by(ProjectGroup.name)
+        )
         return groups, products
 
 
@@ -751,7 +834,7 @@ class BugTrackerSet:
     table = BugTracker
 
     def __init__(self):
-        self.title = 'Bug trackers registered in Launchpad'
+        self.title = "Bug trackers registered in Launchpad"
 
     def get(self, bugtracker_id, default=None):
         """See `IBugTrackerSet`."""
@@ -785,14 +868,22 @@ class BugTrackerSet:
         matching_bugtrackers = chain(
             # Search for any permutation in BugTracker.
             BugTracker.select(
-                OR(*(BugTracker.q.baseurl == url
-                     for url in permutations))),
+                OR(*(BugTracker.q.baseurl == url for url in permutations))
+            ),
             # Search for any permutation in BugTrackerAlias.
-            (alias.bugtracker for alias in
-             IStore(BugTrackerAlias).find(
-                 BugTrackerAlias,
-                 OR(*(BugTrackerAlias.base_url == six.ensure_text(url)
-                      for url in permutations)))))
+            (
+                alias.bugtracker
+                for alias in IStore(BugTrackerAlias).find(
+                    BugTrackerAlias,
+                    OR(
+                        *(
+                            BugTrackerAlias.base_url == six.ensure_text(url)
+                            for url in permutations
+                        )
+                    ),
+                )
+            ),
+        )
         # Return the first match.
         for bugtracker in matching_bugtrackers:
             return bugtracker
@@ -807,11 +898,22 @@ class BugTrackerSet:
             clauses = [BugTracker.active == active]
         else:
             clauses = []
-        return IStore(BugTracker).find(BugTracker, *clauses).order_by(
-            BugTracker.name)
+        return (
+            IStore(BugTracker)
+            .find(BugTracker, *clauses)
+            .order_by(BugTracker.name)
+        )
 
-    def ensureBugTracker(self, baseurl, owner, bugtrackertype, title=None,
-                         summary=None, contactdetails=None, name=None):
+    def ensureBugTracker(
+        self,
+        baseurl,
+        owner,
+        bugtrackertype,
+        title=None,
+        summary=None,
+        contactdetails=None,
+        name=None,
+    ):
         """See `IBugTrackerSet`."""
         # Try to find an existing bug tracker that matches.
         bugtracker = self.queryByBaseURL(baseurl)
@@ -830,9 +932,14 @@ class BugTrackerSet:
         if title is None:
             title = make_bugtracker_title(baseurl)
         bugtracker = BugTracker(
-            name=name, bugtrackertype=bugtrackertype,
-            title=title, summary=summary, baseurl=baseurl,
-            contactdetails=contactdetails, owner=owner)
+            name=name,
+            bugtrackertype=bugtrackertype,
+            title=title,
+            summary=summary,
+            baseurl=baseurl,
+            contactdetails=contactdetails,
+            owner=owner,
+        )
         flush_database_updates()
         return bugtracker
 
@@ -846,22 +953,36 @@ class BugTrackerSet:
 
     def getMostActiveBugTrackers(self, limit=None):
         """See `IBugTrackerSet`."""
-        return IStore(BugTracker).find(
-            BugTracker,
-            BugTracker.id == BugWatch.bugtrackerID).group_by(
-                BugTracker).order_by(Desc(Count(BugWatch))).config(limit=limit)
+        return (
+            IStore(BugTracker)
+            .find(BugTracker, BugTracker.id == BugWatch.bugtrackerID)
+            .group_by(BugTracker)
+            .order_by(Desc(Count(BugWatch)))
+            .config(limit=limit)
+        )
 
     def getPillarsForBugtrackers(self, bugtrackers, user=None):
         """See `IBugTrackerSet`."""
         ids = [tracker.id for tracker in bugtrackers]
-        products = IStore(Product).find(
-            Product,
-            Product.bugtrackerID.is_in(ids), Product.active == True,
-            ProductSet.getProductPrivacyFilter(user)).order_by(Product.name)
-        groups = IStore(ProjectGroup).find(
-            ProjectGroup,
-            ProjectGroup.bugtrackerID.is_in(ids),
-            ProjectGroup.active == True).order_by(ProjectGroup.name)
+        products = (
+            IStore(Product)
+            .find(
+                Product,
+                Product.bugtrackerID.is_in(ids),
+                Product.active == True,
+                ProductSet.getProductPrivacyFilter(user),
+            )
+            .order_by(Product.name)
+        )
+        groups = (
+            IStore(ProjectGroup)
+            .find(
+                ProjectGroup,
+                ProjectGroup.bugtrackerID.is_in(ids),
+                ProjectGroup.active == True,
+            )
+            .order_by(ProjectGroup.name)
+        )
         results = {}
         for product in products:
             results.setdefault(product.bugtracker, []).append(product)
@@ -873,11 +994,12 @@ class BugTrackerSet:
 @implementer(IBugTrackerAlias)
 class BugTrackerAlias(StormBase):
     """See `IBugTrackerAlias`."""
-    __storm_table__ = 'BugTrackerAlias'
+
+    __storm_table__ = "BugTrackerAlias"
     id = Int(primary=True)
 
-    bugtracker_id = Int(name='bugtracker', allow_none=False)
-    bugtracker = Reference(bugtracker_id, 'BugTracker.id')
+    bugtracker_id = Int(name="bugtracker", allow_none=False)
+    bugtracker = Reference(bugtracker_id, "BugTracker.id")
 
     base_url = Unicode(allow_none=False)
 
@@ -898,5 +1020,5 @@ class BugTrackerAliasSet:
     def queryByBugTracker(self, bugtracker):
         """See IBugTrackerSet."""
         return IStore(BugTrackerAlias).find(
-            BugTrackerAlias,
-            bugtracker=bugtracker)
+            BugTrackerAlias, bugtracker=bugtracker
+        )

@@ -3,20 +3,14 @@
 
 """XXX: Module docstring goes here."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
-from pytz import utc
 import transaction
+from pytz import utc
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.bugs.interfaces.bugwatch import (
-    BugWatchActivityStatus,
-    IBugWatchSet,
-    )
+from lp.bugs.interfaces.bugwatch import BugWatchActivityStatus, IBugWatchSet
 from lp.bugs.scripts.checkwatches.scheduler import BugWatchScheduler
 from lp.services.log.logger import BufferLogger
 from lp.testing import TestCaseWithFactory
@@ -29,7 +23,7 @@ class TestBugWatchScheduler(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super().setUp('foo.bar@canonical.com')
+        super().setUp("foo.bar@canonical.com")
         # We'll make sure that all the other bug watches look like
         # they've been scheduled so that only our watch gets scheduled.
         for watch in getUtility(IBugWatchSet).search():
@@ -45,8 +39,7 @@ class TestBugWatchScheduler(TestCaseWithFactory):
         self.scheduler(1)
 
         self.assertNotEqual(None, self.bug_watch.next_check)
-        self.assertTrue(
-            self.bug_watch.next_check <= datetime.now(utc))
+        self.assertTrue(self.bug_watch.next_check <= datetime.now(utc))
 
     def test_scheduler_schedules_working_watches(self):
         # If a watch has been checked and has never failed its next
@@ -60,8 +53,7 @@ class TestBugWatchScheduler(TestCaseWithFactory):
         transaction.commit()
         self.scheduler(1)
 
-        self.assertEqual(
-            now + timedelta(hours=24), self.bug_watch.next_check)
+        self.assertEqual(now + timedelta(hours=24), self.bug_watch.next_check)
 
     def test_scheduler_schedules_failing_watches(self):
         # If a watch has failed once, it will be scheduled more than 24
@@ -74,26 +66,28 @@ class TestBugWatchScheduler(TestCaseWithFactory):
         for failure_count in range(1, 6):
             self.bug_watch.next_check = None
             self.bug_watch.addActivity(
-                result=BugWatchActivityStatus.BUG_NOT_FOUND)
+                result=BugWatchActivityStatus.BUG_NOT_FOUND
+            )
             transaction.commit()
             self.scheduler(1)
 
             coefficient = self.scheduler.delay_coefficient * failure_count
             self.assertEqual(
                 now + timedelta(days=1 + coefficient),
-                self.bug_watch.next_check)
+                self.bug_watch.next_check,
+            )
 
         # The scheduler only looks at the last 5 activity items, so even
         # if there have been more failures the maximum delay will be 7
         # days.
         for count in range(10):
             self.bug_watch.addActivity(
-                result=BugWatchActivityStatus.BUG_NOT_FOUND)
+                result=BugWatchActivityStatus.BUG_NOT_FOUND
+            )
         self.bug_watch.next_check = None
         transaction.commit()
         self.scheduler(1)
-        self.assertEqual(
-            now + timedelta(days=7), self.bug_watch.next_check)
+        self.assertEqual(now + timedelta(days=7), self.bug_watch.next_check)
 
     def test_scheduler_doesnt_schedule_scheduled_watches(self):
         # The scheduler will ignore watches whose next_check has been

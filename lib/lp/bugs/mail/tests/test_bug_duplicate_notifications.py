@@ -23,34 +23,43 @@ class TestAssignmentNotification(TestCaseWithFactory):
 
     def setUp(self):
         # Run the tests as a logged-in user.
-        super().setUp(user='test@canonical.com')
+        super().setUp(user="test@canonical.com")
         self.user = getUtility(ILaunchBag).user
-        self.product = self.factory.makeProduct(owner=self.user,
-                                                name='project')
+        self.product = self.factory.makeProduct(
+            owner=self.user, name="project"
+        )
         self.master_bug = self.factory.makeBug(target=self.product)
         self.dup_bug = self.factory.makeBug(target=self.product)
         self.master_bug_task = self.master_bug.getBugTask(self.product)
-        self.person_subscribed_email = 'person@example.com'
+        self.person_subscribed_email = "person@example.com"
         self.person_subscribed = self.factory.makePerson(
-            name='subscribed', displayname='Person',
-            email=self.person_subscribed_email)
-        self.dup_bug.subscribe(
-            self.person_subscribed, subscribed_by=self.user)
+            name="subscribed",
+            displayname="Person",
+            email=self.person_subscribed_email,
+        )
+        self.dup_bug.subscribe(self.person_subscribed, subscribed_by=self.user)
         self.dup_bug.markAsDuplicate(self.master_bug)
         self.master_bug.clearBugNotificationRecipientsCache()
 
     def test_dup_subscriber_change_notification_message(self):
         """Duplicate bug number in the reason (email footer) for
-           duplicate subscribers when a master bug is modified."""
-        with notify_modified(self.master_bug_task, ['status'], user=self.user):
+        duplicate subscribers when a master bug is modified."""
+        with notify_modified(self.master_bug_task, ["status"], user=self.user):
             self.master_bug_task.transitionToStatus(
-                BugTaskStatus.CONFIRMED, self.user)
+                BugTaskStatus.CONFIRMED, self.user
+            )
         transaction.commit()
-        latest_notification = IStore(BugNotification).find(
-            BugNotification).order_by(BugNotification.id).last()
+        latest_notification = (
+            IStore(BugNotification)
+            .find(BugNotification)
+            .order_by(BugNotification.id)
+            .last()
+        )
         notifications, omitted, messages = construct_email_notifications(
-            [latest_notification])
+            [latest_notification]
+        )
         self.assertEqual(
-            len(notifications), 1, 'email notification not created')
-        rationale = 'duplicate bug report (%i)' % self.dup_bug.id
+            len(notifications), 1, "email notification not created"
+        )
+        rationale = "duplicate bug report (%i)" % self.dup_bug.id
         self.assertIn(rationale, str(messages[-1]))

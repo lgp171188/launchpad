@@ -14,7 +14,7 @@ __all__ = [
     "DBItemDisplayWidget",
     "FileBugSourcePackageNameWidget",
     "NewLineToSpacesWidget",
-    ]
+]
 
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -24,19 +24,16 @@ from zope.formlib.interfaces import (
     IInputWidget,
     InputErrors,
     WidgetInputError,
-    )
+)
 from zope.formlib.itemswidgets import RadioWidget
 from zope.formlib.utility import setUpWidget
 from zope.formlib.widget import (
     BrowserWidget,
     CustomWidgetFactory,
-    renderElement,
     Widget,
-    )
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+    renderElement,
+)
+from zope.interface import Interface, implementer
 from zope.schema.interfaces import ValidationError
 from zope.schema.vocabulary import getVocabularyRegistry
 
@@ -49,22 +46,16 @@ from lp.app.widgets.launchpadtarget import LaunchpadTargetWidget
 from lp.app.widgets.popup import (
     PersonPickerWidget,
     SourcePackageNameWidgetBase,
-    )
-from lp.app.widgets.textwidgets import (
-    StrippedTextWidget,
-    URIWidget,
-    )
+)
+from lp.app.widgets.textwidgets import StrippedTextWidget, URIWidget
 from lp.bugs.interfaces.bugwatch import (
     IBugWatchSet,
     NoBugTrackerFound,
     UnrecognizedBugTrackerURL,
-    )
+)
 from lp.bugs.vocabularies import UsesBugsDistributionVocabulary
 from lp.registry.enums import DistributionDefaultTraversalPolicy
-from lp.registry.interfaces.distribution import (
-    IDistribution,
-    IDistributionSet,
-    )
+from lp.registry.interfaces.distribution import IDistribution, IDistributionSet
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.product import IProduct
 from lp.services.features import getFeatureFlag
@@ -78,8 +69,7 @@ from lp.services.webapp.interfaces import ILaunchBag
 class BugTaskAssigneeWidget(Widget):
     """A widget for setting the assignee on an IBugTask."""
 
-    __call__ = ViewPageTemplateFile(
-        "templates/bugtask-assignee-widget.pt")
+    __call__ = ViewPageTemplateFile("templates/bugtask-assignee-widget.pt")
 
     def __init__(self, context, vocabulary, request):
         Widget.__init__(self, context, request)
@@ -92,7 +82,8 @@ class BugTaskAssigneeWidget(Widget):
         # See zope.formlib.interfaces.IInputWidget.
         self.required = False
         self.assignee_chooser_widget = PersonPickerWidget(
-            context, context.vocabulary, request)
+            context, context.vocabulary, request
+        )
         self.setUpNames()
 
     def setUpNames(self):
@@ -102,7 +93,8 @@ class BugTaskAssigneeWidget(Widget):
         self.assign_to_nobody = "%s.assign_to_nobody" % self.name
         self.assign_to = "%s.assign_to" % self.name
         self.assignee_chooser_widget.onKeyPress = (
-            "selectWidget('%s', event)" % self.assign_to)
+            "selectWidget('%s', event)" % self.assign_to
+        )
 
     def setPrefix(self, prefix):
         Widget.setPrefix(self, prefix)
@@ -121,12 +113,16 @@ class BugTaskAssigneeWidget(Widget):
         if option == self.assign_to:
             if not self.assignee_chooser_widget.hasInput():
                 raise WidgetInputError(
-                        self.name, self.label,
-                        ValidationError("Missing value for assignee"))
+                    self.name,
+                    self.label,
+                    ValidationError("Missing value for assignee"),
+                )
             if not self.assignee_chooser_widget.hasValidInput():
                 raise WidgetInputError(
-                        self.name, self.label,
-                        ValidationError("Assignee not found"))
+                    self.name,
+                    self.label,
+                    ValidationError("Assignee not found"),
+                )
 
     def hasInput(self):
         """See zope.formlib.interfaces.IInputWidget."""
@@ -215,8 +211,9 @@ class BugTaskAssigneeWidget(Widget):
         bugtask = field.context
         if not bugtask.assignee:
             return None
-        display_value = (
-            TeamFormatterAPI(bugtask.assignee).unique_displayname(None))
+        display_value = TeamFormatterAPI(bugtask.assignee).unique_displayname(
+            None
+        )
         return display_value
 
     def selectedRadioButton(self):
@@ -272,8 +269,9 @@ class BugTaskAssigneeWidget(Widget):
         user = getUtility(ILaunchBag).user
         context = self.context.context
         return user is not None and (
-            context.userCanSetAnyAssignee(user) or not
-            user.teams_participated_in.is_empty())
+            context.userCanSetAnyAssignee(user)
+            or not user.teams_participated_in.is_empty()
+        )
 
 
 class BugWatchEditForm(Interface):
@@ -283,9 +281,11 @@ class BugWatchEditForm(Interface):
     """
 
     url = URIField(
-        title=_('URL'), required=True,
-        allowed_schemes=['http', 'https'],
-        description=_("""The URL at which to view the remote bug."""))
+        title=_("URL"),
+        required=True,
+        allowed_schemes=["http", "https"],
+        description=_("""The URL at which to view the remote bug."""),
+    )
 
 
 class BugTaskBugWatchWidget(RadioWidget):
@@ -295,14 +295,20 @@ class BugTaskBugWatchWidget(RadioWidget):
         RadioWidget.__init__(self, field, vocabulary, request)
         self.url_widget = CustomWidgetFactory(URIWidget)
         setUpWidget(
-            self, 'url', BugWatchEditForm['url'], IInputWidget,
-            context=field.context)
+            self,
+            "url",
+            BugWatchEditForm["url"],
+            IInputWidget,
+            context=field.context,
+        )
         self.setUpJavascript()
 
     def setUpJavascript(self):
         """Set up JS to select the "new bugwatch" option automatically."""
         select_js = "selectWidget('%s.%s', event)" % (
-            self.name, self._new_bugwatch_value)
+            self.name,
+            self._new_bugwatch_value,
+        )
         self.url_widget.extra = 'onKeyPress="%s"' % select_js
 
     def setPrefix(self, prefix):
@@ -311,7 +317,7 @@ class BugTaskBugWatchWidget(RadioWidget):
         self.setUpJavascript()
 
     _messageNoValue = "None, the status of the bug is updated manually."
-    _new_bugwatch_value = 'NEW'
+    _new_bugwatch_value = "NEW"
 
     def _toFieldValue(self, form_value):
         """Convert the textual token to a field value.
@@ -323,21 +329,27 @@ class BugTaskBugWatchWidget(RadioWidget):
             try:
                 url = self.url_widget.getInputValue()
                 bugtracker, remote_bug = getUtility(
-                    IBugWatchSet).extractBugTrackerAndBug(url)
+                    IBugWatchSet
+                ).extractBugTrackerAndBug(url)
                 bugtask = self.context.context
                 return bugtask.bug.addWatch(
-                    bugtracker, remote_bug, getUtility(ILaunchBag).user)
+                    bugtracker, remote_bug, getUtility(ILaunchBag).user
+                )
             except WidgetInputError as error:
                 # Prefix the error with the widget name, since the error
                 # will be display at the top of the page, and not right
                 # next to the widget.
                 raise WidgetInputError(
-                    self.context.__name__, self.label,
-                    'Remote Bug: %s' % error.doc())
+                    self.context.__name__,
+                    self.label,
+                    "Remote Bug: %s" % error.doc(),
+                )
             except (NoBugTrackerFound, UnrecognizedBugTrackerURL):
                 raise WidgetInputError(
-                    self.context.__name__, self.label,
-                    'Invalid bug tracker URL.')
+                    self.context.__name__,
+                    self.label,
+                    "Invalid bug tracker URL.",
+                )
         else:
             return RadioWidget._toFieldValue(self, form_value)
 
@@ -358,13 +370,14 @@ class BugTaskBugWatchWidget(RadioWidget):
 
     def _joinButtonToMessage(self, option_tag, label, input_id):
         """Join the input tag with the label."""
-        row_template = get_widget_template('bugtask-bugwatch-widget.txt')
+        row_template = get_widget_template("bugtask-bugwatch-widget.txt")
         return row_template % {
-            'input_tag': option_tag,
-            'input_id': input_id,
-            'input_label': label}
+            "input_tag": option_tag,
+            "input_id": input_id,
+            "input_label": label,
+        }
 
-    #XXX: Bjorn Tillenius 2006-04-26:
+    # XXX: Bjorn Tillenius 2006-04-26:
     #     This method is mostly copied from RadioWidget.renderItems() and
     #     modified to actually work. RadioWidget.renderItems() should be
     #     fixed upstream so that we can override it and only do the last
@@ -382,27 +395,30 @@ class BugTaskBugWatchWidget(RadioWidget):
         # check if we want to select first item, the previously selected item
         # or the "nothing selected" item.
         nothing_selected = None
-        if (value == self.context.missing_value
-            and getattr(self, 'firstItem', False)
+        if (
+            value == self.context.missing_value
+            and getattr(self, "firstItem", False)
             and len(self.vocabulary) > 0
-            and self.context.required):
+            and self.context.required
+        ):
             # Grab the first item from the iterator:
             values = [next(iter(self.vocabulary)).value]
         elif value != self.context.missing_value:
             values = [value]
         else:
             # the "nothing selected" option will be checked
-            nothing_selected = 'checked'
+            nothing_selected = "checked"
             values = []
 
         items = self.renderItemsWithValues(values)
         if not self.context.required:
             kwargs = {
-                'index': None,
-                'text': self.translate(self._messageNoValue),
-                'value': '',
-                'name': self.name,
-                'cssClass': self.cssClass}
+                "index": None,
+                "text": self.translate(self._messageNoValue),
+                "value": "",
+                "name": self.name,
+                "cssClass": self.cssClass,
+            }
             if nothing_selected:
                 option = self.renderSelectedItem(**kwargs)
             else:
@@ -410,16 +426,23 @@ class BugTaskBugWatchWidget(RadioWidget):
             items.insert(0, option)
 
         # Add an option for creating a new bug watch.
-        option_text = (
-            '<div>URL: %s</div>' % self.url_widget())
+        option_text = "<div>URL: %s</div>" % self.url_widget()
         if value == self._new_bugwatch_value:
             option = self.renderSelectedItem(
-                self._new_bugwatch_value, option_text,
-                self._new_bugwatch_value, self.name, self.cssClass)
+                self._new_bugwatch_value,
+                option_text,
+                self._new_bugwatch_value,
+                self.name,
+                self.cssClass,
+            )
         else:
             option = self.renderItem(
-                self._new_bugwatch_value, option_text,
-                self._new_bugwatch_value, self.name, self.cssClass)
+                self._new_bugwatch_value,
+                option_text,
+                self._new_bugwatch_value,
+                self.name,
+                self.cssClass,
+            )
         items.append(option)
 
         return items
@@ -431,13 +454,15 @@ class BugTaskBugWatchWidget(RadioWidget):
         instead of the _joinButtonToMessageTemplate which doesn't have
         access to the id.
         """
-        id = '%s.%s' % (name, index)
-        elem = renderElement('input',
-                             value=value,
-                             name=name,
-                             id=id,
-                             cssClass=cssClass,
-                             type='radio')
+        id = "%s.%s" % (name, index)
+        elem = renderElement(
+            "input",
+            value=value,
+            name=name,
+            id=id,
+            cssClass=cssClass,
+            type="radio",
+        )
         return self._joinButtonToMessage(elem, text, input_id=id)
 
     def renderSelectedItem(self, index, text, value, name, cssClass):
@@ -447,14 +472,16 @@ class BugTaskBugWatchWidget(RadioWidget):
         instead of the _joinButtonToMessageTemplate which doesn't have
         access to the id.
         """
-        id = '%s.%s' % (name, index)
-        elem = renderElement('input',
-                             value=value,
-                             name=name,
-                             id=id,
-                             cssClass=cssClass,
-                             checked="checked",
-                             type='radio')
+        id = "%s.%s" % (name, index)
+        elem = renderElement(
+            "input",
+            value=value,
+            name=name,
+            id=id,
+            cssClass=cssClass,
+            checked="checked",
+            type="radio",
+        )
         return self._joinButtonToMessage(elem, text, input_id=id)
 
     def renderValue(self, value):
@@ -465,34 +492,37 @@ class BugTaskBugWatchWidget(RadioWidget):
         """
         rendered_items = self.renderItems(value)
         return renderElement(
-            'table', cssClass=self.cssClass,
-            contents='\n'.join(rendered_items))
+            "table", cssClass=self.cssClass, contents="\n".join(rendered_items)
+        )
 
 
 class BugTaskTargetWidget(LaunchpadTargetWidget):
-
     def getDistributionVocabulary(self):
         distro = self.context.context.distribution
         vocabulary = UsesBugsDistributionVocabulary(distro)
         return vocabulary
 
     def getPackageVocabularyName(self):
-        return 'DistributionPackage'
+        return "DistributionPackage"
 
     def getSelectedDistribution(self):
-        return (self.distribution_widget.getInputValue()
-                if self.distribution_widget.hasInput() else None)
+        return (
+            self.distribution_widget.getInputValue()
+            if self.distribution_widget.hasInput()
+            else None
+        )
 
     @property
     def is_oci_distribution_selected(self):
-        if not hasattr(self, 'distribution_widget'):
+        if not hasattr(self, "distribution_widget"):
             # Field not initialized yet.
             return False
         distribution = self.getSelectedDistribution()
         oci_traversal_policy = DistributionDefaultTraversalPolicy.OCI_PROJECT
         return (
-            distribution is not None and
-            distribution.default_traversal_policy == oci_traversal_policy)
+            distribution is not None
+            and distribution.default_traversal_policy == oci_traversal_policy
+        )
 
     def _syncPackageVocabularyDistribution(self, distribution=None):
         """Sync the package vocabulary depending on the selected
@@ -507,17 +537,21 @@ class BugTaskTargetWidget(LaunchpadTargetWidget):
         self.setUpSubWidgets()
         self._syncPackageVocabularyDistribution()
         form_value = self.request.form_ng.getOne(self.name)
-        if self.is_oci_distribution_selected and form_value == 'package':
+        if self.is_oci_distribution_selected and form_value == "package":
             try:
                 distribution = self.distribution_widget.getInputValue()
             except ConversionError:
                 entered_name = self.request.form_ng.getOne(
-                    "%s.distribution" % self.name)
+                    "%s.distribution" % self.name
+                )
                 self._error = WidgetInputError(
-                    self.name, self.label,
+                    self.name,
+                    self.label,
                     LaunchpadValidationError(
                         "There is no distribution named '%s' registered in"
-                        " Launchpad" % entered_name))
+                        " Launchpad" % entered_name
+                    ),
+                )
                 raise self._error
             return self.package_widget.getInputValue() or distribution
         return super().getInputValue()
@@ -529,10 +563,10 @@ class BugTaskTargetWidget(LaunchpadTargetWidget):
                 # We do not support project-based OCIProjects in this widget
                 # yet. If we get an OCIProject based on a project, associate
                 # the value with the project only.
-                self.default_option = 'product'
+                self.default_option = "product"
                 self.product_widget.setRenderedValue(value.pillar)
             elif IDistribution.providedBy(value.pillar):
-                self.default_option = 'package'
+                self.default_option = "package"
                 self.distribution_widget.setRenderedValue(value.pillar)
                 self.package_widget.setRenderedValue(value)
                 self._syncPackageVocabularyDistribution(value.pillar)
@@ -554,7 +588,8 @@ class BugTaskSourcePackageNameWidget(SourcePackageNameWidgetBase):
             distribution = field.context.distroseries.distribution
         assert distribution is not None, (
             "BugTaskSourcePackageNameWidget should be used only for"
-            " bugtasks on distributions or on distribution series.")
+            " bugtasks on distributions or on distribution series."
+        )
         return distribution
 
 
@@ -565,18 +600,20 @@ class BugTaskAlsoAffectsSourcePackageNameWidget(SourcePackageNameWidgetBase):
     that it gets the distribution from the request.
     """
 
-    distribution_id = 'field.distribution'
+    distribution_id = "field.distribution"
 
     def getDistribution(self):
         """See `SourcePackageNameWidgetBase`."""
-        distribution_name = self.request.form.get('field.distribution')
+        distribution_name = self.request.form.get("field.distribution")
         if distribution_name is None:
             return None
         distribution = getUtility(IDistributionSet).getByName(
-            distribution_name)
+            distribution_name
+        )
         if distribution is None:
             raise UnexpectedFormData(
-                "No such distribution: %s" % distribution_name)
+                "No such distribution: %s" % distribution_name
+            )
         return distribution
 
 
@@ -594,20 +631,23 @@ class FileBugSourcePackageNameWidget(SourcePackageNameWidgetBase):
         pillar = field.context.pillar
         assert IDistribution.providedBy(pillar), (
             "FileBugSourcePackageNameWidget should be used only for"
-            " distribution bug targets.")
+            " distribution bug targets."
+        )
         return pillar
 
     def _toFieldValue(self, input):
         """See `SourcePackageNameWidgetBase`."""
         source = super()._toFieldValue(input)
-        if (source is not None and
-                not bool(getFeatureFlag('disclosure.dsp_picker.enabled'))):
+        if source is not None and not bool(
+            getFeatureFlag("disclosure.dsp_picker.enabled")
+        ):
             # XXX cjwatson 2016-07-25: Convert to a value that the
             # IBug.packagename vocabulary will accept.  This is a fiddly
             # hack, but it only needs to survive until we can switch to the
             # DistributionSourcePackage picker across the board.
             bspn_vocab = getVocabularyRegistry().get(
-                None, "BinaryAndSourcePackageName")
+                None, "BinaryAndSourcePackageName"
+            )
             bspn = bspn_vocab.getTermByToken(source.name).value
             self.cached_values[input] = bspn
             return bspn
@@ -631,16 +671,19 @@ class AssigneeDisplayWidget(BrowserWidget):
             assignee = assignee_field.get(bugtask)
         if assignee:
             person_img = renderElement(
-                'img', style="padding-bottom: 2px", src="/@@/person", alt="")
+                "img", style="padding-bottom: 2px", src="/@@/person", alt=""
+            )
             return renderElement(
-                'a', href=canonical_url(assignee),
-                contents="%s %s" % (
-                    person_img, html_escape(assignee.displayname)))
+                "a",
+                href=canonical_url(assignee),
+                contents="%s %s"
+                % (person_img, html_escape(assignee.displayname)),
+            )
         else:
             if bugtask.pillar.official_malone:
-                return renderElement('i', contents='not assigned')
+                return renderElement("i", contents="not assigned")
             else:
-                return renderElement('i', contents='unknown')
+                return renderElement("i", contents="unknown")
 
 
 @implementer(IDisplayWidget)
@@ -659,10 +702,12 @@ class DBItemDisplayWidget(BrowserWidget):
             dbitem = dbitem_field.get(bugtask)
         if dbitem:
             return renderElement(
-                'span', contents=dbitem.title,
-                cssClass="%s%s" % (dbitem_field.__name__, dbitem.name))
+                "span",
+                contents=dbitem.title,
+                cssClass="%s%s" % (dbitem_field.__name__, dbitem.name),
+            )
         else:
-            return renderElement('span', contents='&mdash;')
+            return renderElement("span", contents="&mdash;")
 
 
 class NewLineToSpacesWidget(StrippedTextWidget):
@@ -672,5 +717,5 @@ class NewLineToSpacesWidget(StrippedTextWidget):
         value = StrippedTextWidget._toFieldValue(self, input)
         if value is not self.context.missing_value:
             lines = value.splitlines()
-            value = ' '.join(lines)
+            value = " ".join(lines)
         return value

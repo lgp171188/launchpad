@@ -4,16 +4,12 @@
 """GitLab ExternalBugTracker utility."""
 
 __all__ = [
-    'BadGitLabURL',
-    'GitLab',
-    ]
+    "BadGitLabURL",
+    "GitLab",
+]
 
 import http.client
-from urllib.parse import (
-    quote,
-    quote_plus,
-    urlunsplit,
-    )
+from urllib.parse import quote, quote_plus, urlunsplit
 
 import pytz
 
@@ -22,11 +18,8 @@ from lp.bugs.externalbugtracker import (
     ExternalBugTracker,
     UnknownRemoteStatusError,
     UnparsableBugTrackerVersion,
-    )
-from lp.bugs.interfaces.bugtask import (
-    BugTaskImportance,
-    BugTaskStatus,
-    )
+)
+from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.bugs.interfaces.externalbugtracker import UNKNOWN_REMOTE_IMPORTANCE
 from lp.services.config import config
 from lp.services.webapp.url import urlsplit
@@ -48,9 +41,9 @@ class GitLab(ExternalBugTracker):
             raise BadGitLabURL(baseurl)
         # GitLab redirects <repository>/issues to <repository>/-/issues, so
         # people might use either form.
-        base_path = path[:-len("/issues")]
+        base_path = path[: -len("/issues")]
         if base_path.endswith("/-"):
-            base_path = base_path[:-len("/-")]
+            base_path = base_path[: -len("/-")]
         path = "/api/v4/projects/%s" % quote(base_path, safe="")
         baseurl = urlunsplit(("https", host, path, query, fragment))
         super().__init__(baseurl)
@@ -69,7 +62,8 @@ class GitLab(ExternalBugTracker):
     def getModifiedRemoteBugs(self, bug_ids, last_accessed):
         """See `IExternalBugTracker`."""
         modified_bugs = self.getRemoteBugBatch(
-            bug_ids, last_accessed=last_accessed)
+            bug_ids, last_accessed=last_accessed
+        )
         self.cached_bugs.update(modified_bugs)
         return list(modified_bugs)
 
@@ -77,8 +71,9 @@ class GitLab(ExternalBugTracker):
         """See `ExternalBugTracker`."""
         bug_id = int(bug_id)
         if bug_id not in self.cached_bugs:
-            self.cached_bugs[bug_id] = (
-                self._getPage("issues/%s" % bug_id).json())
+            self.cached_bugs[bug_id] = self._getPage(
+                "issues/%s" % bug_id
+            ).json()
         return bug_id, self.cached_bugs[bug_id]
 
     def getRemoteBugBatch(self, bug_ids, last_accessed=None):
@@ -86,17 +81,24 @@ class GitLab(ExternalBugTracker):
         bug_ids = [int(bug_id) for bug_id in bug_ids]
         bugs = {
             bug_id: self.cached_bugs[bug_id]
-            for bug_id in bug_ids if bug_id in self.cached_bugs}
+            for bug_id in bug_ids
+            if bug_id in self.cached_bugs
+        }
         if set(bugs) == set(bug_ids):
             return bugs
         params = []
         if last_accessed is not None:
             since = last_accessed.astimezone(pytz.UTC).strftime(
-                "%Y-%m-%dT%H:%M:%SZ")
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
             params.append(("updated_after", since))
         params.extend(
-            [("iids[]", str(bug_id))
-             for bug_id in bug_ids if bug_id not in bugs])
+            [
+                ("iids[]", str(bug_id))
+                for bug_id in bug_ids
+                if bug_id not in bugs
+            ]
+        )
         # Don't use urlencode, since we need to leave the key "iids[]"
         # unquoted, and we have no other keys that require quoting.
         qs = []
@@ -138,15 +140,16 @@ class GitLab(ExternalBugTracker):
         else:
             raise UnknownRemoteStatusError(remote_status)
 
-    def makeRequest(self, method, url, headers=None, last_accessed=None,
-                    **kwargs):
+    def makeRequest(
+        self, method, url, headers=None, last_accessed=None, **kwargs
+    ):
         """See `ExternalBugTracker`."""
         if headers is None:
             headers = {}
         if last_accessed is not None:
-            headers["If-Modified-Since"] = (
-                last_accessed.astimezone(pytz.UTC).strftime(
-                    "%a, %d %b %Y %H:%M:%S GMT"))
+            headers["If-Modified-Since"] = last_accessed.astimezone(
+                pytz.UTC
+            ).strftime("%a, %d %b %Y %H:%M:%S GMT")
         token = self.credentials["token"]
         if token is not None:
             headers["Private-Token"] = token
@@ -163,9 +166,11 @@ class GitLab(ExternalBugTracker):
             try:
                 response = self._getPage(page, last_accessed=last_accessed)
             except BugTrackerConnectError as e:
-                if (e.error.response is not None and
-                    e.error.response.status_code ==
-                        http.client.NOT_MODIFIED):
+                if (
+                    e.error.response is not None
+                    and e.error.response.status_code
+                    == http.client.NOT_MODIFIED
+                ):
                     return
                 else:
                     raise

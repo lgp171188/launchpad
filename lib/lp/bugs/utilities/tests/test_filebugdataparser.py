@@ -19,7 +19,6 @@ from lp.testing import TestCase
 
 
 class TestFileBugDataParser(TestCase):
-
     def test_initial_buffer(self):
         # The parser's buffer starts out empty.
         parser = FileBugDataParser(io.BytesIO(b"123456789"))
@@ -55,12 +54,14 @@ class TestFileBugDataParser(TestCase):
         # raised.  This ensures that invalid messages don't cause an
         # infinite loop or similar.
         self.assertRaisesWithContent(
-            AssertionError, "End of file reached.", parser.readLine)
+            AssertionError, "End of file reached.", parser.readLine
+        )
 
     def test_readHeaders(self):
         # readHeaders reads the headers of a MIME message.  It reads all the
         # headers until it sees a blank line.
-        msg = dedent("""\
+        msg = dedent(
+            """\
             Header: value
             Space-Folded-Header: this header
              is folded with a space.
@@ -69,16 +70,19 @@ class TestFileBugDataParser(TestCase):
             Another-header: another-value
 
             Not-A-Header: not-a-value
-            """).encode("ASCII")
+            """
+        ).encode("ASCII")
         parser = FileBugDataParser(io.BytesIO(msg))
         headers = parser.readHeaders()
         self.assertEqual("value", headers["Header"])
         self.assertEqual(
             "this header\n is folded with a space.",
-            headers["Space-Folded-Header"])
+            headers["Space-Folded-Header"],
+        )
         self.assertEqual(
             "this header\n\tis folded with a tab.",
-            headers["Tab-Folded-Header"])
+            headers["Tab-Folded-Header"],
+        )
         self.assertEqual("another-value", headers["Another-Header"])
         self.assertNotIn("Not-A-Header", headers)
 
@@ -127,7 +131,8 @@ class TestFileBugDataParser(TestCase):
         # The first inline part is special.  Instead of being treated as a
         # comment, it gets appended to the bug description.  It's available
         # as FileBugData.extra_description.
-        message = dedent("""\
+        message = dedent(
+            """\
             MIME-Version: 1.0
             Content-type: multipart/mixed; boundary=boundary
 
@@ -140,19 +145,22 @@ class TestFileBugDataParser(TestCase):
             Another line.
 
             --boundary--
-            """).encode("ASCII")
+            """
+        ).encode("ASCII")
         parser = FileBugDataParser(io.BytesIO(message))
         data = parser.parse()
         self.assertEqual(
             "This should be added to the description.\n\nAnother line.",
-            data.extra_description)
+            data.extra_description,
+        )
 
     def test_parse_first_inline_part_base64(self):
         # An inline part can be base64-encoded.
         encoded_text = base64.b64encode(
-            b"This should be added to the description.\n\n"
-            b"Another line.").decode("ASCII")
-        message = dedent("""\
+            b"This should be added to the description.\n\n" b"Another line."
+        ).decode("ASCII")
+        message = dedent(
+            """\
             MIME-Version: 1.0
             Content-type: multipart/mixed; boundary=boundary
 
@@ -164,18 +172,22 @@ class TestFileBugDataParser(TestCase):
             %s
 
             --boundary--
-            """ % encoded_text).encode("ASCII")
+            """
+            % encoded_text
+        ).encode("ASCII")
         parser = FileBugDataParser(io.BytesIO(message))
         data = parser.parse()
         self.assertEqual(
             "This should be added to the description.\n\nAnother line.",
-            data.extra_description)
+            data.extra_description,
+        )
 
     def test_parse_other_inline_parts(self):
         # If there is more than one inline part, the second and subsequent
         # parts are added as comments to the bug.  These are simple text
         # strings, available as FileBugData.comments.
-        message = dedent("""\
+        message = dedent(
+            """\
             MIME-Version: 1.0
             Content-type: multipart/mixed; boundary=boundary
 
@@ -200,20 +212,25 @@ class TestFileBugDataParser(TestCase):
             Line 2.
 
             --boundary--
-            """).encode("ASCII")
+            """
+        ).encode("ASCII")
         parser = FileBugDataParser(io.BytesIO(message))
         data = parser.parse()
         self.assertEqual(
-            ["This should be added as a comment.",
-             "This should be added as another comment.\n\nLine 2."],
-            data.comments)
+            [
+                "This should be added as a comment.",
+                "This should be added as another comment.\n\nLine 2.",
+            ],
+            data.comments,
+        )
 
     def test_parse_text_attachments(self):
         # Parts with a "Content-Disposition: attachment" header are added as
         # attachments to the bug.  The attachment description can be
         # specified using a Content-Description header, but it's not
         # required.
-        message = dedent("""\
+        message = dedent(
+            """\
             MIME-Version: 1.0
             Content-type: multipart/mixed; boundary=boundary
 
@@ -232,7 +249,8 @@ class TestFileBugDataParser(TestCase):
 
             This is another attachment, with a description.
             --boundary--
-            """).encode("ASCII")
+            """
+        ).encode("ASCII")
         parser = FileBugDataParser(io.BytesIO(message))
         data = parser.parse()
         self.assertEqual(2, len(data.attachments))
@@ -241,31 +259,37 @@ class TestFileBugDataParser(TestCase):
         self.assertEqual("attachment2", data.attachments[1]["filename"])
         # The Content-Type header is copied as is.
         self.assertEqual(
-            "text/plain; charset=utf-8",
-            data.attachments[0]["content_type"])
+            "text/plain; charset=utf-8", data.attachments[0]["content_type"]
+        )
         self.assertEqual(
             "text/plain; charset=ISO-8859-1",
-            data.attachments[1]["content_type"])
+            data.attachments[1]["content_type"],
+        )
         # If there is a Content-Description header, it's accessible as
         # "description".  If there isn't any, the file name is used instead.
         self.assertEqual("attachment1", data.attachments[0]["description"])
         self.assertEqual(
-            "Attachment description.", data.attachments[1]["description"])
+            "Attachment description.", data.attachments[1]["description"]
+        )
         # The contents of the attachments are stored in files.
         files = [attachment["content"] for attachment in data.attachments]
         self.assertEqual(
-            b"This is an attachment.\n\nAnother line.\n\n", files[0].read())
+            b"This is an attachment.\n\nAnother line.\n\n", files[0].read()
+        )
         files[0].close()
         self.assertEqual(
             b"This is another attachment, with a description.\n",
-            files[1].read())
+            files[1].read(),
+        )
         files[1].close()
 
     def test_parse_binary_attachments(self):
         # Binary files are base64-encoded.  They are decoded automatically.
         encoded_data = base64.b64encode(
-            b"\n".join([b"\x00" * 5, b"\x01" * 5])).decode("ASCII")
-        message = dedent("""\
+            b"\n".join([b"\x00" * 5, b"\x01" * 5])
+        ).decode("ASCII")
+        message = dedent(
+            """\
             MIME-Version: 1.0
             Content-type: multipart/mixed; boundary=boundary
 
@@ -276,13 +300,16 @@ class TestFileBugDataParser(TestCase):
 
             %s
             --boundary--
-            """ % encoded_data).encode("ASCII")
+            """
+            % encoded_data
+        ).encode("ASCII")
         parser = FileBugDataParser(io.BytesIO(message))
         data = parser.parse()
         self.assertEqual(1, len(data.attachments))
         self.assertEqual(
             b"\x00\x00\x00\x00\x00\n\x01\x01\x01\x01\x01",
-            data.attachments[0]["content"].read())
+            data.attachments[0]["content"].read(),
+        )
         data.attachments[0]["content"].close()
 
     def test_invalid_message(self):
@@ -290,7 +317,8 @@ class TestFileBugDataParser(TestCase):
         # have an end boundary, the parser raises an AssertionError.  We
         # don't care about giving the user a good error message, since the
         # format is well-known.
-        message = dedent("""\
+        message = dedent(
+            """\
             MIME-Version: 1.0
             Content-type: multipart/mixed; boundary=boundary
 
@@ -300,7 +328,9 @@ class TestFileBugDataParser(TestCase):
 
             This is an attachment.
 
-            Another line.""").encode("ASCII")
+            Another line."""
+        ).encode("ASCII")
         parser = FileBugDataParser(io.BytesIO(message))
         self.assertRaisesWithContent(
-            AssertionError, "End of file reached.", parser.parse)
+            AssertionError, "End of file reached.", parser.parse
+        )

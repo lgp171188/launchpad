@@ -4,26 +4,25 @@
 """Interfaces declarations for external bugtrackers."""
 
 __all__ = [
-    'IExternalBugTracker',
-    'IExternalBugTrackerTokenAPI',
-    'ISupportsBackLinking',
-    'ISupportsBugImport',
-    'ISupportsCommentImport',
-    'ISupportsCommentPushing',
-    'UNKNOWN_REMOTE_IMPORTANCE',
-    'UNKNOWN_REMOTE_STATUS',
-    ]
+    "IExternalBugTracker",
+    "IExternalBugTrackerTokenAPI",
+    "ISupportsBackLinking",
+    "ISupportsBugImport",
+    "ISupportsCommentImport",
+    "ISupportsCommentPushing",
+    "UNKNOWN_REMOTE_IMPORTANCE",
+    "UNKNOWN_REMOTE_STATUS",
+]
 
 from zope.interface import Interface
-
 
 # This is a text string which indicates that the remote status is
 # unknown for some reason.
 # XXX: Bjorn Tillenius 2006-04-06:
 #      We should store the actual reason for the error somewhere. This
 #      would allow us to get rid of these text constants.
-UNKNOWN_REMOTE_STATUS = 'UNKNOWN'
-UNKNOWN_REMOTE_IMPORTANCE = 'UNKNOWN'
+UNKNOWN_REMOTE_STATUS = "UNKNOWN"
+UNKNOWN_REMOTE_IMPORTANCE = "UNKNOWN"
 
 
 class IExternalBugTrackerTokenAPI(Interface):
@@ -163,8 +162,7 @@ class ISupportsBugImport(IExternalBugTracker):
 
 
 class ISupportsCommentPushing(IExternalBugTracker):
-    """An external bug tracker that can push comments to the remote tracker.
-    """
+    """An external bug tracker that can push comments to the remote tracker."""
 
     def addRemoteComment(remote_bug, comment_body, rfc822msgid):
         """Push a comment to the remote bug.
@@ -180,7 +178,6 @@ class ISupportsCommentPushing(IExternalBugTracker):
 
 
 class ISupportsBackLinking(IExternalBugTracker):
-
     def getLaunchpadBugId(remote_bug):
         """Return a Launchpad bug ID for a given remote bug.
 

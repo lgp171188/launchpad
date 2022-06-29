@@ -4,37 +4,21 @@
 """CVE interfaces."""
 
 __all__ = [
-    'CveStatus',
-    'ICve',
-    'ICveSet',
-    ]
+    "CveStatus",
+    "ICve",
+    "ICveSet",
+]
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from lazr.restful.declarations import (
     collection_default_content,
     exported,
     exported_as_webservice_collection,
     exported_as_webservice_entry,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Datetime,
-    Dict,
-    Int,
-    Text,
-    TextLine,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference
+from zope.interface import Attribute, Interface
+from zope.schema import Choice, Datetime, Dict, Int, Text, TextLine
 
 from lp import _
 from lp.app.validators.validation import valid_cve_sequence
@@ -50,108 +34,147 @@ class CveStatus(DBEnumeratedType):
     be a CAN or a CVE.
     """
 
-    CANDIDATE = DBItem(1, """
+    CANDIDATE = DBItem(
+        1,
+        """
         Candidate
 
         The vulnerability is a candidate which hasn't yet been confirmed and
         given "Entry" status.
-        """)
+        """,
+    )
 
-    ENTRY = DBItem(2, """
+    ENTRY = DBItem(
+        2,
+        """
         Entry
 
         This vulnerability or threat has been assigned a CVE number, and is
         fully documented. It has been through the full CVE verification
         process.
-        """)
+        """,
+    )
 
-    DEPRECATED = DBItem(3, """
+    DEPRECATED = DBItem(
+        3,
+        """
         Deprecated
 
         This entry is deprecated, and should no longer be referred to in
         general correspondence. There is either a newer entry that better
         defines the problem, or the original candidate was never promoted to
         "Entry" status.
-        """)
+        """,
+    )
 
 
 @exported_as_webservice_entry(as_of="beta")
 class ICve(Interface):
     """A single CVE database entry."""
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
     sequence = exported(
-        TextLine(title=_('CVE Sequence Number'),
-                 description=_('Should take the form XXXX-XXXX, all digits.'),
-                 required=True, readonly=False,
-                 constraint=valid_cve_sequence))
+        TextLine(
+            title=_("CVE Sequence Number"),
+            description=_("Should take the form XXXX-XXXX, all digits."),
+            required=True,
+            readonly=False,
+            constraint=valid_cve_sequence,
+        )
+    )
     status = exported(
-        Choice(title=_('Current CVE State'),
-               default=CveStatus.CANDIDATE,
-               description=_("Whether or not the "
-                             "vulnerability has been reviewed and assigned a "
-                             "full CVE number, or is still considered a "
-                             "Candidate, or is deprecated."),
-               required=True, vocabulary=CveStatus))
+        Choice(
+            title=_("Current CVE State"),
+            default=CveStatus.CANDIDATE,
+            description=_(
+                "Whether or not the "
+                "vulnerability has been reviewed and assigned a "
+                "full CVE number, or is still considered a "
+                "Candidate, or is deprecated."
+            ),
+            required=True,
+            vocabulary=CveStatus,
+        )
+    )
     description = exported(
-        TextLine(title=_('Title'),
-                 description=_('A description of the CVE issue. This will be '
-                               'updated regularly from the CVE database.'),
-                 required=True, readonly=False))
+        TextLine(
+            title=_("Title"),
+            description=_(
+                "A description of the CVE issue. This will be "
+                "updated regularly from the CVE database."
+            ),
+            required=True,
+            readonly=False,
+        )
+    )
     datecreated = exported(
-        Datetime(title=_('Date Created'), required=True, readonly=True),
-        exported_as='date_created')
+        Datetime(title=_("Date Created"), required=True, readonly=True),
+        exported_as="date_created",
+    )
     datemodified = exported(
-        Datetime(title=_('Date Modified'), required=True, readonly=False),
-        exported_as='date_modified')
+        Datetime(title=_("Date Modified"), required=True, readonly=False),
+        exported_as="date_modified",
+    )
     bugs = exported(
         CollectionField(
-            title=_('Bugs related to this CVE entry.'),
+            title=_("Bugs related to this CVE entry."),
             readonly=True,
-            value_type=Reference(schema=Interface)))  # Redefined in bug.py.
+            value_type=Reference(schema=Interface),
+        )
+    )  # Redefined in bug.py.
 
     # Other attributes.
     url = exported(
-        TextLine(title=_('URL'),
-                 description=_("Return a URL to the site that has the CVE "
-                               "data for this CVE reference.")))
+        TextLine(
+            title=_("URL"),
+            description=_(
+                "Return a URL to the site that has the CVE "
+                "data for this CVE reference."
+            ),
+        )
+    )
     displayname = exported(
-        TextLine(title=_("Display Name"),
-                 description=_("A very brief name describing "
-                               "the ref and state.")),
-        exported_as='display_name')
-    title = exported(TextLine(title=_("Title"),
-                              description=_("A title for the CVE")))
+        TextLine(
+            title=_("Display Name"),
+            description=_(
+                "A very brief name describing " "the ref and state."
+            ),
+        ),
+        exported_as="display_name",
+    )
+    title = exported(
+        TextLine(title=_("Title"), description=_("A title for the CVE"))
+    )
     references = Attribute("The set of CVE References for this CVE.")
 
     date_made_public = exported(
-        Datetime(title=_('Date Made Public'), required=False, readonly=True),
-        as_of='devel'
+        Datetime(title=_("Date Made Public"), required=False, readonly=True),
+        as_of="devel",
     )
 
     discoverer = exported(
         PersonChoice(
-            title=_('Discoverer'),
+            title=_("Discoverer"),
             required=False,
             readonly=True,
-            vocabulary='ValidPerson'
+            vocabulary="ValidPerson",
         ),
-        as_of='devel'
+        as_of="devel",
     )
 
     cvss = exported(
         Dict(
-            title=_('CVSS'),
+            title=_("CVSS"),
             description=_(
-                'The CVSS vector strings from various authorities '
-                'that publish it.'
+                "The CVSS vector strings from various authorities "
+                "that publish it."
             ),
-            key_type=Text(title=_('The authority that published the score.')),
-            value_type=Text(title=_('The CVSS vector string.')),
+            key_type=Text(title=_("The authority that published the score.")),
+            value_type=Text(title=_("The CVSS vector string.")),
             required=False,
             readonly=True,
         ),
-        as_of='devel'
+        as_of="devel",
     )
 
     def createReference(source, content, url=None):
@@ -168,7 +191,7 @@ class ICve(Interface):
 class ICveSet(Interface):
     """The set of ICve objects."""
 
-    title = Attribute('Title')
+    title = Attribute("Title")
 
     def __getitem__(key):
         """Get a Cve by sequence number."""
@@ -176,8 +199,14 @@ class ICveSet(Interface):
     def __iter__():
         """Iterate through all the Cve records."""
 
-    def new(sequence, description, cvestate=CveStatus.CANDIDATE,
-            date_made_public=None, discoverer=None, cvss=None):
+    def new(
+        sequence,
+        description,
+        cvestate=CveStatus.CANDIDATE,
+        date_made_public=None,
+        discoverer=None,
+        cvss=None,
+    ):
         """Create a new ICve."""
 
     @collection_default_content()

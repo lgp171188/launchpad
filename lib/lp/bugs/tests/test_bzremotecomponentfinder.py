@@ -15,12 +15,9 @@ from lp.bugs.scripts.bzremotecomponentfinder import (
     BugzillaRemoteComponentFinder,
     BugzillaRemoteComponentScraper,
     dictFromCSV,
-    )
+)
 from lp.services.log.logger import BufferLogger
-from lp.testing import (
-    login,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, login
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.sampledata import ADMIN_EMAIL
 
@@ -30,7 +27,7 @@ def read_test_file(name):
 
     Test files are located in lib/canonical/launchpad/ftests/testfiles
     """
-    file_path = os.path.join(os.path.dirname(__file__), 'testfiles', name)
+    file_path = os.path.join(os.path.dirname(__file__), "testfiles", name)
     with open(file_path) as test_file:
         return test_file.read()
 
@@ -44,33 +41,36 @@ class TestBugzillaRemoteComponentScraper(TestCaseWithFactory):
 
     def test_url_correction(self):
         scraper = BugzillaRemoteComponentScraper(
-            base_url="http://bugzilla.sample.com/")
+            base_url="http://bugzilla.sample.com/"
+        )
 
         # Trailing slashes are stripped from the URL
-        self.assertEqual(
-            scraper.base_url,
-            "http://bugzilla.sample.com")
+        self.assertEqual(scraper.base_url, "http://bugzilla.sample.com")
 
         # Query cgi string is generated from the base_url
         self.assertEqual(
-            scraper.url,
-            "http://bugzilla.sample.com/query.cgi?format=advanced")
+            scraper.url, "http://bugzilla.sample.com/query.cgi?format=advanced"
+        )
 
     def test_dict_from_csv(self):
         """Test conversion of various CSV strings parse correctly"""
 
         data = [
-            ("'foo'",        {'foo':     {'name': 'foo'}}),
-            ("'B_A_R'",      {'B_A_R':   {'name': 'B_A_R'}}),
-            ("'b@z'",        {'b@z':     {'name': 'b@z'}}),
-            ("'b\\!ah'",     {'b!ah':    {'name': 'b!ah'}}),
-            ("42",           {'42':      {'name': '42'}}),
-            ("''",           {'':        {'name': ''}}),
-            ("'a', 'b','c'", {'a':       {'name': 'a'},
-                              'b':       {'name': 'b'},
-                              'c':       {'name': 'c'},
-                              }),
-            ]
+            ("'foo'", {"foo": {"name": "foo"}}),
+            ("'B_A_R'", {"B_A_R": {"name": "B_A_R"}}),
+            ("'b@z'", {"b@z": {"name": "b@z"}}),
+            ("'b\\!ah'", {"b!ah": {"name": "b!ah"}}),
+            ("42", {"42": {"name": "42"}}),
+            ("''", {"": {"name": ""}}),
+            (
+                "'a', 'b','c'",
+                {
+                    "a": {"name": "a"},
+                    "b": {"name": "b"},
+                    "c": {"name": "c"},
+                },
+            ),
+        ]
         for test_case in data:
             (key, truth_dict) = test_case
             test_dict = dictFromCSV(key)
@@ -79,12 +79,13 @@ class TestBugzillaRemoteComponentScraper(TestCaseWithFactory):
     def test_parse_page(self):
         """Verify parsing a static html bugzilla page"""
         self.scraper = BugzillaRemoteComponentScraper(
-            base_url="http://bugs.wine.org")
+            base_url="http://bugs.wine.org"
+        )
         page_text = read_test_file("bugzilla-wine-advanced-query.html")
         self.scraper.parsePage(page_text)
-        self.assertTrue('Wine' in self.scraper.products)
-        xorg = self.scraper.products['Wine']
-        self.assertTrue('ole' in xorg['components'])
+        self.assertTrue("Wine" in self.scraper.products)
+        xorg = self.scraper.products["Wine"]
+        self.assertTrue("ole" in xorg["components"])
 
 
 class TestBugzillaRemoteComponentFinder(TestCaseWithFactory):
@@ -115,65 +116,76 @@ class TestBugzillaRemoteComponentFinder(TestCaseWithFactory):
 
         # Set up remote bug tracker with synthetic data
         bz_bugtracker = BugzillaRemoteComponentScraper(
-            base_url="http://bugzilla.example.org")
+            base_url="http://bugzilla.example.org"
+        )
         bz_bugtracker.products = {
-            'alpha': {
-                'name': 'alpha',
-                'components': {
-                    '1': {'name': 'one', },
-                    '2': {'name': 'two', },
-                    '3': {'name': 'three', },
+            "alpha": {
+                "name": "alpha",
+                "components": {
+                    "1": {
+                        "name": "one",
                     },
-                'versions': None,
+                    "2": {
+                        "name": "two",
+                    },
+                    "3": {
+                        "name": "three",
+                    },
                 },
-            'beta': {
-                'name': 'beta',
-                'components': {
-                    '4': {'name': 'four', },
+                "versions": None,
+            },
+            "beta": {
+                "name": "beta",
+                "components": {
+                    "4": {
+                        "name": "four",
                     },
-                'versions': None,
-                }
-            }
-        finder = BugzillaRemoteComponentFinder(
-            logger=BufferLogger())
-        finder.storeRemoteProductsAndComponents(
-            bz_bugtracker, lp_bugtracker)
+                },
+                "versions": None,
+            },
+        }
+        finder = BugzillaRemoteComponentFinder(logger=BufferLogger())
+        finder.storeRemoteProductsAndComponents(bz_bugtracker, lp_bugtracker)
 
         # Verify the data got stored properly
         comp_groups = lp_bugtracker.getAllRemoteComponentGroups()
         self.assertEqual(2, len(list(comp_groups)))
-        comp_group = lp_bugtracker.getRemoteComponentGroup('alpha')
+        comp_group = lp_bugtracker.getRemoteComponentGroup("alpha")
         self.assertEqual(3, len(list(comp_group.components)))
-        comp_group = lp_bugtracker.getRemoteComponentGroup('beta')
+        comp_group = lp_bugtracker.getRemoteComponentGroup("beta")
         self.assertEqual(1, len(list(comp_group.components)))
-        comp = comp_group.getComponent('non-existant')
+        comp = comp_group.getComponent("non-existant")
         self.assertIs(None, comp)
-        comp = comp_group.getComponent('four')
-        self.assertEqual('four', comp.name)
+        comp = comp_group.getComponent("four")
+        self.assertEqual("four", comp.name)
 
     @responses.activate
     def test_get_remote_products_and_components(self):
         """Does a full retrieve and storing of data."""
         lp_bugtracker = self.factory.makeBugTracker(
-            title="fdo-example",
-            name="fdo-example")
+            title="fdo-example", name="fdo-example"
+        )
         transaction.commit()
 
         finder = BugzillaRemoteComponentFinder(logger=BufferLogger())
         responses.add(
-            "GET", re.compile(r".*/query\.cgi\?format=advanced"),
-            match_querystring=True, content_type="text/html",
-            body=read_test_file("bugzilla-fdo-advanced-query.html"))
+            "GET",
+            re.compile(r".*/query\.cgi\?format=advanced"),
+            match_querystring=True,
+            content_type="text/html",
+            body=read_test_file("bugzilla-fdo-advanced-query.html"),
+        )
         finder.getRemoteProductsAndComponents(bugtracker_name="fdo-example")
 
         self.assertEqual(
-            109, len(list(lp_bugtracker.getAllRemoteComponentGroups())))
-        comp_group = lp_bugtracker.getRemoteComponentGroup('xorg')
+            109, len(list(lp_bugtracker.getAllRemoteComponentGroups()))
+        )
+        comp_group = lp_bugtracker.getRemoteComponentGroup("xorg")
         self.assertIsNot(None, comp_group)
         self.assertEqual(146, len(list(comp_group.components)))
-        comp = comp_group.getComponent('Driver/Radeon')
+        comp = comp_group.getComponent("Driver/Radeon")
         self.assertIsNot(None, comp)
-        self.assertEqual('Driver/Radeon', comp.name)
+        self.assertEqual("Driver/Radeon", comp.name)
 
     @responses.activate
     def test_get_remote_products_and_components_encounters_301(self):
@@ -182,27 +194,32 @@ class TestBugzillaRemoteComponentFinder(TestCaseWithFactory):
             return (301, {"Location": new_url}, "")
 
         lp_bugtracker = self.factory.makeBugTracker(
-            title="fdo-example",
-            name="fdo-example")
+            title="fdo-example", name="fdo-example"
+        )
         transaction.commit()
 
         finder = BugzillaRemoteComponentFinder(logger=BufferLogger())
         responses.add_callback(
-            "GET", re.compile(r".*/query\.cgi"), callback=redirect_callback)
+            "GET", re.compile(r".*/query\.cgi"), callback=redirect_callback
+        )
         responses.add(
-            "GET", re.compile(r".*/newquery\.cgi\?format=advanced"),
-            match_querystring=True, content_type="text/html",
-            body=read_test_file("bugzilla-fdo-advanced-query.html"))
+            "GET",
+            re.compile(r".*/newquery\.cgi\?format=advanced"),
+            match_querystring=True,
+            content_type="text/html",
+            body=read_test_file("bugzilla-fdo-advanced-query.html"),
+        )
         finder.getRemoteProductsAndComponents(bugtracker_name="fdo-example")
 
         self.assertEqual(
-            109, len(list(lp_bugtracker.getAllRemoteComponentGroups())))
-        comp_group = lp_bugtracker.getRemoteComponentGroup('xorg')
+            109, len(list(lp_bugtracker.getAllRemoteComponentGroups()))
+        )
+        comp_group = lp_bugtracker.getRemoteComponentGroup("xorg")
         self.assertIsNot(None, comp_group)
         self.assertEqual(146, len(list(comp_group.components)))
-        comp = comp_group.getComponent('Driver/Radeon')
+        comp = comp_group.getComponent("Driver/Radeon")
         self.assertIsNot(None, comp)
-        self.assertEqual('Driver/Radeon', comp.name)
+        self.assertEqual("Driver/Radeon", comp.name)
 
     @responses.activate
     def test_get_remote_products_and_components_encounters_400(self):
@@ -230,6 +247,7 @@ class TestBugzillaRemoteComponentFinder(TestCaseWithFactory):
 
         responses.add("GET", re.compile(r".*/query\.cgi"), status=500)
         self.assertGetRemoteProductsAndComponentsDoesNotAssert(finder)
+
 
 # FIXME: This takes ~9 sec to run, but mars says new testsuites need to
 #        compete in 2

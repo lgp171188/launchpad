@@ -4,13 +4,10 @@
 """Interfaces for bug changes."""
 
 __all__ = [
-    'IBugChange',
-    ]
+    "IBugChange",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 
 class IBugChange(Interface):
@@ -19,7 +16,8 @@ class IBugChange(Interface):
     when = Attribute("The timestamp for the BugChange.")
     person = Attribute("The Person who made the change.")
     change_level = Attribute(
-        "Type of the change to a bug expressed as `BugNotificationLevel`.")
+        "Type of the change to a bug expressed as `BugNotificationLevel`."
+    )
 
     def getBugActivity():
         """Return the `BugActivity` data for this change as a dict."""

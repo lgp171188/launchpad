@@ -3,7 +3,7 @@
 
 """RT ExternalBugTracker Utility."""
 
-__all__ = ['RequestTracker']
+__all__ = ["RequestTracker"]
 
 import email
 import re
@@ -18,11 +18,8 @@ from lp.bugs.externalbugtracker import (
     InvalidBugId,
     LookupTree,
     UnknownRemoteStatusError,
-    )
-from lp.bugs.interfaces.bugtask import (
-    BugTaskImportance,
-    BugTaskStatus,
-    )
+)
+from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.bugs.interfaces.externalbugtracker import UNKNOWN_REMOTE_IMPORTANCE
 from lp.services.config import config
 from lp.services.webapp.url import urlparse
@@ -31,8 +28,8 @@ from lp.services.webapp.url import urlparse
 class RequestTracker(ExternalBugTracker):
     """`ExternalBugTracker` subclass for handling RT imports."""
 
-    ticket_url = 'REST/1.0/ticket/%s/show'
-    batch_url = 'REST/1.0/search/ticket/'
+    ticket_url = "REST/1.0/ticket/%s/show"
+    batch_url = "REST/1.0/search/ticket/"
     batch_query_threshold = 1
 
     def __init__(self, baseurl, cookie_jar=None):
@@ -51,14 +48,14 @@ class RequestTracker(ExternalBugTracker):
         these will be returned. Otherwise the RT default guest
         credentials (username and password of 'guest') will be returned.
         """
-        credentials_config = config['checkwatches.credentials']
+        credentials_config = config["checkwatches.credentials"]
         hostname = urlparse(self.baseurl)[1]
         try:
-            username = credentials_config['%s.username' % hostname]
-            password = credentials_config['%s.password' % hostname]
-            return {'user': username, 'pass': password}
+            username = credentials_config["%s.username" % hostname]
+            password = credentials_config["%s.password" % hostname]
+            return {"user": username, "pass": password}
         except KeyError:
-            return {'user': 'guest', 'pass': 'guest'}
+            return {"user": "guest", "pass": "guest"}
 
     def makeRequest(self, method, url, **kwargs):
         """See `ExternalBugTracker`."""
@@ -67,46 +64,53 @@ class RequestTracker(ExternalBugTracker):
             # password to its login form, as a user would from the web.
             try:
                 super().makeRequest(
-                    'GET', '%s/' % self.baseurl,
-                    params=self.credentials, cookies=self._cookie_jar)
+                    "GET",
+                    "%s/" % self.baseurl,
+                    params=self.credentials,
+                    cookies=self._cookie_jar,
+                )
             except requests.RequestException as e:
-                raise BugTrackerConnectError('%s/' % self.baseurl,
+                raise BugTrackerConnectError(
+                    "%s/" % self.baseurl,
                     "Unable to authenticate with remote RT service: "
-                    "Could not submit login form: %s" % e)
+                    "Could not submit login form: %s" % e,
+                )
             self._logged_in = True
         return super().makeRequest(
-            method, url, cookies=self._cookie_jar, **kwargs)
+            method, url, cookies=self._cookie_jar, **kwargs
+        )
 
     def getRemoteBug(self, bug_id):
         """See `ExternalBugTracker`."""
         ticket_url = self.ticket_url % str(bug_id)
-        query_url = '%s/%s' % (self.baseurl, ticket_url)
+        query_url = "%s/%s" % (self.baseurl, ticket_url)
         try:
-            bug_data = self.makeRequest('GET', query_url).text
+            bug_data = self.makeRequest("GET", query_url).text
         except requests.HTTPError as error:
             raise BugTrackerConnectError(ticket_url, error)
 
         # We use the first line of the response to ensure that we've
         # made a successful request.
-        bug_firstline, bug_rest = re.split(r'\r?\n', bug_data, maxsplit=1)
-        firstline = bug_firstline.strip().split(' ')
-        if firstline[1] != '200':
+        bug_firstline, bug_rest = re.split(r"\r?\n", bug_data, maxsplit=1)
+        firstline = bug_firstline.strip().split(" ")
+        if firstline[1] != "200":
             # If anything goes wrong we raise a BugTrackerConnectError.
             # We included in the error message the status code and error
             # message returned by the server.
             raise BugTrackerConnectError(
                 query_url,
                 "Unable to retrieve bug %s. The remote server returned the "
-                "following error: %s." %
-                (str(bug_id), " ".join(firstline[1:])))
+                "following error: %s."
+                % (str(bug_id), " ".join(firstline[1:])),
+            )
 
         # RT's REST interface returns tickets in RFC822 format, so we
         # can use the email module to parse them.
         bug = email.message_from_string(bug_rest.strip())
-        if bug.get('id') is None:
+        if bug.get("id") is None:
             return None, None
         else:
-            bug_id = bug['id'].replace('ticket/', '')
+            bug_id = bug["id"].replace("ticket/", "")
             return int(bug_id), bug
 
     def getRemoteBugBatch(self, bug_ids):
@@ -115,20 +119,23 @@ class RequestTracker(ExternalBugTracker):
         id_list = [str(id) for id in bug_ids]
         query = "id = " + " OR id = ".join(id_list)
 
-        query_url = '%s/%s' % (self.baseurl, self.batch_url)
-        request_params = {'query': query, 'format': 'l'}
+        query_url = "%s/%s" % (self.baseurl, self.batch_url)
+        request_params = {"query": query, "format": "l"}
         try:
             bug_data = self.makeRequest(
-                'GET', query_url, params=request_params,
-                headers={'Referer': self.baseurl}).text
+                "GET",
+                query_url,
+                params=request_params,
+                headers={"Referer": self.baseurl},
+            ).text
         except requests.HTTPError as error:
             raise BugTrackerConnectError(query_url, error)
 
         # We use the first line of the response to ensure that we've
         # made a successful request.
-        bug_firstline, bug_rest = re.split(r'\r?\n', bug_data, maxsplit=1)
-        firstline = bug_firstline.strip().split(' ')
-        if firstline[1] != '200':
+        bug_firstline, bug_rest = re.split(r"\r?\n", bug_data, maxsplit=1)
+        firstline = bug_firstline.strip().split(" ")
+        if firstline[1] != "200":
             # If anything goes wrong we raise a BugTrackerConnectError.
             # We included in the error message the status code and error
             # message returned by the server.
@@ -136,8 +143,9 @@ class RequestTracker(ExternalBugTracker):
             raise BugTrackerConnectError(
                 query_url,
                 "Unable to retrieve bugs %s. The remote server returned the "
-                "following error:  %s." %
-                (bug_id_string, " ".join(firstline[1:])))
+                "following error:  %s."
+                % (bug_id_string, " ".join(firstline[1:])),
+            )
 
         # Tickets returned in RT multiline format are separated by lines
         # containing only --\n.
@@ -152,8 +160,8 @@ class RequestTracker(ExternalBugTracker):
 
             # We only bother adding the bug to the bugs dict if we
             # actually have some data worth adding.
-            if bug.get('id') is not None:
-                bug_id = bug['id'].replace('ticket/', '')
+            if bug.get("id") is not None:
+                bug_id = bug["id"].replace("ticket/", "")
                 bugs[int(bug_id)] = bug
 
         return bugs
@@ -168,12 +176,13 @@ class RequestTracker(ExternalBugTracker):
         except ValueError:
             raise InvalidBugId(
                 "RequestTracker bug ids must be integers (was passed %r)"
-                % bug_id)
+                % bug_id
+            )
 
         if bug_id not in self.bugs:
             raise BugNotFound(bug_id)
 
-        return self.bugs[bug_id]['status']
+        return self.bugs[bug_id]["status"]
 
     def getRemoteImportance(self, bug_id):
         """See `IExternalBugTracker`."""
@@ -183,14 +192,14 @@ class RequestTracker(ExternalBugTracker):
         """See `IExternalBugTracker`."""
         return BugTaskImportance.UNKNOWN
 
-    _status_lookup_titles = 'RT status',
+    _status_lookup_titles = ("RT status",)
     _status_lookup = LookupTree(
-        ('new', BugTaskStatus.NEW),
-        ('open', BugTaskStatus.CONFIRMED),
-        ('stalled', BugTaskStatus.CONFIRMED),
-        ('rejected', BugTaskStatus.INVALID),
-        ('resolved', BugTaskStatus.FIXRELEASED),
-        )
+        ("new", BugTaskStatus.NEW),
+        ("open", BugTaskStatus.CONFIRMED),
+        ("stalled", BugTaskStatus.CONFIRMED),
+        ("rejected", BugTaskStatus.INVALID),
+        ("resolved", BugTaskStatus.FIXRELEASED),
+    )
 
     def convertRemoteStatus(self, remote_status):
         """Convert an RT status into a Launchpad BugTaskStatus."""
@@ -207,4 +216,4 @@ class RequestTracker(ExternalBugTracker):
         if remote_bug not in self.bugs:
             raise BugNotFound(remote_bug)
 
-        return self.bugs[remote_bug].get('queue', None)
+        return self.bugs[remote_bug].get("queue", None)

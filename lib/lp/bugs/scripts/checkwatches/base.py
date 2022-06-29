@@ -4,20 +4,17 @@
 """Common classes and functions for the checkwatches system."""
 
 __all__ = [
-    'WorkingBase',
-    'commit_before',
-    'with_interaction',
-    ]
+    "WorkingBase",
+    "commit_before",
+    "with_interaction",
+]
 
+import sys
 from contextlib import contextmanager
 from functools import wraps
-import sys
 
 from zope.component import getUtility
-from zope.security.management import (
-    endInteraction,
-    queryInteraction,
-    )
+from zope.security.management import endInteraction, queryInteraction
 
 from lp.bugs.externalbugtracker import BugWatchUpdateWarning
 from lp.services.database.isolation import check_no_transaction
@@ -26,21 +23,18 @@ from lp.services.webapp.adapter import (
     clear_request_started,
     get_request_start_time,
     set_request_started,
-    )
-from lp.services.webapp.errorlog import (
-    ErrorReportingUtility,
-    ScriptRequest,
-    )
+)
+from lp.services.webapp.errorlog import ErrorReportingUtility, ScriptRequest
 from lp.services.webapp.interaction import setupInteraction
 from lp.services.webapp.interfaces import IPlacelessAuthUtility
-
 
 # For OOPS reporting keep up to this number of SQL statements.
 MAX_SQL_STATEMENTS_LOGGED = 10000
 
 
-def report_oops(message=None, properties=None, info=None,
-                transaction_manager=None):
+def report_oops(
+    message=None, properties=None, info=None, transaction_manager=None
+):
     """Record an oops for the current exception.
 
     This must only be called while handling an exception.
@@ -72,27 +66,29 @@ def report_oops(message=None, properties=None, info=None,
         properties = list(properties)
 
     if message is not None:
-        properties.append(('error-explanation', message))
+        properties.append(("error-explanation", message))
 
     # Find a candidate for the request URL.
     def find_url():
-        for name in 'URL', 'url', 'baseurl':
+        for name in "URL", "url", "baseurl":
             for key, value in properties:
                 if key == name:
                     return value
         return None
+
     url = find_url()
 
     # Create the dummy request object.
     request = ScriptRequest(properties, url)
     error_utility = ErrorReportingUtility()
-    error_utility.configure(section_name='checkwatches')
+    error_utility.configure(section_name="checkwatches")
     error_utility.raising(info, request)
     return request
 
 
-def report_warning(message, properties=None, info=None,
-                   transaction_manager=None):
+def report_warning(
+    message, properties=None, info=None, transaction_manager=None
+):
     """Create and report a warning as an OOPS.
 
     If no exception info is passed in this will create a generic
@@ -119,9 +115,9 @@ class WorkingBase:
 
     def init(self, login, transaction_manager, logger):
         self._login = login
-        self._principal = (
-            getUtility(IPlacelessAuthUtility).getPrincipalByLogin(
-                self._login))
+        self._principal = getUtility(
+            IPlacelessAuthUtility
+        ).getPrincipalByLogin(self._login)
         self._transaction_manager = transaction_manager
         self.logger = logger
 
@@ -174,7 +170,9 @@ class WorkingBase:
         """Start logging SQL statements and other database activity."""
         set_request_started(
             request_statements=LimitedList(MAX_SQL_STATEMENTS_LOGGED),
-            txn=self._transaction_manager, enable_timeout=False)
+            txn=self._transaction_manager,
+            enable_timeout=False,
+        )
 
     def _statement_logging_stop(self):
         """Stop logging SQL statements."""
@@ -203,7 +201,8 @@ class WorkingBase:
     def warning(self, message, properties=None, info=None):
         """Record a warning."""
         oops_info = report_warning(
-            message, properties, info, self._transaction_manager)
+            message, properties, info, self._transaction_manager
+        )
         # Also put it in the log.
         self.logger.warning("%s (%s)" % (message, oops_info.oopsid))
         # Reset statement logging, if enabled.
@@ -215,7 +214,8 @@ class WorkingBase:
     def error(self, message, properties=None, info=None):
         """Record an error."""
         oops_info = report_oops(
-            message, properties, info, self._transaction_manager)
+            message, properties, info, self._transaction_manager
+        )
         # Also put it in the log.
         self.logger.info("%s (%s)" % (message, oops_info.oopsid))
         # Reset statement logging, if enabled.
@@ -238,10 +238,12 @@ def with_interaction(func):
     It's intended for use with `WorkingBase`, which provides an
     `interaction` property; this is the hook that's required.
     """
+
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         with self.interaction:
             return func(self, *args, **kwargs)
+
     return wrapper
 
 
@@ -255,8 +257,10 @@ def commit_before(func):
     It's intended for use with `WorkingBase`, which provides a
     `_transaction_manager` property; this is the hook that's required.
     """
+
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         self._transaction_manager.commit()
         return func(self, *args, **kwargs)
+
     return wrapper

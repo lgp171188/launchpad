@@ -4,15 +4,11 @@
 """BugTrackerPerson interface."""
 
 __all__ = [
-    'IBugTrackerPerson',
-    'BugTrackerPersonAlreadyExists',
-    ]
+    "IBugTrackerPerson",
+    "BugTrackerPersonAlreadyExists",
+]
 
-from zope.schema import (
-    Datetime,
-    Object,
-    Text,
-    )
+from zope.schema import Datetime, Object, Text
 
 from lp import _
 from lp.bugs.interfaces.bugtracker import IBugTracker
@@ -27,12 +23,11 @@ class BugTrackerPersonAlreadyExists(Exception):
 class IBugTrackerPerson(IHasBug):
     """A link between a person and a bugtracker."""
 
-    bugtracker = Object(
-        schema=IBugTracker, title=_('The bug.'), required=True)
-    person = Object(
-        schema=IPerson, title=_('Person'), required=True)
+    bugtracker = Object(schema=IBugTracker, title=_("The bug."), required=True)
+    person = Object(schema=IPerson, title=_("Person"), required=True)
     name = Text(
-        title=_("The name of the person on the bugtracker."),
-        required=True)
+        title=_("The name of the person on the bugtracker."), required=True
+    )
     date_created = Datetime(
-        title=_('Date Created'), required=True, readonly=True)
+        title=_("Date Created"), required=True, readonly=True
+    )

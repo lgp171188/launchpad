@@ -4,56 +4,41 @@
 """Interfaces for searching bug tasks. Mostly used with IBugTaskSet."""
 
 __all__ = [
-    'BugBlueprintSearch',
-    'BugBranchSearch',
-    'BugTagsSearchCombinator',
-    'BugTaskSearchParams',
-    'DEFAULT_SEARCH_BUGTASK_STATUSES_FOR_DISPLAY',
-    'get_person_bugtasks_search_params',
-    'IBugTaskSearch',
-    'IBugTaskSearchBase',
-    'IllegalRelatedBugTasksParams',
-    'IFrontPageBugTaskSearch',
-    'IPersonBugTaskSearch',
-    'IUpstreamProductBugTaskSearch',
-    ]
+    "BugBlueprintSearch",
+    "BugBranchSearch",
+    "BugTagsSearchCombinator",
+    "BugTaskSearchParams",
+    "DEFAULT_SEARCH_BUGTASK_STATUSES_FOR_DISPLAY",
+    "get_person_bugtasks_search_params",
+    "IBugTaskSearch",
+    "IBugTaskSearchBase",
+    "IllegalRelatedBugTasksParams",
+    "IFrontPageBugTaskSearch",
+    "IPersonBugTaskSearch",
+    "IUpstreamProductBugTaskSearch",
+]
 
-from collections.abc import Iterable
 import http.client
+from collections.abc import Iterable
 
-from lazr.enum import (
-    EnumeratedType,
-    Item,
-    )
+from lazr.enum import EnumeratedType, Item
 from lazr.restful.declarations import error_status
 from lazr.restful.fields import ReferenceChoice
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Choice,
-    List,
-    TextLine,
-    )
-from zope.schema.vocabulary import (
-    SimpleTerm,
-    SimpleVocabulary,
-    )
+from zope.schema import Bool, Choice, List, TextLine
+from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 from zope.security.proxy import isinstance as zope_isinstance
 
 from lp import _
 from lp.app.enums import InformationType
 from lp.bugs.interfaces.bugtask import (
+    UNRESOLVED_BUGTASK_STATUSES,
     BugTaskStatusSearch,
     BugTaskStatusSearchDisplay,
     IBugTask,
-    UNRESOLVED_BUGTASK_STATUSES,
-    )
+)
 from lp.services.fields import SearchTag
-from lp.services.searchbuilder import (
-    all,
-    any,
-    NULL,
-    )
+from lp.services.searchbuilder import NULL, all, any
 from lp.soyuz.interfaces.component import IComponent
 
 
@@ -97,17 +82,21 @@ class BugTagsSearchCombinator(EnumeratedType):
     The possible values for combining the list of tags in a bug search.
     """
 
-    ANY = Item("""
+    ANY = Item(
+        """
         Any
 
         Search for bugs tagged with any of the specified tags.
-        """)
+        """
+    )
 
-    ALL = Item("""
+    ALL = Item(
+        """
         All
 
         Search for bugs tagged with all of the specified tags.
-        """)
+        """
+    )
 
 
 class BugTaskSearchParams:
@@ -154,23 +143,54 @@ class BugTaskSearchParams:
     distroseries = None
     productseries = None
 
-    def __init__(self, user, bug=None, searchtext=None, fast_searchtext=None,
-                 status=None, importance=None, milestone=None,
-                 milestone_tag=None, assignee=None, sourcepackagename=None,
-                 owner=None, attachmenttype=None, orderby=None,
-                 omit_dupes=False, subscriber=None, component=None,
-                 pending_bugwatch_elsewhere=False, resolved_upstream=False,
-                 open_upstream=False, has_no_upstream_bugtask=False, tag=None,
-                 has_cve=False, bug_supervisor=None, bug_reporter=None,
-                 nominated_for=None, bug_commenter=None, omit_targeted=False,
-                 date_closed=None, affected_user=None, affects_me=False,
-                 linked_branches=None, linked_merge_proposals=None,
-                 linked_blueprints=None,
-                 structural_subscriber=None, modified_since=None,
-                 created_since=None, exclude_conjoined_tasks=False, cve=None,
-                 upstream_target=None, milestone_dateexpected_before=None,
-                 milestone_dateexpected_after=None, created_before=None,
-                 information_type=None, ignore_privacy=False, ociproject=None):
+    def __init__(
+        self,
+        user,
+        bug=None,
+        searchtext=None,
+        fast_searchtext=None,
+        status=None,
+        importance=None,
+        milestone=None,
+        milestone_tag=None,
+        assignee=None,
+        sourcepackagename=None,
+        owner=None,
+        attachmenttype=None,
+        orderby=None,
+        omit_dupes=False,
+        subscriber=None,
+        component=None,
+        pending_bugwatch_elsewhere=False,
+        resolved_upstream=False,
+        open_upstream=False,
+        has_no_upstream_bugtask=False,
+        tag=None,
+        has_cve=False,
+        bug_supervisor=None,
+        bug_reporter=None,
+        nominated_for=None,
+        bug_commenter=None,
+        omit_targeted=False,
+        date_closed=None,
+        affected_user=None,
+        affects_me=False,
+        linked_branches=None,
+        linked_merge_proposals=None,
+        linked_blueprints=None,
+        structural_subscriber=None,
+        modified_since=None,
+        created_since=None,
+        exclude_conjoined_tasks=False,
+        cve=None,
+        upstream_target=None,
+        milestone_dateexpected_before=None,
+        milestone_dateexpected_after=None,
+        created_before=None,
+        information_type=None,
+        ignore_privacy=False,
+        ociproject=None,
+    ):
 
         self.bug = bug
         self.searchtext = searchtext
@@ -247,15 +267,26 @@ class BugTaskSearchParams:
         """Set the sourcepackage context on which to filter the search."""
         # Import this here to avoid circular dependencies
         from lp.registry.interfaces.sourcepackage import ISourcePackage
+
         if isinstance(sourcepackage, any):
             # Unwrap the source package.
-            self.sourcepackagename = any(*[
-                pkg.sourcepackagename for pkg in sourcepackage.query_values])
-            distroseries = any(*[pkg.distroseries for pkg in
-                sourcepackage.query_values if ISourcePackage.providedBy(pkg)])
-            distributions = any(*[pkg.distribution for pkg in
-                sourcepackage.query_values
-                if not ISourcePackage.providedBy(pkg)])
+            self.sourcepackagename = any(
+                *[pkg.sourcepackagename for pkg in sourcepackage.query_values]
+            )
+            distroseries = any(
+                *[
+                    pkg.distroseries
+                    for pkg in sourcepackage.query_values
+                    if ISourcePackage.providedBy(pkg)
+                ]
+            )
+            distributions = any(
+                *[
+                    pkg.distribution
+                    for pkg in sourcepackage.query_values
+                    if not ISourcePackage.providedBy(pkg)
+                ]
+            )
             if distroseries.query_values and not distributions.query_values:
                 self.distroseries = distroseries
             elif not distroseries.query_values and distributions.query_values:
@@ -299,7 +330,7 @@ class BugTaskSearchParams:
         from lp.registry.interfaces.distribution import IDistribution
         from lp.registry.interfaces.distributionsourcepackage import (
             IDistributionSourcePackage,
-            )
+        )
         from lp.registry.interfaces.distroseries import IDistroSeries
         from lp.registry.interfaces.milestone import IMilestone
         from lp.registry.interfaces.ociproject import IOCIProject
@@ -307,9 +338,11 @@ class BugTaskSearchParams:
         from lp.registry.interfaces.productseries import IProductSeries
         from lp.registry.interfaces.projectgroup import IProjectGroup
         from lp.registry.interfaces.sourcepackage import ISourcePackage
+
         if isinstance(target, (any, all)):
-            assert len(target.query_values), \
-                'cannot determine target with no targets'
+            assert len(
+                target.query_values
+            ), "cannot determine target with no targets"
             instance = target.query_values[0]
         else:
             instance = target
@@ -351,25 +384,44 @@ class BugTaskSearchParams:
             return value
 
     @classmethod
-    def fromSearchForm(cls, user,
-                       order_by=('-importance', ), search_text=None,
-                       status=list(UNRESOLVED_BUGTASK_STATUSES),
-                       importance=None,
-                       assignee=None, bug_reporter=None, bug_supervisor=None,
-                       bug_commenter=None, bug_subscriber=None, owner=None,
-                       affected_user=None, affects_me=False,
-                       has_patch=None, has_cve=None,
-                       distribution=None, tags=None,
-                       tags_combinator=BugTagsSearchCombinator.ALL,
-                       omit_duplicates=True, omit_targeted=None,
-                       status_upstream=None, milestone=None, component=None,
-                       nominated_for=None, sourcepackagename=None,
-                       has_no_package=None, linked_branches=None,
-                       linked_merge_proposals=None, linked_blueprints=None,
-                       structural_subscriber=None,
-                       modified_since=None, created_since=None,
-                       created_before=None, information_type=None,
-                       ociproject=None):
+    def fromSearchForm(
+        cls,
+        user,
+        order_by=("-importance",),
+        search_text=None,
+        status=list(UNRESOLVED_BUGTASK_STATUSES),
+        importance=None,
+        assignee=None,
+        bug_reporter=None,
+        bug_supervisor=None,
+        bug_commenter=None,
+        bug_subscriber=None,
+        owner=None,
+        affected_user=None,
+        affects_me=False,
+        has_patch=None,
+        has_cve=None,
+        distribution=None,
+        tags=None,
+        tags_combinator=BugTagsSearchCombinator.ALL,
+        omit_duplicates=True,
+        omit_targeted=None,
+        status_upstream=None,
+        milestone=None,
+        component=None,
+        nominated_for=None,
+        sourcepackagename=None,
+        has_no_package=None,
+        linked_branches=None,
+        linked_merge_proposals=None,
+        linked_blueprints=None,
+        structural_subscriber=None,
+        modified_since=None,
+        created_since=None,
+        created_before=None,
+        information_type=None,
+        ociproject=None,
+    ):
         """Create and return a new instance using the parameter list."""
         search_params = cls(user=user, orderby=order_by)
 
@@ -388,6 +440,7 @@ class BugTaskSearchParams:
         if has_patch:
             # Import this here to avoid circular imports
             from lp.bugs.interfaces.bugattachment import BugAttachmentType
+
             search_params.attachmenttype = BugAttachmentType.PATCH
         search_params.has_cve = has_cve
         if zope_isinstance(tags, (list, tuple)):
@@ -402,17 +455,18 @@ class BugTaskSearchParams:
             pass  # tags not supplied
         else:
             raise AssertionError(
-                'Tags can only be supplied as a list or a string.')
+                "Tags can only be supplied as a list or a string."
+            )
         search_params.omit_dupes = omit_duplicates
         search_params.omit_targeted = omit_targeted
         if status_upstream is not None:
-            if 'pending_bugwatch' in status_upstream:
+            if "pending_bugwatch" in status_upstream:
                 search_params.pending_bugwatch_elsewhere = True
-            if 'resolved_upstream' in status_upstream:
+            if "resolved_upstream" in status_upstream:
                 search_params.resolved_upstream = True
-            if 'open_upstream' in status_upstream:
+            if "open_upstream" in status_upstream:
                 search_params.open_upstream = True
-            if 'hide_upstream' in status_upstream:
+            if "hide_upstream" in status_upstream:
                 search_params.has_no_upstream_bugtask = True
         search_params.milestone = cls._anyfy(milestone)
         search_params.component = cls._anyfy(component)
@@ -440,139 +494,186 @@ DEFAULT_SEARCH_BUGTASK_STATUSES = (
     BugTaskStatusSearch.CONFIRMED,
     BugTaskStatusSearch.TRIAGED,
     BugTaskStatusSearch.INPROGRESS,
-    BugTaskStatusSearch.FIXCOMMITTED)
+    BugTaskStatusSearch.FIXCOMMITTED,
+)
 
 DEFAULT_SEARCH_BUGTASK_STATUSES_FOR_DISPLAY = [
     BugTaskStatusSearchDisplay.items.mapping[item.value]
-    for item in DEFAULT_SEARCH_BUGTASK_STATUSES]
+    for item in DEFAULT_SEARCH_BUGTASK_STATUSES
+]
 
 
 UPSTREAM_STATUS_VOCABULARY = SimpleVocabulary(
-    [SimpleTerm(
-        "pending_bugwatch",
-        title="Show bugs that need to be forwarded to an upstream "
-              "bug tracker"),
-    SimpleTerm(
-        "hide_upstream",
-        title="Show bugs that are not known to affect upstream"),
-    SimpleTerm(
-        "resolved_upstream",
-        title="Show bugs that are resolved upstream"),
-    SimpleTerm(
-        "open_upstream",
-        title="Show bugs that are open upstream"),
-    ])
+    [
+        SimpleTerm(
+            "pending_bugwatch",
+            title="Show bugs that need to be forwarded to an upstream "
+            "bug tracker",
+        ),
+        SimpleTerm(
+            "hide_upstream",
+            title="Show bugs that are not known to affect upstream",
+        ),
+        SimpleTerm(
+            "resolved_upstream", title="Show bugs that are resolved upstream"
+        ),
+        SimpleTerm("open_upstream", title="Show bugs that are open upstream"),
+    ]
+)
 
 UPSTREAM_PRODUCT_STATUS_VOCABULARY = SimpleVocabulary(
-    [SimpleTerm(
-        "pending_bugwatch",
-        title="Show bugs that need to be forwarded to an upstream bug "
-              "tracker"),
-    SimpleTerm(
-        "resolved_upstream",
-        title="Show bugs that are resolved elsewhere"),
-    ])
+    [
+        SimpleTerm(
+            "pending_bugwatch",
+            title="Show bugs that need to be forwarded to an upstream bug "
+            "tracker",
+        ),
+        SimpleTerm(
+            "resolved_upstream", title="Show bugs that are resolved elsewhere"
+        ),
+    ]
+)
 
 
 class IBugTaskSearchBase(Interface):
     """The basic search controls."""
+
     searchtext = TextLine(title=_("Bug ID or search text."), required=False)
     status = List(
-        title=_('Status'),
-        description=_('Show only bugs with the given status value '
-                      'or list of values.'),
+        title=_("Status"),
+        description=_(
+            "Show only bugs with the given status value " "or list of values."
+        ),
         value_type=Choice(
-            title=_('Status'),
+            title=_("Status"),
             vocabulary=BugTaskStatusSearch,
-            default=BugTaskStatusSearch.NEW),
+            default=BugTaskStatusSearch.NEW,
+        ),
         default=list(DEFAULT_SEARCH_BUGTASK_STATUSES),
-        required=False)
+        required=False,
+    )
     importance = List(
-        title=_('Importance'),
-        description=_('Show only bugs with the given importance '
-                      'or list of importances.'),
-        value_type=IBugTask['importance'],
-        required=False)
+        title=_("Importance"),
+        description=_(
+            "Show only bugs with the given importance "
+            "or list of importances."
+        ),
+        value_type=IBugTask["importance"],
+        required=False,
+    )
     information_type = List(
-        title=_('Information Type'),
-        description=_('Show only bugs with the given information type '
-                      'or list of information types.'),
+        title=_("Information Type"),
+        description=_(
+            "Show only bugs with the given information type "
+            "or list of information types."
+        ),
         value_type=Choice(
-            title=_('Information Type'),
-            vocabulary=InformationType),
-        required=False)
+            title=_("Information Type"), vocabulary=InformationType
+        ),
+        required=False,
+    )
     assignee = Choice(
-        title=_('Assignee'),
-        description=_('Person entity assigned for this bug.'),
-        vocabulary='ValidAssignee', required=False)
+        title=_("Assignee"),
+        description=_("Person entity assigned for this bug."),
+        vocabulary="ValidAssignee",
+        required=False,
+    )
     bug_reporter = Choice(
-        title=_('Bug reporter'),
-        description=_('Person entity that filed the bug report.'),
-        vocabulary='ValidAssignee', required=False)
+        title=_("Bug reporter"),
+        description=_("Person entity that filed the bug report."),
+        vocabulary="ValidAssignee",
+        required=False,
+    )
     omit_dupes = Bool(
-        title=_('Omit bugs marked as duplicate,'), required=False,
-        default=True)
+        title=_("Omit bugs marked as duplicate,"), required=False, default=True
+    )
     omit_targeted = Bool(
-        title=_('Omit bugs targeted to a series'), required=False,
-        default=True)
+        title=_("Omit bugs targeted to a series"), required=False, default=True
+    )
     has_patch = Bool(
-        title=_('Show only bugs with patches available.'), required=False,
-        default=False)
+        title=_("Show only bugs with patches available."),
+        required=False,
+        default=False,
+    )
     has_no_package = Bool(
-        title=_('Exclude bugs with packages specified'),
-        required=False, default=False)
+        title=_("Exclude bugs with packages specified"),
+        required=False,
+        default=False,
+    )
     milestone = List(
-        title=_('Milestone'),
-        description=_('Show only bug tasks targeted to this milestone.'),
+        title=_("Milestone"),
+        description=_("Show only bug tasks targeted to this milestone."),
         value_type=ReferenceChoice(
-        title=_('Milestone'), vocabulary='Milestone',
-            schema=Interface),  # IMilestone
-        required=False)
+            title=_("Milestone"), vocabulary="Milestone", schema=Interface
+        ),  # IMilestone
+        required=False,
+    )
     component = List(
-        title=_('Component'),
-        description=_('Distribution package archive grouping. '
-                      'E.g. main, universe, multiverse'),
-        value_type=IComponent['name'], required=False)
+        title=_("Component"),
+        description=_(
+            "Distribution package archive grouping. "
+            "E.g. main, universe, multiverse"
+        ),
+        value_type=IComponent["name"],
+        required=False,
+    )
     tag = List(title=_("Tag"), value_type=SearchTag(), required=False)
     status_upstream = List(
-        title=_('Status upstream'),
-        description=_('Indicates the status of any remote watches '
-                      'associated with the bug.  Possible values '
-                      'include: pending_bugwatch, hide_upstream, '
-                      'resolved_upstream, and open_upstream.'),
-        value_type=Choice(vocabulary=UPSTREAM_STATUS_VOCABULARY),
-        required=False)
-    has_cve = Bool(
-        title=_('Show only bugs associated with a CVE'), required=False)
-    structural_subscriber = Choice(
-        title=_('Structural Subscriber'), vocabulary='ValidPersonOrTeam',
+        title=_("Status upstream"),
         description=_(
-            'Show only bugs in projects, series, distributions, and packages '
-            'that this person or team is subscribed to.'),
-        required=False)
+            "Indicates the status of any remote watches "
+            "associated with the bug.  Possible values "
+            "include: pending_bugwatch, hide_upstream, "
+            "resolved_upstream, and open_upstream."
+        ),
+        value_type=Choice(vocabulary=UPSTREAM_STATUS_VOCABULARY),
+        required=False,
+    )
+    has_cve = Bool(
+        title=_("Show only bugs associated with a CVE"), required=False
+    )
+    structural_subscriber = Choice(
+        title=_("Structural Subscriber"),
+        vocabulary="ValidPersonOrTeam",
+        description=_(
+            "Show only bugs in projects, series, distributions, and packages "
+            "that this person or team is subscribed to."
+        ),
+        required=False,
+    )
     bug_commenter = Choice(
-        title=_('Bug commenter'), vocabulary='ValidPersonOrTeam',
-        description=_('Show only bugs commented on by this person.'),
-        required=False)
+        title=_("Bug commenter"),
+        vocabulary="ValidPersonOrTeam",
+        description=_("Show only bugs commented on by this person."),
+        required=False,
+    )
     subscriber = Choice(
-        title=_('Bug subscriber'), vocabulary='ValidPersonOrTeam',
-        description=_('Show only bugs this person or team '
-                      'is directly subscribed to.'),
-        required=False)
-    affects_me = Bool(
-        title=_('Show only bugs affecting me'), required=False)
+        title=_("Bug subscriber"),
+        vocabulary="ValidPersonOrTeam",
+        description=_(
+            "Show only bugs this person or team " "is directly subscribed to."
+        ),
+        required=False,
+    )
+    affects_me = Bool(title=_("Show only bugs affecting me"), required=False)
     has_branches = Bool(
-        title=_('Show bugs with linked branches'), required=False,
-        default=True)
+        title=_("Show bugs with linked branches"), required=False, default=True
+    )
     has_no_branches = Bool(
-        title=_('Show bugs without linked branches'), required=False,
-        default=True)
+        title=_("Show bugs without linked branches"),
+        required=False,
+        default=True,
+    )
     has_blueprints = Bool(
-        title=_('Show bugs with linked blueprints'), required=False,
-        default=True)
+        title=_("Show bugs with linked blueprints"),
+        required=False,
+        default=True,
+    )
     has_no_blueprints = Bool(
-        title=_('Show bugs without linked blueprints'), required=False,
-        default=True)
+        title=_("Show bugs without linked blueprints"),
+        required=False,
+        default=True,
+    )
 
 
 class IBugTaskSearch(IBugTaskSearchBase):
@@ -584,35 +685,51 @@ class IBugTaskSearch(IBugTaskSearchBase):
     for status to be a List field on a search form, where more than
     one value can be selected.)
     """
+
     tag = List(
         title=_("Tags"),
-        description=_("String or list of strings for tags to search. "
-                      "To exclude, prepend a '-', e.g. '-unwantedtag'"),
-        value_type=SearchTag(), required=False)
+        description=_(
+            "String or list of strings for tags to search. "
+            "To exclude, prepend a '-', e.g. '-unwantedtag'"
+        ),
+        value_type=SearchTag(),
+        required=False,
+    )
     tags_combinator = Choice(
         title=_("Tags combination"),
         description=_("Search for any or all of the tags specified."),
-        vocabulary=BugTagsSearchCombinator, required=False,
-        default=BugTagsSearchCombinator.ANY)
+        vocabulary=BugTagsSearchCombinator,
+        required=False,
+        default=BugTagsSearchCombinator.ANY,
+    )
 
     upstream_target = Choice(
-        title=_('Project'), required=False, vocabulary='Product')
+        title=_("Project"), required=False, vocabulary="Product"
+    )
 
 
 class IPersonBugTaskSearch(IBugTaskSearchBase):
     """The schema used by the bug task search form of a person."""
+
     sourcepackagename = Choice(
-        title=_("Source Package Name"), required=False,
-        description=_("The source package in which the bug occurs. "
-        "Leave blank if you are not sure."),
-        vocabulary='SourcePackageName')
+        title=_("Source Package Name"),
+        required=False,
+        description=_(
+            "The source package in which the bug occurs. "
+            "Leave blank if you are not sure."
+        ),
+        vocabulary="SourcePackageName",
+    )
     distribution = Choice(
-        title=_("Distribution"), required=False, vocabulary='Distribution')
+        title=_("Distribution"), required=False, vocabulary="Distribution"
+    )
     tags_combinator = Choice(
         title=_("Tags combination"),
         description=_("Search for any or all of the tags specified."),
-        vocabulary=BugTagsSearchCombinator, required=False,
-        default=BugTagsSearchCombinator.ANY)
+        vocabulary=BugTagsSearchCombinator,
+        required=False,
+        default=BugTagsSearchCombinator.ANY,
+    )
 
 
 class IUpstreamProductBugTaskSearch(IBugTaskSearch):
@@ -621,18 +738,22 @@ class IUpstreamProductBugTaskSearch(IBugTaskSearch):
     This schema is the same as IBugTaskSearch, except that it has only
     one choice for Status Upstream.
     """
+
     status_upstream = List(
-        title=_('Status Upstream'),
-        value_type=Choice(
-            vocabulary=UPSTREAM_PRODUCT_STATUS_VOCABULARY),
-        required=False)
+        title=_("Status Upstream"),
+        value_type=Choice(vocabulary=UPSTREAM_PRODUCT_STATUS_VOCABULARY),
+        required=False,
+    )
 
 
 class IFrontPageBugTaskSearch(IBugTaskSearch):
     """Additional search options for the front page of bugs."""
+
     scope = Choice(
-        title="Search Scope", required=False,
-        vocabulary="DistributionOrProductOrProjectGroup")
+        title="Search Scope",
+        required=False,
+        vocabulary="DistributionOrProductOrProjectGroup",
+    )
 
 
 def get_person_bugtasks_search_params(user, context, **kwargs):
@@ -649,9 +770,15 @@ def get_person_bugtasks_search_params(user, context, **kwargs):
         always get one task owned by the bug reporter
     """
     from lp.registry.interfaces.person import IPerson
+
     assert IPerson.providedBy(context), "Context argument needs to be IPerson"
-    relevant_fields = ('assignee', 'bug_subscriber', 'owner', 'bug_commenter',
-                       'structural_subscriber')
+    relevant_fields = (
+        "assignee",
+        "bug_subscriber",
+        "owner",
+        "bug_commenter",
+        "structural_subscriber",
+    )
     search_params = []
     for key in relevant_fields:
         # all these parameter default to None
@@ -661,20 +788,22 @@ def get_person_bugtasks_search_params(user, context, **kwargs):
             # the field is None or equal to the context
             arguments = kwargs.copy()
             arguments[key] = context
-            if key == 'owner':
+            if key == "owner":
                 # Specify both owner and bug_reporter to try to
                 # prevent the same bug (but different tasks)
                 # being displayed.
                 # see `PersonRelatedBugTaskSearchListingView.searchUnbatched`
-                arguments['bug_reporter'] = context
+                arguments["bug_reporter"] = context
             search_params.append(
-                BugTaskSearchParams.fromSearchForm(user, **arguments))
+                BugTaskSearchParams.fromSearchForm(user, **arguments)
+            )
     if len(search_params) == 0:
         # unable to search for related tasks to user_context because user
         # modified the query in an invalid way by overwriting all user
         # related parameters
         raise IllegalRelatedBugTasksParams(
-            'Cannot search for related tasks to \'%s\', at least one '
-             'of these parameter has to be empty: %s'
-                % (context.name, ", ".join(relevant_fields)))
+            "Cannot search for related tasks to '%s', at least one "
+            "of these parameter has to be empty: %s"
+            % (context.name, ", ".join(relevant_fields))
+        )
     return search_params
