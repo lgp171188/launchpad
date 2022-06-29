@@ -526,7 +526,9 @@ class ISpecificationView(IHasOwner, IHasLinkedBranches):
     dependencies = exported(
         CollectionField(
             title=_("Specs on which this one depends."),
-            value_type=Reference(schema=Interface),  # ISpecification, really.
+            # Really ISpecification, patched in
+            # lp.blueprints.interfaces.webservice.
+            value_type=Reference(schema=Interface),
             readonly=True,
         ),
         as_of="devel",
@@ -537,7 +539,9 @@ class ISpecificationView(IHasOwner, IHasLinkedBranches):
                 "Branches associated with this spec, usually "
                 "branches on which this spec is being implemented."
             ),
-            value_type=Reference(schema=Interface),  # ISpecificationBranch
+            # Really ISpecificationBranch, patched in
+            # lp.blueprints.interfaces.webservice.
+            value_type=Reference(schema=Interface),
             readonly=True,
         ),
         as_of="devel",
@@ -859,7 +863,10 @@ class ISpecification(
         """
 
     @call_with(user=REQUEST_USER)
-    @operation_parameters(bug=Reference(schema=Interface))  # Really IBug
+    @operation_parameters(
+        # Really IBug, patched in lp.blueprints.interfaces.webservice.
+        bug=Reference(schema=Interface)
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def linkBug(bug, user=None, check_permissions=True):
@@ -869,7 +876,10 @@ class ISpecification(
         """
 
     @call_with(user=REQUEST_USER)
-    @operation_parameters(bug=Reference(schema=Interface))  # Really IBug
+    @operation_parameters(
+        # Really IBug, patched in lp.blueprints.interfaces.webservice.
+        bug=Reference(schema=Interface)
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def unlinkBug(bug, user=None, check_permissions=True):
