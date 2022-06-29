@@ -476,8 +476,7 @@ class Archive(SQLBase):
     def api_publish(self, value):
         if value is True and self.status != ArchiveStatus.ACTIVE:
             raise IncompatibleArchiveStatus(
-                "The publish flag can only be set to "
-                "True when the archive status is Active")
+                "Deleted PPAs can't be enabled.")
         self.publish = value
 
     @property

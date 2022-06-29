@@ -201,9 +201,7 @@ class TestArchiveWebservice(TestCaseWithFactory):
                 archive_url, "application/json", json.dumps({"publish": True}))
 
             self.assertEqual(400, response.status)
-            self.assertEqual(b'The publish flag can only be set to '
-                             b'True when the archive status is Active',
-                             response.body)
+            self.assertEqual(b"Deleted PPAs can't be enabled.", response.body)
 
 
 class TestSigningKey(TestCaseWithFactory):
