@@ -112,7 +112,7 @@
 
     <ul>
       <li id="revision-id" tal:condition="context/revision_id">
-        Revision: <span tal:replace="context/revision_id" />
+        VCS revision: <span tal:replace="context/revision_id" />
       </li>
       <li tal:condition="context/dependencies">
         Missing build dependencies: <em tal:content="context/dependencies"/>
@@ -156,69 +156,92 @@
            tal:attributes="href context/upload_log_url">uploadlog</a>
         (<span tal:replace="file/content/filesize/fmt:bytes" />)
       </li>
-      <li id="store-upload-status"
-          tal:define="job context/last_store_upload_job"
-          tal:condition="job">
-        <a tal:condition="context/store_upload_url"
-           tal:attributes="href context/store_upload_url">
-          Manage this package in the store
-        </a>
-        <tal:pending
-            condition="context/store_upload_status/enumvalue:PENDING">
-          <br tal:condition="context/store_upload_url" />
-          Store upload in progress
-        </tal:pending>
-        <tal:failed-upload
-            condition="context/store_upload_status/enumvalue:FAILEDTOUPLOAD">
-          Store upload failed:
-          <ul id="store-upload-error-messages">
-            <li tal:repeat="error context/store_upload_error_messages">
-              <span tal:replace="error/message"/>
-              <a tal:condition="error/link|nothing"
-                  tal:attributes="href error/link"
-                  target="_blank"
-                  class="sprite maybe action-icon">(?)</a>
-            </li>
-          </ul>
-          <form action="" method="POST">
-            <input type="submit" name="field.actions.upload" value="Retry" />
-          </form>
-        </tal:failed-upload>
-        <tal:failed-release
-            condition="context/store_upload_status/enumvalue:FAILEDTORELEASE">
-          <br />
-          Releasing package to channels failed:
-          <tal:error-message replace="context/store_upload_error_message" />
-          <form action="" method="POST">
-            <input type="submit" name="field.actions.upload" value="Retry" />
-          </form>
-        </tal:failed-release>
-        <tal:uploaded
-            condition="context/store_upload_status/enumvalue:UPLOADED">
-          <tal:comment condition="nothing">
-            If the package is in the uploaded state, we normally have a URL
-            (rendered above), but we might not if the upload was queued for
-            manual review behind other uploads of the same package.  Linking
-            to the front page of the store in that case isn't great, but
-            it's the best we can reasonably do.
-          </tal:comment>
-          <a tal:condition="not: context/store_upload_url"
-             tal:attributes="href modules/lp.services.config/config/snappy/store_url">
-            Uploaded to the store
-          </a>
-        </tal:uploaded>
-      </li>
-      <li id="store-upload-status"
-          tal:condition="python:
-            context.status.title == 'Successfully built' and
-            context.snap.can_upload_to_store and
-            context.last_store_upload_job is None">
-        <form action="" method="POST">
-          <input type="submit" name="field.actions.upload"
-                 value="Upload this package to the store" />
-        </form>
-      </li>
     </ul>
+
+    <div id="store-status"
+         tal:condition="python:
+           context.status.title == 'Successfully built' and
+           context.snap.store_name">
+      <h2>Store status</h2>
+      <div>
+        <dl>
+          <dt>Name:</dt>
+          <dd tal:content="context/snap/store_name" />
+        </dl>
+        <dl tal:condition="context/store_upload_revision">
+          <dt>Revision:</dt>
+          <dd tal:content="context/store_upload_revision" />
+        </dl>
+        <dl>
+          <dt>Upload:</dt>
+          <dd id="store-upload-status">
+            <tal:upload-job
+                define="job context/last_store_upload_job;
+                        status context/store_upload_status;
+                        url context/store_upload_url;
+                        error_message context/store_upload_error_message;
+                        error_messages context/store_upload_error_messages"
+                condition="job">
+              <a tal:condition="url" tal:attributes="href url">
+                Manage this package in the store
+              </a>
+              <tal:pending condition="status/enumvalue:PENDING">
+                <br tal:condition="url" />
+                Store upload in progress
+              </tal:pending>
+              <tal:failed-upload condition="status/enumvalue:FAILEDTOUPLOAD">
+                Store upload failed:
+                <ul id="store-upload-error-messages">
+                  <li tal:repeat="error error_messages">
+                    <span tal:replace="error/message"/>
+                    <a tal:condition="error/link|nothing"
+                        tal:attributes="href error/link"
+                        target="_blank"
+                        class="sprite maybe action-icon">(?)</a>
+                  </li>
+                </ul>
+                <form action="" method="POST">
+                  <input type="submit" name="field.actions.upload"
+                         value="Retry" />
+                </form>
+              </tal:failed-upload>
+              <tal:failed-release condition="status/enumvalue:FAILEDTORELEASE">
+                <br />
+                Releasing package to channels failed:
+                <tal:error-message replace="error_message" />
+                <form action="" method="POST">
+                  <input type="submit" name="field.actions.upload"
+                         value="Retry" />
+                </form>
+              </tal:failed-release>
+              <tal:uploaded condition="status/enumvalue:UPLOADED">
+                <tal:comment condition="nothing">
+                  If the package is in the uploaded state, we normally have
+                  a URL (rendered above), but we might not if the upload was
+                  queued for manual review behind other uploads of the same
+                  package. Linking to the front page of the store in that
+                  case isn't great, but it's the best we can reasonably do.
+                </tal:comment>
+                <a tal:condition="not: url"
+                   tal:attributes="href modules/lp.services.config/config/snappy/store_url">
+                  Uploaded to the store
+                </a>
+              </tal:uploaded>
+            </tal:upload-job>
+            <tal:no-upload-job
+                condition="python:
+                  context.status.title == 'Successfully built' and
+                  context.snap.can_upload_to_store and
+                  context.last_store_upload_job is None">
+              <form action="" method="POST">
+                <input type="submit" name="field.actions.upload"
+                       value="Upload this package to the store" />
+              </form>
+            </tal:no-upload-job>
+          </dd>
+        </dl>
+      </div>
+    </div>
 
     <div
       style="margin-top: 1.5em"
