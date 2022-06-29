@@ -13,18 +13,15 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.services.webapp import canonical_url
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
+    RequestTimelineCollector,
+    TestCaseWithFactory,
     admin_logged_in,
     api_url,
     logout,
-    RequestTimelineCollector,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
-from lp.testing.pages import (
-    LaunchpadWebServiceCaller,
-    webservice_for_person,
-    )
+from lp.testing.pages import LaunchpadWebServiceCaller, webservice_for_person
 
 
 class TestBuildersCollection(TestCaseWithFactory):
@@ -35,18 +32,21 @@ class TestBuildersCollection(TestCaseWithFactory):
         self.webservice = LaunchpadWebServiceCaller()
 
     def test_list(self):
-        names = ['bob', 'frog']
+        names = ["bob", "frog"]
         for i in range(3):
             builder = self.factory.makeBuilder()
             self.factory.makeBinaryPackageBuild().queueBuild().markAsBuilding(
-                builder)
+                builder
+            )
             names.append(builder.name)
         logout()
         with RequestTimelineCollector() as recorder:
             builders = self.webservice.get(
-                '/builders', api_version='devel').jsonBody()
+                "/builders", api_version="devel"
+            ).jsonBody()
         self.assertContentEqual(
-            names, [b['name'] for b in builders['entries']])
+            names, [b["name"] for b in builders["entries"]]
+        )
         self.assertThat(recorder, HasQueryCount(Equals(19)))
 
     def test_list_with_private_builds(self):
@@ -54,74 +54,94 @@ class TestBuildersCollection(TestCaseWithFactory):
         # current_build fields.
         with admin_logged_in():
             rbpb = self.factory.makeBinaryPackageBuild(
-                archive=self.factory.makeArchive(private=True))
+                archive=self.factory.makeArchive(private=True)
+            )
             rbpb.queueBuild().markAsBuilding(
-                self.factory.makeBuilder(name='restricted'))
+                self.factory.makeBuilder(name="restricted")
+            )
             bpb = self.factory.makeBinaryPackageBuild(
-                archive=self.factory.makeArchive(private=False))
+                archive=self.factory.makeArchive(private=False)
+            )
             bpb.queueBuild().markAsBuilding(
-                self.factory.makeBuilder(name='public'))
+                self.factory.makeBuilder(name="public")
+            )
             bpb_url = canonical_url(bpb, path_only_if_possible=True)
         logout()
 
         builders = self.webservice.get(
-            '/builders', api_version='devel').jsonBody()
+            "/builders", api_version="devel"
+        ).jsonBody()
         current_builds = {
-            b['name']: b['current_build_link'] for b in builders['entries']}
+            b["name"]: b["current_build_link"] for b in builders["entries"]
+        }
         self.assertEqual(
-            'tag:launchpad.net:2008:redacted', current_builds['restricted'])
+            "tag:launchpad.net:2008:redacted", current_builds["restricted"]
+        )
         self.assertEqual(
-            'http://api.launchpad.test/devel' + bpb_url,
-            current_builds['public'])
+            "http://api.launchpad.test/devel" + bpb_url,
+            current_builds["public"],
+        )
 
     def test_getBuildQueueSizes(self):
         logout()
         results = self.webservice.named_get(
-            '/builders', 'getBuildQueueSizes', api_version='devel')
+            "/builders", "getBuildQueueSizes", api_version="devel"
+        )
         self.assertEqual(
-            ['nonvirt', 'virt'], sorted(results.jsonBody().keys()))
+            ["nonvirt", "virt"], sorted(results.jsonBody().keys())
+        )
 
     def test_getBuildersForQueue(self):
-        g1 = self.factory.makeProcessor('g1')
-        quantum = self.factory.makeProcessor('quantum')
+        g1 = self.factory.makeProcessor("g1")
+        quantum = self.factory.makeProcessor("quantum")
+        self.factory.makeBuilder(processors=[quantum], name="quantum_builder1")
+        self.factory.makeBuilder(processors=[quantum], name="quantum_builder2")
         self.factory.makeBuilder(
-            processors=[quantum], name='quantum_builder1')
+            processors=[quantum], name="quantum_builder3", virtualized=False
+        )
         self.factory.makeBuilder(
-            processors=[quantum], name='quantum_builder2')
-        self.factory.makeBuilder(
-            processors=[quantum], name='quantum_builder3', virtualized=False)
-        self.factory.makeBuilder(
-            processors=[g1], name='g1_builder', virtualized=False)
+            processors=[g1], name="g1_builder", virtualized=False
+        )
 
         logout()
         results = self.webservice.named_get(
-            '/builders', 'getBuildersForQueue',
-            processor=api_url(quantum), virtualized=True,
-            api_version='devel').jsonBody()
+            "/builders",
+            "getBuildersForQueue",
+            processor=api_url(quantum),
+            virtualized=True,
+            api_version="devel",
+        ).jsonBody()
         self.assertEqual(
-            ['quantum_builder1', 'quantum_builder2'],
-            sorted(builder['name'] for builder in results['entries']))
+            ["quantum_builder1", "quantum_builder2"],
+            sorted(builder["name"] for builder in results["entries"]),
+        )
 
     def test_new(self):
         person = self.factory.makePerson()
-        badmins = getUtility(IPersonSet).getByName('launchpad-buildd-admins')
+        badmins = getUtility(IPersonSet).getByName("launchpad-buildd-admins")
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PRIVATE)
+            person, permission=OAuthPermission.WRITE_PRIVATE
+        )
         args = dict(
-            name='foo', processors=['/+processors/386'], title='foobar',
-            url='http://foo.buildd:8221/', virtualized=False,
-            api_version='devel')
+            name="foo",
+            processors=["/+processors/386"],
+            title="foobar",
+            url="http://foo.buildd:8221/",
+            virtualized=False,
+            api_version="devel",
+        )
 
-        response = webservice.named_post('/builders', 'new', **args)
+        response = webservice.named_post("/builders", "new", **args)
         self.assertEqual(401, response.status)
 
         with admin_logged_in():
             badmins.addMember(person, badmins)
-        response = webservice.named_post('/builders', 'new', **args)
+        response = webservice.named_post("/builders", "new", **args)
         self.assertEqual(201, response.status)
 
         self.assertEqual(
-            'foobar', webservice.get('/builders/foo').jsonBody()['title'])
+            "foobar", webservice.get("/builders/foo").jsonBody()["title"]
+        )
 
 
 class TestBuilderEntry(TestCaseWithFactory):
@@ -139,62 +159,79 @@ class TestBuilderEntry(TestCaseWithFactory):
         builder = self.factory.makeBuilder()
         user = self.factory.makePerson()
         user_webservice = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC)
-        clean_status_patch = dumps({'clean_status': 'Cleaning'})
+            user, permission=OAuthPermission.WRITE_PUBLIC
+        )
+        clean_status_patch = dumps({"clean_status": "Cleaning"})
         logout()
 
         # A normal user is unauthorized.
         response = user_webservice.patch(
-            api_url(builder), 'application/json',
-            clean_status_patch, api_version='devel')
+            api_url(builder),
+            "application/json",
+            clean_status_patch,
+            api_version="devel",
+        )
         self.assertEqual(401, response.status)
 
         # But a buildd admin can set the attribute.
         with admin_logged_in():
             buildd_admins = getUtility(IPersonSet).getByName(
-                'launchpad-buildd-admins')
+                "launchpad-buildd-admins"
+            )
             buildd_admins.addMember(user, buildd_admins.teamowner)
         response = user_webservice.patch(
-            api_url(builder), 'application/json',
-            clean_status_patch, api_version='devel')
+            api_url(builder),
+            "application/json",
+            clean_status_patch,
+            api_version="devel",
+        )
         self.assertEqual(209, response.status)
-        self.assertEqual('Cleaning', response.jsonBody()['clean_status'])
+        self.assertEqual("Cleaning", response.jsonBody()["clean_status"])
 
     def test_security_builder_reset(self):
-        builder = getUtility(IBuilderSet)['bob']
+        builder = getUtility(IBuilderSet)["bob"]
         person = self.factory.makePerson()
         user_webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
-        change_patch = dumps({'builderok': False, 'manual': False,
-                              'failnotes': 'test notes'})
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
+        change_patch = dumps(
+            {"builderok": False, "manual": False, "failnotes": "test notes"}
+        )
         logout()
 
         # A normal user is unauthorized.
         response = user_webservice.patch(
-            api_url(builder), 'application/json', change_patch,
-            api_version='devel')
+            api_url(builder),
+            "application/json",
+            change_patch,
+            api_version="devel",
+        )
         self.assertEqual(401, response.status)
 
         # But a registry expert can set the attributes.
         with admin_logged_in():
-            reg_expert = getUtility(IPersonSet).getByName('registry')
+            reg_expert = getUtility(IPersonSet).getByName("registry")
             reg_expert.addMember(person, reg_expert)
         response = user_webservice.patch(
-            api_url(builder), 'application/json', change_patch,
-            api_version='devel')
+            api_url(builder),
+            "application/json",
+            change_patch,
+            api_version="devel",
+        )
         self.assertEqual(209, response.status)
-        self.assertEqual(False, response.jsonBody()['builderok'])
-        self.assertEqual(False, response.jsonBody()['manual'])
-        self.assertEqual('test notes', response.jsonBody()['failnotes'])
+        self.assertEqual(False, response.jsonBody()["builderok"])
+        self.assertEqual(False, response.jsonBody()["manual"])
+        self.assertEqual("test notes", response.jsonBody()["failnotes"])
 
     def test_exports_processor(self):
-        processor = self.factory.makeProcessor('s1')
+        processor = self.factory.makeProcessor("s1")
         builder = self.factory.makeBuilder(processors=[processor])
 
         logout()
         entry = self.webservice.get(
-            api_url(builder), api_version='devel').jsonBody()
-        self.assertEndsWith(entry['processor_link'], '/+processors/s1')
+            api_url(builder), api_version="devel"
+        ).jsonBody()
+        self.assertEndsWith(entry["processor_link"], "/+processors/s1")
 
     def test_getBuildRecords(self):
         builder = self.factory.makeBuilder()
@@ -203,11 +240,18 @@ class TestBuilderEntry(TestCaseWithFactory):
 
         logout()
         results = self.webservice.named_get(
-            api_url(builder), 'getBuildRecords', pocket='Release',
-            api_version='devel').jsonBody()
+            api_url(builder),
+            "getBuildRecords",
+            pocket="Release",
+            api_version="devel",
+        ).jsonBody()
         self.assertEqual(
-            [build_title], [entry['title'] for entry in results['entries']])
+            [build_title], [entry["title"] for entry in results["entries"]]
+        )
         results = self.webservice.named_get(
-            api_url(builder), 'getBuildRecords', pocket='Proposed',
-            api_version='devel').jsonBody()
-        self.assertEqual(0, len(results['entries']))
+            api_url(builder),
+            "getBuildRecords",
+            pocket="Proposed",
+            api_version="devel",
+        ).jsonBody()
+        self.assertEqual(0, len(results["entries"]))

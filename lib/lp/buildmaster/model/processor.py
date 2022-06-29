@@ -2,9 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'Processor',
-    'ProcessorSet',
-    ]
+    "Processor",
+    "ProcessorSet",
+]
 
 from storm.locals import Bool
 from zope.interface import implementer
@@ -13,7 +13,7 @@ from lp.buildmaster.interfaces.processor import (
     IProcessor,
     IProcessorSet,
     ProcessorNotFound,
-    )
+)
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import StringCol
@@ -21,11 +21,11 @@ from lp.services.database.sqlobject import StringCol
 
 @implementer(IProcessor)
 class Processor(SQLBase):
-    _table = 'Processor'
+    _table = "Processor"
 
-    name = StringCol(dbName='name', notNull=True)
-    title = StringCol(dbName='title', notNull=True)
-    description = StringCol(dbName='description', notNull=True)
+    name = StringCol(dbName="name", notNull=True)
+    title = StringCol(dbName="title", notNull=True)
+    description = StringCol(dbName="description", notNull=True)
     restricted = Bool(allow_none=False, default=False)
 
     # When setting this to true you may want to add missing
@@ -51,8 +51,9 @@ class ProcessorSet:
 
     def getByName(self, name):
         """See `IProcessorSet`."""
-        processor = IStore(Processor).find(
-            Processor, Processor.name == name).one()
+        processor = (
+            IStore(Processor).find(Processor, Processor.name == name).one()
+        )
         if processor is None:
             raise ProcessorNotFound(name)
         return processor
@@ -61,12 +62,23 @@ class ProcessorSet:
         """See `IProcessorSet`."""
         return IStore(Processor).find(Processor)
 
-    def new(self, name, title, description, restricted=False,
-            build_by_default=False, supports_virtualized=False,
-            supports_nonvirtualized=True):
+    def new(
+        self,
+        name,
+        title,
+        description,
+        restricted=False,
+        build_by_default=False,
+        supports_virtualized=False,
+        supports_nonvirtualized=True,
+    ):
         """See `IProcessorSet`."""
         return Processor(
-            name=name, title=title, description=description,
-            restricted=restricted, build_by_default=build_by_default,
+            name=name,
+            title=title,
+            description=description,
+            restricted=restricted,
+            build_by_default=build_by_default,
             supports_virtualized=supports_virtualized,
-            supports_nonvirtualized=supports_nonvirtualized)
+            supports_nonvirtualized=supports_nonvirtualized,
+        )

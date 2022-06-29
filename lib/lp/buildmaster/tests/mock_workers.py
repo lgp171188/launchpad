@@ -4,23 +4,23 @@
 """Mock Build objects for tests soyuz buildd-system."""
 
 __all__ = [
-    'AbortingWorker',
-    'BrokenWorker',
-    'BuildingWorker',
-    'DeadProxy',
-    'LostBuildingBrokenWorker',
-    'make_publisher',
-    'MockBuilder',
-    'OkWorker',
-    'TrivialBehaviour',
-    'WaitingWorker',
-    'WorkerTestHelpers',
-    ]
+    "AbortingWorker",
+    "BrokenWorker",
+    "BuildingWorker",
+    "DeadProxy",
+    "LostBuildingBrokenWorker",
+    "make_publisher",
+    "MockBuilder",
+    "OkWorker",
+    "TrivialBehaviour",
+    "WaitingWorker",
+    "WorkerTestHelpers",
+]
 
-from collections import OrderedDict
 import os
 import sys
 import xmlrpc.client
+from collections import OrderedDict
 
 import fixtures
 from lpbuildd.tests.harness import BuilddTestSetup
@@ -28,10 +28,7 @@ from testtools.content import attach_file
 from twisted.internet import defer
 from twisted.web.xmlrpc import Proxy
 
-from lp.buildmaster.enums import (
-    BuilderCleanStatus,
-    BuilderResetProtocol,
-    )
+from lp.buildmaster.enums import BuilderCleanStatus, BuilderResetProtocol
 from lp.buildmaster.interactor import BuilderWorker
 from lp.buildmaster.interfaces.builder import CannotFetchFile
 from lp.services.config import config
@@ -44,18 +41,27 @@ def make_publisher():
     """Make a Soyuz test publisher."""
     # Avoid circular imports.
     from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
+
     return SoyuzTestPublisher()
 
 
 class MockBuilder:
     """Emulates a IBuilder class."""
 
-    def __init__(self, name='mock-builder', builderok=True, manual=False,
-                 processors=None, virtualized=True, vm_host=None,
-                 url='http://fake:0000', version=None,
-                 clean_status=BuilderCleanStatus.DIRTY,
-                 vm_reset_protocol=BuilderResetProtocol.PROTO_1_1,
-                 active=True):
+    def __init__(
+        self,
+        name="mock-builder",
+        builderok=True,
+        manual=False,
+        processors=None,
+        virtualized=True,
+        vm_host=None,
+        url="http://fake:0000",
+        version=None,
+        clean_status=BuilderCleanStatus.DIRTY,
+        vm_reset_protocol=BuilderResetProtocol.PROTO_1_1,
+        active=True,
+    ):
         self.currentjob = None
         self.builderok = builderok
         self.manual = manual
@@ -96,83 +102,92 @@ class OkWorker:
         return [(x[0] if isinstance(x, tuple) else x) for x in self.call_log]
 
     def status(self):
-        self.call_log.append('status')
-        worker_status = {'builder_status': 'BuilderStatus.IDLE'}
+        self.call_log.append("status")
+        worker_status = {"builder_status": "BuilderStatus.IDLE"}
         if self.version is not None:
-            worker_status['builder_version'] = self.version
+            worker_status["builder_version"] = self.version
         return defer.succeed(worker_status)
 
     def ensurepresent(self, sha1, url, user=None, password=None):
-        self.call_log.append(('ensurepresent', url, user, password))
+        self.call_log.append(("ensurepresent", url, user, password))
         return defer.succeed((True, None))
 
     def build(self, buildid, buildtype, chroot, filemap, args):
         self.call_log.append(
-            ('build', buildid, buildtype, chroot, list(filemap), args))
-        return defer.succeed(('BuildStatus.BUILDING', buildid))
+            ("build", buildid, buildtype, chroot, list(filemap), args)
+        )
+        return defer.succeed(("BuildStatus.BUILDING", buildid))
 
     def echo(self, *args):
-        self.call_log.append(('echo',) + args)
+        self.call_log.append(("echo",) + args)
         return defer.succeed(args)
 
     def clean(self):
-        self.call_log.append('clean')
+        self.call_log.append("clean")
         return defer.succeed(None)
 
     def abort(self):
-        self.call_log.append('abort')
+        self.call_log.append("abort")
         return defer.succeed(None)
 
     def info(self):
-        self.call_log.append('info')
-        return defer.succeed(('1.0', self.arch_tag, 'binarypackage'))
+        self.call_log.append("info")
+        return defer.succeed(("1.0", self.arch_tag, "binarypackage"))
 
     def resume(self):
-        self.call_log.append('resume')
+        self.call_log.append("resume")
         return defer.succeed(("", "", 0))
 
     @defer.inlineCallbacks
-    def sendFileToWorker(self, sha1, url, username="", password="",
-                         logger=None):
+    def sendFileToWorker(
+        self, sha1, url, username="", password="", logger=None
+    ):
         present, info = yield self.ensurepresent(sha1, url, username, password)
         if not present:
             raise CannotFetchFile(url, info)
 
     def getURL(self, sha1):
-        return urlappend(
-            'http://localhost:8221/filecache/', sha1).encode('utf8')
+        return urlappend("http://localhost:8221/filecache/", sha1).encode(
+            "utf8"
+        )
 
     def getFiles(self, files, logger=None):
-        dl = defer.gatherResults([
-            self.getFile(builder_file, local_file)
-            for builder_file, local_file in files])
+        dl = defer.gatherResults(
+            [
+                self.getFile(builder_file, local_file)
+                for builder_file, local_file in files
+            ]
+        )
         return dl
 
 
 class BuildingWorker(OkWorker):
     """A mock worker that looks like it's currently building."""
 
-    def __init__(self, build_id='1-1'):
+    def __init__(self, build_id="1-1"):
         super().__init__()
         self.build_id = build_id
         self.status_count = 0
 
     def status(self):
-        self.call_log.append('status')
+        self.call_log.append("status")
         buildlog = xmlrpc.client.Binary(
-            b"This is a build log: %d" % self.status_count)
+            b"This is a build log: %d" % self.status_count
+        )
         self.status_count += 1
-        return defer.succeed({
-            'builder_status': 'BuilderStatus.BUILDING',
-            'build_id': self.build_id,
-            'logtail': buildlog,
-            })
+        return defer.succeed(
+            {
+                "builder_status": "BuilderStatus.BUILDING",
+                "build_id": self.build_id,
+                "logtail": buildlog,
+            }
+        )
 
     def getFile(self, sum, file_to_write):
-        self.call_log.append('getFile')
+        self.call_log.append("getFile")
         if sum == "buildlog":
             if isinstance(file_to_write, str):
-                file_to_write = open(file_to_write, 'wb')
+                file_to_write = open(file_to_write, "wb")
             file_to_write.write(b"This is a build log")
             file_to_write.close()
         return defer.succeed(None)
@@ -181,8 +196,13 @@ class BuildingWorker(OkWorker):
 class WaitingWorker(OkWorker):
     """A mock worker that looks like it's currently waiting."""
 
-    def __init__(self, state='BuildStatus.OK', dependencies=None,
-                 build_id='1-1', filemap=None):
+    def __init__(
+        self,
+        state="BuildStatus.OK",
+        dependencies=None,
+        build_id="1-1",
+        filemap=None,
+    ):
         super().__init__()
         self.state = state
         self.dependencies = dependencies
@@ -194,28 +214,30 @@ class WaitingWorker(OkWorker):
 
         # By default, the worker only has a buildlog, but callsites
         # can update this list as needed.
-        self.valid_files = {'buildlog': ''}
+        self.valid_files = {"buildlog": ""}
         self._got_file_record = []
 
     def status(self):
-        self.call_log.append('status')
-        return defer.succeed({
-            'builder_status': 'BuilderStatus.WAITING',
-            'build_status': self.state,
-            'build_id': self.build_id,
-            'filemap': self.filemap,
-            'dependencies': self.dependencies,
-            })
+        self.call_log.append("status")
+        return defer.succeed(
+            {
+                "builder_status": "BuilderStatus.WAITING",
+                "build_status": self.state,
+                "build_id": self.build_id,
+                "filemap": self.filemap,
+                "dependencies": self.dependencies,
+            }
+        )
 
     def getFile(self, hash, file_to_write):
-        self.call_log.append('getFile')
+        self.call_log.append("getFile")
         if hash in self.valid_files:
             if isinstance(file_to_write, str):
-                file_to_write = open(file_to_write, 'wb')
+                file_to_write = open(file_to_write, "wb")
             if not self.valid_files[hash]:
                 content = ("This is a %s" % hash).encode("ASCII")
             else:
-                with open(self.valid_files[hash], 'rb') as source:
+                with open(self.valid_files[hash], "rb") as source:
                     content = source.read()
             file_to_write.write(content)
             file_to_write.close()
@@ -227,11 +249,13 @@ class AbortingWorker(OkWorker):
     """A mock worker that looks like it's in the process of aborting."""
 
     def status(self):
-        self.call_log.append('status')
-        return defer.succeed({
-            'builder_status': 'BuilderStatus.ABORTING',
-            'build_id': '1-1',
-            })
+        self.call_log.append("status")
+        return defer.succeed(
+            {
+                "builder_status": "BuilderStatus.ABORTING",
+                "build_id": "1-1",
+            }
+        )
 
 
 class LostBuildingBrokenWorker:
@@ -244,18 +268,20 @@ class LostBuildingBrokenWorker:
         self.call_log = []
 
     def status(self):
-        self.call_log.append('status')
-        return defer.succeed({
-            'builder_status': 'BuilderStatus.BUILDING',
-            'build_id': '1000-10000',
-            })
+        self.call_log.append("status")
+        return defer.succeed(
+            {
+                "builder_status": "BuilderStatus.BUILDING",
+                "build_id": "1000-10000",
+            }
+        )
 
     def abort(self):
-        self.call_log.append('abort')
+        self.call_log.append("abort")
         return defer.fail(xmlrpc.client.Fault(8002, "Could not abort"))
 
     def resume(self):
-        self.call_log.append('resume')
+        self.call_log.append("resume")
         return defer.succeed(("", "", 0))
 
 
@@ -266,7 +292,7 @@ class BrokenWorker:
         self.call_log = []
 
     def status(self):
-        self.call_log.append('status')
+        self.call_log.append("status")
         return defer.fail(xmlrpc.client.Fault(8001, "Broken worker"))
 
 
@@ -288,17 +314,14 @@ class LPBuilddTestSetup(BuilddTestSetup):
     """A BuilddTestSetup that uses the LP virtualenv."""
 
     def setUp(self):
-        super().setUp(
-            python_path=sys.executable,
-            twistd_script=twistd_script)
+        super().setUp(python_path=sys.executable, twistd_script=twistd_script)
 
 
 class WorkerTestHelpers(fixtures.Fixture):
-
     @property
     def base_url(self):
         """The URL for the XML-RPC service set up by `BuilddTestSetup`."""
-        return 'http://localhost:%d' % LPBuilddTestSetup().daemon_port
+        return "http://localhost:%d" % LPBuilddTestSetup().daemon_port
 
     def getServerWorker(self):
         """Set up a test build worker server.
@@ -307,20 +330,28 @@ class WorkerTestHelpers(fixtures.Fixture):
         """
         tachandler = self.useFixture(LPBuilddTestSetup())
         attach_file(
-            self, tachandler.logfile, name='xmlrpc-log-file', buffer_now=False)
+            self, tachandler.logfile, name="xmlrpc-log-file", buffer_now=False
+        )
         return tachandler
 
-    def getClientWorker(self, reactor=None, proxy=None,
-                        pool=None, process_pool=None):
+    def getClientWorker(
+        self, reactor=None, proxy=None, pool=None, process_pool=None
+    ):
         """Return a `BuilderWorker` for use in testing.
 
         Points to a fixed URL that is also used by `BuilddTestSetup`.
         """
         return BuilderWorker.makeBuilderWorker(
-            self.base_url, 'vmhost', config.builddmaster.socket_timeout,
-            reactor=reactor, proxy=proxy, pool=pool, process_pool=process_pool)
+            self.base_url,
+            "vmhost",
+            config.builddmaster.socket_timeout,
+            reactor=reactor,
+            proxy=proxy,
+            pool=pool,
+            process_pool=process_pool,
+        )
 
-    def makeCacheFile(self, tachandler, filename, contents=b'something'):
+    def makeCacheFile(self, tachandler, filename, contents=b"something"):
         """Make a cache file available on the remote worker.
 
         :param tachandler: The TacTestSetup object used to start the remote
@@ -329,8 +360,8 @@ class WorkerTestHelpers(fixtures.Fixture):
             area.
         :param contents: Bytes to write to the file.
         """
-        path = os.path.join(tachandler.root, 'filecache', filename)
-        with open(path, 'wb') as fd:
+        path = os.path.join(tachandler.root, "filecache", filename)
+        with open(path, "wb") as fd:
             fd.write(contents)
         self.addCleanup(os.unlink, path)
 
@@ -344,21 +375,25 @@ class WorkerTestHelpers(fixtures.Fixture):
         :return: The build id returned by the worker.
         """
         if build_id is None:
-            build_id = 'random-build-id'
+            build_id = "random-build-id"
         tachandler = self.getServerWorker()
-        chroot_file = 'fake-chroot'
-        dsc_file = 'thing'
+        chroot_file = "fake-chroot"
+        dsc_file = "thing"
         self.makeCacheFile(tachandler, chroot_file)
         self.makeCacheFile(tachandler, dsc_file)
         extra_args = {
-            'distribution': 'ubuntu',
-            'series': 'precise',
-            'suite': 'precise',
-            'ogrecomponent': 'main',
-            }
+            "distribution": "ubuntu",
+            "series": "precise",
+            "suite": "precise",
+            "ogrecomponent": "main",
+        }
         return worker.build(
-            build_id, 'binarypackage', chroot_file,
+            build_id,
+            "binarypackage",
+            chroot_file,
             # Although a single-element dict obviously has stable ordering,
             # we use an OrderedDict anyway to test that BuilderWorker
             # serializes it correctly over XML-RPC.
-            OrderedDict([('.dsc', dsc_file)]), extra_args)
+            OrderedDict([(".dsc", dsc_file)]),
+            extra_args,
+        )

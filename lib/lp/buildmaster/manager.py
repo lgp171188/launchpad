@@ -4,31 +4,24 @@
 """Soyuz buildd worker manager logic."""
 
 __all__ = [
-    'BuilddManager',
-    'BUILDD_MANAGER_LOG_NAME',
-    'PrefetchedBuilderFactory',
-    'WorkerScanner',
-    ]
+    "BuilddManager",
+    "BUILDD_MANAGER_LOG_NAME",
+    "PrefetchedBuilderFactory",
+    "WorkerScanner",
+]
 
-from collections import defaultdict
 import datetime
 import functools
 import logging
 import os.path
 import shutil
+from collections import defaultdict
 
 import six
-from storm.expr import (
-    Column,
-    LeftJoin,
-    Table,
-    )
 import transaction
+from storm.expr import Column, LeftJoin, Table
 from twisted.application import service
-from twisted.internet import (
-    defer,
-    reactor,
-    )
+from twisted.internet import defer, reactor
 from twisted.internet.task import LoopingCall
 from twisted.python import log
 from zope.component import getUtility
@@ -37,11 +30,8 @@ from lp.buildmaster.enums import (
     BuilderCleanStatus,
     BuildQueueStatus,
     BuildStatus,
-    )
-from lp.buildmaster.interactor import (
-    BuilderInteractor,
-    extract_vitals_from_db,
-    )
+)
+from lp.buildmaster.interactor import BuilderInteractor, extract_vitals_from_db
 from lp.buildmaster.interfaces.builder import (
     BuildDaemonError,
     BuildDaemonIsolationError,
@@ -50,7 +40,7 @@ from lp.buildmaster.interfaces.builder import (
     CannotFetchFile,
     CannotResumeHost,
     IBuilderSet,
-    )
+)
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.builder import Builder
@@ -58,13 +48,9 @@ from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.services.config import config
 from lp.services.database.bulk import dbify_value
 from lp.services.database.interfaces import IStore
-from lp.services.database.stormexpr import (
-    BulkUpdate,
-    Values,
-    )
+from lp.services.database.stormexpr import BulkUpdate, Values
 from lp.services.propertycache import get_property_cache
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
-
 
 BUILDD_MANAGER_LOG_NAME = "worker-scanner"
 
@@ -97,7 +83,8 @@ class PrefetchedBuildCandidates:
     def _getBuilderGroupKeys(vitals):
         return [
             (processor_name, vitals.virtualized)
-            for processor_name in vitals.processor_names + [None]]
+            for processor_name in vitals.processor_names + [None]
+        ]
 
     @staticmethod
     def _getSortKey(candidate):
@@ -112,24 +99,31 @@ class PrefetchedBuildCandidates:
 
     def prefetchForBuilder(self, vitals):
         """Ensure that the prefetched cache is populated for this builder."""
-        missing_builder_group_keys = (
-            set(self._getBuilderGroupKeys(vitals)) - set(self.candidates))
+        missing_builder_group_keys = set(
+            self._getBuilderGroupKeys(vitals)
+        ) - set(self.candidates)
         if not missing_builder_group_keys:
             return
         processor_set = getUtility(IProcessorSet)
         processors_by_name = {
             processor_name: (
                 processor_set.getByName(processor_name)
-                if processor_name is not None else None)
-            for processor_name, _ in missing_builder_group_keys}
+                if processor_name is not None
+                else None
+            )
+            for processor_name, _ in missing_builder_group_keys
+        }
         bq_set = getUtility(IBuildQueueSet)
         for builder_group_key in missing_builder_group_keys:
             processor_name, virtualized = builder_group_key
             self._addCandidates(
                 builder_group_key,
                 bq_set.findBuildCandidates(
-                    processors_by_name[processor_name], virtualized,
-                    len(self.builder_groups[builder_group_key])))
+                    processors_by_name[processor_name],
+                    virtualized,
+                    len(self.builder_groups[builder_group_key]),
+                ),
+            )
 
     def pop(self, vitals):
         """Return a suitable build candidate for this builder.
@@ -143,10 +137,13 @@ class PrefetchedBuildCandidates:
         # each builder group, and then re-sort the combined list in exactly
         # the same way.
         grouped_candidates = sorted(
-            ((builder_group_key, self.candidates[builder_group_key][0])
-             for builder_group_key in builder_group_keys
-             if self.candidates[builder_group_key]),
-            key=lambda key_candidate: self.sort_keys[key_candidate[1]])
+            (
+                (builder_group_key, self.candidates[builder_group_key][0])
+                for builder_group_key in builder_group_keys
+                if self.candidates[builder_group_key]
+            ),
+            key=lambda key_candidate: self.sort_keys[key_candidate[1]],
+        )
         if grouped_candidates:
             builder_group_key, candidate_id = grouped_candidates[0]
             self.candidates[builder_group_key].pop(0)
@@ -237,7 +234,8 @@ class BuilderFactory(BaseBuilderFactory):
         """See `BaseBuilderFactory`."""
         return (
             extract_vitals_from_db(b)
-            for b in getUtility(IBuilderSet).__iter__())
+            for b in getUtility(IBuilderSet).__iter__()
+        )
 
     def findBuildCandidate(self, vitals):
         """See `BaseBuilderFactory`."""
@@ -262,16 +260,23 @@ class PrefetchedBuilderFactory(BaseBuilderFactory):
     def update(self):
         """See `BaseBuilderFactory`."""
         transaction.abort()
-        builders_and_current_bqs = list(IStore(Builder).using(
-            Builder, LeftJoin(BuildQueue, BuildQueue.builder == Builder.id)
-            ).find((Builder, BuildQueue)))
+        builders_and_current_bqs = list(
+            IStore(Builder)
+            .using(
+                Builder, LeftJoin(BuildQueue, BuildQueue.builder == Builder.id)
+            )
+            .find((Builder, BuildQueue))
+        )
         getUtility(IBuilderSet).preloadProcessors(
-            [b for b, _ in builders_and_current_bqs])
+            [b for b, _ in builders_and_current_bqs]
+        )
         self.vitals_map = {
             b.name: extract_vitals_from_db(b, bq)
-            for b, bq in builders_and_current_bqs}
+            for b, bq in builders_and_current_bqs
+        }
         self.candidates = PrefetchedBuildCandidates(
-            list(self.vitals_map.values()))
+            list(self.vitals_map.values())
+        )
         transaction.abort()
         self.date_updated = datetime.datetime.utcnow()
 
@@ -354,17 +359,30 @@ def recover_failure(logger, vitals, builder, retry, exception):
     # judge_failure decides who is guilty and their sentences. We're
     # just the executioner.
     builder_action, job_action = judge_failure(
-        builder.failure_count, job.specific_build.failure_count if job else 0,
-        exception, retry=retry and not cancelling)
+        builder.failure_count,
+        job.specific_build.failure_count if job else 0,
+        exception,
+        retry=retry and not cancelling,
+    )
     if job is not None:
         logger.info(
             "Judged builder %s (%d failures) with job %s (%d failures): "
-            "%r, %r", builder.name, builder.failure_count, job.build_cookie,
-            job.specific_build.failure_count, builder_action, job_action)
+            "%r, %r",
+            builder.name,
+            builder.failure_count,
+            job.build_cookie,
+            job.specific_build.failure_count,
+            builder_action,
+            job_action,
+        )
     else:
         logger.info(
             "Judged builder %s (%d failures) with no job: %r, %r",
-            builder.name, builder.failure_count, builder_action, job_action)
+            builder.name,
+            builder.failure_count,
+            builder_action,
+            job_action,
+        )
 
     if job is not None and job_action is not None:
         if cancelling:
@@ -383,12 +401,14 @@ def recover_failure(logger, vitals, builder, retry, exception):
                 # it out of the queue to avoid further corruption.
                 logger.warning(
                     "Build is already successful! Dequeuing but leaving build "
-                    "status alone. Something is very wrong.")
+                    "status alone. Something is very wrong."
+                )
             else:
                 # Whatever it was before, we want it failed. We're an
                 # error handler, so let's not risk more errors.
                 job.specific_build.updateStatus(
-                    BuildStatus.FAILEDTOBUILD, force_invalid_transition=True)
+                    BuildStatus.FAILEDTOBUILD, force_invalid_transition=True
+                )
             job.destroySelf()
         elif job_action == True:
             # Reset the job so it will be retried elsewhere.
@@ -432,10 +452,17 @@ class WorkerScanner:
     # greater than abort_timeout in launchpad-buildd's worker BuildManager.
     CANCEL_TIMEOUT = 180
 
-    def __init__(self, builder_name, builder_factory, manager, logger,
-                 clock=None, interactor_factory=BuilderInteractor,
-                 worker_factory=BuilderInteractor.makeWorkerFromVitals,
-                 behaviour_factory=BuilderInteractor.getBuildBehaviour):
+    def __init__(
+        self,
+        builder_name,
+        builder_factory,
+        manager,
+        logger,
+        clock=None,
+        interactor_factory=BuilderInteractor,
+        worker_factory=BuilderInteractor.makeWorkerFromVitals,
+        behaviour_factory=BuilderInteractor.getBuildBehaviour,
+    ):
         self.builder_name = builder_name
         self.builder_factory = builder_factory
         self.manager = manager
@@ -475,10 +502,13 @@ class WorkerScanner:
         # as it's always up to date, but PrefetchedBuilderFactory caches
         # heavily, and we don't want to eg. forget that we dispatched a
         # build in the previous cycle.
-        if (self.date_scanned is not None
-            and self.date_scanned > self.builder_factory.date_updated):
+        if (
+            self.date_scanned is not None
+            and self.date_scanned > self.builder_factory.date_updated
+        ):
             self.logger.debug(
-                "Skipping builder %s (cache out of date)" % self.builder_name)
+                "Skipping builder %s (cache out of date)" % self.builder_name
+            )
             return defer.succeed(None)
 
         self.logger.debug("Scanning builder %s" % self.builder_name)
@@ -510,14 +540,25 @@ class WorkerScanner:
         # the error.
         error_message = failure.getErrorMessage()
         if failure.check(
-            BuildWorkerFailure, CannotBuild, CannotResumeHost,
-            BuildDaemonError, CannotFetchFile):
-            self.logger.info("Scanning %s failed with: %s" % (
-                self.builder_name, error_message))
+            BuildWorkerFailure,
+            CannotBuild,
+            CannotResumeHost,
+            BuildDaemonError,
+            CannotFetchFile,
+        ):
+            self.logger.info(
+                "Scanning %s failed with: %s"
+                % (self.builder_name, error_message)
+            )
         else:
-            self.logger.info("Scanning %s failed with: %s\n%s" % (
-                self.builder_name, failure.getErrorMessage(),
-                failure.getTraceback()))
+            self.logger.info(
+                "Scanning %s failed with: %s\n%s"
+                % (
+                    self.builder_name,
+                    failure.getErrorMessage(),
+                    failure.getTraceback(),
+                )
+            )
 
         # Decide if we need to terminate the job or reset/fail the builder.
         vitals = self.builder_factory.getVitals(self.builder_name)
@@ -527,20 +568,23 @@ class WorkerScanner:
             labels = {}
             if builder.current_build is not None:
                 builder.current_build.gotFailure()
-                labels.update({
-                    'build': True,
-                    'arch': builder.current_build.processor.name,
-                    })
+                labels.update(
+                    {
+                        "build": True,
+                        "arch": builder.current_build.processor.name,
+                    }
+                )
             else:
-                labels['build'] = False
-            self.statsd_client.incr('builders.judged_failed', labels=labels)
+                labels["build"] = False
+            self.statsd_client.incr("builders.judged_failed", labels=labels)
             recover_failure(self.logger, vitals, builder, retry, failure.value)
             transaction.commit()
         except Exception:
             # Catastrophic code failure! Not much we can do.
             self.logger.error(
                 "Miserable failure when trying to handle failure:\n",
-                exc_info=True)
+                exc_info=True,
+            )
             transaction.abort()
 
     @defer.inlineCallbacks
@@ -557,8 +601,10 @@ class WorkerScanner:
         elif self.date_cancel is None:
             self.logger.info(
                 "Cancelling BuildQueue %d (%s) on %s",
-                vitals.build_queue.id, self.getExpectedCookie(vitals),
-                vitals.name)
+                vitals.build_queue.id,
+                self.getExpectedCookie(vitals),
+                vitals.name,
+            )
             yield worker.abort()
             self.date_cancel = self._clock.seconds() + self.CANCEL_TIMEOUT
         else:
@@ -568,14 +614,20 @@ class WorkerScanner:
             if self._clock.seconds() < self.date_cancel:
                 self.logger.info(
                     "Waiting for BuildQueue %d (%s) on %s to cancel",
-                    vitals.build_queue.id, self.getExpectedCookie(vitals),
-                    vitals.name)
+                    vitals.build_queue.id,
+                    self.getExpectedCookie(vitals),
+                    vitals.name,
+                )
             else:
                 raise BuildWorkerFailure(
                     "Timeout waiting for BuildQueue %d (%s) on %s to "
-                    "cancel" % (
-                    vitals.build_queue.id, self.getExpectedCookie(vitals),
-                    vitals.name))
+                    "cancel"
+                    % (
+                        vitals.build_queue.id,
+                        self.getExpectedCookie(vitals),
+                        vitals.name,
+                    )
+                )
 
     def getExpectedCookie(self, vitals):
         """Return the build cookie expected to be held by the worker.
@@ -616,29 +668,34 @@ class WorkerScanner:
                 # This is probably a grave bug with security implications,
                 # as a worker that has a job must be cleaned afterwards.
                 raise BuildDaemonIsolationError(
-                    "Non-dirty builder allegedly building.")
+                    "Non-dirty builder allegedly building."
+                )
 
             lost_reason = None
             if not vitals.builderok:
-                lost_reason = '%s is disabled' % vitals.name
+                lost_reason = "%s is disabled" % vitals.name
             else:
                 worker_status = yield worker.status()
                 # Ensure that the worker has the job that we think it
                 # should.
-                worker_cookie = worker_status.get('build_id')
+                worker_cookie = worker_status.get("build_id")
                 expected_cookie = self.getExpectedCookie(vitals)
                 if worker_cookie != expected_cookie:
-                    lost_reason = (
-                        '%s is lost (expected %r, got %r)' % (
-                            vitals.name, expected_cookie, worker_cookie))
+                    lost_reason = "%s is lost (expected %r, got %r)" % (
+                        vitals.name,
+                        expected_cookie,
+                        worker_cookie,
+                    )
 
             if lost_reason is not None:
                 # The worker is either confused or disabled, so reset and
                 # requeue the job. The next scan cycle will clean up the
                 # worker if appropriate.
                 self.logger.warning(
-                    "%s. Resetting job %s.", lost_reason,
-                    vitals.build_queue.build_cookie)
+                    "%s. Resetting job %s.",
+                    lost_reason,
+                    vitals.build_queue.build_cookie,
+                )
                 vitals.build_queue.reset()
                 transaction.commit()
                 return
@@ -650,8 +707,13 @@ class WorkerScanner:
             # ready.  Yes, "updateBuild" is a bad name.
             assert worker_status is not None
             yield interactor.updateBuild(
-                vitals, worker, worker_status, self.builder_factory,
-                self.behaviour_factory, self.manager)
+                vitals,
+                worker,
+                worker_status,
+                self.builder_factory,
+                self.behaviour_factory,
+                self.manager,
+            )
         else:
             if not vitals.builderok:
                 return
@@ -659,23 +721,26 @@ class WorkerScanner:
             # it's dirty, clean.
             if vitals.clean_status == BuilderCleanStatus.CLEAN:
                 worker_status = yield worker.status()
-                if worker_status.get('builder_status') != 'BuilderStatus.IDLE':
+                if worker_status.get("builder_status") != "BuilderStatus.IDLE":
                     raise BuildDaemonIsolationError(
-                        'Allegedly clean worker not idle (%r instead)'
-                        % worker_status.get('builder_status'))
+                        "Allegedly clean worker not idle (%r instead)"
+                        % worker_status.get("builder_status")
+                    )
                 self.updateVersion(vitals, worker_status)
                 if vitals.manual:
                     # If the builder is in manual mode, don't dispatch
                     # anything.
                     self.logger.debug(
-                        '%s is in manual mode, not dispatching.', vitals.name)
+                        "%s is in manual mode, not dispatching.", vitals.name
+                    )
                     return
                 # Try to find and dispatch a job. If it fails, don't
                 # attempt to just retry the scan; we need to reset
                 # the job so the dispatch will be reattempted.
                 builder = self.builder_factory[self.builder_name]
                 d = interactor.findAndStartJob(
-                    vitals, builder, worker, self.builder_factory)
+                    vitals, builder, worker, self.builder_factory
+                )
                 d.addErrback(functools.partial(self._scanFailed, False))
                 yield d
                 if builder.currentjob is not None:
@@ -689,11 +754,12 @@ class WorkerScanner:
                 # straight back to CLEAN, or we might have to spin
                 # through another few cycles.
                 done = yield interactor.cleanWorker(
-                    vitals, worker, self.builder_factory)
+                    vitals, worker, self.builder_factory
+                )
                 if done:
                     builder = self.builder_factory[self.builder_name]
                     builder.setCleanStatus(BuilderCleanStatus.CLEAN)
-                    self.logger.debug('%s has been cleaned.', vitals.name)
+                    self.logger.debug("%s has been cleaned.", vitals.name)
                     transaction.commit()
 
 
@@ -731,7 +797,7 @@ class BuilddManager(service.Service):
         # Redirect the output to the twisted log module.
         channel = logging.StreamHandler(log.StdioOnnaStick())
         channel.setLevel(level)
-        channel.setFormatter(logging.Formatter('%(message)s'))
+        channel.setFormatter(logging.Formatter("%(message)s"))
 
         logger.addHandler(channel)
         logger.setLevel(level)
@@ -740,7 +806,8 @@ class BuilddManager(service.Service):
     def checkForNewBuilders(self):
         """Add and return any new builders."""
         new_builders = {
-            vitals.name for vitals in self.builder_factory.iterVitals()}
+            vitals.name for vitals in self.builder_factory.iterVitals()
+        }
         old_builders = set(self.current_builders)
         extra_builders = new_builders.difference(old_builders)
         self.current_builders.extend(extra_builders)
@@ -755,8 +822,8 @@ class BuilddManager(service.Service):
             self.addScanForBuilders(new_builders)
         except Exception:
             self.logger.error(
-                "Failure while updating builders:\n",
-                exc_info=True)
+                "Failure while updating builders:\n", exc_info=True
+            )
             transaction.abort()
         self.logger.debug("Builder refresh complete.")
 
@@ -774,19 +841,28 @@ class BuilddManager(service.Service):
                 new_logtails_expr = Values(
                     new_logtails.name,
                     [("buildqueue", "integer"), ("logtail", "text")],
-                    [[dbify_value(BuildQueue.id, buildqueue_id),
-                      dbify_value(BuildQueue.logtail, logtail)]
-                     for buildqueue_id, logtail in pending_logtails.items()])
+                    [
+                        [
+                            dbify_value(BuildQueue.id, buildqueue_id),
+                            dbify_value(BuildQueue.logtail, logtail),
+                        ]
+                        for buildqueue_id, logtail in pending_logtails.items()
+                    ],
+                )
                 store = IStore(BuildQueue)
-                store.execute(BulkUpdate(
-                    {BuildQueue.logtail: Column("logtail", new_logtails)},
-                    table=BuildQueue, values=new_logtails_expr,
-                    where=(
-                        BuildQueue.id == Column("buildqueue", new_logtails))))
+                store.execute(
+                    BulkUpdate(
+                        {BuildQueue.logtail: Column("logtail", new_logtails)},
+                        table=BuildQueue,
+                        values=new_logtails_expr,
+                        where=(
+                            BuildQueue.id == Column("buildqueue", new_logtails)
+                        ),
+                    )
+                )
                 transaction.commit()
         except Exception:
-            self.logger.exception(
-                "Failure while flushing log tail updates:\n")
+            self.logger.exception("Failure while flushing log tail updates:\n")
             transaction.abort()
         self.logger.debug("Flushing log tail updates complete.")
 
@@ -812,11 +888,14 @@ class BuilddManager(service.Service):
             pass
         # Add and start WorkerScanners for each current builder, and any
         # added in the future.
-        self.scan_builders_loop, self.scan_builders_deferred = (
-            self._startLoop(self.SCAN_BUILDERS_INTERVAL, self.scanBuilders))
+        self.scan_builders_loop, self.scan_builders_deferred = self._startLoop(
+            self.SCAN_BUILDERS_INTERVAL, self.scanBuilders
+        )
         # Schedule bulk flushes for build queue logtail updates.
-        self.flush_logtails_loop, self.flush_logtails_deferred = (
-            self._startLoop(self.FLUSH_LOGTAILS_INTERVAL, self.flushLogTails))
+        (
+            self.flush_logtails_loop,
+            self.flush_logtails_deferred,
+        ) = self._startLoop(self.FLUSH_LOGTAILS_INTERVAL, self.flushLogTails)
 
     def stopService(self):
         """Callback for when we need to shut down."""
@@ -841,7 +920,8 @@ class BuilddManager(service.Service):
         """Set up scanner objects for the builders specified."""
         for builder in builders:
             worker_scanner = WorkerScanner(
-                builder, self.builder_factory, self, self.logger)
+                builder, self.builder_factory, self, self.logger
+            )
             self.workers.append(worker_scanner)
             worker_scanner.startCycle()
 

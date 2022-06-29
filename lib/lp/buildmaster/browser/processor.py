@@ -4,8 +4,8 @@
 """Navigation views for processors."""
 
 __all__ = [
-    'ProcessorSetNavigation',
-    ]
+    "ProcessorSetNavigation",
+]
 
 
 from lp.buildmaster.interfaces.processor import IProcessorSet
@@ -14,6 +14,7 @@ from lp.services.webapp import Navigation
 
 class ProcessorSetNavigation(Navigation):
     """IProcessorSet navigation."""
+
     usedfor = IProcessorSet
 
     def traverse(self, name):

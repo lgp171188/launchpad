@@ -4,8 +4,8 @@
 """TacHandler for `buildd-manager` daemon."""
 
 __all__ = [
-    'BuilddManagerTestSetup',
-    ]
+    "BuilddManagerTestSetup",
+]
 
 
 import os
@@ -42,12 +42,12 @@ class BuilddManagerTestSetup(TacTestSetup):
     @property
     def root(self):
         """Directory where log and pid files will be stored."""
-        return '/var/tmp/buildd-manager/'
+        return "/var/tmp/buildd-manager/"
 
     @property
     def tacfile(self):
         """Absolute path to the 'buildd-manager' tac file."""
-        return os.path.join(self.daemon_directory, 'buildd-manager.tac')
+        return os.path.join(self.daemon_directory, "buildd-manager.tac")
 
     @property
     def pidfile(self):
@@ -55,7 +55,7 @@ class BuilddManagerTestSetup(TacTestSetup):
 
         Will be created when the tac file actually runs.
         """
-        return os.path.join(self.root, 'buildd-manager.pid')
+        return os.path.join(self.root, "buildd-manager.pid")
 
     @property
     def logfile(self):
@@ -63,4 +63,4 @@ class BuilddManagerTestSetup(TacTestSetup):
 
         Will be created when the tac file actually runs.
         """
-        return os.path.join(self.root, 'buildd-manager.log')
+        return os.path.join(self.root, "buildd-manager.log")
