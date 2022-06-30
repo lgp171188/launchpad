@@ -3,28 +3,17 @@
 
 """Fixtures for dealing with the build time HTTP proxy."""
 
-from datetime import datetime
 import json
+import uuid
+from datetime import datetime
 from textwrap import dedent
 from urllib.parse import urlsplit
-import uuid
 
 import fixtures
-from testtools.matchers import (
-    Equals,
-    HasLength,
-    MatchesStructure,
-    )
-from twisted.internet import (
-    defer,
-    endpoints,
-    reactor,
-    )
+from testtools.matchers import Equals, HasLength, MatchesStructure
+from twisted.internet import defer, endpoints, reactor
 from twisted.python.compat import nativeString
-from twisted.web import (
-    resource,
-    server,
-    )
+from twisted.web import resource, server
 
 from lp.services.config import config
 
@@ -40,18 +29,22 @@ class ProxyAuthAPITokensResource(resource.Resource):
 
     def render_POST(self, request):
         content = json.loads(request.content.read().decode("UTF-8"))
-        self.requests.append({
-            "method": request.method,
-            "uri": request.uri,
-            "headers": dict(request.requestHeaders.getAllRawHeaders()),
-            "json": content,
-            })
+        self.requests.append(
+            {
+                "method": request.method,
+                "uri": request.uri,
+                "headers": dict(request.requestHeaders.getAllRawHeaders()),
+                "json": content,
+            }
+        )
         username = content["username"]
-        return json.dumps({
-            "username": username,
-            "secret": uuid.uuid4().hex,
-            "timestamp": datetime.utcnow().isoformat(),
-            }).encode("UTF-8")
+        return json.dumps(
+            {
+                "username": username,
+                "secret": uuid.uuid4().hex,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        ).encode("UTF-8")
 
 
 class InProcessProxyAuthAPIFixture(fixtures.Fixture):
@@ -83,12 +76,19 @@ class InProcessProxyAuthAPIFixture(fixtures.Fixture):
         self.addCleanup(site.stopFactory)
         port = yield endpoint.listen(site)
         self.addCleanup(port.stopListening)
-        config.push("in-process-proxy-auth-api-fixture", dedent("""
-            [builddmaster]
-            builder_proxy_auth_api_admin_secret: admin-secret
-            builder_proxy_auth_api_endpoint: http://%s:%s/tokens
-            """) %
-            (port.getHost().host, port.getHost().port))
+        config.push(
+            "in-process-proxy-auth-api-fixture",
+            dedent(
+                """
+                [builddmaster]
+                builder_proxy_auth_api_admin_secret: admin-secret
+                builder_proxy_auth_api_admin_username: admin-launchpad.test
+                builder_proxy_auth_api_endpoint: http://{host}:{port}/tokens
+                builder_proxy_host: {host}
+                builder_proxy_port: {port}
+                """
+            ).format(host=port.getHost().host, port=port.getHost().port),
+        )
         self.addCleanup(config.pop, "in-process-proxy-auth-api-fixture")
 
 
@@ -98,12 +98,12 @@ class ProxyURLMatcher(MatchesStructure):
     def __init__(self, job, now):
         super().__init__(
             scheme=Equals("http"),
-            username=Equals("{}-{}".format(
-                job.build.build_cookie, int(now))),
+            username=Equals("{}-{}".format(job.build.build_cookie, int(now))),
             password=HasLength(32),
             hostname=Equals(config.builddmaster.builder_proxy_host),
             port=Equals(config.builddmaster.builder_proxy_port),
-            path=Equals(""))
+            path=Equals(""),
+        )
 
     def match(self, matchee):
         super().match(urlsplit(matchee))
@@ -116,4 +116,7 @@ class RevocationEndpointMatcher(Equals):
         super().__init__(
             "{}/{}-{}".format(
                 config.builddmaster.builder_proxy_auth_api_endpoint,
-                job.build.build_cookie, int(now)))
+                job.build.build_cookie,
+                int(now),
+            )
+        )

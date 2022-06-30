@@ -4,24 +4,23 @@
 """Interface for build farm job behaviours."""
 
 __all__ = [
-    'IBuildFarmJobBehaviour',
-    ]
+    "IBuildFarmJobBehaviour",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 
 class IBuildFarmJobBehaviour(Interface):
 
     builder_type = Attribute(
         "The name of the builder type to use for this build, corresponding "
-        "to a launchpad-buildd build manager tag.")
+        "to a launchpad-buildd build manager tag."
+    )
 
     image_types = Attribute(
         "A list of `BuildBaseImageType`s indicating which types of base "
-        "images can be used for this build.")
+        "images can be used for this build."
+    )
 
     build = Attribute("The `IBuildFarmJob` to build.")
 

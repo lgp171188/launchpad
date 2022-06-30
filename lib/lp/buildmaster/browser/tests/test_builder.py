@@ -10,10 +10,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.tales import DurationFormatterAPI
 from lp.buildmaster.browser.tests.test_builder_views import BuildCreationMixin
-from lp.buildmaster.enums import (
-    BuilderCleanStatus,
-    BuildStatus,
-    )
+from lp.buildmaster.enums import BuilderCleanStatus, BuildStatus
 from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.model.builder import Builder
 from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
@@ -24,21 +21,14 @@ from lp.services.job.model.job import Job
 from lp.services.webapp.publisher import canonical_url
 from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.testing import (
+    TestCaseWithFactory,
     admin_logged_in,
     logout,
     record_two_runs,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+)
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 from lp.testing.matchers import HasQueryCount
-from lp.testing.pages import (
-    extract_text,
-    find_tags_by_class,
-    setupBrowser,
-    )
+from lp.testing.pages import extract_text, find_tags_by_class, setupBrowser
 from lp.testing.views import create_initialized_view
 
 
@@ -54,9 +44,9 @@ class TestBuilderSetNavigation(TestCaseWithFactory):
     def test_binary_package_build_api_redirects(self):
         build = self.factory.makeBinaryPackageBuild()
         url = "http://api.launchpad.test/devel/builders/+build/%s" % build.id
-        expected_url = (
-            "http://api.launchpad.test/devel" +
-            canonical_url(build, path_only_if_possible=True))
+        expected_url = "http://api.launchpad.test/devel" + canonical_url(
+            build, path_only_if_possible=True
+        )
         logout()
         browser = setupBrowser()
         browser.open(url)
@@ -65,11 +55,12 @@ class TestBuilderSetNavigation(TestCaseWithFactory):
     def test_source_package_recipe_build_api_redirects(self):
         build = self.factory.makeSourcePackageRecipeBuild()
         url = (
-            "http://api.launchpad.test/devel/builders/+recipebuild/%s" %
-            build.id)
-        expected_url = (
-            "http://api.launchpad.test/devel" +
-            canonical_url(build, path_only_if_possible=True))
+            "http://api.launchpad.test/devel/builders/+recipebuild/%s"
+            % build.id
+        )
+        expected_url = "http://api.launchpad.test/devel" + canonical_url(
+            build, path_only_if_possible=True
+        )
         logout()
         browser = setupBrowser()
         browser.open(url)
@@ -79,11 +70,12 @@ class TestBuilderSetNavigation(TestCaseWithFactory):
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         build = self.factory.makeLiveFSBuild()
         url = (
-            "http://api.launchpad.test/devel/builders/+livefsbuild/%s" %
-            build.id)
-        expected_url = (
-            "http://api.launchpad.test/devel" +
-            canonical_url(build, path_only_if_possible=True))
+            "http://api.launchpad.test/devel/builders/+livefsbuild/%s"
+            % build.id
+        )
+        expected_url = "http://api.launchpad.test/devel" + canonical_url(
+            build, path_only_if_possible=True
+        )
         logout()
         browser = setupBrowser()
         browser.open(url)
@@ -92,11 +84,11 @@ class TestBuilderSetNavigation(TestCaseWithFactory):
     def test_snap_build_api_redirects(self):
         build = self.factory.makeSnapBuild()
         url = (
-            "http://api.launchpad.test/devel/builders/+snapbuild/%s" %
-            build.id)
-        expected_url = (
-            "http://api.launchpad.test/devel" +
-            canonical_url(build, path_only_if_possible=True))
+            "http://api.launchpad.test/devel/builders/+snapbuild/%s" % build.id
+        )
+        expected_url = "http://api.launchpad.test/devel" + canonical_url(
+            build, path_only_if_possible=True
+        )
         logout()
         browser = setupBrowser()
         browser.open(url)
@@ -106,11 +98,12 @@ class TestBuilderSetNavigation(TestCaseWithFactory):
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
         build = self.factory.makeOCIRecipeBuild()
         url = (
-            "http://api.launchpad.test/devel/builders/+ocirecipebuild/%s" %
-            build.id)
-        expected_url = (
-            "http://api.launchpad.test/devel" +
-            canonical_url(build, path_only_if_possible=True))
+            "http://api.launchpad.test/devel/builders/+ocirecipebuild/%s"
+            % build.id
+        )
+        expected_url = "http://api.launchpad.test/devel" + canonical_url(
+            build, path_only_if_possible=True
+        )
         logout()
         browser = setupBrowser()
         browser.open(url)
@@ -118,11 +111,10 @@ class TestBuilderSetNavigation(TestCaseWithFactory):
 
     def test_ci_build_api_redirects(self):
         build = self.factory.makeCIBuild()
-        url = (
-            "http://api.launchpad.test/devel/builders/+cibuild/%s" % build.id)
-        expected_url = (
-            "http://api.launchpad.test/devel" +
-            canonical_url(build, path_only_if_possible=True))
+        url = "http://api.launchpad.test/devel/builders/+cibuild/%s" % build.id
+        expected_url = "http://api.launchpad.test/devel" + canonical_url(
+            build, path_only_if_possible=True
+        )
         logout()
         browser = setupBrowser()
         browser.open(url)
@@ -148,26 +140,30 @@ class TestBuildersHomepage(TestCaseWithFactory, BuildCreationMixin):
         def create_build():
             build = self.createBinaryPackageBuild()
             build.updateStatus(
-                BuildStatus.NEEDSBUILD, force_invalid_transition=True)
+                BuildStatus.NEEDSBUILD, force_invalid_transition=True
+            )
             queue = build.queueBuild()
             queue.markAsBuilding(build.builder)
 
         nb_objects = 2
         recorder1, recorder2 = record_two_runs(
-            builders_homepage_render, create_build, nb_objects)
+            builders_homepage_render, create_build, nb_objects
+        )
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_builders_recipe_build_query_count(self):
         def create_build():
             build = self.createRecipeBuildWithBuilder()
             build.updateStatus(
-                BuildStatus.NEEDSBUILD, force_invalid_transition=True)
+                BuildStatus.NEEDSBUILD, force_invalid_transition=True
+            )
             queue = build.queueBuild()
             queue.markAsBuilding(build.builder)
 
         nb_objects = 2
         recorder1, recorder2 = record_two_runs(
-            builders_homepage_render, create_build, nb_objects)
+            builders_homepage_render, create_build, nb_objects
+        )
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_builders_translation_template_build_query_count(self):
@@ -177,7 +173,8 @@ class TestBuildersHomepage(TestCaseWithFactory, BuildCreationMixin):
 
         nb_objects = 2
         recorder1, recorder2 = record_two_runs(
-            builders_homepage_render, create_build, nb_objects)
+            builders_homepage_render, create_build, nb_objects
+        )
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_builders_variety_query_count(self):
@@ -186,13 +183,14 @@ class TestBuildersHomepage(TestCaseWithFactory, BuildCreationMixin):
                 self.factory.makeBinaryPackageBuild().queueBuild(),
                 self.factory.makeSourcePackageRecipeBuild().queueBuild(),
                 self.factory.makeTranslationTemplatesBuild().queueBuild(),
-                ]
+            ]
             for bq in bqs:
                 bq.markAsBuilding(self.factory.makeBuilder())
 
         nb_objects = 2
         recorder1, recorder2 = record_two_runs(
-            builders_homepage_render, create_builds, nb_objects)
+            builders_homepage_render, create_builds, nb_objects
+        )
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_category_portlet_not_shown_if_empty(self):
@@ -201,20 +199,20 @@ class TestBuildersHomepage(TestCaseWithFactory, BuildCreationMixin):
         self.assertIn("Non-virtual build status", content)
 
         with admin_logged_in():
-            getUtility(IBuilderSet).getByName('frog').active = False
+            getUtility(IBuilderSet).getByName("frog").active = False
         content = builders_homepage_render()
         self.assertNotIn("Virtual build status", content)
         self.assertIn("Non-virtual build status", content)
 
         with admin_logged_in():
-            getUtility(IBuilderSet).getByName('bob').active = False
-            getUtility(IBuilderSet).getByName('frog').active = True
+            getUtility(IBuilderSet).getByName("bob").active = False
+            getUtility(IBuilderSet).getByName("frog").active = True
         content = builders_homepage_render()
         self.assertIn("Virtual build status", content)
         self.assertNotIn("Non-virtual build status", content)
 
         with admin_logged_in():
-            getUtility(IBuilderSet).getByName('frog').active = False
+            getUtility(IBuilderSet).getByName("frog").active = False
         content = builders_homepage_render()
         self.assertNotIn("Virtual build status", content)
         self.assertNotIn("Non-virtual build status", content)
@@ -223,12 +221,16 @@ class TestBuildersHomepage(TestCaseWithFactory, BuildCreationMixin):
         now = get_transaction_timestamp(IStore(Builder))
         durations = [
             timedelta(minutes=5),
-            timedelta(minutes=11), timedelta(hours=1), timedelta(hours=2)]
+            timedelta(minutes=11),
+            timedelta(hours=1),
+            timedelta(hours=2),
+        ]
         with admin_logged_in():
             for builder in getUtility(IBuilderSet):
                 builder.active = False
             builders = [
-                self.factory.makeBuilder() for _ in range(len(durations))]
+                self.factory.makeBuilder() for _ in range(len(durations))
+            ]
             for builder, duration in zip(builders, durations):
                 naked_builder = removeSecurityProxy(builder)
                 naked_builder.clean_status = BuilderCleanStatus.CLEANING
@@ -239,12 +241,19 @@ class TestBuildersHomepage(TestCaseWithFactory, BuildCreationMixin):
         expected_text = ["{}\nCleaning".format(builders[0].name)]
         # We show durations for builders that have been cleaning for more
         # than ten minutes.
-        expected_text.extend([
-            "{}\nCleaning for {}".format(
-                builder.name,
-                DurationFormatterAPI(duration).approximateduration())
-            for builder, duration in zip(builders[1:], durations[1:])])
+        expected_text.extend(
+            [
+                "{}\nCleaning for {}".format(
+                    builder.name,
+                    DurationFormatterAPI(duration).approximateduration(),
+                )
+                for builder, duration in zip(builders[1:], durations[1:])
+            ]
+        )
         self.assertEqual(
             expected_text,
-            [extract_text(row)
-             for row in find_tags_by_class(content, "builder-row")])
+            [
+                extract_text(row)
+                for row in find_tags_by_class(content, "builder-row")
+            ],
+        )

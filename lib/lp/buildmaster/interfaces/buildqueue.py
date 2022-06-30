@@ -4,23 +4,13 @@
 """Build interfaces."""
 
 __all__ = [
-    'IBuildQueue',
-    'IBuildQueueSet',
-    ]
+    "IBuildQueue",
+    "IBuildQueueSet",
+]
 
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Int,
-    Text,
-    Timedelta,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, Int, Text, Timedelta
 
 from lp import _
 from lp.buildmaster.enums import BuildQueueStatus
@@ -45,32 +35,47 @@ class IBuildQueue(Interface):
 
     id = Attribute("Job identifier")
     builder = Reference(
-        IBuilder, title=_("Builder"), required=True, readonly=True,
-        description=_("The IBuilder instance processing this job"))
-    logtail = Text(
-        description=_("The current tail of the log of the job"))
+        IBuilder,
+        title=_("Builder"),
+        required=True,
+        readonly=True,
+        description=_("The IBuilder instance processing this job"),
+    )
+    logtail = Text(description=_("The current tail of the log of the job"))
     lastscore = Int(description=_("This job's score."))
-    manual = Bool(
-        description=_("Whether or not the job was manually scored."))
+    manual = Bool(description=_("Whether or not the job was manually scored."))
     processor = Reference(
-        IProcessor, title=_("Processor"), required=False, readonly=True,
-        description=_("The processor required by this build farm job."))
+        IProcessor,
+        title=_("Processor"),
+        required=False,
+        readonly=True,
+        description=_("The processor required by this build farm job."),
+    )
     virtualized = Bool(
         required=False,
         description=_(
-            "The virtualization setting required by this build farm job."))
+            "The virtualization setting required by this build farm job."
+        ),
+    )
 
     status = Choice(
-        title=_("Status"), vocabulary=BuildQueueStatus, readonly=True,
-        description=_("The status of this build queue item."))
+        title=_("Status"),
+        vocabulary=BuildQueueStatus,
+        readonly=True,
+        description=_("The status of this build queue item."),
+    )
 
     estimated_duration = Timedelta(
-        title=_("Estimated Job Duration"), required=True,
-        description=_("Estimated job duration interval."))
+        title=_("Estimated Job Duration"),
+        required=True,
+        description=_("Estimated job duration interval."),
+    )
 
     current_build_duration = Timedelta(
-        title=_("Current build duration"), required=False,
-        description=_("Time spent building so far."))
+        title=_("Current build duration"),
+        required=False,
+        description=_("Time spent building so far."),
+    )
 
     def manualScore(value):
         """Manually set a score value to a queue item and lock it."""
@@ -106,15 +111,18 @@ class IBuildQueue(Interface):
     specific_source = Attribute("Type of concrete build farm job.")
 
     specific_build = Reference(
-        IBuildFarmJob, title=_("Build farm job"),
-        description=_("Concrete build farm job object."))
+        IBuildFarmJob,
+        title=_("Build farm job"),
+        description=_("Concrete build farm job object."),
+    )
 
     build_cookie = Attribute(
-        "A string which uniquely identifies the job in the build farm.")
+        "A string which uniquely identifies the job in the build farm."
+    )
 
     date_started = Datetime(
-        title=_('Start time'),
-        description=_('Time when the job started.'))
+        title=_("Start time"), description=_("Time when the job started.")
+    )
 
     def getEstimatedJobStartTime():
         """Get the estimated start time for a pending build farm job.

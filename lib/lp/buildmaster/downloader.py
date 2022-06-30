@@ -8,19 +8,16 @@ anything from the rest of Launchpad.
 """
 
 __all__ = [
-    'DownloadCommand',
-    'RequestProcess',
-    'RequestProxyTokenCommand',
-    ]
+    "DownloadCommand",
+    "RequestProcess",
+    "RequestProxyTokenCommand",
+]
 
 import os.path
 import tempfile
 
 from ampoule.child import AMPChild
-from requests import (
-    RequestException,
-    Session,
-    )
+from requests import RequestException, Session
 from requests_toolbelt.downloadutils import stream
 from requests_toolbelt.exceptions import StreamingError
 from twisted.protocols import amp
@@ -32,12 +29,12 @@ class DownloadCommand(amp.Command):
         (b"file_url", amp.Unicode()),
         (b"path_to_write", amp.Unicode()),
         (b"timeout", amp.Integer()),
-        ]
+    ]
     response = []
     errors = {
         RequestException: b"REQUEST_ERROR",
         StreamingError: b"STREAMING_ERROR",
-        }
+    }
 
 
 class RequestProxyTokenCommand(amp.Command):
@@ -46,15 +43,15 @@ class RequestProxyTokenCommand(amp.Command):
         (b"url", amp.Unicode()),
         (b"auth_header", amp.String()),
         (b"proxy_username", amp.Unicode()),
-        ]
+    ]
     response = [
         (b"username", amp.Unicode()),
         (b"secret", amp.Unicode()),
         (b"timestamp", amp.Unicode()),
-        ]
+    ]
     errors = {
         RequestException: b"REQUEST_ERROR",
-        }
+    }
 
 
 class RequestProcess(AMPChild):
@@ -71,8 +68,11 @@ class RequestProcess(AMPChild):
         except FileExistsError:
             pass
         f = tempfile.NamedTemporaryFile(
-            mode="wb", prefix=os.path.basename(path_to_write) + "_",
-            dir=os.path.dirname(path_to_write), delete=False)
+            mode="wb",
+            prefix=os.path.basename(path_to_write) + "_",
+            dir=os.path.dirname(path_to_write),
+            delete=False,
+        )
         try:
             stream.stream_response_to_file(response, path=f)
         except Exception:
@@ -89,7 +89,9 @@ class RequestProcess(AMPChild):
         session = Session()
         session.trust_env = False
         response = session.post(
-            url, headers={"Authorization": auth_header},
-            json={"username": proxy_username})
+            url,
+            headers={"Authorization": auth_header},
+            json={"username": proxy_username},
+        )
         response.raise_for_status()
         return response.json()
