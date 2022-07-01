@@ -36,9 +36,9 @@ class IHasSpecifications(Interface):
         doNotSnapshot(
             CollectionField(
                 title=_("All specifications"),
-                value_type=Reference(
-                    schema=Interface
-                ),  # ISpecification, really.
+                # Really ISpecification, patched in
+                # lp.blueprints.interfaces.webservice.
+                value_type=Reference(schema=Interface),
                 readonly=True,
                 description=_(
                     "A list of all specifications, regardless of status or "
@@ -54,9 +54,9 @@ class IHasSpecifications(Interface):
         doNotSnapshot(
             CollectionField(
                 title=_("Valid specifications"),
-                value_type=Reference(
-                    schema=Interface
-                ),  # ISpecification, really.
+                # Really ISpecification, patched in
+                # lp.blueprints.interfaces.webservice.
+                value_type=Reference(schema=Interface),
                 readonly=True,
                 description=_(
                     "All specifications that are not obsolete. When called "
@@ -112,7 +112,8 @@ class ISpecificationTarget(IHasSpecifications):
     @operation_parameters(
         name=TextLine(title=_("The name of the specification"))
     )
-    @operation_returns_entry(Interface)  # really ISpecification
+    # Really ISpecification, patched in lp.blueprints.interfaces.webservice.
+    @operation_returns_entry(Interface)
     @export_read_operation()
     @operation_for_version("devel")
     def getSpecification(name):

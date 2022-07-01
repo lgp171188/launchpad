@@ -16,10 +16,6 @@ from lazr.restful.fields import Reference
 
 from lp.blueprints.interfaces.specification import ISpecification
 from lp.blueprints.interfaces.specificationbranch import ISpecificationBranch
-from lp.blueprints.interfaces.specificationtarget import (
-    IHasSpecifications,
-    ISpecificationTarget,
-    )
 from lp.bugs.interfaces.bug import (
     IBug,
     IFrontPageBugAddForm,
@@ -639,23 +635,6 @@ patch_collection_return_type(
 
 # IProductSeries
 patch_reference_property(IProductSeries, 'product', IProduct)
-
-# ISpecification
-patch_plain_parameter_type(ISpecification, 'linkBug', 'bug', IBug)
-patch_plain_parameter_type(ISpecification, 'unlinkBug', 'bug', IBug)
-patch_collection_property(ISpecification, 'dependencies', ISpecification)
-patch_collection_property(
-    ISpecification, 'linked_branches', ISpecificationBranch)
-
-# ISpecificationTarget
-patch_entry_return_type(
-    ISpecificationTarget, 'getSpecification', ISpecification)
-
-# IHasSpecifications
-patch_collection_property(
-    IHasSpecifications, 'visible_specifications', ISpecification)
-patch_collection_property(
-    IHasSpecifications, 'api_valid_specifications', ISpecification)
 
 # IAccessToken
 patch_reference_property(IAccessToken, 'git_repository', IGitRepository)
