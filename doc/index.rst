@@ -59,9 +59,4 @@ Thinking about using Launchpad for your next project?  `Get in touch!
    how-to/index
    explanation/index
    reference/index
-   readme
-   strategy
-   scope
-   values
-   faq
-   historical
+   overview
