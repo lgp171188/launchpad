@@ -10,3 +10,4 @@ Explanation
    architecture
    pip
    favicon
+   doc-theme
