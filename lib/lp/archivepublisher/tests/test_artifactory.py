@@ -306,9 +306,10 @@ class TestArtifactoryPool(TestCase):
         )
 
     def test_getAllArtifacts_handles_empty_properties(self):
-        # AQL queries seem to return empty properties as `{"key": ...}`,
-        # i.e. with no value rather than an empty value.  getAllArtifacts
-        # handles this.
+        # AQL queries seem to return empty properties as something like
+        # `{"key": "pypi.requires.python"}` rather than `{"key":
+        # "pypi.requires.python", "value": ""}`.  getAllArtifacts handles
+        # this.
         pool = self.makePool(ArchiveRepositoryFormat.PYTHON)
         ArtifactoryPoolTestingFile(
             pool=pool,
