@@ -305,6 +305,37 @@ class TestArtifactoryPool(TestCase):
             ),
         )
 
+    def test_getAllArtifacts_handles_empty_properties(self):
+        # AQL queries seem to return empty properties as `{"key": ...}`,
+        # i.e. with no value rather than an empty value.  getAllArtifacts
+        # handles this.
+        pool = self.makePool(ArchiveRepositoryFormat.PYTHON)
+        ArtifactoryPoolTestingFile(
+            pool=pool,
+            source_name="bar",
+            source_version="1.0",
+            filename="bar-1.0.whl",
+            release_type=FakeReleaseType.BINARY,
+            release_id=1,
+        ).addToPool()
+        path = pool.rootpath / "bar" / "1.0" / "bar-1.0.whl"
+        # FakeArtifactoryFixture._make_aql_item returns empty properties as
+        # a property dictionary with no value.
+        path.set_properties({"pypi.requires.python": [""]}, recursive=False)
+        self.assertEqual(
+            {
+                PurePath("bar/1.0/bar-1.0.whl"): {
+                    "launchpad.release-id": ["binary:1"],
+                    "launchpad.source-name": ["bar"],
+                    "launchpad.source-version": ["1.0"],
+                    "pypi.requires.python": [""],
+                },
+            },
+            pool.getAllArtifacts(
+                self.repository_name, ArchiveRepositoryFormat.PYTHON
+            ),
+        )
+
 
 class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
 

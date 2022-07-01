@@ -210,16 +210,19 @@ class FakeArtifactoryFixture(Fixture):
     def _make_aql_item(self, path):
         """Return an AQL response item based on an entry in `self._fs`."""
         path_obj = Path(path)
-        return {
+        item = {
             "repo": self.repository_name,
             "path": path_obj.parent.as_posix()[1:],
             "name": path_obj.name,
-            "properties": [
-                {"key": key, "value": v}
-                for key, value in sorted(self._fs[path]["properties"].items())
-                for v in value
-            ],
+            "properties": [],
         }
+        for key, value in sorted(self._fs[path]["properties"].items()):
+            if value:
+                for v in value:
+                    item["properties"].append({"key": key, "value": v})
+            else:
+                item["properties"].append({"key": key})
+        return item
 
     def _matches_aql(self, item, criteria):
         """Return True if an item matches some AQL criteria.
