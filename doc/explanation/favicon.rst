@@ -1,5 +1,5 @@
-Why so many files and what do they do?
---------------------------------------
+Favicons: Why so many files and what do they do?
+------------------------------------------------
 
 These files were generated from a single SVG file containing the logo (``lib/canonical/launchpad/images/src/Launchpad_square.svg``), using https://realfavicongenerator.net/.
 
