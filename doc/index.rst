@@ -5,6 +5,18 @@ Launchpad developer documentation
 Welcome to the Launchpad developer documentation.  This documentation is for
 people who want to hack on Launchpad.
 
+Contents
+========
+
+.. list-table::
+
+   * - :doc:`how-to/index`
+     - Step-by-step guides covering key operations and common tasks
+   * - :doc:`explanation/index`
+     - Discussion and clarification of key topics
+   * - :doc:`reference/index`
+     - Technical information - specifications, APIs, architecture
+
 Overview
 ========
 
@@ -22,18 +34,6 @@ Overview
      -
    * - :doc:`historical`
      -
-
-Contents
-========
-
-.. list-table::
-
-   * - :doc:`how-to/index`
-     - Step-by-step guides covering key operations and common tasks
-   * - :doc:`explanation/index`
-     - Discussion and clarification of key topics
-   * - :doc:`reference/index`
-     - Technical information - specifications, APIs, architecture
 
 Project and community
 =====================
@@ -56,12 +56,12 @@ Thinking about using Launchpad for your next project?  `Get in touch!
 .. toctree::
    :hidden:
 
+   how-to/index
+   explanation/index
+   reference/index
    readme
    strategy
    scope
    values
    faq
    historical
-   how-to/index
-   explanation/index
-   reference/index
