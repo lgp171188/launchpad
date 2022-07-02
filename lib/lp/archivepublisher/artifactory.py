@@ -539,7 +539,7 @@ class ArtifactoryPool:
             path = PurePath(artifact["path"], artifact["name"])
             properties = defaultdict(set)
             for prop in artifact["properties"]:
-                properties[prop["key"]].add(prop["value"])
+                properties[prop["key"]].add(prop.get("value", ""))
             # AQL returns each value of multi-value properties separately
             # and in an undefined order.  Always sort them to ensure that we
             # can compare properties reliably.
