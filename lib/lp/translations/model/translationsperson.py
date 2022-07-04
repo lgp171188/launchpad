@@ -252,17 +252,17 @@ class TranslationsPerson:
                 where=And(*clause)))
         ReviewableGroups = With("reviewable_groups",
             Select(
-                (TranslationGroup.id, Translator.languageID),
+                (TranslationGroup.id, Translator.language_id),
                 tables=[
                     TranslationGroup,
                     Join(
                         Translator,
-                        Translator.translationgroupID == TranslationGroup.id),
+                        Translator.translationgroup_id == TranslationGroup.id),
                     Join(
                         TeamParticipation,
                         And(
                             TeamParticipation.teamID ==
-                                Translator.translatorID,
+                                Translator.translator_id,
                             TeamParticipation.personID == self.person.id))]))
         TranslatableDistroSeries = With("translatable_distroseries",
             Select(
@@ -362,8 +362,8 @@ class TranslationsPerson:
 
         # Look up translation team.
         translatorjoin_conditions = And(
-            Translator.translationgroupID == TranslationGroup.id,
-            Translator.languageID == POFile.languageID)
+            Translator.translationgroup_id == TranslationGroup.id,
+            Translator.language_id == POFile.languageID)
         if expect_reviewer_status:
             TranslatorJoin = Join(Translator, translatorjoin_conditions)
         else:
@@ -375,7 +375,7 @@ class TranslationsPerson:
         # query won't be interested in its actual contents anyway.
         Reviewership = ClassAlias(TeamParticipation, 'Reviewership')
         reviewerjoin_condition = And(
-            Reviewership.teamID == Translator.translatorID,
+            Reviewership.teamID == Translator.translator_id,
             Reviewership.personID == self.person.id)
         if expect_reviewer_status:
             TranslationTeamJoin = Join(Reviewership, reviewerjoin_condition)

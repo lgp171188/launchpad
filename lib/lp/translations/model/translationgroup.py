@@ -13,6 +13,7 @@ from storm.expr import (
     Join,
     LeftJoin,
     )
+from storm.references import ReferenceSet
 from storm.store import Store
 from zope.interface import implementer
 
@@ -33,7 +34,6 @@ from lp.services.database.sqlobject import (
     ForeignKey,
     SQLMultipleJoin,
     SQLObjectNotFound,
-    SQLRelatedJoin,
     StringCol,
     )
 from lp.services.librarian.model import (
@@ -67,10 +67,11 @@ class TranslationGroup(SQLBase):
     # useful joins
     distributions = SQLMultipleJoin('Distribution',
         joinColumn='translationgroup')
-    languages = SQLRelatedJoin('Language', joinColumn='translationgroup',
-        intermediateTable='Translator', otherColumn='language')
-    translators = SQLMultipleJoin('Translator',
-                                  joinColumn='translationgroup')
+    languages = ReferenceSet(
+        "<primary key>", "Translator.translationgroup_id",
+        "Translator.language_id", "Language.id")
+    translators = ReferenceSet(
+        "<primary key>", "Translator.translationgroup_id")
     translation_guide_url = StringCol(notNull=False, default=None)
 
     def __getitem__(self, language_code):
@@ -78,7 +79,7 @@ class TranslationGroup(SQLBase):
         query = Store.of(self).find(
             Translator,
             Translator.translationgroup == self,
-            Translator.languageID == Language.id,
+            Translator.language_id == Language.id,
             Language.code == language_code)
 
         translator = query.one()
@@ -95,7 +96,7 @@ class TranslationGroup(SQLBase):
     # adding and removing translators
     def remove_translator(self, translator):
         """See ITranslationGroup."""
-        Translator.delete(translator.id)
+        IStore(Translator).find(Translator, id=translator.id).remove()
 
     # get a translator by language or code
     def query_translator(self, language):
@@ -176,8 +177,8 @@ class TranslationGroup(SQLBase):
         translator_data = Store.of(self).using(*using).find(
             tables,
             Translator.translationgroup == self,
-            Language.id == Translator.languageID,
-            Person.id == Translator.translatorID)
+            Language.id == Translator.language_id,
+            Person.id == Translator.translator_id)
         translator_data = translator_data.order_by(Language.englishname)
         mapper = lambda row: row[slice(0, 3)]
         return DecoratedResultSet(translator_data, mapper)
@@ -296,9 +297,9 @@ class TranslationGroupSet:
         origin = [
             TranslationGroup,
             Join(Translator,
-                Translator.translationgroupID == TranslationGroup.id),
+                Translator.translationgroup_id == TranslationGroup.id),
             Join(TeamParticipation,
-                TeamParticipation.teamID == Translator.translatorID),
+                TeamParticipation.teamID == Translator.translator_id),
             ]
         result = store.using(*origin).find(
             TranslationGroup, TeamParticipation.person == person)
