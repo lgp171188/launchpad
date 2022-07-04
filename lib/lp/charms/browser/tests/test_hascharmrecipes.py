@@ -4,10 +4,7 @@
 """Test views for objects that have charm recipes."""
 
 import soupmatchers
-from testscenarios import (
-    load_tests_apply_scenarios,
-    WithScenarios,
-    )
+from testscenarios import WithScenarios, load_tests_apply_scenarios
 from testtools.matchers import Not
 
 from lp.charms.interfaces.charmrecipe import CHARM_RECIPE_ALLOW_CREATE
@@ -33,15 +30,21 @@ class TestHasCharmRecipesView(WithScenarios, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     scenarios = [
-        ("GitRepository", {
-            "context_type": "repository",
-            "context_factory": make_git_repository,
-            }),
-        ("GitRef", {
-            "context_type": "branch",
-            "context_factory": make_git_ref,
-            }),
-        ]
+        (
+            "GitRepository",
+            {
+                "context_type": "repository",
+                "context_factory": make_git_repository,
+            },
+        ),
+        (
+            "GitRef",
+            {
+                "context_type": "branch",
+                "context_factory": make_git_ref,
+            },
+        ),
+    ]
 
     def setUp(self):
         super().setUp()
@@ -58,16 +61,18 @@ class TestHasCharmRecipesView(WithScenarios, TestCaseWithFactory):
         view = create_initialized_view(context, "+index")
         self.assertEqual(
             "No charm recipes using this %s." % self.context_type,
-            view.charm_recipes_link)
+            view.charm_recipes_link,
+        )
 
     def test_charm_recipes_link_one_recipe(self):
         # An object with one charm recipe shows a link to that recipe.
         context = self.context_factory(self)
         recipe = self.makeCharmRecipe(context)
         view = create_initialized_view(context, "+index")
-        expected_link = (
-            '<a href="%s">1 charm recipe</a> using this %s.' %
-            (canonical_url(recipe), self.context_type))
+        expected_link = '<a href="%s">1 charm recipe</a> using this %s.' % (
+            canonical_url(recipe),
+            self.context_type,
+        )
         self.assertEqual(expected_link, view.charm_recipes_link)
 
     def test_charm_recipes_link_more_recipes(self):
@@ -77,8 +82,9 @@ class TestHasCharmRecipesView(WithScenarios, TestCaseWithFactory):
         self.makeCharmRecipe(context)
         view = create_initialized_view(context, "+index")
         expected_link = (
-            '<a href="+charm-recipes">2 charm recipes</a> using this %s.' %
-            self.context_type)
+            '<a href="+charm-recipes">2 charm recipes</a> using this %s.'
+            % self.context_type
+        )
         self.assertEqual(expected_link, view.charm_recipes_link)
 
 
@@ -88,7 +94,7 @@ class TestHasCharmRecipesMenu(WithScenarios, TestCaseWithFactory):
 
     scenarios = [
         ("GitRef", {"context_factory": make_git_ref}),
-        ]
+    ]
 
     def setUp(self):
         super().setUp()
@@ -103,11 +109,21 @@ class TestHasCharmRecipesMenu(WithScenarios, TestCaseWithFactory):
         context = self.context_factory(self)
         view = create_initialized_view(context, "+index")
         new_charm_recipe_url = canonical_url(
-            context, view_name="+new-charm-recipe")
-        self.assertThat(view(), Not(soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                "creation link", "a", attrs={"href": new_charm_recipe_url},
-                text="Create charm recipe"))))
+            context, view_name="+new-charm-recipe"
+        )
+        self.assertThat(
+            view(),
+            Not(
+                soupmatchers.HTMLContains(
+                    soupmatchers.Tag(
+                        "creation link",
+                        "a",
+                        attrs={"href": new_charm_recipe_url},
+                        text="Create charm recipe",
+                    )
+                )
+            ),
+        )
 
     def test_creation_link_no_recipes(self):
         # An object with no charm recipes shows a creation link.
@@ -115,11 +131,19 @@ class TestHasCharmRecipesMenu(WithScenarios, TestCaseWithFactory):
         context = self.context_factory(self)
         view = create_initialized_view(context, "+index")
         new_charm_recipe_url = canonical_url(
-            context, view_name="+new-charm-recipe")
-        self.assertThat(view(), soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                "creation link", "a", attrs={"href": new_charm_recipe_url},
-                text="Create charm recipe")))
+            context, view_name="+new-charm-recipe"
+        )
+        self.assertThat(
+            view(),
+            soupmatchers.HTMLContains(
+                soupmatchers.Tag(
+                    "creation link",
+                    "a",
+                    attrs={"href": new_charm_recipe_url},
+                    text="Create charm recipe",
+                )
+            ),
+        )
 
     def test_creation_link_recipes(self):
         # An object with charm recipes shows a creation link.
@@ -128,11 +152,19 @@ class TestHasCharmRecipesMenu(WithScenarios, TestCaseWithFactory):
         self.makeCharmRecipe(context)
         view = create_initialized_view(context, "+index")
         new_charm_recipe_url = canonical_url(
-            context, view_name="+new-charm-recipe")
-        self.assertThat(view(), soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                "creation link", "a", attrs={"href": new_charm_recipe_url},
-                text="Create charm recipe")))
+            context, view_name="+new-charm-recipe"
+        )
+        self.assertThat(
+            view(),
+            soupmatchers.HTMLContains(
+                soupmatchers.Tag(
+                    "creation link",
+                    "a",
+                    attrs={"href": new_charm_recipe_url},
+                    text="Create charm recipe",
+                )
+            ),
+        )
 
 
 load_tests = load_tests_apply_scenarios

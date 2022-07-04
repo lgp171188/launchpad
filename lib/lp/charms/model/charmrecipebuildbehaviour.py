@@ -8,7 +8,7 @@ Dispatches charm recipe build jobs to build-farm workers.
 
 __all__ = [
     "CharmRecipeBuildBehaviour",
-    ]
+]
 
 from twisted.internet import defer
 from zope.component import adapter
@@ -20,15 +20,13 @@ from lp.buildmaster.enums import BuildBaseImageType
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
-    )
+)
 from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
-    )
+)
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
 from lp.registry.interfaces.series import SeriesStatus
-from lp.soyuz.adapters.archivedependencies import (
-    get_sources_list_for_building,
-    )
+from lp.soyuz.adapters.archivedependencies import get_sources_list_for_building
 
 
 @adapter(ICharmRecipeBuild)
@@ -45,9 +43,12 @@ class CharmRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         # Examples:
         #   buildlog_charm_ubuntu_wily_amd64_name_FULLYBUILT.txt
         return "buildlog_charm_%s_%s_%s_%s_%s.txt" % (
-            das.distroseries.distribution.name, das.distroseries.name,
-            das.architecturetag, self.build.recipe.name,
-            self.build.status.name)
+            das.distroseries.distribution.name,
+            das.distroseries.name,
+            das.architecturetag,
+            self.build.recipe.name,
+            self.build.status.name,
+        )
 
     def verifyBuildRequest(self, logger):
         """Assert some pre-build checks.
@@ -59,12 +60,14 @@ class CharmRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         build = self.build
         if build.virtualized and not self._builder.virtualized:
             raise AssertionError(
-                "Attempt to build virtual item on a non-virtual builder.")
+                "Attempt to build virtual item on a non-virtual builder."
+            )
 
         chroot = build.distro_arch_series.getChroot()
         if chroot is None:
             raise CannotBuild(
-                "Missing chroot for %s" % build.distro_arch_series.displayname)
+                "Missing chroot for %s" % build.distro_arch_series.displayname
+            )
 
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None):
@@ -79,9 +82,12 @@ class CharmRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         # We have to remove the security proxy that Zope applies to this
         # dict, since otherwise we'll be unable to serialise it to XML-RPC.
         args["channels"] = removeSecurityProxy(channels)
-        args["archives"], args["trusted_keys"] = (
-            yield get_sources_list_for_building(
-                self, build.distro_arch_series, None, logger=logger))
+        (
+            args["archives"],
+            args["trusted_keys"],
+        ) = yield get_sources_list_for_building(
+            self, build.distro_arch_series, None, logger=logger
+        )
         if build.recipe.build_path is not None:
             args["build_path"] = build.recipe.build_path
         if build.recipe.git_ref is not None:
@@ -93,9 +99,13 @@ class CharmRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                 args["git_path"] = build.recipe.git_ref.name
         else:
             raise CannotBuild(
-                "Source repository for ~%s/%s/+charm/%s has been deleted." % (
-                    build.recipe.owner.name, build.recipe.project.name,
-                    build.recipe.name))
+                "Source repository for ~%s/%s/+charm/%s has been deleted."
+                % (
+                    build.recipe.owner.name,
+                    build.recipe.project.name,
+                    build.recipe.name,
+                )
+            )
         args["private"] = build.is_private
         return args
 

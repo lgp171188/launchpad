@@ -3,13 +3,10 @@
 
 __all__ = [
     "determine_instances_to_build",
-    ]
+]
 
-from collections import (
-    Counter,
-    OrderedDict,
-    )
 import json
+from collections import Counter, OrderedDict
 
 from lp.services.helpers import english_list
 
@@ -23,7 +20,8 @@ class MissingPropertyError(CharmBasesParserError):
 
     def __init__(self, prop):
         super().__init__(
-            "Base specification is missing the {!r} property".format(prop))
+            "Base specification is missing the {!r} property".format(prop)
+        )
         self.property = prop
 
 
@@ -38,7 +36,9 @@ class DuplicateRunOnError(CharmBasesParserError):
         super().__init__(
             "{} {} present in the 'run-on' of multiple items".format(
                 english_list([str(d) for d in duplicates]),
-                "is" if len(duplicates) == 1 else "are"))
+                "is" if len(duplicates) == 1 else "are",
+            )
+        )
 
 
 class CharmBase:
@@ -49,7 +49,9 @@ class CharmBase:
         if not isinstance(channel, str):
             raise BadPropertyError(
                 "Channel {!r} is not a string (missing quotes?)".format(
-                    channel))
+                    channel
+                )
+            )
         self.channel = channel
         self.architectures = architectures
 
@@ -65,26 +67,31 @@ class CharmBase:
         except KeyError:
             raise MissingPropertyError("channel")
         return cls(
-            name=name, channel=channel,
-            architectures=properties.get("architectures"))
+            name=name,
+            channel=channel,
+            architectures=properties.get("architectures"),
+        )
 
     def __eq__(self, other):
         return (
-            self.name == other.name and
-            self.channel == other.channel and
-            self.architectures == other.architectures)
+            self.name == other.name
+            and self.channel == other.channel
+            and self.architectures == other.architectures
+        )
 
     def __ne__(self, other):
         return not self == other
 
     def __hash__(self):
         architectures = (
-            None if self.architectures is None else tuple(self.architectures))
+            None if self.architectures is None else tuple(self.architectures)
+        )
         return hash((self.name, self.channel, architectures))
 
     def __str__(self):
         return "{} {} {}".format(
-            self.name, self.channel, json.dumps(self.architectures))
+            self.name, self.channel, json.dumps(self.architectures)
+        )
 
 
 class CharmBaseConfiguration:
@@ -101,8 +108,9 @@ class CharmBaseConfiguration:
         # common typos in case the user intends to use long-form but did so
         # incorrectly (for better error message handling).
         if not any(
-                item in properties
-                for item in ("run-on", "run_on", "build-on", "build_on")):
+            item in properties
+            for item in ("run-on", "run_on", "build-on", "build_on")
+        ):
             base = CharmBase.from_dict(properties)
             return cls([base], run_on=[base])
 
@@ -117,8 +125,9 @@ class CharmBaseConfiguration:
         return cls(build_on, run_on=run_on)
 
 
-def determine_instances_to_build(charmcraft_data, supported_arches,
-                                 default_distro_series):
+def determine_instances_to_build(
+    charmcraft_data, supported_arches, default_distro_series
+):
     """Return a list of instances to build based on charmcraft.yaml.
 
     :param charmcraft_data: A parsed charmcraft.yaml.
@@ -133,18 +142,24 @@ def determine_instances_to_build(charmcraft_data, supported_arches,
 
     if bases_list:
         configs = [
-            CharmBaseConfiguration.from_dict(item) for item in bases_list]
+            CharmBaseConfiguration.from_dict(item) for item in bases_list
+        ]
     else:
         # If no bases are specified, build one for each supported
         # architecture for the default series.
         configs = [
-            CharmBaseConfiguration([
-                CharmBase(
-                    default_distro_series.distribution.name,
-                    default_distro_series.version, das.architecturetag),
-                ])
+            CharmBaseConfiguration(
+                [
+                    CharmBase(
+                        default_distro_series.distribution.name,
+                        default_distro_series.version,
+                        das.architecturetag,
+                    ),
+                ]
+            )
             for das in supported_arches
-            if das.distroseries == default_distro_series]
+            if das.distroseries == default_distro_series
+        ]
 
     # Ensure that multiple `run-on` items don't overlap; this is ambiguous
     # and forbidden by charmcraft.
@@ -166,7 +181,9 @@ def determine_instances_to_build(charmcraft_data, supported_arches,
                 if das.distroseries.distribution.name != build_on.name:
                     continue
                 if build_on.channel not in (
-                        das.distroseries.name, das.distroseries.version):
+                    das.distroseries.name,
+                    das.distroseries.version,
+                ):
                     continue
                 if build_on.architectures is None:
                     # Build on all supported architectures for the requested

@@ -16,33 +16,32 @@ __all__ = [
     "ICharmRecipeBuild",
     "ICharmRecipeBuildRequest",
     "ICharmRecipeSet",
-    ]
+]
 
-from lp.charms.interfaces.charmbase import (
-    ICharmBase,
-    ICharmBaseSet,
-    )
+from lp.charms.interfaces.charmbase import ICharmBase, ICharmBaseSet
 from lp.charms.interfaces.charmrecipe import (
     ICharmRecipe,
     ICharmRecipeBuildRequest,
     ICharmRecipeSet,
     ICharmRecipeView,
-    )
+)
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
 from lp.services.webservice.apihelpers import (
     patch_collection_property,
     patch_reference_property,
-    )
-
+)
 
 # ICharmRecipeBuildRequest
 patch_reference_property(ICharmRecipeBuildRequest, "recipe", ICharmRecipe)
 patch_collection_property(
-    ICharmRecipeBuildRequest, "builds", ICharmRecipeBuild)
+    ICharmRecipeBuildRequest, "builds", ICharmRecipeBuild
+)
 
 # ICharmRecipeView
 patch_collection_property(ICharmRecipeView, "builds", ICharmRecipeBuild)
 patch_collection_property(
-    ICharmRecipeView, "completed_builds", ICharmRecipeBuild)
+    ICharmRecipeView, "completed_builds", ICharmRecipeBuild
+)
 patch_collection_property(
-    ICharmRecipeView, "pending_builds", ICharmRecipeBuild)
+    ICharmRecipeView, "pending_builds", ICharmRecipeBuild
+)

@@ -68,3 +68,5 @@ c606443bdb2f342593c9a7c9437cb70c01f85f29
 2edd6d52841e03ba11ad431e40828f2f0b6a7e17
 # apply black to lp.buildmaster
 95cf83968d59453397dfbdcbe30556fc8004479a
+# apply black to lp.charms
+a6bed71f3d2fdbceae20c2d435c993e8bededdce

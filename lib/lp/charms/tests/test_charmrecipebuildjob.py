@@ -5,14 +5,14 @@
 
 from datetime import timedelta
 
+import transaction
 from fixtures import FakeLogger
 from testtools.matchers import (
     Equals,
     MatchesDict,
     MatchesListwise,
     MatchesStructure,
-    )
-import transaction
+)
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
@@ -24,21 +24,21 @@ from lp.charms.interfaces.charmhubclient import (
     UnauthorizedUploadResponse,
     UploadFailedResponse,
     UploadNotReviewedYetResponse,
-    )
+)
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
-    )
+)
 from lp.charms.interfaces.charmrecipebuildjob import (
     ICharmhubUploadJob,
     ICharmRecipeBuildJob,
-    )
+)
 from lp.charms.model.charmrecipebuild import CharmRecipeBuild
 from lp.charms.model.charmrecipebuildjob import (
     CharmhubUploadJob,
     CharmRecipeBuildJob,
     CharmRecipeBuildJobType,
-    )
+)
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
@@ -50,10 +50,7 @@ from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.fixture import ZopeUtilityFixture
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadZopelessLayer,
-    )
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadZopelessLayer
 from lp.testing.mail_helpers import pop_notifications
 
 
@@ -74,7 +71,6 @@ def run_isolated_jobs(jobs):
 # ones?
 @implementer(ICharmhubClient)
 class FakeCharmhubClient:
-
     def __init__(self):
         self.uploadFile = FakeMethod()
         self.push = FakeMethod()
@@ -83,16 +79,19 @@ class FakeCharmhubClient:
 
 
 class FileUploaded(MatchesListwise):
-
     def __init__(self, filename):
-        super().__init__([
-            MatchesListwise([
-                MatchesListwise([
-                    MatchesStructure.byEquality(filename=filename),
-                    ]),
-                MatchesDict({}),
-                ]),
-            ])
+        super().__init__(
+            [
+                MatchesListwise(
+                    [
+                        MatchesListwise(
+                            [MatchesStructure.byEquality(filename=filename)]
+                        ),
+                        MatchesDict({}),
+                    ]
+                ),
+            ]
+        )
 
 
 class TestCharmRecipeBuildJob(TestCaseWithFactory):
@@ -108,8 +107,10 @@ class TestCharmRecipeBuildJob(TestCaseWithFactory):
         build = self.factory.makeCharmRecipeBuild()
         self.assertProvides(
             CharmRecipeBuildJob(
-                build, CharmRecipeBuildJobType.CHARMHUB_UPLOAD, {}),
-            ICharmRecipeBuildJob)
+                build, CharmRecipeBuildJobType.CHARMHUB_UPLOAD, {}
+            ),
+            ICharmRecipeBuildJob,
+        )
 
 
 class TestCharmhubUploadJob(TestCaseWithFactory):
@@ -118,10 +119,14 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture({
-            CHARM_RECIPE_ALLOW_CREATE: "on",
-            CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
-            }))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    CHARM_RECIPE_ALLOW_CREATE: "on",
+                    CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                }
+            )
+        )
         self.status_url = "/v1/charm/test-charm/revisions/review?upload-id=123"
 
     def test_provides_interface(self):
@@ -135,59 +140,86 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         build = self.factory.makeCharmRecipeBuild()
         job = CharmhubUploadJob.create(build)
         self.assertEqual(
-            "<CharmhubUploadJob for ~%s/%s/+charm/%s/+build/%d>" % (
-                build.recipe.owner.name, build.recipe.project.name,
-                build.recipe.name, build.id),
-            repr(job))
+            "<CharmhubUploadJob for ~%s/%s/+charm/%s/+build/%d>"
+            % (
+                build.recipe.owner.name,
+                build.recipe.project.name,
+                build.recipe.name,
+                build.id,
+            ),
+            repr(job),
+        )
 
     def makeCharmRecipeBuild(self, **kwargs):
         # Make a build with a builder, some files, and a webhook.
         build = self.factory.makeCharmRecipeBuild(
-            builder=self.factory.makeBuilder(), **kwargs)
+            builder=self.factory.makeBuilder(), **kwargs
+        )
         build.updateStatus(BuildStatus.FULLYBUILT)
         irrelevant_lfa = self.factory.makeLibraryFileAlias(
-            filename="000-irrelevant.txt", content=b"irrelevant file")
+            filename="000-irrelevant.txt", content=b"irrelevant file"
+        )
         self.factory.makeCharmFile(build=build, library_file=irrelevant_lfa)
         charm_lfa = self.factory.makeLibraryFileAlias(
-            filename="test-charm.charm", content=b"dummy charm content")
+            filename="test-charm.charm", content=b"dummy charm content"
+        )
         self.factory.makeCharmFile(build=build, library_file=charm_lfa)
         self.factory.makeWebhook(
-            target=build.recipe, event_types=["charm-recipe:build:0.1"])
+            target=build.recipe, event_types=["charm-recipe:build:0.1"]
+        )
         return build
 
-    def assertWebhookDeliveries(self, build,
-                                expected_store_upload_statuses, logger):
+    def assertWebhookDeliveries(
+        self, build, expected_store_upload_statuses, logger
+    ):
         hook = build.recipe.webhooks.one()
         deliveries = list(hook.deliveries)
         deliveries.reverse()
-        expected_payloads = [{
-            "recipe_build": Equals(
-                canonical_url(build, force_local_path=True)),
-            "action": Equals("status-changed"),
-            "recipe": Equals(
-                canonical_url(build.recipe, force_local_path=True)),
-            "build_request": Equals(
-                canonical_url(build.build_request, force_local_path=True)),
-            "status": Equals("Successfully built"),
-            "store_upload_status": Equals(expected),
-            } for expected in expected_store_upload_statuses]
+        expected_payloads = [
+            {
+                "recipe_build": Equals(
+                    canonical_url(build, force_local_path=True)
+                ),
+                "action": Equals("status-changed"),
+                "recipe": Equals(
+                    canonical_url(build.recipe, force_local_path=True)
+                ),
+                "build_request": Equals(
+                    canonical_url(build.build_request, force_local_path=True)
+                ),
+                "status": Equals("Successfully built"),
+                "store_upload_status": Equals(expected),
+            }
+            for expected in expected_store_upload_statuses
+        ]
         matchers = [
             MatchesStructure(
                 event_type=Equals("charm-recipe:build:0.1"),
-                payload=MatchesDict(expected_payload))
-            for expected_payload in expected_payloads]
+                payload=MatchesDict(expected_payload),
+            )
+            for expected_payload in expected_payloads
+        ]
         self.assertThat(deliveries, MatchesListwise(matchers))
         with dbuser(config.IWebhookDeliveryJobSource.dbuser):
             for delivery in deliveries:
                 self.assertEqual(
-                    "<WebhookDeliveryJob for webhook %d on %r>" % (
-                        hook.id, hook.target),
-                    repr(delivery))
+                    "<WebhookDeliveryJob for webhook %d on %r>"
+                    % (hook.id, hook.target),
+                    repr(delivery),
+                )
             self.assertThat(
-                logger.output, LogsScheduledWebhooks([
-                    (hook, "charm-recipe:build:0.1",
-                     MatchesDict(expected_payload))
-                    for expected_payload in expected_payloads]))
+                logger.output,
+                LogsScheduledWebhooks(
+                    [
+                        (
+                            hook,
+                            "charm-recipe:build:0.1",
+                            MatchesDict(expected_payload),
+                        )
+                        for expected_payload in expected_payloads
+                    ]
+                ),
+            )
 
     def test_run(self):
         # The job uploads the build to Charmhub and records the Charmhub
@@ -204,10 +236,12 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-charm.charm"))
+            client.uploadFile.calls, FileUploaded("test-charm.charm")
+        )
         self.assertEqual([((build, 1), {})], client.push.calls)
         self.assertEqual(
-            [((build, self.status_url), {})], client.checkStatus.calls)
+            [((build, self.status_url), {})], client.checkStatus.calls
+        )
         self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
         self.assertEqual(1, job.store_revision)
@@ -227,7 +261,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-charm.charm"))
+            client.uploadFile.calls, FileUploaded("test-charm.charm")
+        )
         self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
@@ -236,29 +271,36 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.assertEqual("An upload failure", job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertWebhookDeliveries(
-            build, ["Pending", "Failed to upload"], logger)
+            build, ["Pending", "Failed to upload"], logger
+        )
 
     def test_run_unauthorized_notifies(self):
         # A run that gets 401 from Charmhub sends mail.
         logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
-            owner=requester, name="requester-team", members=[requester])
+            owner=requester, name="requester-team", members=[requester]
+        )
         project = self.factory.makeProduct(name="test-project")
         build = self.makeCharmRecipeBuild(
-            requester=requester_team, name="test-charm", owner=requester_team,
-            project=project)
+            requester=requester_team,
+            name="test-charm",
+            owner=requester_team,
+            project=project,
+        )
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
         client.uploadFile.result = 1
         client.uploadFile.failure = UnauthorizedUploadResponse(
-            "Authorization failed.")
+            "Authorization failed."
+        )
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-charm.charm"))
+            client.uploadFile.calls, FileUploaded("test-charm.charm")
+        )
         self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
@@ -267,34 +309,45 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.assertEqual("Authorization failed.", job.error_message)
         [notification] = pop_notifications()
         self.assertEqual(
-            config.canonical.noreply_from_address, notification["From"])
+            config.canonical.noreply_from_address, notification["From"]
+        )
         self.assertEqual(
             "Requester <%s>" % requester.preferredemail.email,
-            notification["To"])
+            notification["To"],
+        )
         subject = notification["Subject"].replace("\n ", " ")
         self.assertEqual(
-            "Charmhub authorization failed for test-charm", subject)
+            "Charmhub authorization failed for test-charm", subject
+        )
         self.assertEqual(
             "Requester @requester-team",
-            notification["X-Launchpad-Message-Rationale"])
+            notification["X-Launchpad-Message-Rationale"],
+        )
         self.assertEqual(
-            requester_team.name, notification["X-Launchpad-Message-For"])
+            requester_team.name, notification["X-Launchpad-Message-For"]
+        )
         self.assertEqual(
             "charm-recipe-build-upload-unauthorized",
-            notification["X-Launchpad-Notification-Type"])
+            notification["X-Launchpad-Notification-Type"],
+        )
         body, footer = (
-            notification.get_payload(decode=True).decode().split("\n-- \n"))
+            notification.get_payload(decode=True).decode().split("\n-- \n")
+        )
         self.assertIn(
             "http://launchpad.test/~requester-team/test-project/+charm/"
             "test-charm/+authorize",
-            body)
+            body,
+        )
         self.assertEqual(
             "http://launchpad.test/~requester-team/test-project/+charm/"
             "test-charm/+build/%d\n"
-            "Your team Requester Team is the requester of the build.\n" %
-            build.id, footer)
+            "Your team Requester Team is the requester of the build.\n"
+            % build.id,
+            footer,
+        )
         self.assertWebhookDeliveries(
-            build, ["Pending", "Failed to upload"], logger)
+            build, ["Pending", "Failed to upload"], logger
+        )
 
     def test_run_502_retries(self):
         # A run that gets a 502 error from Charmhub schedules itself to be
@@ -305,12 +358,14 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
         client.uploadFile.failure = UploadFailedResponse(
-            "Proxy error", can_retry=True)
+            "Proxy error", can_retry=True
+        )
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-charm.charm"))
+            client.uploadFile.calls, FileUploaded("test-charm.charm")
+        )
         self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
@@ -331,10 +386,12 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-charm.charm"))
+            client.uploadFile.calls, FileUploaded("test-charm.charm")
+        )
         self.assertEqual([((build, 1), {})], client.push.calls)
         self.assertEqual(
-            [((build, self.status_url), {})], client.checkStatus.calls)
+            [((build, self.status_url), {})], client.checkStatus.calls
+        )
         self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
         self.assertEqual(1, job.store_revision)
@@ -349,21 +406,27 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
-            owner=requester, name="requester-team", members=[requester])
+            owner=requester, name="requester-team", members=[requester]
+        )
         project = self.factory.makeProduct(name="test-project")
         build = self.makeCharmRecipeBuild(
-            requester=requester_team, name="test-charm", owner=requester_team,
-            project=project)
+            requester=requester_team,
+            name="test-charm",
+            owner=requester_team,
+            project=project,
+        )
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
         client.uploadFile.failure = UploadFailedResponse(
-            "Failed to upload", detail="The proxy exploded.\n")
+            "Failed to upload", detail="The proxy exploded.\n"
+        )
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-charm.charm"))
+            client.uploadFile.calls, FileUploaded("test-charm.charm")
+        )
         self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
@@ -372,35 +435,45 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.assertEqual("Failed to upload", job.error_message)
         [notification] = pop_notifications()
         self.assertEqual(
-            config.canonical.noreply_from_address, notification["From"])
+            config.canonical.noreply_from_address, notification["From"]
+        )
         self.assertEqual(
             "Requester <%s>" % requester.preferredemail.email,
-            notification["To"])
+            notification["To"],
+        )
         subject = notification["Subject"].replace("\n ", " ")
         self.assertEqual("Charmhub upload failed for test-charm", subject)
         self.assertEqual(
             "Requester @requester-team",
-            notification["X-Launchpad-Message-Rationale"])
+            notification["X-Launchpad-Message-Rationale"],
+        )
         self.assertEqual(
-            requester_team.name, notification["X-Launchpad-Message-For"])
+            requester_team.name, notification["X-Launchpad-Message-For"]
+        )
         self.assertEqual(
             "charm-recipe-build-upload-failed",
-            notification["X-Launchpad-Notification-Type"])
+            notification["X-Launchpad-Notification-Type"],
+        )
         body, footer = (
-            notification.get_payload(decode=True).decode().split("\n-- \n"))
+            notification.get_payload(decode=True).decode().split("\n-- \n")
+        )
         self.assertIn("Failed to upload", body)
         build_url = (
             "http://launchpad.test/~requester-team/test-project/+charm/"
-            "test-charm/+build/%d" %
-            build.id)
+            "test-charm/+build/%d" % build.id
+        )
         self.assertIn(build_url, body)
         self.assertEqual(
-            "%s\nYour team Requester Team is the requester of the build.\n" %
-            build_url, footer)
+            "%s\nYour team Requester Team is the requester of the build.\n"
+            % build_url,
+            footer,
+        )
         self.assertWebhookDeliveries(
-            build, ["Pending", "Failed to upload"], logger)
+            build, ["Pending", "Failed to upload"], logger
+        )
         self.assertIn(
-            ("error_detail", "The proxy exploded.\n"), job.getOopsVars())
+            ("error_detail", "The proxy exploded.\n"), job.getOopsVars()
+        )
 
     def test_run_review_pending_retries(self):
         # A run that finds that Charmhub has not yet finished reviewing the
@@ -417,10 +490,12 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-charm.charm"))
+            client.uploadFile.calls, FileUploaded("test-charm.charm")
+        )
         self.assertEqual([((build, 2), {})], client.push.calls)
         self.assertEqual(
-            [((build, self.status_url), {})], client.checkStatus.calls)
+            [((build, self.status_url), {})], client.checkStatus.calls
+        )
         self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
         self.assertIsNone(job.store_revision)
@@ -441,7 +516,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.assertEqual([], client.uploadFile.calls)
         self.assertEqual([], client.push.calls)
         self.assertEqual(
-            [((build, self.status_url), {})], client.checkStatus.calls)
+            [((build, self.status_url), {})], client.checkStatus.calls
+        )
         self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
         self.assertEqual(1, job.store_revision)
@@ -455,58 +531,76 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
-            owner=requester, name="requester-team", members=[requester])
+            owner=requester, name="requester-team", members=[requester]
+        )
         project = self.factory.makeProduct(name="test-project")
         build = self.makeCharmRecipeBuild(
-            requester=requester_team, name="test-charm", owner=requester_team,
-            project=project)
+            requester=requester_team,
+            name="test-charm",
+            owner=requester_team,
+            project=project,
+        )
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
         client.uploadFile.result = 2
         client.push.result = self.status_url
         client.checkStatus.failure = ReviewFailedResponse(
-            "Review failed.\nCharm is terrible.")
+            "Review failed.\nCharm is terrible."
+        )
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-charm.charm"))
+            client.uploadFile.calls, FileUploaded("test-charm.charm")
+        )
         self.assertEqual([((build, 2), {})], client.push.calls)
         self.assertEqual(
-            [((build, self.status_url), {})], client.checkStatus.calls)
+            [((build, self.status_url), {})], client.checkStatus.calls
+        )
         self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
         self.assertIsNone(job.store_revision)
         self.assertEqual(
-            "Review failed.\nCharm is terrible.", job.error_message)
+            "Review failed.\nCharm is terrible.", job.error_message
+        )
         [notification] = pop_notifications()
         self.assertEqual(
-            config.canonical.noreply_from_address, notification["From"])
+            config.canonical.noreply_from_address, notification["From"]
+        )
         self.assertEqual(
             "Requester <%s>" % requester.preferredemail.email,
-            notification["To"])
+            notification["To"],
+        )
         subject = notification["Subject"].replace("\n ", " ")
         self.assertEqual(
-            "Charmhub upload review failed for test-charm", subject)
+            "Charmhub upload review failed for test-charm", subject
+        )
         self.assertEqual(
             "Requester @requester-team",
-            notification["X-Launchpad-Message-Rationale"])
+            notification["X-Launchpad-Message-Rationale"],
+        )
         self.assertEqual(
-            requester_team.name, notification["X-Launchpad-Message-For"])
+            requester_team.name, notification["X-Launchpad-Message-For"]
+        )
         self.assertEqual(
             "charm-recipe-build-upload-review-failed",
-            notification["X-Launchpad-Notification-Type"])
+            notification["X-Launchpad-Notification-Type"],
+        )
         body, footer = (
-            notification.get_payload(decode=True).decode().split("\n-- \n"))
+            notification.get_payload(decode=True).decode().split("\n-- \n")
+        )
         self.assertIn("Review failed.", body)
         self.assertEqual(
             "http://launchpad.test/~requester-team/test-project/+charm/"
             "test-charm/+build/%d\n"
-            "Your team Requester Team is the requester of the build.\n" %
-            build.id, footer)
+            "Your team Requester Team is the requester of the build.\n"
+            % build.id,
+            footer,
+        )
         self.assertWebhookDeliveries(
-            build, ["Pending", "Failed to upload"], logger)
+            build, ["Pending", "Failed to upload"], logger
+        )
 
     def test_run_release(self):
         # A run configured to automatically release the charm to certain
@@ -523,10 +617,12 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-charm.charm"))
+            client.uploadFile.calls, FileUploaded("test-charm.charm")
+        )
         self.assertEqual([((build, 1), {})], client.push.calls)
         self.assertEqual(
-            [((build, self.status_url), {})], client.checkStatus.calls)
+            [((build, self.status_url), {})], client.checkStatus.calls
+        )
         self.assertEqual([((build, 1), {})], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
         self.assertEqual(1, job.store_revision)
@@ -540,11 +636,16 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
-            owner=requester, name="requester-team", members=[requester])
+            owner=requester, name="requester-team", members=[requester]
+        )
         project = self.factory.makeProduct(name="test-project")
         build = self.makeCharmRecipeBuild(
-            requester=requester_team, name="test-charm", owner=requester_team,
-            project=project, store_channels=["stable", "edge"])
+            requester=requester_team,
+            name="test-charm",
+            owner=requester_team,
+            project=project,
+            store_channels=["stable", "edge"],
+        )
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
@@ -556,40 +657,51 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             JobRunner([job]).runAll()
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-charm.charm"))
+            client.uploadFile.calls, FileUploaded("test-charm.charm")
+        )
         self.assertEqual([((build, 1), {})], client.push.calls)
         self.assertEqual(
-            [((build, self.status_url), {})], client.checkStatus.calls)
+            [((build, self.status_url), {})], client.checkStatus.calls
+        )
         self.assertEqual([((build, 1), {})], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
         self.assertEqual(1, job.store_revision)
         self.assertEqual("Failed to release", job.error_message)
         [notification] = pop_notifications()
         self.assertEqual(
-            config.canonical.noreply_from_address, notification["From"])
+            config.canonical.noreply_from_address, notification["From"]
+        )
         self.assertEqual(
             "Requester <%s>" % requester.preferredemail.email,
-            notification["To"])
+            notification["To"],
+        )
         subject = notification["Subject"].replace("\n", " ")
         self.assertEqual("Charmhub release failed for test-charm", subject)
         self.assertEqual(
             "Requester @requester-team",
-            notification["X-Launchpad-Message-Rationale"])
+            notification["X-Launchpad-Message-Rationale"],
+        )
         self.assertEqual(
-            requester_team.name, notification["X-Launchpad-Message-For"])
+            requester_team.name, notification["X-Launchpad-Message-For"]
+        )
         self.assertEqual(
             "charm-recipe-build-release-failed",
-            notification["X-Launchpad-Notification-Type"])
+            notification["X-Launchpad-Notification-Type"],
+        )
         body, footer = (
-            notification.get_payload(decode=True).decode().split("\n-- \n"))
+            notification.get_payload(decode=True).decode().split("\n-- \n")
+        )
         self.assertIn("Failed to release", body)
         self.assertEqual(
             "http://launchpad.test/~requester-team/test-project/+charm/"
             "test-charm/+build/%d\n"
-            "Your team Requester Team is the requester of the build.\n" %
-            build.id, footer)
+            "Your team Requester Team is the requester of the build.\n"
+            % build.id,
+            footer,
+        )
         self.assertWebhookDeliveries(
-            build, ["Pending", "Failed to release to channels"], logger)
+            build, ["Pending", "Failed to release to channels"], logger
+        )
 
     def test_retry_delay(self):
         # The job is retried every minute, unless it just made one of its
@@ -600,7 +712,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
         client.uploadFile.failure = UploadFailedResponse(
-            "Proxy error", can_retry=True)
+            "Proxy error", can_retry=True
+        )
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
@@ -610,7 +723,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         client.uploadFile.failure = None
         client.uploadFile.result = 1
         client.push.failure = UploadFailedResponse(
-            "Proxy error", can_retry=True)
+            "Proxy error", can_retry=True
+        )
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertIn("upload_id", job.build.store_upload_metadata)
@@ -625,7 +739,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
                 run_isolated_jobs([job])
             self.assertIn("status_url", job.build.store_upload_metadata)
             self.assertEqual(
-                timedelta(seconds=expected_delay), job.retry_delay)
+                timedelta(seconds=expected_delay), job.retry_delay
+            )
             job.scheduled_start = None
         client.checkStatus.failure = None
         client.checkStatus.result = 1
@@ -645,7 +760,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         client = FakeCharmhubClient()
         client.uploadFile.result = 1
         client.push.failure = UploadFailedResponse(
-            "Proxy error", can_retry=True)
+            "Proxy error", can_retry=True
+        )
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
@@ -730,10 +846,11 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         loaded_build = store.find(CharmRecipeBuild, id=db_build.id).one()
 
         job = CharmhubUploadJob.create(loaded_build)
-        job.status_url = 'http://example.org'
+        job.status_url = "http://example.org"
         store.flush()
 
         loaded_build = store.find(CharmRecipeBuild, id=db_build.id).one()
         self.assertEqual(
-            'http://example.org',
-            loaded_build.store_upload_metadata['status_url'])
+            "http://example.org",
+            loaded_build.store_upload_metadata["status_url"],
+        )

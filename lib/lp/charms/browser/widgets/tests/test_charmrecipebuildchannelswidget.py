@@ -3,23 +3,17 @@
 
 import re
 
-from zope.formlib.interfaces import (
-    IBrowserWidget,
-    IInputWidget,
-    )
+from zope.formlib.interfaces import IBrowserWidget, IInputWidget
 from zope.schema import Dict
 
 from lp.charms.browser.widgets.charmrecipebuildchannels import (
     CharmRecipeBuildChannelsWidget,
-    )
+)
 from lp.charms.interfaces.charmrecipe import CHARM_RECIPE_ALLOW_CREATE
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.testing import (
-    TestCaseWithFactory,
-    verifyObject,
-    )
+from lp.testing import TestCaseWithFactory, verifyObject
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -32,7 +26,8 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
         field = Dict(
             __name__="auto_build_channels",
-            title="Source snap channels for automatic builds")
+            title="Source snap channels for automatic builds",
+        )
         self.context = self.factory.makeCharmRecipe()
         self.field = field.bind(self.context)
         self.request = LaunchpadTestRequest()
@@ -45,14 +40,17 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
     def test_template(self):
         self.assertTrue(
             self.widget.template.filename.endswith(
-                "charmrecipebuildchannels.pt"),
-            "Template was not set up.")
+                "charmrecipebuildchannels.pt"
+            ),
+            "Template was not set up.",
+        )
 
     def test_hint(self):
         self.assertEqual(
             "The channels to use for build tools when building the charm "
             "recipe.",
-            self.widget.hint)
+            self.widget.hint,
+        )
 
     def test_setUpSubWidgets_first_call(self):
         # The subwidgets are set up and a flag is set.
@@ -94,7 +92,8 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
     def test_setRenderedValue_one_channel(self):
         self.widget.setRenderedValue({"charmcraft": "stable"})
         self.assertEqual(
-            "stable", self.widget.charmcraft_widget._getCurrentValue())
+            "stable", self.widget.charmcraft_widget._getCurrentValue()
+        )
         self.assertIsNone(self.widget.core_widget._getCurrentValue())
         self.assertIsNone(self.widget.core18_widget._getCurrentValue())
         self.assertIsNone(self.widget.core20_widget._getCurrentValue())
@@ -102,16 +101,25 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
 
     def test_setRenderedValue_all_channels(self):
         self.widget.setRenderedValue(
-            {"charmcraft": "stable", "core": "candidate", "core18": "beta",
-             "core20": "edge", "core22": "edge/feature"})
+            {
+                "charmcraft": "stable",
+                "core": "candidate",
+                "core18": "beta",
+                "core20": "edge",
+                "core22": "edge/feature",
+            }
+        )
         self.assertEqual(
-            "stable", self.widget.charmcraft_widget._getCurrentValue())
+            "stable", self.widget.charmcraft_widget._getCurrentValue()
+        )
         self.assertEqual(
-            "candidate", self.widget.core_widget._getCurrentValue())
+            "candidate", self.widget.core_widget._getCurrentValue()
+        )
         self.assertEqual("beta", self.widget.core18_widget._getCurrentValue())
         self.assertEqual("edge", self.widget.core20_widget._getCurrentValue())
         self.assertEqual(
-            "edge/feature", self.widget.core22_widget._getCurrentValue())
+            "edge/feature", self.widget.core22_widget._getCurrentValue()
+        )
 
     def test_hasInput_false(self):
         # hasInput is false when there are no channels in the form data.
@@ -121,7 +129,8 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
     def test_hasInput_true(self):
         # hasInput is true when there are channels in the form data.
         self.widget.request = LaunchpadTestRequest(
-            form={"field.auto_build_channels.charmcraft": "stable"})
+            form={"field.auto_build_channels.charmcraft": "stable"}
+        )
         self.assertTrue(self.widget.hasInput())
 
     def test_hasValidInput_true(self):
@@ -134,7 +143,7 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
             "field.auto_build_channels.core18": "beta",
             "field.auto_build_channels.core20": "edge",
             "field.auto_build_channels.core22": "edge/feature",
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertTrue(self.widget.hasValidInput())
 
@@ -145,12 +154,17 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
             "field.auto_build_channels.core18": "beta",
             "field.auto_build_channels.core20": "edge",
             "field.auto_build_channels.core22": "edge/feature",
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertEqual(
-            {"charmcraft": "stable", "core18": "beta", "core20": "edge",
-             "core22": "edge/feature"},
-            self.widget.getInputValue())
+            {
+                "charmcraft": "stable",
+                "core18": "beta",
+                "core20": "edge",
+                "core22": "edge/feature",
+            },
+            self.widget.getInputValue(),
+        )
 
     def test_call(self):
         # The __call__ method sets up the widgets.
@@ -168,6 +182,6 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
             "field.auto_build_channels.core18",
             "field.auto_build_channels.core20",
             "field.auto_build_channels.core22",
-            ]
+        ]
         ids = [field["id"] for field in fields]
         self.assertContentEqual(expected_ids, ids)
