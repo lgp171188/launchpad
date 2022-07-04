@@ -5,7 +5,7 @@
 
 __all__ = [
     "CharmBaseSetNavigation",
-    ]
+]
 
 from zope.component import getUtility
 
@@ -15,6 +15,7 @@ from lp.services.webapp.publisher import Navigation
 
 class CharmBaseSetNavigation(Navigation):
     """Navigation methods for `ICharmBaseSet`."""
+
     usedfor = ICharmBaseSet
 
     def traverse(self, name):

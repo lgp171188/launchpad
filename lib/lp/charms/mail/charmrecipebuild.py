@@ -3,14 +3,11 @@
 
 __all__ = [
     "CharmRecipeBuildMailer",
-    ]
+]
 
 from lp.app.browser.tales import DurationFormatterAPI
 from lp.services.config import config
-from lp.services.mail.basemailer import (
-    BaseMailer,
-    RecipientReason,
-    )
+from lp.services.mail.basemailer import BaseMailer, RecipientReason
 from lp.services.webapp import canonical_url
 
 
@@ -28,9 +25,12 @@ class CharmRecipeBuildMailer(BaseMailer):
         recipients = {requester: RecipientReason.forBuildRequester(requester)}
         return cls(
             "[Charm recipe build #%(build_id)d] %(build_title)s",
-            "charmrecipebuild-notification.txt", recipients,
-            config.canonical.noreply_from_address, "charm-recipe-build-status",
-            build)
+            "charmrecipebuild-notification.txt",
+            recipients,
+            config.canonical.noreply_from_address,
+            "charm-recipe-build-status",
+            build,
+        )
 
     @classmethod
     def forUnauthorizedUpload(cls, build):
@@ -42,9 +42,12 @@ class CharmRecipeBuildMailer(BaseMailer):
         recipients = {requester: RecipientReason.forBuildRequester(requester)}
         return cls(
             "Charmhub authorization failed for %(recipe_name)s",
-            "charmrecipebuild-unauthorized.txt", recipients,
+            "charmrecipebuild-unauthorized.txt",
+            recipients,
             config.canonical.noreply_from_address,
-            "charm-recipe-build-upload-unauthorized", build)
+            "charm-recipe-build-upload-unauthorized",
+            build,
+        )
 
     @classmethod
     def forUploadFailure(cls, build):
@@ -56,9 +59,12 @@ class CharmRecipeBuildMailer(BaseMailer):
         recipients = {requester: RecipientReason.forBuildRequester(requester)}
         return cls(
             "Charmhub upload failed for %(recipe_name)s",
-            "charmrecipebuild-uploadfailed.txt", recipients,
+            "charmrecipebuild-uploadfailed.txt",
+            recipients,
             config.canonical.noreply_from_address,
-            "charm-recipe-build-upload-failed", build)
+            "charm-recipe-build-upload-failed",
+            build,
+        )
 
     @classmethod
     def forUploadReviewFailure(cls, build):
@@ -70,9 +76,12 @@ class CharmRecipeBuildMailer(BaseMailer):
         recipients = {requester: RecipientReason.forBuildRequester(requester)}
         return cls(
             "Charmhub upload review failed for %(recipe_name)s",
-            "charmrecipebuild-reviewfailed.txt", recipients,
+            "charmrecipebuild-reviewfailed.txt",
+            recipients,
             config.canonical.noreply_from_address,
-            "charm-recipe-build-upload-review-failed", build)
+            "charm-recipe-build-upload-review-failed",
+            build,
+        )
 
     @classmethod
     def forReleaseFailure(cls, build):
@@ -84,15 +93,29 @@ class CharmRecipeBuildMailer(BaseMailer):
         recipients = {requester: RecipientReason.forBuildRequester(requester)}
         return cls(
             "Charmhub release failed for %(recipe_name)s",
-            "charmrecipebuild-releasefailed.txt", recipients,
+            "charmrecipebuild-releasefailed.txt",
+            recipients,
             config.canonical.noreply_from_address,
-            "charm-recipe-build-release-failed", build)
+            "charm-recipe-build-release-failed",
+            build,
+        )
 
-    def __init__(self, subject, template_name, recipients, from_address,
-                 notification_type, build):
+    def __init__(
+        self,
+        subject,
+        template_name,
+        recipients,
+        from_address,
+        notification_type,
+        build,
+    ):
         super().__init__(
-            subject, template_name, recipients, from_address,
-            notification_type=notification_type)
+            subject,
+            template_name,
+            recipients,
+            from_address,
+            notification_type=notification_type,
+        )
         self.build = build
 
     def _getHeaders(self, email, recipient):
@@ -110,23 +133,26 @@ class CharmRecipeBuildMailer(BaseMailer):
         else:
             error_message = upload_job.error_message or ""
         params = super()._getTemplateParams(email, recipient)
-        params.update({
-            "architecturetag": build.distro_arch_series.architecturetag,
-            "build_duration": "",
-            "build_id": build.id,
-            "build_state": build.status.title,
-            "build_title": build.title,
-            "build_url": canonical_url(build),
-            "builder_url": "",
-            "store_error_message": error_message,
-            "distroseries": build.distro_series,
-            "log_url": "",
-            "project_name": build.recipe.project.name,
-            "recipe_authorize_url": canonical_url(
-                build.recipe, view_name="+authorize"),
-            "recipe_name": build.recipe.name,
-            "upload_log_url": "",
-            })
+        params.update(
+            {
+                "architecturetag": build.distro_arch_series.architecturetag,
+                "build_duration": "",
+                "build_id": build.id,
+                "build_state": build.status.title,
+                "build_title": build.title,
+                "build_url": canonical_url(build),
+                "builder_url": "",
+                "store_error_message": error_message,
+                "distroseries": build.distro_series,
+                "log_url": "",
+                "project_name": build.recipe.project.name,
+                "recipe_authorize_url": canonical_url(
+                    build.recipe, view_name="+authorize"
+                ),
+                "recipe_name": build.recipe.name,
+                "upload_log_url": "",
+            }
+        )
         if build.duration is not None:
             duration_formatter = DurationFormatterAPI(build.duration)
             params["build_duration"] = duration_formatter.approximateduration()
@@ -140,5 +166,4 @@ class CharmRecipeBuildMailer(BaseMailer):
 
     def _getFooter(self, email, recipient, params):
         """See `BaseMailer`."""
-        return ("%(build_url)s\n"
-                "%(reason)s\n" % params)
+        return "%(build_url)s\n%(reason)s\n" % params

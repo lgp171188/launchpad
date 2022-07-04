@@ -4,20 +4,18 @@
 """Test charm recipes."""
 
 import base64
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import json
+from datetime import datetime, timedelta
 from textwrap import dedent
 
-from fixtures import FakeLogger
 import iso8601
+import pytz
+import responses
+import transaction
+from fixtures import FakeLogger
 from nacl.public import PrivateKey
 from pymacaroons import Macaroon
 from pymacaroons.serializers import JsonSerializer
-import pytz
-import responses
 from storm.exceptions import LostObjectError
 from storm.locals import Store
 from testtools.matchers import (
@@ -32,8 +30,7 @@ from testtools.matchers import (
     MatchesListwise,
     MatchesSetwise,
     MatchesStructure,
-    )
-import transaction
+)
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
@@ -44,21 +41,21 @@ from lp.buildmaster.enums import (
     BuildBaseImageType,
     BuildQueueStatus,
     BuildStatus,
-    )
+)
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.processor import (
     IProcessorSet,
     ProcessorNotFound,
-    )
+)
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.charms.interfaces.charmrecipe import (
-    BadCharmRecipeSearchContext,
-    CannotAuthorizeCharmhubUploads,
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_BUILD_DISTRIBUTION,
     CHARM_RECIPE_PRIVATE_FEATURE_FLAG,
     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    BadCharmRecipeSearchContext,
+    CannotAuthorizeCharmhubUploads,
     CharmRecipeBuildAlreadyPending,
     CharmRecipeBuildDisallowedArchitecture,
     CharmRecipeBuildRequestStatus,
@@ -68,37 +65,31 @@ from lp.charms.interfaces.charmrecipe import (
     ICharmRecipeSet,
     ICharmRecipeView,
     NoSourceForCharmRecipe,
-    )
+)
 from lp.charms.interfaces.charmrecipebuild import (
     ICharmRecipeBuild,
     ICharmRecipeBuildSet,
-    )
+)
 from lp.charms.interfaces.charmrecipebuildjob import ICharmhubUploadJobSource
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
-    )
+)
 from lp.charms.model.charmrecipe import CharmRecipeSet
 from lp.charms.model.charmrecipebuild import CharmFile
 from lp.charms.model.charmrecipebuildjob import CharmRecipeBuildJob
 from lp.charms.model.charmrecipejob import CharmRecipeJob
 from lp.code.errors import GitRepositoryBlobNotFound
 from lp.code.tests.helpers import GitHostingFixture
-from lp.registry.enums import (
-    PersonVisibility,
-    TeamMembershipPolicy,
-    )
+from lp.registry.enums import PersonVisibility, TeamMembershipPolicy
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.crypto.interfaces import IEncryptedContainer
-from lp.services.database.constants import (
-    ONE_DAY_AGO,
-    UTC_NOW,
-    )
+from lp.services.database.constants import ONE_DAY_AGO, UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     flush_database_caches,
     get_transaction_timestamp,
-    )
+)
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
@@ -108,26 +99,23 @@ from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
-    admin_logged_in,
     ANONYMOUS,
+    StormStatementRecorder,
+    TestCaseWithFactory,
+    admin_logged_in,
     api_url,
     login,
     logout,
     person_logged_in,
     record_two_runs,
-    StormStatementRecorder,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
-    )
-from lp.testing.matchers import (
-    DoesNotSnapshot,
-    HasQueryCount,
-    )
+)
+from lp.testing.matchers import DoesNotSnapshot, HasQueryCount
 from lp.testing.pages import webservice_for_person
 
 
@@ -138,15 +126,18 @@ class TestCharmRecipeFeatureFlags(TestCaseWithFactory):
     def test_feature_flag_disabled(self):
         # Without a feature flag, we wil not create any charm recipes.
         self.assertRaises(
-            CharmRecipeFeatureDisabled, self.factory.makeCharmRecipe)
+            CharmRecipeFeatureDisabled, self.factory.makeCharmRecipe
+        )
 
     def test_private_feature_flag_disabled(self):
         # Without a private feature flag, we wil not create new private
         # charm recipes.
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
         self.assertRaises(
-            CharmRecipePrivateFeatureDisabled, self.factory.makeCharmRecipe,
-            information_type=InformationType.PROPRIETARY)
+            CharmRecipePrivateFeatureDisabled,
+            self.factory.makeCharmRecipe,
+            information_type=InformationType.PROPRIETARY,
+        )
 
 
 class TestCharmRecipe(TestCaseWithFactory):
@@ -167,17 +158,25 @@ class TestCharmRecipe(TestCaseWithFactory):
         # CharmRecipe objects have an informative __repr__.
         recipe = self.factory.makeCharmRecipe()
         self.assertEqual(
-            "<CharmRecipe ~%s/%s/+charm/%s>" % (
-                recipe.owner.name, recipe.project.name, recipe.name),
-            repr(recipe))
+            "<CharmRecipe ~%s/%s/+charm/%s>"
+            % (recipe.owner.name, recipe.project.name, recipe.name),
+            repr(recipe),
+        )
 
     def test_avoids_problematic_snapshots(self):
         self.assertThat(
             self.factory.makeCharmRecipe(),
             DoesNotSnapshot(
-                ["pending_build_requests", "failed_build_requests",
-                 "builds", "completed_builds", "pending_builds"],
-                ICharmRecipeView))
+                [
+                    "pending_build_requests",
+                    "failed_build_requests",
+                    "builds",
+                    "completed_builds",
+                    "pending_builds",
+                ],
+                ICharmRecipeView,
+            ),
+        )
 
     def test_initial_date_last_modified(self):
         # The initial value of date_last_modified is date_created.
@@ -191,14 +190,16 @@ class TestCharmRecipe(TestCaseWithFactory):
         with notify_modified(removeSecurityProxy(recipe), ["name"]):
             pass
         self.assertSqlAttributeEqualsDate(
-            recipe, "date_last_modified", UTC_NOW)
+            recipe, "date_last_modified", UTC_NOW
+        )
 
     def test__default_distribution_default(self):
         # If the CHARM_RECIPE_BUILD_DISTRIBUTION feature rule is not set, we
         # default to Ubuntu.
         recipe = self.factory.makeCharmRecipe()
         self.assertEqual(
-            "ubuntu", removeSecurityProxy(recipe)._default_distribution.name)
+            "ubuntu", removeSecurityProxy(recipe)._default_distribution.name
+        )
 
     def test__default_distribution_feature_rule(self):
         # If the CHARM_RECIPE_BUILD_DISTRIBUTION feature rule is set, we
@@ -208,8 +209,8 @@ class TestCharmRecipe(TestCaseWithFactory):
         recipe = self.factory.makeCharmRecipe()
         with FeatureFixture({CHARM_RECIPE_BUILD_DISTRIBUTION: distro_name}):
             self.assertEqual(
-                distribution,
-                removeSecurityProxy(recipe)._default_distribution)
+                distribution, removeSecurityProxy(recipe)._default_distribution
+            )
 
     def test__default_distribution_feature_rule_nonexistent(self):
         # If we mistakenly set the rule to a non-existent distribution,
@@ -217,11 +218,16 @@ class TestCharmRecipe(TestCaseWithFactory):
         recipe = self.factory.makeCharmRecipe()
         with FeatureFixture({CHARM_RECIPE_BUILD_DISTRIBUTION: "nonexistent"}):
             expected_msg = (
-                "'nonexistent' is not a valid value for feature rule '%s'" %
-                CHARM_RECIPE_BUILD_DISTRIBUTION)
+                "'nonexistent' is not a valid value for feature rule '%s'"
+                % CHARM_RECIPE_BUILD_DISTRIBUTION
+            )
             self.assertRaisesWithContent(
-                ValueError, expected_msg,
-                getattr, removeSecurityProxy(recipe), "_default_distribution")
+                ValueError,
+                expected_msg,
+                getattr,
+                removeSecurityProxy(recipe),
+                "_default_distribution",
+            )
 
     def test__default_distro_series_feature_rule(self):
         # If the appropriate per-distribution feature rule is set, we
@@ -230,17 +236,21 @@ class TestCharmRecipe(TestCaseWithFactory):
         distribution = self.factory.makeDistribution(name=distro_name)
         distro_series_name = "myseries"
         distro_series = self.factory.makeDistroSeries(
-            distribution=distribution, name=distro_series_name)
+            distribution=distribution, name=distro_series_name
+        )
         self.factory.makeDistroSeries(distribution=distribution)
         recipe = self.factory.makeCharmRecipe()
-        with FeatureFixture({
+        with FeatureFixture(
+            {
                 CHARM_RECIPE_BUILD_DISTRIBUTION: distro_name,
-                "charm.default_build_series.%s" % distro_name: (
-                    distro_series_name),
-                }):
+                "charm.default_build_series.%s"
+                % distro_name: (distro_series_name),
+            }
+        ):
             self.assertEqual(
                 distro_series,
-                removeSecurityProxy(recipe)._default_distro_series)
+                removeSecurityProxy(recipe)._default_distro_series,
+            )
 
     def test__default_distro_series_no_feature_rule(self):
         # If the appropriate per-distribution feature rule is not set, we
@@ -248,40 +258,52 @@ class TestCharmRecipe(TestCaseWithFactory):
         distro_name = "mydistro"
         distribution = self.factory.makeDistribution(name=distro_name)
         self.factory.makeDistroSeries(
-            distribution=distribution, status=SeriesStatus.SUPPORTED)
+            distribution=distribution, status=SeriesStatus.SUPPORTED
+        )
         current_series = self.factory.makeDistroSeries(
-            distribution=distribution, status=SeriesStatus.DEVELOPMENT)
+            distribution=distribution, status=SeriesStatus.DEVELOPMENT
+        )
         recipe = self.factory.makeCharmRecipe()
         with FeatureFixture({CHARM_RECIPE_BUILD_DISTRIBUTION: distro_name}):
             self.assertEqual(
                 current_series,
-                removeSecurityProxy(recipe)._default_distro_series)
+                removeSecurityProxy(recipe)._default_distro_series,
+            )
 
-    def makeBuildableDistroArchSeries(self, architecturetag=None,
-                                      processor=None,
-                                      supports_virtualized=True,
-                                      supports_nonvirtualized=True, **kwargs):
+    def makeBuildableDistroArchSeries(
+        self,
+        architecturetag=None,
+        processor=None,
+        supports_virtualized=True,
+        supports_nonvirtualized=True,
+        **kwargs
+    ):
         if architecturetag is None:
             architecturetag = self.factory.getUniqueUnicode("arch")
         if processor is None:
             try:
                 processor = getUtility(IProcessorSet).getByName(
-                    architecturetag)
+                    architecturetag
+                )
             except ProcessorNotFound:
                 processor = self.factory.makeProcessor(
                     name=architecturetag,
                     supports_virtualized=supports_virtualized,
-                    supports_nonvirtualized=supports_nonvirtualized)
+                    supports_nonvirtualized=supports_nonvirtualized,
+                )
         das = self.factory.makeDistroArchSeries(
-            architecturetag=architecturetag, processor=processor, **kwargs)
+            architecturetag=architecturetag, processor=processor, **kwargs
+        )
         # Add both a chroot and a LXD image to test that
         # getAllowedArchitectures doesn't get confused by multiple
         # PocketChroot rows for a single DistroArchSeries.
         fake_chroot = self.factory.makeLibraryFileAlias(
-            filename="fake_chroot.tar.gz", db_only=True)
+            filename="fake_chroot.tar.gz", db_only=True
+        )
         das.addOrUpdateChroot(fake_chroot)
         fake_lxd = self.factory.makeLibraryFileAlias(
-            filename="fake_lxd.tar.gz", db_only=True)
+            filename="fake_lxd.tar.gz", db_only=True
+        )
         das.addOrUpdateChroot(fake_lxd, image_type=BuildBaseImageType.LXD)
         return das
 
@@ -292,18 +314,22 @@ class TestCharmRecipe(TestCaseWithFactory):
         build_request = self.factory.makeCharmRecipeBuildRequest(recipe=recipe)
         build = recipe.requestBuild(build_request, das)
         self.assertTrue(ICharmRecipeBuild.providedBy(build))
-        self.assertThat(build, MatchesStructure(
-            requester=Equals(recipe.owner.teamowner),
-            distro_arch_series=Equals(das),
-            channels=Is(None),
-            status=Equals(BuildStatus.NEEDSBUILD),
-            ))
+        self.assertThat(
+            build,
+            MatchesStructure(
+                requester=Equals(recipe.owner.teamowner),
+                distro_arch_series=Equals(das),
+                channels=Is(None),
+                status=Equals(BuildStatus.NEEDSBUILD),
+            ),
+        )
         store = Store.of(build)
         store.flush()
         build_queue = store.find(
             BuildQueue,
-            BuildQueue._build_farm_job_id ==
-                removeSecurityProxy(build).build_farm_job_id).one()
+            BuildQueue._build_farm_job_id
+            == removeSecurityProxy(build).build_farm_job_id,
+        ).one()
         self.assertProvides(build_queue, IBuildQueue)
         self.assertEqual(recipe.require_virtualized, build_queue.virtualized)
         self.assertEqual(BuildQueueStatus.WAITING, build_queue.status)
@@ -324,7 +350,8 @@ class TestCharmRecipe(TestCaseWithFactory):
         das = self.makeBuildableDistroArchSeries()
         build_request = self.factory.makeCharmRecipeBuildRequest(recipe=recipe)
         build = recipe.requestBuild(
-            build_request, das, channels={"charmcraft": "edge"})
+            build_request, das, channels={"charmcraft": "edge"}
+        )
         self.assertEqual({"charmcraft": "edge"}, build.channels)
 
     def test_requestBuild_rejects_repeats(self):
@@ -333,24 +360,37 @@ class TestCharmRecipe(TestCaseWithFactory):
         distro_series = self.factory.makeDistroSeries()
         arches = [
             self.makeBuildableDistroArchSeries(distroseries=distro_series)
-            for _ in range(2)]
+            for _ in range(2)
+        ]
         build_request = self.factory.makeCharmRecipeBuildRequest(recipe=recipe)
         old_build = recipe.requestBuild(build_request, arches[0])
         self.assertRaises(
-            CharmRecipeBuildAlreadyPending, recipe.requestBuild,
-            build_request, arches[0])
+            CharmRecipeBuildAlreadyPending,
+            recipe.requestBuild,
+            build_request,
+            arches[0],
+        )
         # We can build for a different distroarchseries.
         recipe.requestBuild(build_request, arches[1])
         # channels=None and channels={} are treated as equivalent, but
         # anything else allows a new build.
         self.assertRaises(
-            CharmRecipeBuildAlreadyPending, recipe.requestBuild,
-            build_request, arches[0], channels={})
+            CharmRecipeBuildAlreadyPending,
+            recipe.requestBuild,
+            build_request,
+            arches[0],
+            channels={},
+        )
         recipe.requestBuild(
-            build_request, arches[0], channels={"core": "edge"})
+            build_request, arches[0], channels={"core": "edge"}
+        )
         self.assertRaises(
-            CharmRecipeBuildAlreadyPending, recipe.requestBuild,
-            build_request, arches[0], channels={"core": "edge"})
+            CharmRecipeBuildAlreadyPending,
+            recipe.requestBuild,
+            build_request,
+            arches[0],
+            channels={"core": "edge"},
+        )
         # Changing the status of the old build allows a new build.
         old_build.updateStatus(BuildStatus.BUILDING)
         old_build.updateStatus(BuildStatus.FULLYBUILT)
@@ -364,20 +404,24 @@ class TestCharmRecipe(TestCaseWithFactory):
         dases = {}
         for proc_nonvirt in True, False:
             das = self.makeBuildableDistroArchSeries(
-                distroseries=distro_series, supports_virtualized=True,
-                supports_nonvirtualized=proc_nonvirt)
+                distroseries=distro_series,
+                supports_virtualized=True,
+                supports_nonvirtualized=proc_nonvirt,
+            )
             dases[proc_nonvirt] = das
         for proc_nonvirt, recipe_virt, build_virt in (
-                (True, False, False),
-                (True, True, True),
-                (False, False, True),
-                (False, True, True),
-                ):
+            (True, False, False),
+            (True, True, True),
+            (False, False, True),
+            (False, True, True),
+        ):
             das = dases[proc_nonvirt]
             recipe = self.factory.makeCharmRecipe(
-                require_virtualized=recipe_virt)
+                require_virtualized=recipe_virt
+            )
             build_request = self.factory.makeCharmRecipeBuildRequest(
-                recipe=recipe)
+                recipe=recipe
+            )
             build = recipe.requestBuild(build_request, das)
             self.assertEqual(build_virt, build.virtualized)
 
@@ -387,55 +431,78 @@ class TestCharmRecipe(TestCaseWithFactory):
         recipe = self.factory.makeCharmRecipe()
         distro_series = self.factory.makeDistroSeries()
         das = self.makeBuildableDistroArchSeries(
-            distroseries=distro_series, supports_virtualized=False,
-            supports_nonvirtualized=True)
+            distroseries=distro_series,
+            supports_virtualized=False,
+            supports_nonvirtualized=True,
+        )
         build_request = self.factory.makeCharmRecipeBuildRequest(recipe=recipe)
         self.assertRaises(
-            CharmRecipeBuildDisallowedArchitecture, recipe.requestBuild,
-            build_request, das)
+            CharmRecipeBuildDisallowedArchitecture,
+            recipe.requestBuild,
+            build_request,
+            das,
+        )
         with admin_logged_in():
             recipe.require_virtualized = False
         recipe.requestBuild(build_request, das)
 
     def test_requestBuild_triggers_webhooks(self):
         # Requesting a build triggers webhooks.
-        self.useFixture(FeatureFixture({
-            CHARM_RECIPE_ALLOW_CREATE: "on",
-            CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
-            }))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    CHARM_RECIPE_ALLOW_CREATE: "on",
+                    CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                }
+            )
+        )
         logger = self.useFixture(FakeLogger())
         recipe = self.factory.makeCharmRecipe()
         das = self.makeBuildableDistroArchSeries()
         build_request = self.factory.makeCharmRecipeBuildRequest(recipe=recipe)
         hook = self.factory.makeWebhook(
-            target=recipe, event_types=["charm-recipe:build:0.1"])
+            target=recipe, event_types=["charm-recipe:build:0.1"]
+        )
         build = recipe.requestBuild(build_request, das)
         expected_payload = {
             "recipe_build": Equals(
-                canonical_url(build, force_local_path=True)),
+                canonical_url(build, force_local_path=True)
+            ),
             "action": Equals("created"),
             "recipe": Equals(canonical_url(recipe, force_local_path=True)),
             "build_request": Equals(
-                canonical_url(build_request, force_local_path=True)),
+                canonical_url(build_request, force_local_path=True)
+            ),
             "status": Equals("Needs building"),
             "store_upload_status": Equals("Unscheduled"),
-            }
+        }
         with person_logged_in(recipe.owner):
             delivery = hook.deliveries.one()
             self.assertThat(
-                delivery, MatchesStructure(
+                delivery,
+                MatchesStructure(
                     event_type=Equals("charm-recipe:build:0.1"),
-                    payload=MatchesDict(expected_payload)))
+                    payload=MatchesDict(expected_payload),
+                ),
+            )
             with dbuser(config.IWebhookDeliveryJobSource.dbuser):
                 self.assertEqual(
-                    "<WebhookDeliveryJob for webhook %d on %r>" % (
-                        hook.id, hook.target),
-                    repr(delivery))
+                    "<WebhookDeliveryJob for webhook %d on %r>"
+                    % (hook.id, hook.target),
+                    repr(delivery),
+                )
                 self.assertThat(
                     logger.output,
-                    LogsScheduledWebhooks([
-                        (hook, "charm-recipe:build:0.1",
-                         MatchesDict(expected_payload))]))
+                    LogsScheduledWebhooks(
+                        [
+                            (
+                                hook,
+                                "charm-recipe:build:0.1",
+                                MatchesDict(expected_payload),
+                            )
+                        ]
+                    ),
+                )
 
     def test_requestBuilds(self):
         # requestBuilds schedules a job and returns a corresponding
@@ -444,22 +511,30 @@ class TestCharmRecipe(TestCaseWithFactory):
         now = get_transaction_timestamp(IStore(recipe))
         with person_logged_in(recipe.owner.teamowner):
             request = recipe.requestBuilds(recipe.owner.teamowner)
-        self.assertThat(request, MatchesStructure(
-            date_requested=Equals(now),
-            date_finished=Is(None),
-            recipe=Equals(recipe),
-            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
-            error_message=Is(None),
-            channels=Is(None),
-            architectures=Is(None)))
+        self.assertThat(
+            request,
+            MatchesStructure(
+                date_requested=Equals(now),
+                date_finished=Is(None),
+                recipe=Equals(recipe),
+                status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+                error_message=Is(None),
+                channels=Is(None),
+                architectures=Is(None),
+            ),
+        )
         [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
-        self.assertThat(job, MatchesStructure(
-            job_id=Equals(request.id),
-            job=MatchesStructure.byEquality(status=JobStatus.WAITING),
-            recipe=Equals(recipe),
-            requester=Equals(recipe.owner.teamowner),
-            channels=Is(None),
-            architectures=Is(None)))
+        self.assertThat(
+            job,
+            MatchesStructure(
+                job_id=Equals(request.id),
+                job=MatchesStructure.byEquality(status=JobStatus.WAITING),
+                recipe=Equals(recipe),
+                requester=Equals(recipe.owner.teamowner),
+                channels=Is(None),
+                architectures=Is(None),
+            ),
+        )
 
     def test_requestBuilds_with_channels(self):
         # If asked to build using particular snap channels, requestBuilds
@@ -468,23 +543,32 @@ class TestCharmRecipe(TestCaseWithFactory):
         now = get_transaction_timestamp(IStore(recipe))
         with person_logged_in(recipe.owner.teamowner):
             request = recipe.requestBuilds(
-                recipe.owner.teamowner, channels={"charmcraft": "edge"})
-        self.assertThat(request, MatchesStructure(
-            date_requested=Equals(now),
-            date_finished=Is(None),
-            recipe=Equals(recipe),
-            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
-            error_message=Is(None),
-            channels=MatchesDict({"charmcraft": Equals("edge")}),
-            architectures=Is(None)))
+                recipe.owner.teamowner, channels={"charmcraft": "edge"}
+            )
+        self.assertThat(
+            request,
+            MatchesStructure(
+                date_requested=Equals(now),
+                date_finished=Is(None),
+                recipe=Equals(recipe),
+                status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+                error_message=Is(None),
+                channels=MatchesDict({"charmcraft": Equals("edge")}),
+                architectures=Is(None),
+            ),
+        )
         [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
-        self.assertThat(job, MatchesStructure(
-            job_id=Equals(request.id),
-            job=MatchesStructure.byEquality(status=JobStatus.WAITING),
-            recipe=Equals(recipe),
-            requester=Equals(recipe.owner.teamowner),
-            channels=Equals({"charmcraft": "edge"}),
-            architectures=Is(None)))
+        self.assertThat(
+            job,
+            MatchesStructure(
+                job_id=Equals(request.id),
+                job=MatchesStructure.byEquality(status=JobStatus.WAITING),
+                recipe=Equals(recipe),
+                requester=Equals(recipe.owner.teamowner),
+                channels=Equals({"charmcraft": "edge"}),
+                architectures=Is(None),
+            ),
+        )
 
     def test_requestBuilds_with_architectures(self):
         # If asked to build for particular architectures, requestBuilds
@@ -493,130 +577,183 @@ class TestCharmRecipe(TestCaseWithFactory):
         now = get_transaction_timestamp(IStore(recipe))
         with person_logged_in(recipe.owner.teamowner):
             request = recipe.requestBuilds(
-                recipe.owner.teamowner, architectures={"amd64", "i386"})
-        self.assertThat(request, MatchesStructure(
-            date_requested=Equals(now),
-            date_finished=Is(None),
-            recipe=Equals(recipe),
-            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
-            error_message=Is(None),
-            channels=Is(None),
-            architectures=MatchesSetwise(Equals("amd64"), Equals("i386"))))
+                recipe.owner.teamowner, architectures={"amd64", "i386"}
+            )
+        self.assertThat(
+            request,
+            MatchesStructure(
+                date_requested=Equals(now),
+                date_finished=Is(None),
+                recipe=Equals(recipe),
+                status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+                error_message=Is(None),
+                channels=Is(None),
+                architectures=MatchesSetwise(Equals("amd64"), Equals("i386")),
+            ),
+        )
         [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
-        self.assertThat(job, MatchesStructure(
-            job_id=Equals(request.id),
-            job=MatchesStructure.byEquality(status=JobStatus.WAITING),
-            recipe=Equals(recipe),
-            requester=Equals(recipe.owner.teamowner),
-            channels=Is(None),
-            architectures=MatchesSetwise(Equals("amd64"), Equals("i386"))))
+        self.assertThat(
+            job,
+            MatchesStructure(
+                job_id=Equals(request.id),
+                job=MatchesStructure.byEquality(status=JobStatus.WAITING),
+                recipe=Equals(recipe),
+                requester=Equals(recipe.owner.teamowner),
+                channels=Is(None),
+                architectures=MatchesSetwise(Equals("amd64"), Equals("i386")),
+            ),
+        )
 
-    def makeRequestBuildsJob(self, distro_series_version, arch_tags,
-                             git_ref=None):
+    def makeRequestBuildsJob(
+        self, distro_series_version, arch_tags, git_ref=None
+    ):
         recipe = self.factory.makeCharmRecipe(git_ref=git_ref)
         distro_series = self.factory.makeDistroSeries(
             distribution=getUtility(ILaunchpadCelebrities).ubuntu,
-            version=distro_series_version)
+            version=distro_series_version,
+        )
         for arch_tag in arch_tags:
             self.makeBuildableDistroArchSeries(
-                distroseries=distro_series, architecturetag=arch_tag)
+                distroseries=distro_series, architecturetag=arch_tag
+            )
         return getUtility(ICharmRecipeRequestBuildsJobSource).create(
-            recipe, recipe.owner.teamowner, {"charmcraft": "edge"})
+            recipe, recipe.owner.teamowner, {"charmcraft": "edge"}
+        )
 
-    def assertRequestedBuildsMatch(self, builds, job, distro_series_version,
-                                   arch_tags, channels):
-        self.assertThat(builds, MatchesSetwise(
-            *(MatchesStructure(
-                requester=Equals(job.requester),
-                recipe=Equals(job.recipe),
-                distro_arch_series=MatchesStructure(
-                    distroseries=MatchesStructure.byEquality(
-                        version=distro_series_version),
-                    architecturetag=Equals(arch_tag)),
-                channels=Equals(channels))
-              for arch_tag in arch_tags)))
+    def assertRequestedBuildsMatch(
+        self, builds, job, distro_series_version, arch_tags, channels
+    ):
+        self.assertThat(
+            builds,
+            MatchesSetwise(
+                *(
+                    MatchesStructure(
+                        requester=Equals(job.requester),
+                        recipe=Equals(job.recipe),
+                        distro_arch_series=MatchesStructure(
+                            distroseries=MatchesStructure.byEquality(
+                                version=distro_series_version
+                            ),
+                            architecturetag=Equals(arch_tag),
+                        ),
+                        channels=Equals(channels),
+                    )
+                    for arch_tag in arch_tags
+                )
+            ),
+        )
 
     def test_requestBuildsFromJob_restricts_explicit_list(self):
         # requestBuildsFromJob limits builds targeted at an explicit list of
         # architectures to those allowed for the recipe.
-        self.useFixture(GitHostingFixture(blob=dedent("""\
-            bases:
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [sparc]
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [i386]
-              - build-on:
-                  - name: ubuntu
-                    channel: "20.04"
-                    architectures: [avr]
-            """)))
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    bases:
+                      - build-on:
+                          - name: ubuntu
+                            channel: "20.04"
+                            architectures: [sparc]
+                      - build-on:
+                          - name: ubuntu
+                            channel: "20.04"
+                            architectures: [i386]
+                      - build-on:
+                          - name: ubuntu
+                            channel: "20.04"
+                            architectures: [avr]
+                    """
+                )
+            )
+        )
         job = self.makeRequestBuildsJob("20.04", ["sparc", "avr", "mips64el"])
         self.assertEqual(
-            get_transaction_timestamp(IStore(job.recipe)), job.date_created)
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
         transaction.commit()
         with person_logged_in(job.requester):
             builds = job.recipe.requestBuildsFromJob(
-                job.build_request, channels=removeSecurityProxy(job.channels))
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
         self.assertRequestedBuildsMatch(
-            builds, job, "20.04", ["sparc", "avr"], job.channels)
+            builds, job, "20.04", ["sparc", "avr"], job.channels
+        )
 
     def test_requestBuildsFromJob_no_explicit_bases(self):
         # If the recipe doesn't specify any bases, requestBuildsFromJob
         # requests builds for all configured architectures for the default
         # series.
-        self.useFixture(FeatureFixture({
-            CHARM_RECIPE_ALLOW_CREATE: "on",
-            CHARM_RECIPE_BUILD_DISTRIBUTION: "ubuntu",
-            "charm.default_build_series.ubuntu": "20.04",
-            }))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    CHARM_RECIPE_ALLOW_CREATE: "on",
+                    CHARM_RECIPE_BUILD_DISTRIBUTION: "ubuntu",
+                    "charm.default_build_series.ubuntu": "20.04",
+                }
+            )
+        )
         self.useFixture(GitHostingFixture(blob="name: foo\n"))
         old_distro_series = self.factory.makeDistroSeries(
             distribution=getUtility(ILaunchpadCelebrities).ubuntu,
-            version="18.04")
+            version="18.04",
+        )
         for arch_tag in ("mips64el", "riscv64"):
             self.makeBuildableDistroArchSeries(
-                distroseries=old_distro_series, architecturetag=arch_tag)
+                distroseries=old_distro_series, architecturetag=arch_tag
+            )
         job = self.makeRequestBuildsJob("20.04", ["mips64el", "riscv64"])
         self.assertEqual(
-            get_transaction_timestamp(IStore(job.recipe)), job.date_created)
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
         transaction.commit()
         with person_logged_in(job.requester):
             builds = job.recipe.requestBuildsFromJob(
-                job.build_request, channels=removeSecurityProxy(job.channels))
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
         self.assertRequestedBuildsMatch(
-            builds, job, "20.04", ["mips64el", "riscv64"], job.channels)
+            builds, job, "20.04", ["mips64el", "riscv64"], job.channels
+        )
 
     def test_requestBuildsFromJob_no_charmcraft_yaml(self):
         # If the recipe has no charmcraft.yaml file, requestBuildsFromJob
         # treats this as equivalent to a charmcraft.yaml file that doesn't
         # specify any bases: that is, it requests builds for all configured
         # architectures for the default series.
-        self.useFixture(FeatureFixture({
-            CHARM_RECIPE_ALLOW_CREATE: "on",
-            CHARM_RECIPE_BUILD_DISTRIBUTION: "ubuntu",
-            "charm.default_build_series.ubuntu": "20.04",
-            }))
-        self.useFixture(GitHostingFixture()).getBlob.failure = (
-            GitRepositoryBlobNotFound("placeholder", "charmcraft.yaml"))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    CHARM_RECIPE_ALLOW_CREATE: "on",
+                    CHARM_RECIPE_BUILD_DISTRIBUTION: "ubuntu",
+                    "charm.default_build_series.ubuntu": "20.04",
+                }
+            )
+        )
+        self.useFixture(
+            GitHostingFixture()
+        ).getBlob.failure = GitRepositoryBlobNotFound(
+            "placeholder", "charmcraft.yaml"
+        )
         old_distro_series = self.factory.makeDistroSeries(
             distribution=getUtility(ILaunchpadCelebrities).ubuntu,
-            version="18.04")
+            version="18.04",
+        )
         for arch_tag in ("mips64el", "riscv64"):
             self.makeBuildableDistroArchSeries(
-                distroseries=old_distro_series, architecturetag=arch_tag)
+                distroseries=old_distro_series, architecturetag=arch_tag
+            )
         job = self.makeRequestBuildsJob("20.04", ["mips64el", "riscv64"])
         self.assertEqual(
-            get_transaction_timestamp(IStore(job.recipe)), job.date_created)
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
         transaction.commit()
         with person_logged_in(job.requester):
             builds = job.recipe.requestBuildsFromJob(
-                job.build_request, channels=removeSecurityProxy(job.channels))
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
         self.assertRequestedBuildsMatch(
-            builds, job, "20.04", ["mips64el", "riscv64"], job.channels)
+            builds, job, "20.04", ["mips64el", "riscv64"], job.channels
+        )
 
     def test_requestBuildsFromJob_architectures_parameter(self):
         # If an explicit set of architectures was given as a parameter,
@@ -624,16 +761,21 @@ class TestCharmRecipe(TestCaseWithFactory):
         # when requesting builds.
         self.useFixture(GitHostingFixture(blob="name: foo\n"))
         job = self.makeRequestBuildsJob(
-            "20.04", ["avr", "mips64el", "riscv64"])
+            "20.04", ["avr", "mips64el", "riscv64"]
+        )
         self.assertEqual(
-            get_transaction_timestamp(IStore(job.recipe)), job.date_created)
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
         transaction.commit()
         with person_logged_in(job.requester):
             builds = job.recipe.requestBuildsFromJob(
-                job.build_request, channels=removeSecurityProxy(job.channels),
-                architectures={"avr", "riscv64"})
+                job.build_request,
+                channels=removeSecurityProxy(job.channels),
+                architectures={"avr", "riscv64"},
+            )
         self.assertRequestedBuildsMatch(
-            builds, job, "20.04", ["avr", "riscv64"], job.channels)
+            builds, job, "20.04", ["avr", "riscv64"], job.channels
+        )
 
     def test_requestBuildsFromJob_charm_base_architectures(self):
         # requestBuildsFromJob intersects the architectures supported by the
@@ -641,20 +783,25 @@ class TestCharmRecipe(TestCaseWithFactory):
         self.useFixture(GitHostingFixture(blob="name: foo\n"))
         job = self.makeRequestBuildsJob("20.04", ["sparc", "i386", "avr"])
         distroseries = getUtility(ILaunchpadCelebrities).ubuntu.getSeries(
-            "20.04")
+            "20.04"
+        )
         with admin_logged_in():
             self.factory.makeCharmBase(
                 distro_series=distroseries,
                 build_snap_channels={"charmcraft": "stable/launchpad-buildd"},
                 processors=[
                     distroseries[arch_tag].processor
-                    for arch_tag in ("sparc", "avr")])
+                    for arch_tag in ("sparc", "avr")
+                ],
+            )
         transaction.commit()
         with person_logged_in(job.requester):
             builds = job.recipe.requestBuildsFromJob(
-                job.build_request, channels=removeSecurityProxy(job.channels))
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
         self.assertRequestedBuildsMatch(
-            builds, job, "20.04", ["sparc", "avr"], job.channels)
+            builds, job, "20.04", ["sparc", "avr"], job.channels
+        )
 
     def test_requestBuildsFromJob_charm_base_build_channels_by_arch(self):
         # If the charm base declares different build channels for specific
@@ -663,72 +810,113 @@ class TestCharmRecipe(TestCaseWithFactory):
         self.useFixture(GitHostingFixture(blob="name: foo\n"))
         job = self.makeRequestBuildsJob("20.04", ["avr", "riscv64"])
         distroseries = getUtility(ILaunchpadCelebrities).ubuntu.getSeries(
-            "20.04")
+            "20.04"
+        )
         with admin_logged_in():
             self.factory.makeCharmBase(
                 distro_series=distroseries,
                 build_snap_channels={
                     "core20": "stable",
                     "_byarch": {"riscv64": {"core20": "candidate"}},
-                    })
+                },
+            )
         transaction.commit()
         with person_logged_in(job.requester):
             builds = job.recipe.requestBuildsFromJob(
-                job.build_request, channels=removeSecurityProxy(job.channels))
-        self.assertThat(builds, MatchesSetwise(
-            *(MatchesStructure(
-                requester=Equals(job.requester),
-                recipe=Equals(job.recipe),
-                distro_arch_series=MatchesStructure(
-                    distroseries=MatchesStructure.byEquality(version="20.04"),
-                    architecturetag=Equals(arch_tag)),
-                channels=Equals(channels))
-              for arch_tag, channels in (
-                  ("avr", {"charmcraft": "edge", "core20": "stable"}),
-                  ("riscv64", {"charmcraft": "edge", "core20": "candidate"}),
-                  ))))
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertThat(
+            builds,
+            MatchesSetwise(
+                *(
+                    MatchesStructure(
+                        requester=Equals(job.requester),
+                        recipe=Equals(job.recipe),
+                        distro_arch_series=MatchesStructure(
+                            distroseries=MatchesStructure.byEquality(
+                                version="20.04"
+                            ),
+                            architecturetag=Equals(arch_tag),
+                        ),
+                        channels=Equals(channels),
+                    )
+                    for arch_tag, channels in (
+                        ("avr", {"charmcraft": "edge", "core20": "stable"}),
+                        (
+                            "riscv64",
+                            {"charmcraft": "edge", "core20": "candidate"},
+                        ),
+                    )
+                )
+            ),
+        )
 
     def test_requestBuildsFromJob_triggers_webhooks(self):
         # requestBuildsFromJob triggers webhooks, and the payload includes a
         # link to the build request.
-        self.useFixture(FeatureFixture({
-            CHARM_RECIPE_ALLOW_CREATE: "on",
-            CHARM_RECIPE_BUILD_DISTRIBUTION: "ubuntu",
-            "charm.default_build_series.ubuntu": "20.04",
-            CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
-            }))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    CHARM_RECIPE_ALLOW_CREATE: "on",
+                    CHARM_RECIPE_BUILD_DISTRIBUTION: "ubuntu",
+                    "charm.default_build_series.ubuntu": "20.04",
+                    CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                }
+            )
+        )
         self.useFixture(GitHostingFixture(blob="name: foo\n"))
         logger = self.useFixture(FakeLogger())
         job = self.makeRequestBuildsJob("20.04", ["mips64el", "riscv64"])
         hook = self.factory.makeWebhook(
-            target=job.recipe, event_types=["charm-recipe:build:0.1"])
+            target=job.recipe, event_types=["charm-recipe:build:0.1"]
+        )
         with person_logged_in(job.requester):
             builds = job.recipe.requestBuildsFromJob(
-                job.build_request, channels=removeSecurityProxy(job.channels))
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
             self.assertEqual(2, len(builds))
             payload_matchers = [
-                MatchesDict({
-                    "recipe_build": Equals(canonical_url(
-                        build, force_local_path=True)),
-                    "action": Equals("created"),
-                    "recipe": Equals(canonical_url(
-                        job.recipe, force_local_path=True)),
-                    "build_request": Equals(canonical_url(
-                        job.build_request, force_local_path=True)),
-                    "status": Equals("Needs building"),
-                    "store_upload_status": Equals("Unscheduled"),
-                    })
-                for build in builds]
-            self.assertThat(hook.deliveries, MatchesSetwise(*(
-                MatchesStructure(
-                    event_type=Equals("charm-recipe:build:0.1"),
-                    payload=payload_matcher)
-                for payload_matcher in payload_matchers)))
+                MatchesDict(
+                    {
+                        "recipe_build": Equals(
+                            canonical_url(build, force_local_path=True)
+                        ),
+                        "action": Equals("created"),
+                        "recipe": Equals(
+                            canonical_url(job.recipe, force_local_path=True)
+                        ),
+                        "build_request": Equals(
+                            canonical_url(
+                                job.build_request, force_local_path=True
+                            )
+                        ),
+                        "status": Equals("Needs building"),
+                        "store_upload_status": Equals("Unscheduled"),
+                    }
+                )
+                for build in builds
+            ]
+            self.assertThat(
+                hook.deliveries,
+                MatchesSetwise(
+                    *(
+                        MatchesStructure(
+                            event_type=Equals("charm-recipe:build:0.1"),
+                            payload=payload_matcher,
+                        )
+                        for payload_matcher in payload_matchers
+                    )
+                ),
+            )
             self.assertThat(
                 logger.output,
-                LogsScheduledWebhooks([
-                    (hook, "charm-recipe:build:0.1", payload_matcher)
-                    for payload_matcher in payload_matchers]))
+                LogsScheduledWebhooks(
+                    [
+                        (hook, "charm-recipe:build:0.1", payload_matcher)
+                        for payload_matcher in payload_matchers
+                    ]
+                ),
+            )
 
     def test_requestAutoBuilds(self):
         # requestAutoBuilds creates a new build request with appropriate
@@ -737,59 +925,79 @@ class TestCharmRecipe(TestCaseWithFactory):
         now = get_transaction_timestamp(IStore(recipe))
         with person_logged_in(recipe.owner.teamowner):
             request = recipe.requestAutoBuilds()
-        self.assertThat(request, MatchesStructure(
-            date_requested=Equals(now),
-            date_finished=Is(None),
-            recipe=Equals(recipe),
-            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
-            error_message=Is(None),
-            channels=Is(None),
-            architectures=Is(None)))
+        self.assertThat(
+            request,
+            MatchesStructure(
+                date_requested=Equals(now),
+                date_finished=Is(None),
+                recipe=Equals(recipe),
+                status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+                error_message=Is(None),
+                channels=Is(None),
+                architectures=Is(None),
+            ),
+        )
         [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
-        self.assertThat(job, MatchesStructure(
-            job_id=Equals(request.id),
-            job=MatchesStructure.byEquality(status=JobStatus.WAITING),
-            recipe=Equals(recipe),
-            requester=Equals(recipe.owner),
-            channels=Is(None),
-            architectures=Is(None)))
+        self.assertThat(
+            job,
+            MatchesStructure(
+                job_id=Equals(request.id),
+                job=MatchesStructure.byEquality(status=JobStatus.WAITING),
+                recipe=Equals(recipe),
+                requester=Equals(recipe.owner),
+                channels=Is(None),
+                architectures=Is(None),
+            ),
+        )
 
     def test_requestAutoBuilds_channels(self):
         # requestAutoBuilds honours CharmRecipe.auto_build_channels.
         recipe = self.factory.makeCharmRecipe(
-            auto_build_channels={"charmcraft": "edge"})
+            auto_build_channels={"charmcraft": "edge"}
+        )
         now = get_transaction_timestamp(IStore(recipe))
         with person_logged_in(recipe.owner.teamowner):
             request = recipe.requestAutoBuilds()
-        self.assertThat(request, MatchesStructure(
-            date_requested=Equals(now),
-            date_finished=Is(None),
-            recipe=Equals(recipe),
-            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
-            error_message=Is(None),
-            channels=Equals({"charmcraft": "edge"}),
-            architectures=Is(None)))
+        self.assertThat(
+            request,
+            MatchesStructure(
+                date_requested=Equals(now),
+                date_finished=Is(None),
+                recipe=Equals(recipe),
+                status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+                error_message=Is(None),
+                channels=Equals({"charmcraft": "edge"}),
+                architectures=Is(None),
+            ),
+        )
         [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
-        self.assertThat(job, MatchesStructure(
-            job_id=Equals(request.id),
-            job=MatchesStructure.byEquality(status=JobStatus.WAITING),
-            recipe=Equals(recipe),
-            requester=Equals(recipe.owner),
-            channels=Equals({"charmcraft": "edge"}),
-            architectures=Is(None)))
+        self.assertThat(
+            job,
+            MatchesStructure(
+                job_id=Equals(request.id),
+                job=MatchesStructure.byEquality(status=JobStatus.WAITING),
+                recipe=Equals(recipe),
+                requester=Equals(recipe.owner),
+                channels=Equals({"charmcraft": "edge"}),
+                architectures=Is(None),
+            ),
+        )
 
     def test_delete_without_builds(self):
         # A charm recipe with no builds can be deleted.
         owner = self.factory.makePerson()
         project = self.factory.makeProduct()
         recipe = self.factory.makeCharmRecipe(
-            registrant=owner, owner=owner, project=project, name="condemned")
+            registrant=owner, owner=owner, project=project, name="condemned"
+        )
         self.assertTrue(
-            getUtility(ICharmRecipeSet).exists(owner, project, "condemned"))
+            getUtility(ICharmRecipeSet).exists(owner, project, "condemned")
+        )
         with person_logged_in(recipe.owner):
             recipe.destroySelf()
         self.assertFalse(
-            getUtility(ICharmRecipeSet).exists(owner, project, "condemned"))
+            getUtility(ICharmRecipeSet).exists(owner, project, "condemned")
+        )
 
     def test_related_webhooks_deleted(self):
         owner = self.factory.makePerson()
@@ -811,54 +1019,69 @@ class TestCharmRecipeAuthorization(TestCaseWithFactory):
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
         self.pushConfig("charms", charmhub_url="http://charmhub.example/")
         self.pushConfig(
-            "launchpad", candid_service_root="https://candid.test/")
+            "launchpad", candid_service_root="https://candid.test/"
+        )
 
     @responses.activate
     def assertBeginsAuthorization(self, recipe, **kwargs):
         root_macaroon = Macaroon(version=2)
         root_macaroon.add_third_party_caveat(
-            "https://candid.test/", "", "identity")
+            "https://candid.test/", "", "identity"
+        )
         root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
         responses.add(
-            "POST", "http://charmhub.example/v1/tokens",
-            json={"macaroon": root_macaroon_raw})
+            "POST",
+            "http://charmhub.example/v1/tokens",
+            json={"macaroon": root_macaroon_raw},
+        )
         self.assertEqual(root_macaroon_raw, recipe.beginAuthorization())
-        self.assertThat(responses.calls, MatchesListwise([
-            MatchesStructure(
-                request=MatchesStructure(
-                    url=Equals("http://charmhub.example/v1/tokens"),
-                    method=Equals("POST"),
-                    body=AfterPreprocessing(
-                        lambda b: json.loads(b.decode()),
-                        Equals({
-                            "description": (
-                                "{} for launchpad.test".format(
-                                    recipe.store_name)),
-                            "packages": [
-                                {"type": "charm", "name": recipe.store_name},
-                                ],
-                            "permissions": [
-                                "package-manage-releases",
-                                "package-manage-revisions",
-                                "package-view-revisions",
-                                ],
-                            })))),
-            ]))
+        tokens_matcher = MatchesStructure(
+            url=Equals("http://charmhub.example/v1/tokens"),
+            method=Equals("POST"),
+            body=AfterPreprocessing(
+                lambda b: json.loads(b.decode()),
+                Equals(
+                    {
+                        "description": (
+                            "{} for launchpad.test".format(recipe.store_name)
+                        ),
+                        "packages": [
+                            {
+                                "type": "charm",
+                                "name": recipe.store_name,
+                            },
+                        ],
+                        "permissions": [
+                            "package-manage-releases",
+                            "package-manage-revisions",
+                            "package-view-revisions",
+                        ],
+                    }
+                ),
+            ),
+        )
+        self.assertThat(
+            responses.calls,
+            MatchesListwise([MatchesStructure(request=tokens_matcher)]),
+        )
         self.assertEqual({"root": root_macaroon_raw}, recipe.store_secrets)
 
     def test_beginAuthorization(self):
         recipe = self.factory.makeCharmRecipe(
-            store_upload=True, store_name=self.factory.getUniqueUnicode())
+            store_upload=True, store_name=self.factory.getUniqueUnicode()
+        )
         with person_logged_in(recipe.registrant):
             self.assertBeginsAuthorization(recipe)
 
     def test_beginAuthorization_unauthorized(self):
         # A user without edit access cannot authorize charm recipe uploads.
         recipe = self.factory.makeCharmRecipe(
-            store_upload=True, store_name=self.factory.getUniqueUnicode())
+            store_upload=True, store_name=self.factory.getUniqueUnicode()
+        )
         with person_logged_in(self.factory.makePerson()):
             self.assertRaises(
-                Unauthorized, getattr, recipe, "beginAuthorization")
+                Unauthorized, getattr, recipe, "beginAuthorization"
+            )
 
     @responses.activate
     def test_completeAuthorization(self):
@@ -866,56 +1089,84 @@ class TestCharmRecipeAuthorization(TestCaseWithFactory):
         self.pushConfig(
             "charms",
             charmhub_secrets_public_key=base64.b64encode(
-                bytes(private_key.public_key)).decode())
+                bytes(private_key.public_key)
+            ).decode(),
+        )
         root_macaroon = Macaroon(version=2)
         root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
         unbound_discharge_macaroon = Macaroon(version=2)
         unbound_discharge_macaroon_raw = unbound_discharge_macaroon.serialize(
-            JsonSerializer())
+            JsonSerializer()
+        )
         discharge_macaroon_raw = root_macaroon.prepare_for_request(
-            unbound_discharge_macaroon).serialize(JsonSerializer())
+            unbound_discharge_macaroon
+        ).serialize(JsonSerializer())
         exchanged_macaroon = Macaroon(version=2)
         exchanged_macaroon_raw = exchanged_macaroon.serialize(JsonSerializer())
         responses.add(
-            "POST", "http://charmhub.example/v1/tokens/exchange",
-            json={"macaroon": exchanged_macaroon_raw})
+            "POST",
+            "http://charmhub.example/v1/tokens/exchange",
+            json={"macaroon": exchanged_macaroon_raw},
+        )
         recipe = self.factory.makeCharmRecipe(
-            store_upload=True, store_name=self.factory.getUniqueUnicode(),
-            store_secrets={"root": root_macaroon_raw})
+            store_upload=True,
+            store_name=self.factory.getUniqueUnicode(),
+            store_secrets={"root": root_macaroon_raw},
+        )
         with person_logged_in(recipe.registrant):
             recipe.completeAuthorization(unbound_discharge_macaroon_raw)
             self.pushConfig(
                 "charms",
                 charmhub_secrets_private_key=base64.b64encode(
-                    bytes(private_key)).decode())
+                    bytes(private_key)
+                ).decode(),
+            )
             container = getUtility(IEncryptedContainer, "charmhub-secrets")
-            self.assertThat(recipe.store_secrets, MatchesDict({
-                "exchanged_encrypted": AfterPreprocessing(
-                    lambda data: container.decrypt(data).decode(),
-                    Equals(exchanged_macaroon_raw)),
-                }))
-        self.assertThat(responses.calls, MatchesListwise([
-            MatchesStructure(
-                request=MatchesStructure(
-                    url=Equals("http://charmhub.example/v1/tokens/exchange"),
-                    method=Equals("POST"),
-                    headers=ContainsDict({
-                        "Macaroons": AfterPreprocessing(
-                            lambda v: json.loads(
-                                base64.b64decode(v.encode()).decode()),
-                            Equals([
-                                json.loads(m) for m in (
+            self.assertThat(
+                recipe.store_secrets,
+                MatchesDict(
+                    {
+                        "exchanged_encrypted": AfterPreprocessing(
+                            lambda data: container.decrypt(data).decode(),
+                            Equals(exchanged_macaroon_raw),
+                        ),
+                    }
+                ),
+            )
+        exchange_matcher = MatchesStructure(
+            url=Equals("http://charmhub.example/v1/tokens/exchange"),
+            method=Equals("POST"),
+            headers=ContainsDict(
+                {
+                    "Macaroons": AfterPreprocessing(
+                        lambda v: json.loads(
+                            base64.b64decode(v.encode()).decode()
+                        ),
+                        Equals(
+                            [
+                                json.loads(m)
+                                for m in (
                                     root_macaroon_raw,
-                                    discharge_macaroon_raw)])),
-                        }),
-                    body=AfterPreprocessing(
-                        lambda b: json.loads(b.decode()),
-                        Equals({})))),
-            ]))
+                                    discharge_macaroon_raw,
+                                )
+                            ]
+                        ),
+                    ),
+                }
+            ),
+            body=AfterPreprocessing(
+                lambda b: json.loads(b.decode()), Equals({})
+            ),
+        )
+        self.assertThat(
+            responses.calls,
+            MatchesListwise([MatchesStructure(request=exchange_matcher)]),
+        )
 
     def test_completeAuthorization_without_beginAuthorization(self):
         recipe = self.factory.makeCharmRecipe(
-            store_upload=True, store_name=self.factory.getUniqueUnicode())
+            store_upload=True, store_name=self.factory.getUniqueUnicode()
+        )
         discharge_macaroon = Macaroon(version=2)
         with person_logged_in(recipe.registrant):
             self.assertRaisesWithContent(
@@ -923,27 +1174,35 @@ class TestCharmRecipeAuthorization(TestCaseWithFactory):
                 "beginAuthorization must be called before "
                 "completeAuthorization.",
                 recipe.completeAuthorization,
-                discharge_macaroon.serialize(JsonSerializer()))
+                discharge_macaroon.serialize(JsonSerializer()),
+            )
 
     def test_completeAuthorization_unauthorized(self):
         root_macaroon = Macaroon(version=2)
         recipe = self.factory.makeCharmRecipe(
-            store_upload=True, store_name=self.factory.getUniqueUnicode(),
-            store_secrets={"root": root_macaroon.serialize(JsonSerializer())})
+            store_upload=True,
+            store_name=self.factory.getUniqueUnicode(),
+            store_secrets={"root": root_macaroon.serialize(JsonSerializer())},
+        )
         with person_logged_in(self.factory.makePerson()):
             self.assertRaises(
-                Unauthorized, getattr, recipe, "completeAuthorization")
+                Unauthorized, getattr, recipe, "completeAuthorization"
+            )
 
     def test_completeAuthorization_malformed_discharge_macaroon(self):
         root_macaroon = Macaroon(version=2)
         recipe = self.factory.makeCharmRecipe(
-            store_upload=True, store_name=self.factory.getUniqueUnicode(),
-            store_secrets={"root": root_macaroon.serialize(JsonSerializer())})
+            store_upload=True,
+            store_name=self.factory.getUniqueUnicode(),
+            store_secrets={"root": root_macaroon.serialize(JsonSerializer())},
+        )
         with person_logged_in(recipe.registrant):
             self.assertRaisesWithContent(
                 CannotAuthorizeCharmhubUploads,
                 "Discharge macaroon is invalid.",
-                recipe.completeAuthorization, "nonsense")
+                recipe.completeAuthorization,
+                "nonsense",
+            )
 
 
 class TestCharmRecipeDeleteWithBuilds(TestCaseWithFactory):
@@ -963,28 +1222,47 @@ class TestCharmRecipeDeleteWithBuilds(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries()
         processor = self.factory.makeProcessor(supports_virtualized=True)
         das = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag=processor.name,
-            processor=processor)
+            distroseries=distroseries,
+            architecturetag=processor.name,
+            processor=processor,
+        )
         das.addOrUpdateChroot(
             self.factory.makeLibraryFileAlias(
-                filename="fake_chroot.tar.gz", db_only=True))
-        self.useFixture(GitHostingFixture(blob=dedent("""\
-            bases:
-              - build-on:
-                  - name: "%s"
-                    channel: "%s"
-                    architectures: [%s]
-            """ % (
-                distroseries.distribution.name, distroseries.name,
-                processor.name))))
+                filename="fake_chroot.tar.gz", db_only=True
+            )
+        )
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    bases:
+                      - build-on:
+                          - name: "%s"
+                            channel: "%s"
+                            architectures: [%s]
+                    """
+                    % (
+                        distroseries.distribution.name,
+                        distroseries.name,
+                        processor.name,
+                    )
+                )
+            )
+        )
         [git_ref] = self.factory.makeGitRefs()
         condemned_recipe = self.factory.makeCharmRecipe(
-            registrant=owner, owner=owner, project=project, name="condemned",
-            git_ref=git_ref)
+            registrant=owner,
+            owner=owner,
+            project=project,
+            name="condemned",
+            git_ref=git_ref,
+        )
         other_recipe = self.factory.makeCharmRecipe(
-            registrant=owner, owner=owner, project=project, git_ref=git_ref)
+            registrant=owner, owner=owner, project=project, git_ref=git_ref
+        )
         self.assertTrue(
-            getUtility(ICharmRecipeSet).exists(owner, project, "condemned"))
+            getUtility(ICharmRecipeSet).exists(owner, project, "condemned")
+        )
         with person_logged_in(owner):
             requests = []
             jobs = []
@@ -999,10 +1277,12 @@ class TestCharmRecipeDeleteWithBuilds(TestCaseWithFactory):
             [other_build] = requests[1].builds
             charm_file = self.factory.makeCharmFile(build=build)
             other_charm_file = self.factory.makeCharmFile(build=other_build)
-            charm_build_job = getUtility(
-                ICharmhubUploadJobSource).create(build)
-            other_build_job = getUtility(
-                ICharmhubUploadJobSource).create(other_build)
+            charm_build_job = getUtility(ICharmhubUploadJobSource).create(
+                build
+            )
+            other_build_job = getUtility(ICharmhubUploadJobSource).create(
+                other_build
+            )
         store = Store.of(condemned_recipe)
         store.flush()
         job_ids = [job.job_id for job in jobs]
@@ -1017,7 +1297,8 @@ class TestCharmRecipeDeleteWithBuilds(TestCaseWithFactory):
         # The deleted recipe, its build requests, its builds and the build job
         # are gone.
         self.assertFalse(
-            getUtility(ICharmRecipeSet).exists(owner, project, "condemned"))
+            getUtility(ICharmRecipeSet).exists(owner, project, "condemned")
+        )
         self.assertIsNone(store.get(CharmRecipeJob, job_ids[0]))
         self.assertIsNone(getUtility(ICharmRecipeBuildSet).getByID(build_id))
         self.assertIsNone(store.get(BuildQueue, build_queue_id))
@@ -1026,16 +1307,20 @@ class TestCharmRecipeDeleteWithBuilds(TestCaseWithFactory):
         self.assertIsNone(store.get(CharmRecipeBuildJob, charm_build_job_id))
         # Unrelated build requests, build jobs and builds are still present.
         self.assertIsNotNone(
-            store.get(CharmRecipeBuildJob, other_build_job.job_id))
+            store.get(CharmRecipeBuildJob, other_build_job.job_id)
+        )
         self.assertEqual(
             removeSecurityProxy(jobs[1]).context,
-            store.get(CharmRecipeJob, job_ids[1]))
+            store.get(CharmRecipeJob, job_ids[1]),
+        )
         self.assertEqual(
             other_build,
-            getUtility(ICharmRecipeBuildSet).getByID(other_build.id))
+            getUtility(ICharmRecipeBuildSet).getByID(other_build.id),
+        )
         self.assertIsNotNone(other_build.buildqueue_record)
         self.assertIsNotNone(
-            store.get(CharmFile, removeSecurityProxy(other_charm_file).id))
+            store.get(CharmFile, removeSecurityProxy(other_charm_file).id)
+        )
 
 
 class TestCharmRecipeSet(TestCaseWithFactory):
@@ -1063,7 +1348,7 @@ class TestCharmRecipeSet(TestCaseWithFactory):
             "owner": self.factory.makeTeam(owner=registrant),
             "project": self.factory.makeProduct(),
             "name": self.factory.getUniqueUnicode("charm-name"),
-            }
+        }
         if git_ref is None:
             git_ref = self.factory.makeGitRefs()[0]
         components["git_ref"] = git_ref
@@ -1097,22 +1382,30 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         # fails.
         registrant = self.factory.makePerson()
         self.assertRaises(
-            NoSourceForCharmRecipe, getUtility(ICharmRecipeSet).new,
-            registrant, registrant, self.factory.makeProduct(),
-            self.factory.getUniqueUnicode("charm-name"))
+            NoSourceForCharmRecipe,
+            getUtility(ICharmRecipeSet).new,
+            registrant,
+            registrant,
+            self.factory.makeProduct(),
+            self.factory.getUniqueUnicode("charm-name"),
+        )
 
     def test_getByName(self):
         owner = self.factory.makePerson()
         project = self.factory.makeProduct()
         project_recipe = self.factory.makeCharmRecipe(
-            registrant=owner, owner=owner, project=project, name="proj-charm")
+            registrant=owner, owner=owner, project=project, name="proj-charm"
+        )
         self.factory.makeCharmRecipe(
-            registrant=owner, owner=owner, name="proj-charm")
+            registrant=owner, owner=owner, name="proj-charm"
+        )
 
         self.assertEqual(
             project_recipe,
             getUtility(ICharmRecipeSet).getByName(
-                owner, project, "proj-charm"))
+                owner, project, "proj-charm"
+            ),
+        )
 
     def test_findByOwner(self):
         # ICharmRecipeSet.findByOwner returns all charm recipes with the
@@ -1121,8 +1414,9 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         recipes = []
         for owner in owners:
             for i in range(2):
-                recipes.append(self.factory.makeCharmRecipe(
-                    registrant=owner, owner=owner))
+                recipes.append(
+                    self.factory.makeCharmRecipe(registrant=owner, owner=owner)
+                )
         recipe_set = getUtility(ICharmRecipeSet)
         self.assertContentEqual(recipes[:2], recipe_set.findByOwner(owners[0]))
         self.assertContentEqual(recipes[2:], recipe_set.findByOwner(owners[1]))
@@ -1133,15 +1427,18 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         owners = [self.factory.makePerson() for i in range(2)]
         recipes = []
         for owner in owners:
-            recipes.append(self.factory.makeCharmRecipe(
-                registrant=owner, owner=owner))
+            recipes.append(
+                self.factory.makeCharmRecipe(registrant=owner, owner=owner)
+            )
             [ref] = self.factory.makeGitRefs(owner=owner)
             recipes.append(self.factory.makeCharmRecipe(git_ref=ref))
         recipe_set = getUtility(ICharmRecipeSet)
         self.assertContentEqual(
-            recipes[:2], recipe_set.findByPerson(owners[0]))
+            recipes[:2], recipe_set.findByPerson(owners[0])
+        )
         self.assertContentEqual(
-            recipes[2:], recipe_set.findByPerson(owners[1]))
+            recipes[2:], recipe_set.findByPerson(owners[1])
+        )
 
     def test_findByProject(self):
         # ICharmRecipeSet.findByProject returns all charm recipes based on
@@ -1157,9 +1454,11 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         recipes.append(self.factory.makeCharmRecipe(git_ref=ref))
         recipe_set = getUtility(ICharmRecipeSet)
         self.assertContentEqual(
-            recipes[:2], recipe_set.findByProject(projects[0]))
+            recipes[:2], recipe_set.findByProject(projects[0])
+        )
         self.assertContentEqual(
-            recipes[2:4], recipe_set.findByProject(projects[1]))
+            recipes[2:4], recipe_set.findByProject(projects[1])
+        )
 
     def test_findByGitRepository(self):
         # ICharmRecipeSet.findByGitRepository returns all charm recipes with
@@ -1172,9 +1471,11 @@ class TestCharmRecipeSet(TestCaseWithFactory):
                 recipes.append(self.factory.makeCharmRecipe(git_ref=ref))
         recipe_set = getUtility(ICharmRecipeSet)
         self.assertContentEqual(
-            recipes[:2], recipe_set.findByGitRepository(repositories[0]))
+            recipes[:2], recipe_set.findByGitRepository(repositories[0])
+        )
         self.assertContentEqual(
-            recipes[2:], recipe_set.findByGitRepository(repositories[1]))
+            recipes[2:], recipe_set.findByGitRepository(repositories[1])
+        )
 
     def test_findByGitRepository_paths(self):
         # ICharmRecipeSet.findByGitRepository can restrict by reference
@@ -1187,16 +1488,21 @@ class TestCharmRecipeSet(TestCaseWithFactory):
                 recipes.append(self.factory.makeCharmRecipe(git_ref=ref))
         recipe_set = getUtility(ICharmRecipeSet)
         self.assertContentEqual(
-            [], recipe_set.findByGitRepository(repositories[0], paths=[]))
+            [], recipe_set.findByGitRepository(repositories[0], paths=[])
+        )
         self.assertContentEqual(
             [recipes[0]],
             recipe_set.findByGitRepository(
-                repositories[0], paths=[recipes[0].git_ref.path]))
+                repositories[0], paths=[recipes[0].git_ref.path]
+            ),
+        )
         self.assertContentEqual(
             recipes[:2],
             recipe_set.findByGitRepository(
                 repositories[0],
-                paths=[recipes[0].git_ref.path, recipes[1].git_ref.path]))
+                paths=[recipes[0].git_ref.path, recipes[1].git_ref.path],
+            ),
+        )
 
     def test_findByGitRef(self):
         # ICharmRecipeSet.findByGitRef returns all charm recipes with the
@@ -1205,8 +1511,11 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         refs = []
         recipes = []
         for repository in repositories:
-            refs.extend(self.factory.makeGitRefs(
-                paths=["refs/heads/master", "refs/heads/other"]))
+            refs.extend(
+                self.factory.makeGitRefs(
+                    paths=["refs/heads/master", "refs/heads/other"]
+                )
+            )
             recipes.append(self.factory.makeCharmRecipe(git_ref=refs[-2]))
             recipes.append(self.factory.makeCharmRecipe(git_ref=refs[-1]))
         recipe_set = getUtility(ICharmRecipeSet)
@@ -1219,33 +1528,47 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         person = self.factory.makePerson()
         project = self.factory.makeProduct()
         repository = self.factory.makeGitRepository(
-            owner=person, target=project)
+            owner=person, target=project
+        )
         refs = self.factory.makeGitRefs(
             repository=repository,
-            paths=["refs/heads/master", "refs/heads/other"])
+            paths=["refs/heads/master", "refs/heads/other"],
+        )
         other_repository = self.factory.makeGitRepository()
         other_refs = self.factory.makeGitRefs(
             repository=other_repository,
-            paths=["refs/heads/master", "refs/heads/other"])
+            paths=["refs/heads/master", "refs/heads/other"],
+        )
         recipes = []
         recipes.append(self.factory.makeCharmRecipe(git_ref=refs[0]))
         recipes.append(self.factory.makeCharmRecipe(git_ref=refs[1]))
-        recipes.append(self.factory.makeCharmRecipe(
-            registrant=person, owner=person, git_ref=other_refs[0]))
-        recipes.append(self.factory.makeCharmRecipe(
-            project=project, git_ref=other_refs[1]))
+        recipes.append(
+            self.factory.makeCharmRecipe(
+                registrant=person, owner=person, git_ref=other_refs[0]
+            )
+        )
+        recipes.append(
+            self.factory.makeCharmRecipe(
+                project=project, git_ref=other_refs[1]
+            )
+        )
         recipe_set = getUtility(ICharmRecipeSet)
         self.assertContentEqual(recipes[:3], recipe_set.findByContext(person))
         self.assertContentEqual(
             [recipes[0], recipes[1], recipes[3]],
-            recipe_set.findByContext(project))
+            recipe_set.findByContext(project),
+        )
         self.assertContentEqual(
-            recipes[:2], recipe_set.findByContext(repository))
+            recipes[:2], recipe_set.findByContext(repository)
+        )
         self.assertContentEqual(
-            [recipes[0]], recipe_set.findByContext(refs[0]))
+            [recipes[0]], recipe_set.findByContext(refs[0])
+        )
         self.assertRaises(
-            BadCharmRecipeSearchContext, recipe_set.findByContext,
-            self.factory.makeDistribution())
+            BadCharmRecipeSearchContext,
+            recipe_set.findByContext,
+            self.factory.makeDistribution(),
+        )
 
     def test__findStaleRecipes(self):
         # Stale; not built automatically.
@@ -1254,9 +1577,11 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         self.factory.makeCharmRecipe(auto_build=True, is_stale=False)
         # Stale; built automatically.
         stale_daily = self.factory.makeCharmRecipe(
-            auto_build=True, is_stale=True)
+            auto_build=True, is_stale=True
+        )
         self.assertContentEqual(
-            [stale_daily], CharmRecipeSet._findStaleRecipes())
+            [stale_daily], CharmRecipeSet._findStaleRecipes()
+        )
 
     def test__findStaleRecipes_distinct(self):
         # If a charm recipe has two build requests, it only returns one
@@ -1264,10 +1589,11 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         recipe = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
         for _ in range(2):
             build_request = self.factory.makeCharmRecipeBuildRequest(
-                recipe=recipe)
+                recipe=recipe
+            )
             removeSecurityProxy(
-                removeSecurityProxy(build_request)._job).job.date_created = (
-                    datetime.now(pytz.UTC) - timedelta(days=2))
+                removeSecurityProxy(build_request)._job
+            ).job.date_created = datetime.now(pytz.UTC) - timedelta(days=2)
         self.assertContentEqual([recipe], CharmRecipeSet._findStaleRecipes())
 
     def test_makeAutoBuilds(self):
@@ -1277,17 +1603,24 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         recipe = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
         logger = BufferLogger()
         [build_request] = getUtility(ICharmRecipeSet).makeAutoBuilds(
-            logger=logger)
-        self.assertThat(build_request, MatchesStructure(
-            recipe=Equals(recipe),
-            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
-            requester=Equals(recipe.owner), channels=Is(None)))
+            logger=logger
+        )
+        self.assertThat(
+            build_request,
+            MatchesStructure(
+                recipe=Equals(recipe),
+                status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+                requester=Equals(recipe.owner),
+                channels=Is(None),
+            ),
+        )
         expected_log_entries = [
-            "DEBUG Scheduling builds of charm recipe %s/%s/%s" % (
-                recipe.owner.name, recipe.project.name, recipe.name),
-            ]
+            "DEBUG Scheduling builds of charm recipe %s/%s/%s"
+            % (recipe.owner.name, recipe.project.name, recipe.name),
+        ]
         self.assertEqual(
-            expected_log_entries, logger.getLogBuffer().splitlines())
+            expected_log_entries, logger.getLogBuffer().splitlines()
+        )
         self.assertFalse(recipe.is_stale)
 
     def test_makeAutoBuild_skips_for_unexpected_exceptions(self):
@@ -1295,19 +1628,22 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         recipe = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
         logger = BufferLogger()
         recipe = removeSecurityProxy(recipe)
+
         # currently there is no expected way that `makeAutoBuilds` could fail
         # so we fake it
         def fake_requestAutoBuilds_with_side_effect(logger=None):
             raise Exception("something unexpected went wrong")
+
         recipe.requestAutoBuilds = fake_requestAutoBuilds_with_side_effect
 
         build_requests = getUtility(ICharmRecipeSet).makeAutoBuilds(
-            logger=logger)
+            logger=logger
+        )
 
         self.assertEqual([], build_requests)
         self.assertEqual(
-            ['ERROR something unexpected went wrong'],
-            logger.getLogBuffer().splitlines()
+            ["ERROR something unexpected went wrong"],
+            logger.getLogBuffer().splitlines(),
         )
 
     def test_makeAutoBuild_skips_and_no_logger_enabled(self):
@@ -1316,8 +1652,10 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         # but we particularly test with no logger enabled.
         recipe = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
         recipe = removeSecurityProxy(recipe)
+
         def fake_requestAutoBuilds_with_side_effect(logger=None):
             raise Exception("something unexpected went wrong")
+
         recipe.requestAutoBuilds = fake_requestAutoBuilds_with_side_effect
 
         build_requests = getUtility(ICharmRecipeSet).makeAutoBuilds()
@@ -1329,49 +1667,67 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         # recently.
         recipe = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
         self.factory.makeCharmRecipeBuildRequest(
-            requester=recipe.owner, recipe=recipe)
+            requester=recipe.owner, recipe=recipe
+        )
         logger = BufferLogger()
         build_requests = getUtility(ICharmRecipeSet).makeAutoBuilds(
-            logger=logger)
+            logger=logger
+        )
         self.assertEqual([], build_requests)
         self.assertEqual([], logger.getLogBuffer().splitlines())
 
     def test_makeAutoBuilds_skips_if_requested_recently_matching_channels(
-            self):
+        self,
+    ):
         # ICharmRecipeSet.makeAutoBuilds only considers recent build
         # requests to match a recipe if they match its auto_build_channels.
         recipe1 = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
         recipe2 = self.factory.makeCharmRecipe(
-            auto_build=True, auto_build_channels={"charmcraft": "edge"},
-            is_stale=True)
+            auto_build=True,
+            auto_build_channels={"charmcraft": "edge"},
+            is_stale=True,
+        )
         # Create some build requests with mismatched channels.
         self.factory.makeCharmRecipeBuildRequest(
-            recipe=recipe1, requester=recipe1.owner,
-            channels={"charmcraft": "edge"})
+            recipe=recipe1,
+            requester=recipe1.owner,
+            channels={"charmcraft": "edge"},
+        )
         self.factory.makeCharmRecipeBuildRequest(
-            recipe=recipe2, requester=recipe2.owner,
-            channels={"charmcraft": "stable"})
+            recipe=recipe2,
+            requester=recipe2.owner,
+            channels={"charmcraft": "stable"},
+        )
 
         logger = BufferLogger()
         build_requests = getUtility(ICharmRecipeSet).makeAutoBuilds(
-            logger=logger)
-        self.assertThat(build_requests, MatchesSetwise(
-            MatchesStructure(
-                recipe=Equals(recipe1),
-                status=Equals(CharmRecipeBuildRequestStatus.PENDING),
-                requester=Equals(recipe1.owner), channels=Is(None)),
-            MatchesStructure(
-                recipe=Equals(recipe2),
-                status=Equals(CharmRecipeBuildRequestStatus.PENDING),
-                requester=Equals(recipe2.owner),
-                channels=Equals({"charmcraft": "edge"}))))
+            logger=logger
+        )
+        self.assertThat(
+            build_requests,
+            MatchesSetwise(
+                MatchesStructure(
+                    recipe=Equals(recipe1),
+                    status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+                    requester=Equals(recipe1.owner),
+                    channels=Is(None),
+                ),
+                MatchesStructure(
+                    recipe=Equals(recipe2),
+                    status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+                    requester=Equals(recipe2.owner),
+                    channels=Equals({"charmcraft": "edge"}),
+                ),
+            ),
+        )
         log_entries = logger.getLogBuffer().splitlines()
         self.assertEqual(2, len(log_entries))
         for recipe in recipe1, recipe2:
             self.assertIn(
-                "DEBUG Scheduling builds of charm recipe %s/%s/%s" % (
-                    recipe.owner.name, recipe.project.name, recipe.name),
-                log_entries)
+                "DEBUG Scheduling builds of charm recipe %s/%s/%s"
+                % (recipe.owner.name, recipe.project.name, recipe.name),
+                log_entries,
+            )
             self.assertFalse(recipe.is_stale)
 
         # Mark the two recipes stale and try again.  There are now matching
@@ -1381,7 +1737,8 @@ class TestCharmRecipeSet(TestCaseWithFactory):
             IStore(recipe).flush()
         logger = BufferLogger()
         build_requests = getUtility(ICharmRecipeSet).makeAutoBuilds(
-            logger=logger)
+            logger=logger
+        )
         self.assertEqual([], build_requests)
         self.assertEqual([], logger.getLogBuffer().splitlines())
 
@@ -1396,15 +1753,21 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         recipe = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
         one_day_ago = datetime.now(pytz.UTC) - timedelta(days=1)
         build_request = self.factory.makeCharmRecipeBuildRequest(
-            recipe=recipe, requester=recipe.owner)
+            recipe=recipe, requester=recipe.owner
+        )
         removeSecurityProxy(
-            removeSecurityProxy(build_request)._job).job.date_created = (
-                one_day_ago)
+            removeSecurityProxy(build_request)._job
+        ).job.date_created = one_day_ago
         [build_request] = getUtility(ICharmRecipeSet).makeAutoBuilds()
-        self.assertThat(build_request, MatchesStructure(
-            recipe=Equals(recipe),
-            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
-            requester=Equals(recipe.owner), channels=Is(None)))
+        self.assertThat(
+            build_request,
+            MatchesStructure(
+                recipe=Equals(recipe),
+                status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+                requester=Equals(recipe.owner),
+                channels=Is(None),
+            ),
+        )
 
     def test_makeAutoBuilds_with_older_and_newer_build_requests(self):
         # If builds of a recipe have been requested twice, and the most recent
@@ -1414,10 +1777,11 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         for timediff in timedelta(days=1), timedelta(minutes=30):
             date_created = datetime.now(pytz.UTC) - timediff
             build_request = self.factory.makeCharmRecipeBuildRequest(
-                recipe=recipe, requester=recipe.owner)
+                recipe=recipe, requester=recipe.owner
+            )
             removeSecurityProxy(
-                removeSecurityProxy(build_request)._job).job.date_created = (
-                    date_created)
+                removeSecurityProxy(build_request)._job
+            ).job.date_created = date_created
         self.assertEqual([], getUtility(ICharmRecipeSet).makeAutoBuilds())
 
     def test_detachFromGitRepository(self):
@@ -1432,21 +1796,28 @@ class TestCharmRecipeSet(TestCaseWithFactory):
                 [ref] = self.factory.makeGitRefs(repository=repository)
                 paths.append(ref.path)
                 refs.append(ref)
-                recipes.append(self.factory.makeCharmRecipe(
-                    git_ref=ref, date_created=ONE_DAY_AGO))
+                recipes.append(
+                    self.factory.makeCharmRecipe(
+                        git_ref=ref, date_created=ONE_DAY_AGO
+                    )
+                )
         getUtility(ICharmRecipeSet).detachFromGitRepository(repositories[0])
         self.assertEqual(
             [None, None, repositories[1], repositories[1]],
-            [recipe.git_repository for recipe in recipes])
+            [recipe.git_repository for recipe in recipes],
+        )
         self.assertEqual(
             [None, None, paths[2], paths[3]],
-            [recipe.git_path for recipe in recipes])
+            [recipe.git_path for recipe in recipes],
+        )
         self.assertEqual(
             [None, None, refs[2], refs[3]],
-            [recipe.git_ref for recipe in recipes])
+            [recipe.git_ref for recipe in recipes],
+        )
         for recipe in recipes[:2]:
             self.assertSqlAttributeEqualsDate(
-                recipe, "date_last_modified", UTC_NOW)
+                recipe, "date_last_modified", UTC_NOW
+            )
 
 
 class TestCharmRecipeWebservice(TestCaseWithFactory):
@@ -1455,26 +1826,39 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture({
-            CHARM_RECIPE_ALLOW_CREATE: "on",
-            CHARM_RECIPE_BUILD_DISTRIBUTION: "ubuntu",
-            CHARM_RECIPE_PRIVATE_FEATURE_FLAG: "on",
-            }))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    CHARM_RECIPE_ALLOW_CREATE: "on",
+                    CHARM_RECIPE_BUILD_DISTRIBUTION: "ubuntu",
+                    CHARM_RECIPE_PRIVATE_FEATURE_FLAG: "on",
+                }
+            )
+        )
         self.pushConfig("charms", charmhub_url="http://charmhub.example/")
         self.pushConfig(
-            "launchpad", candid_service_root="https://candid.test/")
+            "launchpad", candid_service_root="https://candid.test/"
+        )
         self.person = self.factory.makePerson(displayname="Test Person")
         self.webservice = webservice_for_person(
-            self.person, permission=OAuthPermission.WRITE_PUBLIC)
+            self.person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         self.webservice.default_api_version = "devel"
         login(ANONYMOUS)
 
     def getURL(self, obj):
         return self.webservice.getAbsoluteUrl(api_url(obj))
 
-    def makeCharmRecipe(self, owner=None, project=None, name=None,
-                        git_ref=None, private=False, webservice=None,
-                        **kwargs):
+    def makeCharmRecipe(
+        self,
+        owner=None,
+        project=None,
+        name=None,
+        git_ref=None,
+        private=False,
+        webservice=None,
+        **kwargs
+    ):
         if owner is None:
             owner = self.person
         if project is None:
@@ -1490,58 +1874,80 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
         project_url = api_url(project)
         git_ref_url = api_url(git_ref)
         logout()
-        information_type = (InformationType.PROPRIETARY if private else
-                            InformationType.PUBLIC)
+        information_type = (
+            InformationType.PROPRIETARY if private else InformationType.PUBLIC
+        )
         response = webservice.named_post(
-            "/+charm-recipes", "new", owner=owner_url, project=project_url,
-            name=name, git_ref=git_ref_url,
-            information_type=information_type.title, **kwargs)
+            "/+charm-recipes",
+            "new",
+            owner=owner_url,
+            project=project_url,
+            name=name,
+            git_ref=git_ref_url,
+            information_type=information_type.title,
+            **kwargs,
+        )
         self.assertEqual(201, response.status)
         return webservice.get(response.getHeader("Location")).jsonBody()
 
     def getCollectionLinks(self, entry, member):
         """Return a list of self_link attributes of entries in a collection."""
         collection = self.webservice.get(
-            entry["%s_collection_link" % member]).jsonBody()
+            entry["%s_collection_link" % member]
+        ).jsonBody()
         return [entry["self_link"] for entry in collection["entries"]]
 
     def test_new_git(self):
         # Charm recipe creation based on a Git branch works.
         team = self.factory.makeTeam(
             owner=self.person,
-            membership_policy=TeamMembershipPolicy.RESTRICTED)
+            membership_policy=TeamMembershipPolicy.RESTRICTED,
+        )
         project = self.factory.makeProduct(owner=team)
         [ref] = self.factory.makeGitRefs()
         recipe = self.makeCharmRecipe(
-            owner=team, project=project, name="test-charm", git_ref=ref)
+            owner=team, project=project, name="test-charm", git_ref=ref
+        )
         with person_logged_in(self.person):
-            self.assertThat(recipe, ContainsDict({
-                "registrant_link": Equals(self.getURL(self.person)),
-                "owner_link": Equals(self.getURL(team)),
-                "project_link": Equals(self.getURL(project)),
-                "name": Equals("test-charm"),
-                "git_ref_link": Equals(self.getURL(ref)),
-                "build_path": Is(None),
-                "require_virtualized": Is(True),
-                }))
+            self.assertThat(
+                recipe,
+                ContainsDict(
+                    {
+                        "registrant_link": Equals(self.getURL(self.person)),
+                        "owner_link": Equals(self.getURL(team)),
+                        "project_link": Equals(self.getURL(project)),
+                        "name": Equals("test-charm"),
+                        "git_ref_link": Equals(self.getURL(ref)),
+                        "build_path": Is(None),
+                        "require_virtualized": Is(True),
+                    }
+                ),
+            )
 
     def test_new_store_options(self):
         # The store-related options in CharmRecipe.new work.
         store_name = self.factory.getUniqueUnicode()
         recipe = self.makeCharmRecipe(
-            store_upload=True, store_name=store_name, store_channels=["edge"])
+            store_upload=True, store_name=store_name, store_channels=["edge"]
+        )
         with person_logged_in(self.person):
-            self.assertThat(recipe, ContainsDict({
-                "store_upload": Is(True),
-                "store_name": Equals(store_name),
-                "store_channels": Equals(["edge"]),
-                }))
+            self.assertThat(
+                recipe,
+                ContainsDict(
+                    {
+                        "store_upload": Is(True),
+                        "store_name": Equals(store_name),
+                        "store_channels": Equals(["edge"]),
+                    }
+                ),
+            )
 
     def test_duplicate(self):
         # An attempt to create a duplicate charm recipe fails.
         team = self.factory.makeTeam(
             owner=self.person,
-            membership_policy=TeamMembershipPolicy.RESTRICTED)
+            membership_policy=TeamMembershipPolicy.RESTRICTED,
+        )
         project = self.factory.makeProduct(owner=team)
         name = self.factory.getUniqueUnicode()
         [git_ref] = self.factory.makeGitRefs()
@@ -1549,22 +1955,34 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
         project_url = api_url(project)
         git_ref_url = api_url(git_ref)
         self.makeCharmRecipe(
-            owner=team, project=project, name=name, git_ref=git_ref)
+            owner=team, project=project, name=name, git_ref=git_ref
+        )
         response = self.webservice.named_post(
-            "/+charm-recipes", "new", owner=owner_url, project=project_url,
-            name=name, git_ref=git_ref_url)
-        self.assertThat(response, MatchesStructure.byEquality(
-            status=400,
-            body=(
-                b"There is already a charm recipe with the same project, "
-                b"owner, and name.")))
+            "/+charm-recipes",
+            "new",
+            owner=owner_url,
+            project=project_url,
+            name=name,
+            git_ref=git_ref_url,
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=400,
+                body=(
+                    b"There is already a charm recipe with the same project, "
+                    b"owner, and name."
+                ),
+            ),
+        )
 
     def test_not_owner(self):
         # If the registrant is not the owner or a member of the owner team,
         # charm recipe creation fails.
         other_person = self.factory.makePerson(displayname="Other Person")
         other_team = self.factory.makeTeam(
-            owner=other_person, displayname="Other Team")
+            owner=other_person, displayname="Other Team"
+        )
         project = self.factory.makeProduct(owner=self.person)
         [git_ref] = self.factory.makeGitRefs()
         transaction.commit()
@@ -1574,59 +1992,97 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
         git_ref_url = api_url(git_ref)
         logout()
         response = self.webservice.named_post(
-            "/+charm-recipes", "new", owner=other_person_url,
-            project=project_url, name="test-charm", git_ref=git_ref_url)
-        self.assertThat(response, MatchesStructure.byEquality(
-            status=401,
-            body=(
-                b"Test Person cannot create charm recipes owned by "
-                b"Other Person.")))
+            "/+charm-recipes",
+            "new",
+            owner=other_person_url,
+            project=project_url,
+            name="test-charm",
+            git_ref=git_ref_url,
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=401,
+                body=(
+                    b"Test Person cannot create charm recipes owned by "
+                    b"Other Person."
+                ),
+            ),
+        )
         response = self.webservice.named_post(
-            "/+charm-recipes", "new", owner=other_team_url,
-            project=project_url, name="test-charm", git_ref=git_ref_url)
-        self.assertThat(response, MatchesStructure.byEquality(
-            status=401,
-            body=b"Test Person is not a member of Other Team."))
+            "/+charm-recipes",
+            "new",
+            owner=other_team_url,
+            project=project_url,
+            name="test-charm",
+            git_ref=git_ref_url,
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=401, body=b"Test Person is not a member of Other Team."
+            ),
+        )
 
     def test_cannot_set_private_components_of_public_recipe(self):
         # If a charm recipe is public, then trying to change its owner or
         # git_ref components to be private fails.
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, owner=self.person,
-            git_ref=self.factory.makeGitRefs()[0])
-        private_team = self.factory.makeTeam(
-            owner=self.person, visibility=PersonVisibility.PRIVATE)
-        [private_ref] = self.factory.makeGitRefs(
+            registrant=self.person,
             owner=self.person,
-            information_type=InformationType.PRIVATESECURITY)
+            git_ref=self.factory.makeGitRefs()[0],
+        )
+        private_team = self.factory.makeTeam(
+            owner=self.person, visibility=PersonVisibility.PRIVATE
+        )
+        [private_ref] = self.factory.makeGitRefs(
+            owner=self.person, information_type=InformationType.PRIVATESECURITY
+        )
         recipe_url = api_url(recipe)
         with person_logged_in(self.person):
             private_team_url = api_url(private_team)
             private_ref_url = api_url(private_ref)
         logout()
         private_webservice = webservice_for_person(
-            self.person, permission=OAuthPermission.WRITE_PRIVATE)
+            self.person, permission=OAuthPermission.WRITE_PRIVATE
+        )
         private_webservice.default_api_version = "devel"
         response = private_webservice.patch(
-            recipe_url, "application/json",
-            json.dumps({"owner_link": private_team_url}))
-        self.assertThat(response, MatchesStructure.byEquality(
-            status=400,
-            body=b"A public charm recipe cannot have a private owner."))
+            recipe_url,
+            "application/json",
+            json.dumps({"owner_link": private_team_url}),
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=400,
+                body=b"A public charm recipe cannot have a private owner.",
+            ),
+        )
         response = private_webservice.patch(
-            recipe_url, "application/json",
-            json.dumps({"git_ref_link": private_ref_url}))
-        self.assertThat(response, MatchesStructure.byEquality(
-            status=400,
-            body=b"A public charm recipe cannot have a private repository."))
+            recipe_url,
+            "application/json",
+            json.dumps({"git_ref_link": private_ref_url}),
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=400,
+                body=(
+                    b"A public charm recipe cannot have a private repository."
+                ),
+            ),
+        )
 
     def test_is_stale(self):
         # is_stale is exported and is read-only.
         recipe = self.makeCharmRecipe()
         self.assertTrue(recipe["is_stale"])
         response = self.webservice.patch(
-            recipe["self_link"], "application/json",
-            json.dumps({"is_stale": False}))
+            recipe["self_link"],
+            "application/json",
+            json.dumps({"is_stale": False}),
+        )
         self.assertEqual(400, response.status)
 
     def test_getByName(self):
@@ -1638,8 +2094,12 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
             owner_url = api_url(self.person)
             project_url = api_url(project)
         response = self.webservice.named_get(
-            "/+charm-recipes", "getByName",
-            owner=owner_url, project=project_url, name=name)
+            "/+charm-recipes",
+            "getByName",
+            owner=owner_url,
+            project=project_url,
+            name=name,
+        )
         self.assertEqual(200, response.status)
         self.assertEqual(recipe, response.jsonBody())
 
@@ -1652,65 +2112,90 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
             owner_url = api_url(self.person)
             project_url = api_url(project)
         response = self.webservice.named_get(
-            "/+charm-recipes", "getByName",
-            owner=owner_url, project=project_url, name="nonexistent")
-        self.assertThat(response, MatchesStructure.byEquality(
-            status=404,
-            body=(
-                b"No such charm recipe with this owner and project: "
-                b"'nonexistent'.")))
+            "/+charm-recipes",
+            "getByName",
+            owner=owner_url,
+            project=project_url,
+            name="nonexistent",
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=404,
+                body=(
+                    b"No such charm recipe with this owner and project: "
+                    b"'nonexistent'."
+                ),
+            ),
+        )
 
     @responses.activate
     def assertBeginsAuthorization(self, recipe, **kwargs):
         recipe_url = api_url(recipe)
         root_macaroon = Macaroon(version=2)
         root_macaroon.add_third_party_caveat(
-            "https://candid.test/", "", "identity")
+            "https://candid.test/", "", "identity"
+        )
         root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
         logout()
         responses.add(
-            "POST", "http://charmhub.example/v1/tokens",
-            json={"macaroon": root_macaroon_raw})
+            "POST",
+            "http://charmhub.example/v1/tokens",
+            json={"macaroon": root_macaroon_raw},
+        )
         response = self.webservice.named_post(
-            recipe_url, "beginAuthorization", **kwargs)
+            recipe_url, "beginAuthorization", **kwargs
+        )
         [call] = responses.calls
-        self.assertThat(call.request, MatchesStructure.byEquality(
-            url="http://charmhub.example/v1/tokens", method="POST"))
+        self.assertThat(
+            call.request,
+            MatchesStructure.byEquality(
+                url="http://charmhub.example/v1/tokens", method="POST"
+            ),
+        )
         with person_logged_in(self.person):
             expected_body = {
                 "description": (
-                    "{} for launchpad.test".format(recipe.store_name)),
+                    "{} for launchpad.test".format(recipe.store_name)
+                ),
                 "packages": [{"type": "charm", "name": recipe.store_name}],
                 "permissions": [
                     "package-manage-releases",
                     "package-manage-revisions",
                     "package-view-revisions",
-                    ],
-                }
+                ],
+            }
             self.assertEqual(
-                expected_body, json.loads(call.request.body.decode("UTF-8")))
+                expected_body, json.loads(call.request.body.decode("UTF-8"))
+            )
             self.assertEqual({"root": root_macaroon_raw}, recipe.store_secrets)
         return response, root_macaroon_raw
 
     def test_beginAuthorization(self):
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, store_upload=True,
-            store_name=self.factory.getUniqueUnicode())
+            registrant=self.person,
+            store_upload=True,
+            store_name=self.factory.getUniqueUnicode(),
+        )
         response, root_macaroon_raw = self.assertBeginsAuthorization(recipe)
         self.assertEqual(root_macaroon_raw, response.jsonBody())
 
     def test_beginAuthorization_unauthorized(self):
         # A user without edit access cannot authorize charm recipe uploads.
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, store_upload=True,
-            store_name=self.factory.getUniqueUnicode())
+            registrant=self.person,
+            store_upload=True,
+            store_name=self.factory.getUniqueUnicode(),
+        )
         recipe_url = api_url(recipe)
         other_person = self.factory.makePerson()
         other_webservice = webservice_for_person(
-            other_person, permission=OAuthPermission.WRITE_PUBLIC)
+            other_person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         other_webservice.default_api_version = "devel"
         response = other_webservice.named_post(
-            recipe_url, "beginAuthorization")
+            recipe_url, "beginAuthorization"
+        )
         self.assertEqual(401, response.status)
 
     @responses.activate
@@ -1719,134 +2204,197 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
         self.pushConfig(
             "charms",
             charmhub_secrets_public_key=base64.b64encode(
-                bytes(private_key.public_key)).decode())
+                bytes(private_key.public_key)
+            ).decode(),
+        )
         root_macaroon = Macaroon(version=2)
         root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
         unbound_discharge_macaroon = Macaroon(version=2)
         unbound_discharge_macaroon_raw = unbound_discharge_macaroon.serialize(
-            JsonSerializer())
+            JsonSerializer()
+        )
         discharge_macaroon_raw = root_macaroon.prepare_for_request(
-            unbound_discharge_macaroon).serialize(JsonSerializer())
+            unbound_discharge_macaroon
+        ).serialize(JsonSerializer())
         exchanged_macaroon = Macaroon(version=2)
         exchanged_macaroon_raw = exchanged_macaroon.serialize(JsonSerializer())
         responses.add(
-            "POST", "http://charmhub.example/v1/tokens/exchange",
-            json={"macaroon": exchanged_macaroon_raw})
+            "POST",
+            "http://charmhub.example/v1/tokens/exchange",
+            json={"macaroon": exchanged_macaroon_raw},
+        )
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, store_upload=True,
+            registrant=self.person,
+            store_upload=True,
             store_name=self.factory.getUniqueUnicode(),
-            store_secrets={"root": root_macaroon_raw})
+            store_secrets={"root": root_macaroon_raw},
+        )
         recipe_url = api_url(recipe)
         logout()
         response = self.webservice.named_post(
-            recipe_url, "completeAuthorization",
-            discharge_macaroon=json.dumps(unbound_discharge_macaroon_raw))
+            recipe_url,
+            "completeAuthorization",
+            discharge_macaroon=json.dumps(unbound_discharge_macaroon_raw),
+        )
         self.assertEqual(200, response.status)
         self.pushConfig(
             "charms",
             charmhub_secrets_private_key=base64.b64encode(
-                bytes(private_key)).decode())
+                bytes(private_key)
+            ).decode(),
+        )
         container = getUtility(IEncryptedContainer, "charmhub-secrets")
         with person_logged_in(self.person):
-            self.assertThat(recipe.store_secrets, MatchesDict({
-                "exchanged_encrypted": AfterPreprocessing(
-                    lambda data: container.decrypt(data).decode(),
-                    Equals(exchanged_macaroon_raw)),
-                }))
-        self.assertThat(responses.calls, MatchesListwise([
-            MatchesStructure(
-                request=MatchesStructure(
-                    url=Equals("http://charmhub.example/v1/tokens/exchange"),
-                    method=Equals("POST"),
-                    headers=ContainsDict({
-                        "Macaroons": AfterPreprocessing(
-                            lambda v: json.loads(
-                                base64.b64decode(v.encode()).decode()),
-                            Equals([
-                                json.loads(m) for m in (
+            self.assertThat(
+                recipe.store_secrets,
+                MatchesDict(
+                    {
+                        "exchanged_encrypted": AfterPreprocessing(
+                            lambda data: container.decrypt(data).decode(),
+                            Equals(exchanged_macaroon_raw),
+                        ),
+                    }
+                ),
+            )
+        exchange_matcher = MatchesStructure(
+            url=Equals("http://charmhub.example/v1/tokens/exchange"),
+            method=Equals("POST"),
+            headers=ContainsDict(
+                {
+                    "Macaroons": AfterPreprocessing(
+                        lambda v: json.loads(
+                            base64.b64decode(v.encode()).decode()
+                        ),
+                        Equals(
+                            [
+                                json.loads(m)
+                                for m in (
                                     root_macaroon_raw,
-                                    discharge_macaroon_raw)])),
-                        }),
-                    body=AfterPreprocessing(
-                        lambda b: json.loads(b.decode()),
-                        Equals({})))),
-            ]))
+                                    discharge_macaroon_raw,
+                                )
+                            ]
+                        ),
+                    ),
+                }
+            ),
+            body=AfterPreprocessing(
+                lambda b: json.loads(b.decode()), Equals({})
+            ),
+        )
+        self.assertThat(
+            responses.calls,
+            MatchesListwise([MatchesStructure(request=exchange_matcher)]),
+        )
 
     def test_completeAuthorization_without_beginAuthorization(self):
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, store_upload=True,
-            store_name=self.factory.getUniqueUnicode())
+            registrant=self.person,
+            store_upload=True,
+            store_name=self.factory.getUniqueUnicode(),
+        )
         recipe_url = api_url(recipe)
         logout()
         discharge_macaroon = Macaroon(version=2)
         response = self.webservice.named_post(
-            recipe_url, "completeAuthorization",
+            recipe_url,
+            "completeAuthorization",
             discharge_macaroon=json.dumps(
-                discharge_macaroon.serialize(JsonSerializer())))
-        self.assertThat(response, MatchesStructure.byEquality(
-            status=400,
-            body=(
-                b"beginAuthorization must be called before "
-                b"completeAuthorization.")))
+                discharge_macaroon.serialize(JsonSerializer())
+            ),
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=400,
+                body=(
+                    b"beginAuthorization must be called before "
+                    b"completeAuthorization."
+                ),
+            ),
+        )
 
     def test_completeAuthorization_unauthorized(self):
         root_macaroon = Macaroon(version=2)
         discharge_macaroon = Macaroon(version=2)
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, store_upload=True,
+            registrant=self.person,
+            store_upload=True,
             store_name=self.factory.getUniqueUnicode(),
-            store_secrets={"root": root_macaroon.serialize(JsonSerializer())})
+            store_secrets={"root": root_macaroon.serialize(JsonSerializer())},
+        )
         recipe_url = api_url(recipe)
         other_person = self.factory.makePerson()
         other_webservice = webservice_for_person(
-            other_person, permission=OAuthPermission.WRITE_PUBLIC)
+            other_person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         other_webservice.default_api_version = "devel"
         response = other_webservice.named_post(
-            recipe_url, "completeAuthorization",
+            recipe_url,
+            "completeAuthorization",
             discharge_macaroon=json.dumps(
-                discharge_macaroon.serialize(JsonSerializer())))
+                discharge_macaroon.serialize(JsonSerializer())
+            ),
+        )
         self.assertEqual(401, response.status)
 
     def test_completeAuthorization_malformed_discharge_macaroon(self):
         root_macaroon = Macaroon(version=2)
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, store_upload=True,
+            registrant=self.person,
+            store_upload=True,
             store_name=self.factory.getUniqueUnicode(),
-            store_secrets={"root": root_macaroon.serialize(JsonSerializer())})
+            store_secrets={"root": root_macaroon.serialize(JsonSerializer())},
+        )
         recipe_url = api_url(recipe)
         logout()
         response = self.webservice.named_post(
-            recipe_url, "completeAuthorization",
-            discharge_macaroon="nonsense")
-        self.assertThat(response, MatchesStructure.byEquality(
-            status=400, body=b"Discharge macaroon is invalid."))
+            recipe_url, "completeAuthorization", discharge_macaroon="nonsense"
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=400, body=b"Discharge macaroon is invalid."
+            ),
+        )
 
-    def makeBuildableDistroArchSeries(self, distroseries=None,
-                                      architecturetag=None, processor=None,
-                                      supports_virtualized=True,
-                                      supports_nonvirtualized=True, **kwargs):
+    def makeBuildableDistroArchSeries(
+        self,
+        distroseries=None,
+        architecturetag=None,
+        processor=None,
+        supports_virtualized=True,
+        supports_nonvirtualized=True,
+        **kwargs
+    ):
         if architecturetag is None:
             architecturetag = self.factory.getUniqueUnicode("arch")
         if processor is None:
             try:
                 processor = getUtility(IProcessorSet).getByName(
-                    architecturetag)
+                    architecturetag
+                )
             except ProcessorNotFound:
                 processor = self.factory.makeProcessor(
                     name=architecturetag,
                     supports_virtualized=supports_virtualized,
-                    supports_nonvirtualized=supports_nonvirtualized)
+                    supports_nonvirtualized=supports_nonvirtualized,
+                )
         das = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag=architecturetag,
-            processor=processor, **kwargs)
+            distroseries=distroseries,
+            architecturetag=architecturetag,
+            processor=processor,
+            **kwargs,
+        )
         # Add both a chroot and a LXD image to test that
         # getAllowedArchitectures doesn't get confused by multiple
         # PocketChroot rows for a single DistroArchSeries.
         fake_chroot = self.factory.makeLibraryFileAlias(
-            filename="fake_chroot.tar.gz", db_only=True)
+            filename="fake_chroot.tar.gz", db_only=True
+        )
         das.addOrUpdateChroot(fake_chroot)
         fake_lxd = self.factory.makeLibraryFileAlias(
-            filename="fake_lxd.tar.gz", db_only=True)
+            filename="fake_lxd.tar.gz", db_only=True
+        )
         das.addOrUpdateChroot(fake_lxd, image_type=BuildBaseImageType.LXD)
         return das
 
@@ -1856,42 +2404,58 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
         # the status of the asynchronous job.
         distroseries = self.factory.makeDistroSeries(
             distribution=getUtility(ILaunchpadCelebrities).ubuntu,
-            registrant=self.person)
+            registrant=self.person,
+        )
         processors = [
             self.factory.makeProcessor(supports_virtualized=True)
-            for _ in range(3)]
+            for _ in range(3)
+        ]
         for processor in processors:
             self.makeBuildableDistroArchSeries(
-                distroseries=distroseries, architecturetag=processor.name,
-                processor=processor, owner=self.person)
+                distroseries=distroseries,
+                architecturetag=processor.name,
+                processor=processor,
+                owner=self.person,
+            )
         [git_ref] = self.factory.makeGitRefs()
         recipe = self.makeCharmRecipe(git_ref=git_ref)
         now = get_transaction_timestamp(IStore(distroseries))
         response = self.webservice.named_post(
-            recipe["self_link"], "requestBuilds",
-            channels={"charmcraft": "edge"})
+            recipe["self_link"],
+            "requestBuilds",
+            channels={"charmcraft": "edge"},
+        )
         self.assertEqual(201, response.status)
         build_request_url = response.getHeader("Location")
         build_request = self.webservice.get(build_request_url).jsonBody()
-        self.assertThat(build_request, ContainsDict({
-            "date_requested": AfterPreprocessing(
-                iso8601.parse_date, GreaterThan(now)),
-            "date_finished": Is(None),
-            "recipe_link": Equals(recipe["self_link"]),
-            "status": Equals("Pending"),
-            "error_message": Is(None),
-            "builds_collection_link": Equals(build_request_url + "/builds"),
-            }))
+        self.assertThat(
+            build_request,
+            ContainsDict(
+                {
+                    "date_requested": AfterPreprocessing(
+                        iso8601.parse_date, GreaterThan(now)
+                    ),
+                    "date_finished": Is(None),
+                    "recipe_link": Equals(recipe["self_link"]),
+                    "status": Equals("Pending"),
+                    "error_message": Is(None),
+                    "builds_collection_link": Equals(
+                        build_request_url + "/builds"
+                    ),
+                }
+            ),
+        )
         self.assertEqual([], self.getCollectionLinks(build_request, "builds"))
         with person_logged_in(self.person):
             charmcraft_yaml = "bases:\n"
             for processor in processors:
                 charmcraft_yaml += (
-                    '  - build-on:\n'
-                    '    - name: ubuntu\n'
+                    "  - build-on:\n"
+                    "    - name: ubuntu\n"
                     '      channel: "%s"\n'
-                    '      architectures: [%s]\n' %
-                    (distroseries.version, processor.name))
+                    "      architectures: [%s]\n"
+                    % (distroseries.version, processor.name)
+                )
             self.useFixture(GitHostingFixture(blob=charmcraft_yaml))
             [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
             with dbuser(config.ICharmRecipeRequestBuildsJobSource.dbuser):
@@ -1899,30 +2463,50 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
         date_requested = iso8601.parse_date(build_request["date_requested"])
         now = get_transaction_timestamp(IStore(distroseries))
         build_request = self.webservice.get(
-            build_request["self_link"]).jsonBody()
-        self.assertThat(build_request, ContainsDict({
-            "date_requested": AfterPreprocessing(
-                iso8601.parse_date, Equals(date_requested)),
-            "date_finished": AfterPreprocessing(
-                iso8601.parse_date,
-                MatchesAll(GreaterThan(date_requested), LessThan(now))),
-            "recipe_link": Equals(recipe["self_link"]),
-            "status": Equals("Completed"),
-            "error_message": Is(None),
-            "builds_collection_link": Equals(build_request_url + "/builds"),
-            }))
-        builds = self.webservice.get(
-            build_request["builds_collection_link"]).jsonBody()["entries"]
-        with person_logged_in(self.person):
-            self.assertThat(builds, MatchesSetwise(*(
-                ContainsDict({
+            build_request["self_link"]
+        ).jsonBody()
+        self.assertThat(
+            build_request,
+            ContainsDict(
+                {
+                    "date_requested": AfterPreprocessing(
+                        iso8601.parse_date, Equals(date_requested)
+                    ),
+                    "date_finished": AfterPreprocessing(
+                        iso8601.parse_date,
+                        MatchesAll(GreaterThan(date_requested), LessThan(now)),
+                    ),
                     "recipe_link": Equals(recipe["self_link"]),
-                    "archive_link": Equals(
-                        self.getURL(distroseries.main_archive)),
-                    "arch_tag": Equals(processor.name),
-                    "channels": Equals({"charmcraft": "edge"}),
-                    })
-                for processor in processors)))
+                    "status": Equals("Completed"),
+                    "error_message": Is(None),
+                    "builds_collection_link": Equals(
+                        build_request_url + "/builds"
+                    ),
+                }
+            ),
+        )
+        builds = self.webservice.get(
+            build_request["builds_collection_link"]
+        ).jsonBody()["entries"]
+        with person_logged_in(self.person):
+            self.assertThat(
+                builds,
+                MatchesSetwise(
+                    *(
+                        ContainsDict(
+                            {
+                                "recipe_link": Equals(recipe["self_link"]),
+                                "archive_link": Equals(
+                                    self.getURL(distroseries.main_archive)
+                                ),
+                                "arch_tag": Equals(processor.name),
+                                "channels": Equals({"charmcraft": "edge"}),
+                            }
+                        )
+                        for processor in processors
+                    )
+                ),
+            )
 
     def test_requestBuilds_failure(self):
         # If the asynchronous build request job fails, this is reflected in
@@ -1931,41 +2515,61 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
         recipe = self.makeCharmRecipe(git_ref=git_ref)
         now = get_transaction_timestamp(IStore(git_ref))
         response = self.webservice.named_post(
-            recipe["self_link"], "requestBuilds")
+            recipe["self_link"], "requestBuilds"
+        )
         self.assertEqual(201, response.status)
         build_request_url = response.getHeader("Location")
         build_request = self.webservice.get(build_request_url).jsonBody()
-        self.assertThat(build_request, ContainsDict({
-            "date_requested": AfterPreprocessing(
-                iso8601.parse_date, GreaterThan(now)),
-            "date_finished": Is(None),
-            "recipe_link": Equals(recipe["self_link"]),
-            "status": Equals("Pending"),
-            "error_message": Is(None),
-            "builds_collection_link": Equals(build_request_url + "/builds"),
-            }))
+        self.assertThat(
+            build_request,
+            ContainsDict(
+                {
+                    "date_requested": AfterPreprocessing(
+                        iso8601.parse_date, GreaterThan(now)
+                    ),
+                    "date_finished": Is(None),
+                    "recipe_link": Equals(recipe["self_link"]),
+                    "status": Equals("Pending"),
+                    "error_message": Is(None),
+                    "builds_collection_link": Equals(
+                        build_request_url + "/builds"
+                    ),
+                }
+            ),
+        )
         self.assertEqual([], self.getCollectionLinks(build_request, "builds"))
         with person_logged_in(self.person):
             self.useFixture(GitHostingFixture()).getBlob.failure = Exception(
-                "Something went wrong")
+                "Something went wrong"
+            )
             [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
             with dbuser(config.ICharmRecipeRequestBuildsJobSource.dbuser):
                 JobRunner([job]).runAll()
         date_requested = iso8601.parse_date(build_request["date_requested"])
         now = get_transaction_timestamp(IStore(git_ref))
         build_request = self.webservice.get(
-            build_request["self_link"]).jsonBody()
-        self.assertThat(build_request, ContainsDict({
-            "date_requested": AfterPreprocessing(
-                iso8601.parse_date, Equals(date_requested)),
-            "date_finished": AfterPreprocessing(
-                iso8601.parse_date,
-                MatchesAll(GreaterThan(date_requested), LessThan(now))),
-            "recipe_link": Equals(recipe["self_link"]),
-            "status": Equals("Failed"),
-            "error_message": Equals("Something went wrong"),
-            "builds_collection_link": Equals(build_request_url + "/builds"),
-            }))
+            build_request["self_link"]
+        ).jsonBody()
+        self.assertThat(
+            build_request,
+            ContainsDict(
+                {
+                    "date_requested": AfterPreprocessing(
+                        iso8601.parse_date, Equals(date_requested)
+                    ),
+                    "date_finished": AfterPreprocessing(
+                        iso8601.parse_date,
+                        MatchesAll(GreaterThan(date_requested), LessThan(now)),
+                    ),
+                    "recipe_link": Equals(recipe["self_link"]),
+                    "status": Equals("Failed"),
+                    "error_message": Equals("Something went wrong"),
+                    "builds_collection_link": Equals(
+                        build_request_url + "/builds"
+                    ),
+                }
+            ),
+        )
         self.assertEqual([], self.getCollectionLinks(build_request, "builds"))
 
     def test_requestBuilds_not_owner(self):
@@ -1973,20 +2577,29 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
         # build requests are rejected.
         other_team = self.factory.makeTeam(
             displayname="Other Team",
-            membership_policy=TeamMembershipPolicy.RESTRICTED)
+            membership_policy=TeamMembershipPolicy.RESTRICTED,
+        )
         other_webservice = webservice_for_person(
-            other_team.teamowner, permission=OAuthPermission.WRITE_PUBLIC)
+            other_team.teamowner, permission=OAuthPermission.WRITE_PUBLIC
+        )
         other_webservice.default_api_version = "devel"
         login(ANONYMOUS)
         recipe = self.makeCharmRecipe(
-            owner=other_team, webservice=other_webservice)
+            owner=other_team, webservice=other_webservice
+        )
         response = self.webservice.named_post(
-            recipe["self_link"], "requestBuilds")
-        self.assertThat(response, MatchesStructure.byEquality(
-            status=401,
-            body=(
-                b"Test Person cannot create charm recipe builds owned by "
-                b"Other Team.")))
+            recipe["self_link"], "requestBuilds"
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=401,
+                body=(
+                    b"Test Person cannot create charm recipe builds owned by "
+                    b"Other Team."
+                ),
+            ),
+        )
 
     def test_getBuilds(self):
         # The builds, completed_builds, and pending_builds properties are as
@@ -1994,27 +2607,34 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
         project = self.factory.makeProduct(owner=self.person)
         distroseries = self.factory.makeDistroSeries(
             distribution=getUtility(ILaunchpadCelebrities).ubuntu,
-            registrant=self.person)
+            registrant=self.person,
+        )
         processors = [
             self.factory.makeProcessor(supports_virtualized=True)
-            for _ in range(4)]
+            for _ in range(4)
+        ]
         for processor in processors:
             self.makeBuildableDistroArchSeries(
-                distroseries=distroseries, architecturetag=processor.name,
-                processor=processor, owner=self.person)
+                distroseries=distroseries,
+                architecturetag=processor.name,
+                processor=processor,
+                owner=self.person,
+            )
         recipe = self.makeCharmRecipe(project=project)
         response = self.webservice.named_post(
-            recipe["self_link"], "requestBuilds")
+            recipe["self_link"], "requestBuilds"
+        )
         self.assertEqual(201, response.status)
         with person_logged_in(self.person):
             charmcraft_yaml = "bases:\n"
             for processor in processors:
                 charmcraft_yaml += (
-                    '  - build-on:\n'
-                    '    - name: ubuntu\n'
+                    "  - build-on:\n"
+                    "    - name: ubuntu\n"
                     '      channel: "%s"\n'
-                    '      architectures: [%s]\n' %
-                    (distroseries.version, processor.name))
+                    "      architectures: [%s]\n"
+                    % (distroseries.version, processor.name)
+                )
             self.useFixture(GitHostingFixture(blob=charmcraft_yaml))
             [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
             with dbuser(config.ICharmRecipeRequestBuildsJobSource.dbuser):
@@ -2022,48 +2642,61 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
         builds = self.getCollectionLinks(recipe, "builds")
         self.assertEqual(len(processors), len(builds))
         self.assertEqual(
-            [], self.getCollectionLinks(recipe, "completed_builds"))
+            [], self.getCollectionLinks(recipe, "completed_builds")
+        )
         self.assertEqual(
-            builds, self.getCollectionLinks(recipe, "pending_builds"))
+            builds, self.getCollectionLinks(recipe, "pending_builds")
+        )
 
         with person_logged_in(self.person):
             db_recipe = getUtility(ICharmRecipeSet).getByName(
-                self.person, project, recipe["name"])
+                self.person, project, recipe["name"]
+            )
             db_builds = list(db_recipe.builds)
             db_builds[0].updateStatus(
-                BuildStatus.BUILDING, date_started=db_recipe.date_created)
+                BuildStatus.BUILDING, date_started=db_recipe.date_created
+            )
             db_builds[0].updateStatus(
                 BuildStatus.FULLYBUILT,
-                date_finished=db_recipe.date_created + timedelta(minutes=10))
+                date_finished=db_recipe.date_created + timedelta(minutes=10),
+            )
         # Builds that have not yet been started are listed last.  This does
         # mean that pending builds that have never been started are sorted
         # to the end, but means that builds that were cancelled before
         # starting don't pollute the start of the collection forever.
         self.assertEqual(builds, self.getCollectionLinks(recipe, "builds"))
         self.assertEqual(
-            builds[:1], self.getCollectionLinks(recipe, "completed_builds"))
+            builds[:1], self.getCollectionLinks(recipe, "completed_builds")
+        )
         self.assertEqual(
-            builds[1:], self.getCollectionLinks(recipe, "pending_builds"))
+            builds[1:], self.getCollectionLinks(recipe, "pending_builds")
+        )
 
         with person_logged_in(self.person):
             db_builds[1].updateStatus(
-                BuildStatus.BUILDING, date_started=db_recipe.date_created)
+                BuildStatus.BUILDING, date_started=db_recipe.date_created
+            )
             db_builds[1].updateStatus(
                 BuildStatus.FULLYBUILT,
-                date_finished=db_recipe.date_created + timedelta(minutes=20))
+                date_finished=db_recipe.date_created + timedelta(minutes=20),
+            )
         self.assertEqual(
             [builds[1], builds[0], builds[2], builds[3]],
-            self.getCollectionLinks(recipe, "builds"))
+            self.getCollectionLinks(recipe, "builds"),
+        )
         self.assertEqual(
             [builds[1], builds[0]],
-            self.getCollectionLinks(recipe, "completed_builds"))
+            self.getCollectionLinks(recipe, "completed_builds"),
+        )
         self.assertEqual(
-            builds[2:], self.getCollectionLinks(recipe, "pending_builds"))
+            builds[2:], self.getCollectionLinks(recipe, "pending_builds")
+        )
 
     def test_query_count(self):
         # CharmRecipe has a reasonable query count.
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, owner=self.person)
+            registrant=self.person, owner=self.person
+        )
         url = api_url(recipe)
         logout()
         store = Store.of(recipe)
@@ -2079,21 +2712,27 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
         self.pushConfig("charms", charmhub_url="http://charmhub.example/")
         distroseries = self.factory.makeDistroSeries(
             distribution=getUtility(ILaunchpadCelebrities).ubuntu,
-            registrant=self.person)
+            registrant=self.person,
+        )
         processor = self.factory.makeProcessor(supports_virtualized=True)
         das = self.makeBuildableDistroArchSeries(
-            distroseries=distroseries, architecturetag=processor.name,
-            processor=processor, owner=self.person)
+            distroseries=distroseries,
+            architecturetag=processor.name,
+            processor=processor,
+            owner=self.person,
+        )
         with person_logged_in(self.person):
             recipe = self.factory.makeCharmRecipe(
-                registrant=self.person, owner=self.person)
+                registrant=self.person, owner=self.person
+            )
             recipe.store_name = self.factory.getUniqueUnicode()
             recipe.store_upload = True
             # CharmRecipe.can_upload_to_store only checks whether
             # "exchanged_encrypted" is present, so don't bother setting up
             # encryption keys here.
             recipe.store_secrets = {
-                "exchanged_encrypted": Macaroon().serialize()}
+                "exchanged_encrypted": Macaroon().serialize()
+            }
         builds_url = "%s/builds" % api_url(recipe)
         logout()
 
@@ -2101,16 +2740,20 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
             with person_logged_in(self.person):
                 builder = self.factory.makeBuilder()
                 build_request = self.factory.makeCharmRecipeBuildRequest(
-                    recipe=recipe)
+                    recipe=recipe
+                )
                 build = recipe.requestBuild(build_request, das)
                 with dbuser(config.builddmaster.dbuser):
                     build.updateStatus(
-                        BuildStatus.BUILDING, date_started=recipe.date_created)
+                        BuildStatus.BUILDING, date_started=recipe.date_created
+                    )
                     build.updateStatus(
                         BuildStatus.FULLYBUILT,
                         builder=builder,
                         date_finished=(
-                            recipe.date_created + timedelta(minutes=10)))
+                            recipe.date_created + timedelta(minutes=10)
+                        ),
+                    )
                 return build
 
         def get_builds():

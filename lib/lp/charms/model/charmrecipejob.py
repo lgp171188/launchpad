@@ -7,53 +7,37 @@ __all__ = [
     "CharmRecipeJob",
     "CharmRecipeJobType",
     "CharmRecipeRequestBuildsJob",
-    ]
+]
 
-from lazr.delegates import delegate_to
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
-from storm.databases.postgres import JSON
-from storm.locals import (
-    Desc,
-    Int,
-    Reference,
-    )
-from storm.store import EmptyResultSet
 import transaction
+from lazr.delegates import delegate_to
+from lazr.enum import DBEnumeratedType, DBItem
+from storm.databases.postgres import JSON
+from storm.locals import Desc, Int, Reference
+from storm.store import EmptyResultSet
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 
 from lp.app.errors import NotFoundError
 from lp.charms.interfaces.charmrecipe import (
     CannotFetchCharmcraftYaml,
     CannotParseCharmcraftYaml,
     MissingCharmcraftYaml,
-    )
+)
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeJob,
     ICharmRecipeRequestBuildsJob,
     ICharmRecipeRequestBuildsJobSource,
-    )
+)
 from lp.charms.model.charmrecipebuild import CharmRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.job.model.job import (
-    EnumeratedSubclass,
-    Job,
-    )
+from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.mail.sendmail import format_address_for_person
 from lp.services.propertycache import cachedproperty
@@ -63,11 +47,14 @@ from lp.services.scripts import log
 class CharmRecipeJobType(DBEnumeratedType):
     """Values that `ICharmRecipeJob.job_type` can take."""
 
-    REQUEST_BUILDS = DBItem(0, """
+    REQUEST_BUILDS = DBItem(
+        0,
+        """
         Request builds
 
         This job requests builds of a charm recipe.
-        """)
+        """,
+    )
 
 
 @implementer(ICharmRecipeJob)
@@ -83,7 +70,8 @@ class CharmRecipeJob(StormBase):
     recipe = Reference(recipe_id, "CharmRecipe.id")
 
     job_type = DBEnum(
-        name="job_type", enum=CharmRecipeJobType, allow_none=False)
+        name="job_type", enum=CharmRecipeJobType, allow_none=False
+    )
 
     metadata = JSON("json_data", allow_none=False)
 
@@ -110,15 +98,17 @@ class CharmRecipeJob(StormBase):
 
 @delegate_to(ICharmRecipeJob)
 class CharmRecipeJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
-
     def __init__(self, recipe_job):
         self.context = recipe_job
 
     def __repr__(self):
         """An informative representation of the job."""
         return "<%s for ~%s/%s/+charm/%s>" % (
-            self.__class__.__name__, self.recipe.owner.name,
-            self.recipe.project.name, self.recipe.name)
+            self.__class__.__name__,
+            self.recipe.owner.name,
+            self.recipe.project.name,
+            self.recipe.name,
+        )
 
     @classmethod
     def get(cls, job_id):
@@ -132,8 +122,9 @@ class CharmRecipeJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
         recipe_job = IStore(CharmRecipeJob).get(CharmRecipeJob, job_id)
         if recipe_job.job_type != cls.class_job_type:
             raise NotFoundError(
-                "No object found with id %d and type %s" %
-                (job_id, cls.class_job_type.title))
+                "No object found with id %d and type %s"
+                % (job_id, cls.class_job_type.title)
+            )
         return cls(recipe_job)
 
     @classmethod
@@ -143,19 +134,22 @@ class CharmRecipeJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
             CharmRecipeJob,
             CharmRecipeJob.job_type == cls.class_job_type,
             CharmRecipeJob.job == Job.id,
-            Job.id.is_in(Job.ready_jobs))
+            Job.id.is_in(Job.ready_jobs),
+        )
         return (cls(job) for job in jobs)
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
         oops_vars = super().getOopsVars()
-        oops_vars.extend([
-            ("job_id", self.context.job.id),
-            ("job_type", self.context.job_type.title),
-            ("recipe_owner_name", self.context.recipe.owner.name),
-            ("recipe_project_name", self.context.recipe.project.name),
-            ("recipe_name", self.context.recipe.name),
-            ])
+        oops_vars.extend(
+            [
+                ("job_id", self.context.job.id),
+                ("job_type", self.context.job_type.title),
+                ("recipe_owner_name", self.context.recipe.owner.name),
+                ("recipe_project_name", self.context.recipe.project.name),
+                ("recipe_name", self.context.recipe.name),
+            ]
+        )
         return oops_vars
 
 
@@ -169,7 +163,7 @@ class CharmRecipeRequestBuildsJob(CharmRecipeJobDerived):
     user_error_types = (
         CannotParseCharmcraftYaml,
         MissingCharmcraftYaml,
-        )
+    )
     retry_error_types = (CannotFetchCharmcraftYaml,)
 
     max_retries = 5
@@ -185,8 +179,9 @@ class CharmRecipeRequestBuildsJob(CharmRecipeJobDerived):
             # Really a set or None, but sets aren't directly
             # JSON-serialisable.
             "architectures": (
-                list(architectures) if architectures is not None else None),
-            }
+                list(architectures) if architectures is not None else None
+            ),
+        }
         recipe_job = CharmRecipeJob(recipe, cls.class_job_type, metadata)
         job = cls(recipe_job)
         job.celeryRunOnCommit()
@@ -198,36 +193,49 @@ class CharmRecipeRequestBuildsJob(CharmRecipeJobDerived):
         clauses = [
             CharmRecipeJob.recipe == recipe,
             CharmRecipeJob.job_type == cls.class_job_type,
-            ]
+        ]
         if statuses is not None:
-            clauses.extend([
-                CharmRecipeJob.job == Job.id,
-                Job._status.is_in(statuses),
-                ])
+            clauses.extend(
+                [
+                    CharmRecipeJob.job == Job.id,
+                    Job._status.is_in(statuses),
+                ]
+            )
         if job_ids is not None:
             clauses.append(CharmRecipeJob.job_id.is_in(job_ids))
-        recipe_jobs = IStore(CharmRecipeJob).find(
-            CharmRecipeJob, *clauses).order_by(Desc(CharmRecipeJob.job_id))
+        recipe_jobs = (
+            IStore(CharmRecipeJob)
+            .find(CharmRecipeJob, *clauses)
+            .order_by(Desc(CharmRecipeJob.job_id))
+        )
 
         def preload_jobs(rows):
             load_related(Job, rows, ["job_id"])
 
         return DecoratedResultSet(
-            recipe_jobs, lambda recipe_job: cls(recipe_job),
-            pre_iter_hook=preload_jobs)
+            recipe_jobs,
+            lambda recipe_job: cls(recipe_job),
+            pre_iter_hook=preload_jobs,
+        )
 
     @classmethod
     def getByRecipeAndID(cls, recipe, job_id):
         """See `ICharmRecipeRequestBuildsJobSource`."""
-        recipe_job = IStore(CharmRecipeJob).find(
-            CharmRecipeJob,
-            CharmRecipeJob.job_id == job_id,
-            CharmRecipeJob.recipe == recipe,
-            CharmRecipeJob.job_type == cls.class_job_type).one()
+        recipe_job = (
+            IStore(CharmRecipeJob)
+            .find(
+                CharmRecipeJob,
+                CharmRecipeJob.job_id == job_id,
+                CharmRecipeJob.recipe == recipe,
+                CharmRecipeJob.job_type == cls.class_job_type,
+            )
+            .one()
+        )
         if recipe_job is None:
             raise NotFoundError(
-                "No REQUEST_BUILDS job with ID %d found for %r" %
-                (job_id, recipe))
+                "No REQUEST_BUILDS job with ID %d found for %r"
+                % (job_id, recipe)
+            )
         return cls(recipe_job)
 
     def getOperationDescription(self):
@@ -286,7 +294,8 @@ class CharmRecipeRequestBuildsJob(CharmRecipeJobDerived):
         build_ids = self.metadata.get("builds")
         if build_ids:
             return IStore(CharmRecipeBuild).find(
-                CharmRecipeBuild, CharmRecipeBuild.id.is_in(build_ids))
+                CharmRecipeBuild, CharmRecipeBuild.id.is_in(build_ids)
+            )
         else:
             return EmptyResultSet()
 
@@ -300,12 +309,16 @@ class CharmRecipeRequestBuildsJob(CharmRecipeJobDerived):
         requester = self.requester
         if requester is None:
             log.info(
-                "Skipping %r because the requester has been deleted." % self)
+                "Skipping %r because the requester has been deleted." % self
+            )
             return
         try:
             self.builds = self.recipe.requestBuildsFromJob(
-                self.build_request, channels=self.channels,
-                architectures=self.architectures, logger=log)
+                self.build_request,
+                channels=self.channels,
+                architectures=self.architectures,
+                logger=log,
+            )
             self.error_message = None
         except Exception as e:
             self.error_message = str(e)

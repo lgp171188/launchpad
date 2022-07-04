@@ -5,17 +5,11 @@
 
 __all__ = [
     "CharmBase",
-    ]
+]
 
 import pytz
 from storm.databases.postgres import JSON
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    Store,
-    Storm,
-    )
+from storm.locals import DateTime, Int, Reference, Store, Storm
 from zope.interface import implementer
 
 from lp.buildmaster.model.processor import Processor
@@ -24,12 +18,9 @@ from lp.charms.interfaces.charmbase import (
     ICharmBase,
     ICharmBaseSet,
     NoSuchCharmBase,
-    )
+)
 from lp.services.database.constants import DEFAULT
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 
 
 @implementer(ICharmBase)
@@ -41,7 +32,8 @@ class CharmBase(Storm):
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False)
+        name="date_created", tzinfo=pytz.UTC, allow_none=False
+    )
 
     registrant_id = Int(name="registrant", allow_none=False)
     registrant = Reference(registrant_id, "Person.id")
@@ -51,8 +43,13 @@ class CharmBase(Storm):
 
     build_snap_channels = JSON(name="build_snap_channels", allow_none=False)
 
-    def __init__(self, registrant, distro_series, build_snap_channels,
-                 date_created=DEFAULT):
+    def __init__(
+        self,
+        registrant,
+        distro_series,
+        build_snap_channels,
+        date_created=DEFAULT,
+    ):
         super().__init__()
         self.registrant = registrant
         self.distro_series = distro_series
@@ -60,17 +57,23 @@ class CharmBase(Storm):
         self.date_created = date_created
 
     def _getProcessors(self):
-        return list(Store.of(self).find(
-            Processor,
-            Processor.id == CharmBaseArch.processor_id,
-            CharmBaseArch.charm_base == self))
+        return list(
+            Store.of(self).find(
+                Processor,
+                Processor.id == CharmBaseArch.processor_id,
+                CharmBaseArch.charm_base == self,
+            )
+        )
 
     def setProcessors(self, processors):
         """See `ICharmBase`."""
-        enablements = dict(Store.of(self).find(
-            (Processor, CharmBaseArch),
-            Processor.id == CharmBaseArch.processor_id,
-            CharmBaseArch.charm_base == self))
+        enablements = dict(
+            Store.of(self).find(
+                (Processor, CharmBaseArch),
+                Processor.id == CharmBaseArch.processor_id,
+                CharmBaseArch.charm_base == self,
+            )
+        )
         for proc in enablements:
             if proc not in processors:
                 Store.of(self).remove(enablements[proc])
@@ -105,8 +108,14 @@ class CharmBaseArch(Storm):
 class CharmBaseSet:
     """See `ICharmBaseSet`."""
 
-    def new(self, registrant, distro_series, build_snap_channels,
-            processors=None, date_created=DEFAULT):
+    def new(
+        self,
+        registrant,
+        distro_series,
+        build_snap_channels,
+        processors=None,
+        date_created=DEFAULT,
+    ):
         """See `ICharmBaseSet`."""
         try:
             self.getByDistroSeries(distro_series)
@@ -116,12 +125,16 @@ class CharmBaseSet:
             raise DuplicateCharmBase(distro_series)
         store = IMasterStore(CharmBase)
         charm_base = CharmBase(
-            registrant, distro_series, build_snap_channels,
-            date_created=date_created)
+            registrant,
+            distro_series,
+            build_snap_channels,
+            date_created=date_created,
+        )
         store.add(charm_base)
         if processors is None:
             processors = [
-                das.processor for das in distro_series.enabled_architectures]
+                das.processor for das in distro_series.enabled_architectures
+            ]
         charm_base.setProcessors(processors)
         return charm_base
 
@@ -135,13 +148,19 @@ class CharmBaseSet:
 
     def getByDistroSeries(self, distro_series):
         """See `ICharmBaseSet`."""
-        charm_base = IStore(CharmBase).find(
-            CharmBase, distro_series=distro_series).one()
+        charm_base = (
+            IStore(CharmBase)
+            .find(CharmBase, distro_series=distro_series)
+            .one()
+        )
         if charm_base is None:
             raise NoSuchCharmBase(distro_series)
         return charm_base
 
     def getAll(self):
         """See `ICharmBaseSet`."""
-        return IStore(CharmBase).find(CharmBase).order_by(
-            CharmBase.distro_series_id)
+        return (
+            IStore(CharmBase)
+            .find(CharmBase)
+            .order_by(CharmBase.distro_series_id)
+        )
