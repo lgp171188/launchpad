@@ -1728,8 +1728,8 @@ class Archive(SQLBase):
                 clauses = (
                     SourcePackagePublishingHistory.archive == self.id,
                     SourcePackagePublishingHistory.sourcepackagereleaseID ==
-                        PackageDiff.to_sourceID,
-                    PackageDiff.diff_contentID == LibraryFileAlias.id,
+                        PackageDiff.to_source_id,
+                    PackageDiff.diff_content_id == LibraryFileAlias.id,
                     )
                 package_diff_file = do_query()
                 if package_diff_file is not None:

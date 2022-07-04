@@ -43,6 +43,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     cursor,
     SQLBase,
@@ -400,8 +401,9 @@ class SourcePackageRelease(SQLBase):
 
     def getDiffTo(self, to_sourcepackagerelease):
         """See ISourcePackageRelease."""
-        return PackageDiff.selectOneBy(
-            from_source=self, to_source=to_sourcepackagerelease)
+        return IStore(PackageDiff).find(
+            PackageDiff,
+            from_source=self, to_source=to_sourcepackagerelease).one()
 
     def requestDiffTo(self, requester, to_sourcepackagerelease):
         """See ISourcePackageRelease."""
@@ -416,6 +418,7 @@ class SourcePackageRelease(SQLBase):
         packagediff = PackageDiff(
             from_source=self, to_source=to_sourcepackagerelease,
             requester=requester)
+        IStore(packagediff).flush()
         getUtility(IPackageDiffJobSource).create(packagediff)
         return packagediff
 

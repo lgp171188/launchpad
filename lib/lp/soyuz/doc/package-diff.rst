@@ -74,7 +74,7 @@ Its main attributes are:
     pmount - 0.1-2
 
 The PackageDiff record is not yet 'performed', so 'status' is PENDING
-and both 'date_fullfiled' and 'diff_content' fields are empty.
+and both 'date_fulfilled' and 'diff_content' fields are empty.
 
     >>> print(package_diff.date_fulfilled)
     None
@@ -315,7 +315,7 @@ was uploaded.
     >>> [diff] = biscuit_eight_pub.sourcepackagerelease.package_diffs
 
 The PackageDiff record is not yet 'performed', so both,
-'date_fullfiled' and 'diff_content' fields, are empty and 'status' is
+'date_fulfilled' and 'diff_content' fields, are empty and 'status' is
 PENDING.
 
     >>> print(diff.status.name)
@@ -332,7 +332,7 @@ Performing the diff.
     >>> diff.performDiff()
 
 The record is immediatelly updated, now the record contains a
-'date_fullfilled', its status is COMPLETED and 'diff_content' points
+'date_fulfilled', its status is COMPLETED and 'diff_content' points
 to a LibraryFileAlias with a proper mimetype.
 
     >>> diff.date_fulfilled is not None
@@ -636,7 +636,7 @@ uploaded source.
     diff from 1.0-1 (in Ubuntu) to 1.0-2
 
 With a tainted DSC 'debdiff' cannot do much and fails, resulting in a
-FAILED request (empty 'diff_content' and 'date_fullfilled').
+FAILED request (empty 'diff_content' and 'date_fulfilled').
 
     >>> broken_diff.performDiff()
     >>> transaction.commit()

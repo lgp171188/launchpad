@@ -61,7 +61,6 @@ lib/canonical/launchpad/apidoc
 librarian.log
 configs/testrunner_*
 configs/testrunner-appserver_*
-doc/_build
 .idea
 run.gdb
 lib/canonical/launchpad/icing/*-sprites-*.png

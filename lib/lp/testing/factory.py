@@ -4621,11 +4621,13 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             diff_content = self.getUniqueBytes("packagediff")
         lfa = self.makeLibraryFileAlias(
             filename=diff_filename, content=diff_content)
-        return ProxyFactory(
+        package_diff = ProxyFactory(
             PackageDiff(
                 requester=requester, from_source=from_source,
                 to_source=to_source, date_fulfilled=date_fulfilled,
                 status=status, diff_content=lfa))
+        IStore(package_diff).flush()
+        return package_diff
 
     # Factory methods for OAuth tokens.
     def makeOAuthConsumer(self, key=None, secret=None):
