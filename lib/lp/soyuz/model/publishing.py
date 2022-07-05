@@ -327,10 +327,11 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
             return None
         return channel_list_to_string(*self._channel)
 
-    def getPublishedBinaries(self):
+    def getPublishedBinaries(self, active_binaries_only=True):
         """See `ISourcePackagePublishingHistory`."""
         publishing_set = getUtility(IPublishingSet)
-        result_set = publishing_set.getBinaryPublicationsForSources(self)
+        result_set = publishing_set.getBinaryPublicationsForSources(
+            self, active_binaries_only=active_binaries_only)
         return DecoratedResultSet(result_set, result_decorator=itemgetter(1))
 
     def getBuiltBinaries(self, want_files=False):
@@ -1584,7 +1585,8 @@ class PublishingSet:
 
         return result_set
 
-    def getBinaryPublicationsForSources(self, one_or_more_source_publications):
+    def getBinaryPublicationsForSources(self, one_or_more_source_publications,
+                                        active_binaries_only=True):
         """See `IPublishingSet`."""
         source_publication_ids = self._extractIDs(
             one_or_more_source_publications)
@@ -1592,7 +1594,9 @@ class PublishingSet:
         result_set = IStore(SourcePackagePublishingHistory).find(
             (SourcePackagePublishingHistory, BinaryPackagePublishingHistory,
              BinaryPackageRelease, BinaryPackageName, DistroArchSeries),
-            self._getSourceBinaryJoinForSources(source_publication_ids))
+            self._getSourceBinaryJoinForSources(
+                source_publication_ids,
+                active_binaries_only=active_binaries_only))
 
         result_set.order_by(
             SourcePackagePublishingHistory.id,
