@@ -66,13 +66,21 @@ search_tasks_params_common = {
     "status": copy_field(IBugTaskSearch["status"]),
     "importance": copy_field(IBugTaskSearch["importance"]),
     "information_type": copy_field(IBugTaskSearch["information_type"]),
+    # Really IPerson, patched in lp.bugs.interfaces.webservice.
     "assignee": Reference(schema=Interface),
+    # Really IPerson, patched in lp.bugs.interfaces.webservice.
     "bug_reporter": Reference(schema=Interface),
+    # Really IPerson, patched in lp.bugs.interfaces.webservice.
     "bug_supervisor": Reference(schema=Interface),
+    # Really IPerson, patched in lp.bugs.interfaces.webservice.
     "bug_commenter": Reference(schema=Interface),
+    # Really IPerson, patched in lp.bugs.interfaces.webservice.
     "bug_subscriber": Reference(schema=Interface),
+    # Really IPerson, patched in lp.bugs.interfaces.webservice.
     "structural_subscriber": Reference(schema=Interface),
+    # Really IPerson, patched in lp.bugs.interfaces.webservice.
     "owner": Reference(schema=Interface),
+    # Really IPerson, patched in lp.bugs.interfaces.webservice.
     "affected_user": Reference(schema=Interface),
     "has_patch": copy_field(IBugTaskSearch["has_patch"]),
     "has_cve": copy_field(IBugTaskSearch["has_cve"]),

@@ -43,10 +43,9 @@ __all__ = [
     "UserCannotEditBugTaskStatus",
 ]
 
-# XXX: JonathanLange 2010-11-09 bug=673083: Legacy work-around for circular
-# import bugs.  Break this up into a per-package thing.
-from lp import _schema_circular_imports
-from lp.bugs.interfaces.bug import IBug
+from lazr.restful.fields import Reference
+
+from lp.bugs.interfaces.bug import IBug, IFrontPageBugAddForm
 from lp.bugs.interfaces.bugactivity import IBugActivity
 from lp.bugs.interfaces.bugattachment import IBugAttachment
 from lp.bugs.interfaces.bugbranch import IBugBranch
@@ -83,5 +82,83 @@ from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
 )
 from lp.bugs.interfaces.vulnerability import IVulnerability
+from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
+from lp.registry.interfaces.distributionsourcepackage import (
+    IDistributionSourcePackage,
+)
+from lp.registry.interfaces.person import IPerson
+from lp.services.webservice.apihelpers import (
+    patch_collection_property,
+    patch_collection_return_type,
+    patch_entry_return_type,
+    patch_list_parameter_type,
+    patch_plain_parameter_type,
+    patch_reference_property,
+)
 
-_schema_circular_imports
+# IBug
+patch_plain_parameter_type(IBug, "addNomination", "target", IBugTarget)
+patch_entry_return_type(IBug, "addNomination", IBugNomination)
+patch_plain_parameter_type(IBug, "canBeNominatedFor", "target", IBugTarget)
+patch_plain_parameter_type(IBug, "getNominationFor", "target", IBugTarget)
+patch_entry_return_type(IBug, "getNominationFor", IBugNomination)
+patch_plain_parameter_type(IBug, "getNominations", "target", IBugTarget)
+patch_list_parameter_type(
+    IBug, "getNominations", "nominations", Reference(schema=IBugNomination)
+)
+patch_collection_return_type(IBug, "getNominations", IBugNomination)
+patch_collection_property(IBug, "linked_merge_proposals", IBranchMergeProposal)
+patch_plain_parameter_type(
+    IBug, "linkMergeProposal", "merge_proposal", IBranchMergeProposal
+)
+patch_plain_parameter_type(
+    IBug, "unlinkMergeProposal", "merge_proposal", IBranchMergeProposal
+)
+
+# IBugTask
+patch_reference_property(IBugTask, "owner", IPerson)
+patch_collection_return_type(IBugTask, "findSimilarBugs", IBug)
+
+# IBugTracker
+patch_reference_property(IBugTracker, "owner", IPerson)
+
+# IBugTrackerComponent
+patch_reference_property(
+    IBugTrackerComponent, "distro_source_package", IDistributionSourcePackage
+)
+
+# IBugWatch
+patch_reference_property(IBugWatch, "owner", IPerson)
+
+# IFrontPageBugAddForm
+patch_reference_property(IFrontPageBugAddForm, "bugtarget", IBugTarget)
+
+# IHasBugs
+patch_plain_parameter_type(IHasBugs, "searchTasks", "assignee", IPerson)
+patch_plain_parameter_type(IHasBugs, "searchTasks", "bug_reporter", IPerson)
+patch_plain_parameter_type(IHasBugs, "searchTasks", "bug_supervisor", IPerson)
+patch_plain_parameter_type(IHasBugs, "searchTasks", "bug_commenter", IPerson)
+patch_plain_parameter_type(IHasBugs, "searchTasks", "bug_subscriber", IPerson)
+patch_plain_parameter_type(IHasBugs, "searchTasks", "owner", IPerson)
+patch_plain_parameter_type(IHasBugs, "searchTasks", "affected_user", IPerson)
+patch_plain_parameter_type(
+    IHasBugs, "searchTasks", "structural_subscriber", IPerson
+)
+
+# IStructuralSubscription
+patch_collection_property(
+    IStructuralSubscription, "bug_filters", IBugSubscriptionFilter
+)
+patch_entry_return_type(
+    IStructuralSubscription, "newBugFilter", IBugSubscriptionFilter
+)
+patch_reference_property(
+    IStructuralSubscription, "target", IStructuralSubscriptionTarget
+)
+
+# IStructuralSubscriptionTarget
+patch_entry_return_type(
+    IStructuralSubscriptionTarget,
+    "addBugSubscriptionFilter",
+    IBugSubscriptionFilter,
+)

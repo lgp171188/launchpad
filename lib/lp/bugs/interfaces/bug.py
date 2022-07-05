@@ -698,6 +698,7 @@ class IBugView(Interface):
         """
 
     @operation_parameters(
+        # Really IBugTarget, patched in lp.bugs.interfaces.webservice.
         target=Reference(schema=Interface, title=_("Target"))
     )
     @export_read_operation()
@@ -711,8 +712,10 @@ class IBugView(Interface):
         """
 
     @operation_parameters(
+        # Really IBugTarget, patched in lp.bugs.interfaces.webservice.
         target=Reference(schema=Interface, title=_("Target"))
     )
+    # Really IBugNomination, patched in lp.bugs.interfaces.webservice.
     @operation_returns_entry(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -725,14 +728,17 @@ class IBugView(Interface):
         """
 
     @operation_parameters(
+        # Really IBugTarget, patched in lp.bugs.interfaces.webservice.
         target=Reference(schema=Interface, title=_("Target"), required=False),
         nominations=List(
             title=_("Nominations to search through."),
-            value_type=Reference(schema=Interface),  # IBugNomination
+            # Really IBugNomination, patched in lp.bugs.interfaces.webservice.
+            value_type=Reference(schema=Interface),
             required=False,
         ),
     )
-    @operation_returns_collection_of(Interface)  # IBugNomination
+    # Really IBugNomination, patched in lp.bugs.interfaces.webservice.
+    @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
     def getNominations(target=None, nominations=None):
@@ -1068,9 +1074,11 @@ class IBugEdit(Interface):
     """IBug attributes that require launchpad.Edit permission."""
 
     @operation_parameters(
+        # Really IBugTarget, patched in lp.bugs.interfaces.webservice.
         target=Reference(schema=Interface, title=_("Target"))
     )
     @call_with(owner=REQUEST_USER)
+    # Really IBugNomination, patched in lp.bugs.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("beta")
     def addNomination(owner, target):
@@ -1113,7 +1121,8 @@ class IBugEdit(Interface):
 
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        # Really IBranchMergeProposal, patched in _schema_circular_imports.py.
+        # Really IBranchMergeProposal, patched in
+        # lp.bugs.interfaces.webservice.
         merge_proposal=Reference(
             Interface, title=_("Merge proposal"), required=True
         )
@@ -1125,7 +1134,8 @@ class IBugEdit(Interface):
 
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        # Really IBranchMergeProposal, patched in _schema_circular_imports.py.
+        # Really IBranchMergeProposal, patched in
+        # lp.bugs.interfaces.webservice.
         merge_proposal=Reference(
             Interface, title=_("Merge proposal"), required=True
         )
@@ -1301,7 +1311,7 @@ class IBug(
                 "Git-based merge proposals)."
             ),
             # Really IBranchMergeProposal, patched in
-            # _schema_circular_imports.py.
+            # lp.bugs.interfaces.webservice.
             value_type=Reference(schema=Interface),
             readonly=True,
         ),
@@ -1484,7 +1494,10 @@ class IFrontPageBugAddForm(IBugAddForm):
     """Create a bug for any bug target."""
 
     bugtarget = Reference(
-        schema=Interface, title=_("Where did you find the bug?"), required=True
+        # Really IBugTarget, patched in lp.bugs.interfaces.webservice.
+        schema=Interface,
+        title=_("Where did you find the bug?"),
+        required=True,
     )
 
 
