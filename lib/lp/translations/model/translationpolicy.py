@@ -91,10 +91,10 @@ class TranslationPolicyMixin:
     def _getTranslator(self, translationgroup, language, store):
         """Retrieve one (TranslationGroup, Translator, Person) tuple."""
         translator_join = LeftJoin(Translator, And(
-            Translator.translationgroupID == TranslationGroup.id,
-            Translator.languageID == language.id))
+            Translator.translationgroup_id == TranslationGroup.id,
+            Translator.language_id == language.id))
         person_join = LeftJoin(
-            Person, Person.id == Translator.translatorID)
+            Person, Person.id == Translator.translator_id)
 
         source = store.using(TranslationGroup, translator_join, person_join)
         return source.find(
