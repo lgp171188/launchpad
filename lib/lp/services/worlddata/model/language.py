@@ -16,6 +16,7 @@ from storm.expr import (
     LeftJoin,
     Or,
     )
+from storm.references import ReferenceSet
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
@@ -64,9 +65,9 @@ class Language(SQLBase):
         name='direction', allow_none=False, enum=TextDirection,
         default=TextDirection.LTR)
 
-    translation_teams = SQLRelatedJoin(
-        'Person', joinColumn="language",
-        intermediateTable='Translator', otherColumn='translator')
+    translation_teams = ReferenceSet(
+        "<primary key>", "Translator.language_id", "Translator.translator_id",
+        "Person.id")
 
     _countries = SQLRelatedJoin(
         'Country', joinColumn='language',
