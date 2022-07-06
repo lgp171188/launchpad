@@ -66,7 +66,7 @@ from lp.archiveuploader.uploadpolicy import (
     UploadPolicyError,
 )
 from lp.archiveuploader.utils import UploadError
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.enums import BuildFarmJobType, BuildStatus
 from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
 from lp.code.interfaces.cibuild import ICIBuild
@@ -78,6 +78,7 @@ from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.log.logger import BufferLogger
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 from lp.services.webapp.adapter import (
     clear_request_started,
     set_request_started,
@@ -173,6 +174,28 @@ class UploadProcessor:
         self._getPolicyForDistro = policy_for_distro
         self.ztm = ztm
 
+    def reportStatsdMetrics(self, handler, uploads_to_process):
+        upload_type = "NoBuildInfo"
+        if hasattr(handler, "build"):
+            if ICharmRecipeBuild.providedBy(handler.build):
+                upload_type = BuildFarmJobType.CHARMRECIPEBUILD
+            elif ILiveFSBuild.providedBy(handler.build):
+                upload_type = BuildFarmJobType.LIVEFSBUILD
+            elif ISnapBuild.providedBy(handler.build):
+                upload_type = BuildFarmJobType.SNAPBUILD
+            elif IOCIRecipeBuild.providedBy(handler.build):
+                upload_type = BuildFarmJobType.OCIRECIPEBUILD
+            elif ICIBuild.providedBy(handler.build):
+                upload_type = BuildFarmJobType.CIBUILD
+        statsd_client = getUtility(IStatsdClient)
+        statsd_client.incr(
+            "upload.process",
+            labels={
+                "upload_type": upload_type,
+                "total_files": len(uploads_to_process),
+            },
+        )
+
     def processUploadQueue(self, leaf_name=None):
         """Search for uploads, and process them.
 
@@ -205,8 +228,29 @@ class UploadProcessor:
                     )
                     continue
                 set_request_started(enable_timeout=False)
+                # upload_type = 'NoBuildInfo'
                 try:
                     handler = UploadHandler.forProcessor(self, fsroot, upload)
+                    self.reportStatsdMetrics(handler, uploads_to_process)
+                    # if hasattr(handler, 'build'):
+                    #     if ICharmRecipeBuild.providedBy(handler.build):
+                    #         upload_type = BuildFarmJobType.CHARMRECIPEBUILD
+                    #     elif ILiveFSBuild.providedBy(handler.build):
+                    #         upload_type = BuildFarmJobType.LIVEFSBUILD
+                    #     elif ISnapBuild.providedBy(handler.build):
+                    #         upload_type = BuildFarmJobType.SNAPBUILD
+                    #     elif IOCIRecipeBuild.providedBy(handler.build):
+                    #         upload_type = BuildFarmJobType.OCIRECIPEBUILD
+                    #     elif ICIBuild.providedBy(handler.build):
+                    #         upload_type = BuildFarmJobType.CIBUILD
+                    # statsd_client = getUtility(IStatsdClient)
+                    # statsd_client.incr(
+                    #     'upload.process',
+                    #     labels={
+                    #         'upload_type': upload_type,
+                    #         'total_files': len(uploads_to_process),
+                    #     })
+
                 except CannotGetBuild as e:
                     self.log.warning(e)
                 else:
