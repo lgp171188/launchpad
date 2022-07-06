@@ -228,29 +228,9 @@ class UploadProcessor:
                     )
                     continue
                 set_request_started(enable_timeout=False)
-                # upload_type = 'NoBuildInfo'
                 try:
                     handler = UploadHandler.forProcessor(self, fsroot, upload)
                     self.reportStatsdMetrics(handler, uploads_to_process)
-                    # if hasattr(handler, 'build'):
-                    #     if ICharmRecipeBuild.providedBy(handler.build):
-                    #         upload_type = BuildFarmJobType.CHARMRECIPEBUILD
-                    #     elif ILiveFSBuild.providedBy(handler.build):
-                    #         upload_type = BuildFarmJobType.LIVEFSBUILD
-                    #     elif ISnapBuild.providedBy(handler.build):
-                    #         upload_type = BuildFarmJobType.SNAPBUILD
-                    #     elif IOCIRecipeBuild.providedBy(handler.build):
-                    #         upload_type = BuildFarmJobType.OCIRECIPEBUILD
-                    #     elif ICIBuild.providedBy(handler.build):
-                    #         upload_type = BuildFarmJobType.CIBUILD
-                    # statsd_client = getUtility(IStatsdClient)
-                    # statsd_client.incr(
-                    #     'upload.process',
-                    #     labels={
-                    #         'upload_type': upload_type,
-                    #         'total_files': len(uploads_to_process),
-                    #     })
-
                 except CannotGetBuild as e:
                     self.log.warning(e)
                 else:
