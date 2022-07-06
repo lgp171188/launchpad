@@ -1,6 +1,7 @@
 # Copyright 2010-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from collections import OrderedDict
 import io
 import json
 import logging
@@ -202,6 +203,13 @@ class ScanException(Exception):
     """A CI build upload job failed to scan a file."""
 
 
+class ScannedArtifact:
+
+    def __init__(self, *, artifact, metadata):
+        self.artifact = artifact
+        self.metadata = metadata
+
+
 @implementer(ICIBuildUploadJob)
 @provider(ICIBuildUploadJobSource)
 class CIBuildUploadJob(ArchiveJobDerived):
@@ -375,6 +383,76 @@ class CIBuildUploadJob(ArchiveJobDerived):
         else:
             return None
 
+    def _scanArtifacts(self, artifacts):
+        """Scan an iterable of `RevisionStatusArtifact`s for metadata.
+
+        Skips log artifacts, artifacts we don't understand, and artifacts
+        not relevant to the target archive's repository format.
+
+        Returns a list of `ScannedArtifact`s containing metadata for
+        relevant artifacts.
+        """
+        allowed_binary_formats = (
+            self.binary_format_by_repository_format.get(
+                self.archive.repository_format, set()))
+        scanned = []
+        with tempfile.TemporaryDirectory(prefix="ci-build-copy-job") as tmpdir:
+            for artifact in artifacts:
+                if artifact.artifact_type == RevisionStatusArtifactType.LOG:
+                    continue
+                name = artifact.library_file.filename
+                contents = os.path.join(tmpdir, name)
+                artifact.library_file.open()
+                copy_and_close(artifact.library_file, open(contents, "wb"))
+                metadata = self._scanFile(contents)
+                if metadata is None:
+                    logger.info("No upload handler for %s", name)
+                    continue
+                if metadata["binpackageformat"] not in allowed_binary_formats:
+                    logger.info(
+                        "Skipping %s (not relevant to %s archives)",
+                        name, self.archive.repository_format)
+                    continue
+                scanned.append(
+                    ScannedArtifact(artifact=artifact, metadata=metadata))
+        return scanned
+
+    def _uploadBinaries(self, scanned):
+        """Upload an iterable of `ScannedArtifact`s to an archive."""
+        releases = {
+            (release.binarypackagename, release.binpackageformat): release
+            for release in self.ci_build.binarypackages}
+        binaries = OrderedDict()
+        for scanned_artifact in scanned:
+            library_file = scanned_artifact.artifact.library_file
+            metadata = dict(scanned_artifact.metadata)
+            binpackageformat = metadata["binpackageformat"]
+            logger.info(
+                "Uploading %s to %s %s (%s)",
+                library_file.filename, self.archive.reference,
+                self.target_distroseries.getSuite(self.target_pocket),
+                self.target_channel)
+            metadata["binarypackagename"] = bpn = (
+                getUtility(IBinaryPackageNameSet).ensure(metadata["name"]))
+            del metadata["name"]
+            filetype = self.filetype_by_format[binpackageformat]
+            bpr = releases.get((bpn, binpackageformat))
+            if bpr is None:
+                bpr = self.ci_build.createBinaryPackageRelease(**metadata)
+            for bpf in bpr.files:
+                if (bpf.libraryfile == library_file and
+                        bpf.filetype == filetype):
+                    break
+            else:
+                bpr.addFile(library_file, filetype=filetype)
+            # The publishBinaries interface was designed for .debs,
+            # which need extra per-binary "override" information
+            # (component, etc.).  None of this is relevant here.
+            binaries[bpr] = (None, None, None, None)
+        getUtility(IPublishingSet).publishBinaries(
+            self.archive, self.target_distroseries, self.target_pocket,
+            binaries, channel=self.target_channel)
+
     def run(self):
         """See `IRunnableJob`."""
         build_target = self.ci_build.git_repository.target
@@ -385,55 +463,8 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 "Source CI build is for %s, which is not a package",
                 repr(build_target))
             return
-        with tempfile.TemporaryDirectory(prefix="ci-build-copy-job") as tmpdir:
-            releases = {
-                (release.binarypackagename, release.binpackageformat): release
-                for release in self.ci_build.binarypackages}
-            allowed_binary_formats = (
-                self.binary_format_by_repository_format.get(
-                    self.archive.repository_format, set()))
-            binaries = {}
-            for artifact in getUtility(
-                    IRevisionStatusArtifactSet).findByCIBuild(self.ci_build):
-                if artifact.artifact_type == RevisionStatusArtifactType.LOG:
-                    continue
-                name = artifact.library_file.filename
-                contents = os.path.join(tmpdir, name)
-                artifact.library_file.open()
-                copy_and_close(artifact.library_file, open(contents, "wb"))
-                metadata = self._scanFile(contents)
-                if metadata is None:
-                    logger.info("No upload handler for %s" % name)
-                    continue
-                binpackageformat = metadata["binpackageformat"]
-                if binpackageformat not in allowed_binary_formats:
-                    logger.info(
-                        "Skipping %s (not relevant to %s archives)" % (
-                            name, self.archive.repository_format))
-                    continue
-                logger.info(
-                    "Uploading %s to %s %s (%s)" % (
-                        name, self.archive.reference,
-                        self.target_distroseries.getSuite(self.target_pocket),
-                        self.target_channel))
-                metadata["binarypackagename"] = bpn = (
-                    getUtility(IBinaryPackageNameSet).ensure(metadata["name"]))
-                del metadata["name"]
-                filetype = self.filetype_by_format[binpackageformat]
-                bpr = releases.get((bpn, binpackageformat))
-                if bpr is None:
-                    bpr = self.ci_build.createBinaryPackageRelease(**metadata)
-                for bpf in bpr.files:
-                    if (bpf.libraryfile == artifact.library_file and
-                            bpf.filetype == filetype):
-                        break
-                else:
-                    bpr.addFile(artifact.library_file, filetype=filetype)
-                # The publishBinaries interface was designed for .debs,
-                # which need extra per-binary "override" information
-                # (component, etc.).  None of this is relevant here.
-                binaries[bpr] = (None, None, None, None)
-            if binaries:
-                getUtility(IPublishingSet).publishBinaries(
-                    self.archive, self.target_distroseries, self.target_pocket,
-                    binaries, channel=self.target_channel)
+        artifacts = getUtility(IRevisionStatusArtifactSet).findByCIBuild(
+            self.ci_build)
+        scanned = self._scanArtifacts(artifacts)
+        if scanned:
+            self._uploadBinaries(scanned)
