@@ -416,18 +416,24 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
             required=False, readonly=True
         ))
 
+    @operation_parameters(
+        active_binaries_only=Bool(
+            title=_("Only return active publications"), required=False))
     # Really IBinaryPackagePublishingHistory, see below.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
-    def getPublishedBinaries():
+    def getPublishedBinaries(active_binaries_only=True):
         """Return all resulted `IBinaryPackagePublishingHistory`.
 
-        Follow the build record and return every PUBLISHED or PENDING
-        binary publishing record for any `DistroArchSeries` in this
-        `DistroSeries` and in the same `IArchive` and Pocket, ordered
-        by architecture tag.
+        Follow the build record and return every binary publishing record
+        for any `DistroArchSeries` in this `DistroSeries` and in the same
+        `IArchive` and Pocket, ordered by architecture tag.  If
+        `active_binaries_only` is True (the default), then only return
+        PUBLISHED or PENDING binary publishing records.
 
+        :param active_binaries_only: If True, only return PUBLISHED or
+            PENDING publishing records.
         :return: a list with all corresponding publishing records.
         """
 

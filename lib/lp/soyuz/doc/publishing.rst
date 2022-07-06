@@ -518,10 +518,14 @@ previous broken implementation in this area.
 
 Note that even PENDING binary publications are returned by
 getPublishedBinaries(), it considers both PENDING and PUBLISHED status
-as active, SUPERSEDED, DELETED and OBSOLETE are excluded. Differently,
+as active, SUPERSEDED, DELETED and OBSOLETE are excluded (unless we pass
+``active_binaries_only=False``). Differently,
 getBuiltBinaries() follows binaries in any state.
 
     >>> source.getPublishedBinaries().count()
+    2
+
+    >>> source.getPublishedBinaries(active_binaries_only=False).count()
     2
 
     >>> len(source.getBuiltBinaries())
@@ -531,14 +535,17 @@ Note that getPublishedBinaries() returns a DecoratedResultSet and
 getBuiltBinaries() returns a list.
 
 When we supersede one of the original binary publications, it gets
-excluded from the getPublishedBinaries() results, but not from the
-getBuiltBinaries() result.
+excluded from the getPublishedBinaries() results, but not if we pass
+``active_binaries_only=False``, and not from the getBuiltBinaries() result.
 
     >>> a_binary = source.getPublishedBinaries()[0]
     >>> a_binary.supersede()
 
     >>> source.getPublishedBinaries().count()
     1
+
+    >>> source.getPublishedBinaries(active_binaries_only=False).count()
+    2
 
     >>> len(source.getBuiltBinaries())
     2
@@ -552,6 +559,9 @@ published in the original location.
 
     >>> source.getPublishedBinaries().count()
     0
+
+    >>> source.getPublishedBinaries(active_binaries_only=False).count()
+    2
 
     >>> len(source.getBuiltBinaries())
     2
@@ -567,6 +577,9 @@ verify that the getPublishedBinaries() result is also empty after that.
 
     >>> copied_source.getPublishedBinaries().count()
     0
+
+    >>> copied_source.getPublishedBinaries(active_binaries_only=False).count()
+    2
 
     >>> len(copied_source.getBuiltBinaries())
     2
