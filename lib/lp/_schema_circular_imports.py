@@ -16,28 +16,9 @@ from lazr.restful.fields import Reference
 
 from lp.blueprints.interfaces.specification import ISpecification
 from lp.blueprints.interfaces.specificationbranch import ISpecificationBranch
-from lp.bugs.interfaces.bug import (
-    IBug,
-    IFrontPageBugAddForm,
-    )
+from lp.bugs.interfaces.bug import IBug
 from lp.bugs.interfaces.bugbranch import IBugBranch
-from lp.bugs.interfaces.bugnomination import IBugNomination
-from lp.bugs.interfaces.bugsubscriptionfilter import IBugSubscriptionFilter
-from lp.bugs.interfaces.bugtarget import (
-    IBugTarget,
-    IHasBugs,
-    )
 from lp.bugs.interfaces.bugtask import IBugTask
-from lp.bugs.interfaces.bugtracker import (
-    IBugTracker,
-    IBugTrackerComponent,
-    IBugTrackerComponentGroup,
-    )
-from lp.bugs.interfaces.bugwatch import IBugWatch
-from lp.bugs.interfaces.structuralsubscription import (
-    IStructuralSubscription,
-    IStructuralSubscriptionTarget,
-    )
 from lp.bugs.interfaces.vulnerability import IVulnerability
 from lp.buildmaster.interfaces.builder import IBuilder
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
@@ -219,15 +200,6 @@ patch_collection_return_type(
     IHasRequestedReviews, 'getRequestedReviews', IBranchMergeProposal)
 patch_entry_return_type(IHasCodeImports, 'newCodeImport', ICodeImport)
 patch_plain_parameter_type(IHasCodeImports, 'newCodeImport', 'owner', IPerson)
-
-# IBugTask
-
-patch_collection_return_type(IBugTask, 'findSimilarBugs', IBug)
-patch_list_parameter_type(
-    IBug, 'getNominations', 'nominations', Reference(schema=IBugNomination))
-patch_entry_return_type(IBug, 'addNomination', IBugNomination)
-patch_entry_return_type(IBug, 'getNominationFor', IBugNomination)
-patch_collection_return_type(IBug, 'getNominations', IBugNomination)
 
 # IBuilder
 patch_reference_property(IBuilder, 'current_build', IBuildFarmJob)
@@ -512,22 +484,6 @@ patch_reference_property(IPackageUpload, 'distroseries', IDistroSeries)
 patch_reference_property(IPackageUpload, 'archive', IArchive)
 patch_reference_property(IPackageUpload, 'copy_source_archive', IArchive)
 
-# IStructuralSubscription
-patch_collection_property(
-    IStructuralSubscription, 'bug_filters', IBugSubscriptionFilter)
-patch_entry_return_type(
-    IStructuralSubscription, "newBugFilter", IBugSubscriptionFilter)
-patch_reference_property(
-    IStructuralSubscription, 'target', IStructuralSubscriptionTarget)
-
-# IStructuralSubscriptionTarget
-patch_reference_property(
-    IStructuralSubscriptionTarget, 'parent_subscription_target',
-    IStructuralSubscriptionTarget)
-patch_entry_return_type(
-    IStructuralSubscriptionTarget, 'addBugSubscriptionFilter',
-    IBugSubscriptionFilter)
-
 # ISourcePackageRelease
 patch_reference_property(
     ISourcePackageRelease, 'source_package_recipe_build',
@@ -545,23 +501,6 @@ patch_collection_property(
 patch_collection_property(
     ISourcePackageRecipe, 'completed_builds', ISourcePackageRecipeBuild)
 
-# IHasBugs
-patch_plain_parameter_type(IHasBugs, 'searchTasks', 'assignee', IPerson)
-patch_plain_parameter_type(IHasBugs, 'searchTasks', 'bug_reporter', IPerson)
-patch_plain_parameter_type(IHasBugs, 'searchTasks', 'bug_supervisor', IPerson)
-patch_plain_parameter_type(IHasBugs, 'searchTasks', 'bug_commenter', IPerson)
-patch_plain_parameter_type(IHasBugs, 'searchTasks', 'bug_subscriber', IPerson)
-patch_plain_parameter_type(IHasBugs, 'searchTasks', 'owner', IPerson)
-patch_plain_parameter_type(IHasBugs, 'searchTasks', 'affected_user', IPerson)
-patch_plain_parameter_type(
-    IHasBugs, 'searchTasks', 'structural_subscriber', IPerson)
-
-# IBugTask
-patch_reference_property(IBugTask, 'owner', IPerson)
-
-# IBugWatch
-patch_reference_property(IBugWatch, 'owner', IPerson)
-
 # IHasTranslationImports
 patch_collection_return_type(
     IHasTranslationImports, 'getTranslationImportQueueEntries',
@@ -577,42 +516,6 @@ patch_collection_property(IMessage, 'revisions', IMessageRevision)
 # IUserToUserEmail
 patch_reference_property(IUserToUserEmail, 'sender', IPerson)
 patch_reference_property(IUserToUserEmail, 'recipient', IPerson)
-
-# IBug
-patch_plain_parameter_type(
-    IBug, 'addNomination', 'target', IBugTarget)
-patch_plain_parameter_type(
-    IBug, 'canBeNominatedFor', 'target', IBugTarget)
-patch_plain_parameter_type(
-    IBug, 'getNominationFor', 'target', IBugTarget)
-patch_plain_parameter_type(
-    IBug, 'getNominations', 'target', IBugTarget)
-patch_collection_property(IBug, 'linked_merge_proposals', IBranchMergeProposal)
-patch_plain_parameter_type(
-    IBug, 'linkMergeProposal', 'merge_proposal', IBranchMergeProposal)
-patch_plain_parameter_type(
-    IBug, 'unlinkMergeProposal', 'merge_proposal', IBranchMergeProposal)
-
-
-# IFrontPageBugAddForm
-patch_reference_property(IFrontPageBugAddForm, 'bugtarget', IBugTarget)
-
-# IBugTracker
-patch_reference_property(IBugTracker, 'owner', IPerson)
-patch_entry_return_type(
-    IBugTracker, 'getRemoteComponentGroup', IBugTrackerComponentGroup)
-patch_entry_return_type(
-    IBugTracker, 'addRemoteComponentGroup', IBugTrackerComponentGroup)
-patch_collection_return_type(
-    IBugTracker, 'getAllRemoteComponentGroups', IBugTrackerComponentGroup)
-patch_entry_return_type(
-    IBugTracker, 'getRemoteComponentForDistroSourcePackageName',
-    IBugTrackerComponent)
-
-## IBugTrackerComponent
-patch_reference_property(
-    IBugTrackerComponent, "distro_source_package",
-    IDistributionSourcePackage)
 
 # IHasTranslationTemplates
 patch_collection_return_type(

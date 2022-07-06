@@ -85,7 +85,9 @@ class IStructuralSubscriptionPublic(Interface):
 
     target = exported(
         Reference(
-            schema=Interface,  # IStructuralSubscriptionTarget
+            # Really IStructuralSubscriptionTarget, patched in
+            # lp.bugs.interfaces.webservice.
+            schema=Interface,
             required=True,
             readonly=True,
             title=_("The structure to which this subscription belongs."),
@@ -97,14 +99,17 @@ class IStructuralSubscriptionPublic(Interface):
             title=_("List of bug filters that narrow this subscription."),
             readonly=True,
             required=False,
+            # Really IBugSubscriptionFilter, patched in
+            # lp.bugs.interfaces.webservice.
             value_type=Reference(schema=Interface),
         )
-    )  # IBugSubscriptionFilter
+    )
 
 
 class IStructuralSubscriptionRestricted(Interface):
     """The restricted parts of a subscription to a Launchpad structure."""
 
+    # Really IBugSubscriptionFilter, patched in lp.bugs.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("beta")
     def newBugFilter():
@@ -223,7 +228,8 @@ class IStructuralSubscriptionTargetWrite(Interface):
         )
     )
     @call_with(subscribed_by=REQUEST_USER)
-    @export_factory_operation(Interface, [])  # Really IBugSubscriptionFilter
+    # Really IBugSubscriptionFilter, patched in lp.bugs.interfaces.webservice.
+    @export_factory_operation(Interface, [])
     @operation_for_version("beta")
     def addBugSubscriptionFilter(subscriber, subscribed_by):
         """Add a bug subscription filter for this structure.

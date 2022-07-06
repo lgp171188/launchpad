@@ -110,3 +110,13 @@ repos:
     rev: v0.8.0.4
     hooks:
     -   id: shellcheck
+-   repo: https://github.com/codespell-project/codespell
+    rev: v2.1.0
+    hooks:
+    -   id: codespell
+        files: ^doc/.*\.rst$
+-   repo: https://github.com/get-woke/woke
+    rev: v0.18.2
+    hooks:
+    -   id: woke-from-source
+        files: ^doc/.*\.rst$

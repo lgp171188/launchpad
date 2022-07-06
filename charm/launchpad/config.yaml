@@ -1,0 +1,8 @@
+options:
+  # layer-apt
+  install_sources:
+    default: |
+      - ppa:launchpad/ppa
+  install_keys:
+    default: |
+      - null  # PPA keys securely added via Launchpad.

@@ -221,7 +221,11 @@ class IBugWatch(IHasBug):
     )
     owner = exported(
         Reference(
-            title=_("Owner"), required=True, readonly=True, schema=Interface
+            title=_("Owner"),
+            required=True,
+            readonly=True,
+            # Really IPerson, patched in lp.bugs.interfaces.webservice.
+            schema=Interface,
         )
     )
     activity = Attribute("The activity history of this BugWatch.")
