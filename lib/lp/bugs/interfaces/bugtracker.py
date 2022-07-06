@@ -44,7 +44,11 @@ from lp import _
 from lp.app.validators import LaunchpadValidationError
 from lp.app.validators.name import name_validator
 from lp.services.fields import ContentNameField, StrippedTextLine, URIField
-from lp.services.webservice.apihelpers import patch_reference_property
+from lp.services.webservice.apihelpers import (
+    patch_collection_return_type,
+    patch_entry_return_type,
+    patch_reference_property,
+)
 
 LOCATION_SCHEMES_ALLOWED = "http", "https", "mailto"
 
@@ -316,7 +320,9 @@ class IBugTracker(Interface):
         exported_as="base_url_aliases",
     )
     owner = exported(
-        Reference(title=_("Owner"), schema=Interface), exported_as="registrant"
+        # Really IPerson, patched in lp.bugs.interfaces.webservice.
+        Reference(title=_("Owner"), schema=Interface),
+        exported_as="registrant",
     )
     contactdetails = exported(
         Text(
@@ -447,6 +453,7 @@ class IBugTracker(Interface):
             title="The name of the remote component group", required=True
         )
     )
+    # Really IBugTrackerComponentGroup, patched below.
     @operation_returns_entry(Interface)
     @export_write_operation()
     @operation_for_version("beta")
@@ -454,6 +461,7 @@ class IBugTracker(Interface):
         """Adds a new component group to the bug tracker"""
 
     @export_read_operation()
+    # Really IBugTrackerComponentGroup, patched below.
     @operation_returns_collection_of(Interface)
     @operation_for_version("beta")
     def getAllRemoteComponentGroups():
@@ -464,6 +472,7 @@ class IBugTracker(Interface):
             title="The name of the remote component group", required=True
         )
     )
+    # Really IBugTrackerComponentGroup, patched below.
     @operation_returns_entry(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -481,6 +490,7 @@ class IBugTracker(Interface):
             title="The source package name", required=True
         ),
     )
+    # Really IBugTrackerComponentGroup, patched below.
     @operation_returns_entry(Interface)
     @export_read_operation()
     @operation_for_version("devel")
@@ -677,6 +687,8 @@ class IBugTrackerComponent(Interface):
 
     distro_source_package = exported(
         Reference(
+            # Really IDistributionSourcePackage, patched in
+            # lp.bugs.interfaces.webservice.
             Interface,
             title=_("Distribution Source Package"),
             description=_(
@@ -688,6 +700,7 @@ class IBugTrackerComponent(Interface):
     )
 
     component_group = exported(
+        # Really IBugTrackerComponentGroup, patched below.
         Reference(title=_("Component Group"), schema=Interface)
     )
 
@@ -729,8 +742,21 @@ class IBugTrackerComponentGroup(Interface):
         """Adds a component to be tracked as part of this component group"""
 
 
-# Patch in a mutual reference between IBugTrackerComponent and
-# IBugTrackerComponentGroup.
+# Patch in some mutual references.
+patch_entry_return_type(
+    IBugTracker, "getRemoteComponentGroup", IBugTrackerComponentGroup
+)
+patch_entry_return_type(
+    IBugTracker, "addRemoteComponentGroup", IBugTrackerComponentGroup
+)
+patch_collection_return_type(
+    IBugTracker, "getAllRemoteComponentGroups", IBugTrackerComponentGroup
+)
+patch_entry_return_type(
+    IBugTracker,
+    "getRemoteComponentForDistroSourcePackageName",
+    IBugTrackerComponent,
+)
 patch_reference_property(
     IBugTrackerComponent, "component_group", IBugTrackerComponentGroup
 )

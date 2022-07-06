@@ -699,6 +699,7 @@ class IBugTask(IHasBug, IBugTaskDelete):
         ),
     )
     owner = exported(
+        # Really IPerson, patched in lp.bugs.interfaces.webservice.
         Reference(title=_("The owner"), schema=Interface, readonly=True)
     )
     target = exported(
@@ -772,7 +773,8 @@ class IBugTask(IHasBug, IBugTaskDelete):
         )
     )
 
-    @operation_returns_collection_of(Interface)  # Actually IBug.
+    # Really IBug, patched in lp.bugs.interfaces.webservice.
+    @operation_returns_collection_of(Interface)
     @call_with(user=REQUEST_USER, limit=10)
     @export_read_operation()
     @operation_for_version("beta")
