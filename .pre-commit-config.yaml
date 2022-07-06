@@ -115,3 +115,8 @@ repos:
     hooks:
     -   id: codespell
         files: ^doc/.*\.rst$
+-   repo: https://github.com/get-woke/woke
+    rev: v0.18.2
+    hooks:
+    -   id: woke-from-source
+        files: ^doc/.*\.rst$
