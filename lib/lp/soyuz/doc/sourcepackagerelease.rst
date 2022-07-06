@@ -167,13 +167,31 @@ ISourcePackageRelease, it will automatically set the
 'upload_distroseries' to the API entry point, in this case Hoary.
 
     >>> new_spr = hoary.createUploadedSourcePackageRelease(
-    ...     arg_name, version, SourcePackageType.DPKG, arg_maintainer,
-    ...     builddepends, builddependsindep, archhintlist, arg_comp,
-    ...     arg_creator, arg_urgency, changelog, changelog_entry, dsc,
-    ...     arg_key, arg_sect, dsc_maintainer_rfc822, dsc_standards_version,
-    ...     dsc_format, dsc_binaries, archive, copyright=copyright,
-    ...     build_conflicts=None, build_conflicts_indep=None,
-    ...     source_package_recipe_build=arg_recipebuild)
+    ...     sourcepackagename=arg_name,
+    ...     version=version,
+    ...     format=SourcePackageType.DPKG,
+    ...     maintainer=arg_maintainer,
+    ...     builddepends=builddepends,
+    ...     builddependsindep=builddependsindep,
+    ...     architecturehintlist=archhintlist,
+    ...     component=arg_comp,
+    ...     creator=arg_creator,
+    ...     urgency=arg_urgency,
+    ...     changelog=changelog,
+    ...     changelog_entry=changelog_entry,
+    ...     dsc=dsc,
+    ...     dscsigningkey=arg_key,
+    ...     section=arg_sect,
+    ...     dsc_maintainer_rfc822=dsc_maintainer_rfc822,
+    ...     dsc_standards_version=dsc_standards_version,
+    ...     dsc_format=dsc_format,
+    ...     dsc_binaries=dsc_binaries,
+    ...     archive=archive,
+    ...     copyright=copyright,
+    ...     build_conflicts=None,
+    ...     build_conflicts_indep=None,
+    ...     source_package_recipe_build=arg_recipebuild,
+    ... )
 
     >>> print(new_spr.upload_distroseries.name)
     hoary

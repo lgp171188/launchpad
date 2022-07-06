@@ -546,8 +546,8 @@ Then the source gets accepted and published, step 3 and 4:
     >>> from lp.soyuz.interfaces.publishing import IPublishingSet
     >>> getUtility(IPublishingSet).newSourcePublication(
     ...     multibar_src_queue.archive, multibar_spr,
-    ...     sync_policy.distroseries, multibar_spr.component,
-    ...     multibar_spr.section, PackagePublishingPocket.RELEASE)
+    ...     sync_policy.distroseries, PackagePublishingPocket.RELEASE,
+    ...     component=multibar_spr.component, section=multibar_spr.section)
     <SourcePackagePublishingHistory at ...>
 
 Build creation is done based on the SourcePackageRelease object, step 5:
