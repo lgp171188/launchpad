@@ -80,6 +80,9 @@ from lp.registry.enums import (
     PersonVisibility,
     )
 from lp.registry.errors import NoSuchDistroSeries
+from lp.registry.interfaces.distributionsourcepackage import (
+    IDistributionSourcePackage,
+    )
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.distroseriesparent import IDistroSeriesParentSet
 from lp.registry.interfaces.gpg import IGPGKeySet
@@ -2018,18 +2021,20 @@ class Archive(SQLBase):
             raise CannotCopy(
                 "CI builds may only be uploaded to archives published using "
                 "Artifactory.")
+        dsp = ci_build.git_repository.target
+        if not IDistributionSourcePackage.providedBy(dsp):
+            raise CannotCopy(
+                "Only CI builds for repositories in package namespaces may be "
+                "uploaded to archives.")
         if ci_build.status != BuildStatus.FULLYBUILT:
             raise CannotCopy(
                 "%r has status '%s', not '%s'." %
                 (ci_build, ci_build.status.title, BuildStatus.FULLYBUILT))
-        # Check upload permissions.  We don't know the package name until we
-        # actually run the job; however, per-package upload permissions are
-        # by source package name, so don't necessarily make sense for CI
-        # builds anyway.  For now, just ignore per-package upload
-        # permissions.
+        # Check upload permissions.
         reason = self.checkUpload(
-            person=person, distroseries=series, sourcepackagename=None,
-            component=None, pocket=pocket)
+            person=person, distroseries=series,
+            sourcepackagename=dsp.sourcepackagename, component=None,
+            pocket=pocket)
         if reason is not None:
             raise CannotCopy(reason)
         getUtility(ICIBuildUploadJobSource).create(
