@@ -1,0 +1,20 @@
+type: charm
+bases:
+  - build-on:
+    - name: ubuntu
+      channel: "18.04"
+    run-on:
+    - name: ubuntu
+      channel: "18.04"
+parts:
+  launchpad:
+    source: .
+    plugin: reactive
+    build-snaps: [charm]
+    build-environment:
+      - CHARM_LAYERS_DIR: tmp/deps/ols-layers/layer
+      - CHARM_INTERFACES_DIR: tmp/deps/ols-layers/interface
+      - PIP_NO_INDEX: "true"
+      - PIP_FIND_LINKS: tmp/deps/charm-wheels
+    stage:
+      - -tmp
