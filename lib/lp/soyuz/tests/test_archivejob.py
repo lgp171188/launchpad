@@ -4,7 +4,10 @@
 import os.path
 
 from debian.deb822 import Changes
-from fixtures import MockPatch
+from fixtures import (
+    FakeLogger,
+    MockPatch,
+    )
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -678,6 +681,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
     def test_run_failed(self):
         # A failed run sets the job status to FAILED and notifies the
         # requester.
+        logger = self.useFixture(FakeLogger())
         archive = self.factory.makeArchive(
             repository_format=ArchiveRepositoryFormat.PYTHON)
         distroseries = self.factory.makeDistroSeries(
@@ -698,6 +702,14 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             JobRunner([job]).runAll()
 
         self.assertEqual(JobStatus.FAILED, job.job.status)
+        expected_logs = [
+            "Running %r (ID %d) in status Waiting" % (job, job.job_id),
+            "Failed to scan _invalid.whl as a Python wheel: Invalid wheel "
+            "filename: '_invalid.whl'",
+            "%r (ID %d) failed with user error ScanException(\"Could not find "
+            "any usable files in ['_invalid.whl']\",)." % (job, job.job_id),
+            ]
+        self.assertEqual(expected_logs, logger.output.splitlines())
         [notification] = self.assertEmailQueueLength(1)
         self.assertThat(dict(notification), ContainsDict({
             "From": Equals(config.canonical.noreply_from_address),
@@ -709,7 +721,8 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             }))
         self.assertEqual(
             "Launchpad encountered an error during the following operation: "
-            "uploading %s to %s.  Failed to scan _invalid.whl" % (
+            "uploading %s to %s.  "
+            "Could not find any usable files in ['_invalid.whl']" % (
                 build.title, archive.reference),
             notification.get_payload(decode=True).decode())
 
