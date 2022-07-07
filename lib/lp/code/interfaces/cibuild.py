@@ -133,6 +133,10 @@ class ICIBuildView(IPackageBuildView, IPrivacy):
             "A mapping from job IDs to result tokens, retrieved from the "
             "builder.")))
 
+    sourcepackages = Attribute(
+        "A list of source packages that resulted from this build, ordered by "
+        "name.")
+
     binarypackages = Attribute(
         "A list of binary packages that resulted from this build, ordered by "
         "name.")
@@ -180,6 +184,14 @@ class ICIBuildView(IPackageBuildView, IPrivacy):
         """URLs for all the files produced by this build.
 
         :return: A collection of URLs for this build.
+        """
+
+    def createSourcePackageRelease(
+            distroseries, sourcepackagename, version, creator=None,
+            archive=None):
+        """Create and return a `SourcePackageRelease` for this CI build.
+
+        The new source package release will be linked to this build.
         """
 
     def createBinaryPackageRelease(
