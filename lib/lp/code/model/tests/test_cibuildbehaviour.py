@@ -63,7 +63,10 @@ from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestVerifySuccessfulBuildMixin,
     )
 from lp.code.enums import RevisionStatusResult
-from lp.code.model.cibuildbehaviour import CIBuildBehaviour
+from lp.code.model.cibuildbehaviour import (
+    build_secrets,
+    CIBuildBehaviour,
+    )
 from lp.services.authserver.testing import InProcessAuthServerFixture
 from lp.services.config import config
 from lp.services.log.logger import (
@@ -77,11 +80,17 @@ from lp.soyuz.adapters.archivedependencies import (
     )
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.tests.soyuz import Base64KeyMatches
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    TestCase,
+    TestCaseWithFactory,
+    )
 from lp.testing.dbuser import dbuser
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.keyserver import InProcessKeyServerFixture
-from lp.testing.layers import ZopelessDatabaseLayer
+from lp.testing.layers import (
+    BaseLayer,
+    ZopelessDatabaseLayer,
+    )
 
 
 class TestCIBuildBehaviourBase(TestCaseWithFactory):
@@ -285,11 +294,29 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
             }))
 
     @defer.inlineCallbacks
-    def test_extraBuildArgs_git_no_artifactory_configuration_section(self):
+    def test_extraBuildArgs_git_for_non_soss_distribution(self):
         # create a distribution with a name other than "soss", see
         # schema-lazr.conf -> cibuild.soss
         # for this distribution neither Artifactory environment variables nor
         # apt repositories will be dispatched
+
+        # we need to provide the soss specific data anyway and then make sure
+        # it is not accessible
+        self.pushConfig(
+            "cibuild.soss",
+            environment_variables=json.dumps({
+                "PIP_INDEX_URL": "https://%(read_auth)s@canonical.example.com/artifactory/api/pypi/soss-python-stable/simple/",  # noqa: E501
+                "SOME_PATH": "/bin/zip"}),
+            apt_repositories=json.dumps([
+                "deb https://%(read_auth)s@canonical.example.com/artifactory/soss-deb-stable focal main universe",  # noqa: E501
+                "deb https://public_ppa.example.net/repository focal main"]),
+            plugin_settings=json.dumps({
+                "miniconda_conda_channel": "https://%(read_auth)s@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
+                "foo": "bar"}),
+            secrets=json.dumps({
+                "soss_read_auth": "%(read_auth)s"
+            })
+        )
         package = self.factory.makeDistributionSourcePackage(
             distribution=self.factory.makeDistribution(name="distribution-123")
         )
@@ -300,8 +327,12 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
         )
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
+        # make sure the distribution specific additional args are included
+        # but have no values set
         self.assertEqual({}, args["environment_variables"])
-        self.assertNotIn([], args["apt_repositories"])
+        self.assertEqual([], args["apt_repositories"])
+        self.assertEqual({}, args["plugin_settings"])
+        self.assertEqual({}, args["secrets"])
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_git_no_artifactory_configuration(self):
@@ -338,6 +369,9 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
             plugin_settings=json.dumps({
                 "miniconda_conda_channel": "https://%(read_auth)s@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
                 "foo": "bar"}),
+            secrets=json.dumps({
+                "soss_read_auth": "%(read_auth)s"
+            })
         )
         package = self.factory.makeDistributionSourcePackage(
             distribution=self.factory.makeDistribution(name="soss")
@@ -384,7 +418,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                     "miniconda_conda_channel": "https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
                     "foo": "bar",
                 }),
-
+            "secrets": Equals({"soss_read_auth": "user:pass"})
             }))
 
     @defer.inlineCallbacks
@@ -598,3 +632,33 @@ class TestHandleStatusForCIBuild(
         self.assertEqual(
             RevisionStatusResult.FAILED,
             self.build.getOrCreateRevisionStatusReport("build:0").result)
+
+
+class TestBuildSecrets(TestCase):
+    layer = BaseLayer
+
+    def setUp(self):
+        super().setUp()
+        self.pushConfig(
+            "artifactory",
+            base_url="canonical.artifactory.com",
+            read_credentials="user:pass",
+        )
+        self.pushConfig(
+            "cibuild.soss",
+            secrets=json.dumps({
+                "soss_read_auth": "%(read_auth)s"
+            })
+        )
+
+    def test_with_soss_distribution(self):
+        # builds for the soss distribution have access to the soss secrets
+        rv = build_secrets(distribution_name="soss")
+
+        self.assertEqual({"soss_read_auth": "user:pass"}, rv)
+
+    def test_with_other_than_soss_distribution(self):
+        # builds for other distributions do not have access to the soss secrets
+        rv = build_secrets(distribution_name="some-other-distribution")
+
+        self.assertEqual({}, rv)
