@@ -66,14 +66,14 @@ class SnapArchitecture:
     def __init__(
         self,
         build_on: Union[str, List[str]],
-        build_to: Optional[Union[str, List[str]]] = None,
+        build_for: Optional[Union[str, List[str]]] = None,
         build_error: Optional[str] = None
     ):
         """Create a new architecture entry.
 
         :param build_on: string or list; build-on property from
             snapcraft.yaml.
-        :param build_to: string or list; build-to property from
+        :param build_for: string or list; build-for property from
             snapcraft.yaml (defaults to build_on).
         :param build_error: string; build-error property from
             snapcraft.yaml.
@@ -81,12 +81,12 @@ class SnapArchitecture:
         self.build_on = (
             [build_on] if isinstance(build_on, str) else build_on
         )  # type: List[str]
-        if build_to:
-            self.build_to = (
-                [build_to] if isinstance(build_to, str) else build_to
+        if build_for:
+            self.build_for = (
+                [build_for] if isinstance(build_for, str) else build_for
             )  # type: List[str]
         else:
-            self.build_to = self.build_on
+            self.build_for = self.build_on
         self.build_error = build_error
 
     @classmethod
@@ -97,11 +97,11 @@ class SnapArchitecture:
         except KeyError:
             raise MissingPropertyError("build-on")
 
-        build_to = properties.get("build-to", properties.get("run-on"))
+        build_for = properties.get("build-for", properties.get("run-on"))
 
         return cls(
             build_on=build_on,
-            build_to=build_to,
+            build_for=build_for,
             build_error=properties.get("build-error"),
         )
 
@@ -138,7 +138,7 @@ class SnapBuildInstance:
         except StopIteration:
             raise UnsupportedBuildOnError(architecture.build_on)
 
-        self.target_architectures = architecture.build_to
+        self.target_architectures = architecture.build_for
         self.required = architecture.build_error != "ignore"
 
 
