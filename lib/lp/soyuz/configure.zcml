@@ -10,6 +10,8 @@
     xmlns:webservice="http://namespaces.canonical.com/webservice"
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
+
+    <authorizations module=".security" />
     <include
         package=".browser"/>
     <include
@@ -350,8 +352,8 @@
         <require
             permission="launchpad.Edit"
             interface="lp.soyuz.interfaces.archive.IArchiveEdit"
-            set_attributes="api_publish build_debug_symbols description 
-                            displayname publish publish_debug_symbols 
+            set_attributes="api_publish build_debug_symbols description
+                            displayname publish publish_debug_symbols
                             status suppress_subscription_notifications"/>
         <require
             permission="launchpad.Delete"
