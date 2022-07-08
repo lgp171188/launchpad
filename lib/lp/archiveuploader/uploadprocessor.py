@@ -293,8 +293,7 @@ class UploadHandler:
         if processor.builds:
             # Upload directories contain build results,
             # directories are named after job ids.
-            handler = BuildUploadHandler(processor, fsroot, upload, build)
-            return handler
+            return BuildUploadHandler(processor, fsroot, upload, build)
         else:
             assert build is None
             return UserUploadHandler(processor, fsroot, upload)
