@@ -3452,6 +3452,14 @@ class TestUploadCIBuild(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
+    def makeCIBuild(self, distribution, **kwargs):
+        # CIBuilds must be in a package namespace in order to be uploaded to
+        # an archive.
+        dsp = self.factory.makeDistributionSourcePackage(
+            distribution=distribution)
+        repository = self.factory.makeGitRepository(target=dsp)
+        return self.factory.makeCIBuild(git_repository=repository, **kwargs)
+
     def test_creates_job(self):
         # The uploadCIBuild method creates a CIBuildUploadJob with the
         # appropriate parameters.
@@ -3459,7 +3467,8 @@ class TestUploadCIBuild(TestCaseWithFactory):
             publishing_method=ArchivePublishingMethod.ARTIFACTORY)
         series = self.factory.makeDistroSeries(
             distribution=archive.distribution)
-        build = self.factory.makeCIBuild(status=BuildStatus.FULLYBUILT)
+        build = self.makeCIBuild(
+            archive.distribution, status=BuildStatus.FULLYBUILT)
         with person_logged_in(archive.owner):
             archive.uploadCIBuild(
                 build, archive.owner, series.name, "Release",
@@ -3477,12 +3486,29 @@ class TestUploadCIBuild(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         series = self.factory.makeDistroSeries(
             distribution=archive.distribution)
-        build = self.factory.makeCIBuild(status=BuildStatus.FULLYBUILT)
+        build = self.makeCIBuild(
+            archive.distribution, status=BuildStatus.FULLYBUILT)
         with person_logged_in(archive.owner):
             self.assertRaisesWithContent(
                 CannotCopy,
                 "CI builds may only be uploaded to archives published using "
                 "Artifactory.",
+                archive.uploadCIBuild,
+                build, archive.owner, series.name, "Release")
+
+    def test_disallows_non_package_namespace(self):
+        # Only CI builds for repositories in package namespaces may be
+        # copied into archives.
+        archive = self.factory.makeArchive(
+            publishing_method=ArchivePublishingMethod.ARTIFACTORY)
+        series = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        build = self.factory.makeCIBuild(status=BuildStatus.FULLYBUILT)
+        with person_logged_in(archive.owner):
+            self.assertRaisesWithContent(
+                CannotCopy,
+                "Only CI builds for repositories in package namespaces may be "
+                "uploaded to archives.",
                 archive.uploadCIBuild,
                 build, archive.owner, series.name, "Release")
 
@@ -3492,7 +3518,8 @@ class TestUploadCIBuild(TestCaseWithFactory):
             publishing_method=ArchivePublishingMethod.ARTIFACTORY)
         series = self.factory.makeDistroSeries(
             distribution=archive.distribution)
-        build = self.factory.makeCIBuild(status=BuildStatus.FAILEDTOBUILD)
+        build = self.makeCIBuild(
+            archive.distribution, status=BuildStatus.FAILEDTOBUILD)
         person = self.factory.makePerson()
         self.assertRaisesWithContent(
             CannotCopy,
@@ -3506,7 +3533,8 @@ class TestUploadCIBuild(TestCaseWithFactory):
             publishing_method=ArchivePublishingMethod.ARTIFACTORY)
         series = self.factory.makeDistroSeries(
             distribution=archive.distribution)
-        build = self.factory.makeCIBuild(status=BuildStatus.FULLYBUILT)
+        build = self.makeCIBuild(
+            archive.distribution, status=BuildStatus.FULLYBUILT)
         person = self.factory.makePerson()
         self.assertRaisesWithContent(
             CannotCopy, "Signer has no upload rights to this PPA.",

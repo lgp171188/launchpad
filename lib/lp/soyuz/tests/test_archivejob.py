@@ -156,11 +156,19 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
 
+    def makeCIBuild(self, distribution, **kwargs):
+        # CIBuilds must be in a package namespace in order to be uploaded to
+        # an archive.
+        dsp = self.factory.makeDistributionSourcePackage(
+            distribution=distribution)
+        repository = self.factory.makeGitRepository(target=dsp)
+        return self.factory.makeCIBuild(git_repository=repository, **kwargs)
+
     def test_repr_no_channel(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
-        build = self.factory.makeCIBuild()
+        build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE)
@@ -173,7 +181,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
-        build = self.factory.makeCIBuild()
+        build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
@@ -186,7 +194,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
-        build = self.factory.makeCIBuild()
+        build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
@@ -206,7 +214,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
-        build = self.factory.makeCIBuild()
+        build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
@@ -226,7 +234,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
-        build = self.factory.makeCIBuild()
+        build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
@@ -246,7 +254,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
-        build = self.factory.makeCIBuild()
+        build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
@@ -266,7 +274,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
-        build = self.factory.makeCIBuild()
+        build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
@@ -287,7 +295,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
-        build = self.factory.makeCIBuild()
+        build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
@@ -308,7 +316,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
-        build = self.factory.makeCIBuild()
+        build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
@@ -329,7 +337,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
-        build = self.factory.makeCIBuild()
+        build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
@@ -354,7 +362,8 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         dases = [
             self.factory.makeDistroArchSeries(distroseries=distroseries)
             for _ in range(2)]
-        build = self.factory.makeCIBuild(distro_arch_series=dases[0])
+        build = self.makeCIBuild(
+            archive.distribution, distro_arch_series=dases[0])
         report = build.getOrCreateRevisionStatusReport("build:0")
         report.setLog(b"log data")
         path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
@@ -402,7 +411,8 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         dases = [
             self.factory.makeDistroArchSeries(distroseries=distroseries)
             for _ in range(2)]
-        build = self.factory.makeCIBuild(distro_arch_series=dases[0])
+        build = self.makeCIBuild(
+            archive.distribution, distro_arch_series=dases[0])
         report = build.getOrCreateRevisionStatusReport("build:0")
         report.setLog(b"log data")
         path = "wheel-arch/dist/wheel_arch-0.0.1-cp310-cp310-linux_x86_64.whl"
@@ -449,7 +459,8 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         dases = [
             self.factory.makeDistroArchSeries(distroseries=distroseries)
             for _ in range(2)]
-        build = self.factory.makeCIBuild(distro_arch_series=dases[0])
+        build = self.makeCIBuild(
+            archive.distribution, distro_arch_series=dases[0])
         report = build.getOrCreateRevisionStatusReport("build:0")
         report.setLog(b"log data")
         path = "conda-arch/dist/linux-64/conda-arch-0.1-0.tar.bz2"
@@ -496,7 +507,8 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         dases = [
             self.factory.makeDistroArchSeries(distroseries=distroseries)
             for _ in range(2)]
-        build = self.factory.makeCIBuild(distro_arch_series=dases[0])
+        build = self.makeCIBuild(
+            archive.distribution, distro_arch_series=dases[0])
         report = build.getOrCreateRevisionStatusReport("build:0")
         report.setLog(b"log data")
         path = "conda-v2-arch/dist/linux-64/conda-v2-arch-0.1-0.conda"
@@ -544,7 +556,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
-        build = self.factory.makeCIBuild(distro_arch_series=das)
+        build = self.makeCIBuild(archive.distribution, distro_arch_series=das)
         report = build.getOrCreateRevisionStatusReport("build:0")
         path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
         with open(datadir(path), mode="rb") as f:
@@ -596,7 +608,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
-        build = self.factory.makeCIBuild(distro_arch_series=das)
+        build = self.makeCIBuild(archive.distribution, distro_arch_series=das)
         wheel_report = build.getOrCreateRevisionStatusReport("build-wheel:0")
         wheel_path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
         conda_path = "conda-v2-arch/dist/linux-64/conda-v2-arch-0.1-0.conda"
@@ -636,7 +648,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
-        build = self.factory.makeCIBuild(distro_arch_series=das)
+        build = self.makeCIBuild(archive.distribution, distro_arch_series=das)
         report = build.getOrCreateRevisionStatusReport("build:0")
         path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
         with open(datadir(path), mode="rb") as f:
@@ -671,7 +683,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
-        build = self.factory.makeCIBuild(distro_arch_series=das)
+        build = self.makeCIBuild(archive.distribution, distro_arch_series=das)
         report = build.getOrCreateRevisionStatusReport("build:0")
         path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
         with open(datadir(path), mode="rb") as f:
@@ -736,7 +748,11 @@ class TestViaCelery(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
-        build = self.factory.makeCIBuild(distro_arch_series=das)
+        dsp = self.factory.makeDistributionSourcePackage(
+            distribution=archive.distribution)
+        repository = self.factory.makeGitRepository(target=dsp)
+        build = self.factory.makeCIBuild(
+            git_repository=repository, distro_arch_series=das)
         report = build.getOrCreateRevisionStatusReport("build:0")
         path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
         with open(datadir(path), mode="rb") as f:
