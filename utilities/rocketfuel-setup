@@ -8,7 +8,11 @@
 # as utilities/rocketfuel-setup
 
 # load up Ubuntu release details so we know which repos to enable
-DISTRIB_CODENAME="$(lsb_release -sc)"
+DISTRIB_CODENAME="$(sed -n 's/^DISTRIB_CODENAME=//p' /etc/lsb-release | tr -d '"')"
+if [ -z "$DISTRIB_CODENAME" ]; then
+  echo "Cannot find DISTRIB_CODENAME in /etc/lsb-release" >&2
+  exit 1
+fi
 DO_WORKSPACE=1
 INSTALL_OPTS=""
 getopt_output="$(getopt -o '' -l no-workspace,lpusername:,assume-yes -- "$@")" || exit 1
