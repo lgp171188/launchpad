@@ -141,6 +141,8 @@ def get_component(archive, distroseries, component):
 
     If there is no default, just return the given component.
     """
+    if component is None:
+        return None
     permitted_components = archive.getComponentsForSeries(distroseries)
     if (component not in permitted_components and
         archive.default_component is not None):
@@ -580,9 +582,9 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
             archive,
             self.sourcepackagerelease,
             distroseries,
-            component,
-            section,
             pocket,
+            component=component,
+            section=section,
             ancestor=self,
             create_dsd_job=create_dsd_job,
             creator=creator,
@@ -1309,8 +1311,8 @@ class PublishingSet:
             copied_from_archives, channel=channel)
 
     def newSourcePublication(self, archive, sourcepackagerelease,
-                             distroseries, component, section, pocket,
-                             ancestor=None, create_dsd_job=True,
+                             distroseries, pocket, component=None,
+                             section=None, ancestor=None, create_dsd_job=True,
                              copied_from_archive=None,
                              creator=None, sponsor=None, packageupload=None,
                              channel=None):
@@ -1333,6 +1335,14 @@ class PublishingSet:
                 raise AssertionError(
                     "Channel publications must be in the RELEASE pocket")
             channel = channel_string_to_list(channel)
+
+        if sourcepackagerelease.format == SourcePackageType.DPKG:
+            if component is None:
+                raise AssertionError(
+                    "dpkg source publications require a component")
+            if section is None:
+                raise AssertionError(
+                    "dpkg source publications require a section")
 
         pub = SourcePackagePublishingHistory(
             distroseries=distroseries,

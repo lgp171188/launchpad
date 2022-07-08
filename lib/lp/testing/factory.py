@@ -3846,6 +3846,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                  dsc_format='1.0', dsc_binaries='foo-bin',
                                  date_uploaded=UTC_NOW,
                                  source_package_recipe_build=None,
+                                 ci_build=None,
                                  dscsigningkey=None,
                                  user_defined_fields=None,
                                  changelog_entry=None,
@@ -3857,6 +3858,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if distroseries is None:
             if source_package_recipe_build is not None:
                 distroseries = source_package_recipe_build.distroseries
+            elif ci_build is not None:
+                distroseries = ci_build.distro_series
             else:
                 if archive is None:
                     distribution = None
@@ -3928,6 +3931,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             archive=archive,
             dateuploaded=date_uploaded,
             source_package_recipe_build=source_package_recipe_build,
+            ci_build=ci_build,
             user_defined_fields=user_defined_fields,
             homepage=homepage)
 
@@ -4086,9 +4090,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         admins = getUtility(ILaunchpadCelebrities).admin
         with person_logged_in(admins.teamowner):
             spph = getUtility(IPublishingSet).newSourcePublication(
-                archive, sourcepackagerelease, distroseries,
-                sourcepackagerelease.component, sourcepackagerelease.section,
-                pocket, ancestor=ancestor, creator=creator,
+                archive, sourcepackagerelease, distroseries, pocket,
+                component=sourcepackagerelease.component,
+                section=sourcepackagerelease.section,
+                ancestor=ancestor, creator=creator,
                 packageupload=packageupload, channel=channel)
 
         naked_spph = removeSecurityProxy(spph)

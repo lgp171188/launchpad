@@ -671,56 +671,57 @@ class IDistroSeriesPublic(
         """
 
     def createUploadedSourcePackageRelease(
-        sourcepackagename, version, format, maintainer, builddepends,
-        builddependsindep, architecturehintlist, component, creator, urgency,
-        changelog, changelog_entry, dsc, dscsigningkey, section,
-        dsc_maintainer_rfc822, dsc_standards_version, dsc_format,
-        dsc_binaries, archive, copyright, build_conflicts,
-        build_conflicts_indep, dateuploaded=None,
-        source_package_recipe_build=None, user_defined_fields=None,
-        homepage=None, buildinfo=None):
-        """Create an uploads `SourcePackageRelease`.
+        sourcepackagename, version, format, architecturehintlist, creator,
+        archive, maintainer=None, component=None, section=None, urgency=None,
+        dscsigningkey=None, dsc=None, copyright=None, changelog=None,
+        changelog_entry=None, builddepends=None, builddependsindep=None,
+        build_conflicts=None, build_conflicts_indep=None,
+        dsc_maintainer_rfc822=None, dsc_standards_version=None,
+        dsc_format=None, dsc_binaries=None, dateuploaded=None,
+        source_package_recipe_build=None, ci_build=None,
+        user_defined_fields=None, homepage=None, buildinfo=None):
+        """Create an uploaded `SourcePackageRelease`.
 
-        Set this distroseries set to be the uploadeddistroseries.
+        Set this distroseries to be the `upload_distroseries`.
 
-        All arguments are mandatory, they are extracted/built when
-        processing and uploaded source package:
+        Arguments are extracted/built when processing an uploaded source
+        package:
 
-         :param dateuploaded: timestamp, if not provided will be UTC_NOW
-         :param sourcepackagename: `ISourcePackageName`
-         :param version: string, a debian valid version
-         :param format: `SourcePackageType`
-         :param maintainer: IPerson designed as package maintainer
-         :param creator: IPerson, package uploader
-         :param component: IComponent
-         :param section: ISection
-         :param urgency: dbschema.SourcePackageUrgency
-         :param dscsigningkey: IGPGKey used to sign the DSC file
-         :param dsc: string, original content of the dsc file
-         :param copyright: string, the original debian/copyright content
-         :param changelog: LFA ID of the debian/changelog file in librarian
-         :param changelog_entry: string, changelog extracted from the
-                                 changesfile
-         :param architecturehintlist: string, DSC architectures
-         :param builddepends: string, DSC build dependencies
-         :param builddependsindep: string, DSC architecture independent build
-                                   dependencies.
-         :param build_conflicts: string, DSC Build-Conflicts content
-         :param build_conflicts_indep: string, DSC Build-Conflicts-Indep
-                                       content
-         :param dsc_maintainer_rfc822: string, DSC maintainer field
-         :param dsc_standards_version: string, DSC standards version field
-         :param dsc_format: string, DSC format version field
-         :param dsc_binaries:  string, DSC binaries field
-         :param archive: IArchive to where the upload was targeted
-         :param dateuploaded: optional datetime, if omitted assumed nowUTC
-         :param source_package_recipe_build: optional SourcePackageRecipeBuild
-         :param user_defined_fields: optional sequence of key-value pairs with
-                                     user defined fields.
-         :param homepage: optional string with (unchecked) upstream homepage
-                          URL
-         :param buildinfo: optional LFA with build information file
-         :return: the just creates `SourcePackageRelease`
+        :param sourcepackagename: `ISourcePackageName`
+        :param version: string, a valid Debian version
+        :param format: `SourcePackageType`
+        :param architecturehintlist: string, DSC architectures
+        :param creator: `IPerson`, package uploader
+        :param archive: `IArchive` to where the upload was targeted
+        :param maintainer: `IPerson` designated as package maintainer
+        :param component: `IComponent`
+        :param section: `ISection`
+        :param urgency: `SourcePackageUrgency`
+        :param dscsigningkey: `IGPGKey` used to sign the DSC file
+        :param dsc: string, original content of the dsc file
+        :param copyright: string, the original debian/copyright content
+        :param changelog: LFA ID of the debian/changelog file in librarian
+        :param changelog_entry: string, changelog extracted from the
+                                changesfile
+        :param builddepends: string, DSC build dependencies
+        :param builddependsindep: string, DSC architecture independent build
+                                  dependencies
+        :param build_conflicts: string, DSC Build-Conflicts content
+        :param build_conflicts_indep: string, DSC Build-Conflicts-Indep
+                                      content
+        :param dsc_maintainer_rfc822: string, DSC maintainer field
+        :param dsc_standards_version: string, DSC standards version field
+        :param dsc_format: string, DSC format version field
+        :param dsc_binaries: string, DSC binaries field
+        :param dateuploaded: optional datetime, if omitted assumed `UTC_NOW`
+        :param source_package_recipe_build: optional `SourcePackageRecipeBuild`
+        :param ci_build: optional `CIBuild`
+        :param user_defined_fields: optional sequence of key-value pairs with
+                                    user defined fields
+        :param homepage: optional string with (unchecked) upstream homepage
+                         URL
+        :param buildinfo: optional LFA with build information file
+        :return: the new `SourcePackageRelease`
         """
 
     def getComponentByName(name):

@@ -986,17 +986,17 @@ class IPublishingSet(Interface):
         """
 
     def newSourcePublication(archive, sourcepackagerelease, distroseries,
-                             component, section, pocket, ancestor,
-                             create_dsd_job=True, copied_from_archive=None,
-                             creator=None, sponsor=None, packageupload=None,
-                             channel=None):
+                             pocket, component=None, section=None,
+                             ancestor=None, create_dsd_job=True,
+                             copied_from_archive=None, creator=None,
+                             sponsor=None, packageupload=None, channel=None):
         """Create a new `SourcePackagePublishingHistory`.
 
         :param archive: An `IArchive`
         :param sourcepackagerelease: An `ISourcePackageRelease`
         :param distroseries: An `IDistroSeries`
-        :param component: An `IComponent`
-        :param section: An `ISection`
+        :param component: An `IComponent` (optional for SPR.format != DPKG)
+        :param section: An `ISection` (optional for SPR.format != DPKG)
         :param pocket: A `PackagePublishingPocket`
         :param ancestor: A `ISourcePackagePublishingHistory` for the previous
             version of this publishing record
