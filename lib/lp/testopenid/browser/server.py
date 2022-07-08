@@ -29,7 +29,6 @@ from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import isinstance as zisinstance
-from zope.session.interfaces import ISession
 
 from lp import _
 from lp.app.browser.launchpadform import (
@@ -54,6 +53,7 @@ from lp.services.webapp import LaunchpadView
 from lp.services.webapp.interfaces import (
     ICanonicalUrlData,
     IPlacelessLoginSource,
+    ISession,
     )
 from lp.services.webapp.login import (
     allowUnauthenticatedSession,

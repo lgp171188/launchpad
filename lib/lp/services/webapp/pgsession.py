@@ -8,7 +8,6 @@ from datetime import datetime
 import hashlib
 import io
 import pickle
-import time
 
 from lazr.restful.utils import get_current_browser_request
 import six
@@ -16,7 +15,8 @@ from storm.zope.interfaces import IZStorm
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.component import getUtility
 from zope.interface import implementer
-from zope.session.interfaces import (
+
+from lp.services.webapp.interfaces import (
     IClientIdManager,
     ISessionData,
     ISessionDataContainer,
@@ -95,11 +95,11 @@ class PGSessionDataContainer(PGSessionBase):
     session_pkg_data_table_name = 'SessionPkgData'
 
     def __getitem__(self, client_id):
-        """See zope.session.interfaces.ISessionDataContainer"""
+        """See `ISessionDataContainer`."""
         return PGSessionData(self, client_id)
 
     def __setitem__(self, client_id, session_data):
-        """See zope.session.interfaces.ISessionDataContainer"""
+        """See `ISessionDataContainer`."""
         # The SessionData / SessionPkgData objects know how to store
         # themselves.
         pass
@@ -110,8 +110,6 @@ class PGSessionData(PGSessionBase):
 
     session_data_container = None
 
-    lastAccessTime = None
-
     _have_ensured_client_id = False
 
     def __init__(self, session_data_container, client_id):
@@ -119,7 +117,6 @@ class PGSessionData(PGSessionBase):
         self.client_id = six.ensure_text(client_id, 'ascii')
         self.hashed_client_id = (
             hashlib.sha256(self.client_id.encode()).hexdigest())
-        self.lastAccessTime = time.time()
 
         # Update the last access time in the db if it is out of date
         table_name = session_data_container.session_data_table_name
@@ -174,11 +171,11 @@ class PGSessionData(PGSessionBase):
         self._have_ensured_client_id = True
 
     def __getitem__(self, product_id):
-        """Return an ISessionPkgData"""
+        """Return an `ISessionPkgData`."""
         return PGSessionPkgData(self, product_id)
 
     def __setitem__(self, product_id, session_pkg_data):
-        """See zope.session.interfaces.ISessionData
+        """See `ISessionData`.
 
         This is a noop in the RDBMS implementation.
         """

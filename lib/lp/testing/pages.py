@@ -36,7 +36,6 @@ from zope.app.wsgi.testlayer import (
 from zope.component import getUtility
 from zope.security.management import setSecurityPolicy
 from zope.security.proxy import removeSecurityProxy
-from zope.session.interfaces import ISession
 from zope.testbrowser.browser import (
     BrowserStateError,
     isMatching,
@@ -65,7 +64,10 @@ from lp.services.oauth.interfaces import (
     )
 from lp.services.webapp import canonical_url
 from lp.services.webapp.authorization import LaunchpadPermissiveSecurityPolicy
-from lp.services.webapp.interfaces import OAuthPermission
+from lp.services.webapp.interfaces import (
+    ISession,
+    OAuthPermission,
+    )
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.services.webapp.url import urlsplit
 from lp.testing import (

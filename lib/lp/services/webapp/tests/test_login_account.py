@@ -7,7 +7,6 @@ from urllib.parse import parse_qs
 import lazr.uri
 from zope.component import getUtility
 from zope.event import notify
-from zope.session.interfaces import ISession
 
 from lp.services.config import config
 from lp.services.identity.interfaces.account import (
@@ -18,6 +17,7 @@ from lp.services.webapp.authentication import LaunchpadPrincipal
 from lp.services.webapp.interfaces import (
     CookieAuthLoggedInEvent,
     IPlacelessAuthUtility,
+    ISession,
     )
 from lp.services.webapp.login import (
     CookieLogoutPage,

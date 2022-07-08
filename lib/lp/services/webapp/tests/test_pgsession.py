@@ -11,11 +11,11 @@ from zope.security.management import (
     endInteraction,
     newInteraction,
     )
-from zope.session.interfaces import (
+
+from lp.services.webapp.interfaces import (
     ISessionData,
     ISessionDataContainer,
     )
-
 from lp.services.webapp.pgsession import (
     PGSessionData,
     PGSessionDataContainer,

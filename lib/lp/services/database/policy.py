@@ -30,10 +30,6 @@ from zope.interface import (
     alsoProvides,
     implementer,
     )
-from zope.session.interfaces import (
-    IClientIdManager,
-    ISession,
-    )
 
 from lp.services.config import (
     config,
@@ -51,6 +47,10 @@ from lp.services.database.interfaces import (
     STANDBY_FLAVOR,
     )
 from lp.services.database.sqlbase import StupidCache
+from lp.services.webapp.interfaces import (
+    IClientIdManager,
+    ISession,
+    )
 
 
 def _now():

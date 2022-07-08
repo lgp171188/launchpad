@@ -35,10 +35,6 @@ from zope.interface import Interface
 from zope.publisher.browser import BrowserPage
 from zope.publisher.interfaces.http import IHTTPApplicationRequest
 from zope.security.proxy import removeSecurityProxy
-from zope.session.interfaces import (
-    IClientIdManager,
-    ISession,
-    )
 
 from lp import _
 from lp.registry.interfaces.person import (
@@ -60,9 +56,11 @@ from lp.services.webapp import canonical_url
 from lp.services.webapp.error import SystemErrorView
 from lp.services.webapp.interfaces import (
     CookieAuthLoggedInEvent,
+    IClientIdManager,
     ILaunchpadApplication,
     IPlacelessAuthUtility,
     IPlacelessLoginSource,
+    ISession,
     LoggedOutEvent,
     )
 from lp.services.webapp.publisher import LaunchpadView
