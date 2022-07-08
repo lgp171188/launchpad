@@ -48,7 +48,9 @@ above, failed being worst).
 import os
 import shutil
 import sys
+from datetime import datetime
 
+import pytz
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -66,7 +68,7 @@ from lp.archiveuploader.uploadpolicy import (
     UploadPolicyError,
 )
 from lp.archiveuploader.utils import UploadError
-from lp.buildmaster.enums import BuildFarmJobType, BuildStatus
+from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
 from lp.code.interfaces.cibuild import ICIBuild
@@ -86,6 +88,7 @@ from lp.services.webapp.adapter import (
 from lp.services.webapp.errorlog import ErrorReportingUtility, ScriptRequest
 from lp.snappy.interfaces.snapbuild import ISnapBuild
 from lp.soyuz.interfaces.archive import IArchiveSet, NoSuchPPA
+from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuild
 from lp.soyuz.interfaces.livefsbuild import ILiveFSBuild
 
 __all__ = [
@@ -174,25 +177,27 @@ class UploadProcessor:
         self._getPolicyForDistro = policy_for_distro
         self.ztm = ztm
 
-    def reportStatsdMetrics(self, handler, uploads_to_process):
-        upload_type = "NoBuildInfo"
+    def reportStatsdMetrics(self, handler, upload_duration):
+        upload_type = "UserUpload"
         if hasattr(handler, "build"):
+            if IBinaryPackageBuild.providedBy(handler.build):
+                upload_type = "PACKAGEBUILD"
             if ICharmRecipeBuild.providedBy(handler.build):
-                upload_type = BuildFarmJobType.CHARMRECIPEBUILD
-            elif ILiveFSBuild.providedBy(handler.build):
-                upload_type = BuildFarmJobType.LIVEFSBUILD
-            elif ISnapBuild.providedBy(handler.build):
-                upload_type = BuildFarmJobType.SNAPBUILD
-            elif IOCIRecipeBuild.providedBy(handler.build):
-                upload_type = BuildFarmJobType.OCIRECIPEBUILD
-            elif ICIBuild.providedBy(handler.build):
-                upload_type = BuildFarmJobType.CIBUILD
+                upload_type = "CHARMRECIPEBUILD"
+            if ILiveFSBuild.providedBy(handler.build):
+                upload_type = "LIVEFSBUILD"
+            if ISnapBuild.providedBy(handler.build):
+                upload_type = "SNAPBUILD"
+            if IOCIRecipeBuild.providedBy(handler.build):
+                upload_type = "OCIRECIPEBUILD"
+            if ICIBuild.providedBy(handler.build):
+                upload_type = "CIBUILD"
         statsd_client = getUtility(IStatsdClient)
-        statsd_client.incr(
-            "upload.process",
+        statsd_client.timing(
+            "upload_duration",
+            upload_duration * 1000,
             labels={
                 "upload_type": upload_type,
-                "total_files": len(uploads_to_process),
             },
         )
 
@@ -230,11 +235,16 @@ class UploadProcessor:
                 set_request_started(enable_timeout=False)
                 try:
                     handler = UploadHandler.forProcessor(self, fsroot, upload)
-                    self.reportStatsdMetrics(handler, uploads_to_process)
+                    date_started = datetime.now(pytz.UTC)
                 except CannotGetBuild as e:
                     self.log.warning(e)
                 else:
                     handler.process()
+                    date_completed = datetime.now(pytz.UTC)
+                    upload_duration = (
+                        date_completed - date_started
+                    ).total_seconds() * 1000
+                    self.reportStatsdMetrics(handler, upload_duration)
                 finally:
                     clear_request_started()
         finally:
@@ -283,7 +293,8 @@ class UploadHandler:
         if processor.builds:
             # Upload directories contain build results,
             # directories are named after job ids.
-            return BuildUploadHandler(processor, fsroot, upload, build)
+            handler = BuildUploadHandler(processor, fsroot, upload, build)
+            return handler
         else:
             assert build is None
             return UserUploadHandler(processor, fsroot, upload)
