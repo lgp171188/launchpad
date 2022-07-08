@@ -25,9 +25,9 @@ from lp.code.enums import (
     CodeReviewNotificationLevel,
     )
 from lp.code.interfaces.branch import IBranchSet
+from lp.code.security import AccessBranch
 from lp.registry.interfaces.person import TeamMembershipPolicy
 from lp.registry.interfaces.role import IPersonRoles
-from lp.security import AccessBranch
 from lp.services.webapp.authorization import (
     check_permission,
     clear_cache,
