@@ -1416,9 +1416,9 @@ class PackageUploadSource(StormBase):
             archive=self.packageupload.archive,
             sourcepackagerelease=self.sourcepackagerelease,
             distroseries=self.packageupload.distroseries,
+            pocket=self.packageupload.pocket,
             component=self.sourcepackagerelease.component,
             section=self.sourcepackagerelease.section,
-            pocket=self.packageupload.pocket,
             packageupload=self.packageupload)
 
 

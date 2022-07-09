@@ -28,6 +28,9 @@ import zstandard
 from lp.code.enums import RevisionStatusArtifactType
 from lp.code.interfaces.cibuild import ICIBuildSet
 from lp.code.interfaces.revisionstatus import IRevisionStatusArtifactSet
+from lp.registry.interfaces.distributionsourcepackage import (
+    IDistributionSourcePackage,
+    )
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
@@ -61,6 +64,9 @@ from lp.soyuz.interfaces.binarypackagename import IBinaryPackageNameSet
 from lp.soyuz.interfaces.publishing import IPublishingSet
 from lp.soyuz.interfaces.queue import IPackageUploadSet
 from lp.soyuz.model.archive import Archive
+
+
+logger = logging.getLogger(__name__)
 
 
 @implementer(IArchiveJob)
@@ -187,7 +193,6 @@ class PackageUploadNotificationJob(ArchiveJobDerived):
             changes_file_object = None
         else:
             changes_file_object = io.BytesIO(packageupload.changesfile.read())
-        logger = logging.getLogger()
         packageupload.notify(
             status=self.packageupload_status, summary_text=self.summary_text,
             changes_file_object=changes_file_object, logger=logger)
@@ -372,7 +377,14 @@ class CIBuildUploadJob(ArchiveJobDerived):
 
     def run(self):
         """See `IRunnableJob`."""
-        logger = logging.getLogger()
+        build_target = self.ci_build.git_repository.target
+        if not IDistributionSourcePackage.providedBy(build_target):
+            # This should be caught by `Archive.uploadCIBuild`, but check it
+            # here as well just in case.
+            logger.warning(
+                "Source CI build is for %s, which is not a package",
+                repr(build_target))
+            return
         with tempfile.TemporaryDirectory(prefix="ci-build-copy-job") as tmpdir:
             releases = {
                 (release.binarypackagename, release.binpackageformat): release

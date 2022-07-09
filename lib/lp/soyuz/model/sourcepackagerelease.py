@@ -120,9 +120,14 @@ class SourcePackageRelease(SQLBase):
     upload_archive = ForeignKey(
         foreignKey='Archive', dbName='upload_archive', notNull=True)
 
-    source_package_recipe_build_id = Int(name='sourcepackage_recipe_build')
+    # DB constraint: at most one of source_package_recipe_build and ci_build
+    # is non-NULL.
+    source_package_recipe_build_id = Int(
+        name='sourcepackage_recipe_build', allow_none=True)
     source_package_recipe_build = Reference(
         source_package_recipe_build_id, 'SourcePackageRecipeBuild.id')
+    ci_build_id = Int(name='ci_build', allow_none=True)
+    ci_build = Reference(ci_build_id, 'CIBuild.id')
 
     # XXX cprov 2006-09-26: Those fields are set as notNull and required in
     # ISourcePackageRelease, however they can't be not NULL in DB since old

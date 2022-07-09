@@ -1031,9 +1031,9 @@ the PPA publication will always be main:
     ...     archive=mark.archive,
     ...     sourcepackagerelease=test_source_pub.sourcepackagerelease,
     ...     distroseries=mark.archive.distribution.currentseries,
+    ...     pocket=test_source_pub.pocket,
     ...     component=test_source_pub.component,
-    ...     section=test_source_pub.section,
-    ...     pocket=test_source_pub.pocket)
+    ...     section=test_source_pub.section)
     >>> print(ppa_pub.component.name)
     main
 

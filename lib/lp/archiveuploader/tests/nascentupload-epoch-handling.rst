@@ -221,8 +221,9 @@ For source uploads, Changes.version == DSC.version == SPR.version:
     >>> from lp.soyuz.interfaces.publishing import IPublishingSet
     >>> getUtility(IPublishingSet).newSourcePublication(
     ...     bar_src_upload.policy.distro.main_archive, bar_spr,
-    ...     bar_src_upload.policy.distroseries, bar_spr.component,
-    ...     bar_spr.section, PackagePublishingPocket.RELEASE)
+    ...     bar_src_upload.policy.distroseries,
+    ...     PackagePublishingPocket.RELEASE,
+    ...     component=bar_spr.component, section=bar_spr.section)
     <SourcePackagePublishingHistory at ...>
 
 Let's accept the source and claim 'build from accepted' to process the

@@ -14,41 +14,14 @@ __all__ = []
 
 from lazr.restful.fields import Reference
 
-from lp.blueprints.interfaces.specification import ISpecification
-from lp.blueprints.interfaces.specificationbranch import ISpecificationBranch
-from lp.bugs.interfaces.bug import IBug
-from lp.bugs.interfaces.bugbranch import IBugBranch
 from lp.bugs.interfaces.bugtask import IBugTask
 from lp.bugs.interfaces.vulnerability import IVulnerability
 from lp.buildmaster.interfaces.builder import IBuilder
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
-from lp.code.interfaces.branch import (
-    IBranch,
-    IBranchSet,
-    )
-from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
-from lp.code.interfaces.branchsubscription import IBranchSubscription
+from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.cibuild import ICIBuild
-from lp.code.interfaces.codeimport import ICodeImport
-from lp.code.interfaces.codereviewcomment import ICodeReviewComment
-from lp.code.interfaces.codereviewvote import ICodeReviewVoteReference
-from lp.code.interfaces.diff import IPreviewDiff
-from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepository
-from lp.code.interfaces.gitrule import (
-    IGitNascentRule,
-    IGitNascentRuleGrant,
-    )
-from lp.code.interfaces.gitsubscription import IGitSubscription
-from lp.code.interfaces.hasbranches import (
-    IHasBranches,
-    IHasCodeImports,
-    IHasMergeProposals,
-    IHasRequestedReviews,
-    )
-from lp.code.interfaces.hasrecipes import IHasRecipes
-from lp.code.interfaces.revisionstatus import IRevisionStatusReport
 from lp.code.interfaces.sourcepackagerecipe import ISourcePackageRecipe
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
@@ -84,7 +57,6 @@ from lp.registry.interfaces.sourcepackage import (
     )
 from lp.services.auth.interfaces import IAccessToken
 from lp.services.comments.interfaces.conversation import IComment
-from lp.services.fields import InlineObject
 from lp.services.messages.interfaces.message import (
     IIndexedMessage,
     IMessage,
@@ -140,72 +112,8 @@ from lp.translations.interfaces.translationimportqueue import (
     )
 
 
-patch_collection_property(IBranch, 'bug_branches', IBugBranch)
-patch_collection_property(IBranch, 'linked_bugs', IBug)
-patch_collection_property(IBranch, 'dependent_branches', IBranchMergeProposal)
-patch_entry_return_type(IBranch, 'getSubscription', IBranchSubscription)
-patch_collection_property(
-    IBranch, '_api_landing_candidates', IBranchMergeProposal)
-patch_collection_property(
-    IBranch, '_api_landing_targets', IBranchMergeProposal)
-patch_plain_parameter_type(IBranch, 'linkBug', 'bug', IBug)
-patch_plain_parameter_type(
-    IBranch, 'linkSpecification', 'spec', ISpecification)
-patch_reference_property(IBranch, 'product', IProduct)
-
-patch_plain_parameter_type(IBranch, 'setTarget', 'project', IProduct)
-patch_plain_parameter_type(
-    IBranch, 'setTarget', 'source_package', ISourcePackage)
-patch_reference_property(IBranch, 'sourcepackage', ISourcePackage)
-patch_reference_property(IBranch, 'code_import', ICodeImport)
-
-patch_collection_property(IBranch, 'spec_links', ISpecificationBranch)
-patch_entry_return_type(IBranch, 'subscribe', IBranchSubscription)
-patch_collection_property(IBranch, 'subscriptions', IBranchSubscription)
-patch_plain_parameter_type(IBranch, 'unlinkBug', 'bug', IBug)
-patch_plain_parameter_type(
-    IBranch, 'unlinkSpecification', 'spec', ISpecification)
-
-patch_entry_return_type(IBranch, '_createMergeProposal', IBranchMergeProposal)
-patch_plain_parameter_type(
-    IBranch, '_createMergeProposal', 'merge_target', IBranch)
-patch_plain_parameter_type(
-    IBranch, '_createMergeProposal', 'merge_prerequisite', IBranch)
-patch_collection_return_type(
-    IBranch, 'getMergeProposals', IBranchMergeProposal)
-
-patch_collection_return_type(
-    IBranchSet, 'getMergeProposals', IBranchMergeProposal)
-
-patch_entry_return_type(IBranchMergeProposal, 'getComment', ICodeReviewComment)
-patch_plain_parameter_type(
-    IBranchMergeProposal, 'createComment', 'parent', ICodeReviewComment)
-patch_entry_return_type(
-    IBranchMergeProposal, 'createComment', ICodeReviewComment)
-patch_collection_property(
-    IBranchMergeProposal, 'all_comments', ICodeReviewComment)
-patch_entry_return_type(
-    IBranchMergeProposal, 'nominateReviewer', ICodeReviewVoteReference)
-patch_collection_property(
-    IBranchMergeProposal, 'votes', ICodeReviewVoteReference)
-patch_collection_return_type(
-    IBranchMergeProposal, 'getRelatedBugTasks', IBugTask)
-patch_plain_parameter_type(IBranchMergeProposal, 'linkBug', 'bug', IBug)
-patch_plain_parameter_type(IBranchMergeProposal, 'unlinkBug', 'bug', IBug)
-
-patch_collection_return_type(IHasBranches, 'getBranches', IBranch)
-patch_collection_return_type(
-    IHasMergeProposals, 'getMergeProposals', IBranchMergeProposal)
-patch_collection_return_type(
-    IHasRequestedReviews, 'getRequestedReviews', IBranchMergeProposal)
-patch_entry_return_type(IHasCodeImports, 'newCodeImport', ICodeImport)
-patch_plain_parameter_type(IHasCodeImports, 'newCodeImport', 'owner', IPerson)
-
 # IBuilder
 patch_reference_property(IBuilder, 'current_build', IBuildFarmJob)
-
-patch_reference_property(
-    IPreviewDiff, 'branch_merge_proposal', IBranchMergeProposal)
 
 patch_reference_property(IPersonViewRestricted, 'archive', IArchive)
 patch_collection_property(IPersonViewRestricted, 'ppas', IArchive)
@@ -237,9 +145,6 @@ patch_collection_return_type(
     IPerson, 'getArchiveSubscriptions', IArchiveSubscriber)
 patch_entry_return_type(IPerson, 'getRecipe', ISourcePackageRecipe)
 patch_collection_return_type(IPerson, 'getOwnedProjects', IProduct)
-
-# IHasRecipe
-patch_collection_property(IHasRecipes, 'recipes', ISourcePackageRecipe)
 
 # publishing.py
 patch_collection_return_type(
@@ -418,49 +323,6 @@ patch_entry_return_type(
 patch_plain_parameter_type(
     IDistroArchSeries, 'setSourceFilter', 'packageset', IPackageset)
 
-# IGitRef
-patch_reference_property(IGitRef, 'repository', IGitRepository)
-patch_plain_parameter_type(
-    IGitRef, 'createMergeProposal', 'merge_target', IGitRef)
-patch_plain_parameter_type(
-    IGitRef, 'createMergeProposal', 'merge_prerequisite', IGitRef)
-patch_collection_property(
-    IGitRef, '_api_landing_targets', IBranchMergeProposal)
-patch_collection_property(
-    IGitRef, '_api_landing_candidates', IBranchMergeProposal)
-patch_collection_property(IGitRef, 'dependent_landings', IBranchMergeProposal)
-patch_entry_return_type(IGitRef, 'createMergeProposal', IBranchMergeProposal)
-patch_collection_return_type(
-    IGitRef, 'getMergeProposals', IBranchMergeProposal)
-patch_list_parameter_type(
-    IGitRef, 'setGrants', 'grants', InlineObject(schema=IGitNascentRuleGrant))
-
-# IGitRepository
-patch_collection_property(IGitRepository, 'branches', IGitRef)
-patch_collection_property(IGitRepository, 'refs', IGitRef)
-patch_collection_property(IGitRepository, 'subscriptions', IGitSubscription)
-patch_entry_return_type(IGitRepository, 'subscribe', IGitSubscription)
-patch_entry_return_type(IGitRepository, 'getSubscription', IGitSubscription)
-patch_reference_property(IGitRepository, 'code_import', ICodeImport)
-patch_entry_return_type(IGitRepository, 'getRefByPath', IGitRef)
-patch_collection_return_type(
-    IGitRepository, 'getStatusReports', IRevisionStatusReport)
-patch_collection_property(
-    IGitRepository, '_api_landing_targets', IBranchMergeProposal)
-patch_collection_property(
-    IGitRepository, '_api_landing_candidates', IBranchMergeProposal)
-patch_collection_property(
-    IGitRepository, 'dependent_landings', IBranchMergeProposal)
-patch_collection_return_type(
-    IGitRepository, 'getMergeProposals', IBranchMergeProposal)
-patch_list_parameter_type(
-    IGitRepository, 'setRules', 'rules', InlineObject(schema=IGitNascentRule))
-
-# IRevisionStatusReport
-patch_reference_property(
-    IRevisionStatusReport, 'git_repository', IGitRepository)
-patch_reference_property(IRevisionStatusReport, 'ci_build', ICIBuild)
-
 # ILiveFSFile
 patch_reference_property(ILiveFSFile, 'livefsbuild', ILiveFSBuild)
 
@@ -488,18 +350,6 @@ patch_reference_property(IPackageUpload, 'copy_source_archive', IArchive)
 patch_reference_property(
     ISourcePackageRelease, 'source_package_recipe_build',
     ISourcePackageRecipeBuild)
-
-# ISourcePackageRecipeView
-patch_entry_return_type(
-    ISourcePackageRecipe, 'requestBuild', ISourcePackageRecipeBuild)
-patch_reference_property(
-    ISourcePackageRecipe, 'last_build', ISourcePackageRecipeBuild)
-patch_collection_property(
-    ISourcePackageRecipe, 'builds', ISourcePackageRecipeBuild)
-patch_collection_property(
-    ISourcePackageRecipe, 'pending_builds', ISourcePackageRecipeBuild)
-patch_collection_property(
-    ISourcePackageRecipe, 'completed_builds', ISourcePackageRecipeBuild)
 
 # IHasTranslationImports
 patch_collection_return_type(

@@ -1060,14 +1060,15 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
             self, build_state, name, pocket, arch_tag)
 
     def createUploadedSourcePackageRelease(
-        self, sourcepackagename, version, format, maintainer, builddepends,
-        builddependsindep, architecturehintlist, component, creator,
-        urgency, changelog, changelog_entry, dsc, dscsigningkey, section,
-        dsc_maintainer_rfc822, dsc_standards_version, dsc_format,
-        dsc_binaries, archive, copyright, build_conflicts,
-        build_conflicts_indep, dateuploaded=DEFAULT,
-        source_package_recipe_build=None, user_defined_fields=None,
-        homepage=None, buildinfo=None):
+        self, sourcepackagename, version, format, architecturehintlist,
+        creator, archive, maintainer=None, component=None, section=None,
+        urgency=None, dscsigningkey=None, dsc=None, copyright=None,
+        changelog=None, changelog_entry=None, builddepends=None,
+        builddependsindep=None, build_conflicts=None,
+        build_conflicts_indep=None, dsc_maintainer_rfc822=None,
+        dsc_standards_version=None, dsc_format=None, dsc_binaries=None,
+        dateuploaded=DEFAULT, source_package_recipe_build=None, ci_build=None,
+        user_defined_fields=None, homepage=None, buildinfo=None):
         """See `IDistroSeries`."""
         return SourcePackageRelease(
             upload_distroseries=self, sourcepackagename=sourcepackagename,
@@ -1087,8 +1088,8 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
             build_conflicts=build_conflicts,
             build_conflicts_indep=build_conflicts_indep,
             source_package_recipe_build=source_package_recipe_build,
-            user_defined_fields=user_defined_fields, homepage=homepage,
-            buildinfo=buildinfo)
+            ci_build=ci_build, user_defined_fields=user_defined_fields,
+            homepage=homepage, buildinfo=buildinfo)
 
     def getComponentByName(self, name):
         """See `IDistroSeries`."""

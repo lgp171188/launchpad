@@ -215,9 +215,9 @@ class TestBuilddUploads(TestStagedBinaryUploadBase):
             self.distroseries.main_archive,
             spr,
             self.distroseries,
-            spr.component,
-            spr.section,
             PackagePublishingPocket.RELEASE,
+            component=spr.component,
+            section=spr.section,
         )
         self.policy = real_policy
 

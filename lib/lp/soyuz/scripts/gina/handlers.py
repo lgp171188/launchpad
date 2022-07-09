@@ -692,9 +692,9 @@ class SourcePackagePublisher:
         entry = getUtility(IPublishingSet).newSourcePublication(
             distroseries=self.distroseries,
             sourcepackagerelease=sourcepackagerelease,
+            pocket=self.pocket,
             component=component,
             section=section,
-            pocket=self.pocket,
             archive=archive)
         entry.setPublished()
         log.info('Source package %s (%s) published' % (
