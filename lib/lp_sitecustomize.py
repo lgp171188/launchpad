@@ -24,18 +24,7 @@ from lp.services.openid.fetcher import set_default_openid_fetcher
 
 
 def add_custom_loglevels():
-    """Add out custom log levels to the Python logging package."""
-
-    # This import installs custom ZODB loglevels, which we can then
-    # override. BLATHER is between INFO and DEBUG, so we can leave it.
-    # TRACE conflicts with DEBUG6, and since we are not using ZEO, we
-    # just overwrite the level string by calling addLevelName.
-    from ZODB.loglevels import BLATHER, TRACE
-
-    # Confirm our above assumptions, and silence lint at the same time.
-    assert BLATHER == 15
-    assert TRACE == loglevels.DEBUG6
-
+    """Add our custom log levels to the Python logging package."""
     logging.addLevelName(loglevels.DEBUG2, "DEBUG2")
     logging.addLevelName(loglevels.DEBUG3, "DEBUG3")
     logging.addLevelName(loglevels.DEBUG4, "DEBUG4")

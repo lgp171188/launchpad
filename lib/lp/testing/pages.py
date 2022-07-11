@@ -1,5 +1,17 @@
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+#
+# Portions from zope.app.wsgi.testlayer, which is:
+#
+# Copyright (c) 2010 Zope Foundation and Contributors.
+# All Rights Reserved.
+#
+# This software is subject to the provisions of the Zope Public License,
+# Version 2.1 (ZPL).  A copy of the ZPL should accompany this distribution.
+# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY AND ALL EXPRESS OR IMPLIED
+# WARRANTIES ARE DISCLAIMED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF TITLE, MERCHANTABILITY, AGAINST INFRINGEMENT, AND FITNESS
+# FOR A PARTICULAR PURPOSE.
 
 """Testing infrastructure for page tests."""
 
@@ -29,7 +41,6 @@ from lazr.restful.testing.webservice import WebServiceCaller
 from oauthlib import oauth1
 from soupsieve import escape as css_escape
 from webtest import TestRequest
-from zope.app.wsgi.testlayer import FakeResponse, NotInBrowserLayer
 from zope.component import getUtility
 from zope.security.management import setSecurityPolicy
 from zope.security.proxy import removeSecurityProxy
@@ -74,6 +85,78 @@ SAMPLEDATA_ACCESS_SECRETS = {
     "salgado-change-anything": "test",
     "nopriv-read-nonprivate": "mystery",
 }
+
+
+class NotInBrowserLayer(Exception):
+    """The current test is not running in zope.testbrowser.wsgi.Layer."""
+
+
+# Based on zope.app.wsgi.testlayer.FakeResponse, but with fewer dependencies.
+class FakeResponse:
+    """This behaves like a Response object returned by HTTPCaller of
+    zope.app.testing.functional.
+    """
+
+    def __init__(self, response, request=None):
+        self.response = response
+        self.request = request
+
+    @property
+    def server_protocol(self):
+        protocol = None
+        if self.request is not None:
+            protocol = self.request.environ.get("SERVER_PROTOCOL")
+        if protocol is None:
+            protocol = b"HTTP/1.0"
+        if not isinstance(protocol, bytes):
+            protocol = protocol.encode("latin1")
+        return protocol
+
+    def getStatus(self):
+        return self.response.status_int
+
+    def getStatusString(self):
+        return self.response.status
+
+    def getHeader(self, name, default=None):
+        return self.response.headers.get(name, default)
+
+    def getHeaders(self):
+        return sorted(self.response.headerlist)
+
+    def getBody(self):
+        return self.response.body
+
+    def getOutput(self):
+        status = self.response.status
+        status = (
+            status.encode("latin1")
+            if not isinstance(status, bytes)
+            else status
+        )
+        parts = [self.server_protocol + b" " + status]
+
+        headers = [
+            (
+                k.encode("latin1") if not isinstance(k, bytes) else k,
+                v.encode("latin1") if not isinstance(v, bytes) else v,
+            )
+            for k, v in self.getHeaders()
+        ]
+
+        parts += [k + b": " + v for k, v in headers]
+
+        body = self.response.body
+        if body:
+            if not isinstance(body, bytes):
+                body = body.encode("utf-8")
+            parts += [b"", body]
+        return b"\n".join(parts)
+
+    __bytes__ = getOutput
+
+    def __str__(self):
+        return self.getOutput().decode("latin-1")
 
 
 def http(string, handle_errors=True):
