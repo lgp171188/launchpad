@@ -8,6 +8,7 @@
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
 
+    <authorizations module=".security" />
     <include file="errorlog.zcml" />
     <include file="database.zcml" />
 

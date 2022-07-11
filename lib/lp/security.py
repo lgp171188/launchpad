@@ -24,10 +24,8 @@ from datetime import (
     )
 
 import pytz
-from zope.component import queryAdapter
 from zope.interface import Interface
 
-from lp.app.interfaces.security import IAuthorization
 from lp.app.security import (
     AnonymousAuthorization,
     AuthorizationBase,
@@ -60,27 +58,8 @@ from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.oci.interfaces.ocirecipesubscription import IOCIRecipeSubscription
 from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
 from lp.registry.interfaces.role import IHasOwner
-from lp.services.auth.interfaces import IAccessToken
 from lp.services.config import config
-from lp.services.identity.interfaces.emailaddress import IEmailAddress
-from lp.services.librarian.interfaces import ILibraryFileAliasWithParent
-from lp.services.messages.interfaces.message import IMessage
-from lp.services.messages.interfaces.messagerevision import IMessageRevision
-from lp.services.oauth.interfaces import (
-    IOAuthAccessToken,
-    IOAuthRequestToken,
-    )
-from lp.services.openid.interfaces.openididentifier import IOpenIdIdentifier
 from lp.services.webapp.interfaces import ILaunchpadRoot
-from lp.services.webhooks.interfaces import (
-    IWebhook,
-    IWebhookDeliveryJob,
-    )
-from lp.services.worlddata.interfaces.country import ICountry
-from lp.services.worlddata.interfaces.language import (
-    ILanguage,
-    ILanguageSet,
-    )
 from lp.snappy.interfaces.snap import (
     ISnap,
     ISnapBuildRequest,
@@ -210,45 +189,6 @@ class ModerateByRegistryExpertsOrAdmins(AuthorizationBase):
         return user.in_admin or user.in_registry_experts
 
 
-class ViewOpenIdIdentifierBySelfOrAdmin(AuthorizationBase):
-    permission = 'launchpad.View'
-    usedfor = IOpenIdIdentifier
-
-    def checkAuthenticated(self, user):
-        return user.in_admin or user.person.accountID == self.obj.accountID
-
-
-class EditOAuthAccessToken(AuthorizationBase):
-    permission = 'launchpad.Edit'
-    usedfor = IOAuthAccessToken
-
-    def checkAuthenticated(self, user):
-        return self.obj.person == user.person or user.in_admin
-
-
-class EditOAuthRequestToken(EditOAuthAccessToken):
-    permission = 'launchpad.Edit'
-    usedfor = IOAuthRequestToken
-
-
-class EditAccessToken(AuthorizationBase):
-    permission = 'launchpad.Edit'
-    usedfor = IAccessToken
-
-    def checkAuthenticated(self, user):
-        if user.inTeam(self.obj.owner):
-            return True
-        # Being able to edit the token doesn't allow extracting the secret,
-        # so it's OK to allow the owner of the target to do so too.  This
-        # allows target owners to exercise some control over access to their
-        # object.
-        adapter = queryAdapter(
-            self.obj.target, IAuthorization, 'launchpad.Edit')
-        if adapter is not None and adapter.checkAuthenticated(user):
-            return True
-        return False
-
-
 class EditByOwnersOrAdmins(AuthorizationBase):
     permission = 'launchpad.Edit'
     usedfor = IHasOwner
@@ -276,11 +216,6 @@ class BugTargetOwnerOrBugSupervisorOrAdmins(AuthorizationBase):
         return (user.inTeam(self.obj.bug_supervisor) or
                 user.inTeam(self.obj.owner) or
                 user.in_admin)
-
-
-class ViewCountry(AnonymousAuthorization):
-    """Anyone can view a Country."""
-    usedfor = ICountry
 
 
 class EditStructuralSubscription(AuthorizationBase):
@@ -375,156 +310,8 @@ class EditPackageBuild(EditBuildFarmJob):
                 user.inTeam(self.obj.archive.owner))
 
 
-class ViewLanguageSet(AnonymousAuthorization):
-    """Anyone can view an ILanguageSet."""
-    usedfor = ILanguageSet
-
-
-class AdminLanguageSet(OnlyRosettaExpertsAndAdmins):
-    permission = 'launchpad.Admin'
-    usedfor = ILanguageSet
-
-
-class ViewLanguage(AnonymousAuthorization):
-    """Anyone can view an ILanguage."""
-    usedfor = ILanguage
-
-
-class AdminLanguage(OnlyRosettaExpertsAndAdmins):
-    permission = 'launchpad.Admin'
-    usedfor = ILanguage
-
-
-class ViewEmailAddress(AuthorizationBase):
-    permission = 'launchpad.View'
-    usedfor = IEmailAddress
-
-    def checkUnauthenticated(self):
-        """See `AuthorizationBase`."""
-        # Anonymous users can never see email addresses.
-        return False
-
-    def checkAuthenticated(self, user):
-        """Can the user see the details of this email address?
-
-        If the email address' owner doesn't want their email addresses to be
-        hidden, anyone can see them.  Otherwise only the owner themselves or
-        admins can see them.
-        """
-        # Always allow users to see their own email addresses.
-        if self.obj.person == user:
-            return True
-
-        if not (self.obj.person is None or
-                self.obj.person.hide_email_addresses):
-            return True
-
-        return (self.obj.person is not None and user.inTeam(self.obj.person)
-                or user.in_commercial_admin
-                or user.in_registry_experts
-                or user.in_admin)
-
-
-class EditEmailAddress(EditByOwnersOrAdmins):
-    permission = 'launchpad.Edit'
-    usedfor = IEmailAddress
-
-    def checkAuthenticated(self, user):
-        # Always allow users to see their own email addresses.
-        if self.obj.person == user:
-            return True
-        return super().checkAuthenticated(user)
-
-
-class EditLibraryFileAliasWithParent(AuthorizationBase):
-    permission = 'launchpad.Edit'
-    usedfor = ILibraryFileAliasWithParent
-
-    def checkAuthenticated(self, user):
-        """Only persons which can edit an LFA's parent can edit an LFA.
-
-        By default, a LibraryFileAlias does not know about its parent.
-        Such aliases are never editable. Use an adapter to provide a
-        parent object.
-
-        If a parent is known, users which can edit the parent can also
-        edit properties of the LibraryFileAlias.
-        """
-        parent = getattr(self.obj, '__parent__', None)
-        if parent is None:
-            return False
-        return self.forwardCheckAuthenticated(user, parent)
-
-
-class ViewLibraryFileAliasWithParent(AuthorizationBase):
-    """Authorization class for viewing LibraryFileAliass having a parent."""
-
-    permission = 'launchpad.View'
-    usedfor = ILibraryFileAliasWithParent
-
-    def checkAuthenticated(self, user):
-        """Only persons which can edit an LFA's parent can edit an LFA.
-
-        By default, a LibraryFileAlias does not know about its parent.
-
-        If a parent is known, users which can view the parent can also
-        view the LibraryFileAlias.
-        """
-        parent = getattr(self.obj, '__parent__', None)
-        if parent is None:
-            return False
-        return self.forwardCheckAuthenticated(user, parent)
-
-
-class SetMessageVisibility(AuthorizationBase):
-    permission = 'launchpad.Admin'
-    usedfor = IMessage
-
-    def checkAuthenticated(self, user):
-        """Admins and registry admins can set bug comment visibility."""
-        return (user.in_admin or user.in_registry_experts)
-
-
-class EditMessage(AuthorizationBase):
-    permission = 'launchpad.Edit'
-    usedfor = IMessage
-
-    def checkAuthenticated(self, user):
-        """Only message owner can edit it."""
-        return user.isOwner(self.obj)
-
-
-class EditMessageRevision(DelegatedAuthorization):
-    permission = 'launchpad.Edit'
-    usedfor = IMessageRevision
-
-    def __init__(self, obj):
-        super().__init__(obj, obj.message, 'launchpad.Edit')
-
-
 class ViewPublisherConfig(AdminByAdminsTeam):
     usedfor = IPublisherConfig
-
-
-class ViewWebhook(AuthorizationBase):
-    """Webhooks can be viewed and edited by someone who can edit the target."""
-    permission = 'launchpad.View'
-    usedfor = IWebhook
-
-    def checkUnauthenticated(self):
-        return False
-
-    def checkAuthenticated(self, user):
-        yield self.obj.target, 'launchpad.Edit'
-
-
-class ViewWebhookDeliveryJob(DelegatedAuthorization):
-    """Webhooks can be viewed and edited by someone who can edit the target."""
-    permission = 'launchpad.View'
-    usedfor = IWebhookDeliveryJob
-
-    def __init__(self, obj):
-        super().__init__(obj, obj.webhook, 'launchpad.View')
 
 
 class ViewSnap(AuthorizationBase):
