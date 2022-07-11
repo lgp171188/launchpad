@@ -3,16 +3,13 @@
 
 import base64
 
-import testtools
 from zope.authentication.interfaces import ILoginPassword
 from zope.component import getUtility
-from zope.container.testing import ContainerPlacelessSetup
 from zope.interface import implementer
 from zope.principalregistry.principalregistry import UnauthenticatedPrincipal
 from zope.publisher.browser import TestRequest
 from zope.publisher.http import BasicAuthAdapter
 from zope.publisher.interfaces.http import IHTTPCredentials
-from zope.security.management import newInteraction
 from zope.security.testing import addCheckerPublic
 
 from lp.registry.interfaces.person import IPerson
@@ -26,10 +23,12 @@ from lp.services.webapp.interfaces import (
     IPlacelessAuthUtility,
     IPlacelessLoginSource,
     )
+from lp.testing import TestCase
 from lp.testing.fixture import (
     ZopeAdapterFixture,
     ZopeUtilityFixture,
     )
+from lp.testing.layers import FunctionalLayer
 
 
 @implementer(IPerson)
@@ -58,23 +57,19 @@ class DummyPlacelessLoginSource:
         return [Bruce]
 
 
-class TestPlacelessAuth(ContainerPlacelessSetup, testtools.TestCase):
+class TestPlacelessAuth(TestCase):
+
+    layer = FunctionalLayer
 
     def setUp(self):
-        testtools.TestCase.setUp(self)
-        ContainerPlacelessSetup.setUp(self)
+        super().setUp()
         addCheckerPublic()
-        newInteraction()
         self.useFixture(ZopeUtilityFixture(
             DummyPlacelessLoginSource(), IPlacelessLoginSource))
         self.useFixture(ZopeUtilityFixture(
             PlacelessAuthUtility(), IPlacelessAuthUtility))
         self.useFixture(ZopeAdapterFixture(
             BasicAuthAdapter, (IHTTPCredentials,), ILoginPassword))
-
-    def tearDown(self):
-        ContainerPlacelessSetup.tearDown(self)
-        testtools.TestCase.tearDown(self)
 
     def _make(self, login, pwd):
         auth = base64.b64encode(
