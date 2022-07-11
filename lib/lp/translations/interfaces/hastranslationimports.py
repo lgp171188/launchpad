@@ -48,8 +48,8 @@ class IHasTranslationImports(Interface):
             title=_("Filename extension"),
             description=_("Show only entries with this filename suffix"),
             required=False))
-    # Really ITranslationImportQueueEntry.  Fixed up in
-    # _schema_circular_imports.py.
+    # Really ITranslationImportQueueEntry, patched in
+    # lp.translations.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version('beta')

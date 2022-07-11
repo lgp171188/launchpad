@@ -95,21 +95,6 @@ from lp.soyuz.interfaces.publishing import (
     )
 from lp.soyuz.interfaces.queue import IPackageUpload
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
-from lp.translations.interfaces.hastranslationimports import (
-    IHasTranslationImports,
-    )
-from lp.translations.interfaces.hastranslationtemplates import (
-    IHasTranslationTemplates,
-    )
-from lp.translations.interfaces.pofile import IPOFile
-from lp.translations.interfaces.potemplate import (
-    IPOTemplate,
-    IPOTemplateSharingSubset,
-    IPOTemplateSubset,
-    )
-from lp.translations.interfaces.translationimportqueue import (
-    ITranslationImportQueueEntry,
-    )
 
 
 # IBuilder
@@ -351,11 +336,6 @@ patch_reference_property(
     ISourcePackageRelease, 'source_package_recipe_build',
     ISourcePackageRecipeBuild)
 
-# IHasTranslationImports
-patch_collection_return_type(
-    IHasTranslationImports, 'getTranslationImportQueueEntries',
-    ITranslationImportQueueEntry)
-
 # IIndexedMessage
 patch_reference_property(IIndexedMessage, 'inside', IBugTask)
 
@@ -366,21 +346,6 @@ patch_collection_property(IMessage, 'revisions', IMessageRevision)
 # IUserToUserEmail
 patch_reference_property(IUserToUserEmail, 'sender', IPerson)
 patch_reference_property(IUserToUserEmail, 'recipient', IPerson)
-
-# IHasTranslationTemplates
-patch_collection_return_type(
-    IHasTranslationTemplates, 'getTranslationTemplates', IPOTemplate)
-
-# IPOTemplate
-patch_collection_property(IPOTemplate, 'pofiles', IPOFile)
-patch_reference_property(IPOTemplate, 'product', IProduct)
-
-# IPOTemplateSubset
-patch_reference_property(IPOTemplateSubset, 'distroseries', IDistroSeries)
-patch_reference_property(IPOTemplateSubset, 'productseries', IProductSeries)
-
-# IPOTemplateSharingSubset
-patch_reference_property(IPOTemplateSharingSubset, 'product', IProduct)
 
 # IPerson
 patch_collection_return_type(
