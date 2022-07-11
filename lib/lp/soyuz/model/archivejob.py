@@ -8,6 +8,12 @@ import logging
 import os.path
 import tarfile
 import tempfile
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    )
 import zipfile
 
 from lazr.delegates import delegate_to
@@ -28,7 +34,10 @@ import zstandard
 
 from lp.code.enums import RevisionStatusArtifactType
 from lp.code.interfaces.cibuild import ICIBuildSet
-from lp.code.interfaces.revisionstatus import IRevisionStatusArtifactSet
+from lp.code.interfaces.revisionstatus import (
+    IRevisionStatusArtifact,
+    IRevisionStatusArtifactSet,
+    )
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
@@ -315,7 +324,9 @@ class CIBuildUploadJob(ArchiveJobDerived):
     def target_channel(self):
         return self.metadata["target_channel"]
 
-    def _scanCondaMetadata(self, index, about):
+    def _scanCondaMetadata(
+        self, index: Dict[Any, Any], about: Dict[Any, Any]
+    ) -> Dict[str, Any]:
         return {
             "name": index["name"],
             "version": index["version"],
@@ -330,7 +341,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
             "user_defined_fields": [("subdir", index["subdir"])],
             }
 
-    def _scanFile(self, path):
+    def _scanFile(self, path: str) -> Dict[str, Any]:
         # XXX cjwatson 2022-06-10: We should probably start splitting this
         # up some more.
         name = os.path.basename(path)
@@ -383,7 +394,9 @@ class CIBuildUploadJob(ArchiveJobDerived):
         else:
             return None
 
-    def _scanArtifacts(self, artifacts):
+    def _scanArtifacts(
+        self, artifacts: Iterable[IRevisionStatusArtifact]
+    ) -> List[ScannedArtifact]:
         """Scan an iterable of `RevisionStatusArtifact`s for metadata.
 
         Skips log artifacts, artifacts we don't understand, and artifacts
@@ -417,7 +430,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
                     ScannedArtifact(artifact=artifact, metadata=metadata))
         return scanned
 
-    def _uploadBinaries(self, scanned):
+    def _uploadBinaries(self, scanned: Iterable[ScannedArtifact]) -> None:
         """Upload an iterable of `ScannedArtifact`s to an archive."""
         releases = {
             (release.binarypackagename, release.binpackageformat): release
@@ -453,7 +466,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
             self.archive, self.target_distroseries, self.target_pocket,
             binaries, channel=self.target_channel)
 
-    def run(self):
+    def run(self) -> None:
         """See `IRunnableJob`."""
         build_target = self.ci_build.git_repository.target
         if not IDistributionSourcePackage.providedBy(build_target):
