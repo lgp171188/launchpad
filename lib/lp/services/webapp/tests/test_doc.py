@@ -32,8 +32,7 @@ special = {
     'notification-text-escape.rst': LayeredDocFileSuite(
         '../doc/notification-text-escape.rst',
         setUp=test_notifications.setUp,
-        tearDown=test_notifications.tearDown,
-        stdout_logging=False, layer=None),
+        stdout_logging=False, layer=FunctionalLayer),
     'test_adapter.rst': LayeredDocFileSuite(
         '../doc/test_adapter.rst',
         setUp=setGlobs,
