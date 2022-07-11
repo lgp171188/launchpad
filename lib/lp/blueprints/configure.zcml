@@ -11,6 +11,7 @@
     xmlns:lp="http://namespaces.canonical.com/lp"
     i18n_domain="launchpad">
 
+  <authorizations module=".security" />
   <include package=".browser"/>
   <include package=".vocabularies"/>
 
