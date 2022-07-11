@@ -203,8 +203,6 @@ class YUITestFixtureControllerView(LaunchpadView):
               href="/+yuitest/build/js/yui/console/assets/console-core.css"/>
             <link rel="stylesheet"
               href="/+yuitest/build/js/yui/console/assets/skins/sam/console.css"/>
-            <link rel="stylesheet"
-              href="/+yuitest/build/js/yui/test/assets/skins/sam/test.css"/>
             <link rel="stylesheet" href="/+icing/rev%(revision)s/combo.css"/>
             <script type="text/javascript" src="%(test_module)s"></script>
           </head>
