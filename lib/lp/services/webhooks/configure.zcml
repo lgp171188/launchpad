@@ -7,6 +7,7 @@
     xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:webservice="http://namespaces.canonical.com/webservice">
 
+    <authorizations module=".security" />
     <class class="lp.services.webhooks.model.Webhook">
         <require
             permission="launchpad.View"

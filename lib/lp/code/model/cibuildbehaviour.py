@@ -86,6 +86,21 @@ def build_plugin_settings(distribution_name: str) -> dict:
     return rv
 
 
+def build_secrets(distribution_name: str) -> dict:
+    # For now: load and return the distribution specific secrets
+    # In future this could also load secrets from repository settings.
+    try:
+        pairs = config["cibuild."+distribution_name]["secrets"]
+    except NoSectionError:
+        return {}
+    if pairs is None:
+        return {}
+    rv = {}
+    for key, value in json.loads(pairs).items():
+        rv[key] = replace_auth_placeholder(value)
+    return rv
+
+
 @adapter(ICIBuild)
 @implementer(IBuildFarmJobBehaviour)
 class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
@@ -156,6 +171,8 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             args["apt_repositories"] = build_apt_repositories(
                 distribution_name)
             args["plugin_settings"] = build_plugin_settings(
+                distribution_name)
+            args["secrets"] = build_secrets(
                 distribution_name)
         return args
 
