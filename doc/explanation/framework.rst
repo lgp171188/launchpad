@@ -68,9 +68,9 @@ XML rather than being a combination of two syntaxes, and it is not generally
 possible to write well-formed input that produces ill-formed output.
 
 Page Templates were originally invented by Zope, and we still happen to use
-`Zope's implementation of them <https://zopepagetemplate.readthedocs.io/>`_,
-but other implementations such as `Chameleon
-<https://chameleon.readthedocs.io/>`_ exist.
+`Zope's original implementation of them
+<https://zopepagetemplate.readthedocs.io/>`_, although Zope nowadays uses
+`Chameleon <https://chameleon.readthedocs.io/>`_ instead.
 
 Views and forms
 ---------------
