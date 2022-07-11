@@ -214,7 +214,9 @@ class ScanException(Exception):
 
 class ScannedArtifact:
 
-    def __init__(self, *, artifact, metadata):
+    def __init__(
+        self, *, artifact: IRevisionStatusArtifact, metadata: Dict[str, Any]
+    ):
         self.artifact = artifact
         self.metadata = metadata
 
