@@ -9,6 +9,7 @@
     xmlns:webservice="http://namespaces.canonical.com/webservice"
     i18n_domain="launchpad">
 
+    <authorizations module=".security" />
     <!-- Message -->
     <class class="lp.services.messages.model.message.Message">
         <allow

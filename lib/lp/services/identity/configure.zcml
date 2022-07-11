@@ -5,6 +5,8 @@
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     xmlns:webservice="http://namespaces.canonical.com/webservice"
     i18n_domain="launchpad">
+
+    <authorizations module=".security" />
     <class
         class="lp.services.identity.model.emailaddress.EmailAddress">
         <allow
