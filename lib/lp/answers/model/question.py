@@ -1675,7 +1675,7 @@ class QuestionTargetMixin:
             LeftJoin(Person, AnswerContact.person == Person.id),
             LeftJoin(
                 PersonLanguage,
-                AnswerContact.personID == PersonLanguage.person_id,
+                AnswerContact.person == PersonLanguage.person_id,
             ),
             LeftJoin(Language, PersonLanguage.language_id == Language.id),
         ]
@@ -1710,8 +1710,10 @@ class QuestionTargetMixin:
         """See `IQuestionTarget`."""
         if not self.canUserAlterAnswerContact(person, subscribed_by):
             return False
-        answer_contact = AnswerContact.selectOneBy(
-            person=person, **self.getTargetTypes()
+        answer_contact = (
+            IStore(AnswerContact)
+            .find(AnswerContact, person=person, **self.getTargetTypes())
+            .one()
         )
         if answer_contact is not None:
             return False
@@ -1784,14 +1786,14 @@ class QuestionTargetMixin:
             return False
         if person not in self.answer_contacts:
             return False
-        answer_contact = AnswerContact.selectOneBy(
-            person=person, **self.getTargetTypes()
+        answer_contact = (
+            IStore(AnswerContact)
+            .find(AnswerContact, person=person, **self.getTargetTypes())
+            .one()
         )
         if answer_contact is None:
             return False
-        store = Store.of(answer_contact)
-        answer_contact.destroySelf()
-        store.flush()
+        Store.of(answer_contact).remove(answer_contact)
         return True
 
     def getSupportedLanguages(self):

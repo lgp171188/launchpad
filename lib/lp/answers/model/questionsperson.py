@@ -84,7 +84,7 @@ class QuestionsPersonMixin:
             IStore(AnswerContact)
             .find(
                 AnswerContact,
-                AnswerContact.personID == TeamParticipation.teamID,
+                AnswerContact.person == TeamParticipation.teamID,
                 TeamParticipation.person == self,
                 AnswerContact.person != self,
             )
