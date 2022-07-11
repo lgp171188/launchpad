@@ -34,17 +34,17 @@ from lp.blueprints.model.specification import Specification
 from lp.blueprints.model.specificationsearch import (
     get_specification_privacy_filter,
 )
+from lp.blueprints.security import (
+    AdminSpecification,
+    EditSpecificationByRelatedPeople,
+    ViewSpecification,
+)
 from lp.registry.enums import SharingPermission, SpecificationSharingPolicy
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactGrantSource,
     IAccessPolicySource,
 )
 from lp.registry.interfaces.person import IPersonSet
-from lp.security import (
-    AdminSpecification,
-    EditSpecificationByRelatedPeople,
-    ViewSpecification,
-)
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interaction import ANONYMOUS
