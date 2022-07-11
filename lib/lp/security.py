@@ -70,8 +70,6 @@ from lp.oci.interfaces.ocirecipe import (
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.oci.interfaces.ocirecipesubscription import IOCIRecipeSubscription
 from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
-from lp.registry.interfaces.ociproject import IOCIProject
-from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.auth.interfaces import IAccessToken
 from lp.services.config import config
@@ -845,30 +843,6 @@ class EditSnapBase(EditByRegistryExpertsOrAdmins):
 
 class EditSnapBaseSet(EditByRegistryExpertsOrAdmins):
     usedfor = ISnapBaseSet
-
-
-class ViewOCIProject(AnonymousAuthorization):
-    """Anyone can view an `IOCIProject`."""
-    usedfor = IOCIProject
-
-
-class EditOCIProject(AuthorizationBase):
-    permission = 'launchpad.Edit'
-    usedfor = IOCIProject
-
-    def checkAuthenticated(self, user):
-        """Maintainers, drivers, and admins can drive projects."""
-        return (user.in_admin or
-                user.isDriver(self.obj.pillar) or
-                self.obj.pillar.canAdministerOCIProjects(user))
-
-
-class EditOCIProjectSeries(DelegatedAuthorization):
-    permission = 'launchpad.Edit'
-    usedfor = IOCIProjectSeries
-
-    def __init__(self, obj):
-        super().__init__(obj, obj.oci_project)
 
 
 class ViewOCIRecipeBuildRequest(DelegatedAuthorization):
