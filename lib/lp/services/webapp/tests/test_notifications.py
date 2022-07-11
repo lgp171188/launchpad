@@ -7,10 +7,6 @@ from doctest import DocTestSuite
 import unittest
 
 from zope.component import provideAdapter
-from zope.container.testing import (
-    setUp as containerSetUp,
-    tearDown as containerTearDown,
-    )
 from zope.interface import implementer
 from zope.publisher.browser import TestRequest
 from zope.publisher.interfaces.browser import IBrowserRequest
@@ -26,6 +22,7 @@ from lp.services.webapp.interfaces import (
     INotificationResponse,
     )
 from lp.services.webapp.notifications import NotificationResponse
+from lp.testing.layers import FunctionalLayer
 
 
 @implementer(ISession)
@@ -69,7 +66,6 @@ def adaptNotificationRequestToResponse(request):
 
 
 def setUp(test):
-    containerSetUp()
     mock_session = MockSession()
     provideAdapter(lambda x: mock_session, (INotificationRequest,), ISession)
     provideAdapter(lambda x: mock_session, (INotificationResponse,), ISession)
@@ -86,16 +82,14 @@ def setUp(test):
     test.globs['structured'] = structured
 
 
-def tearDown(test):
-    containerTearDown()
-
-
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(DocTestSuite(
+    doctest_suite = DocTestSuite(
         'lp.services.webapp.notifications',
-        setUp=setUp, tearDown=tearDown,
-        ))
+        setUp=setUp,
+        )
+    doctest_suite.layer = FunctionalLayer
+    suite.addTest(doctest_suite)
     return suite
 
 
