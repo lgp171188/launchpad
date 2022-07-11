@@ -115,7 +115,7 @@ create:
 	@ echo "* Loading base database schema"
 	@ psql -d ${EMPTY_DBNAME} -f ${BASELINE} | grep : | cat
 	@ echo "* Patching the database schema"
-	@ ./upgrade.py -d ${EMPTY_DBNAME}
+	@ ./upgrade.py --separate-sessions -d ${EMPTY_DBNAME}
 	@ echo "* Security setup"
 	@ ./security.py -q -d ${EMPTY_DBNAME}
 	@ echo "* Disabling autovacuum"

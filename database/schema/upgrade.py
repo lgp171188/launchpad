@@ -37,7 +37,11 @@ def main(con=None):
     patches = get_patchlist(con)
 
     log.info("Applying patches.")
-    apply_patches_normal(con)
+    if options.separate_sessions:
+        apply_patches_separately()
+        con.rollback()
+    else:
+        apply_patches_normal(con)
 
     report_patch_times(con, patches)
 
@@ -163,6 +167,26 @@ def apply_patches_normal(con):
     apply_comments(con)
 
 
+def apply_patches_separately():
+    """Update a database, applying each patch in a separate session."""
+    # Apply the patches.
+    with connect() as con:
+        patches = get_patchlist(con)
+    for (major, minor, patch), patch_file in patches:
+        with connect() as con:
+            apply_patch(con, major, minor, patch, patch_file)
+
+    # Update comments.
+    with connect() as con:
+        apply_comments(con)
+
+    # Commit changes.  (Not optional, since we don't currently support using
+    # --dry-run and --separate-sessions together; it's not clear how this
+    # would work when applying multiple patches.)
+    log.debug("Committing changes")
+    con.commit()
+
+
 def get_patchlist(con):
     """Return a patches that need to be applied to the connected database
     in [((major, minor, patch), patch_file)] format.
@@ -276,10 +300,15 @@ if __name__ == '__main__':
     parser.add_option(
         "--skip-comments", dest="comments", default=True,
         action="store_false", help="Skip applying comments.sql")
+    parser.add_option(
+        "--separate-sessions", dest="separate_sessions", default=False,
+        action="store_true", help="Apply each patch in a separate session")
     (options, args) = parser.parse_args()
 
     if args:
         parser.error("Too many arguments")
+    if not options.commit and options.separate_sessions:
+        parser.error("--dry-run and --separate-sessions are incompatible")
 
     log = logger(options)
     main()
