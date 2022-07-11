@@ -41,6 +41,7 @@ def run_upgrade(options, log, primary_con):
     options.commit = False
     options.partial = False
     options.comments = False  # Saves about 1s. Apply comments manually.
+    options.separate_sessions = False
     # Invoke the database schema upgrade process.
     try:
         return upgrade.main(primary_con)
