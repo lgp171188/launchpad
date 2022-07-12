@@ -991,7 +991,7 @@ class TestPersonStates(TestCaseWithFactory):
             warty_team)
 
     def test_AnswerContact_person_validator(self):
-        answer_contact = AnswerContact.select(limit=1)[0]
+        answer_contact = IStore(AnswerContact).find(AnswerContact).first()
         self.assertRaises(
             PrivatePersonLinkageError,
             setattr, answer_contact, 'person', self.myteam)
