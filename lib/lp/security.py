@@ -7,7 +7,6 @@ __all__ = [
     'AdminByAdminsTeam',
     'AdminByBuilddAdmin',
     'AdminByCommercialTeamOrAdmins',
-    'BugTargetOwnerOrBugSupervisorOrAdmins',
     'EditByOwnersOrAdmins',
     'EditByRegistryExpertsOrAdmins',
     'is_commercial_case',
@@ -26,8 +25,6 @@ import pytz
 from zope.interface import Interface
 
 from lp.app.security import AuthorizationBase
-from lp.bugs.interfaces.bugtarget import IOfficialBugTagTargetRestricted
-from lp.bugs.interfaces.structuralsubscription import IStructuralSubscription
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.config import config
 from lp.services.webapp.interfaces import ILaunchpadRoot
@@ -161,40 +158,6 @@ class OnlyRosettaExpertsAndAdmins(AuthorizationBase):
     def checkAuthenticated(self, user):
         """Allow Launchpad's admins and Rosetta experts edit all fields."""
         return user.in_admin or user.in_rosetta_experts
-
-
-class BugTargetOwnerOrBugSupervisorOrAdmins(AuthorizationBase):
-    """Product's owner and bug supervisor can set official bug tags."""
-
-    permission = 'launchpad.BugSupervisor'
-    usedfor = IOfficialBugTagTargetRestricted
-
-    def checkAuthenticated(self, user):
-        return (user.inTeam(self.obj.bug_supervisor) or
-                user.inTeam(self.obj.owner) or
-                user.in_admin)
-
-
-class EditStructuralSubscription(AuthorizationBase):
-    permission = 'launchpad.Edit'
-    usedfor = IStructuralSubscription
-
-    def checkAuthenticated(self, user):
-        """Who can edit StructuralSubscriptions."""
-
-        assert self.obj.target
-
-        # Removal of a target cascades removals to StructuralSubscriptions,
-        # so we need to allow editing to those who can edit the target itself.
-        can_edit_target = self.forwardCheckAuthenticated(
-            user, self.obj.target)
-
-        # Who is actually allowed to edit a subscription is determined by
-        # a helper method on the model.
-        can_edit_subscription = self.obj.target.userCanAlterSubscription(
-            self.obj.subscriber, user.person)
-
-        return (can_edit_target or can_edit_subscription)
 
 
 class OnlyBazaarExpertsAndAdmins(AuthorizationBase):
