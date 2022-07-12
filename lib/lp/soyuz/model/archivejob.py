@@ -326,6 +326,25 @@ class CIBuildUploadJob(ArchiveJobDerived):
     def target_channel(self):
         return self.metadata["target_channel"]
 
+    def _scanWheel(self, path: str) -> Dict[str, Any]:
+        try:
+            parsed_path = parse_wheel_filename(path)
+            wheel = Wheel(path)
+        except Exception as e:
+            logger.warning(
+                "Failed to scan %s as a Python wheel: %s",
+                os.path.basename(path), e)
+            return None
+        return {
+            "name": wheel.name,
+            "version": wheel.version,
+            "summary": wheel.summary or "",
+            "description": wheel.description,
+            "binpackageformat": BinaryPackageFormat.WHL,
+            "architecturespecific": "any" not in parsed_path.platform_tags,
+            "homepage": wheel.home_page or "",
+            }
+
     def _scanCondaMetadata(
         self, index: Dict[Any, Any], about: Dict[Any, Any]
     ) -> Dict[str, Any]:
@@ -343,57 +362,60 @@ class CIBuildUploadJob(ArchiveJobDerived):
             "user_defined_fields": [("subdir", index["subdir"])],
             }
 
-    def _scanFile(self, path: str) -> Dict[str, Any]:
-        # XXX cjwatson 2022-06-10: We should probably start splitting this
-        # up some more.
-        name = os.path.basename(path)
-        if path.endswith(".whl"):
-            try:
-                parsed_path = parse_wheel_filename(path)
-                wheel = Wheel(path)
-            except Exception as e:
-                raise ScanException("Failed to scan %s" % name) from e
-            return {
-                "name": wheel.name,
-                "version": wheel.version,
-                "summary": wheel.summary or "",
-                "description": wheel.description,
-                "binpackageformat": BinaryPackageFormat.WHL,
-                "architecturespecific": "any" not in parsed_path.platform_tags,
-                "homepage": wheel.home_page or "",
-                }
-        elif path.endswith(".tar.bz2"):
-            try:
-                with tarfile.open(path) as tar:
+    def _scanCondaV1(self, path: str) -> Dict[str, Any]:
+        try:
+            with tarfile.open(path) as tar:
+                index = json.loads(
+                    tar.extractfile("info/index.json").read().decode())
+                about = json.loads(
+                    tar.extractfile("info/about.json").read().decode())
+        except Exception as e:
+            logger.warning(
+                "Failed to scan %s as a Conda v1 package: %s",
+                os.path.basename(path), e)
+            return None
+        scanned = {"binpackageformat": BinaryPackageFormat.CONDA_V1}
+        scanned.update(self._scanCondaMetadata(index, about))
+        return scanned
+
+    def _scanCondaV2(self, path: str) -> Dict[str, Any]:
+        try:
+            with zipfile.ZipFile(path) as zipf:
+                base_name = os.path.basename(path)[:-len(".conda")]
+                info = io.BytesIO()
+                with zipf.open("info-%s.tar.zst" % base_name) as raw_info:
+                    zstandard.ZstdDecompressor().copy_stream(raw_info, info)
+                info.seek(0)
+                with tarfile.open(fileobj=info) as tar:
                     index = json.loads(
                         tar.extractfile("info/index.json").read().decode())
                     about = json.loads(
                         tar.extractfile("info/about.json").read().decode())
-            except Exception as e:
-                raise ScanException("Failed to scan %s" % name) from e
-            scanned = {"binpackageformat": BinaryPackageFormat.CONDA_V1}
-            scanned.update(self._scanCondaMetadata(index, about))
-            return scanned
-        elif path.endswith(".conda"):
-            try:
-                with zipfile.ZipFile(path) as zipf:
-                    base_name = os.path.basename(path)[:-len(".conda")]
-                    info = io.BytesIO()
-                    with zipf.open("info-%s.tar.zst" % base_name) as raw_info:
-                        zstandard.ZstdDecompressor().copy_stream(
-                            raw_info, info)
-                    info.seek(0)
-                    with tarfile.open(fileobj=info) as tar:
-                        index = json.loads(
-                            tar.extractfile("info/index.json").read().decode())
-                        about = json.loads(
-                            tar.extractfile("info/about.json").read().decode())
-            except Exception as e:
-                raise ScanException("Failed to scan %s" % name) from e
-            scanned = {"binpackageformat": BinaryPackageFormat.CONDA_V2}
-            scanned.update(self._scanCondaMetadata(index, about))
-            return scanned
+        except Exception as e:
+            logger.warning(
+                "Failed to scan %s as a Conda v2 package: %s",
+                os.path.basename(path), e)
+            return None
+        scanned = {"binpackageformat": BinaryPackageFormat.CONDA_V2}
+        scanned.update(self._scanCondaMetadata(index, about))
+        return scanned
+
+    def _scanFile(self, path: str) -> Dict[str, Any]:
+        _scanners = (
+            (".whl", self._scanWheel),
+            (".tar.bz2", self._scanCondaV1),
+            (".conda", self._scanCondaV2),
+            )
+        found_scanner = False
+        for suffix, scanner in _scanners:
+            if path.endswith(suffix):
+                found_scanner = True
+                scanned = scanner(path)
+                if scanned is not None:
+                    return scanned
         else:
+            if not found_scanner:
+                logger.info("No upload handler for %s", os.path.basename(path))
             return None
 
     def _scanArtifacts(
@@ -421,7 +443,6 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 copy_and_close(artifact.library_file, open(contents, "wb"))
                 metadata = self._scanFile(contents)
                 if metadata is None:
-                    logger.info("No upload handler for %s", name)
                     continue
                 if metadata["binpackageformat"] not in allowed_binary_formats:
                     logger.info(
@@ -483,3 +504,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
         scanned = self._scanArtifacts(artifacts)
         if scanned:
             self._uploadBinaries(scanned)
+        else:
+            names = [artifact.library_file.filename for artifact in artifacts]
+            raise ScanException(
+                "Could not find any usable files in %s" % names)
