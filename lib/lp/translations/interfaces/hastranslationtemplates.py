@@ -84,6 +84,7 @@ class IHasTranslationTemplates(Interface):
         """
 
     @export_read_operation()
+    # Really IPOTemplate, patched in lp.translations.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @operation_for_version('beta')
     def getTranslationTemplates():
