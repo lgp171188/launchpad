@@ -67,8 +67,13 @@ class IAuthorizationsDirective(Interface):
     module = GlobalObject(title='module', required=True)
 
 
-def _isAuthorization(module_member):
+def _isAuthorization(module, module_member):
     return (type(module_member) is type and
+            # The check below ensures that only the security
+            # adapters belonging to the current module are
+            # selected and the security adapters imported from
+            # elsewhere are ignored.
+            module.__name__ == module_member.__module__ and
             IAuthorization.implementedBy(module_member))
 
 
@@ -77,8 +82,10 @@ def authorizations(_context, module):
         raise TypeError("module attribute must be a module: %s, %s" %
                         module, type(module))
     provides = IAuthorization
-    for nameinmodule, authorization in inspect.getmembers(module,
-                                                          _isAuthorization):
+    for nameinmodule, authorization in inspect.getmembers(
+            module,
+            lambda member: _isAuthorization(module, member)
+            ):
         if (authorization.permission is not None and
             authorization.usedfor is not None):
             name = authorization.permission
