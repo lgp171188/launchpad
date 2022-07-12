@@ -7,9 +7,7 @@ __all__ = [
     'AdminByAdminsTeam',
     'AdminByBuilddAdmin',
     'AdminByCommercialTeamOrAdmins',
-    'EditByOwnersOrAdmins',
     'EditByRegistryExpertsOrAdmins',
-    'is_commercial_case',
     'ModerateByRegistryExpertsOrAdmins',
     'OnlyBazaarExpertsAndAdmins',
     'OnlyRosettaExpertsAndAdmins',
@@ -25,14 +23,8 @@ import pytz
 from zope.interface import Interface
 
 from lp.app.security import AuthorizationBase
-from lp.registry.interfaces.role import IHasOwner
 from lp.services.config import config
 from lp.services.webapp.interfaces import ILaunchpadRoot
-
-
-def is_commercial_case(obj, user):
-    """Is this a commercial project and the user is a commercial admin?"""
-    return obj.has_current_commercial_subscription and user.in_commercial_admin
 
 
 class ViewByLoggedInUser(AuthorizationBase):
@@ -141,14 +133,6 @@ class ModerateByRegistryExpertsOrAdmins(AuthorizationBase):
 
     def checkAuthenticated(self, user):
         return user.in_admin or user.in_registry_experts
-
-
-class EditByOwnersOrAdmins(AuthorizationBase):
-    permission = 'launchpad.Edit'
-    usedfor = IHasOwner
-
-    def checkAuthenticated(self, user):
-        return user.isOwner(self.obj) or user.in_admin
 
 
 class OnlyRosettaExpertsAndAdmins(AuthorizationBase):

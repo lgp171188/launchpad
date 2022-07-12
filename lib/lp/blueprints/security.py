@@ -17,7 +17,8 @@ from lp.blueprints.interfaces.specificationsubscription import (
 )
 from lp.blueprints.interfaces.sprint import ISprint
 from lp.blueprints.interfaces.sprintspecification import ISprintSpecification
-from lp.security import EditByOwnersOrAdmins, ModerateByRegistryExpertsOrAdmins
+from lp.registry.security import EditByOwnersOrAdmins
+from lp.security import ModerateByRegistryExpertsOrAdmins
 
 
 class EditSpecificationBranch(AuthorizationBase):
