@@ -102,12 +102,12 @@ from lp.registry.model.person import Person
 from lp.security import (
     AdminByAdminsTeam,
     AdminByCommercialTeamOrAdmins,
-    EditByRegistryExpertsOrAdmins,
     ModerateByRegistryExpertsOrAdmins,
     OnlyRosettaExpertsAndAdmins,
     )
 from lp.services.database.interfaces import IStore
 from lp.services.identity.interfaces.account import IAccount
+from lp.services.webapp.security import EditByRegistryExpertsOrAdmins
 from lp.soyuz.interfaces.archivesubscriber import IArchiveSubscriberSet
 
 

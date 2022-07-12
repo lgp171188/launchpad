@@ -7,7 +7,6 @@ __all__ = [
     'AdminByAdminsTeam',
     'AdminByBuilddAdmin',
     'AdminByCommercialTeamOrAdmins',
-    'EditByRegistryExpertsOrAdmins',
     'ModerateByRegistryExpertsOrAdmins',
     'OnlyBazaarExpertsAndAdmins',
     'OnlyRosettaExpertsAndAdmins',
@@ -24,7 +23,6 @@ from zope.interface import Interface
 
 from lp.app.security import AuthorizationBase
 from lp.services.config import config
-from lp.services.webapp.interfaces import ILaunchpadRoot
 
 
 class ViewByLoggedInUser(AuthorizationBase):
@@ -117,14 +115,6 @@ class AdminByCommercialTeamOrAdmins(AuthorizationBase):
 
     def checkAuthenticated(self, user):
         return user.in_commercial_admin or user.in_admin
-
-
-class EditByRegistryExpertsOrAdmins(AuthorizationBase):
-    permission = 'launchpad.Edit'
-    usedfor = ILaunchpadRoot
-
-    def checkAuthenticated(self, user):
-        return user.in_admin or user.in_registry_experts
 
 
 class ModerateByRegistryExpertsOrAdmins(AuthorizationBase):

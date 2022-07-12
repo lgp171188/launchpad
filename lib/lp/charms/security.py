@@ -16,7 +16,8 @@ from lp.charms.interfaces.charmrecipe import (
     ICharmRecipeBuildRequest,
 )
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
-from lp.security import AdminByBuilddAdmin, EditByRegistryExpertsOrAdmins
+from lp.security import AdminByBuilddAdmin
+from lp.services.webapp.security import EditByRegistryExpertsOrAdmins
 
 
 class ViewCharmRecipe(AuthorizationBase):

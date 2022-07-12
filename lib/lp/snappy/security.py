@@ -10,10 +10,8 @@ from lp.app.security import (
     AuthorizationBase,
     DelegatedAuthorization,
     )
-from lp.security import (
-    AdminByBuilddAdmin,
-    EditByRegistryExpertsOrAdmins,
-    )
+from lp.security import AdminByBuilddAdmin
+from lp.services.webapp.security import EditByRegistryExpertsOrAdmins
 from lp.snappy.interfaces.snap import (
     ISnap,
     ISnapBuildRequest,
