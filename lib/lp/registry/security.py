@@ -3,7 +3,10 @@
 
 """Security adapters for the registry module."""
 
-__all__ = []
+__all__ = [
+    "EditByOwnersOrAdmins",
+    "PublicOrPrivateTeamsExistence",
+]
 
 from storm.expr import (
     Select,

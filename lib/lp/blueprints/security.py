@@ -3,7 +3,11 @@
 
 """Security adapters for the blueprints package."""
 
-__all__ = []
+__all__ = [
+    "AdminSpecification",
+    "EditSpecificationByRelatedPeople",
+    "ViewSpecification",
+]
 
 from lp.app.security import AnonymousAuthorization, AuthorizationBase
 from lp.blueprints.interfaces.specification import (

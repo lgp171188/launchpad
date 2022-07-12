@@ -3,7 +3,9 @@
 
 """Security adapters for the bugs module."""
 
-__all__ = []
+__all__ = [
+    "PublicToAllOrPrivateToExplicitSubscribersForBugTask",
+]
 
 from lp.app.security import (
     AnonymousAuthorization,
