@@ -27,7 +27,6 @@ import pytz
 from zope.interface import Interface
 
 from lp.app.security import AuthorizationBase
-from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfig
 from lp.bugs.interfaces.bugtarget import IOfficialBugTagTargetRestricted
 from lp.bugs.interfaces.structuralsubscription import IStructuralSubscription
 from lp.buildmaster.interfaces.builder import (
@@ -273,7 +272,3 @@ class EditPackageBuild(EditBuildFarmJob):
         # If it's a PPA or a copy archive only allow its owner.
         return (self.obj.archive.owner and
                 user.inTeam(self.obj.archive.owner))
-
-
-class ViewPublisherConfig(AdminByAdminsTeam):
-    usedfor = IPublisherConfig
