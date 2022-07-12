@@ -126,6 +126,17 @@ class TestArtifactoryPool(TestCase):
             pool.pathFor(None, "foo", "1.0", pub_file),
         )
 
+    def test_pathFor_go_proxy_with_file(self):
+        pool = self.makePool(ArchiveRepositoryFormat.GO_PROXY)
+        pub_file = FakePackageReleaseFile(b"go-module", "v1.0.zip")
+        self.assertEqual(
+            ArtifactoryPath(
+                "https://foo.example.com/artifactory/repository/"
+                "launchpad.net/go-module/@v/v1.0.zip"
+            ),
+            pool.pathFor(None, "launchpad.net,go-module", "v1.0", pub_file),
+        )
+
     def test_addFile(self):
         pool = self.makePool()
         foo = ArtifactoryPoolTestingFile(
@@ -224,13 +235,24 @@ class TestArtifactoryPool(TestCase):
             pool.getArtifactPatterns(ArchiveRepositoryFormat.CONDA),
         )
 
-    def test_getAllArtifacts(self):
+    def test_getArtifactPatterns_go_proxy(self):
+        pool = self.makePool()
+        self.assertEqual(
+            [
+                "*.info",
+                "*.mod",
+                "*.zip",
+            ],
+            pool.getArtifactPatterns(ArchiveRepositoryFormat.GO_PROXY),
+        )
+
+    def test_getAllArtifacts_debian(self):
         # getAllArtifacts mostly relies on constructing a correct AQL query,
         # which we can't meaningfully test without a real Artifactory
         # instance, although `FakeArtifactoryFixture` tries to do something
-        # with it.  This test mainly ensures that we transform the response
+        # with it.  These tests mainly ensure that we transform the response
         # correctly.
-        pool = self.makePool()
+        pool = self.makePool(ArchiveRepositoryFormat.DEBIAN)
         ArtifactoryPoolTestingFile(
             pool=pool,
             source_name="foo",
@@ -246,22 +268,6 @@ class TestArtifactoryPool(TestCase):
             filename="foo-1.1.deb",
             release_type=FakeReleaseType.BINARY,
             release_id=2,
-        ).addToPool()
-        ArtifactoryPoolTestingFile(
-            pool=pool,
-            source_name="bar",
-            source_version="1.0",
-            filename="bar-1.0.whl",
-            release_type=FakeReleaseType.BINARY,
-            release_id=3,
-        ).addToPool()
-        ArtifactoryPoolTestingFile(
-            pool=pool,
-            source_name="qux",
-            source_version="1.0",
-            filename="qux-1.0.conda",
-            release_type=FakeReleaseType.BINARY,
-            release_id=4,
         ).addToPool()
         self.assertEqual(
             {
@@ -280,9 +286,20 @@ class TestArtifactoryPool(TestCase):
                 self.repository_name, ArchiveRepositoryFormat.DEBIAN
             ),
         )
+
+    def test_getAllArtifacts_python(self):
+        pool = self.makePool(ArchiveRepositoryFormat.PYTHON)
+        ArtifactoryPoolTestingFile(
+            pool=pool,
+            source_name="bar",
+            source_version="1.0",
+            filename="bar-1.0.whl",
+            release_type=FakeReleaseType.BINARY,
+            release_id=3,
+        ).addToPool()
         self.assertEqual(
             {
-                PurePath("pool/b/bar/bar-1.0.whl"): {
+                PurePath("bar/1.0/bar-1.0.whl"): {
                     "launchpad.release-id": ["binary:3"],
                     "launchpad.source-name": ["bar"],
                     "launchpad.source-version": ["1.0"],
@@ -292,9 +309,21 @@ class TestArtifactoryPool(TestCase):
                 self.repository_name, ArchiveRepositoryFormat.PYTHON
             ),
         )
+
+    def test_getAllArtifacts_conda(self):
+        pool = self.makePool(ArchiveRepositoryFormat.CONDA)
+        ArtifactoryPoolTestingFile(
+            pool=pool,
+            source_name="qux",
+            source_version="1.0",
+            filename="qux-1.0.conda",
+            release_type=FakeReleaseType.BINARY,
+            release_id=4,
+            user_defined_fields=[("subdir", "linux-64")],
+        ).addToPool()
         self.assertEqual(
             {
-                PurePath("pool/q/qux/qux-1.0.conda"): {
+                PurePath("linux-64/qux-1.0.conda"): {
                     "launchpad.release-id": ["binary:4"],
                     "launchpad.source-name": ["qux"],
                     "launchpad.source-version": ["1.0"],
@@ -302,6 +331,29 @@ class TestArtifactoryPool(TestCase):
             },
             pool.getAllArtifacts(
                 self.repository_name, ArchiveRepositoryFormat.CONDA
+            ),
+        )
+
+    def test_getAllArtifacts_go_proxy(self):
+        pool = self.makePool(ArchiveRepositoryFormat.GO_PROXY)
+        ArtifactoryPoolTestingFile(
+            pool=pool,
+            source_name="launchpad.net,go-module",
+            source_version="v0.0.1",
+            filename="v0.0.1.zip",
+            release_type=FakeReleaseType.BINARY,
+            release_id=5,
+        ).addToPool()
+        self.assertEqual(
+            {
+                PurePath("launchpad.net/go-module/@v/v0.0.1.zip"): {
+                    "launchpad.release-id": ["binary:5"],
+                    "launchpad.source-name": ["launchpad.net,go-module"],
+                    "launchpad.source-version": ["v0.0.1"],
+                },
+            },
+            pool.getAllArtifacts(
+                self.repository_name, ArchiveRepositoryFormat.GO_PROXY
             ),
         )
 

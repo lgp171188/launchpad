@@ -59,6 +59,14 @@ def _path_for(
                 "Cannot publish a Conda package with no subdir"
             )
         path = rootpath / subdir
+    elif repository_format == ArchiveRepositoryFormat.GO_PROXY:
+        # Go module paths contain "/" characters
+        # (https://go.dev/ref/mod#go-mod-file-ident), which are awkward to
+        # include in Launchpad source package names since they would need
+        # special URL traversal handling.  "," is disallowed in Go module
+        # paths, so we use that to mangle them into source package names.
+        # Reverse this mangling for publication.
+        path = rootpath / source_name.replace(",", "/") / "@v"
     else:
         raise AssertionError(
             "Unsupported repository format: %r" % repository_format
@@ -503,6 +511,12 @@ class ArtifactoryPool:
             return [
                 "*.tar.bz2",
                 "*.conda",
+            ]
+        elif repository_format == ArchiveRepositoryFormat.GO_PROXY:
+            return [
+                "*.info",
+                "*.mod",
+                "*.zip",
             ]
         else:
             raise AssertionError(

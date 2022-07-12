@@ -104,6 +104,7 @@ class PoolTestingFile:
         filename,
         release_type=FakeReleaseType.BINARY,
         release_id=1,
+        user_defined_fields=None,
     ):
         self.pool = pool
         self.source_name = source_name
@@ -113,6 +114,7 @@ class PoolTestingFile:
             filename,
             release_type=release_type,
             release_id=release_id,
+            user_defined_fields=user_defined_fields,
         )
 
     def addToPool(self, component: str):

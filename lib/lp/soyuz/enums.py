@@ -715,3 +715,10 @@ class ArchiveRepositoryFormat(DBEnumeratedType):
         A Conda channel
         (https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/channels.html).
         """)
+
+    GO_PROXY = DBItem(3, """
+        Go
+
+        A Go registry, laid out as a module proxy
+        (https://go.dev/ref/mod#module-proxy).
+        """)
