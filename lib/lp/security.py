@@ -10,7 +10,6 @@ __all__ = [
     'BugTargetOwnerOrBugSupervisorOrAdmins',
     'EditByOwnersOrAdmins',
     'EditByRegistryExpertsOrAdmins',
-    'EditPackageBuild',
     'is_commercial_case',
     'ModerateByRegistryExpertsOrAdmins',
     'OnlyBazaarExpertsAndAdmins',
@@ -29,12 +28,6 @@ from zope.interface import Interface
 from lp.app.security import AuthorizationBase
 from lp.bugs.interfaces.bugtarget import IOfficialBugTagTargetRestricted
 from lp.bugs.interfaces.structuralsubscription import IStructuralSubscription
-from lp.buildmaster.interfaces.builder import (
-    IBuilder,
-    IBuilderSet,
-    )
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
-from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.config import config
 from lp.services.webapp.interfaces import ILaunchpadRoot
@@ -226,49 +219,3 @@ class AdminByBuilddAdmin(AuthorizationBase):
     def checkAuthenticated(self, user):
         """Allow admins and buildd_admins."""
         return user.in_buildd_admin or user.in_admin
-
-
-class AdminBuilderSet(AdminByBuilddAdmin):
-    usedfor = IBuilderSet
-
-
-class AdminBuilder(AdminByBuilddAdmin):
-    usedfor = IBuilder
-
-
-class EditBuilder(AdminByBuilddAdmin):
-    permission = 'launchpad.Edit'
-    usedfor = IBuilder
-
-
-class ModerateBuilder(EditBuilder):
-    permission = 'launchpad.Moderate'
-    usedfor = IBuilder
-
-    def checkAuthenticated(self, user):
-        return (user.in_registry_experts or
-                super().checkAuthenticated(user))
-
-
-class AdminBuildRecord(AdminByBuilddAdmin):
-    usedfor = IBuildFarmJob
-
-
-class EditBuildFarmJob(AdminByBuilddAdmin):
-    permission = 'launchpad.Edit'
-    usedfor = IBuildFarmJob
-
-
-class EditPackageBuild(EditBuildFarmJob):
-    usedfor = IPackageBuild
-
-    def checkAuthenticated(self, user):
-        """Check if the user has access to edit the archive."""
-        if EditBuildFarmJob.checkAuthenticated(self, user):
-            return True
-
-        # If the user is in the owning team for the archive,
-        # then they have access to edit the builds.
-        # If it's a PPA or a copy archive only allow its owner.
-        return (self.obj.archive.owner and
-                user.inTeam(self.obj.archive.owner))
