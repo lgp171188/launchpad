@@ -56,6 +56,7 @@ Thinking about using Launchpad for your next project?  `Get in touch!
 .. toctree::
    :hidden:
 
+   Home <self>
    how-to/index
    explanation/index
    reference/index
