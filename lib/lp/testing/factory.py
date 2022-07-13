@@ -307,7 +307,7 @@ from lp.services.temporaryblobstorage.interfaces import (
     ITemporaryStorageManager,
     )
 from lp.services.temporaryblobstorage.model import TemporaryBlobStorage
-from lp.services.utils import AutoDecorate
+from lp.services.utils import AutoDecorateMetaClass
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.sorting import sorted_version_numbers
 from lp.services.webhooks.interfaces import IWebhookSet
@@ -446,11 +446,14 @@ class GPGSigningContext:
         self.mode = mode
 
 
-class ObjectFactory(metaclass=AutoDecorate(default_master_store)):
+class ObjectFactory(metaclass=AutoDecorateMetaClass):
     """Factory methods for creating basic Python objects."""
 
     # This allocates process-wide unique integers.  We count on Python doing
     # only cooperative threading to make this safe across threads.
+
+    __decorators = (default_master_store, )
+
     _unique_int_counter = count(100000)
 
     def getUniqueEmailAddress(self):
