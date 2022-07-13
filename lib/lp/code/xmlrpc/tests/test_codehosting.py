@@ -341,7 +341,7 @@ class CodehostingTest(WithScenarios, TestCaseWithFactory):
         self.assertEqual(BranchType.HOSTED, branch.branch_type)
 
     def test_createBranch_bad_product(self):
-        # Creating a branch for a non-existant product fails.
+        # Creating a branch for a non-existent product fails.
         owner = self.factory.makePerson()
         name = self.factory.getUniqueString()
         message = "Project 'no-such-product' does not exist."

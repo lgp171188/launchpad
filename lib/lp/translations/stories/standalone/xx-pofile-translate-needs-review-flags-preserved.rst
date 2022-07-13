@@ -61,8 +61,8 @@ But a new suggestion is provided for this message.
     New suggestion
 
 
-Reseting translations
----------------------
+Resetting translations
+----------------------
 
 If the 'Someone should review this translation' checkbox is used without
 adding any new suggestions or adding an empty string, the current translation
@@ -91,7 +91,7 @@ translation, while no suggestions are displayed.
     Located in ...
 
 'Someone should review this translation' can be used to reset the translation,
-when a new emtpy translation is added and marked as needing review.
+when a new empty translation is added and marked as needing review.
 After clicking 'Save & Continue', all translations entered for this
 message will be listed as suggestions.
 

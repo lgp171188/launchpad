@@ -154,7 +154,7 @@ class TestBugzillaRemoteComponentFinder(TestCaseWithFactory):
         self.assertEqual(3, len(list(comp_group.components)))
         comp_group = lp_bugtracker.getRemoteComponentGroup("beta")
         self.assertEqual(1, len(list(comp_group.components)))
-        comp = comp_group.getComponent("non-existant")
+        comp = comp_group.getComponent("non-existent")
         self.assertIs(None, comp)
         comp = comp_group.getComponent("four")
         self.assertEqual("four", comp.name)

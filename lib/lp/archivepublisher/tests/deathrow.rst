@@ -265,7 +265,7 @@ Run DeathRow against the current 'removable' context.
 A few details to pay attention to in the log output:
 
  * All files were checked despite having the same content. In
-   normal circunstances this can be achieved by having the same tarball
+   normal circumstances this can be achieved by having the same tarball
    used with different names for two distinct sourcepackages
    (openoffice and openoffice-l10n is an example);
 
@@ -409,7 +409,7 @@ database.
     stuck-bin 666 in hoary i386 SUPERSEDED True
     stuck-bin 666 in hoary i386 SUPERSEDED True
 
-Remove temporary diretories used for tests.
+Remove temporary directories used for tests.
 
     >>> import shutil
     >>> shutil.rmtree(pool_path)

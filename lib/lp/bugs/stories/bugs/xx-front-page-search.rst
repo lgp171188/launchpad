@@ -52,7 +52,7 @@ will be searched.
     >>> anon_browser.title
     'Search all bug reports'
 
-The same is of course true if the target widget contains a non-existant
+The same is of course true if the target widget contains a non-existent
 project name.
 
     >>> anon_browser.open('http://bugs.launchpad.test/')

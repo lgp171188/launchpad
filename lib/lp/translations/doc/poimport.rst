@@ -663,7 +663,7 @@ We'll import a POFile with 3 plural forms into this POFile:
     ... msgstr[2] "Third form %%d"
     ... ''' % datetime.datetime.now(UTC).isoformat())  # noqa
 
-We now import this POFile as this language's translation for the soure
+We now import this POFile as this language's translation for the source
 package:
 
     >>> entry = translation_import_queue.addOrUpdateEntry(

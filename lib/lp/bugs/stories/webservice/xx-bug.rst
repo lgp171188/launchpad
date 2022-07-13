@@ -1024,7 +1024,7 @@ it and its duplicate, bug_six.
     ...     bug_five['self_link'], 'unsubscribeFromDupes'))
     HTTP/1.1 200 Ok...
 
-Now bug_six has no subscibers.
+Now bug_six has no subscribers.
 
     >>> bug_six_subscriptions = webservice.get(
     ...     bug_six['subscriptions_collection_link']).jsonBody()
@@ -1053,7 +1053,7 @@ member_webservice, which is for an Ubuntu Team member.
     ...     person=webservice.getAbsoluteUrl('/~ubuntu-team')))
     HTTP/1.1 200 Ok...
 
-Now again, bug_six has no subscibers.
+Now again, bug_six has no subscribers.
 
     >>> bug_six_subscriptions = webservice.get(
     ...     bug_six['subscriptions_collection_link']).jsonBody()

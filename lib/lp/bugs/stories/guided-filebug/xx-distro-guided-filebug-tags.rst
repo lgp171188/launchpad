@@ -15,7 +15,7 @@ that deal with new package request with a certain tag.
     ...    'Please package CoolApp')
     >>> user_browser.getControl('Continue').click()
 
-On the next page, possible duplicates are displayed as ususal. No
+On the next page, possible duplicates are displayed as usual. No
 candidates were found for this summary, though.
 
     >>> print(find_main_content(user_browser.contents).decode_contents())

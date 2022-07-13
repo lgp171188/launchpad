@@ -2,7 +2,7 @@ Sourcepackage translations
 ==========================
 
 This page shows a list of PO templates contained a specific source package
-in a particular distibution series. In this case, we're asking for the
+in a particular distribution series. In this case, we're asking for the
 translation overview for Evolution in Hoary.
 
 Make the test browser look like it's coming from an arbitrary South African

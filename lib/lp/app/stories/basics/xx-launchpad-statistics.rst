@@ -1,6 +1,5 @@
-
 We also have the special Launchpad Statistics summary page. This is only
-acessible to launchpad Admins:
+accessible to launchpad Admins:
 
     >>> user_browser.open('http://launchpad.test/+statistics')
     Traceback (most recent call last):

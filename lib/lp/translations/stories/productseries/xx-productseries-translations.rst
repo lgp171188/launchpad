@@ -378,8 +378,8 @@ the new series.
     Set up translations for a series...
     evo-new series — manual or automatic...
 
-For each series there is a link for accesing the series translations
-page togheter with link for uploading a template from that series
+For each series there is a link for accessing the series translations
+page together with link for uploading a template from that series
 (manual) and setting automatic imports.
 
     >>> print(admin_browser.getLink('Evolution evo-new series').url)

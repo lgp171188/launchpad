@@ -166,8 +166,8 @@ Following the link will show the questions results:
 Distribution Source Packages and FAQs
 -------------------------------------
 
-Altough distribution source packages aren't directly associated with
-FAQs. The 'All FAQs' link that appears in that context links to the
+Although distribution source packages aren't directly associated with
+FAQs, the 'All FAQs' link that appears in that context links to the
 distribution FAQs.
 
     >>> browser.open('http://answers.launchpad.test/ubuntu/'
