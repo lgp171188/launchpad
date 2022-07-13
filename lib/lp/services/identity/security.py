@@ -6,7 +6,7 @@
 __all__ = []
 
 from lp.app.security import AuthorizationBase
-from lp.security import EditByOwnersOrAdmins
+from lp.registry.security import EditByOwnersOrAdmins
 from lp.services.identity.interfaces.emailaddress import IEmailAddress
 
 

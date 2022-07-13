@@ -10,6 +10,7 @@
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
 
+    <authorizations module=".security" />
     <!-- ArchiveGPGSigningKey -->
     <class class="lp.archivepublisher.archivegpgsigningkey.ArchiveGPGSigningKey">
         <allow interface="lp.archivepublisher.interfaces.archivegpgsigningkey.IArchiveGPGSigningKey"/>

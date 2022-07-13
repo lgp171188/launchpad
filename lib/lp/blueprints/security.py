@@ -3,7 +3,11 @@
 
 """Security adapters for the blueprints package."""
 
-__all__ = []
+__all__ = [
+    "AdminSpecification",
+    "EditSpecificationByRelatedPeople",
+    "ViewSpecification",
+]
 
 from lp.app.security import AnonymousAuthorization, AuthorizationBase
 from lp.blueprints.interfaces.specification import (
@@ -17,7 +21,8 @@ from lp.blueprints.interfaces.specificationsubscription import (
 )
 from lp.blueprints.interfaces.sprint import ISprint
 from lp.blueprints.interfaces.sprintspecification import ISprintSpecification
-from lp.security import EditByOwnersOrAdmins, ModerateByRegistryExpertsOrAdmins
+from lp.registry.security import EditByOwnersOrAdmins
+from lp.security import ModerateByRegistryExpertsOrAdmins
 
 
 class EditSpecificationBranch(AuthorizationBase):
