@@ -8,6 +8,7 @@ Explanation
 
    running-details
    framework
+   navigating
    architecture
    pip
    favicon
