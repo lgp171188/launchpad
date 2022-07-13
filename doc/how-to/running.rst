@@ -12,6 +12,9 @@ own machine, using a `LXD
 <https://linuxcontainers.org/lxd/introduction/>`_-managed container to
 isolate it from the rest of your system.
 
+After you've done this, you may want to read about
+:doc:`../explanation/navigating`.
+
 Supported operating systems
 ===========================
 
