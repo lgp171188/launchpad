@@ -14,6 +14,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Union,
     )
@@ -508,8 +509,8 @@ class CIBuildUploadJob(ArchiveJobDerived):
                     ScannedArtifact(artifact=artifact, metadata=metadata))
         return scanned
 
-    def _uploadSources(self, scanned: Iterable[ScannedArtifact]) -> None:
-        """Upload sources from an iterable of `ScannedArtifact`s."""
+    def _uploadSources(self, scanned: Sequence[ScannedArtifact]) -> None:
+        """Upload sources from an sequence of `ScannedArtifact`s."""
         # Launchpad's data model generally assumes that a single source is
         # associated with multiple binaries.  However, a source package
         # release can have multiple (or indeed no) files attached to it, so
