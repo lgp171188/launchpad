@@ -114,7 +114,7 @@ to fetch the method from the object, so methods should be declared in
 ``interface`` or ``attributes`` even if they modify the object.
 
 3. Ensure that there is an ``<authorizations />`` directive in the package's
-   top-level ``configure.zcml` file that specifies the package's security
+   top-level ``configure.zcml`` file that specifies the package's security
    module. If it isn't there already, add one like:
 
 .. code-block:: xml
