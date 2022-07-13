@@ -53,7 +53,7 @@ class IDistroSeriesLanguage(IRosettaStats):
 class IDistroSeriesLanguageSet(Interface):
     """The set of distroserieslanguages."""
 
-    def getDummy(distroseries, language):
-        """Return a new DummyDistroSeriesLanguage for the given
+    def getEmpty(distroseries, language):
+        """Return a new EmptyDistroSeriesLanguage for the given
         distroseries and language.
         """

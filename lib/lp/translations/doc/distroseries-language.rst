@@ -100,23 +100,23 @@ hoary_spanish.pofiles is hiding as expected.
     Spanish (es) translation of disabled-template in Ubuntu Hoary package
     "evolution"
 
-We also have DummyDistroSeriesLanguages.
+We also have EmptyDistroSeriesLanguages.
 
     >>> amharic = getUtility(ILanguageSet)['am']
-    >>> hoary_amharic = hoary.getDistroSeriesLanguageOrDummy(amharic)
+    >>> hoary_amharic = hoary.getDistroSeriesLanguageOrEmpty(amharic)
     >>> print(hoary_amharic.__class__)
-    <class '...DummyDistroSeriesLanguage'>
+    <class '...EmptyDistroSeriesLanguage'>
 
 English is not a translatable language because we store the source messages
-as English. Thus English cannot be a DummyDistroSeriesLanguage.
+as English. Thus English cannot be an EmptyDistroSeriesLanguage.
 
     >>> english = getUtility(ILanguageSet)['en']
-    >>> hoary_english = hoary.getDistroSeriesLanguageOrDummy(english)
+    >>> hoary_english = hoary.getDistroSeriesLanguageOrEmpty(english)
     Traceback (most recent call last):
     ...
     AssertionError: English is not a translatable language.
 
-A DummyDistroSeriesLanguage gives you the same set of templates to
+An EmptyDistroSeriesLanguage gives you the same set of templates to
 translate as a regular DistroSeriesLanguage would.
 
     >>> print_augmented_pofiles(hoary_amharic, hoary_templates)
@@ -126,11 +126,11 @@ translate as a regular DistroSeriesLanguage would.
     pkgconf-mozilla  (am)  <class '...pofile.DummyPOFile'>
     pmount           (am)  <class '...pofile.DummyPOFile'>
 
-Now, we should test that a DummyDistroSeriesLanguage implements the full
+Now, we should test that an EmptyDistroSeriesLanguage implements the full
 interface of a normal DistroSeriesLanguage.
 
 NB IF THIS FAILS then it means that the DistroSeriesLanguage object has
-been extended, and the DummyDistroSeriesLanguage has not been similarly
+been extended, and the EmptyDistroSeriesLanguage has not been similarly
 extended.
 
     >>> print(IDistroSeriesLanguage.providedBy(hoary_amharic))

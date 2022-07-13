@@ -6,7 +6,7 @@
 __all__ = [
     'DistroSeriesLanguage',
     'DistroSeriesLanguageSet',
-    'DummyDistroSeriesLanguage',
+    'EmptyDistroSeriesLanguage',
     ]
 
 from datetime import datetime
@@ -160,7 +160,7 @@ class DistroSeriesLanguage(StormBase, RosettaStats):
 
 
 @implementer(IDistroSeriesLanguage)
-class DummyDistroSeriesLanguage(RosettaStats):
+class EmptyDistroSeriesLanguage(RosettaStats):
     """See `IDistroSeriesLanguage`
 
     Represents a DistroSeriesLanguage where we do not yet actually HAVE one
@@ -240,9 +240,9 @@ class DummyDistroSeriesLanguage(RosettaStats):
 class DistroSeriesLanguageSet:
     """See `IDistroSeriesLanguageSet`.
 
-    Implements a means to get a DummyDistroSeriesLanguage.
+    Implements a means to get an EmptyDistroSeriesLanguage.
     """
 
-    def getDummy(self, distroseries, language):
+    def getEmpty(self, distroseries, language):
         """See IDistroSeriesLanguageSet."""
-        return DummyDistroSeriesLanguage(distroseries, language)
+        return EmptyDistroSeriesLanguage(distroseries, language)

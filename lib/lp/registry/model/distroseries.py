@@ -161,7 +161,7 @@ from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 from lp.translations.enums import LanguagePackType
 from lp.translations.model.distroserieslanguage import (
     DistroSeriesLanguage,
-    DummyDistroSeriesLanguage,
+    EmptyDistroSeriesLanguage,
     )
 from lp.translations.model.hastranslationimports import (
     HasTranslationImportsMixin,
@@ -907,12 +907,12 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
         return IStore(DistroSeriesLanguage).find(
             DistroSeriesLanguage, distroseries=self, language=language).one()
 
-    def getDistroSeriesLanguageOrDummy(self, language):
+    def getDistroSeriesLanguageOrEmpty(self, language):
         """See `IDistroSeries`."""
         drl = self.getDistroSeriesLanguage(language)
         if drl is not None:
             return drl
-        return DummyDistroSeriesLanguage(self, language)
+        return EmptyDistroSeriesLanguage(self, language)
 
     def updateStatistics(self, ztm):
         """See `IDistroSeries`."""
