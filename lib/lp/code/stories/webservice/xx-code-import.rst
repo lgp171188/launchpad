@@ -99,7 +99,7 @@ There is a link on the branch object
     >>> print(representation['code_import_link'])
     http://.../~import-owner/scruffbuntu/manic/scruff/import/+code-import
 
-and there is information available about the import itsef.
+and there is information available about the import itself.
 
     >>> import_url = representation['code_import_link']
     >>> response = import_webservice.get(import_url)
@@ -221,7 +221,7 @@ We can create a Git-to-Git import.
     >>> print(representation['date_last_successful'])
     None
 
-We can also create an import targetting a source package.
+We can also create an import targeting a source package.
 
     >>> login(ANONYMOUS)
     >>> source_package_url = (
@@ -256,7 +256,7 @@ We can also create an import targetting a source package.
     >>> print(representation['date_last_successful'])
     None
 
-We can create a Git-to-Git import targetting a distribution source package.
+We can create a Git-to-Git import targeting a distribution source package.
 
     >>> login(ANONYMOUS)
     >>> distro_source_package_url = (

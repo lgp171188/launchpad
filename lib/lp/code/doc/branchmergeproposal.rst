@@ -8,7 +8,7 @@ The branch to be merged is referred to as the "source branch", and the branch
 that is being merged into is referred to as the "target branch".
 
 In the early phases of development of this feature there was often a mixing of
-terms where the term "merge proposal" was used interchangably with "code
+terms where the term "merge proposal" was used interchangeably with "code
 review" which caused some confusion.
 
 - **Merge Proposal:** indicates that one branch should be merged with another.

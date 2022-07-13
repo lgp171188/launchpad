@@ -17,7 +17,7 @@ The BugWidget converts string bug ids to the corresponding bug object.
     >>> bug_one.id
     1
 
-If non-existant bug number is entered, an error is raised.
+If non-existent bug number is entered, an error is raised.
 
     >>> request = LaunchpadTestRequest(form={'field.bug': '1234567'})
     >>> bug_widget = BugWidget(bug_field, request)

@@ -194,7 +194,7 @@ Only those chunks of content type text/plain with content-disposition
 text/plain chunk has a filename, it is considered to be an attachment
 and is stored as a blob, as well as text/plain chunks with
 content-disposition "attachment". Chunks with content-disposition
-"attachment" do not need a file name to be stored as blobs. If the chunck
+"attachment" do not need a file name to be stored as blobs. If the chunk
 doesn't specify a Content-Type, application/octet-stream will be used as
 a default. If the chunk doesn't specify a charset, latin-1 will be
 used as a default.

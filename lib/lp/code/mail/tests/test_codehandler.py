@@ -183,8 +183,8 @@ class TestCodeHandler(TestCaseWithFactory):
         self.assertFalse(self.code_handler.process(mail,
             'foo@code.launchpad.test', None))
 
-    def test_processNonExistantAddress(self):
-        """When a non-existant address is supplied, it returns False."""
+    def test_processNonExistentAddress(self):
+        """When a non-existent address is supplied, it returns False."""
         mail = self.factory.makeSignedMessage('<my-id>')
         switch_dbuser(config.processmail.dbuser)
         self.assertTrue(self.code_handler.process(mail,

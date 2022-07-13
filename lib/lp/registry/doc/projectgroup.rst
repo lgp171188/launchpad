@@ -78,7 +78,7 @@ Make sure that a project provides the IProjectGroup interface.
 If there is no project with the specified name, a NotFoundError will be
 raised.
 
-    >>> projectset['non-existant']
+    >>> projectset['non-existent']
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...

@@ -109,7 +109,7 @@ information is not found in there, so a retry is attempted against the
 master DB in case the information is missing due to replication lag.
 
     >>> with MockPatchObject(statsd_client, '_client', stats_client):
-    ...     output = http("GET http://launchpad.test/non-existant HTTP/1.1\n")
+    ...     output = http("GET http://launchpad.test/non-existent HTTP/1.1\n")
     >>> output.getStatus()
     404
     >>> report()

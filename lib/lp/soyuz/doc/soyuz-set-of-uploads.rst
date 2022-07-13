@@ -608,7 +608,7 @@ run. Rewriting the Release files with these files missing produces a
 broken distro.
 
 We will make two publisher runs, deleting the uncompressed index files
-inbetween, and verify that the second publisher run doesn't screw up the
+in between, and verify that the second publisher run doesn't screw up the
 release files in the way bug-54039 infected code would.
 
 First a couple helpers.

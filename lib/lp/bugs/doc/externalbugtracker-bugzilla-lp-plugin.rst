@@ -255,7 +255,7 @@ accepts a list of bug IDs and a datetime as a parameter and returns the
 list of all the bug IDs in the passed set that have been changed since
 that datetime.
 
-This is acheived by calling the Launchpad.get_bugs() method on the
+This is achieved by calling the Launchpad.get_bugs() method on the
 remote server and passing it a 'changed_since' parameter.
 
     >>> bugzilla.xmlrpc_transport.print_method_calls = True
@@ -327,7 +327,7 @@ products from Bugzilla APIs.
 Retrieving remote comments
 --------------------------
 
-BugzillaLPPlugin implments the ISupportsCommentImport interface, which
+BugzillaLPPlugin implements the ISupportsCommentImport interface, which
 means that we can use it to import comments from the remote Bugzilla
 instance.
 

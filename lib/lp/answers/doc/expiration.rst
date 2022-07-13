@@ -128,7 +128,7 @@ somebody are subject to expiration.
     # Commit the current transaction because the script will run in
     # another transaction and thus it won't see the changes done on this
     # test unless we commit.
-    # XXX flacoste 2006-10-03 bug=3989: Unecessary flush_database_updates
+    # XXX flacoste 2006-10-03 bug=3989: Unnecessary flush_database_updates
     # required.
     >>> from lp.services.database.sqlbase import flush_database_updates
     >>> flush_database_updates()

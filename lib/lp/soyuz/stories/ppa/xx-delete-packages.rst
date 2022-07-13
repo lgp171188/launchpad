@@ -139,7 +139,7 @@ performed. The results should not include the just-deleted source.
 
 Note that we will also include a unquoted portion of text in the
 deletion comment, simulating a XSS attack. The current code will
-automaticaly quote the text entered by the user resulting in an
+automatically quote the text entered by the user resulting in an
 entirely readable content.
 
     >>> admin_browser.getControl("Filter").click()
@@ -464,7 +464,7 @@ corresponding expandable area, they can see that the 'Built packages'
 section is omitted, however the source and binary files can be
 downloaded from librarian.
 
-Please note also how the deletion comment is diplayed in its entirety as
+Please note also how the deletion comment is displayed in its entirety as
 opposed to being truncated after the first 20 characters.
 
     >>> user_browser.open(

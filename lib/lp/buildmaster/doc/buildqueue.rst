@@ -92,8 +92,8 @@ set 'manual' attribute atomically. For this we use manualScore:
     (True, 1000)
 
 
-Dispatching and Reseting jobs
------------------------------
+Dispatching and Resetting jobs
+------------------------------
 
 The sampledata contains an active job, being built by the 'bob'
 builder.

@@ -14,7 +14,7 @@ to a local page (the default configuration is for a page on the Ubuntu wiki).
     ... ubuntu_bug_filing_url: http://launchpad.test/+tour
     ... ''')
 
-Tring to navigate to the 'report a bug' page, redirects us to the alternative
+Trying to navigate to the 'report a bug' page redirects us to the alternative
 page.
 
     >>> user_browser.open('http://launchpad.test/ubuntu')

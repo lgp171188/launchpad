@@ -252,7 +252,7 @@ class TestSourcePackageHasBuildRecords(TestHasBuildRecordsInterface):
                 SourcePackagePublishingHistory, sourcepackagerelease=spr
                 ).set(sourcepackagenameID=gedit_name.id)
 
-        # Set them as sucessfully built
+        # Set them as successfully built
         for build in self.builds:
             build.updateStatus(BuildStatus.BUILDING)
             build.updateStatus(BuildStatus.FULLYBUILT)

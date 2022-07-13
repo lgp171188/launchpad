@@ -70,7 +70,7 @@ But this delete option should not be shown for other users.
 
 If the button is pressed, the attachment will be deleted, which means
 that it won't show up in the attachments portlet anymore. Since there
-arent' any other attachments, the portlet won't show up at all.
+aren't any other attachments, the portlet won't show up at all.
 
     >>> user_browser.getControl('Delete Attachment').click()
     >>> user_browser.url

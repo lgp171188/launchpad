@@ -52,7 +52,7 @@ Targets of official bug tags
 ----------------------------
 
 Distribution owners and other persons with the permission launchpad.Edit
-can add and remove offical bug tags by calling addOfficialBugTag()
+can add and remove official bug tags by calling addOfficialBugTag()
 or removeOfficialBugTag(), respectively.
 
     >>> login('colin.watson@ubuntulinux.com')
@@ -101,7 +101,7 @@ change the data.
     ...     print(tag.tag)
     bar
 
-Similary, deleting an not-existent tag does not lead to an error, but
+Similarly, deleting an not-existent tag does not lead to an error, but
 does not change the data either.
 
     >>> ubuntu.removeOfficialBugTag(u'foo')

@@ -1,7 +1,7 @@
 Launchpad maintenance messages
 ==============================
 
-A system adminstrator can write an iso format timestamp to the file
+A system administrator can write an iso format timestamp to the file
 "+maintenancetime.txt" in the launchpad application root directory.
 
 This will cause a message to be displayed as part of the main template

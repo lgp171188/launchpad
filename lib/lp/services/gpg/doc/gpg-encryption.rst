@@ -52,7 +52,7 @@ Note fingerprint is also unicode.
     >>> key = gpghandler.retrieveKey(fingerprint)
     >>> cipher = gpghandler.encryptContent(content.encode('utf-8'), key)
 
-cipher constains the encrypted content.
+cipher contains the encrypted content.
 
 Storing the raw password may compromise the security, but is the
 only way we can decrypt the cipher content.
@@ -65,7 +65,7 @@ voilá, the same content shows up again.
     >>> print(backslashreplace(plain.decode('utf-8')))
     \ufcber
 
-Verify if the encrytion process support passing another charset string
+The encryption process supports passing another charset string.
 
     >>> content = u'a\xe7ucar'
     >>> cipher = gpghandler.encryptContent(content.encode('iso-8859-1'), key)

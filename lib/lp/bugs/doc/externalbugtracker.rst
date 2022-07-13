@@ -44,7 +44,7 @@ Choosing another ExternalBugTracker instance
 
 Sometimes there is more than one ExternalBugTracker instance for a
 single bug tracker type. For example, for different versions, for
-intances having our Launchpad plugin installed, and so on. This is done
+instances having our Launchpad plugin installed, and so on. This is done
 with the getExternalBugTrackerToUse() method, which returns the correct
 instance.  Usually there is only one version, so the default for the
 original instance is to return itself.
@@ -56,7 +56,7 @@ original instance is to return itself.
     True
 
 CheckwatchesMaster calls externalbugtracker.get_external_bugtracker(),
-follwed by ExternalBugTracker.getExternalBugTrackerToUse() to get the
+followed by ExternalBugTracker.getExternalBugTrackerToUse() to get the
 correct ExternalBugTracker for a given BugTracker. It does this via the
 private _getExternalBugTrackersAndWatches() method, which returns a set of
 (ExternalBugTracker, bug_watches) tuples.
@@ -716,7 +716,7 @@ can use it to check that bug watches' last_error_types are being set
 correctly.
 
 We start with those errors that may be raised by
-ExternalBugTracker.initializeRemoteBugDB(). We supress exceptions
+ExternalBugTracker.initializeRemoteBugDB(). We suppress exceptions
 because the bug watch's last error field will contain the data we need
 for this test.
 

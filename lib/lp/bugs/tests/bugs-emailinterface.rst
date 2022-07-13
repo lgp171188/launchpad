@@ -752,7 +752,7 @@ be subscribed. Examples:
     ...                         for subscription in bug_four.subscriptions]
     True
 
-If we specify a non-existant user, an error message will be sent:
+If we specify a non-existent user, an error message will be sent:
 
     >>> submit_commands(bug_four, 'subscribe non_existant@canonical.com')
     >>> print_latest_email()
@@ -851,7 +851,7 @@ bug #5.
 
     >>> login(sampledata.USER_EMAIL)
 
-If we specify a non-existant user, an error message will be sent:
+If we specify a non-existent user, an error message will be sent:
 
     >>> submit_commands(bug_four, 'unsubscribe non_existant')
     >>> print_latest_email()

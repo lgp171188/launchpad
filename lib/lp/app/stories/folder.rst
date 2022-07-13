@@ -191,7 +191,7 @@ Trying to request a non-existent file, will also raise a NotFound.
       ...
     zope.publisher.interfaces.NotFound: ...
 
-Traversing beyond an existing file to a non-existant file raises a
+Traversing beyond an existing file to a non-existent file raises a
 NotFound.
 
     >>> view = MyTree(object(), FakeRequest(version="devel"))

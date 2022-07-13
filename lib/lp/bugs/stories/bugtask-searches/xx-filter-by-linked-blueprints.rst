@@ -39,7 +39,7 @@ linked blueprints are returned.
     1 Firefox does not support SVG
      Mozilla Firefox Low New
 
-Similary, we can search for blueprints that don't have linked
+Similarly, we can search for blueprints that don't have linked
 blueprints, if we uncheck 'Show bugs with linked blueprints'.
 
     >>> anon_browser.open(advanced_search_url)

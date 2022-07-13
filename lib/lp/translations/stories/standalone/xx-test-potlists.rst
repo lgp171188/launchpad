@@ -1,4 +1,4 @@
-Check that we can get a potlist for a source pacakge that has potemplates:
+Check that we can get a potlist for a source package that has potemplates:
 
     >>> print(http(br"""
     ... GET /ubuntu/hoary/+source/evolution/+potlist HTTP/1.1

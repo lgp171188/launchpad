@@ -375,7 +375,7 @@ Form Rendering
     ...         self.next_url = 'http://launchpad.test/'
     ...
     ...     def handleUpdateFailure(self, action, data, errors):
-    ...         return u'Some errors occured.'
+    ...         return u'Some errors occurred.'
     ...
     ...     @action(u'Update', name='update', failure=handleUpdateFailure)
     ...     def update_action(self, action, data):
@@ -423,7 +423,7 @@ This is also true of failure handlers:
     ...           'field.actions.update': 'Update'})
     >>> view = RenderFormTest(context, request)
     >>> print(view())
-    Some errors occured.
+    Some errors occurred.
 
 
 Initial Focused Widget
