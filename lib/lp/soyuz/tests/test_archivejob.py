@@ -46,8 +46,10 @@ from lp.soyuz.enums import (
 from lp.soyuz.model.archivejob import (
     ArchiveJob,
     ArchiveJobDerived,
+    BinaryArtifactMetadata,
     CIBuildUploadJob,
     PackageUploadNotificationJob,
+    SourceArtifactMetadata,
     )
 from lp.soyuz.tests import datadir
 from lp.testing import (
@@ -247,17 +249,19 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
         path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
-        expected = {
-            "is_binary": True,
-            "format": BinaryPackageFormat.WHL,
-            "name": "wheel-indep",
-            "version": "0.0.1",
-            "summary": "Example description",
-            "description": "Example long description\n",
-            "architecturespecific": False,
-            "homepage": "",
-            }
-        self.assertEqual(expected, job._scanFile(datadir(path)))
+        metadata = job._scanFile(datadir(path))
+        self.assertIsInstance(metadata, BinaryArtifactMetadata)
+        self.assertThat(
+            metadata,
+            MatchesStructure(
+                format=Equals(BinaryPackageFormat.WHL),
+                name=Equals("wheel-indep"),
+                version=Equals("0.0.1"),
+                summary=Equals("Example description"),
+                description=Equals("Example long description\n"),
+                architecturespecific=Is(False),
+                homepage=Equals(""),
+                ))
 
     def test__scanFile_wheel_arch(self):
         archive = self.factory.makeArchive()
@@ -268,17 +272,19 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
         path = "wheel-arch/dist/wheel_arch-0.0.1-cp310-cp310-linux_x86_64.whl"
-        expected = {
-            "is_binary": True,
-            "format": BinaryPackageFormat.WHL,
-            "name": "wheel-arch",
-            "version": "0.0.1",
-            "summary": "Example description",
-            "description": "Example long description\n",
-            "architecturespecific": True,
-            "homepage": "http://example.com/",
-            }
-        self.assertEqual(expected, job._scanFile(datadir(path)))
+        metadata = job._scanFile(datadir(path))
+        self.assertIsInstance(metadata, BinaryArtifactMetadata)
+        self.assertThat(
+            metadata,
+            MatchesStructure(
+                format=Equals(BinaryPackageFormat.WHL),
+                name=Equals("wheel-arch"),
+                version=Equals("0.0.1"),
+                summary=Equals("Example description"),
+                description=Equals("Example long description\n"),
+                architecturespecific=Is(True),
+                homepage=Equals("http://example.com/"),
+                ))
 
     def test__scanFile_sdist(self):
         archive = self.factory.makeArchive()
@@ -289,13 +295,15 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
         path = "wheel-arch/dist/wheel-arch-0.0.1.tar.gz"
-        expected = {
-            "is_binary": False,
-            "format": SourcePackageFileType.SDIST,
-            "name": "wheel-arch",
-            "version": "0.0.1",
-            }
-        self.assertEqual(expected, job._scanFile(datadir(path)))
+        metadata = job._scanFile(datadir(path))
+        self.assertIsInstance(metadata, SourceArtifactMetadata)
+        self.assertThat(
+            metadata,
+            MatchesStructure.byEquality(
+                format=SourcePackageFileType.SDIST,
+                name="wheel-arch",
+                version="0.0.1",
+                ))
 
     def test__scanFile_conda_indep(self):
         archive = self.factory.makeArchive()
@@ -306,18 +314,20 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
         path = "conda-indep/dist/noarch/conda-indep-0.1-0.tar.bz2"
-        expected = {
-            "is_binary": True,
-            "format": BinaryPackageFormat.CONDA_V1,
-            "name": "conda-indep",
-            "version": "0.1",
-            "summary": "Example summary",
-            "description": "Example description",
-            "architecturespecific": False,
-            "homepage": "",
-            "user_defined_fields": [("subdir", "noarch")],
-            }
-        self.assertEqual(expected, job._scanFile(datadir(path)))
+        metadata = job._scanFile(datadir(path))
+        self.assertIsInstance(metadata, BinaryArtifactMetadata)
+        self.assertThat(
+            metadata,
+            MatchesStructure(
+                format=Equals(BinaryPackageFormat.CONDA_V1),
+                name=Equals("conda-indep"),
+                version=Equals("0.1"),
+                summary=Equals("Example summary"),
+                description=Equals("Example description"),
+                architecturespecific=Is(False),
+                homepage=Equals(""),
+                user_defined_fields=Equals([("subdir", "noarch")]),
+                ))
 
     def test__scanFile_conda_arch(self):
         archive = self.factory.makeArchive()
@@ -328,18 +338,20 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
         path = "conda-arch/dist/linux-64/conda-arch-0.1-0.tar.bz2"
-        expected = {
-            "is_binary": True,
-            "format": BinaryPackageFormat.CONDA_V1,
-            "name": "conda-arch",
-            "version": "0.1",
-            "summary": "Example summary",
-            "description": "Example description",
-            "architecturespecific": True,
-            "homepage": "http://example.com/",
-            "user_defined_fields": [("subdir", "linux-64")],
-            }
-        self.assertEqual(expected, job._scanFile(datadir(path)))
+        metadata = job._scanFile(datadir(path))
+        self.assertIsInstance(metadata, BinaryArtifactMetadata)
+        self.assertThat(
+            metadata,
+            MatchesStructure(
+                format=Equals(BinaryPackageFormat.CONDA_V1),
+                name=Equals("conda-arch"),
+                version=Equals("0.1"),
+                summary=Equals("Example summary"),
+                description=Equals("Example description"),
+                architecturespecific=Is(True),
+                homepage=Equals("http://example.com/"),
+                user_defined_fields=Equals([("subdir", "linux-64")]),
+                ))
 
     def test__scanFile_conda_v2_indep(self):
         archive = self.factory.makeArchive()
@@ -350,18 +362,20 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
         path = "conda-v2-indep/dist/noarch/conda-v2-indep-0.1-0.conda"
-        expected = {
-            "is_binary": True,
-            "format": BinaryPackageFormat.CONDA_V2,
-            "name": "conda-v2-indep",
-            "version": "0.1",
-            "summary": "Example summary",
-            "description": "Example description",
-            "architecturespecific": False,
-            "homepage": "",
-            "user_defined_fields": [("subdir", "noarch")],
-            }
-        self.assertEqual(expected, job._scanFile(datadir(path)))
+        metadata = job._scanFile(datadir(path))
+        self.assertIsInstance(metadata, BinaryArtifactMetadata)
+        self.assertThat(
+            metadata,
+            MatchesStructure(
+                format=Equals(BinaryPackageFormat.CONDA_V2),
+                name=Equals("conda-v2-indep"),
+                version=Equals("0.1"),
+                summary=Equals("Example summary"),
+                description=Equals("Example description"),
+                architecturespecific=Is(False),
+                homepage=Equals(""),
+                user_defined_fields=Equals([("subdir", "noarch")]),
+                ))
 
     def test__scanFile_conda_v2_arch(self):
         archive = self.factory.makeArchive()
@@ -372,18 +386,20 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
         path = "conda-v2-arch/dist/linux-64/conda-v2-arch-0.1-0.conda"
-        expected = {
-            "is_binary": True,
-            "format": BinaryPackageFormat.CONDA_V2,
-            "name": "conda-v2-arch",
-            "version": "0.1",
-            "summary": "Example summary",
-            "description": "Example description",
-            "architecturespecific": True,
-            "homepage": "http://example.com/",
-            "user_defined_fields": [("subdir", "linux-64")],
-            }
-        self.assertEqual(expected, job._scanFile(datadir(path)))
+        metadata = job._scanFile(datadir(path))
+        self.assertIsInstance(metadata, BinaryArtifactMetadata)
+        self.assertThat(
+            metadata,
+            MatchesStructure(
+                format=Equals(BinaryPackageFormat.CONDA_V2),
+                name=Equals("conda-v2-arch"),
+                version=Equals("0.1"),
+                summary=Equals("Example summary"),
+                description=Equals("Example description"),
+                architecturespecific=Is(True),
+                homepage=Equals("http://example.com/"),
+                user_defined_fields=Equals([("subdir", "linux-64")]),
+                ))
 
     def test_run_indep(self):
         archive = self.factory.makeArchive(

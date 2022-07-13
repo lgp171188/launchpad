@@ -13,6 +13,9 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Optional,
+    Tuple,
+    Union,
     )
 import zipfile
 
@@ -216,19 +219,42 @@ class ScanException(Exception):
     """A CI build upload job failed to scan a file."""
 
 
+class SourceArtifactMetadata:
+    """Metadata extracted from a source package."""
+
+    def __init__(self, format: SourcePackageFileType, name: str, version: str):
+        self.format = format
+        self.name = name
+        self.version = version
+
+
+class BinaryArtifactMetadata:
+    """Metadata extracted from a binary package."""
+
+    def __init__(self, format: BinaryPackageFormat, name: str, version: str,
+                 summary: str, description: str, architecturespecific: bool,
+                 homepage: str,
+                 user_defined_fields: Optional[List[Tuple[str, str]]] = None):
+        self.format = format
+        self.name = name
+        self.version = version
+        self.summary = summary
+        self.description = description
+        self.architecturespecific = architecturespecific
+        self.homepage = homepage
+        self.user_defined_fields = user_defined_fields
+
+
+ArtifactMetadata = Union[SourceArtifactMetadata, BinaryArtifactMetadata]
+
+
 class ScannedArtifact:
 
     def __init__(
-        self, *, artifact: IRevisionStatusArtifact, metadata: Dict[str, Any],
-        is_binary: bool
+        self, *, artifact: IRevisionStatusArtifact, metadata: ArtifactMetadata
     ):
         self.artifact = artifact
         self.metadata = metadata
-        self.is_binary = is_binary
-
-    @property
-    def version(self):
-        return self.metadata["version"]
 
 
 @implementer(ICIBuildUploadJob)
@@ -339,7 +365,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
     def target_channel(self):
         return self.metadata["target_channel"]
 
-    def _scanWheel(self, path: str) -> Dict[str, Any]:
+    def _scanWheel(self, path: str) -> Optional[BinaryArtifactMetadata]:
         try:
             parsed_path = parse_wheel_filename(path)
             wheel = Wheel(path)
@@ -348,18 +374,17 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 "Failed to scan %s as a Python wheel: %s",
                 os.path.basename(path), e)
             return None
-        return {
-            "is_binary": True,
-            "format": BinaryPackageFormat.WHL,
-            "name": wheel.name,
-            "version": wheel.version,
-            "summary": wheel.summary or "",
-            "description": wheel.description,
-            "architecturespecific": "any" not in parsed_path.platform_tags,
-            "homepage": wheel.home_page or "",
-            }
+        return BinaryArtifactMetadata(
+            format=BinaryPackageFormat.WHL,
+            name=wheel.name,
+            version=wheel.version,
+            summary=wheel.summary or "",
+            description=wheel.description,
+            architecturespecific="any" not in parsed_path.platform_tags,
+            homepage=wheel.home_page or "",
+        )
 
-    def _scanSDist(self, path: str) -> Dict[str, Any]:
+    def _scanSDist(self, path: str) -> Optional[SourceArtifactMetadata]:
         try:
             sdist = SDist(path)
         except Exception as e:
@@ -367,32 +392,32 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 "Failed to scan %s as a Python sdist: %s",
                 os.path.basename(path), e)
             return None
-        return {
-            "is_binary": False,
-            "format": SourcePackageFileType.SDIST,
-            "name": sdist.name,
-            "version": sdist.version,
-            }
+        return SourceArtifactMetadata(
+            format=SourcePackageFileType.SDIST,
+            name=sdist.name,
+            version=sdist.version,
+        )
 
     def _scanCondaMetadata(
-        self, index: Dict[Any, Any], about: Dict[Any, Any]
-    ) -> Dict[str, Any]:
-        return {
-            "is_binary": True,
-            "name": index["name"],
-            "version": index["version"],
-            "summary": about.get("summary", ""),
-            "description": about.get("description", ""),
-            "architecturespecific": index["platform"] is not None,
-            "homepage": about.get("home", ""),
+        self, format: BinaryPackageFormat, index: Dict[Any, Any],
+        about: Dict[Any, Any]
+    ) -> Optional[BinaryArtifactMetadata]:
+        return BinaryArtifactMetadata(
+            format=format,
+            name=index["name"],
+            version=index["version"],
+            summary=about.get("summary", ""),
+            description=about.get("description", ""),
+            architecturespecific=index["platform"] is not None,
+            homepage=about.get("home", ""),
             # We should perhaps model this explicitly since it's used by the
             # publisher, but this gives us an easy way to pass this through
             # without needing to add a column to a large table that's only
             # relevant to a tiny minority of rows.
-            "user_defined_fields": [("subdir", index["subdir"])],
-            }
+            user_defined_fields=[("subdir", index["subdir"])],
+        )
 
-    def _scanCondaV1(self, path: str) -> Dict[str, Any]:
+    def _scanCondaV1(self, path: str) -> Optional[BinaryArtifactMetadata]:
         try:
             with tarfile.open(path) as tar:
                 index = json.loads(
@@ -404,11 +429,10 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 "Failed to scan %s as a Conda v1 package: %s",
                 os.path.basename(path), e)
             return None
-        scanned = {"format": BinaryPackageFormat.CONDA_V1}
-        scanned.update(self._scanCondaMetadata(index, about))
-        return scanned
+        return self._scanCondaMetadata(
+            BinaryPackageFormat.CONDA_V1, index, about)
 
-    def _scanCondaV2(self, path: str) -> Dict[str, Any]:
+    def _scanCondaV2(self, path: str) -> Optional[BinaryArtifactMetadata]:
         try:
             with zipfile.ZipFile(path) as zipf:
                 base_name = os.path.basename(path)[:-len(".conda")]
@@ -426,11 +450,10 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 "Failed to scan %s as a Conda v2 package: %s",
                 os.path.basename(path), e)
             return None
-        scanned = {"format": BinaryPackageFormat.CONDA_V2}
-        scanned.update(self._scanCondaMetadata(index, about))
-        return scanned
+        return self._scanCondaMetadata(
+            BinaryPackageFormat.CONDA_V2, index, about)
 
-    def _scanFile(self, path: str) -> Dict[str, Any]:
+    def _scanFile(self, path: str) -> Optional[ArtifactMetadata]:
         _scanners = (
             (".whl", self._scanWheel),
             (".tar.gz", self._scanSDist),
@@ -476,16 +499,13 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 metadata = self._scanFile(contents)
                 if metadata is None:
                     continue
-                if metadata["format"] not in allowed_formats:
+                if metadata.format not in allowed_formats:
                     logger.info(
                         "Skipping %s (not relevant to %s archives)",
                         name, self.archive.repository_format)
                     continue
-                is_binary = metadata.pop("is_binary")
                 scanned.append(
-                    ScannedArtifact(
-                        artifact=artifact, metadata=metadata,
-                        is_binary=is_binary))
+                    ScannedArtifact(artifact=artifact, metadata=metadata))
         return scanned
 
     def _uploadSources(self, scanned: Iterable[ScannedArtifact]) -> None:
@@ -507,11 +527,12 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 # We don't have a good concept of source version here, but
                 # the data model demands one.  Arbitrarily pick the version
                 # of the first scanned artifact.
-                version=scanned[0].version,
+                version=scanned[0].metadata.version,
                 creator=self.requester,
                 archive=self.archive)
         for scanned_artifact in scanned:
-            if scanned_artifact.is_binary:
+            metadata = scanned_artifact.metadata
+            if not isinstance(metadata, SourceArtifactMetadata):
                 continue
             library_file = scanned_artifact.artifact.library_file
             logger.info(
@@ -519,13 +540,12 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 library_file.filename, self.archive.reference,
                 self.target_distroseries.getSuite(self.target_pocket),
                 self.target_channel)
-            filetype = scanned_artifact.metadata["format"]
             for sprf in spr.files:
                 if (sprf.libraryfile == library_file and
-                        sprf.filetype == filetype):
+                        sprf.filetype == metadata.format):
                     break
             else:
-                spr.addFile(library_file, filetype=filetype)
+                spr.addFile(library_file, filetype=metadata.format)
         getUtility(IPublishingSet).newSourcePublication(
             archive=self.archive, sourcepackagerelease=spr,
             distroseries=self.target_distroseries, pocket=self.target_pocket,
@@ -538,25 +558,29 @@ class CIBuildUploadJob(ArchiveJobDerived):
             for release in self.ci_build.binarypackages}
         binaries = OrderedDict()
         for scanned_artifact in scanned:
-            if not scanned_artifact.is_binary:
+            metadata = scanned_artifact.metadata
+            if not isinstance(metadata, BinaryArtifactMetadata):
                 continue
             library_file = scanned_artifact.artifact.library_file
-            metadata = dict(scanned_artifact.metadata)
-            binpackageformat = metadata["format"]
             logger.info(
                 "Uploading %s to %s %s (%s)",
                 library_file.filename, self.archive.reference,
                 self.target_distroseries.getSuite(self.target_pocket),
                 self.target_channel)
-            metadata["binpackageformat"] = binpackageformat
-            del metadata["format"]
-            metadata["binarypackagename"] = bpn = (
-                getUtility(IBinaryPackageNameSet).ensure(metadata["name"]))
-            del metadata["name"]
-            filetype = self.filetype_by_format[binpackageformat]
-            bpr = releases.get((bpn, binpackageformat))
+            binarypackagename = getUtility(IBinaryPackageNameSet).ensure(
+                metadata.name)
+            filetype = self.filetype_by_format[metadata.format]
+            bpr = releases.get((binarypackagename, metadata.format))
             if bpr is None:
-                bpr = self.ci_build.createBinaryPackageRelease(**metadata)
+                bpr = self.ci_build.createBinaryPackageRelease(
+                    binarypackagename=binarypackagename,
+                    version=metadata.version,
+                    summary=metadata.summary,
+                    description=metadata.description,
+                    binpackageformat=metadata.format,
+                    architecturespecific=metadata.architecturespecific,
+                    homepage=metadata.homepage,
+                    user_defined_fields=metadata.user_defined_fields)
             for bpf in bpr.files:
                 if (bpf.libraryfile == library_file and
                         bpf.filetype == filetype):
