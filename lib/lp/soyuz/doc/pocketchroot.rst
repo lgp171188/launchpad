@@ -61,7 +61,7 @@ the chroot:
     >>> p_chroot2 == p_chroot1
     True
 
-Ensure chroot was updated by retriving it from DB again:
+Ensure chroot was updated by retrieving it from DB again:
 
     >>> hoary_i386.getPocketChroot(PackagePublishingPocket.RELEASE).chroot.id
     2

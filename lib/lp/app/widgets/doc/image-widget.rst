@@ -5,7 +5,7 @@ In Launchpad we have images associated with people, products,
 distributions, etc, and we want to allow people to have full control
 over their images. That is, they must be able to upload a new image and
 delete (or keep) an existing one. For this we created this widget, which
-can be embeded into any form we want, which doesn't require us to add
+can be embedded into any form we want, which doesn't require us to add
 any submit buttons to indicate that the image should be kept, deleted or
 changed.
 

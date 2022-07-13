@@ -11,6 +11,7 @@
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
 
+    <authorizations module=".security" />
     <include package=".browser" />
     <include file="vocabularies.zcml" />
 

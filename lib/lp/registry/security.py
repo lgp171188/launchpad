@@ -3,7 +3,10 @@
 
 """Security adapters for the registry module."""
 
-__all__ = []
+__all__ = [
+    "EditByOwnersOrAdmins",
+    "PublicOrPrivateTeamsExistence",
+]
 
 from storm.expr import (
     Select,
@@ -87,7 +90,10 @@ from lp.registry.interfaces.projectgroup import (
     IProjectGroup,
     IProjectGroupSet,
     )
-from lp.registry.interfaces.role import IHasDrivers
+from lp.registry.interfaces.role import (
+    IHasDrivers,
+    IHasOwner,
+    )
 from lp.registry.interfaces.sourcepackage import ISourcePackage
 from lp.registry.interfaces.ssh import ISSHKey
 from lp.registry.interfaces.teammembership import (
@@ -99,14 +105,12 @@ from lp.registry.model.person import Person
 from lp.security import (
     AdminByAdminsTeam,
     AdminByCommercialTeamOrAdmins,
-    EditByOwnersOrAdmins,
-    EditByRegistryExpertsOrAdmins,
-    is_commercial_case,
     ModerateByRegistryExpertsOrAdmins,
     OnlyRosettaExpertsAndAdmins,
     )
 from lp.services.database.interfaces import IStore
 from lp.services.identity.interfaces.account import IAccount
+from lp.services.webapp.security import EditByRegistryExpertsOrAdmins
 from lp.soyuz.interfaces.archivesubscriber import IArchiveSubscriberSet
 
 
@@ -116,6 +120,14 @@ def can_edit_team(team, user):
         return True
     else:
         return team in user.person.getAdministratedTeams()
+
+
+class EditByOwnersOrAdmins(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IHasOwner
+
+    def checkAuthenticated(self, user):
+        return user.isOwner(self.obj) or user.in_admin
 
 
 class ModerateDistroSeries(ModerateByRegistryExpertsOrAdmins):
@@ -1256,3 +1268,8 @@ class EditOCIProjectSeries(DelegatedAuthorization):
 
     def __init__(self, obj):
         super().__init__(obj, obj.oci_project)
+
+
+def is_commercial_case(obj, user):
+    """Is this a commercial project and the user is a commercial admin?"""
+    return obj.has_current_commercial_subscription and user.in_commercial_admin

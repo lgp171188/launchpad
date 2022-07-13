@@ -114,7 +114,7 @@ class MailingListAPITestCase(TestCaseWithFactory):
         self.assertEqual(private_expected, sorted(all_info['team-b']))
 
     def test_getMembershipInformation_no_team(self):
-        # Requesting a non-existant team will have None for the subcribers
+        # Requesting a non-existent team will have None for the subscribers
         all_info = self.api.getMembershipInformation(['not-team'])
         self.assertEqual(['not-team'], sorted(all_info.keys()))
         self.assertIs(None, all_info['not-team'])

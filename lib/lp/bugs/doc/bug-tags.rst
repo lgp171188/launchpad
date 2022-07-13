@@ -212,7 +212,7 @@ earlier can be used again.
     ...     bug_tags_field, tag_field, request)
 
 _tagsFromFieldValue() converts tags from the field value to tags for
-display. The absense of tags causes it to return None:
+display. The absence of tags causes it to return None:
 
     >>> print(tags_frozen_set_widget._tagsFromFieldValue(None))
     None
@@ -226,7 +226,7 @@ Tags are ordered before returning:
     [1, 4, 5, 12]
 
 _tagsToFieldValue() converts the tags entered in the form into a value
-suitable for the field. In the absense of tags it returns an empty
+suitable for the field. In the absence of tags it returns an empty
 frozenset():
 
     >>> for item in tags_frozen_set_widget._tagsToFieldValue(None):

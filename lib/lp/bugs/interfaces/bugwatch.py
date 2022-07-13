@@ -153,7 +153,7 @@ class BugWatchActivityStatus(DBEnumeratedType):
         Unable to set link remote bug to Launchpad
 
         The remote bug's status and comments were synchronized
-        sucessfully with Launchpad but Launchpad was unable to set the
+        successfully with Launchpad but Launchpad was unable to set the
         remote bug's link back to the relevant Launchpad bug.
         """,
     )

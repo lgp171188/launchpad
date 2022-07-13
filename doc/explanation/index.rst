@@ -7,7 +7,8 @@ Explanation
    :maxdepth: 1
 
    running-details
+   framework
+   navigating
    architecture
    pip
    favicon
-   doc-theme

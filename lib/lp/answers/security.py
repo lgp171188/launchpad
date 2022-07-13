@@ -15,7 +15,7 @@ from lp.app.security import AnonymousAuthorization, AuthorizationBase
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
 )
-from lp.security import EditByOwnersOrAdmins
+from lp.registry.security import EditByOwnersOrAdmins
 
 
 class AdminQuestion(AuthorizationBase):

@@ -207,7 +207,7 @@ class IPOTemplate(IRosettaStats):
     pofiles = exported(
         CollectionField(
             title=_("All translation files that exist for this template."),
-            # Really IPOFile, see _schema_circular_imports.py.
+            # Really IPOFile, patched in lp.translations.interfaces.webservice.
             value_type=Reference(schema=Interface)),
         exported_as='translation_files')
 
@@ -228,7 +228,7 @@ class IPOTemplate(IRosettaStats):
     product = Object(
         title=_('The `IProduct` to which this translation template belongs.'),
         required=False, readonly=True,
-        # Really IProduct, see _schema_circular_imports.py.
+        # Really IProduct, patched in lp.translations.interfaces.webservice.
         schema=Interface)
 
     distribution = Object(
@@ -518,13 +518,15 @@ class IPOTemplateSubset(Interface):
     distroseries = Object(
         title=_(
             'The `IDistroSeries` associated with this subset.'),
-        # Really IDistroSeries, see _schema_circular_imports.py.
+        # Really IDistroSeries, patched in
+        # lp.translations.interfaces.webservice.
         schema=Interface)
 
     productseries = Object(
         title=_(
             'The `IProductSeries` associated with this subset.'),
-        # Really IProductSeries, see _schema_circular_imports.py.
+        # Really IProductSeries, patched in
+        # lp.translations.interfaces.webservice.
         schema=Interface)
 
     iscurrent = Bool(
@@ -675,7 +677,7 @@ class IPOTemplateSharingSubset(Interface):
     product = Object(
         title=_(
             'The `IProduct` associated with this subset.'),
-        # Really IProduct, see _schema_circular_imports.py.
+        # Really IProduct, patched in lp.translations.interfaces.webservice.
         schema=Interface)
 
     sourcepackagename = Object(

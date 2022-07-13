@@ -19,11 +19,11 @@ from lp.app.security import (
     AuthorizationBase,
     DelegatedAuthorization,
     )
+from lp.buildmaster.security import EditPackageBuild
 from lp.security import (
     AdminByAdminsTeam,
     AdminByBuilddAdmin,
     AdminByCommercialTeamOrAdmins,
-    EditPackageBuild,
     )
 from lp.services.database.interfaces import IStore
 from lp.soyuz.interfaces.archive import (

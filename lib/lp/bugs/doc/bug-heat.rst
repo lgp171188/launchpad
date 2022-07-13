@@ -99,7 +99,7 @@ the bug loses 4 points of heat.
     >>> bug.heat
     8
 
-If a user who wasn't affected by the bug marks themselve as explicitly
+If a user who wasn't affected by the bug marks themselves as explicitly
 unaffected, the bug's heat doesn't change.
 
     >>> unaffected_person = factory.makePerson()

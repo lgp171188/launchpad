@@ -641,7 +641,7 @@ Librarian files are no longer set.
     >>> private_attachment.libraryfile.restricted
     False
 
-Similary, if a public bug becomes private, the "restricted" flag of
+Similarly, if a public bug becomes private, the "restricted" flag of
 its Librarian files are set.
 
     >>> changed = bug.setPrivate(True, bug.owner)

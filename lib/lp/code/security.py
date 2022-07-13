@@ -4,6 +4,7 @@
 """Security adapters for the code module."""
 
 __all__ = [
+    'AccessBranch',
     'BranchSubscriptionEdit',
     'BranchSubscriptionView',
     'GitSubscriptionEdit',

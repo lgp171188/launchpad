@@ -1255,7 +1255,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
 
         If the proposal has been merged, then we stop at the merged date. If
         it is rejected, we stop at the reviewed date. For superseded
-        proposals, it should ideally use the non-existant date_last_modified,
+        proposals, it should ideally use the non-existent date_last_modified,
         but could use the last comment date.
         """
         status = self.queue_status

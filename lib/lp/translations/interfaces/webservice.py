@@ -19,14 +19,26 @@ __all__ = [
     'ITranslationImportQueueEntry',
     ]
 
-# XXX: JonathanLange 2010-11-09 bug=673083: Legacy work-around for circular
-# import bugs.  Break this up into a per-package thing.
-from lp import _schema_circular_imports
+from lp.registry.interfaces.distroseries import IDistroSeries
+from lp.registry.interfaces.product import IProduct
+from lp.registry.interfaces.productseries import IProductSeries
+from lp.services.webservice.apihelpers import (
+    patch_collection_property,
+    patch_collection_return_type,
+    patch_reference_property,
+    )
 from lp.translations.interfaces.hastranslationimports import (
     IHasTranslationImports,
     )
+from lp.translations.interfaces.hastranslationtemplates import (
+    IHasTranslationTemplates,
+    )
 from lp.translations.interfaces.pofile import IPOFile
-from lp.translations.interfaces.potemplate import IPOTemplate
+from lp.translations.interfaces.potemplate import (
+    IPOTemplate,
+    IPOTemplateSharingSubset,
+    IPOTemplateSubset,
+    )
 from lp.translations.interfaces.translationgroup import (
     ITranslationGroup,
     ITranslationGroupSet,
@@ -37,4 +49,22 @@ from lp.translations.interfaces.translationimportqueue import (
     )
 
 
-_schema_circular_imports
+# IHasTranslationImports
+patch_collection_return_type(
+    IHasTranslationImports, 'getTranslationImportQueueEntries',
+    ITranslationImportQueueEntry)
+
+# IHasTranslationTemplates
+patch_collection_return_type(
+    IHasTranslationTemplates, 'getTranslationTemplates', IPOTemplate)
+
+# IPOTemplate
+patch_collection_property(IPOTemplate, 'pofiles', IPOFile)
+patch_reference_property(IPOTemplate, 'product', IProduct)
+
+# IPOTemplateSubset
+patch_reference_property(IPOTemplateSubset, 'distroseries', IDistroSeries)
+patch_reference_property(IPOTemplateSubset, 'productseries', IProductSeries)
+
+# IPOTemplateSharingSubset
+patch_reference_property(IPOTemplateSharingSubset, 'product', IProduct)

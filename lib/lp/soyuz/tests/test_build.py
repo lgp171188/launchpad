@@ -128,7 +128,7 @@ class TestBuild(TestCaseWithFactory):
             expected_changesfile, build.upload_changesfile.filename)
         expected_changesfile_url = '%s/%s' % (url_start, expected_changesfile)
         self.assertEqual(expected_changesfile_url, build.changesfile_url)
-        # Since this build was sucessful, it can not be retried
+        # Since this build was successful, it can not be retried
         self.assertFalse(build.can_be_retried)
 
     def test_current_component(self):

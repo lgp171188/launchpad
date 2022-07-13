@@ -634,14 +634,14 @@ prevents a XSS vulnerability where malicious code injected into the
 title might be interpreted by the browser.
 
     >>> login('test@canonical.com')
-    >>> bug.title = "Opps<br/><script>alert('XSS')</script>"
+    >>> bug.title = "Oops<br/><script>alert('XSS')</script>"
     >>> print(test_tales("bug/fmt:link", bug=getUtility(IBugSet).get(1)))
     <a href=".../bugs/1" ...>Bug #1:
-      Opps&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a>
+      Oops&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a>
 
     >>> print(test_tales("bugtask/fmt:link", bugtask=bugtask))
     <a href=".../firefox/+bug/1" ...>Bug #1:
-      Opps&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a>
+      Oops&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a>
 
 
 Branch subscriptions

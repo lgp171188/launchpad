@@ -114,7 +114,7 @@ class TestBugTrackerWithComponents(TestCaseWithFactory):
         self.assertTrue(self.bug_tracker is not None)
 
         # Empty bugtrackers shouldn't return component groups
-        comp_group = self.bug_tracker.getRemoteComponentGroup("non-existant")
+        comp_group = self.bug_tracker.getRemoteComponentGroup("non-existent")
         self.assertEqual(comp_group, None)
 
         # Verify it contains no component groups
@@ -130,7 +130,7 @@ class TestBugTrackerWithComponents(TestCaseWithFactory):
         default_comp_group.addComponent("example-c")
 
         # Verify that retrieving an invalid component group returns nothing
-        comp_group = self.bug_tracker.getRemoteComponentGroup("non-existant")
+        comp_group = self.bug_tracker.getRemoteComponentGroup("non-existent")
         self.assertEqual(comp_group, None)
 
         # Now retrieve the component group we added
@@ -155,8 +155,8 @@ class TestBugTrackerWithComponents(TestCaseWithFactory):
         comp_group_iii.addComponent("example-gamma-2")
         comp_group_iii.addComponent("example-gamma-3")
 
-        # Retrieving a non-existant component group returns nothing
-        comp_group = self.bug_tracker.getRemoteComponentGroup("non-existant")
+        # Retrieving a non-existent component group returns nothing
+        comp_group = self.bug_tracker.getRemoteComponentGroup("non-existent")
         self.assertEqual(comp_group, None)
 
         # Now retrieve one of the real component groups

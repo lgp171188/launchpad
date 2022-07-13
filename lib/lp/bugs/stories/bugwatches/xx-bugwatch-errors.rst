@@ -110,7 +110,7 @@ We can observe this for each of the BugWatchActivityStatus failure values:
     The remote bug's status was synchronized successfully and its
     comments were successfully imported but Launchpad was unable to push
     comments back to the remote bug...
-    The remote bug's status and comments were synchronized sucessfully
+    The remote bug's status and comments were synchronized successfully
     with Launchpad but Launchpad was unable to set the remote bug's link
     back to the relevant Launchpad bug...
 

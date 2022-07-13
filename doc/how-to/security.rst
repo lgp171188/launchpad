@@ -40,7 +40,8 @@ interface.
 In Launchpad, an authorization policy is expressed through a security adapter.
 To define a security adapter for a given permission on an interface:
 
-1. Define the adapter in ``lib/lp/security.py``. Here's a simple example of
+1. Define the adapter in the corresponding package's `security.py`. Create
+   the file, if it doesn't exist already. Here's a simple example of
    an adapter that authorizes only an object owner for the
    ``launchpad.Edit`` permission on objects that implement the ``IHasOwner``
    interface:
@@ -111,3 +112,11 @@ Note that "accessed" means ``getattr()``, while "modified" means
 ``setattr()``.  The process of calling a method starts by using ``getattr()``
 to fetch the method from the object, so methods should be declared in
 ``interface`` or ``attributes`` even if they modify the object.
+
+3. Ensure that there is an ``<authorizations />`` directive in the package's
+   top-level ``configure.zcml`` file that specifies the package's security
+   module. If it isn't there already, add one like:
+
+.. code-block:: xml
+
+    <authorizations module=".security" />

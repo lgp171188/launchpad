@@ -12,7 +12,7 @@
     i18n_domain="launchpad">
   <include package=".browser"/>
   <include package=".vocabularies"/>
-  <authorizations module="lp.code.security" />
+  <authorizations module=".security" />
 
   <publisher
       name="code"

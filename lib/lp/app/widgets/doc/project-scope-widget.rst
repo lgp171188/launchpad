@@ -109,7 +109,7 @@ by getInputValue().
     >>> print(selected_scope.name)
     mozilla
 
-If an non-existant distribution name is provided, a widget error is
+If an non-existent distribution name is provided, a widget error is
 raised:
 
     >>> form['field.scope.target'] = 'invalid'

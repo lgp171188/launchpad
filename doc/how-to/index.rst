@@ -19,3 +19,4 @@ How-to Guides
    land-update-for-loggerhead
    update-configuration-for-testing
    deploying-configuration-changes
+   doc-theme

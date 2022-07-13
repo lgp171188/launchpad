@@ -272,7 +272,7 @@ You can also set the expiry date on the file this way too:
     >>> transaction.abort()
 
 To check the expiry is set, we need to extract the alias id from the
-URL. remoteAddFile deliberatly returns the URL instead of the alias id
+URL. remoteAddFile deliberately returns the URL instead of the alias id
 because, except for test cases, the URL is the only thing useful
 (because the client can't see the database records yet).
 

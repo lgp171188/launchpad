@@ -259,7 +259,7 @@ status:
 Reopening
 ---------
 
-It can happen that, altough the owner confirmed the question was solved,
+It can happen that, although the owner confirmed the question was solved,
 the original problem reappears. In this case, they can reopen the question
 by entering a new message and clicking the "I Still Need an Answer"
 button.

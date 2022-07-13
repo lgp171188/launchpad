@@ -8,7 +8,6 @@ Run the doctests and pagetests.
 import os
 
 from lp.services.testing import build_test_suite
-from lp.services.webapp.tests import test_notifications
 from lp.testing.layers import (
     FunctionalLayer,
     LaunchpadFunctionalLayer,
@@ -29,10 +28,6 @@ special = {
         '../doc/canonical_url.rst',
         setUp=setUp, tearDown=tearDown,
         layer=FunctionalLayer,),
-    'notification-text-escape.rst': LayeredDocFileSuite(
-        '../doc/notification-text-escape.rst',
-        setUp=test_notifications.setUp,
-        stdout_logging=False, layer=FunctionalLayer),
     'test_adapter.rst': LayeredDocFileSuite(
         '../doc/test_adapter.rst',
         setUp=setGlobs,

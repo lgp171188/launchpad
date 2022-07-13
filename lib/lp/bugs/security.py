@@ -3,7 +3,9 @@
 
 """Security adapters for the bugs module."""
 
-__all__ = []
+__all__ = [
+    "PublicToAllOrPrivateToExplicitSubscribersForBugTask",
+]
 
 from lp.app.security import (
     AnonymousAuthorization,
@@ -18,6 +20,7 @@ from lp.bugs.interfaces.bugnomination import IBugNomination
 from lp.bugs.interfaces.bugsubscription import IBugSubscription
 from lp.bugs.interfaces.bugsubscriptionfilter import IBugSubscriptionFilter
 from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
+from lp.bugs.interfaces.bugtarget import IOfficialBugTagTargetRestricted
 from lp.bugs.interfaces.bugtask import IBugTaskDelete
 from lp.bugs.interfaces.bugtracker import IBugTracker
 from lp.bugs.interfaces.bugwatch import IBugWatch
@@ -383,14 +386,25 @@ class AdminBugWatch(AuthorizationBase):
 
 
 class EditStructuralSubscription(AuthorizationBase):
-    """Edit permissions for `IStructuralSubscription`."""
-
     permission = "launchpad.Edit"
     usedfor = IStructuralSubscription
 
     def checkAuthenticated(self, user):
-        """Subscribers can edit their own structural subscriptions."""
-        return user.inTeam(self.obj.subscriber)
+        """Who can edit StructuralSubscriptions."""
+
+        assert self.obj.target
+
+        # Removal of a target cascades removals to StructuralSubscriptions,
+        # so we need to allow editing to those who can edit the target itself.
+        can_edit_target = self.forwardCheckAuthenticated(user, self.obj.target)
+
+        # Who is actually allowed to edit a subscription is determined by
+        # a helper method on the model.
+        can_edit_subscription = self.obj.target.userCanAlterSubscription(
+            self.obj.subscriber, user.person
+        )
+
+        return can_edit_target or can_edit_subscription
 
 
 class EditBugSubscriptionFilter(AuthorizationBase):
@@ -412,3 +426,17 @@ class EditVulnerability(DelegatedAuthorization):
 
     def __init__(self, obj):
         super().__init__(obj, obj.distribution, "launchpad.SecurityAdmin")
+
+
+class BugTargetOwnerOrBugSupervisorOrAdmins(AuthorizationBase):
+    """Product's owner and bug supervisor can set official bug tags."""
+
+    permission = "launchpad.BugSupervisor"
+    usedfor = IOfficialBugTagTargetRestricted
+
+    def checkAuthenticated(self, user):
+        return (
+            user.inTeam(self.obj.bug_supervisor)
+            or user.inTeam(self.obj.owner)
+            or user.in_admin
+        )

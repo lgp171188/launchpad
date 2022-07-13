@@ -274,7 +274,7 @@ to fake how long things take.
     10000ms
     >>> time_travel(0.6) # Forward in time 0.6 seconds, now over precision
 
-This invokation, the PostgreSQL statement timeout will be updated before
+This invocation, the PostgreSQL statement timeout will be updated before
 issuing the SQL command as we have exceeded the precision period:
 
     >>> store.execute('SELECT TRUE', noresult=True)
@@ -283,7 +283,7 @@ issuing the SQL command as we have exceeded the precision period:
     >>> time_travel(8.89) # 0.01s remaining before hard timeout
 
 
-This final invokation, we will actually sleep to ensure that the
+This final invocation, we will actually sleep to ensure that the
 timeout being reported by PostgreSQL is actually working:
 
     >>> store.execute('SELECT pg_sleep(0.2)', noresult=True)
@@ -398,7 +398,7 @@ affect other threads:
     >>> clear_request_started()
 
 Similarly, starting a new request in another thread will not reset the
-remove the timout:
+remove the timeout:
 
     >>> started_request = threading.Event()
     >>> statement_issued = threading.Event()

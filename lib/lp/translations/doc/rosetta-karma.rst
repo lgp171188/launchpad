@@ -165,7 +165,7 @@ assigned to the team, our karma_helper will print it out here.
     >>> transaction.commit()
 
 
-We attach the new file as comming from upstream, that means that we
+We attach the new file as coming from upstream, that means that we
 will give karma only for the upload action.
 
     >>> potemplate = POTemplate.get(1)
@@ -203,7 +203,7 @@ case, we will give karma *only* because the translation change.
     ... msgstr "bars"
     ... ''' % datetime.datetime.now(UTC).isoformat())
 
-We attach the new file as not comming from upstream.
+We attach the new file as not coming from upstream.
 
     >>> potemplate = POTemplate.get(1)
     >>> pofile = potemplate.getPOFileByLang('es')

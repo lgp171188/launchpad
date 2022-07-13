@@ -2,7 +2,7 @@ Bug Count Summaries
 ===================
 
 The BugSummary table contains summaries of bug counts. It contains one
-or more rows row for every unique public BugTask targetting:
+or more rows row for every unique public BugTask targeting:
 
     - product
     - productseries
@@ -189,7 +189,7 @@ or milestone, we need to aggregate them.
 
 
 Here are the untagged rows. This will show us the oci-project one, and there
-are 2 New and 2 Confirmed bug tasks targetted to the pr-a product.:
+are 2 New and 2 Confirmed bug tasks targeted to the pr-a product.:
 
     >>> print_find(
     ...     BugSummary.product == prod_a,
@@ -205,7 +205,7 @@ are 2 New and 2 Confirmed bug tasks targetted to the pr-a product.:
                                                               6
 
 Here are the rows associated with the 't-a' tag. There is 1 Confirmed
-bug task targetted to the pr-a product who's bug is tagged 't-a'.:
+bug task targeted to the pr-a product who's bug is tagged 't-a'.:
 
     >>> print_find(
     ...     BugSummary.product == prod_a,
@@ -307,8 +307,8 @@ ProductSeries Bug Counts
 
 Querying for ProductSeries information is identical to querying for
 Product information except you patch on the productseries column instead
-of the product column. Note that if there is a BugTask targetting a
-ProductSeries, there also must be a BugTask record targetting that
+of the product column. Note that if there is a BugTask targeting a
+ProductSeries, there also must be a BugTask record targeting that
 ProductSeries' Product:
 
     >>> prod_b = factory.makeProduct(name='pr-b')

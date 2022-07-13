@@ -234,7 +234,7 @@ a closed status to an open one, we record the date in date_left_closed.
     >>> ubuntu_firefox_task.date_left_closed > last_date_closed
     True
 
-We also record the date a task was marked Fix Commited.
+We also record the date a task was marked Fix Committed.
 
     >>> print(ubuntu_firefox_task.date_fix_committed)
     None

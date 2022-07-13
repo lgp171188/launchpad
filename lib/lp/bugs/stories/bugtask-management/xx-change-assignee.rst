@@ -106,8 +106,8 @@ project used in these tests.
 
 To avoid any confusion, the option to assign somebody else is only
 shown if the user has sufficient privileges to assign anybody or if
-the user is a member of at least one team. no-priv is no a member of
-any team and hence does no see the option to asign somebody else.
+the user is a member of at least one team. no-priv is not a member of
+any team and hence does not see the option to assign somebody else.
 
     >>> no_priv.teams_participated_in.count()
     0
