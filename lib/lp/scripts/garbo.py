@@ -1557,8 +1557,13 @@ class SnapFilePruner(BulkPruner):
 
     Snaps attached to `SnapBuild`s are typically very large, and once
     they've been uploaded to the store we don't really need to keep them in
-    Launchpad as well.  Other files are either small or don't exist anywhere
-    else, so we preserve those indefinitely.
+    Launchpad as well.  Most other files are either small or don't exist
+    anywhere else, so we preserve those indefinitely.
+
+    `.debug` files are large, so we prune those once the associated snap
+    builds themselves have been uploaded to the store even though they don't
+    themselves get uploaded anywhere else; it's up to anyone producing these
+    to deal with scraping them.
     """
     target_table_class = SnapFile
     ids_to_prune_query = """
@@ -1574,7 +1579,8 @@ class SnapFilePruner(BulkPruner):
                 CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
                 - CAST('7 days' AS INTERVAL)
             AND SnapFile.libraryfile = LibraryFileAlias.id
-            AND LibraryFileAlias.filename LIKE '%%.snap'
+            AND (LibraryFileAlias.filename LIKE '%%.snap'
+                 OR LibraryFileAlias.filename LIKE '%%.debug')
         """ % (SnapBuildJobType.STORE_UPLOAD.value, JobStatus.COMPLETED.value)
 
 
