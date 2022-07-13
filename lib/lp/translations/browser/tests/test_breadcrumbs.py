@@ -114,7 +114,7 @@ class TestSeriesLanguageBreadcrumbs(BaseBreadcrumbTestCase):
             name="test", version="1.0", distribution=distribution)
         naked_series = remove_security_proxy_and_shout_at_engineer(series)
         naked_series.hide_all_translations = False
-        serieslanguage = getUtility(IDistroSeriesLanguageSet).getDummy(
+        serieslanguage = getUtility(IDistroSeriesLanguageSet).getEmpty(
             series, self.language)
 
         self.assertBreadcrumbs(

@@ -230,7 +230,7 @@
         for="lp.registry.interfaces.product.IProduct zope.lifecycleevent.interfaces.IObjectModifiedEvent"
         handler="lp.translations.subscribers.product_modified"/>
 
-    <!-- DistroSeriesLanguage and Dummy -->
+    <!-- DistroSeriesLanguage and EmptyDistroSeriesLanguage -->
 
     <adapter
         provides="lp.services.webapp.interfaces.IBreadcrumb"
@@ -244,7 +244,7 @@
             interface="lp.translations.interfaces.distroserieslanguage.IDistroSeriesLanguage"/>
     </class>
     <class
-        class="lp.translations.model.distroserieslanguage.DummyDistroSeriesLanguage">
+        class="lp.translations.model.distroserieslanguage.EmptyDistroSeriesLanguage">
         <allow
             interface="lp.translations.interfaces.distroserieslanguage.IDistroSeriesLanguage"/>
     </class>

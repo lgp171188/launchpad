@@ -70,7 +70,7 @@ class RosettaApplicationView(LaunchpadView, TranslationsMixin):
         langs = []
         series = self.ubuntu_translationseries
         for language in self.languages:
-            langs.append(series.getDistroSeriesLanguageOrDummy(language))
+            langs.append(series.getDistroSeriesLanguageOrEmpty(language))
         return langs
 
     def requestCountry(self):

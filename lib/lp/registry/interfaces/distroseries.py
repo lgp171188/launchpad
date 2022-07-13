@@ -665,9 +665,9 @@ class IDistroSeriesPublic(
         distribution and the given language.
         """
 
-    def getDistroSeriesLanguageOrDummy(language):
+    def getDistroSeriesLanguageOrEmpty(language):
         """Return the DistroSeriesLanguage for this distroseries and the
-        given language, or a DummyDistroSeriesLanguage.
+        given language, or an EmptyDistroSeriesLanguage.
         """
 
     def createUploadedSourcePackageRelease(

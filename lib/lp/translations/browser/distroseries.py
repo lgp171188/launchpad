@@ -222,8 +222,8 @@ class DistroSeriesView(LaunchpadView, TranslationsMixin):
         """Produces a list containing a DistroSeriesLanguage object for
         each language this distro has been translated into, and for each
         of the user's preferred languages. Where the series has no
-        DistroSeriesLanguage for that language, we use a
-        DummyDistroSeriesLanguage.
+        DistroSeriesLanguage for that language, we use an
+        EmptyDistroSeriesLanguage.
         """
 
         # find the existing DRLanguages
@@ -233,12 +233,12 @@ class DistroSeriesView(LaunchpadView, TranslationsMixin):
         existing_languages = {drl.language for drl in distroserieslangs}
 
         # find all the preferred languages which are not in the set of
-        # existing languages, and add a dummydistroserieslanguage for each
+        # existing languages, and add an EmptyDistroSeriesLanguage for each
         # of them
         distroserieslangset = getUtility(IDistroSeriesLanguageSet)
         for lang in self.translatable_languages:
             if lang not in existing_languages:
-                distroserieslang = distroserieslangset.getDummy(
+                distroserieslang = distroserieslangset.getEmpty(
                     self.context, lang)
                 distroserieslangs.append(distroserieslang)
 
