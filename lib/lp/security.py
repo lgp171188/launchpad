@@ -1,7 +1,11 @@
 # Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Security policies for using content objects."""
+"""Common infrastructure for security policies.
+
+The actual security policies for content objects live in the '.security'
+module of the corresponding application package, e.g. `lp.registry.security`.
+"""
 
 __all__ = [
     'AdminByAdminsTeam',
