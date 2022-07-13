@@ -182,7 +182,7 @@ class DistroSeriesNavigation(GetitemNavigation, BugTargetTraversalMixin,
             # Unknown language code.
             raise NotFoundError
 
-        distroserieslang = self.context.getDistroSeriesLanguageOrDummy(lang)
+        distroserieslang = self.context.getDistroSeriesLanguageOrEmpty(lang)
 
         # Check if user is able to view the translations for
         # this distribution series language.

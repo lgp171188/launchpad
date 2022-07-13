@@ -149,7 +149,7 @@ DistroSeriesLanguage objects have their URLs on translations vhost.
     ...     IDistroSeriesLanguageSet)
     >>> serbian = getUtility(ILanguageSet)['sr']
 
-    >>> boo_bah_serbian = getUtility(IDistroSeriesLanguageSet).getDummy(
+    >>> boo_bah_serbian = getUtility(IDistroSeriesLanguageSet).getEmpty(
     ...     distroseries, serbian)
     >>> print(canonical_url(boo_bah_serbian))
     http://translations.launchpad.test/boo/bah/+lang/sr
