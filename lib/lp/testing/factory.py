@@ -31,6 +31,7 @@ from email.utils import (
     formatdate,
     make_msgid,
     )
+from functools import wraps
 import hashlib
 from io import BytesIO
 from itertools import count
@@ -417,6 +418,7 @@ def default_master_store(func):
     However, if we then read it back the default Store has to be used.
     """
 
+    @wraps(func)
     def with_default_master_store(*args, **kw):
         try:
             store_selector = getUtility(IStoreSelector)
@@ -538,13 +540,33 @@ class ObjectFactory(metaclass=AutoDecorateMetaClass):
         return epoch + timedelta(minutes=self.getUniqueInteger())
 
 
-class BareLaunchpadObjectFactory(ObjectFactory):
+def check_security_proxy(func):
+    """
+    Decorator for factory methods to ensure that the returned objects are
+    either harmless or wrapped with a security proxy.
+    """
+
+    @wraps(func)
+    def wrapped(*args, **kw):
+        result = func(*args, **kw)
+        if not is_security_proxied_or_harmless(result):
+            warnings.warn(
+                UnproxiedFactoryMethodWarning(func.__name__), stacklevel=1
+            )
+        return result
+
+    return wrapped
+
+
+class LaunchpadObjectFactory(ObjectFactory):
     """Factory methods for creating Launchpad objects.
 
     All the factory methods should be callable with no parameters.
     When this is done, the returned object should have unique references
     for any other required objects.
     """
+
+    __decorators = (check_security_proxy, )
 
     def loginAsAnyone(self, participation=None):
         """Log in as an arbitrary person.
@@ -5541,42 +5563,6 @@ class ShouldThisBeUsingRemoveSecurityProxy(UserWarning):
             "removeSecurityProxy(%r) called. Is this correct? "
             "Either call it directly or fix the test." % obj)
         super().__init__(message)
-
-
-class LaunchpadObjectFactory:
-    """A wrapper around `BareLaunchpadObjectFactory`.
-
-    Ensure that each object created by a `BareLaunchpadObjectFactory` method
-    is either of a simple Python type or is security proxied.
-
-    A warning message is printed to stderr if a factory method creates
-    an object without a security proxy.
-
-    Whereever you see such a warning: fix it!
-    """
-
-    def __init__(self):
-        self._factory = BareLaunchpadObjectFactory()
-
-    def __getattr__(self, name):
-        attr = getattr(self._factory, name)
-        if os.environ.get('LP_PROXY_WARNINGS') == '1' and callable(attr):
-
-            def guarded_method(*args, **kw):
-                result = attr(*args, **kw)
-                if not is_security_proxied_or_harmless(result):
-                    warnings.warn(
-                        UnproxiedFactoryMethodWarning(name), stacklevel=1)
-                return result
-            return guarded_method
-        else:
-            return attr
-
-    def __dir__(self):
-        """Enumerate the attributes and methods of the wrapped object factory.
-
-        This is especially useful for interactive users."""
-        return dir(self._factory)
 
 
 def remove_security_proxy_and_shout_at_engineer(obj):
