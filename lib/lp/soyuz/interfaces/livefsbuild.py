@@ -40,6 +40,7 @@ from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.constants import DEFAULT
 from lp.services.librarian.interfaces import ILibraryFileAlias
+from lp.services.webservice.apihelpers import patch_reference_property
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 from lp.soyuz.interfaces.livefs import ILiveFS
@@ -49,7 +50,7 @@ class ILiveFSFile(Interface):
     """A file produced by a live filesystem build."""
 
     livefsbuild = Reference(
-        # Really ILiveFSBuild, patched in _schema_circular_imports.py.
+        # Really ILiveFSBuild, patched below.
         Interface,
         title=_("The live filesystem build producing this file."),
         required=True, readonly=True)
@@ -170,3 +171,6 @@ class ILiveFSBuildSet(ISpecificBuildFarmJobSource):
             unique_key=None, metadata_override=None, version=None,
             date_created=DEFAULT):
         """Create an `ILiveFSBuild`."""
+
+
+patch_reference_property(ILiveFSFile, "livefsbuild", ILiveFSBuild)

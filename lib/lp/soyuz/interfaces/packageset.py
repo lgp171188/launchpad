@@ -44,6 +44,10 @@ from lp.app.validators.name import name_validator
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.role import IHasOwner
+from lp.services.webservice.apihelpers import (
+    patch_collection_return_type,
+    patch_plain_parameter_type,
+    )
 from lp.soyuz.interfaces.packagesetgroup import IPackagesetGroup
 
 
@@ -105,6 +109,7 @@ class IPackagesetViewOnly(IHasOwner):
 
     @operation_parameters(
         direct_inclusion=Bool(required=False))
+    # Really IPackageset, patched below.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -120,6 +125,7 @@ class IPackagesetViewOnly(IHasOwner):
 
     @operation_parameters(
         direct_inclusion=Bool(required=False))
+    # Really IPackageset, patched below.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -194,6 +200,7 @@ class IPackagesetViewOnly(IHasOwner):
 
     @operation_parameters(
         other_package_set=Reference(
+            # Really IPackageset, patched below.
             Interface,
             title=_('The package set we are comparing to.'), required=True),
         direct_inclusion=Bool(required=False))
@@ -219,6 +226,7 @@ class IPackagesetViewOnly(IHasOwner):
 
     @operation_parameters(
         other_package_set=Reference(
+            # Really IPackageset, patched below.
             Interface,
             title=_('The package set we are comparing to.'), required=True),
         direct_inclusion=Bool(required=False))
@@ -242,6 +250,7 @@ class IPackagesetViewOnly(IHasOwner):
             names.
         """
 
+    # Really IPackageset, patched below.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -511,3 +520,12 @@ class IPackagesetSet(IPackagesetSetEdit):
             name cannot be found.
         :return: A (potentially empty) sequence of `IPackageset` instances.
         """
+
+
+patch_collection_return_type(IPackageset, 'setsIncluded', IPackageset)
+patch_collection_return_type(IPackageset, 'setsIncludedBy', IPackageset)
+patch_plain_parameter_type(
+    IPackageset, 'getSourcesSharedBy', 'other_package_set', IPackageset)
+patch_plain_parameter_type(
+    IPackageset, 'getSourcesNotSharedBy', 'other_package_set', IPackageset)
+patch_collection_return_type(IPackageset, 'relatedSets', IPackageset)

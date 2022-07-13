@@ -45,7 +45,7 @@ class IHasBuildRecords(Interface):
             description=_("The pocket into which this entry is published"),
             vocabulary=PackagePublishingPocket))
     @call_with(user=REQUEST_USER, binary_only=True)
-    # Really a IBuild see _schema_circular_imports.
+    # Really IBinaryPackageBuild, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version('beta')
