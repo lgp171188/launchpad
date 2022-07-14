@@ -1,14 +1,16 @@
--- Generated Mon Feb 25 21:35:23 2019 UTC
+-- Generated Thu Jul 14 23:32:59 2022 UTC
 
 SET client_min_messages TO ERROR;
 SET statement_timeout = 0;
 SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = off;
 SELECT pg_catalog.set_config('search_path', '', false);
 SET check_function_bodies = false;
 SET client_min_messages = warning;
 SET escape_string_warning = off;
+SET row_security = off;
 
 CREATE SCHEMA todrop;
 
@@ -22,10 +24,10 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
-CREATE EXTENSION IF NOT EXISTS plpythonu WITH SCHEMA pg_catalog;
+CREATE EXTENSION IF NOT EXISTS plpython3u WITH SCHEMA pg_catalog;
 
 
-COMMENT ON EXTENSION plpythonu IS 'PL/PythonU untrusted procedural language';
+COMMENT ON EXTENSION plpython3u IS 'PL/Python3U untrusted procedural language';
 
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA trgm;
@@ -38,6 +40,56 @@ CREATE EXTENSION IF NOT EXISTS pgstattuple WITH SCHEMA public;
 
 
 COMMENT ON EXTENSION pgstattuple IS 'show tuple-level statistics';
+
+
+CREATE DOMAIN public.ts2_tsvector AS tsvector;
+
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+CREATE TABLE public.bugtaskflat (
+    bugtask integer NOT NULL,
+    bug integer NOT NULL,
+    datecreated timestamp without time zone,
+    duplicateof integer,
+    bug_owner integer NOT NULL,
+    fti public.ts2_tsvector,
+    information_type integer NOT NULL,
+    date_last_updated timestamp without time zone NOT NULL,
+    heat integer NOT NULL,
+    product integer,
+    productseries integer,
+    distribution integer,
+    distroseries integer,
+    sourcepackagename integer,
+    status integer NOT NULL,
+    importance integer NOT NULL,
+    assignee integer,
+    milestone integer,
+    owner integer NOT NULL,
+    active boolean NOT NULL,
+    access_policies integer[],
+    access_grants integer[],
+    latest_patch_uploaded timestamp without time zone,
+    date_closed timestamp without time zone,
+    ociproject integer,
+    ociprojectseries integer
+);
+
+
+CREATE TYPE public.bugsummary_temp_btf_internal AS (
+	btf public.bugtaskflat,
+	count integer
+);
+
+
+CREATE TYPE public.bugsummary_temp_bug_internal AS (
+	bug integer,
+	tags text[],
+	count integer
+);
 
 
 CREATE TYPE public.debversion;
@@ -91,21 +143,17 @@ CREATE TYPE public.pgstattuple_type AS (
 );
 
 
-CREATE DOMAIN public.ts2_tsvector AS tsvector;
-
-
 CREATE FUNCTION public._ftq(text) RETURNS text
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $_$
         import re
 
         # I think this method would be more robust if we used a real
         # tokenizer and parser to generate the query string, but we need
         # something suitable for use as a stored procedure which currently
-        # means no external dependancies.
+        # means no external dependencies.
 
-        # Convert to Unicode
-        query = args[0].decode('utf8')
+        query = args[0]
         ## plpy.debug('1 query is %s' % repr(query))
 
         # Replace tsquery operators with ' '. '<' begins all the phrase
@@ -113,19 +161,19 @@ CREATE FUNCTION public._ftq(text) RETURNS text
         query = re.sub('[|&!<]', ' ', query)
 
         # Normalize whitespace
-        query = re.sub("(?u)\s+"," ", query)
+        query = re.sub("\s+"," ", query)
 
         # Convert AND, OR, NOT to tsearch2 punctuation
-        query = re.sub(r"(?u)\bAND\b", "&", query)
-        query = re.sub(r"(?u)\bOR\b", "|", query)
-        query = re.sub(r"(?u)\bNOT\b", " !", query)
+        query = re.sub(r"\bAND\b", "&", query)
+        query = re.sub(r"\bOR\b", "|", query)
+        query = re.sub(r"\bNOT\b", " !", query)
         ## plpy.debug('2 query is %s' % repr(query))
 
         # Deal with unwanted punctuation.
         # ':' is used in queries to specify a weight of a word.
         # '\' is treated differently in to_tsvector() and to_tsquery().
         punctuation = r'[:\\]'
-        query = re.sub(r"(?u)%s+" % (punctuation,), " ", query)
+        query = re.sub(r"%s+" % (punctuation,), " ", query)
         ## plpy.debug('3 query is %s' % repr(query))
 
         # Now that we have handle case sensitive booleans, convert to lowercase
@@ -136,18 +184,18 @@ CREATE FUNCTION public._ftq(text) RETURNS text
         query = re.sub(r"(?ux) \( ( [^)]* ) $", r"(\1)", query)
 
         # Remove spurious brackets
-        query = re.sub(r"(?u)\(([^\&\|]*?)\)", r" \1 ", query)
+        query = re.sub(r"\(([^\&\|]*?)\)", r" \1 ", query)
         ## plpy.debug('5 query is %s' % repr(query))
 
         # Insert & between tokens without an existing boolean operator
         # ( not proceeded by (|&!
-        query = re.sub(r"(?u)(?<![\(\|\&\!])\s*\(", "&(", query)
+        query = re.sub(r"(?<![\(\|\&\!])\s*\(", "&(", query)
         ## plpy.debug('6 query is %s' % repr(query))
         # ) not followed by )|&
-        query = re.sub(r"(?u)\)(?!\s*(\)|\||\&|\s*$))", ")&", query)
+        query = re.sub(r"\)(?!\s*(\)|\||\&|\s*$))", ")&", query)
         ## plpy.debug('6.1 query is %s' % repr(query))
         # Whitespace not proceded by (|&! not followed by &|
-        query = re.sub(r"(?u)(?<![\(\|\&\!\s])\s+(?![\&\|\s])", "&", query)
+        query = re.sub(r"(?<![\(\|\&\!\s])\s+(?![\&\|\s])", "&", query)
         ## plpy.debug('7 query is %s' % repr(query))
 
         # Detect and repair syntax errors - we are lenient because
@@ -163,21 +211,21 @@ CREATE FUNCTION public._ftq(text) RETURNS text
         ## plpy.debug('8 query is %s' % repr(query))
 
         # Strip ' character that do not have letters on both sides
-        query = re.sub(r"(?u)((?<!\w)'|'(?!\w))", "", query)
+        query = re.sub(r"((?<!\w)'|'(?!\w))", "", query)
 
         # Brackets containing nothing but whitespace and booleans, recursive
         last = ""
         while last != query:
             last = query
-            query = re.sub(r"(?u)\([\s\&\|\!]*\)", "", query)
+            query = re.sub(r"\([\s\&\|\!]*\)", "", query)
         ## plpy.debug('9 query is %s' % repr(query))
 
         # An & or | following a (
-        query = re.sub(r"(?u)(?<=\()[\&\|\s]+", "", query)
+        query = re.sub(r"(?<=\()[\&\|\s]+", "", query)
         ## plpy.debug('10 query is %s' % repr(query))
 
         # An &, | or ! immediatly before a )
-        query = re.sub(r"(?u)[\&\|\!\s]*[\&\|\!]+\s*(?=\))", "", query)
+        query = re.sub(r"[\&\|\!\s]*[\&\|\!]+\s*(?=\))", "", query)
         ## plpy.debug('11 query is %s' % repr(query))
 
         # An &,| or ! followed by another boolean.
@@ -185,20 +233,18 @@ CREATE FUNCTION public._ftq(text) RETURNS text
         ## plpy.debug('12 query is %s' % repr(query))
 
         # Leading & or |
-        query = re.sub(r"(?u)^[\s\&\|]+", "", query)
+        query = re.sub(r"^[\s\&\|]+", "", query)
         ## plpy.debug('13 query is %s' % repr(query))
 
         # Trailing &, | or !
-        query = re.sub(r"(?u)[\&\|\!\s]+$", "", query)
+        query = re.sub(r"[\&\|\!\s]+$", "", query)
         ## plpy.debug('14 query is %s' % repr(query))
 
         # If we have nothing but whitespace and tsearch2 operators,
         # return NULL.
-        if re.search(r"(?u)^[\&\|\!\s\(\)]*$", query) is not None:
+        if re.search(r"^[\&\|\!\s\(\)]*$", query) is not None:
             return None
 
-        # Convert back to UTF-8
-        query = query.encode('utf8')
         ## plpy.debug('15 query is %s' % repr(query))
 
         return query or None
@@ -221,15 +267,21 @@ BEGIN
     IF artifact_row.gitrepository IS NOT NULL THEN
         PERFORM gitrepository_denorm_access(artifact_row.gitrepository);
     END IF;
+    IF artifact_row.snap IS NOT NULL THEN
+        PERFORM snap_denorm_access(artifact_row.snap);
+    END IF;
     IF artifact_row.specification IS NOT NULL THEN
         PERFORM specification_denorm_access(artifact_row.specification);
+    END IF;
+    IF artifact_row.ocirecipe IS NOT NULL THEN
+        PERFORM ocirecipe_denorm_access(artifact_row.ocirecipe);
     END IF;
     RETURN;
 END;
 $$;
 
 
-COMMENT ON FUNCTION public.accessartifact_denorm_to_artifacts(artifact_id integer) IS 'Denormalize the policy access and artifact grants to bugs, branches, Git repositories, and specifications.';
+COMMENT ON FUNCTION public.accessartifact_denorm_to_artifacts(artifact_id integer) IS 'Denormalize the policy access and artifact grants to bugs, branches, git repositories, snaps, specifications and ocirecipe.';
 
 
 CREATE FUNCTION public.accessartifact_maintain_denorm_to_artifacts_trig() RETURNS trigger
@@ -443,7 +495,7 @@ COMMENT ON FUNCTION public.add_test_openid_identifier(account_ integer) IS 'Add 
 
 
 CREATE FUNCTION public.assert_patch_applied(major integer, minor integer, patch integer) RETURNS boolean
-    LANGUAGE plpythonu STABLE
+    LANGUAGE plpython3u STABLE
     AS $$
     rv = plpy.execute("""
         SELECT * FROM LaunchpadDatabaseRevision
@@ -548,98 +600,6 @@ END;
 $$;
 
 
-CREATE FUNCTION public.valid_bug_name(text) RETURNS boolean
-    LANGUAGE plpythonu IMMUTABLE STRICT
-    AS $_$
-    import re
-    name = args[0]
-    pat = r"^[a-z][a-z0-9+\.\-]+$"
-    if re.match(pat, name):
-        return 1
-    return 0
-$_$;
-
-
-COMMENT ON FUNCTION public.valid_bug_name(text) IS 'validate a bug name
-
-    As per valid_name, except numeric-only names are not allowed (including
-    names that look like floats).';
-
-
-SET default_tablespace = '';
-
-SET default_with_oids = false;
-
-CREATE TABLE public.bug (
-    id integer NOT NULL,
-    datecreated timestamp without time zone DEFAULT timezone('UTC'::text, ('now'::text)::timestamp(6) with time zone) NOT NULL,
-    name text,
-    title text NOT NULL,
-    description text NOT NULL,
-    owner integer NOT NULL,
-    duplicateof integer,
-    fti public.ts2_tsvector,
-    date_last_updated timestamp without time zone DEFAULT timezone('UTC'::text, now()) NOT NULL,
-    date_made_private timestamp without time zone,
-    who_made_private integer,
-    date_last_message timestamp without time zone,
-    number_of_duplicates integer DEFAULT 0 NOT NULL,
-    message_count integer DEFAULT 0 NOT NULL,
-    users_affected_count integer DEFAULT 0,
-    users_unaffected_count integer DEFAULT 0,
-    heat integer DEFAULT 0 NOT NULL,
-    heat_last_updated timestamp without time zone,
-    latest_patch_uploaded timestamp without time zone,
-    information_type integer NOT NULL,
-    CONSTRAINT notduplicateofself CHECK ((NOT (id = duplicateof))),
-    CONSTRAINT sane_description CHECK (((ltrim(description) <> ''::text) AND (char_length(description) <= 50000))),
-    CONSTRAINT valid_bug_name CHECK (public.valid_bug_name(name))
-);
-
-
-COMMENT ON TABLE public.bug IS 'A software bug that requires fixing. This particular bug may be linked to one or more products or source packages to identify the location(s) that this bug is found.';
-
-
-COMMENT ON COLUMN public.bug.name IS 'A lowercase name uniquely identifying the bug';
-
-
-COMMENT ON COLUMN public.bug.description IS 'A detailed description of the bug. Initially this will be set to the contents of the initial email or bug filing comment, but later it can be edited to give a more accurate description of the bug itself rather than the symptoms observed by the reporter.';
-
-
-COMMENT ON COLUMN public.bug.date_last_message IS 'When the last BugMessage was attached to this Bug. Maintained by a trigger on the BugMessage table.';
-
-
-COMMENT ON COLUMN public.bug.number_of_duplicates IS 'The number of bugs marked as duplicates of this bug, populated by a trigger after setting the duplicateof of bugs.';
-
-
-COMMENT ON COLUMN public.bug.message_count IS 'The number of messages (currently just comments) on this bugbug, maintained by the set_bug_message_count_t trigger.';
-
-
-COMMENT ON COLUMN public.bug.users_affected_count IS 'The number of users affected by this bug, maintained by the set_bug_users_affected_count_t trigger.';
-
-
-COMMENT ON COLUMN public.bug.heat IS 'The relevance of this bug. This value is computed periodically using bug_affects_person and other bug values.';
-
-
-COMMENT ON COLUMN public.bug.heat_last_updated IS 'The time this bug''s heat was last updated, or NULL if the heat has never yet been updated.';
-
-
-COMMENT ON COLUMN public.bug.latest_patch_uploaded IS 'The time when the most recent patch has been attached to this bug or NULL if no patches are attached';
-
-
-COMMENT ON COLUMN public.bug.information_type IS 'Enum describing what type of information is stored, such as type of private or security related data, and used to determine how to apply an access policy.';
-
-
-CREATE FUNCTION public.bug_row(bug_id integer) RETURNS public.bug
-    LANGUAGE sql STABLE
-    AS $_$
-    SELECT * FROM Bug WHERE id=$1;
-$_$;
-
-
-COMMENT ON FUNCTION public.bug_row(bug_id integer) IS 'Helper for manually testing functions requiring a bug row as input. eg. SELECT * FROM bugsummary_tags(bug_row(1))';
-
-
 CREATE TABLE public.bugsummary (
     id integer NOT NULL,
     count integer DEFAULT 0 NOT NULL,
@@ -655,12 +615,16 @@ CREATE TABLE public.bugsummary (
     importance integer NOT NULL,
     has_patch boolean NOT NULL,
     access_policy integer,
+    ociproject integer,
+    ociprojectseries integer,
     CONSTRAINT bugtask_assignment_checks CHECK (
 CASE
-    WHEN (product IS NOT NULL) THEN ((((productseries IS NULL) AND (distribution IS NULL)) AND (distroseries IS NULL)) AND (sourcepackagename IS NULL))
-    WHEN (productseries IS NOT NULL) THEN (((distribution IS NULL) AND (distroseries IS NULL)) AND (sourcepackagename IS NULL))
+    WHEN (product IS NOT NULL) THEN ((productseries IS NULL) AND (distribution IS NULL) AND (distroseries IS NULL) AND (sourcepackagename IS NULL))
+    WHEN (productseries IS NOT NULL) THEN ((distribution IS NULL) AND (distroseries IS NULL) AND (sourcepackagename IS NULL) AND (ociproject IS NULL) AND (ociprojectseries IS NULL))
     WHEN (distribution IS NOT NULL) THEN (distroseries IS NULL)
-    WHEN (distroseries IS NOT NULL) THEN true
+    WHEN (distroseries IS NOT NULL) THEN ((ociproject IS NULL) AND (ociprojectseries IS NULL))
+    WHEN (ociproject IS NOT NULL) THEN ((ociprojectseries IS NULL) AND ((distribution IS NOT NULL) OR (product IS NOT NULL)) AND (sourcepackagename IS NULL))
+    WHEN (ociprojectseries IS NOT NULL) THEN ((ociproject IS NULL) AND ((distribution IS NOT NULL) OR (product IS NOT NULL)) AND (sourcepackagename IS NULL))
     ELSE false
 END)
 );
@@ -708,39 +672,6 @@ $_$;
 COMMENT ON FUNCTION public.bug_summary_dec(public.bugsummary) IS 'UPSERT into bugsummary incrementing one row';
 
 
-CREATE FUNCTION public.bug_summary_flush_temp_journal() RETURNS void
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    d bugsummary%ROWTYPE;
-BEGIN
-    -- May get called even though no summaries were made (for simplicity in the
-    -- callers). We sum the rows here to minimise the number of inserts
-    -- into the persistent journal, as it's reasonably likely that we'll
-    -- have -1s and +1s cancelling each other out.
-    PERFORM ensure_bugsummary_temp_journal();
-    INSERT INTO BugSummaryJournal(
-        count, product, productseries, distribution,
-        distroseries, sourcepackagename, viewed_by, tag,
-        status, milestone, importance, has_patch, access_policy)
-    SELECT
-        SUM(count), product, productseries, distribution,
-        distroseries, sourcepackagename, viewed_by, tag,
-        status, milestone, importance, has_patch, access_policy
-    FROM bugsummary_temp_journal
-    GROUP BY
-        product, productseries, distribution,
-        distroseries, sourcepackagename, viewed_by, tag,
-        status, milestone, importance, has_patch, access_policy
-    HAVING SUM(count) != 0;
-    TRUNCATE bugsummary_temp_journal;
-END;
-$$;
-
-
-COMMENT ON FUNCTION public.bug_summary_flush_temp_journal() IS 'flush the temporary bugsummary journal into the bugsummary table';
-
-
 CREATE FUNCTION public.bug_summary_inc(d public.bugsummary) RETURNS void
     LANGUAGE plpgsql
     AS $_$
@@ -750,20 +681,15 @@ BEGIN
         -- first try to update the row
         UPDATE BugSummary SET count = count + d.count
         WHERE
-            ((product IS NULL AND $1.product IS NULL)
-                OR product = $1.product)
-            AND ((productseries IS NULL AND $1.productseries IS NULL)
-                OR productseries = $1.productseries)
-            AND ((distribution IS NULL AND $1.distribution IS NULL)
-                OR distribution = $1.distribution)
-            AND ((distroseries IS NULL AND $1.distroseries IS NULL)
-                OR distroseries = $1.distroseries)
-            AND ((sourcepackagename IS NULL AND $1.sourcepackagename IS NULL)
-                OR sourcepackagename = $1.sourcepackagename)
-            AND ((viewed_by IS NULL AND $1.viewed_by IS NULL)
-                OR viewed_by = $1.viewed_by)
-            AND ((tag IS NULL AND $1.tag IS NULL)
-                OR tag = $1.tag)
+            product IS NOT DISTINCT FROM $1.product
+            AND productseries IS NOT DISTINCT FROM $1.productseries
+            AND distribution IS NOT DISTINCT FROM $1.distribution
+            AND distroseries IS NOT DISTINCT FROM $1.distroseries
+            AND sourcepackagename IS NOT DISTINCT FROM $1.sourcepackagename
+            AND ociproject IS NOT DISTINCT FROM $1.ociproject
+            AND ociprojectseries IS NOT DISTINCT FROM $1.ociprojectseries
+            AND viewed_by IS NOT DISTINCT FROM $1.viewed_by
+            AND tag IS NOT DISTINCT FROM $1.tag
             AND status = $1.status
             AND ((milestone IS NULL AND $1.milestone IS NULL)
                 OR milestone = $1.milestone)
@@ -779,11 +705,15 @@ BEGIN
         BEGIN
             INSERT INTO BugSummary(
                 count, product, productseries, distribution,
-                distroseries, sourcepackagename, viewed_by, tag,
+                distroseries, sourcepackagename,
+                ociproject, ociprojectseries,
+                viewed_by, tag,
                 status, milestone, importance, has_patch, access_policy)
             VALUES (
                 d.count, d.product, d.productseries, d.distribution,
-                d.distroseries, d.sourcepackagename, d.viewed_by, d.tag,
+                d.distroseries, d.sourcepackagename,
+                d.ociproject, d.ociprojectseries,
+                d.viewed_by, d.tag,
                 d.status, d.milestone, d.importance, d.has_patch,
                 d.access_policy);
             RETURN;
@@ -864,67 +794,53 @@ $$;
 COMMENT ON FUNCTION public.bugmessage_copy_owner_from_message() IS 'Copies the message owner into bugmessage when bugmessage changes.';
 
 
-CREATE FUNCTION public.bugsummary_journal_bug(bug_row public.bug, _count integer) RETURNS void
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    btf_row bugtaskflat%ROWTYPE;
-BEGIN
-    FOR btf_row IN SELECT * FROM bugtaskflat WHERE bug = bug_row.id
-    LOOP
-        PERFORM bugsummary_journal_bugtaskflat(btf_row, _count);
-    END LOOP;
-END;
-$$;
-
-
-CREATE TABLE public.bugtaskflat (
-    bugtask integer NOT NULL,
-    bug integer NOT NULL,
-    datecreated timestamp without time zone,
-    duplicateof integer,
-    bug_owner integer NOT NULL,
-    fti public.ts2_tsvector,
-    information_type integer NOT NULL,
-    date_last_updated timestamp without time zone NOT NULL,
-    heat integer NOT NULL,
+CREATE TABLE public.bugsummaryjournal (
+    id integer NOT NULL,
+    count integer DEFAULT 0 NOT NULL,
     product integer,
     productseries integer,
     distribution integer,
     distroseries integer,
     sourcepackagename integer,
+    viewed_by integer,
+    tag text,
     status integer NOT NULL,
-    importance integer NOT NULL,
-    assignee integer,
     milestone integer,
-    owner integer NOT NULL,
-    active boolean NOT NULL,
-    access_policies integer[],
-    access_grants integer[],
-    latest_patch_uploaded timestamp without time zone,
-    date_closed timestamp without time zone
+    importance integer NOT NULL,
+    has_patch boolean NOT NULL,
+    access_policy integer,
+    ociproject integer,
+    ociprojectseries integer
 );
 
 
-CREATE FUNCTION public.bugsummary_journal_bugtaskflat(btf_row public.bugtaskflat, _count integer) RETURNS void
-    LANGUAGE plpgsql
+CREATE FUNCTION public.bugsummary_insert_journals(journals public.bugsummaryjournal[]) RETURNS void
+    LANGUAGE sql
     AS $$
-BEGIN
-    PERFORM ensure_bugsummary_temp_journal();
-    INSERT INTO BugSummary_Temp_Journal(
-        count, product, productseries, distribution,
-        distroseries, sourcepackagename, viewed_by, tag,
-        status, milestone, importance, has_patch, access_policy)
-    SELECT
-        _count, product, productseries, distribution,
-        distroseries, sourcepackagename, viewed_by, tag,
-        status, milestone, importance, has_patch, access_policy
-        FROM bugsummary_locations(btf_row);
-END;
+    -- We sum the rows here to minimise the number of inserts into the
+    -- journal, as in the case of UPDATE statement we may have -1s and +1s
+    -- cancelling each other out.
+    INSERT INTO BugSummaryJournal(
+            count, product, productseries, distribution,
+            distroseries, sourcepackagename, ociproject, ociprojectseries,
+            viewed_by, tag, status, milestone, importance, has_patch,
+            access_policy)
+        SELECT
+            SUM(count), product, productseries, distribution,
+            distroseries, sourcepackagename, ociproject, ociprojectseries,
+            viewed_by, tag, status, milestone, importance, has_patch,
+            access_policy
+        FROM unnest(journals)
+        GROUP BY
+            product, productseries, distribution,
+            distroseries, sourcepackagename, ociproject, ociprojectseries,
+            viewed_by, tag, status, milestone, importance, has_patch,
+            access_policy
+        HAVING SUM(count) != 0;
 $$;
 
 
-CREATE FUNCTION public.bugsummary_locations(btf_row public.bugtaskflat) RETURNS SETOF public.bugsummary
+CREATE FUNCTION public.bugsummary_locations(btf_row public.bugtaskflat, tags text[]) RETURNS SETOF public.bugsummaryjournal
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -941,10 +857,11 @@ BEGIN
             bug_viewers.viewed_by, bug_tags.tag, btf_row.status,
             btf_row.milestone, btf_row.importance,
             btf_row.latest_patch_uploaded IS NOT NULL AS has_patch,
-            bug_viewers.access_policy
+            bug_viewers.access_policy,
+            bug_targets.ociproject, bug_targets.ociprojectseries
         FROM
-            bugsummary_targets(btf_row) as bug_targets,
-            bugsummary_tags(btf_row) AS bug_tags,
+            bugsummary_targets(btf_row) AS bug_targets,
+            unnest(tags) AS bug_tags (tag),
             bugsummary_viewers(btf_row) AS bug_viewers;
 END;
 $$;
@@ -987,12 +904,15 @@ BEGIN
             milestone,
             importance,
             has_patch,
-            access_policy
+            access_policy,
+            ociproject,
+            ociprojectseries
         FROM BugSummaryJournal
         WHERE id <= max_id
         GROUP BY
             product, productseries, distribution, distroseries,
-            sourcepackagename, viewed_by, tag, status, milestone,
+            sourcepackagename, ociproject, ociprojectseries,
+            viewed_by, tag, status, milestone,
             importance, has_patch, access_policy
         HAVING sum(count) <> 0
     LOOP
@@ -1014,68 +934,20 @@ $$;
 COMMENT ON FUNCTION public.bugsummary_rollup_journal(batchsize integer) IS 'Collate and migrate rows from BugSummaryJournal to BugSummary';
 
 
-CREATE FUNCTION public.valid_name(text) RETURNS boolean
-    LANGUAGE plpythonu IMMUTABLE STRICT
-    AS $$
-    import re
-    name = args[0]
-    pat = r"^[a-z0-9][a-z0-9\+\.\-]*\Z"
-    if re.match(pat, name):
-        return 1
-    return 0
-$$;
-
-
-COMMENT ON FUNCTION public.valid_name(text) IS 'validate a name.
-
-    Names must contain only lowercase letters, numbers, ., & -. They
-    must start with an alphanumeric. They are ASCII only. Names are useful
-    for mneumonic identifiers such as nicknames and as URL components.
-    This specification is the same as the Debian product naming policy.
-
-    Note that a valid name might be all integers, so there is a possible
-    namespace conflict if URL traversal is possible by name as well as id.';
-
-
-CREATE TABLE public.bugtag (
-    id integer NOT NULL,
-    bug integer NOT NULL,
-    tag text NOT NULL,
-    CONSTRAINT valid_tag CHECK (public.valid_name(tag))
-);
-
-
-COMMENT ON TABLE public.bugtag IS 'Attaches simple text tags to a bug.';
-
-
-COMMENT ON COLUMN public.bugtag.bug IS 'The bug the tags is attached to.';
-
-
-COMMENT ON COLUMN public.bugtag.tag IS 'The text representation of the tag.';
-
-
-CREATE FUNCTION public.bugsummary_tags(btf_row public.bugtaskflat) RETURNS SETOF public.bugtag
-    LANGUAGE sql STABLE
-    AS $_$
-    SELECT * FROM BugTag WHERE BugTag.bug = $1.bug
-    UNION ALL
-    SELECT NULL::integer, $1.bug, NULL::text;
-$_$;
-
-
-CREATE FUNCTION public.bugsummary_targets(btf_row public.bugtaskflat) RETURNS TABLE(product integer, productseries integer, distribution integer, distroseries integer, sourcepackagename integer)
+CREATE FUNCTION public.bugsummary_targets(btf_row public.bugtaskflat) RETURNS TABLE(product integer, productseries integer, distribution integer, distroseries integer, sourcepackagename integer, ociproject integer, ociprojectseries integer)
     LANGUAGE sql IMMUTABLE
     AS $_$
-    -- Include a sourcepackagename-free task if this one has a
-    -- sourcepackagename, so package tasks are also counted in their
-    -- distro/series.
+    -- Include a sourcepackagename-free/ociproject(series)-free task if this
+    -- one has a sourcepackagename/ociproject(series), so package tasks are
+    -- also counted in their distro/series.
     SELECT
         $1.product, $1.productseries, $1.distribution,
-        $1.distroseries, $1.sourcepackagename
+        $1.distroseries, $1.sourcepackagename,
+        $1.ociproject, $1.ociprojectseries
     UNION -- Implicit DISTINCT
     SELECT
         $1.product, $1.productseries, $1.distribution,
-        $1.distroseries, NULL;
+        $1.distroseries, NULL, NULL, NULL;
 $_$;
 
 
@@ -1096,38 +968,50 @@ CREATE FUNCTION public.bugtag_maintain_bug_summary() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DECLARE
+    all_rows bugsummary_temp_bug_internal[];
+    temp_rows bugsummary_temp_bug_internal[];
+    journals bugsummaryjournal[];
+    temp_rec record;
+    temp_journal bugsummaryjournal;
 BEGIN
-    IF TG_OP = 'INSERT' THEN
-        IF TG_WHEN = 'BEFORE' THEN
-            PERFORM unsummarise_bug(NEW.bug);
-        ELSE
-            PERFORM summarise_bug(NEW.bug);
-        END IF;
-        PERFORM bug_summary_flush_temp_journal();
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        IF TG_WHEN = 'BEFORE' THEN
-            PERFORM unsummarise_bug(OLD.bug);
-        ELSE
-            PERFORM summarise_bug(OLD.bug);
-        END IF;
-        PERFORM bug_summary_flush_temp_journal();
-        RETURN OLD;
-    ELSE
-        IF TG_WHEN = 'BEFORE' THEN
-            PERFORM unsummarise_bug(OLD.bug);
-            IF OLD.bug <> NEW.bug THEN
-                PERFORM unsummarise_bug(NEW.bug);
-            END IF;
-        ELSE
-            PERFORM summarise_bug(OLD.bug);
-            IF OLD.bug <> NEW.bug THEN
-                PERFORM summarise_bug(NEW.bug);
-            END IF;
-        END IF;
-        PERFORM bug_summary_flush_temp_journal();
-        RETURN NEW;
+    -- Work out the subqueries we need to compute the set of
+    -- BugSummaryJournal rows that should be inserted.
+    IF TG_OP = 'DELETE' OR TG_OP = 'UPDATE' THEN
+        SELECT array_agg(
+            (SELECT row(bug, array_agg(tag), -1) FROM old_bugtag GROUP BY bug))
+            INTO STRICT temp_rows;
+        all_rows := array_cat(all_rows, temp_rows);
     END IF;
+    IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+        SELECT array_agg(
+            (SELECT row(bug, array_agg(tag), 1) FROM new_bugtag GROUP BY bug))
+            INTO STRICT temp_rows;
+        all_rows := array_cat(all_rows, temp_rows);
+    END IF;
+
+    -- XXX wgrant 2020-02-07: "The target is a record variable, row
+    -- variable, or comma-separated list of scalar variables." but a list
+    -- doesn't seem to work.
+    FOR temp_rec IN
+        SELECT journal, row.count
+        FROM
+            unnest(all_rows) as row,
+            LATERAL (
+                SELECT journal.*
+                FROM
+                    bugtaskflat btf,
+                    bugsummary_locations(btf, row.tags) AS journal
+                WHERE btf.bug = row.bug
+            ) AS journal
+    LOOP
+        temp_journal := temp_rec.journal;
+        temp_journal.count := temp_rec.count;
+        journals := array_append(journals, temp_journal);
+    END LOOP;
+
+    PERFORM bugsummary_insert_journals(journals);
+    RETURN NULL;
 END;
 $$;
 
@@ -1199,7 +1083,8 @@ BEGIN
            COALESCE(_product_active, TRUE),
            _access_policies,
            _access_grants,
-           bug_row.latest_patch_uploaded, task_row.date_closed
+           bug_row.latest_patch_uploaded, task_row.date_closed,
+           task_row.ociproject, task_row.ociprojectseries
            INTO new_flat_row;
 
     -- Calculate the necessary updates.
@@ -1233,7 +1118,9 @@ BEGIN
                 access_policies = new_flat_row.access_policies,
                 access_grants = new_flat_row.access_grants,
                 date_closed = new_flat_row.date_closed,
-                latest_patch_uploaded = new_flat_row.latest_patch_uploaded
+                latest_patch_uploaded = new_flat_row.latest_patch_uploaded,
+                ociproject = new_flat_row.ociproject,
+                ociprojectseries = new_flat_row.ociprojectseries
                 WHERE bugtask = new_flat_row.bugtask;
         END IF;
         RETURN FALSE;
@@ -1268,6 +1155,8 @@ BEGIN
             OR NEW.distribution IS DISTINCT FROM OLD.distribution
             OR NEW.distroseries IS DISTINCT FROM OLD.distroseries
             OR NEW.sourcepackagename IS DISTINCT FROM OLD.sourcepackagename
+            OR NEW.ociproject IS DISTINCT FROM OLD.ociproject
+            OR NEW.ociprojectseries IS DISTINCT FROM OLD.ociprojectseries
             OR NEW.status IS DISTINCT FROM OLD.status
             OR NEW.importance IS DISTINCT FROM OLD.importance
             OR NEW.assignee IS DISTINCT FROM OLD.assignee
@@ -1285,6 +1174,8 @@ BEGIN
                 distribution = NEW.distribution,
                 distroseries = NEW.distroseries,
                 sourcepackagename = NEW.sourcepackagename,
+                ociproject = NEW.ociproject,
+                ociprojectseries = NEW.ociprojectseries,
                 status = NEW.status,
                 importance = NEW.importance,
                 assignee = NEW.assignee,
@@ -1305,32 +1196,44 @@ CREATE FUNCTION public.bugtaskflat_maintain_bug_summary() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DECLARE
+    all_rows bugsummary_temp_btf_internal[];
+    temp_rows bugsummary_temp_btf_internal[];
+    journals bugsummaryjournal[];
+    temp_rec record;
+    temp_journal bugsummaryjournal;
 BEGIN
-    IF TG_OP = 'INSERT' THEN
-        PERFORM bugsummary_journal_bugtaskflat(NEW, 1);
-        PERFORM bug_summary_flush_temp_journal();
-    ELSIF TG_OP = 'DELETE' THEN
-        PERFORM bugsummary_journal_bugtaskflat(OLD, -1);
-        PERFORM bug_summary_flush_temp_journal();
-    ELSIF
-        NEW.product IS DISTINCT FROM OLD.product
-        OR NEW.productseries IS DISTINCT FROM OLD.productseries
-        OR NEW.distribution IS DISTINCT FROM OLD.distribution
-        OR NEW.distroseries IS DISTINCT FROM OLD.distroseries
-        OR NEW.sourcepackagename IS DISTINCT FROM OLD.sourcepackagename
-        OR NEW.status IS DISTINCT FROM OLD.status
-        OR NEW.milestone IS DISTINCT FROM OLD.milestone
-        OR NEW.importance IS DISTINCT FROM OLD.importance
-        OR NEW.latest_patch_uploaded IS DISTINCT FROM OLD.latest_patch_uploaded
-        OR NEW.information_type IS DISTINCT FROM OLD.information_type
-        OR NEW.access_grants IS DISTINCT FROM OLD.access_grants
-        OR NEW.access_policies IS DISTINCT FROM OLD.access_policies
-        OR NEW.duplicateof IS DISTINCT FROM OLD.duplicateof
-    THEN
-        PERFORM bugsummary_journal_bugtaskflat(OLD, -1);
-        PERFORM bugsummary_journal_bugtaskflat(NEW, 1);
-        PERFORM bug_summary_flush_temp_journal();
+    -- Work out the subqueries we need to compute the set of
+    -- BugSummaryJournal rows that should be inserted.
+    IF TG_OP = 'DELETE' OR TG_OP = 'UPDATE' THEN
+        SELECT array_agg(row(old_bugtaskflat, -1))
+            INTO STRICT temp_rows FROM old_bugtaskflat;
+        all_rows := array_cat(all_rows, temp_rows);
     END IF;
+    IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+        SELECT array_agg(row(new_bugtaskflat, 1))
+            INTO STRICT temp_rows FROM new_bugtaskflat;
+        all_rows := array_cat(all_rows, temp_rows);
+    END IF;
+
+    -- XXX wgrant 2020-02-07: "The target is a record variable, row
+    -- variable, or comma-separated list of scalar variables." but a list
+    -- doesn't seem to work.
+    FOR temp_rec IN
+        SELECT journal, row.count
+        FROM
+            unnest(all_rows) AS row,
+            LATERAL bugsummary_locations(
+                row((row.btf).*),
+                (SELECT array_append(array_agg(tag), NULL::text)
+                 FROM bugtag WHERE bug = (row.btf).bug)) AS journal
+    LOOP
+        temp_journal := temp_rec.journal;
+        temp_journal.count := temp_rec.count;
+        journals := array_append(journals, temp_journal);
+    END LOOP;
+
+    PERFORM bugsummary_insert_journals(journals);
     RETURN NULL;
 END;
 $$;
@@ -1475,7 +1378,7 @@ CREATE FUNCTION public.debversion_smaller(version1 public.debversion, version2 p
 
 
 CREATE FUNCTION public.debversion_sort_key(version text) RETURNS text
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $_$
     # If this method is altered, then any functional indexes using it
     # need to be rebuilt.
@@ -1546,25 +1449,8 @@ $_$;
 COMMENT ON FUNCTION public.debversion_sort_key(version text) IS 'Return a string suitable for sorting debian version strings on';
 
 
-CREATE FUNCTION public.ensure_bugsummary_temp_journal() RETURNS void
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    CREATE TEMPORARY TABLE bugsummary_temp_journal (
-        LIKE bugsummary ) ON COMMIT DROP;
-    ALTER TABLE bugsummary_temp_journal ALTER COLUMN id DROP NOT NULL;
-EXCEPTION
-    WHEN duplicate_table THEN
-        NULL;
-END;
-$$;
-
-
-COMMENT ON FUNCTION public.ensure_bugsummary_temp_journal() IS 'Create a temporary table bugsummary_temp_journal if it does not exist.';
-
-
 CREATE FUNCTION public.ftiupdate() RETURNS trigger
-    LANGUAGE plpythonu
+    LANGUAGE plpython3u
     AS $_$
     new = TD["new"]
     args = TD["args"][:]
@@ -1596,7 +1482,7 @@ CREATE FUNCTION public.ftiupdate() RETURNS trigger
     sql = "SELECT %s AS fti" % "||".join(sql)
 
     # Execute and store in the fti column
-    plan = plpy.prepare(sql, ["text", "char"] * (len(args)/2))
+    plan = plpy.prepare(sql, ["text", "char"] * (len(args) // 2))
     new["fti"] = plpy.execute(plan, args, 1)[0]["fti"]
 
     # Tell PostgreSQL we have modified the data
@@ -1608,7 +1494,7 @@ COMMENT ON FUNCTION public.ftiupdate() IS 'Trigger function that keeps the fti t
 
 
 CREATE FUNCTION public.ftq(text) RETURNS tsquery
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $_$
         p = plpy.prepare(
             "SELECT to_tsquery('default', _ftq($1)) AS x", ["text"])
@@ -1947,7 +1833,7 @@ COMMENT ON FUNCTION public.message_copy_owner_to_questionmessage() IS 'Copies th
 
 
 CREATE FUNCTION public.milestone_sort_key(dateexpected timestamp without time zone, name text) RETURNS text
-    LANGUAGE plpythonu IMMUTABLE
+    LANGUAGE plpython3u IMMUTABLE
     AS $$
     # If this method is altered, then any functional indexes using it
     # need to be rebuilt.
@@ -1959,7 +1845,7 @@ CREATE FUNCTION public.milestone_sort_key(dateexpected timestamp without time zo
     def substitute_filled_numbers(match):
         return match.group(0).zfill(5)
 
-    name = re.sub(u'\d+', substitute_filled_numbers, name)
+    name = re.sub('\d+', substitute_filled_numbers, name)
     if date_expected is None:
         # NULL dates are considered to be in the future.
         date_expected = datetime.datetime(datetime.MAXYEAR, 1, 1)
@@ -2147,7 +2033,7 @@ COMMENT ON FUNCTION public.mv_pofiletranslator_translationmessage() IS 'Trigger 
 
 
 CREATE FUNCTION public.mv_validpersonorteamcache_emailaddress() RETURNS trigger
-    LANGUAGE plpythonu SECURITY DEFINER
+    LANGUAGE plpython3u SECURITY DEFINER
     AS $_$
     # This trigger function keeps the ValidPersonOrTeamCache materialized
     # view in sync when updates are made to the EmailAddress table.
@@ -2155,7 +2041,7 @@ CREATE FUNCTION public.mv_validpersonorteamcache_emailaddress() RETURNS trigger
     # have no effect.
     PREF = 4 # Constant indicating preferred email address
 
-    if not SD.has_key("delete_plan"):
+    if "delete_plan" not in SD:
         param_types = ["int4"]
 
         SD["is_team"] = plpy.prepare("""
@@ -2242,14 +2128,14 @@ COMMENT ON FUNCTION public.mv_validpersonorteamcache_emailaddress() IS 'A trigge
 
 
 CREATE FUNCTION public.mv_validpersonorteamcache_person() RETURNS trigger
-    LANGUAGE plpythonu SECURITY DEFINER
+    LANGUAGE plpython3u SECURITY DEFINER
     AS $_$
     # This trigger function could be simplified by simply issuing
     # one DELETE followed by one INSERT statement. However, we want to minimize
     # expensive writes so we use this more complex logic.
     PREF = 4 # Constant indicating preferred email address
 
-    if not SD.has_key("delete_plan"):
+    if "delete_plan" not in SD:
         param_types = ["int4"]
 
         SD["delete_plan"] = plpy.prepare("""
@@ -2306,15 +2192,15 @@ COMMENT ON FUNCTION public.mv_validpersonorteamcache_person() IS 'A trigger for 
 
 
 CREATE FUNCTION public.name_blacklist_match(text, integer) RETURNS integer
-    LANGUAGE plpythonu STABLE STRICT SECURITY DEFINER
+    LANGUAGE plpython3u STABLE STRICT SECURITY DEFINER
     SET search_path TO 'public'
     AS $_$
     import re
-    name = args[0].decode("UTF-8")
+    name = args[0]
     user_id = args[1]
 
     # Initialize shared storage, shared between invocations.
-    if not SD.has_key("regexp_select_plan"):
+    if "regexp_select_plan" not in SD:
 
         # All the blacklist regexps except the ones we are an admin
         # for. These we do not check since they are not blacklisted to us.
@@ -2364,9 +2250,7 @@ CREATE FUNCTION public.name_blacklist_match(text, integer) RETURNS integer
         regexp_txt = row["regexp"]
         if (compiled.get(regexp_id) is None
             or compiled[regexp_id][0] != regexp_txt):
-            regexp = re.compile(
-                regexp_txt, re.IGNORECASE | re.UNICODE | re.VERBOSE
-                )
+            regexp = re.compile(regexp_txt, re.IGNORECASE | re.VERBOSE)
             compiled[regexp_id] = (regexp_txt, regexp)
         else:
             regexp = compiled[regexp_id][1]
@@ -2397,6 +2281,40 @@ $$;
 
 
 COMMENT ON FUNCTION public.null_count(p_values anyarray) IS 'Return the number of NULLs in the first row of the given array.';
+
+
+CREATE FUNCTION public.ocirecipe_denorm_access(ocirecipe_id integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    info_type integer;
+BEGIN
+    SELECT
+        -- information type: 1 = public
+        COALESCE(ocirecipe.information_type, 1)
+    INTO info_type
+    FROM ocirecipe WHERE id = ocirecipe_id;
+
+    UPDATE OCIRecipe
+        SET access_policy = policies[1], access_grants = grants
+        FROM
+            build_access_cache(
+                (SELECT id FROM accessartifact WHERE ocirecipe = ocirecipe_id),
+                info_type)
+            AS (policies integer[], grants integer[])
+        WHERE id = ocirecipe_id;
+END;
+$$;
+
+
+CREATE FUNCTION public.ocirecipe_maintain_access_cache_trig() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    PERFORM ocirecipe_denorm_access(NEW.id);
+    RETURN NULL;
+END;
+$$;
 
 
 CREATE FUNCTION public.packageset_deleted_trig() RETURNS trigger
@@ -2582,7 +2500,7 @@ COMMENT ON FUNCTION public.packagesetinclusion_inserted_trig() IS 'Maintain the 
 
 
 CREATE FUNCTION public.person_sort_key(displayname text, name text) RETURNS text
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $$
     # NB: If this implementation is changed, the person_sort_idx needs to be
     # rebuilt along with any other indexes using it.
@@ -2591,15 +2509,15 @@ CREATE FUNCTION public.person_sort_key(displayname text, name text) RETURNS text
     try:
         strip_re = SD["strip_re"]
     except KeyError:
-        strip_re = re.compile("(?:[^\w\s]|[\d_])", re.U)
+        strip_re = re.compile("(?:[^\w\s]|[\d_])")
         SD["strip_re"] = strip_re
 
     displayname, name = args
 
     # Strip noise out of displayname. We do not have to bother with
     # name, as we know it is just plain ascii.
-    displayname = strip_re.sub('', displayname.decode('UTF-8').lower())
-    return ("%s, %s" % (displayname.strip(), name)).encode('UTF-8')
+    displayname = strip_re.sub('', displayname.lower())
+    return "%s, %s" % (displayname.strip(), name)
 $$;
 
 
@@ -2686,7 +2604,7 @@ COMMENT ON FUNCTION public.replication_lag(node_id integer) IS 'Returns the lag 
 
 
 CREATE FUNCTION public.sane_version(text) RETURNS boolean
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $_$
     import re
     if re.search("""^(?ix)
@@ -2908,14 +2826,54 @@ COMMENT ON FUNCTION public.set_date_status_set() IS 'BEFORE UPDATE trigger on Ac
 
 
 CREATE FUNCTION public.sha1(text) RETURNS character
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $$
     import hashlib
-    return hashlib.sha1(args[0]).hexdigest()
+    return hashlib.sha1(args[0].encode()).hexdigest()
 $$;
 
 
 COMMENT ON FUNCTION public.sha1(text) IS 'Return the SHA1 one way cryptographic hash as a string of 40 hex digits';
+
+
+CREATE FUNCTION public.snap_denorm_access(snap_id integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    info_type integer;
+BEGIN
+    -- XXX pappacena 2021-02-12: Once we finish filling "information_type" and
+    -- deprecate the usage of "public" column at code level, we will be able to
+    -- drop the "private" column usage here.
+    SELECT
+        COALESCE(
+            snap.information_type,
+            -- information type: 1 = public; 5 = proprietary
+            CASE WHEN snap.private THEN 5 ELSE 1 END
+        )
+    INTO info_type
+    FROM snap WHERE id = snap_id;
+
+    UPDATE Snap
+        SET access_policy = policies[1], access_grants = grants
+        FROM
+            build_access_cache(
+                (SELECT id FROM accessartifact WHERE snap = snap_id),
+                info_type)
+            AS (policies integer[], grants integer[])
+        WHERE id = snap_id;
+END;
+$$;
+
+
+CREATE FUNCTION public.snap_maintain_access_cache_trig() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    PERFORM snap_denorm_access(NEW.id);
+    RETURN NULL;
+END;
+$$;
 
 
 CREATE FUNCTION public.specification_denorm_access(spec_id integer) RETURNS void
@@ -2943,32 +2901,14 @@ END;
 $$;
 
 
-CREATE FUNCTION public.summarise_bug(bug integer) RETURNS void
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    PERFORM bugsummary_journal_bug(bug_row(bug), 1);
-END;
-$$;
-
-
 CREATE FUNCTION public.ulower(text) RETURNS text
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $$
-    return args[0].decode('utf8').lower().encode('utf8')
+    return args[0].lower()
 $$;
 
 
 COMMENT ON FUNCTION public.ulower(text) IS 'Return the lower case version of a UTF-8 encoded string.';
-
-
-CREATE FUNCTION public.unsummarise_bug(bug integer) RETURNS void
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    PERFORM bugsummary_journal_bug(bug_row(bug), -1);
-END;
-$$;
 
 
 CREATE FUNCTION public.update_branch_name_cache() RETURNS trigger
@@ -3135,7 +3075,7 @@ $$;
 
 
 CREATE FUNCTION public.update_database_stats() RETURNS void
-    LANGUAGE plpythonu SECURITY DEFINER
+    LANGUAGE plpython3u SECURITY DEFINER
     SET search_path TO 'public'
     AS $_$
     import re
@@ -3248,17 +3188,14 @@ COMMENT ON FUNCTION public.update_replication_lag_cache() IS 'Updates the Databa
 
 
 CREATE FUNCTION public.valid_absolute_url(text) RETURNS boolean
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $$
-    from urlparse import urlparse, uses_netloc
-    # Extend list of schemes that specify netloc. We can drop sftp
-    # with Python 2.5 in the DB.
-    if 'git' not in uses_netloc:
-        uses_netloc.insert(0, 'sftp')
+    from urllib.parse import urlparse, uses_netloc
+    # Extend list of schemes that specify netloc.
+    if 'bzr' not in uses_netloc:
         uses_netloc.insert(0, 'bzr')
         uses_netloc.insert(0, 'bzr+ssh')
         uses_netloc.insert(0, 'ssh') # Mercurial
-        uses_netloc.insert(0, 'git')
     (scheme, netloc, path, params, query, fragment) = urlparse(args[0])
     return bool(scheme and netloc)
 $$;
@@ -3268,7 +3205,7 @@ COMMENT ON FUNCTION public.valid_absolute_url(text) IS 'Ensure the given test is
 
 
 CREATE FUNCTION public.valid_branch_name(text) RETURNS boolean
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $$
     import re
     name = args[0]
@@ -3284,8 +3221,26 @@ COMMENT ON FUNCTION public.valid_branch_name(text) IS 'validate a branch name.
     As per valid_name, except we allow uppercase and @';
 
 
+CREATE FUNCTION public.valid_bug_name(text) RETURNS boolean
+    LANGUAGE plpython3u IMMUTABLE STRICT
+    AS $_$
+    import re
+    name = args[0]
+    pat = r"^[a-z][a-z0-9+\.\-]+$"
+    if re.match(pat, name):
+        return 1
+    return 0
+$_$;
+
+
+COMMENT ON FUNCTION public.valid_bug_name(text) IS 'validate a bug name
+
+    As per valid_name, except numeric-only names are not allowed (including
+    names that look like floats).';
+
+
 CREATE FUNCTION public.valid_cve(text) RETURNS boolean
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $_$
     import re
     name = args[0]
@@ -3300,7 +3255,7 @@ COMMENT ON FUNCTION public.valid_cve(text) IS 'validate a common vulnerability n
 
 
 CREATE FUNCTION public.valid_debian_version(text) RETURNS boolean
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $_$
     import re
     m = re.search("""^(?ix)
@@ -3327,7 +3282,7 @@ COMMENT ON FUNCTION public.valid_debian_version(text) IS 'validate a version num
 
 
 CREATE FUNCTION public.valid_fingerprint(text) RETURNS boolean
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $$
     import re
     if re.match(r"[\dA-F]{40}", args[0]) is not None:
@@ -3341,7 +3296,7 @@ COMMENT ON FUNCTION public.valid_fingerprint(text) IS 'Returns true if passed a 
 
 
 CREATE FUNCTION public.valid_git_repository_name(text) RETURNS boolean
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $$
     import re
     name = args[0]
@@ -3358,7 +3313,7 @@ COMMENT ON FUNCTION public.valid_git_repository_name(text) IS 'validate a Git re
 
 
 CREATE FUNCTION public.valid_keyid(text) RETURNS boolean
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $$
     import re
     if re.match(r"[\dA-F]{8}", args[0]) is not None:
@@ -3371,13 +3326,36 @@ $$;
 COMMENT ON FUNCTION public.valid_keyid(text) IS 'Returns true if passed a valid GPG keyid. Valid GPG keyids are an 8 character long hexadecimal number in uppercase (in reality, they are 16 characters long but we are using the ''common'' definition.';
 
 
+CREATE FUNCTION public.valid_name(text) RETURNS boolean
+    LANGUAGE plpython3u IMMUTABLE STRICT
+    AS $$
+    import re
+    name = args[0]
+    pat = r"^[a-z0-9][a-z0-9\+\.\-]*\Z"
+    if re.match(pat, name):
+        return 1
+    return 0
+$$;
+
+
+COMMENT ON FUNCTION public.valid_name(text) IS 'validate a name.
+
+    Names must contain only lowercase letters, numbers, ., & -. They
+    must start with an alphanumeric. They are ASCII only. Names are useful
+    for mneumonic identifiers such as nicknames and as URL components.
+    This specification is the same as the Debian product naming policy.
+
+    Note that a valid name might be all integers, so there is a possible
+    namespace conflict if URL traversal is possible by name as well as id.';
+
+
 CREATE FUNCTION public.valid_regexp(text) RETURNS boolean
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $$
     import re
     try:
         re.compile(args[0])
-    except:
+    except Exception:
         return False
     else:
         return True
@@ -3388,7 +3366,7 @@ COMMENT ON FUNCTION public.valid_regexp(text) IS 'Returns true if the input can 
 
 
 CREATE FUNCTION public.version_sort_key(version text) RETURNS text
-    LANGUAGE plpythonu IMMUTABLE STRICT
+    LANGUAGE plpython3u IMMUTABLE STRICT
     AS $$
     # If this method is altered, then any functional indexes using it
     # need to be rebuilt.
@@ -3403,7 +3381,7 @@ CREATE FUNCTION public.version_sort_key(version text) RETURNS text
         # of visible ASCII characters.
         return '~' + match.group(0).zfill(5)
 
-    return re.sub(u'\d+', substitute_filled_numbers, version)
+    return re.sub('\d+', substitute_filled_numbers, version)
 $$;
 
 
@@ -3617,7 +3595,9 @@ CREATE TABLE public.accessartifact (
     branch integer,
     specification integer,
     gitrepository integer,
-    CONSTRAINT has_artifact CHECK ((public.null_count(ARRAY[bug, branch, gitrepository, specification]) = 3))
+    snap integer,
+    ocirecipe integer,
+    CONSTRAINT has_artifact CHECK ((public.null_count(ARRAY[bug, branch, gitrepository, snap, specification, ocirecipe]) = 5))
 );
 
 
@@ -3670,7 +3650,7 @@ CREATE TABLE public.accesspolicy (
     distribution integer,
     type integer,
     person integer,
-    CONSTRAINT has_target CHECK (((((type IS NOT NULL) AND ((product IS NULL) <> (distribution IS NULL))) AND (person IS NULL)) OR ((((type IS NULL) AND (person IS NOT NULL)) AND (product IS NULL)) AND (distribution IS NULL))))
+    CONSTRAINT has_target CHECK ((((type IS NOT NULL) AND ((product IS NULL) <> (distribution IS NULL)) AND (person IS NULL)) OR ((type IS NULL) AND (person IS NOT NULL) AND (product IS NULL) AND (distribution IS NULL))))
 );
 
 
@@ -3769,6 +3749,62 @@ CREATE SEQUENCE public.accesspolicygrantflat_id_seq
 ALTER SEQUENCE public.accesspolicygrantflat_id_seq OWNED BY public.accesspolicygrantflat.id;
 
 
+CREATE TABLE public.accesstoken (
+    id integer NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    token_sha256 text NOT NULL,
+    owner integer NOT NULL,
+    description text NOT NULL,
+    git_repository integer NOT NULL,
+    scopes jsonb NOT NULL,
+    date_last_used timestamp without time zone,
+    date_expires timestamp without time zone,
+    revoked_by integer
+);
+
+
+COMMENT ON TABLE public.accesstoken IS 'A personal access token for the webservice API.';
+
+
+COMMENT ON COLUMN public.accesstoken.date_created IS 'When the token was created.';
+
+
+COMMENT ON COLUMN public.accesstoken.token_sha256 IS 'SHA-256 hash of the secret token.';
+
+
+COMMENT ON COLUMN public.accesstoken.owner IS 'The person who created the token.';
+
+
+COMMENT ON COLUMN public.accesstoken.description IS 'A short description of the token''s purpose.';
+
+
+COMMENT ON COLUMN public.accesstoken.git_repository IS 'The Git repository for which the token was issued.';
+
+
+COMMENT ON COLUMN public.accesstoken.scopes IS 'A list of scopes granted by the token.';
+
+
+COMMENT ON COLUMN public.accesstoken.date_last_used IS 'When the token was last used.';
+
+
+COMMENT ON COLUMN public.accesstoken.date_expires IS 'When the token should expire or was revoked.';
+
+
+COMMENT ON COLUMN public.accesstoken.revoked_by IS 'The person who revoked the token, if any.';
+
+
+CREATE SEQUENCE public.accesstoken_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.accesstoken_id_seq OWNED BY public.accesstoken.id;
+
+
 CREATE TABLE public.account (
     id integer NOT NULL,
     date_created timestamp without time zone DEFAULT timezone('UTC'::text, now()) NOT NULL,
@@ -3819,7 +3855,7 @@ CREATE TABLE public.announcement (
     url text,
     active boolean DEFAULT true NOT NULL,
     date_updated timestamp without time zone,
-    CONSTRAINT has_target CHECK ((((product IS NOT NULL) OR (project IS NOT NULL)) OR (distribution IS NOT NULL))),
+    CONSTRAINT has_target CHECK (((product IS NOT NULL) OR (project IS NOT NULL) OR (distribution IS NOT NULL))),
     CONSTRAINT valid_url CHECK (public.valid_absolute_url(url))
 );
 
@@ -3943,7 +3979,6 @@ CREATE TABLE public.archive (
     failed_count integer DEFAULT 0 NOT NULL,
     building_count integer DEFAULT 0 NOT NULL,
     date_created timestamp without time zone DEFAULT timezone('UTC'::text, now()) NOT NULL,
-    signing_key integer,
     removed_binary_retention_days integer,
     num_old_versions_published integer,
     displayname text NOT NULL,
@@ -3957,7 +3992,8 @@ CREATE TABLE public.archive (
     signing_key_owner integer,
     signing_key_fingerprint text,
     dirty_suites text,
-    CONSTRAINT valid_buildd_secret CHECK ((((private = true) AND (buildd_secret IS NOT NULL)) OR (private = false))),
+    publishing_method integer,
+    repository_format integer,
     CONSTRAINT valid_name CHECK (public.valid_name(name)),
     CONSTRAINT valid_signing_key_fingerprint CHECK (((signing_key_fingerprint IS NULL) OR public.valid_fingerprint(signing_key_fingerprint)))
 );
@@ -4021,9 +4057,6 @@ COMMENT ON COLUMN public.archive.failed_count IS 'How many packages failed to bu
 
 
 COMMENT ON COLUMN public.archive.building_count IS 'How many packages are building at present?';
-
-
-COMMENT ON COLUMN public.archive.signing_key IS 'The GpgKey used for signing this archive.';
 
 
 COMMENT ON COLUMN public.archive.removed_binary_retention_days IS 'The number of days before superseded or deleted binary files are expired in the librarian, or zero for never.';
@@ -4137,15 +4170,17 @@ ALTER SEQUENCE public.archiveauthtoken_id_seq OWNED BY public.archiveauthtoken.i
 CREATE TABLE public.archivedependency (
     id integer NOT NULL,
     date_created timestamp without time zone DEFAULT timezone('UTC'::text, now()) NOT NULL,
-    archive integer NOT NULL,
+    archive integer,
     dependency integer NOT NULL,
     pocket integer NOT NULL,
     component integer,
-    CONSTRAINT distinct_archives CHECK ((archive <> dependency))
+    snap_base integer,
+    CONSTRAINT distinct_archives CHECK ((archive <> dependency)),
+    CONSTRAINT one_parent CHECK ((public.null_count(ARRAY[archive, snap_base]) = 1))
 );
 
 
-COMMENT ON TABLE public.archivedependency IS 'This table maps a given archive to all other archives it should depend on.';
+COMMENT ON TABLE public.archivedependency IS 'This table maps a given parent (archive or snap base) to all other archives it should depend on.';
 
 
 COMMENT ON COLUMN public.archivedependency.date_created IS 'Instant when the dependency was created.';
@@ -4155,6 +4190,9 @@ COMMENT ON COLUMN public.archivedependency.archive IS 'The archive where the dep
 
 
 COMMENT ON COLUMN public.archivedependency.dependency IS 'The archive to depend on.';
+
+
+COMMENT ON COLUMN public.archivedependency.snap_base IS 'The snap base that has this dependency.';
 
 
 CREATE SEQUENCE public.archivedependency_id_seq
@@ -4174,7 +4212,9 @@ CREATE TABLE public.archivefile (
     container text NOT NULL,
     path text NOT NULL,
     library_file integer NOT NULL,
-    scheduled_deletion_date timestamp without time zone
+    scheduled_deletion_date timestamp without time zone,
+    date_created timestamp without time zone,
+    date_superseded timestamp without time zone
 );
 
 
@@ -4194,6 +4234,12 @@ COMMENT ON COLUMN public.archivefile.library_file IS 'The file in the librarian.
 
 
 COMMENT ON COLUMN public.archivefile.scheduled_deletion_date IS 'The date when this file should stop being published.';
+
+
+COMMENT ON COLUMN public.archivefile.date_created IS 'The date when this file was created.';
+
+
+COMMENT ON COLUMN public.archivefile.date_superseded IS 'The date when this file ceased to hold its path in the archive, due to being removed or superseded by a newer version.';
 
 
 CREATE SEQUENCE public.archivefile_id_seq
@@ -4299,6 +4345,28 @@ CREATE SEQUENCE public.archivepermission_id_seq
 ALTER SEQUENCE public.archivepermission_id_seq OWNED BY public.archivepermission.id;
 
 
+CREATE TABLE public.archivesigningkey (
+    id integer NOT NULL,
+    archive integer NOT NULL,
+    earliest_distro_series integer,
+    key_type integer NOT NULL,
+    signing_key integer NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL
+);
+
+
+CREATE SEQUENCE public.archivesigningkey_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.archivesigningkey_id_seq OWNED BY public.archivesigningkey.id;
+
+
 CREATE TABLE public.archivesubscriber (
     id integer NOT NULL,
     archive integer NOT NULL,
@@ -4356,8 +4424,7 @@ ALTER SEQUENCE public.archivesubscriber_id_seq OWNED BY public.archivesubscriber
 
 CREATE TABLE public.binarypackagename (
     id integer NOT NULL,
-    name text NOT NULL,
-    CONSTRAINT valid_name CHECK (public.valid_name(name))
+    name text NOT NULL
 );
 
 
@@ -4487,9 +4554,9 @@ CREATE TABLE public.binarypackagepublishinghistory (
     binarypackagerelease integer NOT NULL,
     distroarchseries integer NOT NULL,
     status integer NOT NULL,
-    component integer NOT NULL,
-    section integer NOT NULL,
-    priority integer NOT NULL,
+    component integer,
+    section integer,
+    priority integer,
     datecreated timestamp without time zone NOT NULL,
     datepublished timestamp without time zone,
     datesuperseded timestamp without time zone,
@@ -4502,7 +4569,13 @@ CREATE TABLE public.binarypackagepublishinghistory (
     removed_by integer,
     removal_comment text,
     binarypackagename integer NOT NULL,
-    phased_update_percentage smallint
+    phased_update_percentage smallint,
+    creator integer,
+    copied_from_archive integer,
+    binarypackageformat integer,
+    channel jsonb,
+    CONSTRAINT debian_columns CHECK ((((binarypackageformat IS NOT NULL) AND (binarypackageformat <> ALL (ARRAY[1, 2, 5]))) OR ((component IS NOT NULL) AND (section IS NOT NULL) AND (priority IS NOT NULL)))),
+    CONSTRAINT no_debian_channel CHECK ((((binarypackageformat IS NOT NULL) AND (binarypackageformat <> ALL (ARRAY[1, 2, 5]))) OR (channel IS NULL)))
 );
 
 
@@ -4583,11 +4656,11 @@ CREATE TABLE public.binarypackagerelease (
     version public.debversion NOT NULL,
     summary text NOT NULL,
     description text NOT NULL,
-    build integer NOT NULL,
+    build integer,
     binpackageformat integer NOT NULL,
-    component integer NOT NULL,
-    section integer NOT NULL,
-    priority integer NOT NULL,
+    component integer,
+    section integer,
+    priority integer,
     shlibdeps text,
     depends text,
     recommends text,
@@ -4606,6 +4679,9 @@ CREATE TABLE public.binarypackagerelease (
     debug_package integer,
     user_defined_fields text,
     homepage text,
+    ci_build integer,
+    CONSTRAINT debian_columns CHECK (((binpackageformat <> ALL (ARRAY[1, 2, 5])) OR ((component IS NOT NULL) AND (section IS NOT NULL) AND (priority IS NOT NULL)))),
+    CONSTRAINT one_build CHECK ((public.null_count(ARRAY[build, ci_build]) = 1)),
     CONSTRAINT valid_version CHECK (public.valid_debian_version((version)::text))
 );
 
@@ -4720,6 +4796,38 @@ CREATE SEQUENCE public.binarypackagereleasedownloadcount_id_seq
 ALTER SEQUENCE public.binarypackagereleasedownloadcount_id_seq OWNED BY public.binarypackagereleasedownloadcount.id;
 
 
+CREATE TABLE public.binarysourcereference (
+    id integer NOT NULL,
+    binary_package_release integer NOT NULL,
+    source_package_release integer NOT NULL,
+    reference_type integer NOT NULL
+);
+
+
+COMMENT ON TABLE public.binarysourcereference IS 'A reference from a binary package release to a source package release.';
+
+
+COMMENT ON COLUMN public.binarysourcereference.binary_package_release IS 'The referencing binary package release.';
+
+
+COMMENT ON COLUMN public.binarysourcereference.source_package_release IS 'The referenced source package release.';
+
+
+COMMENT ON COLUMN public.binarysourcereference.reference_type IS 'The type of the reference.';
+
+
+CREATE SEQUENCE public.binarysourcereference_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.binarysourcereference_id_seq OWNED BY public.binarysourcereference.id;
+
+
 CREATE TABLE public.branch (
     id integer NOT NULL,
     title text,
@@ -4758,7 +4866,8 @@ CREATE TABLE public.branch (
     information_type integer NOT NULL,
     access_policy integer,
     access_grants integer[],
-    CONSTRAINT branch_type_url_consistent CHECK (((((branch_type = 2) AND (url IS NOT NULL)) OR ((branch_type = ANY (ARRAY[1, 3])) AND (url IS NULL))) OR (branch_type = 4))),
+    deletion_status integer,
+    CONSTRAINT branch_type_url_consistent CHECK ((((branch_type = 2) AND (url IS NOT NULL)) OR ((branch_type = ANY (ARRAY[1, 3])) AND (url IS NULL)) OR (branch_type = 4))),
     CONSTRAINT branch_url_no_trailing_slash CHECK ((url !~~ '%/'::text)),
     CONSTRAINT branch_url_not_supermirror CHECK ((url !~~ 'http://bazaar.launchpad.net/%'::text)),
     CONSTRAINT one_container CHECK ((((distroseries IS NULL) = (sourcepackagename IS NULL)) AND ((distroseries IS NULL) OR (product IS NULL)))),
@@ -4838,6 +4947,9 @@ COMMENT ON COLUMN public.branch.size_on_disk IS 'The size in bytes of this branc
 
 
 COMMENT ON COLUMN public.branch.information_type IS 'Enum describing what type of information is stored, such as type of private or security related data, and used to determine how to apply an access policy.';
+
+
+COMMENT ON COLUMN public.branch.deletion_status IS 'The deletion status of this branch.';
 
 
 CREATE SEQUENCE public.branch_id_seq
@@ -4927,9 +5039,9 @@ CREATE TABLE public.branchmergeproposal (
     CONSTRAINT consistent_dependent_git_ref CHECK ((((dependent_git_repository IS NULL) = (dependent_git_path IS NULL)) AND ((dependent_git_repository IS NULL) = (dependent_git_commit_sha1 IS NULL)))),
     CONSTRAINT consistent_source_git_ref CHECK ((((source_git_repository IS NULL) = (source_git_path IS NULL)) AND ((source_git_repository IS NULL) = (source_git_commit_sha1 IS NULL)))),
     CONSTRAINT consistent_target_git_ref CHECK ((((target_git_repository IS NULL) = (target_git_path IS NULL)) AND ((target_git_repository IS NULL) = (target_git_commit_sha1 IS NULL)))),
-    CONSTRAINT different_branches CHECK ((((source_branch <> target_branch) AND (dependent_branch <> source_branch)) AND (dependent_branch <> target_branch))),
-    CONSTRAINT different_git_refs CHECK (((source_git_repository IS NULL) OR ((((source_git_repository <> target_git_repository) OR (source_git_path <> target_git_path)) AND ((dependent_git_repository <> source_git_repository) OR (dependent_git_path <> source_git_path))) AND ((dependent_git_repository <> target_git_repository) OR (dependent_git_path <> target_git_path))))),
-    CONSTRAINT one_vcs CHECK ((((((source_branch IS NOT NULL) AND (target_branch IS NOT NULL)) <> ((source_git_repository IS NOT NULL) AND (target_git_repository IS NOT NULL))) AND ((dependent_branch IS NULL) OR (source_branch IS NOT NULL))) AND ((dependent_git_repository IS NULL) OR (source_git_repository IS NOT NULL)))),
+    CONSTRAINT different_branches CHECK (((source_branch <> target_branch) AND (dependent_branch <> source_branch) AND (dependent_branch <> target_branch))),
+    CONSTRAINT different_git_refs CHECK (((source_git_repository IS NULL) OR (((source_git_repository <> target_git_repository) OR (source_git_path <> target_git_path)) AND ((dependent_git_repository <> source_git_repository) OR (dependent_git_path <> source_git_path)) AND ((dependent_git_repository <> target_git_repository) OR (dependent_git_path <> target_git_path))))),
+    CONSTRAINT one_vcs CHECK (((((source_branch IS NOT NULL) AND (target_branch IS NOT NULL)) <> ((source_git_repository IS NOT NULL) AND (target_git_repository IS NOT NULL))) AND ((dependent_branch IS NULL) OR (source_branch IS NOT NULL)) AND ((dependent_git_repository IS NULL) OR (source_git_repository IS NOT NULL)))),
     CONSTRAINT positive_revno CHECK (((merged_revno IS NULL) OR (merged_revno > 0)))
 );
 
@@ -5108,6 +5220,74 @@ CREATE SEQUENCE public.branchsubscription_id_seq
 
 
 ALTER SEQUENCE public.branchsubscription_id_seq OWNED BY public.branchsubscription.id;
+
+
+CREATE TABLE public.bug (
+    id integer NOT NULL,
+    datecreated timestamp without time zone DEFAULT timezone('UTC'::text, ('now'::text)::timestamp(6) with time zone) NOT NULL,
+    name text,
+    title text NOT NULL,
+    description text NOT NULL,
+    owner integer NOT NULL,
+    duplicateof integer,
+    fti public.ts2_tsvector,
+    date_last_updated timestamp without time zone DEFAULT timezone('UTC'::text, now()) NOT NULL,
+    date_made_private timestamp without time zone,
+    who_made_private integer,
+    date_last_message timestamp without time zone,
+    number_of_duplicates integer DEFAULT 0 NOT NULL,
+    message_count integer DEFAULT 0 NOT NULL,
+    users_affected_count integer DEFAULT 0,
+    users_unaffected_count integer DEFAULT 0,
+    heat integer DEFAULT 0 NOT NULL,
+    heat_last_updated timestamp without time zone,
+    latest_patch_uploaded timestamp without time zone,
+    information_type integer NOT NULL,
+    lock_status integer DEFAULT 0 NOT NULL,
+    lock_reason text,
+    CONSTRAINT notduplicateofself CHECK ((NOT (id = duplicateof))),
+    CONSTRAINT sane_description CHECK (((ltrim(description) <> ''::text) AND (char_length(description) <= 50000))),
+    CONSTRAINT valid_bug_name CHECK (public.valid_bug_name(name))
+);
+
+
+COMMENT ON TABLE public.bug IS 'A software bug that requires fixing. This particular bug may be linked to one or more products or source packages to identify the location(s) that this bug is found.';
+
+
+COMMENT ON COLUMN public.bug.name IS 'A lowercase name uniquely identifying the bug';
+
+
+COMMENT ON COLUMN public.bug.description IS 'A detailed description of the bug. Initially this will be set to the contents of the initial email or bug filing comment, but later it can be edited to give a more accurate description of the bug itself rather than the symptoms observed by the reporter.';
+
+
+COMMENT ON COLUMN public.bug.date_last_message IS 'When the last BugMessage was attached to this Bug. Maintained by a trigger on the BugMessage table.';
+
+
+COMMENT ON COLUMN public.bug.number_of_duplicates IS 'The number of bugs marked as duplicates of this bug, populated by a trigger after setting the duplicateof of bugs.';
+
+
+COMMENT ON COLUMN public.bug.message_count IS 'The number of messages (currently just comments) on this bugbug, maintained by the set_bug_message_count_t trigger.';
+
+
+COMMENT ON COLUMN public.bug.users_affected_count IS 'The number of users affected by this bug, maintained by the set_bug_users_affected_count_t trigger.';
+
+
+COMMENT ON COLUMN public.bug.heat IS 'The relevance of this bug. This value is computed periodically using bug_affects_person and other bug values.';
+
+
+COMMENT ON COLUMN public.bug.heat_last_updated IS 'The time this bug''s heat was last updated, or NULL if the heat has never yet been updated.';
+
+
+COMMENT ON COLUMN public.bug.latest_patch_uploaded IS 'The time when the most recent patch has been attached to this bug or NULL if no patches are attached';
+
+
+COMMENT ON COLUMN public.bug.information_type IS 'Enum describing what type of information is stored, such as type of private or security related data, and used to determine how to apply an access policy.';
+
+
+COMMENT ON COLUMN public.bug.lock_status IS 'The current lock status of this bug.';
+
+
+COMMENT ON COLUMN public.bug.lock_reason IS 'The reason for locking this bug.';
 
 
 CREATE SEQUENCE public.bug_id_seq
@@ -5503,7 +5683,7 @@ ALTER SEQUENCE public.bugsubscription_id_seq OWNED BY public.bugsubscription.id;
 
 CREATE TABLE public.bugsubscriptionfilter (
     id integer NOT NULL,
-    structuralsubscription integer,
+    structuralsubscription integer NOT NULL,
     find_all_tags boolean NOT NULL,
     include_any_tags boolean NOT NULL,
     exclude_any_tags boolean NOT NULL,
@@ -5645,24 +5825,6 @@ CREATE SEQUENCE public.bugsummary_id_seq
 ALTER SEQUENCE public.bugsummary_id_seq OWNED BY public.bugsummary.id;
 
 
-CREATE TABLE public.bugsummaryjournal (
-    id integer NOT NULL,
-    count integer DEFAULT 0 NOT NULL,
-    product integer,
-    productseries integer,
-    distribution integer,
-    distroseries integer,
-    sourcepackagename integer,
-    viewed_by integer,
-    tag text,
-    status integer NOT NULL,
-    milestone integer,
-    importance integer NOT NULL,
-    has_patch boolean NOT NULL,
-    access_policy integer
-);
-
-
 CREATE SEQUENCE public.bugsummaryjournal_id_seq
     START WITH 1
     INCREMENT BY 1
@@ -5672,6 +5834,23 @@ CREATE SEQUENCE public.bugsummaryjournal_id_seq
 
 
 ALTER SEQUENCE public.bugsummaryjournal_id_seq OWNED BY public.bugsummaryjournal.id;
+
+
+CREATE TABLE public.bugtag (
+    id integer NOT NULL,
+    bug integer NOT NULL,
+    tag text NOT NULL,
+    CONSTRAINT valid_tag CHECK (public.valid_name(tag))
+);
+
+
+COMMENT ON TABLE public.bugtag IS 'Attaches simple text tags to a bug.';
+
+
+COMMENT ON COLUMN public.bugtag.bug IS 'The bug the tags is attached to.';
+
+
+COMMENT ON COLUMN public.bugtag.tag IS 'The text representation of the tag.';
 
 
 CREATE SEQUENCE public.bugtag_id_seq
@@ -5712,12 +5891,18 @@ CREATE TABLE public.bugtask (
     date_fix_released timestamp without time zone,
     date_left_closed timestamp without time zone,
     date_milestone_set timestamp without time zone,
+    ociproject integer,
+    ociprojectseries integer,
+    status_explanation text,
+    importance_explanation text,
     CONSTRAINT bugtask_assignment_checks CHECK (
 CASE
-    WHEN (product IS NOT NULL) THEN ((((productseries IS NULL) AND (distribution IS NULL)) AND (distroseries IS NULL)) AND (sourcepackagename IS NULL))
-    WHEN (productseries IS NOT NULL) THEN (((distribution IS NULL) AND (distroseries IS NULL)) AND (sourcepackagename IS NULL))
+    WHEN (product IS NOT NULL) THEN ((productseries IS NULL) AND (distribution IS NULL) AND (distroseries IS NULL) AND (sourcepackagename IS NULL))
+    WHEN (productseries IS NOT NULL) THEN ((distribution IS NULL) AND (distroseries IS NULL) AND (sourcepackagename IS NULL) AND (ociproject IS NULL) AND (ociprojectseries IS NULL))
     WHEN (distribution IS NOT NULL) THEN (distroseries IS NULL)
-    WHEN (distroseries IS NOT NULL) THEN true
+    WHEN (distroseries IS NOT NULL) THEN ((ociproject IS NULL) AND (ociprojectseries IS NULL))
+    WHEN (ociproject IS NOT NULL) THEN ((ociprojectseries IS NULL) AND ((distribution IS NOT NULL) OR (product IS NOT NULL)) AND (sourcepackagename IS NULL))
+    WHEN (ociprojectseries IS NOT NULL) THEN ((ociproject IS NULL) AND ((distribution IS NOT NULL) OR (product IS NOT NULL)) AND (sourcepackagename IS NULL))
     ELSE false
 END)
 );
@@ -5794,6 +5979,12 @@ COMMENT ON COLUMN public.bugtask.date_left_closed IS 'The date when this bug las
 
 
 COMMENT ON COLUMN public.bugtask.date_milestone_set IS 'The date when this bug was targed to the milestone that is currently set.';
+
+
+COMMENT ON COLUMN public.bugtask.status_explanation IS 'An optional explanation for the current status of this bugtask.';
+
+
+COMMENT ON COLUMN public.bugtask.importance_explanation IS 'An optional explanation for the current importance of this bugtask.';
 
 
 CREATE SEQUENCE public.bugtask_id_seq
@@ -6246,6 +6437,411 @@ CREATE SEQUENCE public.buildqueue_id_seq
 ALTER SEQUENCE public.buildqueue_id_seq OWNED BY public.buildqueue.id;
 
 
+CREATE TABLE public.charmbase (
+    id integer NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    registrant integer NOT NULL,
+    distro_series integer NOT NULL,
+    build_snap_channels jsonb NOT NULL
+);
+
+
+COMMENT ON TABLE public.charmbase IS 'A base for charms.';
+
+
+COMMENT ON COLUMN public.charmbase.date_created IS 'The date on which this base was created in Launchpad.';
+
+
+COMMENT ON COLUMN public.charmbase.registrant IS 'The user who registered this base.';
+
+
+COMMENT ON COLUMN public.charmbase.distro_series IS 'The distro series for this base.';
+
+
+COMMENT ON COLUMN public.charmbase.build_snap_channels IS 'A dictionary mapping snap names to channels to use when building charm recipes that specify this base.';
+
+
+CREATE SEQUENCE public.charmbase_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.charmbase_id_seq OWNED BY public.charmbase.id;
+
+
+CREATE TABLE public.charmbasearch (
+    charm_base integer NOT NULL,
+    processor integer NOT NULL
+);
+
+
+COMMENT ON TABLE public.charmbasearch IS 'The architectures that a charm base supports.';
+
+
+COMMENT ON COLUMN public.charmbasearch.charm_base IS 'The charm base for which a supported architecture is specified.';
+
+
+COMMENT ON COLUMN public.charmbasearch.processor IS 'A supported architecture for this charm base.';
+
+
+CREATE TABLE public.charmfile (
+    id integer NOT NULL,
+    build integer NOT NULL,
+    library_file integer NOT NULL
+);
+
+
+COMMENT ON TABLE public.charmfile IS 'A link between a charm recipe build and a file in the librarian that it produces.';
+
+
+COMMENT ON COLUMN public.charmfile.build IS 'The charm recipe build producing this file.';
+
+
+COMMENT ON COLUMN public.charmfile.library_file IS 'A file in the librarian.';
+
+
+CREATE SEQUENCE public.charmfile_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.charmfile_id_seq OWNED BY public.charmfile.id;
+
+
+CREATE TABLE public.charmrecipe (
+    id integer NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    date_last_modified timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    registrant integer NOT NULL,
+    owner integer NOT NULL,
+    project integer NOT NULL,
+    name text NOT NULL,
+    description text,
+    git_repository integer,
+    git_path text,
+    build_path text,
+    require_virtualized boolean DEFAULT true NOT NULL,
+    information_type integer NOT NULL,
+    access_policy integer,
+    access_grants integer[],
+    auto_build boolean DEFAULT false NOT NULL,
+    auto_build_channels jsonb,
+    is_stale boolean DEFAULT true NOT NULL,
+    store_upload boolean DEFAULT false NOT NULL,
+    store_name text,
+    store_secrets text,
+    store_channels jsonb,
+    CONSTRAINT consistent_git_ref CHECK (((git_repository IS NULL) = (git_path IS NULL))),
+    CONSTRAINT consistent_store_upload CHECK (((NOT store_upload) OR (store_name IS NOT NULL))),
+    CONSTRAINT valid_name CHECK (public.valid_name(name))
+);
+
+
+COMMENT ON TABLE public.charmrecipe IS 'A charm recipe.';
+
+
+COMMENT ON COLUMN public.charmrecipe.registrant IS 'The person who registered this charm recipe.';
+
+
+COMMENT ON COLUMN public.charmrecipe.owner IS 'The owner of this charm recipe.';
+
+
+COMMENT ON COLUMN public.charmrecipe.project IS 'The project that this charm recipe belongs to.';
+
+
+COMMENT ON COLUMN public.charmrecipe.name IS 'The name of the charm recipe, unique per owner and project.';
+
+
+COMMENT ON COLUMN public.charmrecipe.description IS 'A description of the charm recipe.';
+
+
+COMMENT ON COLUMN public.charmrecipe.git_repository IS 'A Git repository with a branch containing a charmcraft.yaml recipe.';
+
+
+COMMENT ON COLUMN public.charmrecipe.git_path IS 'The path of the Git branch containing a charmcraft.yaml recipe.';
+
+
+COMMENT ON COLUMN public.charmrecipe.build_path IS 'Subdirectory within the branch containing charmcraft.yaml.';
+
+
+COMMENT ON COLUMN public.charmrecipe.require_virtualized IS 'If True, this snap package must be built only on a virtual machine.';
+
+
+COMMENT ON COLUMN public.charmrecipe.information_type IS 'Enum describing what type of information is stored, such as type of private or security related data, and used to determine how to apply an access policy.';
+
+
+COMMENT ON COLUMN public.charmrecipe.auto_build IS 'Whether this charm recipe is built automatically when its branch changes.';
+
+
+COMMENT ON COLUMN public.charmrecipe.auto_build_channels IS 'A dictionary mapping snap names to channels to use when building this charm recipe.';
+
+
+COMMENT ON COLUMN public.charmrecipe.is_stale IS 'True if this charm recipe has not been built since a branch was updated.';
+
+
+COMMENT ON COLUMN public.charmrecipe.store_upload IS 'Whether builds of this charm recipe are automatically uploaded to the store.';
+
+
+COMMENT ON COLUMN public.charmrecipe.store_name IS 'The registered name of this charm in the store.';
+
+
+COMMENT ON COLUMN public.charmrecipe.store_secrets IS 'Serialized secrets issued by the store and the login service to authorize uploads of this charm.';
+
+
+COMMENT ON COLUMN public.charmrecipe.store_channels IS 'Channels to release this charm to after uploading it to the store.';
+
+
+CREATE SEQUENCE public.charmrecipe_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.charmrecipe_id_seq OWNED BY public.charmrecipe.id;
+
+
+CREATE TABLE public.charmrecipebuild (
+    id integer NOT NULL,
+    build_request integer NOT NULL,
+    requester integer NOT NULL,
+    recipe integer NOT NULL,
+    distro_arch_series integer NOT NULL,
+    channels jsonb,
+    processor integer NOT NULL,
+    virtualized boolean NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    date_started timestamp without time zone,
+    date_finished timestamp without time zone,
+    date_first_dispatched timestamp without time zone,
+    builder integer,
+    status integer NOT NULL,
+    log integer,
+    upload_log integer,
+    dependencies text,
+    failure_count integer DEFAULT 0 NOT NULL,
+    build_farm_job integer NOT NULL,
+    revision_id text,
+    store_upload_json_data jsonb
+);
+
+
+COMMENT ON TABLE public.charmrecipebuild IS 'A build record for a charm recipe.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.build_request IS 'The build request that caused this build to be created.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.requester IS 'The person who requested this charm recipe build.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.recipe IS 'The charm recipe to build.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.distro_arch_series IS 'The distroarchseries that the charm recipe should build from.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.channels IS 'A dictionary mapping snap names to channels to use for this build.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.processor IS 'The processor that the charm recipe should be built for.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.virtualized IS 'The virtualization setting required by this build farm job.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.date_created IS 'When the build farm job record was created.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.date_started IS 'When the build farm job started being processed.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.date_finished IS 'When the build farm job finished being processed.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.date_first_dispatched IS 'The instant the build was dispatched the first time.  This value will not get overridden if the build is retried.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.builder IS 'The builder which processed this build farm job.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.status IS 'The current build status.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.log IS 'The log file for this build farm job stored in the librarian.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.upload_log IS 'The upload log file for this build farm job stored in the librarian.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.dependencies IS 'A Debian-like dependency line specifying the current missing dependencies for this build.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.failure_count IS 'The number of consecutive failures on this job.  If excessive, the job may be terminated.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.build_farm_job IS 'The build farm job with the base information.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.revision_id IS 'The revision ID of the branch used for this build, if available.';
+
+
+COMMENT ON COLUMN public.charmrecipebuild.store_upload_json_data IS 'Data that is related to the process of uploading a build to the store.';
+
+
+CREATE SEQUENCE public.charmrecipebuild_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.charmrecipebuild_id_seq OWNED BY public.charmrecipebuild.id;
+
+
+CREATE TABLE public.charmrecipebuildjob (
+    job integer NOT NULL,
+    build integer NOT NULL,
+    job_type integer NOT NULL,
+    json_data jsonb NOT NULL
+);
+
+
+COMMENT ON TABLE public.charmrecipebuildjob IS 'Contains references to jobs that are executed for a build of a charm recipe.';
+
+
+COMMENT ON COLUMN public.charmrecipebuildjob.job IS 'A reference to a Job row that has all the common job details.';
+
+
+COMMENT ON COLUMN public.charmrecipebuildjob.build IS 'The charm recipe build that this job is for.';
+
+
+COMMENT ON COLUMN public.charmrecipebuildjob.job_type IS 'The type of a job, such as a store upload.';
+
+
+COMMENT ON COLUMN public.charmrecipebuildjob.json_data IS 'Data that is specific to a particular job type.';
+
+
+CREATE TABLE public.charmrecipejob (
+    job integer NOT NULL,
+    recipe integer NOT NULL,
+    job_type integer NOT NULL,
+    json_data jsonb NOT NULL
+);
+
+
+COMMENT ON TABLE public.charmrecipejob IS 'Contains references to jobs that are executed for a charm recipe.';
+
+
+COMMENT ON COLUMN public.charmrecipejob.job IS 'A reference to a Job row that has all the common job details.';
+
+
+COMMENT ON COLUMN public.charmrecipejob.recipe IS 'The charm recipe that this job is for.';
+
+
+COMMENT ON COLUMN public.charmrecipejob.job_type IS 'The type of a job, such as a build request.';
+
+
+COMMENT ON COLUMN public.charmrecipejob.json_data IS 'Data that is specific to a particular job type.';
+
+
+CREATE TABLE public.cibuild (
+    id integer NOT NULL,
+    git_repository integer NOT NULL,
+    commit_sha1 character(40) NOT NULL,
+    distro_arch_series integer NOT NULL,
+    processor integer NOT NULL,
+    virtualized boolean NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    date_started timestamp without time zone,
+    date_finished timestamp without time zone,
+    date_first_dispatched timestamp without time zone,
+    builder integer,
+    status integer NOT NULL,
+    log integer,
+    upload_log integer,
+    dependencies text,
+    failure_count integer DEFAULT 0 NOT NULL,
+    build_farm_job integer NOT NULL,
+    jobs jsonb
+);
+
+
+COMMENT ON TABLE public.cibuild IS 'A build record for a CI job.';
+
+
+COMMENT ON COLUMN public.cibuild.git_repository IS 'The Git repository for this CI job.';
+
+
+COMMENT ON COLUMN public.cibuild.commit_sha1 IS 'The Git commit ID for this CI job.';
+
+
+COMMENT ON COLUMN public.cibuild.distro_arch_series IS 'The distroarchseries that this CI job should run on.';
+
+
+COMMENT ON COLUMN public.cibuild.processor IS 'The processor that this CI job should run on.';
+
+
+COMMENT ON COLUMN public.cibuild.virtualized IS 'The virtualization setting required by this build farm job.';
+
+
+COMMENT ON COLUMN public.cibuild.date_created IS 'When the build farm job record was created.';
+
+
+COMMENT ON COLUMN public.cibuild.date_started IS 'When the build farm job started being processed.';
+
+
+COMMENT ON COLUMN public.cibuild.date_finished IS 'When the build farm job finished being processed.';
+
+
+COMMENT ON COLUMN public.cibuild.date_first_dispatched IS 'The instant the build was dispatched the first time.  This value will not get overridden if the build is retried.';
+
+
+COMMENT ON COLUMN public.cibuild.builder IS 'The builder which processed this build farm job.';
+
+
+COMMENT ON COLUMN public.cibuild.status IS 'The current build status.';
+
+
+COMMENT ON COLUMN public.cibuild.log IS 'The log file for this build farm job stored in the librarian.';
+
+
+COMMENT ON COLUMN public.cibuild.upload_log IS 'The upload log file for this build farm job stored in the librarian.';
+
+
+COMMENT ON COLUMN public.cibuild.failure_count IS 'The number of consecutive failures on this job.  If excessive, the job may be terminated.';
+
+
+COMMENT ON COLUMN public.cibuild.build_farm_job IS 'The build farm job with the base information.';
+
+
+COMMENT ON COLUMN public.cibuild.jobs IS 'The status of the individual jobs in this CI build.';
+
+
+CREATE SEQUENCE public.cibuild_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.cibuild_id_seq OWNED BY public.cibuild.id;
+
+
 CREATE TABLE public.codeimport (
     id integer NOT NULL,
     branch integer,
@@ -6265,9 +6861,9 @@ CREATE TABLE public.codeimport (
     CONSTRAINT valid_source_target_vcs_pairing CHECK (((branch IS NOT NULL) OR (rcs_type = 4))),
     CONSTRAINT valid_vcs_details CHECK (
 CASE
-    WHEN (rcs_type = 1) THEN (((((cvs_root IS NOT NULL) AND (cvs_root <> ''::text)) AND (cvs_module IS NOT NULL)) AND (cvs_module <> ''::text)) AND (url IS NULL))
-    WHEN (rcs_type = ANY (ARRAY[2, 3])) THEN ((((cvs_root IS NULL) AND (cvs_module IS NULL)) AND (url IS NOT NULL)) AND public.valid_absolute_url(url))
-    WHEN (rcs_type = ANY (ARRAY[4, 5, 6])) THEN (((cvs_root IS NULL) AND (cvs_module IS NULL)) AND (url IS NOT NULL))
+    WHEN (rcs_type = 1) THEN ((cvs_root IS NOT NULL) AND (cvs_root <> ''::text) AND (cvs_module IS NOT NULL) AND (cvs_module <> ''::text) AND (url IS NULL))
+    WHEN (rcs_type = ANY (ARRAY[2, 3])) THEN ((cvs_root IS NULL) AND (cvs_module IS NULL) AND (url IS NOT NULL) AND public.valid_absolute_url(url))
+    WHEN (rcs_type = ANY (ARRAY[4, 5, 6])) THEN ((cvs_root IS NULL) AND (cvs_module IS NULL) AND (url IS NOT NULL))
     ELSE false
 END)
 );
@@ -6404,9 +7000,9 @@ CREATE TABLE public.codeimportjob (
     date_started timestamp without time zone,
     CONSTRAINT valid_state CHECK (
 CASE
-    WHEN (state = 10) THEN (((((machine IS NULL) AND (ordering IS NULL)) AND (heartbeat IS NULL)) AND (date_started IS NULL)) AND (logtail IS NULL))
-    WHEN (state = 20) THEN (((((machine IS NOT NULL) AND (ordering IS NOT NULL)) AND (heartbeat IS NULL)) AND (date_started IS NULL)) AND (logtail IS NULL))
-    WHEN (state = 30) THEN (((((machine IS NOT NULL) AND (ordering IS NULL)) AND (heartbeat IS NOT NULL)) AND (date_started IS NOT NULL)) AND (logtail IS NOT NULL))
+    WHEN (state = 10) THEN ((machine IS NULL) AND (ordering IS NULL) AND (heartbeat IS NULL) AND (date_started IS NULL) AND (logtail IS NULL))
+    WHEN (state = 20) THEN ((machine IS NOT NULL) AND (ordering IS NOT NULL) AND (heartbeat IS NULL) AND (date_started IS NULL) AND (logtail IS NULL))
+    WHEN (state = 30) THEN ((machine IS NOT NULL) AND (ordering IS NULL) AND (heartbeat IS NOT NULL) AND (date_started IS NOT NULL) AND (logtail IS NOT NULL))
     ELSE false
 END)
 );
@@ -6637,7 +7233,9 @@ CREATE VIEW public.combinedbugsummary AS
     bugsummary.milestone,
     bugsummary.importance,
     bugsummary.has_patch,
-    bugsummary.access_policy
+    bugsummary.access_policy,
+    bugsummary.ociproject,
+    bugsummary.ociprojectseries
    FROM public.bugsummary
 UNION ALL
  SELECT (- bugsummaryjournal.id) AS id,
@@ -6653,7 +7251,9 @@ UNION ALL
     bugsummaryjournal.milestone,
     bugsummaryjournal.importance,
     bugsummaryjournal.has_patch,
-    bugsummaryjournal.access_policy
+    bugsummaryjournal.access_policy,
+    bugsummaryjournal.ociproject,
+    bugsummaryjournal.ociprojectseries
    FROM public.bugsummaryjournal;
 
 
@@ -6664,11 +7264,13 @@ CREATE TABLE public.commercialsubscription (
     date_starts timestamp without time zone NOT NULL,
     date_expires timestamp without time zone NOT NULL,
     status integer DEFAULT 10 NOT NULL,
-    product integer NOT NULL,
+    product integer,
     registrant integer NOT NULL,
     purchaser integer NOT NULL,
     whiteboard text,
-    sales_system_id text
+    sales_system_id text,
+    distribution integer,
+    CONSTRAINT one_pillar CHECK ((public.null_count(ARRAY[product, distribution]) = 1))
 );
 
 
@@ -6703,6 +7305,9 @@ COMMENT ON COLUMN public.commercialsubscription.whiteboard IS 'A place for admin
 
 
 COMMENT ON COLUMN public.commercialsubscription.sales_system_id IS 'A reference in the external sales system (e.g. Salesforce) that can be used to identify this subscription.';
+
+
+COMMENT ON COLUMN public.commercialsubscription.distribution IS 'The distribution this subscription enables.';
 
 
 CREATE SEQUENCE public.commercialsubscription_id_seq
@@ -6872,6 +7477,9 @@ CREATE TABLE public.cve (
     datecreated timestamp without time zone DEFAULT timezone('UTC'::text, ('now'::text)::timestamp(6) with time zone) NOT NULL,
     datemodified timestamp without time zone DEFAULT timezone('UTC'::text, ('now'::text)::timestamp(6) with time zone) NOT NULL,
     fti public.ts2_tsvector,
+    date_made_public timestamp without time zone,
+    discoverer integer,
+    cvss jsonb,
     CONSTRAINT valid_cve_ref CHECK (public.valid_cve(sequence))
 );
 
@@ -6886,6 +7494,15 @@ COMMENT ON COLUMN public.cve.status IS 'The current status of the CVE. The value
 
 
 COMMENT ON COLUMN public.cve.datemodified IS 'The last time this CVE entry changed in some way - including addition or modification of references.';
+
+
+COMMENT ON COLUMN public.cve.date_made_public IS 'The date on which the CVE was made public.';
+
+
+COMMENT ON COLUMN public.cve.discoverer IS 'The person who discovered this CVE.';
+
+
+COMMENT ON COLUMN public.cve.cvss IS 'The CVSS score for this CVE.';
 
 
 CREATE SEQUENCE public.cve_id_seq
@@ -7094,6 +7711,17 @@ CREATE TABLE public.distribution (
     supports_ppas boolean DEFAULT false NOT NULL,
     supports_mirrors boolean DEFAULT false NOT NULL,
     vcs integer,
+    oci_project_admin integer,
+    default_traversal_policy integer DEFAULT 0 NOT NULL,
+    redirect_default_traversal boolean DEFAULT false NOT NULL,
+    oci_credentials integer,
+    branch_sharing_policy integer DEFAULT 1 NOT NULL,
+    bug_sharing_policy integer DEFAULT 1 NOT NULL,
+    specification_sharing_policy integer DEFAULT 1 NOT NULL,
+    information_type integer DEFAULT 1 NOT NULL,
+    access_policies integer[],
+    security_admin integer,
+    CONSTRAINT distribution__valid_information_type CHECK ((information_type = ANY (ARRAY[1, 5, 6]))),
     CONSTRAINT only_launchpad_has_expiration CHECK (((enable_bug_expiration IS FALSE) OR (official_malone IS TRUE))),
     CONSTRAINT valid_name CHECK (public.valid_name(name))
 );
@@ -7205,6 +7833,30 @@ COMMENT ON COLUMN public.distribution.development_series_alias IS 'If set, an al
 COMMENT ON COLUMN public.distribution.vcs IS 'An enumeration specifying the default version control system for this distribution.';
 
 
+COMMENT ON COLUMN public.distribution.oci_project_admin IS 'Person or team with privileges to manage OCI Projects.';
+
+
+COMMENT ON COLUMN public.distribution.oci_credentials IS 'Credentials and URL to use for uploading all OCI Images in this distribution to a registry.';
+
+
+COMMENT ON COLUMN public.distribution.branch_sharing_policy IS 'Sharing policy for this distribution''s branches.';
+
+
+COMMENT ON COLUMN public.distribution.bug_sharing_policy IS 'Sharing policy for this distribution''s bugs.';
+
+
+COMMENT ON COLUMN public.distribution.specification_sharing_policy IS 'Sharing policy for this distribution''s specifications.';
+
+
+COMMENT ON COLUMN public.distribution.information_type IS 'Enum describing what type of information is stored, such as type of private or security related data, and used to determine how to apply an access policy.';
+
+
+COMMENT ON COLUMN public.distribution.access_policies IS 'Cache of AccessPolicy.ids that convey launchpad.LimitedView.';
+
+
+COMMENT ON COLUMN public.distribution.security_admin IS 'The person or team responsible for managing security vulnerabilities in this distribution.';
+
+
 CREATE SEQUENCE public.distribution_id_seq
     START WITH 1
     INCREMENT BY 1
@@ -7273,9 +7925,11 @@ CREATE TABLE public.distributionmirror (
     date_reviewed timestamp without time zone,
     reviewer integer,
     country_dns_mirror boolean DEFAULT false NOT NULL,
-    CONSTRAINT one_or_more_urls CHECK ((((http_base_url IS NOT NULL) OR (ftp_base_url IS NOT NULL)) OR (rsync_base_url IS NOT NULL))),
+    https_base_url text,
+    CONSTRAINT one_or_more_urls CHECK (((http_base_url IS NOT NULL) OR (https_base_url IS NOT NULL) OR (ftp_base_url IS NOT NULL) OR (rsync_base_url IS NOT NULL))),
     CONSTRAINT valid_ftp_base_url CHECK (public.valid_absolute_url(ftp_base_url)),
     CONSTRAINT valid_http_base_url CHECK (public.valid_absolute_url(http_base_url)),
+    CONSTRAINT valid_https_base_url CHECK (public.valid_absolute_url(https_base_url)),
     CONSTRAINT valid_name CHECK (public.valid_name(name)),
     CONSTRAINT valid_rsync_base_url CHECK (public.valid_absolute_url(rsync_base_url))
 );
@@ -7339,6 +7993,9 @@ COMMENT ON COLUMN public.distributionmirror.reviewer IS 'The person who reviewed
 
 
 COMMENT ON COLUMN public.distributionmirror.country_dns_mirror IS 'Is the mirror a country DNS mirror?';
+
+
+COMMENT ON COLUMN public.distributionmirror.https_base_url IS 'The HTTPS URL used to access the mirror.';
 
 
 CREATE SEQUENCE public.distributionmirror_id_seq
@@ -7501,6 +8158,50 @@ CREATE SEQUENCE public.distroarchseries_id_seq
 
 
 ALTER SEQUENCE public.distroarchseries_id_seq OWNED BY public.distroarchseries.id;
+
+
+CREATE TABLE public.distroarchseriesfilter (
+    id integer NOT NULL,
+    distroarchseries integer NOT NULL,
+    packageset integer NOT NULL,
+    sense integer NOT NULL,
+    creator integer NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    date_last_modified timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL
+);
+
+
+COMMENT ON TABLE public.distroarchseriesfilter IS 'A filter for packages to be included in or excluded from an architecture in a distro series.';
+
+
+COMMENT ON COLUMN public.distroarchseriesfilter.distroarchseries IS 'The distro arch series that this filter is for.';
+
+
+COMMENT ON COLUMN public.distroarchseriesfilter.packageset IS 'The package set to be included in or excluded from this distro arch series.';
+
+
+COMMENT ON COLUMN public.distroarchseriesfilter.sense IS 'Whether the filter represents packages to include or exclude from the distro arch series.';
+
+
+COMMENT ON COLUMN public.distroarchseriesfilter.creator IS 'The user who created this filter.';
+
+
+COMMENT ON COLUMN public.distroarchseriesfilter.date_created IS 'The time when this filter was created.';
+
+
+COMMENT ON COLUMN public.distroarchseriesfilter.date_last_modified IS 'The time when this filter was last modified.';
+
+
+CREATE SEQUENCE public.distroarchseriesfilter_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.distroarchseriesfilter_id_seq OWNED BY public.distroarchseriesfilter.id;
 
 
 CREATE TABLE public.distroseries (
@@ -8222,8 +8923,16 @@ CREATE TABLE public.gitrepository (
     reviewer integer,
     default_branch text,
     repository_type integer NOT NULL,
-    CONSTRAINT default_implies_target CHECK ((((project IS NOT NULL) OR (distribution IS NOT NULL)) OR ((NOT owner_default) AND (NOT target_default)))),
-    CONSTRAINT one_container CHECK ((((project IS NULL) OR (distribution IS NULL)) AND ((distribution IS NULL) = (sourcepackagename IS NULL)))),
+    deletion_status integer,
+    ociprojectname integer,
+    oci_project integer,
+    status integer DEFAULT 2 NOT NULL,
+    loose_object_count integer,
+    pack_count integer,
+    date_last_repacked timestamp without time zone,
+    date_last_scanned timestamp without time zone,
+    CONSTRAINT default_implies_target CHECK (((project IS NOT NULL) OR (distribution IS NOT NULL) OR (oci_project IS NOT NULL) OR ((NOT owner_default) AND (NOT target_default)))),
+    CONSTRAINT one_container CHECK ((((project IS NULL) AND (distribution IS NOT NULL) AND (sourcepackagename IS NULL) AND (ociprojectname IS NOT NULL)) OR ((project IS NOT NULL) AND (distribution IS NULL) AND (sourcepackagename IS NULL) AND (oci_project IS NULL) AND (ociprojectname IS NULL)) OR ((project IS NULL) AND (distribution IS NOT NULL) AND (sourcepackagename IS NOT NULL) AND (oci_project IS NULL) AND (ociprojectname IS NULL)) OR ((project IS NULL) AND (distribution IS NULL) AND (sourcepackagename IS NULL) AND (oci_project IS NOT NULL) AND (ociprojectname IS NULL)) OR ((project IS NULL) AND (distribution IS NULL) AND (sourcepackagename IS NULL) AND (oci_project IS NULL)))),
     CONSTRAINT valid_name CHECK (public.valid_git_repository_name(name))
 );
 
@@ -8268,6 +8977,21 @@ COMMENT ON COLUMN public.gitrepository.default_branch IS 'The reference path of 
 
 
 COMMENT ON COLUMN public.gitrepository.repository_type IS 'Repositories are currently one of HOSTED (1) or IMPORTED (3).';
+
+
+COMMENT ON COLUMN public.gitrepository.deletion_status IS 'The deletion status of this repository.';
+
+
+COMMENT ON COLUMN public.gitrepository.ociprojectname IS 'Deprecated column. Check one_container and default_implies_target constraints before removing.';
+
+
+COMMENT ON COLUMN public.gitrepository.status IS 'The current status of this git repository.';
+
+
+COMMENT ON COLUMN public.gitrepository.date_last_repacked IS 'The datetime that the last repack request was executed successfully on Turnip.';
+
+
+COMMENT ON COLUMN public.gitrepository.date_last_scanned IS 'The datetime that packs and loose_objects were last updated for this repository.';
 
 
 CREATE SEQUENCE public.gitrepository_id_seq
@@ -8908,7 +9632,7 @@ CREATE TABLE public.hwtestanswer (
     comment text,
     language integer,
     submission integer NOT NULL,
-    CONSTRAINT hwtestanswer_check CHECK (((((choice IS NULL) AND (unit IS NOT NULL)) AND ((intval IS NULL) <> (floatval IS NULL))) OR ((((choice IS NOT NULL) AND (unit IS NULL)) AND (intval IS NULL)) AND (floatval IS NULL))))
+    CONSTRAINT hwtestanswer_check CHECK ((((choice IS NULL) AND (unit IS NOT NULL) AND ((intval IS NULL) <> (floatval IS NULL))) OR ((choice IS NOT NULL) AND (unit IS NULL) AND (intval IS NULL) AND (floatval IS NULL))))
 );
 
 
@@ -8977,7 +9701,7 @@ CREATE TABLE public.hwtestanswercount (
     sum_square double precision,
     unit text,
     num_answers integer NOT NULL,
-    CONSTRAINT hwtestanswercount_check CHECK ((((((choice IS NULL) AND (average IS NOT NULL)) AND (sum_square IS NOT NULL)) AND (unit IS NOT NULL)) OR ((((choice IS NOT NULL) AND (average IS NULL)) AND (sum_square IS NULL)) AND (unit IS NULL))))
+    CONSTRAINT hwtestanswercount_check CHECK ((((choice IS NULL) AND (average IS NOT NULL) AND (sum_square IS NOT NULL) AND (unit IS NOT NULL)) OR ((choice IS NOT NULL) AND (average IS NULL) AND (sum_square IS NULL) AND (unit IS NULL))))
 );
 
 
@@ -9348,7 +10072,6 @@ ALTER SEQUENCE public.karmaaction_id_seq OWNED BY public.karmaaction.id;
 
 
 CREATE TABLE public.karmacache (
-    id integer NOT NULL,
     person integer NOT NULL,
     category integer,
     karmavalue integer NOT NULL,
@@ -9356,6 +10079,7 @@ CREATE TABLE public.karmacache (
     distribution integer,
     sourcepackagename integer,
     project integer,
+    id bigint NOT NULL,
     CONSTRAINT just_distribution CHECK (((distribution IS NULL) OR ((product IS NULL) AND (project IS NULL)))),
     CONSTRAINT just_product CHECK (((product IS NULL) OR ((project IS NULL) AND (distribution IS NULL)))),
     CONSTRAINT just_project CHECK (((project IS NULL) OR ((product IS NULL) AND (distribution IS NULL)))),
@@ -9802,6 +10526,7 @@ CREATE TABLE public.livefs (
     json_data text,
     require_virtualized boolean DEFAULT true NOT NULL,
     relative_build_score integer DEFAULT 0 NOT NULL,
+    keep_binary_files_interval interval DEFAULT '1 day'::interval,
     CONSTRAINT valid_name CHECK (public.valid_name(name))
 );
 
@@ -9828,6 +10553,9 @@ COMMENT ON COLUMN public.livefs.require_virtualized IS 'If True, this live files
 
 
 COMMENT ON COLUMN public.livefs.relative_build_score IS 'A delta to the build score that is applied to all builds of this live filesystem.';
+
+
+COMMENT ON COLUMN public.livefs.keep_binary_files_interval IS 'Keep binary files attached to builds of this live filesystem for at least this long.';
 
 
 CREATE SEQUENCE public.livefs_id_seq
@@ -10192,7 +10920,9 @@ CREATE TABLE public.message (
     rfc822msgid text NOT NULL,
     fti public.ts2_tsvector,
     raw integer,
-    visible boolean DEFAULT true NOT NULL
+    visible boolean DEFAULT true NOT NULL,
+    date_deleted timestamp without time zone,
+    date_last_edited timestamp without time zone
 )
 WITH (fillfactor='100');
 
@@ -10314,6 +11044,74 @@ CREATE SEQUENCE public.messagechunk_id_seq
 
 
 ALTER SEQUENCE public.messagechunk_id_seq OWNED BY public.messagechunk.id;
+
+
+CREATE TABLE public.messagerevision (
+    id integer NOT NULL,
+    message integer NOT NULL,
+    revision integer NOT NULL,
+    subject text,
+    date_created timestamp without time zone NOT NULL,
+    date_deleted timestamp without time zone
+)
+WITH (fillfactor='100');
+
+
+COMMENT ON TABLE public.messagerevision IS 'Old versions of an edited Message';
+
+
+COMMENT ON COLUMN public.messagerevision.message IS 'The current message of this revision';
+
+
+COMMENT ON COLUMN public.messagerevision.revision IS 'The revision monotonic increasing number';
+
+
+COMMENT ON COLUMN public.messagerevision.date_created IS 'When the original message was edited and created this revision';
+
+
+COMMENT ON COLUMN public.messagerevision.date_deleted IS 'If this revision was deleted, when did that happen';
+
+
+CREATE SEQUENCE public.messagerevision_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.messagerevision_id_seq OWNED BY public.messagerevision.id;
+
+
+CREATE TABLE public.messagerevisionchunk (
+    id integer NOT NULL,
+    messagerevision integer NOT NULL,
+    sequence integer NOT NULL,
+    content text NOT NULL
+)
+WITH (fillfactor='100');
+
+
+COMMENT ON TABLE public.messagerevisionchunk IS 'Old chunks of a message when a revision was created for it';
+
+
+COMMENT ON COLUMN public.messagerevisionchunk.sequence IS 'Order of this particular chunk';
+
+
+COMMENT ON COLUMN public.messagerevisionchunk.content IS 'Text content for this chunk of the message.';
+
+
+CREATE SEQUENCE public.messagerevisionchunk_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.messagerevisionchunk_id_seq OWNED BY public.messagerevisionchunk.id;
 
 
 CREATE TABLE public.milestone (
@@ -10742,6 +11540,513 @@ CREATE SEQUENCE public.oauthrequesttoken_id_seq
 ALTER SEQUENCE public.oauthrequesttoken_id_seq OWNED BY public.oauthrequesttoken.id;
 
 
+CREATE TABLE public.ocifile (
+    id integer NOT NULL,
+    build integer NOT NULL,
+    library_file integer NOT NULL,
+    layer_file_digest character(80),
+    date_last_used timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL
+);
+
+
+COMMENT ON TABLE public.ocifile IS 'A link between an OCI recipe build and a file in the librarian that it produces.';
+
+
+COMMENT ON COLUMN public.ocifile.build IS 'The OCI recipe build producing this file.';
+
+
+COMMENT ON COLUMN public.ocifile.library_file IS 'A file in the librarian.';
+
+
+COMMENT ON COLUMN public.ocifile.layer_file_digest IS 'Content-addressable hash of the file''s contents, used for reassembling image layers when pushing a build to a registry.  This hash is in an opaque format generated by the OCI build tool.';
+
+
+COMMENT ON COLUMN public.ocifile.date_last_used IS 'The datetime this file was last used in a build.';
+
+
+CREATE SEQUENCE public.ocifile_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.ocifile_id_seq OWNED BY public.ocifile.id;
+
+
+CREATE TABLE public.ociproject (
+    id integer NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    date_last_modified timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    registrant integer NOT NULL,
+    distribution integer,
+    ociprojectname integer NOT NULL,
+    description text,
+    bug_reporting_guidelines text,
+    bug_reported_acknowledgement text,
+    enable_bugfiling_duplicate_search boolean DEFAULT true NOT NULL,
+    project integer,
+    CONSTRAINT one_container CHECK (((project IS NULL) <> (distribution IS NULL)))
+);
+
+
+COMMENT ON TABLE public.ociproject IS 'A project containing Open Container Initiative recipes.';
+
+
+COMMENT ON COLUMN public.ociproject.date_created IS 'The date on which this OCI project was created in Launchpad.';
+
+
+COMMENT ON COLUMN public.ociproject.date_last_modified IS 'The date on which this OCI project was last modified in Launchpad.';
+
+
+COMMENT ON COLUMN public.ociproject.registrant IS 'The user who registered this OCI project.';
+
+
+COMMENT ON COLUMN public.ociproject.distribution IS 'The distribution that this OCI project belongs to.';
+
+
+COMMENT ON COLUMN public.ociproject.ociprojectname IS 'The name of this OCI project.';
+
+
+COMMENT ON COLUMN public.ociproject.description IS 'A short description of this OCI project.';
+
+
+COMMENT ON COLUMN public.ociproject.bug_reporting_guidelines IS 'Guidelines to the end user for reporting bugs on this OCI project';
+
+
+COMMENT ON COLUMN public.ociproject.bug_reported_acknowledgement IS 'A message of acknowledgement to display to a bug reporter after they''ve reported a new bug.';
+
+
+COMMENT ON COLUMN public.ociproject.enable_bugfiling_duplicate_search IS 'Enable/disable a search for possible duplicates when a bug is filed.';
+
+
+COMMENT ON COLUMN public.ociproject.project IS 'The project that this OCI project is associated with.';
+
+
+CREATE SEQUENCE public.ociproject_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.ociproject_id_seq OWNED BY public.ociproject.id;
+
+
+CREATE TABLE public.ociprojectname (
+    id integer NOT NULL,
+    name text NOT NULL,
+    CONSTRAINT valid_name CHECK (public.valid_name(name))
+);
+
+
+COMMENT ON TABLE public.ociprojectname IS 'A name of an Open Container Initiative project.';
+
+
+COMMENT ON COLUMN public.ociprojectname.name IS 'A lowercase name identifying an OCI project.';
+
+
+CREATE SEQUENCE public.ociprojectname_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.ociprojectname_id_seq OWNED BY public.ociprojectname.id;
+
+
+CREATE TABLE public.ociprojectseries (
+    id integer NOT NULL,
+    ociproject integer NOT NULL,
+    name text NOT NULL,
+    summary text NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    registrant integer NOT NULL,
+    status integer DEFAULT 2 NOT NULL,
+    CONSTRAINT valid_name CHECK (public.valid_name(name))
+);
+
+
+COMMENT ON TABLE public.ociprojectseries IS 'A series of an Open Container Initiative project, used to allow tracking bugs against multiple versions of images.';
+
+
+COMMENT ON COLUMN public.ociprojectseries.ociproject IS 'The OCI project that this series belongs to.';
+
+
+COMMENT ON COLUMN public.ociprojectseries.name IS 'The name of this series.';
+
+
+COMMENT ON COLUMN public.ociprojectseries.summary IS 'A brief summary of this series.';
+
+
+COMMENT ON COLUMN public.ociprojectseries.date_created IS 'The date on which this series was created in Launchpad.';
+
+
+COMMENT ON COLUMN public.ociprojectseries.registrant IS 'The user who registered this series.';
+
+
+COMMENT ON COLUMN public.ociprojectseries.status IS 'The current status of this series.';
+
+
+CREATE SEQUENCE public.ociprojectseries_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.ociprojectseries_id_seq OWNED BY public.ociprojectseries.id;
+
+
+CREATE TABLE public.ocipushrule (
+    id integer NOT NULL,
+    recipe integer NOT NULL,
+    registry_credentials integer NOT NULL,
+    image_name text NOT NULL
+);
+
+
+COMMENT ON TABLE public.ocipushrule IS 'A rule for pushing builds of an OCI recipe to a registry.';
+
+
+COMMENT ON COLUMN public.ocipushrule.recipe IS 'The recipe for which the rule is defined.';
+
+
+COMMENT ON COLUMN public.ocipushrule.registry_credentials IS 'The registry credentials to use.';
+
+
+COMMENT ON COLUMN public.ocipushrule.image_name IS 'The intended name of the image on the registry.';
+
+
+CREATE SEQUENCE public.ocipushrule_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.ocipushrule_id_seq OWNED BY public.ocipushrule.id;
+
+
+CREATE TABLE public.ocirecipe (
+    id integer NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    date_last_modified timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    registrant integer NOT NULL,
+    owner integer NOT NULL,
+    oci_project integer NOT NULL,
+    name text NOT NULL,
+    description text,
+    official boolean DEFAULT false NOT NULL,
+    git_repository integer,
+    git_path text,
+    build_file text NOT NULL,
+    require_virtualized boolean DEFAULT true NOT NULL,
+    build_daily boolean DEFAULT false NOT NULL,
+    allow_internet boolean DEFAULT true NOT NULL,
+    build_path text DEFAULT '.'::text NOT NULL,
+    build_args jsonb,
+    image_name text,
+    information_type integer,
+    access_policy integer,
+    access_grants integer[],
+    CONSTRAINT consistent_git_ref CHECK (((git_repository IS NULL) = (git_path IS NULL)))
+);
+
+
+COMMENT ON TABLE public.ocirecipe IS 'A recipe for building Open Container Initiative images.';
+
+
+COMMENT ON COLUMN public.ocirecipe.date_created IS 'The date on which this recipe was created in Launchpad.';
+
+
+COMMENT ON COLUMN public.ocirecipe.date_last_modified IS 'The date on which this recipe was last modified in Launchpad.';
+
+
+COMMENT ON COLUMN public.ocirecipe.registrant IS 'The user who registered this recipe.';
+
+
+COMMENT ON COLUMN public.ocirecipe.owner IS 'The owner of the recipe.';
+
+
+COMMENT ON COLUMN public.ocirecipe.oci_project IS 'The OCI project that this recipe is for.';
+
+
+COMMENT ON COLUMN public.ocirecipe.name IS 'The name of this recipe.';
+
+
+COMMENT ON COLUMN public.ocirecipe.description IS 'A short description of this recipe.';
+
+
+COMMENT ON COLUMN public.ocirecipe.official IS 'True if this recipe is official for its OCI project.';
+
+
+COMMENT ON COLUMN public.ocirecipe.git_repository IS 'A Git repository with a branch containing an OCI recipe.';
+
+
+COMMENT ON COLUMN public.ocirecipe.git_path IS 'The branch within this recipe''s Git repository where its build files are maintained.';
+
+
+COMMENT ON COLUMN public.ocirecipe.build_file IS 'The relative path to the file within this recipe''s branch that defines how to build the recipe.';
+
+
+COMMENT ON COLUMN public.ocirecipe.require_virtualized IS 'If True, this recipe must be built only on a virtual machine.';
+
+
+COMMENT ON COLUMN public.ocirecipe.build_daily IS 'If True, this recipe should be built daily.';
+
+
+COMMENT ON COLUMN public.ocirecipe.allow_internet IS 'If True, builds of this OCIRecipe may allow access to external network resources.';
+
+
+COMMENT ON COLUMN public.ocirecipe.build_path IS 'Directory to use for build context and OCIRecipe.build_file location.';
+
+
+COMMENT ON COLUMN public.ocirecipe.build_args IS 'ARGs to be used when building the OCI Recipe.';
+
+
+COMMENT ON COLUMN public.ocirecipe.image_name IS 'Image name to use on upload to registry.';
+
+
+COMMENT ON COLUMN public.ocirecipe.information_type IS 'Enum describing what type of information is stored, such as type of private or security related data, and used to determine to apply an access policy.';
+
+
+CREATE SEQUENCE public.ocirecipe_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.ocirecipe_id_seq OWNED BY public.ocirecipe.id;
+
+
+CREATE TABLE public.ocirecipearch (
+    recipe integer NOT NULL,
+    processor integer NOT NULL
+);
+
+
+COMMENT ON TABLE public.ocirecipearch IS 'The architectures an OCI recipe should be built for.';
+
+
+COMMENT ON COLUMN public.ocirecipearch.recipe IS 'The OCI recipe for which an architecture is specified.';
+
+
+COMMENT ON COLUMN public.ocirecipearch.processor IS 'The architecture for which the OCI recipe should be built.';
+
+
+CREATE TABLE public.ocirecipebuild (
+    id integer NOT NULL,
+    requester integer NOT NULL,
+    recipe integer NOT NULL,
+    processor integer NOT NULL,
+    virtualized boolean NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    date_started timestamp without time zone,
+    date_finished timestamp without time zone,
+    date_first_dispatched timestamp without time zone,
+    builder integer,
+    status integer NOT NULL,
+    log integer,
+    upload_log integer,
+    dependencies text,
+    failure_count integer DEFAULT 0 NOT NULL,
+    build_farm_job integer NOT NULL,
+    build_request integer
+);
+
+
+COMMENT ON TABLE public.ocirecipebuild IS 'A build record for an OCI recipe.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.requester IS 'The person who requested this OCI recipe build.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.recipe IS 'The OCI recipe to build.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.processor IS 'The processor that the OCI recipe should be built for.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.virtualized IS 'The virtualization setting required by this build farm job.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.date_created IS 'When the build farm job record was created.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.date_started IS 'When the build farm job started being processed.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.date_finished IS 'When the build farm job finished being processed.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.date_first_dispatched IS 'The instant the build was dispatched the first time.  This value will not get overridden if the build is retried.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.builder IS 'The builder which processed this build farm job.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.status IS 'The current build status.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.log IS 'The log file for this build farm job stored in the librarian.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.upload_log IS 'The upload log file for this build farm job stored in the librarian.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.dependencies IS 'A Debian-like dependency line specifying the current missing dependencies for this build.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.failure_count IS 'The number of consecutive failures on this job.  If excessive, the job may be terminated.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.build_farm_job IS 'The build farm job with the base information.';
+
+
+COMMENT ON COLUMN public.ocirecipebuild.build_request IS 'The build request that caused this build to be created.';
+
+
+CREATE SEQUENCE public.ocirecipebuild_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.ocirecipebuild_id_seq OWNED BY public.ocirecipebuild.id;
+
+
+CREATE TABLE public.ocirecipebuildjob (
+    job integer NOT NULL,
+    build integer NOT NULL,
+    job_type integer NOT NULL,
+    json_data jsonb NOT NULL
+);
+
+
+COMMENT ON TABLE public.ocirecipebuildjob IS 'Contains references to jobs that are executed for a build of an OCI recipe.';
+
+
+COMMENT ON COLUMN public.ocirecipebuildjob.job IS 'A reference to a Job row that has all the common job details.';
+
+
+COMMENT ON COLUMN public.ocirecipebuildjob.build IS 'The OCI recipe build that this job is for.';
+
+
+COMMENT ON COLUMN public.ocirecipebuildjob.job_type IS 'The type of a job, such as a registry push.';
+
+
+COMMENT ON COLUMN public.ocirecipebuildjob.json_data IS 'Data that is specific to a particular job type.';
+
+
+CREATE TABLE public.ocirecipejob (
+    job integer NOT NULL,
+    recipe integer NOT NULL,
+    job_type integer NOT NULL,
+    json_data jsonb NOT NULL
+);
+
+
+COMMENT ON TABLE public.ocirecipejob IS 'Contains references to jobs that are executed for an OCI Recipe.';
+
+
+COMMENT ON COLUMN public.ocirecipejob.job IS 'A reference to a Job row that has all the common job details.';
+
+
+COMMENT ON COLUMN public.ocirecipejob.recipe IS 'The OCI recipe that this job is for.';
+
+
+COMMENT ON COLUMN public.ocirecipejob.job_type IS 'The type of a job, such as a build request.';
+
+
+COMMENT ON COLUMN public.ocirecipejob.json_data IS 'Data that is specific to a particular job type.';
+
+
+CREATE TABLE public.ocirecipesubscription (
+    id integer NOT NULL,
+    recipe integer NOT NULL,
+    person integer NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    subscribed_by integer NOT NULL
+);
+
+
+COMMENT ON TABLE public.ocirecipesubscription IS 'Person subscription for OCI recipe.';
+
+
+COMMENT ON COLUMN public.ocirecipesubscription.recipe IS 'The OCI recipe to which the person subscribed.';
+
+
+COMMENT ON COLUMN public.ocirecipesubscription.person IS 'The person who subscribed to the OCI recipe.';
+
+
+COMMENT ON COLUMN public.ocirecipesubscription.date_created IS 'When the subscription was created.';
+
+
+COMMENT ON COLUMN public.ocirecipesubscription.subscribed_by IS 'The person performing the action of subscribing someone to the OCI recipe.';
+
+
+CREATE SEQUENCE public.ocirecipesubscription_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.ocirecipesubscription_id_seq OWNED BY public.ocirecipesubscription.id;
+
+
+CREATE TABLE public.ociregistrycredentials (
+    id integer NOT NULL,
+    owner integer NOT NULL,
+    url text NOT NULL,
+    credentials jsonb NOT NULL
+);
+
+
+COMMENT ON TABLE public.ociregistrycredentials IS 'Credentials for pushing to an OCI registry.';
+
+
+COMMENT ON COLUMN public.ociregistrycredentials.owner IS 'The owner of these credentials.  Only the owner is entitled to create push rules using them.';
+
+
+COMMENT ON COLUMN public.ociregistrycredentials.url IS 'The registry URL.';
+
+
+COMMENT ON COLUMN public.ociregistrycredentials.credentials IS 'Encrypted credentials for pushing to the registry.';
+
+
+CREATE SEQUENCE public.ociregistrycredentials_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.ociregistrycredentials_id_seq OWNED BY public.ociregistrycredentials.id;
+
+
 CREATE TABLE public.officialbugtag (
     id integer NOT NULL,
     tag text NOT NULL,
@@ -11094,7 +12399,6 @@ CREATE TABLE public.packageupload (
     pocket integer NOT NULL,
     changesfile integer,
     date_created timestamp without time zone DEFAULT timezone('UTC'::text, now()) NOT NULL,
-    signing_key integer,
     archive integer NOT NULL,
     package_copy_job integer,
     searchable_names text NOT NULL,
@@ -11192,6 +12496,29 @@ CREATE SEQUENCE public.packageuploadcustom_id_seq
 
 
 ALTER SEQUENCE public.packageuploadcustom_id_seq OWNED BY public.packageuploadcustom.id;
+
+
+CREATE TABLE public.packageuploadlog (
+    id integer NOT NULL,
+    package_upload integer NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    reviewer integer NOT NULL,
+    old_status integer NOT NULL,
+    new_status integer NOT NULL,
+    comment text
+);
+
+
+CREATE SEQUENCE public.packageuploadlog_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.packageuploadlog_id_seq OWNED BY public.packageuploadlog.id;
 
 
 CREATE TABLE public.packageuploadsource (
@@ -11299,7 +12626,7 @@ CREATE TABLE public.packagingjob (
     sourcepackagename integer,
     distroseries integer,
     potemplate integer,
-    CONSTRAINT translationtemplatejob_valid_link CHECK ((((((potemplate IS NOT NULL) AND (productseries IS NULL)) AND (distroseries IS NULL)) AND (sourcepackagename IS NULL)) OR ((((potemplate IS NULL) AND (productseries IS NOT NULL)) AND (distroseries IS NOT NULL)) AND (sourcepackagename IS NOT NULL))))
+    CONSTRAINT translationtemplatejob_valid_link CHECK ((((potemplate IS NOT NULL) AND (productseries IS NULL) AND (distroseries IS NULL) AND (sourcepackagename IS NULL)) OR ((potemplate IS NULL) AND (productseries IS NOT NULL) AND (distroseries IS NOT NULL) AND (sourcepackagename IS NOT NULL))))
 );
 
 
@@ -12981,7 +14308,6 @@ CREATE TABLE public.revision (
     date_created timestamp without time zone DEFAULT timezone('UTC'::text, ('now'::text)::timestamp(6) with time zone) NOT NULL,
     log_body text NOT NULL,
     revision_author integer NOT NULL,
-    gpgkey integer,
     revision_id text NOT NULL,
     revision_date timestamp without time zone,
     karma_allocated boolean DEFAULT false,
@@ -13129,6 +14455,103 @@ CREATE SEQUENCE public.revisionproperty_id_seq
 
 
 ALTER SEQUENCE public.revisionproperty_id_seq OWNED BY public.revisionproperty.id;
+
+
+CREATE TABLE public.revisionstatusartifact (
+    id integer NOT NULL,
+    report integer NOT NULL,
+    type integer NOT NULL,
+    library_file integer NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL
+);
+
+
+COMMENT ON TABLE public.revisionstatusartifact IS 'An artifact produced by a status check for a code revision.';
+
+
+COMMENT ON COLUMN public.revisionstatusartifact.report IS 'A link back to the report that the artifact was produced by.';
+
+
+COMMENT ON COLUMN public.revisionstatusartifact.type IS 'The artifact type produced by the check job.';
+
+
+COMMENT ON COLUMN public.revisionstatusartifact.library_file IS 'LibraryFileAlias storing the contents of the artifact.';
+
+
+CREATE SEQUENCE public.revisionstatusartifact_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.revisionstatusartifact_id_seq OWNED BY public.revisionstatusartifact.id;
+
+
+CREATE TABLE public.revisionstatusreport (
+    id integer NOT NULL,
+    git_repository integer NOT NULL,
+    commit_sha1 character(40) NOT NULL,
+    name text NOT NULL,
+    url text,
+    description text,
+    result integer,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    creator integer NOT NULL,
+    date_started timestamp without time zone,
+    date_finished timestamp without time zone,
+    ci_build integer
+);
+
+
+COMMENT ON TABLE public.revisionstatusreport IS 'A status check for a code revision.';
+
+
+COMMENT ON COLUMN public.revisionstatusreport.git_repository IS 'The Git repository for this report..';
+
+
+COMMENT ON COLUMN public.revisionstatusreport.commit_sha1 IS 'The commit sha1 for the report.';
+
+
+COMMENT ON COLUMN public.revisionstatusreport.name IS 'Name of the report.';
+
+
+COMMENT ON COLUMN public.revisionstatusreport.url IS 'External URL to view result of report.';
+
+
+COMMENT ON COLUMN public.revisionstatusreport.description IS 'Text description of the result.';
+
+
+COMMENT ON COLUMN public.revisionstatusreport.result IS 'The result of the check job for this revision.';
+
+
+COMMENT ON COLUMN public.revisionstatusreport.date_created IS 'DateTime that report was created.';
+
+
+COMMENT ON COLUMN public.revisionstatusreport.creator IS 'The person that created the report.';
+
+
+COMMENT ON COLUMN public.revisionstatusreport.date_started IS 'DateTime that report was started.';
+
+
+COMMENT ON COLUMN public.revisionstatusreport.date_finished IS 'DateTime that report was completed.';
+
+
+COMMENT ON COLUMN public.revisionstatusreport.ci_build IS 'The CI build that produced this report.';
+
+
+CREATE SEQUENCE public.revisionstatusreport_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.revisionstatusreport_id_seq OWNED BY public.revisionstatusreport.id;
 
 
 CREATE TABLE public.scriptactivity (
@@ -13306,15 +14729,23 @@ ALTER SEQUENCE public.sharingjob_id_seq OWNED BY public.sharingjob.id;
 CREATE TABLE public.signedcodeofconduct (
     id integer NOT NULL,
     owner integer NOT NULL,
-    signingkey integer,
     datecreated timestamp without time zone DEFAULT timezone('UTC'::text, ('now'::text)::timestamp(6) with time zone) NOT NULL,
     signedcode text,
     recipient integer,
     active boolean DEFAULT false NOT NULL,
     admincomment text,
     signing_key_fingerprint text,
+    affirmed boolean DEFAULT false NOT NULL,
+    version text,
+    CONSTRAINT only_one_method CHECK (((NOT affirmed) OR (signing_key_fingerprint IS NULL))),
     CONSTRAINT valid_signing_key_fingerprint CHECK (((signing_key_fingerprint IS NULL) OR public.valid_fingerprint(signing_key_fingerprint)))
 );
+
+
+COMMENT ON COLUMN public.signedcodeofconduct.affirmed IS 'Code of conduct was affirmed via website interaction.';
+
+
+COMMENT ON COLUMN public.signedcodeofconduct.version IS 'Version of the Code of Conduct that was signed.';
 
 
 CREATE SEQUENCE public.signedcodeofconduct_id_seq
@@ -13326,6 +14757,28 @@ CREATE SEQUENCE public.signedcodeofconduct_id_seq
 
 
 ALTER SEQUENCE public.signedcodeofconduct_id_seq OWNED BY public.signedcodeofconduct.id;
+
+
+CREATE TABLE public.signingkey (
+    id integer NOT NULL,
+    key_type integer NOT NULL,
+    description text,
+    fingerprint text NOT NULL,
+    public_key bytea NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL
+);
+
+
+CREATE SEQUENCE public.signingkey_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.signingkey_id_seq OWNED BY public.signingkey.id;
 
 
 CREATE TABLE public.snap (
@@ -13355,6 +14808,10 @@ CREATE TABLE public.snap (
     auto_build_channels text,
     allow_internet boolean DEFAULT true NOT NULL,
     build_source_tarball boolean DEFAULT false NOT NULL,
+    information_type integer,
+    project integer,
+    access_policy integer,
+    access_grants integer[],
     CONSTRAINT consistent_auto_build CHECK (((NOT auto_build) OR ((auto_build_archive IS NOT NULL) AND (auto_build_pocket IS NOT NULL)))),
     CONSTRAINT consistent_git_ref CHECK ((((git_repository IS NULL) AND (git_repository_url IS NULL)) = (git_path IS NULL))),
     CONSTRAINT consistent_store_upload CHECK (((NOT store_upload) OR ((store_series IS NOT NULL) AND (store_name IS NOT NULL)))),
@@ -13394,7 +14851,7 @@ COMMENT ON COLUMN public.snap.git_path IS 'The path of the Git branch containing
 COMMENT ON COLUMN public.snap.require_virtualized IS 'If True, this snap package must be built only on a virtual machine.';
 
 
-COMMENT ON COLUMN public.snap.private IS 'Whether or not this snap is private.';
+COMMENT ON COLUMN public.snap.private IS '(DEPRECATED; use Snap.information_type) Whether or not this snap is private.';
 
 
 COMMENT ON COLUMN public.snap.store_upload IS 'Whether builds of this snap package are automatically uploaded to the store.';
@@ -13434,6 +14891,12 @@ COMMENT ON COLUMN public.snap.allow_internet IS 'If True, builds of this snap ma
 
 
 COMMENT ON COLUMN public.snap.build_source_tarball IS 'If true, builds of this snap should also build a tarball containing all source code, including external dependencies.';
+
+
+COMMENT ON COLUMN public.snap.information_type IS 'Enum describing what type of information is stored, such as type of private or security related data, and used to determine to apply an access policy.';
+
+
+COMMENT ON COLUMN public.snap.project IS 'The project which is the pillar for this Snap';
 
 
 CREATE SEQUENCE public.snap_id_seq
@@ -13510,6 +14973,21 @@ CREATE SEQUENCE public.snapbase_id_seq
 ALTER SEQUENCE public.snapbase_id_seq OWNED BY public.snapbase.id;
 
 
+CREATE TABLE public.snapbasearch (
+    snap_base integer NOT NULL,
+    processor integer NOT NULL
+);
+
+
+COMMENT ON TABLE public.snapbasearch IS 'The architectures that a snap base supports.';
+
+
+COMMENT ON COLUMN public.snapbasearch.snap_base IS 'The snap base for which a supported architecture is specified.';
+
+
+COMMENT ON COLUMN public.snapbasearch.processor IS 'A supported architecture for this snap base.';
+
+
 CREATE TABLE public.snapbuild (
     id integer NOT NULL,
     requester integer NOT NULL,
@@ -13533,7 +15011,10 @@ CREATE TABLE public.snapbuild (
     revision_id text,
     channels text,
     build_request integer,
-    store_upload_json_data text
+    store_upload_json_data text,
+    snap_base integer,
+    store_upload_revision integer,
+    target_architectures text[]
 );
 
 
@@ -13601,6 +15082,15 @@ COMMENT ON COLUMN public.snapbuild.build_request IS 'The build request that caus
 
 
 COMMENT ON COLUMN public.snapbuild.store_upload_json_data IS 'Data that is related to the process of uploading a build to the store.';
+
+
+COMMENT ON COLUMN public.snapbuild.snap_base IS 'The snap base to use for this build.';
+
+
+COMMENT ON COLUMN public.snapbuild.store_upload_revision IS 'The revision number assigned to this build on the last store upload.';
+
+
+COMMENT ON COLUMN public.snapbuild.target_architectures IS 'A list of target architectures for a snap build.';
 
 
 CREATE SEQUENCE public.snapbuild_id_seq
@@ -13757,6 +15247,42 @@ CREATE SEQUENCE public.snappyseries_id_seq
 ALTER SEQUENCE public.snappyseries_id_seq OWNED BY public.snappyseries.id;
 
 
+CREATE TABLE public.snapsubscription (
+    id integer NOT NULL,
+    snap integer NOT NULL,
+    person integer NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    subscribed_by integer NOT NULL
+);
+
+
+COMMENT ON TABLE public.snapsubscription IS 'Person subscription for Snap recipes.';
+
+
+COMMENT ON COLUMN public.snapsubscription.snap IS 'The Snap recipe to which the person subscribed.';
+
+
+COMMENT ON COLUMN public.snapsubscription.person IS 'The person who subscribed to the Snap.';
+
+
+COMMENT ON COLUMN public.snapsubscription.date_created IS 'When the subscription was created.';
+
+
+COMMENT ON COLUMN public.snapsubscription.subscribed_by IS 'The person performing the action of subscribing someone to the Snap.';
+
+
+CREATE SEQUENCE public.snapsubscription_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.snapsubscription_id_seq OWNED BY public.snapsubscription.id;
+
+
 CREATE TABLE public.sourcepackageformatselection (
     id integer NOT NULL,
     distroseries integer NOT NULL,
@@ -13800,8 +15326,8 @@ CREATE TABLE public.sourcepackagepublishinghistory (
     sourcepackagerelease integer NOT NULL,
     distroseries integer NOT NULL,
     status integer NOT NULL,
-    component integer NOT NULL,
-    section integer NOT NULL,
+    component integer,
+    section integer,
     datecreated timestamp without time zone NOT NULL,
     datepublished timestamp without time zone,
     datesuperseded timestamp without time zone,
@@ -13817,7 +15343,12 @@ CREATE TABLE public.sourcepackagepublishinghistory (
     sourcepackagename integer NOT NULL,
     creator integer,
     sponsor integer,
-    packageupload integer
+    packageupload integer,
+    copied_from_archive integer,
+    format integer,
+    channel jsonb,
+    CONSTRAINT debian_columns CHECK (((COALESCE(format, 1) <> 1) OR ((component IS NOT NULL) AND (section IS NOT NULL)))),
+    CONSTRAINT no_debian_channel CHECK (((COALESCE(format, 1) <> 1) OR (channel IS NULL)))
 );
 
 
@@ -14051,7 +15582,7 @@ CREATE TABLE public.sourcepackagerecipedatainstruction (
     source_directory text,
     git_repository integer,
     CONSTRAINT one_vcs CHECK (((branch IS NOT NULL) <> (git_repository IS NOT NULL))),
-    CONSTRAINT sourcepackagerecipedatainstruction__directory_not_null CHECK ((((type = 3) OR ((type = 1) AND (directory IS NULL))) OR ((type = 2) AND (directory IS NOT NULL)))),
+    CONSTRAINT sourcepackagerecipedatainstruction__directory_not_null CHECK (((type = 3) OR ((type = 1) AND (directory IS NULL)) OR ((type = 2) AND (directory IS NOT NULL)))),
     CONSTRAINT sourcepackagerecipedatainstruction__source_directory_null CHECK ((((type = ANY (ARRAY[1, 2])) AND (source_directory IS NULL)) OR ((type = 3) AND (source_directory IS NOT NULL))))
 );
 
@@ -14135,22 +15666,21 @@ CREATE TABLE public.sourcepackagerelease (
     creator integer NOT NULL,
     version public.debversion NOT NULL,
     dateuploaded timestamp without time zone DEFAULT timezone('UTC'::text, ('now'::text)::timestamp(6) with time zone) NOT NULL,
-    urgency integer NOT NULL,
-    dscsigningkey integer,
-    component integer NOT NULL,
+    urgency integer,
+    component integer,
     changelog_entry text,
     builddepends text,
     builddependsindep text,
     architecturehintlist text NOT NULL,
     dsc text,
-    section integer NOT NULL,
-    maintainer integer NOT NULL,
+    section integer,
+    maintainer integer,
     sourcepackagename integer NOT NULL,
     upload_distroseries integer NOT NULL,
     format integer NOT NULL,
     dsc_maintainer_rfc822 text,
     dsc_standards_version text,
-    dsc_format text NOT NULL,
+    dsc_format text,
     dsc_binaries text,
     upload_archive integer,
     copyright text,
@@ -14163,6 +15693,9 @@ CREATE TABLE public.sourcepackagerelease (
     signing_key_owner integer,
     signing_key_fingerprint text,
     buildinfo integer,
+    ci_build integer,
+    CONSTRAINT at_most_one_build CHECK ((public.null_count(ARRAY[sourcepackage_recipe_build, ci_build]) >= 1)),
+    CONSTRAINT debian_columns CHECK (((format <> 1) OR ((component IS NOT NULL) AND (section IS NOT NULL) AND (urgency IS NOT NULL) AND (dsc_format IS NOT NULL)))),
     CONSTRAINT valid_signing_key_fingerprint CHECK (((signing_key_fingerprint IS NULL) OR public.valid_fingerprint(signing_key_fingerprint))),
     CONSTRAINT valid_version CHECK (public.valid_debian_version((version)::text))
 );
@@ -14198,12 +15731,6 @@ COMMENT ON COLUMN public.sourcepackagerelease.urgency IS 'The urgency of the
 upload. This is generally used to prioritise buildd activity but may also be
 used for "testing" systems or security work in the future. The "urgency" is
 set by the uploader, in the DSC file.';
-
-
-COMMENT ON COLUMN public.sourcepackagerelease.dscsigningkey IS 'The GPG key used to
-sign the DSC. This is not necessarily the maintainer''s key, or the
-creator''s key. For example, it''s possible to produce a package, then ask a
-sponsor to upload it.';
 
 
 COMMENT ON COLUMN public.sourcepackagerelease.component IS 'The component in which
@@ -14375,7 +15902,7 @@ CREATE TABLE public.specification (
     CONSTRAINT product_and_productseries CHECK (((productseries IS NULL) OR (product IS NOT NULL))),
     CONSTRAINT product_xor_distribution CHECK (((product IS NULL) <> (distribution IS NULL))),
     CONSTRAINT specification_completion_fully_recorded_chk CHECK (((date_completed IS NULL) = (completer IS NULL))),
-    CONSTRAINT specification_completion_recorded_chk CHECK (((date_completed IS NULL) <> (((implementation_status = 90) OR (definition_status = ANY (ARRAY[60, 70]))) OR ((implementation_status = 95) AND (definition_status = 10))))),
+    CONSTRAINT specification_completion_recorded_chk CHECK (((date_completed IS NULL) <> ((implementation_status = 90) OR (definition_status = ANY (ARRAY[60, 70])) OR ((implementation_status = 95) AND (definition_status = 10))))),
     CONSTRAINT specification_decision_recorded CHECK (((goalstatus = 30) OR ((goal_decider IS NOT NULL) AND (date_goal_decided IS NOT NULL)))),
     CONSTRAINT specification_goal_nomination_chk CHECK ((((productseries IS NULL) AND (distroseries IS NULL)) OR ((goal_proposer IS NOT NULL) AND (date_goal_proposed IS NOT NULL)))),
     CONSTRAINT specification_not_self_superseding CHECK ((superseded_by <> id)),
@@ -15420,7 +16947,7 @@ CREATE VIEW public.validpersoncache AS
    FROM public.emailaddress,
     public.person,
     public.account
-  WHERE ((((emailaddress.person = person.id) AND (person.account = account.id)) AND (emailaddress.status = 4)) AND (account.status = 20));
+  WHERE ((emailaddress.person = person.id) AND (person.account = account.id) AND (emailaddress.status = 4) AND (account.status = 20));
 
 
 COMMENT ON VIEW public.validpersoncache IS 'A materialized view listing the Person.ids of all valid people (but not teams).';
@@ -15431,7 +16958,7 @@ CREATE VIEW public.validpersonorteamcache AS
    FROM ((public.person
      LEFT JOIN public.emailaddress ON ((person.id = emailaddress.person)))
      LEFT JOIN public.account ON ((person.account = account.id)))
-  WHERE (((person.teamowner IS NOT NULL) AND (person.merged IS NULL)) OR (((person.teamowner IS NULL) AND (account.status = 20)) AND (emailaddress.status = 4)));
+  WHERE (((person.teamowner IS NOT NULL) AND (person.merged IS NULL)) OR ((person.teamowner IS NULL) AND (account.status = 20) AND (emailaddress.status = 4)));
 
 
 CREATE TABLE public.vote (
@@ -15500,6 +17027,118 @@ CREATE SEQUENCE public.votecast_id_seq
 ALTER SEQUENCE public.votecast_id_seq OWNED BY public.votecast.id;
 
 
+CREATE TABLE public.vulnerability (
+    id integer NOT NULL,
+    distribution integer NOT NULL,
+    cve integer,
+    status integer NOT NULL,
+    description text,
+    notes text,
+    mitigation text,
+    importance integer NOT NULL,
+    importance_explanation text,
+    information_type integer DEFAULT 1 NOT NULL,
+    date_created timestamp without time zone DEFAULT timezone('UTC'::text, CURRENT_TIMESTAMP) NOT NULL,
+    creator integer NOT NULL,
+    date_made_public timestamp without time zone
+);
+
+
+COMMENT ON TABLE public.vulnerability IS 'Expresses the notion of whether a CVE affects a distribution.';
+
+
+COMMENT ON COLUMN public.vulnerability.distribution IS 'The distribution affected by this vulnerability.';
+
+
+COMMENT ON COLUMN public.vulnerability.cve IS 'The external CVE reference corresponding to this vulnerability, if any.';
+
+
+COMMENT ON COLUMN public.vulnerability.status IS 'Indicates current status of the vulnerability.';
+
+
+COMMENT ON COLUMN public.vulnerability.description IS 'Overrides the Cve.description.';
+
+
+COMMENT ON COLUMN public.vulnerability.notes IS 'Free-form notes.';
+
+
+COMMENT ON COLUMN public.vulnerability.mitigation IS 'Explain why we''re ignoring something.';
+
+
+COMMENT ON COLUMN public.vulnerability.importance IS 'Indicates work priority, not severity.';
+
+
+COMMENT ON COLUMN public.vulnerability.importance_explanation IS 'Used to explain why our importance differs from somebody else''s CVSS score.';
+
+
+COMMENT ON COLUMN public.vulnerability.information_type IS 'Indicates privacy of the vulnerability.';
+
+
+COMMENT ON COLUMN public.vulnerability.date_created IS 'The date when the vulnerability was created.';
+
+
+COMMENT ON COLUMN public.vulnerability.creator IS 'The person that created the vulnerability.';
+
+
+COMMENT ON COLUMN public.vulnerability.date_made_public IS 'The date this vulnerability was made public.';
+
+
+CREATE SEQUENCE public.vulnerability_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.vulnerability_id_seq OWNED BY public.vulnerability.id;
+
+
+CREATE TABLE public.vulnerabilityactivity (
+    id integer NOT NULL,
+    vulnerability integer NOT NULL,
+    changer integer NOT NULL,
+    date_changed timestamp without time zone NOT NULL,
+    what_changed integer NOT NULL,
+    old_value text,
+    new_value text
+);
+
+
+COMMENT ON TABLE public.vulnerabilityactivity IS 'Tracks changes to vulnerability rows.';
+
+
+COMMENT ON COLUMN public.vulnerabilityactivity.vulnerability IS 'The vulnerability that the changes refer to.';
+
+
+COMMENT ON COLUMN public.vulnerabilityactivity.changer IS 'The person that made the changes.';
+
+
+COMMENT ON COLUMN public.vulnerabilityactivity.date_changed IS 'The date when the vulnerability details last changed.';
+
+
+COMMENT ON COLUMN public.vulnerabilityactivity.what_changed IS 'Indicates what field changed for the vulnerability by means of an enum.';
+
+
+COMMENT ON COLUMN public.vulnerabilityactivity.old_value IS 'The value prior to the change.';
+
+
+COMMENT ON COLUMN public.vulnerabilityactivity.new_value IS 'The current value.';
+
+
+CREATE SEQUENCE public.vulnerabilityactivity_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.vulnerabilityactivity_id_seq OWNED BY public.vulnerabilityactivity.id;
+
+
 CREATE TABLE public.webhook (
     id integer NOT NULL,
     registrant integer NOT NULL,
@@ -15512,7 +17151,10 @@ CREATE TABLE public.webhook (
     git_repository integer,
     branch integer,
     snap integer,
-    CONSTRAINT one_target CHECK ((public.null_count(ARRAY[git_repository, branch, snap]) = 2))
+    livefs integer,
+    oci_recipe integer,
+    charm_recipe integer,
+    CONSTRAINT one_target CHECK ((public.null_count(ARRAY[git_repository, branch, snap, livefs, oci_recipe, charm_recipe]) = 5))
 );
 
 
@@ -15576,6 +17218,9 @@ ALTER TABLE ONLY public.accesspolicy ALTER COLUMN id SET DEFAULT nextval('public
 ALTER TABLE ONLY public.accesspolicygrantflat ALTER COLUMN id SET DEFAULT nextval('public.accesspolicygrantflat_id_seq'::regclass);
 
 
+ALTER TABLE ONLY public.accesstoken ALTER COLUMN id SET DEFAULT nextval('public.accesstoken_id_seq'::regclass);
+
+
 ALTER TABLE ONLY public.account ALTER COLUMN id SET DEFAULT nextval('public.account_id_seq'::regclass);
 
 
@@ -15609,6 +17254,9 @@ ALTER TABLE ONLY public.archivejob ALTER COLUMN id SET DEFAULT nextval('public.a
 ALTER TABLE ONLY public.archivepermission ALTER COLUMN id SET DEFAULT nextval('public.archivepermission_id_seq'::regclass);
 
 
+ALTER TABLE ONLY public.archivesigningkey ALTER COLUMN id SET DEFAULT nextval('public.archivesigningkey_id_seq'::regclass);
+
+
 ALTER TABLE ONLY public.archivesubscriber ALTER COLUMN id SET DEFAULT nextval('public.archivesubscriber_id_seq'::regclass);
 
 
@@ -15625,6 +17273,9 @@ ALTER TABLE ONLY public.binarypackagerelease ALTER COLUMN id SET DEFAULT nextval
 
 
 ALTER TABLE ONLY public.binarypackagereleasedownloadcount ALTER COLUMN id SET DEFAULT nextval('public.binarypackagereleasedownloadcount_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.binarysourcereference ALTER COLUMN id SET DEFAULT nextval('public.binarysourcereference_id_seq'::regclass);
 
 
 ALTER TABLE ONLY public.branch ALTER COLUMN id SET DEFAULT nextval('public.branch_id_seq'::regclass);
@@ -15723,6 +17374,21 @@ ALTER TABLE ONLY public.buildfarmjob ALTER COLUMN id SET DEFAULT nextval('public
 ALTER TABLE ONLY public.buildqueue ALTER COLUMN id SET DEFAULT nextval('public.buildqueue_id_seq'::regclass);
 
 
+ALTER TABLE ONLY public.charmbase ALTER COLUMN id SET DEFAULT nextval('public.charmbase_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.charmfile ALTER COLUMN id SET DEFAULT nextval('public.charmfile_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.charmrecipe ALTER COLUMN id SET DEFAULT nextval('public.charmrecipe_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.charmrecipebuild ALTER COLUMN id SET DEFAULT nextval('public.charmrecipebuild_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.cibuild ALTER COLUMN id SET DEFAULT nextval('public.cibuild_id_seq'::regclass);
+
+
 ALTER TABLE ONLY public.codeimport ALTER COLUMN id SET DEFAULT nextval('public.codeimport_id_seq'::regclass);
 
 
@@ -15790,6 +17456,9 @@ ALTER TABLE ONLY public.distributionsourcepackagecache ALTER COLUMN id SET DEFAU
 
 
 ALTER TABLE ONLY public.distroarchseries ALTER COLUMN id SET DEFAULT nextval('public.distroarchseries_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.distroarchseriesfilter ALTER COLUMN id SET DEFAULT nextval('public.distroarchseriesfilter_id_seq'::regclass);
 
 
 ALTER TABLE ONLY public.distroseries ALTER COLUMN id SET DEFAULT nextval('public.distroseries_id_seq'::regclass);
@@ -15981,6 +17650,12 @@ ALTER TABLE ONLY public.messageapproval ALTER COLUMN id SET DEFAULT nextval('pub
 ALTER TABLE ONLY public.messagechunk ALTER COLUMN id SET DEFAULT nextval('public.messagechunk_id_seq'::regclass);
 
 
+ALTER TABLE ONLY public.messagerevision ALTER COLUMN id SET DEFAULT nextval('public.messagerevision_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.messagerevisionchunk ALTER COLUMN id SET DEFAULT nextval('public.messagerevisionchunk_id_seq'::regclass);
+
+
 ALTER TABLE ONLY public.milestone ALTER COLUMN id SET DEFAULT nextval('public.milestone_id_seq'::regclass);
 
 
@@ -16009,6 +17684,33 @@ ALTER TABLE ONLY public.oauthconsumer ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 ALTER TABLE ONLY public.oauthrequesttoken ALTER COLUMN id SET DEFAULT nextval('public.oauthrequesttoken_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.ocifile ALTER COLUMN id SET DEFAULT nextval('public.ocifile_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.ociproject ALTER COLUMN id SET DEFAULT nextval('public.ociproject_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.ociprojectname ALTER COLUMN id SET DEFAULT nextval('public.ociprojectname_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.ociprojectseries ALTER COLUMN id SET DEFAULT nextval('public.ociprojectseries_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.ocipushrule ALTER COLUMN id SET DEFAULT nextval('public.ocipushrule_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.ocirecipe ALTER COLUMN id SET DEFAULT nextval('public.ocirecipe_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.ocirecipebuild ALTER COLUMN id SET DEFAULT nextval('public.ocirecipebuild_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.ocirecipesubscription ALTER COLUMN id SET DEFAULT nextval('public.ocirecipesubscription_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.ociregistrycredentials ALTER COLUMN id SET DEFAULT nextval('public.ociregistrycredentials_id_seq'::regclass);
 
 
 ALTER TABLE ONLY public.officialbugtag ALTER COLUMN id SET DEFAULT nextval('public.officialbugtag_id_seq'::regclass);
@@ -16042,6 +17744,9 @@ ALTER TABLE ONLY public.packageuploadbuild ALTER COLUMN id SET DEFAULT nextval('
 
 
 ALTER TABLE ONLY public.packageuploadcustom ALTER COLUMN id SET DEFAULT nextval('public.packageuploadcustom_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.packageuploadlog ALTER COLUMN id SET DEFAULT nextval('public.packageuploadlog_id_seq'::regclass);
 
 
 ALTER TABLE ONLY public.packageuploadsource ALTER COLUMN id SET DEFAULT nextval('public.packageuploadsource_id_seq'::regclass);
@@ -16158,6 +17863,12 @@ ALTER TABLE ONLY public.revisionparent ALTER COLUMN id SET DEFAULT nextval('publ
 ALTER TABLE ONLY public.revisionproperty ALTER COLUMN id SET DEFAULT nextval('public.revisionproperty_id_seq'::regclass);
 
 
+ALTER TABLE ONLY public.revisionstatusartifact ALTER COLUMN id SET DEFAULT nextval('public.revisionstatusartifact_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.revisionstatusreport ALTER COLUMN id SET DEFAULT nextval('public.revisionstatusreport_id_seq'::regclass);
+
+
 ALTER TABLE ONLY public.scriptactivity ALTER COLUMN id SET DEFAULT nextval('public.scriptactivity_id_seq'::regclass);
 
 
@@ -16176,6 +17887,9 @@ ALTER TABLE ONLY public.sharingjob ALTER COLUMN id SET DEFAULT nextval('public.s
 ALTER TABLE ONLY public.signedcodeofconduct ALTER COLUMN id SET DEFAULT nextval('public.signedcodeofconduct_id_seq'::regclass);
 
 
+ALTER TABLE ONLY public.signingkey ALTER COLUMN id SET DEFAULT nextval('public.signingkey_id_seq'::regclass);
+
+
 ALTER TABLE ONLY public.snap ALTER COLUMN id SET DEFAULT nextval('public.snap_id_seq'::regclass);
 
 
@@ -16192,6 +17906,9 @@ ALTER TABLE ONLY public.snappydistroseries ALTER COLUMN id SET DEFAULT nextval('
 
 
 ALTER TABLE ONLY public.snappyseries ALTER COLUMN id SET DEFAULT nextval('public.snappyseries_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.snapsubscription ALTER COLUMN id SET DEFAULT nextval('public.snapsubscription_id_seq'::regclass);
 
 
 ALTER TABLE ONLY public.sourcepackageformatselection ALTER COLUMN id SET DEFAULT nextval('public.sourcepackageformatselection_id_seq'::regclass);
@@ -16293,6 +18010,12 @@ ALTER TABLE ONLY public.vote ALTER COLUMN id SET DEFAULT nextval('public.vote_id
 ALTER TABLE ONLY public.votecast ALTER COLUMN id SET DEFAULT nextval('public.votecast_id_seq'::regclass);
 
 
+ALTER TABLE ONLY public.vulnerability ALTER COLUMN id SET DEFAULT nextval('public.vulnerability_id_seq'::regclass);
+
+
+ALTER TABLE ONLY public.vulnerabilityactivity ALTER COLUMN id SET DEFAULT nextval('public.vulnerabilityactivity_id_seq'::regclass);
+
+
 ALTER TABLE ONLY public.webhook ALTER COLUMN id SET DEFAULT nextval('public.webhook_id_seq'::regclass);
 
 
@@ -16321,6 +18044,10 @@ ALTER TABLE ONLY public.accesspolicygrant
 
 ALTER TABLE ONLY public.accesspolicygrantflat
     ADD CONSTRAINT accesspolicygrantflat_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.accesstoken
+    ADD CONSTRAINT accesstoken_pkey PRIMARY KEY (id);
 
 
 ALTER TABLE ONLY public.account
@@ -16385,6 +18112,14 @@ ALTER TABLE ONLY public.archivepermission
     ADD CONSTRAINT archivepermission_pkey PRIMARY KEY (id);
 
 
+ALTER TABLE ONLY public.archivesigningkey
+    ADD CONSTRAINT archivesigningkey__archive__key_type__earliest_distro_series__k UNIQUE (archive, key_type, earliest_distro_series);
+
+
+ALTER TABLE ONLY public.archivesigningkey
+    ADD CONSTRAINT archivesigningkey_pkey PRIMARY KEY (id);
+
+
 ALTER TABLE ONLY public.archivesubscriber
     ADD CONSTRAINT archivesubscriber_pkey PRIMARY KEY (id);
 
@@ -16417,20 +18152,16 @@ ALTER TABLE ONLY public.binarypackagename
     ADD CONSTRAINT binarypackagename_pkey PRIMARY KEY (id);
 
 
-ALTER TABLE ONLY public.binarypackagerelease
-    ADD CONSTRAINT binarypackagerelease_binarypackagename_key UNIQUE (binarypackagename, build, version);
-
-
-ALTER TABLE ONLY public.binarypackagerelease
-    ADD CONSTRAINT binarypackagerelease_build_name_uniq UNIQUE (build, binarypackagename);
-
-
 ALTER TABLE ONLY public.binarypackagereleasedownloadcount
     ADD CONSTRAINT binarypackagereleasedownloadcount__archive__binary_package_rele UNIQUE (archive, binary_package_release, day, country);
 
 
 ALTER TABLE ONLY public.binarypackagereleasedownloadcount
     ADD CONSTRAINT binarypackagereleasedownloadcount_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.binarysourcereference
+    ADD CONSTRAINT binarysourcereference_pkey PRIMARY KEY (id);
 
 
 ALTER TABLE ONLY public.branch
@@ -16687,6 +18418,38 @@ ALTER TABLE ONLY public.revision
     ADD CONSTRAINT changeset_pkey PRIMARY KEY (id);
 
 
+ALTER TABLE ONLY public.charmbase
+    ADD CONSTRAINT charmbase_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.charmbasearch
+    ADD CONSTRAINT charmbasearch_pkey PRIMARY KEY (charm_base, processor);
+
+
+ALTER TABLE ONLY public.charmfile
+    ADD CONSTRAINT charmfile_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.charmrecipe
+    ADD CONSTRAINT charmrecipe_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.charmrecipebuild
+    ADD CONSTRAINT charmrecipebuild_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.charmrecipebuildjob
+    ADD CONSTRAINT charmrecipebuildjob_pkey PRIMARY KEY (job);
+
+
+ALTER TABLE ONLY public.charmrecipejob
+    ADD CONSTRAINT charmrecipejob_pkey PRIMARY KEY (job);
+
+
+ALTER TABLE ONLY public.cibuild
+    ADD CONSTRAINT cibuild_pkey PRIMARY KEY (id);
+
+
 ALTER TABLE ONLY public.codeimport
     ADD CONSTRAINT codeimport_pkey PRIMARY KEY (id);
 
@@ -16862,6 +18625,10 @@ ALTER TABLE ONLY public.distributionmirror
 
 
 ALTER TABLE ONLY public.distributionmirror
+    ADD CONSTRAINT distributionmirror_https_base_url_key UNIQUE (https_base_url);
+
+
+ALTER TABLE ONLY public.distributionmirror
     ADD CONSTRAINT distributionmirror_name_key UNIQUE (name);
 
 
@@ -16901,6 +18668,14 @@ ALTER TABLE ONLY public.distroarchseries
 
 ALTER TABLE ONLY public.distroarchseries
     ADD CONSTRAINT distroarchseries__processor__distroseries__key UNIQUE (processor, distroseries);
+
+
+ALTER TABLE ONLY public.distroarchseriesfilter
+    ADD CONSTRAINT distroarchseriesfilter__distroarchseries__key UNIQUE (distroarchseries);
+
+
+ALTER TABLE ONLY public.distroarchseriesfilter
+    ADD CONSTRAINT distroarchseriesfilter_pkey PRIMARY KEY (id);
 
 
 ALTER TABLE ONLY public.distroseries
@@ -17397,6 +19172,14 @@ ALTER TABLE ONLY public.messagechunk
     ADD CONSTRAINT messagechunk_pkey PRIMARY KEY (id);
 
 
+ALTER TABLE ONLY public.messagerevision
+    ADD CONSTRAINT messagerevision_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.messagerevisionchunk
+    ADD CONSTRAINT messagerevisionchunk_pkey PRIMARY KEY (id);
+
+
 ALTER TABLE ONLY public.milestone
     ADD CONSTRAINT milestone_distribution_id_key UNIQUE (distribution, id);
 
@@ -17479,6 +19262,54 @@ ALTER TABLE ONLY public.oauthrequesttoken
     ADD CONSTRAINT oauthrequesttoken_pkey PRIMARY KEY (id);
 
 
+ALTER TABLE ONLY public.ocifile
+    ADD CONSTRAINT ocifile_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.ociproject
+    ADD CONSTRAINT ociproject_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.ociprojectname
+    ADD CONSTRAINT ociprojectname_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.ociprojectseries
+    ADD CONSTRAINT ociprojectseries_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.ocipushrule
+    ADD CONSTRAINT ocipushrule_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.ocirecipe
+    ADD CONSTRAINT ocirecipe_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.ocirecipearch
+    ADD CONSTRAINT ocirecipearch_pkey PRIMARY KEY (recipe, processor);
+
+
+ALTER TABLE ONLY public.ocirecipebuild
+    ADD CONSTRAINT ocirecipebuild_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.ocirecipebuildjob
+    ADD CONSTRAINT ocirecipebuildjob_pkey PRIMARY KEY (job);
+
+
+ALTER TABLE ONLY public.ocirecipejob
+    ADD CONSTRAINT ocirecipejob_pkey PRIMARY KEY (job);
+
+
+ALTER TABLE ONLY public.ocirecipesubscription
+    ADD CONSTRAINT ocirecipesubscription_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.ociregistrycredentials
+    ADD CONSTRAINT ociregistrycredentials_pkey PRIMARY KEY (id);
+
+
 ALTER TABLE ONLY public.officialbugtag
     ADD CONSTRAINT officialbugtag_pkey PRIMARY KEY (id);
 
@@ -17541,6 +19372,10 @@ ALTER TABLE ONLY public.packagesetsources
 
 ALTER TABLE ONLY public.packagesetsources
     ADD CONSTRAINT packagesetsources_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.packageuploadlog
+    ADD CONSTRAINT packageuploadlog_pkey PRIMARY KEY (id);
 
 
 ALTER TABLE ONLY public.packageuploadsource
@@ -17809,6 +19644,14 @@ ALTER TABLE ONLY public.revisionproperty
     ADD CONSTRAINT revisionproperty_pkey PRIMARY KEY (id);
 
 
+ALTER TABLE ONLY public.revisionstatusartifact
+    ADD CONSTRAINT revisionstatusartifact_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.revisionstatusreport
+    ADD CONSTRAINT revisionstatusreport_pkey PRIMARY KEY (id);
+
+
 ALTER TABLE ONLY public.scriptactivity
     ADD CONSTRAINT scriptactivity_pkey PRIMARY KEY (id);
 
@@ -17845,6 +19688,18 @@ ALTER TABLE ONLY public.signedcodeofconduct
     ADD CONSTRAINT signedcodeofconduct_pkey PRIMARY KEY (id);
 
 
+ALTER TABLE ONLY public.signingkey
+    ADD CONSTRAINT signingkey__id__key_type__key UNIQUE (id, key_type);
+
+
+ALTER TABLE ONLY public.signingkey
+    ADD CONSTRAINT signingkey__key_type__fingerprint__key UNIQUE (key_type, fingerprint);
+
+
+ALTER TABLE ONLY public.signingkey
+    ADD CONSTRAINT signingkey_pkey PRIMARY KEY (id);
+
+
 ALTER TABLE ONLY public.snap
     ADD CONSTRAINT snap__owner__name__key UNIQUE (owner, name);
 
@@ -17859,6 +19714,10 @@ ALTER TABLE ONLY public.snaparch
 
 ALTER TABLE ONLY public.snapbase
     ADD CONSTRAINT snapbase_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.snapbasearch
+    ADD CONSTRAINT snapbasearch_pkey PRIMARY KEY (snap_base, processor);
 
 
 ALTER TABLE ONLY public.snapbuild
@@ -17883,6 +19742,10 @@ ALTER TABLE ONLY public.snappydistroseries
 
 ALTER TABLE ONLY public.snappyseries
     ADD CONSTRAINT snappyseries_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.snapsubscription
+    ADD CONSTRAINT snapsubscription_pkey PRIMARY KEY (id);
 
 
 ALTER TABLE ONLY public.sourcepackageformatselection
@@ -18159,6 +20022,14 @@ ALTER TABLE ONLY public.votecast
     ADD CONSTRAINT votecast_pkey PRIMARY KEY (id);
 
 
+ALTER TABLE ONLY public.vulnerability
+    ADD CONSTRAINT vulnerability_pkey PRIMARY KEY (id);
+
+
+ALTER TABLE ONLY public.vulnerabilityactivity
+    ADD CONSTRAINT vulnerabilityactivity_pkey PRIMARY KEY (id);
+
+
 ALTER TABLE ONLY public.webhook
     ADD CONSTRAINT webhook_pkey PRIMARY KEY (id);
 
@@ -18186,6 +20057,12 @@ CREATE UNIQUE INDEX accessartifact__bug__key ON public.accessartifact USING btre
 
 
 CREATE UNIQUE INDEX accessartifact__gitrepository__key ON public.accessartifact USING btree (gitrepository) WHERE (gitrepository IS NOT NULL);
+
+
+CREATE UNIQUE INDEX accessartifact__ocirecipe__key ON public.accessartifact USING btree (ocirecipe) WHERE (ocirecipe IS NOT NULL);
+
+
+CREATE UNIQUE INDEX accessartifact__snap__key ON public.accessartifact USING btree (snap) WHERE (snap IS NOT NULL);
 
 
 CREATE UNIQUE INDEX accessartifact__specification__key ON public.accessartifact USING btree (specification) WHERE (specification IS NOT NULL);
@@ -18225,6 +20102,21 @@ CREATE UNIQUE INDEX accesspolicygrantflat__policy__grantee__artifact__key ON pub
 
 
 CREATE UNIQUE INDEX accesspolicygrantflat__policy__grantee__key ON public.accesspolicygrantflat USING btree (policy, grantee) WHERE (artifact IS NULL);
+
+
+CREATE INDEX accesstoken__date_expires__idx ON public.accesstoken USING btree (date_expires) WHERE (date_expires IS NOT NULL);
+
+
+CREATE INDEX accesstoken__git_repository__idx ON public.accesstoken USING btree (git_repository);
+
+
+CREATE INDEX accesstoken__owner__idx ON public.accesstoken USING btree (owner);
+
+
+CREATE INDEX accesstoken__revoked_by__idx ON public.accesstoken USING btree (revoked_by);
+
+
+CREATE UNIQUE INDEX accesstoken__token_sha256__key ON public.accesstoken USING btree (token_sha256);
 
 
 CREATE INDEX announcement__distribution__active__idx ON public.announcement USING btree (distribution, active) WHERE (distribution IS NOT NULL);
@@ -18291,6 +20183,9 @@ CREATE INDEX archivedependency__archive__idx ON public.archivedependency USING b
 
 
 CREATE INDEX archivedependency__dependency__idx ON public.archivedependency USING btree (dependency);
+
+
+CREATE INDEX archivedependency__snap_base__idx ON public.archivedependency USING btree (snap_base);
 
 
 CREATE INDEX archivefile__archive__container__idx ON public.archivefile USING btree (archive, container);
@@ -18410,6 +20305,9 @@ CREATE INDEX binarypackagename__name__trgm ON public.binarypackagename USING gin
 CREATE INDEX binarypackagepublishinghistory__archive__bpn__status__idx ON public.binarypackagepublishinghistory USING btree (archive, binarypackagename, status);
 
 
+CREATE INDEX binarypackagepublishinghistory__archive__bpr__idx ON public.binarypackagepublishinghistory USING btree (archive, binarypackagerelease);
+
+
 CREATE INDEX binarypackagepublishinghistory__archive__bpr__status__idx ON public.binarypackagepublishinghistory USING btree (archive, binarypackagerelease, status);
 
 
@@ -18422,16 +20320,34 @@ CREATE INDEX binarypackagepublishinghistory__archive__datecreated__id__idx ON pu
 CREATE INDEX binarypackagepublishinghistory__archive__distroarchseries__stat ON public.binarypackagepublishinghistory USING btree (archive, distroarchseries, status, binarypackagename);
 
 
+CREATE INDEX binarypackagepublishinghistory__archive__status__datepublished_ ON public.binarypackagepublishinghistory USING btree (archive, status) WHERE (datepublished IS NULL);
+
+
 CREATE INDEX binarypackagepublishinghistory__archive__status__scheduleddelet ON public.binarypackagepublishinghistory USING btree (archive, status) WHERE (scheduleddeletiondate IS NULL);
 
 
 CREATE INDEX binarypackagepublishinghistory__binarypackagename__idx ON public.binarypackagepublishinghistory USING btree (binarypackagename);
 
 
+CREATE INDEX binarypackagepublishinghistory__copied_from_archive__idx ON public.binarypackagepublishinghistory USING btree (copied_from_archive) WHERE (copied_from_archive IS NOT NULL);
+
+
+CREATE INDEX binarypackagepublishinghistory__creator__idx ON public.binarypackagepublishinghistory USING btree (creator) WHERE (creator IS NOT NULL);
+
+
 CREATE INDEX binarypackagepublishinghistory__supersededby__idx ON public.binarypackagepublishinghistory USING btree (supersededby);
 
 
 CREATE INDEX binarypackagerelease__binarypackagename__version__idx ON public.binarypackagerelease USING btree (binarypackagename, version);
+
+
+CREATE INDEX binarypackagerelease__binarypackagename__version_text__idx ON public.binarypackagerelease USING btree (binarypackagename, ((version)::text));
+
+
+CREATE UNIQUE INDEX binarypackagerelease__build__bpn__key ON public.binarypackagerelease USING btree (build, binarypackagename) WHERE (build IS NOT NULL);
+
+
+CREATE UNIQUE INDEX binarypackagerelease__ci_build__bpn__format__key ON public.binarypackagerelease USING btree (ci_build, binarypackagename, binpackageformat) WHERE (ci_build IS NOT NULL);
 
 
 CREATE UNIQUE INDEX binarypackagerelease__debug_package__key ON public.binarypackagerelease USING btree (debug_package);
@@ -18441,6 +20357,18 @@ CREATE INDEX binarypackagerelease_build_idx ON public.binarypackagerelease USING
 
 
 CREATE INDEX binarypackagereleasedownloadcount__binary_package_release__idx ON public.binarypackagereleasedownloadcount USING btree (binary_package_release);
+
+
+CREATE INDEX binarypackagereleasedownloadcount__index_only_scan__idx ON public.binarypackagereleasedownloadcount USING btree (archive, binary_package_release, day, country, count);
+
+
+CREATE UNIQUE INDEX binarysourcereference__bpr__spr__type__key ON public.binarysourcereference USING btree (binary_package_release, source_package_release, reference_type);
+
+
+CREATE INDEX binarysourcereference__bpr__type__idx ON public.binarysourcereference USING btree (binary_package_release, reference_type);
+
+
+CREATE INDEX binarysourcereference__spr__type__idx ON public.binarysourcereference USING btree (source_package_release, reference_type);
 
 
 CREATE UNIQUE INDEX branch__ds__spn__owner__name__key ON public.branch USING btree (distroseries, sourcepackagename, owner, name) WHERE (distroseries IS NOT NULL);
@@ -18490,6 +20418,9 @@ CREATE INDEX branchjob__branch__idx ON public.branchjob USING btree (branch);
 CREATE INDEX branchmergeproposal__dependent_branch__idx ON public.branchmergeproposal USING btree (dependent_branch);
 
 
+CREATE INDEX branchmergeproposal__dependent_git_repository__dependent_git_pa ON public.branchmergeproposal USING btree (dependent_git_repository, dependent_git_path);
+
+
 CREATE INDEX branchmergeproposal__merge_log_file__idx ON public.branchmergeproposal USING btree (merge_log_file);
 
 
@@ -18511,10 +20442,16 @@ CREATE INDEX branchmergeproposal__reviewer__idx ON public.branchmergeproposal US
 CREATE INDEX branchmergeproposal__source_branch__idx ON public.branchmergeproposal USING btree (source_branch);
 
 
+CREATE INDEX branchmergeproposal__source_git_repository__source_git_path__id ON public.branchmergeproposal USING btree (source_git_repository, source_git_path);
+
+
 CREATE INDEX branchmergeproposal__superseded_by__idx ON public.branchmergeproposal USING btree (superseded_by) WHERE (superseded_by IS NOT NULL);
 
 
 CREATE INDEX branchmergeproposal__target_branch__idx ON public.branchmergeproposal USING btree (target_branch);
+
+
+CREATE INDEX branchmergeproposal__target_git_repository__target_git_path__id ON public.branchmergeproposal USING btree (target_git_repository, target_git_path);
 
 
 CREATE INDEX branchmergeproposaljob__branch_merge_proposal__idx ON public.branchmergeproposaljob USING btree (branch_merge_proposal);
@@ -18688,6 +20625,12 @@ CREATE INDEX bugsummary__milestone__idx ON public.bugsummary USING btree (milest
 CREATE INDEX bugsummary__nocount__idx ON public.bugsummary USING btree (count) WHERE (count = 0);
 
 
+CREATE INDEX bugsummary__ociproject__idx ON public.bugsummary USING btree (ociproject) WHERE (ociproject IS NOT NULL);
+
+
+CREATE INDEX bugsummary__ociprojectseries__idx ON public.bugsummary USING btree (ociprojectseries) WHERE (ociprojectseries IS NOT NULL);
+
+
 CREATE INDEX bugsummary__product__idx ON public.bugsummary USING btree (product) WHERE (product IS NOT NULL);
 
 
@@ -18697,13 +20640,13 @@ CREATE INDEX bugsummary__productseries__idx ON public.bugsummary USING btree (pr
 CREATE INDEX bugsummary__status_count__idx ON public.bugsummary USING btree (status) WHERE ((sourcepackagename IS NULL) AND (tag IS NULL));
 
 
-CREATE UNIQUE INDEX bugsummary__unique ON public.bugsummary USING btree ((COALESCE(product, (-1))), (COALESCE(productseries, (-1))), (COALESCE(distribution, (-1))), (COALESCE(distroseries, (-1))), (COALESCE(sourcepackagename, (-1))), status, importance, has_patch, (COALESCE(tag, ''::text)), (COALESCE(milestone, (-1))), (COALESCE(viewed_by, (-1))), (COALESCE(access_policy, (-1))));
+CREATE UNIQUE INDEX bugsummary__unique ON public.bugsummary USING btree (COALESCE(product, '-1'::integer), COALESCE(productseries, '-1'::integer), COALESCE(distribution, '-1'::integer), COALESCE(distroseries, '-1'::integer), COALESCE(sourcepackagename, '-1'::integer), COALESCE(ociproject, '-1'::integer), COALESCE(ociprojectseries, '-1'::integer), status, importance, has_patch, COALESCE(tag, ''::text), COALESCE(milestone, '-1'::integer), COALESCE(viewed_by, '-1'::integer), COALESCE(access_policy, '-1'::integer));
 
 
 CREATE INDEX bugsummary__viewed_by__idx ON public.bugsummary USING btree (viewed_by) WHERE (viewed_by IS NOT NULL);
 
 
-CREATE INDEX bugsummaryjournal__full__idx ON public.bugsummaryjournal USING btree (status, product, productseries, distribution, distroseries, sourcepackagename, viewed_by, milestone, tag);
+CREATE INDEX bugsummaryjournal__full__idx ON public.bugsummaryjournal USING btree (status, product, productseries, distribution, distroseries, sourcepackagename, ociproject, ociprojectseries, viewed_by, milestone, tag);
 
 
 CREATE INDEX bugsummaryjournal__milestone__idx ON public.bugsummaryjournal USING btree (milestone) WHERE (milestone IS NOT NULL);
@@ -18744,10 +20687,16 @@ CREATE INDEX bugtask__distroseries__sourcepackagename__idx ON public.bugtask USI
 CREATE INDEX bugtask__milestone__idx ON public.bugtask USING btree (milestone);
 
 
+CREATE UNIQUE INDEX bugtask__ociproject__bug__key ON public.bugtask USING btree (ociproject, bug) WHERE (ociproject IS NOT NULL);
+
+
+CREATE UNIQUE INDEX bugtask__ociprojectseries__bug__key ON public.bugtask USING btree (ociprojectseries, bug) WHERE (ociprojectseries IS NOT NULL);
+
+
 CREATE INDEX bugtask__owner__idx ON public.bugtask USING btree (owner);
 
 
-CREATE UNIQUE INDEX bugtask__product__bug__key ON public.bugtask USING btree (product, bug) WHERE (product IS NOT NULL);
+CREATE UNIQUE INDEX bugtask__product__bug__key ON public.bugtask USING btree (product, bug) WHERE ((product IS NOT NULL) AND (ociproject IS NULL) AND (ociprojectseries IS NULL));
 
 
 CREATE UNIQUE INDEX bugtask__productseries__bug__key ON public.bugtask USING btree (productseries, bug) WHERE (productseries IS NOT NULL);
@@ -18759,7 +20708,7 @@ CREATE INDEX bugtask__sourcepackagename__idx ON public.bugtask USING btree (sour
 CREATE INDEX bugtask__status__idx ON public.bugtask USING btree (status);
 
 
-CREATE UNIQUE INDEX bugtask_distinct_sourcepackage_assignment ON public.bugtask USING btree (bug, (COALESCE(sourcepackagename, (-1))), (COALESCE(distroseries, (-1))), (COALESCE(distribution, (-1)))) WHERE ((product IS NULL) AND (productseries IS NULL));
+CREATE UNIQUE INDEX bugtask_distinct_sourcepackage_assignment ON public.bugtask USING btree (bug, COALESCE(sourcepackagename, '-1'::integer), COALESCE(distroseries, '-1'::integer), COALESCE(distribution, '-1'::integer)) WHERE ((product IS NULL) AND (productseries IS NULL) AND (ociproject IS NULL) AND (ociprojectseries IS NULL));
 
 
 CREATE INDEX bugtask_importance_idx ON public.bugtask USING btree (importance, id DESC);
@@ -18897,6 +20846,54 @@ CREATE INDEX bugtaskflat__latest_patch_uploaded__bugtask__idx ON public.bugtaskf
 CREATE INDEX bugtaskflat__milestone__idx ON public.bugtaskflat USING btree (milestone);
 
 
+CREATE INDEX bugtaskflat__ociproject__bug__idx ON public.bugtaskflat USING btree (ociproject, bug) WHERE (ociproject IS NOT NULL);
+
+
+CREATE INDEX bugtaskflat__ociproject__date_closed__bug__idx ON public.bugtaskflat USING btree (ociproject, date_closed, bug DESC) WHERE (ociproject IS NOT NULL);
+
+
+CREATE INDEX bugtaskflat__ociproject__date_last_updated__idx ON public.bugtaskflat USING btree (ociproject, date_last_updated) WHERE (ociproject IS NOT NULL);
+
+
+CREATE INDEX bugtaskflat__ociproject__datecreated__idx ON public.bugtaskflat USING btree (ociproject, datecreated) WHERE (ociproject IS NOT NULL);
+
+
+CREATE INDEX bugtaskflat__ociproject__heat__bug__idx ON public.bugtaskflat USING btree (ociproject, heat, bug DESC) WHERE (ociproject IS NOT NULL);
+
+
+CREATE INDEX bugtaskflat__ociproject__importance__bug__idx ON public.bugtaskflat USING btree (ociproject, importance, bug DESC) WHERE (ociproject IS NOT NULL);
+
+
+CREATE INDEX bugtaskflat__ociproject__latest_patch_uploaded__bug__idx ON public.bugtaskflat USING btree (ociproject, latest_patch_uploaded, bug DESC) WHERE (ociproject IS NOT NULL);
+
+
+CREATE INDEX bugtaskflat__ociproject__status__bug__idx ON public.bugtaskflat USING btree (ociproject, status, bug DESC) WHERE (ociproject IS NOT NULL);
+
+
+CREATE INDEX bugtaskflat__ociprojectseries__bug__idx ON public.bugtaskflat USING btree (ociprojectseries, bug) WHERE (ociprojectseries IS NOT NULL);
+
+
+CREATE INDEX bugtaskflat__ociprojectseries__date_closed__bug__idx ON public.bugtaskflat USING btree (ociprojectseries, date_closed, bug DESC) WHERE (ociprojectseries IS NOT NULL);
+
+
+CREATE INDEX bugtaskflat__ociprojectseries__date_last_updated__idx ON public.bugtaskflat USING btree (ociprojectseries, date_last_updated) WHERE (ociprojectseries IS NOT NULL);
+
+
+CREATE INDEX bugtaskflat__ociprojectseries__datecreated__idx ON public.bugtaskflat USING btree (ociprojectseries, datecreated) WHERE (ociprojectseries IS NOT NULL);
+
+
+CREATE INDEX bugtaskflat__ociprojectseries__heat__bug__idx ON public.bugtaskflat USING btree (ociprojectseries, heat, bug DESC) WHERE (ociprojectseries IS NOT NULL);
+
+
+CREATE INDEX bugtaskflat__ociprojectseries__importance__bug__idx ON public.bugtaskflat USING btree (ociprojectseries, importance, bug DESC) WHERE (ociprojectseries IS NOT NULL);
+
+
+CREATE INDEX bugtaskflat__ociprojectseries__latest_patch_uploaded__bug__idx ON public.bugtaskflat USING btree (ociprojectseries, latest_patch_uploaded, bug DESC) WHERE (ociprojectseries IS NOT NULL);
+
+
+CREATE INDEX bugtaskflat__ociprojectseries__status__bug__idx ON public.bugtaskflat USING btree (ociprojectseries, status, bug DESC) WHERE (ociprojectseries IS NOT NULL);
+
+
 CREATE INDEX bugtaskflat__owner__idx ON public.bugtaskflat USING btree (owner);
 
 
@@ -19030,6 +21027,93 @@ CREATE INDEX buildqueue__status__lastscore__id__idx ON public.buildqueue USING b
 CREATE INDEX buildqueue__status__virtualized__processor__lastscore__id__idx ON public.buildqueue USING btree (status, virtualized, processor, lastscore DESC, id);
 
 
+CREATE UNIQUE INDEX charmbase__distro_series__key ON public.charmbase USING btree (distro_series);
+
+
+CREATE INDEX charmbase__registrant__idx ON public.charmbase USING btree (registrant);
+
+
+CREATE INDEX charmfile__build__idx ON public.charmfile USING btree (build);
+
+
+CREATE INDEX charmfile__library_file__idx ON public.charmfile USING btree (library_file);
+
+
+CREATE INDEX charmrecipe__git_repository__idx ON public.charmrecipe USING btree (git_repository);
+
+
+CREATE INDEX charmrecipe__is_stale__auto_build__idx ON public.charmrecipe USING btree (is_stale, auto_build);
+
+
+CREATE UNIQUE INDEX charmrecipe__owner__project__name__key ON public.charmrecipe USING btree (owner, project, name);
+
+
+CREATE INDEX charmrecipe__project__idx ON public.charmrecipe USING btree (project);
+
+
+CREATE INDEX charmrecipe__registrant__idx ON public.charmrecipe USING btree (registrant);
+
+
+CREATE INDEX charmrecipe__store_name__idx ON public.charmrecipe USING btree (store_name);
+
+
+CREATE INDEX charmrecipebuild__build_farm_job__idx ON public.charmrecipebuild USING btree (build_farm_job);
+
+
+CREATE INDEX charmrecipebuild__build_request__idx ON public.charmrecipebuild USING btree (build_request);
+
+
+CREATE INDEX charmrecipebuild__distro_arch_series__idx ON public.charmrecipebuild USING btree (distro_arch_series);
+
+
+CREATE INDEX charmrecipebuild__log__idx ON public.charmrecipebuild USING btree (log);
+
+
+CREATE INDEX charmrecipebuild__recipe__das__status__finished__idx ON public.charmrecipebuild USING btree (recipe, distro_arch_series, status, date_finished DESC) WHERE (status = 1);
+
+
+CREATE INDEX charmrecipebuild__recipe__das__status__idx ON public.charmrecipebuild USING btree (recipe, distro_arch_series, status);
+
+
+CREATE INDEX charmrecipebuild__recipe__idx ON public.charmrecipebuild USING btree (recipe);
+
+
+CREATE INDEX charmrecipebuild__recipe__status__started__finished__created__i ON public.charmrecipebuild USING btree (recipe, status, GREATEST(date_started, date_finished) DESC NULLS LAST, date_created DESC, id DESC);
+
+
+CREATE INDEX charmrecipebuild__requester__idx ON public.charmrecipebuild USING btree (requester);
+
+
+CREATE INDEX charmrecipebuild__upload_log__idx ON public.charmrecipebuild USING btree (upload_log);
+
+
+CREATE INDEX charmrecipebuildjob__build__job_type__job__idx ON public.charmrecipebuildjob USING btree (build, job_type, job);
+
+
+CREATE INDEX charmrecipejob__recipe__job_type__job__idx ON public.charmrecipejob USING btree (recipe, job_type, job);
+
+
+CREATE INDEX cibuild__build_farm_job__idx ON public.cibuild USING btree (build_farm_job);
+
+
+CREATE INDEX cibuild__commit__das__status__idx ON public.cibuild USING btree (git_repository, commit_sha1, distro_arch_series, status);
+
+
+CREATE INDEX cibuild__commit__status__started__finished__created__id__idx ON public.cibuild USING btree (git_repository, commit_sha1, status, GREATEST(date_started, date_finished) DESC NULLS LAST, date_created DESC, id DESC);
+
+
+CREATE INDEX cibuild__distro_arch_series__idx ON public.cibuild USING btree (distro_arch_series);
+
+
+CREATE INDEX cibuild__git_repository__das__status__finished__idx ON public.cibuild USING btree (git_repository, distro_arch_series, status, date_finished DESC) WHERE (status = 1);
+
+
+CREATE INDEX cibuild__log__idx ON public.cibuild USING btree (log);
+
+
+CREATE INDEX cibuild__upload_log__idx ON public.cibuild USING btree (upload_log);
+
+
 CREATE INDEX codeimport__assignee__idx ON public.codeimport USING btree (assignee);
 
 
@@ -19102,7 +21186,10 @@ CREATE INDEX codereviewvote__reviewer__idx ON public.codereviewvote USING btree 
 CREATE INDEX codereviewvote__vote_message__idx ON public.codereviewvote USING btree (vote_message);
 
 
-CREATE INDEX commercialsubscription__product__idx ON public.commercialsubscription USING btree (product);
+CREATE UNIQUE INDEX commercialsubscription__distribution__idx ON public.commercialsubscription USING btree (distribution) WHERE (distribution IS NOT NULL);
+
+
+CREATE UNIQUE INDEX commercialsubscription__product__idx ON public.commercialsubscription USING btree (product) WHERE (product IS NOT NULL);
 
 
 CREATE INDEX commercialsubscription__purchaser__idx ON public.commercialsubscription USING btree (purchaser);
@@ -19118,6 +21205,9 @@ CREATE UNIQUE INDEX customlanguagecode__distribution__sourcepackagename__code__k
 
 
 CREATE UNIQUE INDEX customlanguagecode__product__code__key ON public.customlanguagecode USING btree (product, language_code) WHERE (product IS NOT NULL);
+
+
+CREATE INDEX cve__discoverer__idx ON public.cve USING btree (discoverer);
 
 
 CREATE INDEX cve__fti__idx ON public.cve USING gin (fti);
@@ -19159,10 +21249,16 @@ CREATE INDEX distribution__mirror_admin__idx ON public.distribution USING btree 
 CREATE INDEX distribution__mugshot__idx ON public.distribution USING btree (mugshot) WHERE (mugshot IS NOT NULL);
 
 
+CREATE INDEX distribution__oci_project_admin__idx ON public.distribution USING btree (oci_project_admin);
+
+
 CREATE INDEX distribution__owner__idx ON public.distribution USING btree (owner);
 
 
 CREATE INDEX distribution__registrant__idx ON public.distribution USING btree (registrant);
+
+
+CREATE INDEX distribution__security_admin__idx ON public.distribution USING btree (security_admin);
 
 
 CREATE UNIQUE INDEX distribution_job__initialize_series__distroseries ON public.distributionjob USING btree (distroseries) WHERE (job_type = 1);
@@ -19208,6 +21304,9 @@ CREATE INDEX distroarchseries__distroseries__idx ON public.distroarchseries USIN
 
 
 CREATE INDEX distroarchseries__owner__idx ON public.distroarchseries USING btree (owner);
+
+
+CREATE INDEX distroarchseriesfilter__packageset__idx ON public.distroarchseriesfilter USING btree (packageset);
 
 
 CREATE INDEX distroseries__driver__idx ON public.distroseries USING btree (driver) WHERE (driver IS NOT NULL);
@@ -19300,34 +21399,82 @@ CREATE INDEX flatpackagesetinclusion__child__idx ON public.flatpackagesetinclusi
 CREATE INDEX gitactivity__repository__date_changed__id__idx ON public.gitactivity USING btree (repository, date_changed DESC, id DESC);
 
 
-CREATE INDEX gitrepository__distribution__spn__date_last_modified__idx ON public.gitrepository USING btree (distribution, sourcepackagename, date_last_modified) WHERE (distribution IS NOT NULL);
+CREATE INDEX gitrepository__date_created__status__idx ON public.gitrepository USING btree (date_created) WHERE (status = 1);
 
 
-CREATE INDEX gitrepository__distribution__spn__id__idx ON public.gitrepository USING btree (distribution, sourcepackagename, id) WHERE (distribution IS NOT NULL);
+CREATE INDEX gitrepository__distribution__ocipn__date_last_modified__idx ON public.gitrepository USING btree (distribution, ociprojectname, date_last_modified) WHERE ((distribution IS NOT NULL) AND (ociprojectname IS NOT NULL));
 
 
-CREATE UNIQUE INDEX gitrepository__distribution__spn__target_default__key ON public.gitrepository USING btree (distribution, sourcepackagename) WHERE ((distribution IS NOT NULL) AND target_default);
+CREATE INDEX gitrepository__distribution__ocipn__id__idx ON public.gitrepository USING btree (distribution, ociprojectname, id) WHERE ((distribution IS NOT NULL) AND (ociprojectname IS NOT NULL));
+
+
+CREATE UNIQUE INDEX gitrepository__distribution__ocipn__target_default__key ON public.gitrepository USING btree (distribution, ociprojectname) WHERE ((distribution IS NOT NULL) AND (ociprojectname IS NOT NULL) AND target_default);
+
+
+CREATE INDEX gitrepository__distribution__spn__date_last_modified__idx ON public.gitrepository USING btree (distribution, sourcepackagename, date_last_modified) WHERE ((distribution IS NOT NULL) AND (sourcepackagename IS NOT NULL));
+
+
+CREATE INDEX gitrepository__distribution__spn__id__idx ON public.gitrepository USING btree (distribution, sourcepackagename, id) WHERE ((distribution IS NOT NULL) AND (sourcepackagename IS NOT NULL));
+
+
+CREATE UNIQUE INDEX gitrepository__distribution__spn__target_default__key ON public.gitrepository USING btree (distribution, sourcepackagename) WHERE ((distribution IS NOT NULL) AND (sourcepackagename IS NOT NULL) AND target_default);
+
+
+CREATE INDEX gitrepository__loose_object_count__pack_count__idx ON public.gitrepository USING btree (loose_object_count, pack_count);
+
+
+CREATE INDEX gitrepository__oci_project__date_last_modified__idx ON public.gitrepository USING btree (oci_project, date_last_modified) WHERE (oci_project IS NOT NULL);
+
+
+CREATE INDEX gitrepository__oci_project__id__idx ON public.gitrepository USING btree (oci_project, id) WHERE (oci_project IS NOT NULL);
+
+
+CREATE UNIQUE INDEX gitrepository__oci_project__target_default__key ON public.gitrepository USING btree (oci_project) WHERE ((oci_project IS NOT NULL) AND target_default);
 
 
 CREATE INDEX gitrepository__owner__date_last_modified__idx ON public.gitrepository USING btree (owner, date_last_modified);
 
 
-CREATE UNIQUE INDEX gitrepository__owner__distribution__sourcepackagename__name__ke ON public.gitrepository USING btree (owner, distribution, sourcepackagename, name) WHERE (distribution IS NOT NULL);
+CREATE INDEX gitrepository__owner__distribution__ocipn__date_last_modified__ ON public.gitrepository USING btree (owner, distribution, ociprojectname, date_last_modified) WHERE ((distribution IS NOT NULL) AND (ociprojectname IS NOT NULL));
 
 
-CREATE INDEX gitrepository__owner__distribution__spn__date_last_modified__id ON public.gitrepository USING btree (owner, distribution, sourcepackagename, date_last_modified) WHERE (distribution IS NOT NULL);
+CREATE INDEX gitrepository__owner__distribution__ocipn__id__idx ON public.gitrepository USING btree (owner, distribution, ociprojectname, id) WHERE ((distribution IS NOT NULL) AND (ociprojectname IS NOT NULL));
 
 
-CREATE INDEX gitrepository__owner__distribution__spn__id__idx ON public.gitrepository USING btree (owner, distribution, sourcepackagename, id) WHERE (distribution IS NOT NULL);
+CREATE UNIQUE INDEX gitrepository__owner__distribution__ocipn__name__key ON public.gitrepository USING btree (owner, distribution, ociprojectname, name) WHERE ((distribution IS NOT NULL) AND (ociprojectname IS NOT NULL));
 
 
-CREATE UNIQUE INDEX gitrepository__owner__distribution__spn__owner_default__key ON public.gitrepository USING btree (owner, distribution, sourcepackagename) WHERE ((distribution IS NOT NULL) AND owner_default);
+CREATE UNIQUE INDEX gitrepository__owner__distribution__ocipn__owner_default__key ON public.gitrepository USING btree (owner, distribution, ociprojectname) WHERE ((distribution IS NOT NULL) AND (ociprojectname IS NOT NULL) AND owner_default);
+
+
+CREATE INDEX gitrepository__owner__distribution__spn__date_last_modified__id ON public.gitrepository USING btree (owner, distribution, sourcepackagename, date_last_modified) WHERE ((distribution IS NOT NULL) AND (sourcepackagename IS NOT NULL));
+
+
+CREATE INDEX gitrepository__owner__distribution__spn__id__idx ON public.gitrepository USING btree (owner, distribution, sourcepackagename, id) WHERE ((distribution IS NOT NULL) AND (sourcepackagename IS NOT NULL));
+
+
+CREATE UNIQUE INDEX gitrepository__owner__distribution__spn__name__key ON public.gitrepository USING btree (owner, distribution, sourcepackagename, name) WHERE ((distribution IS NOT NULL) AND (sourcepackagename IS NOT NULL));
+
+
+CREATE UNIQUE INDEX gitrepository__owner__distribution__spn__owner_default__key ON public.gitrepository USING btree (owner, distribution, sourcepackagename) WHERE ((distribution IS NOT NULL) AND (sourcepackagename IS NOT NULL) AND owner_default);
 
 
 CREATE INDEX gitrepository__owner__id__idx ON public.gitrepository USING btree (owner, id);
 
 
 CREATE UNIQUE INDEX gitrepository__owner__name__key ON public.gitrepository USING btree (owner, name) WHERE ((project IS NULL) AND (distribution IS NULL));
+
+
+CREATE INDEX gitrepository__owner__oci_project__date_last_modified__idx ON public.gitrepository USING btree (owner, oci_project, date_last_modified) WHERE (oci_project IS NOT NULL);
+
+
+CREATE INDEX gitrepository__owner__oci_project__id__idx ON public.gitrepository USING btree (owner, oci_project, id) WHERE (oci_project IS NOT NULL);
+
+
+CREATE UNIQUE INDEX gitrepository__owner__oci_project__name__key ON public.gitrepository USING btree (owner, oci_project, name) WHERE (oci_project IS NOT NULL);
+
+
+CREATE UNIQUE INDEX gitrepository__owner__oci_project__owner_default__key ON public.gitrepository USING btree (owner, oci_project) WHERE ((oci_project IS NOT NULL) AND owner_default);
 
 
 CREATE INDEX gitrepository__owner__project__date_last_modified__idx ON public.gitrepository USING btree (owner, project, date_last_modified) WHERE (project IS NOT NULL);
@@ -19524,10 +21671,10 @@ CREATE INDEX karma_person_datecreated_idx ON public.karma USING btree (person, d
 ALTER TABLE public.karma CLUSTER ON karma_person_datecreated_idx;
 
 
-CREATE INDEX karmacache__category__karmavalue__idx ON public.karmacache USING btree (category, karmavalue) WHERE ((((category IS NOT NULL) AND (product IS NULL)) AND (project IS NULL)) AND (distribution IS NULL));
+CREATE INDEX karmacache__category__karmavalue__idx ON public.karmacache USING btree (category, karmavalue) WHERE ((category IS NOT NULL) AND (product IS NULL) AND (project IS NULL) AND (distribution IS NULL));
 
 
-CREATE INDEX karmacache__distribution__category__karmavalue__idx ON public.karmacache USING btree (distribution, category, karmavalue) WHERE (((category IS NOT NULL) AND (distribution IS NOT NULL)) AND (sourcepackagename IS NULL));
+CREATE INDEX karmacache__distribution__category__karmavalue__idx ON public.karmacache USING btree (distribution, category, karmavalue) WHERE ((category IS NOT NULL) AND (distribution IS NOT NULL) AND (sourcepackagename IS NULL));
 
 
 CREATE INDEX karmacache__person__category__idx ON public.karmacache USING btree (person, category);
@@ -19545,13 +21692,13 @@ CREATE INDEX karmacache__project__category__karmavalue__idx ON public.karmacache
 CREATE INDEX karmacache__project__karmavalue__idx ON public.karmacache USING btree (project, karmavalue) WHERE ((category IS NULL) AND (project IS NOT NULL));
 
 
-CREATE UNIQUE INDEX karmacache__unq ON public.karmacache USING btree (person, (COALESCE(product, (-1))), (COALESCE(sourcepackagename, (-1))), (COALESCE(project, (-1))), (COALESCE(category, (-1))), (COALESCE(distribution, (-1))));
+CREATE UNIQUE INDEX karmacache__unq ON public.karmacache USING btree (person, COALESCE(product, '-1'::integer), COALESCE(sourcepackagename, '-1'::integer), COALESCE(project, '-1'::integer), COALESCE(category, '-1'::integer), COALESCE(distribution, '-1'::integer));
 
 
 CREATE INDEX karmacache_person_idx ON public.karmacache USING btree (person);
 
 
-CREATE INDEX karmacache_top_in_category_idx ON public.karmacache USING btree (person, category, karmavalue) WHERE ((((product IS NULL) AND (project IS NULL)) AND (sourcepackagename IS NULL)) AND (distribution IS NULL));
+CREATE INDEX karmacache_top_in_category_idx ON public.karmacache USING btree (person, category, karmavalue) WHERE ((product IS NULL) AND (project IS NULL) AND (sourcepackagename IS NULL) AND (distribution IS NULL));
 
 
 CREATE UNIQUE INDEX karmatotalcache_karma_total_person_idx ON public.karmatotalcache USING btree (karma_total, person);
@@ -19635,7 +21782,7 @@ CREATE INDEX livefsbuild__livefs__das__status__finished__idx ON public.livefsbui
 CREATE INDEX livefsbuild__livefs__idx ON public.livefsbuild USING btree (livefs);
 
 
-CREATE INDEX livefsbuild__livefs__status__started__finished__created__id__id ON public.livefsbuild USING btree (livefs, status, (GREATEST(date_started, date_finished)) DESC NULLS LAST, date_created DESC, id DESC);
+CREATE INDEX livefsbuild__livefs__status__started__finished__created__id__id ON public.livefsbuild USING btree (livefs, status, GREATEST(date_started, date_finished) DESC NULLS LAST, date_created DESC, id DESC);
 
 
 CREATE INDEX livefsbuild__log__idx ON public.livefsbuild USING btree (log);
@@ -19713,6 +21860,12 @@ CREATE INDEX messageapproval__posted_message__idx ON public.messageapproval USIN
 CREATE INDEX messagechunk_blob_idx ON public.messagechunk USING btree (blob) WHERE (blob IS NOT NULL);
 
 
+CREATE UNIQUE INDEX messagerevision__message__revision__key ON public.messagerevision USING btree (message, revision);
+
+
+CREATE UNIQUE INDEX messagerevisionchunk__messagerevision__sequence__key ON public.messagerevisionchunk USING btree (messagerevision, sequence);
+
+
 CREATE INDEX milestone__distroseries__idx ON public.milestone USING btree (distroseries);
 
 
@@ -19743,6 +21896,108 @@ CREATE INDEX oauthaccesstoken__person__idx ON public.oauthaccesstoken USING btre
 CREATE INDEX oauthrequesttoken__person__idx ON public.oauthrequesttoken USING btree (person) WHERE (person IS NOT NULL);
 
 
+CREATE UNIQUE INDEX ocifile__build__layer_file_digest__key ON public.ocifile USING btree (build, layer_file_digest);
+
+
+CREATE INDEX ocifile__date_last_used__idx ON public.ocifile USING btree (date_last_used);
+
+
+CREATE INDEX ocifile__layer_file_digest__idx ON public.ocifile USING btree (layer_file_digest);
+
+
+CREATE INDEX ocifile__library_file__idx ON public.ocifile USING btree (library_file);
+
+
+CREATE UNIQUE INDEX ociproject__distribution__ociprojectname__key ON public.ociproject USING btree (distribution, ociprojectname) WHERE (distribution IS NOT NULL);
+
+
+CREATE UNIQUE INDEX ociproject__project__ociprojectname__key ON public.ociproject USING btree (project, ociprojectname) WHERE (project IS NOT NULL);
+
+
+CREATE INDEX ociproject__registrant__idx ON public.ociproject USING btree (registrant);
+
+
+CREATE UNIQUE INDEX ociprojectname__name__key ON public.ociprojectname USING btree (name);
+
+
+CREATE INDEX ociprojectname__name__trgm ON public.ociprojectname USING gin (name trgm.gin_trgm_ops);
+
+
+CREATE UNIQUE INDEX ociprojectseries__ociproject__name__key ON public.ociprojectseries USING btree (ociproject, name);
+
+
+CREATE INDEX ociprojectseries__registrant__idx ON public.ociprojectseries USING btree (registrant);
+
+
+CREATE UNIQUE INDEX ocipushrule__recipe__registry_credentials__image_name__key ON public.ocipushrule USING btree (recipe, registry_credentials, image_name);
+
+
+CREATE INDEX ocipushrule__registry_credentials__idx ON public.ocipushrule USING btree (registry_credentials);
+
+
+CREATE INDEX ocirecipe__git_repository__idx ON public.ocirecipe USING btree (git_repository);
+
+
+CREATE INDEX ocirecipe__oci_project__idx ON public.ocirecipe USING btree (oci_project);
+
+
+CREATE UNIQUE INDEX ocirecipe__oci_project__name__official__key ON public.ocirecipe USING btree (oci_project, name) WHERE official;
+
+
+CREATE UNIQUE INDEX ocirecipe__owner__oci_project__name__key ON public.ocirecipe USING btree (owner, oci_project, name);
+
+
+CREATE INDEX ocirecipe__registrant__idx ON public.ocirecipe USING btree (registrant);
+
+
+CREATE INDEX ocirecipebuild__build_farm_job__idx ON public.ocirecipebuild USING btree (build_farm_job);
+
+
+CREATE INDEX ocirecipebuild__build_request__idx ON public.ocirecipebuild USING btree (build_request);
+
+
+CREATE INDEX ocirecipebuild__log__idx ON public.ocirecipebuild USING btree (log);
+
+
+CREATE INDEX ocirecipebuild__recipe__idx ON public.ocirecipebuild USING btree (recipe);
+
+
+CREATE INDEX ocirecipebuild__recipe__processor__status__finished__idx ON public.ocirecipebuild USING btree (recipe, processor, status, date_finished DESC) WHERE (status = 1);
+
+
+CREATE INDEX ocirecipebuild__recipe__processor__status__idx ON public.ocirecipebuild USING btree (recipe, processor, status);
+
+
+CREATE INDEX ocirecipebuild__recipe__status__started__finished__created__id_ ON public.ocirecipebuild USING btree (recipe, status, GREATEST(date_started, date_finished) DESC NULLS LAST, date_created DESC, id DESC);
+
+
+CREATE INDEX ocirecipebuild__requester__idx ON public.ocirecipebuild USING btree (requester);
+
+
+CREATE INDEX ocirecipebuild__upload_log__idx ON public.ocirecipebuild USING btree (upload_log);
+
+
+CREATE INDEX ocirecipebuildjob__build__job_type__job__idx ON public.ocirecipebuildjob USING btree (build, job_type, job);
+
+
+CREATE INDEX ocirecipebuildjob__job__job_type__idx ON public.ocirecipebuildjob USING btree (job, job_type);
+
+
+CREATE INDEX ocirecipejob__recipe__job_type__job__idx ON public.ocirecipejob USING btree (recipe, job_type, job);
+
+
+CREATE INDEX ocirecipesubscription__person__idx ON public.ocirecipesubscription USING btree (person);
+
+
+CREATE UNIQUE INDEX ocirecipesubscription__recipe__person__key ON public.ocirecipesubscription USING btree (recipe, person);
+
+
+CREATE INDEX ocirecipesubscription__subscribed_by__idx ON public.ocirecipesubscription USING btree (subscribed_by);
+
+
+CREATE INDEX ociregistrycredentials__owner__idx ON public.ociregistrycredentials USING btree (owner);
+
+
 CREATE UNIQUE INDEX officialbugtag__distribution__tag__key ON public.officialbugtag USING btree (distribution, tag) WHERE (distribution IS NOT NULL);
 
 
@@ -19758,6 +22013,9 @@ CREATE INDEX openididentifier__account__idx ON public.openididentifier USING btr
 CREATE UNIQUE INDEX packagecopyjob__job_type__target_ds__id__key ON public.packagecopyjob USING btree (job_type, target_distroseries, id);
 
 
+CREATE INDEX packagecopyjob__source_archive__idx ON public.packagecopyjob USING btree (source_archive);
+
+
 CREATE INDEX packagecopyjob__target ON public.packagecopyjob USING btree (target_archive, target_distroseries);
 
 
@@ -19765,6 +22023,9 @@ CREATE INDEX packagecopyrequest__datecreated__idx ON public.packagecopyrequest U
 
 
 CREATE INDEX packagecopyrequest__requester__idx ON public.packagecopyrequest USING btree (requester);
+
+
+CREATE INDEX packagecopyrequest__source_archive__idx ON public.packagecopyrequest USING btree (source_archive);
 
 
 CREATE INDEX packagecopyrequest__targetarchive__idx ON public.packagecopyrequest USING btree (target_archive);
@@ -19843,6 +22104,12 @@ CREATE INDEX packageuploadcustom__libraryfilealias__idx ON public.packageuploadc
 
 
 CREATE INDEX packageuploadcustom__packageupload__idx ON public.packageuploadcustom USING btree (packageupload);
+
+
+CREATE INDEX packageuploadlog__package_upload__date_created__idx ON public.packageuploadlog USING btree (package_upload, date_created);
+
+
+CREATE INDEX packageuploadlog__reviewer__idx ON public.packageuploadlog USING btree (reviewer);
 
 
 CREATE INDEX packageuploadsource__sourcepackagerelease__idx ON public.packageuploadsource USING btree (sourcepackagerelease);
@@ -19929,7 +22196,7 @@ CREATE INDEX pocketchroot__chroot__idx ON public.pocketchroot USING btree (chroo
 CREATE INDEX poexportrequest__person__idx ON public.poexportrequest USING btree (person);
 
 
-CREATE UNIQUE INDEX poexportrequest_duplicate_key ON public.poexportrequest USING btree (potemplate, person, format, (COALESCE(pofile, (-1))));
+CREATE UNIQUE INDEX poexportrequest_duplicate_key ON public.poexportrequest USING btree (potemplate, person, format, COALESCE(pofile, '-1'::integer));
 
 
 CREATE INDEX pofile__from_sourcepackagename__idx ON public.pofile USING btree (from_sourcepackagename) WHERE (from_sourcepackagename IS NOT NULL);
@@ -20044,6 +22311,9 @@ CREATE INDEX product_project_idx ON public.product USING btree (project);
 
 
 CREATE INDEX product_translationgroup_idx ON public.product USING btree (translationgroup);
+
+
+CREATE UNIQUE INDEX productjob__job__key ON public.productjob USING btree (job);
 
 
 CREATE INDEX productjob__job_type_idx ON public.productjob USING btree (job_type);
@@ -20184,6 +22454,21 @@ CREATE UNIQUE INDEX revisioncache__product__revision__private__key ON public.rev
 CREATE INDEX revisioncache__revision_date__idx ON public.revisioncache USING btree (revision_date);
 
 
+CREATE INDEX revisionstatusartifact__library_file__idx ON public.revisionstatusartifact USING btree (library_file);
+
+
+CREATE INDEX revisionstatusartifact__report__type__created__idx ON public.revisionstatusartifact USING btree (report, type, date_created DESC);
+
+
+CREATE UNIQUE INDEX revisionstatusreport__ci_build__name__idx ON public.revisionstatusreport USING btree (ci_build, name) WHERE (ci_build IS NOT NULL);
+
+
+CREATE INDEX revisionstatusreport__creator__idx ON public.revisionstatusreport USING btree (creator);
+
+
+CREATE INDEX revisionstatusreport__git_repository__commit_sha1__idx ON public.revisionstatusreport USING btree (git_repository, commit_sha1);
+
+
 CREATE INDEX scriptactivity__hostname__name__date_completed__idx ON public.scriptactivity USING btree (hostname, name, date_completed);
 
 ALTER TABLE public.scriptactivity CLUSTER ON scriptactivity__hostname__name__date_completed__idx;
@@ -20246,6 +22531,9 @@ CREATE INDEX signedcodeofconduct__signing_key_fingerprint__idx ON public.signedc
 CREATE INDEX signedcodeofconduct_owner_idx ON public.signedcodeofconduct USING btree (owner);
 
 
+CREATE INDEX snap__auto_build_archive__idx ON public.snap USING btree (auto_build_archive) WHERE (auto_build_archive IS NOT NULL);
+
+
 CREATE INDEX snap__branch__idx ON public.snap USING btree (branch);
 
 
@@ -20255,7 +22543,19 @@ CREATE INDEX snap__distro_series__idx ON public.snap USING btree (distro_series)
 CREATE INDEX snap__git_repository__idx ON public.snap USING btree (git_repository);
 
 
+CREATE INDEX snap__git_repository_url__idx ON public.snap USING btree (git_repository_url);
+
+
+CREATE INDEX snap__is_stale__auto_build__idx ON public.snap USING btree (is_stale, auto_build);
+
+
+CREATE INDEX snap__project__idx ON public.snap USING btree (project) WHERE (project IS NOT NULL);
+
+
 CREATE INDEX snap__registrant__idx ON public.snap USING btree (registrant);
+
+
+CREATE INDEX snap__store_name__idx ON public.snap USING btree (store_name);
 
 
 CREATE INDEX snap__store_series__idx ON public.snap USING btree (store_series) WHERE (store_series IS NOT NULL);
@@ -20276,6 +22576,9 @@ CREATE INDEX snapbuild__archive__idx ON public.snapbuild USING btree (archive);
 CREATE INDEX snapbuild__build_farm_job__idx ON public.snapbuild USING btree (build_farm_job);
 
 
+CREATE INDEX snapbuild__build_request__idx ON public.snapbuild USING btree (build_request);
+
+
 CREATE INDEX snapbuild__distro_arch_series__idx ON public.snapbuild USING btree (distro_arch_series);
 
 
@@ -20294,7 +22597,10 @@ CREATE INDEX snapbuild__snap__das__status__finished__idx ON public.snapbuild USI
 CREATE INDEX snapbuild__snap__idx ON public.snapbuild USING btree (snap);
 
 
-CREATE INDEX snapbuild__snap__status__started__finished__created__id__idx ON public.snapbuild USING btree (snap, status, (GREATEST(date_started, date_finished)) DESC NULLS LAST, date_created DESC, id DESC);
+CREATE INDEX snapbuild__snap__status__started__finished__created__id__idx ON public.snapbuild USING btree (snap, status, GREATEST(date_started, date_finished) DESC NULLS LAST, date_created DESC, id DESC);
+
+
+CREATE INDEX snapbuild__snap__store_upload_revision__idx ON public.snapbuild USING btree (snap, store_upload_revision);
 
 
 CREATE INDEX snapbuild__upload_log__idx ON public.snapbuild USING btree (upload_log);
@@ -20333,6 +22639,15 @@ CREATE INDEX snappyseries__registrant__idx ON public.snappyseries USING btree (r
 CREATE INDEX snappyseries__status__idx ON public.snappyseries USING btree (status);
 
 
+CREATE INDEX snapsubscription__person__idx ON public.snapsubscription USING btree (person);
+
+
+CREATE UNIQUE INDEX snapsubscription__person_snap__key ON public.snapsubscription USING btree (snap, person);
+
+
+CREATE INDEX snapsubscription__subscribed_by__idx ON public.snapsubscription USING btree (subscribed_by);
+
+
 CREATE INDEX sourcepackagename__name__trgm ON public.sourcepackagename USING gin (name trgm.gin_trgm_ops);
 
 
@@ -20345,7 +22660,13 @@ CREATE INDEX sourcepackagepublishinghistory__archive__distroseries__spn__sta ON 
 CREATE INDEX sourcepackagepublishinghistory__archive__spn__status__idx ON public.sourcepackagepublishinghistory USING btree (archive, sourcepackagename, status);
 
 
+CREATE INDEX sourcepackagepublishinghistory__archive__status__datepublished_ ON public.sourcepackagepublishinghistory USING btree (archive, status) WHERE (datepublished IS NULL);
+
+
 CREATE INDEX sourcepackagepublishinghistory__archive__status__scheduleddelet ON public.sourcepackagepublishinghistory USING btree (archive, status) WHERE (scheduleddeletiondate IS NULL);
+
+
+CREATE INDEX sourcepackagepublishinghistory__copied_from_archive__idx ON public.sourcepackagepublishinghistory USING btree (copied_from_archive) WHERE (copied_from_archive IS NOT NULL);
 
 
 CREATE INDEX sourcepackagepublishinghistory__creator__idx ON public.sourcepackagepublishinghistory USING btree (creator) WHERE (creator IS NOT NULL);
@@ -20372,6 +22693,9 @@ CREATE INDEX sourcepackagerecipe__is_stale__build_daily__idx ON public.sourcepac
 CREATE INDEX sourcepackagerecipe__registrant__idx ON public.sourcepackagerecipe USING btree (registrant);
 
 
+CREATE INDEX sourcepackagerecipebuild__archive__idx ON public.sourcepackagerecipebuild USING btree (archive);
+
+
 CREATE INDEX sourcepackagerecipebuild__build_farm_job__idx ON public.sourcepackagerecipebuild USING btree (build_farm_job);
 
 
@@ -20390,10 +22714,10 @@ CREATE INDEX sourcepackagerecipebuild__recipe__date_created__idx ON public.sourc
 CREATE INDEX sourcepackagerecipebuild__recipe__date_finished__idx ON public.sourcepackagerecipebuild USING btree (recipe, date_finished DESC);
 
 
-CREATE INDEX sourcepackagerecipebuild__recipe__started__finished__created__i ON public.sourcepackagerecipebuild USING btree (recipe, (GREATEST(date_started, date_finished)) DESC NULLS LAST, date_created DESC, id DESC);
+CREATE INDEX sourcepackagerecipebuild__recipe__started__finished__created__i ON public.sourcepackagerecipebuild USING btree (recipe, GREATEST(date_started, date_finished) DESC NULLS LAST, date_created DESC, id DESC);
 
 
-CREATE INDEX sourcepackagerecipebuild__recipe__started__finished__idx ON public.sourcepackagerecipebuild USING btree (recipe, (GREATEST(date_started, date_finished)) DESC NULLS LAST, id DESC);
+CREATE INDEX sourcepackagerecipebuild__recipe__started__finished__idx ON public.sourcepackagerecipebuild USING btree (recipe, GREATEST(date_started, date_finished) DESC NULLS LAST, id DESC);
 
 
 CREATE INDEX sourcepackagerecipebuild__recipe__status__id__idx ON public.sourcepackagerecipebuild USING btree (recipe, status, id DESC);
@@ -20426,6 +22750,9 @@ CREATE INDEX sourcepackagerelease__buildinfo__idx ON public.sourcepackagerelease
 CREATE INDEX sourcepackagerelease__changelog__idx ON public.sourcepackagerelease USING btree (changelog);
 
 
+CREATE INDEX sourcepackagerelease__ci_build__idx ON public.sourcepackagerelease USING btree (ci_build);
+
+
 CREATE INDEX sourcepackagerelease__signing_key_fingerprint__idx ON public.sourcepackagerelease USING btree (signing_key_fingerprint);
 
 
@@ -20436,6 +22763,9 @@ CREATE INDEX sourcepackagerelease__sourcepackage_recipe_build__idx ON public.sou
 
 
 CREATE INDEX sourcepackagerelease__sourcepackagename__version__idx ON public.sourcepackagerelease USING btree (sourcepackagename, version);
+
+
+CREATE INDEX sourcepackagerelease__sourcepackagename__version_text__idx ON public.sourcepackagerelease USING btree (sourcepackagename, ((version)::text));
 
 
 CREATE INDEX sourcepackagerelease__upload_archive__idx ON public.sourcepackagerelease USING btree (upload_archive);
@@ -20635,7 +22965,7 @@ CREATE INDEX translationimportqueueentry__content__idx ON public.translationimpo
 CREATE INDEX translationimportqueueentry__context__path__idx ON public.translationimportqueueentry USING btree (distroseries, sourcepackagename, productseries, path);
 
 
-CREATE UNIQUE INDEX translationimportqueueentry__entry_per_importer__unq ON public.translationimportqueueentry USING btree (importer, path, (COALESCE(potemplate, (-1))), (COALESCE(distroseries, (-1))), (COALESCE(sourcepackagename, (-1))), (COALESCE(productseries, (-1))));
+CREATE UNIQUE INDEX translationimportqueueentry__entry_per_importer__unq ON public.translationimportqueueentry USING btree (importer, path, COALESCE(potemplate, '-1'::integer), COALESCE(distroseries, '-1'::integer), COALESCE(sourcepackagename, '-1'::integer), COALESCE(productseries, '-1'::integer));
 
 
 CREATE INDEX translationimportqueueentry__path__idx ON public.translationimportqueueentry USING btree (path);
@@ -20725,10 +23055,34 @@ CREATE INDEX vote__person__idx ON public.vote USING btree (person);
 CREATE INDEX votecast_poll_idx ON public.votecast USING btree (poll);
 
 
+CREATE INDEX vulnerability__creator__idx ON public.vulnerability USING btree (creator);
+
+
+CREATE INDEX vulnerability__cve__idx ON public.vulnerability USING btree (cve);
+
+
+CREATE UNIQUE INDEX vulnerability__distribution__cve__key ON public.vulnerability USING btree (distribution, cve);
+
+
+CREATE INDEX vulnerabilityactivity__changer__idx ON public.vulnerabilityactivity USING btree (changer);
+
+
+CREATE INDEX vulnerabilityactivity__vulnerability__date_changed__idx ON public.vulnerabilityactivity USING btree (vulnerability, date_changed);
+
+
 CREATE INDEX webhook__branch__id__idx ON public.webhook USING btree (branch, id) WHERE (branch IS NOT NULL);
 
 
+CREATE INDEX webhook__charm_recipe__id__idx ON public.webhook USING btree (charm_recipe, id) WHERE (charm_recipe IS NOT NULL);
+
+
 CREATE INDEX webhook__git_repository__id__idx ON public.webhook USING btree (git_repository, id) WHERE (git_repository IS NOT NULL);
+
+
+CREATE INDEX webhook__livefs__id__idx ON public.webhook USING btree (livefs, id) WHERE (livefs IS NOT NULL);
+
+
+CREATE INDEX webhook__oci_recipe__id__idx ON public.webhook USING btree (oci_recipe, id) WHERE (oci_recipe IS NOT NULL);
 
 
 CREATE INDEX webhook__snap__id__idx ON public.webhook USING btree (snap, id) WHERE (snap IS NOT NULL);
@@ -20785,13 +23139,22 @@ CREATE TRIGGER bug_latest_patch_uploaded_on_insert_update_t AFTER INSERT OR UPDA
 CREATE TRIGGER bugmessage__owner__mirror AFTER INSERT OR UPDATE ON public.bugmessage FOR EACH ROW EXECUTE PROCEDURE public.bugmessage_copy_owner_from_message();
 
 
-CREATE TRIGGER bugtag_maintain_bug_summary_after_trigger AFTER INSERT OR DELETE OR UPDATE ON public.bugtag FOR EACH ROW EXECUTE PROCEDURE public.bugtag_maintain_bug_summary();
+CREATE TRIGGER bugtag_maintain_bug_summary_delete AFTER DELETE ON public.bugtag REFERENCING OLD TABLE AS old_bugtag FOR EACH STATEMENT EXECUTE PROCEDURE public.bugtag_maintain_bug_summary();
 
 
-CREATE TRIGGER bugtag_maintain_bug_summary_before_trigger BEFORE INSERT OR DELETE OR UPDATE ON public.bugtag FOR EACH ROW EXECUTE PROCEDURE public.bugtag_maintain_bug_summary();
+CREATE TRIGGER bugtag_maintain_bug_summary_insert AFTER INSERT ON public.bugtag REFERENCING NEW TABLE AS new_bugtag FOR EACH STATEMENT EXECUTE PROCEDURE public.bugtag_maintain_bug_summary();
 
 
-CREATE TRIGGER bugtaskflat_maintain_bug_summary AFTER INSERT OR DELETE OR UPDATE ON public.bugtaskflat FOR EACH ROW EXECUTE PROCEDURE public.bugtaskflat_maintain_bug_summary();
+CREATE TRIGGER bugtag_maintain_bug_summary_update AFTER UPDATE ON public.bugtag REFERENCING OLD TABLE AS old_bugtag NEW TABLE AS new_bugtag FOR EACH STATEMENT EXECUTE PROCEDURE public.bugtag_maintain_bug_summary();
+
+
+CREATE TRIGGER bugtaskflat_maintain_bug_summary_delete AFTER DELETE ON public.bugtaskflat REFERENCING OLD TABLE AS old_bugtaskflat FOR EACH STATEMENT EXECUTE PROCEDURE public.bugtaskflat_maintain_bug_summary();
+
+
+CREATE TRIGGER bugtaskflat_maintain_bug_summary_insert AFTER INSERT ON public.bugtaskflat REFERENCING NEW TABLE AS new_bugtaskflat FOR EACH STATEMENT EXECUTE PROCEDURE public.bugtaskflat_maintain_bug_summary();
+
+
+CREATE TRIGGER bugtaskflat_maintain_bug_summary_update AFTER UPDATE ON public.bugtaskflat REFERENCING OLD TABLE AS old_bugtaskflat NEW TABLE AS new_bugtaskflat FOR EACH STATEMENT EXECUTE PROCEDURE public.bugtaskflat_maintain_bug_summary();
 
 
 CREATE TRIGGER gitrepository_maintain_access_cache AFTER INSERT OR UPDATE OF information_type ON public.gitrepository FOR EACH ROW EXECUTE PROCEDURE public.gitrepository_maintain_access_cache_trig();
@@ -20839,28 +23202,31 @@ CREATE TRIGGER message__owner__mirror AFTER UPDATE ON public.message FOR EACH RO
 CREATE TRIGGER message__owner__mirror__questionmessage AFTER UPDATE ON public.message FOR EACH ROW EXECUTE PROCEDURE public.message_copy_owner_to_questionmessage();
 
 
-CREATE TRIGGER mv_branch_distribution_update_t AFTER UPDATE ON public.distribution FOR EACH ROW EXECUTE PROCEDURE public.mv_branch_distribution_update();
+CREATE TRIGGER mv_branch_distribution_update_t AFTER UPDATE OF name ON public.distribution FOR EACH ROW EXECUTE PROCEDURE public.mv_branch_distribution_update();
 
 
-CREATE TRIGGER mv_branch_distroseries_update_t AFTER UPDATE ON public.distroseries FOR EACH ROW EXECUTE PROCEDURE public.mv_branch_distroseries_update();
+CREATE TRIGGER mv_branch_distroseries_update_t AFTER UPDATE OF name ON public.distroseries FOR EACH ROW EXECUTE PROCEDURE public.mv_branch_distroseries_update();
 
 
-CREATE TRIGGER mv_branch_person_update_t AFTER UPDATE ON public.person FOR EACH ROW EXECUTE PROCEDURE public.mv_branch_person_update();
+CREATE TRIGGER mv_branch_person_update_t AFTER UPDATE OF name ON public.person FOR EACH ROW EXECUTE PROCEDURE public.mv_branch_person_update();
 
 
-CREATE TRIGGER mv_branch_product_update_t AFTER UPDATE ON public.product FOR EACH ROW EXECUTE PROCEDURE public.mv_branch_product_update();
+CREATE TRIGGER mv_branch_product_update_t AFTER UPDATE OF name ON public.product FOR EACH ROW EXECUTE PROCEDURE public.mv_branch_product_update();
 
 
-CREATE TRIGGER mv_pillarname_distribution_t AFTER INSERT OR UPDATE ON public.distribution FOR EACH ROW EXECUTE PROCEDURE public.mv_pillarname_distribution();
+CREATE TRIGGER mv_pillarname_distribution_t AFTER INSERT OR UPDATE OF name ON public.distribution FOR EACH ROW EXECUTE PROCEDURE public.mv_pillarname_distribution();
 
 
-CREATE TRIGGER mv_pillarname_product_t AFTER INSERT OR UPDATE ON public.product FOR EACH ROW EXECUTE PROCEDURE public.mv_pillarname_product();
+CREATE TRIGGER mv_pillarname_product_t AFTER INSERT OR UPDATE OF name, active ON public.product FOR EACH ROW EXECUTE PROCEDURE public.mv_pillarname_product();
 
 
-CREATE TRIGGER mv_pillarname_project_t AFTER INSERT OR UPDATE ON public.project FOR EACH ROW EXECUTE PROCEDURE public.mv_pillarname_project();
+CREATE TRIGGER mv_pillarname_project_t AFTER INSERT OR UPDATE OF name, active ON public.project FOR EACH ROW EXECUTE PROCEDURE public.mv_pillarname_project();
 
 
 CREATE TRIGGER mv_pofiletranslator_translationmessage AFTER INSERT OR UPDATE ON public.translationmessage FOR EACH ROW EXECUTE PROCEDURE public.mv_pofiletranslator_translationmessage();
+
+
+CREATE TRIGGER ocirecipe_maintain_access_cache AFTER INSERT OR UPDATE OF information_type ON public.ocirecipe FOR EACH ROW EXECUTE PROCEDURE public.ocirecipe_maintain_access_cache_trig();
 
 
 CREATE TRIGGER packageset_deleted_trig BEFORE DELETE ON public.packageset FOR EACH ROW EXECUTE PROCEDURE public.packageset_deleted_trig();
@@ -20881,70 +23247,73 @@ CREATE TRIGGER questionmessage__owner__mirror AFTER INSERT OR UPDATE ON public.q
 CREATE TRIGGER set_bug_message_count_t AFTER INSERT OR DELETE OR UPDATE ON public.bugmessage FOR EACH ROW EXECUTE PROCEDURE public.set_bug_message_count();
 
 
-CREATE TRIGGER set_bug_number_of_duplicates_t AFTER INSERT OR DELETE OR UPDATE ON public.bug FOR EACH ROW EXECUTE PROCEDURE public.set_bug_number_of_duplicates();
+CREATE TRIGGER set_bug_number_of_duplicates_t AFTER INSERT OR DELETE OR UPDATE OF duplicateof ON public.bug FOR EACH ROW EXECUTE PROCEDURE public.set_bug_number_of_duplicates();
 
 
 CREATE TRIGGER set_bug_users_affected_count_t AFTER INSERT OR DELETE OR UPDATE ON public.bugaffectsperson FOR EACH ROW EXECUTE PROCEDURE public.set_bug_users_affected_count();
 
 
-CREATE TRIGGER set_bugtask_date_milestone_set_t AFTER INSERT OR UPDATE ON public.bugtask FOR EACH ROW EXECUTE PROCEDURE public.set_bugtask_date_milestone_set();
+CREATE TRIGGER set_bugtask_date_milestone_set_t AFTER INSERT OR UPDATE OF milestone ON public.bugtask FOR EACH ROW EXECUTE PROCEDURE public.set_bugtask_date_milestone_set();
 
 
 CREATE TRIGGER set_date_last_message_t AFTER INSERT OR DELETE OR UPDATE ON public.bugmessage FOR EACH ROW EXECUTE PROCEDURE public.set_bug_date_last_message();
 
 
-CREATE TRIGGER set_date_status_set_t BEFORE UPDATE ON public.account FOR EACH ROW EXECUTE PROCEDURE public.set_date_status_set();
+CREATE TRIGGER set_date_status_set_t BEFORE UPDATE OF status ON public.account FOR EACH ROW EXECUTE PROCEDURE public.set_date_status_set();
+
+
+CREATE TRIGGER snap_maintain_access_cache AFTER INSERT OR UPDATE OF private, information_type, project ON public.snap FOR EACH ROW EXECUTE PROCEDURE public.snap_maintain_access_cache_trig();
 
 
 CREATE TRIGGER specification_maintain_access_cache AFTER INSERT OR UPDATE OF information_type ON public.specification FOR EACH ROW EXECUTE PROCEDURE public.specification_maintain_access_cache_trig();
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.binarypackagerelease FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('summary', 'b', 'description', 'c');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF summary, description, fti ON public.binarypackagerelease FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('summary', 'b', 'description', 'c');
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.cve FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('sequence', 'a', 'description', 'b');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF sequence, description, fti ON public.cve FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('sequence', 'a', 'description', 'b');
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.distroseriespackagecache FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'summaries', 'b', 'descriptions', 'c');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF name, summaries, descriptions, fti ON public.distroseriespackagecache FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'summaries', 'b', 'descriptions', 'c');
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.message FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('subject', 'b');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF subject, fti ON public.message FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('subject', 'b');
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.messagechunk FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('content', 'c');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF content, fti ON public.messagechunk FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('content', 'c');
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.product FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'displayname', 'a', 'title', 'b', 'summary', 'c', 'description', 'd');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF name, displayname, title, summary, description, fti ON public.product FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'displayname', 'a', 'title', 'b', 'summary', 'c', 'description', 'd');
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.project FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'displayname', 'a', 'title', 'b', 'summary', 'c', 'description', 'd');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF name, displayname, title, summary, description, fti ON public.project FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'displayname', 'a', 'title', 'b', 'summary', 'c', 'description', 'd');
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.question FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('title', 'a', 'description', 'b', 'whiteboard', 'b');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF title, description, whiteboard, fti ON public.question FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('title', 'a', 'description', 'b', 'whiteboard', 'b');
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.bug FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'title', 'b', 'description', 'd');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF name, title, description, fti ON public.bug FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'title', 'b', 'description', 'd');
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.person FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'displayname', 'a');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF name, displayname, fti ON public.person FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'displayname', 'a');
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.specification FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'title', 'a', 'summary', 'b', 'whiteboard', 'd');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF name, title, summary, whiteboard, fti ON public.specification FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'title', 'a', 'summary', 'b', 'whiteboard', 'd');
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.distribution FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'displayname', 'a', 'title', 'b', 'summary', 'c', 'description', 'd');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF name, displayname, title, summary, description, fti ON public.distribution FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'displayname', 'a', 'title', 'b', 'summary', 'c', 'description', 'd');
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.productreleasefile FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('description', 'd');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF description, fti ON public.productreleasefile FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('description', 'd');
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.faq FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('title', 'a', 'tags', 'b', 'content', 'd');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF title, tags, content, fti ON public.faq FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('title', 'a', 'tags', 'b', 'content', 'd');
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.archive FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('description', 'a', 'package_description_cache', 'b');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF description, package_description_cache, fti ON public.archive FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('description', 'a', 'package_description_cache', 'b');
 
 
-CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE ON public.distributionsourcepackagecache FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'binpkgnames', 'b', 'binpkgsummaries', 'c', 'binpkgdescriptions', 'd');
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE OF name, binpkgnames, binpkgsummaries, binpkgdescriptions, fti ON public.distributionsourcepackagecache FOR EACH ROW EXECUTE PROCEDURE public.ftiupdate('name', 'a', 'binpkgnames', 'b', 'binpkgsummaries', 'c', 'binpkgdescriptions', 'd');
 
 
 CREATE TRIGGER update_branch_name_cache_t BEFORE INSERT OR UPDATE ON public.branch FOR EACH ROW EXECUTE PROCEDURE public.update_branch_name_cache();
@@ -21048,6 +23417,14 @@ ALTER TABLE ONLY public.accessartifact
 
 
 ALTER TABLE ONLY public.accessartifact
+    ADD CONSTRAINT accessartifact_ocirecipe_fkey FOREIGN KEY (ocirecipe) REFERENCES public.ocirecipe(id);
+
+
+ALTER TABLE ONLY public.accessartifact
+    ADD CONSTRAINT accessartifact_snap_fkey FOREIGN KEY (snap) REFERENCES public.snap(id);
+
+
+ALTER TABLE ONLY public.accessartifact
     ADD CONSTRAINT accessartifact_specification_fkey FOREIGN KEY (specification) REFERENCES public.specification(id);
 
 
@@ -21103,6 +23480,18 @@ ALTER TABLE ONLY public.accesspolicygrantflat
     ADD CONSTRAINT accesspolicygrantflat_policy_fkey FOREIGN KEY (policy) REFERENCES public.accesspolicy(id);
 
 
+ALTER TABLE ONLY public.accesstoken
+    ADD CONSTRAINT accesstoken_git_repository_fkey FOREIGN KEY (git_repository) REFERENCES public.gitrepository(id);
+
+
+ALTER TABLE ONLY public.accesstoken
+    ADD CONSTRAINT accesstoken_owner_fkey FOREIGN KEY (owner) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.accesstoken
+    ADD CONSTRAINT accesstoken_revoked_by_fkey FOREIGN KEY (revoked_by) REFERENCES public.person(id);
+
+
 ALTER TABLE ONLY public.karma
     ADD CONSTRAINT action_fkey FOREIGN KEY (action) REFERENCES public.karmaaction(id);
 
@@ -21156,10 +23545,6 @@ ALTER TABLE ONLY public.archive
 
 
 ALTER TABLE ONLY public.archive
-    ADD CONSTRAINT archive_signing_key_fkey FOREIGN KEY (signing_key) REFERENCES public.gpgkey(id);
-
-
-ALTER TABLE ONLY public.archive
     ADD CONSTRAINT archive_signing_key_owner_fkey FOREIGN KEY (signing_key_owner) REFERENCES public.person(id);
 
 
@@ -21189,6 +23574,10 @@ ALTER TABLE ONLY public.archivedependency
 
 ALTER TABLE ONLY public.archivedependency
     ADD CONSTRAINT archivedependency_component_fkey FOREIGN KEY (component) REFERENCES public.component(id);
+
+
+ALTER TABLE ONLY public.archivedependency
+    ADD CONSTRAINT archivedependency_snap_base_fkey FOREIGN KEY (snap_base) REFERENCES public.snapbase(id);
 
 
 ALTER TABLE ONLY public.archivefile
@@ -21225,6 +23614,18 @@ ALTER TABLE ONLY public.archivepermission
 
 ALTER TABLE ONLY public.archivepermission
     ADD CONSTRAINT archivepermission__sourcepackagename__fk FOREIGN KEY (sourcepackagename) REFERENCES public.sourcepackagename(id);
+
+
+ALTER TABLE ONLY public.archivesigningkey
+    ADD CONSTRAINT archivesigningkey__signing_key__fk FOREIGN KEY (signing_key, key_type) REFERENCES public.signingkey(id, key_type);
+
+
+ALTER TABLE ONLY public.archivesigningkey
+    ADD CONSTRAINT archivesigningkey_archive_fkey FOREIGN KEY (archive) REFERENCES public.archive(id);
+
+
+ALTER TABLE ONLY public.archivesigningkey
+    ADD CONSTRAINT archivesigningkey_earliest_distro_series_fkey FOREIGN KEY (earliest_distro_series) REFERENCES public.distroseries(id);
 
 
 ALTER TABLE ONLY public.archivesubscriber
@@ -21304,6 +23705,14 @@ ALTER TABLE ONLY public.binarypackagepublishinghistory
 
 
 ALTER TABLE ONLY public.binarypackagepublishinghistory
+    ADD CONSTRAINT binarypackagepublishinghistory_copied_from_archive_fkey FOREIGN KEY (copied_from_archive) REFERENCES public.archive(id);
+
+
+ALTER TABLE ONLY public.binarypackagepublishinghistory
+    ADD CONSTRAINT binarypackagepublishinghistory_creator_fkey FOREIGN KEY (creator) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.binarypackagepublishinghistory
     ADD CONSTRAINT binarypackagepublishinghistory_supersededby_fk FOREIGN KEY (supersededby) REFERENCES public.binarypackagebuild(id);
 
 
@@ -21313,6 +23722,10 @@ ALTER TABLE ONLY public.binarypackagerelease
 
 ALTER TABLE ONLY public.binarypackagerelease
     ADD CONSTRAINT binarypackagerelease_build_fk FOREIGN KEY (build) REFERENCES public.binarypackagebuild(id) ON DELETE CASCADE;
+
+
+ALTER TABLE ONLY public.binarypackagerelease
+    ADD CONSTRAINT binarypackagerelease_ci_build_fkey FOREIGN KEY (ci_build) REFERENCES public.cibuild(id);
 
 
 ALTER TABLE ONLY public.binarypackagerelease
@@ -21337,6 +23750,14 @@ ALTER TABLE ONLY public.binarypackagereleasedownloadcount
 
 ALTER TABLE ONLY public.binarypackagereleasedownloadcount
     ADD CONSTRAINT binarypackagereleasedownloadcount_country_fkey FOREIGN KEY (country) REFERENCES public.country(id);
+
+
+ALTER TABLE ONLY public.binarysourcereference
+    ADD CONSTRAINT binarysourcereference_binary_package_release_fkey FOREIGN KEY (binary_package_release) REFERENCES public.binarypackagerelease(id);
+
+
+ALTER TABLE ONLY public.binarysourcereference
+    ADD CONSTRAINT binarysourcereference_source_package_release_fkey FOREIGN KEY (source_package_release) REFERENCES public.sourcepackagerelease(id);
 
 
 ALTER TABLE ONLY public.branch
@@ -21640,6 +24061,14 @@ ALTER TABLE ONLY public.bugsummary
 
 
 ALTER TABLE ONLY public.bugsummary
+    ADD CONSTRAINT bugsummary_ociproject_fkey FOREIGN KEY (ociproject) REFERENCES public.ociproject(id);
+
+
+ALTER TABLE ONLY public.bugsummary
+    ADD CONSTRAINT bugsummary_ociprojectseries_fkey FOREIGN KEY (ociprojectseries) REFERENCES public.ociprojectseries(id);
+
+
+ALTER TABLE ONLY public.bugsummary
     ADD CONSTRAINT bugsummary_product_fkey FOREIGN KEY (product) REFERENCES public.product(id) ON DELETE CASCADE;
 
 
@@ -21701,6 +24130,14 @@ ALTER TABLE ONLY public.bugtask
 
 ALTER TABLE ONLY public.bugtask
     ADD CONSTRAINT bugtask__sourcepackagename__fk FOREIGN KEY (sourcepackagename) REFERENCES public.sourcepackagename(id);
+
+
+ALTER TABLE ONLY public.bugtask
+    ADD CONSTRAINT bugtask_ociproject_fkey FOREIGN KEY (ociproject) REFERENCES public.ociproject(id);
+
+
+ALTER TABLE ONLY public.bugtask
+    ADD CONSTRAINT bugtask_ociprojectseries_fkey FOREIGN KEY (ociprojectseries) REFERENCES public.ociprojectseries(id);
 
 
 ALTER TABLE ONLY public.bugtracker
@@ -21773,6 +24210,126 @@ ALTER TABLE ONLY public.buildqueue
 
 ALTER TABLE ONLY public.buildqueue
     ADD CONSTRAINT buildqueue__processor__fk FOREIGN KEY (processor) REFERENCES public.processor(id);
+
+
+ALTER TABLE ONLY public.charmbase
+    ADD CONSTRAINT charmbase_distro_series_fkey FOREIGN KEY (distro_series) REFERENCES public.distroseries(id);
+
+
+ALTER TABLE ONLY public.charmbase
+    ADD CONSTRAINT charmbase_registrant_fkey FOREIGN KEY (registrant) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.charmbasearch
+    ADD CONSTRAINT charmbasearch_charm_base_fkey FOREIGN KEY (charm_base) REFERENCES public.charmbase(id);
+
+
+ALTER TABLE ONLY public.charmbasearch
+    ADD CONSTRAINT charmbasearch_processor_fkey FOREIGN KEY (processor) REFERENCES public.processor(id);
+
+
+ALTER TABLE ONLY public.charmfile
+    ADD CONSTRAINT charmfile_build_fkey FOREIGN KEY (build) REFERENCES public.charmrecipebuild(id);
+
+
+ALTER TABLE ONLY public.charmfile
+    ADD CONSTRAINT charmfile_library_file_fkey FOREIGN KEY (library_file) REFERENCES public.libraryfilealias(id);
+
+
+ALTER TABLE ONLY public.charmrecipe
+    ADD CONSTRAINT charmrecipe_git_repository_fkey FOREIGN KEY (git_repository) REFERENCES public.gitrepository(id);
+
+
+ALTER TABLE ONLY public.charmrecipe
+    ADD CONSTRAINT charmrecipe_owner_fkey FOREIGN KEY (owner) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.charmrecipe
+    ADD CONSTRAINT charmrecipe_project_fkey FOREIGN KEY (project) REFERENCES public.product(id);
+
+
+ALTER TABLE ONLY public.charmrecipe
+    ADD CONSTRAINT charmrecipe_registrant_fkey FOREIGN KEY (registrant) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.charmrecipebuild
+    ADD CONSTRAINT charmrecipebuild_build_farm_job_fkey FOREIGN KEY (build_farm_job) REFERENCES public.buildfarmjob(id);
+
+
+ALTER TABLE ONLY public.charmrecipebuild
+    ADD CONSTRAINT charmrecipebuild_build_request_fkey FOREIGN KEY (build_request) REFERENCES public.job(id);
+
+
+ALTER TABLE ONLY public.charmrecipebuild
+    ADD CONSTRAINT charmrecipebuild_builder_fkey FOREIGN KEY (builder) REFERENCES public.builder(id);
+
+
+ALTER TABLE ONLY public.charmrecipebuild
+    ADD CONSTRAINT charmrecipebuild_distro_arch_series_fkey FOREIGN KEY (distro_arch_series) REFERENCES public.distroarchseries(id);
+
+
+ALTER TABLE ONLY public.charmrecipebuild
+    ADD CONSTRAINT charmrecipebuild_log_fkey FOREIGN KEY (log) REFERENCES public.libraryfilealias(id);
+
+
+ALTER TABLE ONLY public.charmrecipebuild
+    ADD CONSTRAINT charmrecipebuild_processor_fkey FOREIGN KEY (processor) REFERENCES public.processor(id);
+
+
+ALTER TABLE ONLY public.charmrecipebuild
+    ADD CONSTRAINT charmrecipebuild_recipe_fkey FOREIGN KEY (recipe) REFERENCES public.charmrecipe(id);
+
+
+ALTER TABLE ONLY public.charmrecipebuild
+    ADD CONSTRAINT charmrecipebuild_requester_fkey FOREIGN KEY (requester) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.charmrecipebuild
+    ADD CONSTRAINT charmrecipebuild_upload_log_fkey FOREIGN KEY (upload_log) REFERENCES public.libraryfilealias(id);
+
+
+ALTER TABLE ONLY public.charmrecipebuildjob
+    ADD CONSTRAINT charmrecipebuildjob_build_fkey FOREIGN KEY (build) REFERENCES public.charmrecipebuild(id);
+
+
+ALTER TABLE ONLY public.charmrecipebuildjob
+    ADD CONSTRAINT charmrecipebuildjob_job_fkey FOREIGN KEY (job) REFERENCES public.job(id) ON DELETE CASCADE;
+
+
+ALTER TABLE ONLY public.charmrecipejob
+    ADD CONSTRAINT charmrecipejob_job_fkey FOREIGN KEY (job) REFERENCES public.job(id) ON DELETE CASCADE;
+
+
+ALTER TABLE ONLY public.charmrecipejob
+    ADD CONSTRAINT charmrecipejob_recipe_fkey FOREIGN KEY (recipe) REFERENCES public.charmrecipe(id);
+
+
+ALTER TABLE ONLY public.cibuild
+    ADD CONSTRAINT cibuild_build_farm_job_fkey FOREIGN KEY (build_farm_job) REFERENCES public.buildfarmjob(id);
+
+
+ALTER TABLE ONLY public.cibuild
+    ADD CONSTRAINT cibuild_builder_fkey FOREIGN KEY (builder) REFERENCES public.builder(id);
+
+
+ALTER TABLE ONLY public.cibuild
+    ADD CONSTRAINT cibuild_distro_arch_series_fkey FOREIGN KEY (distro_arch_series) REFERENCES public.distroarchseries(id);
+
+
+ALTER TABLE ONLY public.cibuild
+    ADD CONSTRAINT cibuild_git_repository_fkey FOREIGN KEY (git_repository) REFERENCES public.gitrepository(id);
+
+
+ALTER TABLE ONLY public.cibuild
+    ADD CONSTRAINT cibuild_log_fkey FOREIGN KEY (log) REFERENCES public.libraryfilealias(id);
+
+
+ALTER TABLE ONLY public.cibuild
+    ADD CONSTRAINT cibuild_processor_fkey FOREIGN KEY (processor) REFERENCES public.processor(id);
+
+
+ALTER TABLE ONLY public.cibuild
+    ADD CONSTRAINT cibuild_upload_log_fkey FOREIGN KEY (upload_log) REFERENCES public.libraryfilealias(id);
 
 
 ALTER TABLE ONLY public.codeimport
@@ -21895,6 +24452,10 @@ ALTER TABLE ONLY public.commercialsubscription
     ADD CONSTRAINT commercialsubscription__registrant__fk FOREIGN KEY (registrant) REFERENCES public.person(id);
 
 
+ALTER TABLE ONLY public.commercialsubscription
+    ADD CONSTRAINT commercialsubscription_distribution_fkey FOREIGN KEY (distribution) REFERENCES public.distribution(id);
+
+
 ALTER TABLE ONLY public.componentselection
     ADD CONSTRAINT componentselection__component__fk FOREIGN KEY (component) REFERENCES public.component(id);
 
@@ -21921,6 +24482,10 @@ ALTER TABLE ONLY public.customlanguagecode
 
 ALTER TABLE ONLY public.customlanguagecode
     ADD CONSTRAINT customlanguagecode_sourcepackagename_fkey FOREIGN KEY (sourcepackagename) REFERENCES public.sourcepackagename(id);
+
+
+ALTER TABLE ONLY public.cve
+    ADD CONSTRAINT cve_discoverer_fkey FOREIGN KEY (discoverer) REFERENCES public.person(id);
 
 
 ALTER TABLE ONLY public.cvereference
@@ -21960,7 +24525,19 @@ ALTER TABLE ONLY public.distribution
 
 
 ALTER TABLE ONLY public.distribution
+    ADD CONSTRAINT distribution_oci_credentials_fkey FOREIGN KEY (oci_credentials) REFERENCES public.ociregistrycredentials(id);
+
+
+ALTER TABLE ONLY public.distribution
+    ADD CONSTRAINT distribution_oci_project_admin_fkey FOREIGN KEY (oci_project_admin) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.distribution
     ADD CONSTRAINT distribution_registrant_fkey FOREIGN KEY (registrant) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.distribution
+    ADD CONSTRAINT distribution_security_admin_fkey FOREIGN KEY (security_admin) REFERENCES public.person(id);
 
 
 ALTER TABLE ONLY public.distribution
@@ -22029,6 +24606,18 @@ ALTER TABLE ONLY public.distroarchseries
 
 ALTER TABLE ONLY public.distroarchseries
     ADD CONSTRAINT distroarchseries_processor_fkey FOREIGN KEY (processor) REFERENCES public.processor(id);
+
+
+ALTER TABLE ONLY public.distroarchseriesfilter
+    ADD CONSTRAINT distroarchseriesfilter_creator_fkey FOREIGN KEY (creator) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.distroarchseriesfilter
+    ADD CONSTRAINT distroarchseriesfilter_distroarchseries_fkey FOREIGN KEY (distroarchseries) REFERENCES public.distroarchseries(id);
+
+
+ALTER TABLE ONLY public.distroarchseriesfilter
+    ADD CONSTRAINT distroarchseriesfilter_packageset_fkey FOREIGN KEY (packageset) REFERENCES public.packageset(id);
 
 
 ALTER TABLE ONLY public.distroseries
@@ -22205,6 +24794,14 @@ ALTER TABLE ONLY public.gitref
 
 ALTER TABLE ONLY public.gitrepository
     ADD CONSTRAINT gitrepository_distribution_fkey FOREIGN KEY (distribution) REFERENCES public.distribution(id);
+
+
+ALTER TABLE ONLY public.gitrepository
+    ADD CONSTRAINT gitrepository_oci_project_fkey FOREIGN KEY (oci_project) REFERENCES public.ociproject(id);
+
+
+ALTER TABLE ONLY public.gitrepository
+    ADD CONSTRAINT gitrepository_ociprojectname_fkey FOREIGN KEY (ociprojectname) REFERENCES public.ociprojectname(id);
 
 
 ALTER TABLE ONLY public.gitrepository
@@ -22623,6 +25220,14 @@ ALTER TABLE ONLY public.messagechunk
     ADD CONSTRAINT messagechunk_message_fk FOREIGN KEY (message) REFERENCES public.message(id);
 
 
+ALTER TABLE ONLY public.messagerevision
+    ADD CONSTRAINT messagerevision_message_fkey FOREIGN KEY (message) REFERENCES public.message(id);
+
+
+ALTER TABLE ONLY public.messagerevisionchunk
+    ADD CONSTRAINT messagerevisionchunk_messagerevision_fkey FOREIGN KEY (messagerevision) REFERENCES public.messagerevision(id);
+
+
 ALTER TABLE ONLY public.milestone
     ADD CONSTRAINT milestone__distroseries__distribution__fk FOREIGN KEY (distroseries, distribution) REFERENCES public.distroseries(id, distribution);
 
@@ -22751,6 +25356,134 @@ ALTER TABLE ONLY public.oauthrequesttoken
     ADD CONSTRAINT oauthrequesttoken_sourcepackagename_fkey FOREIGN KEY (sourcepackagename) REFERENCES public.sourcepackagename(id);
 
 
+ALTER TABLE ONLY public.ocifile
+    ADD CONSTRAINT ocifile_build_fkey FOREIGN KEY (build) REFERENCES public.ocirecipebuild(id);
+
+
+ALTER TABLE ONLY public.ocifile
+    ADD CONSTRAINT ocifile_library_file_fkey FOREIGN KEY (library_file) REFERENCES public.libraryfilealias(id);
+
+
+ALTER TABLE ONLY public.ociproject
+    ADD CONSTRAINT ociproject_distribution_fkey FOREIGN KEY (distribution) REFERENCES public.distribution(id);
+
+
+ALTER TABLE ONLY public.ociproject
+    ADD CONSTRAINT ociproject_ociprojectname_fkey FOREIGN KEY (ociprojectname) REFERENCES public.ociprojectname(id);
+
+
+ALTER TABLE ONLY public.ociproject
+    ADD CONSTRAINT ociproject_project_fkey FOREIGN KEY (project) REFERENCES public.product(id);
+
+
+ALTER TABLE ONLY public.ociproject
+    ADD CONSTRAINT ociproject_registrant_fkey FOREIGN KEY (registrant) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.ociprojectseries
+    ADD CONSTRAINT ociprojectseries_ociproject_fkey FOREIGN KEY (ociproject) REFERENCES public.ociproject(id);
+
+
+ALTER TABLE ONLY public.ociprojectseries
+    ADD CONSTRAINT ociprojectseries_registrant_fkey FOREIGN KEY (registrant) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.ocipushrule
+    ADD CONSTRAINT ocipushrule_recipe_fkey FOREIGN KEY (recipe) REFERENCES public.ocirecipe(id);
+
+
+ALTER TABLE ONLY public.ocipushrule
+    ADD CONSTRAINT ocipushrule_registry_credentials_fkey FOREIGN KEY (registry_credentials) REFERENCES public.ociregistrycredentials(id);
+
+
+ALTER TABLE ONLY public.ocirecipe
+    ADD CONSTRAINT ocirecipe_git_repository_fkey FOREIGN KEY (git_repository) REFERENCES public.gitrepository(id);
+
+
+ALTER TABLE ONLY public.ocirecipe
+    ADD CONSTRAINT ocirecipe_oci_project_fkey FOREIGN KEY (oci_project) REFERENCES public.ociproject(id);
+
+
+ALTER TABLE ONLY public.ocirecipe
+    ADD CONSTRAINT ocirecipe_owner_fkey FOREIGN KEY (owner) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.ocirecipe
+    ADD CONSTRAINT ocirecipe_registrant_fkey FOREIGN KEY (registrant) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.ocirecipearch
+    ADD CONSTRAINT ocirecipearch_processor_fkey FOREIGN KEY (processor) REFERENCES public.processor(id);
+
+
+ALTER TABLE ONLY public.ocirecipearch
+    ADD CONSTRAINT ocirecipearch_recipe_fkey FOREIGN KEY (recipe) REFERENCES public.ocirecipe(id);
+
+
+ALTER TABLE ONLY public.ocirecipebuild
+    ADD CONSTRAINT ocirecipebuild_build_farm_job_fkey FOREIGN KEY (build_farm_job) REFERENCES public.buildfarmjob(id);
+
+
+ALTER TABLE ONLY public.ocirecipebuild
+    ADD CONSTRAINT ocirecipebuild_build_request_fkey FOREIGN KEY (build_request) REFERENCES public.job(id);
+
+
+ALTER TABLE ONLY public.ocirecipebuild
+    ADD CONSTRAINT ocirecipebuild_builder_fkey FOREIGN KEY (builder) REFERENCES public.builder(id);
+
+
+ALTER TABLE ONLY public.ocirecipebuild
+    ADD CONSTRAINT ocirecipebuild_log_fkey FOREIGN KEY (log) REFERENCES public.libraryfilealias(id);
+
+
+ALTER TABLE ONLY public.ocirecipebuild
+    ADD CONSTRAINT ocirecipebuild_processor_fkey FOREIGN KEY (processor) REFERENCES public.processor(id);
+
+
+ALTER TABLE ONLY public.ocirecipebuild
+    ADD CONSTRAINT ocirecipebuild_recipe_fkey FOREIGN KEY (recipe) REFERENCES public.ocirecipe(id);
+
+
+ALTER TABLE ONLY public.ocirecipebuild
+    ADD CONSTRAINT ocirecipebuild_requester_fkey FOREIGN KEY (requester) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.ocirecipebuild
+    ADD CONSTRAINT ocirecipebuild_upload_log_fkey FOREIGN KEY (upload_log) REFERENCES public.libraryfilealias(id);
+
+
+ALTER TABLE ONLY public.ocirecipebuildjob
+    ADD CONSTRAINT ocirecipebuildjob_build_fkey FOREIGN KEY (build) REFERENCES public.ocirecipebuild(id);
+
+
+ALTER TABLE ONLY public.ocirecipebuildjob
+    ADD CONSTRAINT ocirecipebuildjob_job_fkey FOREIGN KEY (job) REFERENCES public.job(id) ON DELETE CASCADE;
+
+
+ALTER TABLE ONLY public.ocirecipejob
+    ADD CONSTRAINT ocirecipejob_job_fkey FOREIGN KEY (job) REFERENCES public.job(id) ON DELETE CASCADE;
+
+
+ALTER TABLE ONLY public.ocirecipejob
+    ADD CONSTRAINT ocirecipejob_recipe_fkey FOREIGN KEY (recipe) REFERENCES public.ocirecipe(id);
+
+
+ALTER TABLE ONLY public.ocirecipesubscription
+    ADD CONSTRAINT ocirecipesubscription_person_fkey FOREIGN KEY (person) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.ocirecipesubscription
+    ADD CONSTRAINT ocirecipesubscription_recipe_fkey FOREIGN KEY (recipe) REFERENCES public.ocirecipe(id);
+
+
+ALTER TABLE ONLY public.ocirecipesubscription
+    ADD CONSTRAINT ocirecipesubscription_subscribed_by_fkey FOREIGN KEY (subscribed_by) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.ociregistrycredentials
+    ADD CONSTRAINT ociregistrycredentials_owner_fkey FOREIGN KEY (owner) REFERENCES public.person(id);
+
+
 ALTER TABLE ONLY public.officialbugtag
     ADD CONSTRAINT officialbugtag_distribution_fkey FOREIGN KEY (distribution) REFERENCES public.distribution(id);
 
@@ -22876,10 +25609,6 @@ ALTER TABLE ONLY public.packageupload
 
 
 ALTER TABLE ONLY public.packageupload
-    ADD CONSTRAINT packageupload__signing_key__fk FOREIGN KEY (signing_key) REFERENCES public.gpgkey(id);
-
-
-ALTER TABLE ONLY public.packageupload
     ADD CONSTRAINT packageupload_signing_key_owner_fkey FOREIGN KEY (signing_key_owner) REFERENCES public.person(id);
 
 
@@ -22897,6 +25626,14 @@ ALTER TABLE ONLY public.packageuploadcustom
 
 ALTER TABLE ONLY public.packageuploadcustom
     ADD CONSTRAINT packageuploadcustom_packageupload_fk FOREIGN KEY (packageupload) REFERENCES public.packageupload(id);
+
+
+ALTER TABLE ONLY public.packageuploadlog
+    ADD CONSTRAINT packageuploadlog_package_upload_fkey FOREIGN KEY (package_upload) REFERENCES public.packageupload(id);
+
+
+ALTER TABLE ONLY public.packageuploadlog
+    ADD CONSTRAINT packageuploadlog_reviewer_fkey FOREIGN KEY (reviewer) REFERENCES public.person(id);
 
 
 ALTER TABLE ONLY public.packageuploadsource
@@ -23340,10 +26077,6 @@ ALTER TABLE ONLY public.teammembership
 
 
 ALTER TABLE ONLY public.revision
-    ADD CONSTRAINT revision_gpgkey_fk FOREIGN KEY (gpgkey) REFERENCES public.gpgkey(id);
-
-
-ALTER TABLE ONLY public.revision
     ADD CONSTRAINT revision_revision_author_fk FOREIGN KEY (revision_author) REFERENCES public.revisionauthor(id);
 
 
@@ -23381,6 +26114,26 @@ ALTER TABLE ONLY public.revisionparent
 
 ALTER TABLE ONLY public.revisionproperty
     ADD CONSTRAINT revisionproperty__revision__fk FOREIGN KEY (revision) REFERENCES public.revision(id);
+
+
+ALTER TABLE ONLY public.revisionstatusartifact
+    ADD CONSTRAINT revisionstatusartifact_library_file_fkey FOREIGN KEY (library_file) REFERENCES public.libraryfilealias(id);
+
+
+ALTER TABLE ONLY public.revisionstatusartifact
+    ADD CONSTRAINT revisionstatusartifact_report_fkey FOREIGN KEY (report) REFERENCES public.revisionstatusreport(id);
+
+
+ALTER TABLE ONLY public.revisionstatusreport
+    ADD CONSTRAINT revisionstatusreport_ci_build_fkey FOREIGN KEY (ci_build) REFERENCES public.cibuild(id);
+
+
+ALTER TABLE ONLY public.revisionstatusreport
+    ADD CONSTRAINT revisionstatusreport_creator_fkey FOREIGN KEY (creator) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.revisionstatusreport
+    ADD CONSTRAINT revisionstatusreport_git_repository_fkey FOREIGN KEY (git_repository) REFERENCES public.gitrepository(id);
 
 
 ALTER TABLE ONLY public.sectionselection
@@ -23475,10 +26228,6 @@ ALTER TABLE ONLY public.signedcodeofconduct
     ADD CONSTRAINT signedcodeofconduct_owner_fk FOREIGN KEY (owner) REFERENCES public.person(id);
 
 
-ALTER TABLE ONLY public.signedcodeofconduct
-    ADD CONSTRAINT signedcodeofconduct_signingkey_fk FOREIGN KEY (owner, signingkey) REFERENCES public.gpgkey(owner, id) ON UPDATE CASCADE;
-
-
 ALTER TABLE ONLY public.snap
     ADD CONSTRAINT snap_auto_build_archive_fkey FOREIGN KEY (auto_build_archive) REFERENCES public.archive(id);
 
@@ -23497,6 +26246,10 @@ ALTER TABLE ONLY public.snap
 
 ALTER TABLE ONLY public.snap
     ADD CONSTRAINT snap_owner_fkey FOREIGN KEY (owner) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.snap
+    ADD CONSTRAINT snap_project_fkey FOREIGN KEY (project) REFERENCES public.product(id);
 
 
 ALTER TABLE ONLY public.snap
@@ -23521,6 +26274,14 @@ ALTER TABLE ONLY public.snapbase
 
 ALTER TABLE ONLY public.snapbase
     ADD CONSTRAINT snapbase_registrant_fkey FOREIGN KEY (registrant) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.snapbasearch
+    ADD CONSTRAINT snapbasearch_processor_fkey FOREIGN KEY (processor) REFERENCES public.processor(id);
+
+
+ALTER TABLE ONLY public.snapbasearch
+    ADD CONSTRAINT snapbasearch_snap_base_fkey FOREIGN KEY (snap_base) REFERENCES public.snapbase(id);
 
 
 ALTER TABLE ONLY public.snapbuild
@@ -23553,6 +26314,10 @@ ALTER TABLE ONLY public.snapbuild
 
 ALTER TABLE ONLY public.snapbuild
     ADD CONSTRAINT snapbuild_requester_fkey FOREIGN KEY (requester) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.snapbuild
+    ADD CONSTRAINT snapbuild_snap_base_fkey FOREIGN KEY (snap_base) REFERENCES public.snapbase(id);
 
 
 ALTER TABLE ONLY public.snapbuild
@@ -23599,6 +26364,18 @@ ALTER TABLE ONLY public.snappyseries
     ADD CONSTRAINT snappyseries_registrant_fkey FOREIGN KEY (registrant) REFERENCES public.person(id);
 
 
+ALTER TABLE ONLY public.snapsubscription
+    ADD CONSTRAINT snapsubscription_person_fkey FOREIGN KEY (person) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.snapsubscription
+    ADD CONSTRAINT snapsubscription_snap_fkey FOREIGN KEY (snap) REFERENCES public.snap(id);
+
+
+ALTER TABLE ONLY public.snapsubscription
+    ADD CONSTRAINT snapsubscription_subscribed_by_fkey FOREIGN KEY (subscribed_by) REFERENCES public.person(id);
+
+
 ALTER TABLE ONLY public.sourcepackageformatselection
     ADD CONSTRAINT sourceformatselection__distroseries__fk FOREIGN KEY (distroseries) REFERENCES public.distroseries(id);
 
@@ -23625,6 +26402,10 @@ ALTER TABLE ONLY public.sourcepackagepublishinghistory
 
 ALTER TABLE ONLY public.sourcepackagepublishinghistory
     ADD CONSTRAINT sourcepackagepublishinghistory_ancestor_fkey FOREIGN KEY (ancestor) REFERENCES public.sourcepackagepublishinghistory(id);
+
+
+ALTER TABLE ONLY public.sourcepackagepublishinghistory
+    ADD CONSTRAINT sourcepackagepublishinghistory_copied_from_archive_fkey FOREIGN KEY (copied_from_archive) REFERENCES public.archive(id);
 
 
 ALTER TABLE ONLY public.sourcepackagepublishinghistory
@@ -23732,10 +26513,6 @@ ALTER TABLE ONLY public.sourcepackagerelease
 
 
 ALTER TABLE ONLY public.sourcepackagerelease
-    ADD CONSTRAINT sourcepackagerelease__dscsigningkey FOREIGN KEY (dscsigningkey) REFERENCES public.gpgkey(id);
-
-
-ALTER TABLE ONLY public.sourcepackagerelease
     ADD CONSTRAINT sourcepackagerelease__upload_archive__fk FOREIGN KEY (upload_archive) REFERENCES public.archive(id);
 
 
@@ -23749,6 +26526,10 @@ ALTER TABLE ONLY public.sourcepackagerelease
 
 ALTER TABLE ONLY public.sourcepackagerelease
     ADD CONSTRAINT sourcepackagerelease_changelog_fkey FOREIGN KEY (changelog) REFERENCES public.libraryfilealias(id);
+
+
+ALTER TABLE ONLY public.sourcepackagerelease
+    ADD CONSTRAINT sourcepackagerelease_ci_build_fkey FOREIGN KEY (ci_build) REFERENCES public.cibuild(id);
 
 
 ALTER TABLE ONLY public.sourcepackagerelease
@@ -24167,12 +26948,44 @@ ALTER TABLE ONLY public.votecast
     ADD CONSTRAINT votecast_poll_fk FOREIGN KEY (poll) REFERENCES public.poll(id);
 
 
+ALTER TABLE ONLY public.vulnerability
+    ADD CONSTRAINT vulnerability_creator_fkey FOREIGN KEY (creator) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.vulnerability
+    ADD CONSTRAINT vulnerability_cve_fkey FOREIGN KEY (cve) REFERENCES public.cve(id);
+
+
+ALTER TABLE ONLY public.vulnerability
+    ADD CONSTRAINT vulnerability_distribution_fkey FOREIGN KEY (distribution) REFERENCES public.distribution(id);
+
+
+ALTER TABLE ONLY public.vulnerabilityactivity
+    ADD CONSTRAINT vulnerabilityactivity_changer_fkey FOREIGN KEY (changer) REFERENCES public.person(id);
+
+
+ALTER TABLE ONLY public.vulnerabilityactivity
+    ADD CONSTRAINT vulnerabilityactivity_vulnerability_fkey FOREIGN KEY (vulnerability) REFERENCES public.vulnerability(id);
+
+
 ALTER TABLE ONLY public.webhook
     ADD CONSTRAINT webhook_branch_fkey FOREIGN KEY (branch) REFERENCES public.branch(id);
 
 
 ALTER TABLE ONLY public.webhook
+    ADD CONSTRAINT webhook_charm_recipe_fkey FOREIGN KEY (charm_recipe) REFERENCES public.charmrecipe(id);
+
+
+ALTER TABLE ONLY public.webhook
     ADD CONSTRAINT webhook_git_repository_fkey FOREIGN KEY (git_repository) REFERENCES public.gitrepository(id);
+
+
+ALTER TABLE ONLY public.webhook
+    ADD CONSTRAINT webhook_livefs_fkey FOREIGN KEY (livefs) REFERENCES public.livefs(id);
+
+
+ALTER TABLE ONLY public.webhook
+    ADD CONSTRAINT webhook_oci_recipe_fkey FOREIGN KEY (oci_recipe) REFERENCES public.ocirecipe(id);
 
 
 ALTER TABLE ONLY public.webhook
