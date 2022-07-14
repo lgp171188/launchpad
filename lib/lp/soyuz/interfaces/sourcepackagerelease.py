@@ -145,10 +145,19 @@ class ISourcePackageRelease(Interface):
     # Really ISourcePackageRecipeBuild -- see _schema_circular_imports.
     source_package_recipe_build = Reference(
         schema=Interface,
-        description=_("The `SourcePackageRecipeBuild` which produced this "
-            "source package release, or None if it was created from a "
-            "traditional upload."),
+        description=_(
+            "The `SourcePackageRecipeBuild` which produced this source "
+            "package release, or None if it was not created from a source "
+            "package recipe."),
         title=_("Source package recipe build"),
+        required=False, readonly=True)
+    # Really ICIBuild, patched in _schema_circular_imports.
+    ci_build = Reference(
+        schema=Interface,
+        description=_(
+            "The `CIBuild` which produced this source package release, or "
+            "None if it was not created from a CI build."),
+        title=_("CI build"),
         required=False, readonly=True)
 
     def getUserDefinedField(name):

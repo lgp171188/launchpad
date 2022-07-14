@@ -576,7 +576,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             sourcepackagename="foo",
             version="1.0",
             channel="edge",
-            format=SourcePackageType.SDIST,
+            format=SourcePackageType.CI_BUILD,
         )
         spr = spph.sourcepackagerelease
         sprf = self.factory.makeSourcePackageReleaseFile(
@@ -635,7 +635,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             archive=pool.archive,
             sourcepackagename="foo",
             version="1.0",
-            format=SourcePackageType.SDIST,
+            format=SourcePackageType.CI_BUILD,
         )
         bpph = self.factory.makeBinaryPackagePublishingHistory(
             archive=pool.archive,
@@ -940,7 +940,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             archive=pool.archive,
             sourcepackagename="foo",
             version="1.0",
-            format=SourcePackageType.SDIST,
+            format=SourcePackageType.CI_BUILD,
         )
         bpph = self.factory.makeBinaryPackagePublishingHistory(
             archive=pool.archive,

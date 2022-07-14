@@ -335,6 +335,7 @@ patch_reference_property(IPackageUpload, 'copy_source_archive', IArchive)
 patch_reference_property(
     ISourcePackageRelease, 'source_package_recipe_build',
     ISourcePackageRecipeBuild)
+patch_reference_property(ISourcePackageRelease, 'ci_build', ICIBuild)
 
 # IIndexedMessage
 patch_reference_property(IIndexedMessage, 'inside', IBugTask)
