@@ -57,12 +57,11 @@ build_new_sampledata=./fti.py --null -d ${1} -q && \
 # The latest schema dump from production. Database patches are relative
 # to this baseline. This dump should be updated occasionally from production
 # to ensure that the development database remains in sync with reality
-# on production. It is generated using newbaseline.py in
-# bzr+ssh://devpad.canonical.com/code/stub/dbascripts
+# on production. It is generated using database/schema/newbaseline.py.
 #
-REV=2210
+REV=2211
 BASELINE=launchpad-${REV}-00-0.sql
-MD5SUM=36ae7078cd41916bbbd9c116b2e6aea7  launchpad-2210-00-0.sql
+MD5SUM=ab4516c1e0439619f6c3a8e248d0c37a  launchpad-2211-00-0.sql
 
 default: all
 
