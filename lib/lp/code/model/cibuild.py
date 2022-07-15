@@ -65,8 +65,10 @@ from lp.code.model.gitref import GitRef
 from lp.code.model.lpcraft import load_configuration
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.interfaces.sourcepackage import SourcePackageType
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
@@ -91,6 +93,7 @@ from lp.services.propertycache import cachedproperty
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.distroarchseries import DistroArchSeries
+from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
 
 def get_stages(configuration):
@@ -471,6 +474,17 @@ class CIBuild(PackageBuildMixin, StormBase):
         # We don't currently send any notifications.
 
     @property
+    def sourcepackages(self):
+        """See `ICIBuild`."""
+        releases = IStore(SourcePackageRelease).find(
+            (SourcePackageRelease, SourcePackageName),
+            SourcePackageRelease.ci_build == self,
+            SourcePackageRelease.sourcepackagename == SourcePackageName.id)
+        releases = releases.order_by(
+            SourcePackageName.name, SourcePackageRelease.id)
+        return DecoratedResultSet(releases, result_decorator=itemgetter(0))
+
+    @property
     def binarypackages(self):
         """See `ICIBuild`."""
         releases = IStore(BinaryPackageRelease).find(
@@ -480,6 +494,22 @@ class CIBuild(PackageBuildMixin, StormBase):
         releases = releases.order_by(
             BinaryPackageName.name, BinaryPackageRelease.id)
         return DecoratedResultSet(releases, result_decorator=itemgetter(0))
+
+    def createSourcePackageRelease(
+            self, distroseries, sourcepackagename, version, creator=None,
+            archive=None):
+        """See `ICIBuild`."""
+        return distroseries.createUploadedSourcePackageRelease(
+            sourcepackagename=sourcepackagename,
+            version=version,
+            format=SourcePackageType.CI_BUILD,
+            # This doesn't really make sense for SPRs created for CI builds,
+            # but the column is NOT NULL.  The empty string will do though,
+            # since nothing will use this.
+            architecturehintlist="",
+            creator=creator,
+            archive=archive,
+            ci_build=self)
 
     def createBinaryPackageRelease(
             self, binarypackagename, version, summary, description,

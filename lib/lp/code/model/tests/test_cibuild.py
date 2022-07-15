@@ -62,6 +62,7 @@ from lp.code.model.cibuild import (
 from lp.code.model.lpcraft import load_configuration
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.interfaces.sourcepackage import SourcePackageType
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
@@ -399,6 +400,27 @@ class TestCIBuild(TestCaseWithFactory):
                 git_repository=build.git_repository,
                 commit_sha1=build.commit_sha1,
                 ci_build=build))
+
+    def test_createSourcePackageRelease(self):
+        distroseries = self.factory.makeDistroSeries()
+        archive = self.factory.makeArchive(
+            distribution=distroseries.distribution)
+        build = self.factory.makeCIBuild()
+        spn = self.factory.makeSourcePackageName()
+        spr = build.createSourcePackageRelease(
+            distroseries, spn, "1.0", creator=build.git_repository.owner,
+            archive=archive)
+        self.assertThat(spr, MatchesStructure(
+            upload_distroseries=Equals(distroseries),
+            sourcepackagename=Equals(spn),
+            version=Equals("1.0"),
+            format=Equals(SourcePackageType.CI_BUILD),
+            architecturehintlist=Equals(""),
+            creator=Equals(build.git_repository.owner),
+            upload_archive=Equals(archive),
+            ci_build=Equals(build),
+            ))
+        self.assertContentEqual([spr], build.sourcepackages)
 
     def test_createBinaryPackageRelease(self):
         build = self.factory.makeCIBuild()
