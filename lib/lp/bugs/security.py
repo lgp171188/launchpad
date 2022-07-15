@@ -417,6 +417,21 @@ class EditBugSubscriptionFilter(AuthorizationBase):
         return user.inTeam(self.obj.structural_subscription.subscriber)
 
 
+class ViewVulnerability(AnonymousAuthorization):
+    """Anyone can view public vulnerabilities, but only subscribers
+    can view private ones.
+    """
+
+    permission = "launchpad.View"
+    usedfor = IVulnerability
+
+    def checkUnauthenticated(self):
+        return self.obj.visibleByUser(None)
+
+    def checkAuthenticated(self, user):
+        return self.obj.visibleByUser(user.person)
+
+
 class EditVulnerability(DelegatedAuthorization):
     """The security admins of a distribution should be able to edit
     vulnerabilities in that distribution."""

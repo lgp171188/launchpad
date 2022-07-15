@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Person/team merger implementation."""
@@ -895,7 +895,8 @@ def _mergeOCIRecipeSubscription(cur, from_id, to_id):
 
 def _mergeVulnerabilitySubscription(cur, from_id, to_id):
     # Update only the VulnerabilitySubscription that will not conflict.
-    cur.execute('''
+    cur.execute(
+        """
         UPDATE VulnerabilitySubscription
         SET person=%(to_id)d
         WHERE person=%(from_id)d AND vulnerability NOT IN
@@ -904,11 +905,16 @@ def _mergeVulnerabilitySubscription(cur, from_id, to_id):
             FROM VulnerabilitySubscription
             WHERE person = %(to_id)d
             )
-    ''' % vars())
+    """
+        % vars()
+    )
     # and delete those left over.
-    cur.execute('''
+    cur.execute(
+        """
         DELETE FROM VulnerabilitySubscription WHERE person=%(from_id)d
-        ''' % vars())
+        """
+        % vars()
+    )
 
 
 def _mergeCharmRecipe(cur, from_person, to_person):
@@ -1181,7 +1187,7 @@ def merge_people(from_person, to_person, reviewer, delete=False):
     skip.append(("charmrecipe", "owner"))
 
     _mergeVulnerabilitySubscription(cur, from_id, to_id)
-    skip.append(('vulnerabilitysubscription', 'person'))
+    skip.append(("vulnerabilitysubscription", "person"))
 
     # Sanity check. If we have a reference that participates in a
     # UNIQUE index, it must have already been handled by this point.

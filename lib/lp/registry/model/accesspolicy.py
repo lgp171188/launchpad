@@ -1,4 +1,4 @@
-# Copyright 2011-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Model classes for pillar and artifact access policies."""
@@ -95,6 +95,8 @@ class AccessArtifact(StormBase):
     specification = Reference(specification_id, "Specification.id")
     ocirecipe_id = Int(name="ocirecipe")
     ocirecipe = Reference(ocirecipe_id, "OCIRecipe.id")
+    vulnerability_id = Int(name="vulnerability")
+    vulnerability = Reference(vulnerability_id, "Vulnerability.id")
 
     @property
     def concrete_artifact(self):
@@ -107,6 +109,7 @@ class AccessArtifact(StormBase):
     def _constraintForConcrete(cls, concrete_artifact):
         from lp.blueprints.interfaces.specification import ISpecification
         from lp.bugs.interfaces.bug import IBug
+        from lp.bugs.interfaces.vulnerability import IVulnerability
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
         from lp.oci.interfaces.ocirecipe import IOCIRecipe
@@ -124,6 +127,8 @@ class AccessArtifact(StormBase):
             col = cls.specification
         elif IOCIRecipe.providedBy(concrete_artifact):
             col = cls.ocirecipe
+        elif IVulnerability.providedBy(concrete_artifact):
+            col = cls.vulnerability
         else:
             raise ValueError("%r is not a valid artifact" % concrete_artifact)
         return col == concrete_artifact
@@ -146,6 +151,7 @@ class AccessArtifact(StormBase):
         """See `IAccessArtifactSource`."""
         from lp.blueprints.interfaces.specification import ISpecification
         from lp.bugs.interfaces.bug import IBug
+        from lp.bugs.interfaces.vulnerability import IVulnerability
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
         from lp.oci.interfaces.ocirecipe import IOCIRecipe
@@ -163,17 +169,33 @@ class AccessArtifact(StormBase):
         insert_values = []
         for concrete in needed:
             if IBug.providedBy(concrete):
-                insert_values.append((concrete, None, None, None, None, None))
+                insert_values.append(
+                    (concrete, None, None, None, None, None, None)
+                )
             elif IBranch.providedBy(concrete):
-                insert_values.append((None, concrete, None, None, None, None))
+                insert_values.append(
+                    (None, concrete, None, None, None, None, None)
+                )
             elif IGitRepository.providedBy(concrete):
-                insert_values.append((None, None, concrete, None, None, None))
+                insert_values.append(
+                    (None, None, concrete, None, None, None, None)
+                )
             elif ISnap.providedBy(concrete):
-                insert_values.append((None, None, None, concrete, None, None))
+                insert_values.append(
+                    (None, None, None, concrete, None, None, None)
+                )
             elif ISpecification.providedBy(concrete):
-                insert_values.append((None, None, None, None, concrete, None))
+                insert_values.append(
+                    (None, None, None, None, concrete, None, None)
+                )
             elif IOCIRecipe.providedBy(concrete):
-                insert_values.append((None, None, None, None, None, concrete))
+                insert_values.append(
+                    (None, None, None, None, None, concrete, None)
+                )
+            elif IVulnerability.providedBy(concrete):
+                insert_values.append(
+                    (None, None, None, None, None, None, concrete)
+                )
             else:
                 raise ValueError("%r is not a supported artifact" % concrete)
         columns = (
@@ -183,6 +205,7 @@ class AccessArtifact(StormBase):
             cls.snap,
             cls.specification,
             cls.ocirecipe,
+            cls.vulnerability,
         )
         new = create(columns, insert_values, get_objects=True)
         return list(existing) + new

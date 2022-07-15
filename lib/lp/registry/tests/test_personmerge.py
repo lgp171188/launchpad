@@ -25,6 +25,7 @@ from lp.charms.interfaces.charmrecipe import (
 )
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE, IOCIRecipeSet
+from lp.registry.enums import BugSharingPolicy
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactGrantSource,
     IAccessPolicyGrantSource,
@@ -48,6 +49,7 @@ from lp.services.identity.interfaces.emailaddress import (
     EmailAddressStatus,
     IEmailAddressSet,
 )
+from lp.services.webapp.authorization import check_permission
 from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS, ISnapSet
 from lp.soyuz.enums import ArchiveStatus
 from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG, ILiveFSSet
@@ -749,6 +751,71 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         )
         self.assertFalse(snap.visibleByUser(duplicate))
         self.assertIsNone(snap.getSubscription(duplicate))
+
+    def test_merge_vulnerability_subscriptions(self):
+        # Checks that merging users moves subscriptions.
+        duplicate = self.factory.makePerson()
+        mergee = self.factory.makePerson()
+        vulnerability = self.factory.makeVulnerability()
+        vulnerability.subscribe(duplicate, duplicate)
+        self.assertTrue(vulnerability.hasSubscription(duplicate))
+        self.assertFalse(vulnerability.hasSubscription(mergee))
+        self._do_premerge(duplicate, mergee)
+        login_person(mergee)
+        duplicate, mergee = self._do_merge(duplicate, mergee)
+        self.assertFalse(vulnerability.hasSubscription(duplicate))
+        self.assertTrue(vulnerability.hasSubscription(mergee))
+
+    def test_merge_vulnerability_subscriptions_mergee_already_subscribed(self):
+        duplicate = self.factory.makePerson()
+        mergee = self.factory.makePerson()
+        vulnerability = self.factory.makeVulnerability()
+        vulnerability.subscribe(duplicate, duplicate)
+        vulnerability.subscribe(mergee, mergee)
+        mergee_subscription = vulnerability.getSubscription(mergee)
+        self.assertTrue(vulnerability.hasSubscription(duplicate))
+        self.assertTrue(vulnerability.hasSubscription(mergee))
+        self._do_premerge(duplicate, mergee)
+        login_person(mergee)
+        duplicate, mergee = self._do_merge(duplicate, mergee)
+        self.assertFalse(vulnerability.hasSubscription(duplicate))
+        self.assertTrue(vulnerability.hasSubscription(mergee))
+        self.assertEqual(
+            mergee_subscription, vulnerability.getSubscription(mergee)
+        )
+
+    def test_merge_vulnerability_subscriptions_non_public_vulnerability(self):
+        duplicate = self.factory.makePerson()
+        mergee = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(
+            bug_sharing_policy=BugSharingPolicy.PROPRIETARY
+        )
+        vulnerability = self.factory.makeVulnerability(
+            distribution=distribution,
+            information_type=InformationType.PROPRIETARY,
+        )
+        with person_logged_in(distribution.owner):
+            vulnerability.subscribe(duplicate, distribution.owner)
+            self.assertTrue(vulnerability.hasSubscription(duplicate))
+            self.assertFalse(vulnerability.hasSubscription(mergee))
+
+        with person_logged_in(duplicate):
+            self.assertTrue(check_permission("launchpad.View", vulnerability))
+
+        with person_logged_in(mergee):
+            self.assertFalse(check_permission("launchpad.View", vulnerability))
+
+        self._do_premerge(duplicate, mergee)
+        login_person(mergee)
+        duplicate, mergee = self._do_merge(duplicate, mergee)
+        with person_logged_in(distribution.owner):
+            self.assertFalse(vulnerability.hasSubscription(duplicate))
+            self.assertTrue(vulnerability.hasSubscription(mergee))
+
+        # Cannot log in as the duplicate user any more to test that they do not
+        # have the permission.
+        with person_logged_in(mergee):
+            self.assertTrue(check_permission("launchpad.View", vulnerability))
 
     def test_merge_moves_oci_recipes(self):
         # When person/teams are merged, oci recipes owned by the from
