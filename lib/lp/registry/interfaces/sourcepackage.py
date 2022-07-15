@@ -427,6 +427,24 @@ class SourcePackageFileType(DBEnumeratedType):
         This file is a Python source distribution ("sdist").
         """)
 
+    GO_MODULE_INFO = DBItem(12, """
+        Go Module Info
+
+        This file contains JSON metadata about a Go module.
+        """)
+
+    GO_MODULE_MOD = DBItem(13, """
+        go.mod
+
+        This is the `go.mod` file for a Go module.
+        """)
+
+    GO_MODULE_ZIP = DBItem(14, """
+        Zipped Go Module
+
+        This is the zipped contents of a Go module.
+        """)
+
 
 class SourcePackageType(DBEnumeratedType):
     """Source Package Format

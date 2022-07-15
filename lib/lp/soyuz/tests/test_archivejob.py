@@ -425,6 +425,46 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
                     ),
                 }))
 
+    def test__scanFiles_go(self):
+        self.useFixture(FakeLogger())
+        archive = self.factory.makeArchive()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        build = self.makeCIBuild(archive.distribution)
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="edge")
+        info_path = Path("go/dist/v0.0.1.info")
+        mod_path = Path("go/dist/v0.0.1.mod")
+        zip_path = Path("go/dist/v0.0.1.zip")
+        tmpdir = Path(self.useFixture(TempDir()).path)
+        shutil.copy2(datadir(str(info_path)), str(tmpdir))
+        shutil.copy2(datadir(str(mod_path)), str(tmpdir))
+        shutil.copy2(datadir(str(zip_path)), str(tmpdir))
+        all_metadata = job._scanFiles(tmpdir)
+        self.assertThat(
+            all_metadata,
+            MatchesDict({
+                info_path.name: MatchesStructure.byEquality(
+                    format=SourcePackageFileType.GO_MODULE_INFO,
+                    name="example.com/t",
+                    version="v0.0.1",
+                    user_defined_fields=[("module-path", "example.com/t")],
+                    ),
+                mod_path.name: MatchesStructure.byEquality(
+                    format=SourcePackageFileType.GO_MODULE_MOD,
+                    name="example.com/t",
+                    version="v0.0.1",
+                    user_defined_fields=[("module-path", "example.com/t")],
+                    ),
+                zip_path.name: MatchesStructure.byEquality(
+                    format=SourcePackageFileType.GO_MODULE_ZIP,
+                    name="example.com/t",
+                    version="v0.0.1",
+                    user_defined_fields=[("module-path", "example.com/t")],
+                    ),
+                }))
+
     def test_run_indep(self):
         archive = self.factory.makeArchive(
             repository_format=ArchiveRepositoryFormat.PYTHON)
@@ -684,6 +724,65 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
                             filetype=BinaryPackageFileType.CONDA_V2))),
                 binarypackageformat=Equals(BinaryPackageFormat.CONDA_V2),
                 distroarchseries=Equals(dases[0]))))
+
+    def test_run_go(self):
+        self.useFixture(FakeLogger())
+        archive = self.factory.makeArchive(
+            repository_format=ArchiveRepositoryFormat.GO_PROXY)
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        dases = [
+            self.factory.makeDistroArchSeries(distroseries=distroseries)
+            for _ in range(2)]
+        build = self.makeCIBuild(
+            archive.distribution, distro_arch_series=dases[0])
+        report = build.getOrCreateRevisionStatusReport("build:0")
+        report.setLog(b"log data")
+        info_path = "go/dist/v0.0.1.info"
+        mod_path = "go/dist/v0.0.1.mod"
+        zip_path = "go/dist/v0.0.1.zip"
+        for path in (info_path, mod_path, zip_path):
+            with open(datadir(path), mode="rb") as f:
+                report.attach(name=os.path.basename(path), data=f.read())
+        artifacts = IStore(RevisionStatusArtifact).find(
+            RevisionStatusArtifact,
+            report=report,
+            artifact_type=RevisionStatusArtifactType.BINARY).order_by("id")
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="edge")
+        transaction.commit()
+
+        with dbuser(job.config.dbuser):
+            JobRunner([job]).runAll()
+
+        self.assertThat(archive.getPublishedSources(), MatchesSetwise(
+            MatchesStructure(
+                sourcepackagename=MatchesStructure.byEquality(
+                    name=build.git_repository.target.name),
+                sourcepackagerelease=MatchesStructure(
+                    ci_build=Equals(build),
+                    sourcepackagename=MatchesStructure.byEquality(
+                        name=build.git_repository.target.name),
+                    version=Equals("v0.0.1"),
+                    format=Equals(SourcePackageType.CI_BUILD),
+                    architecturehintlist=Equals(""),
+                    creator=Equals(build.git_repository.owner),
+                    files=MatchesSetwise(
+                        MatchesStructure.byEquality(
+                            libraryfile=artifacts[0].library_file,
+                            filetype=SourcePackageFileType.GO_MODULE_INFO),
+                        MatchesStructure.byEquality(
+                            libraryfile=artifacts[1].library_file,
+                            filetype=SourcePackageFileType.GO_MODULE_MOD),
+                        MatchesStructure.byEquality(
+                            libraryfile=artifacts[2].library_file,
+                            filetype=SourcePackageFileType.GO_MODULE_ZIP)),
+                    user_defined_fields=Equals(
+                        [["module-path", "example.com/t"]])),
+                format=Equals(SourcePackageType.CI_BUILD),
+                distroseries=Equals(distroseries))))
+        self.assertContentEqual([], archive.getAllPublishedBinaries())
 
     def test_existing_source_and_binary_releases(self):
         # A `CIBuildUploadJob` can be run even if the build in question was

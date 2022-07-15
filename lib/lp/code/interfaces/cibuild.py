@@ -188,7 +188,7 @@ class ICIBuildView(IPackageBuildView, IPrivacy):
 
     def createSourcePackageRelease(
             distroseries, sourcepackagename, version, creator=None,
-            archive=None):
+            archive=None, user_defined_fields=None):
         """Create and return a `SourcePackageRelease` for this CI build.
 
         The new source package release will be linked to this build.

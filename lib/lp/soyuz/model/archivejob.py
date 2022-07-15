@@ -63,6 +63,10 @@ from lp.services.job.runner import BaseRunnableJob
 from lp.services.librarian.interfaces.client import LibrarianServerError
 from lp.services.librarian.utils import copy_and_close
 from lp.services.mail.sendmail import format_address_for_person
+from lp.soyuz.adapters.gomodparser import (
+    GoModParserException,
+    parse_go_mod,
+    )
 from lp.soyuz.enums import (
     ArchiveJobType,
     ArchiveRepositoryFormat,
@@ -223,10 +227,12 @@ class ScanException(Exception):
 class SourceArtifactMetadata:
     """Metadata extracted from a source package."""
 
-    def __init__(self, format: SourcePackageFileType, name: str, version: str):
+    def __init__(self, format: SourcePackageFileType, name: str, version: str,
+                 user_defined_fields: Optional[List[Tuple[str, str]]] = None):
         self.format = format
         self.name = name
         self.version = version
+        self.user_defined_fields = user_defined_fields
 
 
 class BinaryArtifactMetadata:
@@ -297,6 +303,11 @@ class CIBuildUploadJob(ArchiveJobDerived):
         ArchiveRepositoryFormat.CONDA: {
             BinaryPackageFormat.CONDA_V1,
             BinaryPackageFormat.CONDA_V2,
+            },
+        ArchiveRepositoryFormat.GO_PROXY: {
+            SourcePackageFileType.GO_MODULE_INFO,
+            SourcePackageFileType.GO_MODULE_MOD,
+            SourcePackageFileType.GO_MODULE_ZIP,
             },
         }
 
@@ -480,12 +491,67 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 BinaryPackageFormat.CONDA_V2, index, about)
         return all_metadata
 
+    def _scanGoMod(self, paths: Iterable[Path]) -> Dict[str, ArtifactMetadata]:
+        all_metadata = {}
+        for path in paths:
+            if not path.name.endswith(".mod"):
+                continue
+            info_path = path.parent / ("%s.info" % path.stem)
+            if not info_path.is_file():
+                logger.warning("%s has no corresponding .info file", path.name)
+                continue
+            zip_path = path.parent / ("%s.zip" % path.stem)
+            if not zip_path.is_file():
+                logger.warning("%s has no corresponding .zip file", path.name)
+                continue
+            with open(str(info_path)) as info_file:
+                try:
+                    version = json.load(info_file)["Version"]
+                except Exception as e:
+                    logger.warning(
+                        "Failed to load Go module version from %s: %s",
+                        info_path.name, e)
+            try:
+                with open(str(path)) as mod_file:
+                    module_path = parse_go_mod(mod_file.read())
+            except GoModParserException as e:
+                logger.warning(
+                    "Failed to scan %s as a Go module: %s",
+                    path.name, e)
+                continue
+            logger.info(
+                "(%s, %s, %s) are a Go module",
+                info_path.name, path.name, zip_path.name)
+            metadata_kwargs = {
+                "name": module_path,
+                "version": version,
+                # We should perhaps model this explicitly since it's used by
+                # the publisher, but this gives us an easy way to pass this
+                # through without needing to add a column to a large table
+                # that's only relevant to a tiny minority of rows.
+                "user_defined_fields": [("module-path", module_path)],
+                }
+            all_metadata[info_path.name] = SourceArtifactMetadata(
+                format=SourcePackageFileType.GO_MODULE_INFO,
+                **metadata_kwargs,
+            )
+            all_metadata[path.name] = SourceArtifactMetadata(
+                format=SourcePackageFileType.GO_MODULE_MOD,
+                **metadata_kwargs,
+            )
+            all_metadata[zip_path.name] = SourceArtifactMetadata(
+                format=SourcePackageFileType.GO_MODULE_ZIP,
+                **metadata_kwargs,
+            )
+        return all_metadata
+
     def _scanFiles(self, directory: Path) -> Dict[str, ArtifactMetadata]:
         scanners = (
             self._scanWheel,
             self._scanSDist,
             self._scanCondaV1,
             self._scanCondaV2,
+            self._scanGoMod,
             )
         paths = [directory / child for child in directory.iterdir()]
         all_metadata = OrderedDict()
@@ -546,15 +612,18 @@ class CIBuildUploadJob(ArchiveJobDerived):
         build_target = self.ci_build.git_repository.target
         spr = releases.get(build_target.sourcepackagename)
         if spr is None:
+            # Arbitrarily pick the first scanned artifact to provide
+            # additional metadata.  (This may need refinement in future.)
+            first_metadata = scanned[0].metadata
             spr = self.ci_build.createSourcePackageRelease(
                 distroseries=distroseries,
                 sourcepackagename=build_target.sourcepackagename,
                 # We don't have a good concept of source version here, but
-                # the data model demands one.  Arbitrarily pick the version
-                # of the first scanned artifact.
-                version=scanned[0].metadata.version,
+                # the data model demands one.
+                version=first_metadata.version,
                 creator=self.requester,
-                archive=self.archive)
+                archive=self.archive,
+                user_defined_fields=first_metadata.user_defined_fields)
         for scanned_artifact in scanned:
             metadata = scanned_artifact.metadata
             if not isinstance(metadata, SourceArtifactMetadata):
