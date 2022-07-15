@@ -128,13 +128,18 @@ class TestArtifactoryPool(TestCase):
 
     def test_pathFor_go_proxy_with_file(self):
         pool = self.makePool(ArchiveRepositoryFormat.GO_PROXY)
-        pub_file = FakePackageReleaseFile(b"go-module", "v1.0.zip")
+        pub_file = FakePackageReleaseFile(
+            b"go-module",
+            "v1.0.zip",
+            release_type=FakeReleaseType.SOURCE,
+            user_defined_fields=[("module-path", "launchpad.net/go-module")],
+        )
         self.assertEqual(
             ArtifactoryPath(
                 "https://foo.example.com/artifactory/repository/"
                 "launchpad.net/go-module/@v/v1.0.zip"
             ),
-            pool.pathFor(None, "launchpad.net,go-module", "v1.0", pub_file),
+            pool.pathFor(None, "go-module", "v1.0", pub_file),
         )
 
     def test_addFile(self):
@@ -338,17 +343,18 @@ class TestArtifactoryPool(TestCase):
         pool = self.makePool(ArchiveRepositoryFormat.GO_PROXY)
         ArtifactoryPoolTestingFile(
             pool=pool,
-            source_name="launchpad.net,go-module",
+            source_name="go-module",
             source_version="v0.0.1",
             filename="v0.0.1.zip",
-            release_type=FakeReleaseType.BINARY,
+            release_type=FakeReleaseType.SOURCE,
             release_id=5,
+            user_defined_fields=[("module-path", "launchpad.net/go-module")],
         ).addToPool()
         self.assertEqual(
             {
                 PurePath("launchpad.net/go-module/@v/v0.0.1.zip"): {
-                    "launchpad.release-id": ["binary:5"],
-                    "launchpad.source-name": ["launchpad.net,go-module"],
+                    "launchpad.release-id": ["source:5"],
+                    "launchpad.source-name": ["go-module"],
                     "launchpad.source-version": ["v0.0.1"],
                 },
             },

@@ -60,13 +60,20 @@ def _path_for(
             )
         path = rootpath / subdir
     elif repository_format == ArchiveRepositoryFormat.GO_PROXY:
-        # Go module paths contain "/" characters
-        # (https://go.dev/ref/mod#go-mod-file-ident), which are awkward to
-        # include in Launchpad source package names since they would need
-        # special URL traversal handling.  "," is disallowed in Go module
-        # paths, so we use that to mangle them into source package names.
-        # Reverse this mangling for publication.
-        path = rootpath / source_name.replace(",", "/") / "@v"
+        user_defined_fields = pub_file.sourcepackagerelease.user_defined_fields
+        module_path = next(
+            (
+                value
+                for key, value in user_defined_fields
+                if key == "module-path"
+            ),
+            None,
+        )
+        if module_path is None:
+            raise AssertionError(
+                "Cannot publish a Go module with no module-path"
+            )
+        path = rootpath / module_path / "@v"
     else:
         raise AssertionError(
             "Unsupported repository format: %r" % repository_format
