@@ -60,6 +60,11 @@ class FakePackageRelease:
         self.user_defined_fields = user_defined_fields
         self.ci_build = ci_build
 
+    def getUserDefinedField(self, name):
+        for k, v in self.user_defined_fields:
+            if k.lower() == name.lower():
+                return v
+
 
 class FakeReleaseType(EnumeratedType):
 

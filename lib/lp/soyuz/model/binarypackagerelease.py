@@ -188,6 +188,11 @@ class BinaryPackageRelease(SQLBase):
             return []
         return simplejson.loads(self._user_defined_fields)
 
+    def getUserDefinedField(self, name):
+        for k, v in self.user_defined_fields:
+            if k.lower() == name.lower():
+                return v
+
     @property
     def title(self):
         """See `IBinaryPackageRelease`."""

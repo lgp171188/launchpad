@@ -105,6 +105,9 @@ class IBinaryPackageRelease(Interface):
     sourcepackageversion = Attribute(
         "The version of the source package from where this binary was built.")
 
+    def getUserDefinedField(name):
+        """Case-insensitively get a user-defined field."""
+
     def addFile(file, filetype=None):
         """Create a BinaryPackageFile record referencing this build
         and attach the provided library file alias (file).

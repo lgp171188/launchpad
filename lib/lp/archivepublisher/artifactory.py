@@ -49,25 +49,15 @@ def _path_for(
     elif repository_format == ArchiveRepositoryFormat.PYTHON:
         path = rootpath / source_name / source_version
     elif repository_format == ArchiveRepositoryFormat.CONDA:
-        user_defined_fields = pub_file.binarypackagerelease.user_defined_fields
-        subdir = next(
-            (value for key, value in user_defined_fields if key == "subdir"),
-            None,
-        )
+        subdir = pub_file.binarypackagerelease.getUserDefinedField("subdir")
         if subdir is None:
             raise AssertionError(
                 "Cannot publish a Conda package with no subdir"
             )
         path = rootpath / subdir
     elif repository_format == ArchiveRepositoryFormat.GO_PROXY:
-        user_defined_fields = pub_file.sourcepackagerelease.user_defined_fields
-        module_path = next(
-            (
-                value
-                for key, value in user_defined_fields
-                if key == "module-path"
-            ),
-            None,
+        module_path = pub_file.sourcepackagerelease.getUserDefinedField(
+            "module-path"
         )
         if module_path is None:
             raise AssertionError(
