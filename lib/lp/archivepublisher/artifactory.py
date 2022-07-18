@@ -59,6 +59,7 @@ def _path_for(
         )
         if module_path is None:
             raise ValueError("Cannot publish a Go module with no module-path")
+        # Base path required by https://go.dev/ref/mod#module-proxy.
         path = rootpath / module_path / "@v"
     else:
         raise AssertionError(
