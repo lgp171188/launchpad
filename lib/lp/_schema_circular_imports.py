@@ -20,12 +20,8 @@ from lp.buildmaster.interfaces.builder import IBuilder
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.code.interfaces.branch import IBranch
-from lp.code.interfaces.cibuild import ICIBuild
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.code.interfaces.sourcepackagerecipe import ISourcePackageRecipe
-from lp.code.interfaces.sourcepackagerecipebuild import (
-    ISourcePackageRecipeBuild,
-    )
 from lp.registry.interfaces.commercialsubscription import (
     ICommercialSubscription,
     )
@@ -71,30 +67,10 @@ from lp.services.webservice.apihelpers import (
     patch_plain_parameter_type,
     patch_reference_property,
     )
-from lp.snappy.interfaces.snapbase import ISnapBase
 from lp.soyuz.interfaces.archive import IArchive
-from lp.soyuz.interfaces.archivedependency import IArchiveDependency
-from lp.soyuz.interfaces.archivepermission import IArchivePermission
 from lp.soyuz.interfaces.archivesubscriber import IArchiveSubscriber
-from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuild
-from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
-from lp.soyuz.interfaces.distroarchseriesfilter import IDistroArchSeriesFilter
-from lp.soyuz.interfaces.livefs import ILiveFSView
-from lp.soyuz.interfaces.livefsbuild import (
-    ILiveFSBuild,
-    ILiveFSFile,
-    )
-from lp.soyuz.interfaces.packageset import IPackageset
-from lp.soyuz.interfaces.publishing import (
-    IBinaryPackagePublishingHistory,
-    IBinaryPackagePublishingHistoryEdit,
-    ISourcePackagePublishingHistory,
-    ISourcePackagePublishingHistoryEdit,
-    ISourcePackagePublishingHistoryPublic,
-    )
 from lp.soyuz.interfaces.queue import IPackageUpload
-from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
 
 
 # IBuilder
@@ -108,9 +84,6 @@ patch_entry_return_type(IPersonLimitedView, 'getPPAByName', IArchive)
 patch_plain_parameter_type(
     IPersonEditRestricted, 'createPPA', 'distribution', IDistribution)
 patch_entry_return_type(IPersonEditRestricted, 'createPPA', IArchive)
-
-patch_collection_return_type(
-    IHasBuildRecords, 'getBuildRecords', IBinaryPackageBuild)
 
 patch_reference_property(ISourcePackagePublic, 'distroseries', IDistroSeries)
 patch_reference_property(ISourcePackagePublic, 'productseries', IProductSeries)
@@ -130,106 +103,6 @@ patch_collection_return_type(
     IPerson, 'getArchiveSubscriptions', IArchiveSubscriber)
 patch_entry_return_type(IPerson, 'getRecipe', ISourcePackageRecipe)
 patch_collection_return_type(IPerson, 'getOwnedProjects', IProduct)
-
-# publishing.py
-patch_collection_return_type(
-    ISourcePackagePublishingHistoryPublic, 'getBuilds', IBinaryPackageBuild)
-patch_collection_return_type(
-    ISourcePackagePublishingHistoryPublic, 'getPublishedBinaries',
-    IBinaryPackagePublishingHistory)
-patch_reference_property(
-    IBinaryPackagePublishingHistory, 'distroarchseries',
-    IDistroArchSeries)
-patch_reference_property(
-    IBinaryPackagePublishingHistory, 'build', IBinaryPackageBuild)
-patch_reference_property(
-    IBinaryPackagePublishingHistory, 'archive', IArchive)
-patch_reference_property(
-    ISourcePackagePublishingHistory, 'archive', IArchive)
-patch_reference_property(
-    IBinaryPackagePublishingHistory, 'copied_from_archive', IArchive)
-patch_reference_property(
-    ISourcePackagePublishingHistory, 'copied_from_archive', IArchive)
-patch_reference_property(
-    ISourcePackagePublishingHistory, 'ancestor',
-    ISourcePackagePublishingHistory)
-patch_reference_property(
-    ISourcePackagePublishingHistory, 'packageupload', IPackageUpload)
-patch_entry_return_type(
-    ISourcePackagePublishingHistoryEdit, 'changeOverride',
-    ISourcePackagePublishingHistory)
-patch_entry_return_type(
-    IBinaryPackagePublishingHistoryEdit, 'changeOverride',
-    IBinaryPackagePublishingHistory)
-
-# IArchive apocalypse.
-patch_reference_property(IArchive, 'distribution', IDistribution)
-patch_collection_property(IArchive, 'dependencies', IArchiveDependency)
-patch_collection_return_type(IArchive, 'getAllPermissions', IArchivePermission)
-patch_collection_return_type(
-    IArchive, 'getPermissionsForPerson', IArchivePermission)
-patch_collection_return_type(
-    IArchive, 'getUploadersForPackage', IArchivePermission)
-patch_collection_return_type(
-    IArchive, 'getUploadersForPackageset', IArchivePermission)
-patch_collection_return_type(
-    IArchive, 'getPackagesetsForUploader', IArchivePermission)
-patch_collection_return_type(
-    IArchive, 'getPackagesetsForSourceUploader', IArchivePermission)
-patch_collection_return_type(
-    IArchive, 'getPackagesetsForSource', IArchivePermission)
-patch_collection_return_type(
-    IArchive, 'getUploadersForComponent', IArchivePermission)
-patch_collection_return_type(
-    IArchive, 'getQueueAdminsForComponent', IArchivePermission)
-patch_collection_return_type(
-    IArchive, 'getComponentsForQueueAdmin', IArchivePermission)
-patch_collection_return_type(
-    IArchive, 'getQueueAdminsForPocket', IArchivePermission)
-patch_collection_return_type(
-    IArchive, 'getPocketsForQueueAdmin', IArchivePermission)
-patch_collection_return_type(
-    IArchive, 'getPocketsForUploader', IArchivePermission)
-patch_collection_return_type(
-    IArchive, 'getUploadersForPocket', IArchivePermission)
-patch_entry_return_type(IArchive, 'newPackageUploader', IArchivePermission)
-patch_entry_return_type(IArchive, 'newPackagesetUploader', IArchivePermission)
-patch_entry_return_type(IArchive, 'newComponentUploader', IArchivePermission)
-patch_entry_return_type(IArchive, 'newPocketUploader', IArchivePermission)
-patch_entry_return_type(IArchive, 'newQueueAdmin', IArchivePermission)
-patch_entry_return_type(IArchive, 'newPocketQueueAdmin', IArchivePermission)
-patch_plain_parameter_type(IArchive, 'syncSources', 'from_archive', IArchive)
-patch_plain_parameter_type(IArchive, 'syncSource', 'from_archive', IArchive)
-patch_plain_parameter_type(IArchive, 'copyPackage', 'from_archive', IArchive)
-patch_plain_parameter_type(
-    IArchive, 'copyPackages', 'from_archive', IArchive)
-patch_plain_parameter_type(IArchive, 'uploadCIBuild', 'ci_build', ICIBuild)
-patch_entry_return_type(IArchive, 'newSubscription', IArchiveSubscriber)
-patch_plain_parameter_type(
-    IArchive, 'getArchiveDependency', 'dependency', IArchive)
-patch_entry_return_type(IArchive, 'getArchiveDependency', IArchiveDependency)
-patch_collection_return_type(
-    IArchive, 'api_getPublishedSources', ISourcePackagePublishingHistory)
-patch_plain_parameter_type(
-    IArchive, 'getAllPublishedBinaries', 'distroarchseries',
-    IDistroArchSeries)
-patch_collection_return_type(
-    IArchive, 'getAllPublishedBinaries', IBinaryPackagePublishingHistory)
-patch_plain_parameter_type(
-    IArchive, 'newPackagesetUploader', 'packageset', IPackageset)
-patch_plain_parameter_type(
-    IArchive, 'getUploadersForPackageset', 'packageset', IPackageset)
-patch_plain_parameter_type(
-    IArchive, 'deletePackagesetUploader', 'packageset', IPackageset)
-patch_plain_parameter_type(
-    IArchive, 'removeArchiveDependency', 'dependency', IArchive)
-patch_plain_parameter_type(
-    IArchive, '_addArchiveDependency', 'dependency', IArchive)
-patch_entry_return_type(
-    IArchive, '_addArchiveDependency', IArchiveDependency)
-
-# IArchiveDependency
-patch_reference_property(IArchiveDependency, 'snap_base', ISnapBase)
 
 # IBuildFarmJob
 patch_reference_property(IBuildFarmJob, 'buildqueue_record', IBuildQueue)
@@ -298,44 +171,6 @@ patch_reference_property(
 # IDistroSeriesDifferenceComment
 patch_reference_property(
     IDistroSeriesDifferenceComment, 'comment_author', IPerson)
-
-# IDistroArchSeries
-patch_reference_property(IDistroArchSeries, 'main_archive', IArchive)
-patch_plain_parameter_type(
-    IDistroArchSeries, 'setChrootFromBuild', 'livefsbuild', ILiveFSBuild)
-patch_entry_return_type(
-    IDistroArchSeries, 'getSourceFilter', IDistroArchSeriesFilter)
-patch_plain_parameter_type(
-    IDistroArchSeries, 'setSourceFilter', 'packageset', IPackageset)
-
-# ILiveFSFile
-patch_reference_property(ILiveFSFile, 'livefsbuild', ILiveFSBuild)
-
-# ILiveFSView
-patch_entry_return_type(ILiveFSView, 'requestBuild', ILiveFSBuild)
-patch_collection_property(ILiveFSView, 'builds', ILiveFSBuild)
-patch_collection_property(ILiveFSView, 'completed_builds', ILiveFSBuild)
-patch_collection_property(ILiveFSView, 'pending_builds', ILiveFSBuild)
-
-# IPackageset
-patch_collection_return_type(IPackageset, 'setsIncluded', IPackageset)
-patch_collection_return_type(IPackageset, 'setsIncludedBy', IPackageset)
-patch_plain_parameter_type(
-    IPackageset, 'getSourcesSharedBy', 'other_package_set', IPackageset)
-patch_plain_parameter_type(
-    IPackageset, 'getSourcesNotSharedBy', 'other_package_set', IPackageset)
-patch_collection_return_type(IPackageset, 'relatedSets', IPackageset)
-
-# IPackageUpload
-patch_reference_property(IPackageUpload, 'distroseries', IDistroSeries)
-patch_reference_property(IPackageUpload, 'archive', IArchive)
-patch_reference_property(IPackageUpload, 'copy_source_archive', IArchive)
-
-# ISourcePackageRelease
-patch_reference_property(
-    ISourcePackageRelease, 'source_package_recipe_build',
-    ISourcePackageRecipeBuild)
-patch_reference_property(ISourcePackageRelease, 'ci_build', ICIBuild)
 
 # IIndexedMessage
 patch_reference_property(IIndexedMessage, 'inside', IBugTask)

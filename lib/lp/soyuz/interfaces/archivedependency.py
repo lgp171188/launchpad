@@ -50,7 +50,7 @@ class IArchiveDependency(Interface):
 
     snap_base = exported(
         Reference(
-            # Really ISnapBase, patched in _schema_circular_imports.py.
+            # Really ISnapBase, patched in lp.soyuz.interfaces.webservice.
             schema=Interface, required=False, readonly=True,
             title=_('Target snap base'),
             description=_("The snap base that has this dependency.")))

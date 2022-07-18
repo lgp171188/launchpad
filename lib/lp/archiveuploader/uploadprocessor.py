@@ -48,7 +48,9 @@ above, failed being worst).
 import os
 import shutil
 import sys
+from datetime import datetime
 
+import pytz
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -78,6 +80,7 @@ from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.log.logger import BufferLogger
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 from lp.services.webapp.adapter import (
     clear_request_started,
     set_request_started,
@@ -173,6 +176,19 @@ class UploadProcessor:
         self._getPolicyForDistro = policy_for_distro
         self.ztm = ztm
 
+    def reportStatsdMetrics(self, handler, upload_duration):
+        upload_type = "UserUpload"
+        if hasattr(handler, "build"):
+            upload_type = handler.build.job_type.name
+        statsd_client = getUtility(IStatsdClient)
+        statsd_client.timing(
+            "upload_duration",
+            upload_duration * 1000,
+            labels={
+                "upload_type": upload_type,
+            },
+        )
+
     def processUploadQueue(self, leaf_name=None):
         """Search for uploads, and process them.
 
@@ -207,10 +223,16 @@ class UploadProcessor:
                 set_request_started(enable_timeout=False)
                 try:
                     handler = UploadHandler.forProcessor(self, fsroot, upload)
+                    date_started = datetime.now(pytz.UTC)
                 except CannotGetBuild as e:
                     self.log.warning(e)
                 else:
                     handler.process()
+                    date_completed = datetime.now(pytz.UTC)
+                    upload_duration = (
+                        date_completed - date_started
+                    ).total_seconds() * 1000
+                    self.reportStatsdMetrics(handler, upload_duration)
                 finally:
                     clear_request_started()
         finally:

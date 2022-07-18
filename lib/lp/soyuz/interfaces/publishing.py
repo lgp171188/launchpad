@@ -281,13 +281,13 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
             "(only for archives published using Artifactory)"))
     archive = exported(
         Reference(
-            # Really IArchive (fixed in _schema_circular_imports.py).
+            # Really IArchive, patched in lp.soyuz.interfaces.webservice.
             Interface,
             title=_('Archive ID'), required=True, readonly=True,
             ))
     copied_from_archive = exported(
         Reference(
-            # Really IArchive (fixed in _schema_circular_imports.py).
+            # Really IArchive, patched in lp.soyuz.interfaces.webservice.
             Interface,
             title=_('Original archive ID where this package was copied from.'),
             required=False, readonly=True,
@@ -380,8 +380,8 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
         "if one exists, or None.")
 
     ancestor = Reference(
-         # Really ISourcePackagePublishingHistory (fixed in
-         # _schema_circular_imports.py).
+         # Really ISourcePackagePublishingHistory, patched in
+         # lp.soyuz.interfaces.webservice.
         Interface,
         title=_('Ancestor'),
         description=_('The previous release of this source package.'),
@@ -408,7 +408,7 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
 
     packageupload = exported(
         Reference(
-            # Really IPackageUpload, fixed in _schema_circular_imports.
+            # Really IPackageUpload, patched in lp.soyuz.interfaces.webservice.
             Interface,
             title=_('Package upload'),
             description=_('The Package Upload that caused the creation of '
@@ -419,7 +419,8 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
     @operation_parameters(
         active_binaries_only=Bool(
             title=_("Only return active publications"), required=False))
-    # Really IBinaryPackagePublishingHistory, see below.
+    # Really IBinaryPackagePublishingHistory, patched in
+    # lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -456,7 +457,7 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
     def hasRestrictedFiles():
         """Return whether or not a given source files has restricted files."""
 
-    # Really IBuild (fixed in _schema_circular_imports.py)
+    # Really IBinaryPackageBuild, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -595,7 +596,7 @@ class ISourcePackagePublishingHistoryEdit(IPublishingEdit):
     """A writeable source package publishing history record."""
 
     # Really ISourcePackagePublishingHistory, patched in
-    # _schema_circular_imports.py.
+    # lp.soyuz.interfaces.webservice.
     @operation_returns_entry(Interface)
     @operation_parameters(
         new_component=TextLine(title="The new component name."),
@@ -660,8 +661,8 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
         required=False, readonly=False)
     distroarchseries = exported(
         Reference(
-            # Really IDistroArchSeries (fixed in
-            #_schema_circular_imports.py).
+            # Really IDistroArchSeries, patched in
+            # lp.soyuz.interfaces.webservice.
             Interface,
             title=_("Distro Arch Series"),
             description=_('The distroarchseries being published into'),
@@ -766,7 +767,7 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
         exported_as="date_removed")
     archive = exported(
         Reference(
-            # Really IArchive (fixed in _schema_circular_imports.py).
+            # Really IArchive, patched in lp.soyuz.interfaces.webservice.
             Interface,
             title=_('Archive'),
             description=_("The context archive for this publication."),
@@ -774,7 +775,7 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
             ))
     copied_from_archive = exported(
         Reference(
-            # Really IArchive (fixed in _schema_circular_imports.py).
+            # Really IArchive, patched in lp.soyuz.interfaces.webservice.
             Interface,
             title=_('Original archive ID where this package was copied from.'),
             required=False, readonly=True,
@@ -806,7 +807,8 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
             required=False, readonly=True))
     build = exported(
         Reference(
-            # Really IBinaryPackageBuild, fixed in _schema_circular_imports.
+            # Really IBinaryPackageBuild, fixed in
+            # lp.soyuz.interfaces.webservice.
             Interface,
             title=_("Build"),
             description=_("The build that produced this binary package."),
@@ -906,7 +908,7 @@ class IBinaryPackagePublishingHistoryEdit(IPublishingEdit):
     """A writeable binary package publishing record."""
 
     # Really IBinaryPackagePublishingHistory, patched in
-    # _schema_circular_imports.py.
+    # lp.soyuz.interfaces.webservice.
     @operation_returns_entry(Interface)
     @operation_parameters(
         new_component=TextLine(title="The new component name."),
@@ -1304,6 +1306,3 @@ inactive_publishing_status = (
     PackagePublishingStatus.DELETED,
     PackagePublishingStatus.OBSOLETE,
     )
-
-
-# Circular import problems fixed in _schema_circular_imports.py

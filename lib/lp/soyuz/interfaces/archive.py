@@ -374,7 +374,8 @@ class IArchivePublic(IPrivacy, IHasOwner):
 
     distribution = exported(
         Reference(
-            Interface,  # Redefined to IDistribution later.
+            # Really IDistribution, patched in lp.soyuz.interfaces.webservice.
+            Interface,
             title=_("The distribution that uses or is used by this "
                     "archive.")))
 
@@ -434,8 +435,9 @@ class IArchiveSubscriberView(Interface):
     dependencies = exported(
         CollectionField(
             title=_("Archive dependencies recorded for this archive."),
+            # Really IArchiveDependency, patched in
+            # lp.soyuz.interfaces.webservice.
             value_type=Reference(schema=Interface),
-            # Really IArchiveDependency
             readonly=True))
     description = exported(
         Text(
@@ -528,8 +530,8 @@ class IArchiveSubscriberView(Interface):
                           "descending version and then descending ID."),
             required=False),
         )
-    # Really returns ISourcePackagePublishingHistory, see below for
-    # patch to avoid circular import.
+    # Really ISourcePackagePublishingHistory, patched in
+    # lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -602,7 +604,8 @@ class IArchiveSubscriberView(Interface):
             vocabulary=PackagePublishingStatus,
             required=False),
         distroarchseries=Reference(
-            # Really IDistroArchSeries, circular import fixed below.
+            # Really IDistroArchSeries, patched in
+            # lp.soyuz.interfaces.webservice.
             Interface,
             title=_("Distro Arch Series"), required=False),
         pocket=Choice(
@@ -632,8 +635,8 @@ class IArchiveSubscriberView(Interface):
             required=False),
         component_name=TextLine(title=_("Component name"), required=False),
     )
-    # Really returns IBinaryPackagePublishingHistory, see below for
-    # patch to avoid circular import.
+    # Really IBinaryPackagePublishingHistory, patched in
+    # lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_operation_as("getPublishedBinaries")
     @export_read_operation()
@@ -1120,14 +1123,12 @@ class IArchiveView(IHasBuildRecords):
         """
 
     @operation_parameters(
-        # Really IPackageset, corrected in _schema_circular_imports to avoid
-        # circular import.
+        # Really IPackageset, patched in lp.soyuz.interfaces.webservice.
         packageset=Reference(
             Interface, title=_("Package set"), required=True),
         direct_permissions=Bool(
             title=_("Ignore package set hierarchy"), required=False))
-    # Really IArchivePermission, set in _schema_circular_imports to avoid
-    # circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -1145,8 +1146,7 @@ class IArchiveView(IHasBuildRecords):
 
     @operation_parameters(
         person=Reference(schema=IPerson))
-    # Really IArchivePermission, set in _schema_circular_imports to avoid
-    # circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -1169,8 +1169,7 @@ class IArchiveView(IHasBuildRecords):
 
     @operation_parameters(
         person=Reference(schema=IPerson))
-    # Really IArchivePermission, set in _schema_circular_imports to avoid
-    # circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("devel")
@@ -1186,8 +1185,7 @@ class IArchiveView(IHasBuildRecords):
         sourcepackagename=TextLine(
             title=_("Source package name"), required=True),
         person=Reference(schema=IPerson))
-    # Really IArchivePermission, set in _schema_circular_imports to avoid
-    # circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -1217,8 +1215,7 @@ class IArchiveView(IHasBuildRecords):
             title=_("Source package name"), required=True),
         direct_permissions=Bool(
             title=_("Ignore package set hierarchy"), required=False))
-    # Really IArchivePermission, set in _schema_circular_imports to avoid
-    # circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -1348,8 +1345,10 @@ class IArchiveView(IHasBuildRecords):
         """
 
     @operation_parameters(
-        dependency=Reference(schema=Interface))  # Really IArchive. See below.
-    @operation_returns_entry(schema=Interface)  # Really IArchiveDependency.
+        # Really IArchive, patched in lp.soyuz.interfaces.webservice.
+        dependency=Reference(schema=Interface))
+    # Really IArchiveDependency, patched in lp.soyuz.interfaces.webservice.
+    @operation_returns_entry(schema=Interface)
     @export_read_operation()
     @operation_for_version("beta")
     def getArchiveDependency(dependency):
@@ -1361,7 +1360,7 @@ class IArchiveView(IHasBuildRecords):
             could not be found.
         """
 
-    # Really IArchivePermission, set below to avoid circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("devel")
@@ -1372,7 +1371,7 @@ class IArchiveView(IHasBuildRecords):
         """
 
     @operation_parameters(person=Reference(schema=IPerson))
-    # Really IArchivePermission, set below to avoid circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -1386,7 +1385,7 @@ class IArchiveView(IHasBuildRecords):
     @operation_parameters(
         source_package_name=TextLine(
             title=_("Source Package Name"), required=True))
-    # Really IArchivePermission, set below to avoid circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -1400,7 +1399,7 @@ class IArchiveView(IHasBuildRecords):
 
     @operation_parameters(
         component_name=TextLine(title=_("Component Name"), required=False))
-    # Really IArchivePermission, set below to avoid circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -1414,7 +1413,7 @@ class IArchiveView(IHasBuildRecords):
 
     @operation_parameters(
         component_name=TextLine(title=_("Component Name"), required=True))
-    # Really IArchivePermission, set below to avoid circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -1427,7 +1426,7 @@ class IArchiveView(IHasBuildRecords):
         """
 
     @operation_parameters(person=Reference(schema=IPerson))
-    # Really IArchivePermission, set below to avoid circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -1445,7 +1444,7 @@ class IArchiveView(IHasBuildRecords):
             vocabulary=PackagePublishingPocket,
             required=True),
         )
-    # Really IArchivePermission, set below to avoid circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("devel")
@@ -1464,7 +1463,7 @@ class IArchiveView(IHasBuildRecords):
         distroseries=Reference(
             IDistroSeries, title=_("Distro series"), required=False),
         )
-    # Really IArchivePermission, set below to avoid circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("devel")
@@ -1477,7 +1476,7 @@ class IArchiveView(IHasBuildRecords):
         """
 
     @operation_parameters(person=Reference(schema=IPerson))
-    # Really IArchivePermission, set below to avoid circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("devel")
@@ -1512,8 +1511,8 @@ class IArchiveView(IHasBuildRecords):
     @operation_parameters(
         source_name=TextLine(title=_("Source package name")),
         version=TextLine(title=_("Version")),
+        # Really IArchive, patched in lp.soyuz.interfaces.webservice.
         from_archive=Reference(schema=Interface),
-        # Really IArchive, see below
         to_pocket=TextLine(title=_("Target pocket name")),
         to_series=TextLine(
             title=_("Target distroseries name"), required=False),
@@ -1615,8 +1614,8 @@ class IArchiveView(IHasBuildRecords):
         source_names=List(
             title=_("Source package names"),
             value_type=TextLine()),
+        # Really IArchive, patched in lp.soyuz.interfaces.webservice.
         from_archive=Reference(schema=Interface),
-        #Really IArchive, see below
         to_pocket=TextLine(title=_("Pocket name")),
         to_series=TextLine(
             title=_("Distroseries name"),
@@ -1700,7 +1699,7 @@ class IArchiveView(IHasBuildRecords):
 
     @call_with(person=REQUEST_USER)
     @operation_parameters(
-        # Really ICIBuild, patched in _schema_circular_imports.
+        # Really ICIBuild, patched in lp.soyuz.interfaces.webservice.
         ci_build=Reference(schema=Interface),
         to_series=TextLine(title=_("Target distroseries name")),
         to_pocket=TextLine(title=_("Target pocket name")),
@@ -1719,8 +1718,8 @@ class IArchiveAppend(Interface):
         source_names=List(
             title=_("Source package names"),
             value_type=TextLine()),
+        # Really IArchive, patched in lp.soyuz.interfaces.webservice.
         from_archive=Reference(schema=Interface),
-        #Really IArchive, see below
         to_pocket=TextLine(title=_("Pocket name")),
         to_series=TextLine(
             title=_("Distroseries name"),
@@ -1782,8 +1781,8 @@ class IArchiveAppend(Interface):
     @operation_parameters(
         source_name=TextLine(title=_("Source package name")),
         version=TextLine(title=_("Version")),
+        # Really IArchive, patched in lp.soyuz.interfaces.webservice.
         from_archive=Reference(schema=Interface),
-        # Really IArchive, see below
         to_pocket=TextLine(title=_("Pocket name")),
         to_series=TextLine(title=_("Distroseries name"), required=False),
         include_binaries=Bool(
@@ -1844,7 +1843,7 @@ class IArchiveAppend(Interface):
                 "expire.")),
         description=Text(title=_("Description"), required=False,
             description=_("Free text describing this subscription.")))
-    # Really IArchiveSubscriber, set below to avoid circular import.
+    # Really IArchiveSubscriber, patched in lp.soyuz.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("beta")
     def newSubscription(subscriber, registrant, date_expires=None,
@@ -1909,7 +1908,7 @@ class IArchiveEdit(Interface):
         person=Reference(schema=IPerson),
         source_package_name=TextLine(
             title=_("Source Package Name"), required=True))
-    # Really IArchivePermission, set below to avoid circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("beta")
     def newPackageUploader(person, source_package_name):
@@ -1926,7 +1925,7 @@ class IArchiveEdit(Interface):
         person=Reference(schema=IPerson),
         component_name=TextLine(
             title=_("Component Name"), required=True))
-    # Really IArchivePermission, set below to avoid circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("beta")
     def newComponentUploader(person, component_name):
@@ -1947,7 +1946,7 @@ class IArchiveEdit(Interface):
             vocabulary=PackagePublishingPocket,
             required=True),
         )
-    # Really IArchivePermission, set below to avoid circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
     def newPocketUploader(person, pocket):
@@ -1967,7 +1966,7 @@ class IArchiveEdit(Interface):
         person=Reference(schema=IPerson),
         component_name=TextLine(
             title=_("Component Name"), required=True))
-    # Really IArchivePermission, set below to avoid circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("beta")
     def newQueueAdmin(person, component_name):
@@ -1991,7 +1990,7 @@ class IArchiveEdit(Interface):
         distroseries=Reference(
             IDistroSeries, title=_("Distro series"), required=True),
         )
-    # Really IArchivePermission, set below to avoid circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
     def newPocketQueueAdmin(person, pocket, distroseries=None):
@@ -2009,14 +2008,12 @@ class IArchiveEdit(Interface):
 
     @operation_parameters(
         person=Reference(schema=IPerson),
-        # Really IPackageset, corrected in _schema_circular_imports to avoid
-        # circular import.
+        # Really IPackageset, patched in lp.soyuz.interfaces.webservice.
         packageset=Reference(
             Interface, title=_("Package set"), required=True),
         explicit=Bool(
             title=_("Explicit"), required=False))
-    # Really IArchivePermission, set in _schema_circular_imports to avoid
-    # circular import.
+    # Really IArchivePermission, patched in lp.soyuz.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("beta")
     def newPackagesetUploader(person, packageset, explicit=False):
@@ -2115,8 +2112,7 @@ class IArchiveEdit(Interface):
 
     @operation_parameters(
         person=Reference(schema=IPerson),
-        # Really IPackageset, corrected in _schema_circular_imports to avoid
-        # circular import.
+        # Really IPackageset, patched in lp.soyuz.interfaces.webservice.
         packageset=Reference(
             Interface, title=_("Package set"), required=True),
         explicit=Bool(
@@ -2155,7 +2151,7 @@ class IArchiveEdit(Interface):
 
     @operation_parameters(
         dependency=Reference(schema=Interface, required=True),
-        #  Really IArchive
+        # Really IArchive, patched in lp.soyuz.interfaces.webservice.
         pocket=Choice(
             title=_("Pocket"),
             description=_("The pocket into which this entry is published"),
@@ -2164,7 +2160,8 @@ class IArchiveEdit(Interface):
         component=TextLine(title=_("Component"), required=False),
         )
     @export_operation_as('addArchiveDependency')
-    @export_factory_operation(Interface, [])  # Really IArchiveDependency
+    # Really IArchive, patched in lp.soyuz.interfaces.webservice.
+    @export_factory_operation(Interface, [])
     @operation_for_version('devel')
     def _addArchiveDependency(dependency, pocket, component=None):
         """Record an archive dependency record for the context archive.
@@ -2182,8 +2179,8 @@ class IArchiveEdit(Interface):
         """
 
     @operation_parameters(
+        # Really IArchive, patched in lp.soyuz.interfaces.webservice.
         dependency=Reference(schema=Interface, required=True),
-        # Really IArchive
     )
     @export_write_operation()
     @operation_for_version('devel')
@@ -2592,8 +2589,6 @@ FULL_COMPONENT_SUPPORT = (
     ArchivePurpose.PRIMARY,
     ArchivePurpose.COPY,
     )
-
-# Circular dependency issues fixed in _schema_circular_imports.py
 
 
 def validate_external_dependencies(ext_deps):

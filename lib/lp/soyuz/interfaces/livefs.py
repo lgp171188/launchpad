@@ -167,7 +167,7 @@ class ILiveFSView(IPrivacy):
             title=_("A dict of data about the image."),
             key_type=TextLine(), required=False),
         version=TextLine(title=_("A version string for this build.")))
-    # Really ILiveFSBuild, patched in _schema_circular_imports.py.
+    # Really ILiveFSBuild, patched in lp.soyuz.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
     def requestBuild(requester, archive, distro_arch_series, pocket,
@@ -194,7 +194,7 @@ class ILiveFSView(IPrivacy):
         description=_(
             "All builds of this live filesystem, sorted in descending order "
             "of finishing (or starting if not completed successfully)."),
-        # Really ILiveFSBuild, patched in _schema_circular_imports.py.
+        # Really ILiveFSBuild, patched in lp.soyuz.interfaces.webservice.
         value_type=Reference(schema=Interface), readonly=True)))
 
     completed_builds = exported(doNotSnapshot(CollectionField(
@@ -202,7 +202,7 @@ class ILiveFSView(IPrivacy):
         description=_(
             "Completed builds of this live filesystem, sorted in descending "
             "order of finishing."),
-        # Really ILiveFSBuild, patched in _schema_circular_imports.py.
+        # Really ILiveFSBuild, patched in lp.soyuz.interfaces.webservice.
         value_type=Reference(schema=Interface), readonly=True)))
 
     pending_builds = exported(doNotSnapshot(CollectionField(
@@ -210,7 +210,7 @@ class ILiveFSView(IPrivacy):
         description=_(
             "Pending builds of this live filesystem, sorted in descending "
             "order of creation."),
-        # Really ILiveFSBuild, patched in _schema_circular_imports.py.
+        # Really ILiveFSBuild, patched in lp.soyuz.interfaces.webservice.
         value_type=Reference(schema=Interface), readonly=True)))
 
 

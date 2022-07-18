@@ -171,8 +171,7 @@ class IPackageUpload(Interface):
 
     distroseries = exported(
         Reference(
-            # Really IDistroSeries, patched in
-            # _schema_circular_imports.py
+            # Really IDistroSeries, patched in lp.soyuz.interfaces.webservice.
             schema=Interface,
             description=_("The distroseries targeted by this upload."),
             title=_("Series"), required=True, readonly=False,
@@ -215,7 +214,7 @@ class IPackageUpload(Interface):
 
     archive = exported(
         Reference(
-            # Really IArchive, patched in _schema_circular_imports.py
+            # Really IArchive, patched in lp.soyuz.interfaces.webservice.
             schema=Interface,
             description=_("The archive for this upload."),
             title=_("Archive"), required=True, readonly=True))
@@ -244,7 +243,7 @@ class IPackageUpload(Interface):
 
     copy_source_archive = exported(
         Reference(
-            # Really IArchive, patched in _schema_circular_imports.py
+            # Really IArchive, patched in lp.soyuz.interfaces.webservice.
             schema=Interface,
             description=_("The archive from which this package was copied, if "
                           "any."),

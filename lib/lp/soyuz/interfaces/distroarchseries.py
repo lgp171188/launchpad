@@ -163,7 +163,8 @@ class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
         exported_as="is_nominated_arch_indep")
     main_archive = exported(
         Reference(
-            Interface,  # Really IArchive, circular import fixed below.
+            # Really IArchive, patched in lp.soyuz.interfaces.webservice.
+            Interface,
             title=_('Main Archive'),
             description=_("The main archive of the distroarchseries.")))
     chroot_url = exported(
@@ -239,7 +240,8 @@ class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
         this distro arch series.
         """
 
-    # Really IDistroArchSeriesFilter, patched in _schema_circular_imports.py.
+    # Really IDistroArchSeriesFilter, patched in
+    # lp.soyuz.interfaces.webservice.
     @operation_returns_entry(Interface)
     @export_read_operation()
     @operation_for_version("devel")
@@ -277,7 +279,7 @@ class IDistroArchSeriesModerate(Interface):
         """
 
     @operation_parameters(
-        # Really ILiveFSBuild, patched in _schema_circular_imports.py.
+        # Really ILiveFSBuild, patched in lp.soyuz.interfaces.webservice.
         livefsbuild=Reference(
             Interface, title=_("Live filesystem build"), required=True),
         filename=TextLine(title=_("Filename"), required=True),
@@ -306,7 +308,7 @@ class IDistroArchSeriesModerate(Interface):
         """
 
     @operation_parameters(
-        # Really IPackageset, patched in _schema_circular_imports.py.
+        # Really IPackageset, patched in lp.soyuz.interfaces.webservice.
         packageset=Reference(Interface, title=_("Package set"), required=True),
         sense=Choice(
             vocabulary=DistroArchSeriesFilterSense,
