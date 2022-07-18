@@ -88,7 +88,6 @@ from lp.services.webapp.adapter import (
 from lp.services.webapp.errorlog import ErrorReportingUtility, ScriptRequest
 from lp.snappy.interfaces.snapbuild import ISnapBuild
 from lp.soyuz.interfaces.archive import IArchiveSet, NoSuchPPA
-from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuild
 from lp.soyuz.interfaces.livefsbuild import ILiveFSBuild
 
 __all__ = [
@@ -180,18 +179,7 @@ class UploadProcessor:
     def reportStatsdMetrics(self, handler, upload_duration):
         upload_type = "UserUpload"
         if hasattr(handler, "build"):
-            if IBinaryPackageBuild.providedBy(handler.build):
-                upload_type = "PACKAGEBUILD"
-            if ICharmRecipeBuild.providedBy(handler.build):
-                upload_type = "CHARMRECIPEBUILD"
-            if ILiveFSBuild.providedBy(handler.build):
-                upload_type = "LIVEFSBUILD"
-            if ISnapBuild.providedBy(handler.build):
-                upload_type = "SNAPBUILD"
-            if IOCIRecipeBuild.providedBy(handler.build):
-                upload_type = "OCIRECIPEBUILD"
-            if ICIBuild.providedBy(handler.build):
-                upload_type = "CIBUILD"
+            upload_type = handler.build.job_type.name
         statsd_client = getUtility(IStatsdClient)
         statsd_client.timing(
             "upload_duration",
