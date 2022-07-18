@@ -1389,8 +1389,7 @@ def map_branch_contents(branch):
     tree = branch.basis_tree()
     tree.lock_read()
     try:
-        for dir, entries in tree.walkdirs():
-            dirname, id = dir
+        for _, entries in tree.walkdirs():
             for entry in entries:
                 file_path, file_name, file_type = entry[:3]
                 if file_type == 'file':
