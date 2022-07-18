@@ -52,7 +52,6 @@ from zope.security.proxy import (
     isinstance as zope_isinstance,
     removeSecurityProxy,
     )
-from zope.session.interfaces import ISession
 
 from lp.app import versioninfo
 from lp.app.errors import UnexpectedFormData
@@ -95,6 +94,7 @@ from lp.services.webapp.interfaces import (
     INotificationResponse,
     IPlacelessAuthUtility,
     IPlacelessLoginSource,
+    ISession,
     OAuthPermission,
     )
 from lp.services.webapp.notifications import (

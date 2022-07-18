@@ -1,5 +1,17 @@
 # Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+#
+# Portions from zope.session, which is:
+#
+# Copyright (c) 2004 Zope Foundation and Contributors.
+# All Rights Reserved.
+#
+# This software is subject to the provisions of the Zope Public License,
+# Version 2.1 (ZPL).  A copy of the ZPL should accompany this distribution.
+# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY AND ALL EXPRESS OR IMPLIED
+# WARRANTIES ARE DISCLAIMED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF TITLE, MERCHANTABILITY, AGAINST INFRINGEMENT, AND FITNESS
+# FOR A PARTICULAR PURPOSE.
 
 import logging
 
@@ -18,6 +30,11 @@ from zope.interface import (
     Attribute,
     implementer,
     Interface,
+    )
+from zope.interface.common.mapping import (
+    IMapping,
+    IReadMapping,
+    IWriteMapping,
     )
 from zope.interface.interfaces import IObjectEvent
 from zope.publisher.interfaces.browser import IBrowserApplicationRequest
@@ -769,4 +786,88 @@ class FinishReadOnlyRequestEvent:
 class StormRangeFactoryError(Exception):
     """Raised when a Storm result set cannot be used for slicing by a
     StormRangeFactory.
+    """
+
+
+class IClientIdManager(Interface):
+    """Manages client identifiers."""
+
+    def getClientId(request):
+        """
+        Return the client id for the given request as a string.
+
+        If the request doesn't have an attached sessionId a new one will be
+        generated.
+
+        This will do whatever is possible to do the HTTP request to ensure
+        the session id will be preserved.  Depending on the specific method,
+        further action might be necessary on the part of the user.  See the
+        documentation for the specific implementation and its interfaces.
+        """
+
+
+class ISessionDataContainer(IReadMapping, IWriteMapping):
+    """
+    Stores data objects for sessions.
+
+    The object implementing this interface is responsible for expiring data
+    as it feels appropriate.
+
+    Usage::
+
+      session_data_container[client_id][product_id][key] = value
+
+    Note that this interface does not support the full mapping interface -
+    the keys need to remain secret so we can't give access to :meth:`keys`,
+    :meth:`values` etc.
+    """
+
+    def __getitem__(self, product_id):
+        """Return an `ISessionPkgData`."""
+
+    def __setitem__(self, product_id, value):
+        """Store an `ISessionPkgData`."""
+
+
+class ISession(Interface):
+    """A user session, indexed by client (from the request) and product."""
+
+    def __getitem__(product_id):
+        """Return the `ISessionPkgData` for this product ID.
+
+        .. caution::
+               This method implicitly creates a new session for the user if
+               it does not exist yet.
+        """
+
+    def get(product_id, default=None):
+        """
+        Return the relevant `ISessionPkgData` for this product ID, or
+        *default* if not available.
+        """
+
+
+class ISessionData(IReadMapping, IWriteMapping):
+    """
+    Storage for a particular client ID's session data.
+
+    Contains 0 or more `ISessionPkgData` instances.
+    """
+
+    # Note that only IReadMapping and IWriteMapping are implemented.
+    # We cannot give access to the keys, as they need to remain secret.
+
+    def __getitem__(self, client_id):
+        """Return an `ISessionPkgData`."""
+
+    def __setitem__(self, client_id, session_pkg_data):
+        """Store an `ISessionPkgData`."""
+
+
+class ISessionPkgData(IMapping):
+    """
+    Storage for a particular client ID and product ID's session data.
+
+    Data is stored persistently and transactionally.  Data stored must
+    be persistent or picklable.
     """

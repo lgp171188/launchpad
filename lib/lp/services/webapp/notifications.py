@@ -15,7 +15,6 @@ browser window the request came from.
 from datetime import datetime
 
 from zope.interface import implementer
-from zope.session.interfaces import ISession
 
 from lp.services.config import config
 from lp.services.webapp.escaping import (
@@ -28,6 +27,7 @@ from lp.services.webapp.interfaces import (
     INotificationList,
     INotificationRequest,
     INotificationResponse,
+    ISession,
     )
 from lp.services.webapp.login import allowUnauthenticatedSession
 from lp.services.webapp.publisher import LaunchpadView

@@ -14,10 +14,6 @@ from zope.interface import implementer
 from zope.publisher.browser import TestRequest
 from zope.publisher.interfaces.browser import IBrowserRequest
 from zope.publisher.interfaces.http import IHTTPApplicationResponse
-from zope.session.interfaces import (
-    ISession,
-    ISessionData,
-    )
 
 from lp import _
 from lp.services.webapp.escaping import structured
@@ -26,6 +22,8 @@ from lp.services.webapp.interfaces import (
     INotificationList,
     INotificationRequest,
     INotificationResponse,
+    ISession,
+    ISessionData,
     IStructuredString,
     )
 from lp.services.webapp.notifications import (
@@ -53,8 +51,6 @@ class MockSession(dict):
 
 @implementer(ISessionData)
 class MockSessionData(dict):
-
-    lastAccessTime = 0
 
     def __call__(self, whatever):
         return self

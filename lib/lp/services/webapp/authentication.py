@@ -21,7 +21,6 @@ from zope.interface import implementer
 from zope.principalregistry.principalregistry import UnauthenticatedPrincipal
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
-from zope.session.interfaces import ISession
 
 from lp.registry.interfaces.person import (
     IPerson,
@@ -37,6 +36,7 @@ from lp.services.webapp.interfaces import (
     ILaunchpadPrincipal,
     IPlacelessAuthUtility,
     IPlacelessLoginSource,
+    ISession,
     )
 
 

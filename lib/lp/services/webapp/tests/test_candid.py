@@ -25,7 +25,6 @@ from testtools.matchers import (
     MatchesStructure,
     Not,
     )
-from zope.session.interfaces import ISession
 
 from lp.services.config import config
 from lp.services.webapp.candid import (
@@ -35,6 +34,7 @@ from lp.services.webapp.candid import (
     extract_candid_caveat,
     request_candid_discharge,
     )
+from lp.services.webapp.interfaces import ISession
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
     login_person,
