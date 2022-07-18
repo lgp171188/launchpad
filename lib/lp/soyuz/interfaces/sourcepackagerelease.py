@@ -142,7 +142,8 @@ class ISourcePackageRelease(Interface):
     uploader = Attribute(
         "The user who uploaded the package.")
 
-    # Really ISourcePackageRecipeBuild -- see _schema_circular_imports.
+    # Really ISourcePackageRecipeBuild, patched in
+    # lp.soyuz.interfaces.webservice.
     source_package_recipe_build = Reference(
         schema=Interface,
         description=_(
@@ -151,7 +152,7 @@ class ISourcePackageRelease(Interface):
             "package recipe."),
         title=_("Source package recipe build"),
         required=False, readonly=True)
-    # Really ICIBuild, patched in _schema_circular_imports.
+    # Really ICIBuild, patched in lp.soyuz.interfaces.webservice.
     ci_build = Reference(
         schema=Interface,
         description=_(
