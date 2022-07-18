@@ -821,19 +821,6 @@ class ISessionDataContainer(IReadMapping, IWriteMapping):
     the keys need to remain secret so we can't give access to :meth:`keys`,
     :meth:`values` etc.
     """
-    resolution = Int(
-        title=_("Timeout resolution (in seconds)"),
-        description=_(
-            "Defines what the 'resolution' of item timeout is. "
-            "Setting this higher allows the transience machinery to "
-            "do fewer 'writes' at the expense of causing items to time "
-            "out later than the 'Data object timeout value' by  a factor "
-            "of (at most) this many seconds."
-        ),
-        default=10*60,
-        required=True,
-        min=0,
-    )
 
     def __getitem__(self, product_id):
         """Return an `ISessionPkgData`."""
