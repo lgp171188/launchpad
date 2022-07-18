@@ -51,18 +51,14 @@ def _path_for(
     elif repository_format == ArchiveRepositoryFormat.CONDA:
         subdir = pub_file.binarypackagerelease.getUserDefinedField("subdir")
         if subdir is None:
-            raise AssertionError(
-                "Cannot publish a Conda package with no subdir"
-            )
+            raise ValueError("Cannot publish a Conda package with no subdir")
         path = rootpath / subdir
     elif repository_format == ArchiveRepositoryFormat.GO_PROXY:
         module_path = pub_file.sourcepackagerelease.getUserDefinedField(
             "module-path"
         )
         if module_path is None:
-            raise AssertionError(
-                "Cannot publish a Go module with no module-path"
-            )
+            raise ValueError("Cannot publish a Go module with no module-path")
         path = rootpath / module_path / "@v"
     else:
         raise AssertionError(
