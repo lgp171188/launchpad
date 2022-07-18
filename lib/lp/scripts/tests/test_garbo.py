@@ -1745,11 +1745,12 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             distroarchseries=other_build.distro_arch_series)
         self.assertContentEqual([other_file], store.find(LiveFSFile))
 
-    def _test_SnapFilePruner(self, filename, job_status, interval,
+    def _test_SnapFilePruner(self, filenames, job_status, interval,
                              expected_count=0):
-        # Garbo should (or should not, if `expected_count=1`) remove snap
-        # files named `filename` with a store upload job of status
-        # `job_status` that finished more than `interval` days ago.
+        # Garbo should (or should not, if `expected_count` is non-zero)
+        # remove snap files named each of `filenames` with a store upload
+        # job of status `job_status` that finished more than `interval` days
+        # ago.
         now = datetime.now(UTC)
         switch_dbuser('testadmin')
         store = IMasterStore(SnapFile)
@@ -1757,16 +1758,16 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         db_build = self.factory.makeSnapBuild(
             date_created=now - timedelta(days=interval, minutes=15),
             status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=10))
-        db_lfa = self.factory.makeLibraryFileAlias(filename=filename)
-        db_file = self.factory.makeSnapFile(
-            snapbuild=db_build, libraryfile=db_lfa)
+        for filename in filenames:
+            db_lfa = self.factory.makeLibraryFileAlias(filename=filename)
+            self.factory.makeSnapFile(snapbuild=db_build, libraryfile=db_lfa)
         if job_status is not None:
             db_build_job = SnapStoreUploadJob.create(db_build)
             db_build_job.job._status = job_status
             db_build_job.job.date_finished = (
                 now - timedelta(days=interval, minutes=5))
-        Store.of(db_file).flush()
-        self.assertEqual(1, store.find(SnapFile).count())
+        Store.of(db_build).flush()
+        self.assertEqual(len(filenames), store.find(SnapFile).count())
 
         self.runDaily()
 
@@ -1776,30 +1777,34 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
     def test_SnapFilePruner_old_snap_files(self):
         # Snap files attached to builds over 7 days old that have been
         # uploaded to the store are pruned.
-        self._test_SnapFilePruner('foo.snap', JobStatus.COMPLETED, 7)
+        self._test_SnapFilePruner(
+            ['foo.snap', 'foo.debug'], JobStatus.COMPLETED, 7)
 
     def test_SnapFilePruner_old_non_snap_files(self):
         # Non-snap files attached to builds over 7 days old that have been
         # uploaded to the store are retained.
         self._test_SnapFilePruner(
-            'foo.tar.gz', JobStatus.COMPLETED, 7, expected_count=1)
+            ['foo.snap', 'foo.tar.gz'], JobStatus.COMPLETED, 7,
+            expected_count=1)
 
     def test_SnapFilePruner_recent_binary_files(self):
         # Snap binary files attached to builds less than 7 days old that
         # have been uploaded to the store are retained.
         self._test_SnapFilePruner(
-            'foo.snap', JobStatus.COMPLETED, 6, expected_count=1)
+            ['foo.snap', 'foo.debug'], JobStatus.COMPLETED, 6,
+            expected_count=2)
 
     def test_SnapFilePruner_binary_files_failed_to_upload(self):
         # Snap binary files attached to builds that failed to be uploaded to
         # the store are retained.
         self._test_SnapFilePruner(
-            'foo.snap', JobStatus.FAILED, 7, expected_count=1)
+            ['foo.snap', 'foo.debug'], JobStatus.FAILED, 7, expected_count=2)
 
     def test_SnapFilePruner_binary_files_no_upload_job(self):
         # Snap binary files attached to builds with no store upload job are
         # retained.
-        self._test_SnapFilePruner('foo.snap', None, 7, expected_count=1)
+        self._test_SnapFilePruner(
+            ['foo.snap', 'foo.debug'], None, 7, expected_count=2)
 
     def test_ArchiveSubscriptionExpirer_expires_subscriptions(self):
         # Archive subscriptions with expiry dates in the past have their
