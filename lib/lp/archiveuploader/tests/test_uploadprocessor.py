@@ -16,7 +16,7 @@ import tempfile
 import six
 from fixtures import MonkeyPatch
 from storm.locals import Store
-from testtools.matchers import LessThan
+from testtools.matchers import Equals, GreaterThan, LessThan, MatchesListwise
 from zope.component import getGlobalSiteManager, getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -42,6 +42,8 @@ from lp.buildmaster.enums import BuildFarmJobType, BuildStatus
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
 )
+from lp.charms.interfaces.charmrecipe import CHARM_RECIPE_ALLOW_CREATE
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.registry.interfaces.person import IPersonSet
@@ -53,8 +55,10 @@ from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
+from lp.services.features.testing import FeatureFixture
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.log.logger import BufferLogger, DevNullLogger
+from lp.services.statsd.tests import StatsMixin
 from lp.soyuz.enums import (
     ArchivePermissionType,
     ArchivePurpose,
@@ -65,6 +69,7 @@ from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.component import IComponentSet
+from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.soyuz.interfaces.packageset import IPackagesetSet
 from lp.soyuz.interfaces.publishing import (
     IPublishingSet,
@@ -434,7 +439,7 @@ class TestUploadProcessorBase(TestCaseWithFactory):
         )
 
 
-class TestUploadProcessor(TestUploadProcessorBase):
+class TestUploadProcessor(StatsMixin, TestUploadProcessorBase):
     """Basic tests on uploadprocessor class.
 
     * Check if the rejection message is send even when an unexpected
@@ -1571,6 +1576,225 @@ class TestUploadProcessor(TestUploadProcessorBase):
         # much longer.
         self.assertThat(len(self.oopses[0]["timeline"]), LessThan(5))
         self.assertThat(len(self.oopses[1]["timeline"]), LessThan(5))
+
+    def testUploadStatsdMetricsBuildUploadUser(self):
+        self.setUpStats()
+        uploadprocessor = self.getUploadProcessor(self.layer.txn)
+        self.queueUpload("bar_1.0-1")
+        self.queueUpload("bar_1.0-2")
+
+        uploadprocessor.processUploadQueue()
+
+        self.assertEqual(2, self.stats_client.timing.call_count)
+        self.assertThat(
+            [x[0] for x in self.stats_client.timing.call_args_list],
+            MatchesListwise(
+                [
+                    MatchesListwise(
+                        (
+                            Equals(
+                                "upload_duration,env=test,"
+                                "upload_type=UserUpload"
+                            ),
+                            GreaterThan(0),
+                        )
+                    ),
+                    MatchesListwise(
+                        (
+                            Equals(
+                                "upload_duration,env=test,"
+                                "upload_type=UserUpload"
+                            ),
+                            GreaterThan(0),
+                        )
+                    ),
+                ]
+            ),
+        )
+
+    def testUploadStatsdMetricsBuildUploadBinaryPackage(self):
+        self.setUpStats()
+        self.setupBreezy()
+        self.switchToAdmin()
+        build = self.factory.makeBinaryPackageBuild()
+        self.layer.txn.commit()
+        upload_name = "statsd-PACKAGEBUILD-%s" % build.id
+        os.makedirs(os.path.join(self.queue_folder, upload_name))
+        self.switchToUploader()
+        uploadprocessor = self.getUploadProcessor(self.layer.txn, builds=True)
+        UploadHandler.forProcessor(
+            uploadprocessor, self.incoming_folder, "test", build
+        )
+        self.queueUpload(upload_name, "", self.queue_folder)
+
+        uploadprocessor.processUploadQueue()
+
+        self.assertEqual(1, self.stats_client.timing.call_count)
+        self.assertThat(
+            self.stats_client.timing.call_args_list[0][0],
+            MatchesListwise(
+                (
+                    Equals(
+                        "upload_duration,env=test," "upload_type=PACKAGEBUILD"
+                    ),
+                    GreaterThan(0),
+                )
+            ),
+        )
+
+    def testUploadStatsdMetricsBuildUploadCharmRecipe(self):
+        self.setUpStats()
+        self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
+        self.setupBreezy()
+        self.switchToAdmin()
+        build = self.factory.makeCharmRecipeBuild(
+            distro_arch_series=self.breezy["i386"]
+        )
+        self.layer.txn.commit()
+        upload_name = "statsd-CHARMRECIPEBUILD-%s" % build.id
+        os.makedirs(os.path.join(self.queue_folder, upload_name))
+        self.switchToUploader()
+        uploadprocessor = self.getUploadProcessor(self.layer.txn, builds=True)
+        UploadHandler.forProcessor(
+            uploadprocessor, self.incoming_folder, "test", build
+        )
+        self.queueUpload(upload_name, "", self.queue_folder)
+
+        uploadprocessor.processUploadQueue()
+
+        self.assertEqual(1, self.stats_client.timing.call_count)
+        self.assertThat(
+            self.stats_client.timing.call_args_list[0][0],
+            MatchesListwise(
+                (
+                    Equals(
+                        "upload_duration,env=test,"
+                        "upload_type=CHARMRECIPEBUILD"
+                    ),
+                    GreaterThan(0),
+                )
+            ),
+        )
+
+    def testUploadStatsdMetricsBuildUploadSnap(self):
+        self.setUpStats()
+        self.setupBreezy()
+        self.switchToAdmin()
+        build = self.factory.makeSnapBuild()
+        self.layer.txn.commit()
+        upload_name = "statsd-SNAPBUILD-%s" % build.id
+        os.makedirs(os.path.join(self.queue_folder, upload_name))
+        self.switchToUploader()
+        uploadprocessor = self.getUploadProcessor(self.layer.txn, builds=True)
+        self.queueUpload(upload_name, "", self.queue_folder)
+        UploadHandler.forProcessor(
+            uploadprocessor, self.incoming_folder, "test", build
+        )
+
+        uploadprocessor.processUploadQueue()
+
+        self.assertEqual(1, self.stats_client.timing.call_count)
+        self.assertThat(
+            self.stats_client.timing.call_args_list[0][0],
+            MatchesListwise(
+                (
+                    Equals(
+                        "upload_duration,env=test," "upload_type=SNAPBUILD"
+                    ),
+                    GreaterThan(0),
+                )
+            ),
+        )
+
+    def testUploadStatsdMetricsBuildUploadCI(self):
+        self.setUpStats()
+        self.setupBreezy()
+        self.switchToAdmin()
+        build = self.factory.makeCIBuild()
+        self.layer.txn.commit()
+        upload_name = "statsd-CIBUILD-%s" % build.id
+        os.makedirs(os.path.join(self.queue_folder, upload_name))
+        self.switchToUploader()
+        uploadprocessor = self.getUploadProcessor(self.layer.txn, builds=True)
+        self.queueUpload(upload_name, "", self.queue_folder)
+        UploadHandler.forProcessor(
+            uploadprocessor, self.incoming_folder, "test", build
+        )
+
+        uploadprocessor.processUploadQueue()
+
+        self.assertEqual(1, self.stats_client.timing.call_count)
+        self.assertThat(
+            self.stats_client.timing.call_args_list[0][0],
+            MatchesListwise(
+                (
+                    Equals("upload_duration,env=test," "upload_type=CIBUILD"),
+                    GreaterThan(0),
+                )
+            ),
+        )
+
+    def testUploadStatsdMetricsBuildUploadLiveFS(self):
+        self.setUpStats()
+        self.setupBreezy()
+        self.switchToAdmin()
+        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
+        build = self.factory.makeLiveFSBuild()
+        self.layer.txn.commit()
+        upload_name = "statsd-LIVEFSBUILD-%s" % build.id
+        os.makedirs(os.path.join(self.queue_folder, upload_name))
+        self.switchToUploader()
+        uploadprocessor = self.getUploadProcessor(self.layer.txn, builds=True)
+        self.queueUpload(upload_name, "", self.queue_folder)
+        UploadHandler.forProcessor(
+            uploadprocessor, self.incoming_folder, "test", build
+        )
+
+        uploadprocessor.processUploadQueue()
+
+        self.assertEqual(1, self.stats_client.timing.call_count)
+        self.assertThat(
+            self.stats_client.timing.call_args_list[0][0],
+            MatchesListwise(
+                (
+                    Equals(
+                        "upload_duration,env=test," "upload_type=LIVEFSBUILD"
+                    ),
+                    GreaterThan(0),
+                )
+            ),
+        )
+
+    def testUploadStatsdMetricsBuildUploadOCIRecipe(self):
+        self.setUpStats()
+        self.setupBreezy()
+        self.switchToAdmin()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
+        build = self.factory.makeOCIRecipeBuild()
+        self.layer.txn.commit()
+        upload_name = "statsd-OCIRECIPEBUILD-%s" % build.id
+        os.makedirs(os.path.join(self.queue_folder, upload_name))
+        self.switchToUploader()
+        self.queueUpload(upload_name, "", self.queue_folder)
+        uploadprocessor = self.getUploadProcessor(self.layer.txn, builds=True)
+        UploadHandler.forProcessor(
+            uploadprocessor, self.incoming_folder, "test", build
+        )
+
+        uploadprocessor.processUploadQueue()
+
+        self.assertEqual(1, self.stats_client.timing.call_count)
+        self.assertThat(
+            self.stats_client.timing.call_args_list[0][0],
+            MatchesListwise(
+                (
+                    Equals(
+                        "upload_duration,env=test,upload_type=OCIRECIPEBUILD"
+                    ),
+                    GreaterThan(0),
+                )
+            ),
+        )
 
     def testLZMADebUpload(self):
         """Make sure that data files compressed with lzma in Debs work.
