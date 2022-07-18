@@ -1562,8 +1562,9 @@ class SnapFilePruner(BulkPruner):
 
     `.debug` files are large, so we prune those once the associated snap
     builds themselves have been uploaded to the store even though they don't
-    themselves get uploaded anywhere else; it's up to anyone producing these
-    to deal with scraping them.
+    themselves get uploaded anywhere else.  It's up to anyone producing
+    these to deal with scraping them before they're pruned; they have about
+    a week after the build finishes to do so.
     """
     target_table_class = SnapFile
     ids_to_prune_query = """
