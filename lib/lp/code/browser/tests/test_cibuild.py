@@ -5,10 +5,10 @@
 
 import re
 
-from fixtures import FakeLogger
 import soupmatchers
-from storm.locals import Store
 import transaction
+from fixtures import FakeLogger
+from storm.locals import Store
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.testbrowser.browser import LinkNotFoundError
@@ -19,16 +19,16 @@ from lp.services.webapp import canonical_url
 from lp.testing import (
     ANONYMOUS,
     BrowserTestCase,
+    TestCaseWithFactory,
     login,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.pages import (
     extract_text,
     find_main_content,
     find_tags_by_class,
-    )
+)
 
 
 class TestCanonicalUrlForCIBuild(TestCaseWithFactory):
@@ -39,9 +39,10 @@ class TestCanonicalUrlForCIBuild(TestCaseWithFactory):
         repository = self.factory.makeGitRepository()
         build = self.factory.makeCIBuild(git_repository=repository)
         self.assertEqual(
-            "http://launchpad.test/%s/+build/%s" % (
-                repository.shortened_path, build.id),
-            canonical_url(build))
+            "http://launchpad.test/%s/+build/%s"
+            % (repository.shortened_path, build.id),
+            canonical_url(build),
+        )
 
 
 class TestCIBuildOperations(BrowserTestCase):
@@ -55,7 +56,8 @@ class TestCIBuildOperations(BrowserTestCase):
         self.build_url = canonical_url(self.build)
         self.repository = self.build.git_repository
         self.buildd_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).buildd_admin])
+            member_of=[getUtility(ILaunchpadCelebrities).buildd_admin]
+        )
 
     def test_retry_build(self):
         # The owner of a build's repository can retry it.
@@ -76,10 +78,14 @@ class TestCIBuildOperations(BrowserTestCase):
         user = self.factory.makePerson()
         browser = self.getViewBrowser(self.build, user=user)
         self.assertRaises(
-            LinkNotFoundError, browser.getLink, "Retry this build")
+            LinkNotFoundError, browser.getLink, "Retry this build"
+        )
         self.assertRaises(
-            Unauthorized, self.getUserBrowser, self.build_url + "/+retry",
-            user=user)
+            Unauthorized,
+            self.getUserBrowser,
+            self.build_url + "/+retry",
+            user=user,
+        )
 
     def test_retry_build_wrong_state(self):
         # If the build isn't in an unsuccessful terminal state, you can't
@@ -87,7 +93,8 @@ class TestCIBuildOperations(BrowserTestCase):
         self.build.updateStatus(BuildStatus.FULLYBUILT)
         browser = self.getViewBrowser(self.build, user=self.repository.owner)
         self.assertRaises(
-            LinkNotFoundError, browser.getLink, "Retry this build")
+            LinkNotFoundError, browser.getLink, "Retry this build"
+        )
 
     def test_cancel_build(self):
         # The owner of a build's repository can cancel it.
@@ -109,8 +116,11 @@ class TestCIBuildOperations(BrowserTestCase):
         browser = self.getViewBrowser(self.build, user=user)
         self.assertRaises(LinkNotFoundError, browser.getLink, "Cancel build")
         self.assertRaises(
-            Unauthorized, self.getUserBrowser, self.build_url + "/+cancel",
-            user=user)
+            Unauthorized,
+            self.getUserBrowser,
+            self.build_url + "/+cancel",
+            user=user,
+        )
 
     def test_cancel_build_wrong_state(self):
         # If the build isn't queued, you can't cancel it.
@@ -141,7 +151,8 @@ class TestCIBuildOperations(BrowserTestCase):
         browser.getControl("Rescore build").click()
         self.assertEqual(
             "Invalid integer data",
-            extract_text(find_tags_by_class(browser.contents, "message")[1]))
+            extract_text(find_tags_by_class(browser.contents, "message")[1]),
+        )
 
     def test_rescore_build_not_admin(self):
         # A non-admin user cannot cancel a build.
@@ -151,8 +162,11 @@ class TestCIBuildOperations(BrowserTestCase):
         browser = self.getViewBrowser(self.build, user=user)
         self.assertRaises(LinkNotFoundError, browser.getLink, "Rescore build")
         self.assertRaises(
-            Unauthorized, self.getUserBrowser, self.build_url + "/+rescore",
-            user=user)
+            Unauthorized,
+            self.getUserBrowser,
+            self.build_url + "/+rescore",
+            user=user,
+        )
 
     def test_rescore_build_wrong_state(self):
         # If the build isn't NEEDSBUILD, you can't rescore it.
@@ -169,22 +183,32 @@ class TestCIBuildOperations(BrowserTestCase):
         with person_logged_in(self.repository.owner):
             self.build.cancel()
         browser = self.getViewBrowser(
-            self.build, "+rescore", user=self.buildd_admin)
+            self.build, "+rescore", user=self.buildd_admin
+        )
         self.assertEqual(self.build_url, browser.url)
-        self.assertThat(browser.contents, soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                "notification", "div", attrs={"class": "warning message"},
-                text="Cannot rescore this build because it is not queued.")))
+        self.assertThat(
+            browser.contents,
+            soupmatchers.HTMLContains(
+                soupmatchers.Tag(
+                    "notification",
+                    "div",
+                    attrs={"class": "warning message"},
+                    text="Cannot rescore this build because it is not queued.",
+                )
+            ),
+        )
 
     def test_builder_history(self):
         Store.of(self.build).flush()
         self.build.updateStatus(
-            BuildStatus.FULLYBUILT, builder=self.factory.makeBuilder())
+            BuildStatus.FULLYBUILT, builder=self.factory.makeBuilder()
+        )
         title = self.build.title
         browser = self.getViewBrowser(self.build.builder, "+history")
         self.assertTextMatchesExpressionIgnoreWhitespace(
             r"Build history.*%s" % re.escape(title),
-            extract_text(find_main_content(browser.contents)))
+            extract_text(find_main_content(browser.contents)),
+        )
         self.assertEqual(self.build_url, browser.getLink(title).url)
 
     def makeBuildingRecipe(self):

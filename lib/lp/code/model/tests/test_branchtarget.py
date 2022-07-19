@@ -9,23 +9,18 @@ from lp.app.enums import InformationType
 from lp.code.enums import BranchType
 from lp.code.interfaces.branchtarget import IBranchTarget
 from lp.code.model.branchtarget import (
-    check_default_stacked_on,
     PackageBranchTarget,
     PersonBranchTarget,
     ProductBranchTarget,
-    )
+    check_default_stacked_on,
+)
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.webapp import canonical_url
-from lp.testing import (
-    person_logged_in,
-    run_with_login,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in, run_with_login
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class BaseBranchTargetTests:
-
     def test_provides_IBranchTarget(self):
         self.assertProvides(self.target, IBranchTarget)
 
@@ -37,7 +32,8 @@ class BaseBranchTargetTests:
         # The canonical URL of a branch target is the canonical url of its
         # context.
         self.assertEqual(
-            canonical_url(self.original), canonical_url(self.target))
+            canonical_url(self.original), canonical_url(self.target)
+        )
 
     def test_collection(self):
         # The collection attribute is an IBranchCollection containing all
@@ -98,22 +94,26 @@ class TestPackageBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
         # current series of the distro as the distroseries.
         distro = self.original.distribution
         distro_sourcepackage = distro.getSourcePackage(
-            self.original.sourcepackagename)
+            self.original.sourcepackagename
+        )
         target = IBranchTarget(distro_sourcepackage)
         self.assertIsInstance(target, PackageBranchTarget)
-        self.assertEqual(
-            [distro, distro.currentseries],
-            target.components[:2])
+        self.assertEqual([distro, distro.currentseries], target.components[:2])
         self.assertEqual(
             self.original.sourcepackagename,
-            target.components[2].sourcepackagename)
+            target.components[2].sourcepackagename,
+        )
 
     def test_components(self):
         target = IBranchTarget(self.original)
         self.assertEqual(
-            [self.original.distribution, self.original.distroseries,
-             self.original],
-            list(target.components))
+            [
+                self.original.distribution,
+                self.original.distroseries,
+                self.original,
+            ],
+            list(target.components),
+        )
 
     def test_default_stacked_on_branch(self):
         # The default stacked-on branch for a source package is the branch
@@ -121,14 +121,16 @@ class TestPackageBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
         target = IBranchTarget(self.original)
         development_package = self.original.development_version
         default_branch = self.factory.makePackageBranch(
-            sourcepackage=development_package)
+            sourcepackage=development_package
+        )
         removeSecurityProxy(default_branch).branchChanged(
-            '', self.factory.getUniqueString(), None, None, None)
+            "", self.factory.getUniqueString(), None, None, None
+        )
         registrant = development_package.distribution.owner
         with person_logged_in(registrant):
             development_package.setBranch(
-                PackagePublishingPocket.RELEASE, default_branch,
-                registrant)
+                PackagePublishingPocket.RELEASE, default_branch, registrant
+            )
         self.assertEqual(default_branch, target.default_stacked_on_branch)
 
     def test_supports_merge_proposals(self):
@@ -153,7 +155,8 @@ class TestPackageBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
     def test_areBranchesMergeable_same_sourcepackagename(self):
         # Branches with the same sourcepackagename are mergeable.
         sourcepackage = self.factory.makeSourcePackage(
-            self.original.sourcepackagename)
+            self.original.sourcepackagename
+        )
         same_name = PackageBranchTarget(sourcepackage)
         self.assertTrue(self.target.areBranchesMergeable(same_name))
 
@@ -178,7 +181,8 @@ class TestPackageBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
         branch = self.factory.makeProductBranch()
         # Link it up.
         self.original.setPackaging(
-            branch.product.development_focus, branch.owner)
+            branch.product.development_focus, branch.owner
+        )
         self.assertTrue(self.target.areBranchesMergeable(branch.target))
 
     def test_default_merge_target(self):
@@ -188,8 +192,10 @@ class TestPackageBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
         branch = self.factory.makePackageBranch(sourcepackage=self.original)
         with person_logged_in(self.original.distribution.owner):
             self.original.setBranch(
-                PackagePublishingPocket.RELEASE, branch,
-                self.original.distribution.owner)
+                PackagePublishingPocket.RELEASE,
+                branch,
+                self.original.distribution.owner,
+            )
         self.assertEqual(branch, self.target.default_merge_target)
 
     def test_supports_code_imports(self):
@@ -199,28 +205,38 @@ class TestPackageBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
         self.assertTrue(self.target.allow_recipe_name_from_target)
 
     def test_related_branches(self):
-        (branch, related_series_branch_info,
-            related_package_branches) = (
-                self.factory.makeRelatedBranchesForSourcePackage(
-                sourcepackage=self.original))
+        (
+            branch,
+            related_series_branch_info,
+            related_package_branches,
+        ) = self.factory.makeRelatedBranchesForSourcePackage(
+            sourcepackage=self.original
+        )
         self.assertEqual(
             related_series_branch_info,
-            self.target.getRelatedSeriesBranchInfo(branch))
+            self.target.getRelatedSeriesBranchInfo(branch),
+        )
         self.assertEqual(
             related_package_branches,
-            self.target.getRelatedPackageBranchInfo(branch))
+            self.target.getRelatedPackageBranchInfo(branch),
+        )
 
     def test_related_branches_with_private_branch(self):
-        (branch, related_series_branch_info,
-            related_package_branches) = (
-                self.factory.makeRelatedBranchesForSourcePackage(
-                sourcepackage=self.original, with_private_branches=True))
+        (
+            branch,
+            related_series_branch_info,
+            related_package_branches,
+        ) = self.factory.makeRelatedBranchesForSourcePackage(
+            sourcepackage=self.original, with_private_branches=True
+        )
         self.assertEqual(
             related_series_branch_info,
-            self.target.getRelatedSeriesBranchInfo(branch))
+            self.target.getRelatedSeriesBranchInfo(branch),
+        )
         self.assertEqual(
             related_package_branches,
-            self.target.getRelatedPackageBranchInfo(branch))
+            self.target.getRelatedPackageBranchInfo(branch),
+        )
 
 
 class TestPersonBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
@@ -237,7 +253,7 @@ class TestPersonBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
 
     def test_name(self):
         # The name of a junk context is '+junk'.
-        self.assertEqual('+junk', self.target.name)
+        self.assertEqual("+junk", self.target.name)
 
     def test_getNamespace(self):
         """Get namespace produces the correct namespace."""
@@ -270,7 +286,7 @@ class TestPersonBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
     def test_displayname(self):
         # The display name of a person branch target is ~$USER/+junk.
         target = IBranchTarget(self.original)
-        self.assertEqual('~%s/+junk' % self.original.name, target.displayname)
+        self.assertEqual("~%s/+junk" % self.original.name, target.displayname)
 
     def test_areBranchesMergeable(self):
         # No branches are mergeable with a PersonBranchTarget.
@@ -375,8 +391,7 @@ class TestProductBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
         # default stacked-on branch.
         branch = self.factory.makeProductBranch(product=self.original)
         self._setDevelopmentFocus(self.original, branch)
-        removeSecurityProxy(branch).branchChanged(
-            '', 'rev1', None, None, None)
+        removeSecurityProxy(branch).branchChanged("", "rev1", None, None, None)
         target = IBranchTarget(self.original)
         self.assertEqual(branch, target.default_stacked_on_branch)
 
@@ -419,7 +434,8 @@ class TestProductBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
         branch = self.factory.makePackageBranch()
         # Link it up.
         branch.sourcepackage.setPackaging(
-            self.original.development_focus, branch.owner)
+            self.original.development_focus, branch.owner
+        )
         self.assertTrue(self.target.areBranchesMergeable(branch.target))
 
     def test_default_merge_target(self):
@@ -429,7 +445,11 @@ class TestProductBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
         branch = self.factory.makeProductBranch(product=self.original)
         run_with_login(
             self.original.owner,
-            setattr, self.original.development_focus, 'branch', branch)
+            setattr,
+            self.original.development_focus,
+            "branch",
+            branch,
+        )
         self.assertEqual(branch, self.target.default_merge_target)
 
     def test_supports_code_imports(self):
@@ -439,40 +459,51 @@ class TestProductBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
         self.assertTrue(self.target.allow_recipe_name_from_target)
 
     def test_related_branches(self):
-        (branch, related_series_branch_info,
-            related_package_branches) = (
-                self.factory.makeRelatedBranchesForProduct(
-                product=self.original))
+        (
+            branch,
+            related_series_branch_info,
+            related_package_branches,
+        ) = self.factory.makeRelatedBranchesForProduct(product=self.original)
         self.assertEqual(
             related_series_branch_info,
-            self.target.getRelatedSeriesBranchInfo(branch))
+            self.target.getRelatedSeriesBranchInfo(branch),
+        )
         self.assertEqual(
             related_package_branches,
-            self.target.getRelatedPackageBranchInfo(branch))
+            self.target.getRelatedPackageBranchInfo(branch),
+        )
 
     def test_related_branches_with_private_branch(self):
-        (branch, related_series_branch_info,
-            related_package_branches) = (
-                self.factory.makeRelatedBranchesForProduct(
-                product=self.original, with_private_branches=True))
+        (
+            branch,
+            related_series_branch_info,
+            related_package_branches,
+        ) = self.factory.makeRelatedBranchesForProduct(
+            product=self.original, with_private_branches=True
+        )
         self.assertEqual(
             related_series_branch_info,
-            self.target.getRelatedSeriesBranchInfo(branch))
+            self.target.getRelatedSeriesBranchInfo(branch),
+        )
         self.assertEqual(
             related_package_branches,
-            self.target.getRelatedPackageBranchInfo(branch))
+            self.target.getRelatedPackageBranchInfo(branch),
+        )
 
     def test_related_branches_with_limit(self):
-        (branch, related_series_branch_info,
-            related_package_branches) = (
-                self.factory.makeRelatedBranchesForProduct(
-                product=self.original))
+        (
+            branch,
+            related_series_branch_info,
+            related_package_branches,
+        ) = self.factory.makeRelatedBranchesForProduct(product=self.original)
         self.assertEqual(
             related_series_branch_info[:2],
-            self.target.getRelatedSeriesBranchInfo(branch, 2))
+            self.target.getRelatedSeriesBranchInfo(branch, 2),
+        )
         self.assertEqual(
             related_package_branches[:2],
-            self.target.getRelatedPackageBranchInfo(branch, 2))
+            self.target.getRelatedPackageBranchInfo(branch, 2),
+        )
 
 
 class TestCheckDefaultStackedOnBranch(TestCaseWithFactory):
@@ -505,7 +536,8 @@ class TestCheckDefaultStackedOnBranch(TestCaseWithFactory):
         branch = self.factory.makeAnyBranch(branch_type=BranchType.MIRRORED)
         branch.startMirroring()
         removeSecurityProxy(branch).branchChanged(
-            '', self.factory.getUniqueString(), None, None, None)
+            "", self.factory.getUniqueString(), None, None, None
+        )
         removeSecurityProxy(branch).branch_type = BranchType.REMOTE
         self.assertIs(None, check_default_stacked_on(branch))
 
@@ -513,22 +545,26 @@ class TestCheckDefaultStackedOnBranch(TestCaseWithFactory):
         # `check_default_stacked_on` returns None for branches invisible to
         # the current user.
         branch = self.factory.makeAnyBranch(
-            information_type=InformationType.USERDATA)
+            information_type=InformationType.USERDATA
+        )
         self.assertIs(None, check_default_stacked_on(branch))
 
     def test_invisible_been_mirrored(self):
         # `check_default_stacked_on` returns None for branches invisible to
         # the current user, even if those branches have already been mirrored.
         branch = self.factory.makeAnyBranch(
-            information_type=InformationType.USERDATA)
+            information_type=InformationType.USERDATA
+        )
         naked_branch = removeSecurityProxy(branch)
         naked_branch.branchChanged(
-            '', self.factory.getUniqueString(), None, None, None)
+            "", self.factory.getUniqueString(), None, None, None
+        )
         self.assertIs(None, check_default_stacked_on(branch))
 
     def test_been_mirrored(self):
         # `check_default_stacked_on` returns the branch if it has revisions.
         branch = self.factory.makeAnyBranch()
         removeSecurityProxy(branch).branchChanged(
-            '', self.factory.getUniqueString(), None, None, None)
+            "", self.factory.getUniqueString(), None, None, None
+        )
         self.assertEqual(branch, check_default_stacked_on(branch))

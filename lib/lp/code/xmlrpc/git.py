@@ -4,18 +4,18 @@
 """Implementations of the XML-RPC APIs for Git."""
 
 __all__ = [
-    'GitAPI',
-    ]
+    "GitAPI",
+]
 
 import logging
 import sys
-from urllib.parse import quote
 import uuid
 import xmlrpc.client
+from urllib.parse import quote
 
-from pymacaroons import Macaroon
 import six
 import transaction
+from pymacaroons import Macaroon
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.interface import implementer
@@ -30,59 +30,40 @@ from lp.code.enums import (
     GitPermissionType,
     GitRepositoryStatus,
     GitRepositoryType,
-    )
+)
 from lp.code.errors import (
     GitRepositoryCreationException,
     GitRepositoryCreationFault,
     GitRepositoryCreationForbidden,
     GitRepositoryExists,
     InvalidNamespace,
-    )
+)
 from lp.code.interfaces.codehosting import (
     LAUNCHPAD_ANONYMOUS,
     LAUNCHPAD_SERVICES,
-    )
+)
 from lp.code.interfaces.gitapi import IGitAPI
 from lp.code.interfaces.gitjob import IGitRefScanJobSource
-from lp.code.interfaces.gitlookup import (
-    IGitLookup,
-    IGitTraverser,
-    )
+from lp.code.interfaces.gitlookup import IGitLookup, IGitTraverser
 from lp.code.interfaces.gitnamespace import (
     get_git_namespace,
     split_git_unique_name,
-    )
+)
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.xmlrpc.codehosting import run_with_login
-from lp.registry.errors import (
-    InvalidName,
-    NoSuchSourcePackageName,
-    )
-from lp.registry.interfaces.person import (
-    IPersonSet,
-    NoSuchPerson,
-    )
-from lp.registry.interfaces.product import (
-    InvalidProductName,
-    NoSuchProduct,
-    )
+from lp.registry.errors import InvalidName, NoSuchSourcePackageName
+from lp.registry.interfaces.person import IPersonSet, NoSuchPerson
+from lp.registry.interfaces.product import InvalidProductName, NoSuchProduct
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.services.features import getFeatureFlag
-from lp.services.macaroons.interfaces import (
-    IMacaroonIssuer,
-    NO_USER,
-    )
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadXMLRPCView,
-    )
+from lp.services.macaroons.interfaces import NO_USER, IMacaroonIssuer
+from lp.services.webapp import LaunchpadXMLRPCView, canonical_url
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.errorlog import ScriptRequest
 from lp.xmlrpc import faults
 from lp.xmlrpc.helpers import return_fault
 
-
-GIT_ASYNC_CREATE_REPO = 'git.codehosting.async-create.enabled'
+GIT_ASYNC_CREATE_REPO = "git.codehosting.async-create.enabled"
 
 
 def _get_requester_id(auth_params):
@@ -146,7 +127,8 @@ class GitAPI(LaunchpadXMLRPCView):
         except ComponentLookupError:
             return False
         verified = issuer.verifyMacaroon(
-            macaroon, repository, require_context=False, user=user)
+            macaroon, repository, require_context=False, user=user
+        )
         if verified:
             # Double-check user verification to prevent accidents.  Internal
             # macaroons may only be used by internal services, and user
@@ -196,10 +178,11 @@ class GitAPI(LaunchpadXMLRPCView):
             if requester is None:
                 raise faults.Unauthorized()
             verify_user = (
-                None if requester == LAUNCHPAD_SERVICES else requester)
+                None if requester == LAUNCHPAD_SERVICES else requester
+            )
             verified = self._verifyMacaroon(
-                macaroon_raw, removeSecurityProxy(repository),
-                user=verify_user)
+                macaroon_raw, removeSecurityProxy(repository), user=verify_user
+            )
             if not verified:
                 # Macaroon authentication failed.  Don't fall back to the
                 # requester's permissions, since macaroons typically have
@@ -228,8 +211,9 @@ class GitAPI(LaunchpadXMLRPCView):
             # This isn't an authorised internal service, so perform normal
             # user authorisation.
             writable = (
-                    repository.repository_type == GitRepositoryType.HOSTED and
-                    check_permission("launchpad.Edit", repository))
+                repository.repository_type == GitRepositoryType.HOSTED
+                and check_permission("launchpad.Edit", repository)
+            )
             if not writable:
                 grants = naked_repository.findRuleGrantsByGrantee(requester)
                 if not grants.is_empty():
@@ -248,7 +232,8 @@ class GitAPI(LaunchpadXMLRPCView):
         # macaroons issued for a specific repository.
         check_permissions = requester != LAUNCHPAD_SERVICES
         repository, extra_path = getUtility(IGitLookup).getByPath(
-            path, check_permissions=check_permissions)
+            path, check_permissions=check_permissions
+        )
         if repository is None:
             return None, None
 
@@ -278,7 +263,7 @@ class GitAPI(LaunchpadXMLRPCView):
             "writable": writable,
             "trailing": extra_path,
             "private": private,
-            }
+        }
 
     def _getGitNamespaceExtras(self, path, requester):
         """Get the namespace, repository name, and callback for the path.
@@ -303,16 +288,20 @@ class GitAPI(LaunchpadXMLRPCView):
             namespace_name = path
             repository_name = None
         owner, target, repository = getUtility(IGitTraverser).traverse_path(
-            namespace_name)
+            namespace_name
+        )
         # split_git_unique_name should have left us without a repository name.
         assert repository is None
         if owner is None:
             default_namespace = get_git_namespace(target, None)
-            if (not default_namespace.allow_push_to_set_default or
-                    default_namespace.default_owner is None):
+            if (
+                not default_namespace.allow_push_to_set_default
+                or default_namespace.default_owner is None
+            ):
                 raise GitRepositoryCreationForbidden(
                     "Cannot automatically set the default repository for this "
-                    "target; push to a named repository instead.")
+                    "target; push to a named repository instead."
+                )
             repository_owner = default_namespace.default_owner
         else:
             repository_owner = owner
@@ -323,9 +312,12 @@ class GitAPI(LaunchpadXMLRPCView):
             repository_name = namespace.findUnusedName(target.name)
             target_default = owner is None
             owner_default = (
-                owner is None or
-                self.repository_set.getDefaultRepositoryForOwner(
-                    repository_owner, target) is None)
+                owner is None
+                or self.repository_set.getDefaultRepositoryForOwner(
+                    repository_owner, target
+                )
+                is None
+            )
             return namespace, repository_name, target_default, owner_default
         else:
             return namespace, repository_name, False, False
@@ -334,7 +326,7 @@ class GitAPI(LaunchpadXMLRPCView):
         properties = [
             ("path", path),
             ("error-explanation", str(exception)),
-            ]
+        ]
         if hosting_path is not None:
             properties.append(("hosting_path", hosting_path))
         request = ScriptRequest(properties)
@@ -347,15 +339,21 @@ class GitAPI(LaunchpadXMLRPCView):
         if request_id is None:
             request_id = uuid.uuid4()
         return GitLoggerAdapter(
-            logging.getLogger(__name__), {"request-id": request_id})
+            logging.getLogger(__name__), {"request-id": request_id}
+        )
 
     def _createRepository(self, requester, path, clone_from=None):
         try:
-            namespace, repository_name, target_default, owner_default = (
-                self._getGitNamespaceExtras(path, requester))
+            (
+                namespace,
+                repository_name,
+                target_default,
+                owner_default,
+            ) = self._getGitNamespaceExtras(path, requester)
         except InvalidNamespace:
             raise faults.PermissionDenied(
-                "'%s' is not a valid Git repository path." % path)
+                "'%s' is not a valid Git repository path." % path
+            )
         except NoSuchPerson as e:
             raise faults.NotFound("User/team '%s' does not exist." % e.name)
         except (NoSuchProduct, InvalidProductName) as e:
@@ -384,9 +382,14 @@ class GitAPI(LaunchpadXMLRPCView):
                     with_hosting = True
                     status = GitRepositoryStatus.AVAILABLE
                 namespace.createRepository(
-                    GitRepositoryType.HOSTED, requester, repository_name,
-                    target_default=target_default, owner_default=owner_default,
-                    with_hosting=with_hosting, status=status)
+                    GitRepositoryType.HOSTED,
+                    requester,
+                    repository_name,
+                    target_default=target_default,
+                    owner_default=owner_default,
+                    with_hosting=with_hosting,
+                    status=status,
+                )
             except LaunchpadValidationError as e:
                 # Despite the fault name, this just passes through the
                 # exception text so there's no need for a new Git-specific
@@ -417,11 +420,15 @@ class GitAPI(LaunchpadXMLRPCView):
             if repo and repo.status == GitRepositoryStatus.CREATING:
                 raise faults.GitRepositoryBeingCreated(path)
 
-            if (result is None and requester is not None and
-                permission == "write"):
+            if (
+                result is None
+                and requester is not None
+                and permission == "write"
+            ):
                 self._createRepository(requester, path)
                 repo, result = self._performLookup(
-                    requester, path, auth_params)
+                    requester, path, auth_params
+                )
 
                 # If the recently-created repo is in "CREATING" status,
                 # it should be created asynchronously by hosting service
@@ -430,8 +437,11 @@ class GitAPI(LaunchpadXMLRPCView):
                 if repo.status == GitRepositoryStatus.CREATING:
                     clone_from = repo.getClonedFrom()
                     result["creation_params"] = {
-                        "clone_from": (clone_from.getInternalPath()
-                                       if clone_from else None)
+                        "clone_from": (
+                            clone_from.getInternalPath()
+                            if clone_from
+                            else None
+                        )
                     }
             if result is None:
                 raise faults.GitRepositoryNotFound(path)
@@ -454,10 +464,17 @@ class GitAPI(LaunchpadXMLRPCView):
         requester_id = _get_requester_id(auth_params)
         logger.info(
             "Request received: translatePath('%s', '%s') for %s",
-            path, permission, requester_id)
+            path,
+            permission,
+            requester_id,
+        )
         result = run_with_login(
-            requester_id, self._translatePath,
-            six.ensure_text(path).strip("/"), permission, auth_params)
+            requester_id,
+            self._translatePath,
+            six.ensure_text(path).strip("/"),
+            permission,
+            auth_params,
+        )
         try:
             if isinstance(result, xmlrpc.client.Fault):
                 logger.error("translatePath failed: %r", result)
@@ -479,33 +496,44 @@ class GitAPI(LaunchpadXMLRPCView):
         repository = getUtility(IGitLookup).getByHostingPath(translated_path)
         if repository is None:
             fault = faults.NotFound(
-                "No repository found for '%s'." % translated_path)
+                "No repository found for '%s'." % translated_path
+            )
             logger.error("notify failed: %r", fault)
             return fault
         if repository is None:
             raise faults.GitRepositoryNotFound(translated_path)
         if auth_params is not None:
             verified = self._verifyAuthParams(
-                requester, repository, auth_params)
+                requester, repository, auth_params
+            )
             writable = self._isWritable(requester, repository, verified)
             if writable and statistics:
                 removeSecurityProxy(repository).setRepackData(
-                    statistics.get('loose_object_count'),
-                    statistics.get('pack_count'))
+                    statistics.get("loose_object_count"),
+                    statistics.get("pack_count"),
+                )
         getUtility(IGitRefScanJobSource).create(
-            removeSecurityProxy(repository))
+            removeSecurityProxy(repository)
+        )
 
     def notify(self, translated_path, statistics, auth_params):
         """See `IGitAPI`."""
         logger = self._getLogger()
-        logger.info("Request received: notify('%s', '%d', '%d')",
-                    translated_path, statistics.get('loose_object_count'),
-                    statistics.get('pack_count'))
+        logger.info(
+            "Request received: notify('%s', '%d', '%d')",
+            translated_path,
+            statistics.get("loose_object_count"),
+            statistics.get("pack_count"),
+        )
 
         requester_id = _get_requester_id(auth_params)
         result = run_with_login(
-            requester_id, self._notify,
-            translated_path, statistics, auth_params)
+            requester_id,
+            self._notify,
+            translated_path,
+            statistics,
+            auth_params,
+        )
         try:
             if isinstance(result, xmlrpc.client.Fault):
                 logger.error("notify failed: %r", result)
@@ -517,12 +545,14 @@ class GitAPI(LaunchpadXMLRPCView):
             del result
 
     @return_fault
-    def _getMergeProposalURL(self, requester, translated_path, branch,
-                             auth_params):
+    def _getMergeProposalURL(
+        self, requester, translated_path, branch, auth_params
+    ):
         if requester == LAUNCHPAD_ANONYMOUS:
             requester = None
         repository = removeSecurityProxy(
-            getUtility(IGitLookup).getByHostingPath(translated_path))
+            getUtility(IGitLookup).getByHostingPath(translated_path)
+        )
         if repository is None:
             raise faults.GitRepositoryNotFound(translated_path)
 
@@ -533,9 +563,8 @@ class GitAPI(LaunchpadXMLRPCView):
             return None
 
         # We assemble the URL this way here because the ref may not exist yet.
-        base_url = canonical_url(repository, rootsite='code')
-        mp_url = "%s/+ref/%s/+register-merge" % (
-            base_url, quote(branch))
+        base_url = canonical_url(repository, rootsite="code")
+        mp_url = "%s/+ref/%s/+register-merge" % (base_url, quote(branch))
         return mp_url
 
     def getMergeProposalURL(self, translated_path, branch, auth_params):
@@ -544,10 +573,17 @@ class GitAPI(LaunchpadXMLRPCView):
         requester_id = _get_requester_id(auth_params)
         logger.info(
             "Request received: getMergeProposalURL('%s, %s') for %s",
-            translated_path, branch, requester_id)
+            translated_path,
+            branch,
+            requester_id,
+        )
         result = run_with_login(
-            requester_id, self._getMergeProposalURL,
-            translated_path, branch, auth_params)
+            requester_id,
+            self._getMergeProposalURL,
+            translated_path,
+            branch,
+            auth_params,
+        )
         try:
             if isinstance(result, xmlrpc.client.Fault):
                 logger.error("getMergeProposalURL failed: %r", result)
@@ -572,7 +608,8 @@ class GitAPI(LaunchpadXMLRPCView):
         user = (
             getUtility(IPersonSet).getByName(username)
             if username and username != LAUNCHPAD_SERVICES
-            else None)
+            else None
+        )
         verified = self._verifyMacaroon(password, user=user)
         if verified:
             auth_params = {"macaroon": password}
@@ -588,7 +625,8 @@ class GitAPI(LaunchpadXMLRPCView):
         """See `IGitAPI`."""
         logger = self._getLogger()
         logger.info(
-            "Request received: authenticateWithPassword('%s')", username)
+            "Request received: authenticateWithPassword('%s')", username
+        )
         result = self._authenticateWithPassword(username, password)
         try:
             if isinstance(result, xmlrpc.client.Fault):
@@ -598,7 +636,8 @@ class GitAPI(LaunchpadXMLRPCView):
                 # at least log the authenticated user.
                 logger.info(
                     "authenticateWithPassword succeeded: %s",
-                    result.get("uid", result.get("user")))
+                    result.get("uid", result.get("user")),
+                )
             return result
         finally:
             # Avoid traceback reference cycles.
@@ -608,26 +647,29 @@ class GitAPI(LaunchpadXMLRPCView):
         """Render a set of permission strings for XML-RPC output."""
         permissions = []
         if GitPermissionType.CAN_CREATE in set_of_permissions:
-            permissions.append('create')
+            permissions.append("create")
         if GitPermissionType.CAN_PUSH in set_of_permissions:
-            permissions.append('push')
+            permissions.append("push")
         if GitPermissionType.CAN_FORCE_PUSH in set_of_permissions:
-            permissions.append('force_push')
+            permissions.append("force_push")
         return permissions
 
     @return_fault
-    def _checkRefPermissions(self, requester, translated_path, ref_paths,
-                             auth_params):
+    def _checkRefPermissions(
+        self, requester, translated_path, ref_paths, auth_params
+    ):
         if requester == LAUNCHPAD_ANONYMOUS:
             requester = None
         repository = removeSecurityProxy(
-            getUtility(IGitLookup).getByHostingPath(translated_path))
+            getUtility(IGitLookup).getByHostingPath(translated_path)
+        )
         if repository is None:
             raise faults.GitRepositoryNotFound(translated_path)
 
         try:
             verified = self._verifyAuthParams(
-                requester, repository, auth_params)
+                requester, repository, auth_params
+            )
             if verified is not None and verified.user is NO_USER:
                 if not _can_internal_issuer_write(verified):
                     raise faults.Unauthorized()
@@ -646,18 +688,22 @@ class GitAPI(LaunchpadXMLRPCView):
             # about the timing of a push.
             return [
                 (xmlrpc.client.Binary(ref_path.data), [])
-                for ref_path in ref_paths]
+                for ref_path in ref_paths
+            ]
 
         # Caller sends paths as bytes; Launchpad returns a list of (path,
         # permissions) tuples.  (XML-RPC doesn't support dict keys being
         # bytes.)
         ref_paths = [ref_path.data for ref_path in ref_paths]
         return [
-            (xmlrpc.client.Binary(ref_path),
-             self._renderPermissions(permissions))
+            (
+                xmlrpc.client.Binary(ref_path),
+                self._renderPermissions(permissions),
+            )
             for ref_path, permissions in repository.checkRefPermissions(
-                requester, ref_paths).items()
-            ]
+                requester, ref_paths
+            ).items()
+        ]
 
     def checkRefPermissions(self, translated_path, ref_paths, auth_params):
         """See `IGitAPI`."""
@@ -665,11 +711,17 @@ class GitAPI(LaunchpadXMLRPCView):
         requester_id = _get_requester_id(auth_params)
         logger.info(
             "Request received: checkRefPermissions('%s', %s) for %s",
-            translated_path, [ref_path.data for ref_path in ref_paths],
-            requester_id)
+            translated_path,
+            [ref_path.data for ref_path in ref_paths],
+            requester_id,
+        )
         result = run_with_login(
-            requester_id, self._checkRefPermissions,
-            translated_path, ref_paths, auth_params)
+            requester_id,
+            self._checkRefPermissions,
+            translated_path,
+            ref_paths,
+            auth_params,
+        )
         try:
             if isinstance(result, xmlrpc.client.Fault):
                 logger.error("checkRefPermissions failed: %r", result)
@@ -679,15 +731,19 @@ class GitAPI(LaunchpadXMLRPCView):
                 # contain no credentials).
                 logger.info(
                     "checkRefPermissions succeeded: %s",
-                    [(ref_path.data, permissions)
-                     for ref_path, permissions in result])
+                    [
+                        (ref_path.data, permissions)
+                        for ref_path, permissions in result
+                    ],
+                )
             return result
         finally:
             # Avoid traceback reference cycles.
             del result
 
     def _validateRequesterCanManageRepoCreation(
-            self, requester, repository, auth_params):
+        self, requester, repository, auth_params
+    ):
         """Makes sure the requester has permission to change repository
         creation status."""
         naked_repo = removeSecurityProxy(repository)
@@ -720,11 +776,13 @@ class GitAPI(LaunchpadXMLRPCView):
 
     def _confirmRepoCreation(self, requester, translated_path, auth_params):
         naked_repo = removeSecurityProxy(
-            getUtility(IGitLookup).getByHostingPath(translated_path))
+            getUtility(IGitLookup).getByHostingPath(translated_path)
+        )
         if naked_repo is None:
             raise faults.GitRepositoryNotFound(translated_path)
         self._validateRequesterCanManageRepoCreation(
-            requester, naked_repo, auth_params)
+            requester, naked_repo, auth_params
+        )
         naked_repo.rescan()
         naked_repo.status = GitRepositoryStatus.AVAILABLE
 
@@ -733,11 +791,15 @@ class GitAPI(LaunchpadXMLRPCView):
         logger = self._getLogger(auth_params.get("request-id"))
         requester_id = _get_requester_id(auth_params)
         logger.info(
-            "Request received: confirmRepoCreation('%s')", translated_path)
+            "Request received: confirmRepoCreation('%s')", translated_path
+        )
         try:
             result = run_with_login(
-                requester_id, self._confirmRepoCreation,
-                translated_path, auth_params)
+                requester_id,
+                self._confirmRepoCreation,
+                translated_path,
+                auth_params,
+            )
         except Exception as e:
             result = e
         try:
@@ -752,11 +814,13 @@ class GitAPI(LaunchpadXMLRPCView):
 
     def _abortRepoCreation(self, requester, translated_path, auth_params):
         naked_repo = removeSecurityProxy(
-            getUtility(IGitLookup).getByHostingPath(translated_path))
+            getUtility(IGitLookup).getByHostingPath(translated_path)
+        )
         if naked_repo is None:
             raise faults.GitRepositoryNotFound(translated_path)
         self._validateRequesterCanManageRepoCreation(
-            requester, naked_repo, auth_params)
+            requester, naked_repo, auth_params
+        )
         naked_repo.destroySelf(break_references=True)
 
     def abortRepoCreation(self, translated_path, auth_params):
@@ -764,11 +828,15 @@ class GitAPI(LaunchpadXMLRPCView):
         logger = self._getLogger(auth_params.get("request-id"))
         requester_id = _get_requester_id(auth_params)
         logger.info(
-            "Request received: abortRepoCreation('%s')", translated_path)
+            "Request received: abortRepoCreation('%s')", translated_path
+        )
         try:
             result = run_with_login(
-                requester_id, self._abortRepoCreation,
-                translated_path, auth_params)
+                requester_id,
+                self._abortRepoCreation,
+                translated_path,
+                auth_params,
+            )
         except Exception as e:
             result = e
         try:
@@ -784,20 +852,26 @@ class GitAPI(LaunchpadXMLRPCView):
     def updateRepackStats(self, translated_path, statistics):
         """See `IGitAPI`."""
         logger = self._getLogger()
-        logger.info("Request received: updateRepackStats('%s', '%d', '%d')",
-                    translated_path, statistics.get('loose_object_count'),
-                    statistics.get('pack_count'))
+        logger.info(
+            "Request received: updateRepackStats('%s', '%d', '%d')",
+            translated_path,
+            statistics.get("loose_object_count"),
+            statistics.get("pack_count"),
+        )
         repository = getUtility(IGitLookup).getByHostingPath(translated_path)
         if repository is None:
             fault = faults.GitRepositoryNotFound(translated_path)
             logger.error("updateRepackStats failed: %r", fault)
             return fault
         removeSecurityProxy(repository).setRepackData(
-            loose_object_count=statistics.get('loose_object_count'),
-            pack_count=statistics.get('pack_count'))
+            loose_object_count=statistics.get("loose_object_count"),
+            pack_count=statistics.get("pack_count"),
+        )
         logger.info(
-            "updateRepackStats succeeded for repo id %s with: %s %s " % (
+            "updateRepackStats succeeded for repo id %s with: %s %s "
+            % (
                 translated_path,
-                statistics.get('loose_object_count'),
-                statistics.get('pack_count'))
+                statistics.get("loose_object_count"),
+                statistics.get("pack_count"),
+            )
         )

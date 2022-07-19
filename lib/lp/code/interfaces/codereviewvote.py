@@ -4,10 +4,11 @@
 """CodeReviewVoteReference interface."""
 
 __all__ = [
-    'ICodeReviewVoteReference',
-    ]
+    "ICodeReviewVoteReference",
+]
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     export_destructor_operation,
     export_write_operation,
@@ -15,69 +16,73 @@ from lazr.restful.declarations import (
     exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
-    REQUEST_USER,
-    )
+)
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Datetime,
-    Int,
-    TextLine,
-    )
+from zope.schema import Bool, Datetime, Int, TextLine
 
 from lp import _
 from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
 from lp.code.interfaces.codereviewcomment import ICodeReviewComment
 from lp.registry.interfaces.person import IPerson
-from lp.services.fields import (
-    PersonChoice,
-    PublicPersonChoice,
-    )
+from lp.services.fields import PersonChoice, PublicPersonChoice
 
 
 class ICodeReviewVoteReferencePublic(Interface):
     """The public attributes for code review vote references."""
 
-    id = Int(
-        title=_("The ID of the vote reference"))
+    id = Int(title=_("The ID of the vote reference"))
 
     branch_merge_proposal = exported(
         Reference(
             title=_("The merge proposal that is the subject of this vote"),
-            required=True, schema=IBranchMergeProposal))
+            required=True,
+            schema=IBranchMergeProposal,
+        )
+    )
 
     date_created = exported(
-        Datetime(
-            title=_('Date Created'), required=True, readonly=True))
+        Datetime(title=_("Date Created"), required=True, readonly=True)
+    )
 
     registrant = exported(
         PublicPersonChoice(
             title=_("The person who originally registered this vote"),
             required=True,
-            vocabulary='ValidPersonOrTeam'))
+            vocabulary="ValidPersonOrTeam",
+        )
+    )
 
     reviewer = exported(
         PersonChoice(
-            title=_('Reviewer'), required=True,
-            description=_('A person who you want to review this.'),
-            vocabulary='ValidBranchReviewer'))
+            title=_("Reviewer"),
+            required=True,
+            description=_("A person who you want to review this."),
+            vocabulary="ValidBranchReviewer",
+        )
+    )
 
     review_type = exported(
         TextLine(
-            title=_('Review type'), required=False,
-            description=_(
-                "Lowercase keywords describing the type of review.")))
+            title=_("Review type"),
+            required=False,
+            description=_("Lowercase keywords describing the type of review."),
+        )
+    )
 
     comment = exported(
         Reference(
             title=_(
                 "The code review comment that contains the most recent vote."
-                ),
-            required=True, schema=ICodeReviewComment))
+            ),
+            required=True,
+            schema=ICodeReviewComment,
+        )
+    )
 
     is_pending = exported(
-        Bool(title=_("Is the pending?"), required=True, readonly=True))
+        Bool(title=_("Is the pending?"), required=True, readonly=True)
+    )
 
 
 class ICodeReviewVoteReferenceEdit(Interface):
@@ -120,7 +125,9 @@ class ICodeReviewVoteReferenceEdit(Interface):
     @operation_parameters(
         reviewer=Reference(
             title=_("The person or team to assign to do the review."),
-            schema=IPerson))
+            schema=IPerson,
+        )
+    )
     @export_write_operation()
     @operation_for_version("beta")
     def reassignReview(reviewer):
@@ -144,8 +151,9 @@ class ICodeReviewVoteReferenceEdit(Interface):
 
 
 @exported_as_webservice_entry(as_of="beta")
-class ICodeReviewVoteReference(ICodeReviewVoteReferencePublic,
-                               ICodeReviewVoteReferenceEdit):
+class ICodeReviewVoteReference(
+    ICodeReviewVoteReferencePublic, ICodeReviewVoteReferenceEdit
+):
     """A reference to a vote on a IBranchMergeProposal.
 
     There is at most one reference to a vote for each reviewer on a given

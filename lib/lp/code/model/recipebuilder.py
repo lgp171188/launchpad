@@ -4,8 +4,8 @@
 """Code to build recipes on the buildfarm."""
 
 __all__ = [
-    'RecipeBuildBehaviour',
-    ]
+    "RecipeBuildBehaviour",
+]
 
 from twisted.internet import defer
 from zope.component import adapter
@@ -15,19 +15,19 @@ from zope.security.proxy import removeSecurityProxy
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
-    )
+)
 from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
-    )
+)
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
-    )
+)
 from lp.services.config import config
 from lp.services.propertycache import cachedproperty
 from lp.soyuz.adapters.archivedependencies import (
     get_primary_current_component,
     get_sources_list_for_building,
-    )
+)
 
 
 @adapter(ISourcePackageRecipeBuild)
@@ -41,13 +41,14 @@ class RecipeBuildBehaviour(BuildFarmJobBehaviourBase):
     # allowed to be sent. It is up to each callback as to whether it will
     # consider sending a notification but it won't do so if the status is not
     # in this list.
-    ALLOWED_STATUS_NOTIFICATIONS = ['PACKAGEFAIL', 'DEPFAIL', 'CHROOTFAIL']
+    ALLOWED_STATUS_NOTIFICATIONS = ["PACKAGEFAIL", "DEPFAIL", "CHROOTFAIL"]
 
     @cachedproperty
     def distro_arch_series(self):
         if self.build is not None and self._builder is not None:
             return self.build.distroseries.getDistroArchSeriesByProcessor(
-                self._builder.processor)
+                self._builder.processor
+            )
         else:
             return None
 
@@ -58,17 +59,20 @@ class RecipeBuildBehaviour(BuildFarmJobBehaviourBase):
         """
         if self.distro_arch_series is None:
             raise CannotBuild(
-                "Unable to find distroarchseries for %s in %s" %
-                (self._builder.processor.name,
-                 self.build.distroseries.displayname))
+                "Unable to find distroarchseries for %s in %s"
+                % (
+                    self._builder.processor.name,
+                    self.build.distroseries.displayname,
+                )
+            )
 
         # Build extra arguments.
         args = yield super().extraBuildArgs(logger=logger)
-        args['suite'] = self.build.distroseries.getSuite(self.build.pocket)
+        args["suite"] = self.build.distroseries.getSuite(self.build.pocket)
         requester = self.build.requester
         if requester.preferredemail is None:
             # Use a constant, known, name and email.
-            args["author_name"] = 'Launchpad Package Builder'
+            args["author_name"] = "Launchpad Package Builder"
             args["author_email"] = config.canonical.noreply_from_address
         else:
             args["author_name"] = requester.displayname
@@ -76,23 +80,29 @@ class RecipeBuildBehaviour(BuildFarmJobBehaviourBase):
             # logged in entity, and anonymous email lookups aren't allowed.
             # Don't keep the naked requester around though.
             args["author_email"] = removeSecurityProxy(
-                requester).preferredemail.email
+                requester
+            ).preferredemail.email
         args["recipe_text"] = self.build.recipe.getRecipeText(validate=True)
-        args['archive_purpose'] = self.build.archive.purpose.name
+        args["archive_purpose"] = self.build.archive.purpose.name
         args["ogrecomponent"] = get_primary_current_component(
-            self.build.archive, self.build.distroseries,
-            None).name
-        args['archives'], args['trusted_keys'] = (
-            yield get_sources_list_for_building(
-                self, self.distro_arch_series, None,
-                tools_source=config.builddmaster.bzr_builder_sources_list,
-                logger=logger))
+            self.build.archive, self.build.distroseries, None
+        ).name
+        (
+            args["archives"],
+            args["trusted_keys"],
+        ) = yield get_sources_list_for_building(
+            self,
+            self.distro_arch_series,
+            None,
+            tools_source=config.builddmaster.bzr_builder_sources_list,
+            logger=logger,
+        )
         # XXX cjwatson 2017-07-26: This duplicates "series", which is common
         # to all build types; this name for it is deprecated and should be
         # removed once launchpad-buildd no longer requires it.
-        args['distroseries_name'] = self.build.distroseries.name
+        args["distroseries_name"] = self.build.distroseries.name
         if self.build.recipe.base_git_repository is not None:
-            args['git'] = True
+            args["git"] = True
         return args
 
     def verifyBuildRequest(self, logger):
@@ -105,15 +115,22 @@ class RecipeBuildBehaviour(BuildFarmJobBehaviourBase):
            distroseries state.
         """
         build = self.build
-        assert self._builder.virtualized, (
-            "Attempt to build virtual item on a non-virtual builder.")
+        assert (
+            self._builder.virtualized
+        ), "Attempt to build virtual item on a non-virtual builder."
 
         # This should already have been checked earlier, but just check again
         # here in case of programmer errors.
         reason = build.archive.checkUploadToPocket(
-            build.distroseries, build.pocket)
+            build.distroseries, build.pocket
+        )
         assert reason is None, (
-                "%s (%s) can not be built for pocket %s: invalid pocket due "
-                "to the series status of %s." %
-                    (build.title, build.id, build.pocket.name,
-                     build.distroseries.name))
+            "%s (%s) can not be built for pocket %s: invalid pocket due "
+            "to the series status of %s."
+            % (
+                build.title,
+                build.id,
+                build.pocket.name,
+                build.distroseries.name,
+            )
+        )

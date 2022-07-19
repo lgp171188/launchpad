@@ -4,20 +4,12 @@
 """Code import machine interfaces."""
 
 __all__ = [
-    'ICodeImportMachine',
-    'ICodeImportMachineSet',
-    ]
+    "ICodeImportMachine",
+    "ICodeImportMachineSet",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Datetime,
-    Int,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Choice, Datetime, Int, TextLine
 
 from lp import _
 from lp.code.enums import CodeImportMachineState
@@ -29,27 +21,35 @@ class ICodeImportMachine(Interface):
     id = Int(readonly=True, required=True)
 
     state = Choice(
-        title=_('State'), required=True, vocabulary=CodeImportMachineState,
+        title=_("State"),
+        required=True,
+        vocabulary=CodeImportMachineState,
         default=CodeImportMachineState.OFFLINE,
-        description=_("The state of the controller daemon on this machine."))
+        description=_("The state of the controller daemon on this machine."),
+    )
 
     hostname = TextLine(
-        title=_('Host name'), required=True,
-        description=_('The hostname of the machine.'))
+        title=_("Host name"),
+        required=True,
+        description=_("The hostname of the machine."),
+    )
 
     current_jobs = Attribute(
-        'The current jobs that the machine is processing.')
+        "The current jobs that the machine is processing."
+    )
 
-    events = Attribute(
-        'The events associated with this machine.')
+    events = Attribute("The events associated with this machine.")
 
     date_created = Datetime(
-        title=_("Date Created"), required=True, readonly=True)
+        title=_("Date Created"), required=True, readonly=True
+    )
 
     heartbeat = Datetime(
         title=_("Heartbeat"),
-        description=_("When the controller deamon last recorded it was"
-                      " running."))
+        description=_(
+            "When the controller deamon last recorded it was" " running."
+        ),
+    )
 
     def shouldLookForJob(worker_limit):
         """Should we look for a job to run on this machine?

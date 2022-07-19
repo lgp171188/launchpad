@@ -2,9 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'GitRepositoryTargetDisplayWidget',
-    'GitRepositoryTargetWidget',
-    ]
+    "GitRepositoryTargetDisplayWidget",
+    "GitRepositoryTargetWidget",
+]
 
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -15,7 +15,7 @@ from zope.formlib.interfaces import (
     InputErrors,
     MissingInputError,
     WidgetInputError,
-    )
+)
 from zope.formlib.utility import setUpWidget
 from zope.formlib.widget import (
     BrowserWidget,
@@ -23,27 +23,24 @@ from zope.formlib.widget import (
     DisplayWidget,
     InputWidget,
     renderElement,
-    )
+)
 from zope.interface import implementer
 from zope.schema import Choice
 
-from lp.app.errors import (
-    NotFoundError,
-    UnexpectedFormData,
-    )
+from lp.app.errors import NotFoundError, UnexpectedFormData
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.validators import LaunchpadValidationError
 from lp.app.widgets.itemswidgets import LaunchpadDropdownWidget
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
 from lp.services.features import getFeatureFlag
 from lp.services.webapp.interfaces import (
     IAlwaysSubmittedWidget,
     IMultiLineWidgetLayout,
-    )
+)
 
 
 @implementer(IMultiLineWidgetLayout)
@@ -64,23 +61,37 @@ class GitRepositoryTargetWidgetBase(BrowserWidget):
             package_vocab = "BinaryAndSourcePackageName"
         fields = [
             Choice(
-                __name__="project", title="Project",
-                required=True, vocabulary="Product"),
+                __name__="project",
+                title="Project",
+                required=True,
+                vocabulary="Product",
+            ),
             Choice(
-                __name__="distribution", title="Distribution",
-                required=True, vocabulary="Distribution",
-                default=getUtility(ILaunchpadCelebrities).ubuntu),
+                __name__="distribution",
+                title="Distribution",
+                required=True,
+                vocabulary="Distribution",
+                default=getUtility(ILaunchpadCelebrities).ubuntu,
+            ),
             Choice(
-                __name__="package", title="Package",
-                required=False, vocabulary=package_vocab),
-            ]
+                __name__="package",
+                title="Package",
+                required=False,
+                vocabulary=package_vocab,
+            ),
+        ]
         if not self._read_only:
             self.distribution_widget = CustomWidgetFactory(
-                LaunchpadDropdownWidget)
+                LaunchpadDropdownWidget
+            )
         for field in fields:
             setUpWidget(
-                self, field.__name__, field, self._sub_widget_interface,
-                prefix=self.name)
+                self,
+                field.__name__,
+                field,
+                self._sub_widget_interface,
+                prefix=self.name,
+            )
         self._widgets_set_up = True
 
     def setUpOptions(self):
@@ -88,10 +99,15 @@ class GitRepositoryTargetWidgetBase(BrowserWidget):
         self.options = {}
         for option in ["personal", "package", "project"]:
             attributes = dict(
-                type="radio", name=self.name, value=option,
-                id="%s.option.%s" % (self.name, option))
-            if self.request.form_ng.getOne(
-                     self.name, self.default_option) == option:
+                type="radio",
+                name=self.name,
+                value=option,
+                id="%s.option.%s" % (self.name, option),
+            )
+            if (
+                self.request.form_ng.getOne(self.name, self.default_option)
+                == option
+            ):
                 attributes["checked"] = "checked"
             if self._read_only:
                 attributes["disabled"] = "disabled"
@@ -101,7 +117,8 @@ class GitRepositoryTargetWidgetBase(BrowserWidget):
     def show_options(self):
         return {
             option: not self._read_only or self.default_option == option
-            for option in ["personal", "package", "project"]}
+            for option in ["personal", "package", "project"]
+        }
 
     def setRenderedValue(self, value):
         """See `IWidget`."""
@@ -129,7 +146,8 @@ class GitRepositoryTargetWidgetBase(BrowserWidget):
 
 @implementer(IDisplayWidget)
 class GitRepositoryTargetDisplayWidget(
-    GitRepositoryTargetWidgetBase, DisplayWidget):
+    GitRepositoryTargetWidgetBase, DisplayWidget
+):
     """Widget for displaying a Git repository target."""
 
     _sub_widget_interface = IDisplayWidget
@@ -166,54 +184,73 @@ class GitRepositoryTargetWidget(GitRepositoryTargetWidgetBase, InputWidget):
                 return self.project_widget.getInputValue()
             except MissingInputError:
                 raise WidgetInputError(
-                    self.name, self.label,
-                    LaunchpadValidationError("Please enter a project name"))
+                    self.name,
+                    self.label,
+                    LaunchpadValidationError("Please enter a project name"),
+                )
             except ConversionError:
                 entered_name = self.request.form_ng.getOne(
-                    "%s.project" % self.name)
+                    "%s.project" % self.name
+                )
                 raise WidgetInputError(
-                    self.name, self.label,
+                    self.name,
+                    self.label,
                     LaunchpadValidationError(
                         "There is no project named '%s' registered in "
-                        "Launchpad" % entered_name))
+                        "Launchpad" % entered_name
+                    ),
+                )
         elif form_value == "package":
             try:
                 distribution = self.distribution_widget.getInputValue()
             except ConversionError:
                 entered_name = self.request.form_ng.getOne(
-                    "%s.distribution" % self.name)
+                    "%s.distribution" % self.name
+                )
                 raise WidgetInputError(
-                    self.name, self.label,
+                    self.name,
+                    self.label,
                     LaunchpadValidationError(
                         "There is no distribution named '%s' registered in "
-                        "Launchpad" % entered_name))
+                        "Launchpad" % entered_name
+                    ),
+                )
             try:
                 if self.package_widget.hasInput():
-                    if bool(getFeatureFlag('disclosure.dsp_picker.enabled')):
+                    if bool(getFeatureFlag("disclosure.dsp_picker.enabled")):
                         self.package_widget.vocabulary.setDistribution(
-                            distribution)
+                            distribution
+                        )
                     package_name = self.package_widget.getInputValue()
                 else:
                     package_name = None
                 if package_name is None:
                     raise WidgetInputError(
-                        self.name, self.label,
+                        self.name,
+                        self.label,
                         LaunchpadValidationError(
-                            "Please enter a package name"))
+                            "Please enter a package name"
+                        ),
+                    )
                 if IDistributionSourcePackage.providedBy(package_name):
                     dsp = package_name
                 else:
                     source_name = distribution.guessPublishedSourcePackageName(
-                        package_name.name)
+                        package_name.name
+                    )
                     dsp = distribution.getSourcePackage(source_name)
             except (ConversionError, NotFoundError):
                 entered_name = self.request.form_ng.getOne(
-                    "%s.package" % self.name)
+                    "%s.package" % self.name
+                )
                 raise WidgetInputError(
-                    self.name, self.label,
+                    self.name,
+                    self.label,
                     LaunchpadValidationError(
-                        "There is no package named '%s' published in %s." %
-                        (entered_name, distribution.displayname)))
+                        "There is no package named '%s' published in %s."
+                        % (entered_name, distribution.displayname)
+                    ),
+                )
             return dsp
         elif form_value == "personal":
             return None

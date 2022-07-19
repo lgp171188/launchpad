@@ -9,20 +9,14 @@ backports branch for a source package or something else.
 """
 
 __all__ = [
-    'get_linked_to_branch',
-    'ICanHasLinkedBranch',
-    ]
+    "get_linked_to_branch",
+    "ICanHasLinkedBranch",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.security.proxy import isinstance as zope_isinstance
 
-from lp.code.errors import (
-    CannotHaveLinkedBranch,
-    NoLinkedBranch,
-    )
+from lp.code.errors import CannotHaveLinkedBranch, NoLinkedBranch
 
 
 class ICanHasLinkedBranch(Interface):
@@ -31,8 +25,9 @@ class ICanHasLinkedBranch(Interface):
     context = Attribute("The object that can have a linked branch.")
     branch = Attribute("The linked branch.")
     bzr_path = Attribute(
-        'The Bazaar branch path for the linked branch. '
-        'Note that this will be set even if there is no linked branch.')
+        "The Bazaar branch path for the linked branch. "
+        "Note that this will be set even if there is no linked branch."
+    )
 
     def setBranch(branch, registrant=None):
         """Set the linked branch.

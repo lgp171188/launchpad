@@ -4,16 +4,16 @@
 """Adapters for different objects to Git repository collections."""
 
 __all__ = [
-    'git_collection_for_distribution',
-    'git_collection_for_distro_source_package',
-    'git_collection_for_oci_project',
-    'git_collection_for_person',
-    'git_collection_for_person_distro_source_package',
-    'git_collection_for_person_oci_project',
-    'git_collection_for_person_product',
-    'git_collection_for_project',
-    'git_collection_for_project_group',
-    ]
+    "git_collection_for_distribution",
+    "git_collection_for_distro_source_package",
+    "git_collection_for_oci_project",
+    "git_collection_for_person",
+    "git_collection_for_person_distro_source_package",
+    "git_collection_for_person_oci_project",
+    "git_collection_for_person_product",
+    "git_collection_for_project",
+    "git_collection_for_project_group",
+]
 
 
 from zope.component import getUtility
@@ -39,7 +39,8 @@ def git_collection_for_distribution(distribution):
 def git_collection_for_distro_source_package(distro_source_package):
     """Adapt a distro_source_package to a Git repository collection."""
     return getUtility(IAllGitRepositories).inDistributionSourcePackage(
-        distro_source_package)
+        distro_source_package
+    )
 
 
 def git_collection_for_oci_project(oci_project):
@@ -64,13 +65,15 @@ def git_collection_for_person_distro_source_package(person_dsp):
     collection."""
     collection = getUtility(IAllGitRepositories).ownedBy(person_dsp.person)
     collection = collection.inDistributionSourcePackage(
-        person_dsp.distro_source_package)
+        person_dsp.distro_source_package
+    )
     return collection
 
 
 def git_collection_for_person_oci_project(person_oci_project):
     """Adapt a PersonOCIProject to a Git repository collection."""
     collection = getUtility(IAllGitRepositories).ownedBy(
-        person_oci_project.person)
+        person_oci_project.person
+    )
     collection = collection.inOCIProject(person_oci_project.oci_project)
     return collection

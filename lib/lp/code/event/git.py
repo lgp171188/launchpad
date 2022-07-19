@@ -4,17 +4,14 @@
 """Events related to Git repositories."""
 
 __all__ = [
-    'GitRefsCreatedEvent',
-    'GitRefsUpdatedEvent',
-    ]
+    "GitRefsCreatedEvent",
+    "GitRefsUpdatedEvent",
+]
 
 from zope.interface import implementer
 from zope.interface.interfaces import ObjectEvent
 
-from lp.code.interfaces.event import (
-    IGitRefsCreatedEvent,
-    IGitRefsUpdatedEvent,
-    )
+from lp.code.interfaces.event import IGitRefsCreatedEvent, IGitRefsUpdatedEvent
 
 
 @implementer(IGitRefsCreatedEvent)

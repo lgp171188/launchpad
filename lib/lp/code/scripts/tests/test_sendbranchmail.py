@@ -9,11 +9,8 @@ from lp.code.enums import (
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
-    )
-from lp.code.model.branchjob import (
-    RevisionMailJob,
-    RevisionsAddedJob,
-    )
+)
+from lp.code.model.branchjob import RevisionMailJob, RevisionsAddedJob
 from lp.services.osutils import override_environ
 from lp.services.scripts.tests import run_script
 from lp.testing import TestCaseWithFactory
@@ -31,14 +28,15 @@ class TestSendbranchmail(TestCaseWithFactory):
             BranchSubscriptionNotificationLevel.FULL,
             BranchSubscriptionDiffSize.WHOLEDIFF,
             CodeReviewNotificationLevel.FULL,
-            branch.registrant)
+            branch.registrant,
+        )
         transport = tree.controldir.root_transport
-        transport.put_bytes('foo', b'bar')
-        tree.add('foo')
+        transport.put_bytes("foo", b"bar")
+        tree.add("foo")
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BRZ_EMAIL='me@example.com'):
-            tree.commit('Added foo.', rev_id=b'rev1')
+        with override_environ(BRZ_EMAIL="me@example.com"):
+            tree.commit("Added foo.", rev_id=b"rev1")
         return branch, tree
 
     def test_sendbranchmail(self):
@@ -46,43 +44,50 @@ class TestSendbranchmail(TestCaseWithFactory):
         self.useBzrBranches()
         branch, tree = self.createBranch()
         mail_job = RevisionMailJob.create(
-            branch, 1, 'from@example.org', 'body', 'foo')
+            branch, 1, "from@example.org", "body", "foo"
+        )
         transaction.commit()
         retcode, stdout, stderr = run_script(
-            'cronscripts/process-job-source.py', ['IRevisionMailJobSource'])
+            "cronscripts/process-job-source.py", ["IRevisionMailJobSource"]
+        )
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            'INFO    '
-            'Creating lockfile: /var/lock/launchpad-process-job-source-'
-            'IRevisionMailJobSource.lock\n'
-            'INFO    Running synchronously.\n'
-            'INFO    Running <REVISION_MAIL branch job \\(\\d+\\) for .*?> '
-            '\\(ID %d\\) in status Waiting\n'
-            'INFO    Ran 1 RevisionMailJob jobs.\n' % mail_job.job.id, stderr)
-        self.assertEqual('', stdout)
+            "INFO    "
+            "Creating lockfile: /var/lock/launchpad-process-job-source-"
+            "IRevisionMailJobSource.lock\n"
+            "INFO    Running synchronously.\n"
+            "INFO    Running <REVISION_MAIL branch job \\(\\d+\\) for .*?> "
+            "\\(ID %d\\) in status Waiting\n"
+            "INFO    Ran 1 RevisionMailJob jobs.\n" % mail_job.job.id,
+            stderr,
+        )
+        self.assertEqual("", stdout)
         self.assertEqual(0, retcode)
 
     def test_revision_added_job(self):
         """RevisionsAddedJobs are run by sendbranchmail."""
         self.useBzrBranches()
         branch, tree = self.createBranch()
-        tree.controldir.root_transport.put_bytes('foo', b'baz')
+        tree.controldir.root_transport.put_bytes("foo", b"baz")
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BRZ_EMAIL='me@example.com'):
-            tree.commit('Added foo.', rev_id=b'rev2')
+        with override_environ(BRZ_EMAIL="me@example.com"):
+            tree.commit("Added foo.", rev_id=b"rev2")
         job = RevisionsAddedJob.create(
-            branch, 'rev1', 'rev2', 'from@example.org')
+            branch, "rev1", "rev2", "from@example.org"
+        )
         transaction.commit()
         retcode, stdout, stderr = run_script(
-            'cronscripts/process-job-source.py', ['IRevisionsAddedJobSource'])
+            "cronscripts/process-job-source.py", ["IRevisionsAddedJobSource"]
+        )
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            'INFO    '
-            'Creating lockfile: /var/lock/launchpad-process-job-source-'
-            'IRevisionsAddedJobSource.lock\n'
-            'INFO    Running synchronously.\n'
-            'INFO    Running <REVISIONS_ADDED_MAIL branch job \\(\\d+\\) '
-            'for .*?> \\(ID %d\\) in status Waiting\n'
-            'INFO    Ran 1 RevisionsAddedJob jobs.\n' % job.job.id,
-            stderr)
-        self.assertEqual('', stdout)
+            "INFO    "
+            "Creating lockfile: /var/lock/launchpad-process-job-source-"
+            "IRevisionsAddedJobSource.lock\n"
+            "INFO    Running synchronously.\n"
+            "INFO    Running <REVISIONS_ADDED_MAIL branch job \\(\\d+\\) "
+            "for .*?> \\(ID %d\\) in status Waiting\n"
+            "INFO    Ran 1 RevisionsAddedJob jobs.\n" % job.job.id,
+            stderr,
+        )
+        self.assertEqual("", stdout)
         self.assertEqual(0, retcode)

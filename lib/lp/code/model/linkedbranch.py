@@ -9,10 +9,7 @@ __all__ = []
 
 from functools import total_ordering
 
-from lazr.enum import (
-    EnumeratedType,
-    Item,
-    )
+from lazr.enum import EnumeratedType, Item
 from zope.component import adapter
 from zope.interface import implementer
 
@@ -21,7 +18,7 @@ from lp.code.interfaces.linkedbranch import ICanHasLinkedBranch
 from lp.registry.errors import NoSuchDistroSeries
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.productseries import IProductSeries
@@ -31,10 +28,10 @@ from lp.registry.interfaces.suitesourcepackage import ISuiteSourcePackage
 class LinkedBranchOrder(EnumeratedType):
     """An enum used only for ordering."""
 
-    PRODUCT = Item('Product')
-    DISTRIBUTION_SOURCE_PACKAGE = Item('Distribution Source Package')
-    PRODUCT_SERIES = Item('Product Series')
-    SUITE_SOURCE_PACKAGE = Item('Suite Source Package')
+    PRODUCT = Item("Product")
+    DISTRIBUTION_SOURCE_PACKAGE = Item("Distribution Source Package")
+    PRODUCT_SERIES = Item("Product Series")
+    SUITE_SOURCE_PACKAGE = Item("Suite Source Package")
 
 
 @total_ordering
@@ -48,8 +45,8 @@ class BaseLinkedBranch:
 
     def __eq__(self, other):
         return (
-            isinstance(other, self.__class__) and
-            self.context == other.context)
+            isinstance(other, self.__class__) and self.context == other.context
+        )
 
 
 @adapter(IProductSeries)
@@ -78,10 +75,12 @@ class ProductSeriesLinkedBranch(BaseLinkedBranch):
             # product itself uses, which is alphabetically by name.
             my_parts = (
                 self.product_series.product.name,
-                self.product_series.name)
+                self.product_series.name,
+            )
             other_parts = (
                 other.product_series.product.name,
-                other.product_series.name)
+                other.product_series.name,
+            )
             return my_parts < other_parts
 
     @property
@@ -92,8 +91,9 @@ class ProductSeriesLinkedBranch(BaseLinkedBranch):
     @property
     def bzr_path(self):
         """See `ICanHasLinkedBranch`."""
-        return '/'.join(
-            [self.product_series.product.name, self.product_series.name])
+        return "/".join(
+            [self.product_series.product.name, self.product_series.name]
+        )
 
     def setBranch(self, branch, registrant=None):
         """See `ICanHasLinkedBranch`."""
@@ -137,7 +137,8 @@ class ProductLinkedBranch(BaseLinkedBranch):
     def setBranch(self, branch, registrant=None):
         """See `ICanHasLinkedBranch`."""
         ICanHasLinkedBranch(self.product.development_focus).setBranch(
-            branch, registrant)
+            branch, registrant
+        )
 
 
 @adapter(ISuiteSourcePackage)
@@ -170,12 +171,14 @@ class PackageLinkedBranch(BaseLinkedBranch):
                 self.suite_sourcepackage.distribution.name,
                 Version(other.suite_sourcepackage.distroseries.version),
                 self.suite_sourcepackage.sourcepackagename.name,
-                self.suite_sourcepackage.pocket)
+                self.suite_sourcepackage.pocket,
+            )
             other_parts = (
                 other.suite_sourcepackage.distribution.name,
                 Version(self.suite_sourcepackage.distroseries.version),
                 other.suite_sourcepackage.sourcepackagename.name,
-                other.suite_sourcepackage.pocket)
+                other.suite_sourcepackage.pocket,
+            )
             return my_parts < other_parts
 
     @property
@@ -221,36 +224,45 @@ class DistributionPackageLinkedBranch(BaseLinkedBranch):
         else:
             my_names = (
                 self.distribution_sourcepackage.distribution.name,
-                self.distribution_sourcepackage.sourcepackagename.name)
+                self.distribution_sourcepackage.sourcepackagename.name,
+            )
             other_names = (
                 other.distribution_sourcepackage.distribution.name,
-                other.distribution_sourcepackage.sourcepackagename.name)
+                other.distribution_sourcepackage.sourcepackagename.name,
+            )
             return my_names < other_names
 
     @property
     def branch(self):
         """See `ICanHasLinkedBranch`."""
         development_package = (
-            self.distribution_sourcepackage.development_version)
+            self.distribution_sourcepackage.development_version
+        )
         if development_package is None:
             return None
         suite_sourcepackage = development_package.getSuiteSourcePackage(
-            PackagePublishingPocket.RELEASE)
+            PackagePublishingPocket.RELEASE
+        )
         return ICanHasLinkedBranch(suite_sourcepackage).branch
 
     @property
     def bzr_path(self):
         """See `ICanHasLinkedBranch`."""
-        return '/'.join(
-            [self.distribution_sourcepackage.distribution.name,
-             self.distribution_sourcepackage.sourcepackagename.name])
+        return "/".join(
+            [
+                self.distribution_sourcepackage.distribution.name,
+                self.distribution_sourcepackage.sourcepackagename.name,
+            ]
+        )
 
     def setBranch(self, branch, registrant):
         """See `ICanHasLinkedBranch`."""
         development_package = (
-            self.distribution_sourcepackage.development_version)
+            self.distribution_sourcepackage.development_version
+        )
         if development_package is None:
-            raise NoSuchDistroSeries('no current series')
+            raise NoSuchDistroSeries("no current series")
         suite_sourcepackage = development_package.getSuiteSourcePackage(
-            PackagePublishingPocket.RELEASE)
+            PackagePublishingPocket.RELEASE
+        )
         ICanHasLinkedBranch(suite_sourcepackage).setBranch(branch, registrant)

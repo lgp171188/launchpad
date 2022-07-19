@@ -4,24 +4,14 @@
 """CodeReviewComment interfaces."""
 
 __all__ = [
-    'ICodeReviewComment',
-    'ICodeReviewCommentDeletion',
-    ]
+    "ICodeReviewComment",
+    "ICodeReviewCommentDeletion",
+]
 
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
+from lazr.restful.declarations import exported, exported_as_webservice_entry
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Int,
-    Object,
-    TextLine,
-    )
+from zope.schema import Bool, Choice, Datetime, Int, Object, TextLine
 
 from lp import _
 from lp.code.enums import CodeReviewVote
@@ -31,7 +21,7 @@ from lp.services.messages.interfaces.message import (
     IMessage,
     IMessageCommon,
     IMessageEdit,
-    )
+)
 
 
 class ICodeReviewCommentView(IMessageCommon):
@@ -39,40 +29,51 @@ class ICodeReviewCommentView(IMessageCommon):
 
     id = exported(
         Int(
-            title=_('DB ID'), required=True, readonly=True,
-            description=_("The tracking number for this comment.")))
+            title=_("DB ID"),
+            required=True,
+            readonly=True,
+            description=_("The tracking number for this comment."),
+        )
+    )
 
     branch_merge_proposal = exported(
         Reference(
-            title=_('The branch merge proposal'), schema=IBranchMergeProposal,
-            required=True, readonly=True))
+            title=_("The branch merge proposal"),
+            schema=IBranchMergeProposal,
+            required=True,
+            readonly=True,
+        )
+    )
 
-    message = Object(schema=IMessage, title=_('The message.'))
+    message = Object(schema=IMessage, title=_("The message."))
 
     author = exported(
-        Reference(title=_('Comment Author'), schema=IPerson,
-                  required=True, readonly=True))
+        Reference(
+            title=_("Comment Author"),
+            schema=IPerson,
+            required=True,
+            readonly=True,
+        )
+    )
 
     date_created = exported(
-        Datetime(title=_('Date Created'), required=True, readonly=True))
+        Datetime(title=_("Date Created"), required=True, readonly=True)
+    )
 
     vote = exported(
-        Choice(
-            title=_('Review'), required=False,
-            vocabulary=CodeReviewVote))
+        Choice(title=_("Review"), required=False, vocabulary=CodeReviewVote)
+    )
 
-    vote_tag = exported(
-        TextLine(
-            title=_('Vote tag'), required=False))
+    vote_tag = exported(TextLine(title=_("Vote tag"), required=False))
 
-    title = exported(
-        TextLine(
-            title=_('The title of the comment')))
+    title = exported(TextLine(title=_("The title of the comment")))
 
     message_body = exported(
         TextLine(
             title=_('Deprecated. Use "content" attribute instead.'),
-            readonly=True))
+            readonly=True,
+        )
+    )
 
     def getAttachments():
         """Get the attachments from the original message.
@@ -86,11 +87,10 @@ class ICodeReviewCommentView(IMessageCommon):
         """An email object of the original raw email if there was one."""
 
     as_quoted_email = exported(
-        TextLine(
-            title=_('The message as quoted in email.'),
-            readonly=True))
+        TextLine(title=_("The message as quoted in email."), readonly=True)
+    )
 
-    visible = Bool(title=_('Whether this comment is visible.'))
+    visible = Bool(title=_("Whether this comment is visible."))
 
     def userCanSetCommentVisibility(user):
         """Can `user` set the visibility of this comment?

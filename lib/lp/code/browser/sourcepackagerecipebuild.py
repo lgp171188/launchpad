@@ -4,37 +4,31 @@
 """SourcePackageRecipeBuild views."""
 
 __all__ = [
-    'SourcePackageRecipeBuildContextMenu',
-    'SourcePackageRecipeBuildNavigation',
-    'SourcePackageRecipeBuildView',
-    'SourcePackageRecipeBuildCancelView',
-    'SourcePackageRecipeBuildRescoreView',
-    ]
+    "SourcePackageRecipeBuildContextMenu",
+    "SourcePackageRecipeBuildNavigation",
+    "SourcePackageRecipeBuildView",
+    "SourcePackageRecipeBuildCancelView",
+    "SourcePackageRecipeBuildRescoreView",
+]
 
 from zope.interface import Interface
 from zope.schema import Int
 
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    )
-from lp.buildmaster.enums import (
-    BuildQueueStatus,
-    BuildStatus,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action
+from lp.buildmaster.enums import BuildQueueStatus, BuildStatus
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
-    )
+)
 from lp.services.librarian.browser import FileNavigationMixin
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
-    canonical_url,
     ContextMenu,
-    enabled_with_permission,
     LaunchpadView,
     Link,
     Navigation,
-    )
+    canonical_url,
+    enabled_with_permission,
+)
 
 
 class SourcePackageRecipeBuildNavigation(Navigation, FileNavigationMixin):
@@ -47,21 +41,27 @@ class SourcePackageRecipeBuildContextMenu(ContextMenu):
 
     usedfor = ISourcePackageRecipeBuild
 
-    facet = 'branches'
+    facet = "branches"
 
-    links = ('cancel', 'rescore')
+    links = ("cancel", "rescore")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def cancel(self):
         return Link(
-            '+cancel', 'Cancel build', icon='remove',
-            enabled=self.context.can_be_cancelled)
+            "+cancel",
+            "Cancel build",
+            icon="remove",
+            enabled=self.context.can_be_cancelled,
+        )
 
-    @enabled_with_permission('launchpad.Admin')
+    @enabled_with_permission("launchpad.Admin")
     def rescore(self):
         return Link(
-            '+rescore', 'Rescore build', icon='edit',
-            enabled=self.context.can_be_rescored)
+            "+rescore",
+            "Rescore build",
+            icon="edit",
+            enabled=self.context.can_be_rescored,
+        )
 
 
 class SourcePackageRecipeBuildView(LaunchpadView):
@@ -70,21 +70,23 @@ class SourcePackageRecipeBuildView(LaunchpadView):
     @property
     def status(self):
         """A human-friendly status string."""
-        if (self.context.status == BuildStatus.NEEDSBUILD
-            and self.eta is None):
-            return 'No suitable builders'
+        if self.context.status == BuildStatus.NEEDSBUILD and self.eta is None:
+            return "No suitable builders"
         return {
-            BuildStatus.NEEDSBUILD: 'Pending build',
-            BuildStatus.UPLOADING: 'Build uploading',
-            BuildStatus.FULLYBUILT: 'Successful build',
+            BuildStatus.NEEDSBUILD: "Pending build",
+            BuildStatus.UPLOADING: "Build uploading",
+            BuildStatus.FULLYBUILT: "Successful build",
             BuildStatus.MANUALDEPWAIT: (
-                'Could not build because of missing dependencies'),
+                "Could not build because of missing dependencies"
+            ),
             BuildStatus.CHROOTWAIT: (
-                'Could not build because of chroot problem'),
+                "Could not build because of chroot problem"
+            ),
             BuildStatus.SUPERSEDED: (
-                'Could not build because source package was superseded'),
-            BuildStatus.FAILEDTOUPLOAD: 'Could not be uploaded correctly',
-            }.get(self.context.status, self.context.status.title)
+                "Could not build because source package was superseded"
+            ),
+            BuildStatus.FAILEDTOUPLOAD: "Could not be uploaded correctly",
+        }.get(self.context.status, self.context.status.title)
 
     @cachedproperty
     def eta(self):
@@ -134,9 +136,10 @@ class SourcePackageRecipeBuildCancelView(LaunchpadFormView):
     @property
     def cancel_url(self):
         return canonical_url(self.context)
+
     next_url = cancel_url
 
-    @action('Cancel build', name='cancel')
+    @action("Cancel build", name="cancel")
     def request_action(self, action, data):
         """Cancel the build."""
         self.context.cancel()
@@ -147,9 +150,12 @@ class SourcePackageRecipeBuildRescoreView(LaunchpadFormView):
 
     class schema(Interface):
         """Schema for deleting a build."""
+
         score = Int(
-            title='Score', required=True,
-            description='The score of the recipe.')
+            title="Score",
+            required=True,
+            description="The score of the recipe.",
+        )
 
     page_title = label = "Rescore build"
 
@@ -157,19 +163,21 @@ class SourcePackageRecipeBuildRescoreView(LaunchpadFormView):
         if self.context.buildqueue_record is not None:
             return super().__call__()
         self.request.response.addWarningNotification(
-            'Cannot rescore this build because it is not queued.')
+            "Cannot rescore this build because it is not queued."
+        )
         self.request.response.redirect(canonical_url(self.context))
 
     @property
     def cancel_url(self):
         return canonical_url(self.context)
+
     next_url = cancel_url
 
-    @action('Rescore build', name='rescore')
+    @action("Rescore build", name="rescore")
     def request_action(self, action, data):
         """Rescore the build."""
-        self.context.buildqueue_record.lastscore = int(data['score'])
+        self.context.buildqueue_record.lastscore = int(data["score"])
 
     @property
     def initial_values(self):
-        return {'score': str(self.context.buildqueue_record.lastscore)}
+        return {"score": str(self.context.buildqueue_record.lastscore)}

@@ -4,28 +4,17 @@
 """Implementation for the IRevisionCache and IRevisionCollection."""
 
 __all__ = [
-    'GenericRevisionCollection',
-    ]
+    "GenericRevisionCollection",
+]
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 import pytz
-from storm.expr import (
-    Desc,
-    Func,
-    SQL,
-    )
+from storm.expr import SQL, Desc, Func
 from zope.interface import implementer
 
 from lp.code.interfaces.revisioncache import IRevisionCollection
-from lp.code.model.revision import (
-    Revision,
-    RevisionAuthor,
-    RevisionCache,
-    )
+from lp.code.model.revision import Revision, RevisionAuthor, RevisionCache
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.product import Product
 from lp.registry.model.teammembership import TeamParticipation
@@ -40,8 +29,7 @@ class GenericRevisionCollection:
         self._store = store
         if filter_expressions is None:
             epoch = datetime.now(pytz.UTC) - timedelta(days=30)
-            filter_expressions = [
-                RevisionCache.revision_date >= epoch]
+            filter_expressions = [RevisionCache.revision_date >= epoch]
         self._filter_expressions = filter_expressions
 
     @property
@@ -57,13 +45,14 @@ class GenericRevisionCollection:
 
     def _filterBy(self, expressions):
         return self.__class__(
-            self.store,
-            self._filter_expressions + expressions)
+            self.store, self._filter_expressions + expressions
+        )
 
     def count(self):
         """See `IRevisionCollection`."""
         result_set = self.store.find(
-            RevisionCache.revision_id, self._filter_expressions)
+            RevisionCache.revision_id, self._filter_expressions
+        )
         result_set.config(distinct=True)
         return result_set.count()
 
@@ -73,11 +62,9 @@ class GenericRevisionCollection:
         # counted once even if the revision text that they use in the commit
         # is different.
         author = Func(
-            'coalesce',
-            RevisionAuthor.person_id,
-            SQL(0) - RevisionAuthor.id)
-        expressions = [
-            RevisionCache.revision_author == RevisionAuthor.id]
+            "coalesce", RevisionAuthor.person_id, SQL(0) - RevisionAuthor.id
+        )
+        expressions = [RevisionCache.revision_author == RevisionAuthor.id]
         expressions.extend(self._filter_expressions)
         result_set = self.store.find(author, expressions)
         result_set.config(distinct=True)
@@ -85,8 +72,7 @@ class GenericRevisionCollection:
 
     def getRevisions(self):
         """See `IRevisionCollection`."""
-        expressions = [
-            RevisionCache.revision == Revision.id]
+        expressions = [RevisionCache.revision == Revision.id]
         expressions.extend(self._filter_expressions)
         result_set = self.store.find(Revision, expressions)
         result_set.config(distinct=True)
@@ -95,52 +81,62 @@ class GenericRevisionCollection:
 
     def public(self):
         """See `IRevisionCollection`."""
-        return self._filterBy(
-            [RevisionCache.private == False])
+        return self._filterBy([RevisionCache.private == False])
 
     def inProduct(self, product):
         """See `IRevisionCollection`."""
-        return self._filterBy(
-            [RevisionCache.product == product])
+        return self._filterBy([RevisionCache.product == product])
 
     def inProjectGroup(self, projectgroup):
         """See `IRevisionCollection`."""
         return self._filterBy(
-            [RevisionCache.product == Product.id,
-             Product.projectgroup == projectgroup])
+            [
+                RevisionCache.product == Product.id,
+                Product.projectgroup == projectgroup,
+            ]
+        )
 
     def inSourcePackage(self, package):
         """See `IRevisionCollection`."""
         return self._filterBy(
-            [RevisionCache.distroseries == package.distroseries,
-             RevisionCache.sourcepackagename == package.sourcepackagename])
+            [
+                RevisionCache.distroseries == package.distroseries,
+                RevisionCache.sourcepackagename == package.sourcepackagename,
+            ]
+        )
 
     def inDistribution(self, distribution):
         """See `IRevisionCollection`."""
         return self._filterBy(
-            [DistroSeries.distribution == distribution,
-             RevisionCache.distroseries == DistroSeries.id])
+            [
+                DistroSeries.distribution == distribution,
+                RevisionCache.distroseries == DistroSeries.id,
+            ]
+        )
 
     def inDistroSeries(self, distro_series):
         """See `IRevisionCollection`."""
-        return self._filterBy(
-            [RevisionCache.distroseries == distro_series])
+        return self._filterBy([RevisionCache.distroseries == distro_series])
 
     def inDistributionSourcePackage(self, distro_source_package):
         """See `IRevisionCollection`."""
         distribution = distro_source_package.distribution
         sourcepackagename = distro_source_package.sourcepackagename
         return self._filterBy(
-            [DistroSeries.distribution == distribution,
-             RevisionCache.distroseries == DistroSeries.id,
-             RevisionCache.sourcepackagename == sourcepackagename])
+            [
+                DistroSeries.distribution == distribution,
+                RevisionCache.distroseries == DistroSeries.id,
+                RevisionCache.sourcepackagename == sourcepackagename,
+            ]
+        )
 
     def authoredBy(self, person):
         """See `IRevisionCollection`."""
         if person.is_team:
             query = [
                 TeamParticipation.team == person,
-                RevisionAuthor.person_id == TeamParticipation.personID]
+                RevisionAuthor.person_id == TeamParticipation.personID,
+            ]
         else:
             query = [RevisionAuthor.person == person]
 

@@ -3,7 +3,7 @@
 
 """The actual script class to allocate revisions."""
 
-__all__ = ['RevisionKarmaAllocator']
+__all__ = ["RevisionKarmaAllocator"]
 
 import transaction
 from zope.component import getUtility
@@ -30,7 +30,8 @@ class RevisionKarmaAllocator(LaunchpadCronScript):
         # Break into bits.
         while True:
             revisions = list(
-                revision_set.getRevisionsNeedingKarmaAllocated(100))
+                revision_set.getRevisionsNeedingKarmaAllocated(100)
+            )
             if len(revisions) == 0:
                 break
             for revision in revisions:
@@ -38,7 +39,8 @@ class RevisionKarmaAllocator(LaunchpadCronScript):
                 # Make sure we don't grab a junk branch though, as we don't
                 # allocate karma for junk branches.
                 branch = revision.getBranch(
-                    allow_private=True, allow_junk=False)
+                    allow_private=True, allow_junk=False
+                )
                 revision.allocateKarma(branch)
                 count += 1
             self.logger.debug("%s processed", count)

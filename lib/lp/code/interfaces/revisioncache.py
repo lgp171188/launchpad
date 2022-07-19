@@ -7,9 +7,9 @@ See `IRevisionCollection` for more details.
 """
 
 __all__ = [
-    'IRevisionCache',
-    'IRevisionCollection',
-    ]
+    "IRevisionCache",
+    "IRevisionCollection",
+]
 
 from zope.interface import Interface
 
@@ -66,12 +66,10 @@ class IRevisionCollection(Interface):
         """
 
     def inDistribution(distribution):
-        """Restrict to revisions in branches in 'distribution'.
-        """
+        """Restrict to revisions in branches in 'distribution'."""
 
     def inDistroSeries(distro_series):
-        """Restrict to revisions in branches in 'distro_series'.
-        """
+        """Restrict to revisions in branches in 'distro_series'."""
 
     def inDistributionSourcePackage(distro_source_package):
         """Restrict to revisions in branches in a 'package' for a

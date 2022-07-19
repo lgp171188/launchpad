@@ -4,12 +4,12 @@
 """Browser views for CodeImportMachines."""
 
 __all__ = [
-    'CodeImportMachineBreadcrumb',
-    'CodeImportMachineSetBreadcrumb',
-    'CodeImportMachineSetNavigation',
-    'CodeImportMachineSetView',
-    'CodeImportMachineView',
-    ]
+    "CodeImportMachineBreadcrumb",
+    "CodeImportMachineSetBreadcrumb",
+    "CodeImportMachineSetNavigation",
+    "CodeImportMachineSetView",
+    "CodeImportMachineView",
+]
 
 
 from lazr.delegates import delegate_to
@@ -18,24 +18,17 @@ from zope.interface import Interface
 from zope.schema import TextLine
 
 from lp import _
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action
 from lp.code.enums import (
     CodeImportJobState,
     CodeImportMachineOfflineReason,
     CodeImportMachineState,
-    )
+)
 from lp.code.interfaces.codeimportevent import ICodeImportEvent
 from lp.code.interfaces.codeimportjob import ICodeImportJobSet
 from lp.code.interfaces.codeimportmachine import ICodeImportMachineSet
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    Navigation,
-    )
+from lp.services.webapp import LaunchpadView, Navigation, canonical_url
 from lp.services.webapp.breadcrumb import Breadcrumb
 
 
@@ -49,6 +42,7 @@ class CodeImportMachineBreadcrumb(Breadcrumb):
 
 class CodeImportMachineSetNavigation(Navigation):
     """Navigation methods for ICodeImportMachineSet."""
+
     usedfor = ICodeImportMachineSet
 
     def traverse(self, hostname):
@@ -58,7 +52,8 @@ class CodeImportMachineSetNavigation(Navigation):
 
 class CodeImportMachineSetBreadcrumb(Breadcrumb):
     """Builds a breadcrumb for an `ICodeImportMachineSet`."""
-    text = 'Machines'
+
+    text = "Machines"
 
 
 class CodeImportMachineSetView(LaunchpadView):
@@ -75,31 +70,42 @@ class CodeImportMachineSetView(LaunchpadView):
     @property
     def pending_imports(self):
         """Get the number of imports that are pending."""
-        return getUtility(ICodeImportJobSet).getJobsInState(
-            CodeImportJobState.PENDING).count()
+        return (
+            getUtility(ICodeImportJobSet)
+            .getJobsInState(CodeImportJobState.PENDING)
+            .count()
+        )
 
     @property
     def scheduled_imports(self):
         """Get the number of imports that are scheduled."""
-        return getUtility(ICodeImportJobSet).getJobsInState(
-            CodeImportJobState.SCHEDULED).count()
+        return (
+            getUtility(ICodeImportJobSet)
+            .getJobsInState(CodeImportJobState.SCHEDULED)
+            .count()
+        )
 
     @property
     def running_imports(self):
         """Get the number of imports that are running."""
-        return getUtility(ICodeImportJobSet).getJobsInState(
-            CodeImportJobState.RUNNING).count()
+        return (
+            getUtility(ICodeImportJobSet)
+            .getJobsInState(CodeImportJobState.RUNNING)
+            .count()
+        )
 
 
 class UpdateMachineStateForm(Interface):
     """An interface to allow the user to enter a reason for quiescing."""
 
     reason = TextLine(
-        title=_('Reason'), required=False, description=_(
-            "Why the machine state is changing."))
+        title=_("Reason"),
+        required=False,
+        description=_("Why the machine state is changing."),
+    )
 
 
-@delegate_to(ICodeImportEvent, context='event')
+@delegate_to(ICodeImportEvent, context="event")
 class DecoratedEvent:
     """A CodeImportEvent with cached items."""
 
@@ -118,7 +124,7 @@ class CodeImportMachineView(LaunchpadFormView):
     schema = UpdateMachineStateForm
 
     # The default reason is always the empty string.
-    initial_values = {'reason': ''}
+    initial_values = {"reason": ""}
 
     @property
     def page_title(self):
@@ -144,27 +150,37 @@ class CodeImportMachineView(LaunchpadFormView):
 
         The next_state is stored in the data dict of the action.
         """
-        next_state = action.data['next_state']
+        next_state = action.data["next_state"]
         if next_state == CodeImportMachineState.QUIESCING:
             return self.context.state == CodeImportMachineState.ONLINE
         else:
             return self.context.state != next_state
 
-    @action('Set Online', name='set_online',
-            data={'next_state': CodeImportMachineState.ONLINE},
-            condition=_canChangeToState)
+    @action(
+        "Set Online",
+        name="set_online",
+        data={"next_state": CodeImportMachineState.ONLINE},
+        condition=_canChangeToState,
+    )
     def set_online_action(self, action, data):
-        self.context.setOnline(self.user, data['reason'])
+        self.context.setOnline(self.user, data["reason"])
 
-    @action('Set Offline', name='set_offline',
-            data={'next_state': CodeImportMachineState.OFFLINE},
-            condition=_canChangeToState)
+    @action(
+        "Set Offline",
+        name="set_offline",
+        data={"next_state": CodeImportMachineState.OFFLINE},
+        condition=_canChangeToState,
+    )
     def set_offline_action(self, action, data):
         self.context.setOffline(
-            CodeImportMachineOfflineReason.STOPPED, self.user, data['reason'])
+            CodeImportMachineOfflineReason.STOPPED, self.user, data["reason"]
+        )
 
-    @action('Set Quiescing', name='set_quiescing',
-            data={'next_state': CodeImportMachineState.QUIESCING},
-            condition=_canChangeToState)
+    @action(
+        "Set Quiescing",
+        name="set_quiescing",
+        data={"next_state": CodeImportMachineState.QUIESCING},
+        condition=_canChangeToState,
+    )
     def set_quiescing_action(self, action, data):
-        self.context.setQuiescing(self.user, data['reason'])
+        self.context.setQuiescing(self.user, data["reason"])

@@ -9,17 +9,12 @@ from lp.code.errors import (
     ClaimReviewFailed,
     ReviewNotPending,
     UserHasExistingReview,
-    )
+)
 from lp.code.interfaces.codereviewvote import ICodeReviewVoteReference
 from lp.code.tests.helpers import make_merge_proposal_without_reviewers
 from lp.services.database.constants import UTC_NOW
 from lp.services.webapp.authorization import check_permission
-from lp.testing import (
-    ANONYMOUS,
-    login,
-    login_person,
-    TestCaseWithFactory,
-    )
+from lp.testing import ANONYMOUS, TestCaseWithFactory, login, login_person
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -33,13 +28,13 @@ class TestCodeReviewVote(TestCaseWithFactory):
         reviewer = self.factory.makePerson()
         login_person(merge_proposal.registrant)
         vote = merge_proposal.nominateReviewer(
-            reviewer, merge_proposal.registrant)
+            reviewer, merge_proposal.registrant
+        )
         self.assertEqual(reviewer, vote.reviewer)
         self.assertEqual(merge_proposal.registrant, vote.registrant)
         self.assertEqual(merge_proposal, vote.branch_merge_proposal)
         self.assertEqual([vote], list(merge_proposal.votes))
-        self.assertSqlAttributeEqualsDate(
-            vote, 'date_created', UTC_NOW)
+        self.assertSqlAttributeEqualsDate(vote, "date_created", UTC_NOW)
         self.assertProvides(vote, ICodeReviewVoteReference)
 
     def test_anonymous_public(self):
@@ -48,22 +43,25 @@ class TestCodeReviewVote(TestCaseWithFactory):
         reviewer = self.factory.makePerson()
         login_person(merge_proposal.registrant)
         vote = merge_proposal.nominateReviewer(
-            reviewer, merge_proposal.registrant)
+            reviewer, merge_proposal.registrant
+        )
         login(ANONYMOUS)
-        self.assertTrue(check_permission('launchpad.View', vote))
+        self.assertTrue(check_permission("launchpad.View", vote))
 
     def test_anonymous_private(self):
         """Anonymous users cannot see votes on private merge proposals."""
         owner = self.factory.makePerson()
         login_person(owner)
         target_branch = self.factory.makeBranch(
-            owner=owner, information_type=InformationType.USERDATA)
+            owner=owner, information_type=InformationType.USERDATA
+        )
         merge_proposal = make_merge_proposal_without_reviewers(
-            self.factory, target=target_branch, registrant=owner)
+            self.factory, target=target_branch, registrant=owner
+        )
         reviewer = self.factory.makePerson()
         vote = merge_proposal.nominateReviewer(reviewer, owner)
         login(ANONYMOUS)
-        self.assertFalse(check_permission('launchpad.View', vote))
+        self.assertFalse(check_permission("launchpad.View", vote))
 
 
 class TestCodeReviewVoteReferenceClaimReview(TestCaseWithFactory):
@@ -75,21 +73,22 @@ class TestCodeReviewVoteReferenceClaimReview(TestCaseWithFactory):
         TestCaseWithFactory.setUp(self)
         # Setup the proposal, claimant and team reviewer.
         self.bmp = self.factory.makeBranchMergeProposal()
-        self.claimant = self.factory.makePerson(name='eric')
+        self.claimant = self.factory.makePerson(name="eric")
         self.review_team = self.factory.makeTeam()
 
     def _addPendingReview(self):
         """Add a pending review for the review_team."""
         login_person(self.bmp.registrant)
         return self.bmp.nominateReviewer(
-            reviewer=self.review_team,
-            registrant=self.bmp.registrant)
+            reviewer=self.review_team, registrant=self.bmp.registrant
+        )
 
     def _addClaimantToReviewTeam(self):
         """Add the claimant to the review team."""
         login_person(self.review_team.teamowner)
         self.review_team.addMember(
-            person=self.claimant, reviewer=self.review_team.teamowner)
+            person=self.claimant, reviewer=self.review_team.teamowner
+        )
 
     def test_personal_completed_review(self):
         # If the claimant has a personal review already, then they can't claim
@@ -99,14 +98,19 @@ class TestCodeReviewVoteReferenceClaimReview(TestCaseWithFactory):
         # review, otherwise the pending team review will be claimed by this
         # one.
         self.bmp.createComment(
-            self.claimant, 'Message subject', 'Message content',
-            vote=CodeReviewVote.APPROVE)
+            self.claimant,
+            "Message subject",
+            "Message content",
+            vote=CodeReviewVote.APPROVE,
+        )
         review = self._addPendingReview()
         self._addClaimantToReviewTeam()
         self.assertRaisesWithContent(
             UserHasExistingReview,
-            'Eric (eric) has already reviewed this',
-            review.claimReview, self.claimant)
+            "Eric (eric) has already reviewed this",
+            review.claimReview,
+            self.claimant,
+        )
 
     def test_personal_pending_review(self):
         # If the claimant has a pending review already, then they can't claim
@@ -115,12 +119,15 @@ class TestCodeReviewVoteReferenceClaimReview(TestCaseWithFactory):
         self._addClaimantToReviewTeam()
         login_person(self.bmp.registrant)
         self.bmp.nominateReviewer(
-            reviewer=self.claimant, registrant=self.bmp.registrant)
+            reviewer=self.claimant, registrant=self.bmp.registrant
+        )
         login_person(self.claimant)
         self.assertRaisesWithContent(
             UserHasExistingReview,
-            'Eric (eric) has already been asked to review this',
-            review.claimReview, self.claimant)
+            "Eric (eric) has already been asked to review this",
+            review.claimReview,
+            self.claimant,
+        )
 
     def test_personal_not_in_review_team(self):
         # If the claimant is not in the review team, an error is raised.
@@ -129,13 +136,13 @@ class TestCodeReviewVoteReferenceClaimReview(TestCaseWithFactory):
         # launchpad.Edit on the review itself, hence Unauthorized.
         login_person(self.claimant)
         # Actually accessing claimReview triggers the security proxy.
-        self.assertRaises(
-            Unauthorized, getattr, review, 'claimReview')
+        self.assertRaises(Unauthorized, getattr, review, "claimReview")
         # The merge proposal registrant however does have edit permissions,
         # but isn't in the team, so they get ClaimReviewFailed.
         login_person(self.bmp.registrant)
         self.assertRaises(
-            ClaimReviewFailed, review.claimReview, self.bmp.registrant)
+            ClaimReviewFailed, review.claimReview, self.bmp.registrant
+        )
 
     def test_success(self):
         # If the claimant is in the review team, and does not have a personal
@@ -163,7 +170,8 @@ class TestCodeReviewVoteReferenceDelete(TestCaseWithFactory):
         bmp = make_merge_proposal_without_reviewers(self.factory)
         login_person(bmp.registrant)
         review = bmp.nominateReviewer(
-            reviewer=reviewer, registrant=bmp.registrant)
+            reviewer=reviewer, registrant=bmp.registrant
+        )
         review.delete()
         self.assertEqual([], list(bmp.votes))
 
@@ -173,7 +181,8 @@ class TestCodeReviewVoteReferenceDelete(TestCaseWithFactory):
         bmp = make_merge_proposal_without_reviewers(self.factory)
         login_person(bmp.registrant)
         review = bmp.nominateReviewer(
-            reviewer=reviewer, registrant=bmp.registrant)
+            reviewer=reviewer, registrant=bmp.registrant
+        )
         login_person(reviewer)
         review.delete()
         self.assertEqual([], list(bmp.votes))
@@ -184,7 +193,8 @@ class TestCodeReviewVoteReferenceDelete(TestCaseWithFactory):
         bmp = make_merge_proposal_without_reviewers(self.factory)
         login_person(bmp.registrant)
         review = bmp.nominateReviewer(
-            reviewer=review_team, registrant=bmp.registrant)
+            reviewer=review_team, registrant=bmp.registrant
+        )
         login_person(review_team.teamowner)
         review.delete()
         self.assertEqual([], list(bmp.votes))
@@ -196,7 +206,8 @@ class TestCodeReviewVoteReferenceDelete(TestCaseWithFactory):
         bmp = make_merge_proposal_without_reviewers(self.factory)
         login_person(bmp.registrant)
         review = bmp.nominateReviewer(
-            reviewer=reviewer, registrant=bmp.registrant)
+            reviewer=reviewer, registrant=bmp.registrant
+        )
         login_person(bmp.target_branch.owner)
         review.delete()
         self.assertEqual([], list(bmp.votes))
@@ -207,10 +218,10 @@ class TestCodeReviewVoteReferenceDelete(TestCaseWithFactory):
         bmp = self.factory.makeBranchMergeProposal()
         login_person(bmp.registrant)
         review = bmp.nominateReviewer(
-            reviewer=reviewer, registrant=bmp.registrant)
+            reviewer=reviewer, registrant=bmp.registrant
+        )
         login_person(self.factory.makePerson())
-        self.assertRaises(
-            Unauthorized, getattr, review, 'delete')
+        self.assertRaises(Unauthorized, getattr, review, "delete")
 
     def test_delete_not_pending(self):
         # A non-pending review reference cannot be deleted.
@@ -218,8 +229,11 @@ class TestCodeReviewVoteReferenceDelete(TestCaseWithFactory):
         bmp = make_merge_proposal_without_reviewers(self.factory)
         login_person(reviewer)
         bmp.createComment(
-            reviewer, 'Message subject', 'Message content',
-            vote=CodeReviewVote.APPROVE)
+            reviewer,
+            "Message subject",
+            "Message content",
+            vote=CodeReviewVote.APPROVE,
+        )
         [review] = list(bmp.votes)
         self.assertRaises(ReviewNotPending, review.delete)
 
@@ -236,13 +250,17 @@ class TestCodeReviewVoteReferenceReassignReview(TestCaseWithFactory):
         if completed:
             login_person(reviewer)
             bmp.createComment(
-                reviewer, 'Message subject', 'Message content',
-                vote=CodeReviewVote.APPROVE)
+                reviewer,
+                "Message subject",
+                "Message content",
+                vote=CodeReviewVote.APPROVE,
+            )
             [review] = list(bmp.votes)
         else:
             login_person(bmp.registrant)
             review = bmp.nominateReviewer(
-                reviewer=reviewer, registrant=bmp.registrant)
+                reviewer=reviewer, registrant=bmp.registrant
+            )
         return bmp, review
 
     def test_reassign_pending(self):
@@ -256,38 +274,45 @@ class TestCodeReviewVoteReferenceReassignReview(TestCaseWithFactory):
         # A completed review cannot be reassigned
         bmp, review = self.makeMergeProposalWithReview(completed=True)
         self.assertRaises(
-            ReviewNotPending, review.reassignReview, bmp.registrant)
+            ReviewNotPending, review.reassignReview, bmp.registrant
+        )
 
     def test_reassign_to_user_existing_pending(self):
         # If a user has an existing pending review, they cannot have another
         # pending review assigned to them.
         bmp, review = self.makeMergeProposalWithReview()
-        reviewer = self.factory.makePerson(name='eric')
+        reviewer = self.factory.makePerson(name="eric")
         bmp.nominateReviewer(reviewer=reviewer, registrant=bmp.registrant)
         self.assertRaisesWithContent(
             UserHasExistingReview,
-            'Eric (eric) has already been asked to review this',
-            review.reassignReview, reviewer)
+            "Eric (eric) has already been asked to review this",
+            review.reassignReview,
+            reviewer,
+        )
 
     def test_reassign_to_user_existing_completed(self):
         # If a user has an existing completed review, they cannot have another
         # pending review assigned to them.
         bmp, review = self.makeMergeProposalWithReview()
-        reviewer = self.factory.makePerson(name='eric')
+        reviewer = self.factory.makePerson(name="eric")
         bmp.createComment(
-            reviewer, 'Message subject', 'Message content',
-            vote=CodeReviewVote.APPROVE)
+            reviewer,
+            "Message subject",
+            "Message content",
+            vote=CodeReviewVote.APPROVE,
+        )
         self.assertRaisesWithContent(
             UserHasExistingReview,
-            'Eric (eric) has already reviewed this',
-            review.reassignReview, reviewer)
+            "Eric (eric) has already reviewed this",
+            review.reassignReview,
+            reviewer,
+        )
 
     def test_reassign_to_team_existing(self):
         # If a team has an existing review, they can have another pending
         # review assigned to them.
         bmp, review = self.makeMergeProposalWithReview()
         reviewer_team = self.factory.makeTeam()
-        bmp.nominateReviewer(
-            reviewer=reviewer_team, registrant=bmp.registrant)
+        bmp.nominateReviewer(reviewer=reviewer_team, registrant=bmp.registrant)
         review.reassignReview(reviewer_team)
         self.assertEqual(reviewer_team, review.reviewer)

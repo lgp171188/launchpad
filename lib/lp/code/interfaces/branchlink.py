@@ -5,20 +5,17 @@
 
 __all__ = [
     "IHasLinkedBranches",
-    ]
+]
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     export_write_operation,
     exported,
     operation_for_version,
     operation_parameters,
-    REQUEST_USER,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference
 from zope.interface import Interface
 
 from lp import _
@@ -30,15 +27,16 @@ class IHasLinkedBranches(Interface):
 
     linked_branches = exported(
         CollectionField(
-            title=_('MultiJoin of the bugs which are dups of this one'),
+            title=_("MultiJoin of the bugs which are dups of this one"),
             value_type=Reference(schema=IBranch),
-            readonly=True))
+            readonly=True,
+        )
+    )
 
     @call_with(registrant=REQUEST_USER)
-    @operation_parameters(
-        branch=Reference(schema=IBranch))
+    @operation_parameters(branch=Reference(schema=IBranch))
     @export_write_operation()
-    @operation_for_version('beta')
+    @operation_for_version("beta")
     def linkBranch(branch, registrant):
         """Associate a branch with this bug.
 
@@ -47,10 +45,9 @@ class IHasLinkedBranches(Interface):
         """
 
     @call_with(user=REQUEST_USER)
-    @operation_parameters(
-        branch=Reference(schema=IBranch))
+    @operation_parameters(branch=Reference(schema=IBranch))
     @export_write_operation()
-    @operation_for_version('beta')
+    @operation_for_version("beta")
     def unlinkBranch(branch, user):
         """Unlink a branch from this bug.
 

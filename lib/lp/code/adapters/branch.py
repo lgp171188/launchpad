@@ -7,7 +7,7 @@ __all__ = [
     "BranchDelta",
     "BranchMergeProposalDelta",
     "BranchMergeProposalNoPreviewDiffDelta",
-    ]
+]
 
 from contextlib import contextmanager
 
@@ -17,12 +17,8 @@ from lazr.lifecycle.objectdelta import ObjectDelta
 from zope.event import notify
 from zope.interface import implementer
 
-from lp.code.interfaces.branch import (
-    IBranch,
-    IBranchDelta,
-    )
+from lp.code.interfaces.branch import IBranch, IBranchDelta
 from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
-
 
 # XXX: thumper 2006-12-20: This needs to be extended
 # to cover bugs and specs linked and unlinked, as
@@ -33,15 +29,23 @@ from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
 class BranchDelta:
     """See IBranchDelta."""
 
-    delta_values = ('name', 'title', 'url', 'lifecycle_status')
+    delta_values = ("name", "title", "url", "lifecycle_status")
 
-    new_values = ('summary', 'whiteboard')
+    new_values = ("summary", "whiteboard")
 
     interface = IBranch
 
-    def __init__(self, branch, user,
-                 name=None, title=None, summary=None, url=None,
-                 whiteboard=None, lifecycle_status=None):
+    def __init__(
+        self,
+        branch,
+        user,
+        name=None,
+        title=None,
+        summary=None,
+        url=None,
+        whiteboard=None,
+        lifecycle_status=None,
+    ):
         self.branch = branch
         self.user = user
 
@@ -78,15 +82,15 @@ class BranchMergeProposalDelta:
     """Represent changes made to a BranchMergeProposal."""
 
     delta_values = (
-        'registrant',
-        'queue_status',
-        )
+        "registrant",
+        "queue_status",
+    )
     new_values = (
-        'commit_message',
-        'whiteboard',
-        'description',
-        'preview_diff',
-        )
+        "commit_message",
+        "whiteboard",
+        "description",
+        "preview_diff",
+    )
     interface = IBranchMergeProposal
 
     def __init__(self, **kwargs):
@@ -127,11 +131,14 @@ class BranchMergeProposalDelta:
         merge_proposal_snapshot = klass.snapshot(merge_proposal)
         yield
         merge_proposal_delta = klass.construct(
-            merge_proposal_snapshot, merge_proposal)
+            merge_proposal_snapshot, merge_proposal
+        )
         if merge_proposal_delta is not None:
             merge_proposal_event = ObjectModifiedEvent(
-                merge_proposal, merge_proposal_snapshot,
-                list(vars(merge_proposal_delta)))
+                merge_proposal,
+                merge_proposal_snapshot,
+                list(vars(merge_proposal_delta)),
+            )
             notify(merge_proposal_event)
 
 
@@ -142,5 +149,7 @@ class BranchMergeProposalNoPreviewDiffDelta(BranchMergeProposalDelta):
     """
 
     new_values = tuple(
-        name for name in BranchMergeProposalDelta.new_values
-        if name != "preview_diff")
+        name
+        for name in BranchMergeProposalDelta.new_values
+        if name != "preview_diff"
+    )

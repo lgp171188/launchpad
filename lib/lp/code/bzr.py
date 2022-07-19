@@ -4,32 +4,30 @@
 """Enumerations relating to Bazaar formats."""
 
 __all__ = [
-    'branch_changed',
-    'BranchFormat',
-    'ControlFormat',
-    'CURRENT_BRANCH_FORMATS',
-    'CURRENT_REPOSITORY_FORMATS',
-    'branch_revision_history',
-    'get_ancestry',
-    'get_branch_formats',
-    'RepositoryFormat',
-    ]
+    "branch_changed",
+    "BranchFormat",
+    "ControlFormat",
+    "CURRENT_BRANCH_FORMATS",
+    "CURRENT_REPOSITORY_FORMATS",
+    "branch_revision_history",
+    "get_ancestry",
+    "get_branch_formats",
+    "RepositoryFormat",
+]
 
 
 # FIRST Ensure correct plugins are loaded. Do not delete this comment or the
 # line below this comment.
 import lp.codehosting  # noqa: F401  # isort: split
 
+import six
 from breezy.branch import UnstackableBranchFormat
 from breezy.bzr.branch import (
     BranchReferenceFormat,
     BzrBranchFormat6,
     BzrBranchFormat7,
-    )
-from breezy.bzr.bzrdir import (
-    BzrDirMetaFormat1,
-    BzrDirMetaFormat1Colo,
-    )
+)
+from breezy.bzr.bzrdir import BzrDirMetaFormat1, BzrDirMetaFormat1Colo
 from breezy.bzr.fullhistory import BzrBranchFormat5
 from breezy.bzr.groupcompress_repo import RepositoryFormat2a
 from breezy.bzr.knitpack_repo import (
@@ -37,41 +35,31 @@ from breezy.bzr.knitpack_repo import (
     RepositoryFormatKnitPack3,
     RepositoryFormatKnitPack4,
     RepositoryFormatKnitPack5,
-    )
+)
 from breezy.bzr.knitrepo import (
     RepositoryFormatKnit1,
     RepositoryFormatKnit3,
     RepositoryFormatKnit4,
-    )
-from breezy.errors import (
-    NoSuchRevision,
-    NotStacked,
-    )
+)
+from breezy.errors import NoSuchRevision, NotStacked
 from breezy.plugins.loom.branch import (
     BzrBranchLoomFormat1,
     BzrBranchLoomFormat6,
-    )
+)
 from breezy.plugins.weave_fmt.branch import BzrBranchFormat4
 from breezy.plugins.weave_fmt.bzrdir import (
     BzrDirFormat4,
     BzrDirFormat5,
     BzrDirFormat6,
-    )
+)
 from breezy.plugins.weave_fmt.repository import (
     RepositoryFormat4,
     RepositoryFormat5,
     RepositoryFormat6,
     RepositoryFormat7,
-    )
-from breezy.revision import (
-    is_null,
-    NULL_REVISION,
-    )
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
-import six
+)
+from breezy.revision import NULL_REVISION, is_null
+from lazr.enum import DBEnumeratedType, DBItem
 
 
 def _format_enum(num, format, format_string=None, description=None):
@@ -103,12 +91,13 @@ class BranchFormat(BazaarFormatEnum):
     updated as the list of formats supported by Bazaar is updated.
     """
 
-    UNRECOGNIZED = DBItem(1000, '!Unrecognized!', 'Unrecognized format')
+    UNRECOGNIZED = DBItem(1000, "!Unrecognized!", "Unrecognized format")
 
     # Branch 4 was only used with all-in-one formats, so it didn't have its
     # own marker.  It was implied by the control directory marker.
     BZR_BRANCH_4 = _format_enum(
-        4, BzrBranchFormat4, 'Fake Bazaar Branch 4 marker')
+        4, BzrBranchFormat4, "Fake Bazaar Branch 4 marker"
+    )
 
     BRANCH_REFERENCE = _format_enum(1, BranchReferenceFormat)
 
@@ -122,14 +111,16 @@ class BranchFormat(BazaarFormatEnum):
     # a line that looks like _format_enum(8, BzrBranchFormat8) when we upgrade
     # to Bazaar 1.15.
     BZR_BRANCH_8 = DBItem(
-        8, "Bazaar Branch Format 8 (needs bzr 1.15)\n", "Branch format 8")
+        8, "Bazaar Branch Format 8 (needs bzr 1.15)\n", "Branch format 8"
+    )
 
     BZR_LOOM_1 = _format_enum(101, BzrBranchLoomFormat1)
 
     BZR_LOOM_2 = _format_enum(106, BzrBranchLoomFormat6)
 
     BZR_LOOM_3 = DBItem(
-        107, "Bazaar-NG Loom branch format 7\n", "Loom branch format 7")
+        107, "Bazaar-NG Loom branch format 7\n", "Loom branch format 7"
+    )
 
 
 class RepositoryFormat(BazaarFormatEnum):
@@ -139,18 +130,21 @@ class RepositoryFormat(BazaarFormatEnum):
     updated as the list of formats supported by Bazaar is updated.
     """
 
-    UNRECOGNIZED = DBItem(1000, '!Unrecognized!', 'Unrecognized format')
+    UNRECOGNIZED = DBItem(1000, "!Unrecognized!", "Unrecognized format")
 
     # Repository formats prior to format 7 had no marker because they
     # were implied by the control directory format.
     BZR_REPOSITORY_4 = _format_enum(
-        4, RepositoryFormat4, 'Fake Bazaar repository 4 marker')
+        4, RepositoryFormat4, "Fake Bazaar repository 4 marker"
+    )
 
     BZR_REPOSITORY_5 = _format_enum(
-        5, RepositoryFormat5, 'Fake Bazaar repository 5 marker')
+        5, RepositoryFormat5, "Fake Bazaar repository 5 marker"
+    )
 
     BZR_REPOSITORY_6 = _format_enum(
-        6, RepositoryFormat6, 'Fake Bazaar repository 6 marker')
+        6, RepositoryFormat6, "Fake Bazaar repository 6 marker"
+    )
 
     BZR_REPOSITORY_7 = _format_enum(7, RepositoryFormat7)
 
@@ -167,85 +161,100 @@ class RepositoryFormat(BazaarFormatEnum):
     BZR_KNITPACK_4 = _format_enum(204, RepositoryFormatKnitPack4)
 
     BZR_KNITPACK_5 = _format_enum(
-        205, RepositoryFormatKnitPack5,
-        description='Packs 5 (needs bzr 1.6, supports stacking)\n')
+        205,
+        RepositoryFormatKnitPack5,
+        description="Packs 5 (needs bzr 1.6, supports stacking)\n",
+    )
 
-    BZR_KNITPACK_5_RRB = DBItem(206,
-        'Bazaar RepositoryFormatKnitPack5RichRoot (bzr 1.6)\n',
-        'Packs 5-Rich Root (needs bzr 1.6, supports stacking)'
-        )
+    BZR_KNITPACK_5_RRB = DBItem(
+        206,
+        "Bazaar RepositoryFormatKnitPack5RichRoot (bzr 1.6)\n",
+        "Packs 5-Rich Root (needs bzr 1.6, supports stacking)",
+    )
 
-    BZR_KNITPACK_5_RR = DBItem(207,
-        'Bazaar RepositoryFormatKnitPack5RichRoot (bzr 1.6.1)\n',
-        'Packs 5 rich-root (adds stacking support, requires bzr 1.6.1)',
-        )
+    BZR_KNITPACK_5_RR = DBItem(
+        207,
+        "Bazaar RepositoryFormatKnitPack5RichRoot (bzr 1.6.1)\n",
+        "Packs 5 rich-root (adds stacking support, requires bzr 1.6.1)",
+    )
 
-    BZR_KNITPACK_6 = DBItem(208,
-        'Bazaar RepositoryFormatKnitPack6 (bzr 1.9)\n',
-        'Packs 6 (uses btree indexes, requires bzr 1.9)'
-        )
+    BZR_KNITPACK_6 = DBItem(
+        208,
+        "Bazaar RepositoryFormatKnitPack6 (bzr 1.9)\n",
+        "Packs 6 (uses btree indexes, requires bzr 1.9)",
+    )
 
-    BZR_KNITPACK_6_RR = DBItem(209,
-        'Bazaar RepositoryFormatKnitPack6RichRoot (bzr 1.9)\n',
-        'Packs 6 rich-root (uses btree indexes, requires bzr 1.9)'
-        )
+    BZR_KNITPACK_6_RR = DBItem(
+        209,
+        "Bazaar RepositoryFormatKnitPack6RichRoot (bzr 1.9)\n",
+        "Packs 6 rich-root (uses btree indexes, requires bzr 1.9)",
+    )
 
-    BZR_PACK_DEV_0 = DBItem(300,
-        'Bazaar development format 0 (needs bzr.dev from before 1.3)\n',
-        'Development repository format, currently the same as pack-0.92',
-        )
+    BZR_PACK_DEV_0 = DBItem(
+        300,
+        "Bazaar development format 0 (needs bzr.dev from before 1.3)\n",
+        "Development repository format, currently the same as pack-0.92",
+    )
 
-    BZR_PACK_DEV_0_SUBTREE = DBItem(301,
-        'Bazaar development format 0 with subtree support (needs bzr.dev from'
-        ' before 1.3)\n',
-        'Development repository format, currently the same as'
-        ' pack-0.92-subtree\n',
-        )
+    BZR_PACK_DEV_0_SUBTREE = DBItem(
+        301,
+        "Bazaar development format 0 with subtree support (needs bzr.dev from"
+        " before 1.3)\n",
+        "Development repository format, currently the same as"
+        " pack-0.92-subtree\n",
+    )
 
-    BZR_DEV_1 = DBItem(302,
+    BZR_DEV_1 = DBItem(
+        302,
         "Bazaar development format 1 (needs bzr.dev from before 1.6)\n",
         "Development repository format, currently the same as "
-        "pack-0.92 with external reference support.\n"
-        )
+        "pack-0.92 with external reference support.\n",
+    )
 
-    BZR_DEV_1_SUBTREE = DBItem(303,
+    BZR_DEV_1_SUBTREE = DBItem(
+        303,
         "Bazaar development format 1 with subtree support "
         "(needs bzr.dev from before 1.6)\n",
         "Development repository format, currently the same as "
-        "pack-0.92-subtree with external reference support.\n"
-        )
+        "pack-0.92-subtree with external reference support.\n",
+    )
 
-    BZR_DEV_2 = DBItem(304,
+    BZR_DEV_2 = DBItem(
+        304,
         "Bazaar development format 2 (needs bzr.dev from before 1.8)\n",
         "Development repository format, currently the same as "
-            "1.6.1 with B+Trees.\n"
-        )
+        "1.6.1 with B+Trees.\n",
+    )
 
-    BZR_DEV_2_SUBTREE = DBItem(305,
-       "Bazaar development format 2 with subtree support "
+    BZR_DEV_2_SUBTREE = DBItem(
+        305,
+        "Bazaar development format 2 with subtree support "
         "(needs bzr.dev from before 1.8)\n",
         "Development repository format, currently the same as "
-        "1.6.1-subtree with B+Tree indices.\n"
-        )
+        "1.6.1-subtree with B+Tree indices.\n",
+    )
 
-    BZR_DEV_8 = DBItem(306,
+    BZR_DEV_8 = DBItem(
+        306,
         "Bazaar development format 8\n",
-        "2a repository format with support for nested trees.\n"
-        )
+        "2a repository format with support for nested trees.\n",
+    )
 
-    BZR_CHK1 = DBItem(400,
+    BZR_CHK1 = DBItem(
+        400,
         "Bazaar development format - group compression and chk inventory"
         " (needs bzr.dev from 1.14)\n",
         "Development repository format - rich roots, group compression"
         " and chk inventories\n",
-        )
+    )
 
-    BZR_CHK2 = DBItem(410,
+    BZR_CHK2 = DBItem(
+        410,
         "Bazaar development format - chk repository with bencode revision"
         " serialization (needs bzr.dev from 1.16)\n",
         "Development repository format - rich roots, group compression"
         " and chk inventories\n",
-        )
+    )
 
     BZR_CHK_2A = _format_enum(415, RepositoryFormat2a)
 
@@ -257,7 +266,7 @@ class ControlFormat(BazaarFormatEnum):
     as new formats become available.
     """
 
-    UNRECOGNIZED = DBItem(1000, '!Unrecognized!', 'Unrecognized format')
+    UNRECOGNIZED = DBItem(1000, "!Unrecognized!", "Unrecognized format")
 
     BZR_DIR_4 = _format_enum(4, BzrDirFormat4)
 
@@ -279,7 +288,8 @@ CURRENT_BRANCH_FORMATS = (
     BranchFormat.BZR_BRANCH_8,
     BranchFormat.BZR_LOOM_1,
     BranchFormat.BZR_LOOM_2,
-    BranchFormat.BZR_LOOM_3)
+    BranchFormat.BZR_LOOM_3,
+)
 
 # A tuple of repository formats that should not suggest upgrading.
 CURRENT_REPOSITORY_FORMATS = (
@@ -294,7 +304,8 @@ CURRENT_REPOSITORY_FORMATS = (
     RepositoryFormat.BZR_DEV_8,
     RepositoryFormat.BZR_CHK1,
     RepositoryFormat.BZR_CHK2,
-    RepositoryFormat.BZR_CHK_2A)
+    RepositoryFormat.BZR_CHK_2A,
+)
 
 
 def get_branch_formats(bzr_branch):
@@ -303,13 +314,17 @@ def get_branch_formats(bzr_branch):
     :returns: tuple of (ControlFormat, BranchFormat, RepositoryFormat)
     """
     control_string = six.ensure_str(
-        bzr_branch.controldir._format.get_format_string())
+        bzr_branch.controldir._format.get_format_string()
+    )
     branch_string = six.ensure_str(bzr_branch._format.get_format_string())
     repository_string = six.ensure_str(
-        bzr_branch.repository._format.get_format_string())
-    return (ControlFormat.get_enum(control_string),
-            BranchFormat.get_enum(branch_string),
-            RepositoryFormat.get_enum(repository_string))
+        bzr_branch.repository._format.get_format_string()
+    )
+    return (
+        ControlFormat.get_enum(control_string),
+        BranchFormat.get_enum(branch_string),
+        RepositoryFormat.get_enum(repository_string),
+    )
 
 
 def branch_changed(db_branch, bzr_branch=None):
@@ -343,8 +358,11 @@ def branch_revision_history(branch):
     branch.lock_read()
     try:
         graph = branch.repository.get_graph()
-        ret = list(graph.iter_lefthand_ancestry(
-                branch.last_revision(), (NULL_REVISION,)))
+        ret = list(
+            graph.iter_lefthand_ancestry(
+                branch.last_revision(), (NULL_REVISION,)
+            )
+        )
         ret.reverse()
         return ret
     finally:

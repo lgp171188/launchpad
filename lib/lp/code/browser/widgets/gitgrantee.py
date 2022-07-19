@@ -2,10 +2,10 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'GitGranteeDisplayWidget',
-    'GitGranteeField',
-    'GitGranteeWidget',
-    ]
+    "GitGranteeDisplayWidget",
+    "GitGranteeField",
+    "GitGranteeWidget",
+]
 
 from lazr.enum import DBItem
 from lazr.restful.fields import Reference
@@ -17,7 +17,7 @@ from zope.formlib.interfaces import (
     InputErrors,
     MissingInputError,
     WidgetInputError,
-    )
+)
 from zope.formlib.utility import setUpWidget
 from zope.formlib.widget import (
     BrowserWidget,
@@ -25,12 +25,9 @@ from zope.formlib.widget import (
     DisplayWidget,
     InputWidget,
     renderElement,
-    )
+)
 from zope.interface import implementer
-from zope.schema import (
-    Choice,
-    Field,
-    )
+from zope.schema import Choice, Field
 from zope.schema.interfaces import IField
 from zope.schema.vocabulary import getVocabularyRegistry
 from zope.security.proxy import isinstance as zope_isinstance
@@ -46,15 +43,19 @@ from lp.registry.interfaces.person import IPerson
 from lp.services.webapp.interfaces import (
     IAlwaysSubmittedWidget,
     IMultiLineWidgetLayout,
-    )
+)
 
 
 class IGitGranteeField(IField):
     """An interface for a Git access grantee field."""
 
     rule = Reference(
-        title=_("Rule"), required=True, readonly=True, schema=IGitRule,
-        description=_("The rule that this grantee is for."))
+        title=_("Rule"),
+        required=True,
+        readonly=True,
+        schema=IGitRule,
+        description=_("The rule that this grantee is for."),
+    )
 
 
 @implementer(IGitGranteeField)
@@ -71,12 +72,12 @@ class GitGranteeField(Field):
             return value != GitGranteeType.PERSON
         else:
             return value in getVocabularyRegistry().get(
-                None, "ValidPersonOrTeam")
+                None, "ValidPersonOrTeam"
+            )
 
 
 @implementer(IDisplayWidget)
 class GitGranteePersonDisplayWidget(BrowserWidget):
-
     def __init__(self, context, vocabulary, request):
         super().__init__(context, request)
 
@@ -99,23 +100,32 @@ class GitGranteeWidgetBase(BrowserWidget):
             return
         fields = [
             Choice(
-                __name__="person", title="Person",
-                required=False, vocabulary="ValidPersonOrTeam"),
-            ]
+                __name__="person",
+                title="Person",
+                required=False,
+                vocabulary="ValidPersonOrTeam",
+            ),
+        ]
         if self._read_only:
             self.person_widget = CustomWidgetFactory(
-                GitGranteePersonDisplayWidget)
+                GitGranteePersonDisplayWidget
+            )
         else:
             self.person_widget = CustomWidgetFactory(
                 PersonPickerWidget,
                 # XXX cjwatson 2018-10-18: This is a little unfortunate, but
                 # otherwise there's no spacing at all between the
                 # (deliberately unlabelled) radio button and the text box.
-                style="margin-left: 4px;")
+                style="margin-left: 4px;",
+            )
         for field in fields:
             setUpWidget(
-                self, field.__name__, field, self._sub_widget_interface,
-                prefix=self.name)
+                self,
+                field.__name__,
+                field,
+                self._sub_widget_interface,
+                prefix=self.name,
+            )
         self._widgets_set_up = True
 
     def setUpOptions(self):
@@ -123,15 +133,19 @@ class GitGranteeWidgetBase(BrowserWidget):
         self.options = {}
         for option in ("repository_owner", "person"):
             attributes = {
-                "type": "radio", "name": self.name, "value": option,
+                "type": "radio",
+                "name": self.name,
+                "value": option,
                 "id": "%s.option.%s" % (self.name, option),
                 # XXX cjwatson 2018-10-18: Ugly, but it's worse without
                 # this, especially in a permissions table where this widget
                 # is normally used.
                 "style": "margin-left: 0;",
-                }
-            if self.request.form_ng.getOne(
-                    self.name, self.default_option) == option:
+            }
+            if (
+                self.request.form_ng.getOne(self.name, self.default_option)
+                == option
+            ):
                 attributes["checked"] = "checked"
             if self._read_only:
                 attributes["disabled"] = "disabled"
@@ -141,7 +155,8 @@ class GitGranteeWidgetBase(BrowserWidget):
     def show_options(self):
         return {
             option: not self._read_only or self.default_option == option
-            for option in ("repository_owner", "person")}
+            for option in ("repository_owner", "person")
+        }
 
     def setRenderedValue(self, value):
         """See `IWidget`."""
@@ -184,11 +199,14 @@ class GitGranteeWidget(GitGranteeWidgetBase, InputWidget):
         show_options = super().show_options
         # Hide options that indicate unique grantee_types (e.g.
         # repository_owner) if they already exist for the context rule.
-        if (show_options["repository_owner"] and
-            not self.context.rule.repository.findRuleGrantsByGrantee(
+        if (
+            show_options["repository_owner"]
+            and not self.context.rule.repository.findRuleGrantsByGrantee(
                 GitGranteeType.REPOSITORY_OWNER,
                 ref_pattern=self.context.rule.ref_pattern,
-                include_transitive=False).is_empty()):
+                include_transitive=False,
+            ).is_empty()
+        ):
             show_options["repository_owner"] = False
         return show_options
 
@@ -220,17 +238,24 @@ class GitGranteeWidget(GitGranteeWidgetBase, InputWidget):
                 return self.person_widget.getInputValue()
             except MissingInputError:
                 raise WidgetInputError(
-                    self.name, self.label,
+                    self.name,
+                    self.label,
                     LaunchpadValidationError(
-                        "Please enter a person or team name"))
+                        "Please enter a person or team name"
+                    ),
+                )
             except ConversionError:
                 entered_name = self.request.form_ng.getOne(
-                    "%s.person" % self.name)
+                    "%s.person" % self.name
+                )
                 raise WidgetInputError(
-                    self.name, self.label,
+                    self.name,
+                    self.label,
                     LaunchpadValidationError(
                         "There is no person or team named '%s' registered in "
-                        "Launchpad" % entered_name))
+                        "Launchpad" % entered_name
+                    ),
+                )
         else:
             raise UnexpectedFormData("No valid option was selected.")
 

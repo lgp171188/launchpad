@@ -8,24 +8,21 @@ from zope.formlib.interfaces import (
     IDisplayWidget,
     IInputWidget,
     WidgetInputError,
-    )
+)
 
 from lp.app.validators import LaunchpadValidationError
 from lp.code.browser.widgets.gitgrantee import (
     GitGranteeDisplayWidget,
     GitGranteeField,
     GitGranteeWidget,
-    )
+)
 from lp.code.enums import GitGranteeType
 from lp.registry.vocabularies import ValidPersonOrTeamVocabulary
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.testing import (
-    TestCaseWithFactory,
-    verifyObject,
-    )
+from lp.testing import TestCaseWithFactory, verifyObject
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -37,7 +34,8 @@ class TestGitGranteeWidgetBase:
         super().setUp()
         [self.ref] = self.factory.makeGitRefs()
         self.rule = self.factory.makeGitRule(
-            repository=self.ref.repository, ref_pattern=self.ref.path)
+            repository=self.ref.repository, ref_pattern=self.ref.path
+        )
         self.field = GitGranteeField(__name__="grantee", rule=self.rule)
         self.request = LaunchpadTestRequest()
         self.widget = self.widget_factory(self.field, self.request)
@@ -45,13 +43,15 @@ class TestGitGranteeWidgetBase:
     def test_implements(self):
         self.assertTrue(verifyObject(IBrowserWidget, self.widget))
         self.assertTrue(
-            verifyObject(self.expected_widget_interface, self.widget))
+            verifyObject(self.expected_widget_interface, self.widget)
+        )
 
     def test_template(self):
         # The render template is setup.
         self.assertTrue(
             self.widget.template.filename.endswith("gitgrantee.pt"),
-            "Template was not set up.")
+            "Template was not set up.",
+        )
 
     def test_default_option(self):
         # The person field is the default option.
@@ -63,7 +63,8 @@ class TestGitGranteeWidgetBase:
         self.assertTrue(self.widget._widgets_set_up)
         self.assertIsInstance(
             self.widget.person_widget.context.vocabulary,
-            ValidPersonOrTeamVocabulary)
+            ValidPersonOrTeamVocabulary,
+        )
 
     def test_setUpSubWidgets_second_call(self):
         # The setUpSubWidgets method exits early if a flag is set to
@@ -78,17 +79,20 @@ class TestGitGranteeWidgetBase:
         self.widget.setUpSubWidgets()
         self.widget.setUpOptions()
         self.assertEqual(
-            '<input class="radioType" style="margin-left: 0;" ' +
-            self.expected_disabled_attr +
-            'id="field.grantee.option.repository_owner" name="field.grantee" '
-            'type="radio" value="repository_owner" />',
-            self.widget.options["repository_owner"])
+            '<input class="radioType" style="margin-left: 0;" '
+            + self.expected_disabled_attr
+            + 'id="field.grantee.option.repository_owner" '
+            'name="field.grantee" type="radio" value="repository_owner" />',
+            self.widget.options["repository_owner"],
+        )
         self.assertEqual(
-            '<input class="radioType" style="margin-left: 0;" ' +
-            'checked="checked" ' + self.expected_disabled_attr +
-            'id="field.grantee.option.person" name="field.grantee" '
+            '<input class="radioType" style="margin-left: 0;" '
+            + 'checked="checked" '
+            + self.expected_disabled_attr
+            + 'id="field.grantee.option.person" name="field.grantee" '
             'type="radio" value="person" />',
-            self.widget.options["person"])
+            self.widget.options["person"],
+        )
 
     def test_setUpOptions_repository_owner_checked(self):
         # The repository owner radio button is selected when the form is
@@ -99,16 +103,19 @@ class TestGitGranteeWidgetBase:
         self.widget.setUpOptions()
         self.assertEqual(
             '<input class="radioType" style="margin-left: 0;" '
-            'checked="checked" ' + self.expected_disabled_attr +
-            'id="field.grantee.option.repository_owner" name="field.grantee" '
-            'type="radio" value="repository_owner" />',
-            self.widget.options["repository_owner"])
+            'checked="checked" '
+            + self.expected_disabled_attr
+            + 'id="field.grantee.option.repository_owner" '
+            'name="field.grantee" type="radio" value="repository_owner" />',
+            self.widget.options["repository_owner"],
+        )
         self.assertEqual(
-            '<input class="radioType" style="margin-left: 0;" ' +
-            self.expected_disabled_attr +
-            'id="field.grantee.option.person" name="field.grantee" '
+            '<input class="radioType" style="margin-left: 0;" '
+            + self.expected_disabled_attr
+            + 'id="field.grantee.option.person" name="field.grantee" '
             'type="radio" value="person" />',
-            self.widget.options["person"])
+            self.widget.options["person"],
+        )
 
     def test_setUpOptions_person_checked(self):
         # The person radio button is selected when the form is submitted
@@ -118,17 +125,20 @@ class TestGitGranteeWidgetBase:
         self.widget.setUpSubWidgets()
         self.widget.setUpOptions()
         self.assertEqual(
-            '<input class="radioType" style="margin-left: 0;" ' +
-            self.expected_disabled_attr +
-            'id="field.grantee.option.repository_owner" name="field.grantee" '
-            'type="radio" value="repository_owner" />',
-            self.widget.options["repository_owner"])
+            '<input class="radioType" style="margin-left: 0;" '
+            + self.expected_disabled_attr
+            + 'id="field.grantee.option.repository_owner" '
+            'name="field.grantee" type="radio" value="repository_owner" />',
+            self.widget.options["repository_owner"],
+        )
         self.assertEqual(
-            '<input class="radioType" style="margin-left: 0;" ' +
-            'checked="checked" ' + self.expected_disabled_attr +
-            'id="field.grantee.option.person" name="field.grantee" '
+            '<input class="radioType" style="margin-left: 0;" '
+            + 'checked="checked" '
+            + self.expected_disabled_attr
+            + 'id="field.grantee.option.person" name="field.grantee" '
             'type="radio" value="person" />',
-            self.widget.options["person"])
+            self.widget.options["person"],
+        )
 
     def test_setRenderedValue_repository_owner(self):
         # Passing GitGranteeType.REPOSITORY_OWNER will set the widget's
@@ -158,7 +168,8 @@ class TestGitGranteeWidgetBase:
 
 
 class TestGitGranteeDisplayWidget(
-        TestGitGranteeWidgetBase, TestCaseWithFactory):
+    TestGitGranteeWidgetBase, TestCaseWithFactory
+):
     """Test the GitGranteeDisplayWidget class."""
 
     widget_factory = GitGranteeDisplayWidget
@@ -174,9 +185,10 @@ class TestGitGranteeDisplayWidget(
         self.widget.setRenderedValue(person)
         person_url = canonical_url(person, path_only_if_possible=True)
         self.assertEqual(
-            '<a href="%s" class="sprite person">%s</a>' % (
-                person_url, html_escape(person.display_name)),
-            self.widget.person_widget())
+            '<a href="%s" class="sprite person">%s</a>'
+            % (person_url, html_escape(person.display_name)),
+            self.widget.person_widget(),
+        )
 
 
 class TestGitGranteeWidget(TestGitGranteeWidgetBase, TestCaseWithFactory):
@@ -189,7 +201,7 @@ class TestGitGranteeWidget(TestGitGranteeWidgetBase, TestCaseWithFactory):
         "field.grantee.option.repository_owner",
         "field.grantee.option.person",
         "field.grantee.person",
-        ]
+    ]
 
     def setUp(self):
         super().setUp()
@@ -199,10 +211,12 @@ class TestGitGranteeWidget(TestGitGranteeWidgetBase, TestCaseWithFactory):
         # If the rule already has a repository owner grant, the input widget
         # doesn't offer that option.
         self.factory.makeGitRuleGrant(
-            rule=self.rule, grantee=GitGranteeType.REPOSITORY_OWNER)
+            rule=self.rule, grantee=GitGranteeType.REPOSITORY_OWNER
+        )
         self.assertEqual(
             {"repository_owner": False, "person": True},
-            self.widget.show_options)
+            self.widget.show_options,
+        )
 
     def test_show_options_repository_owner_grant_does_not_exist(self):
         # If the rule doesn't have a repository owner grant, the input
@@ -210,14 +224,15 @@ class TestGitGranteeWidget(TestGitGranteeWidgetBase, TestCaseWithFactory):
         self.factory.makeGitRuleGrant(rule=self.rule)
         self.assertEqual(
             {"repository_owner": True, "person": True},
-            self.widget.show_options)
+            self.widget.show_options,
+        )
 
     @property
     def form(self):
         return {
             "field.grantee": "person",
             "field.grantee.person": self.person.name,
-            }
+        }
 
     def test_hasInput_not_in_form(self):
         # hasInput is false when the widget's name is not in the form data.
@@ -229,14 +244,16 @@ class TestGitGranteeWidget(TestGitGranteeWidgetBase, TestCaseWithFactory):
         # hasInput is false when the person radio button is selected and the
         # person widget's name is not in the form data.
         self.widget.request = LaunchpadTestRequest(
-            form={"field.grantee": "person"})
+            form={"field.grantee": "person"}
+        )
         self.assertEqual("field.grantee", self.widget.name)
         self.assertFalse(self.widget.hasInput())
 
     def test_hasInput_repository_owner(self):
         # hasInput is true when the repository owner radio button is selected.
         self.widget.request = LaunchpadTestRequest(
-            form={"field.grantee": "repository_owner"})
+            form={"field.grantee": "repository_owner"}
+        )
         self.assertEqual("field.grantee", self.widget.name)
         self.assertTrue(self.widget.hasInput())
 
@@ -266,7 +283,8 @@ class TestGitGranteeWidget(TestGitGranteeWidgetBase, TestCaseWithFactory):
         form["field.grantee"] = "repository_owner"
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertEqual(
-            GitGranteeType.REPOSITORY_OWNER, self.widget.getInputValue())
+            GitGranteeType.REPOSITORY_OWNER, self.widget.getInputValue()
+        )
 
     def test_getInputValue_person(self):
         # The field value is the person when the person radio button is
@@ -294,7 +312,8 @@ class TestGitGranteeWidget(TestGitGranteeWidgetBase, TestCaseWithFactory):
         self.widget.request = LaunchpadTestRequest(form=form)
         message = (
             "There is no person or team named 'non-existent' registered in "
-            "Launchpad")
+            "Launchpad"
+        )
         e = self.assertRaises(WidgetInputError, self.widget.getInputValue)
         self.assertEqual(LaunchpadValidationError(message), e.errors)
         self.assertEqual(html_escape(message), self.widget.error())

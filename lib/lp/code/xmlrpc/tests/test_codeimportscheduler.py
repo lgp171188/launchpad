@@ -17,10 +17,7 @@ from lp.code.xmlrpc.codeimportscheduler import CodeImportSchedulerAPI
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.webapp import canonical_url
-from lp.testing import (
-    run_with_login,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, run_with_login
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.xmlrpc.faults import NoSuchCodeImportJob
 
@@ -40,7 +37,8 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         person = getUtility(ILaunchpadCelebrities).vcs_imports.teamowner
         if running:
             return removeSecurityProxy(
-                run_with_login(person, make_running_import)).import_job
+                run_with_login(person, make_running_import)
+            ).import_job
         else:
             return run_with_login(person, self.factory.makeCodeImportJob)
 
@@ -59,17 +57,18 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         # getImportDataForJobID returns the worker arguments, target url and
         # log file name for an import corresponding to a particular job.
         self.pushConfig(
-            'codehosting', blacklisted_hostnames='localhost,127.0.0.1')
+            "codehosting", blacklisted_hostnames="localhost,127.0.0.1"
+        )
         code_import_job = self.makeCodeImportJob(running=True)
         code_import = removeSecurityProxy(code_import_job).code_import
         data = self.api.getImportDataForJobID(code_import_job.id)
         expected_data = {
-            'arguments': code_import_job.makeWorkerArguments(),
-            'target_url': canonical_url(code_import.target),
-            'log_file_name': '%s.log' % (
-                code_import.target.unique_name[1:].replace('/', '-')),
-            'blacklisted_hostnames': ['localhost', '127.0.0.1'],
-            }
+            "arguments": code_import_job.makeWorkerArguments(),
+            "target_url": canonical_url(code_import.target),
+            "log_file_name": "%s.log"
+            % (code_import.target.unique_name[1:].replace("/", "-")),
+            "blacklisted_hostnames": ["localhost", "127.0.0.1"],
+        }
         self.assertEqual(expected_data, data)
 
     def test_getImportDataForJobID_not_found(self):
@@ -78,8 +77,8 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         fault = self.api.getImportDataForJobID(-1)
         self.assertTrue(
             isinstance(fault, xmlrpc.client.Fault),
-            "getImportDataForJobID(-1) returned %r, not a Fault."
-            % (fault,))
+            "getImportDataForJobID(-1) returned %r, not a Fault." % (fault,),
+        )
         self.assertEqual(NoSuchCodeImportJob, fault.__class__)
 
     def test_updateHeartbeat(self):
@@ -88,17 +87,18 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         log_tail = self.factory.getUniqueUnicode()
         self.api.updateHeartbeat(code_import_job.id, log_tail)
         self.assertSqlAttributeEqualsDate(
-            code_import_job, 'heartbeat', UTC_NOW)
+            code_import_job, "heartbeat", UTC_NOW
+        )
         self.assertEqual(log_tail, code_import_job.logtail)
 
     def test_updateHeartbeat_not_found(self):
         # updateHeartbeat returns a NoSuchCodeImportJob fault when there is no
         # code import job with the given ID.
-        fault = self.api.updateHeartbeat(-1, '')
+        fault = self.api.updateHeartbeat(-1, "")
         self.assertTrue(
             isinstance(fault, xmlrpc.client.Fault),
-            "updateHeartbeat(-1, '') returned %r, not a Fault."
-            % (fault,))
+            "updateHeartbeat(-1, '') returned %r, not a Fault." % (fault,),
+        )
         self.assertEqual(NoSuchCodeImportJob, fault.__class__)
 
     def test_finishJobID_no_log_file(self):
@@ -107,11 +107,13 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         code_import_job = self.makeCodeImportJob(running=True)
         code_import = code_import_job.code_import
         self.api.finishJobID(
-            code_import_job.id, CodeImportResultStatus.SUCCESS.name, '')
+            code_import_job.id, CodeImportResultStatus.SUCCESS.name, ""
+        )
         # finishJob does many things, we just check one of them: setting
         # date_last_successful in the case of success.
         self.assertSqlAttributeEqualsDate(
-            code_import, 'date_last_successful', UTC_NOW)
+            code_import, "date_last_successful", UTC_NOW
+        )
 
     def test_finishJobID_with_log_file_alias_url(self):
         # finishJobID calls the finishJobID job workflow method and can parse
@@ -120,10 +122,11 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         code_import = code_import_job.code_import
         log_file_alias = self.factory.makeLibraryFileAlias()
         self.api.finishJobID(
-            code_import_job.id, CodeImportResultStatus.SUCCESS.name,
-            log_file_alias.http_url)
-        self.assertEqual(
-            log_file_alias, code_import.results.last().log_file)
+            code_import_job.id,
+            CodeImportResultStatus.SUCCESS.name,
+            log_file_alias.http_url,
+        )
+        self.assertEqual(log_file_alias, code_import.results.last().log_file)
 
     def test_finishJobID_with_log_file_data(self):
         # finishJobID calls the finishJobID job workflow method and uploads
@@ -131,11 +134,14 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         code_import_job = self.makeCodeImportJob(running=True)
         code_import = code_import_job.code_import
         self.api.finishJobID(
-            code_import_job.id, CodeImportResultStatus.SUCCESS.name,
-            xmlrpc.client.Binary(b'log file data\n'))
+            code_import_job.id,
+            CodeImportResultStatus.SUCCESS.name,
+            xmlrpc.client.Binary(b"log file data\n"),
+        )
         transaction.commit()
         self.assertEqual(
-            b'log file data\n', code_import.results.last().log_file.read())
+            b"log file data\n", code_import.results.last().log_file.read()
+        )
 
     def test_finishJobID_with_empty_log_file_data(self):
         # finishJobID calls the finishJobID job workflow method, but does
@@ -143,17 +149,21 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         code_import_job = self.makeCodeImportJob(running=True)
         code_import = code_import_job.code_import
         self.api.finishJobID(
-            code_import_job.id, CodeImportResultStatus.SUCCESS.name,
-            xmlrpc.client.Binary(b''))
+            code_import_job.id,
+            CodeImportResultStatus.SUCCESS.name,
+            xmlrpc.client.Binary(b""),
+        )
         self.assertIsNone(code_import.results.last().log_file)
 
     def test_finishJobID_not_found(self):
         # getImportDataForJobID returns a NoSuchCodeImportJob fault when there
         # is no code import job with the given ID.
         fault = self.api.finishJobID(
-            -1, CodeImportResultStatus.SUCCESS.name, '')
+            -1, CodeImportResultStatus.SUCCESS.name, ""
+        )
         self.assertTrue(
             isinstance(fault, xmlrpc.client.Fault),
             "finishJobID(-1, 'SUCCESS', 0) returned %r, not a Fault."
-            % (fault,))
+            % (fault,),
+        )
         self.assertEqual(NoSuchCodeImportJob, fault.__class__)

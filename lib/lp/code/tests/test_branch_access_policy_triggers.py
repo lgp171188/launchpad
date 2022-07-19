@@ -17,9 +17,14 @@ class TestBranchAccessPolicyTriggers(TestCaseWithFactory):
 
     def fetchPolicies(self, branch):
         # We may be dealing with private branches, so just ignore security.
-        return IStore(Branch).execute(
-            "SELECT access_policy, access_grants FROM branch WHERE id = ?",
-            (removeSecurityProxy(branch).id,)).get_one()
+        return (
+            IStore(Branch)
+            .execute(
+                "SELECT access_policy, access_grants FROM branch WHERE id = ?",
+                (removeSecurityProxy(branch).id,),
+            )
+            .get_one()
+        )
 
     def assertAccess(self, branch, expected_policy, expected_grants):
         policy, grants = self.fetchPolicies(branch)
@@ -34,9 +39,11 @@ class TestBranchAccessPolicyTriggers(TestCaseWithFactory):
         # Adding a new AAG updates the branch columns via trigger.
         owner = self.factory.makePerson()
         branch = self.factory.makeBranch(
-            information_type=InformationType.USERDATA, owner=owner)
+            information_type=InformationType.USERDATA, owner=owner
+        )
         [ap] = getUtility(IAccessPolicySource).find(
-            [(removeSecurityProxy(branch).product, InformationType.USERDATA)])
+            [(removeSecurityProxy(branch).product, InformationType.USERDATA)]
+        )
         self.assertAccess(branch, ap.id, [owner.id])
         artifact = self.factory.makeAccessArtifact(concrete=branch)
         grant = self.factory.makeAccessArtifactGrant(artifact=artifact)

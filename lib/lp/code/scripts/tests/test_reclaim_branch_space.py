@@ -7,13 +7,10 @@ import datetime
 import os
 import shutil
 
-from breezy.transport import get_transport
 import transaction
+from breezy.transport import get_transport
 
-from lp.code.model.branchjob import (
-    BranchJob,
-    BranchJobType,
-    )
+from lp.code.model.branchjob import BranchJob, BranchJobType
 from lp.codehosting.vfs import branch_id_to_path
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
@@ -46,7 +43,8 @@ class TestReclaimBranchSpaceScript(TestCaseWithFactory):
         # week ago.
         db_branch = self.factory.makeAnyBranch()
         mirrored_path = self.getBranchPath(
-            db_branch, config.codehosting.mirrored_branches_root)
+            db_branch, config.codehosting.mirrored_branches_root
+        )
         if os.path.exists(mirrored_path):
             shutil.rmtree(mirrored_path)
         os.makedirs(mirrored_path)
@@ -54,36 +52,43 @@ class TestReclaimBranchSpaceScript(TestCaseWithFactory):
         transaction.commit()
         # The first run doesn't remove anything yet.
         retcode, stdout, stderr = run_script(
-            'cronscripts/process-job-source.py',
-            ['IReclaimBranchSpaceJobSource'])
-        self.assertEqual('', stdout)
+            "cronscripts/process-job-source.py",
+            ["IReclaimBranchSpaceJobSource"],
+        )
+        self.assertEqual("", stdout)
         self.assertEqual(
-            'INFO    Creating lockfile: /var/lock/'
-            'launchpad-process-job-source-IReclaimBranchSpaceJobSource.lock\n'
-            'INFO    Running synchronously.\n', stderr)
+            "INFO    Creating lockfile: /var/lock/"
+            "launchpad-process-job-source-IReclaimBranchSpaceJobSource.lock\n"
+            "INFO    Running synchronously.\n",
+            stderr,
+        )
         self.assertEqual(0, retcode)
-        self.assertTrue(
-            os.path.exists(mirrored_path))
+        self.assertTrue(os.path.exists(mirrored_path))
         # Now pretend that the branch was deleted 8 days ago.
-        reclaim_job = IStore(BranchJob).find(
-            BranchJob,
-            BranchJob.job_type == BranchJobType.RECLAIM_BRANCH_SPACE).one()
+        reclaim_job = (
+            IStore(BranchJob)
+            .find(
+                BranchJob,
+                BranchJob.job_type == BranchJobType.RECLAIM_BRANCH_SPACE,
+            )
+            .one()
+        )
         reclaim_job.job.scheduled_start -= datetime.timedelta(days=8)
         transaction.commit()
         # The script will now remove the branch from disk.
         retcode, stdout, stderr = run_script(
-            'cronscripts/process-job-source.py',
-            ['IReclaimBranchSpaceJobSource'])
-        self.assertEqual('', stdout)
+            "cronscripts/process-job-source.py",
+            ["IReclaimBranchSpaceJobSource"],
+        )
+        self.assertEqual("", stdout)
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            'INFO    Creating lockfile: /var/lock/'
-            'launchpad-process-job-source-IReclaimBranchSpaceJobSource.lock\n'
-            'INFO    Running synchronously.\n'
-            'INFO    Running <RECLAIM_BRANCH_SPACE branch job \\(\\d+\\) for '
-            '\\d+> \\(ID %s\\) in status Waiting\n'
-            'INFO    Ran 1 ReclaimBranchSpaceJob jobs.\n' %
-            reclaim_job.job.id,
-            stderr)
+            "INFO    Creating lockfile: /var/lock/"
+            "launchpad-process-job-source-IReclaimBranchSpaceJobSource.lock\n"
+            "INFO    Running synchronously.\n"
+            "INFO    Running <RECLAIM_BRANCH_SPACE branch job \\(\\d+\\) for "
+            "\\d+> \\(ID %s\\) in status Waiting\n"
+            "INFO    Ran 1 ReclaimBranchSpaceJob jobs.\n" % reclaim_job.job.id,
+            stderr,
+        )
         self.assertEqual(0, retcode)
-        self.assertFalse(
-            os.path.exists(mirrored_path))
+        self.assertFalse(os.path.exists(mirrored_path))

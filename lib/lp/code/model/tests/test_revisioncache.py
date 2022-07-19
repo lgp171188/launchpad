@@ -3,10 +3,7 @@
 
 """Tests relating to the revision cache."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 import pytz
 from zope.component import getUtility
@@ -15,10 +12,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.code.interfaces.revisioncache import IRevisionCache
 from lp.code.model.revision import RevisionCache
 from lp.services.database.interfaces import IStore
-from lp.testing import (
-    TestCaseWithFactory,
-    time_counter,
-    )
+from lp.testing import TestCaseWithFactory, time_counter
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -80,8 +74,9 @@ class TestRevisionCache(TestCaseWithFactory):
         results = IStore(RevisionCache).find(RevisionCache)
         self.assertEqual(0, results.count())
 
-    def makeCachedRevision(self, revision=None, product=None,
-                           package=None, private=False):
+    def makeCachedRevision(
+        self, revision=None, product=None, package=None, private=False
+    ):
         # A factory method for RevisionCache objects.
         if revision is None:
             revision = self.factory.makeRevision()
@@ -104,14 +99,17 @@ class TestRevisionCache(TestCaseWithFactory):
         # Revisions are returned most recent first.
         tc = time_counter(
             origin=datetime.now(pytz.UTC) - timedelta(days=15),
-            delta=timedelta(days=1))
+            delta=timedelta(days=1),
+        )
         # Make four cached revisions spanning 15, 14, 13 and 12 days ago.
         # Create from oldest to newest, then check that the ordering from the
         # query is the reverse order.
         revisions = [
             self.makeCachedRevision(
-                revision=self.factory.makeRevision(revision_date=next(tc)))
-            for i in range(4)]
+                revision=self.factory.makeRevision(revision_date=next(tc))
+            )
+            for i in range(4)
+        ]
         revisions.reverse()
         cache = getUtility(IRevisionCache)
         self.assertEqual(revisions, list(cache.getRevisions()))
@@ -125,7 +123,8 @@ class TestRevisionCache(TestCaseWithFactory):
         self.makeCachedRevision(revision, product=self.factory.makeProduct())
         # And the same revision in a source package.
         self.makeCachedRevision(
-            revision, package=self.factory.makeSourcePackage())
+            revision, package=self.factory.makeSourcePackage()
+        )
         cache = getUtility(IRevisionCache)
         self.assertEqual(1, cache.count())
 
@@ -134,20 +133,24 @@ class TestRevisionCache(TestCaseWithFactory):
         # revision cache table hasn't been trimmed lately.
         tc = time_counter(
             origin=datetime.now(pytz.UTC) - timedelta(days=27),
-            delta=timedelta(days=-2))
+            delta=timedelta(days=-2),
+        )
         # Make four cached revisions spanning 33, 31, 29, and 27 days ago.
         for i in range(4):
             self.makeCachedRevision(
-                revision=self.factory.makeRevision(revision_date=next(tc)))
+                revision=self.factory.makeRevision(revision_date=next(tc))
+            )
         cache = getUtility(IRevisionCache)
         self.assertEqual(2, cache.count())
 
-    def assertCollectionContents(self, expected_revisions,
-                                 revision_collection):
+    def assertCollectionContents(
+        self, expected_revisions, revision_collection
+    ):
         # Check that the revisions returned from the revision collection match
         # the expected revisions.
         self.assertContentEqual(
-            expected_revisions, revision_collection.getRevisions())
+            expected_revisions, revision_collection.getRevisions()
+        )
 
     def test_private_revisions(self):
         # Private flags are honoured when only requesting public revisions.
@@ -169,7 +172,8 @@ class TestRevisionCache(TestCaseWithFactory):
         # Limiting to public revisions does not get the private revisions.
         self.assertEqual(2, cache.public().count())
         self.assertCollectionContents(
-            [revision, public_revision], cache.public())
+            [revision, public_revision], cache.public()
+        )
 
     def test_in_product(self):
         # Revisions in a particular product can be restricted using the
@@ -197,7 +201,8 @@ class TestRevisionCache(TestCaseWithFactory):
         self.makeCachedRevision(product=self.factory.makeProduct())
         self.makeCachedRevision()
         revision_cache = getUtility(IRevisionCache).inProjectGroup(
-            projectgroup)
+            projectgroup
+        )
         self.assertCollectionContents([rev1, rev2], revision_cache)
 
     def test_in_source_package(self):
@@ -211,7 +216,8 @@ class TestRevisionCache(TestCaseWithFactory):
         self.makeCachedRevision(package=self.factory.makeSourcePackage())
         self.makeCachedRevision()
         revision_cache = getUtility(IRevisionCache).inSourcePackage(
-            sourcepackage)
+            sourcepackage
+        )
         self.assertCollectionContents([rev1, rev2], revision_cache)
 
     def test_in_distribution(self):
@@ -223,11 +229,11 @@ class TestRevisionCache(TestCaseWithFactory):
         # Two revisions associated with sourcepackages in the series for the
         # distro.
         rev1 = self.makeCachedRevision(
-            package=self.factory.makeSourcePackage(
-                distroseries=distroseries1))
+            package=self.factory.makeSourcePackage(distroseries=distroseries1)
+        )
         rev2 = self.makeCachedRevision(
-            package=self.factory.makeSourcePackage(
-                distroseries=distroseries2))
+            package=self.factory.makeSourcePackage(distroseries=distroseries2)
+        )
         # Make two other revisions, on in a different product, and another
         # general one.
         self.makeCachedRevision(package=self.factory.makeSourcePackage())
@@ -244,21 +250,22 @@ class TestRevisionCache(TestCaseWithFactory):
         # Two revisions associated with sourcepackages in the distro series we
         # care about.
         rev1 = self.makeCachedRevision(
-            package=self.factory.makeSourcePackage(
-                distroseries=distroseries1))
+            package=self.factory.makeSourcePackage(distroseries=distroseries1)
+        )
         rev2 = self.makeCachedRevision(
-            package=self.factory.makeSourcePackage(
-                distroseries=distroseries1))
+            package=self.factory.makeSourcePackage(distroseries=distroseries1)
+        )
         # Make some other revisions.  Same distro, different series.
         self.makeCachedRevision(
-            package=self.factory.makeSourcePackage(
-                distroseries=distroseries2))
+            package=self.factory.makeSourcePackage(distroseries=distroseries2)
+        )
         # Different distro source package revision.
         self.makeCachedRevision(package=self.factory.makeSourcePackage())
         # Some other revision.
         self.makeCachedRevision()
         revision_cache = getUtility(IRevisionCache).inDistroSeries(
-            distroseries1)
+            distroseries1
+        )
         self.assertCollectionContents([rev1, rev2], revision_cache)
 
     def test_in_distribution_source_package(self):
@@ -272,23 +279,26 @@ class TestRevisionCache(TestCaseWithFactory):
         sourcepackagename = self.factory.makeSourcePackageName()
         rev1 = self.makeCachedRevision(
             package=self.factory.makeSourcePackage(
-                distroseries=distroseries1,
-                sourcepackagename=sourcepackagename))
+                distroseries=distroseries1, sourcepackagename=sourcepackagename
+            )
+        )
         rev2 = self.makeCachedRevision(
             package=self.factory.makeSourcePackage(
-                distroseries=distroseries2,
-                sourcepackagename=sourcepackagename))
+                distroseries=distroseries2, sourcepackagename=sourcepackagename
+            )
+        )
         # Make some other revisions.  Same distroseries, different source
         # package.
         self.makeCachedRevision(
-            package=self.factory.makeSourcePackage(
-                distroseries=distroseries1))
+            package=self.factory.makeSourcePackage(distroseries=distroseries1)
+        )
         # Different distro source package revision.
         self.makeCachedRevision(package=self.factory.makeSourcePackage())
         # Some other revision.
         self.makeCachedRevision()
         dsp = self.factory.makeDistributionSourcePackage(
-            distribution=distro, sourcepackagename=sourcepackagename)
+            distribution=distro, sourcepackagename=sourcepackagename
+        )
         revision_cache = getUtility(IRevisionCache)
         revision_cache = revision_cache.inDistributionSourcePackage(dsp)
         self.assertCollectionContents([rev1, rev2], revision_cache)
@@ -309,7 +319,8 @@ class TestRevisionCache(TestCaseWithFactory):
         eric, rev1 = self.makePersonAndLinkedRevision()
         # Make a second revision by eric.
         rev2 = self.makeCachedRevision(
-            self.factory.makeRevision(rev1.revision_author.name))
+            self.factory.makeRevision(rev1.revision_author.name)
+        )
         # Other revisions have other authors.
         self.makeCachedRevision()
         revision_cache = getUtility(IRevisionCache).authoredBy(eric)
@@ -340,7 +351,8 @@ class TestRevisionCache(TestCaseWithFactory):
         # different revision names linked to the same person.
         revisions = [
             self.makeCachedRevision(revision=self.factory.makeRevision())
-            for i in range(4)]
+            for i in range(4)
+        ]
         # Make revisions [2] and [3] linked to the same person.
         person = self.factory.makePerson()
         removeSecurityProxy(revisions[2].revision_author).person = person
@@ -353,7 +365,10 @@ class TestRevisionCache(TestCaseWithFactory):
         # but not linked to a Launchpad person, then that revision_text is
         # counted as one author.
         for counter in range(4):
-            self.makeCachedRevision(revision=self.factory.makeRevision(
-                author="Foo <foo@example.com>"))
+            self.makeCachedRevision(
+                revision=self.factory.makeRevision(
+                    author="Foo <foo@example.com>"
+                )
+            )
         revision_cache = getUtility(IRevisionCache)
         self.assertEqual(1, revision_cache.authorCount())

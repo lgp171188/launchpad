@@ -6,20 +6,13 @@
 __all__ = [
     "GitBranchVocabulary",
     "GitRefVocabulary",
-    ]
+]
 
 from lazr.restful.interfaces import IReference
 from storm.databases.postgres import Case
-from storm.expr import (
-    Desc,
-    Like,
-    like_escape,
-    )
+from storm.expr import Desc, Like, like_escape
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 from zope.schema.vocabulary import SimpleTerm
 from zope.security.proxy import isinstance as zope_isinstance
 
@@ -27,21 +20,17 @@ from lp.code.interfaces.gitref import IGitRefRemoteSet
 from lp.code.interfaces.gitrepository import (
     IGitRepository,
     IHasGitRepositoryURL,
-    )
-from lp.code.model.gitref import (
-    GitRef,
-    GitRefRemote,
-    )
+)
+from lp.code.model.gitref import GitRef, GitRefRemote
 from lp.services.database.interfaces import IStore
 from lp.services.webapp.vocabulary import (
     CountableIterator,
     IHugeVocabulary,
     StormVocabularyBase,
-    )
+)
 
 
 class IRepositoryManagerGitRefVocabulary(Interface):
-
     def setRepository(self, repository):
         """Set the repository after the vocabulary was instantiated."""
 
@@ -67,8 +56,9 @@ class GitRefVocabulary(StormVocabularyBase):
         except TypeError:
             self.repository = None
         try:
-            self.repository_url = (
-                IHasGitRepositoryURL(context).git_repository_url)
+            self.repository_url = IHasGitRepositoryURL(
+                context
+            ).git_repository_url
         except TypeError:
             self.repository_url = None
 
@@ -89,11 +79,9 @@ class GitRefVocabulary(StormVocabularyBase):
     def _order_by(self):
         rank = Case(
             cases=[(self._table.path == self.repository.default_branch, 2)],
-            default=1)
-        return [
-            Desc(rank),
-            Desc(self._table.committer_date),
-            self._table.path]
+            default=1,
+        )
+        return [Desc(rank), Desc(self._table.committer_date), self._table.path]
 
     def toTerm(self, ref):
         """See `StormVocabularyBase`."""
@@ -123,10 +111,15 @@ class GitRefVocabulary(StormVocabularyBase):
             return CountableIterator(0, [], self.toTerm)
         if self.repository is not None:
             pattern = self._makePattern(query=query)
-            results = IStore(self._table).find(
-                self._table,
-                self._table.repository_id == self.repository.id,
-                Like(self._table.path, pattern, "!")).order_by(self._order_by)
+            results = (
+                IStore(self._table)
+                .find(
+                    self._table,
+                    self._table.repository_id == self.repository.id,
+                    Like(self._table.path, pattern, "!"),
+                )
+                .order_by(self._order_by)
+            )
         else:
             results = self.emptySelectResults()
         return CountableIterator(results.count(), results, self.toTerm)

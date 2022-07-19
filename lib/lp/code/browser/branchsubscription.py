@@ -2,32 +2,29 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BranchPortletSubscribersContent',
-    'BranchSubscriptionAddOtherView',
-    'BranchSubscriptionAddView',
-    'BranchSubscriptionEditOwnView',
-    'BranchSubscriptionEditView',
-    ]
+    "BranchPortletSubscribersContent",
+    "BranchSubscriptionAddOtherView",
+    "BranchSubscriptionAddView",
+    "BranchSubscriptionEditOwnView",
+    "BranchSubscriptionEditView",
+]
 
 from zope.component import getUtility
 
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+    action,
+)
 from lp.app.interfaces.services import IService
 from lp.code.enums import BranchSubscriptionNotificationLevel
 from lp.code.interfaces.branchsubscription import IBranchSubscription
 from lp.registry.interfaces.person import IPersonSet
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp import LaunchpadView, canonical_url
 from lp.services.webapp.authorization import (
     check_permission,
     precache_permission_for_objects,
-    )
+)
 from lp.services.webapp.escaping import structured
 
 
@@ -42,20 +39,28 @@ class BranchPortletSubscribersContent(LaunchpadView):
         # the expense of running several complex SQL queries.
         subscriptions = list(self.context.subscriptions)
         person_ids = [sub.person_id for sub in subscriptions]
-        list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-            person_ids, need_validity=True))
+        list(
+            getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+                person_ids, need_validity=True
+            )
+        )
         if self.user is not None:
             subscribers = [
-                subscription.person for subscription in subscriptions]
+                subscription.person for subscription in subscriptions
+            ]
             precache_permission_for_objects(
-                self.request, "launchpad.LimitedView", subscribers)
+                self.request, "launchpad.LimitedView", subscribers
+            )
 
         visible_subscriptions = [
-            subscription for subscription in subscriptions
-            if check_permission('launchpad.LimitedView', subscription.person)]
+            subscription
+            for subscription in subscriptions
+            if check_permission("launchpad.LimitedView", subscription.person)
+        ]
         return sorted(
             visible_subscriptions,
-            key=lambda subscription: subscription.person.displayname)
+            key=lambda subscription: subscription.person.displayname,
+        )
 
 
 class _BranchSubscriptionView(LaunchpadFormView):
@@ -63,11 +68,12 @@ class _BranchSubscriptionView(LaunchpadFormView):
     """Contains the common functionality of the Add and Edit views."""
 
     schema = IBranchSubscription
-    field_names = ['notification_level', 'max_diff_lines', 'review_level']
+    field_names = ["notification_level", "max_diff_lines", "review_level"]
 
     LEVELS_REQUIRING_LINES_SPECIFICATION = (
         BranchSubscriptionNotificationLevel.DIFFSONLY,
-        BranchSubscriptionNotificationLevel.FULL)
+        BranchSubscriptionNotificationLevel.FULL,
+    )
 
     @property
     def user_is_subscribed(self):
@@ -82,17 +88,21 @@ class _BranchSubscriptionView(LaunchpadFormView):
 
     cancel_url = next_url
 
-    def add_notification_message(self, initial, notification_level,
-                                 max_diff_lines, review_level):
+    def add_notification_message(
+        self, initial, notification_level, max_diff_lines, review_level
+    ):
         if notification_level in self.LEVELS_REQUIRING_LINES_SPECIFICATION:
-            lines_message = '<li>%s</li>' % max_diff_lines.description
+            lines_message = "<li>%s</li>" % max_diff_lines.description
         else:
-            lines_message = ''
+            lines_message = ""
 
-        format_str = '%%s<ul><li>%%s</li>%s<li>%%s</li></ul>' % lines_message
+        format_str = "%%s<ul><li>%%s</li>%s<li>%%s</li></ul>" % lines_message
         message = structured(
-            format_str, initial, notification_level.description,
-            review_level.description)
+            format_str,
+            initial,
+            notification_level.description,
+            review_level.description,
+        )
         self.request.response.addNotification(message)
 
     def optional_max_diff_lines(self, notification_level, max_diff_lines):
@@ -112,31 +122,39 @@ class BranchSubscriptionAddView(_BranchSubscriptionView):
         # subscribed before continuing.
         if self.context.hasSubscription(self.user):
             self.request.response.addNotification(
-                'You are already subscribed to this branch.')
+                "You are already subscribed to this branch."
+            )
         else:
-            notification_level = data['notification_level']
+            notification_level = data["notification_level"]
             max_diff_lines = self.optional_max_diff_lines(
-                notification_level, data['max_diff_lines'])
-            review_level = data['review_level']
+                notification_level, data["max_diff_lines"]
+            )
+            review_level = data["review_level"]
 
             self.context.subscribe(
-                self.user, notification_level, max_diff_lines, review_level,
-                self.user)
+                self.user,
+                notification_level,
+                max_diff_lines,
+                review_level,
+                self.user,
+            )
 
             self.add_notification_message(
-                'You have subscribed to this branch with: ',
-                notification_level, max_diff_lines, review_level)
+                "You have subscribed to this branch with: ",
+                notification_level,
+                max_diff_lines,
+                review_level,
+            )
 
 
 class BranchSubscriptionEditOwnView(_BranchSubscriptionView):
-
     @property
     def label(self):
         return "Edit subscription to branch"
 
     @property
     def page_title(self):
-        return 'Edit subscription to branch %s' % self.context.displayname
+        return "Edit subscription to branch %s" % self.context.displayname
 
     @property
     def initial_values(self):
@@ -145,29 +163,33 @@ class BranchSubscriptionEditOwnView(_BranchSubscriptionView):
             # This is the case of URL hacking or stale page.
             return {}
         else:
-            return {'notification_level': subscription.notification_level,
-                    'max_diff_lines': subscription.max_diff_lines,
-                    'review_level': subscription.review_level}
+            return {
+                "notification_level": subscription.notification_level,
+                "max_diff_lines": subscription.max_diff_lines,
+                "review_level": subscription.review_level,
+            }
 
     @action("Change")
     def change_details(self, action, data):
         # Be proactive in the checking to catch the stale post problem.
         if self.context.hasSubscription(self.user):
             subscription = self.context.getSubscription(self.user)
-            subscription.notification_level = data['notification_level']
+            subscription.notification_level = data["notification_level"]
             subscription.max_diff_lines = self.optional_max_diff_lines(
-                subscription.notification_level,
-                data['max_diff_lines'])
-            subscription.review_level = data['review_level']
+                subscription.notification_level, data["max_diff_lines"]
+            )
+            subscription.review_level = data["review_level"]
 
             self.add_notification_message(
-                'Subscription updated to: ',
+                "Subscription updated to: ",
                 subscription.notification_level,
                 subscription.max_diff_lines,
-                subscription.review_level)
+                subscription.review_level,
+            )
         else:
             self.request.response.addNotification(
-                'You are not subscribed to this branch.')
+                "You are not subscribed to this branch."
+            )
 
     @action("Unsubscribe")
     def unsubscribe(self, action, data):
@@ -175,17 +197,23 @@ class BranchSubscriptionEditOwnView(_BranchSubscriptionView):
         if self.context.hasSubscription(self.user):
             self.context.unsubscribe(self.user, self.user)
             self.request.response.addNotification(
-                "You have unsubscribed from this branch.")
+                "You have unsubscribed from this branch."
+            )
         else:
             self.request.response.addNotification(
-                'You are not subscribed to this branch.')
+                "You are not subscribed to this branch."
+            )
 
 
 class BranchSubscriptionAddOtherView(_BranchSubscriptionView):
     """View used to subscribe someone other than the current user."""
 
     field_names = [
-        'person', 'notification_level', 'max_diff_lines', 'review_level']
+        "person",
+        "notification_level",
+        "max_diff_lines",
+        "review_level",
+    ]
     for_input = True
 
     # Since we are subscribing other people, the current user
@@ -195,37 +223,51 @@ class BranchSubscriptionAddOtherView(_BranchSubscriptionView):
     page_title = label = "Subscribe to branch"
 
     def validate(self, data):
-        if 'person' in data:
-            person = data['person']
+        if "person" in data:
+            person = data["person"]
             subscription = self.context.getSubscription(person)
             if subscription is None and not self.context.userCanBeSubscribed(
-                person):
-                self.setFieldError('person', "Open and delegated teams "
-                "cannot be subscribed to private branches.")
+                person
+            ):
+                self.setFieldError(
+                    "person",
+                    "Open and delegated teams "
+                    "cannot be subscribed to private branches.",
+                )
 
     @action("Subscribe", name="subscribe_action")
     def subscribe_action(self, action, data):
         """Subscribe the specified user to the branch."""
-        notification_level = data['notification_level']
+        notification_level = data["notification_level"]
         max_diff_lines = self.optional_max_diff_lines(
-            notification_level, data['max_diff_lines'])
-        review_level = data['review_level']
-        person = data['person']
+            notification_level, data["max_diff_lines"]
+        )
+        review_level = data["review_level"]
+        person = data["person"]
         subscription = self.context.getSubscription(person)
         if subscription is None:
             self.context.subscribe(
-                person, notification_level, max_diff_lines, review_level,
-                self.user)
+                person,
+                notification_level,
+                max_diff_lines,
+                review_level,
+                self.user,
+            )
             self.add_notification_message(
-                '%s has been subscribed to this branch with: '
-                % person.displayname, notification_level, max_diff_lines,
-                review_level)
+                "%s has been subscribed to this branch with: "
+                % person.displayname,
+                notification_level,
+                max_diff_lines,
+                review_level,
+            )
         else:
             self.add_notification_message(
-                '%s was already subscribed to this branch with: '
+                "%s was already subscribed to this branch with: "
                 % person.displayname,
-                subscription.notification_level, subscription.max_diff_lines,
-                review_level)
+                subscription.notification_level,
+                subscription.max_diff_lines,
+                review_level,
+            )
 
 
 class BranchSubscriptionEditView(LaunchpadEditFormView):
@@ -235,12 +277,13 @@ class BranchSubscriptionEditView(LaunchpadEditFormView):
     through the branch action item to edit the user's own subscription.
     This is the only current way to edit a team branch subscription.
     """
+
     schema = IBranchSubscription
-    field_names = ['notification_level', 'max_diff_lines', 'review_level']
+    field_names = ["notification_level", "max_diff_lines", "review_level"]
 
     @property
     def page_title(self):
-        return 'Edit subscription to branch %s' % self.branch.displayname
+        return "Edit subscription to branch %s" % self.branch.displayname
 
     @property
     def label(self):
@@ -262,16 +305,17 @@ class BranchSubscriptionEditView(LaunchpadEditFormView):
         self.branch.unsubscribe(self.person, self.user)
         self.request.response.addNotification(
             "%s has been unsubscribed from this branch."
-            % self.person.displayname)
+            % self.person.displayname
+        )
 
     @property
     def next_url(self):
         url = canonical_url(self.branch)
         # If the subscriber can no longer see the branch, redirect them away.
-        service = getUtility(IService, 'sharing')
+        service = getUtility(IService, "sharing")
         branches = service.getVisibleArtifacts(
-            self.person, branches=[self.branch],
-            ignore_permissions=True)["branches"]
+            self.person, branches=[self.branch], ignore_permissions=True
+        )["branches"]
         if not branches:
             url = canonical_url(self.branch.target)
         return url

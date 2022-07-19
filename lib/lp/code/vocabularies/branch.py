@@ -4,10 +4,10 @@
 """Vocabularies that contain branches."""
 
 __all__ = [
-    'BranchRestrictedOnProductVocabulary',
-    'BranchVocabulary',
-    'HostedBranchRestrictedOnOwnerVocabulary',
-    ]
+    "BranchRestrictedOnProductVocabulary",
+    "BranchVocabulary",
+    "HostedBranchRestrictedOnOwnerVocabulary",
+]
 
 from zope.component import getUtility
 from zope.interface import implementer
@@ -25,7 +25,7 @@ from lp.services.webapp.vocabulary import (
     CountableIterator,
     IHugeVocabulary,
     SQLObjectVocabularyBase,
-    )
+)
 
 
 @implementer(IHugeVocabulary)
@@ -33,9 +33,9 @@ class BranchVocabulary(SQLObjectVocabularyBase):
     """A vocabulary for searching branches."""
 
     _table = Branch
-    _orderBy = ['name', 'id']
-    displayname = 'Select a branch'
-    step_title = 'Search'
+    _orderBy = ["name", "id"]
+    displayname = "Select a branch"
+    step_title = "Search"
 
     def toTerm(self, branch):
         """The display should include the URL if there is one."""
@@ -79,7 +79,7 @@ class BranchRestrictedOnProductVocabulary(BranchVocabulary):
             self.product = self.context.product
         else:
             # An unexpected type.
-            raise AssertionError('Unexpected context type')
+            raise AssertionError("Unexpected context type")
 
     def _getCollection(self):
         return getUtility(IAllBranches).inProduct(self.product).isExclusive()

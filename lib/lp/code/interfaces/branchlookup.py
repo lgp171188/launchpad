@@ -4,18 +4,18 @@
 """Utility for looking up branches by name."""
 
 __all__ = [
-    'get_first_path_result',
-    'IBranchLookup',
-    'ILinkedBranchTraversable',
-    'ILinkedBranchTraverser',
-    ]
+    "get_first_path_result",
+    "IBranchLookup",
+    "ILinkedBranchTraversable",
+    "ILinkedBranchTraverser",
+]
 
 from zope.interface import Interface
 
 from lp.code.interfaces.codehosting import (
     BRANCH_ALIAS_PREFIX,
     BRANCH_ID_ALIAS_PREFIX,
-    )
+)
 from lp.services.utils import iter_split
 
 
@@ -162,30 +162,30 @@ class IBranchLookup(Interface):
 
 
 def path_lookups(path):
-    if path.startswith(BRANCH_ID_ALIAS_PREFIX + '/'):
+    if path.startswith(BRANCH_ID_ALIAS_PREFIX + "/"):
         try:
-            parts = path.split('/', 2)
+            parts = path.split("/", 2)
             branch_id = int(parts[1])
         except (ValueError, IndexError):
             return
-        trailing = '/'.join([''] + parts[2:])
-        yield {'type': 'id', 'branch_id': branch_id, 'trailing': trailing}
+        trailing = "/".join([""] + parts[2:])
+        yield {"type": "id", "branch_id": branch_id, "trailing": trailing}
         return
-    alias_prefix_trailing = BRANCH_ALIAS_PREFIX + '/'
+    alias_prefix_trailing = BRANCH_ALIAS_PREFIX + "/"
     if path.startswith(alias_prefix_trailing):
-        yield {'type': 'alias', 'lp_path': path[len(alias_prefix_trailing):]}
+        yield {"type": "alias", "lp_path": path[len(alias_prefix_trailing) :]}
         return
-    for unique_name, trailing in iter_split(path, '/', [5, 3]):
+    for unique_name, trailing in iter_split(path, "/", [5, 3]):
         yield {
-            'type': 'branch_name',
-            'unique_name': unique_name,
-            'trailing': trailing,
+            "type": "branch_name",
+            "unique_name": unique_name,
+            "trailing": trailing,
         }
-    for control_name, trailing in iter_split(path, '/', [4, 2]):
+    for control_name, trailing in iter_split(path, "/", [4, 2]):
         yield {
-            'type': 'control_name',
-            'control_name': control_name,
-            'trailing': trailing,
+            "type": "control_name",
+            "control_name": control_name,
+            "trailing": trailing,
         }
 
 

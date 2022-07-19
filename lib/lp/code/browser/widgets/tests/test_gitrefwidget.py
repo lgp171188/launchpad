@@ -2,20 +2,14 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from lazr.restful.fields import Reference
-from testscenarios import (
-    load_tests_apply_scenarios,
-    WithScenarios,
-    )
+from testscenarios import WithScenarios, load_tests_apply_scenarios
 from zope.component import getUtility
 from zope.formlib.interfaces import (
     IBrowserWidget,
     IInputWidget,
     WidgetInputError,
-    )
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+)
+from zope.interface import Interface, implementer
 from zope.schema import ValidationError
 
 from lp.app.validators import LaunchpadValidationError
@@ -25,11 +19,7 @@ from lp.code.vocabularies.gitrepository import GitRepositoryVocabulary
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    verifyObject,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in, verifyObject
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -49,12 +39,13 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
     scenarios = [
         ("disallow_external", {"allow_external": False}),
         ("allow_external", {"allow_external": True}),
-        ]
+    ]
 
     def setUp(self):
         super().setUp()
         field = Reference(
-            __name__="git_ref", schema=Interface, title="Git reference")
+            __name__="git_ref", schema=Interface, title="Git reference"
+        )
         self.context = Thing()
         field = field.bind(self.context)
         request = LaunchpadTestRequest()
@@ -68,7 +59,8 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
     def test_template(self):
         self.assertTrue(
             self.widget.template.filename.endswith("gitref.pt"),
-            "Template was not set up.")
+            "Template was not set up.",
+        )
 
     def test_setUpSubWidgets_first_call(self):
         # The subwidgets are set up and a flag is set.
@@ -76,7 +68,8 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         self.assertTrue(self.widget._widgets_set_up)
         self.assertIsInstance(
             self.widget.repository_widget.context.vocabulary,
-            GitRepositoryVocabulary)
+            GitRepositoryVocabulary,
+        )
         self.assertIsNotNone(self.widget.path_widget)
 
     def test_setUpSubWidgets_second_call(self):
@@ -94,7 +87,8 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         [ref] = self.factory.makeGitRefs()
         self.widget.setRenderedValue(ref)
         self.assertEqual(
-            ref.repository, self.widget.repository_widget._getCurrentValue())
+            ref.repository, self.widget.repository_widget._getCurrentValue()
+        )
         self.assertEqual(ref.path, self.widget.path_widget._getCurrentValue())
 
     def test_setRenderedValue_external(self):
@@ -120,7 +114,7 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         form = {
             "field.git_ref.repository": "",
             "field.git_ref.path": "",
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertEqual("field.git_ref", self.widget.name)
         self.assertTrue(self.widget.hasInput())
@@ -131,7 +125,7 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         form = {
             "field.git_ref.repository": "non-existent",
             "field.git_ref.path": "non-existent",
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertFalse(self.widget.hasValidInput())
 
@@ -141,7 +135,7 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         form = {
             "field.git_ref.repository": ref.repository.unique_name,
             "field.git_ref.path": ref.path,
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertTrue(self.widget.hasValidInput())
 
@@ -161,7 +155,7 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         # An error is raised when the repository field is missing.
         form = {
             "field.git_ref.path": "master",
-            }
+        }
         self.assertGetInputValueError(form, "Please choose a Git repository.")
 
     def test_getInputValue_repository_invalid(self):
@@ -169,11 +163,12 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         form = {
             "field.git_ref.repository": "non-existent",
             "field.git_ref.path": "master",
-            }
+        }
         self.assertGetInputValueError(
             form,
             "There is no Git repository named 'non-existent' registered in "
-            "Launchpad.")
+            "Launchpad.",
+        )
 
     def test_getInputValue_repository_invalid_url(self):
         # An error is raised when the repository field is set to an invalid
@@ -181,11 +176,12 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         form = {
             "field.git_ref.repository": "file:///etc/shadow",
             "field.git_ref.path": "master",
-            }
+        }
         self.assertGetInputValueError(
             form,
             "There is no Git repository named 'file:///etc/shadow' "
-            "registered in Launchpad.")
+            "registered in Launchpad.",
+        )
 
     def test_getInputValue_path_empty(self):
         # An error is raised when the path field is empty.
@@ -193,7 +189,7 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         form = {
             "field.git_ref.repository": repository.unique_name,
             "field.git_ref.path": "",
-            }
+        }
         self.assertValidationError(form, "Required input is missing.")
 
     def test_getInputValue_path_invalid(self):
@@ -203,11 +199,12 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         form = {
             "field.git_ref.repository": ref.repository.unique_name,
             "field.git_ref.path": "non-existent",
-            }
+        }
         self.assertGetInputValueError(
             form,
             "The repository at %s does not contain a branch named "
-            "'non-existent'." % ref.repository.display_name)
+            "'non-existent'." % ref.repository.display_name,
+        )
 
     def test_getInputValue_empty_not_required(self):
         # If the field is not required, empty input fields are allowed.
@@ -215,7 +212,7 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         form = {
             "field.git_ref.repository": "",
             "field.git_ref.path": "",
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertIsNone(self.widget.getInputValue())
 
@@ -226,7 +223,7 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         form = {
             "field.git_ref.repository": ref.repository.unique_name,
             "field.git_ref.path": ref.path,
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertEqual(ref, self.widget.getInputValue())
 
@@ -236,7 +233,7 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         form = {
             "field.git_ref.repository": ref.repository.unique_name,
             "field.git_ref.path": ref.name,
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertEqual(ref, self.widget.getInputValue())
 
@@ -246,7 +243,7 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         form = {
             "field.git_ref.repository": ref.repository_url,
             "field.git_ref.path": ref.path,
-            }
+        }
         if self.allow_external:
             self.widget.request = LaunchpadTestRequest(form=form)
             self.assertEqual(ref, self.widget.getInputValue())
@@ -254,7 +251,8 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
             self.assertGetInputValueError(
                 form,
                 "There is no Git repository named '%s' registered in "
-                "Launchpad." % ref.repository_url)
+                "Launchpad." % ref.repository_url,
+            )
 
     def test_getInputValue_owner_default_short_form(self):
         owner = self.factory.makePerson()
@@ -263,23 +261,25 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         [ref] = self.factory.makeGitRefs(repository=repo)
         with person_logged_in(repo.owner):
             getUtility(IGitRepositorySet).setDefaultRepositoryForOwner(
-                owner, target, repo, owner)
+                owner, target, repo, owner
+            )
         short_url = "~{}/{}".format(owner.name, target.name)
         form = {
             "field.git_ref.repository": short_url,
             "field.git_ref.path": ref.path,
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertEqual(ref, self.widget.getInputValue())
 
     def test_getInputValue_with_branch_validator_valid(self):
         def validator(ref):
             return True, ""
+
         [ref] = self.factory.makeGitRefs()
         form = {
             "field.git_ref.repository": ref.repository.unique_name,
             "field.git_ref.path": ref.path,
-            }
+        }
         self.widget.setBranchFormatValidator(validator)
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertEqual(ref, self.widget.getInputValue())
@@ -287,16 +287,15 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
     def test_getInputValue_with_branch_validator_invalid(self):
         def validator(ref):
             return False, "Not in correct format"
+
         [ref] = self.factory.makeGitRefs()
         form = {
             "field.git_ref.repository": ref.repository.unique_name,
             "field.git_ref.path": ref.path,
-            }
+        }
         self.widget.setBranchFormatValidator(validator)
         self.widget.request = LaunchpadTestRequest(form=form)
-        self.assertGetInputValueError(
-            form,
-            "Not in correct format")
+        self.assertGetInputValueError(form, "Not in correct format")
 
     def test_call(self):
         # The __call__ method sets up the widgets.
@@ -307,7 +306,8 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         fields = soup.find_all("input", id=True)
         ids = [field["id"] for field in fields]
         self.assertContentEqual(
-            ["field.git_ref.repository", "field.git_ref.path"], ids)
+            ["field.git_ref.repository", "field.git_ref.path"], ids
+        )
 
 
 load_tests = load_tests_apply_scenarios

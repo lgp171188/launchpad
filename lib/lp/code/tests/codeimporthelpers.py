@@ -4,16 +4,13 @@
 """Helpers for Code Import page tests."""
 
 __all__ = [
-    'get_import_for_branch_name',
-    'make_finished_import',
-    'make_running_import',
-    ]
+    "get_import_for_branch_name",
+    "make_finished_import",
+    "make_running_import",
+]
 
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 from pytz import UTC
 from zope.component import getUtility
@@ -23,7 +20,7 @@ from lp.code.enums import (
     CodeImportJobState,
     CodeImportResultStatus,
     CodeImportReviewStatus,
-    )
+)
 from lp.code.interfaces.branchlookup import IBranchLookup
 from lp.code.model.codeimportjob import CodeImportJobWorkflow
 from lp.testing import time_counter
@@ -39,8 +36,13 @@ def get_import_for_branch_name(branch_unique_name):
         return None
 
 
-def make_running_import(code_import=None, machine=None, date_started=None,
-                        factory=None, logtail=None):
+def make_running_import(
+    code_import=None,
+    machine=None,
+    date_started=None,
+    factory=None,
+    logtail=None,
+):
     """Return a code import with a running job.
 
     :param code_import: The code import to create the job for.  If None, an
@@ -62,13 +64,15 @@ def make_running_import(code_import=None, machine=None, date_started=None,
     # The code import must be in a reviewed state.
     if code_import.review_status != CodeImportReviewStatus.REVIEWED:
         code_import.updateFromData(
-            {'review_status': CodeImportReviewStatus.REVIEWED},
-            code_import.registrant)
+            {"review_status": CodeImportReviewStatus.REVIEWED},
+            code_import.registrant,
+        )
 
     CodeImportJobWorkflow().startJob(code_import.import_job, machine)
     if logtail:
         CodeImportJobWorkflow().updateHeartbeat(
-            code_import.import_job, logtail)
+            code_import.import_job, logtail
+        )
 
     assert code_import.import_job.state == CodeImportJobState.RUNNING
 
@@ -80,8 +84,9 @@ def make_running_import(code_import=None, machine=None, date_started=None,
     return code_import
 
 
-def make_finished_import(code_import=None, status=None, date_finished=None,
-                         factory=None):
+def make_finished_import(
+    code_import=None, status=None, date_finished=None, factory=None
+):
     """Return a code import with a new finished job.
 
     :param code_import: The code import to create the job for.  If None, an
@@ -102,8 +107,9 @@ def make_finished_import(code_import=None, status=None, date_finished=None,
     # The code import must be in a reviewed state.
     if code_import.review_status != CodeImportReviewStatus.REVIEWED:
         code_import.updateFromData(
-            {'review_status': CodeImportReviewStatus.REVIEWED},
-            code_import.registrant)
+            {"review_status": CodeImportReviewStatus.REVIEWED},
+            code_import.registrant,
+        )
 
     # If the job isn't running, make it run.
     if code_import.import_job.state != CodeImportJobState.RUNNING:
@@ -123,11 +129,18 @@ def make_finished_import(code_import=None, status=None, date_finished=None,
 def make_all_result_types(code_import, factory, machine, start, count):
     """Make a code import result of each possible type for the code import."""
     start_dates = time_counter(
-        datetime(2007, 12, 1, 12, tzinfo=UTC), timedelta(days=1))
+        datetime(2007, 12, 1, 12, tzinfo=UTC), timedelta(days=1)
+    )
     end_dates = time_counter(
-        datetime(2007, 12, 1, 13, tzinfo=UTC), timedelta(days=1, hours=1))
+        datetime(2007, 12, 1, 13, tzinfo=UTC), timedelta(days=1, hours=1)
+    )
     for result_status in sorted(CodeImportResultStatus.items)[
-            start:start + count]:
+        start : start + count
+    ]:
         factory.makeCodeImportResult(
-            code_import, result_status, next(start_dates), next(end_dates),
-            machine=machine)
+            code_import,
+            result_status,
+            next(start_dates),
+            next(end_dates),
+            machine=machine,
+        )

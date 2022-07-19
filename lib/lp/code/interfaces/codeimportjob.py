@@ -7,20 +7,14 @@ CodeImportJobs represent pending and running updates of a code import.
 """
 
 __all__ = [
-    'ICodeImportJob',
-    'ICodeImportJobSet',
-    'ICodeImportJobSetPublic',
-    'ICodeImportJobWorkflow',
-    ]
+    "ICodeImportJob",
+    "ICodeImportJobSet",
+    "ICodeImportJobSetPublic",
+    "ICodeImportJobWorkflow",
+]
 
 from zope.interface import Interface
-from zope.schema import (
-    Choice,
-    Datetime,
-    Int,
-    Object,
-    Text,
-    )
+from zope.schema import Choice, Datetime, Int, Object, Text
 
 from lp import _
 from lp.code.enums import CodeImportJobState
@@ -45,48 +39,78 @@ class ICodeImportJob(Interface):
     date_created = Datetime(required=True, readonly=True)
 
     code_import = Object(
-        schema=ICodeImport, required=True, readonly=True,
-        description=_("The code import that is being worked upon."))
+        schema=ICodeImport,
+        required=True,
+        readonly=True,
+        description=_("The code import that is being worked upon."),
+    )
 
     machine = Object(
-        schema=ICodeImportMachine, required=False, readonly=False,
-        description=_("The machine job is currently scheduled to run on, or "
-                      "where the job is currently running."))
+        schema=ICodeImportMachine,
+        required=False,
+        readonly=False,
+        description=_(
+            "The machine job is currently scheduled to run on, or "
+            "where the job is currently running."
+        ),
+    )
 
     date_due = Datetime(
-        required=True, readonly=True,
-        description=_("When the import should happen."))
+        required=True,
+        readonly=True,
+        description=_("When the import should happen."),
+    )
 
     state = Choice(
-        vocabulary=CodeImportJobState, required=True, readonly=True,
-        description=_("The current state of the job."))
+        vocabulary=CodeImportJobState,
+        required=True,
+        readonly=True,
+        description=_("The current state of the job."),
+    )
 
     requesting_user = Object(
-        schema=IPerson, required=False, readonly=True,
-        description=_("The user who requested the import, if any."))
+        schema=IPerson,
+        required=False,
+        readonly=True,
+        description=_("The user who requested the import, if any."),
+    )
 
     ordering = Int(
-        required=False, readonly=True,
-        description=_("A measure of how urgent the job is -- queue entries "
-                      "with lower 'ordering' should be processed first, or "
-                      "in other words 'ORDER BY ordering' returns the most "
-                      "import jobs first."))
+        required=False,
+        readonly=True,
+        description=_(
+            "A measure of how urgent the job is -- queue entries "
+            "with lower 'ordering' should be processed first, or "
+            "in other words 'ORDER BY ordering' returns the most "
+            "import jobs first."
+        ),
+    )
 
     heartbeat = Datetime(
-        required=False, readonly=True,
-        description=_("While the job is running, this field should be "
-                      "updated frequently to indicate that the import job "
-                      "hasn't crashed."))
+        required=False,
+        readonly=True,
+        description=_(
+            "While the job is running, this field should be "
+            "updated frequently to indicate that the import job "
+            "hasn't crashed."
+        ),
+    )
 
     logtail = Text(
-        required=False, readonly=True,
-        description=_("The last few lines of output produced by the running "
-                      "job. It should be updated at the same time as the "
-                      "heartbeat."))
+        required=False,
+        readonly=True,
+        description=_(
+            "The last few lines of output produced by the running "
+            "job. It should be updated at the same time as the "
+            "heartbeat."
+        ),
+    )
 
     date_started = Datetime(
-        required=False, readonly=True,
-        description=_("When the import began to be processed."))
+        required=False,
+        readonly=True,
+        description=_("When the import began to be processed."),
+    )
 
     def isOverdue():
         """Return whether `self.date_due` is now or in the past.
@@ -123,6 +147,7 @@ class ICodeImportJobSetPublic(Interface):
     These are accessed by the getJobForMachine XML-RPC method, requests to
     which are not authenticated.
     """
+
     # XXX MichaelHudson 2008-02-28 bug=196345: This interface can go away when
     # we implement endpoint specific authentication for the private xml-rpc
     # server.

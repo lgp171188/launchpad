@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BranchTargetWidget',
-    ]
+    "BranchTargetWidget",
+]
 
 from zope.browserpage import ViewPageTemplateFile
 from zope.formlib.interfaces import (
@@ -12,13 +12,9 @@ from zope.formlib.interfaces import (
     InputErrors,
     MissingInputError,
     WidgetInputError,
-    )
+)
 from zope.formlib.utility import setUpWidget
-from zope.formlib.widget import (
-    BrowserWidget,
-    InputWidget,
-    renderElement,
-    )
+from zope.formlib.widget import BrowserWidget, InputWidget, renderElement
 from zope.interface import implementer
 from zope.schema import Choice
 
@@ -30,14 +26,14 @@ from lp.registry.interfaces.product import IProduct
 from lp.services.webapp.interfaces import (
     IAlwaysSubmittedWidget,
     IMultiLineWidgetLayout,
-    )
+)
 
 
 @implementer(IAlwaysSubmittedWidget, IMultiLineWidgetLayout, IInputWidget)
 class BranchTargetWidget(BrowserWidget, InputWidget):
     """Widget for selecting a personal (+junk) or product branch target."""
 
-    template = ViewPageTemplateFile('templates/branch-target.pt')
+    template = ViewPageTemplateFile("templates/branch-target.pt")
     default_option = "product"
     _widgets_set_up = False
 
@@ -46,27 +42,37 @@ class BranchTargetWidget(BrowserWidget, InputWidget):
             return
         fields = [
             Choice(
-                __name__='product', title='Project',
-                required=True, vocabulary='Product'),
-            ]
+                __name__="product",
+                title="Project",
+                required=True,
+                vocabulary="Product",
+            ),
+        ]
         for field in fields:
             setUpWidget(
-                self, field.__name__, field, IInputWidget, prefix=self.name)
+                self, field.__name__, field, IInputWidget, prefix=self.name
+            )
         self._widgets_set_up = True
 
     def setUpOptions(self):
         """Set up options to be rendered."""
         self.options = {}
-        for option in ['personal', 'product']:
+        for option in ["personal", "product"]:
             attributes = dict(
-                type='radio', name=self.name, value=option,
-                id='%s.option.%s' % (self.name, option))
-            if self.request.form_ng.getOne(
-                     self.name, self.default_option) == option:
-                attributes['checked'] = 'checked'
-            self.options[option] = renderElement('input', **attributes)
+                type="radio",
+                name=self.name,
+                value=option,
+                id="%s.option.%s" % (self.name, option),
+            )
+            if (
+                self.request.form_ng.getOne(self.name, self.default_option)
+                == option
+            ):
+                attributes["checked"] = "checked"
+            self.options[option] = renderElement("input", **attributes)
         self.product_widget.onKeyPress = (
-            "selectWidget('%s.option.product', event)" % self.name)
+            "selectWidget('%s.option.product', event)" % self.name
+        )
 
     def hasInput(self):
         return self.name in self.request.form
@@ -85,23 +91,29 @@ class BranchTargetWidget(BrowserWidget, InputWidget):
         """See zope.formlib.interfaces.IInputWidget."""
         self.setUpSubWidgets()
         form_value = self.request.form_ng.getOne(self.name)
-        if form_value == 'product':
+        if form_value == "product":
             try:
                 return self.product_widget.getInputValue()
             except MissingInputError:
                 raise WidgetInputError(
-                    self.name, self.label,
-                    LaunchpadValidationError('Please enter a project name'))
+                    self.name,
+                    self.label,
+                    LaunchpadValidationError("Please enter a project name"),
+                )
             except ConversionError:
                 entered_name = self.request.form_ng.getOne(
-                    "%s.product" % self.name)
+                    "%s.product" % self.name
+                )
                 raise WidgetInputError(
-                    self.name, self.label,
+                    self.name,
+                    self.label,
                     LaunchpadValidationError(
                         "There is no project named '%s' registered in"
-                        " Launchpad" % entered_name))
-        elif form_value == 'personal':
-            return '+junk'
+                        " Launchpad" % entered_name
+                    ),
+                )
+        elif form_value == "personal":
+            return "+junk"
         else:
             raise UnexpectedFormData("No valid option was selected.")
 
@@ -110,14 +122,14 @@ class BranchTargetWidget(BrowserWidget, InputWidget):
         self.setUpSubWidgets()
         if IBranchTarget.providedBy(value):
             if IProduct.providedBy(value.context):
-                self.default_option = 'product'
+                self.default_option = "product"
                 self.product_widget.setRenderedValue(value.context)
                 return
             elif IPerson.providedBy(value.context):
-                self.default_option = 'personal'
+                self.default_option = "personal"
                 return
         else:
-            raise AssertionError('Not a valid value: %r' % value)
+            raise AssertionError("Not a valid value: %r" % value)
 
     def error(self):
         """See zope.formlib.interfaces.IBrowserWidget."""

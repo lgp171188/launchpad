@@ -6,14 +6,10 @@
 __all__ = [
     "ILPCraftConfiguration",
     "LPCraftConfigurationError",
-    ]
+]
 
 from zope.interface import Interface
-from zope.schema import (
-    Dict,
-    List,
-    TextLine,
-    )
+from zope.schema import Dict, List, TextLine
 
 
 class LPCraftConfigurationError(Exception):
@@ -26,9 +22,11 @@ class ILPCraftConfiguration(Interface):
     pipeline = List(
         title="List of stages",
         description="Each stage is a list of job names.",
-        value_type=TextLine())
+        value_type=TextLine(),
+    )
 
     jobs = Dict(
         title="Mapping of job names to job definitions",
         key_type=TextLine(),
-        value_type=Dict(key_type=TextLine()))
+        value_type=Dict(key_type=TextLine()),
+    )

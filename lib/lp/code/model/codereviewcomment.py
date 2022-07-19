@@ -4,18 +4,13 @@
 """The database implementation class for CodeReviewComment."""
 
 __all__ = [
-    'CodeReviewComment',
-    ]
+    "CodeReviewComment",
+]
 
 from textwrap import TextWrapper
 
 from lazr.delegates import delegate_to
-from storm.locals import (
-    Int,
-    Reference,
-    Store,
-    Unicode,
-    )
+from storm.locals import Int, Reference, Store, Unicode
 from zope.interface import implementer
 
 from lp.code.enums import CodeReviewVote
@@ -23,14 +18,14 @@ from lp.code.interfaces.branchtarget import IHasBranchTarget
 from lp.code.interfaces.codereviewcomment import (
     ICodeReviewComment,
     ICodeReviewCommentDeletion,
-    )
+)
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.stormbase import StormBase
 from lp.services.mail.signedmessage import signed_message_from_bytes
 from lp.services.messages.interfaces.message import (
     IMessageCommon,
     IMessageEdit,
-    )
+)
 
 
 def quote_text_as_email(text, width=80):
@@ -42,49 +37,58 @@ def quote_text_as_email(text, width=80):
     """
     # Empty text begets empty text.
     if text is None:
-        return ''
+        return ""
     text = text.rstrip()
     if not text:
-        return ''
-    prefix = '> '
+        return ""
+    prefix = "> "
     # The TextWrapper's handling of code is somewhat suspect.
     wrapper = TextWrapper(
         initial_indent=prefix,
         subsequent_indent=prefix,
         width=width,
-        replace_whitespace=False)
+        replace_whitespace=False,
+    )
     result = []
     # Break the string into lines, and use the TextWrapper to wrap the
     # individual lines.
-    for line in text.rstrip().split('\n'):
+    for line in text.rstrip().split("\n"):
         # TextWrapper won't do an indent of an empty string.
-        if line.strip() == '':
+        if line.strip() == "":
             result.append(prefix)
         else:
             result.extend(wrapper.wrap(line))
-    return '\n'.join(result)
+    return "\n".join(result)
 
 
-@implementer(ICodeReviewComment, ICodeReviewCommentDeletion, IHasBranchTarget,
-             IMessageCommon, IMessageEdit)
-@delegate_to(IMessageCommon, IMessageEdit, context='message')
+@implementer(
+    ICodeReviewComment,
+    ICodeReviewCommentDeletion,
+    IHasBranchTarget,
+    IMessageCommon,
+    IMessageEdit,
+)
+@delegate_to(IMessageCommon, IMessageEdit, context="message")
 class CodeReviewComment(StormBase):
     """A table linking branch merge proposals and messages."""
 
-    __storm_table__ = 'CodeReviewMessage'
+    __storm_table__ = "CodeReviewMessage"
 
     id = Int(primary=True)
     branch_merge_proposal_id = Int(
-        name='branch_merge_proposal', allow_none=False)
+        name="branch_merge_proposal", allow_none=False
+    )
     branch_merge_proposal = Reference(
-        branch_merge_proposal_id, 'BranchMergeProposal.id')
-    message_id = Int(name='message', allow_none=False)
-    message = Reference(message_id, 'Message.id')
-    vote = DBEnum(name='vote', allow_none=True, enum=CodeReviewVote)
+        branch_merge_proposal_id, "BranchMergeProposal.id"
+    )
+    message_id = Int(name="message", allow_none=False)
+    message = Reference(message_id, "Message.id")
+    vote = DBEnum(name="vote", allow_none=True, enum=CodeReviewVote)
     vote_tag = Unicode(default=None)
 
-    def __init__(self, branch_merge_proposal, message, vote=None,
-                 vote_tag=None):
+    def __init__(
+        self, branch_merge_proposal, message, vote=None, vote_tag=None
+    ):
         self.branch_merge_proposal = branch_merge_proposal
         self.message = message
         self.vote = vote
@@ -107,10 +111,10 @@ class CodeReviewComment(StormBase):
 
     @property
     def title(self):
-        return ('Comment on proposed merge of %(source)s into %(target)s' %
-            {'source': self.branch_merge_proposal.merge_source.display_name,
-             'target': self.branch_merge_proposal.merge_target.display_name,
-            })
+        return "Comment on proposed merge of %(source)s into %(target)s" % {
+            "source": self.branch_merge_proposal.merge_source.display_name,
+            "target": self.branch_merge_proposal.merge_target.display_name,
+        }
 
     @property
     def message_body(self):
@@ -119,18 +123,27 @@ class CodeReviewComment(StormBase):
 
     def getAttachments(self):
         """See `ICodeReviewComment`."""
-        attachments = [chunk.blob for chunk in self.message.chunks
-                       if chunk.blob is not None]
+        attachments = [
+            chunk.blob
+            for chunk in self.message.chunks
+            if chunk.blob is not None
+        ]
         # Attachments to show.
-        good_mimetypes = {'text/plain', 'text/x-diff', 'text/x-patch'}
+        good_mimetypes = {"text/plain", "text/x-diff", "text/x-patch"}
         display_attachments = [
-            attachment for attachment in attachments
-            if ((attachment.mimetype in good_mimetypes) or
-                attachment.filename.endswith('.diff') or
-                attachment.filename.endswith('.patch'))]
+            attachment
+            for attachment in attachments
+            if (
+                (attachment.mimetype in good_mimetypes)
+                or attachment.filename.endswith(".diff")
+                or attachment.filename.endswith(".patch")
+            )
+        ]
         other_attachments = [
-            attachment for attachment in attachments
-            if attachment not in display_attachments]
+            attachment
+            for attachment in attachments
+            if attachment not in display_attachments
+        ]
         return display_attachments, other_attachments
 
     @property
@@ -149,9 +162,9 @@ class CodeReviewComment(StormBase):
 
     def userCanSetCommentVisibility(self, user):
         """See `ICodeReviewComment`."""
-        return (
-            self.branch_merge_proposal.userCanSetCommentVisibility(user) or
-            (user is not None and user.inTeam(self.author)))
+        return self.branch_merge_proposal.userCanSetCommentVisibility(
+            user
+        ) or (user is not None and user.inTeam(self.author))
 
     def destroySelf(self):
         """Delete this comment."""

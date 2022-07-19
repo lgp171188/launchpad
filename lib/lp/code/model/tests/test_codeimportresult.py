@@ -27,7 +27,8 @@ class TestCodeImportResult(TestCaseWithFactory):
         # commit, so it won't be the same as UTC_NOW.
         self.assertThat(
             result.date_created,
-            LessThan(datetime.utcnow().replace(tzinfo=UTC)))
+            LessThan(datetime.utcnow().replace(tzinfo=UTC)),
+        )
         self.assertEqual(result.date_created, result.date_job_finished)
 
     def test_date_job_started(self):
