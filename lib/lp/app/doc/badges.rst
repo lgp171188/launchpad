@@ -132,7 +132,7 @@ badger class needs to implement the method `getBadge`.
     bug / Bug-Title
     fish / Fish-Title
 
-If the class does not implement the approprate method you get a
+If the class does not implement the appropriate method you get a
 NotImplementedError.
 
     >>> SimpleBadger.badges.append("blueprint")

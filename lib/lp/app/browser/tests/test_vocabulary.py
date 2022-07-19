@@ -112,7 +112,7 @@ class PersonPickerEntrySourceAdapterTestCase(TestCaseWithFactory):
         )
 
     def test_PersonPickerEntrySourceAdapter_no_email_logged_in(self):
-        # Teams without email address have no desriptions.
+        # Teams without email address have no descriptions.
         team = self.factory.makeTeam()
         observer = self.factory.makePerson()
         login_person(observer)
@@ -241,7 +241,7 @@ class TestDistributionSourcePackagePickerEntrySourceAdapter(
         self.assertEqual("fnord", self.getPickerEntry(dsp).description)
 
     def test_dsp_alt_title_is_none(self):
-        # DSP titles are contructed from the distro and package Launchapd Ids,
+        # DSP titles are constructed from the distro and package Launchpad Ids,
         # alt_titles are redundant because they are also Launchpad Ids.
         distro = self.factory.makeDistribution(name="fnord")
         series = self.factory.makeDistroSeries(

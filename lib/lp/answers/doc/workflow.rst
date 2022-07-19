@@ -675,7 +675,7 @@ comes back to say that it doesn't, in fact, work.
     ...     "I've installed BootX and the installer now boot properly.",
     ...     answer=answer_message, datecreated=now_plus_two_hours)
     >>> reopen_message = question.reopen(
-    ...     "Actually, altough the installer boots properly. I'm not able "
+    ...     "Actually, although the installer boots properly. I'm not able "
     ...     "to pass beyond the partitioning.",
     ...     datecreated=now_plus_three_hours)
     Received ObjectCreatedEvent on QuestionReopening

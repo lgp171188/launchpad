@@ -15,7 +15,7 @@ from lp.services.webapp.interfaces import IPlacelessAuthUtility
 
 
 class QuestionJanitor:
-    """Object that takes the responsability of expiring questions
+    """Object that takes the responsibility of expiring questions
     without activity in a configurable period.
     """
 

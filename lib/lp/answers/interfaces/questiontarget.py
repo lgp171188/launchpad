@@ -110,7 +110,7 @@ class IQuestionTargetPublic(ISearchableByQuestionOwner):
     direct_answer_contacts = List(
         title=_("Direct Answer Contacts"),
         description=_(
-            "IPersons that registered as answer contacts explicitely on "
+            "IPersons that registered as answer contacts explicitly on "
             "this target. (answer_contacts may include answer contacts "
             "inherited from other context.)"
         ),

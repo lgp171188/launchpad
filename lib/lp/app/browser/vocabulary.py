@@ -456,7 +456,7 @@ class HugeVocabularyJSONView:
 
         # We need to collate what IPickerEntrySource adapters are required for
         # the items in the current batch. We expect that the batch will be
-        # homogenous and so only one adapter instance is required, but we
+        # homogeneous and so only one adapter instance is required, but we
         # allow for the case where the batch may contain disparate entries
         # requiring different adapter implementations.
 

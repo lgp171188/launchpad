@@ -11,7 +11,7 @@ page and managed via a special admin-only page.
 The home page listing
 ---------------------
 
-Featured projects are visible to everyone on the home page. One poject is
+Featured projects are visible to everyone on the home page. One project is
 featured as "project of the day" depending on the current day. As we do not
 know the current day, we replace that selection method in the view with a
 constant value.

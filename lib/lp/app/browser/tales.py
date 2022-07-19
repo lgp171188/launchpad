@@ -1462,7 +1462,7 @@ class CustomizableFormatter(ObjectFormatterAPI):
       3. if there is an icon for this object type, image:icon is
          implemented and appropriate.
 
-    For greater control over the summary, overrride
+    For greater control over the summary, override
     _make_link_summary.
 
     If a different permission is required, override _link_permission.
@@ -2201,7 +2201,7 @@ class BugTrackerFormatterAPI(ObjectFormatterAPI):
         """Return an HTML link to the external bugtracker.
 
         If the user is not logged-in, the title of the bug tracker is
-        modified to obfuscate all email addresses. Additonally, if the
+        modified to obfuscate all email addresses. Additionally, if the
         URL is a mailto: address then no link is returned, just the
         title text.
         """
