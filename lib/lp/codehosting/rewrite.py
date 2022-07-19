@@ -18,14 +18,12 @@ from lp.services.utils import iter_split
 from lp.services.webapp.adapter import (
     clear_request_started,
     set_request_started,
-    )
+)
 
-
-__all__ = ['BranchRewriter']
+__all__ = ["BranchRewriter"]
 
 
 class BranchRewriter:
-
     def __init__(self, logger, _now=None):
         """
 
@@ -41,9 +39,7 @@ class BranchRewriter:
         self._cache = {}
 
     def _codebrowse_url(self, path):
-        return urlutils.join(
-            config.codehosting.internal_codebrowse_root,
-            path)
+        return urlutils.join(config.codehosting.internal_codebrowse_root, path)
 
     def _getBranchIdAndTrailingPath(self, location):
         """Return the branch id and trailing path for 'location'.
@@ -51,21 +47,24 @@ class BranchRewriter:
         In addition this method returns whether the answer can from the cache
         or from the database.
         """
-        for first, second in iter_split(location[1:], '/'):
+        for first, second in iter_split(location[1:], "/"):
             if first in self._cache:
                 branch_id, inserted_time = self._cache[first]
-                if (self._now() < inserted_time +
-                    config.codehosting.branch_rewrite_cache_lifetime):
+                if (
+                    self._now()
+                    < inserted_time
+                    + config.codehosting.branch_rewrite_cache_lifetime
+                ):
                     return branch_id, second, "HIT"
         lookup = getUtility(IBranchLookup)
-        branch, trailing = lookup.getByHostingPath(location.lstrip('/'))
+        branch, trailing = lookup.getByHostingPath(location.lstrip("/"))
         if branch is not None:
             try:
                 branch_id = branch.id
             except Unauthorized:
                 pass
             else:
-                unique_name = location[1:-len(trailing)]
+                unique_name = location[1 : -len(trailing)]
                 self._cache[unique_name] = (branch_id, self._now())
                 return branch_id, trailing, "MISS"
         return None, None, "MISS"
@@ -106,28 +105,36 @@ class BranchRewriter:
         set_request_started()
         try:
             cached = None
-            if resource_location.startswith('/static/'):
+            if resource_location.startswith("/static/"):
                 r = self._codebrowse_url(resource_location)
-                cached = 'N/A'
+                cached = "N/A"
             else:
                 branch_id, trailing, cached = self._getBranchIdAndTrailingPath(
-                    resource_location)
+                    resource_location
+                )
                 if branch_id is None:
                     if resource_location.startswith(
-                            '/' + BRANCH_ID_ALIAS_PREFIX):
-                        r = 'NULL'
+                        "/" + BRANCH_ID_ALIAS_PREFIX
+                    ):
+                        r = "NULL"
                     else:
                         r = self._codebrowse_url(resource_location)
                 else:
-                    if trailing.startswith('/.bzr'):
+                    if trailing.startswith("/.bzr"):
                         r = urlutils.join(
                             config.codehosting.internal_branch_by_id_root,
-                            branch_id_to_path(branch_id), trailing[1:])
+                            branch_id_to_path(branch_id),
+                            trailing[1:],
+                        )
                     else:
                         r = self._codebrowse_url(resource_location)
         finally:
             clear_request_started()
         self.logger.info(
             "%r -> %r (%fs, cache: %s)",
-            resource_location, r, time.time() - T, cached)
+            resource_location,
+            r,
+            time.time() - T,
+            cached,
+        )
         return r

@@ -4,37 +4,27 @@
 """In-memory doubles of core codehosting objects."""
 
 __all__ = [
-    'InMemoryFrontend',
-    'XMLRPCWrapper',
-    ]
+    "InMemoryFrontend",
+    "XMLRPCWrapper",
+]
 
 import operator
 from xmlrpc.client import Fault
 
-from breezy.urlutils import (
-    escape,
-    unescape,
-    )
 import six
+from breezy.urlutils import escape, unescape
 from twisted.internet import defer
-from zope.component import (
-    adapter,
-    getSiteManager,
-    )
+from zope.component import adapter, getSiteManager
 from zope.interface import implementer
 
 from lp.app.enums import (
-    InformationType,
     PRIVATE_INFORMATION_TYPES,
     PUBLIC_INFORMATION_TYPES,
-    )
+    InformationType,
+)
 from lp.app.validators import LaunchpadValidationError
 from lp.app.validators.name import valid_name
-from lp.code.bzr import (
-    BranchFormat,
-    ControlFormat,
-    RepositoryFormat,
-    )
+from lp.code.bzr import BranchFormat, ControlFormat, RepositoryFormat
 from lp.code.enums import BranchType
 from lp.code.errors import UnknownBranchTypeError
 from lp.code.interfaces.branch import IBranch
@@ -42,18 +32,15 @@ from lp.code.interfaces.branchlookup import get_first_path_result
 from lp.code.interfaces.branchtarget import IBranchTarget
 from lp.code.interfaces.codehosting import (
     BRANCH_ALIAS_PREFIX,
-    branch_id_alias,
     BRANCH_TRANSPORT,
     CONTROL_TRANSPORT,
     LAUNCHPAD_ANONYMOUS,
     LAUNCHPAD_SERVICES,
-    )
+    branch_id_alias,
+)
 from lp.code.interfaces.linkedbranch import ICanHasLinkedBranch
 from lp.code.model.branchnamespace import BranchNamespaceSet
-from lp.code.model.branchtarget import (
-    PackageBranchTarget,
-    ProductBranchTarget,
-    )
+from lp.code.model.branchtarget import PackageBranchTarget, ProductBranchTarget
 from lp.code.xmlrpc.codehosting import datetime_from_tuple
 from lp.registry.errors import InvalidName
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -82,9 +69,10 @@ class FakeStore:
         implies that the given attribute has the expected value. Returning
         None implies the opposite.
         """
-        branch_id = kwargs.pop('id')
+        branch_id = kwargs.pop("id")
         assert len(kwargs) == 1, (
-            'Expected only id and one other. Got %r' % kwargs)
+            "Expected only id and one other. Got %r" % kwargs
+        )
         attribute = list(kwargs)[0]
         expected_value = kwargs[attribute]
         branch = self._object_set.get(branch_id)
@@ -109,7 +97,7 @@ class FakeDatabaseObject:
     """Base class for fake database objects."""
 
     def _set_object_set(self, object_set):
-        self.__storm_object_info__ = {'store': FakeStore(object_set)}
+        self.__storm_object_info__ = {"store": FakeStore(object_set)}
 
 
 class ObjectSet:
@@ -163,8 +151,10 @@ class FakeSourcePackage:
         return hash((self.sourcepackagename.id, self.distroseries.id))
 
     def __eq__(self, other):
-        return (self.sourcepackagename.id == other.sourcepackagename.id
-                and self.distroseries.id == other.distroseries.id)
+        return (
+            self.sourcepackagename.id == other.sourcepackagename.id
+            and self.distroseries.id == other.distroseries.id
+        )
 
     def __ne__(self, other):
         return not (self == other)
@@ -178,7 +168,7 @@ class FakeSourcePackage:
 
     @property
     def development_version(self):
-        name = '%s-devel' % self.distribution.name
+        name = "%s-devel" % self.distribution.name
         dev_series = self._distroseries_set.getByName(name)
         if dev_series is None:
             dev_series = FakeDistroSeries(name, self.distribution)
@@ -187,21 +177,20 @@ class FakeSourcePackage:
 
     @property
     def path(self):
-        return '%s/%s/%s' % (
+        return "%s/%s/%s" % (
             self.distribution.name,
             self.distroseries.name,
-            self.sourcepackagename.name)
+            self.sourcepackagename.name,
+        )
 
     def getBranch(self, pocket):
-        return self.distroseries._linked_branches.get(
-            (self, pocket), None)
+        return self.distroseries._linked_branches.get((self, pocket), None)
 
     def setBranch(self, pocket, branch, registrant):
         self.distroseries._linked_branches[self, pocket] = branch
 
 
 class SourcePackageNameSet(ObjectSet):
-
     def new(self, name_string):
         if not valid_name(name_string):
             raise InvalidName(name_string)
@@ -217,9 +206,19 @@ def fake_source_package_to_branch_target(fake_package):
 class FakeBranch(FakeDatabaseObject):
     """Fake branch object."""
 
-    def __init__(self, branch_type, name, owner, url=None, product=None,
-                 stacked_on=None, information_type=InformationType.PUBLIC,
-                 registrant=None, distroseries=None, sourcepackagename=None):
+    def __init__(
+        self,
+        branch_type,
+        name,
+        owner,
+        url=None,
+        product=None,
+        stacked_on=None,
+        information_type=InformationType.PUBLIC,
+        registrant=None,
+        distroseries=None,
+        sourcepackagename=None,
+    ):
         self.branch_type = branch_type
         self.last_mirror_attempt = None
         self.last_mirrored = None
@@ -247,18 +246,19 @@ class FakeBranch(FakeDatabaseObject):
     def unique_name(self):
         if self.product is None:
             if self.distroseries is None:
-                product = '+junk'
+                product = "+junk"
             else:
-                product = '%s/%s/%s' % (
+                product = "%s/%s/%s" % (
                     self.distroseries.distribution.name,
                     self.distroseries.name,
-                    self.sourcepackagename.name)
+                    self.sourcepackagename.name,
+                )
         else:
             product = self.product.name
-        return '~%s/%s/%s' % (self.owner.name, product, self.name)
+        return "~%s/%s/%s" % (self.owner.name, product, self.name)
 
     def getPullURL(self):
-        return 'lp-fake:///' + self.unique_name
+        return "lp-fake:///" + self.unique_name
 
     @property
     def target(self):
@@ -277,6 +277,7 @@ class FakeBranch(FakeDatabaseObject):
 
 class FakePerson(FakeDatabaseObject):
     """Fake person object."""
+
     is_team = False
 
     def __init__(self, name):
@@ -296,6 +297,7 @@ class FakePerson(FakeDatabaseObject):
 
 class FakeTeam(FakePerson):
     """Fake team."""
+
     is_team = True
 
     def __init__(self, name, members=None):
@@ -314,10 +316,10 @@ class FakeProduct(FakeDatabaseObject):
         self.owner = owner
         self.information_type = information_type
         self.bzr_path = name
-        self.development_focus = FakeProductSeries(self, 'trunk')
+        self.development_focus = FakeProductSeries(self, "trunk")
         self.series = {
-            'trunk': self.development_focus,
-            }
+            "trunk": self.development_focus,
+        }
 
     def getSeries(self, name):
         return self.series.get(name, None)
@@ -372,7 +374,6 @@ class FakeScriptActivity(FakeDatabaseObject):
 
 
 class FakeDistribution(FakeDatabaseObject):
-
     def __init__(self, name):
         self.name = name
 
@@ -397,9 +398,15 @@ DEFAULT_PRODUCT = object()
 
 
 class FakeObjectFactory(ObjectFactory):
-
-    def __init__(self, branch_set, person_set, product_set, distribution_set,
-                 distroseries_set, sourcepackagename_set):
+    def __init__(
+        self,
+        branch_set,
+        person_set,
+        product_set,
+        distribution_set,
+        distroseries_set,
+        sourcepackagename_set,
+    ):
         super().__init__()
         self._branch_set = branch_set
         self._person_set = person_set
@@ -408,10 +415,17 @@ class FakeObjectFactory(ObjectFactory):
         self._distroseries_set = distroseries_set
         self._sourcepackagename_set = sourcepackagename_set
 
-    def makeBranch(self, branch_type=None, stacked_on=None,
-                   information_type=InformationType.PUBLIC,
-                   product=DEFAULT_PRODUCT, owner=None, name=None,
-                   registrant=None, sourcepackage=None):
+    def makeBranch(
+        self,
+        branch_type=None,
+        stacked_on=None,
+        information_type=InformationType.PUBLIC,
+        product=DEFAULT_PRODUCT,
+        owner=None,
+        name=None,
+        registrant=None,
+        sourcepackage=None,
+    ):
         if branch_type is None:
             branch_type = BranchType.HOSTED
         if branch_type == BranchType.MIRRORED:
@@ -432,12 +446,19 @@ class FakeObjectFactory(ObjectFactory):
         else:
             sourcepackagename = sourcepackage.sourcepackagename
             distroseries = sourcepackage.distroseries
-        IBranch['name'].validate(six.ensure_text(name))
+        IBranch["name"].validate(six.ensure_text(name))
         branch = FakeBranch(
-            branch_type, name=name, owner=owner, url=url,
-            stacked_on=stacked_on, product=product,
-            information_type=information_type, registrant=registrant,
-            distroseries=distroseries, sourcepackagename=sourcepackagename)
+            branch_type,
+            name=name,
+            owner=owner,
+            url=url,
+            stacked_on=stacked_on,
+            product=product,
+            information_type=information_type,
+            registrant=registrant,
+            distroseries=distroseries,
+            sourcepackagename=sourcepackagename,
+        )
         self._branch_set._add(branch)
         return branch
 
@@ -448,13 +469,15 @@ class FakeObjectFactory(ObjectFactory):
         if sourcepackage is None:
             sourcepackage = self.makeSourcePackage()
         return self.makeBranch(
-            product=None, sourcepackage=sourcepackage, **kwargs)
+            product=None, sourcepackage=sourcepackage, **kwargs
+        )
 
     def makePersonalBranch(self, owner=None, **kwargs):
         if owner is None:
             owner = self.makePerson()
         return self.makeBranch(
-            owner=owner, product=None, sourcepackage=None, **kwargs)
+            owner=owner, product=None, sourcepackage=None, **kwargs
+        )
 
     def makeProductBranch(self, product=None, **kwargs):
         if product is None:
@@ -497,8 +520,9 @@ class FakeObjectFactory(ObjectFactory):
         self._person_set._add(person)
         return person
 
-    def makeProduct(self, name=None, owner=None,
-                    information_type=InformationType.PUBLIC):
+    def makeProduct(
+        self, name=None, owner=None, information_type=InformationType.PUBLIC
+    ):
         if name is None:
             name = self.getUniqueString()
         if owner is None:
@@ -524,7 +548,7 @@ class FakeObjectFactory(ObjectFactory):
         if branch is None:
             branch = self.makeBranch(product=product)
         product.development_focus.branch = branch
-        branch.last_mirrored_id = 'rev1'
+        branch.last_mirrored_id = "rev1"
         return branch
 
     def enableDefaultStackingForPackage(self, package, branch):
@@ -535,16 +559,24 @@ class FakeObjectFactory(ObjectFactory):
             branch.
         """
         package.development_version.setBranch(
-            PackagePublishingPocket.RELEASE, branch, branch.owner)
-        branch.last_mirrored_id = 'rev1'
+            PackagePublishingPocket.RELEASE, branch, branch.owner
+        )
+        branch.last_mirrored_id = "rev1"
         return branch
 
 
 class FakeCodehosting:
-
-    def __init__(self, branch_set, person_set, product_set, distribution_set,
-                 distroseries_set, sourcepackagename_set, factory,
-                 script_activity_set):
+    def __init__(
+        self,
+        branch_set,
+        person_set,
+        product_set,
+        distribution_set,
+        distroseries_set,
+        sourcepackagename_set,
+        factory,
+        script_activity_set,
+    ):
         self._branch_set = branch_set
         self._person_set = person_set
         self._product_set = product_set
@@ -556,19 +588,24 @@ class FakeCodehosting:
 
     def acquireBranchToPull(self, branch_type_names):
         if not branch_type_names:
-            branch_type_names = 'HOSTED', 'MIRRORED', 'IMPORTED'
+            branch_type_names = "HOSTED", "MIRRORED", "IMPORTED"
         branch_types = []
         for branch_type_name in branch_type_names:
             try:
                 branch_types.append(BranchType.items[branch_type_name])
             except KeyError:
                 raise UnknownBranchTypeError(
-                    'Unknown branch type: %r' % (branch_type_name,))
+                    "Unknown branch type: %r" % (branch_type_name,)
+                )
         branches = sorted(
-            (branch for branch in self._branch_set
-             if branch.next_mirror_time is not None
-             and branch.branch_type in branch_types),
-            key=operator.attrgetter('next_mirror_time'))
+            (
+                branch
+                for branch in self._branch_set
+                if branch.next_mirror_time is not None
+                and branch.branch_type in branch_types
+            ),
+            key=operator.attrgetter("next_mirror_time"),
+        )
         if branches:
             branch = branches[-1]
             # Mark it as started mirroring.
@@ -576,15 +613,22 @@ class FakeCodehosting:
             branch.next_mirror_time = None
             default_branch = branch.target.default_stacked_on_branch
             if default_branch is None:
-                default_branch_name = ''
-            elif (branch.branch_type == BranchType.MIRRORED
-                  and default_branch.information_type in
-                  PRIVATE_INFORMATION_TYPES):
-                default_branch_name = ''
+                default_branch_name = ""
+            elif (
+                branch.branch_type == BranchType.MIRRORED
+                and default_branch.information_type
+                in PRIVATE_INFORMATION_TYPES
+            ):
+                default_branch_name = ""
             else:
-                default_branch_name = '/' + default_branch.unique_name
-            return (branch.id, branch.getPullURL(), branch.unique_name,
-                    default_branch_name, branch.branch_type.name)
+                default_branch_name = "/" + default_branch.unique_name
+            return (
+                branch.id,
+                branch.getPullURL(),
+                branch.unique_name,
+                default_branch_name,
+                branch.branch_type.name,
+            )
         else:
             return ()
 
@@ -598,16 +642,18 @@ class FakeCodehosting:
 
     def recordSuccess(self, name, hostname, date_started, date_completed):
         self._script_activity_set._add(
-            FakeScriptActivity(name, hostname, date_started, date_completed))
+            FakeScriptActivity(name, hostname, date_started, date_completed)
+        )
         return True
 
     def _parseUniqueName(self, branch_path):
         """Return a dict of the parsed information and the branch name."""
         try:
-            namespace_path, branch_name = branch_path.rsplit('/', 1)
+            namespace_path, branch_name = branch_path.rsplit("/", 1)
         except ValueError:
             raise faults.PermissionDenied(
-                "Cannot create branch at '/%s'" % branch_path)
+                "Cannot create branch at '/%s'" % branch_path
+            )
         data = BranchNamespaceSet().parse(namespace_path)
         return data, branch_name
 
@@ -617,25 +663,26 @@ class FakeCodehosting:
         Raises exceptions on error conditions.
         """
         to_link = None
-        if branch_path.startswith(BRANCH_ALIAS_PREFIX + '/'):
-            branch_path = branch_path[len(BRANCH_ALIAS_PREFIX) + 1:]
-            if branch_path.startswith('~'):
+        if branch_path.startswith(BRANCH_ALIAS_PREFIX + "/"):
+            branch_path = branch_path[len(BRANCH_ALIAS_PREFIX) + 1 :]
+            if branch_path.startswith("~"):
                 data, branch_name = self._parseUniqueName(branch_path)
             else:
-                tokens = branch_path.split('/')
+                tokens = branch_path.split("/")
                 data = {
-                    'person': registrant.name,
-                    'product': tokens[0],
-                    }
-                branch_name = 'trunk'
+                    "person": registrant.name,
+                    "product": tokens[0],
+                }
+                branch_name = "trunk"
                 # check the series
-                product = self._product_set.getByName(data['product'])
+                product = self._product_set.getByName(data["product"])
                 if product is not None:
                     if len(tokens) > 1:
                         series = product.getSeries(tokens[1])
                         if series is None:
                             raise faults.NotFound(
-                                "No such product series: '%s'." % tokens[1])
+                                "No such product series: '%s'." % tokens[1]
+                            )
                         else:
                             to_link = ICanHasLinkedBranch(series)
                     else:
@@ -644,10 +691,11 @@ class FakeCodehosting:
         else:
             data, branch_name = self._parseUniqueName(branch_path)
 
-        owner = self._person_set.getByName(data['person'])
+        owner = self._person_set.getByName(data["person"])
         if owner is None:
             raise faults.NotFound(
-                "User/team '%s' does not exist." % (data['person'],))
+                "User/team '%s' does not exist." % (data["person"],)
+            )
         # The real code consults the branch creation policy of the product. We
         # don't need to do so here, since the tests above this layer never
         # encounter that behaviour. If they *do* change to rely on the branch
@@ -655,60 +703,75 @@ class FakeCodehosting:
         # exceptions.
         if not registrant.inTeam(owner):
             raise faults.PermissionDenied(
-                '%s cannot create branches owned by %s'
-                 % (registrant.displayname, owner.displayname))
+                "%s cannot create branches owned by %s"
+                % (registrant.displayname, owner.displayname)
+            )
         product = sourcepackage = None
-        if data['product'] == '+junk':
+        if data["product"] == "+junk":
             product = None
-        elif data['product'] is not None:
-            if not valid_name(data['product']):
-                raise faults.InvalidProductName(escape(data['product']))
-            product = self._product_set.getByName(data['product'])
+        elif data["product"] is not None:
+            if not valid_name(data["product"]):
+                raise faults.InvalidProductName(escape(data["product"]))
+            product = self._product_set.getByName(data["product"])
             if product is None:
                 raise faults.NotFound(
-                    "Project '%s' does not exist." % (data['product'],))
-        elif data['distribution'] is not None:
-            distro = self._distribution_set.getByName(data['distribution'])
+                    "Project '%s' does not exist." % (data["product"],)
+                )
+        elif data["distribution"] is not None:
+            distro = self._distribution_set.getByName(data["distribution"])
             if distro is None:
                 raise faults.NotFound(
-                    "No such distribution: '%s'." % (data['distribution'],))
+                    "No such distribution: '%s'." % (data["distribution"],)
+                )
             distroseries = self._distroseries_set.getByName(
-                data['distroseries'])
+                data["distroseries"]
+            )
             if distroseries is None:
                 raise faults.NotFound(
                     "No such distribution series: '%s'."
-                    % (data['distroseries'],))
+                    % (data["distroseries"],)
+                )
             sourcepackagename = self._sourcepackagename_set.getByName(
-                data['sourcepackagename'])
+                data["sourcepackagename"]
+            )
             if sourcepackagename is None:
                 try:
                     sourcepackagename = self._sourcepackagename_set.new(
-                        data['sourcepackagename'])
+                        data["sourcepackagename"]
+                    )
                 except InvalidName:
                     raise faults.InvalidSourcePackageName(
-                        data['sourcepackagename'])
+                        data["sourcepackagename"]
+                    )
             sourcepackage = self._factory.makeSourcePackage(
-                distroseries, sourcepackagename)
+                distroseries, sourcepackagename
+            )
         else:
             raise faults.PermissionDenied(
-                "Cannot create branch at '%s'" % branch_path)
+                "Cannot create branch at '%s'" % branch_path
+            )
         branch = self._factory.makeBranch(
-            owner=owner, name=branch_name, product=product,
-            sourcepackage=sourcepackage, registrant=registrant,
-            branch_type=BranchType.HOSTED)
+            owner=owner,
+            name=branch_name,
+            product=product,
+            sourcepackage=sourcepackage,
+            registrant=registrant,
+            branch_type=BranchType.HOSTED,
+        )
         if to_link is not None:
             if registrant.inTeam(to_link.product.owner):
                 to_link.branch = branch
             else:
                 self._branch_set._delete(branch)
                 raise faults.PermissionDenied(
-                    "Cannot create linked branch at '%s'." % branch_path)
+                    "Cannot create linked branch at '%s'." % branch_path
+                )
         return branch.id
 
     def createBranch(self, requester_id, branch_path):
-        if not branch_path.startswith('/'):
+        if not branch_path.startswith("/"):
             return faults.InvalidPath(branch_path)
-        escaped_path = unescape(branch_path.strip('/'))
+        escaped_path = unescape(branch_path.strip("/"))
         registrant = self._person_set.get(requester_id)
         try:
             return self._createBranch(registrant, escaped_path)
@@ -720,24 +783,33 @@ class FakeCodehosting:
     def requestMirror(self, requester_id, branch_id):
         self._branch_set.get(branch_id).requestMirror()
 
-    def branchChanged(self, login_id, branch_id, stacked_on_location,
-                      last_revision_id, control_string, branch_string,
-                      repository_string):
+    def branchChanged(
+        self,
+        login_id,
+        branch_id,
+        stacked_on_location,
+        last_revision_id,
+        control_string,
+        branch_string,
+        repository_string,
+    ):
         branch = self._branch_set._find(id=branch_id)
         if branch is None:
             return faults.NoBranchWithID(branch_id)
         branch.mirror_status_message = None
-        if stacked_on_location == '':
+        if stacked_on_location == "":
             stacked_on_branch = None
         else:
             # We could log or something if the branch is not found here, but
             # we just wait until the scanner fails and sets up an appropriate
             # message.
             stacked_on_branch = self._branch_set._find(
-                unique_name=stacked_on_location.strip('/'))
+                unique_name=stacked_on_location.strip("/")
+            )
             if stacked_on_branch is None:
                 branch.mirror_status_message = (
-                    'Invalid stacked on location: ' + stacked_on_location)
+                    "Invalid stacked on location: " + stacked_on_location
+                )
         branch.stacked_on = stacked_on_branch
         branch.last_mirrored = UTC_NOW
         if branch.last_mirrored_id != last_revision_id:
@@ -751,12 +823,14 @@ class FakeCodehosting:
                 return default
 
         branch.control_format = match_title(
-            ControlFormat, control_string, ControlFormat.UNRECOGNIZED)
+            ControlFormat, control_string, ControlFormat.UNRECOGNIZED
+        )
         branch.branch_format = match_title(
-            BranchFormat, branch_string, BranchFormat.UNRECOGNIZED)
+            BranchFormat, branch_string, BranchFormat.UNRECOGNIZED
+        )
         branch.repository_format = match_title(
-            RepositoryFormat, repository_string,
-            RepositoryFormat.UNRECOGNIZED)
+            RepositoryFormat, repository_string, RepositoryFormat.UNRECOGNIZED
+        )
 
         return True
 
@@ -786,7 +860,7 @@ class FakeCodehosting:
 
     def _get_product_target(self, path):
         try:
-            owner_name, product_name = path.split('/')
+            owner_name, product_name = path.split("/")
         except ValueError:
             # Wrong number of segments -- can't be a product.
             return
@@ -795,27 +869,26 @@ class FakeCodehosting:
 
     def _get_package_target(self, path):
         try:
-            owner_name, distro_name, series_name, package_name = (
-                path.split('/'))
+            owner_name, distro_name, series_name, package_name = path.split(
+                "/"
+            )
         except ValueError:
             # Wrong number of segments -- can't be a package.
             return
         distro = self._distribution_set.getByName(distro_name)
         distroseries = self._distroseries_set.getByName(series_name)
-        sourcepackagename = self._sourcepackagename_set.getByName(
-            package_name)
+        sourcepackagename = self._sourcepackagename_set.getByName(package_name)
         if None in (distro, distroseries, sourcepackagename):
             return
-        return self._factory.makeSourcePackage(
-            distroseries, sourcepackagename)
+        return self._factory.makeSourcePackage(distroseries, sourcepackagename)
 
     def _serializeControlDirectory(self, requester, lookup):
-        trailing_path = lookup['trailing'].lstrip('/')
-        if not ('.bzr' == trailing_path or trailing_path.startswith('.bzr/')):
+        trailing_path = lookup["trailing"].lstrip("/")
+        if not (".bzr" == trailing_path or trailing_path.startswith(".bzr/")):
             return
-        target = self._get_product_target(lookup['control_name'])
+        target = self._get_product_target(lookup["control_name"])
         if target is None:
-            target = self._get_package_target(lookup['control_name'])
+            target = self._get_package_target(lookup["control_name"])
         if target is None:
             return
         default_branch = IBranchTarget(target).default_stacked_on_branch
@@ -826,11 +899,13 @@ class FakeCodehosting:
         path = branch_id_alias(default_branch)
         return (
             CONTROL_TRANSPORT,
-            {'default_stack_on': escape(path)},
-            trailing_path)
+            {"default_stack_on": escape(path)},
+            trailing_path,
+        )
 
-    def _serializeBranch(self, requester_id, branch, trailing_path,
-                         force_readonly=False):
+    def _serializeBranch(
+        self, requester_id, branch, trailing_path, force_readonly=False
+    ):
         if not self._canRead(requester_id, branch):
             return faults.PermissionDenied()
         elif branch.branch_type == BranchType.REMOTE:
@@ -841,50 +916,60 @@ class FakeCodehosting:
             writable = self._canWrite(requester_id, branch)
         return (
             BRANCH_TRANSPORT,
-            {'id': branch.id, 'writable': writable, 'private': branch.private},
-            trailing_path)
+            {"id": branch.id, "writable": writable, "private": branch.private},
+            trailing_path,
+        )
 
     def performLookup(self, requester_id, lookup, branch_name_only=False):
         branch = None
-        if branch_name_only and lookup['type'] != 'branch_name':
+        if branch_name_only and lookup["type"] != "branch_name":
             return
-        if lookup['type'] == 'control_name':
-            return self._serializeControlDirectory(requester_id,
-                                                   lookup)
-        elif lookup['type'] == 'id':
-            branch = self._branch_set.get(lookup['branch_id'])
+        if lookup["type"] == "control_name":
+            return self._serializeControlDirectory(requester_id, lookup)
+        elif lookup["type"] == "id":
+            branch = self._branch_set.get(lookup["branch_id"])
             if branch is None:
                 return None
-            trailing = lookup['trailing']
-        elif lookup['type'] == 'alias':
-            result = get_first_path_result(lookup['lp_path'],
-                lambda l: self.performLookup(requester_id, l,
-                    branch_name_only=True), None)
+            trailing = lookup["trailing"]
+        elif lookup["type"] == "alias":
+            result = get_first_path_result(
+                lookup["lp_path"],
+                lambda l: self.performLookup(
+                    requester_id, l, branch_name_only=True
+                ),
+                None,
+            )
             if result is not None:
                 return result
-            product_name = lookup['lp_path'].split('/', 2)[0]
+            product_name = lookup["lp_path"].split("/", 2)[0]
             product = self._product_set.getByName(product_name)
             if product is None:
                 return None
             branch = product.development_focus.branch
-            trailing = lookup['lp_path'][len(product_name):]
-        elif lookup['type'] == 'branch_name':
-            branch = self._branch_set._find(
-                unique_name=lookup['unique_name'])
-            trailing = escape(lookup['trailing'])
+            trailing = lookup["lp_path"][len(product_name) :]
+        elif lookup["type"] == "branch_name":
+            branch = self._branch_set._find(unique_name=lookup["unique_name"])
+            trailing = escape(lookup["trailing"])
         else:
             return None
         if branch is not None:
-            serialized = self._serializeBranch(requester_id, branch,
-                trailing.lstrip('/'), lookup['type'] == 'id')
+            serialized = self._serializeBranch(
+                requester_id,
+                branch,
+                trailing.lstrip("/"),
+                lookup["type"] == "id",
+            )
             if serialized is not None:
                 return serialized
 
     def translatePath(self, requester_id, path):
-        if not path.startswith('/'):
+        if not path.startswith("/"):
             return faults.InvalidPath(path)
-        result = get_first_path_result(unescape(path.strip('/')),
-            lambda l: self.performLookup(requester_id, l), None)
+        result = get_first_path_result(
+            unescape(path.strip("/")),
+            lambda l: self.performLookup(requester_id, l),
+            None,
+        )
         if result is not None:
             return result
         else:
@@ -906,14 +991,23 @@ class InMemoryFrontend:
         self._distroseries_set = ObjectSet()
         self._sourcepackagename_set = SourcePackageNameSet()
         self._factory = FakeObjectFactory(
-            self._branch_set, self._person_set, self._product_set,
-            self._distribution_set, self._distroseries_set,
-            self._sourcepackagename_set)
+            self._branch_set,
+            self._person_set,
+            self._product_set,
+            self._distribution_set,
+            self._distroseries_set,
+            self._sourcepackagename_set,
+        )
         self._codehosting = FakeCodehosting(
-            self._branch_set, self._person_set, self._product_set,
-            self._distribution_set, self._distroseries_set,
-            self._sourcepackagename_set, self._factory,
-            self._script_activity_set)
+            self._branch_set,
+            self._person_set,
+            self._product_set,
+            self._distribution_set,
+            self._distroseries_set,
+            self._sourcepackagename_set,
+            self._factory,
+            self._script_activity_set,
+        )
         sm = getSiteManager()
         sm.registerAdapter(fake_product_to_can_has_linked_branch)
         sm.registerAdapter(fake_product_to_branch_target)

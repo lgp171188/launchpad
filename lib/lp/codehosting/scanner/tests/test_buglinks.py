@@ -15,14 +15,8 @@ from lp.codehosting.scanner.buglinks import BugBranchLinker
 from lp.codehosting.scanner.tests.test_bzrsync import BzrSyncTestCase
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.osutils import override_environ
-from lp.testing import (
-    TestCase,
-    TestCaseWithFactory,
-    )
-from lp.testing.dbuser import (
-    lp_dbuser,
-    switch_dbuser,
-    )
+from lp.testing import TestCase, TestCaseWithFactory
+from lp.testing.dbuser import lp_dbuser, switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
@@ -50,8 +44,8 @@ class RevisionPropertyParsing(TestCase):
 
     def extractBugInfo(self, bug_property):
         revision = Revision(
-            self.factory.getUniqueString(),
-            properties=dict(bugs=bug_property))
+            self.factory.getUniqueString(), properties=dict(bugs=bug_property)
+        )
         bug_linker = BugBranchLinker(None)
         return bug_linker.extractBugInfo(revision)
 
@@ -59,46 +53,46 @@ class RevisionPropertyParsing(TestCase):
         # Parsing a single line should give a dict with a single entry,
         # mapping the bug_id to the status.
         bugs = self.extractBugInfo("https://launchpad.net/bugs/9999 fixed")
-        self.assertEqual(bugs, {9999: 'fixed'})
+        self.assertEqual(bugs, {9999: "fixed"})
 
     def test_multiple(self):
         # Information about more than one bug can be specified. Make sure that
         # all the information is processed.
         bugs = self.extractBugInfo(
             "https://launchpad.net/bugs/9999 fixed\n"
-            "https://launchpad.net/bugs/8888 fixed")
-        self.assertEqual(bugs, {9999: 'fixed',
-                                8888: 'fixed'})
+            "https://launchpad.net/bugs/8888 fixed"
+        )
+        self.assertEqual(bugs, {9999: "fixed", 8888: "fixed"})
 
     def test_empty(self):
         # If the property is empty, then return an empty dict.
-        bugs = self.extractBugInfo('')
+        bugs = self.extractBugInfo("")
         self.assertEqual(bugs, {})
 
     def test_bad_bug(self):
         # If the given bug is not a valid integer, then skip it, generate an
         # OOPS and continue processing.
-        bugs = self.extractBugInfo('https://launchpad.net/~jml fixed')
+        bugs = self.extractBugInfo("https://launchpad.net/~jml fixed")
         self.assertEqual(bugs, {})
 
     def test_non_launchpad_bug(self):
         # References to bugs on sites other than launchpad are ignored.
-        bugs = self.extractBugInfo('http://bugs.debian.org/1234 fixed')
+        bugs = self.extractBugInfo("http://bugs.debian.org/1234 fixed")
         self.assertEqual(bugs, {})
 
     def test_duplicated_line(self):
         # If a particular line is duplicated, silently ignore the duplicates.
         bugs = self.extractBugInfo(
-            'https://launchpad.net/bugs/9999 fixed\n'
-            'https://launchpad.net/bugs/9999 fixed')
-        self.assertEqual(bugs, {9999: 'fixed'})
+            "https://launchpad.net/bugs/9999 fixed\n"
+            "https://launchpad.net/bugs/9999 fixed"
+        )
+        self.assertEqual(bugs, {9999: "fixed"})
 
     def test_strict_url_checking(self):
         # Ignore URLs that look like a Launchpad bug URL but aren't.
-        bugs = self.extractBugInfo('https://launchpad.net/people/1234 fixed')
+        bugs = self.extractBugInfo("https://launchpad.net/people/1234 fixed")
         self.assertEqual(bugs, {})
-        bugs = self.extractBugInfo(
-            'https://launchpad.net/bugs/foo/1234 fixed')
+        bugs = self.extractBugInfo("https://launchpad.net/bugs/foo/1234 fixed")
         self.assertEqual(bugs, {})
 
 
@@ -131,7 +125,7 @@ class TestBugLinking(BzrSyncTestCase):
         We don't use canonical_url because we don't want to have to make
         Bazaar know about launchpad.test.
         """
-        return 'https://launchpad.net/bugs/%s' % bug.id
+        return "https://launchpad.net/bugs/%s" % bug.id
 
     def assertBugBranchLinked(self, bug, branch):
         """Assert that the BugBranch for `bug` and `branch` exists.
@@ -143,16 +137,18 @@ class TestBugLinking(BzrSyncTestCase):
     def test_newMainlineRevisionAddsBugBranch(self):
         """New mainline revisions with bugs properties create BugBranches."""
         self.commitRevision(
-            rev_id=b'rev1',
-            revprops={'bugs': '%s fixed' % self.getBugURL(self.bug1)})
+            rev_id=b"rev1",
+            revprops={"bugs": "%s fixed" % self.getBugURL(self.bug1)},
+        )
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)
         self.assertBugBranchLinked(self.bug1, self.db_branch)
 
     def test_scanningTwiceDoesntMatter(self):
         """Scanning a branch twice is the same as scanning it once."""
         self.commitRevision(
-            rev_id=b'rev1',
-            revprops={'bugs': '%s fixed' % self.getBugURL(self.bug1)})
+            rev_id=b"rev1",
+            revprops={"bugs": "%s fixed" % self.getBugURL(self.bug1)},
+        )
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)
         self.assertBugBranchLinked(self.bug1, self.db_branch)
@@ -161,15 +157,17 @@ class TestBugLinking(BzrSyncTestCase):
         with lp_dbuser():
             branch = self.factory.makePackageBranch()
             branch.sourcepackage.setBranch(
-                PackagePublishingPocket.RELEASE, branch, branch.owner)
+                PackagePublishingPocket.RELEASE, branch, branch.owner
+            )
         return branch
 
     def test_linking_bug_to_official_package_branch(self):
         # We can link a bug to an official package branch. Test added to catch
         # bug 391303.
         self.commitRevision(
-            rev_id=b'rev1',
-            revprops={'bugs': '%s fixed' % self.getBugURL(self.bug1)})
+            rev_id=b"rev1",
+            revprops={"bugs": "%s fixed" % self.getBugURL(self.bug1)},
+        )
         branch = self.makePackageBranch()
         self.syncBazaarBranchToDatabase(self.bzr_branch, branch)
         self.assertBugBranchLinked(self.bug1, branch)
@@ -177,8 +175,9 @@ class TestBugLinking(BzrSyncTestCase):
     def test_knownMainlineRevisionsDoesntMakeLink(self):
         """Don't add BugBranches for known mainline revision."""
         self.commitRevision(
-            rev_id=b'rev1',
-            revprops={'bugs': '%s fixed' % self.getBugURL(self.bug1)})
+            rev_id=b"rev1",
+            revprops={"bugs": "%s fixed" % self.getBugURL(self.bug1)},
+        )
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)
         # Create a new DB branch to sync with.
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.new_db_branch)
@@ -190,29 +189,38 @@ class TestBugLinking(BzrSyncTestCase):
         author = self.factory.getUniqueString()
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BRZ_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL="me@example.com"):
             self.bzr_tree.commit(
-                'common parent', committer=author, rev_id=b'r1',
-                allow_pointless=True)
+                "common parent",
+                committer=author,
+                rev_id=b"r1",
+                allow_pointless=True,
+            )
 
             # Branch from the base revision.
-            new_tree = self.make_branch_and_tree('bzr_branch_merged')
+            new_tree = self.make_branch_and_tree("bzr_branch_merged")
             new_tree.pull(self.bzr_branch)
 
             # Commit to both branches
             self.bzr_tree.commit(
-                'commit one', committer=author, rev_id=b'r2',
-                allow_pointless=True)
-            new_tree.commit(
-                'commit two', committer=author, rev_id=b'r1.1.1',
+                "commit one",
+                committer=author,
+                rev_id=b"r2",
                 allow_pointless=True,
-                revprops={'bugs': '%s fixed' % self.getBugURL(self.bug1)})
+            )
+            new_tree.commit(
+                "commit two",
+                committer=author,
+                rev_id=b"r1.1.1",
+                allow_pointless=True,
+                revprops={"bugs": "%s fixed" % self.getBugURL(self.bug1)},
+            )
 
             # Merge and commit.
             self.bzr_tree.merge_from_branch(new_tree.branch)
             self.bzr_tree.commit(
-                'merge', committer=author, rev_id=b'r3',
-                allow_pointless=True)
+                "merge", committer=author, rev_id=b"r3", allow_pointless=True
+            )
 
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)
         self.assertNotIn(self.db_branch, self.bug1.linked_branches)
@@ -222,17 +230,21 @@ class TestBugLinking(BzrSyncTestCase):
         self.assertRaises(NotFoundError, getUtility(IBugSet).get, 99999)
         self.assertEqual([], list(self.db_branch.linked_bugs))
         self.commitRevision(
-            rev_id=b'rev1',
-            revprops={'bugs': 'https://launchpad.net/bugs/99999 fixed'})
+            rev_id=b"rev1",
+            revprops={"bugs": "https://launchpad.net/bugs/99999 fixed"},
+        )
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)
         self.assertEqual([], list(self.db_branch.linked_bugs))
 
     def test_multipleBugsInProperty(self):
         """Create BugBranch links for *all* bugs in the property."""
         self.commitRevision(
-            rev_id=b'rev1',
-            revprops={'bugs': '%s fixed\n%s fixed' % (
-                    self.getBugURL(self.bug1), self.getBugURL(self.bug2))})
+            rev_id=b"rev1",
+            revprops={
+                "bugs": "%s fixed\n%s fixed"
+                % (self.getBugURL(self.bug1), self.getBugURL(self.bug2))
+            },
+        )
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)
 
         self.assertBugBranchLinked(self.bug1, self.db_branch)
@@ -251,13 +263,17 @@ class TestSubscription(TestCaseWithFactory):
         switch_dbuser("branchscanner")
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BRZ_EMAIL='me@example.com'):
-            revision_id = tree.commit('fix revision',
+        with override_environ(BRZ_EMAIL="me@example.com"):
+            revision_id = tree.commit(
+                "fix revision",
                 revprops={
-                    'bugs': 'https://launchpad.net/bugs/%d fixed' % bug.id})
+                    "bugs": "https://launchpad.net/bugs/%d fixed" % bug.id
+                },
+            )
         bzr_revision = tree.branch.repository.get_revision(revision_id)
         revision_set = getUtility(IRevisionSet)
         revision_set.newFromBazaarRevisions([bzr_revision])
-        notify(events.NewMainlineRevisions(
-            db_branch, tree.branch, [bzr_revision]))
+        notify(
+            events.NewMainlineRevisions(db_branch, tree.branch, [bzr_revision])
+        )
         self.assertIn(db_branch, bug.linked_branches)
