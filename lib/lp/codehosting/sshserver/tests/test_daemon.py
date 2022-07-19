@@ -3,21 +3,18 @@
 
 """Tests for the codehosting SSH server glue."""
 
-from lazr.sshserver.auth import (
-    NoSuchPersonWithName,
-    SSHUserAuthServer,
-    )
+from lazr.sshserver.auth import NoSuchPersonWithName, SSHUserAuthServer
 from lazr.sshserver.service import Factory
 from twisted.conch.ssh.common import NS
 from twisted.conch.ssh.keys import Key
 from twisted.internet.testing import StringTransport
 
 from lp.codehosting.sshserver.daemon import (
-    get_key_path,
-    get_portal,
     PRIVATE_KEY_FILE,
     PUBLIC_KEY_FILE,
-    )
+    get_key_path,
+    get_portal,
+)
 from lp.testing import TestCase
 from lp.xmlrpc import faults
 
@@ -38,10 +35,9 @@ class TestFactory(TestCase):
         """Create and start the factory that our SSH server uses."""
         factory = Factory(
             get_portal(None, None),
-            private_key=Key.fromFile(
-                get_key_path(PRIVATE_KEY_FILE)),
-            public_key=Key.fromFile(
-                get_key_path(PUBLIC_KEY_FILE)))
+            private_key=Key.fromFile(get_key_path(PRIVATE_KEY_FILE)),
+            public_key=Key.fromFile(get_key_path(PUBLIC_KEY_FILE)),
+        )
         factory.startFactory()
         return factory
 
@@ -65,7 +61,7 @@ class TestFactory(TestCase):
             has begun.
         """
         server_transport = self.startConnecting(factory)
-        server_transport.ssh_SERVICE_REQUEST(NS('ssh-userauth'))
+        server_transport.ssh_SERVICE_REQUEST(NS("ssh-userauth"))
         self.addCleanup(server_transport.service.serviceStopped)
         return server_transport
 
@@ -97,4 +93,5 @@ class TestXMLRPC(TestCase):
         # that in lp.xmlrpc.faults.
         self.assertEqual(
             faults.NoSuchPersonWithName.error_code,
-            NoSuchPersonWithName.error_code)
+            NoSuchPersonWithName.error_code,
+        )

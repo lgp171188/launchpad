@@ -19,16 +19,13 @@ from lp.services.config import config
 from lp.services.log.logger import BufferLogger
 from lp.testing import (
     FakeTime,
-    nonblocking_readline,
-    person_logged_in,
     TestCase,
     TestCaseWithFactory,
-    )
+    nonblocking_readline,
+    person_logged_in,
+)
 from lp.testing.fixture import PGBouncerFixture
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    DatabaseLayer,
-    )
+from lp.testing.layers import DatabaseFunctionalLayer, DatabaseLayer
 
 
 class TestBranchRewriter(TestCaseWithFactory):
@@ -52,15 +49,18 @@ class TestBranchRewriter(TestCaseWithFactory):
         branches = [
             self.factory.makeProductBranch(),
             self.factory.makePersonalBranch(),
-            self.factory.makePackageBranch()]
+            self.factory.makePackageBranch(),
+        ]
         transaction.commit()
         output = [
             rewriter.rewriteLine("/%s/.bzr/README" % branch.unique_name)
-            for branch in branches]
+            for branch in branches
+        ]
         expected = [
-            'file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
+            "file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README"
             % branch_id_to_path(branch.id)
-            for branch in branches]
+            for branch in branches
+        ]
         self.assertEqual(expected, output)
 
     def test_rewriteLine_found_not_dot_bzr(self):
@@ -70,14 +70,17 @@ class TestBranchRewriter(TestCaseWithFactory):
         branches = [
             self.factory.makeProductBranch(),
             self.factory.makePersonalBranch(),
-            self.factory.makePackageBranch()]
+            self.factory.makePackageBranch(),
+        ]
         transaction.commit()
         output = [
             rewriter.rewriteLine("/%s/changes" % branch.unique_name)
-            for branch in branches]
+            for branch in branches
+        ]
         expected = [
-            'http://localhost:8080/%s/changes' % branch.unique_name
-            for branch in branches]
+            "http://localhost:8080/%s/changes" % branch.unique_name
+            for branch in branches
+        ]
         self.assertEqual(expected, output)
 
     def test_rewriteLine_private(self):
@@ -86,17 +89,21 @@ class TestBranchRewriter(TestCaseWithFactory):
         # handle them there.
         rewriter = self.makeRewriter()
         branch = self.factory.makeAnyBranch(
-            information_type=InformationType.USERDATA)
+            information_type=InformationType.USERDATA
+        )
         unique_name = removeSecurityProxy(branch).unique_name
         transaction.commit()
         output = [
             rewriter.rewriteLine("/%s/changes" % unique_name),
-            rewriter.rewriteLine("/%s/.bzr" % unique_name)
-            ]
+            rewriter.rewriteLine("/%s/.bzr" % unique_name),
+        ]
         self.assertEqual(
-            ['http://localhost:8080/%s/changes' % unique_name,
-             'http://localhost:8080/%s/.bzr' % unique_name],
-            output)
+            [
+                "http://localhost:8080/%s/changes" % unique_name,
+                "http://localhost:8080/%s/.bzr" % unique_name,
+            ],
+            output,
+        )
 
     def test_rewriteLine_id_alias_found_dot_bzr(self):
         # Requests for /+branch-id/$id/.bzr/... are redirected to where the
@@ -105,16 +112,18 @@ class TestBranchRewriter(TestCaseWithFactory):
         branches = [
             self.factory.makeProductBranch(),
             self.factory.makePersonalBranch(),
-            self.factory.makePackageBranch()]
+            self.factory.makePackageBranch(),
+        ]
         transaction.commit()
         output = [
-            rewriter.rewriteLine(
-                "%s/.bzr/README" % branch_id_alias(branch))
-            for branch in branches]
+            rewriter.rewriteLine("%s/.bzr/README" % branch_id_alias(branch))
+            for branch in branches
+        ]
         expected = [
-            'file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
+            "file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README"
             % branch_id_to_path(branch.id)
-            for branch in branches]
+            for branch in branches
+        ]
         self.assertEqual(expected, output)
 
     def test_rewriteLine_id_alias_private(self):
@@ -122,14 +131,15 @@ class TestBranchRewriter(TestCaseWithFactory):
         # 'NULL'.  This is translated by apache to a 404.
         rewriter = self.makeRewriter()
         branch = self.factory.makeAnyBranch(
-            information_type=InformationType.USERDATA)
+            information_type=InformationType.USERDATA
+        )
         path = branch_id_alias(removeSecurityProxy(branch))
         transaction.commit()
         output = [
             rewriter.rewriteLine("%s/changes" % path),
-            rewriter.rewriteLine("%s/.bzr" % path)
-            ]
-        self.assertEqual(['NULL', 'NULL'], output)
+            rewriter.rewriteLine("%s/.bzr" % path),
+        ]
+        self.assertEqual(["NULL", "NULL"], output)
 
     def test_rewriteLine_id_alias_logs_cache_hit(self):
         # The second request for a branch using the alias hits the cache.
@@ -139,22 +149,23 @@ class TestBranchRewriter(TestCaseWithFactory):
         path = "%s/.bzr/README" % branch_id_alias(branch)
         rewriter.rewriteLine(path)
         rewriter.rewriteLine(path)
-        logging_output_lines = self.getLoggerOutput(
-            rewriter).strip().split('\n')
+        logging_output_lines = (
+            self.getLoggerOutput(rewriter).strip().split("\n")
+        )
         self.assertEqual(2, len(logging_output_lines))
         self.assertIsNot(
             None,
-            re.match("INFO .* -> .* (.*s, cache: HIT)",
-                     logging_output_lines[-1]),
-            "No hit found in %r" % logging_output_lines[-1])
+            re.match(
+                "INFO .* -> .* (.*s, cache: HIT)", logging_output_lines[-1]
+            ),
+            "No hit found in %r" % logging_output_lines[-1],
+        )
 
     def test_rewriteLine_static(self):
         # Requests to /static are rewritten to codebrowse urls.
         rewriter = self.makeRewriter()
         output = rewriter.rewriteLine("/static/foo")
-        self.assertEqual(
-            'http://localhost:8080/static/foo',
-            output)
+        self.assertEqual("http://localhost:8080/static/foo", output)
 
     def test_rewriteLine_not_found(self):
         # If the request does not map to a branch, we redirect it to
@@ -162,91 +173,105 @@ class TestBranchRewriter(TestCaseWithFactory):
         rewriter = self.makeRewriter()
         not_found_path = "/~nouser/noproduct"
         output = rewriter.rewriteLine(not_found_path)
-        self.assertEqual(
-            'http://localhost:8080%s' % not_found_path,
-            output)
+        self.assertEqual("http://localhost:8080%s" % not_found_path, output)
 
     def test_rewriteLine_logs_cache_miss(self):
         # The first request for a branch misses the cache and logs this fact.
         rewriter = self.makeRewriter()
         branch = self.factory.makeAnyBranch()
         transaction.commit()
-        rewriter.rewriteLine('/' + branch.unique_name + '/.bzr/README')
+        rewriter.rewriteLine("/" + branch.unique_name + "/.bzr/README")
         logging_output = self.getLoggerOutput(rewriter)
         self.assertIsNot(
             None,
             re.match("INFO .* -> .* (.*s, cache: MISS)", logging_output),
-            "No miss found in %r" % logging_output)
+            "No miss found in %r" % logging_output,
+        )
 
     def test_rewriteLine_logs_cache_hit(self):
         # The second request for a branch misses the cache and logs this fact.
         rewriter = self.makeRewriter()
         branch = self.factory.makeAnyBranch()
         transaction.commit()
-        rewriter.rewriteLine('/' + branch.unique_name + '/.bzr/README')
-        rewriter.rewriteLine('/' + branch.unique_name + '/.bzr/README')
-        logging_output_lines = self.getLoggerOutput(
-            rewriter).strip().split('\n')
+        rewriter.rewriteLine("/" + branch.unique_name + "/.bzr/README")
+        rewriter.rewriteLine("/" + branch.unique_name + "/.bzr/README")
+        logging_output_lines = (
+            self.getLoggerOutput(rewriter).strip().split("\n")
+        )
         self.assertEqual(2, len(logging_output_lines))
         self.assertIsNot(
             None,
-            re.match("INFO .* -> .* (.*s, cache: HIT)",
-                     logging_output_lines[-1]),
-            "No hit found in %r" % logging_output_lines[-1])
+            re.match(
+                "INFO .* -> .* (.*s, cache: HIT)", logging_output_lines[-1]
+            ),
+            "No hit found in %r" % logging_output_lines[-1],
+        )
 
     def test_rewriteLine_cache_expires(self):
         # The second request for a branch misses the cache and logs this fact.
         rewriter = self.makeRewriter()
         branch = self.factory.makeAnyBranch()
         transaction.commit()
-        rewriter.rewriteLine('/' + branch.unique_name + '/.bzr/README')
+        rewriter.rewriteLine("/" + branch.unique_name + "/.bzr/README")
         self.fake_time.advance(
-            config.codehosting.branch_rewrite_cache_lifetime + 1)
-        rewriter.rewriteLine('/' + branch.unique_name + '/.bzr/README')
-        logging_output_lines = self.getLoggerOutput(
-            rewriter).strip().split('\n')
+            config.codehosting.branch_rewrite_cache_lifetime + 1
+        )
+        rewriter.rewriteLine("/" + branch.unique_name + "/.bzr/README")
+        logging_output_lines = (
+            self.getLoggerOutput(rewriter).strip().split("\n")
+        )
         self.assertEqual(2, len(logging_output_lines))
         self.assertIsNot(
             None,
-            re.match("INFO .* -> .* (.*s, cache: MISS)",
-                     logging_output_lines[-1]),
-            "No miss found in %r" % logging_output_lines[-1])
+            re.match(
+                "INFO .* -> .* (.*s, cache: MISS)", logging_output_lines[-1]
+            ),
+            "No miss found in %r" % logging_output_lines[-1],
+        )
 
     def test_getBranchIdAndTrailingPath_cached(self):
         """When results come from cache, they should be the same."""
         rewriter = self.makeRewriter()
         branch = self.factory.makeAnyBranch()
         transaction.commit()
-        id_path = (branch.id, '/.bzr/README',)
+        id_path = (
+            branch.id,
+            "/.bzr/README",
+        )
         result = rewriter._getBranchIdAndTrailingPath(
-            '/' + branch.unique_name + '/.bzr/README')
-        self.assertEqual(id_path + ('MISS',), result)
+            "/" + branch.unique_name + "/.bzr/README"
+        )
+        self.assertEqual(id_path + ("MISS",), result)
         result = rewriter._getBranchIdAndTrailingPath(
-            '/' + branch.unique_name + '/.bzr/README')
-        self.assertEqual(id_path + ('HIT',), result)
+            "/" + branch.unique_name + "/.bzr/README"
+        )
+        self.assertEqual(id_path + ("HIT",), result)
 
     def test_branch_id_alias_private(self):
         # Private branches are not found at all (this is for anonymous access)
         owner = self.factory.makePerson()
         branch = self.factory.makeAnyBranch(
-            owner=owner, information_type=InformationType.USERDATA)
+            owner=owner, information_type=InformationType.USERDATA
+        )
         with person_logged_in(owner):
             path = branch_id_alias(branch)
         result = self.makeRewriter()._getBranchIdAndTrailingPath(path)
-        self.assertEqual((None, None, 'MISS'), result)
+        self.assertEqual((None, None, "MISS"), result)
 
     def test_branch_id_alias_transitive_private(self):
         # Transitively private branches are not found at all
         # (this is for anonymous access)
         owner = self.factory.makePerson()
         private_branch = self.factory.makeAnyBranch(
-            owner=owner, information_type=InformationType.USERDATA)
+            owner=owner, information_type=InformationType.USERDATA
+        )
         branch = self.factory.makeAnyBranch(
-            stacked_on=private_branch, owner=owner)
+            stacked_on=private_branch, owner=owner
+        )
         with person_logged_in(owner):
             path = branch_id_alias(branch)
         result = self.makeRewriter()._getBranchIdAndTrailingPath(path)
-        self.assertEqual((None, None, 'MISS'), result)
+        self.assertEqual((None, None, "MISS"), result)
 
 
 class TestBranchRewriterScript(TestCaseWithFactory):
@@ -261,34 +286,46 @@ class TestBranchRewriterScript(TestCaseWithFactory):
         bs = [
             self.factory.makeProductBranch(),
             self.factory.makePersonalBranch(),
-            self.factory.makePackageBranch()]
+            self.factory.makePackageBranch(),
+        ]
         privbranch = removeSecurityProxy(
             self.factory.makeProductBranch(
-                information_type=InformationType.USERDATA))
+                information_type=InformationType.USERDATA
+            )
+        )
         allbs = bs + [privbranch]
-        input_lines = (
-            ["/%s/.bzr/README" % branch.unique_name for branch in allbs]
-            + ["/%s/changes" % branch.unique_name for branch in allbs])
+        input_lines = [
+            "/%s/.bzr/README" % branch.unique_name for branch in allbs
+        ] + ["/%s/changes" % branch.unique_name for branch in allbs]
         expected_lines = (
-            ['file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
-             % branch_id_to_path(branch.id) for branch in bs]
-            + ['http://localhost:8080/%s/.bzr/README' % privbranch.unique_name]
-            + ['http://localhost:8080/%s/changes' % b.unique_name for b in bs]
-            + ['http://localhost:8080/%s/changes' % privbranch.unique_name])
+            [
+                "file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README"
+                % branch_id_to_path(branch.id)
+                for branch in bs
+            ]
+            + ["http://localhost:8080/%s/.bzr/README" % privbranch.unique_name]
+            + ["http://localhost:8080/%s/changes" % b.unique_name for b in bs]
+            + ["http://localhost:8080/%s/changes" % privbranch.unique_name]
+        )
         transaction.commit()
-        script_file = os.path.join(
-            config.root, 'scripts', 'branch-rewrite.py')
+        script_file = os.path.join(config.root, "scripts", "branch-rewrite.py")
         proc = subprocess.Popen(
-            [script_file], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, bufsize=0, universal_newlines=True)
+            [script_file],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=0,
+            universal_newlines=True,
+        )
         output_lines = []
         # For each complete line of input, the script should, without
         # buffering, write a complete line of output.
         for input_line in input_lines:
-            proc.stdin.write(input_line + '\n')
+            proc.stdin.write(input_line + "\n")
             proc.stdin.flush()
             output_lines.append(
-                nonblocking_readline(proc.stdout, 60).rstrip('\n'))
+                nonblocking_readline(proc.stdout, 60).rstrip("\n")
+            )
         # If we create a new branch after the branch-rewrite.py script has
         # connected to the database, or edit a branch name that has already
         # been rewritten, both are rewritten successfully.
@@ -297,58 +334,64 @@ class TestBranchRewriterScript(TestCaseWithFactory):
         edited_branch.name = self.factory.getUniqueString()
         transaction.commit()
 
-        new_branch_input = '/%s/.bzr/README' % new_branch.unique_name
+        new_branch_input = "/%s/.bzr/README" % new_branch.unique_name
         expected_lines.append(
-            'file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
-            % branch_id_to_path(new_branch.id))
-        proc.stdin.write(new_branch_input + '\n')
+            "file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README"
+            % branch_id_to_path(new_branch.id)
+        )
+        proc.stdin.write(new_branch_input + "\n")
         proc.stdin.flush()
-        output_lines.append(
-            nonblocking_readline(proc.stdout, 60).rstrip('\n'))
+        output_lines.append(nonblocking_readline(proc.stdout, 60).rstrip("\n"))
 
-        edited_branch_input = '/%s/.bzr/README' % edited_branch.unique_name
+        edited_branch_input = "/%s/.bzr/README" % edited_branch.unique_name
         expected_lines.append(
-            'file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
-            % branch_id_to_path(edited_branch.id))
-        proc.stdin.write(edited_branch_input + '\n')
+            "file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README"
+            % branch_id_to_path(edited_branch.id)
+        )
+        proc.stdin.write(edited_branch_input + "\n")
         proc.stdin.flush()
-        output_lines.append(
-            nonblocking_readline(proc.stdout, 60).rstrip('\n'))
+        output_lines.append(nonblocking_readline(proc.stdout, 60).rstrip("\n"))
 
         os.kill(proc.pid, signal.SIGINT)
         err = proc.stderr.read()
         # The script produces logging output, but not to stderr.
-        self.assertEqual('', err)
+        self.assertEqual("", err)
         self.assertEqual(expected_lines, output_lines)
 
 
 class TestBranchRewriterScriptHandlesDisconnects(TestCase):
     """Ensure branch-rewrite.py survives fastdowntime deploys."""
+
     layer = DatabaseLayer
 
     def spawn(self):
-        script_file = os.path.join(
-            config.root, 'scripts', 'branch-rewrite.py')
+        script_file = os.path.join(config.root, "scripts", "branch-rewrite.py")
 
         self.rewriter_proc = subprocess.Popen(
-            [script_file], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, bufsize=0, universal_newlines=True)
+            [script_file],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=0,
+            universal_newlines=True,
+        )
 
         self.addCleanup(self.rewriter_proc.terminate)
 
     def request(self, query):
-        self.rewriter_proc.stdin.write(query + '\n')
+        self.rewriter_proc.stdin.write(query + "\n")
         self.rewriter_proc.stdin.flush()
 
         # 60 second timeout as we might need to wait for the script to
         # finish starting up.
         result = nonblocking_readline(self.rewriter_proc.stdout, 60)
 
-        if result.endswith('\n'):
+        if result.endswith("\n"):
             return result[:-1]
         self.fail(
             "Incomplete line or no result retrieved from subprocess: %r"
-            % result)
+            % result
+        )
 
     def test_reconnects_when_disconnected(self):
         pgbouncer = self.useFixture(PGBouncerFixture())
@@ -356,8 +399,8 @@ class TestBranchRewriterScriptHandlesDisconnects(TestCase):
         self.spawn()
 
         # Everything should be working, and we get valid output.
-        out = self.request('foo')
-        self.assertEndsWith(out, '/foo')
+        out = self.request("foo")
+        self.assertEndsWith(out, "/foo")
 
         pgbouncer.stop()
 
@@ -366,14 +409,14 @@ class TestBranchRewriterScriptHandlesDisconnects(TestCase):
         # once to ensure that we will keep trying to reconnect even
         # after several failures.
         for count in range(5):
-            out = self.request('foo')
-            self.assertEqual(out, 'NULL')
+            out = self.request("foo")
+            self.assertEqual(out, "NULL")
 
         pgbouncer.start()
 
         # Everything should be working, and we get valid output.
-        out = self.request('foo')
-        self.assertEndsWith(out, '/foo')
+        out = self.request("foo")
+        self.assertEndsWith(out, "/foo")
 
     def test_starts_with_db_down(self):
         pgbouncer = self.useFixture(PGBouncerFixture())
@@ -384,10 +427,10 @@ class TestBranchRewriterScriptHandlesDisconnects(TestCase):
         self.spawn()
 
         for count in range(5):
-            out = self.request('foo')
-            self.assertEqual(out, 'NULL')
+            out = self.request("foo")
+            self.assertEqual(out, "NULL")
 
         pgbouncer.start()
 
-        out = self.request('foo')
-        self.assertEndsWith(out, '/foo')
+        out = self.request("foo")
+        self.assertEndsWith(out, "/foo")

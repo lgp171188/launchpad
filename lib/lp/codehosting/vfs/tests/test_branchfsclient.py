@@ -7,18 +7,12 @@ from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 
 from lp.code.interfaces.codehosting import BRANCH_TRANSPORT
-from lp.codehosting.inmemory import (
-    InMemoryFrontend,
-    XMLRPCWrapper,
-    )
+from lp.codehosting.inmemory import InMemoryFrontend, XMLRPCWrapper
 from lp.codehosting.vfs.branchfsclient import (
     BranchFileSystemClient,
     NotInCache,
-    )
-from lp.testing import (
-    FakeTime,
-    TestCase,
-    )
+)
+from lp.testing import FakeTime, TestCase
 
 
 class TestBranchFileSystemClient(TestCase):
@@ -35,8 +29,7 @@ class TestBranchFileSystemClient(TestCase):
         self.fake_time = FakeTime(12345)
 
     def advanceTime(self, amount):
-        """Advance the time seen by clients made by `makeClient` by 'amount'.
-        """
+        """Advance the time seen by clients made by `makeClient`."""
         self.fake_time.advance(amount)
 
     def makeClient(self, expiry_time=None, seen_new_branch_hook=None):
@@ -45,18 +38,25 @@ class TestBranchFileSystemClient(TestCase):
         The created client interacts with the InMemoryFrontend.
         """
         return BranchFileSystemClient(
-            self._xmlrpc_client, self.user.id, expiry_time=expiry_time,
+            self._xmlrpc_client,
+            self.user.id,
+            expiry_time=expiry_time,
             seen_new_branch_hook=seen_new_branch_hook,
-            _now=self.fake_time.now)
+            _now=self.fake_time.now,
+        )
 
     def test_translatePath(self):
         branch = self.factory.makeAnyBranch()
         client = self.makeClient()
-        deferred = client.translatePath('/' + branch.unique_name)
+        deferred = client.translatePath("/" + branch.unique_name)
         deferred.addCallback(
             self.assertEqual,
-            (BRANCH_TRANSPORT,
-             dict(id=branch.id, writable=False, private=False), ''))
+            (
+                BRANCH_TRANSPORT,
+                dict(id=branch.id, writable=False, private=False),
+                "",
+            ),
+        )
         return deferred
 
     def test_get_matched_part(self):
@@ -65,11 +65,12 @@ class TestBranchFileSystemClient(TestCase):
         # and the returned data.
         branch = self.factory.makeAnyBranch()
         client = self.makeClient()
-        requested_path = '/%s/a/b' % branch.unique_name
+        requested_path = "/%s/a/b" % branch.unique_name
         matched_part = client._getMatchedPart(
             requested_path,
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False}, 'a/b'))
-        self.assertEqual('/%s' % branch.unique_name, matched_part)
+            (BRANCH_TRANSPORT, {"id": branch.id, "writable": False}, "a/b"),
+        )
+        self.assertEqual("/%s" % branch.unique_name, matched_part)
 
     def test_get_matched_part_no_trailing_slash(self):
         # _getMatchedPart always returns the absolute path to the object that
@@ -79,11 +80,12 @@ class TestBranchFileSystemClient(TestCase):
         # This test is added to exercise a corner case.
         branch = self.factory.makeAnyBranch()
         client = self.makeClient()
-        requested_path = '/%s' % branch.unique_name
+        requested_path = "/%s" % branch.unique_name
         matched_part = client._getMatchedPart(
             requested_path,
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False}, ''))
-        self.assertEqual('/%s' % branch.unique_name, matched_part)
+            (BRANCH_TRANSPORT, {"id": branch.id, "writable": False}, ""),
+        )
+        self.assertEqual("/%s" % branch.unique_name, matched_part)
 
     def test_get_matched_part_no_trailing_path(self):
         # _getMatchedPart always returns the absolute path to the object that
@@ -93,11 +95,12 @@ class TestBranchFileSystemClient(TestCase):
         # This test is added to exercise a corner case.
         branch = self.factory.makeAnyBranch()
         client = self.makeClient()
-        requested_path = '/%s/' % branch.unique_name
+        requested_path = "/%s/" % branch.unique_name
         matched_part = client._getMatchedPart(
             requested_path,
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False}, ''))
-        self.assertEqual('/%s' % branch.unique_name, matched_part)
+            (BRANCH_TRANSPORT, {"id": branch.id, "writable": False}, ""),
+        )
+        self.assertEqual("/%s" % branch.unique_name, matched_part)
 
     def test_path_translation_cache(self):
         # We can retrieve data that we've added to the cache. The data we
@@ -106,10 +109,10 @@ class TestBranchFileSystemClient(TestCase):
         client = self.makeClient()
         fake_data = self.factory.getUniqueString()
         client._addToCache(
-            (BRANCH_TRANSPORT, fake_data, ''), '/%s' % branch.unique_name)
-        result = client._getFromCache('/%s/foo/bar' % branch.unique_name)
-        self.assertEqual(
-            (BRANCH_TRANSPORT, fake_data, 'foo/bar'), result)
+            (BRANCH_TRANSPORT, fake_data, ""), "/%s" % branch.unique_name
+        )
+        result = client._getFromCache("/%s/foo/bar" % branch.unique_name)
+        self.assertEqual((BRANCH_TRANSPORT, fake_data, "foo/bar"), result)
 
     def test_path_translation_cache_within_expiry_time(self):
         # If the client treats cached values as having a limited lifetime,
@@ -119,11 +122,11 @@ class TestBranchFileSystemClient(TestCase):
         client = self.makeClient(expiry_time=expiry_time)
         fake_data = self.factory.getUniqueString()
         client._addToCache(
-            (BRANCH_TRANSPORT, fake_data, ''), '/%s' % branch.unique_name)
+            (BRANCH_TRANSPORT, fake_data, ""), "/%s" % branch.unique_name
+        )
         self.advanceTime(expiry_time / 2)
-        result = client._getFromCache('/%s/foo/bar' % branch.unique_name)
-        self.assertEqual(
-            (BRANCH_TRANSPORT, fake_data, 'foo/bar'), result)
+        result = client._getFromCache("/%s/foo/bar" % branch.unique_name)
+        self.assertEqual((BRANCH_TRANSPORT, fake_data, "foo/bar"), result)
 
     def test_path_translation_cache_after_expiry_time(self):
         # If the client treats cached values as having a limited lifetime, a
@@ -134,10 +137,14 @@ class TestBranchFileSystemClient(TestCase):
         client = self.makeClient(expiry_time=expiry_time)
         fake_data = self.factory.getUniqueString()
         client._addToCache(
-            (BRANCH_TRANSPORT, fake_data, ''), '/%s' % branch.unique_name)
+            (BRANCH_TRANSPORT, fake_data, ""), "/%s" % branch.unique_name
+        )
         self.advanceTime(expiry_time * 2)
-        self.assertRaises(NotInCache, client._getFromCache,
-                          '/%s/foo/bar' % branch.unique_name)
+        self.assertRaises(
+            NotInCache,
+            client._getFromCache,
+            "/%s/foo/bar" % branch.unique_name,
+        )
 
     def test_path_translation_cache_respects_path_segments(self):
         # We only get a value from the cache if the cached path is a parent of
@@ -147,17 +154,17 @@ class TestBranchFileSystemClient(TestCase):
         client = self.makeClient()
         fake_data = self.factory.getUniqueString()
         client._addToCache(
-            (BRANCH_TRANSPORT, fake_data, ''), '/%s' % branch.unique_name)
+            (BRANCH_TRANSPORT, fake_data, ""), "/%s" % branch.unique_name
+        )
         self.assertRaises(
-            NotInCache,
-            client._getFromCache, '/%s-suffix' % branch.unique_name)
+            NotInCache, client._getFromCache, "/%s-suffix" % branch.unique_name
+        )
 
     def test_not_in_cache(self):
         # _getFromCache raises an error when the given path isn't in the
         # cache.
         client = self.makeClient()
-        self.assertRaises(
-            NotInCache, client._getFromCache, "foo")
+        self.assertRaises(NotInCache, client._getFromCache, "foo")
 
     @defer.inlineCallbacks
     def test_translatePath_retrieves_from_cache(self):
@@ -169,23 +176,25 @@ class TestBranchFileSystemClient(TestCase):
         # the cache if it's present.
         fake_data = self.factory.getUniqueString()
         client._addToCache(
-            (BRANCH_TRANSPORT, fake_data, ''), '/%s' % branch.unique_name)
-        requested_path = '/%s/foo/bar' % branch.unique_name
+            (BRANCH_TRANSPORT, fake_data, ""), "/%s" % branch.unique_name
+        )
+        requested_path = "/%s/foo/bar" % branch.unique_name
         transport_type, data, trailing_path = yield client.translatePath(
-            requested_path)
+            requested_path
+        )
         self.assertEqual(BRANCH_TRANSPORT, transport_type)
         self.assertEqual(fake_data, data)
-        self.assertEqual('foo/bar', trailing_path)
+        self.assertEqual("foo/bar", trailing_path)
 
     def test_translatePath_adds_to_cache(self):
         # translatePath adds successful path translations to the cache, thus
         # allowing for future translations to be retrieved from the cache.
         branch = self.factory.makeAnyBranch()
         client = self.makeClient()
-        deferred = client.translatePath('/' + branch.unique_name)
+        deferred = client.translatePath("/" + branch.unique_name)
         deferred.addCallback(
-            self.assertEqual,
-            client._getFromCache('/' + branch.unique_name))
+            self.assertEqual, client._getFromCache("/" + branch.unique_name)
+        )
         return deferred
 
     @defer.inlineCallbacks
@@ -196,27 +205,33 @@ class TestBranchFileSystemClient(TestCase):
         client = self.makeClient()
         self.factory.enableDefaultStackingForProduct(branch.product)
         yield client.translatePath(
-            '/~' + branch.owner.name + '/' + branch.product.name +
-            '/.bzr/format')
+            "/~"
+            + branch.owner.name
+            + "/"
+            + branch.product.name
+            + "/.bzr/format"
+        )
         transport_type, data, trailing_path = yield client.translatePath(
-            '/' + branch.unique_name)
+            "/" + branch.unique_name
+        )
         self.assertEqual(BRANCH_TRANSPORT, transport_type)
 
     def test_errors_not_cached(self):
         # Don't cache failed translations. What would be the point?
         client = self.makeClient()
-        deferred = client.translatePath('/foo/bar/baz')
+        deferred = client.translatePath("/foo/bar/baz")
 
         def translated_successfully(result):
             self.fail(
-                "Translated successfully. Expected error, got %r" % result)
+                "Translated successfully. Expected error, got %r" % result
+            )
 
         def failed_translation(failure):
-            self.assertRaises(
-                NotInCache, client._getFromCache, '/foo/bar/baz')
+            self.assertRaises(NotInCache, client._getFromCache, "/foo/bar/baz")
 
         return deferred.addCallbacks(
-            translated_successfully, failed_translation)
+            translated_successfully, failed_translation
+        )
 
     def test_seen_new_branch_hook_called_for_new_branch(self):
         # A callable passed as the seen_new_branch_hook when constructing a
@@ -226,7 +241,7 @@ class TestBranchFileSystemClient(TestCase):
         seen_branches = []
         client = self.makeClient(seen_new_branch_hook=seen_branches.append)
         branch = self.factory.makeAnyBranch()
-        client.translatePath('/' + branch.unique_name + '/trailing')
+        client.translatePath("/" + branch.unique_name + "/trailing")
         self.assertEqual([branch.unique_name], seen_branches)
 
     def test_seen_new_branch_hook_called_for_each_branch(self):
@@ -236,10 +251,11 @@ class TestBranchFileSystemClient(TestCase):
         client = self.makeClient(seen_new_branch_hook=seen_branches.append)
         branch1 = self.factory.makeAnyBranch()
         branch2 = self.factory.makeAnyBranch()
-        client.translatePath('/' + branch1.unique_name + '/trailing')
-        client.translatePath('/' + branch2.unique_name + '/trailing')
+        client.translatePath("/" + branch1.unique_name + "/trailing")
+        client.translatePath("/" + branch2.unique_name + "/trailing")
         self.assertEqual(
-            [branch1.unique_name, branch2.unique_name], seen_branches)
+            [branch1.unique_name, branch2.unique_name], seen_branches
+        )
 
     def test_seen_new_branch_hook_called_once_for_a_new_branch(self):
         # The seen_new_branch_hook is only called once for a given branch.
@@ -247,8 +263,9 @@ class TestBranchFileSystemClient(TestCase):
         client = self.makeClient(seen_new_branch_hook=seen_branches.append)
         branch1 = self.factory.makeAnyBranch()
         branch2 = self.factory.makeAnyBranch()
-        client.translatePath('/' + branch1.unique_name + '/trailing')
-        client.translatePath('/' + branch2.unique_name + '/trailing')
-        client.translatePath('/' + branch1.unique_name + '/different')
+        client.translatePath("/" + branch1.unique_name + "/trailing")
+        client.translatePath("/" + branch2.unique_name + "/trailing")
+        client.translatePath("/" + branch1.unique_name + "/different")
         self.assertEqual(
-            [branch1.unique_name, branch2.unique_name], seen_branches)
+            [branch1.unique_name, branch2.unique_name], seen_branches
+        )

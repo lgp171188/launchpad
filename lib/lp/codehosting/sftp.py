@@ -13,37 +13,28 @@ We call such a transport a "Twisted Transport".
 """
 
 __all__ = [
-    'avatar_to_sftp_server',
-    'TransportSFTPServer',
-    ]
+    "avatar_to_sftp_server",
+    "TransportSFTPServer",
+]
 
 
-from copy import copy
 import errno
 import os
 import stat
+from copy import copy
 
-from breezy import (
-    errors as bzr_errors,
-    osutils,
-    urlutils,
-    )
+from breezy import errors as bzr_errors
+from breezy import osutils, urlutils
 from breezy.transport.local import LocalTransport
 from lazr.sshserver.sftp import FileIsADirectory
-from twisted.conch.interfaces import (
-    ISFTPFile,
-    ISFTPServer,
-    )
+from twisted.conch.interfaces import ISFTPFile, ISFTPServer
 from twisted.conch.ls import lsLine
 from twisted.conch.ssh import filetransfer
 from twisted.internet import defer
 from twisted.python import util
 from zope.interface import implementer
 
-from lp.codehosting.vfs import (
-    AsyncLaunchpadTransport,
-    LaunchpadServer,
-    )
+from lp.codehosting.vfs import AsyncLaunchpadTransport, LaunchpadServer
 from lp.services.config import config
 from lp.services.twistedsupport import gatherResults
 
@@ -89,10 +80,13 @@ def with_sftp_error(func):
     See `TransportSFTPServer.translateError` for the details of the
     translation.
     """
+
     def decorator(*args, **kwargs):
         deferred = func(*args, **kwargs)
-        return deferred.addErrback(TransportSFTPServer.translateError,
-                                   func.__name__)
+        return deferred.addErrback(
+            TransportSFTPServer.translateError, func.__name__
+        )
+
     return util.mergeFunctionMetadata(func, decorator)
 
 
@@ -142,24 +136,25 @@ class TransportSFTPFile:
         # The Twisted VFS adapter creates a file when any of these flags are
         # set. It's possible that we only need to check for FXF_CREAT.
         create_mask = (
-            filetransfer.FXF_WRITE | filetransfer.FXF_APPEND |
-            filetransfer.FXF_CREAT)
+            filetransfer.FXF_WRITE
+            | filetransfer.FXF_APPEND
+            | filetransfer.FXF_CREAT
+        )
         return bool(self._flags & create_mask)
 
     def _shouldTruncate(self):
         """Should we truncate the file?"""
-        return (bool(self._flags & filetransfer.FXF_TRUNC)
-                and not self._written)
+        return bool(self._flags & filetransfer.FXF_TRUNC) and not self._written
 
     def _shouldWrite(self):
         """Is this file opened writable?"""
-        write_mask = (filetransfer.FXF_WRITE | filetransfer.FXF_APPEND)
+        write_mask = filetransfer.FXF_WRITE | filetransfer.FXF_APPEND
         return bool(self._flags & write_mask)
 
     def _truncateFile(self):
         """Truncate this file."""
         self._written = True
-        return self.transport.put_bytes(self._escaped_path, b'')
+        return self.transport.put_bytes(self._escaped_path, b"")
 
     @with_sftp_error
     @defer.inlineCallbacks
@@ -168,7 +163,8 @@ class TransportSFTPFile:
         if not self._shouldWrite():
             raise filetransfer.SFTPError(
                 filetransfer.FX_PERMISSION_DENIED,
-                "%r was opened read-only." % self._unescaped_relpath)
+                "%r was opened read-only." % self._unescaped_relpath,
+            )
         if self._shouldTruncate():
             yield self._truncateFile()
         self._written = True
@@ -183,7 +179,8 @@ class TransportSFTPFile:
         """See `ISFTPFile`."""
         try:
             read_things = yield self.transport.readv(
-                self._escaped_path, [(offset, length)])
+                self._escaped_path, [(offset, length)]
+            )
             chunk = next(read_things)[1]
         except bzr_errors.ShortReadvError as e:
             # Handle short reads by reading what was available.
@@ -203,13 +200,15 @@ class TransportSFTPFile:
         # XXX 2008-05-09 JonathanLange: This should at least raise an error,
         # not do nothing silently.
         return self._server.setAttrs(
-            self._unescaped_relpath.encode('UTF-8'), attrs)
+            self._unescaped_relpath.encode("UTF-8"), attrs
+        )
 
     @with_sftp_error
     def getAttrs(self):
         """See `ISFTPFile`."""
         return self._server.getAttrs(
-            self._unescaped_relpath.encode('UTF-8'), False)
+            self._unescaped_relpath.encode("UTF-8"), False
+        )
 
     @defer.inlineCallbacks
     def close(self):
@@ -234,9 +233,11 @@ def _get_transport_for_dir(directory):
 def avatar_to_sftp_server(avatar):
     user_id = avatar.user_id
     branch_transport = _get_transport_for_dir(
-        config.codehosting.mirrored_branches_root)
+        config.codehosting.mirrored_branches_root
+    )
     server = LaunchpadServer(
-        avatar.codehosting_proxy, user_id, branch_transport)
+        avatar.codehosting_proxy, user_id, branch_transport
+    )
     server.start_server()
     transport = AsyncLaunchpadTransport(server, server.get_url())
     return TransportSFTPServer(transport)
@@ -258,7 +259,7 @@ class TransportSFTPServer:
         Twisted sends paths over SFTP as bytes, so we must decode them.
         """
         try:
-            return path.decode('UTF-8')
+            return path.decode("UTF-8")
         except UnicodeDecodeError:
             raise filetransfer.SFTPError(filetransfer.FX_BAD_MESSAGE, path)
 
@@ -282,8 +283,7 @@ class TransportSFTPServer:
         deferreds = []
         for filename in file_list:
             escaped_file_path = os.path.join(escaped_dir_path, filename)
-            deferreds.append(
-                self.transport.stat(escaped_file_path))
+            deferreds.append(self.transport.stat(escaped_file_path))
         return gatherResults(deferreds)
 
     def _format_directory_entries(self, stat_results, filenames):
@@ -295,9 +295,9 @@ class TransportSFTPServer:
         :return: An iterator of ``(shortname, longname, attributes)``.
         """
         for stat_result, filename in zip(stat_results, filenames):
-            shortname = urlutils.unescape(filename).encode('utf-8')
+            shortname = urlutils.unescape(filename).encode("utf-8")
             stat_result = copy(stat_result)
-            for attribute in ['st_uid', 'st_gid', 'st_mtime', 'st_nlink']:
+            for attribute in ["st_uid", "st_gid", "st_mtime", "st_nlink"]:
                 if getattr(stat_result, attribute, None) is None:
                     setattr(stat_result, attribute, 0)
             longname = lsLine(shortname, stat_result)
@@ -326,7 +326,8 @@ class TransportSFTPServer:
             return TransportSFTPFile(self.transport, path, flags, self)
         else:
             raise filetransfer.SFTPError(
-                filetransfer.FX_NO_SUCH_FILE, directory)
+                filetransfer.FX_NO_SUCH_FILE, directory
+            )
 
     def readLink(self, path):
         """See `ISFTPServer`."""
@@ -338,7 +339,7 @@ class TransportSFTPServer:
         relpath = self._decodePath(relpath)
         path = yield self.transport.local_realPath(urlutils.escape(relpath))
         unescaped_path = urlutils.unescape(path)
-        return unescaped_path.encode('utf-8')
+        return unescaped_path.encode("utf-8")
 
     def setAttrs(self, path, attrs):
         """See `ISFTPServer`.
@@ -355,12 +356,12 @@ class TransportSFTPServer:
         attributes as not all the Bazaar transports return full stat results.
         """
         return {
-            'size': getattr(stat_val, 'st_size', 0),
-            'uid': getattr(stat_val, 'st_uid', 0),
-            'gid': getattr(stat_val, 'st_gid', 0),
-            'permissions': getattr(stat_val, 'st_mode', 0),
-            'atime': int(getattr(stat_val, 'st_atime', 0)),
-            'mtime': int(getattr(stat_val, 'st_mtime', 0)),
+            "size": getattr(stat_val, "st_size", 0),
+            "uid": getattr(stat_val, "st_uid", 0),
+            "gid": getattr(stat_val, "st_gid", 0),
+            "permissions": getattr(stat_val, "st_mode", 0),
+            "atime": int(getattr(stat_val, "st_atime", 0)),
+            "mtime": int(getattr(stat_val, "st_mtime", 0)),
         }
 
     @with_sftp_error
@@ -383,7 +384,8 @@ class TransportSFTPServer:
         """See `ISFTPServer`."""
         path = self._decodePath(path)
         return self.transport.mkdir(
-            urlutils.escape(path), attrs['permissions'])
+            urlutils.escape(path), attrs["permissions"]
+        )
 
     @with_sftp_error
     def removeDirectory(self, path):
@@ -403,26 +405,26 @@ class TransportSFTPServer:
         oldpath = self._decodePath(oldpath)
         newpath = self._decodePath(newpath)
         return self.transport.rename(
-            urlutils.escape(oldpath), urlutils.escape(newpath))
+            urlutils.escape(oldpath), urlutils.escape(newpath)
+        )
 
     @staticmethod
     def translateError(failure, func_name):
         """Translate Bazaar errors to `filetransfer.SFTPError` instances."""
         types_to_codes = {
             bzr_errors.PermissionDenied: filetransfer.FX_PERMISSION_DENIED,
-            bzr_errors.TransportNotPossible:
-                filetransfer.FX_PERMISSION_DENIED,
+            bzr_errors.TransportNotPossible: filetransfer.FX_PERMISSION_DENIED,
             bzr_errors.NoSuchFile: filetransfer.FX_NO_SUCH_FILE,
             bzr_errors.FileExists: filetransfer.FX_FILE_ALREADY_EXISTS,
             bzr_errors.DirectoryNotEmpty: filetransfer.FX_FAILURE,
             bzr_errors.TransportError: filetransfer.FX_FAILURE,
             FileIsADirectory: filetransfer.FX_FILE_IS_A_DIRECTORY,
-            }
+        }
         # Bazaar expects makeDirectory to fail with exactly the string "mkdir
         # failed".
         names_to_messages = {
-            'makeDirectory': 'mkdir failed',
-            }
+            "makeDirectory": "mkdir failed",
+        }
         try:
             sftp_code = types_to_codes[failure.type]
         except KeyError:

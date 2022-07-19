@@ -7,8 +7,8 @@ import unittest
 
 from lp.codehosting.bzrutils import identical_formats
 
-
 # Define a bunch of different fake format classes to pass to identical_formats
+
 
 class BzrDirFormatA:
     pass
@@ -36,12 +36,14 @@ class RepoFormatB:
 
 class StubObjectWithFormat:
     """A stub object with a _format attribute, like bzrdir and repositories."""
+
     def __init__(self, format):
         self._format = format
 
 
 class StubBranch:
     """A stub branch object that just has formats."""
+
     def __init__(self, bzrdir_format, repo_format, branch_format):
         self.controldir = StubObjectWithFormat(bzrdir_format)
         self.repository = StubObjectWithFormat(repo_format)
@@ -57,7 +59,9 @@ class IdenticalFormatsTestCase(unittest.TestCase):
         self.assertTrue(
             identical_formats(
                 StubBranch(BzrDirFormatA(), RepoFormatA(), BranchFormatA()),
-                StubBranch(BzrDirFormatA(), RepoFormatA(), BranchFormatA())))
+                StubBranch(BzrDirFormatA(), RepoFormatA(), BranchFormatA()),
+            )
+        )
 
     def testDifferentBzrDirFormats(self):
         # identical_formats should return False when both branches have the
@@ -65,7 +69,9 @@ class IdenticalFormatsTestCase(unittest.TestCase):
         self.assertFalse(
             identical_formats(
                 StubBranch(BzrDirFormatA(), RepoFormatA(), BranchFormatA()),
-                StubBranch(BzrDirFormatB(), RepoFormatA(), BranchFormatA())))
+                StubBranch(BzrDirFormatB(), RepoFormatA(), BranchFormatA()),
+            )
+        )
 
     def testDifferentRepositoryFormats(self):
         # identical_formats should return False when both branches have the
@@ -73,7 +79,9 @@ class IdenticalFormatsTestCase(unittest.TestCase):
         self.assertFalse(
             identical_formats(
                 StubBranch(BzrDirFormatA(), RepoFormatA(), BranchFormatA()),
-                StubBranch(BzrDirFormatA(), RepoFormatB(), BranchFormatA())))
+                StubBranch(BzrDirFormatA(), RepoFormatB(), BranchFormatA()),
+            )
+        )
 
     def testDifferentBranchFormats(self):
         # identical_formats should return False when both branches have the
@@ -81,4 +89,6 @@ class IdenticalFormatsTestCase(unittest.TestCase):
         self.assertFalse(
             identical_formats(
                 StubBranch(BzrDirFormatA(), RepoFormatA(), BranchFormatA()),
-                StubBranch(BzrDirFormatA(), RepoFormatA(), BranchFormatB())))
+                StubBranch(BzrDirFormatA(), RepoFormatA(), BranchFormatB()),
+            )
+        )

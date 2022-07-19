@@ -4,11 +4,7 @@
 """Tests for the Launchpad code hosting Bazaar transport."""
 
 from breezy.tests import per_transport
-from breezy.transport import (
-    chroot,
-    get_transport,
-    Transport,
-    )
+from breezy.transport import Transport, chroot, get_transport
 from breezy.transport.local import LocalTransport
 from breezy.urlutils import local_path_to_url
 
@@ -39,13 +35,15 @@ class TestingServer(LaunchpadInternalServer):
         # MemoryTransport, but a bug in Bazaar's implementation makes it
         # unreliable for tests that involve particular errors.
         LaunchpadInternalServer.__init__(
-            self, 'lp-testing-%s:///' % id(self),
+            self,
+            "lp-testing-%s:///" % id(self),
             DeferredBlockingProxy(branchfs),
-            LocalTransport(local_path_to_url('.')))
+            LocalTransport(local_path_to_url(".")),
+        )
         self._chroot_servers = []
 
     def get_bogus_url(self):
-        return self._scheme + 'bogus'
+        return self._scheme + "bogus"
 
     def _transportFactory(self, url):
         """See `LaunchpadInternalServer._transportFactory`.
@@ -58,10 +56,12 @@ class TestingServer(LaunchpadInternalServer):
         if not url.startswith(self._scheme):
             raise AssertionError("Wrong transport scheme.")
         root_transport = LaunchpadInternalServer._transportFactory(
-            self, self._scheme)
+            self, self._scheme
+        )
         relpath = root_transport.relpath(url)
-        bzrdir_transport = root_transport.clone(
-            self._branch_path).clone('.bzr')
+        bzrdir_transport = root_transport.clone(self._branch_path).clone(
+            ".bzr"
+        )
         bzrdir_transport.ensure_base()
         chroot_server = chroot.ChrootServer(bzrdir_transport)
         chroot_server.start_server()
@@ -85,6 +85,7 @@ class TestLaunchpadTransportImplementation(per_transport.TransportTests):
     We test the transport chrooted to the .bzr directory of a branch -- see
     `TestingServer._transportFactory` for more.
     """
+
     # TransportTests tests that get_transport() returns an instance of
     # `transport_class`, but the instances we're actually testing are
     # instances of ChrootTransport wrapping instances of SynchronousAdapter
@@ -94,14 +95,12 @@ class TestLaunchpadTransportImplementation(per_transport.TransportTests):
     transport_class = Transport
 
     def setUp(self):
-        """Arrange for `get_transport` to return wrapped LaunchpadTransports.
-        """
+        """Make `get_transport` return wrapped LaunchpadTransports."""
         self.transport_server = TestingServer
         super().setUp()
 
     def run(self, result=None):
-        """Run the test, with the result wrapped so that it knows about skips.
-        """
+        """Run the test, with the result wrapped to know about skips."""
         if result is None:
             result = self.defaultTestResult()
         super().run(TestResultWrapper(result))

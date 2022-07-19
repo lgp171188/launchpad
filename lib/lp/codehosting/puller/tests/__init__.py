@@ -12,7 +12,7 @@ from breezy.tests.http_server import (
     HttpServer,
     TestingHTTPServer,
     TestingThreadingHTTPServer,
-    )
+)
 from breezy.url_policy_open import AcceptAnythingPolicy
 
 from lp.codehosting.puller.worker import (
@@ -20,13 +20,14 @@ from lp.codehosting.puller.worker import (
     BranchMirrorerPolicy,
     PullerWorker,
     PullerWorkerProtocol,
-    )
+)
 from lp.codehosting.tests.helpers import LoomTestMixin
 from lp.testing import TestCaseWithFactory
 
 
-class AcceptAnythingBranchMirrorerPolicy(AcceptAnythingPolicy,
-                                         BranchMirrorerPolicy):
+class AcceptAnythingBranchMirrorerPolicy(
+    AcceptAnythingPolicy, BranchMirrorerPolicy
+):
     """A branch mirror policy that supports mirrorring from anywhere."""
 
 
@@ -38,9 +39,15 @@ class PullerWorkerMixin:
     method.
     """
 
-    def makePullerWorker(self, src_dir=None, dest_dir=None, branch_type=None,
-                         default_stacked_on_url=None, protocol=None,
-                         policy=None):
+    def makePullerWorker(
+        self,
+        src_dir=None,
+        dest_dir=None,
+        branch_type=None,
+        default_stacked_on_url=None,
+        protocol=None,
+        policy=None,
+    ):
         """Anonymous creation method for PullerWorker."""
         if protocol is None:
             protocol = PullerWorkerProtocol(io.BytesIO())
@@ -51,10 +58,15 @@ class PullerWorkerMixin:
         else:
             opener = None
         return PullerWorker(
-            src_dir, dest_dir, branch_id=1, unique_name='foo/bar/baz',
+            src_dir,
+            dest_dir,
+            branch_id=1,
+            unique_name="foo/bar/baz",
             branch_type=branch_type,
-            default_stacked_on_url=default_stacked_on_url, protocol=protocol,
-            branch_mirrorer=opener)
+            default_stacked_on_url=default_stacked_on_url,
+            protocol=protocol,
+            branch_mirrorer=opener,
+        )
 
 
 # XXX MichaelHudson, bug=564375: With changes to the SocketServer module in
@@ -63,7 +75,7 @@ class PullerWorkerMixin:
 # call in SocketServer.BaseServer.handle_request().  So what follows is
 # slightly horrible code to use the version of handle_request from Python 2.5.
 def fixed_handle_request(self):
-    """Handle one request, possibly blocking. """
+    """Handle one request, possibly blocking."""
     try:
         request, client_address = self.get_request()
     except OSError:
@@ -85,11 +97,12 @@ class FixedTTHS(TestingThreadingHTTPServer):
 
 
 class FixedHttpServer(HttpServer):
-    http_server_class = {'HTTP/1.0': FixedTHS, 'HTTP/1.1': FixedTTHS}
+    http_server_class = {"HTTP/1.0": FixedTHS, "HTTP/1.1": FixedTTHS}
 
 
-class PullerBranchTestCase(TestCaseWithTransport, TestCaseWithFactory,
-                           LoomTestMixin):
+class PullerBranchTestCase(
+    TestCaseWithTransport, TestCaseWithFactory, LoomTestMixin
+):
     """Some useful code for the more-integration-y puller tests."""
 
     def setUp(self):
@@ -116,4 +129,4 @@ class PullerBranchTestCase(TestCaseWithTransport, TestCaseWithFactory,
         # issues with the test runner.
         self.addCleanup(http_server._server_thread.join)
         self.addCleanup(http_server.stop_server)
-        return http_server.get_url().rstrip('/')
+        return http_server.get_url().rstrip("/")

@@ -25,7 +25,7 @@ class TestLaunchpadServe(TestCaseWithSubprocess):
 
     def assertFinishedCleanly(self, result):
         """Assert that a server process finished cleanly."""
-        self.assertEqual((0, b'', b''), tuple(result))
+        self.assertEqual((0, b"", b""), tuple(result))
 
     def finish_lpserve_subprocess(self, process):
         """Shut down the server process.
@@ -44,7 +44,7 @@ class TestLaunchpadServe(TestCaseWithSubprocess):
             process.returncode,
             stdout_and_stderr[0],
             stdout_and_stderr[1],
-            )
+        )
 
     def start_server_inet(self, user_id=None):
         """Start an lp-serve server subprocess.
@@ -62,15 +62,17 @@ class TestLaunchpadServe(TestCaseWithSubprocess):
         if user_id is None:
             user_id = 1
         process = self.start_bzr_subprocess(
-            ['lp-serve', '--inet', str(user_id)])
+            ["lp-serve", "--inet", str(user_id)]
+        )
 
         # Connect to the server.
         # The transport needs a URL, but we don't have one for our server, so
         # we're just going to give it this nearly-arbitrary-yet-well-formed
         # one.
-        url = 'bzr://localhost/'
+        url = "bzr://localhost/"
         client_medium = medium.SmartSimplePipesClientMedium(
-            process.stdout, process.stdin, url)
+            process.stdout, process.stdin, url
+        )
         transport = remote.RemoteTransport(url, medium=client_medium)
         return process, transport
 
@@ -99,14 +101,18 @@ class TestLaunchpadServe(TestCaseWithSubprocess):
         # we need a new way of triggering errors in the smart server.
         self.assertRaises(
             errors.UnknownErrorFromSmartServer,
-            transport.list_dir, 'foo/bar/baz')
+            transport.list_dir,
+            "foo/bar/baz",
+        )
         result = self.finish_lpserve_subprocess(process)
         self.assertFinishedCleanly(result)
         capture.sync()
         self.assertEqual(1, len(capture.oopses))
         self.assertEqual(
-            '[Errno 111] Connection refused', capture.oopses[0]['value'],
-            capture.oopses)
+            "[Errno 111] Connection refused",
+            capture.oopses[0]["value"],
+            capture.oopses,
+        )
 
 
 def test_suite():

@@ -1,7 +1,7 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['get_lock_id_for_branch_id', 'mirror']
+__all__ = ["get_lock_id_for_branch_id", "mirror"]
 
 
 import datetime
@@ -11,14 +11,13 @@ from twisted.internet import defer
 
 
 def get_lock_id_for_branch_id(branch_id):
-    """Return the lock id that should be used for a branch with the passed id.
-    """
-    return 'worker-for-branch-%s@supermirror' % (branch_id,)
+    """Return the lock id that should be used for a branch with this id."""
+    return "worker-for-branch-%s@supermirror" % (branch_id,)
+
 
 from lp.codehosting.puller.scheduler import LockError  # noqa: E402
 
-
-UTC = pytz.timezone('UTC')
+UTC = pytz.timezone("UTC")
 
 
 def mirror(logger, manager):
@@ -26,7 +25,7 @@ def mirror(logger, manager):
     try:
         manager.lock()
     except LockError as exception:
-        logger.info('Could not acquire lock: %s', exception)
+        logger.info("Could not acquire lock: %s", exception)
         return defer.succeed(0)
 
     date_started = datetime.datetime.now(UTC)
