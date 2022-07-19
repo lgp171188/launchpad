@@ -31,11 +31,11 @@ from zope.security.checker import (
     ProxyFactory,
     )
 from zope.security.proxy import removeSecurityProxy
-from zope.session.interfaces import IClientIdManager
 
 from lp.app import versioninfo
 from lp.services.config import config
 from lp.services.webapp.interfaces import (
+    IClientIdManager,
     IOpenLaunchBag,
     IPlacelessAuthUtility,
     )

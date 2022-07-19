@@ -60,6 +60,11 @@ class FakePackageRelease:
         self.user_defined_fields = user_defined_fields
         self.ci_build = ci_build
 
+    def getUserDefinedField(self, name):
+        for k, v in self.user_defined_fields:
+            if k.lower() == name.lower():
+                return v
+
 
 class FakeReleaseType(EnumeratedType):
 
@@ -104,6 +109,7 @@ class PoolTestingFile:
         filename,
         release_type=FakeReleaseType.BINARY,
         release_id=1,
+        user_defined_fields=None,
     ):
         self.pool = pool
         self.source_name = source_name
@@ -113,6 +119,7 @@ class PoolTestingFile:
             filename,
             release_type=release_type,
             release_id=release_id,
+            user_defined_fields=user_defined_fields,
         )
 
     def addToPool(self, component: str):

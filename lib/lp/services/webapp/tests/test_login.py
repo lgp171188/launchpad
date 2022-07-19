@@ -42,7 +42,6 @@ from testtools.matchers import (
 from zope.component import getUtility
 from zope.security.management import newInteraction
 from zope.security.proxy import removeSecurityProxy
-from zope.session.interfaces import ISession
 from zope.testbrowser.wsgi import Browser as TestBrowser
 
 from lp.registry.interfaces.person import IPerson
@@ -62,7 +61,10 @@ from lp.services.openid.extensions.macaroon import (
     )
 from lp.services.openid.model.openididentifier import OpenIdIdentifier
 from lp.services.timeline.requesttimeline import get_request_timeline
-from lp.services.webapp.interfaces import ILaunchpadApplication
+from lp.services.webapp.interfaces import (
+    ILaunchpadApplication,
+    ISession,
+    )
 from lp.services.webapp.login import (
     OpenIDCallbackView,
     OpenIDLogin,

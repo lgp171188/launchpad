@@ -12,11 +12,9 @@ __all__ = [
 import os.path
 
 from breezy.bzr.generate_ids import gen_file_id
+from breezy.bzr.transform import TransformPreview
 from breezy.revision import NULL_REVISION
-from breezy.transform import (
-    ROOT_PARENT,
-    TransformPreview,
-    )
+from breezy.transform import ROOT_PARENT
 import six
 
 from lp.code.errors import StaleLastMirrored
@@ -108,7 +106,7 @@ class DirectBranchCommit:
         try:
             self.revision_tree = self.bzrbranch.basis_tree()
             self.transform_preview = TransformPreview(self.revision_tree)
-            assert self.transform_preview.find_conflicts() == [], (
+            assert self.transform_preview.find_raw_conflicts() == [], (
                 "TransformPreview is not in a consistent state.")
             if not no_race_check:
                 last_revision = self.bzrbranch.last_revision()

@@ -1,25 +1,34 @@
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import datetime
+from datetime import (
+    datetime,
+    timedelta,
+    )
+from email.utils import parsedate
 import hashlib
 import hmac
 
-from testtools import TestCase
-from testtools.matchers import Contains
-from zope.session.session import digestEncode
+from testtools.matchers import (
+    Contains,
+    ContainsDict,
+    Equals,
+    )
 
+from lp.services.propertycache import get_property_cache
 from lp.services.webapp.login import (
     isFreshLogin,
     OpenIDCallbackView,
     )
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.services.webapp.session import (
+    encode_digest,
     get_cookie_domain,
     LaunchpadCookieClientIdManager,
     )
 from lp.testing import (
     person_logged_in,
+    TestCase,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -61,6 +70,23 @@ class GetCookieDomainTestCase(TestCase):
 
 class TestLaunchpadCookieClientIdManager(TestCase):
 
+    def test_generateUniqueId(self):
+        idmanager = LaunchpadCookieClientIdManager()
+        get_property_cache(idmanager).secret = 'secret'
+        self.assertNotEqual(
+            idmanager.generateUniqueId(), idmanager.generateUniqueId())
+
+    def test_expires(self):
+        request = LaunchpadTestRequest()
+        idmanager = LaunchpadCookieClientIdManager()
+        idmanager.setRequestId(request, 'some-id')
+        cookie = request.response.getCookie(idmanager.namespace)
+        expires = datetime(*parsedate(cookie['expires'])[:7])
+        self.assertLess(
+            expires - datetime.now() - timedelta(days=365),
+            # Allow some slack for slow tests.
+            timedelta(seconds=30))
+
     def test_httponly(self):
         # Authentication cookies are marked as httponly, so JavaScript
         # can't read them directly.
@@ -70,18 +96,31 @@ class TestLaunchpadCookieClientIdManager(TestCase):
             dict(request.response.getHeaders())['Set-Cookie'].lower(),
             Contains('; httponly;'))
 
+    def test_headers(self):
+        # When the cookie is set, cache headers are added to the response to
+        # try to prevent the cookie header from being cached:
+        request = LaunchpadTestRequest()
+        LaunchpadCookieClientIdManager().setRequestId(request, 'some-id')
+        self.assertThat(
+            dict(request.response.getHeaders()),
+            ContainsDict({
+                'Cache-Control': Equals('no-cache="Set-Cookie,Set-Cookie2"'),
+                'Pragma': Equals('no-cache'),
+                'Expires': Equals('Mon, 26 Jul 1997 05:00:00 GMT'),
+                }))
+
     def test_stable_client_id(self):
         # Changing the HMAC algorithm used for client IDs would invalidate
         # existing sessions, so be careful that that doesn't happen
         # accidentally across upgrades.
         request = LaunchpadTestRequest()
         idmanager = LaunchpadCookieClientIdManager()
-        idmanager._secret = 'secret'
+        get_property_cache(idmanager).secret = 'secret'
         data = b'random'
-        s = digestEncode(hashlib.sha1(data).digest())
+        s = encode_digest(hashlib.sha1(data).digest())
         mac = hmac.new(
             s, idmanager.secret.encode(), digestmod=hashlib.sha1).digest()
-        sid = (s + digestEncode(mac)).decode()
+        sid = (s + encode_digest(mac)).decode()
         idmanager.setRequestId(request, sid)
         # getRequestId will only return the previously-set ID if it was
         # generated using the correct secret with the correct algorithm.
@@ -114,6 +153,6 @@ class TestSessionRelatedFunctions(TestCaseWithFactory):
         """isFreshLogin should be False for users logged in over 2 minutes."""
         user = self.factory.makePerson()
         request = LaunchpadTestRequest()
-        when = datetime.datetime.utcnow() - datetime.timedelta(seconds=180)
+        when = datetime.utcnow() - timedelta(seconds=180)
         self.setupLoggedInRequest(user, request, when)
         self.assertFalse(isFreshLogin(request))

@@ -25,7 +25,6 @@ from pymacaroons import Macaroon
 from pymacaroons.serializers import JsonSerializer
 from requests import HTTPError
 from zope.browserpage import ViewPageTemplateFile
-from zope.session.interfaces import ISession
 
 from lp.services.config import config
 from lp.services.timeline.requesttimeline import get_request_timeline
@@ -33,6 +32,7 @@ from lp.services.timeout import (
     raise_for_status_redacted,
     urlfetch,
     )
+from lp.services.webapp.interfaces import ISession
 from lp.services.webapp.publisher import LaunchpadView
 from lp.services.webapp.url import urlappend
 from lp.services.webapp.vhosts import allvhosts

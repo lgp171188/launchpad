@@ -49,16 +49,18 @@ def _path_for(
     elif repository_format == ArchiveRepositoryFormat.PYTHON:
         path = rootpath / source_name / source_version
     elif repository_format == ArchiveRepositoryFormat.CONDA:
-        user_defined_fields = pub_file.binarypackagerelease.user_defined_fields
-        subdir = next(
-            (value for key, value in user_defined_fields if key == "subdir"),
-            None,
-        )
+        subdir = pub_file.binarypackagerelease.getUserDefinedField("subdir")
         if subdir is None:
-            raise AssertionError(
-                "Cannot publish a Conda package with no subdir"
-            )
+            raise ValueError("Cannot publish a Conda package with no subdir")
         path = rootpath / subdir
+    elif repository_format == ArchiveRepositoryFormat.GO_PROXY:
+        module_path = pub_file.sourcepackagerelease.getUserDefinedField(
+            "module-path"
+        )
+        if module_path is None:
+            raise ValueError("Cannot publish a Go module with no module-path")
+        # Base path required by https://go.dev/ref/mod#module-proxy.
+        path = rootpath / module_path / "@v"
     else:
         raise AssertionError(
             "Unsupported repository format: %r" % repository_format
@@ -503,6 +505,12 @@ class ArtifactoryPool:
             return [
                 "*.tar.bz2",
                 "*.conda",
+            ]
+        elif repository_format == ArchiveRepositoryFormat.GO_PROXY:
+            return [
+                "*.info",
+                "*.mod",
+                "*.zip",
             ]
         else:
             raise AssertionError(
