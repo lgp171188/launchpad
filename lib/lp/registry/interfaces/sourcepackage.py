@@ -430,13 +430,16 @@ class SourcePackageFileType(DBEnumeratedType):
     GO_MODULE_INFO = DBItem(12, """
         Go Module Info
 
-        This file contains JSON metadata about a Go module.
+        This file contains JSON metadata about a Go module, including its
+        version.  See https://go.dev/ref/mod#goproxy-protocol for the
+        format.
         """)
 
     GO_MODULE_MOD = DBItem(13, """
         go.mod
 
-        This is the `go.mod` file for a Go module.
+        This is the `go.mod` file for a Go module.  See
+        https://go.dev/ref/mod#go-mod-file for the format.
         """)
 
     GO_MODULE_ZIP = DBItem(14, """
