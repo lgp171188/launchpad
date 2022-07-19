@@ -4,41 +4,40 @@
 """GitJob interfaces."""
 
 __all__ = [
-    'IGitJob',
-    'IGitRefScanJob',
-    'IGitRefScanJobSource',
-    'IGitRepositoryModifiedMailJob',
-    'IGitRepositoryModifiedMailJobSource',
-    'IReclaimGitRepositorySpaceJob',
-    'IReclaimGitRepositorySpaceJobSource',
-    ]
+    "IGitJob",
+    "IGitRefScanJob",
+    "IGitRefScanJobSource",
+    "IGitRepositoryModifiedMailJob",
+    "IGitRepositoryModifiedMailJobSource",
+    "IReclaimGitRepositorySpaceJob",
+    "IReclaimGitRepositorySpaceJobSource",
+]
 
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.schema import Text
 
 from lp import _
 from lp.code.interfaces.gitrepository import IGitRepository
-from lp.services.job.interfaces.job import (
-    IJob,
-    IJobSource,
-    IRunnableJob,
-    )
+from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
 
 
 class IGitJob(Interface):
     """A job related to a Git repository."""
 
     job = Reference(
-        title=_("The common Job attributes."), schema=IJob,
-        required=True, readonly=True)
+        title=_("The common Job attributes."),
+        schema=IJob,
+        required=True,
+        readonly=True,
+    )
 
     repository = Reference(
         title=_("The Git repository to use for this job."),
-        schema=IGitRepository, required=False, readonly=True)
+        schema=IGitRepository,
+        required=False,
+        readonly=True,
+    )
 
     metadata = Attribute(_("A dict of data about the job."))
 
@@ -48,7 +47,6 @@ class IGitRefScanJob(IRunnableJob):
 
 
 class IGitRefScanJobSource(IJobSource):
-
     def create(repository):
         """Scan a repository for refs.
 
@@ -61,11 +59,11 @@ class IReclaimGitRepositorySpaceJob(IRunnableJob):
     deleted from the database."""
 
     repository_path = Text(
-        title=_("The storage path of the now-deleted repository."))
+        title=_("The storage path of the now-deleted repository.")
+    )
 
 
 class IReclaimGitRepositorySpaceJobSource(IJobSource):
-
     def create(repository_name, repository_path):
         """Construct a new object that implements
         IReclaimGitRepositorySpaceJob.
@@ -82,7 +80,6 @@ class IGitRepositoryModifiedMailJob(IRunnableJob):
 
 
 class IGitRepositoryModifiedMailJobSource(IJobSource):
-
     def create(repository, user, repository_delta):
         """Send email about repository modifications.
 

@@ -11,7 +11,7 @@ from lp.code.enums import BranchType
 from lp.code.interfaces.branch import IBranchListingQueryOptimiser
 from lp.code.model.branchlistingqueryoptimiser import (
     BranchListingQueryOptimiser,
-    )
+)
 from lp.code.tests.helpers import make_linked_package_branch
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -37,11 +37,12 @@ class TestGetProductSeriesForBranches(TestCaseWithFactory):
     def setUp(self):
         # Log in as an admin as we are setting series branches, which is a
         # protected activity.
-        super().setUp('admin@canonical.com')
+        super().setUp("admin@canonical.com")
         self.product = self.factory.makeProduct()
         self.branches = [
             self.factory.makeProductBranch(product=self.product)
-            for x in range(3)]
+            for x in range(3)
+        ]
         self.branch_ids = [branch.id for branch in self.branches]
 
     def assertSeriesBranches(self, expected, branch_ids=None):
@@ -49,7 +50,8 @@ class TestGetProductSeriesForBranches(TestCaseWithFactory):
         if branch_ids is None:
             branch_ids = self.branch_ids
         series = BranchListingQueryOptimiser.getProductSeriesForBranches(
-            branch_ids)
+            branch_ids
+        )
         self.assertEqual(expected, list(series))
 
     def test_no_series_set(self):
@@ -65,11 +67,14 @@ class TestGetProductSeriesForBranches(TestCaseWithFactory):
     def test_result_ordering(self):
         """Series are ordered alphabetically in the results."""
         gamma = self.product.newSeries(
-            self.product.owner, "gamma", "summary", self.branches[0])
+            self.product.owner, "gamma", "summary", self.branches[0]
+        )
         beta = self.product.newSeries(
-            self.product.owner, "beta", "summary", self.branches[1])
+            self.product.owner, "beta", "summary", self.branches[1]
+        )
         alpha = self.product.newSeries(
-            self.product.owner, "alpha", "summary", self.branches[2])
+            self.product.owner, "alpha", "summary", self.branches[2]
+        )
         self.assertSeriesBranches([alpha, beta, gamma])
 
     def test_multiple_series_for_single_branch(self):
@@ -79,18 +84,22 @@ class TestGetProductSeriesForBranches(TestCaseWithFactory):
         """
         branch = self.branches[0]
         gamma = self.product.newSeries(
-            self.product.owner, "gamma", "summary", branch)
+            self.product.owner, "gamma", "summary", branch
+        )
         beta = self.product.newSeries(
-            self.product.owner, "beta", "summary", branch)
+            self.product.owner, "beta", "summary", branch
+        )
         alpha = self.product.newSeries(
-            self.product.owner, "alpha", "summary", branch)
+            self.product.owner, "alpha", "summary", branch
+        )
         self.assertSeriesBranches([alpha, beta, gamma])
 
     def test_non_associated_series_not_returned(self):
         """Only series with associated branches are returned."""
         branch = self.branches[0]
         gamma = self.product.newSeries(
-            self.product.owner, "gamma", "summary", branch)
+            self.product.owner, "gamma", "summary", branch
+        )
         self.product.newSeries(self.product.owner, "beta", "summary")
         self.assertSeriesBranches([gamma])
 
@@ -98,8 +107,10 @@ class TestGetProductSeriesForBranches(TestCaseWithFactory):
         """Series with import branches are returned."""
         vcs_imports = getUtility(ILaunchpadCelebrities).vcs_imports
         branch = self.factory.makeProductBranch(
-            owner=vcs_imports, product=self.product,
-            branch_type=BranchType.IMPORTED)
+            owner=vcs_imports,
+            product=self.product,
+            branch_type=BranchType.IMPORTED,
+        )
         dev_focus = self.product.development_focus
         dev_focus.branch = branch
         self.assertSeriesBranches([dev_focus], [branch.id])
@@ -113,7 +124,7 @@ class TestGetOfficialSourcePackageLinksForBranches(TestCaseWithFactory):
     def setUp(self):
         # Log in an admin as we are setting official branches, which is a
         # protected activity.
-        super().setUp('admin@canonical.com')
+        super().setUp("admin@canonical.com")
 
     def test_with_branches(self):
         # Test the selection of the links.
@@ -123,8 +134,10 @@ class TestGetOfficialSourcePackageLinksForBranches(TestCaseWithFactory):
         # And two we don't.
         make_linked_package_branch(self.factory)
         make_linked_package_branch(self.factory)
-        links = (BranchListingQueryOptimiser.
-                 getOfficialSourcePackageLinksForBranches([b1.id, b2.id]))
+        optimiser = BranchListingQueryOptimiser
+        links = optimiser.getOfficialSourcePackageLinksForBranches(
+            [b1.id, b2.id]
+        )
         self.assertContentEqual([b1, b2], [link.branch for link in links])
 
     def test_objects_loaded(self):
@@ -139,9 +152,12 @@ class TestGetOfficialSourcePackageLinksForBranches(TestCaseWithFactory):
         store.reset()
         getUtility(ILaunchpadCelebrities).ubuntu
 
-        (link, ) = self.assertStatementCount(
-            1, BranchListingQueryOptimiser.
-            getOfficialSourcePackageLinksForBranches, [b1.id])
+        optimiser = BranchListingQueryOptimiser
+        (link,) = self.assertStatementCount(
+            1,
+            optimiser.getOfficialSourcePackageLinksForBranches,
+            [b1.id],
+        )
         # Accessing the source package doesn't hit the database.
         sp = self.assertStatementCount(0, getattr, link, "sourcepackage")
         # Getting the distribution from the source package doesn't hit the

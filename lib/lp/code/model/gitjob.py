@@ -2,39 +2,24 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'describe_repository_delta',
-    'GitJob',
-    'GitJobType',
-    'GitRefScanJob',
-    'GitRepositoryModifiedMailJob',
-    'ReclaimGitRepositorySpaceJob',
-    ]
+    "describe_repository_delta",
+    "GitJob",
+    "GitJobType",
+    "GitRefScanJob",
+    "GitRepositoryModifiedMailJob",
+    "ReclaimGitRepositorySpaceJob",
+]
 
 
 from lazr.delegates import delegate_to
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from storm.exceptions import LostObjectError
-from storm.locals import (
-    Int,
-    JSON,
-    Reference,
-    SQL,
-    Store,
-    )
+from storm.locals import JSON, SQL, Int, Reference, Store
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 
 from lp.app.errors import NotFoundError
-from lp.code.enums import (
-    GitActivityType,
-    GitPermissionType,
-    )
+from lp.code.enums import GitActivityType, GitPermissionType
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.interfaces.gitjob import (
     IGitJob,
@@ -44,28 +29,22 @@ from lp.code.interfaces.gitjob import (
     IGitRepositoryModifiedMailJobSource,
     IReclaimGitRepositorySpaceJob,
     IReclaimGitRepositorySpaceJobSource,
-    )
+)
 from lp.code.interfaces.gitrule import describe_git_permissions
 from lp.code.mail.branch import BranchMailer
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.locking import (
     AdvisoryLockHeld,
     LockType,
     try_advisory_lock,
-    )
+)
 from lp.services.database.stormbase import StormBase
 from lp.services.features import getFeatureFlag
 from lp.services.helpers import english_list
-from lp.services.job.model.job import (
-    EnumeratedSubclass,
-    Job,
-    )
+from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.mail.sendmail import format_address_for_person
 from lp.services.scripts import log
@@ -77,42 +56,51 @@ from lp.services.webhooks.interfaces import IWebhookSet
 class GitJobType(DBEnumeratedType):
     """Values that `IGitJob.job_type` can take."""
 
-    REF_SCAN = DBItem(0, """
+    REF_SCAN = DBItem(
+        0,
+        """
         Ref scan
 
         This job scans a repository for its current list of references.
-        """)
+        """,
+    )
 
-    RECLAIM_REPOSITORY_SPACE = DBItem(1, """
+    RECLAIM_REPOSITORY_SPACE = DBItem(
+        1,
+        """
         Reclaim repository space
 
         This job removes a repository that has been deleted from the
         database from storage.
-        """)
+        """,
+    )
 
-    REPOSITORY_MODIFIED_MAIL = DBItem(2, """
+    REPOSITORY_MODIFIED_MAIL = DBItem(
+        2,
+        """
         Repository modified mail
 
         This job runs against a repository to send emails about
         modifications.
-        """)
+        """,
+    )
 
 
 @implementer(IGitJob)
 class GitJob(StormBase):
     """See `IGitJob`."""
 
-    __storm_table__ = 'GitJob'
+    __storm_table__ = "GitJob"
 
-    job_id = Int(name='job', primary=True, allow_none=False)
-    job = Reference(job_id, 'Job.id')
+    job_id = Int(name="job", primary=True, allow_none=False)
+    job = Reference(job_id, "Job.id")
 
-    repository_id = Int(name='repository', allow_none=True)
-    repository = Reference(repository_id, 'GitRepository.id')
+    repository_id = Int(name="repository", allow_none=True)
+    repository = Reference(repository_id, "GitRepository.id")
 
     job_type = DBEnum(enum=GitJobType, allow_none=False)
 
-    metadata = JSON('json_data')
+    metadata = JSON("json_data")
 
     def __init__(self, repository, job_type, metadata, **job_args):
         """Constructor.
@@ -139,7 +127,6 @@ class GitJob(StormBase):
 
 @delegate_to(IGitJob)
 class GitJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
-
     def __init__(self, git_job):
         self.context = git_job
         self._cached_repository_name = self.metadata["repository_name"]
@@ -147,7 +134,9 @@ class GitJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
     def __repr__(self):
         """Returns an informative representation of the job."""
         return "<%s for %s>" % (
-            self.__class__.__name__, self._cached_repository_name)
+            self.__class__.__name__,
+            self._cached_repository_name,
+        )
 
     @classmethod
     def get(cls, job_id):
@@ -161,8 +150,9 @@ class GitJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
         git_job = IStore(GitJob).get(GitJob, job_id)
         if git_job.job_type != cls.class_job_type:
             raise NotFoundError(
-                "No object found with id %d and type %s" %
-                (job_id, cls.class_job_type.title))
+                "No object found with id %d and type %s"
+                % (job_id, cls.class_job_type.title)
+            )
         return cls(git_job)
 
     @classmethod
@@ -172,21 +162,25 @@ class GitJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
             GitJob,
             GitJob.job_type == cls.class_job_type,
             GitJob.job == Job.id,
-            Job.id.is_in(Job.ready_jobs))
+            Job.id.is_in(Job.ready_jobs),
+        )
         return (cls(job) for job in jobs)
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
         oops_vars = super().getOopsVars()
-        oops_vars.extend([
-            ('git_job_id', self.context.job.id),
-            ('git_job_type', self.context.job_type.title),
-            ])
+        oops_vars.extend(
+            [
+                ("git_job_id", self.context.job.id),
+                ("git_job_type", self.context.job_type.title),
+            ]
+        )
         if self.context.repository is not None:
-            oops_vars.append(('git_repository_id', self.context.repository.id))
+            oops_vars.append(("git_repository_id", self.context.repository.id))
         if "repository_name" in self.metadata:
             oops_vars.append(
-                ('git_repository_name', self.metadata["repository_name"]))
+                ("git_repository_name", self.metadata["repository_name"])
+            )
         return oops_vars
 
     def getErrorRecipients(self):
@@ -199,6 +193,7 @@ class GitJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
 @provider(IGitRefScanJobSource)
 class GitRefScanJob(GitJobDerived):
     """A Job that scans a Git repository for its current list of references."""
+
     class_job_type = GitJobType.REF_SCAN
 
     max_retries = 5
@@ -216,16 +211,21 @@ class GitRefScanJob(GitJobDerived):
         return job
 
     @staticmethod
-    def composeWebhookPayload(repository, old_refs_commits, refs_to_upsert,
-                              refs_to_remove):
+    def composeWebhookPayload(
+        repository, old_refs_commits, refs_to_upsert, refs_to_remove
+    ):
         ref_changes = {}
         for ref in list(refs_to_upsert) + list(refs_to_remove):
             old = (
                 {"commit_sha1": old_refs_commits[ref]}
-                if ref in old_refs_commits else None)
+                if ref in old_refs_commits
+                else None
+            )
             new = (
-                {"commit_sha1": refs_to_upsert[ref]['sha1']}
-                if ref in refs_to_upsert else None)
+                {"commit_sha1": refs_to_upsert[ref]["sha1"]}
+                if ref in refs_to_upsert
+                else None
+            )
             # planRefChanges can return an unchanged ref if the cached
             # commit details differ.
             if old != new:
@@ -234,27 +234,35 @@ class GitRefScanJob(GitJobDerived):
             "git_repository": canonical_url(repository, force_local_path=True),
             "git_repository_path": repository.shortened_path,
             "ref_changes": ref_changes,
-            }
+        }
 
     def run(self):
         """See `IGitRefScanJob`."""
         try:
             with try_advisory_lock(
-                    LockType.GIT_REF_SCAN, self.repository.id,
-                    Store.of(self.repository)):
+                LockType.GIT_REF_SCAN,
+                self.repository.id,
+                Store.of(self.repository),
+            ):
                 old_refs_commits = {
-                    ref.path: ref.commit_sha1 for ref in self.repository.refs}
+                    ref.path: ref.commit_sha1 for ref in self.repository.refs
+                }
                 upserted_refs, removed_refs = self.repository.scan(log=log)
-                if getFeatureFlag('code.git.webhooks.enabled'):
+                if getFeatureFlag("code.git.webhooks.enabled"):
                     payload = self.composeWebhookPayload(
-                        self.repository, old_refs_commits,
-                        upserted_refs, removed_refs)
+                        self.repository,
+                        old_refs_commits,
+                        upserted_refs,
+                        removed_refs,
+                    )
                     getUtility(IWebhookSet).trigger(
-                        self.repository, 'git:push:0.1', payload)
+                        self.repository, "git:push:0.1", payload
+                    )
         except LostObjectError:
             log.info(
-                "Skipping repository %s because it has been deleted." %
-                self._cached_repository_name)
+                "Skipping repository %s because it has been deleted."
+                % self._cached_repository_name
+            )
 
 
 @implementer(IReclaimGitRepositorySpaceJob)
@@ -262,22 +270,24 @@ class GitRefScanJob(GitJobDerived):
 class ReclaimGitRepositorySpaceJob(GitJobDerived):
     """A Job that deletes a repository from storage after it has been
     deleted from the database."""
+
     class_job_type = GitJobType.RECLAIM_REPOSITORY_SPACE
 
     config = config.IReclaimGitRepositorySpaceJobSource
 
     @classmethod
     def create(cls, repository_name, repository_path):
-        "See `IReclaimGitRepositorySpaceJobSource`."""
+        "See `IReclaimGitRepositorySpaceJobSource`." ""
         metadata = {
             "repository_name": repository_name,
             "repository_path": repository_path,
-            }
+        }
         # The GitJob has a repository of None, as there is no repository
         # left in the database to refer to.
         start = SQL("CURRENT_TIMESTAMP AT TIME ZONE 'UTC' + '7 days'")
         git_job = GitJob(
-            None, cls.class_job_type, metadata, scheduled_start=start)
+            None, cls.class_job_type, metadata, scheduled_start=start
+        )
         job = cls(git_job)
         job.celeryRunOnCommit()
         return job
@@ -293,33 +303,42 @@ class ReclaimGitRepositorySpaceJob(GitJobDerived):
 activity_descriptions = {
     GitActivityType.RULE_ADDED: "Added protected ref: {new[ref_pattern]}",
     GitActivityType.RULE_CHANGED: (
-        "Changed protected ref: {old[ref_pattern]} => {new[ref_pattern]}"),
+        "Changed protected ref: {old[ref_pattern]} => {new[ref_pattern]}"
+    ),
     GitActivityType.RULE_REMOVED: "Removed protected ref: {old[ref_pattern]}",
     GitActivityType.RULE_MOVED: (
         "Moved rule for protected ref {new[ref_pattern]}: "
-        "position {old[position]} => {new[position]}"),
+        "position {old[position]} => {new[position]}"
+    ),
     GitActivityType.GRANT_ADDED: (
-        "Added access for {changee} to {new[ref_pattern]}: {new_grants}"),
+        "Added access for {changee} to {new[ref_pattern]}: {new_grants}"
+    ),
     GitActivityType.GRANT_CHANGED: (
         "Changed access for {changee} to {new[ref_pattern]}: "
-        "{old_grants} => {new_grants}"),
+        "{old_grants} => {new_grants}"
+    ),
     GitActivityType.GRANT_REMOVED: (
-        "Removed access for {changee} to {old[ref_pattern]}: {old_grants}"),
-    }
+        "Removed access for {changee} to {old[ref_pattern]}: {old_grants}"
+    ),
+}
 
 
 _activity_permissions = {
     "can_create": GitPermissionType.CAN_CREATE,
     "can_push": GitPermissionType.CAN_PUSH,
     "can_force_push": GitPermissionType.CAN_FORCE_PUSH,
-    }
+}
 
 
 def describe_grants(activity_value):
     if activity_value is not None:
-        output = describe_git_permissions({
-            permission for attr, permission in _activity_permissions.items()
-            if activity_value.get(attr)})
+        output = describe_git_permissions(
+            {
+                permission
+                for attr, permission in _activity_permissions.items()
+                if activity_value.get(attr)
+            }
+        )
     else:
         output = []
     return english_list(output)
@@ -327,8 +346,11 @@ def describe_grants(activity_value):
 
 def describe_repository_delta(repository_delta):
     output = text_delta(
-        repository_delta, repository_delta.delta_values,
-        repository_delta.new_values, repository_delta.interface).split("\n")
+        repository_delta,
+        repository_delta.delta_values,
+        repository_delta.new_values,
+        repository_delta.interface,
+    ).split("\n")
     if output and not output[-1]:  # text_delta returned empty string
         output.pop()
     # Parts of the delta are only visible to people who can edit the
@@ -338,10 +360,12 @@ def describe_repository_delta(repository_delta):
     for activity in repository_delta.activities:
         if activity.what_changed in activity_descriptions:
             description = activity_descriptions[activity.what_changed].format(
-                old=activity.old_value, new=activity.new_value,
+                old=activity.old_value,
+                new=activity.new_value,
                 changee=activity.changee_description,
                 old_grants=describe_grants(activity.old_value),
-                new_grants=describe_grants(activity.new_value))
+                new_grants=describe_grants(activity.new_value),
+            )
             output_for_editors.append(indent + description)
     return "\n".join(output), "\n".join(output_for_editors)
 
@@ -363,7 +387,7 @@ class GitRepositoryModifiedMailJob(GitJobDerived):
             "user": user.id,
             "repository_delta": delta,
             "repository_delta_for_editors": delta_for_editors,
-            }
+        }
         git_job = GitJob(repository, cls.class_job_type, metadata)
         job = cls(git_job)
         job.celeryRunOnCommit()
@@ -384,8 +408,11 @@ class GitRepositoryModifiedMailJob(GitJobDerived):
     def getMailer(self):
         """Return a `BranchMailer` for this job."""
         return BranchMailer.forBranchModified(
-            self.repository, self.user, self.repository_delta,
-            delta_for_editors=self.repository_delta_for_editors)
+            self.repository,
+            self.user,
+            self.repository_delta,
+            delta_for_editors=self.repository_delta_for_editors,
+        )
 
     def run(self):
         """See `IGitRepositoryModifiedMailJob`."""

@@ -14,21 +14,21 @@ class TestFormatterAPI(TestCaseWithFactory):
 
     def test_empty_conflicts(self):
         """'has conflicts' does not appear if conflicts is empty string."""
-        diff = self.factory.makePreviewDiff(conflicts='')
-        self.assertEqual('', diff.conflicts)
+        diff = self.factory.makePreviewDiff(conflicts="")
+        self.assertEqual("", diff.conflicts)
         formatter = PreviewDiffFormatterAPI(diff)
-        self.assertNotIn('has conflicts', formatter.link(None))
+        self.assertNotIn("has conflicts", formatter.link(None))
 
     def test_none_conflicts(self):
         """'has conflicts' does not appear if conflicts is None."""
         diff = self.factory.makePreviewDiff(conflicts=None)
         self.assertIs(None, diff.conflicts)
         formatter = PreviewDiffFormatterAPI(diff)
-        self.assertNotIn('has conflicts', formatter.link(None))
+        self.assertNotIn("has conflicts", formatter.link(None))
 
     def test_with_conflicts(self):
         """'has conflicts' appears if conflicts is a non-empty string."""
-        diff = self.factory.makePreviewDiff(conflicts='bork')
-        self.assertEqual('bork', diff.conflicts)
+        diff = self.factory.makePreviewDiff(conflicts="bork")
+        self.assertEqual("bork", diff.conflicts)
         formatter = PreviewDiffFormatterAPI(diff)
-        self.assertIn('has conflicts', formatter.link(None))
+        self.assertIn("has conflicts", formatter.link(None))

@@ -15,7 +15,6 @@ class RevisionStatusArtifactNavigation(Navigation, FileNavigationMixin):
 
 
 class HasRevisionStatusReportsMixin:
-
     def getStatusReports(self, commit_sha1):
         reports = self.context.getStatusReports(commit_sha1)
         return BatchNavigator(reports, self.request)
@@ -24,25 +23,26 @@ class HasRevisionStatusReportsMixin:
         """Show an appropriate icon at the top of the report."""
         icon_template = (
             '<img width="14" height="14" alt="%(title)s" '
-            'title="%(title)s" src="%(src)s" />')
+            'title="%(title)s" src="%(src)s" />'
+        )
         reports = repository.getStatusReports(commit_sha1)
         if all(
-                report.result == RevisionStatusResult.SKIPPED
-                for report in reports):
+            report.result == RevisionStatusResult.SKIPPED for report in reports
+        ):
             title = "Skipped"
             source = "/@@/yes-gray"
         elif all(
-                report.result in (
-                    RevisionStatusResult.SUCCEEDED,
-                    RevisionStatusResult.SKIPPED)
-                for report in reports):
+            report.result
+            in (RevisionStatusResult.SUCCEEDED, RevisionStatusResult.SKIPPED)
+            for report in reports
+        ):
             title = "Succeeded"
             source = "/@@/yes"
         elif any(
-                report.result in (
-                    RevisionStatusResult.FAILED,
-                    RevisionStatusResult.CANCELLED)
-                for report in reports):
+            report.result
+            in (RevisionStatusResult.FAILED, RevisionStatusResult.CANCELLED)
+            for report in reports
+        ):
             title = "Failed"
             source = "/@@/no"
         else:

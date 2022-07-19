@@ -4,23 +4,20 @@
 """Interface for a Git repository namespace."""
 
 __all__ = [
-    'get_git_namespace',
-    'IGitNamespace',
-    'IGitNamespacePolicy',
-    'IGitNamespaceSet',
-    'split_git_unique_name',
-    ]
+    "get_git_namespace",
+    "IGitNamespace",
+    "IGitNamespacePolicy",
+    "IGitNamespaceSet",
+    "split_git_unique_name",
+]
 
 from zope.component import getUtility
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 from lp.code.errors import InvalidNamespace
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
@@ -30,17 +27,26 @@ class IGitNamespace(Interface):
     """A namespace that a Git repository lives in."""
 
     name = Attribute(
-        "The name of the namespace. This is prepended to the repository name.")
+        "The name of the namespace. This is prepended to the repository name."
+    )
 
     owner = Attribute("The `IPerson` who owns this namespace.")
 
     target = Attribute("The `IHasGitRepositories` for this namespace.")
 
-    def createRepository(repository_type, registrant, name,
-                         information_type=None, date_created=None,
-                         target_default=False, owner_default=False,
-                         with_hosting=False, async_hosting=False, status=None,
-                         clone_from_repository=None):
+    def createRepository(
+        repository_type,
+        registrant,
+        name,
+        information_type=None,
+        date_created=None,
+        target_default=False,
+        owner_default=False,
+        with_hosting=False,
+        async_hosting=False,
+        status=None,
+        clone_from_repository=None,
+    ):
         """Create and return an `IGitRepository` in this namespace.
 
         :param with_hosting: If True, also creates the repository on git
@@ -61,8 +67,9 @@ class IGitNamespace(Interface):
         will remain unused for very long.
         """
 
-    def moveRepository(repository, mover, new_name=None,
-                       rename_if_necessary=False):
+    def moveRepository(
+        repository, mover, new_name=None, rename_if_necessary=False
+    ):
         """Move the repository into this namespace.
 
         :param repository: The `IGitRepository` to move.
@@ -101,11 +108,13 @@ class IGitNamespacePolicy(Interface):
     """Methods relating to Git repository creation and validation."""
 
     has_defaults = Attribute(
-        "True iff the target of this namespace may have a default repository.")
+        "True iff the target of this namespace may have a default repository."
+    )
 
     allow_push_to_set_default = Attribute(
         "True iff this namespace permits automatically setting a default "
-        "repository on push.")
+        "repository on push."
+    )
 
     # XXX cjwatson 2021-04-26: This is a slight hack for the benefit of the
     # OCI project namespace.  OCI projects don't have owners (recipes do),
@@ -113,20 +122,25 @@ class IGitNamespacePolicy(Interface):
     default_owner = Attribute(
         "The default owner when automatically setting a default repository on "
         "push for this namespace, or None if no usable default owner can be "
-        "determined.")
+        "determined."
+    )
 
     supports_repository_forking = Attribute(
-        "Does this namespace support repository forking at all?")
+        "Does this namespace support repository forking at all?"
+    )
 
     supports_merge_proposals = Attribute(
-        "Does this namespace support merge proposals at all?")
+        "Does this namespace support merge proposals at all?"
+    )
 
     supports_code_imports = Attribute(
-        "Does this namespace support code imports at all?")
+        "Does this namespace support code imports at all?"
+    )
 
     allow_recipe_name_from_target = Attribute(
         "Can recipe names reasonably be generated from the target name "
-        "rather than the branch name?")
+        "rather than the branch name?"
+    )
 
     def canCreateRepositories(user):
         """Is the user allowed to create repositories for this namespace?
@@ -218,8 +232,13 @@ class IGitNamespacePolicy(Interface):
 class IGitNamespaceSet(Interface):
     """Interface for getting Git repository namespaces."""
 
-    def get(person, project=None, distribution=None, sourcepackagename=None,
-            oci_project=None):
+    def get(
+        person,
+        project=None,
+        distribution=None,
+        sourcepackagename=None,
+        oci_project=None,
+    ):
         """Return the appropriate `IGitNamespace` for the given objects."""
 
 
@@ -228,8 +247,10 @@ def get_git_namespace(target, owner):
         return getUtility(IGitNamespaceSet).get(owner, project=target)
     elif IDistributionSourcePackage.providedBy(target):
         return getUtility(IGitNamespaceSet).get(
-            owner, distribution=target.distribution,
-            sourcepackagename=target.sourcepackagename)
+            owner,
+            distribution=target.distribution,
+            sourcepackagename=target.sourcepackagename,
+        )
     elif IOCIProject.providedBy(target):
         return getUtility(IGitNamespaceSet).get(owner, oci_project=target)
     elif target is None or IPerson.providedBy(target):

@@ -3,14 +3,8 @@
 
 """Tests related to `RevisionAuthor`."""
 
-from lp.app.browser.tales import (
-    PersonFormatterAPI,
-    RevisionAuthorFormatterAPI,
-    )
-from lp.testing import (
-    login,
-    TestCaseWithFactory,
-    )
+from lp.app.browser.tales import PersonFormatterAPI, RevisionAuthorFormatterAPI
+from lp.testing import TestCaseWithFactory, login
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.sampledata import USER_EMAIL
 
@@ -31,7 +25,8 @@ class TestRevisionAuthorFormatterAPI(TestCaseWithFactory):
         revision = self.factory.makeRevision(author=author)
         self.assertEqual(
             PersonFormatterAPI(author).link(None),
-            self._formatAuthorLink(revision))
+            self._formatAuthorLink(revision),
+        )
 
     def test_link_shows_name(self):
         # When a RevisionAuthor is not coupled to a Person but does have
@@ -63,20 +58,21 @@ class TestRevisionAuthorFormatterAPI(TestCaseWithFactory):
         email = "%s@example.com" % account
         revision = self.factory.makeRevision(author=email)
         self.assertNotIn(account, self._formatAuthorLink(revision))
-        self.assertNotIn('@', self._formatAuthorLink(revision))
+        self.assertNotIn("@", self._formatAuthorLink(revision))
 
     def test_empty_string_when_name_and_email_are_none(self):
         # When the RevisionAuthor name and email attrs are None, an
         # empty string is returned.
-        revision = self.factory.makeRevision(author='')
+        revision = self.factory.makeRevision(author="")
         login(USER_EMAIL)
-        self.assertEqual('', self._formatAuthorLink(revision))
+        self.assertEqual("", self._formatAuthorLink(revision))
 
     def test_name_is_escaped(self):
         # The author's name is HTML-escaped.
         revision = self.factory.makeRevision(author="apples & pears")
         self.assertEqual(
-            "apples &amp; pears", self._formatAuthorLink(revision))
+            "apples &amp; pears", self._formatAuthorLink(revision)
+        )
 
     def test_email_is_escaped(self):
         # The author's email address is HTML-escaped.

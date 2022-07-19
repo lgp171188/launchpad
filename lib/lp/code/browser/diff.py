@@ -4,8 +4,8 @@
 """Display classes relating to diff objects of one sort or another."""
 
 __all__ = [
-    'PreviewDiffFormatterAPI',
-    ]
+    "PreviewDiffFormatterAPI",
+]
 
 
 from lp import _
@@ -24,13 +24,11 @@ class PreviewDiffNavigation(Navigation, FileNavigationMixin):
 
 
 class DiffFormatterAPI(ObjectFormatterAPI):
-
     def _get_url(self, librarian_alias):
         return librarian_alias.getURL()
 
     def url(self, view_name=None, rootsite=None):
-        """Use the url of the librarian file containing the diff.
-        """
+        """Use the url of the librarian file containing the diff."""
         librarian_alias = self._context.diff_text
         if librarian_alias is None:
             return None
@@ -50,51 +48,59 @@ class DiffFormatterAPI(ObjectFormatterAPI):
             that name on this object.
         """
         diff = self._context
-        conflict_text = ''
+        conflict_text = ""
         if diff.has_conflicts:
-            conflict_text = _(' (has conflicts)')
+            conflict_text = _(" (has conflicts)")
 
-        count_text = ''
+        count_text = ""
         added = diff.added_lines_count
         removed = diff.removed_lines_count
-        if (added is not None and removed is not None):
-            count_text = ' (+%d/-%d)' % (added, removed)
+        if added is not None and removed is not None:
+            count_text = " (+%d/-%d)" % (added, removed)
 
-        file_text = ''
+        file_text = ""
         diffstat = diff.diffstat
         if diffstat is not None:
             file_count = len(diffstat)
             basic_file_text = get_plural_text(
-                file_count, _('%d file modified'), _('%d files modified'))
+                file_count, _("%d file modified"), _("%d files modified")
+            )
             basic_file_text = basic_file_text % file_count
-            diffstat_text = '<br/>'.join(
-                structured('%s (+%s/-%s)', path, added, removed).escapedtext
-                for path, (added, removed) in sorted(diffstat.items()))
+            diffstat_text = "<br/>".join(
+                structured("%s (+%s/-%s)", path, added, removed).escapedtext
+                for path, (added, removed) in sorted(diffstat.items())
+            )
             file_text = (
-                '<div class="collapsible"><span>%s</span><div>%s</div></div>' %
-                (basic_file_text, diffstat_text))
+                '<div class="collapsible"><span>%s</span><div>%s</div></div>'
+                % (basic_file_text, diffstat_text)
+            )
 
         args = {
-            'line_count': _('%s lines') % diff.diff_lines_count,
-            'conflict_text': conflict_text,
-            'count_text': count_text,
-            'url': self.url(view_name),
-            }
+            "line_count": _("%s lines") % diff.diff_lines_count,
+            "conflict_text": conflict_text,
+            "count_text": count_text,
+            "url": self.url(view_name),
+        }
         # Under normal circumstances, there will be an associated file,
         # however if the diff is empty, then there is no alias to link to.
-        if args['url'] is None:
+        if args["url"] is None:
             return structured(
-                '<span class="empty-diff">'
-                '%(line_count)s</span>', **args).escapedtext
+                '<span class="empty-diff">' "%(line_count)s</span>", **args
+            ).escapedtext
         else:
-            return structured(
-                '<a href="%(url)s" class="diff-link">'
-                '%(line_count)s%(count_text)s%(conflict_text)s'
-                '</a>', **args).escapedtext + file_text
+            return (
+                structured(
+                    '<a href="%(url)s" class="diff-link">'
+                    "%(line_count)s%(count_text)s%(conflict_text)s"
+                    "</a>",
+                    **args,
+                ).escapedtext
+                + file_text
+            )
 
 
 class PreviewDiffFormatterAPI(DiffFormatterAPI):
     """Formatter for preview diffs."""
 
     def _get_url(self, library_):
-        return canonical_url(self._context) + '/+files/preview.diff'
+        return canonical_url(self._context) + "/+files/preview.diff"

@@ -3,8 +3,8 @@
 
 """Tests for the cron script that updates revision karma."""
 
-from storm.store import Store
 import transaction
+from storm.store import Store
 
 from lp.code.scripts.revisionkarma import RevisionKarmaAllocator
 from lp.registry.model.karma import Karma
@@ -23,7 +23,8 @@ class TestRevisionKarma(TestCaseWithFactory):
         transaction.commit()
         switch_dbuser(config.revisionkarma.dbuser)
         script = RevisionKarmaAllocator(
-            'test', config.revisionkarma.dbuser, ['-q'])
+            "test", config.revisionkarma.dbuser, ["-q"]
+        )
         script.main()
 
     def assertKarmaEvent(self, person, product, count):
@@ -31,9 +32,8 @@ class TestRevisionKarma(TestCaseWithFactory):
         # over revision.allocateKarma()
         instance = person or product
         result = Store.of(instance).find(
-            Karma,
-            Karma.person == person,
-            Karma.product == product)
+            Karma, Karma.person == person, Karma.product == product
+        )
         self.assertEqual(count, result.count())
 
     def test_branch_allocated_karma(self):

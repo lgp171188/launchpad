@@ -4,20 +4,15 @@
 """Database classes related to and including CodeImportEvent."""
 
 __all__ = [
-    'CodeImportEvent',
-    'CodeImportEventSet',
-    'CodeImportEventToken',
-    ]
+    "CodeImportEvent",
+    "CodeImportEventSet",
+    "CodeImportEventToken",
+]
 
 
-from lazr.enum import DBItem
 import pytz
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    Unicode,
-    )
+from lazr.enum import DBItem
+from storm.locals import DateTime, Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.code.enums import (
@@ -25,17 +20,14 @@ from lp.code.enums import (
     CodeImportEventType,
     CodeImportMachineOfflineReason,
     RevisionControlSystems,
-    )
+)
 from lp.code.interfaces.codeimportevent import (
     ICodeImportEvent,
     ICodeImportEventSet,
     ICodeImportEventToken,
-    )
+)
 from lp.registry.interfaces.person import validate_public_person
-from lp.services.database.constants import (
-    DEFAULT,
-    UTC_NOW,
-    )
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
@@ -45,25 +37,35 @@ from lp.services.database.stormbase import StormBase
 class CodeImportEvent(StormBase):
     """See `ICodeImportEvent`."""
 
-    __storm_table__ = 'CodeImportEvent'
+    __storm_table__ = "CodeImportEvent"
 
     id = Int(primary=True)
 
     date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
 
     event_type = DBEnum(
-        name='entry_type', enum=CodeImportEventType, allow_none=False)
-    code_import_id = Int(name='code_import', allow_none=True, default=None)
-    code_import = Reference(code_import_id, 'CodeImport.id')
+        name="entry_type", enum=CodeImportEventType, allow_none=False
+    )
+    code_import_id = Int(name="code_import", allow_none=True, default=None)
+    code_import = Reference(code_import_id, "CodeImport.id")
     person_id = Int(
-        name='person', allow_none=True, validator=validate_public_person,
-        default=None)
-    person = Reference(person_id, 'Person.id')
-    machine_id = Int(name='machine', allow_none=True, default=None)
-    machine = Reference(machine_id, 'CodeImportMachine.id')
+        name="person",
+        allow_none=True,
+        validator=validate_public_person,
+        default=None,
+    )
+    person = Reference(person_id, "Person.id")
+    machine_id = Int(name="machine", allow_none=True, default=None)
+    machine = Reference(machine_id, "CodeImportMachine.id")
 
-    def __init__(self, event_type, code_import=None, person=None,
-                 machine=None, date_created=DEFAULT):
+    def __init__(
+        self,
+        event_type,
+        code_import=None,
+        person=None,
+        machine=None,
+        date_created=DEFAULT,
+    ):
         super().__init__()
         self.event_type = event_type
         self.code_import = code_import
@@ -73,9 +75,12 @@ class CodeImportEvent(StormBase):
 
     def items(self):
         """See `ICodeImportEvent`."""
-        return [(data.data_type, data.data_value)
-                for data in IStore(_CodeImportEventData).find(
-                    _CodeImportEventData, _CodeImportEventData.event == self)]
+        return [
+            (data.data_type, data.data_value)
+            for data in IStore(_CodeImportEventData).find(
+                _CodeImportEventData, _CodeImportEventData.event == self
+            )
+        ]
 
 
 class _CodeImportEventData(StormBase):
@@ -86,12 +91,12 @@ class _CodeImportEventData(StormBase):
     CodeImport methods.
     """
 
-    __storm_table__ = 'CodeImportEventData'
+    __storm_table__ = "CodeImportEventData"
 
     id = Int(primary=True)
 
-    event_id = Int(name='event', allow_none=True)
-    event = Reference(event_id, 'CodeImportEvent.id')
+    event_id = Int(name="event", allow_none=True)
+    event = Reference(event_id, "CodeImportEvent.id")
     data_type = DBEnum(enum=CodeImportEventDataType, allow_none=False)
     data_value = Unicode(allow_none=True)
 
@@ -108,15 +113,19 @@ class CodeImportEventSet:
 
     def getAll(self):
         """See `ICodeImportEventSet`."""
-        return IStore(CodeImportEvent).find(CodeImportEvent).order_by(
-            CodeImportEvent.date_created, CodeImportEvent.id)
+        return (
+            IStore(CodeImportEvent)
+            .find(CodeImportEvent)
+            .order_by(CodeImportEvent.date_created, CodeImportEvent.id)
+        )
 
     def getEventsForCodeImport(self, code_import):
         """See `ICodeImportEventSet`."""
-        return IStore(CodeImportEvent).find(
-            CodeImportEvent,
-            CodeImportEvent.code_import == code_import).order_by(
-                CodeImportEvent.date_created, CodeImportEvent.id)
+        return (
+            IStore(CodeImportEvent)
+            .find(CodeImportEvent, CodeImportEvent.code_import == code_import)
+            .order_by(CodeImportEvent.date_created, CodeImportEvent.id)
+        )
 
     # All CodeImportEvent creation methods should assert arguments against
     # None. The database schema and the interface allow all foreign keys to be
@@ -130,7 +139,9 @@ class CodeImportEventSet:
         assert person is not None, "person must not be None"
         event = CodeImportEvent(
             event_type=CodeImportEventType.CREATE,
-            code_import=code_import, person=person)
+            code_import=code_import,
+            person=person,
+        )
         IStore(CodeImportEvent).add(event)
         self._recordSnapshot(event, code_import)
         return event
@@ -150,7 +161,9 @@ class CodeImportEventSet:
             return None
         event = CodeImportEvent(
             event_type=CodeImportEventType.MODIFY,
-            code_import=code_import, person=person)
+            code_import=code_import,
+            person=person,
+        )
         IStore(CodeImportEvent).add(event)
         self._recordItems(event, items)
         return event
@@ -161,7 +174,9 @@ class CodeImportEventSet:
         assert person is not None, "person must not be None"
         event = CodeImportEvent(
             event_type=CodeImportEventType.REQUEST,
-            code_import=code_import, person=person)
+            code_import=code_import,
+            person=person,
+        )
         IStore(CodeImportEvent).add(event)
         self._recordCodeImport(event, code_import)
         return event
@@ -169,10 +184,13 @@ class CodeImportEventSet:
     def _recordMessage(self, event, message):
         """Record a message if there is a message set."""
         if message:
-            IStore(_CodeImportEventData).add(_CodeImportEventData(
-                event=event,
-                data_type=CodeImportEventDataType.MESSAGE,
-                data_value=message))
+            IStore(_CodeImportEventData).add(
+                _CodeImportEventData(
+                    event=event,
+                    data_type=CodeImportEventDataType.MESSAGE,
+                    data_value=message,
+                )
+            )
 
     def newOnline(self, machine, user=None, message=None, _date_created=None):
         """See `ICodeImportEventSet`."""
@@ -181,7 +199,10 @@ class CodeImportEventSet:
             _date_created = UTC_NOW
         event = CodeImportEvent(
             event_type=CodeImportEventType.ONLINE,
-            machine=machine, person=user, date_created=_date_created)
+            machine=machine,
+            person=user,
+            date_created=_date_created,
+        )
         IStore(CodeImportEvent).add(event)
         self._recordMessage(event, message)
         return event
@@ -189,17 +210,26 @@ class CodeImportEventSet:
     def newOffline(self, machine, reason, user=None, message=None):
         """See `ICodeImportEventSet`."""
         assert machine is not None, "machine must not be None"
-        assert (type(reason) == DBItem
-                and reason.enum == CodeImportMachineOfflineReason), (
+        assert (
+            type(reason) == DBItem
+            and reason.enum == CodeImportMachineOfflineReason
+        ), (
             "reason must be a CodeImportMachineOfflineReason value, "
-            "but was: %r" % (reason,))
+            "but was: %r" % (reason,)
+        )
         event = CodeImportEvent(
             event_type=CodeImportEventType.OFFLINE,
-            machine=machine, person=user)
+            machine=machine,
+            person=user,
+        )
         IStore(CodeImportEvent).add(event)
-        IStore(_CodeImportEventData).add(_CodeImportEventData(
-            event=event, data_type=CodeImportEventDataType.OFFLINE_REASON,
-            data_value=str(reason.name)))
+        IStore(_CodeImportEventData).add(
+            _CodeImportEventData(
+                event=event,
+                data_type=CodeImportEventDataType.OFFLINE_REASON,
+                data_value=str(reason.name),
+            )
+        )
         self._recordMessage(event, message)
         return event
 
@@ -209,7 +239,9 @@ class CodeImportEventSet:
         assert user is not None, "user must not be None"
         event = CodeImportEvent(
             event_type=CodeImportEventType.QUIESCE,
-            machine=machine, person=user)
+            machine=machine,
+            person=user,
+        )
         IStore(CodeImportEvent).add(event)
         self._recordMessage(event, message)
         return event
@@ -220,7 +252,9 @@ class CodeImportEventSet:
         assert machine is not None, "machine must not be None"
         event = CodeImportEvent(
             event_type=CodeImportEventType.START,
-            code_import=code_import, machine=machine)
+            code_import=code_import,
+            machine=machine,
+        )
         IStore(CodeImportEvent).add(event)
         return event
 
@@ -230,7 +264,9 @@ class CodeImportEventSet:
         assert machine is not None, "machine must not be None"
         event = CodeImportEvent(
             event_type=CodeImportEventType.FINISH,
-            code_import=code_import, machine=machine)
+            code_import=code_import,
+            machine=machine,
+        )
         IStore(CodeImportEvent).add(event)
         return event
 
@@ -240,7 +276,9 @@ class CodeImportEventSet:
         assert machine is not None, "machine must not be None"
         event = CodeImportEvent(
             event_type=CodeImportEventType.KILL,
-            code_import=code_import, machine=machine)
+            code_import=code_import,
+            machine=machine,
+        )
         IStore(CodeImportEvent).add(event)
         return event
 
@@ -249,14 +287,21 @@ class CodeImportEventSet:
         assert code_import is not None, "code_import must not be None"
         assert machine is not None, "machine must not be None"
         assert isinstance(job_id, int), (
-            "job_id must be an int, was: %r" % job_id)
+            "job_id must be an int, was: %r" % job_id
+        )
         event = CodeImportEvent(
             event_type=CodeImportEventType.RECLAIM,
-            code_import=code_import, machine=machine)
+            code_import=code_import,
+            machine=machine,
+        )
         IStore(CodeImportEvent).add(event)
-        IStore(_CodeImportEventData).add(_CodeImportEventData(
-            event=event, data_type=CodeImportEventDataType.RECLAIMED_JOB_ID,
-            data_value=str(job_id)))
+        IStore(_CodeImportEventData).add(
+            _CodeImportEventData(
+                event=event,
+                data_type=CodeImportEventDataType.RECLAIMED_JOB_ID,
+                data_value=str(job_id),
+            )
+        )
         return event
 
     def _recordSnapshot(self, event, code_import):
@@ -271,23 +316,28 @@ class CodeImportEventSet:
         """Record the specified event data into the database."""
         for key, value in items:
             data_type = getattr(CodeImportEventDataType, key)
-            IStore(_CodeImportEventData).add(_CodeImportEventData(
-                event=event, data_type=data_type, data_value=value))
+            IStore(_CodeImportEventData).add(
+                _CodeImportEventData(
+                    event=event, data_type=data_type, data_value=value
+                )
+            )
 
     def _iterItemsForSnapshot(self, code_import):
         """Yield key-value tuples to save a snapshot of the code import."""
         yield self._getCodeImportItem(code_import)
-        yield 'REVIEW_STATUS', str(code_import.review_status.name)
-        yield 'OWNER', str(code_import.owner.id)
-        yield 'UPDATE_INTERVAL', self._getNullableValue(
-            code_import.update_interval)
-        yield 'ASSIGNEE', self._getNullableValue(
-            code_import.assignee, use_id=True)
+        yield "REVIEW_STATUS", str(code_import.review_status.name)
+        yield "OWNER", str(code_import.owner.id)
+        yield "UPDATE_INTERVAL", self._getNullableValue(
+            code_import.update_interval
+        )
+        yield "ASSIGNEE", self._getNullableValue(
+            code_import.assignee, use_id=True
+        )
         yield from self._iterSourceDetails(code_import)
 
     def _getCodeImportItem(self, code_import):
         """Return the key-value tuple for the code import id."""
-        return 'CODE_IMPORT', str(code_import.id)
+        return "CODE_IMPORT", str(code_import.id)
 
     def _getNullableValue(self, value, use_id=False):
         """Return the string value for a nullable value.
@@ -305,16 +355,19 @@ class CodeImportEventSet:
 
     def _iterSourceDetails(self, code_import):
         """Yield key-value tuples describing the source of the import."""
-        if code_import.rcs_type in (RevisionControlSystems.BZR_SVN,
-                                    RevisionControlSystems.GIT,
-                                    RevisionControlSystems.BZR):
-            yield 'URL', code_import.url
+        if code_import.rcs_type in (
+            RevisionControlSystems.BZR_SVN,
+            RevisionControlSystems.GIT,
+            RevisionControlSystems.BZR,
+        ):
+            yield "URL", code_import.url
         elif code_import.rcs_type == RevisionControlSystems.CVS:
-            yield 'CVS_ROOT', code_import.cvs_root
-            yield 'CVS_MODULE', code_import.cvs_module
+            yield "CVS_ROOT", code_import.cvs_root
+            yield "CVS_MODULE", code_import.cvs_module
         else:
             raise AssertionError(
-                "Unknown RCS type: %s" % (code_import.rcs_type,))
+                "Unknown RCS type: %s" % (code_import.rcs_type,)
+            )
 
     def _findModifications(self, code_import, token):
         """Find modifications made to the code import.
@@ -331,10 +384,11 @@ class CodeImportEventSet:
         old_dict = dict(token.items)
         new_dict = dict(self._iterItemsForSnapshot(code_import))
 
-        assert old_dict['CODE_IMPORT'] == new_dict['CODE_IMPORT'], (
+        assert old_dict["CODE_IMPORT"] == new_dict["CODE_IMPORT"], (
             "Token was produced from a different CodeImport object: "
             "id in token = %s, id of code_import = %s"
-            % (old_dict['CODE_IMPORT'], new_dict['CODE_IMPORT']))
+            % (old_dict["CODE_IMPORT"], new_dict["CODE_IMPORT"])
+        )
 
         # The set of keys are not identical if the rcstype changed.
         all_keys = set(old_dict.keys()).union(set(new_dict.keys()))
@@ -351,7 +405,7 @@ class CodeImportEventSet:
             if old_value != new_value:
                 # Value has changed. Record previous value as well as current.
                 has_changes = True
-                items.add(('OLD_' + key, old_value))
+                items.add(("OLD_" + key, old_value))
 
         if has_changes:
             return items

@@ -28,11 +28,16 @@ class BranchPuller:
         """See `IBranchPuller`."""
         if not branch_types:
             branch_types = (BranchType.MIRRORED, BranchType.IMPORTED)
-        branch = IStore(Branch).find(
-            Branch,
-            Branch.next_mirror_time <= UTC_NOW,
-            Branch.branch_type.is_in(branch_types)).order_by(
-                Branch.next_mirror_time).first()
+        branch = (
+            IStore(Branch)
+            .find(
+                Branch,
+                Branch.next_mirror_time <= UTC_NOW,
+                Branch.branch_type.is_in(branch_types),
+            )
+            .order_by(Branch.next_mirror_time)
+            .first()
+        )
         if branch is not None:
             branch.startMirroring()
         return branch

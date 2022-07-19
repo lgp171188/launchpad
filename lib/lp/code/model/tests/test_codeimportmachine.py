@@ -10,7 +10,7 @@ from zope.component import getUtility
 from lp.code.enums import (
     CodeImportMachineOfflineReason,
     CodeImportMachineState,
-    )
+)
 from lp.code.interfaces.codeimportjob import ICodeImportJobWorkflow
 from lp.services.database.constants import UTC_NOW
 from lp.testing import TestCaseWithFactory
@@ -23,12 +23,11 @@ class TestCodeImportMachineShouldLookForJob(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super().setUp('admin@canonical.com')
+        super().setUp("admin@canonical.com")
         self.machine = self.factory.makeCodeImportMachine(set_online=True)
 
     def createJobRunningOnMachine(self, machine):
-        """Create a job in the database and mark it as running on `machine`.
-        """
+        """Create a job in the database and mark it as running on `machine`."""
         job = self.factory.makeCodeImportJob()
         getUtility(ICodeImportJobWorkflow).startJob(job, machine)
 
@@ -77,9 +76,9 @@ class TestCodeImportMachineShouldLookForJob(TestCaseWithFactory):
         # When the machine is quiescing, the heartbeat is updated.
         self.machine.setQuiescing(self.factory.makePerson())
         self.machine.shouldLookForJob(10)
-        self.assertSqlAttributeEqualsDate(self.machine, 'heartbeat', UTC_NOW)
+        self.assertSqlAttributeEqualsDate(self.machine, "heartbeat", UTC_NOW)
 
     def test_heartbeatUpdateWhenOnline(self):
         # When the machine is online, the heartbeat is updated.
         self.machine.shouldLookForJob(10)
-        self.assertSqlAttributeEqualsDate(self.machine, 'heartbeat', UTC_NOW)
+        self.assertSqlAttributeEqualsDate(self.machine, "heartbeat", UTC_NOW)

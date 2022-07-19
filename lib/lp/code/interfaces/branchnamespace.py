@@ -4,19 +4,16 @@
 """Interface for a branch namespace."""
 
 __all__ = [
-    'get_branch_namespace',
-    'IBranchNamespace',
-    'IBranchNamespacePolicy',
-    'IBranchNamespaceSet',
-    'lookup_branch_namespace',
-    'split_unique_name',
-    ]
+    "get_branch_namespace",
+    "IBranchNamespace",
+    "IBranchNamespacePolicy",
+    "IBranchNamespaceSet",
+    "lookup_branch_namespace",
+    "split_unique_name",
+]
 
 from zope.component import getUtility
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 from lp.code.enums import BranchLifecycleStatus
 
@@ -25,13 +22,21 @@ class IBranchNamespace(Interface):
     """A namespace that a branch lives in."""
 
     name = Attribute(
-        "The name of the namespace. This is prepended to the branch name.")
+        "The name of the namespace. This is prepended to the branch name."
+    )
 
     target = Attribute("The branch target for this namespace.")
 
-    def createBranch(branch_type, name, registrant, url=None, title=None,
-                     lifecycle_status=BranchLifecycleStatus.DEVELOPMENT,
-                     summary=None, whiteboard=None):
+    def createBranch(
+        branch_type,
+        name,
+        registrant,
+        url=None,
+        title=None,
+        lifecycle_status=BranchLifecycleStatus.DEVELOPMENT,
+        summary=None,
+        whiteboard=None,
+    ):
         """Create and return an `IBranch` in this namespace."""
 
     def createBranchWithPrefix(branch_type, prefix, registrant, url=None):
@@ -183,8 +188,9 @@ class IBranchNamespaceSet(Interface):
         :return: An `IBranchNamespace`.
         """
 
-    def interpret(person, product, distribution, distroseries,
-                  sourcepackagename):
+    def interpret(
+        person, product, distribution, distroseries, sourcepackagename
+    ):
         """Like `get`, but takes names of objects.
 
         :raise NoSuchPerson: if the person referred to cannot be found.
@@ -249,10 +255,12 @@ class IBranchNamespaceSet(Interface):
         """
 
 
-def get_branch_namespace(person, product=None, distroseries=None,
-                         sourcepackagename=None):
+def get_branch_namespace(
+    person, product=None, distroseries=None, sourcepackagename=None
+):
     return getUtility(IBranchNamespaceSet).get(
-        person, product, distroseries, sourcepackagename)
+        person, product, distroseries, sourcepackagename
+    )
 
 
 def lookup_branch_namespace(namespace_name):
@@ -261,4 +269,4 @@ def lookup_branch_namespace(namespace_name):
 
 def split_unique_name(unique_name):
     """Return the namespace and branch name of a unique name."""
-    return unique_name.rsplit('/', 1)
+    return unique_name.rsplit("/", 1)

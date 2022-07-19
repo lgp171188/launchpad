@@ -6,23 +6,16 @@
 """Test the scan_branches script."""
 
 
-from storm.locals import Store
 import transaction
+from storm.locals import Store
 
 from lp.code.enums import (
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
-    )
-from lp.code.model.branchjob import (
-    BranchJob,
-    BranchJobType,
-    BranchScanJob,
-    )
-from lp.services.job.model.job import (
-    Job,
-    JobStatus,
-    )
+)
+from lp.code.model.branchjob import BranchJob, BranchJobType, BranchScanJob
+from lp.services.job.model.job import Job, JobStatus
 from lp.services.osutils import override_environ
 from lp.services.scripts.tests import run_script
 from lp.testing import TestCaseWithFactory
@@ -39,22 +32,23 @@ class TestScanBranches(TestCaseWithFactory):
         target, target_tree = self.create_branch_and_tree(db_branch=db_branch)
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BRZ_EMAIL='me@example.com'):
-            target_tree.commit('First commit', rev_id=b'rev1')
-            target_tree.commit('Second commit', rev_id=b'rev2')
-            target_tree.commit('Third commit', rev_id=b'rev3')
+        with override_environ(BRZ_EMAIL="me@example.com"):
+            target_tree.commit("First commit", rev_id=b"rev1")
+            target_tree.commit("Second commit", rev_id=b"rev2")
+            target_tree.commit("Third commit", rev_id=b"rev3")
         BranchScanJob.create(db_branch)
         transaction.commit()
 
     def run_script_and_assert_success(self):
         """Run the scan_branches script and assert it ran successfully."""
         retcode, stdout, stderr = run_script(
-            'cronscripts/process-job-source.py', ['IBranchScanJobSource'],
-            expect_returncode=0)
+            "cronscripts/process-job-source.py",
+            ["IBranchScanJobSource"],
+            expect_returncode=0,
+        )
         self.oops_capture.sync()
-        self.assertEqual('', stdout)
-        self.assertIn(
-            'INFO    Ran 1 BranchScanJob jobs.\n', stderr)
+        self.assertEqual("", stdout)
+        self.assertIn("INFO    Ran 1 BranchScanJob jobs.\n", stderr)
 
     def test_scan_branch(self):
         """Test that scan branches adds revisions to the database."""
@@ -67,7 +61,8 @@ class TestScanBranches(TestCaseWithFactory):
             BranchSubscriptionNotificationLevel.FULL,
             BranchSubscriptionDiffSize.WHOLEDIFF,
             CodeReviewNotificationLevel.FULL,
-            db_branch.registrant)
+            db_branch.registrant,
+        )
         transaction.commit()
 
         self.run_script_and_assert_success()
@@ -79,7 +74,8 @@ class TestScanBranches(TestCaseWithFactory):
             BranchJob.job_id == Job.id,
             Job._status == JobStatus.WAITING,
             BranchJob.job_type == BranchJobType.REVISION_MAIL,
-            BranchJob.branch == db_branch)
+            BranchJob.branch == db_branch,
+        )
         self.assertEqual(result.count(), 1)
 
     def test_scan_packagebranch(self):

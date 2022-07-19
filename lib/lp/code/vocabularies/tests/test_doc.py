@@ -9,9 +9,8 @@ import os
 
 from lp.services.testing import build_doctest_suite
 
-
 here = os.path.dirname(os.path.realpath(__file__))
 
 
 def test_suite():
-    return build_doctest_suite(here, '')
+    return build_doctest_suite(here, "")

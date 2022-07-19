@@ -6,10 +6,7 @@ from testtools.matchers import MatchesStructure
 from zope.interface import providedBy
 
 from lp.code.adapters.gitrepository import GitRepositoryDelta
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import LaunchpadFunctionalLayer
 
 
@@ -22,7 +19,8 @@ class TestGitRepositoryDelta(TestCaseWithFactory):
         repository = self.factory.makeGitRepository(name="foo")
         old_repository = Snapshot(repository, providing=providedBy(repository))
         delta = GitRepositoryDelta.construct(
-            old_repository, repository, repository.owner)
+            old_repository, repository, repository.owner
+        )
         self.assertIsNone(delta)
 
     def test_modification(self):
@@ -30,18 +28,23 @@ class TestGitRepositoryDelta(TestCaseWithFactory):
         owner = self.factory.makePerson(name="person")
         project = self.factory.makeProduct(name="project")
         repository = self.factory.makeGitRepository(
-            owner=owner, target=project, name="foo")
+            owner=owner, target=project, name="foo"
+        )
         old_repository = Snapshot(repository, providing=providedBy(repository))
         with person_logged_in(repository.owner):
             repository.setName("bar", repository.owner)
         delta = GitRepositoryDelta.construct(old_repository, repository, owner)
         self.assertIsNotNone(delta)
-        self.assertThat(delta, MatchesStructure.byEquality(
-            name={
-                "old": "foo",
-                "new": "bar",
+        self.assertThat(
+            delta,
+            MatchesStructure.byEquality(
+                name={
+                    "old": "foo",
+                    "new": "bar",
                 },
-            git_identity={
-                "old": "lp:~person/project/+git/foo",
-                "new": "lp:~person/project/+git/bar",
-                }))
+                git_identity={
+                    "old": "lp:~person/project/+git/foo",
+                    "new": "lp:~person/project/+git/bar",
+                },
+            ),
+        )

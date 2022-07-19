@@ -7,55 +7,38 @@
 # repositories by name, then get the IGitLookup utility.
 __all__ = []
 
-from lazr.uri import (
-    InvalidURIError,
-    URI,
-    )
 import six
-from zope.component import (
-    adapter,
-    getUtility,
-    queryMultiAdapter,
-    )
+from lazr.uri import URI, InvalidURIError
+from zope.component import adapter, getUtility, queryMultiAdapter
 from zope.interface import implementer
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NameLookupFailed
 from lp.app.validators.name import valid_name
-from lp.code.errors import (
-    InvalidNamespace,
-    NoSuchGitRepository,
-    )
+from lp.code.errors import InvalidNamespace, NoSuchGitRepository
 from lp.code.interfaces.gitlookup import (
     IGitLookup,
     IGitTraversable,
     IGitTraverser,
-    )
+)
 from lp.code.interfaces.gitnamespace import IGitNamespaceSet
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.code.model.gitrepository import GitRepository
-from lp.registry.errors import (
-    NoSuchOCIProjectName,
-    NoSuchSourcePackageName,
-    )
+from lp.registry.errors import NoSuchOCIProjectName, NoSuchSourcePackageName
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.ociproject import IOCIProject
-from lp.registry.interfaces.person import (
-    IPerson,
-    IPersonSet,
-    NoSuchPerson,
-    )
+from lp.registry.interfaces.person import IPerson, IPersonSet, NoSuchPerson
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.product import (
     InvalidProductName,
     IProduct,
     NoSuchProduct,
-    )
+)
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 
@@ -218,8 +201,10 @@ class DistributionSourcePackageGitTraversable(_BaseGitTraversable):
 
     def getNamespace(self, owner):
         return getUtility(IGitNamespaceSet).get(
-            owner, distribution=self.context.distribution,
-            sourcepackagename=self.context.sourcepackagename)
+            owner,
+            distribution=self.context.distribution,
+            sourcepackagename=self.context.sourcepackagename,
+        )
 
 
 @adapter(IPerson)
@@ -272,7 +257,8 @@ class DistributionOCIProjectGitTraversable(_BaseGitTraversable):
 
     def getNamespace(self, owner):
         return getUtility(IGitNamespaceSet).get(
-            owner, oci_project=self.context)
+            owner, oci_project=self.context
+        )
 
 
 class SegmentIterator:
@@ -310,7 +296,8 @@ class GitTraverser:
                 break
             try:
                 owner, target, repository = traversable.traverse(
-                    owner, name, segments_iter)
+                    owner, name, segments_iter
+                )
             except InvalidNamespace:
                 if target is not None or repository is not None:
                     # We have some information, so the rest may consist of
@@ -330,7 +317,8 @@ class GitTraverser:
         """See `IGitTraverser`."""
         segments = iter(path.split("/"))
         owner, target, repository, trailing = self.traverse(
-            segments, check_permissions=check_permissions)
+            segments, check_permissions=check_permissions
+        )
         if trailing or list(segments):
             raise InvalidNamespace(path)
         return owner, target, repository
@@ -360,10 +348,11 @@ class GitLookup:
     @staticmethod
     def uriToPath(uri):
         """See `IGitLookup`."""
-        schemes = ('git', 'git+ssh', 'https', 'ssh')
+        schemes = ("git", "git+ssh", "https", "ssh")
         codehosting_host = URI(config.codehosting.git_anon_root).host
-        if ((uri.scheme in schemes and uri.host == codehosting_host) or
-            (uri.scheme == "lp" and uri.host is None)):
+        if (uri.scheme in schemes and uri.host == codehosting_host) or (
+            uri.scheme == "lp" and uri.host is None
+        ):
             return uri.path.lstrip("/")
         else:
             return None
@@ -406,7 +395,8 @@ class GitLookup:
         segments = iter(path.split("/"))
         try:
             owner, target, repository, trailing = traverser.traverse(
-                segments, check_permissions=check_permissions)
+                segments, check_permissions=check_permissions
+            )
         except (InvalidNamespace, InvalidProductName, NameLookupFailed):
             return None, None
         if repository is None:
@@ -417,7 +407,8 @@ class GitLookup:
                 repository = repository_set.getDefaultRepository(target)
             else:
                 repository = repository_set.getDefaultRepositoryForOwner(
-                    owner, target)
+                    owner, target
+                )
         trailing_segments = list(segments)
         if trailing:
             trailing_segments.insert(0, trailing)

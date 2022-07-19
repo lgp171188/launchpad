@@ -4,24 +4,18 @@
 """CodeReviewVoteReference database class."""
 
 __all__ = [
-    'CodeReviewVoteReference',
-    ]
+    "CodeReviewVoteReference",
+]
 
 import pytz
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    Store,
-    Unicode,
-    )
+from storm.locals import DateTime, Int, Reference, Store, Unicode
 from zope.interface import implementer
 
 from lp.code.errors import (
     ClaimReviewFailed,
     ReviewNotPending,
     UserHasExistingReview,
-    )
+)
 from lp.code.interfaces.codereviewvote import ICodeReviewVoteReference
 from lp.services.database.constants import DEFAULT
 from lp.services.database.stormbase import StormBase
@@ -31,24 +25,32 @@ from lp.services.database.stormbase import StormBase
 class CodeReviewVoteReference(StormBase):
     """See `ICodeReviewVote`"""
 
-    __storm_table__ = 'CodeReviewVote'
+    __storm_table__ = "CodeReviewVote"
 
     id = Int(primary=True)
     branch_merge_proposal_id = Int(
-        name='branch_merge_proposal', allow_none=False)
+        name="branch_merge_proposal", allow_none=False
+    )
     branch_merge_proposal = Reference(
-        branch_merge_proposal_id, 'BranchMergeProposal.id')
+        branch_merge_proposal_id, "BranchMergeProposal.id"
+    )
     date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
-    registrant_id = Int(name='registrant', allow_none=False)
-    registrant = Reference(registrant_id, 'Person.id')
-    reviewer_id = Int(name='reviewer', allow_none=False)
-    reviewer = Reference(reviewer_id, 'Person.id')
+    registrant_id = Int(name="registrant", allow_none=False)
+    registrant = Reference(registrant_id, "Person.id")
+    reviewer_id = Int(name="reviewer", allow_none=False)
+    reviewer = Reference(reviewer_id, "Person.id")
     review_type = Unicode(default=None)
-    comment_id = Int(name='vote_message', default=None)
-    comment = Reference(comment_id, 'CodeReviewComment.id')
+    comment_id = Int(name="vote_message", default=None)
+    comment = Reference(comment_id, "CodeReviewComment.id")
 
-    def __init__(self, branch_merge_proposal, registrant, reviewer,
-                 review_type=None, date_created=DEFAULT):
+    def __init__(
+        self,
+        branch_merge_proposal,
+        registrant,
+        reviewer,
+        review_type=None,
+        date_created=DEFAULT,
+    ):
         self.branch_merge_proposal = branch_merge_proposal
         self.registrant = registrant
         self.reviewer = reviewer
@@ -64,7 +66,7 @@ class CodeReviewVoteReference(StormBase):
     def _validatePending(self):
         """Raise if the review is not pending."""
         if not self.is_pending:
-            raise ReviewNotPending('The review is not pending.')
+            raise ReviewNotPending("The review is not pending.")
 
     def _validateNoReviewForUser(self, user):
         """Make sure there isn't an existing review for the user."""
@@ -72,21 +74,24 @@ class CodeReviewVoteReference(StormBase):
         existing_review = bmp.getUsersVoteReference(user)
         if existing_review is not None:
             if existing_review.is_pending:
-                error_str = '%s has already been asked to review this'
+                error_str = "%s has already been asked to review this"
             else:
-                error_str = '%s has already reviewed this'
+                error_str = "%s has already reviewed this"
             raise UserHasExistingReview(error_str % user.unique_displayname)
 
     def validateClaimReview(self, claimant):
         """See `ICodeReviewVote`"""
         self._validatePending()
         if not self.reviewer.is_team:
-            raise ClaimReviewFailed('Cannot claim non-team reviews.')
+            raise ClaimReviewFailed("Cannot claim non-team reviews.")
         if not claimant.inTeam(self.reviewer):
             raise ClaimReviewFailed(
-                '%s is not a member of %s' %
-                (claimant.unique_displayname,
-                 self.reviewer.unique_displayname))
+                "%s is not a member of %s"
+                % (
+                    claimant.unique_displayname,
+                    self.reviewer.unique_displayname,
+                )
+            )
         self._validateNoReviewForUser(claimant)
 
     def claimReview(self, claimant):
@@ -114,5 +119,5 @@ class CodeReviewVoteReference(StormBase):
     def delete(self):
         """See `ICodeReviewVote`"""
         if not self.is_pending:
-            raise ReviewNotPending('The review is not pending.')
+            raise ReviewNotPending("The review is not pending.")
         self.destroySelf()

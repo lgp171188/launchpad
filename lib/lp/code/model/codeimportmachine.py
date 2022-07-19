@@ -4,34 +4,25 @@
 """Database classes including and related to CodeImportMachine."""
 
 __all__ = [
-    'CodeImportMachine',
-    'CodeImportMachineSet',
-    ]
+    "CodeImportMachine",
+    "CodeImportMachineSet",
+]
 
 import pytz
-from storm.locals import (
-    DateTime,
-    Desc,
-    Int,
-    ReferenceSet,
-    Unicode,
-    )
+from storm.locals import DateTime, Desc, Int, ReferenceSet, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.code.enums import (
     CodeImportMachineOfflineReason,
     CodeImportMachineState,
-    )
+)
 from lp.code.interfaces.codeimportevent import ICodeImportEventSet
 from lp.code.interfaces.codeimportmachine import (
     ICodeImportMachine,
     ICodeImportMachineSet,
-    )
-from lp.services.database.constants import (
-    DEFAULT,
-    UTC_NOW,
-    )
+)
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
@@ -41,8 +32,8 @@ from lp.services.database.stormbase import StormBase
 class CodeImportMachine(StormBase):
     """See `ICodeImportMachine`."""
 
-    __storm_table__ = 'CodeImportMachine'
-    __storm_order__ = 'hostname'
+    __storm_table__ = "CodeImportMachine"
+    __storm_order__ = "hostname"
 
     id = Int(primary=True)
 
@@ -50,19 +41,26 @@ class CodeImportMachine(StormBase):
 
     hostname = Unicode(allow_none=False)
     state = DBEnum(
-        enum=CodeImportMachineState, allow_none=False,
-        default=CodeImportMachineState.OFFLINE)
+        enum=CodeImportMachineState,
+        allow_none=False,
+        default=CodeImportMachineState.OFFLINE,
+    )
     heartbeat = DateTime(tzinfo=pytz.UTC, allow_none=True)
 
     current_jobs = ReferenceSet(
-        id, 'CodeImportJob.machine_id',
-        order_by=('CodeImportJob.date_started', 'CodeImportJob.id'))
+        id,
+        "CodeImportJob.machine_id",
+        order_by=("CodeImportJob.date_started", "CodeImportJob.id"),
+    )
 
     events = ReferenceSet(
-        id, 'CodeImportEvent.machine_id',
+        id,
+        "CodeImportEvent.machine_id",
         order_by=(
-            Desc('CodeImportEvent.date_created'),
-            Desc('CodeImportEvent.id')))
+            Desc("CodeImportEvent.date_created"),
+            Desc("CodeImportEvent.id"),
+        ),
+    )
 
     def __init__(self, hostname, heartbeat=None):
         super().__init__()
@@ -79,42 +77,46 @@ class CodeImportMachine(StormBase):
         self.heartbeat = UTC_NOW
         if self.state == CodeImportMachineState.QUIESCING:
             if job_count == 0:
-                self.setOffline(
-                    CodeImportMachineOfflineReason.QUIESCED)
+                self.setOffline(CodeImportMachineOfflineReason.QUIESCED)
             return False
         elif self.state == CodeImportMachineState.ONLINE:
             return job_count < worker_limit
         else:
-            raise AssertionError(
-                "Unknown machine state %r??" % self.state)
+            raise AssertionError("Unknown machine state %r??" % self.state)
 
     def setOnline(self, user=None, message=None):
         """See `ICodeImportMachine`."""
-        if self.state not in (CodeImportMachineState.OFFLINE,
-                              CodeImportMachineState.QUIESCING):
+        if self.state not in (
+            CodeImportMachineState.OFFLINE,
+            CodeImportMachineState.QUIESCING,
+        ):
             raise AssertionError(
                 "State of machine %s was %s."
-                % (self.hostname, self.state.name))
+                % (self.hostname, self.state.name)
+            )
         self.state = CodeImportMachineState.ONLINE
         getUtility(ICodeImportEventSet).newOnline(self, user, message)
 
     def setOffline(self, reason, user=None, message=None):
         """See `ICodeImportMachine`."""
-        if self.state not in (CodeImportMachineState.ONLINE,
-                              CodeImportMachineState.QUIESCING):
+        if self.state not in (
+            CodeImportMachineState.ONLINE,
+            CodeImportMachineState.QUIESCING,
+        ):
             raise AssertionError(
                 "State of machine %s was %s."
-                % (self.hostname, self.state.name))
+                % (self.hostname, self.state.name)
+            )
         self.state = CodeImportMachineState.OFFLINE
-        getUtility(ICodeImportEventSet).newOffline(
-            self, reason, user, message)
+        getUtility(ICodeImportEventSet).newOffline(self, reason, user, message)
 
     def setQuiescing(self, user, message=None):
         """See `ICodeImportMachine`."""
         if self.state != CodeImportMachineState.ONLINE:
             raise AssertionError(
                 "State of machine %s was %s."
-                % (self.hostname, self.state.name))
+                % (self.hostname, self.state.name)
+            )
         self.state = CodeImportMachineState.QUIESCING
         getUtility(ICodeImportEventSet).newQuiesce(self, user, message)
 
@@ -129,8 +131,11 @@ class CodeImportMachineSet:
 
     def getByHostname(self, hostname):
         """See `ICodeImportMachineSet`."""
-        return IStore(CodeImportMachine).find(
-            CodeImportMachine, CodeImportMachine.hostname == hostname).one()
+        return (
+            IStore(CodeImportMachine)
+            .find(CodeImportMachine, CodeImportMachine.hostname == hostname)
+            .one()
+        )
 
     def new(self, hostname, state=CodeImportMachineState.OFFLINE):
         """See `ICodeImportMachineSet`."""
@@ -138,7 +143,6 @@ class CodeImportMachineSet:
         if state == CodeImportMachineState.ONLINE:
             machine.setOnline()
         elif state != CodeImportMachineState.OFFLINE:
-            raise AssertionError(
-                "Invalid machine creation state: %r." % state)
+            raise AssertionError("Invalid machine creation state: %r." % state)
         IStore(CodeImportMachine).add(machine)
         return machine

@@ -8,24 +8,21 @@ SourcePackageRecipeBuild.manifest, the classes in this file have no public
 interfaces.
 """
 
-__all__ = ['SourcePackageRecipeData']
+__all__ = ["SourcePackageRecipeData"]
 
 import re
 
+import six
 from breezy.plugins.builder.recipe import (
+    SAFE_INSTRUCTIONS,
     BaseRecipeBranch,
     MergeInstruction,
     NestInstruction,
     NestPartInstruction,
     RecipeBranch,
     RecipeParser,
-    SAFE_INSTRUCTIONS,
-    )
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
-import six
+)
+from lazr.enum import DBEnumeratedType, DBItem
 from storm.expr import Union
 from storm.locals import (
     And,
@@ -38,12 +35,9 @@ from storm.locals import (
     Store,
     Storm,
     Unicode,
-    )
+)
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 
 from lp.code.errors import (
     NoSuchBranch,
@@ -51,7 +45,7 @@ from lp.code.errors import (
     PrivateBranchRecipe,
     PrivateGitRepositoryRecipe,
     TooNewRecipeFormat,
-    )
+)
 from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.branchlookup import IBranchLookup
 from lp.code.interfaces.gitlookup import IGitLookup
@@ -62,39 +56,45 @@ from lp.code.interfaces.sourcepackagerecipe import (
     ISourcePackageRecipeData,
     ISourcePackageRecipeDataSource,
     RecipeBranchType,
-    )
+)
 from lp.code.model.branch import Branch
 from lp.code.model.gitrepository import GitRepository
-from lp.services.database.bulk import (
-    load_referencing,
-    load_related,
-    )
+from lp.services.database.bulk import load_referencing, load_related
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.propertycache import (
     cachedproperty,
     clear_property_cache,
     get_property_cache,
-    )
+)
 
 
 class InstructionType(DBEnumeratedType):
     """The instruction type, for _SourcePackageRecipeDataInstruction.type."""
 
-    MERGE = DBItem(1, """
+    MERGE = DBItem(
+        1,
+        """
         Merge instruction
 
-        A merge instruction.""")
+        A merge instruction.""",
+    )
 
-    NEST = DBItem(2, """
+    NEST = DBItem(
+        2,
+        """
         Nest instruction
 
-        A nest instruction.""")
+        A nest instruction.""",
+    )
 
-    NEST_PART = DBItem(3, """
+    NEST_PART = DBItem(
+        3,
+        """
         Nest-part instruction
 
-        A nest-part instruction.""")
+        A nest-part instruction.""",
+    )
 
 
 class _SourcePackageRecipeDataInstruction(Storm):
@@ -102,9 +102,19 @@ class _SourcePackageRecipeDataInstruction(Storm):
 
     __storm_table__ = "SourcePackageRecipeDataInstruction"
 
-    def __init__(self, name, type, comment, line_number, branch_or_repository,
-                 revspec, directory, recipe_data, parent_instruction,
-                 source_directory):
+    def __init__(
+        self,
+        name,
+        type,
+        comment,
+        line_number,
+        branch_or_repository,
+        revspec,
+        directory,
+        recipe_data,
+        parent_instruction,
+        source_directory,
+    ):
         super().__init__()
         self.name = six.ensure_text(name)
         self.type = type
@@ -120,7 +130,8 @@ class _SourcePackageRecipeDataInstruction(Storm):
             self.branch = branch_or_repository
         else:
             raise AssertionError(
-                "Unsupported source: %r" % (branch_or_repository,))
+                "Unsupported source: %r" % (branch_or_repository,)
+            )
         if revspec is not None:
             revspec = six.ensure_text(revspec)
         self.revspec = revspec
@@ -138,21 +149,22 @@ class _SourcePackageRecipeDataInstruction(Storm):
     comment = Unicode(allow_none=True)
     line_number = Int(allow_none=False)
 
-    branch_id = Int(name='branch', allow_none=True)
-    branch = Reference(branch_id, 'Branch.id')
-    git_repository_id = Int(name='git_repository', allow_none=True)
-    git_repository = Reference(git_repository_id, 'GitRepository.id')
+    branch_id = Int(name="branch", allow_none=True)
+    branch = Reference(branch_id, "Branch.id")
+    git_repository_id = Int(name="git_repository", allow_none=True)
+    git_repository = Reference(git_repository_id, "GitRepository.id")
 
     revspec = Unicode(allow_none=True)
     directory = Unicode(allow_none=True)
     source_directory = Unicode(allow_none=True)
 
-    recipe_data_id = Int(name='recipe_data', allow_none=False)
-    recipe_data = Reference(recipe_data_id, 'SourcePackageRecipeData.id')
+    recipe_data_id = Int(name="recipe_data", allow_none=False)
+    recipe_data = Reference(recipe_data_id, "SourcePackageRecipeData.id")
 
-    parent_instruction_id = Int(name='parent_instruction', allow_none=True)
+    parent_instruction_id = Int(name="parent_instruction", allow_none=True)
     parent_instruction = Reference(
-        parent_instruction_id, '_SourcePackageRecipeDataInstruction.id')
+        parent_instruction_id, "_SourcePackageRecipeDataInstruction.id"
+    )
 
     def appendToRecipe(self, recipe_branch):
         """Append a bzr-builder instruction to the recipe_branch object."""
@@ -168,7 +180,8 @@ class _SourcePackageRecipeDataInstruction(Storm):
             recipe_branch.nest_branch(self.directory, branch)
         elif self.type == InstructionType.NEST_PART:
             recipe_branch.nest_part_branch(
-                branch, self.source_directory, self.directory)
+                branch, self.source_directory, self.directory
+            )
         else:
             raise AssertionError("Unknown type %r" % self.type)
         return branch
@@ -191,10 +204,10 @@ class SourcePackageRecipeData(Storm):
 
     id = Int(primary=True)
 
-    base_branch_id = Int(name='base_branch', allow_none=True)
-    base_branch = Reference(base_branch_id, 'Branch.id')
-    base_git_repository_id = Int(name='base_git_repository', allow_none=True)
-    base_git_repository = Reference(base_git_repository_id, 'GitRepository.id')
+    base_branch_id = Int(name="base_branch", allow_none=True)
+    base_branch = Reference(base_branch_id, "Branch.id")
+    base_git_repository_id = Int(name="base_git_repository", allow_none=True)
+    base_git_repository = Reference(base_git_repository_id, "GitRepository.id")
 
     @property
     def base(self):
@@ -220,18 +233,22 @@ class SourcePackageRecipeData(Storm):
     revspec = Unicode(allow_none=True)
 
     instructions = ReferenceSet(
-        id, _SourcePackageRecipeDataInstruction.recipe_data_id,
-        order_by=_SourcePackageRecipeDataInstruction.line_number)
+        id,
+        _SourcePackageRecipeDataInstruction.recipe_data_id,
+        order_by=_SourcePackageRecipeDataInstruction.line_number,
+    )
 
-    sourcepackage_recipe_id = Int(
-        name='sourcepackage_recipe', allow_none=True)
+    sourcepackage_recipe_id = Int(name="sourcepackage_recipe", allow_none=True)
     sourcepackage_recipe = Reference(
-        sourcepackage_recipe_id, 'SourcePackageRecipe.id')
+        sourcepackage_recipe_id, "SourcePackageRecipe.id"
+    )
 
     sourcepackage_recipe_build_id = Int(
-        name='sourcepackage_recipe_build', allow_none=True)
+        name="sourcepackage_recipe_build", allow_none=True
+    )
     sourcepackage_recipe_build = Reference(
-        sourcepackage_recipe_build_id, 'SourcePackageRecipeBuild.id')
+        sourcepackage_recipe_build_id, "SourcePackageRecipeBuild.id"
+    )
 
     @staticmethod
     def getParsedRecipe(recipe_text):
@@ -241,10 +258,11 @@ class SourcePackageRecipeData(Storm):
         # "bzr-builder" even though git-build-recipe also supports its own
         # name there.
         recipe_text, git_substitutions = re.subn(
-            r"^(#\s*)git-build-recipe", r"\1bzr-builder", recipe_text)
+            r"^(#\s*)git-build-recipe", r"\1bzr-builder", recipe_text
+        )
         recipe_branch_type = (
-            RecipeBranchType.GIT if git_substitutions
-            else RecipeBranchType.BZR)
+            RecipeBranchType.GIT if git_substitutions else RecipeBranchType.BZR
+        )
         parser = RecipeParser(recipe_text)
         recipe_branch = parser.parse(permitted_instructions=SAFE_INSTRUCTIONS)
         return recipe_branch, recipe_branch_type
@@ -259,53 +277,68 @@ class SourcePackageRecipeData(Storm):
         :return: a collection of `ISourcePackageRecipe`s.
         """
         from lp.code.model.sourcepackagerecipe import SourcePackageRecipe
+
         store = Store.of(branch_or_repository)
         if IGitRepository.providedBy(branch_or_repository):
             data_clause = (
-                SourcePackageRecipeData.base_git_repository ==
-                    branch_or_repository)
+                SourcePackageRecipeData.base_git_repository
+                == branch_or_repository
+            )
             insn_clause = (
-                _SourcePackageRecipeDataInstruction.git_repository ==
-                    branch_or_repository)
+                _SourcePackageRecipeDataInstruction.git_repository
+                == branch_or_repository
+            )
         elif IBranch.providedBy(branch_or_repository):
             data_clause = (
-                SourcePackageRecipeData.base_branch == branch_or_repository)
+                SourcePackageRecipeData.base_branch == branch_or_repository
+            )
             insn_clause = (
-                _SourcePackageRecipeDataInstruction.branch ==
-                    branch_or_repository)
+                _SourcePackageRecipeDataInstruction.branch
+                == branch_or_repository
+            )
         else:
             raise AssertionError(
-                "Unsupported source: %r" % (branch_or_repository,))
+                "Unsupported source: %r" % (branch_or_repository,)
+            )
         if revspecs is not None:
             concrete_revspecs = [
-                revspec for revspec in revspecs if revspec is not None]
+                revspec for revspec in revspecs if revspec is not None
+            ]
             data_revspec_clause = In(
-                SourcePackageRecipeData.revspec, concrete_revspecs)
+                SourcePackageRecipeData.revspec, concrete_revspecs
+            )
             insn_revspec_clause = In(
-                _SourcePackageRecipeDataInstruction.revspec, concrete_revspecs)
+                _SourcePackageRecipeDataInstruction.revspec, concrete_revspecs
+            )
             if None in revspecs:
                 data_revspec_clause = Or(
                     data_revspec_clause,
-                    SourcePackageRecipeData.revspec == None)
+                    SourcePackageRecipeData.revspec == None,
+                )
                 insn_revspec_clause = Or(
                     insn_revspec_clause,
-                    _SourcePackageRecipeDataInstruction.revspec == None)
+                    _SourcePackageRecipeDataInstruction.revspec == None,
+                )
             data_clause = And(data_clause, data_revspec_clause)
             insn_clause = And(insn_clause, insn_revspec_clause)
         return store.find(
             SourcePackageRecipe,
-            SourcePackageRecipe.id.is_in(Union(
-                Select(
-                    SourcePackageRecipeData.sourcepackage_recipe_id,
-                    data_clause),
-                Select(
-                    SourcePackageRecipeData.sourcepackage_recipe_id,
-                    And(
-                        _SourcePackageRecipeDataInstruction.recipe_data_id ==
-                        SourcePackageRecipeData.id,
-                        insn_clause)
-                    )
-            ))
+            SourcePackageRecipe.id.is_in(
+                Union(
+                    Select(
+                        SourcePackageRecipeData.sourcepackage_recipe_id,
+                        data_clause,
+                    ),
+                    Select(
+                        SourcePackageRecipeData.sourcepackage_recipe_id,
+                        And(
+                            _SourcePackageRecipeDataInstruction.recipe_data_id
+                            == SourcePackageRecipeData.id,
+                            insn_clause,
+                        ),
+                    ),
+                )
+            ),
         )
 
     @classmethod
@@ -313,26 +346,32 @@ class SourcePackageRecipeData(Storm):
         """See `ISourcePackageRecipeDataSource`."""
         parsed, recipe_branch_type = cls.getParsedRecipe(text)
         return cls(
-            parsed, recipe_branch_type,
-            sourcepackage_recipe_build=sourcepackage_recipe_build)
+            parsed,
+            recipe_branch_type,
+            sourcepackage_recipe_build=sourcepackage_recipe_build,
+        )
 
     def getRecipe(self):
         """The BaseRecipeBranch version of the recipe."""
         base_branch = BaseRecipeBranch(
-            self.base.identity, self.deb_version_template,
-            self.recipe_format, self.revspec)
+            self.base.identity,
+            self.deb_version_template,
+            self.recipe_format,
+            self.revspec,
+        )
         insn_stack = []
         for insn in self.instructions:
-            while insn_stack and \
-                      insn_stack[-1]['insn'] != insn.parent_instruction:
+            while (
+                insn_stack
+                and insn_stack[-1]["insn"] != insn.parent_instruction
+            ):
                 insn_stack.pop()
             if insn_stack:
-                target_branch = insn_stack[-1]['recipe_branch']
+                target_branch = insn_stack[-1]["recipe_branch"]
             else:
                 target_branch = base_branch
             recipe_branch = insn.appendToRecipe(target_branch)
-            insn_stack.append(
-                dict(insn=insn, recipe_branch=recipe_branch))
+            insn_stack.append(dict(insn=insn, recipe_branch=recipe_branch))
         return base_branch
 
     def _scanInstructions(self, base, recipe_branch):
@@ -362,10 +401,10 @@ class SourcePackageRecipeData(Storm):
             r.update(self._scanInstructions(base, instruction.recipe_branch))
         return r
 
-    def _recordInstructions(self, recipe_branch, parent_insn, branch_map,
-                            line_number=0):
-        """Build _SourcePackageRecipeDataInstructions for the recipe_branch.
-        """
+    def _recordInstructions(
+        self, recipe_branch, parent_insn, branch_map, line_number=0
+    ):
+        """Build _SourcePackageRecipeDataInstructions for the recipe_branch."""
         for instruction in recipe_branch.child_branches:
             nest_path = instruction.nest_path
             source_directory = None
@@ -381,17 +420,26 @@ class SourcePackageRecipeData(Storm):
                 # Unsupported instructions should have been filtered out by
                 # _scanInstructions; if we get surprised here, that's a bug.
                 raise AssertionError(
-                    "Unsupported instruction %r" % instruction)
+                    "Unsupported instruction %r" % instruction
+                )
             line_number += 1
             comment = None
             db_branch_or_repository = branch_map[instruction.recipe_branch.url]
             insn = _SourcePackageRecipeDataInstruction(
-                instruction.recipe_branch.name, type, comment,
-                line_number, db_branch_or_repository,
+                instruction.recipe_branch.name,
+                type,
+                comment,
+                line_number,
+                db_branch_or_repository,
                 instruction.recipe_branch.revspec,
-                nest_path, self, parent_insn, source_directory)
+                nest_path,
+                self,
+                parent_insn,
+                source_directory,
+            )
             line_number = self._recordInstructions(
-                instruction.recipe_branch, insn, branch_map, line_number)
+                instruction.recipe_branch, insn, branch_map, line_number
+            )
         return line_number
 
     def setRecipe(self, builder_recipe, recipe_branch_type):
@@ -413,7 +461,8 @@ class SourcePackageRecipeData(Storm):
                 raise PrivateGitRepositoryRecipe(base)
         else:
             raise AssertionError(
-                'Unknown recipe_branch_type: %r' % recipe_branch_type)
+                "Unknown recipe_branch_type: %r" % recipe_branch_type
+            )
         branch_map = self._scanInstructions(base, builder_recipe)
         # If this object hasn't been added to a store yet, there can't be any
         # instructions linking to us yet.
@@ -424,19 +473,25 @@ class SourcePackageRecipeData(Storm):
         else:
             self.revspec = None
         self._recordInstructions(
-            builder_recipe, parent_insn=None, branch_map=branch_map)
+            builder_recipe, parent_insn=None, branch_map=branch_map
+        )
         self.base = base
         if builder_recipe.deb_version is None:
             self.deb_version_template = None
         else:
             self.deb_version_template = six.ensure_text(
-                builder_recipe.deb_version)
+                builder_recipe.deb_version
+            )
         self.recipe_format = str(builder_recipe.format)
 
-    def __init__(self, recipe, recipe_branch_type, sourcepackage_recipe=None,
-                 sourcepackage_recipe_build=None):
-        """Initialize from the bzr-builder recipe and link it to a db recipe.
-        """
+    def __init__(
+        self,
+        recipe,
+        recipe_branch_type,
+        sourcepackage_recipe=None,
+        sourcepackage_recipe_build=None,
+    ):
+        """Initialize from the bzr-builder recipe and link to a db recipe."""
         super().__init__()
         self.setRecipe(recipe, recipe_branch_type)
         self.sourcepackage_recipe = sourcepackage_recipe
@@ -450,17 +505,20 @@ class SourcePackageRecipeData(Storm):
 
         # Load the related Branch, _SourcePackageRecipeDataInstruction.
         base_branches = load_related(
-            Branch, sourcepackagerecipedatas, ['base_branch_id'])
+            Branch, sourcepackagerecipedatas, ["base_branch_id"]
+        )
         base_repositories = load_related(
-            GitRepository, sourcepackagerecipedatas,
-            ['base_git_repository_id'])
+            GitRepository, sourcepackagerecipedatas, ["base_git_repository_id"]
+        )
         sprd_instructions = load_referencing(
             _SourcePackageRecipeDataInstruction,
-            sourcepackagerecipedatas, ['recipe_data_id'])
-        sub_branches = load_related(
-            Branch, sprd_instructions, ['branch_id'])
+            sourcepackagerecipedatas,
+            ["recipe_data_id"],
+        )
+        sub_branches = load_related(Branch, sprd_instructions, ["branch_id"])
         sub_repositories = load_related(
-            GitRepository, sprd_instructions, ['git_repository_id'])
+            GitRepository, sprd_instructions, ["git_repository_id"]
+        )
         all_branches = base_branches + sub_branches
         all_repositories = base_repositories + sub_repositories
         # Pre-load branches'/repositories' data.
@@ -473,14 +531,17 @@ class SourcePackageRecipeData(Storm):
         branch_to_recipe_data = {
             instr.branch_id: instr.recipe_data_id
             for instr in sprd_instructions
-            if instr.branch_id is not None}
+            if instr.branch_id is not None
+        }
         repository_to_recipe_data = {
             instr.git_repository_id: instr.recipe_data_id
             for instr in sprd_instructions
-            if instr.git_repository_id is not None}
+            if instr.git_repository_id is not None
+        }
         caches = {
             sprd.id: [sprd, get_property_cache(sprd)]
-            for sprd in sourcepackagerecipedatas}
+            for sprd in sourcepackagerecipedatas
+        }
         for _, [sprd, cache] in caches.items():
             cache._referenced_branches = [sprd.base]
         for branch in sub_branches:
@@ -502,12 +563,14 @@ class SourcePackageRecipeData(Storm):
         sub_branches = IStore(self).find(
             Branch,
             _SourcePackageRecipeDataInstruction.recipe_data == self,
-            Branch.id == _SourcePackageRecipeDataInstruction.branch_id)
+            Branch.id == _SourcePackageRecipeDataInstruction.branch_id,
+        )
         referenced_branches.extend(sub_branches)
         sub_repositories = IStore(self).find(
             GitRepository,
             _SourcePackageRecipeDataInstruction.recipe_data == self,
-            GitRepository.id ==
-                _SourcePackageRecipeDataInstruction.git_repository_id)
+            GitRepository.id
+            == _SourcePackageRecipeDataInstruction.git_repository_id,
+        )
         referenced_branches.extend(sub_repositories)
         return referenced_branches

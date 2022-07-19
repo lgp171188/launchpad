@@ -4,9 +4,9 @@
 """Interfaces for internal Git APIs."""
 
 __all__ = [
-    'IGitAPI',
-    'IGitApplication',
-    ]
+    "IGitAPI",
+    "IGitApplication",
+]
 
 from zope.interface import Interface
 

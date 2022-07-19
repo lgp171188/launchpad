@@ -4,34 +4,28 @@
 """Interfaces for source package builds."""
 
 __all__ = [
-    'ISourcePackageRecipeBuild',
-    'ISourcePackageRecipeBuildSource',
-    ]
+    "ISourcePackageRecipeBuild",
+    "ISourcePackageRecipeBuildSource",
+]
 
 from lazr.restful.declarations import exported_as_webservice_entry
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
-from zope.schema import (
-    Int,
-    Object,
-    )
+from lazr.restful.fields import CollectionField, Reference
+from zope.schema import Int, Object
 
 from lp import _
 from lp.buildmaster.interfaces.buildfarmjob import (
     IBuildFarmJobAdmin,
     IBuildFarmJobEdit,
     ISpecificBuildFarmJobSource,
-    )
+)
 from lp.buildmaster.interfaces.packagebuild import (
     IPackageBuild,
     IPackageBuildView,
-    )
+)
 from lp.code.interfaces.sourcepackagerecipe import (
     ISourcePackageRecipe,
     ISourcePackageRecipeData,
-    )
+)
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import IPerson
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuild
@@ -45,29 +39,39 @@ class ISourcePackageRecipeBuildView(IPackageBuildView):
 
     binary_builds = CollectionField(
         Reference(IBinaryPackageBuild),
-        title=_("The binary builds that resulted from this."), readonly=True)
+        title=_("The binary builds that resulted from this."),
+        readonly=True,
+    )
 
     distroseries = Reference(
-        IDistroSeries, title=_("The distroseries being built for"),
-        readonly=True)
+        IDistroSeries,
+        title=_("The distroseries being built for"),
+        readonly=True,
+    )
 
     requester = Object(
-        schema=IPerson, required=False,
-        title=_("The person who wants this to be done."))
+        schema=IPerson,
+        required=False,
+        title=_("The person who wants this to be done."),
+    )
 
     recipe = Object(
-        schema=ISourcePackageRecipe, title=_("The recipe being built."))
+        schema=ISourcePackageRecipe, title=_("The recipe being built.")
+    )
 
     manifest = Object(
-        schema=ISourcePackageRecipeData, title=_(
-            'A snapshot of the recipe for this build.'))
+        schema=ISourcePackageRecipeData,
+        title=_("A snapshot of the recipe for this build."),
+    )
 
     def getManifestText():
         """The text of the manifest for this build."""
 
     source_package_release = Reference(
-        ISourcePackageRelease, title=_("The produced source package release"),
-        readonly=True)
+        ISourcePackageRelease,
+        title=_("The produced source package release"),
+        readonly=True,
+    )
 
     def getFileByName(filename):
         """Return the file under +files with specified name."""
@@ -85,10 +89,12 @@ class ISourcePackageRecipeBuildAdmin(IBuildFarmJobAdmin):
 
 
 @exported_as_webservice_entry(as_of="beta")
-class ISourcePackageRecipeBuild(ISourcePackageRecipeBuildView,
-                                ISourcePackageRecipeBuildEdit,
-                                ISourcePackageRecipeBuildAdmin,
-                                IPackageBuild):
+class ISourcePackageRecipeBuild(
+    ISourcePackageRecipeBuildView,
+    ISourcePackageRecipeBuildEdit,
+    ISourcePackageRecipeBuildAdmin,
+    IPackageBuild,
+):
     """A build of a source package."""
 
 

@@ -4,23 +4,20 @@
 """Decorated model objects used in the browser code."""
 
 __all__ = [
-    'DecoratedBranch',
-    ]
+    "DecoratedBranch",
+]
 
 from lazr.delegates import delegate_to
 from zope.interface import implementer
 
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import IPrivacy
-from lp.code.interfaces.branch import (
-    BzrIdentityMixin,
-    IBranch,
-    )
+from lp.code.interfaces.branch import BzrIdentityMixin, IBranch
 from lp.services.propertycache import cachedproperty
 
 
 @implementer(IPrivacy)
-@delegate_to(IBranch, IInformationType, context='branch')
+@delegate_to(IBranch, IInformationType, context="branch")
 class DecoratedBranch(BzrIdentityMixin):
     """Wrap a number of the branch accessors to cache results.
 
@@ -54,8 +51,9 @@ class DecoratedBranch(BzrIdentityMixin):
         """A simple property to see if there are any series links."""
         # True if linked to a product series or suite source package.
         return (
-            len(self.associated_product_series) > 0 or
-            len(self.suite_source_packages) > 0)
+            len(self.associated_product_series) > 0
+            or len(self.suite_source_packages) > 0
+        )
 
     def associatedProductSeries(self):
         """Override the IBranch.associatedProductSeries."""

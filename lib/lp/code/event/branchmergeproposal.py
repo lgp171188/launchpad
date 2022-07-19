@@ -4,9 +4,9 @@
 """Event implementation classes for branch merge proposal events."""
 
 __all__ = [
-    'BranchMergeProposalNeedsReviewEvent',
-    'ReviewerNominatedEvent',
-    ]
+    "BranchMergeProposalNeedsReviewEvent",
+    "ReviewerNominatedEvent",
+]
 
 from zope.interface import implementer
 from zope.interface.interfaces import ObjectEvent
@@ -14,7 +14,7 @@ from zope.interface.interfaces import ObjectEvent
 from lp.code.interfaces.event import (
     IBranchMergeProposalNeedsReviewEvent,
     IReviewerNominatedEvent,
-    )
+)
 
 
 @implementer(IBranchMergeProposalNeedsReviewEvent)

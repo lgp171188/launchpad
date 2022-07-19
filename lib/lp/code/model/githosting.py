@@ -4,20 +4,17 @@
 """Communication with the Git hosting service."""
 
 __all__ = [
-    'GitHostingClient',
-    'RefCopyOperation',
-    ]
+    "GitHostingClient",
+    "RefCopyOperation",
+]
 
 import base64
 import json
 import sys
-from urllib.parse import (
-    quote,
-    urljoin,
-    )
+from urllib.parse import quote, urljoin
 
-from lazr.restful.utils import get_current_browser_request
 import requests
+from lazr.restful.utils import get_current_browser_request
 from six import ensure_text
 from zope.interface import implementer
 
@@ -30,15 +27,15 @@ from lp.code.errors import (
     GitRepositoryDeletionFault,
     GitRepositoryScanFault,
     GitTargetError,
-    )
+)
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.services.config import config
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.timeout import (
-    get_default_timeout_function,
     TimeoutError,
+    get_default_timeout_function,
     urlfetch,
-    )
+)
 
 
 class RequestExceptionWrapper(requests.RequestException):
@@ -51,6 +48,7 @@ class RefCopyOperation:
     This class is just a helper to define copy operations parameters on
     IGitHostingClient.copyRefs method.
     """
+
     def __init__(self, source_ref, target_repo, target_ref):
         self.source_ref = source_ref
         self.target_repo = target_repo
@@ -72,10 +70,12 @@ class GitHostingClient:
         get_default_timeout_function()()
         timeline = get_request_timeline(get_current_browser_request())
         action = timeline.start(
-            "git-hosting-%s" % method, "%s %s" % (path, json.dumps(kwargs)))
+            "git-hosting-%s" % method, "%s %s" % (path, json.dumps(kwargs))
+        )
         try:
             response = urlfetch(
-                urljoin(self.endpoint, path), method=method, **kwargs)
+                urljoin(self.endpoint, path), method=method, **kwargs
+            )
         except TimeoutError:
             # Re-raise this directly so that it can be handled specially by
             # callers.
@@ -120,12 +120,13 @@ class GitHostingClient:
                 # because it's only used in situations where this is
                 # desirable for now. We might need to add "clone_refs" as
                 # parameter in the future.
-                request['async'] = True
-                request['clone_refs'] = clone_from is not None
+                request["async"] = True
+                request["clone_refs"] = clone_from is not None
             self._post("/repo", json=request)
         except requests.RequestException as e:
             raise GitRepositoryCreationFault(
-                "Failed to create Git repository: %s" % str(e), path)
+                "Failed to create Git repository: %s" % str(e), path
+            )
 
     def getProperties(self, path):
         """See `IGitHostingClient`."""
@@ -133,7 +134,8 @@ class GitHostingClient:
             return self._get("/repo/%s" % path)
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to get properties of Git repository: %s" % str(e))
+                "Failed to get properties of Git repository: %s" % str(e)
+            )
 
     def setProperties(self, path, **props):
         """See `IGitHostingClient`."""
@@ -141,17 +143,20 @@ class GitHostingClient:
             self._patch("/repo/%s" % path, json=props)
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to set properties of Git repository: %s" % str(e))
+                "Failed to set properties of Git repository: %s" % str(e)
+            )
 
     def getRefs(self, path, exclude_prefixes=None):
         """See `IGitHostingClient`."""
         try:
             return self._get(
                 "/repo/%s/refs" % path,
-                params={"exclude_prefix": exclude_prefixes})
+                params={"exclude_prefix": exclude_prefixes},
+            )
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to get refs from Git repository: %s" % str(e))
+                "Failed to get refs from Git repository: %s" % str(e)
+            )
 
     def _decodeBlob(self, encoded_blob):
         """Blobs are base64-decoded for transport.  Decode them."""
@@ -159,12 +164,14 @@ class GitHostingClient:
             blob = base64.b64decode(encoded_blob["data"].encode("UTF-8"))
             if len(blob) != encoded_blob["size"]:
                 raise GitRepositoryScanFault(
-                    "Unexpected size (%s vs %s)" % (
-                        len(blob), encoded_blob["size"]))
+                    "Unexpected size (%s vs %s)"
+                    % (len(blob), encoded_blob["size"])
+                )
             return blob
         except Exception as e:
             raise GitRepositoryScanFault(
-                "Failed to get file from Git repository: %s" % str(e))
+                "Failed to get file from Git repository: %s" % str(e)
+            )
 
     def getCommits(self, path, commit_oids, filter_paths=None, logger=None):
         """See `IGitHostingClient`."""
@@ -181,8 +188,8 @@ class GitHostingClient:
             response = self._post("/repo/%s/commits" % path, json=json_data)
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to get commit details from Git repository: %s" %
-                str(e))
+                "Failed to get commit details from Git repository: %s" % str(e)
+            )
         if filter_paths:
             for commit in response:
                 blobs = commit.get("blobs", {})
@@ -196,43 +203,63 @@ class GitHostingClient:
             if logger is not None:
                 logger.info(
                     "Requesting commit log for %s: "
-                    "start %s, limit %s, stop %s" %
-                    (path, start, limit, stop))
+                    "start %s, limit %s, stop %s" % (path, start, limit, stop)
+                )
             return self._get(
                 "/repo/%s/log/%s" % (path, quote(start)),
-                params={"limit": limit, "stop": stop})
+                params={"limit": limit, "stop": stop},
+            )
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to get commit log from Git repository: %s" % str(e))
+                "Failed to get commit log from Git repository: %s" % str(e)
+            )
 
-    def getDiff(self, path, old, new, common_ancestor=False,
-                context_lines=None, logger=None):
+    def getDiff(
+        self,
+        path,
+        old,
+        new,
+        common_ancestor=False,
+        context_lines=None,
+        logger=None,
+    ):
         """See `IGitHostingClient`."""
         try:
             if logger is not None:
                 logger.info(
-                    "Requesting diff for %s from %s to %s" % (path, old, new))
+                    "Requesting diff for %s from %s to %s" % (path, old, new)
+                )
             separator = "..." if common_ancestor else ".."
             url = "/repo/%s/compare/%s%s%s" % (
-                path, quote(old), separator, quote(new))
+                path,
+                quote(old),
+                separator,
+                quote(new),
+            )
             return self._get(url, params={"context_lines": context_lines})
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to get diff from Git repository: %s" % str(e))
+                "Failed to get diff from Git repository: %s" % str(e)
+            )
 
     def getMergeDiff(self, path, base, head, prerequisite=None, logger=None):
         """See `IGitHostingClient`."""
         try:
             if logger is not None:
                 logger.info(
-                    "Requesting merge diff for %s from %s to %s" % (
-                        path, base, head))
+                    "Requesting merge diff for %s from %s to %s"
+                    % (path, base, head)
+                )
             url = "/repo/%s/compare-merge/%s:%s" % (
-                path, quote(base), quote(head))
+                path,
+                quote(base),
+                quote(head),
+            )
             return self._get(url, params={"sha1_prerequisite": prerequisite})
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to get merge diff from Git repository: %s" % str(e))
+                "Failed to get merge diff from Git repository: %s" % str(e)
+            )
 
     def detectMerges(self, path, target, sources, logger=None):
         """See `IGitHostingClient`."""
@@ -240,14 +267,17 @@ class GitHostingClient:
         try:
             if logger is not None:
                 logger.info(
-                    "Detecting merges for %s from %s to %s" % (
-                        path, sources, target))
+                    "Detecting merges for %s from %s to %s"
+                    % (path, sources, target)
+                )
             return self._post(
                 "/repo/%s/detect-merges/%s" % (path, quote(target)),
-                json={"sources": sources})
+                json={"sources": sources},
+            )
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to detect merges in Git repository: %s" % str(e))
+                "Failed to detect merges in Git repository: %s" % str(e)
+            )
 
     def delete(self, path, logger=None):
         """See `IGitHostingClient`."""
@@ -257,49 +287,62 @@ class GitHostingClient:
             self._delete("/repo/%s" % path)
         except requests.RequestException as e:
             raise GitRepositoryDeletionFault(
-                "Failed to delete Git repository: %s" % str(e))
+                "Failed to delete Git repository: %s" % str(e)
+            )
 
     def getBlob(self, path, filename, rev=None, logger=None):
         """See `IGitHostingClient`."""
         try:
             if logger is not None:
                 logger.info(
-                    "Fetching file %s from repository %s" % (filename, path))
+                    "Fetching file %s from repository %s" % (filename, path)
+                )
             url = "/repo/%s/blob/%s" % (path, quote(filename))
             response = self._get(url, params={"rev": rev})
         except requests.RequestException as e:
-            if (e.response is not None and
-                    e.response.status_code == requests.codes.NOT_FOUND):
+            if (
+                e.response is not None
+                and e.response.status_code == requests.codes.NOT_FOUND
+            ):
                 raise GitRepositoryBlobNotFound(path, filename, rev=rev)
             else:
                 raise GitRepositoryScanFault(
-                    "Failed to get file from Git repository: %s" % str(e))
+                    "Failed to get file from Git repository: %s" % str(e)
+                )
         return self._decodeBlob(response)
 
     def copyRefs(self, path, operations, logger=None):
         """See `IGitHostingClient`."""
         json_data = {
-            "operations": [{
-                "from": i.source_ref,
-                "to": {"repo": i.target_repo, "ref": i.target_ref}
-            } for i in operations]
+            "operations": [
+                {
+                    "from": i.source_ref,
+                    "to": {"repo": i.target_repo, "ref": i.target_ref},
+                }
+                for i in operations
+            ]
         }
         try:
             if logger is not None:
                 logger.info(
-                    "Copying refs from %s to %s targets" %
-                    (path, len(operations)))
+                    "Copying refs from %s to %s targets"
+                    % (path, len(operations))
+                )
             url = "/repo/%s/refs-copy" % path
             self._post(url, json=json_data)
         except requests.RequestException as e:
-            if (e.response is not None and
-                    e.response.status_code == requests.codes.NOT_FOUND):
+            if (
+                e.response is not None
+                and e.response.status_code == requests.codes.NOT_FOUND
+            ):
                 raise GitTargetError(
-                    "Could not find repository %s or one of its refs" %
-                    ensure_text(path))
+                    "Could not find repository %s or one of its refs"
+                    % ensure_text(path)
+                )
             else:
                 raise GitRepositoryScanFault(
-                    "Could not copy refs: HTTP %s" % e.response.status_code)
+                    "Could not copy refs: HTTP %s" % e.response.status_code
+                )
 
     def deleteRefs(self, refs, logger=None):
         """See `IGitHostingClient`."""
@@ -311,8 +354,9 @@ class GitHostingClient:
                 self._delete(url)
             except requests.RequestException as e:
                 raise GitReferenceDeletionFault(
-                    "Error deleting %s from repo %s: HTTP %s" %
-                    (ref, path, e.response.status_code))
+                    "Error deleting %s from repo %s: HTTP %s"
+                    % (ref, path, e.response.status_code)
+                )
 
     def repackRepository(self, path, logger=None):
         """See `IGitHostingClient`."""
@@ -320,21 +364,22 @@ class GitHostingClient:
         url = "/repo/%s/repack" % path
         try:
             if logger is not None:
-                logger.info(
-                    "Repacking repository %s" % (
-                        path))
+                logger.info("Repacking repository %s" % (path))
             return self._post(url)
         except requests.RequestException as e:
-            if (e.response is not None and
-                    e.response.status_code == requests.codes.NOT_FOUND):
+            if (
+                e.response is not None
+                and e.response.status_code == requests.codes.NOT_FOUND
+            ):
                 if logger:
                     logger.warning(
-                        "Git repository %s not found." % ensure_text(path))
+                        "Git repository %s not found." % ensure_text(path)
+                    )
                 return None
             else:
                 raise CannotRepackRepository(
-                    "Failed to repack Git repository %s: %s" %
-                    (path, str(e)))
+                    "Failed to repack Git repository %s: %s" % (path, str(e))
+                )
 
     def collectGarbage(self, path, logger=None):
         """See `IGitHostingClient`."""
@@ -342,11 +387,9 @@ class GitHostingClient:
         url = "/repo/%s/gc" % path
         try:
             if logger is not None:
-                logger.info(
-                    "Running gc for repository %s" % (
-                        path))
+                logger.info("Running gc for repository %s" % (path))
             return self._post(url)
         except requests.RequestException as e:
             raise CannotRunGitGC(
-                "Failed to run Git GC for repository %s: %s" %
-                (path, str(e)))
+                "Failed to run Git GC for repository %s: %s" % (path, str(e))
+            )

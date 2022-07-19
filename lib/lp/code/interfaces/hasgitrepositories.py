@@ -4,15 +4,16 @@
 """Interfaces relating to targets of Git repositories."""
 
 __all__ = [
-    'IHasGitRepositories',
-    ]
+    "IHasGitRepositories",
+]
 
 from lazr.restful.declarations import exported_as_webservice_entry
 from zope.interface import Interface
 
 
 @exported_as_webservice_entry(
-    singular_name="git_target", plural_name="git_targets", as_of="devel")
+    singular_name="git_target", plural_name="git_targets", as_of="devel"
+)
 class IHasGitRepositories(Interface):
     """An object that has related Git repositories.
 

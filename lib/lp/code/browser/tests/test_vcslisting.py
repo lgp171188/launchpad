@@ -10,12 +10,12 @@ from lp.code.browser.branchlisting import (
     GroupedDistributionSourcePackageBranchesView,
     PersonProductBranchesView,
     ProductBranchesView,
-    )
+)
 from lp.code.browser.gitlisting import (
     PersonTargetGitListingView,
     PlainGitListingView,
     TargetGitListingView,
-    )
+)
 from lp.registry.enums import VCSType
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -30,7 +30,7 @@ class TestProductDefaultVCSView(TestCaseWithFactory):
     def assertCodeViewClass(self, vcs, cls):
         product = self.factory.makeProduct(vcs=vcs)
         self.assertEqual(vcs, product.vcs)
-        view = test_traverse('/%s/+code' % product.name)[1]
+        view = test_traverse("/%s/+code" % product.name)[1]
         self.assertIsInstance(view, cls)
 
     def test_default_unset(self):
@@ -52,7 +52,7 @@ class TestPersonProductDefaultVCSView(TestCaseWithFactory):
         person = self.factory.makePerson()
         product = self.factory.makeProduct(vcs=vcs)
         self.assertEqual(vcs, product.vcs)
-        view = test_traverse('/~%s/%s/+code' % (person.name, product.name))[1]
+        view = test_traverse("/~%s/%s/+code" % (person.name, product.name))[1]
         self.assertIsInstance(view, cls)
 
     def test_default_unset(self):
@@ -75,17 +75,19 @@ class TestDistributionSourcePackageDefaultVCSView(TestCaseWithFactory):
         dsp = self.factory.makeDistributionSourcePackage(distribution=distro)
         self.assertEqual(vcs, distro.vcs)
         view = test_traverse(
-            '/%s/+source/%s/+code'
-            % (distro.name, dsp.sourcepackagename.name))[1]
+            "/%s/+source/%s/+code" % (distro.name, dsp.sourcepackagename.name)
+        )[1]
         self.assertIsInstance(view, cls)
 
     def test_default_unset(self):
         self.assertCodeViewClass(
-            None, GroupedDistributionSourcePackageBranchesView)
+            None, GroupedDistributionSourcePackageBranchesView
+        )
 
     def test_default_bzr(self):
         self.assertCodeViewClass(
-            VCSType.BZR, GroupedDistributionSourcePackageBranchesView)
+            VCSType.BZR, GroupedDistributionSourcePackageBranchesView
+        )
 
     def test_git(self):
         self.assertCodeViewClass(VCSType.GIT, TargetGitListingView)
@@ -106,8 +108,9 @@ class TestPersonDistributionSourcePackageDefaultVCSView(TestCaseWithFactory):
         self.assertEqual(vcs, distro.vcs)
         try:
             view = test_traverse(
-                '~%s/%s/+source/%s/+code'
-                % (person.name, distro.name, dsp.sourcepackagename.name))[1]
+                "~%s/%s/+source/%s/+code"
+                % (person.name, distro.name, dsp.sourcepackagename.name)
+            )[1]
         except NotFound:
             view = None
         self.assertIsInstance(view, cls)
@@ -136,7 +139,8 @@ class TestOCIProjectDefaultVCSView(TestCaseWithFactory):
         oci_project = self.factory.makeOCIProject(pillar=distro)
         self.assertEqual(vcs, distro.vcs)
         view = test_traverse(
-            '/%s/+oci/%s/+code' % (distro.name, oci_project.name))[1]
+            "/%s/+oci/%s/+code" % (distro.name, oci_project.name)
+        )[1]
         self.assertIsInstance(view, cls)
 
     def test_default_unset(self):
@@ -164,8 +168,9 @@ class TestPersonOCIProjectDefaultVCSView(TestCaseWithFactory):
         oci_project = self.factory.makeOCIProject(pillar=distro)
         self.assertEqual(vcs, distro.vcs)
         view = test_traverse(
-            '~%s/%s/+oci/%s/+code'
-            % (person.name, distro.name, oci_project.name))[1]
+            "~%s/%s/+oci/%s/+code"
+            % (person.name, distro.name, oci_project.name)
+        )[1]
         self.assertIsInstance(view, cls)
 
     def test_default_unset(self):
@@ -186,7 +191,7 @@ class TestDistributionDefaultVCSView(TestCaseWithFactory):
     def assertCodeViewClass(self, vcs, cls):
         distro = self.factory.makeDistribution(vcs=vcs)
         self.assertEqual(vcs, distro.vcs)
-        view = test_traverse('/%s/+code' % distro.name)[1]
+        view = test_traverse("/%s/+code" % distro.name)[1]
         self.assertIsInstance(view, cls)
 
     def test_default_unset(self):

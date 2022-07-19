@@ -17,7 +17,7 @@ from lp.testing import (
     person_logged_in,
     run_with_login,
     with_celebrity_logged_in,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -37,11 +37,15 @@ class TestEditMergeProposal(PermissionTest):
         run_with_login(
             suite_sourcepackage.distribution.owner,
             ICanHasLinkedBranch(suite_sourcepackage).setBranch,
-            branch, registrant)
+            branch,
+            registrant,
+        )
         source_branch = self.factory.makePackageBranch(
-            sourcepackage=branch.sourcepackage)
+            sourcepackage=branch.sourcepackage
+        )
         proposal = source_branch.addLandingTarget(
-            source_branch.registrant, branch)
+            source_branch.registrant, branch
+        )
         return proposal
 
     def test_package_merge_proposal_with_no_upload_permission(self):
@@ -66,8 +70,7 @@ class TestEditMergeProposal(PermissionTest):
         # restriction isn't relevant to these tests.
         permission_set = removeSecurityProxy(permission_set)
         # Now give 'person' permission to upload to 'package'.
-        archive = (
-            proposal.target_branch.distroseries.distribution.main_archive)
+        archive = proposal.target_branch.distroseries.distribution.main_archive
         package = proposal.target_branch.sourcepackage
         spn = package.sourcepackagename
         permission_set.newPackageUploader(archive, person, spn)
@@ -84,35 +87,38 @@ class TestEditMergeProposal(PermissionTest):
         [target] = self.factory.makeGitRefs(target=product)
         [source] = self.factory.makeGitRefs(target=product)
         mp = self.factory.makeBranchMergeProposalForGit(
-            source_ref=source, target_ref=target)
+            source_ref=source, target_ref=target
+        )
         with person_logged_in(person):
-            self.assertFalse(check_permission('launchpad.Edit', mp))
+            self.assertFalse(check_permission("launchpad.Edit", mp))
         with admin_logged_in():
             target.repository.reviewer = person
         with person_logged_in(person):
-            self.assertTrue(check_permission('launchpad.Edit', mp))
+            self.assertTrue(check_permission("launchpad.Edit", mp))
 
 
 class TestViewMergeProposal(PermissionTest):
 
     layer = DatabaseFunctionalLayer
 
-    @with_celebrity_logged_in('admin')
+    @with_celebrity_logged_in("admin")
     def assertBranchAccessRequired(self, attr):
         person = self.factory.makePerson()
         prereq = self.factory.makeBranch()
         proposal = self.factory.makeBranchMergeProposal(
-            prerequisite_branch=prereq)
+            prerequisite_branch=prereq
+        )
         self.assertCanView(person, proposal)
         getattr(proposal, attr).setPrivate(
-            True, getUtility(IPersonSet).getByName('admins'))
+            True, getUtility(IPersonSet).getByName("admins")
+        )
         self.assertCannotView(person, proposal)
 
     def test_source_branch_access_required(self):
-        self.assertBranchAccessRequired('source_branch')
+        self.assertBranchAccessRequired("source_branch")
 
     def test_target_branch_access_required(self):
-        self.assertBranchAccessRequired('target_branch')
+        self.assertBranchAccessRequired("target_branch")
 
     def test_prerequisite_branch_access_required(self):
-        self.assertBranchAccessRequired('prerequisite_branch')
+        self.assertBranchAccessRequired("prerequisite_branch")

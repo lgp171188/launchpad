@@ -4,66 +4,66 @@
 """Errors used in the lp/code modules."""
 
 __all__ = [
-    'AlreadyLatestFormat',
-    'BadBranchMergeProposalSearchContext',
-    'BadStateTransition',
-    'BranchCreationException',
-    'BranchCreationForbidden',
-    'BranchCreatorNotMemberOfOwnerTeam',
-    'BranchCreatorNotOwner',
-    'BranchExists',
-    'BranchFileNotFound',
-    'BranchHasPendingWrites',
-    'BranchHostingFault',
-    'BranchTargetError',
-    'BranchTypeError',
-    'BuildAlreadyPending',
-    'BuildNotAllowedForDistro',
-    'BranchMergeProposalExists',
-    'CannotDeleteBranch',
-    'CannotDeleteGitRepository',
-    'CannotHaveLinkedBranch',
-    'CannotModifyNonHostedGitRepository',
-    'CannotRepackRepository',
-    'CannotRunGitGC',
-    'CannotUpgradeBranch',
-    'CannotUpgradeNonHosted',
-    'CodeImportAlreadyRequested',
-    'CodeImportAlreadyRunning',
-    'CodeImportInvalidTargetType',
-    'CodeImportNotInReviewedState',
-    'ClaimReviewFailed',
-    'DiffNotFound',
-    'GitDefaultConflict',
-    'GitReferenceDeletionFault',
-    'GitRepositoryBlobNotFound',
-    'GitRepositoryBlobUnsupportedRemote',
-    'GitRepositoryCreationException',
-    'GitRepositoryCreationFault',
-    'GitRepositoryCreationForbidden',
-    'GitRepositoryCreatorNotMemberOfOwnerTeam',
-    'GitRepositoryCreatorNotOwner',
-    'GitRepositoryDeletionFault',
-    'GitRepositoryExists',
-    'GitRepositoryScanFault',
-    'GitTargetError',
-    'InvalidBranchMergeProposal',
-    'InvalidNamespace',
-    'NoLinkedBranch',
-    'NoSuchBranch',
-    'NoSuchGitReference',
-    'NoSuchGitRepository',
-    'PrivateBranchRecipe',
-    'PrivateGitRepositoryRecipe',
-    'ReviewNotPending',
-    'StaleLastMirrored',
-    'TooNewRecipeFormat',
-    'UnknownBranchTypeError',
-    'UpdatePreviewDiffNotReady',
-    'UpgradePending',
-    'UserHasExistingReview',
-    'UserNotBranchReviewer',
-    'WrongBranchMergeProposal',
+    "AlreadyLatestFormat",
+    "BadBranchMergeProposalSearchContext",
+    "BadStateTransition",
+    "BranchCreationException",
+    "BranchCreationForbidden",
+    "BranchCreatorNotMemberOfOwnerTeam",
+    "BranchCreatorNotOwner",
+    "BranchExists",
+    "BranchFileNotFound",
+    "BranchHasPendingWrites",
+    "BranchHostingFault",
+    "BranchTargetError",
+    "BranchTypeError",
+    "BuildAlreadyPending",
+    "BuildNotAllowedForDistro",
+    "BranchMergeProposalExists",
+    "CannotDeleteBranch",
+    "CannotDeleteGitRepository",
+    "CannotHaveLinkedBranch",
+    "CannotModifyNonHostedGitRepository",
+    "CannotRepackRepository",
+    "CannotRunGitGC",
+    "CannotUpgradeBranch",
+    "CannotUpgradeNonHosted",
+    "CodeImportAlreadyRequested",
+    "CodeImportAlreadyRunning",
+    "CodeImportInvalidTargetType",
+    "CodeImportNotInReviewedState",
+    "ClaimReviewFailed",
+    "DiffNotFound",
+    "GitDefaultConflict",
+    "GitReferenceDeletionFault",
+    "GitRepositoryBlobNotFound",
+    "GitRepositoryBlobUnsupportedRemote",
+    "GitRepositoryCreationException",
+    "GitRepositoryCreationFault",
+    "GitRepositoryCreationForbidden",
+    "GitRepositoryCreatorNotMemberOfOwnerTeam",
+    "GitRepositoryCreatorNotOwner",
+    "GitRepositoryDeletionFault",
+    "GitRepositoryExists",
+    "GitRepositoryScanFault",
+    "GitTargetError",
+    "InvalidBranchMergeProposal",
+    "InvalidNamespace",
+    "NoLinkedBranch",
+    "NoSuchBranch",
+    "NoSuchGitReference",
+    "NoSuchGitRepository",
+    "PrivateBranchRecipe",
+    "PrivateGitRepositoryRecipe",
+    "ReviewNotPending",
+    "StaleLastMirrored",
+    "TooNewRecipeFormat",
+    "UnknownBranchTypeError",
+    "UpdatePreviewDiffNotReady",
+    "UpgradePending",
+    "UserHasExistingReview",
+    "UserNotBranchReviewer",
+    "WrongBranchMergeProposal",
 ]
 
 import http.client
@@ -71,11 +71,7 @@ import http.client
 from breezy.plugins.builder.recipe import RecipeParseError
 from lazr.restful.declarations import error_status
 
-from lp.app.errors import (
-    NameLookupFailed,
-    NotFoundError,
-    )
-
+from lp.app.errors import NameLookupFailed, NotFoundError
 
 # Annotate the RecipeParseError's with a 400 webservice status.
 error_status(http.client.BAD_REQUEST)(RecipeParseError)
@@ -102,17 +98,20 @@ class BranchExists(BranchCreationException):
         # XXX: TimPenhey 2009-07-12 bug=405214: This error
         # message logic is incorrect, but the exact text is being tested
         # in branch-xmlrpc.rst.
-        params = {'name': existing_branch.name}
+        params = {"name": existing_branch.name}
         if existing_branch.product is None:
-            params['maybe_junk'] = 'junk '
-            params['context'] = existing_branch.owner.name
+            params["maybe_junk"] = "junk "
+            params["context"] = existing_branch.owner.name
         else:
-            params['maybe_junk'] = ''
-            params['context'] = '%s in %s' % (
-                existing_branch.owner.name, existing_branch.product.name)
+            params["maybe_junk"] = ""
+            params["context"] = "%s in %s" % (
+                existing_branch.owner.name,
+                existing_branch.product.name,
+            )
         message = (
             'A %(maybe_junk)sbranch with the name "%(name)s" already exists '
-            'for %(context)s.' % params)
+            "for %(context)s." % params
+        )
         self.existing_branch = existing_branch
         BranchCreationException.__init__(self, message)
 
@@ -199,7 +198,7 @@ class CannotHaveLinkedBranch(InvalidBranchException):
 
 
 class CannotUpgradeBranch(Exception):
-    """"Made for subclassing."""
+    """ "Made for subclassing."""
 
     def __init__(self, branch):
         super().__init__(self._msg_template % branch.bzr_identity)
@@ -210,21 +209,22 @@ class AlreadyLatestFormat(CannotUpgradeBranch):
     """Raised on attempt to upgrade a branch already in the latest format."""
 
     _msg_template = (
-        'Branch %s is in the latest format, so it cannot be upgraded.')
+        "Branch %s is in the latest format, so it cannot be upgraded."
+    )
 
 
 class CannotUpgradeNonHosted(CannotUpgradeBranch):
 
     """Raised on attempt to upgrade a non-Hosted branch."""
 
-    _msg_template = 'Cannot upgrade non-hosted branch %s'
+    _msg_template = "Cannot upgrade non-hosted branch %s"
 
 
 class UpgradePending(CannotUpgradeBranch):
 
     """Raised on attempt to upgrade a branch already in the latest format."""
 
-    _msg_template = 'An upgrade is already in progress for branch %s.'
+    _msg_template = "An upgrade is already in progress for branch %s."
 
 
 class ClaimReviewFailed(Exception):
@@ -253,10 +253,13 @@ class BranchMergeProposalExists(InvalidBranchMergeProposal):
         else:
             display_name = "display_name"
         super().__init__(
-                'There is already a branch merge proposal registered for '
-                'branch %s to land on %s that is still active.' %
-                (getattr(existing_proposal.merge_source, display_name),
-                 getattr(existing_proposal.merge_target, display_name)))
+            "There is already a branch merge proposal registered for "
+            "branch %s to land on %s that is still active."
+            % (
+                getattr(existing_proposal.merge_source, display_name),
+                getattr(existing_proposal.merge_target, display_name),
+            )
+        )
         self.existing_proposal = existing_proposal
 
 
@@ -270,7 +273,8 @@ class InvalidNamespace(Exception):
     def __init__(self, name):
         self.name = name
         Exception.__init__(
-            self, "Cannot understand namespace name: '%s'" % (name,))
+            self, "Cannot understand namespace name: '%s'" % (name,)
+        )
 
 
 class NoLinkedBranch(InvalidBranchException):
@@ -299,27 +303,28 @@ class StaleLastMirrored(Exception):
         self.info = info
         Exception.__init__(
             self,
-            'Database last_mirrored_id %s does not match on-disk value %s' %
-            (db_branch.last_mirrored_id, self.info['last_revision_id']))
+            "Database last_mirrored_id %s does not match on-disk value %s"
+            % (db_branch.last_mirrored_id, self.info["last_revision_id"]),
+        )
 
 
 @error_status(http.client.BAD_REQUEST)
 class PrivateBranchRecipe(Exception):
-
     def __init__(self, branch):
         message = (
-            'Recipe may not refer to private branch: %s' % branch.identity)
+            "Recipe may not refer to private branch: %s" % branch.identity
+        )
         self.branch = branch
         Exception.__init__(self, message)
 
 
 @error_status(http.client.BAD_REQUEST)
 class PrivateGitRepositoryRecipe(Exception):
-
     def __init__(self, repository):
         message = (
-            'Recipe may not refer to private repository: %s' %
-            repository.identity)
+            "Recipe may not refer to private repository: %s"
+            % repository.identity
+        )
         self.repository = repository
         Exception.__init__(self, message)
 
@@ -364,7 +369,8 @@ class BranchFileNotFound(BranchHostingFault):
         super().__init__()
         if (filename is None) == (file_id is None):
             raise AssertionError(
-                "Exactly one of filename and file_id must be given.")
+                "Exactly one of filename and file_id must be given."
+            )
         self.branch_id = branch_id
         self.filename = filename
         self.file_id = file_id
@@ -393,10 +399,11 @@ class GitRepositoryExists(GitRepositoryCreationException):
         params = {
             "name": existing_repository.name,
             "context": existing_repository.namespace.name,
-            }
+        }
         message = (
             'A Git repository with the name "%(name)s" already exists for '
-            '%(context)s.' % params)
+            "%(context)s." % params
+        )
         self.existing_repository = existing_repository
         GitRepositoryCreationException.__init__(self, message)
 
@@ -427,8 +434,10 @@ class GitRepositoryCreatorNotMemberOfOwnerTeam(GitRepositoryCreationException):
         self.owner = owner
 
     def __str__(self):
-        message = ('%s is not a member of %s'
-                   % (self.registrant.displayname, self.owner.displayname))
+        message = "%s is not a member of %s" % (
+            self.registrant.displayname,
+            self.owner.displayname,
+        )
         return message
 
 
@@ -445,8 +454,10 @@ class GitRepositoryCreatorNotOwner(GitRepositoryCreationException):
         self.owner = owner
 
     def __str__(self):
-        message = ('%s cannot create Git repositories owned by %s'
-                   % (self.registrant.displayname, self.owner.displayname))
+        message = "%s cannot create Git repositories owned by %s" % (
+            self.registrant.displayname,
+            self.owner.displayname,
+        )
         return message
 
 
@@ -487,7 +498,8 @@ class GitRepositoryBlobUnsupportedRemote(Exception):
 
     def __str__(self):
         return "Cannot fetch blob from external Git repository at %s" % (
-            self.repository_url)
+            self.repository_url
+        )
 
 
 class CannotRepackRepository(Exception):
@@ -523,8 +535,9 @@ class NoSuchGitReference(NotFoundError):
         self.repository = repository
         self.path = path
         self.message = (
-            "The repository at %s does not contain a reference named '%s'." %
-            (repository.display_name, path))
+            "The repository at %s does not contain a reference named '%s'."
+            % (repository.display_name, path)
+        )
         NotFoundError.__init__(self, self.message)
 
     def __str__(self):
@@ -540,16 +553,18 @@ class GitDefaultConflict(Exception):
         params = {
             "unique_name": existing_repository.unique_name,
             "target": target.displayname,
-            }
+        }
         if owner is None:
             message = (
                 "The default repository for '%(target)s' is already set to "
-                "%(unique_name)s." % params)
+                "%(unique_name)s." % params
+            )
         else:
             params["owner"] = owner.displayname
             message = (
                 "%(owner)s's default repository for '%(target)s' is already "
-                "set to %(unique_name)s." % params)
+                "set to %(unique_name)s." % params
+            )
         self.existing_repository = existing_repository
         self.target = target
         self.owner = owner
@@ -562,8 +577,9 @@ class CannotModifyNonHostedGitRepository(Exception):
 
     def __init__(self, repository):
         super().__init__(
-            "Cannot modify non-hosted Git repository %s." %
-            repository.display_name)
+            "Cannot modify non-hosted Git repository %s."
+            % repository.display_name
+        )
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -590,8 +606,9 @@ class CodeImportInvalidTargetType(Exception):
 
     def __init__(self, target, target_rcs_type):
         super().__init__(
-            "Objects of type %s do not support code imports targeting %s." %
-            (target.__class__.__name__, target_rcs_type))
+            "Objects of type %s do not support code imports targeting %s."
+            % (target.__class__.__name__, target_rcs_type)
+        )
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -606,11 +623,10 @@ class TooNewRecipeFormat(Exception):
 
 @error_status(http.client.BAD_REQUEST)
 class RecipeBuildException(Exception):
-
     def __init__(self, recipe, distroseries, template):
         self.recipe = recipe
         self.distroseries = distroseries
-        msg = template % {'recipe': recipe, 'distroseries': distroseries}
+        msg = template % {"recipe": recipe, "distroseries": distroseries}
         Exception.__init__(self, msg)
 
 
@@ -619,8 +635,11 @@ class BuildAlreadyPending(RecipeBuildException):
 
     def __init__(self, recipe, distroseries):
         RecipeBuildException.__init__(
-            self, recipe, distroseries,
-            'An identical build of this recipe is already pending.')
+            self,
+            recipe,
+            distroseries,
+            "An identical build of this recipe is already pending.",
+        )
 
 
 class BuildNotAllowedForDistro(RecipeBuildException):
@@ -628,8 +647,11 @@ class BuildNotAllowedForDistro(RecipeBuildException):
 
     def __init__(self, recipe, distroseries):
         RecipeBuildException.__init__(
-            self, recipe, distroseries,
-            'A build against this distro is not allowed.')
+            self,
+            recipe,
+            distroseries,
+            "A build against this distro is not allowed.",
+        )
 
 
 @error_status(http.client.BAD_REQUEST)

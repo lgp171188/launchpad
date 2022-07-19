@@ -10,7 +10,8 @@ from lp.code.interfaces.cibuild import ICIBuildSet
 
 def _request_ci_builds(repository, event):
     getUtility(ICIBuildSet).requestBuildsForRefs(
-        repository, event.paths, logger=event.logger)
+        repository, event.paths, logger=event.logger
+    )
 
 
 def refs_created(repository, event):

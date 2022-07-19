@@ -10,20 +10,9 @@ __all__ = []
 
 from breezy.urlutils import escape
 from lazr.enum import DBItem
-from lazr.uri import (
-    InvalidURIError,
-    URI,
-    )
-from storm.expr import (
-    And,
-    Join,
-    Select,
-    )
-from zope.component import (
-    adapter,
-    getUtility,
-    queryMultiAdapter,
-    )
+from lazr.uri import URI, InvalidURIError
+from storm.expr import And, Join, Select
+from zope.component import adapter, getUtility, queryMultiAdapter
 from zope.interface import implementer
 
 from lp.app.errors import NameLookupFailed
@@ -33,32 +22,26 @@ from lp.code.errors import (
     InvalidNamespace,
     NoLinkedBranch,
     NoSuchBranch,
-    )
+)
 from lp.code.interfaces.branchlookup import (
-    get_first_path_result,
     IBranchLookup,
     ILinkedBranchTraversable,
     ILinkedBranchTraverser,
-    )
+    get_first_path_result,
+)
 from lp.code.interfaces.branchnamespace import IBranchNamespaceSet
 from lp.code.interfaces.linkedbranch import get_linked_to_branch
 from lp.code.model.branch import Branch
-from lp.registry.errors import (
-    NoSuchDistroSeries,
-    NoSuchSourcePackageName,
-    )
+from lp.registry.errors import NoSuchDistroSeries, NoSuchSourcePackageName
 from lp.registry.interfaces.distribution import IDistribution
-from lp.registry.interfaces.distroseries import (
-    IDistroSeries,
-    IDistroSeriesSet,
-    )
+from lp.registry.interfaces.distroseries import IDistroSeries, IDistroSeriesSet
 from lp.registry.interfaces.person import NoSuchPerson
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.product import (
     InvalidProductName,
     IProduct,
     NoSuchProduct,
-    )
+)
 from lp.registry.interfaces.productseries import NoSuchProductSeries
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
@@ -99,8 +82,9 @@ class RootTraversable:
         if not valid_name(name):
             raise InvalidProductName(name)
         pillar = getUtility(IPillarNameSet).getByName(name)
-        if (pillar is None
-                or not check_permission('launchpad.LimitedView', pillar)):
+        if pillar is None or not check_permission(
+            "launchpad.LimitedView", pillar
+        ):
             # Actually, the pillar is no such *anything*. The user might be
             # trying to refer to a project group, a distribution or a
             # project. We raise a NoSuchProduct error since that's what we
@@ -188,7 +172,7 @@ class LinkedBranchTraverser:
 
     def traverse(self, path):
         """See `ILinkedBranchTraverser`."""
-        segments = path.split('/')
+        segments = path.split("/")
         traversable = RootTraversable()
         while segments:
             name = segments.pop(0)
@@ -213,10 +197,10 @@ class BranchLookup:
     @staticmethod
     def uriToHostingPath(uri):
         """See `IBranchLookup`."""
-        schemes = ('http', 'sftp', 'bzr+ssh')
+        schemes = ("http", "sftp", "bzr+ssh")
         codehosting_host = URI(config.codehosting.supermirror_root).host
         if uri.scheme in schemes and uri.host == codehosting_host:
-            return uri.path.lstrip('/')
+            return uri.path.lstrip("/")
         else:
             return None
 
@@ -224,15 +208,15 @@ class BranchLookup:
         """Is 'uri' for an allowed host?"""
         host = uri.host
         if host is None:
-            host = ''
-        allowed_hosts = set(config.codehosting.lp_url_hosts.split(','))
+            host = ""
+        allowed_hosts = set(config.codehosting.lp_url_hosts.split(","))
         return host in allowed_hosts
 
     def getByUrl(self, url):
         """See `IBranchLookup`."""
         if url is None:
             return None
-        url = url.rstrip('/')
+        url = url.rstrip("/")
         try:
             uri = URI(url)
         except InvalidURIError:
@@ -244,33 +228,38 @@ class BranchLookup:
             if branch is not None:
                 return branch
 
-        if uri.scheme == 'lp':
+        if uri.scheme == "lp":
             if not self._uriHostAllowed(uri):
                 return None
-            return self.getByPath(uri.path.lstrip('/'))
+            return self.getByPath(uri.path.lstrip("/"))
 
         return Branch.selectOneBy(url=url)
 
     def performLookup(self, lookup):
-        if lookup['type'] == 'id':
-            return (self.get(lookup['branch_id']), lookup['trailing'])
-        elif lookup['type'] == 'alias':
+        if lookup["type"] == "id":
+            return (self.get(lookup["branch_id"]), lookup["trailing"])
+        elif lookup["type"] == "alias":
             try:
-                branch, trail = self.getByLPPath(lookup['lp_path'])
+                branch, trail = self.getByLPPath(lookup["lp_path"])
                 return branch, escape(trail)
-            except (InvalidProductName, NoLinkedBranch,
-                    CannotHaveLinkedBranch, NameLookupFailed,
-                    InvalidNamespace):
+            except (
+                InvalidProductName,
+                NoLinkedBranch,
+                CannotHaveLinkedBranch,
+                NameLookupFailed,
+                InvalidNamespace,
+            ):
                 pass
-        elif lookup['type'] == 'branch_name':
-            result = IStore(Branch).find(Branch,
-                                Branch.unique_name == lookup['unique_name'])
+        elif lookup["type"] == "branch_name":
+            result = IStore(Branch).find(
+                Branch, Branch.unique_name == lookup["unique_name"]
+            )
             for branch in result:
-                return (branch, escape(lookup['trailing']))
-        return None, ''
+                return (branch, escape(lookup["trailing"]))
+        return None, ""
 
     def getByHostingPath(self, path):
-        return get_first_path_result(path, self.performLookup, (None, ''))
+        return get_first_path_result(path, self.performLookup, (None, ""))
 
     def getByUrls(self, urls):
         """See `IBranchLookup`."""
@@ -287,52 +276,76 @@ class BranchLookup:
         # XXX: JonathanLange 2008-11-27 spec=package-branches: Doesn't handle
         # +dev alias.
         try:
-            namespace_name, branch_name = unique_name.rsplit('/', 1)
+            namespace_name, branch_name = unique_name.rsplit("/", 1)
         except ValueError:
             return None
         try:
             namespace_data = getUtility(IBranchNamespaceSet).parse(
-                namespace_name)
+                namespace_name
+            )
         except InvalidNamespace:
             return None
         return self._getBranchInNamespace(namespace_data, branch_name)
 
     def _getBranchInNamespace(self, namespace_data, branch_name):
-        if namespace_data['product'] == '+junk':
+        if namespace_data["product"] == "+junk":
             return self._getPersonalBranch(
-                namespace_data['person'], branch_name)
-        elif namespace_data['product'] is None:
+                namespace_data["person"], branch_name
+            )
+        elif namespace_data["product"] is None:
             return self._getPackageBranch(
-                namespace_data['person'], namespace_data['distribution'],
-                namespace_data['distroseries'],
-                namespace_data['sourcepackagename'], branch_name)
+                namespace_data["person"],
+                namespace_data["distribution"],
+                namespace_data["distroseries"],
+                namespace_data["sourcepackagename"],
+                branch_name,
+            )
         else:
             return self._getProductBranch(
-                namespace_data['person'], namespace_data['product'],
-                branch_name)
+                namespace_data["person"],
+                namespace_data["product"],
+                branch_name,
+            )
 
     def _getPersonalBranch(self, person, branch_name):
         """Find a personal branch given its path segments."""
         origin = [Branch, Join(Person, Branch.owner == Person.id)]
-        return IStore(Branch).using(*origin).find(
-            Branch, Person.name == person,
-            Branch.distroseries == None,
-            Branch.product == None,
-            Branch.sourcepackagename == None,
-            Branch.name == branch_name).one()
+        return (
+            IStore(Branch)
+            .using(*origin)
+            .find(
+                Branch,
+                Person.name == person,
+                Branch.distroseries == None,
+                Branch.product == None,
+                Branch.sourcepackagename == None,
+                Branch.name == branch_name,
+            )
+            .one()
+        )
 
     def _getProductBranch(self, person, product, branch_name):
         """Find a product branch given its path segments."""
         origin = [
             Branch,
             Join(Person, Branch.owner == Person.id),
-            Join(Product, Branch.product == Product.id)]
-        return IStore(Branch).using(*origin).find(
-            Branch, Person.name == person, Product.name == product,
-            Branch.name == branch_name).one()
+            Join(Product, Branch.product == Product.id),
+        ]
+        return (
+            IStore(Branch)
+            .using(*origin)
+            .find(
+                Branch,
+                Person.name == person,
+                Product.name == product,
+                Branch.name == branch_name,
+            )
+            .one()
+        )
 
-    def _getPackageBranch(self, owner, distribution, distroseries,
-                          sourcepackagename, branch):
+    def _getPackageBranch(
+        self, owner, distribution, distroseries, sourcepackagename, branch
+    ):
         """Find a source package branch given its path segments.
 
         Only gets unofficial source package branches, that is, branches with
@@ -341,41 +354,57 @@ class BranchLookup:
         origin = [
             Branch,
             Join(Person, Branch.owner == Person.id),
-            Join(SourcePackageName,
-                 Branch.sourcepackagename == SourcePackageName.id)]
-        return IStore(Branch).using(*origin).find(
-            Branch, Person.name == owner,
-            Branch.distroseriesID == Select(
-                DistroSeries.id, And(
-                    DistroSeries.distribution == Distribution.id,
-                    DistroSeries.name == distroseries,
-                    Distribution.name == distribution)),
-            SourcePackageName.name == sourcepackagename,
-            Branch.name == branch).one()
+            Join(
+                SourcePackageName,
+                Branch.sourcepackagename == SourcePackageName.id,
+            ),
+        ]
+        return (
+            IStore(Branch)
+            .using(*origin)
+            .find(
+                Branch,
+                Person.name == owner,
+                Branch.distroseriesID
+                == Select(
+                    DistroSeries.id,
+                    And(
+                        DistroSeries.distribution == Distribution.id,
+                        DistroSeries.name == distroseries,
+                        Distribution.name == distribution,
+                    ),
+                ),
+                SourcePackageName.name == sourcepackagename,
+                Branch.name == branch,
+            )
+            .one()
+        )
 
     def getByLPPath(self, path):
         """See `IBranchLookup`."""
-        if path.startswith('~'):
+        if path.startswith("~"):
             namespace_set = getUtility(IBranchNamespaceSet)
-            segments = iter(path.lstrip('~').split('/'))
+            segments = iter(path.lstrip("~").split("/"))
             branch = namespace_set.traverse(segments)
-            suffix = '/'.join(segments)
-            if not check_permission('launchpad.View', branch):
+            suffix = "/".join(segments)
+            if not check_permission("launchpad.View", branch):
                 raise NoSuchBranch(path)
         else:
             # If the first element doesn't start with a tilde, then maybe
             # 'path' is a shorthand notation for a branch.
             try:
                 object_with_branch_link = getUtility(
-                    ILinkedBranchTraverser).traverse(path)
+                    ILinkedBranchTraverser
+                ).traverse(path)
             except NoSuchProductSeries as e:
                 # If ProductSeries lookup failed, the segment after product
                 # name referred to a location under a Product development
                 # focus branch.
                 object_with_branch_link = e.product
             branch, bzr_path = self._getLinkedBranchAndPath(
-                object_with_branch_link)
-            suffix = path[len(bzr_path) + 1:]
+                object_with_branch_link
+            )
+            suffix = path[len(bzr_path) + 1 :]
         return branch, suffix
 
     def getByPath(self, path):
@@ -383,9 +412,17 @@ class BranchLookup:
         try:
             return self.getByLPPath(path)[0]
         except (
-            CannotHaveLinkedBranch, InvalidNamespace, InvalidProductName,
-            NoSuchBranch, NoSuchPerson, NoSuchProduct, NoSuchProductSeries,
-            NoSuchDistroSeries, NoSuchSourcePackageName, NoLinkedBranch):
+            CannotHaveLinkedBranch,
+            InvalidNamespace,
+            InvalidProductName,
+            NoSuchBranch,
+            NoSuchPerson,
+            NoSuchProduct,
+            NoSuchProductSeries,
+            NoSuchDistroSeries,
+            NoSuchSourcePackageName,
+            NoLinkedBranch,
+        ):
             return None
 
     def _getLinkedBranchAndPath(self, provided):
@@ -398,6 +435,6 @@ class BranchLookup:
         :return: The linked branch, an `IBranch`.
         """
         linked = get_linked_to_branch(provided)
-        if not check_permission('launchpad.View', linked.branch):
+        if not check_permission("launchpad.View", linked.branch):
             raise NoLinkedBranch(provided)
         return linked.branch, linked.bzr_path

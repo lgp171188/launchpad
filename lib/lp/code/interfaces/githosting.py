@@ -4,8 +4,8 @@
 """Interface for communication with the Git hosting service."""
 
 __all__ = [
-    'IGitHostingClient',
-    ]
+    "IGitHostingClient",
+]
 
 from zope.interface import Interface
 
@@ -72,8 +72,9 @@ class IGitHostingClient(Interface):
             start commit's history.
         """
 
-    def getDiff(path, old, new, common_ancestor=False, context_lines=None,
-                logger=None):
+    def getDiff(
+        path, old, new, common_ancestor=False, context_lines=None, logger=None
+    ):
         """Get the diff between two commits.
 
         :param path: Physical path of the repository on the hosting service.

@@ -6,10 +6,7 @@
 from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
 from lp.registry.interfaces.karma import IKarmaAssignedEvent
 from lp.registry.interfaces.person import IPerson
-from lp.testing import (
-    login_person,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, login_person
 from lp.testing.fixture import ZopeEventHandlerFixture
 from lp.testing.layers import DatabaseFunctionalLayer
 
@@ -27,9 +24,12 @@ class TestCodeReviewKarma(TestCaseWithFactory):
     def setUp(self):
         # Use an admin to get launchpad.Edit on all the branches to easily
         # approve and reject the proposals.
-        super().setUp('admin@canonical.com')
-        self.useFixture(ZopeEventHandlerFixture(
-            self._on_karma_assigned, (IPerson, IKarmaAssignedEvent)))
+        super().setUp("admin@canonical.com")
+        self.useFixture(
+            ZopeEventHandlerFixture(
+                self._on_karma_assigned, (IPerson, IKarmaAssignedEvent)
+            )
+        )
         self.karma_events = []
 
     def _on_karma_assigned(self, object, event):
@@ -49,7 +49,8 @@ class TestCodeReviewKarma(TestCaseWithFactory):
         # registrant.
         source_branch = self.factory.makeProductBranch()
         target_branch = self.factory.makeProductBranch(
-            product=source_branch.product)
+            product=source_branch.product
+        )
         registrant = self.factory.makePerson()
         # We need to clear the karma event list before we add the landing
         # target as there would be other karma events for the branch
@@ -58,7 +59,7 @@ class TestCodeReviewKarma(TestCaseWithFactory):
         # The normal SQLObject events use the logged in person.
         login_person(registrant)
         source_branch.addLandingTarget(registrant, target_branch)
-        self.assertOneKarmaEvent(registrant, 'branchmergeproposed')
+        self.assertOneKarmaEvent(registrant, "branchmergeproposed")
 
     def test_commentOnProposal(self):
         # Any person commenting on a code review gets a karma event.
@@ -67,7 +68,7 @@ class TestCodeReviewKarma(TestCaseWithFactory):
         self.karma_events = []
         login_person(commenter)
         proposal.createComment(commenter, "A comment", "The review.")
-        self.assertOneKarmaEvent(commenter, 'codereviewcomment')
+        self.assertOneKarmaEvent(commenter, "codereviewcomment")
 
     def test_reviewerCommentingOnProposal(self):
         # A reviewer commenting on a code review gets a different karma event
@@ -77,7 +78,7 @@ class TestCodeReviewKarma(TestCaseWithFactory):
         self.karma_events = []
         login_person(commenter)
         proposal.createComment(commenter, "A comment", "The review.")
-        self.assertOneKarmaEvent(commenter, 'codereviewreviewercomment')
+        self.assertOneKarmaEvent(commenter, "codereviewreviewercomment")
 
     def test_commentOnOwnProposal(self):
         # If the reviewer is also the registrant of the proposal, they just
@@ -85,11 +86,12 @@ class TestCodeReviewKarma(TestCaseWithFactory):
         commenter = self.factory.makePerson()
         target_branch = self.factory.makeProductBranch(owner=commenter)
         proposal = self.factory.makeBranchMergeProposal(
-            target_branch=target_branch, registrant=commenter)
+            target_branch=target_branch, registrant=commenter
+        )
         self.karma_events = []
         login_person(commenter)
         proposal.createComment(commenter, "A comment", "The review.")
-        self.assertOneKarmaEvent(commenter, 'codereviewcomment')
+        self.assertOneKarmaEvent(commenter, "codereviewcomment")
 
     def test_approveCodeReview(self):
         # Approving a code review is a significant event, and as such gets its
@@ -100,19 +102,20 @@ class TestCodeReviewKarma(TestCaseWithFactory):
         login_person(reviewer)
         with BranchMergeProposalNoPreviewDiffDelta.monitor(proposal):
             proposal.approveBranch(reviewer, "A rev id.")
-        self.assertOneKarmaEvent(reviewer, 'branchmergeapproved')
+        self.assertOneKarmaEvent(reviewer, "branchmergeapproved")
 
     def test_approvingOwnCodeReview(self):
         # Approving your own merge proposal isn't such a significant event.
         reviewer = self.factory.makePerson()
         target_branch = self.factory.makeProductBranch(owner=reviewer)
         proposal = self.factory.makeBranchMergeProposal(
-            target_branch=target_branch, registrant=reviewer)
+            target_branch=target_branch, registrant=reviewer
+        )
         self.karma_events = []
         login_person(reviewer)
         with BranchMergeProposalNoPreviewDiffDelta.monitor(proposal):
             proposal.approveBranch(reviewer, "A rev id.")
-        self.assertOneKarmaEvent(reviewer, 'branchmergeapprovedown')
+        self.assertOneKarmaEvent(reviewer, "branchmergeapprovedown")
 
     def test_rejectedCodeReview(self):
         # Rejecting a code review is also a significant event, and as such
@@ -123,7 +126,7 @@ class TestCodeReviewKarma(TestCaseWithFactory):
         login_person(reviewer)
         with BranchMergeProposalNoPreviewDiffDelta.monitor(proposal):
             proposal.rejectBranch(reviewer, "A rev id.")
-        self.assertOneKarmaEvent(reviewer, 'branchmergerejected')
+        self.assertOneKarmaEvent(reviewer, "branchmergerejected")
 
     def test_rejectedOwnCodeReview(self):
         # Rejecting your own merge proposal isn't such a significant event
@@ -132,9 +135,10 @@ class TestCodeReviewKarma(TestCaseWithFactory):
         reviewer = self.factory.makePerson()
         target_branch = self.factory.makeProductBranch(owner=reviewer)
         proposal = self.factory.makeBranchMergeProposal(
-            target_branch=target_branch, registrant=reviewer)
+            target_branch=target_branch, registrant=reviewer
+        )
         self.karma_events = []
         login_person(reviewer)
         with BranchMergeProposalNoPreviewDiffDelta.monitor(proposal):
             proposal.rejectBranch(reviewer, "A rev id.")
-        self.assertOneKarmaEvent(reviewer, 'branchmergerejectedown')
+        self.assertOneKarmaEvent(reviewer, "branchmergerejectedown")

@@ -3,14 +3,11 @@
 
 """Tests for IBranchCloud provider."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 import pytz
-from storm.locals import Store
 import transaction
+from storm.locals import Store
 from zope.component import getUtility
 
 from lp.code.interfaces.branch import IBranchCloud
@@ -18,11 +15,8 @@ from lp.code.model.revision import RevisionCache
 from lp.code.tests.helpers import (
     make_project_branch_with_revisions,
     remove_all_sample_data_branches,
-    )
-from lp.testing import (
-    TestCaseWithFactory,
-    time_counter,
-    )
+)
+from lp.testing import TestCaseWithFactory, time_counter
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -52,10 +46,16 @@ class TestBranchCloud(TestCaseWithFactory):
 
         return [
             (name, commits, authors, add_utc(last_commit))
-            for name, commits, authors, last_commit in cloud_info]
+            for name, commits, authors, last_commit in cloud_info
+        ]
 
-    def makeBranch(self, product=None, last_commit_date=None, private=False,
-                   revision_count=None):
+    def makeBranch(
+        self,
+        product=None,
+        last_commit_date=None,
+        private=False,
+        revision_count=None,
+    ):
         """Make a product branch with a particular last commit date"""
         if revision_count is None:
             revision_count = 5
@@ -63,12 +63,14 @@ class TestBranchCloud(TestCaseWithFactory):
         if last_commit_date is None:
             # By default we create revisions that are within the last 30 days.
             date_generator = time_counter(
-                datetime.now(pytz.UTC) - timedelta(days=25), delta)
+                datetime.now(pytz.UTC) - timedelta(days=25), delta
+            )
         else:
             start_date = last_commit_date - delta * (revision_count - 1)
             date_generator = time_counter(start_date, delta)
         branch = make_project_branch_with_revisions(
-            self.factory, date_generator, product, private, revision_count)
+            self.factory, date_generator, product, private, revision_count
+        )
         return branch
 
     def test_empty_with_no_branches(self):
@@ -104,7 +106,8 @@ class TestBranchCloud(TestCaseWithFactory):
         self.makeBranch(product=product, last_commit_date=last_commit_date)
         self.assertEqual(
             [(product.name, 5, 1, last_commit_date)],
-            self.getProductsWithInfo())
+            self.getProductsWithInfo(),
+        )
 
     def test_only_recent_revisions_counted(self):
         # If the revision cache has revisions for the project, but they are
@@ -112,17 +115,20 @@ class TestBranchCloud(TestCaseWithFactory):
         product = self.factory.makeProduct()
         date_generator = time_counter(
             datetime.now(pytz.UTC) - timedelta(days=33),
-            delta=timedelta(days=2))
+            delta=timedelta(days=2),
+        )
         store = Store.of(product)
         for i in range(4):
             revision = self.factory.makeRevision(
-                revision_date=next(date_generator))
+                revision_date=next(date_generator)
+            )
             cache = RevisionCache(revision)
             cache.product = product
             store.add(cache)
         self.assertEqual(
             [(product.name, 2, 2, revision.revision_date)],
-            self.getProductsWithInfo())
+            self.getProductsWithInfo(),
+        )
 
     def test_sorted_by_commit_count(self):
         # getProductsWithInfo returns a result set sorted so that the products
@@ -135,8 +141,8 @@ class TestBranchCloud(TestCaseWithFactory):
             self.makeBranch(product=product2)
         self.assertEqual(
             [product2.name, product1.name],
-            [name for name, commits, count, last_commit
-             in self.getProductsWithInfo()])
+            [name for name, _, _, _ in self.getProductsWithInfo()],
+        )
 
     def test_limit(self):
         # If num_products is passed to getProductsWithInfo, it limits the
@@ -153,5 +159,8 @@ class TestBranchCloud(TestCaseWithFactory):
             self.makeBranch(product=product3)
         self.assertEqual(
             [product3.name, product2.name],
-            [name for name, commits, count, last_commit
-             in self.getProductsWithInfo(num_products=2)])
+            [
+                name
+                for name, _, _, _ in self.getProductsWithInfo(num_products=2)
+            ],
+        )
