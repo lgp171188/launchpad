@@ -301,7 +301,9 @@ class IDistroSeriesDifferencePublic(Interface):
         """
 
     latest_comment = Reference(
-        Interface,  # IDistroSeriesDifferenceComment
+        # Really IDistroSeriesDifferenceComment, patched in
+        # lp.registry.interfaces.webservice.
+        Interface,
         title=_("The latest comment"),
         readonly=True,
     )

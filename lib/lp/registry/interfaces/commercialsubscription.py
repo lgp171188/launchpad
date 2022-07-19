@@ -32,7 +32,7 @@ class ICommercialSubscription(Interface):
             required=False,
             readonly=True,
             vocabulary="Product",
-            # Really IProduct, patched in _schema_circular_imports.py.
+            # Really IProduct, patched in lp.registry.interfaces.webservice.
             schema=Interface,
             description=_(
                 "Project for which this commercial subscription is " "applied."
@@ -46,7 +46,8 @@ class ICommercialSubscription(Interface):
             required=False,
             readonly=True,
             vocabulary="Distribution",
-            # Really IDistribution, patched in _schema_circular_imports.py.
+            # Really IDistribution, patched in
+            # lp.registry.interfaces.webservice.
             schema=Interface,
             description=_(
                 "Distribution for which this commercial subscription is "
