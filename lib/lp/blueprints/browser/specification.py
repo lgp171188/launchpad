@@ -829,7 +829,7 @@ class SpecificationView(SpecificationSimpleView):
 
 
 class SpecificationEditSchema(ISpecification):
-    """Provide overrides for the implementaion and definition status."""
+    """Provide overrides for the implementation and definition status."""
 
     definition_status = Choice(
         title=_("Definition Status"),

@@ -140,7 +140,7 @@ now, it is not listed by the view because of its priority:
     >>> js_spec.name not in spec_names
     True
 
-If we decline the extension manager spec, it disapears from the list of
+If we decline the extension manager spec, it disappears from the list of
 specs:
 
     >>> link = ext_spec.sprint_links[0]

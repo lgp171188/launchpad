@@ -12,7 +12,7 @@ Specification Branch Links
     True
 
 A specification can be linked to a number of branches.  For example,
-the Ubuntu media-integrity-check specifcation has a branch link:
+the Ubuntu media-integrity-check specification has a branch link:
 
     >>> from zope.component import getUtility
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities

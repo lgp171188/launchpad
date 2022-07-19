@@ -251,7 +251,7 @@ present in ChangesFile and DSCFile:
     >>> sig_file._dict['Source'] = 'some-source'
     >>> sig_file._dict['Version'] = '6.6.6'
 
-After initiliasing sig_file we can parse addresses and look them up in
+After initialising sig_file we can parse addresses and look them up in
 Launchpad:
 
     >>> addr = sig_file.parseAddress("Foo Bar <foo.bar@canonical.com>")
@@ -395,7 +395,7 @@ ISourcePackageRelease.dscsiginingkey:
     >>> print(ed_source_dsc.signingkey.displayname)
     1024D/340CA3BB270E2716C9EE0B768E7EB7086C64A8C5
 
-A DSCFile provides a verification API similiar to what we have in
+A DSCFile provides a verification API similar to what we have in
 ChangesFile itself:
 
     >>> errors = ed_source_dsc.verify()
@@ -404,9 +404,8 @@ ChangesFile itself:
     >>> len(list(errors))
     0
 
-Apart of other consisteny checks DSCFile is able to check also ensure
-the digest declared in in the DSC matches the content of the files on
-disk:
+Apart from other consistency checks, DSCFile is also able to check that
+the digest declared in the DSC matches the content of the files on disk:
 
     >>> ed_broken_dsc = DSCFile(
     ...     datadir('ed_0.2-20.dsc'),

@@ -156,7 +156,7 @@ class HasSpecificationsView(LaunchpadView):
 
         # ProjectGroups are a special case, as their products may be a
         # combination of usage settings. To deal with this, check all
-        # products via the involvment menu.
+        # products via the involvement menu.
         if IProjectGroup.providedBy(
             self.context
         ) or IProjectGroupSeries.providedBy(self.context):

@@ -21,7 +21,7 @@ def specification_notification_subject(spec):
 
 
 def notify_specification_modified(spec, event):
-    """Notify the related people that a specification has been modifed."""
+    """Notify the related people that a specification has been modified."""
     user = IPerson(event.user)
     spec_delta = spec.getDelta(event.object_before_modification, user)
     if spec_delta is None:

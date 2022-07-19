@@ -1054,7 +1054,7 @@ class TestPPAUploadProcessorFileLookups(TestPPAUploadProcessorBase):
         sometimes contain unicode characters.  There was a bug
         https://bugs.launchpad.net/bugs/275509 reported about getting
         upload errors related to unicode.  This only happened when the
-        uploder was attaching a .orig.tar.gz file with different contents
+        uploader was attaching a .orig.tar.gz file with different contents
         than the one already in the PPA.
         """
         # Ensure the displayname of the PPA has got unicode in it.
@@ -1134,8 +1134,8 @@ class TestPPAUploadProcessorFileLookups(TestPPAUploadProcessorBase):
         """When available, the official 'orig.tar.gz' restricts PPA uploads.
 
         This test guarantee that when not previously overridden in the
-        context PPA, users will be forced to use the offical 'orig.tar.gz'
-        from primary archive.
+        context PPA, users will be forced to use the official 'orig.tar.gz'
+        from the primary archive.
         """
         # Make the official bar orig.tar.gz available in the system.
         self.uploadNewBarToUbuntu()
