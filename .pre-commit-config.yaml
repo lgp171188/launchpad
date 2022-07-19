@@ -51,6 +51,7 @@ repos:
             |charms
             |code
             |codehosting
+            |coop
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
@@ -78,6 +79,7 @@ repos:
             |charms
             |code
             |codehosting
+            |coop
           )/
     -   id: isort
         alias: isort-black
@@ -95,6 +97,7 @@ repos:
             |charms
             |code
             |codehosting
+            |coop
           )/
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.9.2

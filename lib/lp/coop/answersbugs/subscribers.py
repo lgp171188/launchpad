@@ -22,7 +22,8 @@ def assign_question_bug_link_karma(question, event):
     """Assign karma to the user which added <questionbug>."""
     if IBug.providedBy(event.other_object):
         assignKarmaUsingQuestionContext(
-            IPerson(event.user), event.object, 'questionlinkedtobug')
+            IPerson(event.user), event.object, "questionlinkedtobug"
+        )
 
 
 def subscribe_owner_to_bug(question, event):
@@ -52,35 +53,44 @@ class QuestionLinkedBugStatusChangeNotification(QuestionNotification):
 
     def initialize(self):
         """Create a notifcation for a linked bug status change."""
-        assert IObjectModifiedEvent.providedBy(self.event), (
-            "Should only be subscribed for IObjectModifiedEvent.")
-        assert IBugTask.providedBy(self.event.object), (
-            "Should only be subscribed for IBugTask modification.")
+        assert IObjectModifiedEvent.providedBy(
+            self.event
+        ), "Should only be subscribed for IObjectModifiedEvent."
+        assert IBugTask.providedBy(
+            self.event.object
+        ), "Should only be subscribed for IBugTask modification."
         self.bugtask = self.event.object
         self.old_bugtask = self.event.object_before_modification
 
     def shouldNotify(self):
         """Only send notification when the status changed."""
-        return (self.bugtask.status != self.old_bugtask.status
-                and self.bugtask.bug.private == False)
+        return (
+            self.bugtask.status != self.old_bugtask.status
+            and self.bugtask.bug.private == False
+        )
 
     def getSubject(self):
         """See QuestionNotification."""
         return "[Question #%s]: Status of bug #%s changed to '%s' in %s" % (
-            self.question.id, self.bugtask.bug.id, self.bugtask.status.title,
-            self.bugtask.target.displayname)
+            self.question.id,
+            self.bugtask.bug.id,
+            self.bugtask.status.title,
+            self.bugtask.target.displayname,
+        )
 
     def getBody(self):
         """See QuestionNotification."""
         template = get_email_template(
-            'question-linked-bug-status-updated.txt', app='coop/answersbugs')
+            "question-linked-bug-status-updated.txt", app="coop/answersbugs"
+        )
         return template % {
-            'bugtask_target_name': self.bugtask.target.displayname,
-            'question_id': self.question.id,
-            'question_title': self.question.title,
-            'question_url': canonical_url(self.question),
-            'bugtask_url': canonical_url(self.bugtask),
-            'bug_id': self.bugtask.bug.id,
-            'bugtask_title': self.bugtask.bug.title,
-            'old_status': self.old_bugtask.status.title,
-            'new_status': self.bugtask.status.title}
+            "bugtask_target_name": self.bugtask.target.displayname,
+            "question_id": self.question.id,
+            "question_title": self.question.title,
+            "question_url": canonical_url(self.question),
+            "bugtask_url": canonical_url(self.bugtask),
+            "bug_id": self.bugtask.bug.id,
+            "bugtask_title": self.bugtask.bug.title,
+            "old_status": self.old_bugtask.status.title,
+            "new_status": self.bugtask.status.title,
+        }
