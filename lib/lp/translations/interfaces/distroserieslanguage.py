@@ -46,7 +46,7 @@ class IDistroSeriesLanguage(IRosettaStats):
         """Return `POFile`s for each of `potemplates`, in the same order.
 
         For any `POTemplate` that does not have a translation to the
-        required language, a `DummyPOFile` is provided.
+        required language, a `PlaceholderPOFile` is provided.
         """
 
 

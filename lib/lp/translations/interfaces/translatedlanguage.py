@@ -64,7 +64,7 @@ class IPOFilesByPOTemplates(IFiniteSequence):
     """Iterate `IPOFile`s for (`ILanguage`, `ITranslationTemplateCollection`).
 
     This is a wrapper for Storm ResultSet that enables optimized slicing
-    by doing it lazily on the query, thus allowing DummyPOFile objects
+    by doing it lazily on the query, thus allowing PlaceholderPOFile objects
     to be returned while still not doing more than one database query.
 
     It subclasses `IFiniteSequence` so it can easily be used with the

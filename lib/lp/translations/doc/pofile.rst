@@ -30,29 +30,29 @@ Get Xhosa translation
     >>> pofile = potemplate.getPOFileByLang('xh')
     >>> language_pt_BR = getUtility(
     ...     ILanguageSet).getLanguageByCode('pt_BR')
-    >>> dummy_pofile = potemplate.getDummyPOFile(language_pt_BR)
+    >>> placeholder_pofile = potemplate.getPlaceholderPOFile(language_pt_BR)
 
 Both implement the IPOFile interface:
 
     >>> verifyObject(IPOFile, pofile)
     True
 
-    >>> verifyObject(IPOFile, dummy_pofile)
+    >>> verifyObject(IPOFile, placeholder_pofile)
     True
 
-DummyPOFile returns empty SelectResults for getPOTMsgSet* methods,
+PlaceholderPOFile returns empty SelectResults for getPOTMsgSet* methods,
 except for untranslated messages.
 
-    >>> dummy_pofile.getPOTMsgSetTranslated().count()
+    >>> placeholder_pofile.getPOTMsgSetTranslated().count()
     0
 
-    >>> dummy_pofile.getPOTMsgSetDifferentTranslations().count()
+    >>> placeholder_pofile.getPOTMsgSetDifferentTranslations().count()
     0
 
-    >>> dummy_pofile.getPOTMsgSetWithNewSuggestions().count()
+    >>> placeholder_pofile.getPOTMsgSetWithNewSuggestions().count()
     0
 
-    >>> dummy_pofile.getPOTMsgSetUntranslated().count()
+    >>> placeholder_pofile.getPOTMsgSetUntranslated().count()
     22
 
 Get the set of POTMsgSets that are untranslated.
@@ -107,7 +107,7 @@ Returns the complete code for this POFile's language.
     es
 
     >>> sr_latin = factory.makeLanguage('sr@latin', 'Serbian Latin')
-    >>> print(potemplate.getDummyPOFile(sr_latin).getFullLanguageCode())
+    >>> print(potemplate.getPlaceholderPOFile(sr_latin).getFullLanguageCode())
     sr@latin
 
 
@@ -119,7 +119,7 @@ Returns the complete English name for this POFile's language.
     >>> print(potemplate.getPOFileByLang('es').getFullLanguageName())
     Spanish
 
-    >>> print(potemplate.getDummyPOFile(sr_latin).getFullLanguageName())
+    >>> print(potemplate.getPlaceholderPOFile(sr_latin).getFullLanguageName())
     Serbian Latin
 
 
@@ -130,11 +130,11 @@ It is common to want to find those POTMsgSets which contain a certain
 substring in their original English string.
 
     >>> found_potmsgsets = (
-    ...     dummy_pofile.findPOTMsgSetsContaining(u"contact"))
+    ...     placeholder_pofile.findPOTMsgSetsContaining("contact"))
     >>> found_potmsgsets.count()
     4
 
-    >>> print_potmsgsets(found_potmsgsets, dummy_pofile)
+    >>> print_potmsgsets(found_potmsgsets, placeholder_pofile)
      7. contact's header:      None
     14. The location and ...   None
     15. %d contact             %d contacts
@@ -143,11 +143,11 @@ substring in their original English string.
 Search is case-insensitive.
 
     >>> found_potmsgsets = (
-    ...     dummy_pofile.findPOTMsgSetsContaining(u"CONTact"))
+    ...     placeholder_pofile.findPOTMsgSetsContaining("CONTact"))
     >>> found_potmsgsets.count()
     4
 
-    >>> print_potmsgsets(found_potmsgsets, dummy_pofile)
+    >>> print_potmsgsets(found_potmsgsets, placeholder_pofile)
      7. contact's header:      None
     14. The location and ...   None
     15. %d contact             %d contacts
@@ -156,25 +156,26 @@ Search is case-insensitive.
 Search will look through plural msgids as well.
 
     >>> found_potmsgsets = (
-    ...     dummy_pofile.findPOTMsgSetsContaining(u"contacts"))
+    ...     placeholder_pofile.findPOTMsgSetsContaining("contacts"))
     >>> found_potmsgsets.count()
     2
 
-    >>> print_potmsgsets(found_potmsgsets, dummy_pofile)
+    >>> print_potmsgsets(found_potmsgsets, placeholder_pofile)
     15. %d contact             %d contacts
     16. Opening %d contac...   Opening %d contac...
 
 Looking for a non-existing string returns an empty SelectResults.
 
     >>> found_potmsgsets = (
-    ...     dummy_pofile.findPOTMsgSetsContaining(u"non-existing-string"))
+    ...     placeholder_pofile.findPOTMsgSetsContaining(
+    ...         "non-existing-string"))
     >>> found_potmsgsets.count()
     0
 
 Trying to find a string shorter than two characters doesn't work.
 
     >>> found_potmsgsets = (
-    ...     dummy_pofile.findPOTMsgSetsContaining(u"a"))
+    ...     placeholder_pofile.findPOTMsgSetsContaining("a"))
     Traceback (most recent call last):
     ...
     AssertionError: You can not search for strings shorter than 2 characters.
@@ -406,7 +407,7 @@ used.
     >>> serbian.pluralforms
     3
 
-    >>> evolution_sr = evolution_pot.getDummyPOFile(serbian)
+    >>> evolution_sr = evolution_pot.getPlaceholderPOFile(serbian)
     >>> evolution_sr.plural_forms
     3
 
@@ -417,7 +418,7 @@ the most common number of plural forms:
     >>> print(divehi.pluralforms)
     None
 
-    >>> evolution_dv = evolution_pot.getDummyPOFile(divehi)
+    >>> evolution_dv = evolution_pot.getPlaceholderPOFile(divehi)
     >>> evolution_dv.plural_forms
     2
 

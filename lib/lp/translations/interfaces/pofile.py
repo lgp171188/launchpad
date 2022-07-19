@@ -356,8 +356,8 @@ class IPOFileAlternativeLanguage(Interface):
 class IPOFileSet(Interface):
     """A set of POFiles."""
 
-    def getDummy(potemplate, language):
-        """Return a dummy pofile for the given po template and language."""
+    def getPlaceholder(potemplate, language):
+        """Return a placeholder pofile for the given template and language."""
 
     def getPOFilesByPathAndOrigin(path, productseries=None,
         distroseries=None, sourcepackagename=None):

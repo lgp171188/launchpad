@@ -320,10 +320,10 @@
             provides="lp.translations.interfaces.translationcommonformat.ITranslationFileData"
             factory="lp.translations.model.pofile.POFileToChangedFromPackagedAdapter"/>
 
-        <!-- Dummy PO File -->
+        <!-- Placeholder PO File -->
 
         <class
-            class="lp.translations.model.pofile.DummyPOFile">
+            class="lp.translations.model.pofile.PlaceholderPOFile">
             <allow
                 interface="lp.translations.interfaces.pofile.IPOFile"/>
         </class>

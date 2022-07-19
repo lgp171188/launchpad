@@ -31,10 +31,10 @@ class POFilesByPOTemplates:
         self.templates_collection = templates_collection
         self.language = language
 
-    def _getDummyOrPOFile(self, potemplate, pofile):
+    def _getPlaceholderOrPOFile(self, potemplate, pofile):
         if pofile is None:
-            return potemplate.getDummyPOFile(self.language,
-                                             check_for_existing=False)
+            return potemplate.getPlaceholderPOFile(
+                self.language, check_for_existing=False)
         else:
             return pofile
 
@@ -52,7 +52,8 @@ class POFilesByPOTemplates:
         else:
             results = resultset[selector]
         for potemplate, pofile in results:
-            pofiles_list.append(self._getDummyOrPOFile(potemplate, pofile))
+            pofiles_list.append(
+                self._getPlaceholderOrPOFile(potemplate, pofile))
         return pofiles_list
 
     def __getitem__(self, selector):
@@ -61,7 +62,7 @@ class POFilesByPOTemplates:
             return self._getPOFilesForResultSet(resultset, selector)
         else:
             potemplate, pofile = resultset[selector]
-            return self._getDummyOrPOFile(potemplate, pofile)
+            return self._getPlaceholderOrPOFile(potemplate, pofile)
 
     def __iter__(self):
         resultset = self._getPOTemplatesAndPOFilesResultSet()

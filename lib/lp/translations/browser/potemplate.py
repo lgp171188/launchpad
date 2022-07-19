@@ -137,7 +137,7 @@ class POTemplateNavigation(Navigation):
             language = getUtility(ILanguageSet).getLanguageByCode(name)
             if language is None:
                 raise NotFoundError(name)
-            return self.context.getDummyPOFile(
+            return self.context.getPlaceholderPOFile(
                 language, requester=user, check_for_existing=False)
         else:
             # It's a POST.
@@ -198,12 +198,12 @@ class POTemplateView(LaunchpadView,
         self.description = self.context.description
 
     def requestPoFiles(self):
-        """Yield a POFile or DummyPOFile for each of the languages in the
-        request, which includes country languages from the request IP,
+        """Yield a POFile or PlaceholderPOFile for each of the languages in
+        the request, which includes country languages from the request IP,
         browser preferences, and/or personal Launchpad language prefs.
         """
         for language in self._sortLanguages(self.translatable_languages):
-            yield self._getPOFileOrDummy(language)
+            yield self._getPOFileOrPlaceholder(language)
 
     def num_messages(self):
         N = self.context.messageCount()
@@ -220,7 +220,7 @@ class POTemplateView(LaunchpadView,
         Yields a POFileView object for each language this template has
         been translated into, and for each of the user's languages.
         Where the template has no POFile for that language, we use
-        a DummyPOFile.
+        a PlaceholderPOFile.
         """
         # This inline import is needed to workaround a circular import problem
         # because lp.translations.browser.pofile imports
@@ -234,7 +234,7 @@ class POTemplateView(LaunchpadView,
             languages = set(self.context.languages()) | set(languages)
 
         for language in self._sortLanguages(languages):
-            pofile = self._getPOFileOrDummy(language)
+            pofile = self._getPOFileOrPlaceholder(language)
             pofileview = POFileView(pofile, self.request)
             # Initialize the view.
             pofileview.initialize()
@@ -294,11 +294,11 @@ class POTemplateView(LaunchpadView,
     def _sortLanguages(self, languages):
         return sorted(languages, key=operator.attrgetter('englishname'))
 
-    def _getPOFileOrDummy(self, language):
+    def _getPOFileOrPlaceholder(self, language):
         pofile = self.context.getPOFileByLang(language.code)
         if pofile is None:
             pofileset = getUtility(IPOFileSet)
-            pofile = pofileset.getDummy(self.context, language)
+            pofile = pofileset.getPlaceholder(self.context, language)
         return pofile
 
     @property

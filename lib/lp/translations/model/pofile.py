@@ -4,8 +4,8 @@
 """`SQLObject` implementation of `IPOFile` interface."""
 
 __all__ = [
+    'PlaceholderPOFile',
     'POFile',
-    'DummyPOFile',
     'POFileSet',
     'POFileToChangedFromPackagedAdapter',
     'POFileToTranslationFileDataAdapter',
@@ -111,11 +111,11 @@ from lp.translations.utilities.translation_common_format import (
 
 
 class POFileMixIn(RosettaStats):
-    """Base class for `POFile` and `DummyPOFile`.
+    """Base class for `POFile` and `PlaceholderPOFile`.
 
     Provides machinery for retrieving `TranslationMessage`s and populating
     their submissions caches.  That machinery is needed even for
-    `DummyPOFile`s.
+    `PlaceholderPOFile`s.
     """
 
     @property
@@ -276,7 +276,7 @@ class POFileMixIn(RosettaStats):
                 english_match = self._getTranslationSearchQuery(
                     en_pofile, 0, text)
 
-            # Do not look for translations in a DummyPOFile.
+            # Do not look for translations in a PlaceholderPOFile.
             search_clauses = [english_match]
             if self.id is not None:
                 for plural_form in range(self.plural_forms):
@@ -1227,7 +1227,7 @@ class POFile(SQLBase, POFileMixIn):
 
 
 @implementer(IPOFile)
-class DummyPOFile(POFileMixIn):
+class PlaceholderPOFile(POFileMixIn):
     """Represents a POFile where we do not yet actually HAVE a POFile for
     that language for this template.
     """
@@ -1384,7 +1384,7 @@ class DummyPOFile(POFileMixIn):
 
     def setPathIfUnique(self, path):
         """See `IPOFile`."""
-        # Any path will do for a DummyPOFile.
+        # Any path will do for a PlaceholderPOFile.
         self.path = path
 
     def importFromQueue(self, entry_to_import, logger=None, txn=None):
@@ -1407,8 +1407,8 @@ class DummyPOFile(POFileMixIn):
 @implementer(IPOFileSet)
 class POFileSet:
 
-    def getDummy(self, potemplate, language):
-        return DummyPOFile(potemplate, language)
+    def getPlaceholder(self, potemplate, language):
+        return PlaceholderPOFile(potemplate, language)
 
     def getPOFilesByPathAndOrigin(self, path, productseries=None,
                                   distroseries=None, sourcepackagename=None,

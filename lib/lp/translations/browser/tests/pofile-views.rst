@@ -58,7 +58,7 @@ This time, we are going to see what happens if we get an IPOFile without
 the plural form information.
 
     >>> language_tlh = getUtility(ILanguageSet).getLanguageByCode('tlh')
-    >>> pofile_tlh = potemplate.getDummyPOFile(language_tlh)
+    >>> pofile_tlh = potemplate.getPlaceholderPOFile(language_tlh)
     >>> form = {'show': 'all' }
     >>> pofile_view = create_view(pofile_tlh, '+translate', form=form)
     >>> pofile_view.initialize()

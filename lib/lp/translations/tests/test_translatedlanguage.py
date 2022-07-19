@@ -16,6 +16,7 @@ from lp.translations.interfaces.productserieslanguage import (
     IProductSeriesLanguageSet,
     )
 from lp.translations.interfaces.translatedlanguage import ITranslatedLanguage
+from lp.translations.model.pofile import PlaceholderPOFile
 
 
 class TestTranslatedLanguageMixin(TestCaseWithFactory):
@@ -56,12 +57,9 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
             potemplate = self.addPOTemplate()
         return self.factory.makePOFile(self.language.code, potemplate)
 
-    def assertIsDummy(self, pofile):
-        """Assert that `pofile` is actually a `DummyPOFile`."""
-        # Avoid circular imports.
-        from lp.translations.model.pofile import DummyPOFile
-
-        self.assertIsInstance(pofile, DummyPOFile)
+    def assertIsPlaceholder(self, pofile):
+        """Assert that `pofile` is actually a `PlaceholderPOFile`."""
+        self.assertIsInstance(pofile, PlaceholderPOFile)
 
     def test_interface(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -85,17 +83,17 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
     def test_pofiles_template_no_pofiles(self):
         translated_language = self.getTranslatedLanguage(self.language)
         potemplate = self.addPOTemplate()
-        dummy_pofile = potemplate.getDummyPOFile(self.language)
+        placeholder_pofile = potemplate.getPlaceholderPOFile(self.language)
         pofiles = list(translated_language.pofiles)
         self.assertEqual(1, len(pofiles))
 
-        # When there are no actual PO files, we get a DummyPOFile object
-        # instead.
-        dummy_pofile = pofiles[0]
-        naked_dummy = removeSecurityProxy(dummy_pofile)
-        self.assertIsDummy(naked_dummy)
-        self.assertEqual(self.language, dummy_pofile.language)
-        self.assertEqual(potemplate, dummy_pofile.potemplate)
+        # When there are no actual PO files, we get a PlaceholderPOFile
+        # object instead.
+        placeholder_pofile = pofiles[0]
+        naked_placeholder = removeSecurityProxy(placeholder_pofile)
+        self.assertIsPlaceholder(naked_placeholder)
+        self.assertEqual(self.language, placeholder_pofile.language)
+        self.assertEqual(potemplate, placeholder_pofile.potemplate)
 
         # Two queries get executed when listifying
         # TranslatedLanguageMixin.pofiles: a len() does a count, and
@@ -129,7 +127,7 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
         # then all POTemplates and POFiles are fetched with the other.
         self.assertStatementCount(2, list, translated_language.pofiles)
 
-    def test_pofiles_two_templates_one_dummy(self):
+    def test_pofiles_two_templates_one_placeholder(self):
         translated_language = self.getTranslatedLanguage(self.language)
         # Two templates with different priorities so they get sorted
         # appropriately.
@@ -138,8 +136,8 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
         self.addPOTemplate(priority=1)
         pofiles = translated_language.pofiles
         self.assertEqual(pofile1, pofiles[0])
-        dummy_pofile = removeSecurityProxy(pofiles[1])
-        self.assertIsDummy(dummy_pofile)
+        placeholder_pofile = removeSecurityProxy(pofiles[1])
+        self.assertIsPlaceholder(placeholder_pofile)
 
         # Two queries get executed when listifying
         # TranslatedLanguageMixin.pofiles: a len() does a count, and
@@ -170,8 +168,8 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
             self.assertStatementCount(
                 1, get_slice, translated_language.pofiles, 1, 3)
 
-    def test_pofiles_slicing_dummies(self):
-        # Slicing includes DummyPOFiles.
+    def test_pofiles_slicing_placeholders(self):
+        # Slicing includes PlaceholderPOFiles.
         translated_language = self.getTranslatedLanguage(self.language)
         # Three templates with different priorities so they get sorted
         # appropriately.
@@ -181,8 +179,8 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
 
         pofiles = translated_language.pofiles[1:3]
         self.assertEqual(pofile2, pofiles[0])
-        dummy_pofile = removeSecurityProxy(pofiles[1])
-        self.assertIsDummy(dummy_pofile)
+        placeholder_pofile = removeSecurityProxy(pofiles[1])
+        self.assertIsPlaceholder(placeholder_pofile)
 
     def test_statistics_empty(self):
         translated_language = self.getTranslatedLanguage(self.language)
