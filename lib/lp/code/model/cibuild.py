@@ -497,7 +497,7 @@ class CIBuild(PackageBuildMixin, StormBase):
 
     def createSourcePackageRelease(
             self, distroseries, sourcepackagename, version, creator=None,
-            archive=None):
+            archive=None, user_defined_fields=None):
         """See `ICIBuild`."""
         return distroseries.createUploadedSourcePackageRelease(
             sourcepackagename=sourcepackagename,
@@ -509,7 +509,8 @@ class CIBuild(PackageBuildMixin, StormBase):
             architecturehintlist="",
             creator=creator,
             archive=archive,
-            ci_build=self)
+            ci_build=self,
+            user_defined_fields=user_defined_fields)
 
     def createBinaryPackageRelease(
             self, binarypackagename, version, summary, description,

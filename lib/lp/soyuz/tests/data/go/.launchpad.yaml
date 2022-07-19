@@ -1,0 +1,19 @@
+pipeline:
+    - build
+
+jobs:
+    build:
+        series: focal
+        architectures: amd64
+        packages:
+            - zip
+        run: |
+            mkdir -p out
+            zip -r out/v0.0.1.zip t.go
+            cp -a go.mod out/v0.0.1.mod
+            echo '{"Version": "v0.0.1"}' >out/v0.0.1.info
+        output:
+            paths:
+                - out/*.info
+                - out/*.mod
+                - out/*.zip

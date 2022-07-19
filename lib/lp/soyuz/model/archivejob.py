@@ -5,7 +5,7 @@ from collections import OrderedDict
 import io
 import json
 import logging
-import os.path
+from pathlib import Path
 import tarfile
 import tempfile
 from typing import (
@@ -63,6 +63,10 @@ from lp.services.job.runner import BaseRunnableJob
 from lp.services.librarian.interfaces.client import LibrarianServerError
 from lp.services.librarian.utils import copy_and_close
 from lp.services.mail.sendmail import format_address_for_person
+from lp.soyuz.adapters.gomodparser import (
+    GoModParserException,
+    parse_go_mod,
+    )
 from lp.soyuz.enums import (
     ArchiveJobType,
     ArchiveRepositoryFormat,
@@ -223,10 +227,12 @@ class ScanException(Exception):
 class SourceArtifactMetadata:
     """Metadata extracted from a source package."""
 
-    def __init__(self, format: SourcePackageFileType, name: str, version: str):
+    def __init__(self, format: SourcePackageFileType, name: str, version: str,
+                 user_defined_fields: Optional[List[Tuple[str, str]]] = None):
         self.format = format
         self.name = name
         self.version = version
+        self.user_defined_fields = user_defined_fields
 
 
 class BinaryArtifactMetadata:
@@ -298,6 +304,11 @@ class CIBuildUploadJob(ArchiveJobDerived):
             BinaryPackageFormat.CONDA_V1,
             BinaryPackageFormat.CONDA_V2,
             },
+        ArchiveRepositoryFormat.GO_PROXY: {
+            SourcePackageFileType.GO_MODULE_INFO,
+            SourcePackageFileType.GO_MODULE_MOD,
+            SourcePackageFileType.GO_MODULE_ZIP,
+            },
         }
 
     @classmethod
@@ -366,38 +377,48 @@ class CIBuildUploadJob(ArchiveJobDerived):
     def target_channel(self):
         return self.metadata["target_channel"]
 
-    def _scanWheel(self, path: str) -> Optional[BinaryArtifactMetadata]:
-        try:
-            parsed_path = parse_wheel_filename(path)
-            wheel = Wheel(path)
-        except Exception as e:
-            logger.warning(
-                "Failed to scan %s as a Python wheel: %s",
-                os.path.basename(path), e)
-            return None
-        return BinaryArtifactMetadata(
-            format=BinaryPackageFormat.WHL,
-            name=wheel.name,
-            version=wheel.version,
-            summary=wheel.summary or "",
-            description=wheel.description,
-            architecturespecific="any" not in parsed_path.platform_tags,
-            homepage=wheel.home_page or "",
-        )
+    def _scanWheel(self, paths: Iterable[Path]) -> Dict[str, ArtifactMetadata]:
+        all_metadata = {}
+        for path in paths:
+            if not path.name.endswith(".whl"):
+                continue
+            try:
+                parsed_path = parse_wheel_filename(str(path))
+                wheel = Wheel(str(path))
+            except Exception as e:
+                logger.warning(
+                    "Failed to scan %s as a Python wheel: %s", path.name, e)
+                continue
+            logger.info("%s is a Python wheel", path.name)
+            all_metadata[path.name] = BinaryArtifactMetadata(
+                format=BinaryPackageFormat.WHL,
+                name=wheel.name,
+                version=wheel.version,
+                summary=wheel.summary or "",
+                description=wheel.description,
+                architecturespecific="any" not in parsed_path.platform_tags,
+                homepage=wheel.home_page or "",
+            )
+        return all_metadata
 
-    def _scanSDist(self, path: str) -> Optional[SourceArtifactMetadata]:
-        try:
-            sdist = SDist(path)
-        except Exception as e:
-            logger.warning(
-                "Failed to scan %s as a Python sdist: %s",
-                os.path.basename(path), e)
-            return None
-        return SourceArtifactMetadata(
-            format=SourcePackageFileType.SDIST,
-            name=sdist.name,
-            version=sdist.version,
-        )
+    def _scanSDist(self, paths: Iterable[Path]) -> Dict[str, ArtifactMetadata]:
+        all_metadata = {}
+        for path in paths:
+            if not path.name.endswith((".tar.gz", ".zip")):
+                continue
+            try:
+                sdist = SDist(str(path))
+            except Exception as e:
+                logger.warning(
+                    "Failed to scan %s as a Python sdist: %s", path.name, e)
+                continue
+            logger.info("%s is a Python sdist", path.name)
+            all_metadata[path.name] = SourceArtifactMetadata(
+                format=SourcePackageFileType.SDIST,
+                name=sdist.name,
+                version=sdist.version,
+            )
+        return all_metadata
 
     def _scanCondaMetadata(
         self, format: BinaryPackageFormat, index: Dict[Any, Any],
@@ -418,61 +439,127 @@ class CIBuildUploadJob(ArchiveJobDerived):
             user_defined_fields=[("subdir", index["subdir"])],
         )
 
-    def _scanCondaV1(self, path: str) -> Optional[BinaryArtifactMetadata]:
-        try:
-            with tarfile.open(path) as tar:
-                index = json.loads(
-                    tar.extractfile("info/index.json").read().decode())
-                about = json.loads(
-                    tar.extractfile("info/about.json").read().decode())
-        except Exception as e:
-            logger.warning(
-                "Failed to scan %s as a Conda v1 package: %s",
-                os.path.basename(path), e)
-            return None
-        return self._scanCondaMetadata(
-            BinaryPackageFormat.CONDA_V1, index, about)
-
-    def _scanCondaV2(self, path: str) -> Optional[BinaryArtifactMetadata]:
-        try:
-            with zipfile.ZipFile(path) as zipf:
-                base_name = os.path.basename(path)[:-len(".conda")]
-                info = io.BytesIO()
-                with zipf.open("info-%s.tar.zst" % base_name) as raw_info:
-                    zstandard.ZstdDecompressor().copy_stream(raw_info, info)
-                info.seek(0)
-                with tarfile.open(fileobj=info) as tar:
+    def _scanCondaV1(
+        self, paths: Iterable[Path]
+    ) -> Dict[str, ArtifactMetadata]:
+        all_metadata = {}
+        for path in paths:
+            if not path.name.endswith(".tar.bz2"):
+                continue
+            try:
+                with tarfile.open(str(path)) as tar:
                     index = json.loads(
                         tar.extractfile("info/index.json").read().decode())
                     about = json.loads(
                         tar.extractfile("info/about.json").read().decode())
-        except Exception as e:
-            logger.warning(
-                "Failed to scan %s as a Conda v2 package: %s",
-                os.path.basename(path), e)
-            return None
-        return self._scanCondaMetadata(
-            BinaryPackageFormat.CONDA_V2, index, about)
+            except Exception as e:
+                logger.warning(
+                    "Failed to scan %s as a Conda v1 package: %s",
+                    path.name, e)
+                continue
+            logger.info("%s is a Conda v1 package", path.name)
+            all_metadata[path.name] = self._scanCondaMetadata(
+                BinaryPackageFormat.CONDA_V1, index, about)
+        return all_metadata
 
-    def _scanFile(self, path: str) -> Optional[ArtifactMetadata]:
-        _scanners = (
-            (".whl", self._scanWheel),
-            (".tar.gz", self._scanSDist),
-            (".zip", self._scanSDist),
-            (".tar.bz2", self._scanCondaV1),
-            (".conda", self._scanCondaV2),
+    def _scanCondaV2(
+        self, paths: Iterable[Path]
+    ) -> Dict[str, ArtifactMetadata]:
+        all_metadata = {}
+        for path in paths:
+            if not path.name.endswith(".conda"):
+                continue
+            try:
+                with zipfile.ZipFile(str(path)) as zipf:
+                    info = io.BytesIO()
+                    with zipf.open("info-%s.tar.zst" % path.stem) as raw_info:
+                        zstandard.ZstdDecompressor().copy_stream(
+                            raw_info, info)
+                    info.seek(0)
+                    with tarfile.open(fileobj=info) as tar:
+                        index = json.loads(
+                            tar.extractfile("info/index.json").read().decode())
+                        about = json.loads(
+                            tar.extractfile("info/about.json").read().decode())
+            except Exception as e:
+                logger.warning(
+                    "Failed to scan %s as a Conda v2 package: %s",
+                    path.name, e)
+                continue
+            logger.info("%s is a Conda v2 package", path.name)
+            all_metadata[path.name] = self._scanCondaMetadata(
+                BinaryPackageFormat.CONDA_V2, index, about)
+        return all_metadata
+
+    def _scanGoMod(self, paths: Iterable[Path]) -> Dict[str, ArtifactMetadata]:
+        all_metadata = {}
+        for path in paths:
+            if not path.name.endswith(".mod"):
+                continue
+            info_path = path.parent / ("%s.info" % path.stem)
+            if not info_path.is_file():
+                logger.warning("%s has no corresponding .info file", path.name)
+                continue
+            zip_path = path.parent / ("%s.zip" % path.stem)
+            if not zip_path.is_file():
+                logger.warning("%s has no corresponding .zip file", path.name)
+                continue
+            with open(str(info_path)) as info_file:
+                try:
+                    version = json.load(info_file)["Version"]
+                except Exception as e:
+                    logger.warning(
+                        "Failed to load Go module version from %s: %s",
+                        info_path.name, e)
+            try:
+                with open(str(path)) as mod_file:
+                    module_path = parse_go_mod(mod_file.read())
+            except GoModParserException as e:
+                logger.warning(
+                    "Failed to scan %s as a Go module: %s",
+                    path.name, e)
+                continue
+            logger.info(
+                "(%s, %s, %s) are a Go module",
+                info_path.name, path.name, zip_path.name)
+            metadata_kwargs = {
+                "name": module_path,
+                "version": version,
+                # We should perhaps model this explicitly since it's used by
+                # the publisher, but this gives us an easy way to pass this
+                # through without needing to add a column to a large table
+                # that's only relevant to a tiny minority of rows.
+                "user_defined_fields": [("module-path", module_path)],
+                }
+            all_metadata[info_path.name] = SourceArtifactMetadata(
+                format=SourcePackageFileType.GO_MODULE_INFO,
+                **metadata_kwargs,
             )
-        found_scanner = False
-        for suffix, scanner in _scanners:
-            if path.endswith(suffix):
-                found_scanner = True
-                scanned = scanner(path)
-                if scanned is not None:
-                    return scanned
-        else:
-            if not found_scanner:
-                logger.info("No upload handler for %s", os.path.basename(path))
-            return None
+            all_metadata[path.name] = SourceArtifactMetadata(
+                format=SourcePackageFileType.GO_MODULE_MOD,
+                **metadata_kwargs,
+            )
+            all_metadata[zip_path.name] = SourceArtifactMetadata(
+                format=SourcePackageFileType.GO_MODULE_ZIP,
+                **metadata_kwargs,
+            )
+        return all_metadata
+
+    def _scanFiles(self, directory: Path) -> Dict[str, ArtifactMetadata]:
+        scanners = (
+            self._scanWheel,
+            self._scanSDist,
+            self._scanCondaV1,
+            self._scanCondaV2,
+            self._scanGoMod,
+            )
+        paths = [directory / child for child in directory.iterdir()]
+        all_metadata = OrderedDict()
+        for scanner in scanners:
+            for name, metadata in scanner(paths).items():
+                all_metadata[name] = metadata
+            paths = [path for path in paths if path.name not in all_metadata]
+        return all_metadata
 
     def _scanArtifacts(
         self, artifacts: Iterable[IRevisionStatusArtifact]
@@ -490,23 +577,26 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 self.archive.repository_format, set()))
         scanned = []
         with tempfile.TemporaryDirectory(prefix="ci-build-copy-job") as tmpdir:
+            tmpdirpath = Path(tmpdir)
+            artifact_by_name = {}
             for artifact in artifacts:
                 if artifact.artifact_type == RevisionStatusArtifactType.LOG:
                     continue
                 name = artifact.library_file.filename
-                contents = os.path.join(tmpdir, name)
+                contents = str(tmpdirpath / name)
                 artifact.library_file.open()
                 copy_and_close(artifact.library_file, open(contents, "wb"))
-                metadata = self._scanFile(contents)
-                if metadata is None:
-                    continue
+                artifact_by_name[name] = artifact
+            all_metadata = self._scanFiles(tmpdirpath)
+            for name, metadata in all_metadata.items():
                 if metadata.format not in allowed_formats:
                     logger.info(
                         "Skipping %s (not relevant to %s archives)",
                         name, self.archive.repository_format)
                     continue
                 scanned.append(
-                    ScannedArtifact(artifact=artifact, metadata=metadata))
+                    ScannedArtifact(
+                        artifact=artifact_by_name[name], metadata=metadata))
         return scanned
 
     def _uploadSources(self, scanned: Sequence[ScannedArtifact]) -> None:
@@ -522,15 +612,18 @@ class CIBuildUploadJob(ArchiveJobDerived):
         build_target = self.ci_build.git_repository.target
         spr = releases.get(build_target.sourcepackagename)
         if spr is None:
+            # Arbitrarily pick the first scanned artifact to provide
+            # additional metadata.  (This may need refinement in future.)
+            first_metadata = scanned[0].metadata
             spr = self.ci_build.createSourcePackageRelease(
                 distroseries=distroseries,
                 sourcepackagename=build_target.sourcepackagename,
                 # We don't have a good concept of source version here, but
-                # the data model demands one.  Arbitrarily pick the version
-                # of the first scanned artifact.
-                version=scanned[0].metadata.version,
+                # the data model demands one.
+                version=first_metadata.version,
                 creator=self.requester,
-                archive=self.archive)
+                archive=self.archive,
+                user_defined_fields=first_metadata.user_defined_fields)
         for scanned_artifact in scanned:
             metadata = scanned_artifact.metadata
             if not isinstance(metadata, SourceArtifactMetadata):

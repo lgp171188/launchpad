@@ -2,17 +2,21 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import os.path
+from pathlib import Path
+import shutil
 
 from debian.deb822 import Changes
 from fixtures import (
     FakeLogger,
     MockPatch,
     MockPatchObject,
+    TempDir,
     )
 from testtools.matchers import (
     ContainsDict,
     Equals,
     Is,
+    MatchesDict,
     MatchesSetwise,
     MatchesStructure,
     )
@@ -46,10 +50,8 @@ from lp.soyuz.enums import (
 from lp.soyuz.model.archivejob import (
     ArchiveJob,
     ArchiveJobDerived,
-    BinaryArtifactMetadata,
     CIBuildUploadJob,
     PackageUploadNotificationJob,
-    SourceArtifactMetadata,
     )
 from lp.soyuz.tests import datadir
 from lp.testing import (
@@ -240,7 +242,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         self.assertEqual(PackagePublishingPocket.RELEASE, job.target_pocket)
         self.assertEqual("edge", job.target_channel)
 
-    def test__scanFile_wheel_indep(self):
+    def test__scanFiles_wheel_indep(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
@@ -248,22 +250,25 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
-        path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
-        metadata = job._scanFile(datadir(path))
-        self.assertIsInstance(metadata, BinaryArtifactMetadata)
+        path = Path("wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl")
+        tmpdir = Path(self.useFixture(TempDir()).path)
+        shutil.copy2(datadir(str(path)), str(tmpdir))
+        all_metadata = job._scanFiles(tmpdir)
         self.assertThat(
-            metadata,
-            MatchesStructure(
-                format=Equals(BinaryPackageFormat.WHL),
-                name=Equals("wheel-indep"),
-                version=Equals("0.0.1"),
-                summary=Equals("Example description"),
-                description=Equals("Example long description\n"),
-                architecturespecific=Is(False),
-                homepage=Equals(""),
-                ))
+            all_metadata,
+            MatchesDict({
+                path.name: MatchesStructure(
+                    format=Equals(BinaryPackageFormat.WHL),
+                    name=Equals("wheel-indep"),
+                    version=Equals("0.0.1"),
+                    summary=Equals("Example description"),
+                    description=Equals("Example long description\n"),
+                    architecturespecific=Is(False),
+                    homepage=Equals(""),
+                    ),
+                }))
 
-    def test__scanFile_wheel_arch(self):
+    def test__scanFiles_wheel_arch(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
@@ -271,22 +276,26 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
-        path = "wheel-arch/dist/wheel_arch-0.0.1-cp310-cp310-linux_x86_64.whl"
-        metadata = job._scanFile(datadir(path))
-        self.assertIsInstance(metadata, BinaryArtifactMetadata)
+        path = Path(
+            "wheel-arch/dist/wheel_arch-0.0.1-cp310-cp310-linux_x86_64.whl")
+        tmpdir = Path(self.useFixture(TempDir()).path)
+        shutil.copy2(datadir(str(path)), str(tmpdir))
+        all_metadata = job._scanFiles(tmpdir)
         self.assertThat(
-            metadata,
-            MatchesStructure(
-                format=Equals(BinaryPackageFormat.WHL),
-                name=Equals("wheel-arch"),
-                version=Equals("0.0.1"),
-                summary=Equals("Example description"),
-                description=Equals("Example long description\n"),
-                architecturespecific=Is(True),
-                homepage=Equals("http://example.com/"),
-                ))
+            all_metadata,
+            MatchesDict({
+                path.name: MatchesStructure(
+                    format=Equals(BinaryPackageFormat.WHL),
+                    name=Equals("wheel-arch"),
+                    version=Equals("0.0.1"),
+                    summary=Equals("Example description"),
+                    description=Equals("Example long description\n"),
+                    architecturespecific=Is(True),
+                    homepage=Equals("http://example.com/"),
+                    ),
+                }))
 
-    def test__scanFile_sdist(self):
+    def test__scanFiles_sdist(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
@@ -294,18 +303,21 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
-        path = "wheel-arch/dist/wheel-arch-0.0.1.tar.gz"
-        metadata = job._scanFile(datadir(path))
-        self.assertIsInstance(metadata, SourceArtifactMetadata)
+        path = Path("wheel-arch/dist/wheel-arch-0.0.1.tar.gz")
+        tmpdir = Path(self.useFixture(TempDir()).path)
+        shutil.copy2(datadir(str(path)), str(tmpdir))
+        all_metadata = job._scanFiles(tmpdir)
         self.assertThat(
-            metadata,
-            MatchesStructure.byEquality(
-                format=SourcePackageFileType.SDIST,
-                name="wheel-arch",
-                version="0.0.1",
-                ))
+            all_metadata,
+            MatchesDict({
+                path.name: MatchesStructure.byEquality(
+                    format=SourcePackageFileType.SDIST,
+                    name="wheel-arch",
+                    version="0.0.1",
+                    ),
+                }))
 
-    def test__scanFile_conda_indep(self):
+    def test__scanFiles_conda_indep(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
@@ -313,23 +325,26 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
-        path = "conda-indep/dist/noarch/conda-indep-0.1-0.tar.bz2"
-        metadata = job._scanFile(datadir(path))
-        self.assertIsInstance(metadata, BinaryArtifactMetadata)
+        path = Path("conda-indep/dist/noarch/conda-indep-0.1-0.tar.bz2")
+        tmpdir = Path(self.useFixture(TempDir()).path)
+        shutil.copy2(datadir(str(path)), str(tmpdir))
+        all_metadata = job._scanFiles(tmpdir)
         self.assertThat(
-            metadata,
-            MatchesStructure(
-                format=Equals(BinaryPackageFormat.CONDA_V1),
-                name=Equals("conda-indep"),
-                version=Equals("0.1"),
-                summary=Equals("Example summary"),
-                description=Equals("Example description"),
-                architecturespecific=Is(False),
-                homepage=Equals(""),
-                user_defined_fields=Equals([("subdir", "noarch")]),
-                ))
+            all_metadata,
+            MatchesDict({
+                path.name: MatchesStructure(
+                    format=Equals(BinaryPackageFormat.CONDA_V1),
+                    name=Equals("conda-indep"),
+                    version=Equals("0.1"),
+                    summary=Equals("Example summary"),
+                    description=Equals("Example description"),
+                    architecturespecific=Is(False),
+                    homepage=Equals(""),
+                    user_defined_fields=Equals([("subdir", "noarch")]),
+                    ),
+                }))
 
-    def test__scanFile_conda_arch(self):
+    def test__scanFiles_conda_arch(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
@@ -337,23 +352,26 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
-        path = "conda-arch/dist/linux-64/conda-arch-0.1-0.tar.bz2"
-        metadata = job._scanFile(datadir(path))
-        self.assertIsInstance(metadata, BinaryArtifactMetadata)
+        path = Path("conda-arch/dist/linux-64/conda-arch-0.1-0.tar.bz2")
+        tmpdir = Path(self.useFixture(TempDir()).path)
+        shutil.copy2(datadir(str(path)), str(tmpdir))
+        all_metadata = job._scanFiles(tmpdir)
         self.assertThat(
-            metadata,
-            MatchesStructure(
-                format=Equals(BinaryPackageFormat.CONDA_V1),
-                name=Equals("conda-arch"),
-                version=Equals("0.1"),
-                summary=Equals("Example summary"),
-                description=Equals("Example description"),
-                architecturespecific=Is(True),
-                homepage=Equals("http://example.com/"),
-                user_defined_fields=Equals([("subdir", "linux-64")]),
-                ))
+            all_metadata,
+            MatchesDict({
+                path.name: MatchesStructure(
+                    format=Equals(BinaryPackageFormat.CONDA_V1),
+                    name=Equals("conda-arch"),
+                    version=Equals("0.1"),
+                    summary=Equals("Example summary"),
+                    description=Equals("Example description"),
+                    architecturespecific=Is(True),
+                    homepage=Equals("http://example.com/"),
+                    user_defined_fields=Equals([("subdir", "linux-64")]),
+                    ),
+                }))
 
-    def test__scanFile_conda_v2_indep(self):
+    def test__scanFiles_conda_v2_indep(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
@@ -361,23 +379,26 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
-        path = "conda-v2-indep/dist/noarch/conda-v2-indep-0.1-0.conda"
-        metadata = job._scanFile(datadir(path))
-        self.assertIsInstance(metadata, BinaryArtifactMetadata)
+        path = Path("conda-v2-indep/dist/noarch/conda-v2-indep-0.1-0.conda")
+        tmpdir = Path(self.useFixture(TempDir()).path)
+        shutil.copy2(datadir(str(path)), str(tmpdir))
+        all_metadata = job._scanFiles(tmpdir)
         self.assertThat(
-            metadata,
-            MatchesStructure(
-                format=Equals(BinaryPackageFormat.CONDA_V2),
-                name=Equals("conda-v2-indep"),
-                version=Equals("0.1"),
-                summary=Equals("Example summary"),
-                description=Equals("Example description"),
-                architecturespecific=Is(False),
-                homepage=Equals(""),
-                user_defined_fields=Equals([("subdir", "noarch")]),
-                ))
+            all_metadata,
+            MatchesDict({
+                path.name: MatchesStructure(
+                    format=Equals(BinaryPackageFormat.CONDA_V2),
+                    name=Equals("conda-v2-indep"),
+                    version=Equals("0.1"),
+                    summary=Equals("Example summary"),
+                    description=Equals("Example description"),
+                    architecturespecific=Is(False),
+                    homepage=Equals(""),
+                    user_defined_fields=Equals([("subdir", "noarch")]),
+                    ),
+                }))
 
-    def test__scanFile_conda_v2_arch(self):
+    def test__scanFiles_conda_v2_arch(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
             distribution=archive.distribution)
@@ -385,21 +406,64 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         job = CIBuildUploadJob.create(
             build, build.git_repository.owner, archive, distroseries,
             PackagePublishingPocket.RELEASE, target_channel="edge")
-        path = "conda-v2-arch/dist/linux-64/conda-v2-arch-0.1-0.conda"
-        metadata = job._scanFile(datadir(path))
-        self.assertIsInstance(metadata, BinaryArtifactMetadata)
+        path = Path("conda-v2-arch/dist/linux-64/conda-v2-arch-0.1-0.conda")
+        tmpdir = Path(self.useFixture(TempDir()).path)
+        shutil.copy2(datadir(str(path)), str(tmpdir))
+        all_metadata = job._scanFiles(tmpdir)
         self.assertThat(
-            metadata,
-            MatchesStructure(
-                format=Equals(BinaryPackageFormat.CONDA_V2),
-                name=Equals("conda-v2-arch"),
-                version=Equals("0.1"),
-                summary=Equals("Example summary"),
-                description=Equals("Example description"),
-                architecturespecific=Is(True),
-                homepage=Equals("http://example.com/"),
-                user_defined_fields=Equals([("subdir", "linux-64")]),
-                ))
+            all_metadata,
+            MatchesDict({
+                path.name: MatchesStructure(
+                    format=Equals(BinaryPackageFormat.CONDA_V2),
+                    name=Equals("conda-v2-arch"),
+                    version=Equals("0.1"),
+                    summary=Equals("Example summary"),
+                    description=Equals("Example description"),
+                    architecturespecific=Is(True),
+                    homepage=Equals("http://example.com/"),
+                    user_defined_fields=Equals([("subdir", "linux-64")]),
+                    ),
+                }))
+
+    def test__scanFiles_go(self):
+        self.useFixture(FakeLogger())
+        archive = self.factory.makeArchive()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        build = self.makeCIBuild(archive.distribution)
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="edge")
+        info_path = Path("go/dist/v0.0.1.info")
+        mod_path = Path("go/dist/v0.0.1.mod")
+        zip_path = Path("go/dist/v0.0.1.zip")
+        tmpdir = Path(self.useFixture(TempDir()).path)
+        shutil.copy2(datadir(str(info_path)), str(tmpdir))
+        shutil.copy2(datadir(str(mod_path)), str(tmpdir))
+        shutil.copy2(datadir(str(zip_path)), str(tmpdir))
+        all_metadata = job._scanFiles(tmpdir)
+        self.assertThat(
+            all_metadata,
+            MatchesDict({
+                info_path.name: MatchesStructure.byEquality(
+                    format=SourcePackageFileType.GO_MODULE_INFO,
+                    name="example.com/t",
+                    version="v0.0.1",
+                    user_defined_fields=[("module-path", "example.com/t")],
+                    ),
+                mod_path.name: MatchesStructure.byEquality(
+                    format=SourcePackageFileType.GO_MODULE_MOD,
+                    name="example.com/t",
+                    version="v0.0.1",
+                    user_defined_fields=[("module-path", "example.com/t")],
+                    ),
+                zip_path.name: MatchesStructure.byEquality(
+                    format=SourcePackageFileType.GO_MODULE_ZIP,
+                    name="example.com/t",
+                    version="v0.0.1",
+                    user_defined_fields=[("module-path", "example.com/t")],
+                    ),
+                }))
 
     def test_run_indep(self):
         archive = self.factory.makeArchive(
@@ -660,6 +724,65 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
                             filetype=BinaryPackageFileType.CONDA_V2))),
                 binarypackageformat=Equals(BinaryPackageFormat.CONDA_V2),
                 distroarchseries=Equals(dases[0]))))
+
+    def test_run_go(self):
+        self.useFixture(FakeLogger())
+        archive = self.factory.makeArchive(
+            repository_format=ArchiveRepositoryFormat.GO_PROXY)
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        dases = [
+            self.factory.makeDistroArchSeries(distroseries=distroseries)
+            for _ in range(2)]
+        build = self.makeCIBuild(
+            archive.distribution, distro_arch_series=dases[0])
+        report = build.getOrCreateRevisionStatusReport("build:0")
+        report.setLog(b"log data")
+        info_path = "go/dist/v0.0.1.info"
+        mod_path = "go/dist/v0.0.1.mod"
+        zip_path = "go/dist/v0.0.1.zip"
+        for path in (info_path, mod_path, zip_path):
+            with open(datadir(path), mode="rb") as f:
+                report.attach(name=os.path.basename(path), data=f.read())
+        artifacts = IStore(RevisionStatusArtifact).find(
+            RevisionStatusArtifact,
+            report=report,
+            artifact_type=RevisionStatusArtifactType.BINARY).order_by("id")
+        job = CIBuildUploadJob.create(
+            build, build.git_repository.owner, archive, distroseries,
+            PackagePublishingPocket.RELEASE, target_channel="edge")
+        transaction.commit()
+
+        with dbuser(job.config.dbuser):
+            JobRunner([job]).runAll()
+
+        self.assertThat(archive.getPublishedSources(), MatchesSetwise(
+            MatchesStructure(
+                sourcepackagename=MatchesStructure.byEquality(
+                    name=build.git_repository.target.name),
+                sourcepackagerelease=MatchesStructure(
+                    ci_build=Equals(build),
+                    sourcepackagename=MatchesStructure.byEquality(
+                        name=build.git_repository.target.name),
+                    version=Equals("v0.0.1"),
+                    format=Equals(SourcePackageType.CI_BUILD),
+                    architecturehintlist=Equals(""),
+                    creator=Equals(build.git_repository.owner),
+                    files=MatchesSetwise(
+                        MatchesStructure.byEquality(
+                            libraryfile=artifacts[0].library_file,
+                            filetype=SourcePackageFileType.GO_MODULE_INFO),
+                        MatchesStructure.byEquality(
+                            libraryfile=artifacts[1].library_file,
+                            filetype=SourcePackageFileType.GO_MODULE_MOD),
+                        MatchesStructure.byEquality(
+                            libraryfile=artifacts[2].library_file,
+                            filetype=SourcePackageFileType.GO_MODULE_ZIP)),
+                    user_defined_fields=Equals(
+                        [["module-path", "example.com/t"]])),
+                format=Equals(SourcePackageType.CI_BUILD),
+                distroseries=Equals(distroseries))))
+        self.assertContentEqual([], archive.getAllPublishedBinaries())
 
     def test_existing_source_and_binary_releases(self):
         # A `CIBuildUploadJob` can be run even if the build in question was
