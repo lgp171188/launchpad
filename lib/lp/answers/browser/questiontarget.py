@@ -261,7 +261,7 @@ class SearchQuestionsView(UserSupportLanguagesMixin, LaunchpadFormView):
         """Create a field to choose a set of languages.
 
         Create a specialized vocabulary based on the user's preferred
-        languages. If the user is anonymous, the languages submited in the
+        languages. If the user is anonymous, the languages submitted in the
         browser's request will be used.
         """
         languages = set(self.user_support_languages)
@@ -483,7 +483,7 @@ class SearchQuestionsView(UserSupportLanguagesMixin, LaunchpadFormView):
         """Return the questions corresponding to the search."""
         if self.search_params is None:
             # Search button wasn't clicked, use the default filter.
-            # Copy it so that it doesn't get mutated accidently.
+            # Copy it so that it doesn't get mutated accidentally.
             self.search_params = dict(self.getDefaultFilter())
 
         # The search parameters used is defined by the union of the fields

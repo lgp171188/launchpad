@@ -1,5 +1,5 @@
 
-Ensure that notifications are being displayed and propogated correctly.
+Ensure that notifications are being displayed and propagated correctly.
 
 This first page adds notifications itself before being rendered.
 
@@ -22,7 +22,7 @@ This first page adds notifications itself before being rendered.
     ...
 
 This second page adds notifications, and then redirects to another page.
-The notification messages should be propogated.
+The notification messages should be propagated.
 
     >>> result = http(r"""
     ... GET /+notificationtest2 HTTP/1.1

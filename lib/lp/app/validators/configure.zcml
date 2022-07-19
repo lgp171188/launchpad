@@ -10,7 +10,7 @@
     </class>
 
     <!-- We define the permissions here, but register the actual view
-    in the zcml overrides, becase we need to replace the standard Z3
+    in the zcml overrides, because we need to replace the standard Z3
     implementation with our own -->
     <class class="lp.app.validators.WidgetInputErrorView">
         <require permission="zope.Public"

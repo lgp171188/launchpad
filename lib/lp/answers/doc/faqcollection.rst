@@ -122,7 +122,7 @@ When no criteria are given, all the FAQs in the collection are returned.
 search_text
 ...........
 
-The first criteria is search_text. It will select FAQs matching the
+The first criterion is search_text. It will select FAQs matching the
 keywords specified. Keywords are looked for in the title, content and
 keywords field of the FAQ.
 
@@ -140,7 +140,7 @@ title, the second because it appears in the keywords.
 owner
 .....
 
-The other filtering criteria is 'owner'. It will select only FAQs that
+The other filtering criterion is 'owner'. It will select only FAQs that
 were created by the specified user.
 
     >>> for faq in collection.searchFAQs(owner=no_priv):
@@ -155,9 +155,8 @@ Again, the default sort order is most recent first.
 Combination
 ...........
 
-You can combine multiple criterias. Only FAQs matching all the criterias
-
- will be returned.
+You can combine multiple criteria. Only FAQs matching all the criteria
+will be returned.
 
     >>> for faq in collection.searchFAQs(
     ...         search_text=u'install', owner=no_priv):

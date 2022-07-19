@@ -29,7 +29,7 @@ class TestDateTimeWidget(TestCase):
         )
 
     def test_unconverted_message(self):
-        # The widget format checker relies on a particular mesage
+        # The widget format checker relies on a particular message
         # being returned. If that breaks, this will tell us.
         test_str = "2010-01-01 10:10:10"
         fmt = "%Y-%m-%d"

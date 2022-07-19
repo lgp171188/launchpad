@@ -72,7 +72,7 @@ Launchpad also helps you organise the social structure of your community with a 
                         <p class="screen-holder">
                             <img src="images/community/2.png" alt="Team Responsibility" />                        </p>
                         <p>
-                            Teams are interchangable with individuals in just about any role in Launchpad, such as <a href="bugs">bug triage</a>, owning a <a href="branch-hosting-tracking">branch of code</a> or publishing software packages through a <a href="ppa">PPA</a>. You can create as many teams as you want and even arrange a hierarchy of teams so that all the members of one team are also automatically members of another. Launchpad&rsquo;s team functionality is unique among tools for free software developers.
+                            Teams are interchangeable with individuals in just about any role in Launchpad, such as <a href="bugs">bug triage</a>, owning a <a href="branch-hosting-tracking">branch of code</a> or publishing software packages through a <a href="ppa">PPA</a>. You can create as many teams as you want and even arrange a hierarchy of teams so that all the members of one team are also automatically members of another. Launchpad&rsquo;s team functionality is unique among tools for free software developers.
                         </p>
                     </div>
                     <div class="clear"></div>

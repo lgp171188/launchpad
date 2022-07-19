@@ -53,7 +53,7 @@ class UsesAnswersDistributionVocabularyTestCase(TestCaseWithFactory):
     def test_contains_context_distro(self):
         # The vocabulary contains the context distro even it it does not
         # use Launchpad to track answers. The distro may have tracked answers
-        # in the past so it is a legitimate choise for historic data.
+        # in the past so it is a legitimate choice for historic data.
         distro_less_answers = self.factory.makeDistribution()
         vocabulary = UsesAnswersDistributionVocabulary(distro_less_answers)
         self.assertFalse(distro_less_answers.official_answers)

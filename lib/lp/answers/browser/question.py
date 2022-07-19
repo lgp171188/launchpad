@@ -224,7 +224,7 @@ class QuestionExtrasMenu(ApplicationMenu, QuestionLinksMixin):
 
 
 class QuestionSetContextMenu(ContextMenu):
-    """Context menu of actions that can be preformed upon a QuestionSet."""
+    """Context menu of actions that can be performed upon a QuestionSet."""
 
     usedfor = IQuestionSet
     links = ["findproduct", "finddistro"]
@@ -1116,7 +1116,7 @@ class QuestionWorkflowView(LaunchpadFormView, LinkFAQMixin):
         condition=canGiveInfo,
     )
     def giveinfo_action(self, action, data):
-        """Give additional informatin on the request."""
+        """Give additional information on the request."""
         self.context.giveInfo(data["message"])
         self._addNotificationAndHandlePossibleSubscription(
             _("Thanks for adding more information to your question."), data
@@ -1164,7 +1164,7 @@ class QuestionWorkflowView(LaunchpadFormView, LinkFAQMixin):
 
     @action(_("I Still Need an Answer"), name="reopen", condition=canReopen)
     def reopen_action(self, action, data):
-        """State that the problem is still occuring and provide new
+        """State that the problem is still occurring and provide new
         information about it."""
         self.context.reopen(data["message"])
         self._addNotificationAndHandlePossibleSubscription(

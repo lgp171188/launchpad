@@ -11,12 +11,12 @@ from lp.testing.publication import test_traverse
 
 
 class TestMacroNontraversability(TestCaseWithFactory):
-    """Macros should not be URL accessable (see bug 162868)."""
+    """Macros should not be URL accessible (see bug 162868)."""
 
     layer = DatabaseFunctionalLayer
 
     # Names of some macros that are tested to ensure that they're not
-    # accessable via URL.  This is not an exhaustive list.
+    # accessible via URL.  This is not an exhaustive list.
     macro_names = (
         "feed-entry-atom",
         "+base-layout-macros",
@@ -63,5 +63,5 @@ class TestMacroNontraversability(TestCaseWithFactory):
         for name in self.macro_names:
             self.assertTrue(
                 self.is_not_found("http://launchpad.test/" + name),
-                "macro name %r should not be URL accessable" % name,
+                "macro name %r should not be URL accessible" % name,
             )

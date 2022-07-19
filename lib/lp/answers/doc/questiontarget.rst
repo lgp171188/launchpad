@@ -545,7 +545,7 @@ copied to the question.
     ...     owner=sample_person)
     >>> target_bug = target.createBug(bug_params)
     >>> bug_message = target_bug.newMessage(
-    ...     owner=sample_person, subject="Opps, my mistake",
+    ...     owner=sample_person, subject="Oops, my mistake",
     ...     content="This is really a question.")
 
     >>> target_question = target.createQuestionFromBug(target_bug)

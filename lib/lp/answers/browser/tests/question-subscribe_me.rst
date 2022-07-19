@@ -54,7 +54,7 @@ Subscription is possible when providing an answer:
     True
     >>> firefox_question.unsubscribe(foo_bar, foo_bar)
 
-As when confirming an answer (altough this is probably not that common):
+As when confirming an answer (although this is probably not that common):
 
     >>> login('test@canonical.com')
     >>> workflow_harness.submit('confirm', dict(answer_id=-1, **form_data))

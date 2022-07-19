@@ -98,7 +98,7 @@ class TestSuggestionWidget(TestCaseWithFactory):
         )
 
     def test__renderSuggestionLabel_unsafe_content(self):
-        # Render sugestion label escapes unsafe markup.
+        # Render suggestion label escapes unsafe markup.
         structured_string = self.widget._renderSuggestionLabel(
             self.UNSAFE_OBJECT, 2
         )
