@@ -185,7 +185,7 @@ class QuestionUnsupportedLanguageNotificationTestCase(TestCase):
 
 
 class FakeQuestionNotification(QuestionNotification):
-    """A subclass to exercise question notifcations."""
+    """A subclass to exercise question notifications."""
 
     recipient_set = QuestionRecipientSet.ASKER_SUBSCRIBER
 

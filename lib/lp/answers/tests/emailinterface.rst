@@ -134,7 +134,7 @@ Message From the Question Owner
 -------------------------------
 
 When the owner sends a message on the question, the message is
-interpretated in three different manners based on the current question
+interpreted in three different manners based on the current question
 state.
 
 Open and Needs Information

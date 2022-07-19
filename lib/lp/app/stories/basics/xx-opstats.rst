@@ -309,11 +309,11 @@ to somewhere that doesn't exist.
 
     >>> no_db_overrides = """
     ...     [database]
-    ...     rw_main_primary: dbname=nonexistant
-    ...     rw_main_standby: dbname=nonexistant
+    ...     rw_main_primary: dbname=nonexistent
+    ...     rw_main_standby: dbname=nonexistent
     ...
     ...     [launchpad_session]
-    ...     dbname: nonexistant
+    ...     dbname: nonexistent
     ...     """
     >>> config.push('no_db', no_db_overrides)
 
@@ -355,7 +355,7 @@ But our database connections are broken.
     Traceback (most recent call last):
     ...
     storm.exceptions.DisconnectionError:
-    FATAL:  database "nonexistant" does not exist
+    FATAL:  database "nonexistent" does not exist
 
     >>> dummy = config.pop('no_db')
     >>> getUtility(IZStorm)._reset()

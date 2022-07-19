@@ -9,7 +9,7 @@ This is the base-class we should use for all View classes in Launchpad.
     >>> class MyView(LaunchpadView):
     ...
     ...     def initialize(self):
-    ...         print("Initalizing...")
+    ...         print("Initializing...")
     ...
     ...     def render(self):
     ...         return "rendered content"
@@ -29,7 +29,7 @@ Anonymous logged in, so view.account and view.user are None.
     None
 
     >>> result = view()
-    Initalizing...
+    Initializing...
 
     >>> print(result)
     rendered content

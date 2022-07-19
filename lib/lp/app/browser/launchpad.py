@@ -455,7 +455,7 @@ class ExceptionHierarchy(Hierarchy):
 
 @implementer(IBrowserPublisher, ITraversable)
 class Macro:
-    """Keeps templates that are registered as pages from being URL accessable.
+    """Keeps templates that are registered as pages from being URL accessible.
 
     The standard pattern in LP is to register templates that contain macros as
     views on all objects:
@@ -483,7 +483,7 @@ class Macro:
     templates in this way.
 
     This class was created in order to prevent macro templates from being
-    accessable via URL without having to make nontrivial changes to the many,
+    accessible via URL without having to make nontrivial changes to the many,
     many templates that use macros.  To use the class add a "class" parameter
     to macro template registrations:
 
@@ -1083,7 +1083,7 @@ class SoftTimeoutView(LaunchpadView):
 
         time.sleep(soft_timeout / 1000.0)
         time_to_generate_page = (time.time() - start_time) * 1000
-        # In case we didn't sleep enogh time, sleep a while longer to
+        # In case we didn't sleep enough time, sleep a while longer to
         # pass the soft timeout threshold.
         while time_to_generate_page < soft_timeout:
             time.sleep(0.1)
