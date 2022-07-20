@@ -1142,7 +1142,7 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
 
     @cachedproperty
     def _known_viewers(self):
-        """A set of known persons able to view the specifcation."""
+        """A set of known persons able to view the specification."""
         return set()
 
     def userCanView(self, user):

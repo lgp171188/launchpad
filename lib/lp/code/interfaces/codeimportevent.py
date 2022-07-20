@@ -4,20 +4,13 @@
 """Code import audit trail interfaces."""
 
 __all__ = [
-    'ICodeImportEvent',
-    'ICodeImportEventSet',
-    'ICodeImportEventToken',
-    ]
+    "ICodeImportEvent",
+    "ICodeImportEventSet",
+    "ICodeImportEventToken",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Datetime,
-    Int,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Choice, Datetime, Int
 
 from lp import _
 from lp.code.enums import CodeImportEventType
@@ -29,24 +22,37 @@ class ICodeImportEvent(Interface):
 
     id = Int(readonly=True, required=True)
     date_created = Datetime(
-        title=_("Date Created"), required=True, readonly=True)
+        title=_("Date Created"), required=True, readonly=True
+    )
 
     event_type = Choice(
-        title=_("Event"), required=True, readonly=True,
+        title=_("Event"),
+        required=True,
+        readonly=True,
         vocabulary=CodeImportEventType,
-        description=_("The type of this event."""))
+        description=_("The type of this event." ""),
+    )
     code_import = Choice(
-        title=_("Code Import"), required=False, readonly=True,
-        vocabulary='CodeImport',
-        description=_("The code import affected by this event."""))
+        title=_("Code Import"),
+        required=False,
+        readonly=True,
+        vocabulary="CodeImport",
+        description=_("The code import affected by this event." ""),
+    )
     person = PublicPersonChoice(
-        title=_("Person"), required=False, readonly=True,
-        vocabulary='Person',
-        description=_("The person that triggered this event."""))
+        title=_("Person"),
+        required=False,
+        readonly=True,
+        vocabulary="Person",
+        description=_("The person that triggered this event." ""),
+    )
     machine = Choice(
-        title=_("Machine"), required=False, readonly=True,
-        vocabulary='CodeImportMachine',
-        description=_("The import machine where this event occured."""))
+        title=_("Machine"),
+        required=False,
+        readonly=True,
+        vocabulary="CodeImportMachine",
+        description=_("The import machine where this event occured." ""),
+    )
 
     def items():
         """List of key-value tuples recording additional information.
@@ -66,8 +72,7 @@ class ICodeImportEventSet(Interface):
         """
 
     def getEventsForCodeImport(code_import):
-        """Iterate over `CodeImportEvent` objects associated to a CodeImport.
-        """
+        """Iterate over `CodeImportEvent`s associated with a CodeImport."""
 
     def newCreate(code_import, person):
         """Record the creation of a `CodeImport` object.

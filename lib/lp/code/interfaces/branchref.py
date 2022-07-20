@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'IBranchRef',
-    ]
+    "IBranchRef",
+]
 
 from zope.interface import Interface
 from zope.schema import Choice
@@ -19,7 +19,8 @@ class IBranchRef(Interface):
     """
 
     branch = Choice(
-        title=_('Series Branch'),
-        vocabulary='Branch',
+        title=_("Series Branch"),
+        vocabulary="Branch",
         readonly=True,
-        description=_("The Bazaar branch for this series."))
+        description=_("The Bazaar branch for this series."),
+    )

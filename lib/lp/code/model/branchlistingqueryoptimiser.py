@@ -4,8 +4,8 @@
 """Implementation of the BranchListingQueryOptimiser utility."""
 
 __all__ = [
-    'BranchListingQueryOptimiser',
-    ]
+    "BranchListingQueryOptimiser",
+]
 
 
 from zope.interface import implementer
@@ -34,11 +34,15 @@ class BranchListingQueryOptimiser:
         # objects.  These objects are then in the object cache, and not
         # queried again, but we only return the product series objects.
         return [
-            series for product, series in IStore(Product).find(
+            series
+            for product, series in IStore(Product)
+            .find(
                 (Product, ProductSeries),
                 ProductSeries.branchID.is_in(branch_ids),
-                ProductSeries.product == Product.id).order_by(
-                ProductSeries.name)]
+                ProductSeries.product == Product.id,
+            )
+            .order_by(ProductSeries.name)
+        ]
 
     @staticmethod
     def getOfficialSourcePackageLinksForBranches(branch_ids):
@@ -48,14 +52,19 @@ class BranchListingQueryOptimiser:
         # sourcepackagename objects.  For this reason, we get them all in the
         # one query, and only return the SeriesSourcePackageBranch objects.
         realise_objects = (
-            Distribution, DistroSeries, SourcePackageName,
-            SeriesSourcePackageBranch)
+            Distribution,
+            DistroSeries,
+            SourcePackageName,
+            SeriesSourcePackageBranch,
+        )
         return [
-            link for distro, ds, spn, link in IStore(Product).find(
+            link
+            for distro, ds, spn, link in IStore(Product).find(
                 realise_objects,
                 SeriesSourcePackageBranch.branchID.is_in(branch_ids),
-                SeriesSourcePackageBranch.sourcepackagename ==
-                SourcePackageName.id,
-                SeriesSourcePackageBranch.distroseries ==
-                DistroSeries.id,
-                DistroSeries.distribution == Distribution.id)]
+                SeriesSourcePackageBranch.sourcepackagename
+                == SourcePackageName.id,
+                SeriesSourcePackageBranch.distroseries == DistroSeries.id,
+                DistroSeries.distribution == Distribution.id,
+            )
+        ]

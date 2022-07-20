@@ -4,31 +4,18 @@
 """Git repository activity logs."""
 
 __all__ = [
-    'IGitActivity',
-    'IGitActivitySet',
-    ]
+    "IGitActivity",
+    "IGitActivitySet",
+]
 
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Datetime,
-    Dict,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Choice, Datetime, Dict, Int, Text, TextLine
 
 from lp import _
 from lp.code.enums import GitActivityType
 from lp.code.interfaces.gitrepository import IGitRepository
-from lp.services.fields import (
-    PersonChoice,
-    PublicPersonChoice,
-    )
+from lp.services.fields import PersonChoice, PublicPersonChoice
 
 
 class IGitActivity(Interface):
@@ -37,41 +24,65 @@ class IGitActivity(Interface):
     id = Int(title=_("ID"), readonly=True, required=True)
 
     repository = Reference(
-        title=_("Repository"), required=True, readonly=True,
+        title=_("Repository"),
+        required=True,
+        readonly=True,
         schema=IGitRepository,
-        description=_("The repository that this log entry is for."))
+        description=_("The repository that this log entry is for."),
+    )
 
     date_changed = Datetime(
-        title=_("Date changed"), required=True, readonly=True,
-        description=_("The time when this change happened."))
+        title=_("Date changed"),
+        required=True,
+        readonly=True,
+        description=_("The time when this change happened."),
+    )
 
     changer = PublicPersonChoice(
-        title=_("Changer"), required=True, readonly=True,
+        title=_("Changer"),
+        required=True,
+        readonly=True,
         vocabulary="ValidPerson",
-        description=_("The user who made this change."))
+        description=_("The user who made this change."),
+    )
 
     changee = PersonChoice(
-        title=_("Changee"), required=False, readonly=True,
+        title=_("Changee"),
+        required=False,
+        readonly=True,
         vocabulary="ValidPersonOrTeam",
-        description=_("The person or team that this change was applied to."))
+        description=_("The person or team that this change was applied to."),
+    )
 
     changee_description = Attribute(
-        "A human-readable description of the changee.")
+        "A human-readable description of the changee."
+    )
 
     what_changed = Choice(
-        title=_("What changed"), required=True, readonly=True,
+        title=_("What changed"),
+        required=True,
+        readonly=True,
         vocabulary=GitActivityType,
-        description=_("The property of the repository that changed."))
+        description=_("The property of the repository that changed."),
+    )
 
     old_value = Dict(
-        title=_("Old value"), required=False, readonly=True,
+        title=_("Old value"),
+        required=False,
+        readonly=True,
         description=_("Representation of the value before the change."),
-        key_type=TextLine(), value_type=Text())
+        key_type=TextLine(),
+        value_type=Text(),
+    )
 
     new_value = Dict(
-        title=_("New value"), required=False, readonly=True,
+        title=_("New value"),
+        required=False,
+        readonly=True,
         description=_("Representation of the value after the change."),
-        key_type=TextLine(), value_type=Text())
+        key_type=TextLine(),
+        value_type=Text(),
+    )
 
 
 class IGitActivitySet(Interface):

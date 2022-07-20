@@ -3,17 +3,13 @@
 
 """Tests of the branch interface."""
 
+import six
 from breezy.branch import format_registry as branch_format_registry
 from breezy.bzr import BzrProber
 from breezy.repository import format_registry as repo_format_registry
-import six
 
-from lp.code.bzr import (
-    BranchFormat,
-    ControlFormat,
-    RepositoryFormat,
-    )
 import lp.codehosting  # noqa: F401  # For plugins.
+from lp.code.bzr import BranchFormat, ControlFormat, RepositoryFormat
 from lp.testing import TestCase
 
 
@@ -38,9 +34,11 @@ class TestFormatSupport(TestCase):
         """Ensure the Breezy format marker list is a subset of Launchpad."""
         breezy_format_strings = set(breezy_formats)
         launchpad_format_strings = {
-            six.ensure_binary(format.title) for format in launchpad_enum.items}
+            six.ensure_binary(format.title) for format in launchpad_enum.items
+        }
         self.assertEqual(
-            set(), breezy_format_strings.difference(launchpad_format_strings))
+            set(), breezy_format_strings.difference(launchpad_format_strings)
+        )
 
     def test_repositoryDescriptions(self):
         self.checkDescriptions(RepositoryFormat)
@@ -54,7 +52,8 @@ class TestFormatSupport(TestCase):
     def checkDescriptions(self, format_enums):
         for item in format_enums.items:
             description = item.description
-            if description.endswith('\n'):
+            if description.endswith("\n"):
                 description = description[:-1]
-            self.assertTrue(len(description.split('\n')) == 1,
-                            item.description)
+            self.assertTrue(
+                len(description.split("\n")) == 1, item.description
+            )

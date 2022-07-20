@@ -4,66 +4,78 @@
 """Vocabularies related to Git access rules."""
 
 __all__ = [
-    'GitPermissionsVocabulary',
-    ]
+    "GitPermissionsVocabulary",
+]
 
-from zope.schema.vocabulary import (
-    SimpleTerm,
-    SimpleVocabulary,
-    )
+from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 
 from lp import _
 from lp.code.enums import GitPermissionType
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrule import (
-    describe_git_permissions,
     IGitRule,
     IGitRuleGrant,
-    )
-
+    describe_git_permissions,
+)
 
 branch_permissions = [
+    SimpleTerm(frozenset(), "cannot_push", _("Cannot push")),
     SimpleTerm(
-        frozenset(),
-        "cannot_push", _("Cannot push")),
+        frozenset(
+            {
+                GitPermissionType.CAN_PUSH,
+            }
+        ),
+        "can_push_existing",
+        _("Can push if the branch already exists"),
+    ),
     SimpleTerm(
-        frozenset({
-            GitPermissionType.CAN_PUSH,
-            }),
-        "can_push_existing", _("Can push if the branch already exists")),
+        frozenset(
+            {
+                GitPermissionType.CAN_CREATE,
+                GitPermissionType.CAN_PUSH,
+            }
+        ),
+        "can_push",
+        _("Can push"),
+    ),
     SimpleTerm(
-        frozenset({
-            GitPermissionType.CAN_CREATE,
-            GitPermissionType.CAN_PUSH,
-            }),
-        "can_push", _("Can push")),
-    SimpleTerm(
-        frozenset({
-            GitPermissionType.CAN_CREATE,
-            GitPermissionType.CAN_PUSH,
-            GitPermissionType.CAN_FORCE_PUSH,
-            }),
-        "can_force_push", _("Can force-push")),
-    ]
+        frozenset(
+            {
+                GitPermissionType.CAN_CREATE,
+                GitPermissionType.CAN_PUSH,
+                GitPermissionType.CAN_FORCE_PUSH,
+            }
+        ),
+        "can_force_push",
+        _("Can force-push"),
+    ),
+]
 
 
 tag_permissions = [
+    SimpleTerm(frozenset(), "cannot_create", _("Cannot create")),
     SimpleTerm(
-        frozenset(),
-        "cannot_create", _("Cannot create")),
+        frozenset(
+            {
+                GitPermissionType.CAN_CREATE,
+            }
+        ),
+        "can_create",
+        _("Can create"),
+    ),
     SimpleTerm(
-        frozenset({
-            GitPermissionType.CAN_CREATE,
-            }),
-        "can_create", _("Can create")),
-    SimpleTerm(
-        frozenset({
-            GitPermissionType.CAN_CREATE,
-            GitPermissionType.CAN_PUSH,
-            GitPermissionType.CAN_FORCE_PUSH,
-            }),
-        "can_move", _("Can move")),
-    ]
+        frozenset(
+            {
+                GitPermissionType.CAN_CREATE,
+                GitPermissionType.CAN_PUSH,
+                GitPermissionType.CAN_FORCE_PUSH,
+            }
+        ),
+        "can_move",
+        _("Can move"),
+    ),
+]
 
 
 class GitPermissionsVocabulary(SimpleVocabulary):
@@ -99,7 +111,11 @@ class GitPermissionsVocabulary(SimpleVocabulary):
                 # Supplement the vocabulary with any atypical permissions
                 # used by this grant.
                 names = describe_git_permissions(grant_permissions)
-                terms.append(SimpleTerm(
-                    grant_permissions,
-                    "custom", "Custom permissions: %s" % ", ".join(names)))
+                terms.append(
+                    SimpleTerm(
+                        grant_permissions,
+                        "custom",
+                        "Custom permissions: %s" % ", ".join(names),
+                    )
+                )
         super().__init__(terms)

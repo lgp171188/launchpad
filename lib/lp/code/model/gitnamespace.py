@@ -4,68 +4,66 @@
 """Implementations of `IGitNamespace`."""
 
 __all__ = [
-    'GitNamespaceSet',
-    'OCIProjectGitNamespace',
-    'PackageGitNamespace',
-    'PersonalGitNamespace',
-    'ProjectGitNamespace',
-    ]
+    "GitNamespaceSet",
+    "OCIProjectGitNamespace",
+    "PackageGitNamespace",
+    "PersonalGitNamespace",
+    "ProjectGitNamespace",
+]
 
-from lazr.lifecycle.event import ObjectCreatedEvent
 import six
-from storm.locals import And
 import transaction
+from lazr.lifecycle.event import ObjectCreatedEvent
+from storm.locals import And
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
-from zope.security.proxy import (
-    isinstance as zope_isinstance,
-    removeSecurityProxy,
-    )
+from zope.security.proxy import isinstance as zope_isinstance
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import (
     FREE_INFORMATION_TYPES,
-    InformationType,
     NON_EMBARGOED_INFORMATION_TYPES,
     PUBLIC_INFORMATION_TYPES,
-    )
+    InformationType,
+)
 from lp.app.interfaces.services import IService
 from lp.code.enums import (
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
     GitRepositoryStatus,
-    )
+)
 from lp.code.errors import (
     GitDefaultConflict,
     GitRepositoryCreationForbidden,
     GitRepositoryCreatorNotMemberOfOwnerTeam,
     GitRepositoryCreatorNotOwner,
     GitRepositoryExists,
-    )
+)
 from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.code.interfaces.gitnamespace import (
     IGitNamespace,
     IGitNamespacePolicy,
     IGitNamespaceSet,
-    )
+)
 from lp.code.interfaces.gitrepository import (
     IGitRepository,
     IGitRepositorySet,
     user_has_special_git_repository_access,
-    )
+)
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.code.model.branchnamespace import (
     BRANCH_POLICY_ALLOWED_TYPES,
     BRANCH_POLICY_DEFAULT_TYPES,
     BRANCH_POLICY_REQUIRED_GRANTS,
-    )
+)
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import IStore
 from lp.services.propertycache import get_property_cache
@@ -74,13 +72,22 @@ from lp.services.propertycache import get_property_cache
 class _BaseGitNamespace:
     """Common code for Git repository namespaces."""
 
-    def createRepository(self, repository_type, registrant, name,
-                         reviewer=None, information_type=None,
-                         date_created=DEFAULT, description=None,
-                         target_default=False, owner_default=False,
-                         with_hosting=False, async_hosting=False,
-                         status=GitRepositoryStatus.AVAILABLE,
-                         clone_from_repository=None):
+    def createRepository(
+        self,
+        repository_type,
+        registrant,
+        name,
+        reviewer=None,
+        information_type=None,
+        date_created=DEFAULT,
+        description=None,
+        target_default=False,
+        owner_default=False,
+        with_hosting=False,
+        async_hosting=False,
+        status=GitRepositoryStatus.AVAILABLE,
+        clone_from_repository=None,
+    ):
         """See `IGitNamespace`."""
         repository_set = getUtility(IGitRepositorySet)
 
@@ -93,9 +100,17 @@ class _BaseGitNamespace:
                 raise GitRepositoryCreationForbidden()
 
         repository = GitRepository(
-            repository_type, registrant, self.owner, self.target, name,
-            information_type, date_created, reviewer=reviewer,
-            description=description, status=status)
+            repository_type,
+            registrant,
+            self.owner,
+            self.target,
+            name,
+            information_type,
+            date_created,
+            reviewer=reviewer,
+            description=description,
+            status=status,
+        )
         repository._reconcileAccess()
 
         # The owner of the repository should also be automatically subscribed
@@ -107,7 +122,8 @@ class _BaseGitNamespace:
             BranchSubscriptionNotificationLevel.NOEMAIL,
             BranchSubscriptionDiffSize.NODIFF,
             CodeReviewNotificationLevel.FULL,
-            registrant)
+            registrant,
+        )
 
         notify(ObjectCreatedEvent(repository))
 
@@ -115,7 +131,8 @@ class _BaseGitNamespace:
             repository_set.setDefaultRepository(self.target, repository)
         if owner_default:
             repository_set.setDefaultRepositoryForOwner(
-                self.owner, self.target, repository, registrant)
+                self.owner, self.target, repository, registrant
+            )
 
         if with_hosting:
             # Ask the hosting service to create the repository on disk.  Do
@@ -138,7 +155,8 @@ class _BaseGitNamespace:
                 clone_from_repository = repository.getClonedFrom()
             repository._createOnHostingService(
                 clone_from_repository=clone_from_repository,
-                async_create=async_hosting)
+                async_create=async_hosting,
+            )
 
         return repository
 
@@ -163,13 +181,15 @@ class _BaseGitNamespace:
         if not registrant.inTeam(owner):
             if owner.is_team:
                 raise GitRepositoryCreatorNotMemberOfOwnerTeam(
-                    registrant, owner)
+                    registrant, owner
+                )
             else:
                 raise GitRepositoryCreatorNotOwner(registrant, owner)
 
         if not self.getAllowedInformationTypes(registrant):
             raise GitRepositoryCreationForbidden(
-                'You cannot create Git repositories in "%s"' % self.name)
+                'You cannot create Git repositories in "%s"' % self.name
+            )
 
     def validateRepositoryName(self, name):
         """See `IGitNamespace`."""
@@ -177,7 +197,7 @@ class _BaseGitNamespace:
         # schema-validated form, so we validate the repository name here to
         # give a nicer error message than 'ERROR: new row for relation
         # "gitrepository" violates check constraint "valid_name"...'.
-        IGitRepository['name'].validate(six.ensure_text(name))
+        IGitRepository["name"].validate(six.ensure_text(name))
 
         existing_repository = self.getByName(name)
         if existing_repository is not None:
@@ -186,19 +206,29 @@ class _BaseGitNamespace:
     def validateDefaultFlags(self, repository):
         """See `IGitNamespace`."""
         repository_set = getUtility(IGitRepositorySet)
-        if (repository.target_default and self.has_defaults and
-                self.target != repository.target):
+        if (
+            repository.target_default
+            and self.has_defaults
+            and self.target != repository.target
+        ):
             existing = repository_set.getDefaultRepository(self.target)
             if existing is not None:
                 raise GitDefaultConflict(existing, self.target)
-        if (repository.owner_default and self.has_defaults and
-            (self.owner != repository.owner or
-             self.target != repository.target)):
+        if (
+            repository.owner_default
+            and self.has_defaults
+            and (
+                self.owner != repository.owner
+                or self.target != repository.target
+            )
+        ):
             existing = repository_set.getDefaultRepositoryForOwner(
-                self.owner, self.target)
+                self.owner, self.target
+            )
             if existing is not None:
                 raise GitDefaultConflict(
-                    existing, self.target, owner=self.owner)
+                    existing, self.target, owner=self.owner
+                )
 
     def validateMove(self, repository, mover, name=None):
         """See `IGitNamespace`."""
@@ -208,8 +238,9 @@ class _BaseGitNamespace:
         self.validateRegistrant(mover, repository)
         self.validateDefaultFlags(repository)
 
-    def moveRepository(self, repository, mover, new_name=None,
-                       rename_if_necessary=False):
+    def moveRepository(
+        self, repository, mover, new_name=None, rename_if_necessary=False
+    ):
         """See `IGitNamespace`."""
         # Check to see if the repository is already in this namespace with
         # this name.
@@ -235,13 +266,20 @@ class _BaseGitNamespace:
     def getRepositories(self):
         """See `IGitNamespace`."""
         return IStore(GitRepository).find(
-            GitRepository, self._getRepositoriesClause())
+            GitRepository, self._getRepositoriesClause()
+        )
 
     def getByName(self, repository_name, default=None):
         """See `IGitNamespace`."""
-        match = IStore(GitRepository).find(
-            GitRepository, self._getRepositoriesClause(),
-            GitRepository.name == repository_name).one()
+        match = (
+            IStore(GitRepository)
+            .find(
+                GitRepository,
+                self._getRepositoriesClause(),
+                GitRepository.name == repository_name,
+            )
+            .one()
+        )
         if match is None:
             match = default
         return match
@@ -300,7 +338,8 @@ class PersonalGitNamespace(_BaseGitNamespace):
             GitRepository.project == None,
             GitRepository.distribution == None,
             GitRepository.sourcepackagename == None,
-            GitRepository.oci_project == None)
+            GitRepository.oci_project == None,
+        )
 
     # Marker for references to Git URL layouts: ##GITNAMESPACE##
     @property
@@ -325,7 +364,8 @@ class PersonalGitNamespace(_BaseGitNamespace):
     def _is_private_team(self):
         return (
             self.owner.is_team
-            and self.owner.visibility == PersonVisibility.PRIVATE)
+            and self.owner.visibility == PersonVisibility.PRIVATE
+        )
 
     def getAllowedInformationTypes(self, who=None):
         """See `IGitNamespace`."""
@@ -346,7 +386,8 @@ class PersonalGitNamespace(_BaseGitNamespace):
         """See `IGitNamespacePolicy`."""
         if this.namespace != self:
             raise AssertionError(
-                "Namespace of %s is not %s." % (this.unique_name, self.name))
+                "Namespace of %s is not %s." % (this.unique_name, self.name)
+            )
         return this.name == other.name
 
     @property
@@ -382,13 +423,14 @@ class ProjectGitNamespace(_BaseGitNamespace):
     def _getRepositoriesClause(self):
         return And(
             GitRepository.owner == self.owner,
-            GitRepository.project == self.project)
+            GitRepository.project == self.project,
+        )
 
     # Marker for references to Git URL layouts: ##GITNAMESPACE##
     @property
     def name(self):
         """See `IGitNamespace`."""
-        return '~%s/%s' % (self.owner.name, self.project.name)
+        return "~%s/%s" % (self.owner.name, self.project.name)
 
     @property
     def target(self):
@@ -412,13 +454,20 @@ class ProjectGitNamespace(_BaseGitNamespace):
         # have full access to an information type.  If it's required and the
         # user doesn't hold it, no information types are legal.
         required_grant = BRANCH_POLICY_REQUIRED_GRANTS[
-            self.project.branch_sharing_policy]
-        if (required_grant is not None
-            and not getUtility(IService, 'sharing').checkPillarAccess(
-                [self.project], required_grant, self.owner)
-            and (who is None
-                or not getUtility(IService, 'sharing').checkPillarAccess(
-                    [self.project], required_grant, who))):
+            self.project.branch_sharing_policy
+        ]
+        if (
+            required_grant is not None
+            and not getUtility(IService, "sharing").checkPillarAccess(
+                [self.project], required_grant, self.owner
+            )
+            and (
+                who is None
+                or not getUtility(IService, "sharing").checkPillarAccess(
+                    [self.project], required_grant, who
+                )
+            )
+        ):
             return []
 
         return BRANCH_POLICY_ALLOWED_TYPES[self.project.branch_sharing_policy]
@@ -426,7 +475,8 @@ class ProjectGitNamespace(_BaseGitNamespace):
     def getDefaultInformationType(self, who=None):
         """See `IGitNamespace`."""
         default_type = BRANCH_POLICY_DEFAULT_TYPES[
-            self.project.branch_sharing_policy]
+            self.project.branch_sharing_policy
+        ]
         if default_type not in self.getAllowedInformationTypes(who):
             return None
         return default_type
@@ -439,7 +489,8 @@ class ProjectGitNamespace(_BaseGitNamespace):
         # if any (active?) series is linked to this project.
         if this.namespace != self:
             raise AssertionError(
-                "Namespace of %s is not %s." % (this.unique_name, self.name))
+                "Namespace of %s is not %s." % (this.unique_name, self.name)
+            )
         other_namespace = other.namespace
         if zope_isinstance(other_namespace, ProjectGitNamespace):
             return self.target == other_namespace.target
@@ -454,7 +505,8 @@ class ProjectGitNamespace(_BaseGitNamespace):
     def assignKarma(self, person, action_name, date_created=None):
         """See `IGitNamespacePolicy`."""
         return person.assignKarma(
-            action_name, product=self.project, datecreated=date_created)
+            action_name, product=self.project, datecreated=date_created
+        )
 
 
 @implementer(IGitNamespace, IGitNamespacePolicy)
@@ -481,15 +533,19 @@ class PackageGitNamespace(_BaseGitNamespace):
         return And(
             GitRepository.owner == self.owner,
             GitRepository.distribution == dsp.distribution,
-            GitRepository.sourcepackagename == dsp.sourcepackagename)
+            GitRepository.sourcepackagename == dsp.sourcepackagename,
+        )
 
     # Marker for references to Git URL layouts: ##GITNAMESPACE##
     @property
     def name(self):
         """See `IGitNamespace`."""
         dsp = self.distro_source_package
-        return '~%s/%s/+source/%s' % (
-            self.owner.name, dsp.distribution.name, dsp.sourcepackagename.name)
+        return "~%s/%s/+source/%s" % (
+            self.owner.name,
+            dsp.distribution.name,
+            dsp.sourcepackagename.name,
+        )
 
     @property
     def target(self):
@@ -515,13 +571,20 @@ class PackageGitNamespace(_BaseGitNamespace):
         # user doesn't hold it, no information types are legal.
         distribution = self.distro_source_package.distribution
         required_grant = BRANCH_POLICY_REQUIRED_GRANTS[
-            distribution.branch_sharing_policy]
-        if (required_grant is not None
-            and not getUtility(IService, 'sharing').checkPillarAccess(
-                [distribution], required_grant, self.owner)
-            and (who is None
-                or not getUtility(IService, 'sharing').checkPillarAccess(
-                    [distribution], required_grant, who))):
+            distribution.branch_sharing_policy
+        ]
+        if (
+            required_grant is not None
+            and not getUtility(IService, "sharing").checkPillarAccess(
+                [distribution], required_grant, self.owner
+            )
+            and (
+                who is None
+                or not getUtility(IService, "sharing").checkPillarAccess(
+                    [distribution], required_grant, who
+                )
+            )
+        ):
             return []
 
         return BRANCH_POLICY_ALLOWED_TYPES[distribution.branch_sharing_policy]
@@ -529,7 +592,8 @@ class PackageGitNamespace(_BaseGitNamespace):
     def getDefaultInformationType(self, who=None):
         """See `IGitNamespace`."""
         default_type = BRANCH_POLICY_DEFAULT_TYPES[
-            self.distro_source_package.distribution.branch_sharing_policy]
+            self.distro_source_package.distribution.branch_sharing_policy
+        ]
         if default_type not in self.getAllowedInformationTypes(who):
             return None
         return default_type
@@ -542,7 +606,8 @@ class PackageGitNamespace(_BaseGitNamespace):
         # if any (active?) series links this package to that project.
         if this.namespace != self:
             raise AssertionError(
-                "Namespace of %s is not %s." % (this.unique_name, self.name))
+                "Namespace of %s is not %s." % (this.unique_name, self.name)
+            )
         other_namespace = other.namespace
         if zope_isinstance(other_namespace, PackageGitNamespace):
             return self.target == other_namespace.target
@@ -553,14 +618,18 @@ class PackageGitNamespace(_BaseGitNamespace):
     def collection(self):
         """See `IGitNamespacePolicy`."""
         return getUtility(IAllGitRepositories).inDistributionSourcePackage(
-            self.distro_source_package)
+            self.distro_source_package
+        )
 
     def assignKarma(self, person, action_name, date_created=None):
         """See `IGitNamespacePolicy`."""
         dsp = self.distro_source_package
         return person.assignKarma(
-            action_name, distribution=dsp.distribution,
-            sourcepackagename=dsp.sourcepackagename, datecreated=date_created)
+            action_name,
+            distribution=dsp.distribution,
+            sourcepackagename=dsp.sourcepackagename,
+            datecreated=date_created,
+        )
 
     def __eq__(self, other):
         """See `IGitNamespace`."""
@@ -568,8 +637,9 @@ class PackageGitNamespace(_BaseGitNamespace):
         self_dsp = self.distro_source_package
         other_dsp = IDistributionSourcePackage(other.target)
         return (
-            self_dsp.distribution == other_dsp.distribution and
-            self_dsp.sourcepackagename == other_dsp.sourcepackagename)
+            self_dsp.distribution == other_dsp.distribution
+            and self_dsp.sourcepackagename == other_dsp.sourcepackagename
+        )
 
 
 @implementer(IGitNamespace, IGitNamespacePolicy)
@@ -594,15 +664,19 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
     def _getRepositoriesClause(self):
         return And(
             GitRepository.owner == self.owner,
-            GitRepository.oci_project == self.oci_project)
+            GitRepository.oci_project == self.oci_project,
+        )
 
     # Marker for references to Git URL layouts: ##GITNAMESPACE##
     @property
     def name(self):
         """See `IGitNamespace`."""
         ocip = self.oci_project
-        return '~%s/%s/+oci/%s' % (
-            self.owner.name, ocip.pillar.name, ocip.name)
+        return "~%s/%s/+oci/%s" % (
+            self.owner.name,
+            ocip.pillar.name,
+            ocip.name,
+        )
 
     @property
     def target(self):
@@ -644,7 +718,8 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
         # if any (active?) series links this OCI Project to that project.
         if this.namespace != self:
             raise AssertionError(
-                "Namespace of %s is not %s." % (this.unique_name, self.name))
+                "Namespace of %s is not %s." % (this.unique_name, self.name)
+            )
         other_namespace = other.namespace
         if zope_isinstance(other_namespace, OCIProjectGitNamespace):
             return self.target == other_namespace.target
@@ -654,8 +729,7 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
     @property
     def collection(self):
         """See `IGitNamespacePolicy`."""
-        return getUtility(IAllGitRepositories).inOCIProject(
-            self.oci_project)
+        return getUtility(IAllGitRepositories).inOCIProject(self.oci_project)
 
     def assignKarma(self, person, action_name, date_created=None):
         """See `IGitNamespacePolicy`."""
@@ -667,24 +741,36 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
 class GitNamespaceSet:
     """Only implementation of `IGitNamespaceSet`."""
 
-    def get(self, person, project=None, distribution=None,
-            sourcepackagename=None, oci_project=None):
+    def get(
+        self,
+        person,
+        project=None,
+        distribution=None,
+        sourcepackagename=None,
+        oci_project=None,
+    ):
         """See `IGitNamespaceSet`."""
         # XXX cjwatson 2019-11-25: This will eventually need project-based
         # OCIProject support.
         if project is not None:
-            assert (distribution is None and sourcepackagename is None
-                    and oci_project is None), (
+            assert (
+                distribution is None
+                and sourcepackagename is None
+                and oci_project is None
+            ), (
                 "project implies no distribution, sourcepackagename"
                 " or oci_project. "
                 "Got %r, %r, %r, %r."
-                % (project, distribution, sourcepackagename, oci_project))
+                % (project, distribution, sourcepackagename, oci_project)
+            )
             return ProjectGitNamespace(person, project)
         elif distribution is not None:
-            assert (sourcepackagename is not None), (
-                "sourcepackagename must be set. Got %r." % (sourcepackagename))
+            assert (
+                sourcepackagename is not None
+            ), "sourcepackagename must be set. Got %r." % (sourcepackagename)
             return PackageGitNamespace(
-                person, distribution.getSourcePackage(sourcepackagename))
+                person, distribution.getSourcePackage(sourcepackagename)
+            )
         elif oci_project is not None:
             return OCIProjectGitNamespace(person, oci_project)
         else:

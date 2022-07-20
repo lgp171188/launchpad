@@ -4,10 +4,7 @@
 """Tests for BranchURIField."""
 
 from lp.app.validators import LaunchpadValidationError
-from lp.code.interfaces.branch import (
-    BranchURIField,
-    get_blacklisted_hostnames,
-    )
+from lp.code.interfaces.branch import BranchURIField, get_blacklisted_hostnames
 from lp.services.config import config
 from lp.services.webapp.vhosts import allvhosts
 from lp.testing import TestCase
@@ -26,6 +23,7 @@ class TestBranchURIField(TestCase):
     change. Further, branches cannot be on the root of a site, nor are users
     allowed to register a branch that is already being mirrored.
     """
+
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -34,7 +32,7 @@ class TestBranchURIField(TestCase):
 
     def listLaunchpadDomains(self):
         """Iterate over each of the configured domains of Launchpad."""
-        mainsite = allvhosts.configs['mainsite'].hostname
+        mainsite = allvhosts.configs["mainsite"].hostname
         for vhost in allvhosts.configs.values():
             if vhost.hostname.endswith(mainsite):
                 yield vhost.hostname
@@ -47,19 +45,22 @@ class TestBranchURIField(TestCase):
         # Branches on the supermirror are already registered, so there is no
         # need to register them, again.
         self.assertInvalid(
-            '%s/~user/+junk/branch' % config.codehosting.supermirror_root)
+            "%s/~user/+junk/branch" % config.codehosting.supermirror_root
+        )
 
     def test_notFromLaunchpad(self):
         # URIs from Launchpad itself are invalid, no matter what the
         # subdomain.
         for domain in self.listLaunchpadDomains():
-            self.assertInvalid('http://%s/user/+junk/branch' % domain)
+            self.assertInvalid("http://%s/user/+junk/branch" % domain)
 
     def test_get_blacklisted_hostnames(self):
         self.pushConfig(
-            'codehosting', blacklisted_hostnames='localhost,127.0.0.1')
+            "codehosting", blacklisted_hostnames="localhost,127.0.0.1"
+        )
         self.assertEqual(
-            ['localhost', '127.0.0.1'], get_blacklisted_hostnames())
+            ["localhost", "127.0.0.1"], get_blacklisted_hostnames()
+        )
 
     def test_get_blacklisted_hostnames_empty(self):
         self.assertEqual([], get_blacklisted_hostnames())
@@ -68,6 +69,7 @@ class TestBranchURIField(TestCase):
         # URIs with hosts in config.codehosting.blacklisted_hostnames are not
         # allowed to be registered.
         self.pushConfig(
-            'codehosting', blacklisted_hostnames='localhost,127.0.0.1')
-        self.assertInvalid('http://localhost/foo/bar')
-        self.assertInvalid('http://127.0.0.1/foo/bar')
+            "codehosting", blacklisted_hostnames="localhost,127.0.0.1"
+        )
+        self.assertInvalid("http://localhost/foo/bar")
+        self.assertInvalid("http://127.0.0.1/foo/bar")

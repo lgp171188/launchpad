@@ -4,10 +4,7 @@
 """Unit tests for BranchSubscriptions."""
 
 from lp.app.enums import InformationType
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.views import create_initialized_view
 
@@ -19,32 +16,41 @@ class TestBranchSubscriptionAddOtherView(TestCaseWithFactory):
     def test_cannot_subscribe_open_team_to_private_branch(self):
         owner = self.factory.makePerson()
         branch = self.factory.makeBranch(
-            information_type=InformationType.USERDATA, owner=owner)
+            information_type=InformationType.USERDATA, owner=owner
+        )
         team = self.factory.makeTeam()
         form = {
-            'field.person': team.name,
-            'field.notification_level': 'NOEMAIL',
-            'field.max_diff_lines': 'NODIFF',
-            'field.review_level': 'NOEMAIL',
-            'field.actions.subscribe_action': 'Subscribe'}
+            "field.person": team.name,
+            "field.notification_level": "NOEMAIL",
+            "field.max_diff_lines": "NODIFF",
+            "field.review_level": "NOEMAIL",
+            "field.actions.subscribe_action": "Subscribe",
+        }
         with person_logged_in(owner):
             view = create_initialized_view(
-                branch, '+addsubscriber', principal=owner, form=form)
+                branch, "+addsubscriber", principal=owner, form=form
+            )
             self.assertContentEqual(
-                ['Open and delegated teams cannot be subscribed to private '
-                'branches.'], view.errors)
+                [
+                    "Open and delegated teams cannot be subscribed to private "
+                    "branches."
+                ],
+                view.errors,
+            )
 
     def test_can_subscribe_open_team_to_public_branch(self):
         owner = self.factory.makePerson()
         branch = self.factory.makeBranch(owner=owner)
         team = self.factory.makeTeam()
         form = {
-            'field.person': team.name,
-            'field.notification_level': 'NOEMAIL',
-            'field.max_diff_lines': 'NODIFF',
-            'field.review_level': 'NOEMAIL',
-            'field.actions.subscribe_action': 'Subscribe'}
+            "field.person": team.name,
+            "field.notification_level": "NOEMAIL",
+            "field.max_diff_lines": "NODIFF",
+            "field.review_level": "NOEMAIL",
+            "field.actions.subscribe_action": "Subscribe",
+        }
         with person_logged_in(owner):
             view = create_initialized_view(
-                branch, '+addsubscriber', principal=owner, form=form)
+                branch, "+addsubscriber", principal=owner, form=form
+            )
             self.assertContentEqual([], view.errors)

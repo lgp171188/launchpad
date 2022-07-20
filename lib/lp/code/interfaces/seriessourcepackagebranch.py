@@ -4,20 +4,13 @@
 """Interface for linking source packages in distroseries to branches."""
 
 __all__ = [
-    'IFindOfficialBranchLinks',
-    'ISeriesSourcePackageBranch',
-    ]
+    "IFindOfficialBranchLinks",
+    "ISeriesSourcePackageBranch",
+]
 
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Datetime,
-    Int,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Choice, Datetime, Int
 
 from lp import _
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -29,35 +22,45 @@ class ISeriesSourcePackageBranch(Interface):
     id = Int()
 
     distroseries = Choice(
-        title=_("Series"), required=True, readonly=True,
-        vocabulary='DistroSeries')
+        title=_("Series"),
+        required=True,
+        readonly=True,
+        vocabulary="DistroSeries",
+    )
 
     pocket = Choice(
-        title=_("Pocket"), required=True, readonly=True,
-        vocabulary=PackagePublishingPocket)
+        title=_("Pocket"),
+        required=True,
+        readonly=True,
+        vocabulary=PackagePublishingPocket,
+    )
 
-    sourcepackage = Attribute('The source package')
+    sourcepackage = Attribute("The source package")
 
-    suite_sourcepackage = Attribute('The suite source package')
+    suite_sourcepackage = Attribute("The suite source package")
 
     sourcepackagename = Choice(
-        title=_("Package"), required=True,
-        readonly=True, vocabulary='SourcePackageName')
+        title=_("Package"),
+        required=True,
+        readonly=True,
+        vocabulary="SourcePackageName",
+    )
 
-    branchID = Attribute('The ID of the branch.')
+    branchID = Attribute("The ID of the branch.")
     branch = Choice(
-        title=_("Branch"), vocabulary="Branch", required=True, readonly=True)
+        title=_("Branch"), vocabulary="Branch", required=True, readonly=True
+    )
 
     registrant = Attribute("The person who registered this link.")
 
     date_created = Datetime(
         title=_("When the branch was linked to the distribution suite."),
-        readonly=True)
+        readonly=True,
+    )
 
 
 class IFindOfficialBranchLinks(Interface):
-    """Find the links for official branches for pockets on source packages.
-    """
+    """Find the links for official branches for pockets on source packages."""
 
     def findForBranch(branch):
         """Get the links to source packages from a branch.

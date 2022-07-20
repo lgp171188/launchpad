@@ -67,7 +67,7 @@ class TestSpecificationSubscription(TestCaseWithFactory):
         self.assertTrue(subscription.canBeUnsubscribedByUser(subscriber))
 
     # XXX Abel Deuring 2012-11-21, bug=1081677
-    # The two tests below show a weird inconsisteny: Sometimes
+    # The two tests below show a weird inconsistency: Sometimes
     # subscribed_by can unsubscribe, sometimes not.
     def test_subscriber_cannot_unsubscribe_user_from_public_spec(self):
         # For public specifications, the one who subscribed the

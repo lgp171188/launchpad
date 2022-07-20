@@ -269,7 +269,7 @@ is useful for experimenting with the dot layout using production data.
 Distro blueprints
 -----------------
 
-Let's look at blueprints targetting a distribution, rather than a product.
+Let's look at blueprints targeting a distribution, rather than a product.
 We create two blueprints in `ubuntu`.
 
     >>> owner_browser.open('http://blueprints.launchpad.test/ubuntu/+addspec')

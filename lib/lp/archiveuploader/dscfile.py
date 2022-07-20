@@ -903,7 +903,7 @@ def find_changelog(source_dir, logger):
         # Policy requires debian/changelog to always exist.
         raise UploadError("No changelog file found.")
 
-    # Move the changelog file out of the package direcotry
+    # Move the changelog file out of the package directory
     logger.debug("Found changelog")
     with open(changelog_file, "rb") as changelog:
         return changelog.read()

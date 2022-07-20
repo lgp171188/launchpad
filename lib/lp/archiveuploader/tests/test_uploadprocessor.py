@@ -1235,7 +1235,7 @@ class TestUploadProcessor(StatsMixin, TestUploadProcessorBase):
         )
         self.assertEqual(queue_items.count(), 1)
 
-        # Single source uploads also get their corrsponding builds created
+        # Single source uploads also get their corresponding builds created
         # at upload-time. 'foocomm' only builds in 'i386', thus only one
         # build gets created.
         foocomm_source = partner_archive.getPublishedSources(

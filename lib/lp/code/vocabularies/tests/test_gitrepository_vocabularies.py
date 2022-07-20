@@ -8,7 +8,7 @@ from zope.component import getUtility
 from lp.code.vocabularies.gitrepository import (
     GitRepositoryRestrictedOnProductVocabulary,
     GitRepositoryVocabulary,
-    )
+)
 from lp.registry.interfaces.product import IProductSet
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -29,17 +29,22 @@ class TestGitRepositoryVocabulary(TestCaseWithFactory):
         sprocket = self.factory.makeProduct(name="sprocket")
         scotty = self.factory.makePerson(name="scotty")
         self.factory.makeGitRepository(
-            owner=scotty, target=widget, name="fizzbuzz")
+            owner=scotty, target=widget, name="fizzbuzz"
+        )
         self.factory.makeGitRepository(
-            owner=scotty, target=widget, name="mountain")
+            owner=scotty, target=widget, name="mountain"
+        )
         self.factory.makeGitRepository(
-            owner=scotty, target=sprocket, name="fizzbuzz")
+            owner=scotty, target=sprocket, name="fizzbuzz"
+        )
 
     def test_fizzbuzzRepositories(self):
         """Return repositories that match the string 'fizzbuzz'."""
         results = self.vocab.searchForTerms("fizzbuzz")
         expected = [
-            "~scotty/sprocket/+git/fizzbuzz", "~scotty/widget/+git/fizzbuzz"]
+            "~scotty/sprocket/+git/fizzbuzz",
+            "~scotty/widget/+git/fizzbuzz",
+        ]
         repository_names = sorted(repository.token for repository in results)
         self.assertEqual(expected, repository_names)
 
@@ -48,7 +53,8 @@ class TestGitRepositoryVocabulary(TestCaseWithFactory):
         # as the result.
         term = self.vocab.getTermByToken("mountain")
         self.assertEqual(
-            "~scotty/widget/+git/mountain", term.value.unique_name)
+            "~scotty/widget/+git/mountain", term.value.unique_name
+        )
 
     def test_multipleQueryResult(self):
         # If there are more than one search result, a LookupError is still
@@ -70,20 +76,23 @@ class TestRestrictedGitRepositoryVocabularyOnProduct(TestCaseWithFactory):
         super().setUp()
         self._createRepositories()
         self.vocab = GitRepositoryRestrictedOnProductVocabulary(
-            context=self._getVocabRestriction())
+            context=self._getVocabRestriction()
+        )
 
     def _getVocabRestriction(self):
         """Restrict using the widget product."""
-        return getUtility(IProductSet).getByName('widget')
+        return getUtility(IProductSet).getByName("widget")
 
     def _createRepositories(self):
-        test_product = self.factory.makeProduct(name='widget')
-        other_product = self.factory.makeProduct(name='sprocket')
-        person = self.factory.makePerson(name='scotty')
+        test_product = self.factory.makeProduct(name="widget")
+        other_product = self.factory.makeProduct(name="sprocket")
+        person = self.factory.makePerson(name="scotty")
         self.factory.makeGitRepository(
-            owner=person, target=test_product, name='mountain')
+            owner=person, target=test_product, name="mountain"
+        )
         self.factory.makeGitRepository(
-            owner=person, target=other_product, name='mountain')
+            owner=person, target=other_product, name="mountain"
+        )
         self.product = test_product
         self.other_product = test_product
 
@@ -92,19 +101,20 @@ class TestRestrictedGitRepositoryVocabularyOnProduct(TestCaseWithFactory):
 
         The result set should not show ~scotty/sprocket/mountain.
         """
-        results = self.vocab.searchForTerms('mountain')
-        expected = ['~scotty/widget/+git/mountain']
+        results = self.vocab.searchForTerms("mountain")
+        expected = ["~scotty/widget/+git/mountain"]
         repo_names = sorted(repo.token for repo in results)
         self.assertEqual(expected, repo_names)
 
     def test_singleQueryResult(self):
         # If there is a single search result that matches, use that
         # as the result.
-        term = self.vocab.getTermByToken('mountain')
+        term = self.vocab.getTermByToken("mountain")
         self.assertEqual(
-            '~scotty/widget/+git/mountain', term.value.unique_name)
+            "~scotty/widget/+git/mountain", term.value.unique_name
+        )
 
     def test_multipleQueryResult(self):
         # If there are more than one search result, a LookupError is still
         # raised.
-        self.assertRaises(LookupError, self.vocab.getTermByToken, 'scotty')
+        self.assertRaises(LookupError, self.vocab.getTermByToken, "scotty")

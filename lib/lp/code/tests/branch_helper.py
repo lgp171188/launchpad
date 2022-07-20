@@ -4,8 +4,8 @@
 """Helper methods for branch tests and pagetest."""
 
 __all__ = [
-    'reset_all_branch_last_modified',
-    ]
+    "reset_all_branch_last_modified",
+]
 
 from datetime import datetime
 
@@ -21,7 +21,7 @@ def reset_all_branch_last_modified(last_modified=datetime.now(pytz.UTC)):
 
     DO NOT use this in a non-pagetest.
     """
-    with celebrity_logged_in('admin'):
+    with celebrity_logged_in("admin"):
         branches = getUtility(IAllBranches).getBranches()
         for branch in branches:
             branch.date_last_modified = last_modified

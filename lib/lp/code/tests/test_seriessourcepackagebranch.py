@@ -12,10 +12,10 @@ from zope.component import getUtility
 from lp.code.interfaces.seriessourcepackagebranch import (
     IFindOfficialBranchLinks,
     ISeriesSourcePackageBranch,
-    )
+)
 from lp.code.model.seriessourcepackagebranch import (
     SeriesSourcePackageBranchSet,
-    )
+)
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -35,8 +35,13 @@ class TestSeriesSourcePackageBranch(TestCaseWithFactory):
         branch = self.factory.makeAnyBranch()
         now = datetime.now(pytz.UTC)
         sspb = SeriesSourcePackageBranchSet.new(
-            distroseries, PackagePublishingPocket.RELEASE, sourcepackagename,
-            branch, registrant, now)
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            sourcepackagename,
+            branch,
+            registrant,
+            now,
+        )
         self.assertEqual(distroseries, sspb.distroseries)
         self.assertEqual(PackagePublishingPocket.RELEASE, sspb.pocket)
         self.assertEqual(sourcepackagename, sspb.sourcepackagename)
@@ -52,8 +57,12 @@ class TestSeriesSourcePackageBranch(TestCaseWithFactory):
         registrant = self.factory.makePerson()
         branch = self.factory.makeAnyBranch()
         sspb = SeriesSourcePackageBranchSet.new(
-            distroseries, PackagePublishingPocket.RELEASE, sourcepackagename,
-            branch, registrant)
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            sourcepackagename,
+            branch,
+            registrant,
+        )
         transaction.commit()
         self.assertIsNot(sspb.id, None)
 
@@ -65,8 +74,12 @@ class TestSeriesSourcePackageBranch(TestCaseWithFactory):
         registrant = self.factory.makePerson()
         branch = self.factory.makeAnyBranch()
         sspb = SeriesSourcePackageBranchSet.new(
-            distroseries, PackagePublishingPocket.RELEASE, sourcepackagename,
-            branch, registrant)
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            sourcepackagename,
+            branch,
+            registrant,
+        )
         self.assertProvides(sspb, ISeriesSourcePackageBranch)
 
     def test_findForSourcePackage(self):
@@ -83,8 +96,12 @@ class TestSeriesSourcePackageBranch(TestCaseWithFactory):
         branch = self.factory.makePackageBranch()
         package = branch.sourcepackage
         SeriesSourcePackageBranchSet.new(
-            package.distroseries, PackagePublishingPocket.RELEASE,
-            package.sourcepackagename, branch, self.factory.makePerson())
+            package.distroseries,
+            PackagePublishingPocket.RELEASE,
+            package.sourcepackagename,
+            branch,
+            self.factory.makePerson(),
+        )
         find_branch_links = getUtility(IFindOfficialBranchLinks)
         [link] = list(find_branch_links.findForSourcePackage(package))
         self.assertEqual(PackagePublishingPocket.RELEASE, link.pocket)
@@ -99,8 +116,12 @@ class TestSeriesSourcePackageBranch(TestCaseWithFactory):
         branch = self.factory.makePackageBranch()
         package = branch.sourcepackage
         SeriesSourcePackageBranchSet.new(
-            package.distroseries, PackagePublishingPocket.RELEASE,
-            package.sourcepackagename, branch, self.factory.makePerson())
+            package.distroseries,
+            PackagePublishingPocket.RELEASE,
+            package.sourcepackagename,
+            branch,
+            self.factory.makePerson(),
+        )
         find_branch_links = getUtility(IFindOfficialBranchLinks)
         [link] = list(find_branch_links.findForBranch(branch))
         self.assertEqual(PackagePublishingPocket.RELEASE, link.pocket)
@@ -114,10 +135,16 @@ class TestSeriesSourcePackageBranch(TestCaseWithFactory):
         branch = self.factory.makePackageBranch()
         package = branch.sourcepackage
         SeriesSourcePackageBranchSet.new(
-            package.distroseries, PackagePublishingPocket.RELEASE,
-            package.sourcepackagename, branch, self.factory.makePerson())
+            package.distroseries,
+            PackagePublishingPocket.RELEASE,
+            package.sourcepackagename,
+            branch,
+            self.factory.makePerson(),
+        )
         SeriesSourcePackageBranchSet.delete(
-            package, PackagePublishingPocket.RELEASE)
+            package, PackagePublishingPocket.RELEASE
+        )
         find_branch_links = getUtility(IFindOfficialBranchLinks)
         self.assertEqual(
-            [], list(find_branch_links.findForSourcePackage(package)))
+            [], list(find_branch_links.findForSourcePackage(package))
+        )

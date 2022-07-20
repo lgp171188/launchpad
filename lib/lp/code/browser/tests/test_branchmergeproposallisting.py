@@ -6,9 +6,9 @@
 from datetime import datetime
 
 import pytz
+import transaction
 from testtools.content import text_content
 from testtools.matchers import LessThan
-import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -17,11 +17,8 @@ from lp.app.interfaces.services import IService
 from lp.code.browser.branchmergeproposallisting import (
     ActiveReviewsView,
     BranchMergeProposalListingItem,
-    )
-from lp.code.enums import (
-    BranchMergeProposalStatus,
-    CodeReviewVote,
-    )
+)
+from lp.code.enums import BranchMergeProposalStatus, CodeReviewVote
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.registry.enums import SharingPermission
@@ -30,22 +27,18 @@ from lp.services.database.sqlbase import flush_database_caches
 from lp.services.webapp.interfaces import IOpenLaunchBag
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import (
-    admin_logged_in,
     ANONYMOUS,
     BrowserTestCase,
+    StormStatementRecorder,
+    TestCaseWithFactory,
+    admin_logged_in,
     login,
     login_person,
     person_logged_in,
-    StormStatementRecorder,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+)
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.views import create_initialized_view
-
 
 _default = object()
 
@@ -68,11 +61,13 @@ class BzrMixin:
             kwargs["product"] = target
         return self.factory.makeStackedOnBranchChain(**kwargs)
 
-    def _makeBranchMergeProposal(self, target=None, merge_target=None,
-                                 **kwargs):
+    def _makeBranchMergeProposal(
+        self, target=None, merge_target=None, **kwargs
+    ):
         # This only handles projects at the moment.
         return self.factory.makeBranchMergeProposal(
-            product=target, target_branch=merge_target, **kwargs)
+            product=target, target_branch=merge_target, **kwargs
+        )
 
 
 class GitMixin:
@@ -91,7 +86,8 @@ class GitMixin:
 
     def _makeBranchMergeProposal(self, merge_target=None, **kwargs):
         return self.factory.makeBranchMergeProposalForGit(
-            target_ref=merge_target, **kwargs)
+            target_ref=merge_target, **kwargs
+        )
 
 
 class TestProposalVoteSummaryMixin:
@@ -104,26 +100,33 @@ class TestProposalVoteSummaryMixin:
         # permissions on the merge proposals for adding comments.
         super().setUp(user="admin@canonical.com")
 
-    def _createComment(self, proposal, reviewer=None, vote=None,
-                       comment=_default):
+    def _createComment(
+        self, proposal, reviewer=None, vote=None, comment=_default
+    ):
         """Create a comment on the merge proposal."""
         if reviewer is None:
             reviewer = self.factory.makePerson()
         if comment is _default:
             comment = self.factory.getUniqueString()
         proposal.createComment(
-            owner=reviewer, subject=self.factory.getUniqueString('subject'),
-            content=comment, vote=vote)
+            owner=reviewer,
+            subject=self.factory.getUniqueString("subject"),
+            content=comment,
+            vote=vote,
+        )
 
     def _get_vote_summary(self, proposal):
         """Return the vote summary string for the proposal."""
         view = create_initialized_view(
-            proposal.merge_source.owner, '+merges', rootsite='code')
+            proposal.merge_source.owner, "+merges", rootsite="code"
+        )
         batch_navigator = view.proposals
         # There will only be one item in the list of proposals.
         [listing_item] = batch_navigator.proposals
-        return (list(listing_item.vote_summary_items),
-                listing_item.comment_count)
+        return (
+            list(listing_item.vote_summary_items),
+            listing_item.comment_count,
+        )
 
     def test_no_votes_or_comments(self):
         # If there are no votes or comments, then we show that.
@@ -144,11 +147,20 @@ class TestProposalVoteSummaryMixin:
         # If there are no comments we don't show a count.
         proposal = self._makeBranchMergeProposal()
         self._createComment(
-            proposal, vote=CodeReviewVote.APPROVE, comment=None)
+            proposal, vote=CodeReviewVote.APPROVE, comment=None
+        )
         summary, comment_count = self._get_vote_summary(proposal)
         self.assertEqual(
-            [{'name': 'APPROVE', 'title':'Approve', 'count':1,
-              'reviewers': ''}], summary)
+            [
+                {
+                    "name": "APPROVE",
+                    "title": "Approve",
+                    "count": 1,
+                    "reviewers": "",
+                }
+            ],
+            summary,
+        )
         self.assertEqual(0, comment_count)
 
     def test_vote_with_comment(self):
@@ -157,8 +169,16 @@ class TestProposalVoteSummaryMixin:
         self._createComment(proposal, vote=CodeReviewVote.APPROVE)
         summary, comment_count = self._get_vote_summary(proposal)
         self.assertEqual(
-            [{'name': 'APPROVE', 'title':'Approve', 'count':1,
-              'reviewers': ''}], summary)
+            [
+                {
+                    "name": "APPROVE",
+                    "title": "Approve",
+                    "count": 1,
+                    "reviewers": "",
+                }
+            ],
+            summary,
+        )
         self.assertEqual(1, comment_count)
 
     def test_disapproval(self):
@@ -167,8 +187,16 @@ class TestProposalVoteSummaryMixin:
         self._createComment(proposal, vote=CodeReviewVote.DISAPPROVE)
         summary, comment_count = self._get_vote_summary(proposal)
         self.assertEqual(
-            [{'name': 'DISAPPROVE', 'title':'Disapprove', 'count':1,
-              'reviewers': ''}], summary)
+            [
+                {
+                    "name": "DISAPPROVE",
+                    "title": "Disapprove",
+                    "count": 1,
+                    "reviewers": "",
+                }
+            ],
+            summary,
+        )
         self.assertEqual(1, comment_count)
 
     def test_abstain(self):
@@ -178,8 +206,16 @@ class TestProposalVoteSummaryMixin:
         self._createComment(proposal, vote=CodeReviewVote.ABSTAIN)
         summary, comment_count = self._get_vote_summary(proposal)
         self.assertEqual(
-            [{'name': 'ABSTAIN', 'title':'Abstain', 'count':1,
-              'reviewers': ''}], summary)
+            [
+                {
+                    "name": "ABSTAIN",
+                    "title": "Abstain",
+                    "count": 1,
+                    "reviewers": "",
+                }
+            ],
+            summary,
+        )
         self.assertEqual(1, comment_count)
 
     def test_vote_ranking(self):
@@ -189,20 +225,48 @@ class TestProposalVoteSummaryMixin:
         self._createComment(proposal, vote=CodeReviewVote.APPROVE)
         summary, comment_count = self._get_vote_summary(proposal)
         self.assertEqual(
-            [{'name': 'APPROVE', 'title':'Approve', 'count':1,
-              'reviewers': ''},
-             {'name': 'DISAPPROVE', 'title':'Disapprove', 'count':1,
-              'reviewers': ''}], summary)
+            [
+                {
+                    "name": "APPROVE",
+                    "title": "Approve",
+                    "count": 1,
+                    "reviewers": "",
+                },
+                {
+                    "name": "DISAPPROVE",
+                    "title": "Disapprove",
+                    "count": 1,
+                    "reviewers": "",
+                },
+            ],
+            summary,
+        )
         self.assertEqual(2, comment_count)
         self._createComment(proposal, vote=CodeReviewVote.ABSTAIN)
         summary, comment_count = self._get_vote_summary(proposal)
         self.assertEqual(
-            [{'name': 'APPROVE', 'title':'Approve', 'count':1,
-              'reviewers': ''},
-             {'name': 'ABSTAIN', 'title':'Abstain', 'count':1,
-              'reviewers': ''},
-             {'name': 'DISAPPROVE', 'title':'Disapprove', 'count':1,
-              'reviewers': ''}], summary)
+            [
+                {
+                    "name": "APPROVE",
+                    "title": "Approve",
+                    "count": 1,
+                    "reviewers": "",
+                },
+                {
+                    "name": "ABSTAIN",
+                    "title": "Abstain",
+                    "count": 1,
+                    "reviewers": "",
+                },
+                {
+                    "name": "DISAPPROVE",
+                    "title": "Disapprove",
+                    "count": 1,
+                    "reviewers": "",
+                },
+            ],
+            summary,
+        )
         self.assertEqual(3, comment_count)
 
     def test_multiple_votes_for_type(self):
@@ -213,27 +277,47 @@ class TestProposalVoteSummaryMixin:
         self._createComment(proposal, vote=CodeReviewVote.DISAPPROVE)
         self._createComment(proposal, vote=CodeReviewVote.APPROVE)
         self._createComment(
-            proposal, vote=CodeReviewVote.ABSTAIN, comment=None)
+            proposal, vote=CodeReviewVote.ABSTAIN, comment=None
+        )
         self._createComment(
-            proposal, vote=CodeReviewVote.APPROVE, comment=None)
+            proposal, vote=CodeReviewVote.APPROVE, comment=None
+        )
         summary, comment_count = self._get_vote_summary(proposal)
         self.assertEqual(
-            [{'name': 'APPROVE', 'title':'Approve', 'count':3,
-              'reviewers': ''},
-             {'name': 'ABSTAIN', 'title':'Abstain', 'count':1,
-              'reviewers': ''},
-             {'name': 'DISAPPROVE', 'title':'Disapprove', 'count':2,
-              'reviewers': ''}], summary)
+            [
+                {
+                    "name": "APPROVE",
+                    "title": "Approve",
+                    "count": 3,
+                    "reviewers": "",
+                },
+                {
+                    "name": "ABSTAIN",
+                    "title": "Abstain",
+                    "count": 1,
+                    "reviewers": "",
+                },
+                {
+                    "name": "DISAPPROVE",
+                    "title": "Disapprove",
+                    "count": 2,
+                    "reviewers": "",
+                },
+            ],
+            summary,
+        )
         self.assertEqual(4, comment_count)
 
 
 class TestProposalVoteSummaryBzr(
-    TestProposalVoteSummaryMixin, BzrMixin, TestCaseWithFactory):
+    TestProposalVoteSummaryMixin, BzrMixin, TestCaseWithFactory
+):
     """Test the vote summary for Bazaar."""
 
 
 class TestProposalVoteSummaryGit(
-    TestProposalVoteSummaryMixin, GitMixin, TestCaseWithFactory):
+    TestProposalVoteSummaryMixin, GitMixin, TestCaseWithFactory
+):
     """Test the vote summary for Git."""
 
 
@@ -247,17 +331,18 @@ class TestMergesOnce(BrowserTestCase):
             target.product.development_focus.branch = target
             identity = target.identity
         self.factory.makeBranchMergeProposal(target_branch=target)
-        view = self.getViewBrowser(target, '+merges', rootsite='code')
+        view = self.getViewBrowser(target, "+merges", rootsite="code")
         self.assertIn(identity, view.contents)
 
     def test_product_git(self):
         [target] = self.factory.makeGitRefs()
         with person_logged_in(target.target.owner):
             getUtility(IGitRepositorySet).setDefaultRepository(
-                target.target, target.repository)
+                target.target, target.repository
+            )
             identity = target.identity
         self.factory.makeBranchMergeProposalForGit(target_ref=target)
-        view = self.getViewBrowser(target, '+merges', rootsite='code')
+        view = self.getViewBrowser(target, "+merges", rootsite="code")
         self.assertIn(identity, view.contents)
 
 
@@ -275,31 +360,43 @@ class BranchMergeProposalListingTestMixin:
 
     def makeBzrMergeProposal(self):
         information_type = (
-            InformationType.USERDATA if self.supports_privacy else None)
+            InformationType.USERDATA if self.supports_privacy else None
+        )
         target = self.bzr_branch
         if target is None:
             target = self.factory.makeBranch(
-                target=self.bzr_target, information_type=information_type)
+                target=self.bzr_target, information_type=information_type
+            )
         source = self.factory.makeBranch(
-            target=self.bzr_target, owner=self.owner,
-            information_type=information_type)
+            target=self.bzr_target,
+            owner=self.owner,
+            information_type=information_type,
+        )
         return self.factory.makeBranchMergeProposal(
-            source_branch=source, target_branch=target,
-            set_state=BranchMergeProposalStatus.NEEDS_REVIEW)
+            source_branch=source,
+            target_branch=target,
+            set_state=BranchMergeProposalStatus.NEEDS_REVIEW,
+        )
 
     def makeGitMergeProposal(self):
         information_type = (
-            InformationType.USERDATA if self.supports_privacy else None)
+            InformationType.USERDATA if self.supports_privacy else None
+        )
         target = self.git_ref
         if target is None:
             [target] = self.factory.makeGitRefs(
-                target=self.git_target, information_type=information_type)
+                target=self.git_target, information_type=information_type
+            )
         [source] = self.factory.makeGitRefs(
-            target=self.git_target, owner=self.owner,
-            information_type=information_type)
+            target=self.git_target,
+            owner=self.owner,
+            information_type=information_type,
+        )
         return self.factory.makeBranchMergeProposalForGit(
-            source_ref=source, target_ref=target,
-            set_state=BranchMergeProposalStatus.NEEDS_REVIEW)
+            source_ref=source,
+            target_ref=target,
+            set_state=BranchMergeProposalStatus.NEEDS_REVIEW,
+        )
 
     def getExpectedLabel(self):
         if self.label_describes_context:
@@ -316,7 +413,8 @@ class BranchMergeProposalListingTestMixin:
             url = canonical_url(bmp, force_local_path=True)
             label = self.getExpectedLabel()
         browser = self.getViewBrowser(
-            self.context, self.view_name, rootsite='code', user=self.user)
+            self.context, self.view_name, rootsite="code", user=self.user
+        )
         self.assertIn(label, browser.contents)
         self.assertIn(url, browser.contents)
 
@@ -329,7 +427,8 @@ class BranchMergeProposalListingTestMixin:
             url = canonical_url(bmp, force_local_path=True)
             label = self.getExpectedLabel()
         browser = self.getViewBrowser(
-            self.context, self.view_name, rootsite='code', user=self.user)
+            self.context, self.view_name, rootsite="code", user=self.user
+        )
         self.assertIn(label, browser.contents)
         self.assertIn(url, browser.contents)
 
@@ -342,7 +441,8 @@ class BranchMergeProposalListingTestMixin:
         flush_database_caches()
         with StormStatementRecorder() as recorder:
             self.getViewBrowser(
-                self.context, self.view_name, rootsite='code', user=self.user)
+                self.context, self.view_name, rootsite="code", user=self.user
+            )
         self.assertThat(recorder, HasQueryCount(LessThan(51)))
 
     def test_query_count_git(self):
@@ -354,60 +454,76 @@ class BranchMergeProposalListingTestMixin:
         flush_database_caches()
         with StormStatementRecorder() as recorder:
             self.getViewBrowser(
-                self.context, self.view_name, rootsite='code', user=self.user)
+                self.context, self.view_name, rootsite="code", user=self.user
+            )
         self.assertThat(recorder, HasQueryCount(LessThan(47)))
 
 
 class MergesTestMixin(BranchMergeProposalListingTestMixin):
 
-    view_name = '+merges'
-    page_title = 'Merge proposals'
+    view_name = "+merges"
+    page_title = "Merge proposals"
 
     def test_none(self):
         """The merges view should be enabled for the target."""
         browser = self.getViewBrowser(
-            self.context, self.view_name, rootsite='code', user=self.user)
+            self.context, self.view_name, rootsite="code", user=self.user
+        )
         self.assertIn("has no merge proposals", browser.contents)
 
 
 class DependentMergesTestMixin(BranchMergeProposalListingTestMixin):
 
-    view_name = '+dependent-merges'
-    page_title = 'Dependent merge proposals'
+    view_name = "+dependent-merges"
+    page_title = "Dependent merge proposals"
 
     def makeBzrMergeProposal(self):
         information_type = (
-            InformationType.USERDATA if self.supports_privacy else None)
+            InformationType.USERDATA if self.supports_privacy else None
+        )
         prerequisite = self.bzr_branch
         if prerequisite is None:
             prerequisite = self.factory.makeBranch(
-                target=self.bzr_target, information_type=information_type)
+                target=self.bzr_target, information_type=information_type
+            )
         target = self.factory.makeBranch(
-            target=self.bzr_target, information_type=information_type)
+            target=self.bzr_target, information_type=information_type
+        )
         source = self.factory.makeBranch(
-            target=self.bzr_target, owner=self.owner,
-            information_type=information_type)
+            target=self.bzr_target,
+            owner=self.owner,
+            information_type=information_type,
+        )
         return self.factory.makeBranchMergeProposal(
-            source_branch=source, target_branch=target,
+            source_branch=source,
+            target_branch=target,
             prerequisite_branch=prerequisite,
-            set_state=BranchMergeProposalStatus.NEEDS_REVIEW)
+            set_state=BranchMergeProposalStatus.NEEDS_REVIEW,
+        )
 
     def makeGitMergeProposal(self):
         information_type = (
-            InformationType.USERDATA if self.supports_privacy else None)
+            InformationType.USERDATA if self.supports_privacy else None
+        )
         prerequisite = self.git_ref
         if prerequisite is None:
             [prerequisite] = self.factory.makeGitRefs(
-                target=self.git_target, information_type=information_type)
+                target=self.git_target, information_type=information_type
+            )
         [target] = self.factory.makeGitRefs(
-            target=self.git_target, information_type=information_type)
+            target=self.git_target, information_type=information_type
+        )
         [source] = self.factory.makeGitRefs(
-            target=self.git_target, owner=self.owner,
-            information_type=information_type)
+            target=self.git_target,
+            owner=self.owner,
+            information_type=information_type,
+        )
         return self.factory.makeBranchMergeProposalForGit(
-            source_ref=source, target_ref=target,
+            source_ref=source,
+            target_ref=target,
             prerequisite_ref=prerequisite,
-            set_state=BranchMergeProposalStatus.NEEDS_REVIEW)
+            set_state=BranchMergeProposalStatus.NEEDS_REVIEW,
+        )
 
     def getExpectedLabel(self):
         return "Merge proposals dependent on %s" % self.context.displayname
@@ -415,19 +531,21 @@ class DependentMergesTestMixin(BranchMergeProposalListingTestMixin):
     def test_none(self):
         """The dependent merges view should be enabled for the target."""
         browser = self.getViewBrowser(
-            self.context, self.view_name, rootsite='code', user=self.user)
+            self.context, self.view_name, rootsite="code", user=self.user
+        )
         self.assertIn("has no merge proposals", browser.contents)
 
 
 class ActiveReviewsTestMixin(BranchMergeProposalListingTestMixin):
 
-    view_name = '+activereviews'
-    page_title = 'Active reviews'
+    view_name = "+activereviews"
+    page_title = "Active reviews"
 
     def test_none(self):
         """The active reviews view should be enabled for the target."""
         browser = self.getViewBrowser(
-            self.context, self.view_name, rootsite='code', user=self.user)
+            self.context, self.view_name, rootsite="code", user=self.user
+        )
         self.assertIn("has no active code reviews", browser.contents)
 
 
@@ -437,8 +555,9 @@ class ProductContextMixin:
 
     def setUp(self):
         super().setUp()
-        self.git_target = self.bzr_target = self.context = (
-            self.factory.makeProduct())
+        self.git_target = (
+            self.bzr_target
+        ) = self.context = self.factory.makeProduct()
         self.user = self.git_target.owner
         self.owner = None
 
@@ -451,7 +570,8 @@ class ProjectGroupContextMixin:
         super().setUp()
         self.context = self.factory.makeProject()
         self.git_target = self.bzr_target = self.factory.makeProduct(
-            projectgroup=self.context)
+            projectgroup=self.context
+        )
         self.user = self.git_target.owner
         self.owner = None
 
@@ -464,17 +584,22 @@ class DistributionSourcePackageContextMixin:
 
     def setUp(self):
         super().setUp()
-        self.git_target = self.context = (
-            self.factory.makeDistributionSourcePackage())
+        self.git_target = (
+            self.context
+        ) = self.factory.makeDistributionSourcePackage()
         with admin_logged_in():
             getUtility(IService, "sharing").sharePillarInformation(
-                self.context.distribution, self.context.distribution.owner,
+                self.context.distribution,
                 self.context.distribution.owner,
-                {InformationType.USERDATA: SharingPermission.ALL})
+                self.context.distribution.owner,
+                {InformationType.USERDATA: SharingPermission.ALL},
+            )
         distroseries = self.factory.makeDistroSeries(
-            distribution=self.context.distribution)
+            distribution=self.context.distribution
+        )
         self.bzr_target = distroseries.getSourcePackage(
-            self.context.sourcepackagename)
+            self.context.sourcepackagename
+        )
         self.user = self.context.distribution.owner
         self.owner = None
 
@@ -511,7 +636,8 @@ class PersonProductContextMixin:
     def setUp(self):
         super().setUp()
         self.context = PersonProduct(
-            self.factory.makePerson(), self.factory.makeProduct())
+            self.factory.makePerson(), self.factory.makeProduct()
+        )
         self.bzr_target = self.git_target = self.context.product
         self.user = self.context.product.owner
         self.owner = self.context.person
@@ -525,7 +651,8 @@ class BranchContextMixin:
         super().setUp()
         self.bzr_target = self.factory.makeProduct()
         self.context = self.bzr_branch = self.factory.makeBranch(
-            target=self.bzr_target)
+            target=self.bzr_target
+        )
         self.user = self.bzr_target.owner
         self.owner = None
 
@@ -538,32 +665,34 @@ class GitRefContextMixin:
         super().setUp()
         self.git_target = self.factory.makeProduct()
         self.context = self.git_ref = self.factory.makeGitRefs(
-            target=self.git_target)[0]
+            target=self.git_target
+        )[0]
         self.user = self.git_target.owner
         self.owner = None
 
 
-class TestProductMerges(
-        ProductContextMixin, MergesTestMixin, BrowserTestCase):
+class TestProductMerges(ProductContextMixin, MergesTestMixin, BrowserTestCase):
 
     pass
 
 
 class TestProjectGroupMerges(
-        ProjectGroupContextMixin, MergesTestMixin, BrowserTestCase):
+    ProjectGroupContextMixin, MergesTestMixin, BrowserTestCase
+):
 
     pass
 
 
 class TestDistributionSourcePackageMerges(
-        DistributionSourcePackageContextMixin, MergesTestMixin,
-        BrowserTestCase):
+    DistributionSourcePackageContextMixin, MergesTestMixin, BrowserTestCase
+):
 
     pass
 
 
 class TestSourcePackageMerges(
-        SourcePackageContextMixin, MergesTestMixin, BrowserTestCase):
+    SourcePackageContextMixin, MergesTestMixin, BrowserTestCase
+):
 
     pass
 
@@ -574,7 +703,8 @@ class TestPersonMerges(PersonContextMixin, MergesTestMixin, BrowserTestCase):
 
 
 class TestPersonProductMerges(
-        PersonProductContextMixin, MergesTestMixin, BrowserTestCase):
+    PersonProductContextMixin, MergesTestMixin, BrowserTestCase
+):
 
     pass
 
@@ -590,62 +720,73 @@ class TestGitRefMerges(GitRefContextMixin, MergesTestMixin, BrowserTestCase):
 
 
 class TestBranchDependentMerges(
-        BranchContextMixin, DependentMergesTestMixin, BrowserTestCase):
+    BranchContextMixin, DependentMergesTestMixin, BrowserTestCase
+):
 
     pass
 
 
 class TestGitRefDependentMerges(
-        GitRefContextMixin, DependentMergesTestMixin, BrowserTestCase):
+    GitRefContextMixin, DependentMergesTestMixin, BrowserTestCase
+):
 
     pass
 
 
 class TestProductActiveReviews(
-        ProductContextMixin, ActiveReviewsTestMixin, BrowserTestCase):
+    ProductContextMixin, ActiveReviewsTestMixin, BrowserTestCase
+):
 
     pass
 
 
 class TestProjectGroupActiveReviews(
-        ProjectGroupContextMixin, ActiveReviewsTestMixin, BrowserTestCase):
+    ProjectGroupContextMixin, ActiveReviewsTestMixin, BrowserTestCase
+):
 
     pass
 
 
 class TestDistributionSourcePackageActiveReviews(
-        DistributionSourcePackageContextMixin, ActiveReviewsTestMixin,
-        BrowserTestCase):
+    DistributionSourcePackageContextMixin,
+    ActiveReviewsTestMixin,
+    BrowserTestCase,
+):
 
     pass
 
 
 class TestSourcePackageActiveReviews(
-        SourcePackageContextMixin, ActiveReviewsTestMixin, BrowserTestCase):
+    SourcePackageContextMixin, ActiveReviewsTestMixin, BrowserTestCase
+):
 
     pass
 
 
 class TestPersonActiveReviews(
-        PersonContextMixin, ActiveReviewsTestMixin, BrowserTestCase):
+    PersonContextMixin, ActiveReviewsTestMixin, BrowserTestCase
+):
 
     pass
 
 
 class TestPersonProductActiveReviews(
-        PersonProductContextMixin, ActiveReviewsTestMixin, BrowserTestCase):
+    PersonProductContextMixin, ActiveReviewsTestMixin, BrowserTestCase
+):
 
     pass
 
 
 class TestBranchActiveReviews(
-        BranchContextMixin, ActiveReviewsTestMixin, BrowserTestCase):
+    BranchContextMixin, ActiveReviewsTestMixin, BrowserTestCase
+):
 
     pass
 
 
 class TestGitRefActiveReviews(
-        GitRefContextMixin, ActiveReviewsTestMixin, BrowserTestCase):
+    GitRefContextMixin, ActiveReviewsTestMixin, BrowserTestCase
+):
 
     pass
 
@@ -658,7 +799,8 @@ class ActiveReviewGroupsTestMixin:
     def setUp(self):
         super().setUp()
         self.bmp = self._makeBranchMergeProposal(
-            set_state=BranchMergeProposalStatus.NEEDS_REVIEW)
+            set_state=BranchMergeProposalStatus.NEEDS_REVIEW
+        )
 
     def assertReviewGroupForReviewer(self, reviewer, group):
         # Assert that the group for the reviewer is correct.
@@ -666,9 +808,11 @@ class ActiveReviewGroupsTestMixin:
         # The actual context of the view doesn't matter here as all the
         # parameters are passed in.
         view = create_initialized_view(
-            self.factory.makeProduct(), '+activereviews', rootsite='code')
+            self.factory.makeProduct(), "+activereviews", rootsite="code"
+        )
         self.assertEqual(
-            group, view._getReviewGroup(self.bmp, self.bmp.votes, reviewer))
+            group, view._getReviewGroup(self.bmp, self.bmp.votes, reviewer)
+        )
 
     def test_unrelated_reviewer(self):
         # If the reviewer is not otherwise related to the proposal, the group
@@ -679,13 +823,15 @@ class ActiveReviewGroupsTestMixin:
     def test_approved(self):
         # If the proposal is approved, then the group is approved.
         self.bmp = self._makeBranchMergeProposal(
-            set_state=BranchMergeProposalStatus.CODE_APPROVED)
+            set_state=BranchMergeProposalStatus.CODE_APPROVED
+        )
         self.assertReviewGroupForReviewer(None, ActiveReviewsView.APPROVED)
 
     def test_work_in_progress(self):
         # If the proposal is in progress, then the group is wip.
         self.bmp = self._makeBranchMergeProposal(
-            set_state=BranchMergeProposalStatus.WORK_IN_PROGRESS)
+            set_state=BranchMergeProposalStatus.WORK_IN_PROGRESS
+        )
         self.assertReviewGroupForReviewer(None, ActiveReviewsView.WIP)
 
     def test_merge_source_owner(self):
@@ -737,18 +883,22 @@ class ActiveReviewGroupsTestMixin:
         reviewer = self.bmp.merge_target.owner
         login_person(reviewer)
         self.bmp.createComment(
-            reviewer, 'subject', vote=CodeReviewVote.APPROVE)
+            reviewer, "subject", vote=CodeReviewVote.APPROVE
+        )
         self.assertReviewGroupForReviewer(
-            reviewer, ActiveReviewsView.ARE_DOING)
+            reviewer, ActiveReviewsView.ARE_DOING
+        )
 
 
 class ActiveReviewGroupsTestBzr(
-    ActiveReviewGroupsTestMixin, BzrMixin, TestCaseWithFactory):
+    ActiveReviewGroupsTestMixin, BzrMixin, TestCaseWithFactory
+):
     """Tests for groupings used for active reviews for Bazaar."""
 
 
 class ActiveReviewGroupsTestGit(
-    ActiveReviewGroupsTestMixin, GitMixin, TestCaseWithFactory):
+    ActiveReviewGroupsTestMixin, GitMixin, TestCaseWithFactory
+):
     """Tests for groupings used for active reviews for Git."""
 
 
@@ -761,7 +911,8 @@ class TestBranchMergeProposalListingItemMixin:
         # If the proposal is in needs review, the sort_key will be the
         # date_review_requested.
         bmp = self.factory.makeBranchMergeProposal(
-            date_created=datetime(2009, 6, 1, tzinfo=pytz.UTC))
+            date_created=datetime(2009, 6, 1, tzinfo=pytz.UTC)
+        )
         login_person(bmp.registrant)
         request_date = datetime(2009, 7, 1, tzinfo=pytz.UTC)
         bmp.requestReview(request_date)
@@ -772,13 +923,16 @@ class TestBranchMergeProposalListingItemMixin:
         # If the proposal is approved, the sort_key will default to the
         # date_review_requested.
         bmp = self.factory.makeBranchMergeProposal(
-            date_created=datetime(2009, 6, 1, tzinfo=pytz.UTC))
+            date_created=datetime(2009, 6, 1, tzinfo=pytz.UTC)
+        )
         login_person(bmp.target_branch.owner)
         request_date = datetime(2009, 7, 1, tzinfo=pytz.UTC)
         bmp.requestReview(request_date)
         bmp.approveBranch(
-            bmp.target_branch.owner, 'rev-id',
-            datetime(2009, 8, 1, tzinfo=pytz.UTC))
+            bmp.target_branch.owner,
+            "rev-id",
+            datetime(2009, 8, 1, tzinfo=pytz.UTC),
+        )
         item = BranchMergeProposalListingItem(bmp, None, None)
         self.assertEqual(request_date, item.sort_key)
 
@@ -786,30 +940,33 @@ class TestBranchMergeProposalListingItemMixin:
         # If the proposal is approved and the review has been bypassed, the
         # date_reviewed is used.
         bmp = self.factory.makeBranchMergeProposal(
-            date_created=datetime(2009, 6, 1, tzinfo=pytz.UTC))
+            date_created=datetime(2009, 6, 1, tzinfo=pytz.UTC)
+        )
         login_person(bmp.target_branch.owner)
         review_date = datetime(2009, 8, 1, tzinfo=pytz.UTC)
-        bmp.approveBranch(
-            bmp.target_branch.owner, 'rev-id', review_date)
+        bmp.approveBranch(bmp.target_branch.owner, "rev-id", review_date)
         item = BranchMergeProposalListingItem(bmp, None, None)
         self.assertEqual(review_date, item.sort_key)
 
     def test_sort_key_wip(self):
         # If the proposal is a work in progress, the date_created is used.
         bmp = self.factory.makeBranchMergeProposal(
-            date_created=datetime(2009, 6, 1, tzinfo=pytz.UTC))
+            date_created=datetime(2009, 6, 1, tzinfo=pytz.UTC)
+        )
         login_person(bmp.target_branch.owner)
         item = BranchMergeProposalListingItem(bmp, None, None)
         self.assertEqual(bmp.date_created, item.sort_key)
 
 
 class TestBranchMergeProposalListingItemBzr(
-    TestBranchMergeProposalListingItemMixin, BzrMixin, TestCaseWithFactory):
+    TestBranchMergeProposalListingItemMixin, BzrMixin, TestCaseWithFactory
+):
     """Test BranchMergeProposalListingItem for Bazaar."""
 
 
 class TestBranchMergeProposalListingItemGit(
-    TestBranchMergeProposalListingItemMixin, GitMixin, TestCaseWithFactory):
+    TestBranchMergeProposalListingItemMixin, GitMixin, TestCaseWithFactory
+):
     """Test BranchMergeProposalListingItem for Git."""
 
 
@@ -832,19 +989,23 @@ class ActiveReviewSortingTestMixin:
         bmp3.requestReview(datetime(2009, 1, 1, tzinfo=pytz.UTC))
         login(ANONYMOUS)
         view = create_initialized_view(
-            product, name='+activereviews', rootsite='code')
+            product, name="+activereviews", rootsite="code"
+        )
         self.assertEqual(
             [bmp3, bmp2, bmp1],
-            [item.context for item in view.review_groups[view.OTHER]])
+            [item.context for item in view.review_groups[view.OTHER]],
+        )
 
 
 class ActiveReviewSortingTestBzr(
-    ActiveReviewSortingTestMixin, BzrMixin, TestCaseWithFactory):
+    ActiveReviewSortingTestMixin, BzrMixin, TestCaseWithFactory
+):
     """Test the sorting of the active review groups for Bazaar."""
 
 
 class ActiveReviewSortingTestGit(
-    ActiveReviewSortingTestMixin, GitMixin, TestCaseWithFactory):
+    ActiveReviewSortingTestMixin, GitMixin, TestCaseWithFactory
+):
     """Test the sorting of the active review groups for Git."""
 
 
@@ -856,31 +1017,37 @@ class ActiveReviewsOfBranchesMixin:
     def test_no_proposal_message(self):
         branch = self._makeBranch()
         view = create_initialized_view(
-            branch, name='+activereviews', rootsite='code')
+            branch, name="+activereviews", rootsite="code"
+        )
         self.assertEqual(
             "%s has no active code reviews." % branch.display_name,
-            view.no_proposal_message)
+            view.no_proposal_message,
+        )
 
     def test_private_branch_owner(self):
         # Merge proposals against private branches are visible to
         # the branch owner.
         product = self.factory.makeProduct()
         branch = self._makeBranch(
-            target=product, information_type=InformationType.USERDATA)
+            target=product, information_type=InformationType.USERDATA
+        )
         with person_logged_in(removeSecurityProxy(branch).owner):
             mp = self._makeBranchMergeProposal(merge_target=branch)
             view = create_initialized_view(
-                branch, name='+activereviews', rootsite='code')
+                branch, name="+activereviews", rootsite="code"
+            )
             self.assertEqual([mp], list(view.getProposals()))
 
 
 class ActiveReviewsOfBranchesBzr(
-    ActiveReviewsOfBranchesMixin, BzrMixin, TestCaseWithFactory):
+    ActiveReviewsOfBranchesMixin, BzrMixin, TestCaseWithFactory
+):
     """Test reviews of Bazaar branches."""
 
 
 class ActiveReviewsOfBranchesGit(
-    ActiveReviewsOfBranchesMixin, GitMixin, TestCaseWithFactory):
+    ActiveReviewsOfBranchesMixin, GitMixin, TestCaseWithFactory
+):
     """Test reviews of references in Git repositories."""
 
 
@@ -897,10 +1064,10 @@ class ActiveReviewsPerformanceMixin:
     def createUserBMP(self, reviewer=None, merge_target_owner=None):
         merge_target = None
         if merge_target_owner is not None:
-            merge_target = self._makePackageBranch(
-                owner=merge_target_owner)
+            merge_target = self._makePackageBranch(owner=merge_target_owner)
         bmp = self._makeBranchMergeProposal(
-            reviewer=reviewer, merge_target=merge_target)
+            reviewer=reviewer, merge_target=merge_target
+        )
         self.setupBMP(bmp)
         return bmp
 
@@ -923,7 +1090,8 @@ class ActiveReviewsPerformanceMixin:
         flush_database_caches()
         with StormStatementRecorder() as recorder:
             view = create_initialized_view(
-                user, name='+activereviews', rootsite='code', principal=user)
+                user, name="+activereviews", rootsite="code", principal=user
+            )
             view.render()
         return recorder, view
 
@@ -934,14 +1102,16 @@ class ActiveReviewsPerformanceMixin:
         self.assertEqual(base_bmps, view1.proposal_count)
         self.addDetail("r1tb", text_content(str(recorder1)))
         recorder2, view2 = self.createUserBMPsAndRecordQueries(
-            base_bmps + added_bmps)
+            base_bmps + added_bmps
+        )
         self.assertEqual(base_bmps + added_bmps, view2.proposal_count)
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def createProductBMP(self, product):
         merge_target = self._makeStackedOnBranchChain(target=product)
         bmp = self._makeBranchMergeProposal(
-            target=product, merge_target=merge_target)
+            target=product, merge_target=merge_target
+        )
         self.setupBMP(bmp)
         return bmp
 
@@ -957,8 +1127,11 @@ class ActiveReviewsPerformanceMixin:
         flush_database_caches()
         with StormStatementRecorder() as recorder:
             view = create_initialized_view(
-                product, name='+activereviews', rootsite='code',
-                principal=product.owner)
+                product,
+                name="+activereviews",
+                rootsite="code",
+                principal=product.owner,
+            )
             view.render()
         return recorder, view
 
@@ -973,16 +1146,19 @@ class ActiveReviewsPerformanceMixin:
         # for fmt:displaydatetitle.
         getUtility(IOpenLaunchBag).clear()
         recorder2, view2 = self.createProductBMPsAndRecordQueries(
-            base_bmps + added_bmps)
+            base_bmps + added_bmps
+        )
         self.assertEqual(base_bmps + added_bmps, view2.proposal_count)
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
 
 class ActiveReviewsPerformanceBzr(
-    ActiveReviewsPerformanceMixin, BzrMixin, TestCaseWithFactory):
+    ActiveReviewsPerformanceMixin, BzrMixin, TestCaseWithFactory
+):
     """Test the performance of the active reviews page for Bazaar."""
 
 
 class ActiveReviewsPerformanceGit(
-    ActiveReviewsPerformanceMixin, GitMixin, TestCaseWithFactory):
+    ActiveReviewsPerformanceMixin, GitMixin, TestCaseWithFactory
+):
     """Test the performance of the active reviews page for Git."""

@@ -4,71 +4,42 @@
 """Git repository access rules."""
 
 __all__ = [
-    'GitRule',
-    'GitRuleGrant',
-    ]
+    "GitRule",
+    "GitRuleGrant",
+]
 
-from collections import (
-    defaultdict,
-    OrderedDict,
-    )
+from collections import OrderedDict, defaultdict
 
-from lazr.enum import DBItem
-from lazr.restful.interfaces import (
-    IFieldMarshaller,
-    IJSONPublishable,
-    )
-from lazr.restful.utils import get_current_browser_request
 import pytz
-from storm.locals import (
-    Bool,
-    DateTime,
-    Int,
-    Reference,
-    Store,
-    Unicode,
-    )
-from zope.component import (
-    adapter,
-    getMultiAdapter,
-    getUtility,
-    )
+from lazr.enum import DBItem
+from lazr.restful.interfaces import IFieldMarshaller, IJSONPublishable
+from lazr.restful.utils import get_current_browser_request
+from storm.locals import Bool, DateTime, Int, Reference, Store, Unicode
+from zope.component import adapter, getMultiAdapter, getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
-from lp.code.enums import (
-    GitGranteeType,
-    GitPermissionType,
-    )
+from lp.code.enums import GitGranteeType, GitPermissionType
 from lp.code.interfaces.gitactivity import IGitActivitySet
 from lp.code.interfaces.gitrule import (
-    describe_git_permissions,
     IGitNascentRule,
     IGitNascentRuleGrant,
     IGitRule,
     IGitRuleGrant,
-    )
+    describe_git_permissions,
+)
 from lp.registry.interfaces.person import (
     IPerson,
     validate_person,
     validate_public_person,
-    )
+)
 from lp.registry.model.person import Person
-from lp.services.database.bulk import (
-    load_referencing,
-    load_related,
-    )
-from lp.services.database.constants import (
-    DEFAULT,
-    UTC_NOW,
-    )
+from lp.services.database.bulk import load_referencing, load_related
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.stormbase import StormBase
 from lp.services.fields import InlineObject
-from lp.services.propertycache import (
-    cachedproperty,
-    get_property_cache,
-    )
+from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp.snapshot import notify_modified
 
 
@@ -81,7 +52,8 @@ def git_rule_modified(rule, event):
     if event.edited_fields:
         user = IPerson(event.user)
         getUtility(IGitActivitySet).logRuleChanged(
-            event.object_before_modification, rule, user)
+            event.object_before_modification, rule, user
+        )
         removeSecurityProxy(rule).date_last_modified = UTC_NOW
 
 
@@ -89,28 +61,32 @@ def git_rule_modified(rule, event):
 class GitRule(StormBase):
     """See `IGitRule`."""
 
-    __storm_table__ = 'GitRule'
+    __storm_table__ = "GitRule"
 
     id = Int(primary=True)
 
-    repository_id = Int(name='repository', allow_none=False)
-    repository = Reference(repository_id, 'GitRepository.id')
+    repository_id = Int(name="repository", allow_none=False)
+    repository = Reference(repository_id, "GitRepository.id")
 
-    position = Int(name='position', allow_none=False)
+    position = Int(name="position", allow_none=False)
 
-    ref_pattern = Unicode(name='ref_pattern', allow_none=False)
+    ref_pattern = Unicode(name="ref_pattern", allow_none=False)
 
     creator_id = Int(
-        name='creator', allow_none=False, validator=validate_public_person)
-    creator = Reference(creator_id, 'Person.id')
+        name="creator", allow_none=False, validator=validate_public_person
+    )
+    creator = Reference(creator_id, "Person.id")
 
     date_created = DateTime(
-        name='date_created', tzinfo=pytz.UTC, allow_none=False)
+        name="date_created", tzinfo=pytz.UTC, allow_none=False
+    )
     date_last_modified = DateTime(
-        name='date_last_modified', tzinfo=pytz.UTC, allow_none=False)
+        name="date_last_modified", tzinfo=pytz.UTC, allow_none=False
+    )
 
-    def __init__(self, repository, position, ref_pattern, creator,
-                 date_created):
+    def __init__(
+        self, repository, position, ref_pattern, creator, date_created
+    ):
         super().__init__()
         self.repository = repository
         self.position = position
@@ -122,7 +98,9 @@ class GitRule(StormBase):
 
     def __repr__(self):
         return "<GitRule '%s' for %s>" % (
-            self.ref_pattern, self.repository.unique_name)
+            self.ref_pattern,
+            self.repository.unique_name,
+        )
 
     def toDataForJSON(self, media_type):
         """See `IJSONPublishable`."""
@@ -136,25 +114,39 @@ class GitRule(StormBase):
     @cachedproperty
     def grants(self):
         """See `IGitRule`."""
-        return list(Store.of(self).find(
-            GitRuleGrant, GitRuleGrant.rule_id == self.id))
+        return list(
+            Store.of(self).find(GitRuleGrant, GitRuleGrant.rule_id == self.id)
+        )
 
-    def addGrant(self, grantee, grantor, can_create=False, can_push=False,
-                 can_force_push=False, permissions=None):
+    def addGrant(
+        self,
+        grantee,
+        grantor,
+        can_create=False,
+        can_push=False,
+        can_force_push=False,
+        permissions=None,
+    ):
         """See `IGitRule`."""
         if permissions is not None:
             if can_create or can_push or can_force_push:
                 raise AssertionError(
                     "GitRule.addGrant takes either "
                     "can_create/can_push/can_force_push or permissions, not "
-                    "both")
+                    "both"
+                )
             can_create = GitPermissionType.CAN_CREATE in permissions
             can_push = GitPermissionType.CAN_PUSH in permissions
             can_force_push = GitPermissionType.CAN_FORCE_PUSH in permissions
         grant = GitRuleGrant(
-            rule=self, grantee=grantee, can_create=can_create,
-            can_push=can_push, can_force_push=can_force_push, grantor=grantor,
-            date_created=DEFAULT)
+            rule=self,
+            grantee=grantee,
+            can_create=can_create,
+            can_push=can_push,
+            can_force_push=can_force_push,
+            grantor=grantor,
+            date_created=DEFAULT,
+        )
         getUtility(IGitActivitySet).logGrantAdded(grant, grantor)
         del get_property_cache(self).grants
         return grant
@@ -166,24 +158,29 @@ class GitRule(StormBase):
                 if grant.grantee is None:
                     raise ValueError(
                         "Permission grant for %s has grantee_type 'Person' "
-                        "but no grantee" % self.ref_pattern)
+                        "but no grantee" % self.ref_pattern
+                    )
             else:
                 if grant.grantee is not None:
                     raise ValueError(
                         "Permission grant for %s has grantee_type '%s', "
-                        "contradicting grantee ~%s" %
-                        (self.ref_pattern, grant.grantee_type,
-                         grant.grantee.name))
+                        "contradicting grantee ~%s"
+                        % (
+                            self.ref_pattern,
+                            grant.grantee_type,
+                            grant.grantee.name,
+                        )
+                    )
 
     def setGrants(self, grants, user):
         """See `IGitRule`."""
         self._validateGrants(grants)
         existing_grants = {
-            (grant.grantee_type, grant.grantee): grant
-            for grant in self.grants}
+            (grant.grantee_type, grant.grantee): grant for grant in self.grants
+        }
         new_grants = OrderedDict(
-            ((grant.grantee_type, grant.grantee), grant)
-            for grant in grants)
+            ((grant.grantee_type, grant.grantee), grant) for grant in grants
+        )
 
         for grant_key, grant in existing_grants.items():
             if grant_key not in new_grants:
@@ -195,11 +192,15 @@ class GitRule(StormBase):
                 new_grantee = (
                     new_grant.grantee
                     if new_grant.grantee_type == GitGranteeType.PERSON
-                    else new_grant.grantee_type)
+                    else new_grant.grantee_type
+                )
                 grant = self.addGrant(
-                    new_grantee, user, can_create=new_grant.can_create,
+                    new_grantee,
+                    user,
+                    can_create=new_grant.can_create,
                     can_push=new_grant.can_push,
-                    can_force_push=new_grant.can_force_push)
+                    can_force_push=new_grant.can_force_push,
+                )
             else:
                 edited_fields = []
                 with notify_modified(grant, edited_fields):
@@ -239,7 +240,8 @@ def git_rule_grant_modified(grant, event):
     if event.edited_fields:
         user = IPerson(event.user)
         getUtility(IGitActivitySet).logGrantChanged(
-            event.object_before_modification, grant, user)
+            event.object_before_modification, grant, user
+        )
         removeSecurityProxy(grant).date_last_modified = UTC_NOW
 
 
@@ -268,43 +270,57 @@ class GitRuleGrantMixin:
 class GitRuleGrant(StormBase, GitRuleGrantMixin):
     """See `IGitRuleGrant`."""
 
-    __storm_table__ = 'GitRuleGrant'
+    __storm_table__ = "GitRuleGrant"
 
     id = Int(primary=True)
 
-    repository_id = Int(name='repository', allow_none=False)
-    repository = Reference(repository_id, 'GitRepository.id')
+    repository_id = Int(name="repository", allow_none=False)
+    repository = Reference(repository_id, "GitRepository.id")
 
-    rule_id = Int(name='rule', allow_none=False)
-    rule = Reference(rule_id, 'GitRule.id')
+    rule_id = Int(name="rule", allow_none=False)
+    rule = Reference(rule_id, "GitRule.id")
 
     grantee_type = DBEnum(
-        name='grantee_type', enum=GitGranteeType, allow_none=False)
+        name="grantee_type", enum=GitGranteeType, allow_none=False
+    )
 
     grantee_id = Int(
-        name='grantee', allow_none=True, validator=validate_person)
-    grantee = Reference(grantee_id, 'Person.id')
+        name="grantee", allow_none=True, validator=validate_person
+    )
+    grantee = Reference(grantee_id, "Person.id")
 
-    can_create = Bool(name='can_create', allow_none=False)
-    can_push = Bool(name='can_push', allow_none=False)
-    can_force_push = Bool(name='can_force_push', allow_none=False)
+    can_create = Bool(name="can_create", allow_none=False)
+    can_push = Bool(name="can_push", allow_none=False)
+    can_force_push = Bool(name="can_force_push", allow_none=False)
 
     grantor_id = Int(
-        name='grantor', allow_none=False, validator=validate_public_person)
-    grantor = Reference(grantor_id, 'Person.id')
+        name="grantor", allow_none=False, validator=validate_public_person
+    )
+    grantor = Reference(grantor_id, "Person.id")
 
     date_created = DateTime(
-        name='date_created', tzinfo=pytz.UTC, allow_none=False)
+        name="date_created", tzinfo=pytz.UTC, allow_none=False
+    )
     date_last_modified = DateTime(
-        name='date_last_modified', tzinfo=pytz.UTC, allow_none=False)
+        name="date_last_modified", tzinfo=pytz.UTC, allow_none=False
+    )
 
-    def __init__(self, rule, grantee, can_create, can_push, can_force_push,
-                 grantor, date_created):
+    def __init__(
+        self,
+        rule,
+        grantee,
+        can_create,
+        can_push,
+        can_force_push,
+        grantor,
+        date_created,
+    ):
         if isinstance(grantee, DBItem) and grantee.enum == GitGranteeType:
             if grantee == GitGranteeType.PERSON:
                 raise ValueError(
                     "grantee may not be GitGranteeType.PERSON; pass a person "
-                    "object instead")
+                    "object instead"
+                )
             grantee_type = grantee
             grantee = None
         else:
@@ -335,7 +351,10 @@ class GitRuleGrant(StormBase, GitRuleGrantMixin):
             grantee_name = self.grantee_type.title.lower()
         return "<GitRuleGrant [%s] to %s for %s:%s>" % (
             ", ".join(describe_git_permissions(self.permissions)),
-            grantee_name, self.repository.unique_name, self.rule.ref_pattern)
+            grantee_name,
+            self.repository.unique_name,
+            self.rule.ref_pattern,
+        )
 
     def toDataForJSON(self, media_type):
         """See `IJSONPublishable`."""
@@ -356,7 +375,6 @@ class GitRuleGrant(StormBase, GitRuleGrantMixin):
 
 @implementer(IGitNascentRule)
 class GitNascentRule:
-
     def __init__(self, ref_pattern, grants):
         self.ref_pattern = ref_pattern
         self.grants = grants
@@ -373,9 +391,14 @@ def nascent_rule_from_dict(template):
 
 @implementer(IGitNascentRuleGrant)
 class GitNascentRuleGrant(GitRuleGrantMixin):
-
-    def __init__(self, grantee_type, grantee=None, can_create=False,
-                 can_push=False, can_force_push=False):
+    def __init__(
+        self,
+        grantee_type,
+        grantee=None,
+        can_create=False,
+        can_push=False,
+        can_force_push=False,
+    ):
         self.grantee_type = grantee_type
         self.grantee = grantee
         self.can_create = can_create
@@ -389,7 +412,8 @@ class GitNascentRuleGrant(GitRuleGrantMixin):
             grantee_name = self.grantee_type.title.lower()
         return "<GitNascentRuleGrant [%s] to %s>" % (
             ", ".join(describe_git_permissions(self.permissions)),
-            grantee_name)
+            grantee_name,
+        )
 
 
 @adapter(dict)

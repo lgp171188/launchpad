@@ -4,21 +4,21 @@
 """A virtual filesystem for hosting Bazaar branches."""
 
 __all__ = [
-    'AsyncLaunchpadTransport',
-    'branch_id_to_path',
-    'BranchFileSystemClient',
-    'get_lp_server',
-    'get_ro_server',
-    'get_rw_server',
-    'LaunchpadServer',
-    ]
+    "AsyncLaunchpadTransport",
+    "branch_id_to_path",
+    "BranchFileSystemClient",
+    "get_lp_server",
+    "get_ro_server",
+    "get_rw_server",
+    "LaunchpadServer",
+]
 
 from lp.codehosting.vfs.branchfs import (
     AsyncLaunchpadTransport,
+    LaunchpadServer,
     branch_id_to_path,
     get_lp_server,
     get_ro_server,
     get_rw_server,
-    LaunchpadServer,
-    )
+)
 from lp.codehosting.vfs.branchfsclient import BranchFileSystemClient

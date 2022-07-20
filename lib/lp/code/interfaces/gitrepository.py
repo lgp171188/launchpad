@@ -4,23 +4,24 @@
 """Git repository interfaces."""
 
 __all__ = [
-    'ContributorGitIdentity',
-    'GitIdentityMixin',
-    'GIT_REPOSITORY_NAME_VALIDATION_ERROR_MESSAGE',
-    'git_repository_name_validator',
-    'IGitRepository',
-    'IGitRepositoryDelta',
-    'IGitRepositoryExpensiveRequest',
-    'IGitRepositorySet',
-    'IHasGitRepositoryURL',
-    'user_has_special_git_repository_access',
-    ]
+    "ContributorGitIdentity",
+    "GitIdentityMixin",
+    "GIT_REPOSITORY_NAME_VALIDATION_ERROR_MESSAGE",
+    "git_repository_name_validator",
+    "IGitRepository",
+    "IGitRepositoryDelta",
+    "IGitRepositoryExpensiveRequest",
+    "IGitRepositorySet",
+    "IHasGitRepositoryURL",
+    "user_has_special_git_repository_access",
+]
 
 import re
 from textwrap import dedent
 
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     collection_default_content,
     export_destructor_operation,
@@ -36,28 +37,13 @@ from lazr.restful.declarations import (
     operation_parameters,
     operation_returns_collection_of,
     operation_returns_entry,
-    REQUEST_USER,
     scoped,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference
 from lazr.restful.interface import copy_field
 from zope.component import getUtility
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Int,
-    List,
-    Text,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, Int, List, Text, TextLine
 
 from lp import _
 from lp.app.enums import InformationType
@@ -70,43 +56,40 @@ from lp.code.enums import (
     GitListingSort,
     GitRepositoryStatus,
     GitRepositoryType,
-    )
+)
 from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.code.interfaces.hasrecipes import IHasRecipes
 from lp.code.interfaces.revisionstatus import IRevisionStatusReport
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackageFactory,
-    )
+)
 from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.role import IPersonRoles
 from lp.services.auth.enums import AccessTokenScope
 from lp.services.auth.interfaces import IAccessTokenTarget
-from lp.services.fields import (
-    InlineObject,
-    PersonChoice,
-    PublicPersonChoice,
-    )
+from lp.services.fields import InlineObject, PersonChoice, PublicPersonChoice
 from lp.services.webhooks.interfaces import IWebhookTarget
-
 
 GIT_REPOSITORY_NAME_VALIDATION_ERROR_MESSAGE = _(
     "Git repository names must start with a number or letter.  The characters "
     "+, -, _, . and @ are also allowed after the first character.  Repository "
-    "names must not end with \".git\".")
+    'names must not end with ".git".'
+)
 
 
 # This is a copy of the pattern in database/schema/patch-2209-61-0.sql.
 # Don't change it without changing that.
 valid_git_repository_name_pattern = re.compile(
-    r"^(?i)[a-z0-9][a-z0-9+\.\-@_]*\Z")
+    r"^(?i)[a-z0-9][a-z0-9+\.\-@_]*\Z"
+)
 
 
 def valid_git_repository_name(name):
@@ -115,22 +98,25 @@ def valid_git_repository_name(name):
     The rules for what is a valid Git repository name are described in
     GIT_REPOSITORY_NAME_VALIDATION_ERROR_MESSAGE.
     """
-    if (not name.endswith(".git") and
-        valid_git_repository_name_pattern.match(name)):
+    if not name.endswith(".git") and valid_git_repository_name_pattern.match(
+        name
+    ):
         return True
     return False
 
 
 def git_repository_name_validator(name):
-    """Return True if the name is valid, or raise a LaunchpadValidationError.
-    """
+    """Return True if the name is valid, or raise LaunchpadValidationError."""
     if not valid_git_repository_name(name):
         raise LaunchpadValidationError(
-            _("Invalid Git repository name '${name}'. ${message}",
-              mapping={
-                  "name": name,
-                  "message": GIT_REPOSITORY_NAME_VALIDATION_ERROR_MESSAGE,
-                  }))
+            _(
+                "Invalid Git repository name '${name}'. ${message}",
+                mapping={
+                    "name": name,
+                    "message": GIT_REPOSITORY_NAME_VALIDATION_ERROR_MESSAGE,
+                },
+            )
+        )
     return True
 
 
@@ -139,104 +125,187 @@ class IGitRepositoryView(IHasRecipes):
 
     id = exported(Int(title=_("ID"), readonly=True, required=True))
 
-    date_created = exported(Datetime(
-        title=_("Date created"), required=True, readonly=True))
+    date_created = exported(
+        Datetime(title=_("Date created"), required=True, readonly=True)
+    )
 
-    repository_type = exported(Choice(
-        title=_("Repository type"), required=True, readonly=True,
-        vocabulary=GitRepositoryType,
-        description=_(
-            "The way this repository is hosted: directly on Launchpad, or "
-            "imported from somewhere else.")))
+    repository_type = exported(
+        Choice(
+            title=_("Repository type"),
+            required=True,
+            readonly=True,
+            vocabulary=GitRepositoryType,
+            description=_(
+                "The way this repository is hosted: directly on Launchpad, or "
+                "imported from somewhere else."
+            ),
+        )
+    )
 
     status = Choice(
         title=_("Status of this repository"),
-        required=True, readonly=True,
-        vocabulary=GitRepositoryStatus)
+        required=True,
+        readonly=True,
+        vocabulary=GitRepositoryStatus,
+    )
 
-    registrant = exported(PublicPersonChoice(
-        title=_("Registrant"), required=True, readonly=True,
-        vocabulary="ValidPersonOrTeam",
-        description=_("The person who registered this Git repository.")))
+    registrant = exported(
+        PublicPersonChoice(
+            title=_("Registrant"),
+            required=True,
+            readonly=True,
+            vocabulary="ValidPersonOrTeam",
+            description=_("The person who registered this Git repository."),
+        )
+    )
 
-    owner = exported(PersonChoice(
-        title=_("Owner"), required=True, readonly=True,
-        vocabulary="AllUserTeamsParticipationPlusSelf",
-        description=_(
-            "The owner of this Git repository. This controls who can modify "
-            "the repository.")))
+    owner = exported(
+        PersonChoice(
+            title=_("Owner"),
+            required=True,
+            readonly=True,
+            vocabulary="AllUserTeamsParticipationPlusSelf",
+            description=_(
+                "The owner of this Git repository. This controls who can "
+                "modify the repository."
+            ),
+        )
+    )
 
     target = exported(
         Reference(
-            title=_("Target"), required=True, readonly=True,
+            title=_("Target"),
+            required=True,
+            readonly=True,
             schema=IHasGitRepositories,
-            description=_("The target of the repository.")),
-        as_of="devel")
+            description=_("The target of the repository."),
+        ),
+        as_of="devel",
+    )
 
     namespace = Attribute(
-        "The namespace of this repository, as an `IGitNamespace`.")
+        "The namespace of this repository, as an `IGitNamespace`."
+    )
 
     # XXX cjwatson 2015-01-29: Add some advice about default repository
     # naming.
-    name = exported(TextLine(
-        title=_("Name"), required=True, readonly=True,
-        constraint=git_repository_name_validator,
-        description=_(
-            "The repository name. Keep very short, unique, and descriptive, "
-            "because it will be used in URLs.")))
+    name = exported(
+        TextLine(
+            title=_("Name"),
+            required=True,
+            readonly=True,
+            constraint=git_repository_name_validator,
+            description=_(
+                "The repository name. Keep very short, unique, and "
+                "descriptive, because it will be used in URLs."
+            ),
+        )
+    )
 
-    information_type = exported(Choice(
-        title=_("Information type"), vocabulary=InformationType,
-        required=True, readonly=True, default=InformationType.PUBLIC,
-        description=_(
-            "The type of information contained in this repository.")))
+    information_type = exported(
+        Choice(
+            title=_("Information type"),
+            vocabulary=InformationType,
+            required=True,
+            readonly=True,
+            default=InformationType.PUBLIC,
+            description=_(
+                "The type of information contained in this repository."
+            ),
+        )
+    )
 
-    owner_default = exported(Bool(
-        title=_("Owner default"), required=True, readonly=True,
-        description=_(
-            "Whether this repository is the default for its owner and "
-            "target.")))
+    owner_default = exported(
+        Bool(
+            title=_("Owner default"),
+            required=True,
+            readonly=True,
+            description=_(
+                "Whether this repository is the default for its owner and "
+                "target."
+            ),
+        )
+    )
 
-    target_default = exported(Bool(
-        title=_("Target default"), required=True, readonly=True,
-        description=_(
-            "Whether this repository is the default for its target.")))
+    target_default = exported(
+        Bool(
+            title=_("Target default"),
+            required=True,
+            readonly=True,
+            description=_(
+                "Whether this repository is the default for its target."
+            ),
+        )
+    )
 
-    unique_name = exported(Text(
-        title=_("Unique name"), readonly=True,
-        description=_(
-            "Unique name of the repository, including the owner and project "
-            "names.")))
+    unique_name = exported(
+        Text(
+            title=_("Unique name"),
+            readonly=True,
+            description=_(
+                "Unique name of the repository, including the owner and "
+                "project names."
+            ),
+        )
+    )
 
-    display_name = exported(Text(
-        title=_("Display name"), readonly=True,
-        description=_("Display name of the repository.")))
+    display_name = exported(
+        Text(
+            title=_("Display name"),
+            readonly=True,
+            description=_("Display name of the repository."),
+        )
+    )
 
     code_reviewer = Attribute(
-        "The reviewer if set, otherwise the owner of the repository.")
+        "The reviewer if set, otherwise the owner of the repository."
+    )
 
     shortened_path = Attribute(
-        "The shortest reasonable version of the path to this repository.")
+        "The shortest reasonable version of the path to this repository."
+    )
 
-    pack_count = exported(Int(
-        title=_("Pack count"), readonly=True, required=False,
-        description=_("The number of packs for this repository.")))
+    pack_count = exported(
+        Int(
+            title=_("Pack count"),
+            readonly=True,
+            required=False,
+            description=_("The number of packs for this repository."),
+        )
+    )
 
-    loose_object_count = exported(Int(
-        title=_("Loose object count"), readonly=True, required=False,
-        description=_("The number of loose objects for this repository.")))
+    loose_object_count = exported(
+        Int(
+            title=_("Loose object count"),
+            readonly=True,
+            required=False,
+            description=_("The number of loose objects for this repository."),
+        )
+    )
 
     # XXX cjwatson 2021-06-22: This is actually when a repack was last
     # requested on the Launchpad side, not when the hosting service finished
     # the repack.
-    date_last_repacked = exported(Datetime(
-        title=_("Date last repacked"), readonly=True, required=False,
-        description=_("The date that this repository was last repacked.")))
+    date_last_repacked = exported(
+        Datetime(
+            title=_("Date last repacked"),
+            readonly=True,
+            required=False,
+            description=_("The date that this repository was last repacked."),
+        )
+    )
 
-    date_last_scanned = exported(Datetime(
-        title=_("Date last scanned"), readonly=True, required=False,
-        description=_("The date when pack statistics were last updated "
-                      "for this repository.")))
+    date_last_scanned = exported(
+        Datetime(
+            title=_("Date last scanned"),
+            readonly=True,
+            required=False,
+            description=_(
+                "The date when pack statistics were last updated "
+                "for this repository."
+            ),
+        )
+    )
 
     def getClonedFrom():
         """Returns from which repository the given repo is a clone from."""
@@ -244,9 +313,11 @@ class IGitRepositoryView(IHasRecipes):
     @operation_parameters(
         reviewer=Reference(
             title=_("A person for which the reviewer status is in question."),
-            schema=IPerson))
+            schema=IPerson,
+        )
+    )
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def isPersonTrustedReviewer(reviewer):
         """Return true if the `reviewer` is a trusted reviewer.
 
@@ -255,64 +326,101 @@ class IGitRepositoryView(IHasRecipes):
         for the repository.
         """
 
-    git_identity = exported(Text(
-        title=_("Git identity"), readonly=True,
-        description=_(
-            "If this is the default repository for some target, then this is "
-            "'lp:' plus a shortcut version of the path via that target.  "
-            "Otherwise it is simply 'lp:' plus the unique name.")))
+    git_identity = exported(
+        Text(
+            title=_("Git identity"),
+            readonly=True,
+            description=_(
+                "If this is the default repository for some target, then this "
+                "is 'lp:' plus a shortcut version of the path via that "
+                "target.  Otherwise it is simply 'lp:' plus the unique name."
+            ),
+        )
+    )
 
     identity = Attribute(
         "The identity of this repository: a VCS-independent synonym for "
-        "git_identity.")
+        "git_identity."
+    )
 
-    git_https_url = exported(TextLine(
-        title=_("HTTPS URL"), readonly=True,
-        description=_(
-            "An HTTPS URL for this repository, or None in the case of private "
-            "repositories.")))
+    git_https_url = exported(
+        TextLine(
+            title=_("HTTPS URL"),
+            readonly=True,
+            description=_(
+                "An HTTPS URL for this repository, or None in the case of "
+                "private repositories."
+            ),
+        )
+    )
 
-    git_ssh_url = exported(TextLine(
-        title=_("SSH URL"), readonly=True,
-        description=_("A git+ssh:// URL for this repository.")))
+    git_ssh_url = exported(
+        TextLine(
+            title=_("SSH URL"),
+            readonly=True,
+            description=_("A git+ssh:// URL for this repository."),
+        )
+    )
 
-    refs = exported(doNotSnapshot(CollectionField(
-        title=_("The references present in this repository."),
-        readonly=True,
-        # Really IGitRef, patched in _schema_circular_imports.py.
-        value_type=Reference(Interface))))
+    refs = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("The references present in this repository."),
+                readonly=True,
+                # Really IGitRef, patched in _schema_circular_imports.py.
+                value_type=Reference(Interface),
+            )
+        )
+    )
 
-    branches = exported(doNotSnapshot(CollectionField(
-        title=_("The branch references present in this repository."),
-        readonly=True,
-        # Really IGitRef, patched in _schema_circular_imports.py.
-        value_type=Reference(Interface))))
+    branches = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("The branch references present in this repository."),
+                readonly=True,
+                # Really IGitRef, patched in _schema_circular_imports.py.
+                value_type=Reference(Interface),
+            )
+        )
+    )
 
     branches_by_date = Attribute(
         "The branch references present in this repository, ordered by last "
-        "commit date.")
+        "commit date."
+    )
 
-    subscriptions = exported(CollectionField(
-        title=_("GitSubscriptions associated with this repository."),
-        readonly=True,
-        # Really IGitSubscription, patched in _schema_circular_imports.py.
-        value_type=Reference(Interface)))
+    subscriptions = exported(
+        CollectionField(
+            title=_("GitSubscriptions associated with this repository."),
+            readonly=True,
+            # Really IGitSubscription, patched in _schema_circular_imports.py.
+            value_type=Reference(Interface),
+        )
+    )
 
-    subscribers = exported(CollectionField(
-        title=_("Persons subscribed to this repository."),
-        readonly=True, value_type=Reference(IPerson)))
+    subscribers = exported(
+        CollectionField(
+            title=_("Persons subscribed to this repository."),
+            readonly=True,
+            value_type=Reference(IPerson),
+        )
+    )
 
-    code_import = exported(Reference(
-        title=_("The associated CodeImport, if any."),
-        # Really ICodeImport, patched in _schema_circular_imports.py.
-        schema=Interface))
+    code_import = exported(
+        Reference(
+            title=_("The associated CodeImport, if any."),
+            # Really ICodeImport, patched in _schema_circular_imports.py.
+            schema=Interface,
+        )
+    )
 
     rules = Attribute("The access rules for this repository.")
 
     grants = Attribute("The access grants for this repository.")
 
     @operation_parameters(
-        path=TextLine(title=_("A string to look up as a path.")))
+        path=TextLine(title=_("A string to look up as a path."))
+    )
     # Really IGitRef, patched in _schema_circular_imports.py.
     @operation_returns_entry(Interface)
     @export_read_operation()
@@ -471,20 +579,29 @@ class IGitRepositoryView(IHasRecipes):
         person=Reference(title=_("The person to subscribe."), schema=IPerson),
         notification_level=Choice(
             title=_("The level of notification to subscribe to."),
-            vocabulary=BranchSubscriptionNotificationLevel),
+            vocabulary=BranchSubscriptionNotificationLevel,
+        ),
         max_diff_lines=Choice(
             title=_("The max number of lines for diff email."),
-            vocabulary=BranchSubscriptionDiffSize),
+            vocabulary=BranchSubscriptionDiffSize,
+        ),
         code_review_level=Choice(
             title=_("The level of code review notification emails."),
-            vocabulary=CodeReviewNotificationLevel))
+            vocabulary=CodeReviewNotificationLevel,
+        ),
+    )
     # Really IGitSubscription, patched in _schema_circular_imports.py.
     @operation_returns_entry(Interface)
     @call_with(subscribed_by=REQUEST_USER)
     @export_write_operation()
     @operation_for_version("devel")
-    def subscribe(person, notification_level, max_diff_lines,
-                  code_review_level, subscribed_by):
+    def subscribe(
+        person,
+        notification_level,
+        max_diff_lines,
+        code_review_level,
+        subscribed_by,
+    ):
         """Subscribe this person to the repository.
 
         :param person: The `Person` to subscribe.
@@ -500,7 +617,8 @@ class IGitRepositoryView(IHasRecipes):
         """
 
     @operation_parameters(
-        person=Reference(title=_("The person to search for"), schema=IPerson))
+        person=Reference(title=_("The person to search for"), schema=IPerson)
+    )
     # Really IGitSubscription, patched in _schema_circular_imports.py.
     @operation_returns_entry(Interface)
     @export_read_operation()
@@ -512,7 +630,8 @@ class IGitRepositoryView(IHasRecipes):
         """Is this person subscribed to the repository?"""
 
     @operation_parameters(
-        person=Reference(title=_("The person to unsubscribe"), schema=IPerson))
+        person=Reference(title=_("The person to unsubscribe"), schema=IPerson)
+    )
     @call_with(unsubscribed_by=REQUEST_USER)
     @export_write_operation()
     @operation_for_version("devel")
@@ -540,40 +659,59 @@ class IGitRepositoryView(IHasRecipes):
 
     landing_targets = Attribute(
         "A collection of the merge proposals where this repository is "
-        "the source.")
+        "the source."
+    )
     _api_landing_targets = exported(
-        doNotSnapshot(CollectionField(
-            title=_("Landing targets"),
-            description=_(
-                "A collection of the merge proposals where this repository is "
-                "the source."),
-            readonly=True,
-            # Really IBranchMergeProposal, patched in
-            # _schema_circular_imports.py.
-            value_type=Reference(Interface))),
-        exported_as="landing_targets")
+        doNotSnapshot(
+            CollectionField(
+                title=_("Landing targets"),
+                description=_(
+                    "A collection of the merge proposals where this "
+                    "repository is the source."
+                ),
+                readonly=True,
+                # Really IBranchMergeProposal, patched in
+                # _schema_circular_imports.py.
+                value_type=Reference(Interface),
+            )
+        ),
+        exported_as="landing_targets",
+    )
     landing_candidates = Attribute(
         "A collection of the merge proposals where this repository is "
-        "the target.")
+        "the target."
+    )
     _api_landing_candidates = exported(
-        doNotSnapshot(CollectionField(
-            title=_("Landing candidates"),
-            description=_(
-                "A collection of the merge proposals where this repository is "
-                "the target."),
-            readonly=True,
-            # Really IBranchMergeProposal, patched in
-            # _schema_circular_imports.py.
-            value_type=Reference(Interface))),
-        exported_as="landing_candidates")
-    dependent_landings = exported(doNotSnapshot(CollectionField(
-        title=_("Dependent landings"),
-        description=_(
-            "A collection of the merge proposals that are dependent on this "
-            "repository."),
-        readonly=True,
-        # Really IBranchMergeProposal, patched in _schema_circular_imports.py.
-        value_type=Reference(Interface))))
+        doNotSnapshot(
+            CollectionField(
+                title=_("Landing candidates"),
+                description=_(
+                    "A collection of the merge proposals where this "
+                    "repository is the target."
+                ),
+                readonly=True,
+                # Really IBranchMergeProposal, patched in
+                # _schema_circular_imports.py.
+                value_type=Reference(Interface),
+            )
+        ),
+        exported_as="landing_candidates",
+    )
+    dependent_landings = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("Dependent landings"),
+                description=_(
+                    "A collection of the merge proposals that are dependent "
+                    "on this repository."
+                ),
+                readonly=True,
+                # Really IBranchMergeProposal, patched in
+                # _schema_circular_imports.py.
+                value_type=Reference(Interface),
+            )
+        )
+    )
 
     def getPrecachedLandingTargets(user):
         """Return precached landing targets.
@@ -590,16 +728,23 @@ class IGitRepositoryView(IHasRecipes):
     @operation_parameters(
         status=List(
             title=_("A list of merge proposal statuses to filter by."),
-            value_type=Choice(vocabulary=BranchMergeProposalStatus)),
-        merged_revision_ids=List(TextLine(
-            title=_('The target revision ID of the merge.'))))
+            value_type=Choice(vocabulary=BranchMergeProposalStatus),
+        ),
+        merged_revision_ids=List(
+            TextLine(title=_("The target revision ID of the merge."))
+        ),
+    )
     @call_with(visible_by_user=REQUEST_USER)
     # Really IBranchMergeProposal, patched in _schema_circular_imports.py.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("devel")
-    def getMergeProposals(status=None, visible_by_user=None,
-                          merged_revision_ids=None, eager_load=False):
+    def getMergeProposals(
+        status=None,
+        visible_by_user=None,
+        merged_revision_ids=None,
+        eager_load=False,
+    ):
         """Return matching BranchMergeProposals."""
 
     def getMergeProposalByID(id):
@@ -610,7 +755,8 @@ class IGitRepositoryView(IHasRecipes):
 
     pending_updates = Attribute(
         "Whether there are recent changes in this repository that have not "
-        "yet been scanned.")
+        "yet been scanned."
+    )
 
     def updateMergeCommitIDs(paths):
         """Update commit SHA1s of merge proposals for this repository.
@@ -708,12 +854,17 @@ class IGitRepositoryView(IHasRecipes):
     # currently has rather too much backward-compatibility code for that.
     @operation_parameters(
         description=TextLine(
-            title=_("A short description of the token."), required=False),
+            title=_("A short description of the token."), required=False
+        ),
         scopes=List(
             title=_("A list of scopes to be granted by this token."),
-            value_type=Choice(vocabulary=AccessTokenScope), required=False),
+            value_type=Choice(vocabulary=AccessTokenScope),
+            required=False,
+        ),
         date_expires=Datetime(
-            title=_("When the token should expire."), required=False))
+            title=_("When the token should expire."), required=False
+        ),
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def issueAccessToken(description=None, scopes=None, date_expires=None):
@@ -742,7 +893,8 @@ class IGitRepositoryView(IHasRecipes):
         """
 
     @operation_parameters(
-        commit_sha1=copy_field(IRevisionStatusReport["commit_sha1"]))
+        commit_sha1=copy_field(IRevisionStatusReport["commit_sha1"])
+    )
     @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
     @operation_returns_collection_of(Interface)
     @export_read_operation()
@@ -755,22 +907,35 @@ class IGitRepositoryView(IHasRecipes):
 
 
 class IGitRepositoryModerateAttributes(Interface):
-    """IGitRepository attributes that can be edited by more than one community.
-    """
+    """IGitRepository attributes that can be edited by more than one
+    community."""
 
-    date_last_modified = exported(Datetime(
-        title=_("Date last modified"), required=True, readonly=True))
+    date_last_modified = exported(
+        Datetime(title=_("Date last modified"), required=True, readonly=True)
+    )
 
-    reviewer = exported(PublicPersonChoice(
-        title=_("Review Team"), required=False, readonly=False,
-        vocabulary="ValidBranchReviewer",
-        description=_("The reviewer of a repository is the person or "
-                      "exclusive team that is responsible for reviewing "
-                      "proposals and merging into this repository.")))
+    reviewer = exported(
+        PublicPersonChoice(
+            title=_("Review Team"),
+            required=False,
+            readonly=False,
+            vocabulary="ValidBranchReviewer",
+            description=_(
+                "The reviewer of a repository is the person or "
+                "exclusive team that is responsible for reviewing "
+                "proposals and merging into this repository."
+            ),
+        )
+    )
 
-    description = exported(Text(
-        title=_("Description"), required=False, readonly=False,
-        description=_("A short description of this repository.")))
+    description = exported(
+        Text(
+            title=_("Description"),
+            required=False,
+            readonly=False,
+            description=_("A short description of this repository."),
+        )
+    )
 
 
 class IGitRepositoryModerate(Interface):
@@ -779,12 +944,13 @@ class IGitRepositoryModerate(Interface):
     @mutator_for(IGitRepositoryView["information_type"])
     @operation_parameters(
         information_type=copy_field(IGitRepositoryView["information_type"]),
-        )
+    )
     @call_with(user=REQUEST_USER)
     @export_write_operation()
     @operation_for_version("devel")
-    def transitionToInformationType(information_type, user,
-                                    verify_policy=True):
+    def transitionToInformationType(
+        information_type, user, verify_policy=True
+    ):
         """Set the information type for this repository.
 
         :param information_type: The `InformationType` to transition to.
@@ -808,11 +974,17 @@ class IGitRepositoryEditableAttributes(Interface):
     These attributes need launchpad.View to see, and launchpad.Edit to change.
     """
 
-    default_branch = exported(TextLine(
-        title=_("Default branch"), required=False, readonly=False,
-        description=_(
-            "The full path to the default branch for this repository, e.g. "
-            "refs/heads/master.")))
+    default_branch = exported(
+        TextLine(
+            title=_("Default branch"),
+            required=False,
+            readonly=False,
+            description=_(
+                "The full path to the default branch for this repository, "
+                "e.g. refs/heads/master."
+            ),
+        )
+    )
 
 
 class IGitRepositoryExpensiveRequest(Interface):
@@ -843,7 +1015,8 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
     @mutator_for(IGitRepositoryView["name"])
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        new_name=TextLine(title=_("The new name of the repository.")))
+        new_name=TextLine(title=_("The new name of the repository."))
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def setName(new_name, user):
@@ -853,7 +1026,9 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
     @call_with(user=REQUEST_USER)
     @operation_parameters(
         new_owner=Reference(
-            title=_("The new owner of the repository."), schema=IPerson))
+            title=_("The new owner of the repository."), schema=IPerson
+        )
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def setOwner(new_owner, user):
@@ -865,8 +1040,12 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
         target=Reference(
             title=_(
                 "The project, distribution source package, or person the "
-                "repository belongs to."),
-            schema=IHasGitRepositories, required=True))
+                "repository belongs to."
+            ),
+            schema=IHasGitRepositories,
+            required=True,
+        )
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def setTarget(target, user):
@@ -900,8 +1079,9 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
         :param user: The `IPerson` who is moving the rule.
         """
 
-    def findRuleGrantsByGrantee(grantee, include_transitive=True,
-                                ref_pattern=None):
+    def findRuleGrantsByGrantee(
+        grantee, include_transitive=True, ref_pattern=None
+    ):
         """Find the grants for a grantee applied to this repository.
 
         :param grantee: The `IPerson` to search for, or an item of
@@ -925,7 +1105,9 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
             # Really IGitNascentRule, patched in
             # _schema_circular_imports.py.
             value_type=InlineObject(schema=Interface),
-            description=_(dedent("""\
+            description=_(
+                dedent(
+                    """\
                 The new list of rules for this repository.
 
                 For example::
@@ -953,7 +1135,11 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
                                 }
                             ]
                         }
-                    ]"""))))
+                    ]"""
+                )
+            ),
+        )
+    )
     @call_with(user=REQUEST_USER)
     @export_write_operation()
     @operation_for_version("devel")
@@ -984,7 +1170,8 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
 
     @operation_parameters(
         person=Reference(title=_("Person to check"), schema=IPerson),
-        paths=List(title=_("Reference paths"), value_type=TextLine()))
+        paths=List(title=_("Reference paths"), value_type=TextLine()),
+    )
     @export_operation_as("checkRefPermissions")
     @export_read_operation()
     @operation_for_version("devel")
@@ -1036,7 +1223,8 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
         commit_sha1=copy_field(IRevisionStatusReport["commit_sha1"]),
         url=copy_field(IRevisionStatusReport["url"]),
         result_summary=copy_field(IRevisionStatusReport["result_summary"]),
-        result=copy_field(IRevisionStatusReport["result"]))
+        result=copy_field(IRevisionStatusReport["result"]),
+    )
     @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
     @call_with(user=REQUEST_USER)
     @export_factory_operation(IRevisionStatusReport, [])
@@ -1056,14 +1244,26 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
 # generation working.  Individual attributes must set their version to
 # "devel".
 @exported_as_webservice_entry(plural_name="git_repositories", as_of="beta")
-class IGitRepository(IGitRepositoryView, IGitRepositoryModerateAttributes,
-                     IGitRepositoryModerate, IGitRepositoryEditableAttributes,
-                     IGitRepositoryEdit, IGitRepositoryExpensiveRequest):
+class IGitRepository(
+    IGitRepositoryView,
+    IGitRepositoryModerateAttributes,
+    IGitRepositoryModerate,
+    IGitRepositoryEditableAttributes,
+    IGitRepositoryEdit,
+    IGitRepositoryExpensiveRequest,
+):
     """A Git repository."""
 
-    private = exported(Bool(
-        title=_("Private"), required=False, readonly=True,
-        description=_("This repository is visible only to its subscribers.")))
+    private = exported(
+        Bool(
+            title=_("Private"),
+            required=False,
+            readonly=True,
+            description=_(
+                "This repository is visible only to its subscribers."
+            ),
+        )
+    )
 
 
 @exported_as_webservice_collection(IGitRepository)
@@ -1073,14 +1273,25 @@ class IGitRepositorySet(Interface):
     @call_with(
         repository_type=GitRepositoryType.HOSTED,
         registrant=REQUEST_USER,
-        with_hosting=True)
+        with_hosting=True,
+    )
     @operation_parameters(
         information_type=copy_field(
-            IGitRepositoryView["information_type"], required=False))
+            IGitRepositoryView["information_type"], required=False
+        )
+    )
     @export_factory_operation(IGitRepository, ["owner", "target", "name"])
     @operation_for_version("devel")
-    def new(repository_type, registrant, owner, target, name,
-            information_type=None, date_created=None, with_hosting=False):
+    def new(
+        repository_type,
+        registrant,
+        owner,
+        target,
+        name,
+        information_type=None,
+        date_created=None,
+        with_hosting=False,
+    ):
         """Create a Git repository and return it.
 
         :param repository_type: The `GitRepositoryType` of the new
@@ -1108,7 +1319,8 @@ class IGitRepositorySet(Interface):
     # Marker for references to Git URL layouts: ##GITNAMESPACE##
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        path=TextLine(title=_("Repository path"), required=True))
+        path=TextLine(title=_("Repository path"), required=True)
+    )
     @operation_returns_entry(IGitRepository)
     @export_read_operation()
     @operation_for_version("devel")
@@ -1134,22 +1346,31 @@ class IGitRepositorySet(Interface):
     @call_with(user=REQUEST_USER)
     @operation_parameters(
         target=Reference(
-            title=_("Target"), required=False, schema=IHasGitRepositories),
+            title=_("Target"), required=False, schema=IHasGitRepositories
+        ),
         order_by=Choice(
-            title=_("Sort order"), vocabulary=GitListingSort,
+            title=_("Sort order"),
+            vocabulary=GitListingSort,
             default=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
-            required=False),
+            required=False,
+        ),
         modified_since_date=Datetime(
             title=_("Modified since date"),
             description=_(
                 "Return only repositories whose `date_last_modified` is "
-                "greater than or equal to this date.")))
+                "greater than or equal to this date."
+            ),
+        ),
+    )
     @operation_returns_collection_of(IGitRepository)
     @export_read_operation()
     @operation_for_version("devel")
-    def getRepositories(user, target=None,
-                        order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
-                        modified_since_date=None):
+    def getRepositories(
+        user,
+        target=None,
+        order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
+        modified_since_date=None,
+    ):
         """Get all repositories for a target.
 
         :param user: An `IPerson`.  Only repositories visible by this user
@@ -1176,12 +1397,16 @@ class IGitRepositorySet(Interface):
     @call_with(user=REQUEST_USER)
     @operation_parameters(
         person=Reference(
-            title=_("The person whose repository visibility is being "
-                    "checked."),
-            schema=IPerson),
-        repository_names=List(value_type=Text(),
-                              title=_('List of repository unique names'),
-                              required=True),
+            title=_(
+                "The person whose repository visibility is being " "checked."
+            ),
+            schema=IPerson,
+        ),
+        repository_names=List(
+            value_type=Text(),
+            title=_("List of repository unique names"),
+            required=True,
+        ),
     )
     @export_read_operation()
     @operation_for_version("devel")
@@ -1209,7 +1434,9 @@ class IGitRepositorySet(Interface):
 
     @operation_parameters(
         target=Reference(
-            title=_("Target"), required=True, schema=IHasGitRepositories))
+            title=_("Target"), required=True, schema=IHasGitRepositories
+        )
+    )
     @operation_returns_entry(IGitRepository)
     @export_read_operation()
     @operation_for_version("devel")
@@ -1225,7 +1452,9 @@ class IGitRepositorySet(Interface):
     @operation_parameters(
         owner=Reference(title=_("Owner"), required=True, schema=IPerson),
         target=Reference(
-            title=_("Target"), required=True, schema=IHasGitRepositories))
+            title=_("Target"), required=True, schema=IHasGitRepositories
+        ),
+    )
     @operation_returns_entry(IGitRepository)
     @export_read_operation()
     @operation_for_version("devel")
@@ -1241,9 +1470,12 @@ class IGitRepositorySet(Interface):
 
     @operation_parameters(
         target=Reference(
-            title=_("Target"), required=True, schema=IHasGitRepositories),
+            title=_("Target"), required=True, schema=IHasGitRepositories
+        ),
         repository=Reference(
-            title=_("Git repository"), required=False, schema=IGitRepository))
+            title=_("Git repository"), required=False, schema=IGitRepository
+        ),
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def setDefaultRepository(target, repository):
@@ -1260,9 +1492,12 @@ class IGitRepositorySet(Interface):
     @operation_parameters(
         owner=Reference(title=_("Owner"), required=True, schema=IPerson),
         target=Reference(
-            title=_("Target"), required=True, schema=IHasGitRepositories),
+            title=_("Target"), required=True, schema=IHasGitRepositories
+        ),
         repository=Reference(
-            title=_("Git repository"), required=False, schema=IGitRepository))
+            title=_("Git repository"), required=False, schema=IGitRepository
+        ),
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def setDefaultRepositoryForOwner(owner, target, repository, user):
@@ -1357,7 +1592,8 @@ class GitIdentityMixin:
                 # Also enforced by database constraint.
                 raise AssertionError(
                     "Only projects, packages, or OCI projects can have "
-                    "owner-target default repositories.")
+                    "owner-target default repositories."
+                )
             defaults.append(ICanHasDefaultGitRepository(default))
         return sorted(defaults)
 
@@ -1365,7 +1601,8 @@ class GitIdentityMixin:
         """See `IGitRepository`."""
         identities = [
             (default.path, default.context)
-            for default in self.getRepositoryDefaults()]
+            for default in self.getRepositoryDefaults()
+        ]
         identities.append((self.unique_name, self))
         return identities
 
@@ -1374,7 +1611,8 @@ class IHasGitRepositoryURL(Interface):
     """Marker interface for objects that have a Git repository URL."""
 
     git_repository_url = Attribute(
-        "The Git repository URL (possibly external)")
+        "The Git repository URL (possibly external)"
+    )
 
 
 def user_has_special_git_repository_access(user, repository=None):
@@ -1398,9 +1636,7 @@ def user_has_special_git_repository_access(user, repository=None):
 
 
 class ContributorGitIdentity(GitIdentityMixin):
-
-    def __init__(self, owner,
-                 target, repository):
+    def __init__(self, owner, target, repository):
         self.target_default = False
         self.owner_default = True
         self.owner = owner
@@ -1410,5 +1646,6 @@ class ContributorGitIdentity(GitIdentityMixin):
     def getRepositoryIdentities(self):
         identities = [
             (default.path, default.context)
-            for default in self.getRepositoryDefaults()]
+            for default in self.getRepositoryDefaults()
+        ]
         return identities

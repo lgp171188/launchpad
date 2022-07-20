@@ -4,16 +4,13 @@
 """Interface definitions for IHasRecipes."""
 
 __all__ = [
-    'IHasRecipes',
-    ]
+    "IHasRecipes",
+]
 
 
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import exported
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
+from lazr.restful.fields import CollectionField, Reference
 from zope.interface import Interface
 
 from lp import _
@@ -22,8 +19,12 @@ from lp import _
 class IHasRecipes(Interface):
     """An object that has recipes."""
 
-    recipes = exported(doNotSnapshot(
-        CollectionField(
-            title=_("All recipes associated with the object."),
-            value_type=Reference(schema=Interface),
-            readonly=True)))
+    recipes = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("All recipes associated with the object."),
+                value_type=Reference(schema=Interface),
+                readonly=True,
+            )
+        )
+    )

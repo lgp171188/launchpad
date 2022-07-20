@@ -8,54 +8,34 @@ creating proposals, or diffs relating to the proposals.
 """
 
 __all__ = [
-    'BranchMergeProposalJob',
-    'BranchMergeProposalJobSource',
-    'BranchMergeProposalJobType',
-    'CodeReviewCommentEmailJob',
-    'GenerateIncrementalDiffJob',
-    'MergeProposalNeedsReviewEmailJob',
-    'MergeProposalUpdatedEmailJob',
-    'ReviewRequestedEmailJob',
-    'UpdatePreviewDiffJob',
-    ]
+    "BranchMergeProposalJob",
+    "BranchMergeProposalJobSource",
+    "BranchMergeProposalJobType",
+    "CodeReviewCommentEmailJob",
+    "GenerateIncrementalDiffJob",
+    "MergeProposalNeedsReviewEmailJob",
+    "MergeProposalUpdatedEmailJob",
+    "ReviewRequestedEmailJob",
+    "UpdatePreviewDiffJob",
+]
 
 from contextlib import ExitStack
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
-from lazr.delegates import delegate_to
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
 import pytz
 import simplejson
 import six
-from storm.expr import (
-    And,
-    Desc,
-    Or,
-    )
-from storm.locals import (
-    Int,
-    Reference,
-    Unicode,
-    )
+from lazr.delegates import delegate_to
+from lazr.enum import DBEnumeratedType, DBItem
+from storm.expr import And, Desc, Or
+from storm.locals import Int, Reference, Unicode
 from storm.store import Store
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 
 from lp.code.adapters.branch import BranchMergeProposalDelta
 from lp.code.enums import BranchType
-from lp.code.errors import (
-    BranchHasPendingWrites,
-    UpdatePreviewDiffNotReady,
-    )
+from lp.code.errors import BranchHasPendingWrites, UpdatePreviewDiffNotReady
 from lp.code.interfaces.branchmergeproposal import (
     IBranchMergeProposalJob,
     IBranchMergeProposalJobSource,
@@ -71,7 +51,7 @@ from lp.code.interfaces.branchmergeproposal import (
     IReviewRequestedEmailJobSource,
     IUpdatePreviewDiffJob,
     IUpdatePreviewDiffJobSource,
-    )
+)
 from lp.code.interfaces.revision import IRevisionSet
 from lp.code.mail.branch import RecipientReason
 from lp.code.mail.branchmergeproposal import BMPMailer
@@ -83,21 +63,12 @@ from lp.codehosting.vfs import get_ro_server
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
-from lp.services.job.model.job import (
-    EnumeratedSubclass,
-    Job,
-    )
-from lp.services.job.runner import (
-    BaseRunnableJob,
-    BaseRunnableJobSource,
-    )
+from lp.services.job.model.job import EnumeratedSubclass, Job
+from lp.services.job.runner import BaseRunnableJob, BaseRunnableJobSource
 from lp.services.mail.sendmail import format_address_for_person
 from lp.services.webapp import canonical_url
 
@@ -105,63 +76,82 @@ from lp.services.webapp import canonical_url
 class BranchMergeProposalJobType(DBEnumeratedType):
     """Values that ICodeImportJob.state can take."""
 
-    MERGE_PROPOSAL_NEEDS_REVIEW = DBItem(0, """
+    MERGE_PROPOSAL_NEEDS_REVIEW = DBItem(
+        0,
+        """
         Merge proposal needs review
 
         This job sends mail to all interested parties about the proposal.
-        """)
+        """,
+    )
 
-    UPDATE_PREVIEW_DIFF = DBItem(1, """
+    UPDATE_PREVIEW_DIFF = DBItem(
+        1,
+        """
         Update the preview diff for the BranchMergeProposal.
 
         This job generates the preview diff for a BranchMergeProposal.
-        """)
+        """,
+    )
 
-    CODE_REVIEW_COMMENT_EMAIL = DBItem(2, """
+    CODE_REVIEW_COMMENT_EMAIL = DBItem(
+        2,
+        """
         Send the code review comment to the subscribers.
 
         This job sends the email to the merge proposal subscribers and
         reviewers.
-        """)
+        """,
+    )
 
-    REVIEW_REQUEST_EMAIL = DBItem(3, """
+    REVIEW_REQUEST_EMAIL = DBItem(
+        3,
+        """
         Send the review request email to the requested reviewer.
 
         This job sends an email to the requested reviewer, or members of the
         requested reviewer team asking them to review the proposal.
-        """)
+        """,
+    )
 
-    MERGE_PROPOSAL_UPDATED = DBItem(4, """
+    MERGE_PROPOSAL_UPDATED = DBItem(
+        4,
+        """
         Merge proposal updated
 
         This job sends an email to the subscribers informing them of fields
         that have been changed on the merge proposal itself.
-        """)
+        """,
+    )
 
-    GENERATE_INCREMENTAL_DIFF = DBItem(5, """
+    GENERATE_INCREMENTAL_DIFF = DBItem(
+        5,
+        """
         Generate incremental diff
 
-        This job generates an incremental diff for a merge proposal.""")
+        This job generates an incremental diff for a merge proposal.""",
+    )
 
 
 @implementer(IBranchMergeProposalJob)
 class BranchMergeProposalJob(StormBase):
     """Base class for jobs related to branch merge proposals."""
 
-    __storm_table__ = 'BranchMergeProposalJob'
+    __storm_table__ = "BranchMergeProposalJob"
 
     id = Int(primary=True)
 
-    jobID = Int('job')
+    jobID = Int("job")
     job = Reference(jobID, Job.id)
 
-    branch_merge_proposalID = Int('branch_merge_proposal', allow_none=False)
+    branch_merge_proposalID = Int("branch_merge_proposal", allow_none=False)
     branch_merge_proposal = Reference(
-        branch_merge_proposalID, BranchMergeProposal.id)
+        branch_merge_proposalID, BranchMergeProposal.id
+    )
 
     job_type = DBEnum(enum=BranchMergeProposalJobType, allow_none=False)
 
-    _json_data = Unicode('json_data')
+    _json_data = Unicode("json_data")
 
     @property
     def metadata(self):
@@ -212,7 +202,8 @@ class BranchMergeProposalJob(StormBase):
         instance = IStore(klass).get(klass, key)
         if instance is None:
             raise SQLObjectNotFound(
-                'No occurrence of %s has key %s' % (klass.__name__, key))
+                "No occurrence of %s has key %s" % (klass.__name__, key)
+            )
         return instance
 
     def makeDerived(self):
@@ -221,7 +212,8 @@ class BranchMergeProposalJob(StormBase):
 
 @delegate_to(IBranchMergeProposalJob)
 class BranchMergeProposalJobDerived(
-        BaseRunnableJob, metaclass=EnumeratedSubclass):
+    BaseRunnableJob, metaclass=EnumeratedSubclass
+):
     """Intermediate class for deriving from BranchMergeProposalJob."""
 
     def __init__(self, job):
@@ -229,11 +221,11 @@ class BranchMergeProposalJobDerived(
 
     def __repr__(self):
         bmp = self.branch_merge_proposal
-        return '<%(job_type)s job for merge %(merge_id)s on %(branch)s>' % {
-            'job_type': self.context.job_type.name,
-            'merge_id': bmp.id,
-            'branch': bmp.merge_source.unique_name,
-            }
+        return "<%(job_type)s job for merge %(merge_id)s on %(branch)s>" % {
+            "job_type": self.context.job_type.name,
+            "merge_id": bmp.id,
+            "branch": bmp.merge_source.unique_name,
+        }
 
     @classmethod
     def create(cls, bmp):
@@ -242,8 +234,7 @@ class BranchMergeProposalJobDerived(
 
     @classmethod
     def _create(cls, bmp, metadata):
-        base_job = BranchMergeProposalJob(
-            bmp, cls.class_job_type, metadata)
+        base_job = BranchMergeProposalJob(bmp, cls.class_job_type, metadata)
         job = cls(base_job)
         job.celeryRunOnCommit()
         return job
@@ -260,28 +251,39 @@ class BranchMergeProposalJobDerived(
         job = BranchMergeProposalJob.get(job_id)
         if job.job_type != cls.class_job_type:
             raise SQLObjectNotFound(
-                'No object found with id %d and type %s' % (job_id,
-                cls.class_job_type.title))
+                "No object found with id %d and type %s"
+                % (job_id, cls.class_job_type.title)
+            )
         return cls(job)
 
     @classmethod
     def iterReady(klass):
         """Iterate through all ready BranchMergeProposalJobs."""
         from lp.code.model.branch import Branch
+
         jobs = IMasterStore(Branch).find(
             (BranchMergeProposalJob),
-            And(BranchMergeProposalJob.job_type == klass.class_job_type,
+            And(
+                BranchMergeProposalJob.job_type == klass.class_job_type,
                 BranchMergeProposalJob.job == Job.id,
                 Job.id.is_in(Job.ready_jobs),
                 BranchMergeProposalJob.branch_merge_proposal
-                    == BranchMergeProposal.id,
-                Or(And(BranchMergeProposal.source_branch == Branch.id,
-                       # A proposal isn't considered ready if it has no
-                       # revisions, or if it is hosted but pending a mirror.
-                       Branch.revision_count > 0,
-                       Or(Branch.next_mirror_time == None,
-                          Branch.branch_type != BranchType.HOSTED)),
-                   BranchMergeProposal.source_git_repository != None)))
+                == BranchMergeProposal.id,
+                Or(
+                    And(
+                        BranchMergeProposal.source_branch == Branch.id,
+                        # A proposal isn't considered ready if it has no
+                        # revisions, or if it is hosted but pending a mirror.
+                        Branch.revision_count > 0,
+                        Or(
+                            Branch.next_mirror_time == None,
+                            Branch.branch_type != BranchType.HOSTED,
+                        ),
+                    ),
+                    BranchMergeProposal.source_git_repository != None,
+                ),
+            ),
+        )
         jobs = jobs.config(distinct=True)
         return (klass(job) for job in jobs)
 
@@ -289,11 +291,14 @@ class BranchMergeProposalJobDerived(
         """See `IRunnableJob`."""
         vars = BaseRunnableJob.getOopsVars(self)
         bmp = self.context.branch_merge_proposal
-        vars.extend([
-            ('branchmergeproposal_job_id', self.context.id),
-            ('branchmergeproposal_job_type', self.context.job_type.title),
-            ('merge_source', bmp.merge_source.unique_name),
-            ('merge_target', bmp.merge_target.unique_name)])
+        vars.extend(
+            [
+                ("branchmergeproposal_job_id", self.context.id),
+                ("branchmergeproposal_job_type", self.context.job_type.title),
+                ("merge_source", bmp.merge_source.unique_name),
+                ("merge_target", bmp.merge_target.unique_name),
+            ]
+        )
         return vars
 
 
@@ -309,16 +314,18 @@ class MergeProposalNeedsReviewEmailJob(BranchMergeProposalJobDerived):
     def run(self):
         """See `IMergeProposalNeedsReviewEmailJob`."""
         mailer = BMPMailer.forCreation(
-            self.branch_merge_proposal, self.branch_merge_proposal.registrant)
+            self.branch_merge_proposal, self.branch_merge_proposal.registrant
+        )
         mailer.sendAll()
 
     def getOopsRecipients(self):
         return [self.branch_merge_proposal.registrant.preferredemail.email]
 
     def getOperationDescription(self):
-        return ('notifying people about the proposal to merge %s into %s' %
-            (self.branch_merge_proposal.merge_source.identity,
-             self.branch_merge_proposal.merge_target.identity))
+        return "notifying people about the proposal to merge %s into %s" % (
+            self.branch_merge_proposal.merge_source.identity,
+            self.branch_merge_proposal.merge_target.identity,
+        )
 
 
 @implementer(IUpdatePreviewDiffJob)
@@ -331,13 +338,13 @@ class UpdatePreviewDiffJob(BranchMergeProposalJobDerived):
 
     class_job_type = BranchMergeProposalJobType.UPDATE_PREVIEW_DIFF
 
-    task_queue = 'bzrsyncd_job'
+    task_queue = "bzrsyncd_job"
 
     config = config.IBranchMergeProposalJobSource
 
-    user_error_types = (UpdatePreviewDiffNotReady, )
+    user_error_types = (UpdatePreviewDiffNotReady,)
 
-    retry_error_types = (BranchHasPendingWrites, )
+    retry_error_types = (BranchHasPendingWrites,)
 
     max_retries = 20
 
@@ -350,13 +357,16 @@ class UpdatePreviewDiffJob(BranchMergeProposalJobDerived):
         if bmp.source_branch is not None:
             if bmp.source_branch.last_scanned_id is None:
                 raise UpdatePreviewDiffNotReady(
-                    'The source branch of %s has no revisions.' % url)
+                    "The source branch of %s has no revisions." % url
+                )
             if bmp.target_branch.last_scanned_id is None:
                 raise UpdatePreviewDiffNotReady(
-                    'The target branch of %s has no revisions.' % url)
+                    "The target branch of %s has no revisions." % url
+                )
             if bmp.source_branch.pending_writes:
                 raise BranchHasPendingWrites(
-                    'The source branch of %s has pending writes.' % url)
+                    "The source branch of %s has pending writes." % url
+                )
 
     def run(self):
         """See `IRunnableJob`."""
@@ -371,7 +381,7 @@ class UpdatePreviewDiffJob(BranchMergeProposalJobDerived):
                 PreviewDiff.fromBranchMergeProposal(self.branch_merge_proposal)
 
     def getOperationDescription(self):
-        return ('generating the diff for a merge proposal')
+        return "generating the diff for a merge proposal"
 
     def getErrorRecipients(self):
         """Return a list of email-ids to notify about user errors."""
@@ -405,20 +415,23 @@ class CodeReviewCommentEmailJob(BranchMergeProposalJobDerived):
 
     @staticmethod
     def getMetadata(code_review_comment):
-        return {'code_review_comment': code_review_comment.id}
+        return {"code_review_comment": code_review_comment.id}
 
     @property
     def code_review_comment(self):
         """Get the code review comment."""
         return self.branch_merge_proposal.getComment(
-            self.metadata['code_review_comment'])
+            self.metadata["code_review_comment"]
+        )
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
         vars = BranchMergeProposalJobDerived.getOopsVars(self)
-        vars.extend([
-            ('code_review_comment', self.metadata['code_review_comment']),
-            ])
+        vars.extend(
+            [
+                ("code_review_comment", self.metadata["code_review_comment"]),
+            ]
+        )
         return vars
 
     def getErrorRecipients(self):
@@ -427,7 +440,7 @@ class CodeReviewCommentEmailJob(BranchMergeProposalJobDerived):
         return [format_address_for_person(commenter)]
 
     def getOperationDescription(self):
-        return 'emailing a code review comment'
+        return "emailing a code review comment"
 
 
 @implementer(IReviewRequestedEmailJob)
@@ -445,9 +458,11 @@ class ReviewRequestedEmailJob(BranchMergeProposalJobDerived):
     def run(self):
         """See `IRunnableJob`."""
         reason = RecipientReason.forReviewer(
-            self.branch_merge_proposal, True, self.reviewer)
+            self.branch_merge_proposal, True, self.reviewer
+        )
         mailer = BMPMailer.forReviewRequest(
-            reason, self.branch_merge_proposal, self.requester)
+            reason, self.branch_merge_proposal, self.requester
+        )
         mailer.sendAll()
 
     @classmethod
@@ -460,27 +475,29 @@ class ReviewRequestedEmailJob(BranchMergeProposalJobDerived):
     @staticmethod
     def getMetadata(review_request):
         return {
-            'reviewer': review_request.reviewer.name,
-            'requester': review_request.registrant.name,
-            }
+            "reviewer": review_request.reviewer.name,
+            "requester": review_request.registrant.name,
+        }
 
     @property
     def reviewer(self):
         """The person or team who has been asked to review."""
-        return getUtility(IPersonSet).getByName(self.metadata['reviewer'])
+        return getUtility(IPersonSet).getByName(self.metadata["reviewer"])
 
     @property
     def requester(self):
         """The person who requested the review to be done."""
-        return getUtility(IPersonSet).getByName(self.metadata['requester'])
+        return getUtility(IPersonSet).getByName(self.metadata["requester"])
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
         vars = BranchMergeProposalJobDerived.getOopsVars(self)
-        vars.extend([
-            ('reviewer', self.metadata['reviewer']),
-            ('requester', self.metadata['requester']),
-            ])
+        vars.extend(
+            [
+                ("reviewer", self.metadata["reviewer"]),
+                ("requester", self.metadata["requester"]),
+            ]
+        )
         return vars
 
     def getErrorRecipients(self):
@@ -491,7 +508,7 @@ class ReviewRequestedEmailJob(BranchMergeProposalJobDerived):
         return recipients
 
     def getOperationDescription(self):
-        return 'emailing a reviewer requesting a review'
+        return "emailing a reviewer requesting a review"
 
 
 @implementer(IMergeProposalUpdatedEmailJob)
@@ -510,7 +527,8 @@ class MergeProposalUpdatedEmailJob(BranchMergeProposalJobDerived):
     def run(self):
         """See `IRunnableJob`."""
         mailer = BMPMailer.forModification(
-            self.branch_merge_proposal, self.delta_text, self.editor)
+            self.branch_merge_proposal, self.delta_text, self.editor
+        )
         mailer.sendAll()
 
     @classmethod
@@ -521,15 +539,15 @@ class MergeProposalUpdatedEmailJob(BranchMergeProposalJobDerived):
 
     @staticmethod
     def getMetadata(delta_text, editor):
-        metadata = {'delta_text': delta_text}
+        metadata = {"delta_text": delta_text}
         if editor is not None:
-            metadata['editor'] = editor.name
+            metadata["editor"] = editor.name
         return metadata
 
     @property
     def editor(self):
         """The person who updated the merge proposal."""
-        editor_name = self.metadata.get('editor')
+        editor_name = self.metadata.get("editor")
         if editor_name is None:
             return None
         else:
@@ -538,15 +556,17 @@ class MergeProposalUpdatedEmailJob(BranchMergeProposalJobDerived):
     @property
     def delta_text(self):
         """The changes that were made to the merge proposal."""
-        return self.metadata['delta_text']
+        return self.metadata["delta_text"]
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
         vars = BranchMergeProposalJobDerived.getOopsVars(self)
-        vars.extend([
-            ('editor', self.metadata.get('editor', '(not set)')),
-            ('delta_text', self.metadata['delta_text']),
-            ])
+        vars.extend(
+            [
+                ("editor", self.metadata.get("editor", "(not set)")),
+                ("delta_text", self.metadata["delta_text"]),
+            ]
+        )
         return vars
 
     def getErrorRecipients(self):
@@ -557,7 +577,7 @@ class MergeProposalUpdatedEmailJob(BranchMergeProposalJobDerived):
         return recipients
 
     def getOperationDescription(self):
-        return 'emailing subscribers about merge proposal changes'
+        return "emailing subscribers about merge proposal changes"
 
 
 @implementer(IGenerateIncrementalDiffJob)
@@ -570,7 +590,7 @@ class GenerateIncrementalDiffJob(BranchMergeProposalJobDerived):
 
     class_job_type = BranchMergeProposalJobType.GENERATE_INCREMENTAL_DIFF
 
-    task_queue = 'bzrsyncd_job'
+    task_queue = "bzrsyncd_job"
 
     config = config.IBranchMergeProposalJobSource
 
@@ -582,7 +602,8 @@ class GenerateIncrementalDiffJob(BranchMergeProposalJobDerived):
         new_revision = revision_set.getByRevisionId(self.new_revision_id)
         with server(get_ro_server(), no_replace=True):
             self.branch_merge_proposal.generateIncrementalDiff(
-                old_revision, new_revision)
+                old_revision, new_revision
+            )
 
     @classmethod
     def create(cls, merge_proposal, old_revision_id, new_revision_id):
@@ -592,31 +613,33 @@ class GenerateIncrementalDiffJob(BranchMergeProposalJobDerived):
     @staticmethod
     def getMetadata(old_revision_id, new_revision_id):
         return {
-            'old_revision_id': old_revision_id,
-            'new_revision_id': new_revision_id,
+            "old_revision_id": old_revision_id,
+            "new_revision_id": new_revision_id,
         }
 
     @property
     def old_revision_id(self):
         """The old revision id for the diff."""
-        return self.metadata['old_revision_id']
+        return self.metadata["old_revision_id"]
 
     @property
     def new_revision_id(self):
         """The new revision id for the diff."""
-        return self.metadata['new_revision_id']
+        return self.metadata["new_revision_id"]
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
         vars = BranchMergeProposalJobDerived.getOopsVars(self)
-        vars.extend([
-            ('old_revision_id', self.metadata['old_revision_id']),
-            ('new_revision_id', self.metadata['new_revision_id']),
-            ])
+        vars.extend(
+            [
+                ("old_revision_id", self.metadata["old_revision_id"]),
+                ("new_revision_id", self.metadata["new_revision_id"]),
+            ]
+        )
         return vars
 
     def getOperationDescription(self):
-        return ('generating an incremental diff for a merge proposal')
+        return "generating an incremental diff for a merge proposal"
 
     def getErrorRecipients(self):
         """Return a list of email-ids to notify about user errors."""
@@ -648,19 +671,22 @@ class BranchMergeProposalJobSource(BaseRunnableJobSource):
         clauses = [
             BranchMergeProposalJob.job == Job.id,
             Job._status.is_in([JobStatus.WAITING, JobStatus.RUNNING]),
-            BranchMergeProposalJob.branch_merge_proposal ==
-            BranchMergeProposal.id,
-            ]
+            BranchMergeProposalJob.branch_merge_proposal
+            == BranchMergeProposal.id,
+        ]
         if job_type is not None:
             clauses.append(BranchMergeProposalJob.job_type == job_type)
         jobs = IMasterStore(BranchMergeProposalJob).find(
-            (BranchMergeProposalJob, Job, BranchMergeProposal), And(*clauses))
+            (BranchMergeProposalJob, Job, BranchMergeProposal), And(*clauses)
+        )
         # Order by the job status first (to get running before waiting), then
         # the date_created, then job type.  This should give us all creation
         # jobs before comment jobs.
         jobs = jobs.order_by(
-            Desc(Job._status), Job.date_created,
-            Desc(BranchMergeProposalJob.job_type))
+            Desc(Job._status),
+            Job.date_created,
+            Desc(BranchMergeProposalJob.job_type),
+        )
         # Now only return one job for any given merge proposal.
         ready_jobs = []
         seen_merge_proposals = set()
@@ -672,11 +698,17 @@ class BranchMergeProposalJobSource(BaseRunnableJobSource):
             seen_merge_proposals.add(bmp.id)
             # If the job is running or can't currently be run due to its
             # lease or its start time, then skip it.
-            if (job.status == JobStatus.RUNNING or
-                (job.lease_expires is not None and
-                 job.lease_expires >= datetime.now(pytz.UTC)) or
-                (job.scheduled_start is not None and
-                 job.scheduled_start > datetime.now(pytz.UTC))):
+            if (
+                job.status == JobStatus.RUNNING
+                or (
+                    job.lease_expires is not None
+                    and job.lease_expires >= datetime.now(pytz.UTC)
+                )
+                or (
+                    job.scheduled_start is not None
+                    and job.scheduled_start > datetime.now(pytz.UTC)
+                )
+            ):
                 continue
             derived_job = bmp_job.makeDerived()
             # If the job is an update preview diff, then check that it is
@@ -687,9 +719,11 @@ class BranchMergeProposalJobSource(BaseRunnableJobSource):
                 except (UpdatePreviewDiffNotReady, BranchHasPendingWrites):
                     # If the job was created under 15 minutes ago wait a bit.
                     minutes = (
-                        config.codehosting.update_preview_diff_ready_timeout)
-                    cut_off_time = (
-                        datetime.now(pytz.UTC) - timedelta(minutes=minutes))
+                        config.codehosting.update_preview_diff_ready_timeout
+                    )
+                    cut_off_time = datetime.now(pytz.UTC) - timedelta(
+                        minutes=minutes
+                    )
                     if job.date_created > cut_off_time:
                         continue
             ready_jobs.append(derived_job)

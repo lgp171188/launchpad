@@ -7,15 +7,12 @@ from lp.app.enums import InformationType
 from lp.app.errors import (
     SubscriptionPrivacyViolation,
     UserCannotUnsubscribePerson,
-    )
+)
 from lp.code.enums import (
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
-    )
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+)
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -36,8 +33,12 @@ class TestGitSubscriptions(TestCaseWithFactory):
         subscribed_by = self.factory.makePerson()
         repository = self.factory.makeGitRepository()
         subscription = repository.subscribe(
-            subscriber, BranchSubscriptionNotificationLevel.NOEMAIL, None,
-            CodeReviewNotificationLevel.NOEMAIL, subscribed_by)
+            subscriber,
+            BranchSubscriptionNotificationLevel.NOEMAIL,
+            None,
+            CodeReviewNotificationLevel.NOEMAIL,
+            subscribed_by,
+        )
         self.assertEqual(subscriber, subscription.person)
         self.assertEqual(subscribed_by, subscription.subscribed_by)
 
@@ -53,7 +54,8 @@ class TestGitSubscriptions(TestCaseWithFactory):
         # Test unsubscribing by the person who subscribed the user.
         subscribed_by = self.factory.makePerson()
         subscription = self.factory.makeGitSubscription(
-            subscribed_by=subscribed_by)
+            subscribed_by=subscribed_by
+        )
         subscriber = subscription.person
         repository = subscription.repository
         repository.unsubscribe(subscriber, subscribed_by)
@@ -67,42 +69,60 @@ class TestGitSubscriptions(TestCaseWithFactory):
             UserCannotUnsubscribePerson,
             repository.unsubscribe,
             subscription.person,
-            self.factory.makePerson())
+            self.factory.makePerson(),
+        )
 
     def test_cannot_subscribe_open_team_to_private_repository(self):
         # It is forbidden to subscribe a open team to a private repository.
         owner = self.factory.makePerson()
         repository = self.factory.makeGitRepository(
-            information_type=InformationType.USERDATA, owner=owner)
+            information_type=InformationType.USERDATA, owner=owner
+        )
         team = self.factory.makeTeam()
         with person_logged_in(owner):
             self.assertRaises(
-                SubscriptionPrivacyViolation, repository.subscribe, team, None,
-                None, None, owner)
+                SubscriptionPrivacyViolation,
+                repository.subscribe,
+                team,
+                None,
+                None,
+                None,
+                owner,
+            )
 
     def test_subscribe_gives_access(self):
         # Subscribing a user to a repository gives them access.
         owner = self.factory.makePerson()
         repository = self.factory.makeGitRepository(
-            information_type=InformationType.USERDATA, owner=owner)
+            information_type=InformationType.USERDATA, owner=owner
+        )
         subscribee = self.factory.makePerson()
         with person_logged_in(owner):
             self.assertFalse(repository.visibleByUser(subscribee))
             repository.subscribe(
-                subscribee, BranchSubscriptionNotificationLevel.NOEMAIL,
-                None, CodeReviewNotificationLevel.NOEMAIL, owner)
+                subscribee,
+                BranchSubscriptionNotificationLevel.NOEMAIL,
+                None,
+                CodeReviewNotificationLevel.NOEMAIL,
+                owner,
+            )
             self.assertTrue(repository.visibleByUser(subscribee))
 
     def test_unsubscribe_removes_access(self):
         # Unsubscribing a user from a repository removes their access.
         owner = self.factory.makePerson()
         repository = self.factory.makeGitRepository(
-            information_type=InformationType.USERDATA, owner=owner)
+            information_type=InformationType.USERDATA, owner=owner
+        )
         subscribee = self.factory.makePerson()
         with person_logged_in(owner):
             repository.subscribe(
-                subscribee, BranchSubscriptionNotificationLevel.NOEMAIL,
-                None, CodeReviewNotificationLevel.NOEMAIL, owner)
+                subscribee,
+                BranchSubscriptionNotificationLevel.NOEMAIL,
+                None,
+                CodeReviewNotificationLevel.NOEMAIL,
+                owner,
+            )
             self.assertTrue(repository.visibleByUser(subscribee))
             repository.unsubscribe(subscribee, owner)
             self.assertFalse(repository.visibleByUser(subscribee))
@@ -122,7 +142,8 @@ class TestGitSubscriptionCanBeUnsubscribedbyUser(TestCaseWithFactory):
         # The subscriber has permission to unsubscribe.
         subscription = self.factory.makeGitSubscription()
         self.assertTrue(
-            subscription.canBeUnsubscribedByUser(subscription.person))
+            subscription.canBeUnsubscribedByUser(subscription.person)
+        )
 
     def test_non_subscriber_fails(self):
         # An unrelated person can't unsubscribe a user.
@@ -135,7 +156,8 @@ class TestGitSubscriptionCanBeUnsubscribedbyUser(TestCaseWithFactory):
         subscribed_by = self.factory.makePerson()
         subscriber = self.factory.makePerson()
         subscription = self.factory.makeGitSubscription(
-            person=subscriber, subscribed_by=subscribed_by)
+            person=subscriber, subscribed_by=subscribed_by
+        )
         self.assertTrue(subscription.canBeUnsubscribedByUser(subscribed_by))
 
     def test_team_member_can_unsubscribe(self):
@@ -145,7 +167,8 @@ class TestGitSubscriptionCanBeUnsubscribedbyUser(TestCaseWithFactory):
         with person_logged_in(team.teamowner):
             team.addMember(member, team.teamowner)
         subscription = self.factory.makeGitSubscription(
-            person=team, subscribed_by=team.teamowner)
+            person=team, subscribed_by=team.teamowner
+        )
         self.assertTrue(subscription.canBeUnsubscribedByUser(member))
 
     def test_team_subscriber_can_unsubscribe(self):
@@ -154,7 +177,8 @@ class TestGitSubscriptionCanBeUnsubscribedbyUser(TestCaseWithFactory):
         team = self.factory.makeTeam()
         subscribed_by = self.factory.makePerson()
         subscription = self.factory.makeGitSubscription(
-            person=team, subscribed_by=subscribed_by)
+            person=team, subscribed_by=subscribed_by
+        )
         self.assertTrue(subscription.canBeUnsubscribedByUser(subscribed_by))
 
     def test_repository_person_owner_can_unsubscribe(self):
@@ -164,8 +188,10 @@ class TestGitSubscriptionCanBeUnsubscribedbyUser(TestCaseWithFactory):
         subscribed_by = self.factory.makePerson()
         subscriber = self.factory.makePerson()
         subscription = self.factory.makeGitSubscription(
-            repository=repository, person=subscriber,
-            subscribed_by=subscribed_by)
+            repository=repository,
+            person=subscriber,
+            subscribed_by=subscribed_by,
+        )
         self.assertTrue(subscription.canBeUnsubscribedByUser(repository_owner))
 
     def test_repository_team_owner_can_unsubscribe(self):
@@ -177,12 +203,15 @@ class TestGitSubscriptionCanBeUnsubscribedbyUser(TestCaseWithFactory):
         team_owner = self.factory.makePerson()
         team_member = self.factory.makePerson()
         repository_owner = self.factory.makeTeam(
-            owner=team_owner, members=[team_member])
+            owner=team_owner, members=[team_member]
+        )
         repository = self.factory.makeGitRepository(owner=repository_owner)
         subscribed_by = self.factory.makePerson()
         subscriber = self.factory.makePerson()
         subscription = self.factory.makeGitSubscription(
-            repository=repository, person=subscriber,
-            subscribed_by=subscribed_by)
+            repository=repository,
+            person=subscriber,
+            subscribed_by=subscribed_by,
+        )
         self.assertTrue(subscription.canBeUnsubscribedByUser(team_owner))
         self.assertTrue(subscription.canBeUnsubscribedByUser(team_member))

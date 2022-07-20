@@ -4,22 +4,19 @@
 """Common helpers for codehosting tests."""
 
 __all__ = [
-    'AvatarTestCase',
-    'create_branch_with_one_revision',
-    'force_stacked_on_url',
-    'LoomTestMixin',
-    'TestResultWrapper',
-    ]
+    "AvatarTestCase",
+    "create_branch_with_one_revision",
+    "force_stacked_on_url",
+    "LoomTestMixin",
+    "TestResultWrapper",
+]
 
 import os
 
 from breezy.controldir import ControlDir
 from breezy.errors import FileExists
 from breezy.plugins.loom import branch as loom_branch
-from breezy.tests import (
-    TestNotApplicable,
-    TestSkipped,
-    )
+from breezy.tests import TestNotApplicable, TestSkipped
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 
 from lp.testing import TestCase
@@ -37,10 +34,10 @@ class AvatarTestCase(TestCase):
         # A basic user dict, 'alice' is a member of no teams (aside from the
         # user themself).
         self.aliceUserDict = {
-            'id': 1,
-            'name': 'alice',
-            'teams': [{'id': 1, 'name': 'alice'}],
-            'initialBranches': [(1, [])]
+            "id": 1,
+            "name": "alice",
+            "teams": [{"id": 1, "name": "alice"}],
+            "initialBranches": [(1, [])],
         }
 
 
@@ -48,20 +45,20 @@ class LoomTestMixin:
     """Mixin to provide Bazaar test classes with limited loom support."""
 
     def loomify(self, branch):
-        tree = branch.create_checkout('checkout')
+        tree = branch.create_checkout("checkout")
         tree.lock_write()
         try:
-            tree.branch.nick = 'bottom-thread'
+            tree.branch.nick = "bottom-thread"
             loom_branch.loomify(tree.branch)
         finally:
             tree.unlock()
         loom_tree = tree.controldir.open_workingtree()
         loom_tree.lock_write()
-        loom_tree.branch.new_thread('bottom-thread')
-        loom_tree.commit('this is a commit', rev_id=b'commit-1')
+        loom_tree.branch.new_thread("bottom-thread")
+        loom_tree.commit("this is a commit", rev_id=b"commit-1")
         loom_tree.unlock()
-        loom_tree.branch.record_loom('sample loom')
-        self.get_transport().delete_tree('checkout')
+        loom_tree.branch.record_loom("sample loom")
+        self.get_transport().delete_tree("checkout")
         return loom_tree
 
     def makeLoomBranchAndTree(self, tree_directory):
@@ -69,16 +66,16 @@ class LoomTestMixin:
         tree = self.make_branch_and_tree(tree_directory)
         tree.lock_write()
         try:
-            tree.branch.nick = 'bottom-thread'
+            tree.branch.nick = "bottom-thread"
             loom_branch.loomify(tree.branch)
         finally:
             tree.unlock()
         loom_tree = tree.controldir.open_workingtree()
         loom_tree.lock_write()
-        loom_tree.branch.new_thread('bottom-thread')
-        loom_tree.commit('this is a commit', rev_id=b'commit-1')
+        loom_tree.branch.new_thread("bottom-thread")
+        loom_tree.commit("this is a commit", rev_id=b"commit-1")
         loom_tree.unlock()
-        loom_tree.branch.record_loom('sample loom')
+        loom_tree.branch.record_loom("sample loom")
         return loom_tree
 
 
@@ -90,10 +87,10 @@ def create_branch_with_one_revision(branch_dir, format=None):
         tree = ControlDir.create_standalone_workingtree(branch_dir, format)
     except FileExists:
         return
-    f = open(os.path.join(branch_dir, 'hello'), 'w')
-    f.write('foo')
+    f = open(os.path.join(branch_dir, "hello"), "w")
+    f.write("foo")
     f.close()
-    tree.commit('message')
+    tree.commit("message")
     return tree
 
 
@@ -104,7 +101,7 @@ def force_stacked_on_url(branch, url):
     stacking.  It's still worth testing that we don't blow up in the face of
     them, so this function lets us create them anyway.
     """
-    branch.get_config().set_user_option('stacked_on_location', url)
+    branch.get_config().set_user_option("stacked_on_location", url)
 
 
 class TestResultWrapper:

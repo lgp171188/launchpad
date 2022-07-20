@@ -5,7 +5,7 @@
 
 from lp.code.model.seriessourcepackagebranch import (
     SeriesSourcePackageBranchSet,
-    )
+)
 from lp.code.tests.helpers import make_linked_package_branch
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.testing import TestCaseWithFactory
@@ -24,7 +24,8 @@ class TestSeriesSourcePackageBranchSet(TestCaseWithFactory):
     def makeLinkedPackageBranch(self, distribution, sourcepackagename):
         """Make a new package branch and make it official."""
         return make_linked_package_branch(
-            self.factory, distribution, sourcepackagename)
+            self.factory, distribution, sourcepackagename
+        )
 
     def test_findForDistributionSourcePackage(self):
         # Make sure that the find method finds official links for all distro
@@ -47,7 +48,8 @@ class TestSeriesSourcePackageBranchSet(TestCaseWithFactory):
         self.makeLinkedPackageBranch(None, None)
 
         links = self.link_set.findForDistributionSourcePackage(
-            distro_source_package)
+            distro_source_package
+        )
         self.assertContentEqual([b1, b2], [link.branch for link in links])
 
     def test_delete(self):
@@ -57,18 +59,30 @@ class TestSeriesSourcePackageBranchSet(TestCaseWithFactory):
         distro_series = self.factory.makeDistroSeries()
         sourcepackagename = self.factory.makeSourcePackageName()
         sourcepackage = self.factory.makeSourcePackage(
-            sourcepackagename=sourcepackagename, distroseries=distro_series)
+            sourcepackagename=sourcepackagename, distroseries=distro_series
+        )
         branch_release = self.factory.makePackageBranch(
-            distroseries=distro_series, sourcepackagename=sourcepackagename)
+            distroseries=distro_series, sourcepackagename=sourcepackagename
+        )
         branch_updates = self.factory.makePackageBranch(
-            distroseries=distro_series, sourcepackagename=sourcepackagename)
+            distroseries=distro_series, sourcepackagename=sourcepackagename
+        )
         self.link_set.new(
-            distro_series, PackagePublishingPocket.RELEASE, sourcepackagename,
-            branch_release, branch_release.owner)
+            distro_series,
+            PackagePublishingPocket.RELEASE,
+            sourcepackagename,
+            branch_release,
+            branch_release.owner,
+        )
         self.link_set.new(
-            distro_series, PackagePublishingPocket.UPDATES, sourcepackagename,
-            branch_updates, branch_updates.owner)
+            distro_series,
+            PackagePublishingPocket.UPDATES,
+            sourcepackagename,
+            branch_updates,
+            branch_updates.owner,
+        )
         self.link_set.delete(sourcepackage, PackagePublishingPocket.UPDATES)
         links = self.link_set.findForSourcePackage(sourcepackage)
         self.assertContentEqual(
-            [branch_release], [link.branch for link in links])
+            [branch_release], [link.branch for link in links]
+        )

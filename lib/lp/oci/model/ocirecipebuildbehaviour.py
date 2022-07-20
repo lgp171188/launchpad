@@ -7,13 +7,13 @@ Dispatches OCI image build jobs to build-farm workers.
 """
 
 __all__ = [
-    'OCIRecipeBuildBehaviour',
-    ]
+    "OCIRecipeBuildBehaviour",
+]
 
 
-from datetime import datetime
 import json
 import os
+from datetime import datetime
 
 import pytz
 from twisted.internet import defer
@@ -23,16 +23,13 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.builderproxy import BuilderProxyMixin
 from lp.buildmaster.enums import BuildBaseImageType
-from lp.buildmaster.interfaces.builder import (
-    BuildDaemonError,
-    CannotBuild,
-    )
+from lp.buildmaster.interfaces.builder import BuildDaemonError, CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
-    )
+)
 from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
-    )
+)
 from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
 from lp.oci.interfaces.ocirecipebuild import IOCIFileSet
 from lp.registry.interfaces.series import SeriesStatus
@@ -40,9 +37,7 @@ from lp.services.config import config
 from lp.services.librarian.utils import copy_and_close
 from lp.services.twistedsupport import cancel_on_timeout
 from lp.services.webapp import canonical_url
-from lp.soyuz.adapters.archivedependencies import (
-    get_sources_list_for_building,
-    )
+from lp.soyuz.adapters.archivedependencies import get_sources_list_for_building
 
 
 @implementer(IBuildFarmJobBehaviour)
@@ -56,10 +51,13 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
 
         # Examples:
         #   buildlog_oci_ubuntu_wily_amd64_name_FULLYBUILT.txt
-        return 'buildlog_oci_%s_%s_%s_%s_%s.txt' % (
-            series.distribution.name, series.name,
-            self.build.processor.name, self.build.recipe.name,
-            self.build.status.name)
+        return "buildlog_oci_%s_%s_%s_%s_%s.txt" % (
+            series.distribution.name,
+            series.name,
+            self.build.processor.name,
+            self.build.recipe.name,
+            self.build.status.name,
+        )
 
     def verifyBuildRequest(self, logger):
         """Assert some pre-build checks.
@@ -71,20 +69,26 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         build = self.build
         if build.virtualized and not self._builder.virtualized:
             raise AssertionError(
-                "Attempt to build virtual item on a non-virtual builder.")
+                "Attempt to build virtual item on a non-virtual builder."
+            )
 
         chroot = build.distro_arch_series.getChroot(pocket=build.pocket)
         if chroot is None:
             raise CannotBuild(
-                "Missing chroot for %s" % build.distro_arch_series.displayname)
+                "Missing chroot for %s" % build.distro_arch_series.displayname
+            )
 
     def issueMacaroon(self):
         """See `IBuildFarmJobBehaviour`."""
         return cancel_on_timeout(
             self._authserver.callRemote(
                 "issueMacaroon",
-                "oci-recipe-build", "OCIRecipeBuild", self.build.id),
-            config.builddmaster.authentication_timeout)
+                "oci-recipe-build",
+                "OCIRecipeBuild",
+                self.build.id,
+            ),
+            config.builddmaster.authentication_timeout,
+        )
 
     def _getBuildInfoArgs(self):
         def format_user(user):
@@ -93,7 +97,9 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             hide_email = not user.preferredemail or user.hide_email_addresses
             return {
                 "name": user.name,
-                "email": (None if hide_email else user.preferredemail.email)}
+                "email": (None if hide_email else user.preferredemail.email),
+            }
+
         build = self.build
         build_request = build.build_request
         builds = list(build_request.builds) if build_request else [build]
@@ -111,13 +117,16 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         }
         if build_request:
             info["build_request_id"] = build_request.id
-            info["build_request_timestamp"] = (
-                build_request.date_requested.isoformat())
-        info["architectures"] = [i.distro_arch_series.architecturetag
-                                 for i in builds]
+            info[
+                "build_request_timestamp"
+            ] = build_request.date_requested.isoformat()
+        info["architectures"] = [
+            i.distro_arch_series.architecturetag for i in builds
+        ]
         info["build_urls"] = {
             i.distro_arch_series.architecturetag: canonical_url(i)
-            for i in builds}
+            for i in builds
+        }
         return info
 
     @defer.inlineCallbacks
@@ -131,39 +140,49 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         # XXX twom 2020-02-17 This may need to be more complex, and involve
         # distribution name.
         args["name"] = build.recipe.name
-        args["archives"], args["trusted_keys"] = (
-            yield get_sources_list_for_building(
-                self, build.distro_arch_series, None,
-                tools_source=None, tools_fingerprint=None,
-                logger=logger))
+        (
+            args["archives"],
+            args["trusted_keys"],
+        ) = yield get_sources_list_for_building(
+            self,
+            build.distro_arch_series,
+            None,
+            tools_source=None,
+            tools_fingerprint=None,
+            logger=logger,
+        )
 
-        args['build_file'] = build.recipe.build_file
+        args["build_file"] = build.recipe.build_file
 
         # Do our work on a new dict, so we don't try to update the
         # copy on the model
         build_args = {
-            "LAUNCHPAD_BUILD_ARCH": build.distro_arch_series.architecturetag}
+            "LAUNCHPAD_BUILD_ARCH": build.distro_arch_series.architecturetag
+        }
         # We have to remove the security proxy that Zope applies to this
         # dict, since otherwise we'll be unable to serialise it to
         # XML-RPC.
         build_args.update(removeSecurityProxy(build.recipe.build_args))
-        args['build_args'] = build_args
-        args['build_path'] = build.recipe.build_path
-        args['metadata'] = self._getBuildInfoArgs()
+        args["build_args"] = build_args
+        args["build_path"] = build.recipe.build_path
+        args["metadata"] = self._getBuildInfoArgs()
 
         if build.recipe.git_ref is not None:
             if build.recipe.git_repository.private:
                 macaroon_raw = yield self.issueMacaroon()
                 url = build.recipe.git_repository.getCodebrowseUrl(
-                    username=LAUNCHPAD_SERVICES, password=macaroon_raw)
+                    username=LAUNCHPAD_SERVICES, password=macaroon_raw
+                )
                 args["git_repository"] = url
             else:
-                args["git_repository"] = (
-                    build.recipe.git_repository.git_https_url)
+                args[
+                    "git_repository"
+                ] = build.recipe.git_repository.git_https_url
         else:
             raise CannotBuild(
-                "Source repository for ~%s/%s has been deleted." %
-                (build.recipe.owner.name, build.recipe.name))
+                "Source repository for ~%s/%s has been deleted."
+                % (build.recipe.owner.name, build.recipe.name)
+            )
 
         if build.recipe.git_path != "HEAD":
             args["git_path"] = build.recipe.git_ref.name
@@ -174,9 +193,10 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         # If the evaluated output file name is not within our
         # upload path, then we don't try to copy this or any
         # subsequent files.
-        if not os.path.normpath(file_path).startswith(upload_path + '/'):
+        if not os.path.normpath(file_path).startswith(upload_path + "/"):
             raise BuildDaemonError(
-                "Build returned a file named '%s'." % file_name)
+                "Build returned a file named '%s'." % file_name
+            )
 
     @defer.inlineCallbacks
     def _fetchIntermediaryFile(self, name, filemap, upload_path):
@@ -191,15 +211,14 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
     def _extractLayerFiles(self, upload_path, section, config, digests, files):
         # These are different sets of ids, in the same order
         # layer_id is the filename, diff_id is the internal (docker) id
-        for diff_id in config['rootfs']['diff_ids']:
+        for diff_id in config["rootfs"]["diff_ids"]:
             for digests_section in digests:
-                layer_id = digests_section[diff_id]['layer_id']
+                layer_id = digests_section[diff_id]["layer_id"]
                 # This is in the form '<id>/layer.tar', we only need the first
-                layer_filename = "{}.tar.gz".format(layer_id.split('/')[0])
-                digest = digests_section[diff_id]['digest']
+                layer_filename = "{}.tar.gz".format(layer_id.split("/")[0])
+                digest = digests_section[diff_id]["digest"]
                 # Check if the file already exists in the librarian
-                oci_file = getUtility(IOCIFileSet).getByLayerDigest(
-                    digest)
+                oci_file = getUtility(IOCIFileSet).getByLayerDigest(digest)
                 if oci_file:
                     librarian_file = oci_file.library_file
                     unsecure_file = removeSecurityProxy(oci_file)
@@ -212,7 +231,7 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                 # so we can add it to the build artifacts
                 layer_path = os.path.join(upload_path, layer_filename)
                 librarian_file.open()
-                copy_and_close(librarian_file, open(layer_path, 'wb'))
+                copy_and_close(librarian_file, open(layer_path, "wb"))
 
     def _convertToRetrievableFile(self, upload_path, file_name, filemap):
         file_path = os.path.join(upload_path, file_name)
@@ -227,20 +246,25 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         # We don't want to download all of the files that have been created,
         # just the ones that are mentioned in the manifest and config.
         manifest = yield self._fetchIntermediaryFile(
-            'manifest.json', filemap, upload_path)
+            "manifest.json", filemap, upload_path
+        )
         digests = yield self._fetchIntermediaryFile(
-            'digests.json', filemap, upload_path)
+            "digests.json", filemap, upload_path
+        )
 
         files = set()
         for section in manifest:
             config = yield self._fetchIntermediaryFile(
-                section['Config'], filemap, upload_path)
+                section["Config"], filemap, upload_path
+            )
             self._extractLayerFiles(
-                upload_path, section, config, digests, files)
+                upload_path, section, config, digests, files
+            )
 
         files_to_download = [
             self._convertToRetrievableFile(upload_path, filename, filemap)
-            for filename in files]
+            for filename in files
+        ]
         yield self._worker.getFiles(files_to_download, logger=logger)
 
     def verifySuccessfulBuild(self):

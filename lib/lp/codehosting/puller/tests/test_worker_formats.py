@@ -11,7 +11,7 @@ from breezy.plugins.weave_fmt.bzrdir import BzrDirFormat6
 from breezy.plugins.weave_fmt.repository import (
     RepositoryFormat6,
     RepositoryFormat7,
-    )
+)
 from breezy.tests.per_repository import TestCaseWithRepository
 from breezy.url_policy_open import BranchOpener
 
@@ -20,45 +20,50 @@ from lp.codehosting.puller.tests import PullerWorkerMixin
 from lp.codehosting.tests.helpers import LoomTestMixin
 
 
-class TestPullerWorkerFormats(TestCaseWithRepository, PullerWorkerMixin,
-                              LoomTestMixin):
-
+class TestPullerWorkerFormats(
+    TestCaseWithRepository, PullerWorkerMixin, LoomTestMixin
+):
     def setUp(self):
         TestCaseWithRepository.setUp(self)
         # make_controldir relies on this being a relative filesystem path.
-        self._source_branch_path = 'source-branch'
+        self._source_branch_path = "source-branch"
         BranchOpener.install_hook()
         self.worker = self.makePullerWorker(
-            self.get_url(self._source_branch_path),
-            self.get_url('dest-path'))
+            self.get_url(self._source_branch_path), self.get_url("dest-path")
+        )
 
-    def _createSourceBranch(self, repository_format, bzrdir_format,
-                            branch_format=None):
+    def _createSourceBranch(
+        self, repository_format, bzrdir_format, branch_format=None
+    ):
         """Make a source branch with the given formats."""
         if branch_format is not None:
             bzrdir_format.set_branch_format(branch_format)
         bd = self.make_controldir(
-            self._source_branch_path, format=bzrdir_format)
+            self._source_branch_path, format=bzrdir_format
+        )
         repository_format.initialize(bd)
         branch = bd.create_branch()
-        tree = branch.create_checkout('source-checkout')
-        tree.commit('Commit message')
-        self.get_transport().delete_tree('source-checkout')
+        tree = branch.create_checkout("source-checkout")
+        tree.commit("Commit message")
+        self.get_transport().delete_tree("source-checkout")
         return branch
 
     def assertMirrored(self, source_branch, dest_branch):
         """Assert that `dest_branch` is a mirror of `src_branch`."""
         self.assertEqual(
-            source_branch.last_revision(), dest_branch.last_revision())
+            source_branch.last_revision(), dest_branch.last_revision()
+        )
         # Assert that the mirrored branch is in source's format
         # XXX AndrewBennetts 2006-05-18 bug=45277: comparing format objects
         # is ugly.
         self.assertEqual(
             source_branch.repository._format.get_format_description(),
-            dest_branch.repository._format.get_format_description())
+            dest_branch.repository._format.get_format_description(),
+        )
         self.assertEqual(
             source_branch.controldir._format.get_format_description(),
-            dest_branch.controldir._format.get_format_description())
+            dest_branch.controldir._format.get_format_description(),
+        )
 
     def _testMirrorWithFormats(self, repository_format, bzrdir_format):
         """Make a branch with certain formats, mirror it and check the mirror.
@@ -66,8 +71,7 @@ class TestPullerWorkerFormats(TestCaseWithRepository, PullerWorkerMixin,
         :param repository_format: The repository format.
         :param bzrdir_format: The bzrdir format.
         """
-        src_branch = self._createSourceBranch(
-            repository_format, bzrdir_format)
+        src_branch = self._createSourceBranch(repository_format, bzrdir_format)
         self.worker.mirror()
         dest_branch = Branch.open(self.worker.dest)
         self.assertMirrored(src_branch, dest_branch)
@@ -76,8 +80,8 @@ class TestPullerWorkerFormats(TestCaseWithRepository, PullerWorkerMixin,
         # When we mirror a loom branch for the first time, the mirrored loom
         # branch matches the original.
         branch = self._createSourceBranch(
-            RepositoryFormatKnitPack5(),
-            BzrDirMetaFormat1())
+            RepositoryFormatKnitPack5(), BzrDirMetaFormat1()
+        )
         self.loomify(branch)
         self.worker.mirror()
         mirrored_branch = Branch.open(self.worker.dest)
@@ -90,7 +94,8 @@ class TestPullerWorkerFormats(TestCaseWithRepository, PullerWorkerMixin,
         # Create a source branch in knit format, and check that the mirror is
         # in knit format.
         self._testMirrorWithFormats(
-            RepositoryFormatKnit1(), BzrDirMetaFormat1())
+            RepositoryFormatKnit1(), BzrDirMetaFormat1()
+        )
 
     def testMirrorMetaweaveAsMetaweave(self):
         # Create a source branch in metaweave format, and check that the
@@ -118,4 +123,5 @@ class TestPullerWorkerFormats(TestCaseWithRepository, PullerWorkerMixin,
 
         # The mirrored branch should now be in knit format.
         self.assertMirrored(
-            Branch.open(self.worker.source), Branch.open(self.worker.dest))
+            Branch.open(self.worker.source), Branch.open(self.worker.dest)
+        )

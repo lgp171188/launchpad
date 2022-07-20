@@ -3,25 +3,18 @@
 
 """Browser code used to implement virtual '.bzr' directories."""
 
-__all__ = [
-    'BranchRef'
-    ]
+__all__ = ["BranchRef"]
 
 from zope.interface import implementer
 from zope.publisher.interfaces.browser import IBrowserPublisher
 
 from lp.code.interfaces.branchref import IBranchRef
 from lp.services.config import config
-from lp.services.webapp import (
-    Navigation,
-    stepthrough,
-    stepto,
-    )
+from lp.services.webapp import Navigation, stepthrough, stepto
 
 
 @implementer(IBranchRef)
 class BranchRef:
-
     def __init__(self, branch):
         self.branch = branch
 
@@ -35,28 +28,30 @@ class BranchRef:
 # Synthesising a branch reference provides the desired behaviour with
 # current Bazaar releases, however.
 
+
 class BranchRefNavigation(Navigation):
 
     usedfor = IBranchRef
 
-    @stepto('branch-format')
+    @stepto("branch-format")
     def branch_format(self):
-        return StaticContentView('Bazaar-NG meta directory, format 1\n')
+        return StaticContentView("Bazaar-NG meta directory, format 1\n")
 
-    @stepthrough('branch')
+    @stepthrough("branch")
     def traverse_branch(self, name):
-        if name == 'format':
-            return StaticContentView('Bazaar-NG Branch Reference Format 1\n')
-        elif name == 'location':
-            return StaticContentView(config.codehosting.supermirror_root +
-                                     self.context.branch.unique_name)
+        if name == "format":
+            return StaticContentView("Bazaar-NG Branch Reference Format 1\n")
+        elif name == "location":
+            return StaticContentView(
+                config.codehosting.supermirror_root
+                + self.context.branch.unique_name
+            )
         else:
             return None
 
 
 @implementer(IBrowserPublisher)
 class StaticContentView:
-
     def __init__(self, contents):
         self.contents = contents
 

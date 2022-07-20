@@ -3,16 +3,10 @@
 
 """Test the repack_git_repositories script."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import logging
 import threading
-from wsgiref.simple_server import (
-    make_server,
-    WSGIRequestHandler,
-    )
+from datetime import datetime, timedelta
+from wsgiref.simple_server import WSGIRequestHandler, make_server
 
 import pytz
 import transaction
@@ -20,10 +14,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.code.scripts.repackgitrepository import RepackTunableLoop
 from lp.services.config import config
-from lp.services.config.fixture import (
-    ConfigFixture,
-    ConfigUseFixture,
-    )
+from lp.services.config.fixture import ConfigFixture, ConfigUseFixture
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessAppServerLayer
 from lp.testing.script import run_script
@@ -43,9 +34,9 @@ class FakeTurnipApplication:
         self.contents = []
 
     def __call__(self, environ, start_response):
-        self.contents.append(environ['PATH_INFO'])
-        start_response('200 OK', [('Content-Type', 'text/plain')])
-        return [b'']
+        self.contents.append(environ["PATH_INFO"])
+        start_response("200 OK", [("Content-Type", "text/plain")])
+        return [b""]
 
 
 class FakeTurnipServer(threading.Thread):
@@ -53,17 +44,18 @@ class FakeTurnipServer(threading.Thread):
 
     def __init__(self):
         super().__init__()
-        self.name = 'FakeTurnipServer'
+        self.name = "FakeTurnipServer"
         self.app = FakeTurnipApplication()
         self.server = make_server(
-            'localhost', 0, self.app, handler_class=SilentWSGIRequestHandler)
+            "localhost", 0, self.app, handler_class=SilentWSGIRequestHandler
+        )
 
     def run(self):
         self.server.serve_forever()
 
     def getURL(self):
         host, port = self.server.server_address
-        return 'http://%s:%d/' % (host, port)
+        return "http://%s:%d/" % (host, port)
 
     def stop(self):
         self.server.shutdown()
@@ -75,40 +67,44 @@ class TestRequestGitRepack(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.log = logging.getLogger('repack')
+        self.log = logging.getLogger("repack")
 
     def runScript_no_Turnip(self):
         transaction.commit()
 
-        (ret, out, err) = run_script('cronscripts/repack_git_repositories.py')
+        (ret, out, err) = run_script("cronscripts/repack_git_repositories.py")
         self.assertIn(
-            'An error occurred while requesting repository repack',
-            err)
+            "An error occurred while requesting repository repack", err
+        )
+        self.assertIn("Failed to repack Git repository 1", err)
         self.assertIn(
-            'Failed to repack Git repository 1', err)
-        self.assertIn(
-            'Requested a total of 1 automatic git repository repacks '
-            'in this run of the Automated Repack Job', err)
+            "Requested a total of 1 automatic git repository repacks "
+            "in this run of the Automated Repack Job",
+            err,
+        )
         transaction.commit()
 
     def runScript_with_Turnip(self, expected_count=1):
         transaction.commit()
-        (ret, out, err) = run_script('cronscripts/repack_git_repositories.py')
+        (ret, out, err) = run_script("cronscripts/repack_git_repositories.py")
         self.assertIn(
-            'Requested a total of %d automatic git repository repacks '
-            'in this run of the Automated Repack Job.' % expected_count, err)
+            "Requested a total of %d automatic git repository repacks "
+            "in this run of the Automated Repack Job." % expected_count,
+            err,
+        )
         transaction.commit()
 
     def makeTurnipServer(self):
         self.turnip_server = FakeTurnipServer()
         config_name = self.factory.getUniqueString()
-        config_fixture = self.useFixture(ConfigFixture(
-            config_name, config.instance_name))
+        config_fixture = self.useFixture(
+            ConfigFixture(config_name, config.instance_name)
+        )
         setting_lines = [
-            '[codehosting]',
-            'internal_git_api_endpoint: %s' % self.turnip_server.getURL(),
-            ]
-        config_fixture.add_section('\n' + '\n'.join(setting_lines))
+            "[codehosting]",
+            "internal_git_api_endpoint: %s" % self.turnip_server.getURL(),
+        ]
+        config_fixture.add_section("\n" + "\n".join(setting_lines))
         self.useFixture(ConfigUseFixture(config_name))
         self.turnip_server.start()
         self.addCleanup(self.turnip_server.stop)
@@ -159,8 +155,10 @@ class TestRequestGitRepack(TestCaseWithFactory):
 
         for i in range(10):
             self.assertIsNotNone(repo[i].date_last_repacked)
-            self.assertEqual("/repo/%s/repack" % repo[i].getInternalPath(),
-                             self.turnip_server.app.contents[i])
+            self.assertEqual(
+                "/repo/%s/repack" % repo[i].getInternalPath(),
+                self.turnip_server.app.contents[i],
+            )
 
     def test_auto_repack_zero_repackCandidates(self):
         self.makeTurnipServer()
@@ -174,23 +172,28 @@ class TestRequestGitRepack(TestCaseWithFactory):
 
         # zero candidates
         # assert on the log contents and the content that makes it to Turnip
-        (ret, out, err) = run_script('cronscripts/repack_git_repositories.py')
+        (ret, out, err) = run_script("cronscripts/repack_git_repositories.py")
         self.assertIn(
-            'Requested a total of 0 automatic git repository repacks in this '
-            'run of the Automated Repack Job.', err)
-        self.assertEqual([],
-                         self.turnip_server.app.contents)
+            "Requested a total of 0 automatic git repository repacks in this "
+            "run of the Automated Repack Job.",
+            err,
+        )
+        self.assertEqual([], self.turnip_server.app.contents)
 
         # exactly one candidate
         repo[0].loose_object_count = 7000
         repo[0].pack_count = 43
         transaction.commit()
-        (ret, out, err) = run_script('cronscripts/repack_git_repositories.py')
+        (ret, out, err) = run_script("cronscripts/repack_git_repositories.py")
         self.assertIn(
-            'Requested a total of 1 automatic git repository repacks in '
-            'this run of the Automated Repack Job.', err)
-        self.assertEqual("/repo/%s/repack" % repo[0].getInternalPath(),
-                         self.turnip_server.app.contents[0])
+            "Requested a total of 1 automatic git repository repacks in "
+            "this run of the Automated Repack Job.",
+            err,
+        )
+        self.assertEqual(
+            "/repo/%s/repack" % repo[0].getInternalPath(),
+            self.turnip_server.app.contents[0],
+        )
 
     def test_auto_repack_loop_throttle(self):
         repacker = RepackTunableLoop(self.log, None)
@@ -239,9 +242,11 @@ class TestRequestGitRepack(TestCaseWithFactory):
 
         repo = self.factory.makeGitRepository()
         removeSecurityProxy(repo).loose_object_count = (
-            config.codehosting.loose_objects_threshold + 50)
+            config.codehosting.loose_objects_threshold + 50
+        )
         removeSecurityProxy(repo).pack_count = (
-            config.codehosting.packs_threshold + 5)
+            config.codehosting.packs_threshold + 5
+        )
         self.assertIsNone(repo.date_last_repacked)
 
         # An initial run requests a repack.
@@ -255,9 +260,9 @@ class TestRequestGitRepack(TestCaseWithFactory):
 
         # If we pretend that the last repack request was long enough ago,
         # then a third run requests another repack.
-        removeSecurityProxy(repo).date_last_repacked = (
-            datetime.now(pytz.UTC) -
-            timedelta(minutes=config.codehosting.auto_repack_frequency + 1))
+        removeSecurityProxy(repo).date_last_repacked = datetime.now(
+            pytz.UTC
+        ) - timedelta(minutes=config.codehosting.auto_repack_frequency + 1)
         self.runScript_with_Turnip(expected_count=1)
 
     def test_auto_repack_findRepackCandidates(self):

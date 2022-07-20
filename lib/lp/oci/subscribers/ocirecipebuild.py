@@ -21,12 +21,22 @@ def _trigger_oci_recipe_build_webhook(build, action):
         payload = {
             "recipe_build": canonical_url(build, force_local_path=True),
             "action": action,
-            }
-        payload.update(compose_webhook_payload(
-            IOCIRecipeBuild, build,
-            ["recipe", "build_request", "status", "registry_upload_status"]))
+        }
+        payload.update(
+            compose_webhook_payload(
+                IOCIRecipeBuild,
+                build,
+                [
+                    "recipe",
+                    "build_request",
+                    "status",
+                    "registry_upload_status",
+                ],
+            )
+        )
         getUtility(IWebhookSet).trigger(
-            build.recipe, "oci-recipe:build:0.1", payload)
+            build.recipe, "oci-recipe:build:0.1", payload
+        )
 
 
 def oci_recipe_build_created(build, event):
@@ -42,11 +52,14 @@ def oci_recipe_build_modified(build, event):
         if status_changed or registry_changed:
             _trigger_oci_recipe_build_webhook(build, "status-changed")
         if status_changed:
-            if (build.recipe.can_upload_to_registry and
-                    build.status == BuildStatus.FULLYBUILT):
+            if (
+                build.recipe.can_upload_to_registry
+                and build.status == BuildStatus.FULLYBUILT
+            ):
                 log.info("Scheduling upload of %r to registries." % build)
                 getUtility(IOCIRegistryUploadJobSource).create(build)
             else:
                 log.info(
-                    "%r is not configured for upload to registries." %
-                    build.recipe)
+                    "%r is not configured for upload to registries."
+                    % build.recipe
+                )

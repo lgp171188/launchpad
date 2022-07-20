@@ -4,14 +4,14 @@
 """Branch feed (syndication) views."""
 
 __all__ = [
-    'BranchFeed',
-    'PersonBranchFeed',
-    'PersonRevisionFeed',
-    'ProductBranchFeed',
-    'ProductRevisionFeed',
-    'ProjectBranchFeed',
-    'ProjectRevisionFeed',
-    ]
+    "BranchFeed",
+    "PersonBranchFeed",
+    "PersonRevisionFeed",
+    "ProductBranchFeed",
+    "ProductRevisionFeed",
+    "ProjectBranchFeed",
+    "ProjectRevisionFeed",
+]
 
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -20,10 +20,7 @@ from zope.security.interfaces import Unauthorized
 
 from lp.code.browser.branch import BranchView
 from lp.code.enums import BranchListingSort
-from lp.code.interfaces.branch import (
-    DEFAULT_BRANCH_STATUS_IN_LISTING,
-    IBranch,
-    )
+from lp.code.interfaces.branch import DEFAULT_BRANCH_STATUS_IN_LISTING, IBranch
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.revisioncache import IRevisionCache
 from lp.registry.interfaces.person import IPerson
@@ -31,42 +28,41 @@ from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.config import config
 from lp.services.feeds.feed import (
+    MINUTES,
     FeedBase,
     FeedEntry,
     FeedPerson,
     FeedTypedData,
-    MINUTES,
-    )
+)
 from lp.services.feeds.interfaces.feed import IFeedPerson
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    urlparse,
-    )
+from lp.services.webapp import LaunchpadView, canonical_url, urlparse
 from lp.services.webapp.interfaces import ILaunchpadRoot
 
 
 def revision_feed_id(revision):
     """Return a consistent id for a revision to use as an id."""
     return "tag:launchpad.net,%s:/revision/%s" % (
-        revision.revision_date.date().isoformat(), revision.revision_id)
+        revision.revision_date.date().isoformat(),
+        revision.revision_id,
+    )
 
 
 class BranchFeedEntry(FeedEntry):
     """See `IFeedEntry`."""
+
     def construct_id(self):
         url_path = urlparse(self.link_alternate)[2]
-        return 'tag:launchpad.net,%s:/code%s' % (
+        return "tag:launchpad.net,%s:/code%s" % (
             self.date_created.date().isoformat(),
-            url_path)
+            url_path,
+        )
 
 
 class BranchFeedContentView(BranchView):
     """View for branch feed contents."""
 
-    def __init__(self, context, request, feed,
-                 template='templates/branch.pt'):
+    def __init__(self, context, request, feed, template="templates/branch.pt"):
         super().__init__(context, request)
         self.feed = feed
         self.template_ = template
@@ -99,9 +95,7 @@ class BranchFeedBase(FeedBase):
         The list of branches is screened to ensure no private branches are
         returned.
         """
-        return [branch
-                for branch in self._getRawItems()
-                if not branch.private]
+        return [branch for branch in self._getRawItems() if not branch.private]
 
     def _getItemsWorker(self):
         """Create the list of items.
@@ -119,19 +113,20 @@ class BranchFeedBase(FeedBase):
         url = canonical_url(branch, rootsite=self.rootsite)
         content_view = BranchFeedContentView(branch, self.request, self)
         content = content_view.render()
-        content_data = FeedTypedData(content=content,
-                                     content_type="html",
-                                     root_url=self.root_url)
-        entry = BranchFeedEntry(title=title,
-                                link_alternate=url,
-                                date_created=branch.date_created,
-                                date_updated=branch.date_last_modified,
-                                date_published=branch.date_created,
-                                # XXX bac 2008-01-10: if author and owner are
-                                # different perhaps we should use them both?
-                                authors=[FeedPerson(branch.owner,
-                                                    self.rootsite)],
-                                content=content_data)
+        content_data = FeedTypedData(
+            content=content, content_type="html", root_url=self.root_url
+        )
+        entry = BranchFeedEntry(
+            title=title,
+            link_alternate=url,
+            date_created=branch.date_created,
+            date_updated=branch.date_last_modified,
+            date_published=branch.date_created,
+            # XXX bac 2008-01-10: if author and owner are
+            # different perhaps we should use them both?
+            authors=[FeedPerson(branch.owner, self.rootsite)],
+            content=content_data,
+        )
         return entry
 
 
@@ -157,11 +152,15 @@ class BranchListingFeed(BranchFeedBase):
 
         Only `self.quantity` revisions are returned.
         """
-        collection = self._getCollection().visibleByUser(
-            None).withLifecycleStatus(*DEFAULT_BRANCH_STATUS_IN_LISTING)
+        collection = (
+            self._getCollection()
+            .visibleByUser(None)
+            .withLifecycleStatus(*DEFAULT_BRANCH_STATUS_IN_LISTING)
+        )
         branches = collection.getBranches(
             eager_load=False,
-            sort_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST)
+            sort_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST,
+        )
         return list(branches.config(limit=self.quantity))
 
 
@@ -213,7 +212,7 @@ class RevisionFeedContentView(LaunchpadView):
 
     def render(self):
         """Render the view."""
-        return ViewPageTemplateFile('templates/revision.pt')(self)
+        return ViewPageTemplateFile("templates/revision.pt")(self)
 
     @property
     def title(self):
@@ -221,16 +220,17 @@ class RevisionFeedContentView(LaunchpadView):
             revno = ""
         else:
             revno = "r%s " % self.revno
-        log_lines = self.context.log_body.split('\n')
+        log_lines = self.context.log_body.split("\n")
         first_line = log_lines[0]
         if len(first_line) < 60 and len(log_lines) == 1:
             logline = first_line
         else:
-            logline = first_line[:60] + '...'
+            logline = first_line[:60] + "..."
         return "[%(branch)s] %(revno)s %(logline)s" % {
-            'branch': self.branch.name,
-            'revno': revno,
-            'logline': logline}
+            "branch": self.branch.name,
+            "revno": revno,
+            "logline": logline,
+        }
 
 
 class RevisionListingFeed(FeedBase):
@@ -287,16 +287,16 @@ class RevisionListingFeed(FeedBase):
         revision = content_view.context
         id = revision_feed_id(revision)
         content = content_view.render()
-        content_data = FeedTypedData(content=content,
-                                     content_type="html",
-                                     root_url=self.root_url)
+        content_data = FeedTypedData(
+            content=content, content_type="html", root_url=self.root_url
+        )
         title = FeedTypedData(content_view.title)
         if revision.revision_author.person is None:
-            authors = [
-                RevisionPerson(revision.revision_author, self.rootsite)]
+            authors = [RevisionPerson(revision.revision_author, self.rootsite)]
         else:
             authors = [
-                FeedPerson(revision.revision_author.person, self.rootsite)]
+                FeedPerson(revision.revision_author.person, self.rootsite)
+            ]
 
         entry = FeedEntry(
             title=title,
@@ -306,7 +306,8 @@ class RevisionListingFeed(FeedBase):
             date_published=revision.date_created,
             authors=authors,
             id_=id,
-            content=content_data)
+            content=content_data,
+        )
         return entry
 
 
@@ -319,10 +320,11 @@ class PersonRevisionFeed(RevisionListingFeed):
     def title(self):
         """See `IFeed`."""
         if self.context.is_team:
-            return 'Latest Revisions by members of %s' % (
-                self.context.displayname)
+            return "Latest Revisions by members of %s" % (
+                self.context.displayname
+            )
         else:
-            return 'Latest Revisions by %s' % self.context.displayname
+            return "Latest Revisions by %s" % self.context.displayname
 
     def _getRevisionCache(self):
         """See `RevisionListingFeed`."""
@@ -335,7 +337,7 @@ class ProjectRevisionFeedBase(RevisionListingFeed):
     @property
     def title(self):
         """See `IFeed`."""
-        return 'Latest Revisions for %s' % self.context.displayname
+        return "Latest Revisions for %s" % self.context.displayname
 
 
 class ProductRevisionFeed(ProjectRevisionFeedBase):
@@ -404,12 +406,12 @@ class BranchFeed(BranchFeedBase):
             feed_allowed = False
             message_prefix = "The requested branch is private."
             root = getUtility(ILaunchpadRoot)
-            redirect_url = canonical_url(root, rootsite='code')
+            redirect_url = canonical_url(root, rootsite="code")
 
         if not feed_allowed:
             self.request.response.addErrorNotification(
-                message_prefix +
-                " Feeds do not serve private branches.")
+                message_prefix + " Feeds do not serve private branches."
+            )
             self.request.response.redirect(redirect_url)
 
     @property
@@ -438,20 +440,24 @@ class BranchFeed(BranchFeedBase):
     def itemToFeedEntry(self, rev):
         """See `IFeed`."""
         title = FeedTypedData("Revision %d" % rev.sequence)
-        url = self.context.getCodebrowseUrl('revision', str(rev.sequence))
-        content_view = BranchFeedContentView(rev, self.request, self,
-                                             'templates/branch-revision.pt')
-        content = FeedTypedData(content=content_view.render(),
-                                content_type="html",
-                                root_url=self.root_url)
+        url = self.context.getCodebrowseUrl("revision", str(rev.sequence))
+        content_view = BranchFeedContentView(
+            rev, self.request, self, "templates/branch-revision.pt"
+        )
+        content = FeedTypedData(
+            content=content_view.render(),
+            content_type="html",
+            root_url=self.root_url,
+        )
         entry = BranchFeedEntry(
             title=title,
             link_alternate=url,
             date_created=rev.revision.date_created,
             date_updated=rev.revision.revision_date,
             date_published=None,
-            authors=[RevisionPerson(
-                    rev.revision.revision_author,
-                    self.rootsite)],
-            content=content)
+            authors=[
+                RevisionPerson(rev.revision.revision_author, self.rootsite)
+            ],
+            content=content,
+        )
         return entry

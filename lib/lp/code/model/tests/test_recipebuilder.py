@@ -7,32 +7,32 @@ import os.path
 import shutil
 import tempfile
 
+import transaction
 from testtools.matchers import MatchesListwise
 from testtools.twistedsupport import AsynchronousDeferredRunTest
-import transaction
 from twisted.internet import defer
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
-    )
+)
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interactor import BuilderInteractor
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
-    )
+)
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.tests.mock_workers import (
     MockBuilder,
     OkWorker,
     WaitingWorker,
-    )
+)
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
     TestHandleStatusMixin,
     TestVerifySuccessfulBuildMixin,
-    )
+)
 from lp.code.model.recipebuilder import RecipeBuildBehaviour
 from lp.code.model.sourcepackagerecipebuild import SourcePackageRecipeBuild
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -40,26 +40,15 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
 from lp.services.webapp import canonical_url
-from lp.soyuz.adapters.archivedependencies import (
-    get_sources_list_for_building,
-    )
-from lp.soyuz.enums import (
-    ArchivePurpose,
-    PackagePublishingStatus,
-    )
+from lp.soyuz.adapters.archivedependencies import get_sources_list_for_building
+from lp.soyuz.enums import ArchivePurpose, PackagePublishingStatus
 from lp.soyuz.tests.soyuz import Base64KeyMatches
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.keyserver import InProcessKeyServerFixture
-from lp.testing.layers import (
-    LaunchpadZopelessLayer,
-    ZopelessDatabaseLayer,
-    )
+from lp.testing.layers import LaunchpadZopelessLayer, ZopelessDatabaseLayer
 from lp.testing.mail_helpers import pop_notifications
 
 
@@ -67,8 +56,14 @@ class TestRecipeBuilderBase(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
 
-    def makeJob(self, recipe_registrant=None, recipe_owner=None,
-                archive=None, git=False, with_builder=False):
+    def makeJob(
+        self,
+        recipe_registrant=None,
+        recipe_owner=None,
+        archive=None,
+        git=False,
+        with_builder=False,
+    ):
         """Create a sample `ISourcePackageRecipeBuild`."""
         spn = self.factory.makeSourcePackageName("apackage")
         if archive is None:
@@ -76,34 +71,51 @@ class TestRecipeBuilderBase(TestCaseWithFactory):
         else:
             distro = archive.distribution
         distroseries = self.factory.makeDistroSeries(
-            name="mydistro", distribution=distro)
-        processor = getUtility(IProcessorSet).getByName('386')
+            name="mydistro", distribution=distro
+        )
+        processor = getUtility(IProcessorSet).getByName("386")
         distroseries.nominatedarchindep = distroseries.newArch(
-            'i386', processor, True, self.factory.makePerson())
+            "i386", processor, True, self.factory.makePerson()
+        )
         for component_name in ("main", "universe"):
             self.factory.makeComponentSelection(distroseries, component_name)
         sourcepackage = self.factory.makeSourcePackage(spn, distroseries)
         if recipe_registrant is None:
             recipe_registrant = self.factory.makePerson(
                 email="requester@ubuntu.com",
-                name="joe", displayname="Joe User")
+                name="joe",
+                displayname="Joe User",
+            )
         if recipe_owner is None:
             recipe_owner = recipe_registrant
         if git:
             [somebranch] = self.factory.makeGitRefs(
-                owner=recipe_owner, name="pkg",
+                owner=recipe_owner,
+                name="pkg",
                 target=self.factory.makeProduct("someapp"),
-                paths=["refs/heads/packaging"])
+                paths=["refs/heads/packaging"],
+            )
         else:
             somebranch = self.factory.makeBranch(
-                owner=recipe_owner, name="pkg",
-                product=self.factory.makeProduct("someapp"))
+                owner=recipe_owner,
+                name="pkg",
+                product=self.factory.makeProduct("someapp"),
+            )
         recipe = self.factory.makeSourcePackageRecipe(
-            recipe_registrant, recipe_owner, distroseries, "recept",
-            "Recipe description", branches=[somebranch])
+            recipe_registrant,
+            recipe_owner,
+            distroseries,
+            "recept",
+            "Recipe description",
+            branches=[somebranch],
+        )
         spb = self.factory.makeSourcePackageRecipeBuild(
-            sourcepackage=sourcepackage, archive=archive,
-            recipe=recipe, requester=recipe_owner, distroseries=distroseries)
+            sourcepackage=sourcepackage,
+            archive=archive,
+            recipe=recipe,
+            requester=recipe_owner,
+            distroseries=distroseries,
+        )
         job = IBuildFarmJobBehaviour(spb)
         if with_builder:
             builder = MockBuilder()
@@ -113,7 +125,6 @@ class TestRecipeBuilderBase(TestCaseWithFactory):
 
 
 class TestRecipeBuilder(TestRecipeBuilderBase):
-
     def test_providesInterface(self):
         # RecipeBuildBehaviour provides IBuildFarmJobBehaviour.
         recipe_builder = RecipeBuildBehaviour(None)
@@ -138,29 +149,33 @@ class TestRecipeBuilder(TestRecipeBuilderBase):
     def test_verifyBuildRequest_non_virtual(self):
         # verifyBuildRequest will raise if a non-virtual builder is proposed.
         job = self.makeJob()
-        builder = MockBuilder('non-virtual builder')
+        builder = MockBuilder("non-virtual builder")
         builder.virtualized = False
         job.setBuilder(builder, OkWorker())
         logger = BufferLogger()
         e = self.assertRaises(AssertionError, job.verifyBuildRequest, logger)
         self.assertEqual(
-            'Attempt to build virtual item on a non-virtual builder.', str(e))
+            "Attempt to build virtual item on a non-virtual builder.", str(e)
+        )
 
     def test_verifyBuildRequest_bad_pocket(self):
         # verifyBuildRequest will raise if a bad pocket is proposed.
         build = self.factory.makeSourcePackageRecipeBuild(
-            pocket=PackagePublishingPocket.SECURITY)
+            pocket=PackagePublishingPocket.SECURITY
+        )
         job = IBuildFarmJobBehaviour(build)
         job.setBuilder(MockBuilder("bob-de-bouwer"), OkWorker())
         e = self.assertRaises(
-            AssertionError, job.verifyBuildRequest, BufferLogger())
-        self.assertIn('invalid pocket due to the series status of', str(e))
+            AssertionError, job.verifyBuildRequest, BufferLogger()
+        )
+        self.assertIn("invalid pocket due to the series status of", str(e))
 
     def test_getByID(self):
         job = self.makeJob()
         transaction.commit()
         self.assertEqual(
-            job.build, SourcePackageRecipeBuild.getByID(job.build.id))
+            job.build, SourcePackageRecipeBuild.getByID(job.build.id)
+        )
 
 
 class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
@@ -171,7 +186,8 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
         """Setup a temporary builder config."""
         self.pushConfig(
             "builddmaster",
-            bzr_builder_sources_list="deb http://foo %(series)s main")
+            bzr_builder_sources_list="deb http://foo %(series)s main",
+        )
 
     @defer.inlineCallbacks
     def test_extraBuildArgs(self):
@@ -179,30 +195,35 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
         self._setBuilderConfig()
         job = self.makeJob(with_builder=True)
         distroarchseries = job.build.distroseries.architectures[0]
-        expected_archives, expected_trusted_keys = (
-            yield get_sources_list_for_building(job, distroarchseries, None))
+        (
+            expected_archives,
+            expected_trusted_keys,
+        ) = yield get_sources_list_for_building(job, distroarchseries, None)
         expected_archives.insert(
-            0, "deb http://foo %s main" % job.build.distroseries.name)
+            0, "deb http://foo %s main" % job.build.distroseries.name
+        )
         args = yield job.extraBuildArgs()
-        self.assertEqual({
-            'arch_tag': 'i386',
-            'archive_private': False,
-            'archive_purpose': 'PPA',
-            'archives': expected_archives,
-            'author_email': 'requester@ubuntu.com',
-            'author_name': 'Joe User',
-            'build_url': canonical_url(job.build),
-            'distroseries_name': job.build.distroseries.name,
-            'fast_cleanup': True,
-            'ogrecomponent': 'universe',
-            'recipe_text':
-                '# bzr-builder format 0.3 '
-                'deb-version {debupstream}-0~{revno}\n'
-                'lp://dev/~joe/someapp/pkg\n',
-            'series': job.build.distroseries.name,
-            'suite': 'mydistro',
-            'trusted_keys': expected_trusted_keys,
-        }, args)
+        self.assertEqual(
+            {
+                "arch_tag": "i386",
+                "archive_private": False,
+                "archive_purpose": "PPA",
+                "archives": expected_archives,
+                "author_email": "requester@ubuntu.com",
+                "author_name": "Joe User",
+                "build_url": canonical_url(job.build),
+                "distroseries_name": job.build.distroseries.name,
+                "fast_cleanup": True,
+                "ogrecomponent": "universe",
+                "recipe_text": "# bzr-builder format 0.3 "
+                "deb-version {debupstream}-0~{revno}\n"
+                "lp://dev/~joe/someapp/pkg\n",
+                "series": job.build.distroseries.name,
+                "suite": "mydistro",
+                "trusted_keys": expected_trusted_keys,
+            },
+            args,
+        )
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_private_archive(self):
@@ -213,7 +234,7 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
         archive = self.factory.makeArchive(private=True)
         job = self.makeJob(archive=archive, with_builder=True)
         extra_args = yield job.extraBuildArgs()
-        self.assertEqual(True, extra_args['archive_private'])
+        self.assertEqual(True, extra_args["archive_private"])
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_team_owner_no_email(self):
@@ -221,16 +242,20 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
         # registrant is used.
         self._setBuilderConfig()
         recipe_registrant = self.factory.makePerson(
-            name='eric', displayname='Eric the Viking',
-            email='eric@vikings.r.us')
+            name="eric",
+            displayname="Eric the Viking",
+            email="eric@vikings.r.us",
+        )
         recipe_owner = self.factory.makeTeam(
-            name='vikings', members=[recipe_registrant])
+            name="vikings", members=[recipe_registrant]
+        )
 
         job = self.makeJob(recipe_registrant, recipe_owner, with_builder=True)
         extra_args = yield job.extraBuildArgs()
         self.assertEqual(
-            "Launchpad Package Builder", extra_args['author_name'])
-        self.assertEqual("noreply@launchpad.net", extra_args['author_email'])
+            "Launchpad Package Builder", extra_args["author_name"]
+        )
+        self.assertEqual("noreply@launchpad.net", extra_args["author_email"])
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_team_owner_with_email(self):
@@ -239,13 +264,15 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
         self._setBuilderConfig()
         recipe_registrant = self.factory.makePerson()
         recipe_owner = self.factory.makeTeam(
-            name='vikings', email='everyone@vikings.r.us',
-            members=[recipe_registrant])
+            name="vikings",
+            email="everyone@vikings.r.us",
+            members=[recipe_registrant],
+        )
 
         job = self.makeJob(recipe_registrant, recipe_owner, with_builder=True)
         extra_args = yield job.extraBuildArgs()
-        self.assertEqual("Vikings", extra_args['author_name'])
-        self.assertEqual("everyone@vikings.r.us", extra_args['author_email'])
+        self.assertEqual("Vikings", extra_args["author_name"])
+        self.assertEqual("everyone@vikings.r.us", extra_args["author_email"])
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_owner_deactivated(self):
@@ -253,12 +280,13 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
         self._setBuilderConfig()
         owner = self.factory.makePerson()
         with person_logged_in(owner):
-            owner.deactivate(comment='deactivating')
+            owner.deactivate(comment="deactivating")
         job = self.makeJob(owner, with_builder=True)
         extra_args = yield job.extraBuildArgs()
         self.assertEqual(
-            "Launchpad Package Builder", extra_args['author_name'])
-        self.assertEqual("noreply@launchpad.net", extra_args['author_email'])
+            "Launchpad Package Builder", extra_args["author_name"]
+        )
+        self.assertEqual("noreply@launchpad.net", extra_args["author_email"])
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_withBadConfigForBzrBuilderPPA(self):
@@ -266,36 +294,42 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
         # bzr_builder_sources_list in the config.
         self.pushConfig(
             "builddmaster",
-            bzr_builder_sources_list="deb http://foo %(series) main")
+            bzr_builder_sources_list="deb http://foo %(series) main",
+        )
         # (note the missing 's' in %(series)
         job = self.makeJob(with_builder=True)
         distroarchseries = job.build.distroseries.architectures[0]
-        expected_archives, expected_trusted_keys = (
-            yield get_sources_list_for_building(job, distroarchseries, None))
+        (
+            expected_archives,
+            expected_trusted_keys,
+        ) = yield get_sources_list_for_building(job, distroarchseries, None)
         logger = BufferLogger()
         extra_args = yield job.extraBuildArgs(logger)
-        self.assertEqual({
-            'arch_tag': 'i386',
-            'archive_private': False,
-            'archive_purpose': 'PPA',
-            'archives': expected_archives,
-            'author_email': 'requester@ubuntu.com',
-            'author_name': 'Joe User',
-            'build_url': canonical_url(job.build),
-            'distroseries_name': job.build.distroseries.name,
-            'fast_cleanup': True,
-            'ogrecomponent': 'universe',
-            'recipe_text':
-                '# bzr-builder format 0.3 '
-                'deb-version {debupstream}-0~{revno}\n'
-                'lp://dev/~joe/someapp/pkg\n',
-            'series': job.build.distroseries.name,
-            'suite': 'mydistro',
-            'trusted_keys': expected_trusted_keys,
-            }, extra_args)
+        self.assertEqual(
+            {
+                "arch_tag": "i386",
+                "archive_private": False,
+                "archive_purpose": "PPA",
+                "archives": expected_archives,
+                "author_email": "requester@ubuntu.com",
+                "author_name": "Joe User",
+                "build_url": canonical_url(job.build),
+                "distroseries_name": job.build.distroseries.name,
+                "fast_cleanup": True,
+                "ogrecomponent": "universe",
+                "recipe_text": "# bzr-builder format 0.3 "
+                "deb-version {debupstream}-0~{revno}\n"
+                "lp://dev/~joe/someapp/pkg\n",
+                "series": job.build.distroseries.name,
+                "suite": "mydistro",
+                "trusted_keys": expected_trusted_keys,
+            },
+            extra_args,
+        )
         self.assertIn(
             "Exception processing build tools sources.list entry:",
-            logger.getLogBuffer())
+            logger.getLogBuffer(),
+        )
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_withNoBzrBuilderConfigSet(self):
@@ -304,8 +338,10 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
         job = self.makeJob(with_builder=True)
         distroarchseries = job.build.distroseries.architectures[0]
         args = yield job.extraBuildArgs()
-        expected_archives, expected_trusted_keys = (
-            yield get_sources_list_for_building(job, distroarchseries, None))
+        (
+            expected_archives,
+            expected_trusted_keys,
+        ) = yield get_sources_list_for_building(job, distroarchseries, None)
         self.assertEqual(args["archives"], expected_archives)
         self.assertEqual(args["trusted_keys"], expected_trusted_keys)
 
@@ -313,29 +349,33 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
     def test_extraBuildArgs_git(self):
         job = self.makeJob(git=True, with_builder=True)
         distroarchseries = job.build.distroseries.architectures[0]
-        expected_archives, expected_trusted_keys = (
-            yield get_sources_list_for_building(job, distroarchseries, None))
+        (
+            expected_archives,
+            expected_trusted_keys,
+        ) = yield get_sources_list_for_building(job, distroarchseries, None)
         extra_args = yield job.extraBuildArgs()
-        self.assertEqual({
-            'arch_tag': 'i386',
-            'archive_private': False,
-            'archive_purpose': 'PPA',
-            'archives': expected_archives,
-            'author_email': 'requester@ubuntu.com',
-            'author_name': 'Joe User',
-            'build_url': canonical_url(job.build),
-            'distroseries_name': job.build.distroseries.name,
-            'fast_cleanup': True,
-            'git': True,
-            'ogrecomponent': 'universe',
-            'recipe_text':
-                '# git-build-recipe format 0.4 deb-version '
-                '{debupstream}-0~{revtime}\n'
-                'lp:~joe/someapp/+git/pkg packaging\n',
-            'series': job.build.distroseries.name,
-            'suite': 'mydistro',
-            'trusted_keys': expected_trusted_keys,
-            }, extra_args)
+        self.assertEqual(
+            {
+                "arch_tag": "i386",
+                "archive_private": False,
+                "archive_purpose": "PPA",
+                "archives": expected_archives,
+                "author_email": "requester@ubuntu.com",
+                "author_name": "Joe User",
+                "build_url": canonical_url(job.build),
+                "distroseries_name": job.build.distroseries.name,
+                "fast_cleanup": True,
+                "git": True,
+                "ogrecomponent": "universe",
+                "recipe_text": "# git-build-recipe format 0.4 deb-version "
+                "{debupstream}-0~{revtime}\n"
+                "lp:~joe/someapp/+git/pkg packaging\n",
+                "series": job.build.distroseries.name,
+                "suite": "mydistro",
+                "trusted_keys": expected_trusted_keys,
+            },
+            extra_args,
+        )
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_archives(self):
@@ -347,18 +387,19 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
             archive=archive,
             distroarchseries=job.build.distroseries.architectures[0],
             pocket=PackagePublishingPocket.RELEASE,
-            status=PackagePublishingStatus.PUBLISHED)
+            status=PackagePublishingStatus.PUBLISHED,
+        )
         primary = job.build.distribution.main_archive
         expected_archives = [
-            "deb %s %s main" % (
-                archive.archive_url, job.build.distroseries.name),
-            "deb %s %s main universe" % (
-                primary.archive_url, job.build.distroseries.name),
-            "deb %s %s-security main universe" % (
-                primary.archive_url, job.build.distroseries.name),
-            "deb %s %s-updates main universe" % (
-                primary.archive_url, job.build.distroseries.name),
-            ]
+            "deb %s %s main"
+            % (archive.archive_url, job.build.distroseries.name),
+            "deb %s %s main universe"
+            % (primary.archive_url, job.build.distroseries.name),
+            "deb %s %s-security main universe"
+            % (primary.archive_url, job.build.distroseries.name),
+            "deb %s %s-updates main universe"
+            % (primary.archive_url, job.build.distroseries.name),
+        ]
         extra_args = yield job.extraBuildArgs()
         self.assertEqual(expected_archives, extra_args["archives"])
 
@@ -369,16 +410,27 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
         archive = self.factory.makeArchive()
         key_path = os.path.join(gpgkeysdir, "ppa-sample@canonical.com.sec")
         yield IArchiveGPGSigningKey(archive).setSigningKey(
-            key_path, async_keyserver=True)
+            key_path, async_keyserver=True
+        )
         job = self.makeJob(archive=archive, with_builder=True)
         distroarchseries = job.build.distroseries.architectures[0]
         self.factory.makeBinaryPackagePublishingHistory(
-            distroarchseries=distroarchseries, pocket=job.build.pocket,
-            archive=archive, status=PackagePublishingStatus.PUBLISHED)
+            distroarchseries=distroarchseries,
+            pocket=job.build.pocket,
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+        )
         args = yield job.extraBuildArgs()
-        self.assertThat(args["trusted_keys"], MatchesListwise([
-            Base64KeyMatches("0D57E99656BEFB0897606EE9A022DD1F5001B46D"),
-            ]))
+        self.assertThat(
+            args["trusted_keys"],
+            MatchesListwise(
+                [
+                    Base64KeyMatches(
+                        "0D57E99656BEFB0897606EE9A022DD1F5001B46D"
+                    ),
+                ]
+            ),
+        )
 
     @defer.inlineCallbacks
     def test_composeBuildRequest(self):
@@ -389,8 +441,9 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
         build_request = yield job.composeBuildRequest(None)
         extra_args = yield job.extraBuildArgs()
         self.assertEqual(
-            ('sourcepackagerecipe', das, job.build.pocket, {}, extra_args),
-            build_request)
+            ("sourcepackagerecipe", das, job.build.pocket, {}, extra_args),
+            build_request,
+        )
 
 
 class TestBuildNotifications(TestCaseWithFactory):
@@ -400,32 +453,41 @@ class TestBuildNotifications(TestCaseWithFactory):
 
     def prepareBehaviour(self, fake_successful_upload=False):
         self.queue_record = (
-            self.factory.makeSourcePackageRecipeBuild().queueBuild())
+            self.factory.makeSourcePackageRecipeBuild().queueBuild()
+        )
         build = self.queue_record.specific_build
         if fake_successful_upload:
             removeSecurityProxy(build).verifySuccessfulUpload = FakeMethod(
-                result=True)
+                result=True
+            )
             # We overwrite the buildmaster root to use a temp directory.
             tempdir = tempfile.mkdtemp()
             self.addCleanup(shutil.rmtree, tempdir)
             self.upload_root = tempdir
-            tmp_builddmaster_root = """
+            tmp_builddmaster_root = (
+                """
             [builddmaster]
             root: %s
-            """ % self.upload_root
-            config.push('tmp_builddmaster_root', tmp_builddmaster_root)
-            self.addCleanup(config.pop, 'tmp_builddmaster_root')
+            """
+                % self.upload_root
+            )
+            config.push("tmp_builddmaster_root", tmp_builddmaster_root)
+            self.addCleanup(config.pop, "tmp_builddmaster_root")
         self.queue_record.builder = self.factory.makeBuilder()
-        worker = WaitingWorker('BuildStatus.OK')
+        worker = WaitingWorker("BuildStatus.OK")
         return BuilderInteractor.getBuildBehaviour(
-            self.queue_record, self.queue_record.builder, worker)
+            self.queue_record, self.queue_record.builder, worker
+        )
 
     def assertDeferredNotifyCount(self, status, behaviour, expected_count):
         d = behaviour.handleStatus(
             self.queue_record,
-            {'builder_status': 'BuilderStatus.WAITING',
-             'build_status': 'BuildStatus.%s' % status,
-             'filemap': {}})
+            {
+                "builder_status": "BuilderStatus.WAITING",
+                "build_status": "BuildStatus.%s" % status,
+                "filemap": {},
+            },
+        )
 
         def cb(result):
             self.assertEqual(expected_count, len(pop_notifications()))
@@ -436,19 +498,20 @@ class TestBuildNotifications(TestCaseWithFactory):
     def test_handleStatus_PACKAGEFAIL(self):
         """Failing to build the package immediately sends a notification."""
         return self.assertDeferredNotifyCount(
-            "PACKAGEFAIL", self.prepareBehaviour(), 1)
+            "PACKAGEFAIL", self.prepareBehaviour(), 1
+        )
 
     def test_handleStatus_OK(self):
         """Building the source package does _not_ immediately send mail.
 
         (The archive uploader mail send one later.
         """
-        return self.assertDeferredNotifyCount(
-            "OK", self.prepareBehaviour(), 0)
+        return self.assertDeferredNotifyCount("OK", self.prepareBehaviour(), 0)
 
     def test_handleStatus_OK_successful_upload(self):
         return self.assertDeferredNotifyCount(
-            "OK", self.prepareBehaviour(True), 0)
+            "OK", self.prepareBehaviour(True), 0
+        )
 
 
 class MakeSPRecipeBuildMixin:
@@ -456,30 +519,34 @@ class MakeSPRecipeBuildMixin:
 
     def makeBuild(self):
         build = self.factory.makeSourcePackageRecipeBuild(
-            status=BuildStatus.BUILDING)
+            status=BuildStatus.BUILDING
+        )
         build.queueBuild()
         return build
 
     def makeUnmodifiableBuild(self):
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
         build = self.factory.makeSourcePackageRecipeBuild(
-            archive=archive, status=BuildStatus.BUILDING)
+            archive=archive, status=BuildStatus.BUILDING
+        )
         build.distro_series.status = SeriesStatus.CURRENT
         build.queueBuild()
         return build
 
 
 class TestGetUploadMethodsForSPRecipeBuild(
-    MakeSPRecipeBuildMixin, TestGetUploadMethodsMixin, TestCaseWithFactory):
+    MakeSPRecipeBuildMixin, TestGetUploadMethodsMixin, TestCaseWithFactory
+):
     """IPackageBuild.getUpload-related methods work with SPRecipe builds."""
 
 
 class TestVerifySuccessfulBuildForSPRBuild(
-    MakeSPRecipeBuildMixin, TestVerifySuccessfulBuildMixin,
-    TestCaseWithFactory):
+    MakeSPRecipeBuildMixin, TestVerifySuccessfulBuildMixin, TestCaseWithFactory
+):
     """IBuildFarmJobBehaviour.verifySuccessfulBuild works."""
 
 
 class TestHandleStatusForSPRBuild(
-    MakeSPRecipeBuildMixin, TestHandleStatusMixin, TestCaseWithFactory):
+    MakeSPRecipeBuildMixin, TestHandleStatusMixin, TestCaseWithFactory
+):
     """IPackageBuild.handleStatus works with SPRecipe builds."""

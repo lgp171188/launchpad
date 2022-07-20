@@ -160,7 +160,7 @@ class ChangesFile(SignableTagFile):
         """
         if self.signer:
             # We only set the maintainer attribute up if we received a
-            # signed upload.  This is desireable because it avoids us
+            # signed upload.  This is desirable because it avoids us
             # doing ensurePerson() for buildds and sync owners.
             try:
                 self.maintainer = self.parseAddress(self._dict["Maintainer"])

@@ -197,7 +197,7 @@ class NascentUploadFile:
     def verify(self):
         """Implemented locally.
 
-        It does specific checks acording the subclass type and returns
+        It does specific checks according to the subclass type and returns
         an iterator over all the encountered errors and warnings.
         """
         raise NotImplementedError
@@ -1026,7 +1026,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
 
     def storeInDatabase(self, build):
         """Insert this binary release and build into the database."""
-        # Reencode everything we are supplying, because old packages
+        # Re-encode everything we are supplying, because old packages
         # contain latin-1 text and that sucks.
         encoded = Deb822Dict()
         for key, value in self.control.items():

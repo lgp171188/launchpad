@@ -49,6 +49,10 @@ repos:
             |bugs
             |buildmaster
             |charms
+            |code
+            |codehosting
+            |coop
+            |oci
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
@@ -74,6 +78,10 @@ repos:
             |bugs
             |buildmaster
             |charms
+            |code
+            |codehosting
+            |coop
+            |oci
           )/
     -   id: isort
         alias: isort-black
@@ -89,6 +97,10 @@ repos:
             |bugs
             |buildmaster
             |charms
+            |code
+            |codehosting
+            |coop
+            |oci
           )/
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.9.2

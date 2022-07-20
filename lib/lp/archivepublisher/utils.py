@@ -104,8 +104,8 @@ class XZTempFile(PlainTempFile):
 class RepositoryIndexFile:
     """Facilitates the publication of repository index files.
 
-    It allows callsites to publish index files in different medias
-    (plain, gzip, bzip2, and xz) transparently and atomically.
+    It allows callsites to publish index files with different compression
+    formats (plain, gzip, bzip2, and xz) transparently and atomically.
     """
 
     def __init__(self, path, temp_root, compressors=None):
@@ -141,16 +141,16 @@ class RepositoryIndexFile:
         self.close()
 
     def write(self, content):
-        """Write contents to all target medias."""
+        """Write contents to all target files."""
         for index_file in self.index_files:
             index_file.write(content)
 
     def close(self):
-        """Close temporary media and atomically publish them.
+        """Close temporary files and atomically publish them.
 
         If necessary the given 'root' destination is created at this point.
 
-        It also fixes the final files permissions making them readable and
+        It also fixes the final files' permissions making them readable and
         writable by their group and readable by others.
         """
         if os.path.exists(self.root):

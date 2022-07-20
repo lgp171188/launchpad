@@ -7,10 +7,10 @@ See `IBranchCollection` for more details.
 """
 
 __all__ = [
-    'IAllBranches',
-    'IBranchCollection',
-    'InvalidFilter',
-    ]
+    "IAllBranches",
+    "IBranchCollection",
+    "InvalidFilter",
+]
 
 from zope.interface import Interface
 
@@ -74,8 +74,13 @@ class IBranchCollection(Interface):
     def getBranchIds():
         """Return a result set of all branch ids in this collection."""
 
-    def getMergeProposals(statuses=None, for_branches=None, target_branch=None,
-                          prerequisite_branch=None, eager_load=False):
+    def getMergeProposals(
+        statuses=None,
+        for_branches=None,
+        target_branch=None,
+        prerequisite_branch=None,
+        eager_load=False,
+    ):
         """Return a result set of merge proposals for the branches in this
         collection.
 
@@ -195,8 +200,8 @@ class IBranchCollection(Interface):
         """Restrict the collection to branches subscribed to by 'person'."""
 
     def visibleByUser(person):
-        """Restrict the collection to branches that person is allowed to see.
-        """
+        """Restrict the collection to branches that person is allowed to
+        see."""
 
     def withBranchType(*branch_types):
         """Restrict the collection to branches with the given branch types."""

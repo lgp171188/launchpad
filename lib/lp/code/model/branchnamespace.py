@@ -4,18 +4,18 @@
 """Implementations of `IBranchNamespace`."""
 
 __all__ = [
-    'BranchNamespaceSet',
-    'BRANCH_POLICY_ALLOWED_TYPES',
-    'BRANCH_POLICY_DEFAULT_TYPES',
-    'BRANCH_POLICY_REQUIRED_GRANTS',
-    'PackageBranchNamespace',
-    'PersonalBranchNamespace',
-    'ProjectBranchNamespace',
-    ]
+    "BranchNamespaceSet",
+    "BRANCH_POLICY_ALLOWED_TYPES",
+    "BRANCH_POLICY_DEFAULT_TYPES",
+    "BRANCH_POLICY_REQUIRED_GRANTS",
+    "PackageBranchNamespace",
+    "PersonalBranchNamespace",
+    "ProjectBranchNamespace",
+]
 
 
-from lazr.lifecycle.event import ObjectCreatedEvent
 import six
+from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.locals import And
 from zope.component import getUtility
 from zope.event import notify
@@ -24,16 +24,16 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import (
     FREE_INFORMATION_TYPES,
-    InformationType,
     NON_EMBARGOED_INFORMATION_TYPES,
-    )
+    InformationType,
+)
 from lp.app.interfaces.services import IService
 from lp.code.enums import (
     BranchLifecycleStatus,
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
-    )
+)
 from lp.code.errors import (
     BranchCreationForbidden,
     BranchCreatorNotMemberOfOwnerTeam,
@@ -41,57 +41,43 @@ from lp.code.errors import (
     BranchExists,
     InvalidNamespace,
     NoSuchBranch,
-    )
-from lp.code.interfaces.branch import (
-    IBranch,
-    user_has_special_branch_access,
-    )
+)
+from lp.code.interfaces.branch import IBranch, user_has_special_branch_access
 from lp.code.interfaces.branchnamespace import (
     IBranchNamespace,
     IBranchNamespacePolicy,
-    )
+)
 from lp.code.interfaces.branchtarget import IBranchTarget
 from lp.code.model.branch import Branch
-from lp.registry.enums import (
-    BranchSharingPolicy,
-    PersonVisibility,
-    )
-from lp.registry.errors import (
-    NoSuchDistroSeries,
-    NoSuchSourcePackageName,
-    )
+from lp.registry.enums import BranchSharingPolicy, PersonVisibility
+from lp.registry.errors import NoSuchDistroSeries, NoSuchSourcePackageName
 from lp.registry.interfaces.distribution import (
     IDistributionSet,
     NoSuchDistribution,
-    )
+)
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
-from lp.registry.interfaces.person import (
-    IPersonSet,
-    NoSuchPerson,
-    )
+from lp.registry.interfaces.person import IPersonSet, NoSuchPerson
 from lp.registry.interfaces.pillar import IPillarNameSet
-from lp.registry.interfaces.product import (
-    IProduct,
-    IProductSet,
-    NoSuchProduct,
-    )
+from lp.registry.interfaces.product import IProduct, IProductSet, NoSuchProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.registry.model.sourcepackage import SourcePackage
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 
-
 BRANCH_POLICY_ALLOWED_TYPES = {
     BranchSharingPolicy.PUBLIC: FREE_INFORMATION_TYPES,
     BranchSharingPolicy.PUBLIC_OR_PROPRIETARY: NON_EMBARGOED_INFORMATION_TYPES,
     BranchSharingPolicy.PROPRIETARY_OR_PUBLIC: (
-        NON_EMBARGOED_INFORMATION_TYPES),
+        NON_EMBARGOED_INFORMATION_TYPES
+    ),
     BranchSharingPolicy.PROPRIETARY: [InformationType.PROPRIETARY],
-    BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY:
-        [InformationType.PROPRIETARY, InformationType.EMBARGOED],
+    BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY: [
+        InformationType.PROPRIETARY,
+        InformationType.EMBARGOED,
+    ],
     BranchSharingPolicy.FORBIDDEN: [],
-    }
+}
 
 BRANCH_POLICY_DEFAULT_TYPES = {
     BranchSharingPolicy.PUBLIC: InformationType.PUBLIC,
@@ -100,7 +86,7 @@ BRANCH_POLICY_DEFAULT_TYPES = {
     BranchSharingPolicy.PROPRIETARY: InformationType.PROPRIETARY,
     BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY: InformationType.EMBARGOED,
     BranchSharingPolicy.FORBIDDEN: None,
-    }
+}
 
 BRANCH_POLICY_REQUIRED_GRANTS = {
     BranchSharingPolicy.PUBLIC: None,
@@ -109,18 +95,27 @@ BRANCH_POLICY_REQUIRED_GRANTS = {
     BranchSharingPolicy.PROPRIETARY: InformationType.PROPRIETARY,
     BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY: InformationType.PROPRIETARY,
     BranchSharingPolicy.FORBIDDEN: None,
-    }
+}
 
 
 class _BaseBranchNamespace:
     """Common code for branch namespaces."""
 
-    def createBranch(self, branch_type, name, registrant, url=None,
-                     title=None,
-                     lifecycle_status=BranchLifecycleStatus.DEVELOPMENT,
-                     summary=None, whiteboard=None, date_created=None,
-                     branch_format=None, repository_format=None,
-                     control_format=None):
+    def createBranch(
+        self,
+        branch_type,
+        name,
+        registrant,
+        url=None,
+        title=None,
+        lifecycle_status=BranchLifecycleStatus.DEVELOPMENT,
+        summary=None,
+        whiteboard=None,
+        date_created=None,
+        branch_format=None,
+        repository_format=None,
+        control_format=None,
+    ):
         """See `IBranchNamespace`."""
 
         self.validateRegistrant(registrant)
@@ -131,10 +126,10 @@ class _BaseBranchNamespace:
 
         # Run any necessary data massage on the branch URL.
         if url is not None:
-            url = IBranch['url'].normalize(url)
+            url = IBranch["url"].normalize(url)
 
-        product = getattr(self, 'product', None)
-        sourcepackage = getattr(self, 'sourcepackage', None)
+        product = getattr(self, "product", None)
+        sourcepackage = getattr(self, "sourcepackage", None)
         if sourcepackage is None:
             distroseries = None
             sourcepackagename = None
@@ -147,15 +142,25 @@ class _BaseBranchNamespace:
             raise BranchCreationForbidden()
 
         branch = Branch(
-            registrant=registrant, name=name, owner=self.owner,
-            product=product, url=url, title=title,
-            lifecycle_status=lifecycle_status, summary=summary,
-            whiteboard=whiteboard, information_type=information_type,
-            date_created=date_created, branch_type=branch_type,
-            date_last_modified=date_created, branch_format=branch_format,
+            registrant=registrant,
+            name=name,
+            owner=self.owner,
+            product=product,
+            url=url,
+            title=title,
+            lifecycle_status=lifecycle_status,
+            summary=summary,
+            whiteboard=whiteboard,
+            information_type=information_type,
+            date_created=date_created,
+            branch_type=branch_type,
+            date_last_modified=date_created,
+            branch_format=branch_format,
             repository_format=repository_format,
-            control_format=control_format, distroseries=distroseries,
-            sourcepackagename=sourcepackagename)
+            control_format=control_format,
+            distroseries=distroseries,
+            sourcepackagename=sourcepackagename,
+        )
         branch._reconcileAccess()
 
         # The owner of the branch should also be automatically subscribed in
@@ -167,7 +172,8 @@ class _BaseBranchNamespace:
             BranchSubscriptionNotificationLevel.NOEMAIL,
             BranchSubscriptionDiffSize.NODIFF,
             CodeReviewNotificationLevel.FULL,
-            registrant)
+            registrant,
+        )
 
         notify(ObjectCreatedEvent(branch))
         return branch
@@ -181,15 +187,18 @@ class _BaseBranchNamespace:
             if owner.is_team:
                 raise BranchCreatorNotMemberOfOwnerTeam(
                     "%s is not a member of %s"
-                    % (registrant.displayname, owner.displayname))
+                    % (registrant.displayname, owner.displayname)
+                )
             else:
                 raise BranchCreatorNotOwner(
                     "%s cannot create branches owned by %s"
-                    % (registrant.displayname, owner.displayname))
+                    % (registrant.displayname, owner.displayname)
+                )
 
         if not self.getAllowedInformationTypes(registrant):
             raise BranchCreationForbidden(
-                'You cannot create branches in "%s"' % self.name)
+                'You cannot create branches in "%s"' % self.name
+            )
 
     def validateBranchName(self, name):
         """See `IBranchNamespace`."""
@@ -198,7 +207,7 @@ class _BaseBranchNamespace:
         # so we validate the branch name here to give a nicer error message
         # than 'ERROR: new row for relation "branch" violates check
         # constraint "valid_name"...'.
-        IBranch['name'].validate(six.ensure_text(name))
+        IBranch["name"].validate(six.ensure_text(name))
 
         existing_branch = self.getByName(name)
         if existing_branch is not None:
@@ -211,8 +220,9 @@ class _BaseBranchNamespace:
         self.validateBranchName(name)
         self.validateRegistrant(mover, branch)
 
-    def moveBranch(self, branch, mover, new_name=None,
-                   rename_if_necessary=False):
+    def moveBranch(
+        self, branch, mover, new_name=None, rename_if_necessary=False
+    ):
         """See `IBranchNamespace`."""
         # Check to see if the branch is already in this namespace.
         old_namespace = branch.namespace
@@ -230,8 +240,9 @@ class _BaseBranchNamespace:
         self.target._retargetBranch(naked_branch)
         naked_branch.name = new_name
 
-    def createBranchWithPrefix(self, branch_type, prefix, registrant,
-                               url=None):
+    def createBranchWithPrefix(
+        self, branch_type, prefix, registrant, url=None
+    ):
         """See `IBranchNamespace`."""
         name = self.findUnusedName(prefix)
         return self.createBranch(branch_type, name, registrant, url=url)
@@ -251,13 +262,17 @@ class _BaseBranchNamespace:
 
     def getBranchName(self, branch_name):
         """See `IBranchNamespace`."""
-        return '%s/%s' % (self.name, branch_name)
+        return "%s/%s" % (self.name, branch_name)
 
     def getByName(self, branch_name, default=None):
         """See `IBranchNamespace`."""
-        match = IStore(Branch).find(
-            Branch, self._getBranchesClause(),
-            Branch.name == branch_name).one()
+        match = (
+            IStore(Branch)
+            .find(
+                Branch, self._getBranchesClause(), Branch.name == branch_name
+            )
+            .one()
+        )
         if match is None:
             match = default
         return match
@@ -299,19 +314,23 @@ class PersonalBranchNamespace(_BaseBranchNamespace):
 
     def _getBranchesClause(self):
         return And(
-            Branch.owner == self.owner, Branch.product == None,
-            Branch.distroseries == None, Branch.sourcepackagename == None)
+            Branch.owner == self.owner,
+            Branch.product == None,
+            Branch.distroseries == None,
+            Branch.sourcepackagename == None,
+        )
 
     @property
     def name(self):
         """See `IBranchNamespace`."""
-        return '~%s/+junk' % self.owner.name
+        return "~%s/+junk" % self.owner.name
 
     @property
     def _is_private_team(self):
         return (
             self.owner.is_team
-            and self.owner.visibility == PersonVisibility.PRIVATE)
+            and self.owner.visibility == PersonVisibility.PRIVATE
+        )
 
     def getAllowedInformationTypes(self, who=None):
         """See `IBranchNamespace`."""
@@ -352,7 +371,7 @@ class ProjectBranchNamespace(_BaseBranchNamespace):
     @property
     def name(self):
         """See `IBranchNamespace`."""
-        return '~%s/%s' % (self.owner.name, self.product.name)
+        return "~%s/%s" % (self.owner.name, self.product.name)
 
     @property
     def target(self):
@@ -368,22 +387,29 @@ class ProjectBranchNamespace(_BaseBranchNamespace):
         # full access to an information type. If it's required and the user
         # doesn't hold it, no information types are legal.
         required_grant = BRANCH_POLICY_REQUIRED_GRANTS[
-            self.product.branch_sharing_policy]
-        if (required_grant is not None
-            and not getUtility(IService, 'sharing').checkPillarAccess(
-                [self.product], required_grant, self.owner)
-            and (who is None
-                or not getUtility(IService, 'sharing').checkPillarAccess(
-                    [self.product], required_grant, who))):
+            self.product.branch_sharing_policy
+        ]
+        if (
+            required_grant is not None
+            and not getUtility(IService, "sharing").checkPillarAccess(
+                [self.product], required_grant, self.owner
+            )
+            and (
+                who is None
+                or not getUtility(IService, "sharing").checkPillarAccess(
+                    [self.product], required_grant, who
+                )
+            )
+        ):
             return []
 
-        return BRANCH_POLICY_ALLOWED_TYPES[
-            self.product.branch_sharing_policy]
+        return BRANCH_POLICY_ALLOWED_TYPES[self.product.branch_sharing_policy]
 
     def getDefaultInformationType(self, who=None):
         """See `IBranchNamespace`."""
         default_type = BRANCH_POLICY_DEFAULT_TYPES[
-            self.product.branch_sharing_policy]
+            self.product.branch_sharing_policy
+        ]
         if default_type not in self.getAllowedInformationTypes(who):
             return None
         return default_type
@@ -405,12 +431,13 @@ class PackageBranchNamespace(_BaseBranchNamespace):
         return And(
             Branch.owner == self.owner,
             Branch.distroseries == self.sourcepackage.distroseries,
-            Branch.sourcepackagename == self.sourcepackage.sourcepackagename)
+            Branch.sourcepackagename == self.sourcepackage.sourcepackagename,
+        )
 
     @property
     def name(self):
         """See `IBranchNamespace`."""
-        return '~%s/%s' % (self.owner.name, self.sourcepackage.path)
+        return "~%s/%s" % (self.owner.name, self.sourcepackage.path)
 
     @property
     def target(self):
@@ -427,13 +454,20 @@ class PackageBranchNamespace(_BaseBranchNamespace):
         # doesn't hold it, no information types are legal.
         distribution = self.sourcepackage.distribution
         required_grant = BRANCH_POLICY_REQUIRED_GRANTS[
-            distribution.branch_sharing_policy]
-        if (required_grant is not None
-            and not getUtility(IService, 'sharing').checkPillarAccess(
-                [distribution], required_grant, self.owner)
-            and (who is None
-                or not getUtility(IService, 'sharing').checkPillarAccess(
-                    [distribution], required_grant, who))):
+            distribution.branch_sharing_policy
+        ]
+        if (
+            required_grant is not None
+            and not getUtility(IService, "sharing").checkPillarAccess(
+                [distribution], required_grant, self.owner
+            )
+            and (
+                who is None
+                or not getUtility(IService, "sharing").checkPillarAccess(
+                    [distribution], required_grant, who
+                )
+            )
+        ):
             return []
 
         return BRANCH_POLICY_ALLOWED_TYPES[distribution.branch_sharing_policy]
@@ -441,7 +475,8 @@ class PackageBranchNamespace(_BaseBranchNamespace):
     def getDefaultInformationType(self, who=None):
         """See `IBranchNamespace`."""
         default_type = BRANCH_POLICY_DEFAULT_TYPES[
-            self.sourcepackage.distribution.branch_sharing_policy]
+            self.sourcepackage.distribution.branch_sharing_policy
+        ]
         if default_type not in self.getAllowedInformationTypes(who):
             return None
         return default_type
@@ -450,43 +485,52 @@ class PackageBranchNamespace(_BaseBranchNamespace):
 class BranchNamespaceSet:
     """Only implementation of `IBranchNamespaceSet`."""
 
-    def get(self, person, product=None, distroseries=None,
-            sourcepackagename=None):
+    def get(
+        self, person, product=None, distroseries=None, sourcepackagename=None
+    ):
         """See `IBranchNamespaceSet`."""
         if product is not None:
-            assert (distroseries is None and sourcepackagename is None), (
+            assert distroseries is None and sourcepackagename is None, (
                 "product implies no distroseries or sourcepackagename. "
-                "Got %r, %r, %r."
-                % (product, distroseries, sourcepackagename))
+                "Got %r, %r, %r." % (product, distroseries, sourcepackagename)
+            )
             return ProjectBranchNamespace(person, product)
         elif distroseries is not None:
-            assert sourcepackagename is not None, (
-                "distroseries implies sourcepackagename. Got %r, %r"
-                % (distroseries, sourcepackagename))
+            assert (
+                sourcepackagename is not None
+            ), "distroseries implies sourcepackagename. Got %r, %r" % (
+                distroseries,
+                sourcepackagename,
+            )
             return PackageBranchNamespace(
-                person, SourcePackage(sourcepackagename, distroseries))
+                person, SourcePackage(sourcepackagename, distroseries)
+            )
         else:
             return PersonalBranchNamespace(person)
 
     def parse(self, namespace_name):
         """See `IBranchNamespaceSet`."""
         data = dict(
-            person=None, product=None, distribution=None, distroseries=None,
-            sourcepackagename=None)
-        tokens = namespace_name.split('/')
+            person=None,
+            product=None,
+            distribution=None,
+            distroseries=None,
+            sourcepackagename=None,
+        )
+        tokens = namespace_name.split("/")
         if len(tokens) == 2:
-            data['person'] = tokens[0]
-            data['product'] = tokens[1]
+            data["person"] = tokens[0]
+            data["product"] = tokens[1]
         elif len(tokens) == 4:
-            data['person'] = tokens[0]
-            data['distribution'] = tokens[1]
-            data['distroseries'] = tokens[2]
-            data['sourcepackagename'] = tokens[3]
+            data["person"] = tokens[0]
+            data["distribution"] = tokens[1]
+            data["distroseries"] = tokens[2]
+            data["sourcepackagename"] = tokens[3]
         else:
             raise InvalidNamespace(namespace_name)
-        if not data['person'].startswith('~'):
+        if not data["person"].startswith("~"):
             raise InvalidNamespace(namespace_name)
-        data['person'] = data['person'][1:]
+        data["person"] = data["person"][1:]
         return data
 
     def lookup(self, namespace_name):
@@ -494,12 +538,22 @@ class BranchNamespaceSet:
         names = self.parse(namespace_name)
         return self.interpret(**names)
 
-    def interpret(self, person=None, product=None, distribution=None,
-                  distroseries=None, sourcepackagename=None):
+    def interpret(
+        self,
+        person=None,
+        product=None,
+        distribution=None,
+        distroseries=None,
+        sourcepackagename=None,
+    ):
         """See `IBranchNamespaceSet`."""
         names = dict(
-            person=person, product=product, distribution=distribution,
-            distroseries=distroseries, sourcepackagename=sourcepackagename)
+            person=person,
+            product=product,
+            distribution=distribution,
+            distroseries=distroseries,
+            sourcepackagename=sourcepackagename,
+        )
         data = self._realize(names)
         return self.get(**data)
 
@@ -511,7 +565,7 @@ class BranchNamespaceSet:
             try:
                 result = next(segments)
             except StopIteration:
-                raise InvalidNamespace('/'.join(traversed_segments))
+                raise InvalidNamespace("/".join(traversed_segments))
             if result is None:
                 raise AssertionError("None segment passed to traverse()")
             traversed_segments.append(result)
@@ -528,13 +582,17 @@ class BranchNamespaceSet:
             distroseries = self._findDistroSeries(pillar, distroseries_name)
             sourcepackagename_name = get_next_segment()
             sourcepackagename = self._findSourcePackageName(
-                sourcepackagename_name)
+                sourcepackagename_name
+            )
             namespace = self.get(
-                person, distroseries=distroseries,
-                sourcepackagename=sourcepackagename)
+                person,
+                distroseries=distroseries,
+                sourcepackagename=sourcepackagename,
+            )
         branch_name = get_next_segment()
         return self._findOrRaise(
-            NoSuchBranch, branch_name, namespace.getByName)
+            NoSuchBranch, branch_name, namespace.getByName
+        )
 
     def _findOrRaise(self, error, name, finder, *args):
         if name is None:
@@ -548,7 +606,8 @@ class BranchNamespaceSet:
 
     def _findPerson(self, person_name):
         return self._findOrRaise(
-            NoSuchPerson, person_name, getUtility(IPersonSet).getByName)
+            NoSuchPerson, person_name, getUtility(IPersonSet).getByName
+        )
 
     def _findPillar(self, pillar_name):
         """Find and return the pillar with the given name.
@@ -558,35 +617,43 @@ class BranchNamespaceSet:
         :raise NoSuchProduct if there's no pillar with the given name or it is
             a project group.
         """
-        if pillar_name == '+junk':
+        if pillar_name == "+junk":
             return None
         pillar = self._findOrRaise(
-            NoSuchProduct, pillar_name, getUtility(IPillarNameSet).getByName)
+            NoSuchProduct, pillar_name, getUtility(IPillarNameSet).getByName
+        )
         if IProjectGroup.providedBy(pillar):
             raise NoSuchProduct(pillar_name)
         return pillar
 
     def _findProduct(self, product_name):
-        if product_name == '+junk':
+        if product_name == "+junk":
             return None
         return self._findOrRaise(
-            NoSuchProduct, product_name,
-            getUtility(IProductSet).getByName)
+            NoSuchProduct, product_name, getUtility(IProductSet).getByName
+        )
 
     def _findDistribution(self, distribution_name):
         return self._findOrRaise(
-            NoSuchDistribution, distribution_name,
-            getUtility(IDistributionSet).getByName)
+            NoSuchDistribution,
+            distribution_name,
+            getUtility(IDistributionSet).getByName,
+        )
 
     def _findDistroSeries(self, distribution, distroseries_name):
         return self._findOrRaise(
-            NoSuchDistroSeries, distroseries_name,
-            getUtility(IDistroSeriesSet).queryByName, distribution)
+            NoSuchDistroSeries,
+            distroseries_name,
+            getUtility(IDistroSeriesSet).queryByName,
+            distribution,
+        )
 
     def _findSourcePackageName(self, sourcepackagename_name):
         return self._findOrRaise(
-            NoSuchSourcePackageName, sourcepackagename_name,
-            getUtility(ISourcePackageNameSet).queryByName)
+            NoSuchSourcePackageName,
+            sourcepackagename_name,
+            getUtility(ISourcePackageNameSet).queryByName,
+        )
 
     def _realize(self, names):
         """Turn a dict of object names into a dict of objects.
@@ -595,11 +662,13 @@ class BranchNamespaceSet:
         dict where the values are Launchpad objects.
         """
         data = {}
-        data['person'] = self._findPerson(names['person'])
-        data['product'] = self._findProduct(names['product'])
-        distribution = self._findDistribution(names['distribution'])
-        data['distroseries'] = self._findDistroSeries(
-            distribution, names['distroseries'])
-        data['sourcepackagename'] = self._findSourcePackageName(
-            names['sourcepackagename'])
+        data["person"] = self._findPerson(names["person"])
+        data["product"] = self._findProduct(names["product"])
+        distribution = self._findDistribution(names["distribution"])
+        data["distroseries"] = self._findDistroSeries(
+            distribution, names["distroseries"]
+        )
+        data["sourcepackagename"] = self._findSourcePackageName(
+            names["sourcepackagename"]
+        )
         return data

@@ -4,9 +4,9 @@
 """Vocabularies that contain Git repositories."""
 
 __all__ = [
-    'GitRepositoryRestrictedOnProductVocabulary',
-    'GitRepositoryVocabulary',
-    ]
+    "GitRepositoryRestrictedOnProductVocabulary",
+    "GitRepositoryVocabulary",
+]
 
 from zope.component import getUtility
 from zope.interface import implementer
@@ -20,7 +20,7 @@ from lp.services.webapp.vocabulary import (
     CountableIterator,
     IHugeVocabulary,
     StormVocabularyBase,
-    )
+)
 
 
 @implementer(IHugeVocabulary)
@@ -28,14 +28,15 @@ class GitRepositoryVocabulary(StormVocabularyBase):
     """A vocabulary for searching Git repositories."""
 
     _table = GitRepository
-    _order_by = ['name', 'id']
-    displayname = 'Select a Git repository'
-    step_title = 'Search'
+    _order_by = ["name", "id"]
+    displayname = "Select a Git repository"
+    step_title = "Search"
 
     def toTerm(self, repository):
         """The display should include the URL if there is one."""
         return SimpleTerm(
-            repository, repository.unique_name, repository.unique_name)
+            repository, repository.unique_name, repository.unique_name
+        )
 
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
@@ -53,7 +54,8 @@ class GitRepositoryVocabulary(StormVocabularyBase):
         else:
             repositories = collection.search(query)
         return CountableIterator(
-            repositories.count(), repositories, self.toTerm)
+            repositories.count(), repositories, self.toTerm
+        )
 
     def __len__(self):
         """See `IVocabulary`."""
@@ -72,8 +74,11 @@ class GitRepositoryRestrictedOnProductVocabulary(GitRepositoryVocabulary):
             self.product = self.context
         else:
             # An unexpected type.
-            raise AssertionError('Unexpected context type')
+            raise AssertionError("Unexpected context type")
 
     def _getCollection(self):
-        return getUtility(IAllGitRepositories).inProject(
-            self.product).isExclusive()
+        return (
+            getUtility(IAllGitRepositories)
+            .inProject(self.product)
+            .isExclusive()
+        )

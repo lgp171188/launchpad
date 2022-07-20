@@ -2,34 +2,21 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BadMessage',
-    'JobScheduler',
-    'LockError',
-    'PullerMaster',
-    'PullerMonitorProtocol',
-    ]
+    "BadMessage",
+    "JobScheduler",
+    "LockError",
+    "PullerMaster",
+    "PullerMonitorProtocol",
+]
 
 import io
 import os
 import socket
 
-from contrib.glock import (
-    GlobalLock,
-    LockAlreadyAcquired,
-    )
-from twisted.internet import (
-    defer,
-    error,
-    reactor,
-    )
-from twisted.protocols.basic import (
-    NetstringParseError,
-    NetstringReceiver,
-    )
-from twisted.python import (
-    failure,
-    log,
-    )
+from contrib.glock import GlobalLock, LockAlreadyAcquired
+from twisted.internet import defer, error, reactor
+from twisted.protocols.basic import NetstringParseError, NetstringReceiver
+from twisted.python import failure, log
 
 from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
 from lp.codehosting.puller import get_lock_id_for_branch_id
@@ -37,11 +24,11 @@ from lp.codehosting.puller.worker import get_canonical_url_for_branch_name
 from lp.services.config import config
 from lp.services.twistedsupport.processmonitor import (
     ProcessMonitorProtocolWithTimeout,
-    )
+)
 from lp.services.twistedsupport.task import (
     ParallelLimitedTaskConsumer,
     PollingTaskSource,
-    )
+)
 from lp.services.webapp import errorlog
 
 
@@ -50,7 +37,8 @@ class BadMessage(Exception):
 
     def __init__(self, bad_netstring):
         Exception.__init__(
-            self, 'Received unrecognized message: %r' % bad_netstring)
+            self, "Received unrecognized message: %r" % bad_netstring
+        )
 
 
 class UnexpectedStderr(Exception):
@@ -62,7 +50,8 @@ class UnexpectedStderr(Exception):
         else:
             last_line = stderr
         Exception.__init__(
-            self, "Unexpected standard error from subprocess: %s" % last_line)
+            self, "Unexpected standard error from subprocess: %s" % last_line
+        )
         self.error = stderr
 
 
@@ -116,17 +105,21 @@ class PullerWireProtocol(NetstringReceiver):
         # is check the value of brokenPeer.
         if self.brokenPeer:
             self.puller_protocol.unexpectedError(
-                failure.Failure(NetstringParseError(data)))
+                failure.Failure(NetstringParseError(data))
+            )
 
     def stringReceived(self, line):
         """See `NetstringReceiver.stringReceived`."""
         try:
-            line = line.decode('UTF-8')
+            line = line.decode("UTF-8")
         except UnicodeDecodeError:
             self.puller_protocol.unexpectedError(
-                failure.Failure(BadMessage(line)))
-        if (self._current_command is not None
-            and self._expected_args is not None):
+                failure.Failure(BadMessage(line))
+            )
+        if (
+            self._current_command is not None
+            and self._expected_args is not None
+        ):
             # state [2]
             self._current_args.append(line)
         elif self._current_command is not None:
@@ -137,16 +130,18 @@ class PullerWireProtocol(NetstringReceiver):
                 self.puller_protocol.unexpectedError(failure.Failure())
         else:
             # state [0]
-            if getattr(self.puller_protocol, 'do_%s' % line, None) is None:
+            if getattr(self.puller_protocol, "do_%s" % line, None) is None:
                 self.puller_protocol.unexpectedError(
-                    failure.Failure(BadMessage(line)))
+                    failure.Failure(BadMessage(line))
+                )
             else:
                 self._current_command = line
 
         if len(self._current_args) == self._expected_args:
             # Execute the command.
             method = getattr(
-                self.puller_protocol, 'do_%s' % self._current_command)
+                self.puller_protocol, "do_%s" % self._current_command
+            )
             try:
                 try:
                     method(*self._current_args)
@@ -162,8 +157,9 @@ class PullerWireProtocol(NetstringReceiver):
         self._current_args = []
 
 
-class PullerMonitorProtocol(ProcessMonitorProtocolWithTimeout,
-                            NetstringReceiver):
+class PullerMonitorProtocol(
+    ProcessMonitorProtocolWithTimeout, NetstringReceiver
+):
     """The protocol for receiving events from the puller worker."""
 
     def __init__(self, deferred, listener, clock=None):
@@ -178,14 +174,16 @@ class PullerMonitorProtocol(ProcessMonitorProtocolWithTimeout,
             If a clock is not passed in explicitly the reactor is used.
         """
         ProcessMonitorProtocolWithTimeout.__init__(
-            self, deferred, config.supermirror.worker_timeout, clock)
+            self, deferred, config.supermirror.worker_timeout, clock
+        )
         self.reported_mirror_finished = False
         self.listener = listener
         self.wire_protocol = PullerWireProtocol(self)
         self._stderr = io.BytesIO()
         self._deferred.addCallbacks(
             self.checkReportingFinishedAndNoStderr,
-            self.ensureReportingFinished)
+            self.ensureReportingFinished,
+        )
 
     def reportMirrorFinished(self, ignored):
         self.reported_mirror_finished = True
@@ -196,14 +194,16 @@ class PullerMonitorProtocol(ProcessMonitorProtocolWithTimeout,
         When the process exits cleanly, we expect it to have not printed
         anything to stderr and to have reported success or failure.  If it has
         failed to do either of these things, we should fail noisily."""
-        stderr = self._stderr.getvalue().decode('UTF-8', 'replace')
+        stderr = self._stderr.getvalue().decode("UTF-8", "replace")
         if stderr:
             fail = failure.Failure(UnexpectedStderr(stderr))
             fail.error = stderr
             return fail
         if not self.reported_mirror_finished:
-            raise AssertionError('Process exited successfully without '
-                                 'reporting success or failure?')
+            raise AssertionError(
+                "Process exited successfully without "
+                "reporting success or failure?"
+            )
         return result
 
     def ensureReportingFinished(self, reason):
@@ -215,7 +215,7 @@ class PullerMonitorProtocol(ProcessMonitorProtocolWithTimeout,
         as a failure reason.
         """
         if not self.reported_mirror_finished:
-            stderr = self._stderr.getvalue().decode('UTF-8', 'replace')
+            stderr = self._stderr.getvalue().decode("UTF-8", "replace")
             reason.error = stderr
             if stderr:
                 errorline = stderr.splitlines()[-1]
@@ -227,10 +227,10 @@ class PullerMonitorProtocol(ProcessMonitorProtocolWithTimeout,
             # failure that comes from mirrorFailed failing.  In any case, we
             # just pass along the failure.
             report_failed_deferred = defer.maybeDeferred(
-                self.listener.mirrorFailed, errorline, None)
+                self.listener.mirrorFailed, errorline, None
+            )
             report_failed_deferred.addErrback(log.err)
-            return report_failed_deferred.addCallback(
-                lambda result: reason)
+            return report_failed_deferred.addCallback(lambda result: reason)
         else:
             return reason
 
@@ -250,22 +250,36 @@ class PullerMonitorProtocol(ProcessMonitorProtocolWithTimeout,
         self.resetTimeout()
         self.runNotification(self.listener.startMirroring)
 
-    def do_branchChanged(self, stacked_on_url, revid_before, revid_after,
-                         control_string, branch_string, repository_string):
+    def do_branchChanged(
+        self,
+        stacked_on_url,
+        revid_before,
+        revid_after,
+        control_string,
+        branch_string,
+        repository_string,
+    ):
         def branchChanged():
             d = defer.maybeDeferred(
-                self.listener.branchChanged, stacked_on_url, revid_before,
-                revid_after, control_string, branch_string, repository_string)
+                self.listener.branchChanged,
+                stacked_on_url,
+                revid_before,
+                revid_after,
+                control_string,
+                branch_string,
+                repository_string,
+            )
             d.addCallback(self.reportMirrorFinished)
             return d
+
         self.runNotification(branchChanged)
 
     def do_mirrorFailed(self, reason, oops):
         def mirrorFailed():
-            d = defer.maybeDeferred(
-                self.listener.mirrorFailed, reason, oops)
+            d = defer.maybeDeferred(self.listener.mirrorFailed, reason, oops)
             d.addCallback(self.reportMirrorFinished)
             return d
+
         self.runNotification(mirrorFailed)
 
     def do_progressMade(self):
@@ -283,11 +297,19 @@ class PullerMaster:
     generated by that process.
     """
 
-    path_to_script = os.path.join(config.root, 'scripts/mirror-branch.py')
+    path_to_script = os.path.join(config.root, "scripts/mirror-branch.py")
     protocol_class = PullerMonitorProtocol
 
-    def __init__(self, branch_id, source_url, unique_name, branch_type_name,
-                 default_stacked_on_url, logger, client):
+    def __init__(
+        self,
+        branch_id,
+        source_url,
+        unique_name,
+        branch_type_name,
+        default_stacked_on_url,
+        logger,
+        client,
+    ):
         """Construct a PullerMaster object.
 
         :param branch_id: The database ID of the branch to be mirrored.
@@ -305,7 +327,7 @@ class PullerMaster:
         """
         self.branch_id = branch_id
         self.source_url = source_url.strip()
-        self.destination_url = 'lp-internal:///%s' % (unique_name,)
+        self.destination_url = "lp-internal:///%s" % (unique_name,)
         self.unique_name = unique_name
         self.branch_type_name = branch_type_name
         self.default_stacked_on_url = default_stacked_on_url
@@ -316,15 +338,20 @@ class PullerMaster:
         """Spawn a worker process to mirror a branch."""
         deferred = defer.Deferred()
         protocol = self.protocol_class(deferred, self)
-        interpreter = '%s/bin/py' % config.root
+        interpreter = "%s/bin/py" % config.root
         command = [
-            interpreter, self.path_to_script, self.source_url,
-            self.destination_url, str(self.branch_id), str(self.unique_name),
+            interpreter,
+            self.path_to_script,
+            self.source_url,
+            self.destination_url,
+            str(self.branch_id),
+            str(self.unique_name),
             self.branch_type_name,
-            self.default_stacked_on_url]
+            self.default_stacked_on_url,
+        ]
         self.logger.debug("executing %s", command)
         env = os.environ.copy()
-        env['BRZ_EMAIL'] = get_lock_id_for_branch_id(self.branch_id)
+        env["BRZ_EMAIL"] = get_lock_id_for_branch_id(self.branch_id)
         reactor.spawnProcess(protocol, interpreter, command, env=env)
         return deferred
 
@@ -343,51 +370,79 @@ class PullerMaster:
 
     def startMirroring(self):
         self.logger.info(
-            'Worker started on branch %d: %s to %s', self.branch_id,
-            self.source_url, self.destination_url)
+            "Worker started on branch %d: %s to %s",
+            self.branch_id,
+            self.source_url,
+            self.destination_url,
+        )
 
     def mirrorFailed(self, reason, oops):
-        self.logger.info('Recorded %s', oops)
-        self.logger.info('Recorded failure: %s', str(reason))
+        self.logger.info("Recorded %s", oops)
+        self.logger.info("Recorded failure: %s", str(reason))
         return self.codehosting_endpoint.callRemote(
-            'mirrorFailed', self.branch_id, reason)
+            "mirrorFailed", self.branch_id, reason
+        )
 
-    def branchChanged(self, stacked_on_url, revid_before, revid_after,
-                      control_string, branch_string, repository_string):
+    def branchChanged(
+        self,
+        stacked_on_url,
+        revid_before,
+        revid_after,
+        control_string,
+        branch_string,
+        repository_string,
+    ):
         if revid_before == revid_after:
-            was_noop = 'noop'
+            was_noop = "noop"
         else:
-            was_noop = 'non-trivial'
+            was_noop = "non-trivial"
         self.logger.info(
-            'Successfully mirrored %s branch %d %s to %s to from rev %s to %s'
-            ' (%s)', self.branch_type_name, self.branch_id, self.source_url,
-            self.destination_url, revid_before, revid_after, was_noop)
+            "Successfully mirrored %s branch %d %s to %s to from rev %s to %s"
+            " (%s)",
+            self.branch_type_name,
+            self.branch_id,
+            self.source_url,
+            self.destination_url,
+            revid_before,
+            revid_after,
+            was_noop,
+        )
         return self.codehosting_endpoint.callRemote(
-            'branchChanged', LAUNCHPAD_SERVICES, self.branch_id,
-            stacked_on_url, revid_after, control_string, branch_string,
-            repository_string)
+            "branchChanged",
+            LAUNCHPAD_SERVICES,
+            self.branch_id,
+            stacked_on_url,
+            revid_after,
+            control_string,
+            branch_string,
+            repository_string,
+        )
 
     def log(self, message):
-        self.logger.info('From worker: %s', message)
+        self.logger.info("From worker: %s", message)
 
     def unexpectedError(self, failure):
-        request = errorlog.ScriptRequest([
-            ('branch_id', self.branch_id),
-            ('source', self.source_url),
-            ('dest', self.destination_url),
-            ('error-explanation', failure.getErrorMessage())])
+        request = errorlog.ScriptRequest(
+            [
+                ("branch_id", self.branch_id),
+                ("source", self.source_url),
+                ("dest", self.destination_url),
+                ("error-explanation", failure.getErrorMessage()),
+            ]
+        )
         request.URL = get_canonical_url_for_branch_name(self.unique_name)
         # If the sub-process exited abnormally, the stderr it produced is
         # probably a much more interesting traceback than the one attached to
         # the Failure we've been passed.
         tb = None
         if failure.check(error.ProcessTerminated, UnexpectedStderr):
-            tb = getattr(failure, 'error', None)
+            tb = getattr(failure, "error", None)
         if tb is None:
             tb = failure.getTraceback()
         errorlog.globalErrorUtility.raising(
-            (failure.type, failure.value, tb), request)
-        self.logger.info('Recorded %s', request.oopsid)
+            (failure.type, failure.value, tb), request
+        )
+        self.logger.info("Recorded %s", request.oopsid)
 
 
 class JobScheduler:
@@ -402,8 +457,8 @@ class JobScheduler:
         self.logger = logger
         self.branch_type_names = branch_type_names
         self.actualLock = None
-        self.name = 'branch-puller'
-        self.lockfilename = '/var/lock/launchpad-%s.lock' % self.name
+        self.name = "branch-puller"
+        self.lockfilename = "/var/lock/launchpad-%s.lock" % self.name
 
     def _turnJobTupleIntoTask(self, job_tuple):
         """Turn the return value of `acquireBranchToPull` into a job.
@@ -415,33 +470,45 @@ class JobScheduler:
         """
         if len(job_tuple) == 0:
             return None
-        (branch_id, pull_url, unique_name,
-         default_stacked_on_url, branch_type_name) = job_tuple
+        (
+            branch_id,
+            pull_url,
+            unique_name,
+            default_stacked_on_url,
+            branch_type_name,
+        ) = job_tuple
         master = PullerMaster(
-            branch_id, pull_url, unique_name, branch_type_name,
-            default_stacked_on_url, self.logger,
-            self.codehosting_endpoint)
+            branch_id,
+            pull_url,
+            unique_name,
+            branch_type_name,
+            default_stacked_on_url,
+            self.logger,
+            self.codehosting_endpoint,
+        )
         return master.run
 
     def _poll(self):
         deferred = self.codehosting_endpoint.callRemote(
-            'acquireBranchToPull', self.branch_type_names)
+            "acquireBranchToPull", self.branch_type_names
+        )
         deferred.addCallback(self._turnJobTupleIntoTask)
         return deferred
 
     def run(self):
         consumer = ParallelLimitedTaskConsumer(
-            config.supermirror.maximum_workers, logger=self.logger)
+            config.supermirror.maximum_workers, logger=self.logger
+        )
         self.consumer = consumer
         source = PollingTaskSource(
-            config.supermirror.polling_interval, self._poll,
-            logger=self.logger)
+            config.supermirror.polling_interval, self._poll, logger=self.logger
+        )
         deferred = consumer.consume(source)
         deferred.addCallback(self._finishedRunning)
         return deferred
 
     def _finishedRunning(self, ignored):
-        self.logger.info('Mirroring complete')
+        self.logger.info("Mirroring complete")
         return ignored
 
     def lock(self):
@@ -459,15 +526,18 @@ class JobScheduler:
         started_tuple = tuple(date_started.utctimetuple())
         completed_tuple = tuple(date_completed.utctimetuple())
         return self.codehosting_endpoint.callRemote(
-            'recordSuccess', self.name, socket.gethostname(), started_tuple,
-            completed_tuple)
+            "recordSuccess",
+            self.name,
+            socket.gethostname(),
+            started_tuple,
+            completed_tuple,
+        )
 
 
 class LockError(Exception):
-
     def __init__(self, lockfilename):
         super().__init__()
         self.lockfilename = lockfilename
 
     def __str__(self):
-        return 'Jobmanager unable to get master lock: %s' % self.lockfilename
+        return "Jobmanager unable to get master lock: %s" % self.lockfilename

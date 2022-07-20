@@ -10,10 +10,10 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import (
     FREE_INFORMATION_TYPES,
-    InformationType,
     NON_EMBARGOED_INFORMATION_TYPES,
     PUBLIC_INFORMATION_TYPES,
-    )
+    InformationType,
+)
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.services import IService
 from lp.app.validators import LaunchpadValidationError
@@ -23,33 +23,30 @@ from lp.code.errors import (
     GitRepositoryCreatorNotMemberOfOwnerTeam,
     GitRepositoryCreatorNotOwner,
     GitRepositoryExists,
-    )
+)
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.interfaces.gitnamespace import (
-    get_git_namespace,
     IGitNamespace,
     IGitNamespacePolicy,
-    )
+    get_git_namespace,
+)
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.model.gitnamespace import (
     OCIProjectGitNamespace,
     PackageGitNamespace,
     PersonalGitNamespace,
     ProjectGitNamespace,
-    )
+)
 from lp.registry.enums import (
     BranchSharingPolicy,
     PersonVisibility,
     SharingPermission,
-    )
+)
 from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyGrantFlatSource,
     IAccessPolicySource,
-    )
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+)
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import DatabaseFunctionalLayer
 
@@ -70,10 +67,12 @@ class NamespaceMixin:
         repository_name = self.factory.getUniqueUnicode()
         registrant = removeSecurityProxy(namespace).owner
         repository = namespace.createRepository(
-            GitRepositoryType.HOSTED, registrant, repository_name)
+            GitRepositoryType.HOSTED, registrant, repository_name
+        )
         self.assertEqual(
             "%s/+git/%s" % (namespace.name, repository_name),
-            repository.unique_name)
+            repository.unique_name,
+        )
         self.assertEqual(InformationType.PUBLIC, repository.information_type)
 
     def test_createRepository_passes_through(self):
@@ -85,8 +84,12 @@ class NamespaceMixin:
         reviewer = self.factory.makePerson()
         description = self.factory.getUniqueUnicode()
         repository = namespace.createRepository(
-            GitRepositoryType.HOSTED, registrant, repository_name,
-            reviewer=reviewer, description=description)
+            GitRepositoryType.HOSTED,
+            registrant,
+            repository_name,
+            reviewer=reviewer,
+            description=description,
+        )
         self.assertEqual(GitRepositoryType.HOSTED, repository.repository_type)
         self.assertEqual(repository_name, repository.name)
         self.assertEqual(registrant, repository.registrant)
@@ -99,7 +102,8 @@ class NamespaceMixin:
         repository_name = self.factory.getUniqueUnicode()
         registrant = owner.teamowner
         repository = namespace.createRepository(
-            GitRepositoryType.HOSTED, registrant, repository_name)
+            GitRepositoryType.HOSTED, registrant, repository_name
+        )
         self.assertEqual([owner], list(repository.subscribers))
 
     def test_createRepository_creates_on_githosting_sync(self):
@@ -110,12 +114,16 @@ class NamespaceMixin:
         repository_name = self.factory.getUniqueUnicode()
         registrant = owner.teamowner
         repository = namespace.createRepository(
-            GitRepositoryType.HOSTED, registrant, repository_name,
-            with_hosting=True)
+            GitRepositoryType.HOSTED,
+            registrant,
+            repository_name,
+            with_hosting=True,
+        )
         path = repository.getInternalPath()
         self.assertEqual(
             [mock.call(path, clone_from=None, async_create=False)],
-            hosting_client.create.call_args_list)
+            hosting_client.create.call_args_list,
+        )
 
     def test_createRepository_creates_on_githosting_async(self):
         hosting_client = mock.Mock()
@@ -125,12 +133,17 @@ class NamespaceMixin:
         repository_name = self.factory.getUniqueUnicode()
         registrant = owner.teamowner
         repository = namespace.createRepository(
-            GitRepositoryType.HOSTED, registrant, repository_name,
-            with_hosting=True, async_hosting=True)
+            GitRepositoryType.HOSTED,
+            registrant,
+            repository_name,
+            with_hosting=True,
+            async_hosting=True,
+        )
         path = repository.getInternalPath()
         self.assertEqual(
             [mock.call(path, clone_from=None, async_create=True)],
-            hosting_client.create.call_args_list)
+            hosting_client.create.call_args_list,
+        )
 
     def test_getRepositories_no_repositories(self):
         # getRepositories on an IGitNamespace returns a result set of
@@ -145,8 +158,10 @@ class NamespaceMixin:
         namespace = self.getNamespace()
         repository_name = self.factory.getUniqueUnicode()
         repository = namespace.createRepository(
-            GitRepositoryType.HOSTED, removeSecurityProxy(namespace).owner,
-            repository_name)
+            GitRepositoryType.HOSTED,
+            removeSecurityProxy(namespace).owner,
+            repository_name,
+        )
         self.assertEqual([repository], list(namespace.getRepositories()))
 
     def test_getByName_default(self):
@@ -167,8 +182,10 @@ class NamespaceMixin:
         namespace = self.getNamespace()
         repository_name = self.factory.getUniqueUnicode()
         repository = namespace.createRepository(
-            GitRepositoryType.HOSTED, removeSecurityProxy(namespace).owner,
-            repository_name)
+            GitRepositoryType.HOSTED,
+            removeSecurityProxy(namespace).owner,
+            repository_name,
+        )
         match = namespace.getByName(repository_name)
         self.assertEqual(repository, match)
 
@@ -181,8 +198,10 @@ class NamespaceMixin:
         namespace = self.getNamespace()
         repository_name = self.factory.getUniqueUnicode()
         namespace.createRepository(
-            GitRepositoryType.HOSTED, removeSecurityProxy(namespace).owner,
-            repository_name)
+            GitRepositoryType.HOSTED,
+            removeSecurityProxy(namespace).owner,
+            repository_name,
+        )
         self.assertTrue(namespace.isNameUsed(repository_name))
 
     def test_findUnusedName_unused(self):
@@ -198,8 +217,10 @@ class NamespaceMixin:
         namespace = self.getNamespace()
         name = self.factory.getUniqueUnicode()
         namespace.createRepository(
-            GitRepositoryType.HOSTED, removeSecurityProxy(namespace).owner,
-            name)
+            GitRepositoryType.HOSTED,
+            removeSecurityProxy(namespace).owner,
+            name,
+        )
         unused_name = namespace.findUnusedName(name)
         self.assertEqual("%s-1" % name, unused_name)
 
@@ -209,11 +230,15 @@ class NamespaceMixin:
         namespace = self.getNamespace()
         name = self.factory.getUniqueUnicode()
         namespace.createRepository(
-            GitRepositoryType.HOSTED, removeSecurityProxy(namespace).owner,
-            name)
+            GitRepositoryType.HOSTED,
+            removeSecurityProxy(namespace).owner,
+            name,
+        )
         namespace.createRepository(
-            GitRepositoryType.HOSTED, removeSecurityProxy(namespace).owner,
-            name + "-1")
+            GitRepositoryType.HOSTED,
+            removeSecurityProxy(namespace).owner,
+            name + "-1",
+        )
         unused_name = namespace.findUnusedName(name)
         self.assertEqual("%s-2" % name, unused_name)
 
@@ -235,12 +260,17 @@ class NamespaceMixin:
         namespace_owner = removeSecurityProxy(namespace).owner
         name = self.factory.getUniqueUnicode()
         namespace.createRepository(
-            GitRepositoryType.HOSTED, removeSecurityProxy(namespace).owner,
-            name)
+            GitRepositoryType.HOSTED,
+            removeSecurityProxy(namespace).owner,
+            name,
+        )
         repository = self.factory.makeGitRepository(name=name)
         self.assertRaises(
             GitRepositoryExists,
-            namespace.validateMove, repository, namespace_owner)
+            namespace.validateMove,
+            repository,
+            namespace_owner,
+        )
 
     def test_validateMove_forbidden_owner(self):
         # If the mover isn't allowed to create repositories in the
@@ -252,7 +282,10 @@ class NamespaceMixin:
         mover = self.factory.makePerson()
         self.assertRaises(
             GitRepositoryCreatorNotOwner,
-            namespace.validateMove, repository, mover)
+            namespace.validateMove,
+            repository,
+            mover,
+        )
 
     def test_validateMove_not_team_member(self):
         # If the mover isn't allowed to create repositories in the namespace
@@ -265,7 +298,10 @@ class NamespaceMixin:
         mover = self.factory.makePerson()
         self.assertRaises(
             GitRepositoryCreatorNotMemberOfOwnerTeam,
-            namespace.validateMove, repository, mover)
+            namespace.validateMove,
+            repository,
+            mover,
+        )
 
     def test_validateMove_with_other_name(self):
         # If you pass a name to validateMove, that'll check to see whether
@@ -274,12 +310,18 @@ class NamespaceMixin:
         namespace_owner = removeSecurityProxy(namespace).owner
         name = self.factory.getUniqueUnicode()
         namespace.createRepository(
-            GitRepositoryType.HOSTED, removeSecurityProxy(namespace).owner,
-            name)
+            GitRepositoryType.HOSTED,
+            removeSecurityProxy(namespace).owner,
+            name,
+        )
         repository = self.factory.makeGitRepository()
         self.assertRaises(
             GitRepositoryExists,
-            namespace.validateMove, repository, namespace_owner, name=name)
+            namespace.validateMove,
+            repository,
+            namespace_owner,
+            name=name,
+        )
 
 
 class TestPersonalGitNamespace(TestCaseWithFactory, NamespaceMixin):
@@ -321,7 +363,9 @@ class TestPersonalGitNamespace(TestCaseWithFactory, NamespaceMixin):
         repository = self.factory.makeGitRepository(owner=owner, target=owner)
         self.assertTrue(
             repository.namespace.areRepositoriesMergeable(
-                repository, repository))
+                repository, repository
+            )
+        )
 
     def test_areRepositoriesMergeable_different_namespaces(self):
         # A personal repository is not mergeable if the origin namespace is
@@ -346,10 +390,12 @@ class TestPersonalGitNamespace(TestCaseWithFactory, NamespaceMixin):
         this_owner = self.factory.makePerson()
         repo_name = "my-personal-repository"
         this = self.factory.makeGitRepository(
-            owner=this_owner, target=this_owner, name=repo_name)
+            owner=this_owner, target=this_owner, name=repo_name
+        )
         other_owner = self.factory.makePerson()
         other = self.factory.makeGitRepository(
-            owner=other_owner, target=other_owner, name=repo_name)
+            owner=other_owner, target=other_owner, name=repo_name
+        )
         self.assertTrue(this.namespace.areRepositoriesMergeable(this, other))
 
     def test_areRepositoriesMergeable_project(self):
@@ -383,18 +429,23 @@ class TestPersonalGitNamespace(TestCaseWithFactory, NamespaceMixin):
         owner = self.factory.makePerson()
         repositories = [
             self.factory.makeGitRepository(owner=owner, target=owner)
-            for _ in range(3)]
+            for _ in range(3)
+        ]
         other_owner = self.factory.makePerson()
         self.factory.makeGitRepository(owner=other_owner, target=other_owner)
         self.factory.makeGitRepository(
-            owner=owner, target=self.factory.makeProduct())
+            owner=owner, target=self.factory.makeProduct()
+        )
         self.factory.makeGitRepository(
-            owner=owner, target=self.factory.makeDistributionSourcePackage())
+            owner=owner, target=self.factory.makeDistributionSourcePackage()
+        )
         self.factory.makeGitRepository(
-            owner=owner, target=self.factory.makeOCIProject())
+            owner=owner, target=self.factory.makeOCIProject()
+        )
         self.assertContentEqual(
             repositories,
-            repositories[0].namespace.collection.getRepositories())
+            repositories[0].namespace.collection.getRepositories(),
+        )
 
 
 class TestProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
@@ -414,7 +465,8 @@ class TestProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
         project = self.factory.makeProduct()
         namespace = ProjectGitNamespace(person, project)
         self.assertEqual(
-            "~%s/%s" % (person.name, project.name), namespace.name)
+            "~%s/%s" % (person.name, project.name), namespace.name
+        )
 
     def test_owner(self):
         # The person passed to a project namespace is the owner.
@@ -440,7 +492,9 @@ class TestProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
         repository = self.factory.makeGitRepository(target=project)
         self.assertTrue(
             repository.namespace.areRepositoriesMergeable(
-                repository, repository))
+                repository, repository
+            )
+        )
 
     def test_areRepositoriesMergeable_same_namespace(self):
         # Repositories of the same project are mergeable.
@@ -488,16 +542,20 @@ class TestProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
         # project.
         project = self.factory.makeProduct()
         repositories = [
-            self.factory.makeGitRepository(target=project) for _ in range(3)]
+            self.factory.makeGitRepository(target=project) for _ in range(3)
+        ]
         self.factory.makeGitRepository(target=self.factory.makeProduct())
         self.factory.makeGitRepository(
-            owner=repositories[0].owner, target=repositories[0].owner)
+            owner=repositories[0].owner, target=repositories[0].owner
+        )
         self.factory.makeGitRepository(
-            target=self.factory.makeDistributionSourcePackage())
+            target=self.factory.makeDistributionSourcePackage()
+        )
         self.factory.makeGitRepository(target=self.factory.makeOCIProject())
         self.assertContentEqual(
             repositories,
-            repositories[0].namespace.collection.getRepositories())
+            repositories[0].namespace.collection.getRepositories(),
+        )
 
 
 class TestOCIProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
@@ -515,10 +573,14 @@ class TestOCIProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
         oci_project = self.factory.makeOCIProject()
         namespace = OCIProjectGitNamespace(person, oci_project)
         self.assertEqual(
-            "~%s/%s/+oci/%s" % (
-                person.name, oci_project.distribution.name,
-                oci_project.ociprojectname.name),
-            namespace.name)
+            "~%s/%s/+oci/%s"
+            % (
+                person.name,
+                oci_project.distribution.name,
+                oci_project.ociprojectname.name,
+            ),
+            namespace.name,
+        )
 
     def test_owner(self):
         # The person passed to an oci project namespace is the owner.
@@ -544,7 +606,9 @@ class TestOCIProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
         repository = self.factory.makeGitRepository(target=oci_project)
         self.assertTrue(
             repository.namespace.areRepositoriesMergeable(
-                repository, repository))
+                repository, repository
+            )
+        )
 
     def test_areRepositoriesMergeable_same_namespace(self):
         # Repositories of the same OCI Project are mergeable.
@@ -594,17 +658,20 @@ class TestOCIProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
         oci_project = self.factory.makeOCIProject()
         repositories = [
             self.factory.makeGitRepository(target=oci_project)
-            for _ in range(3)]
-        self.factory.makeGitRepository(
-            target=self.factory.makeOCIProject())
+            for _ in range(3)
+        ]
+        self.factory.makeGitRepository(target=self.factory.makeOCIProject())
         self.factory.makeGitRepository(target=self.factory.makeProduct())
         self.factory.makeGitRepository(
-            target=self.factory.makeDistributionSourcePackage())
+            target=self.factory.makeDistributionSourcePackage()
+        )
         self.factory.makeGitRepository(
-            owner=repositories[0].owner, target=repositories[0].owner)
+            owner=repositories[0].owner, target=repositories[0].owner
+        )
         self.assertContentEqual(
             repositories,
-            repositories[0].namespace.collection.getRepositories())
+            repositories[0].namespace.collection.getRepositories(),
+        )
 
 
 class TestProjectGitNamespacePrivacyWithInformationType(TestCaseWithFactory):
@@ -629,9 +696,11 @@ class TestProjectGitNamespacePrivacyWithInformationType(TestCaseWithFactory):
     def test_public_anyone(self):
         namespace = self.makeProjectGitNamespace(BranchSharingPolicy.PUBLIC)
         self.assertContentEqual(
-            FREE_INFORMATION_TYPES, namespace.getAllowedInformationTypes())
+            FREE_INFORMATION_TYPES, namespace.getAllowedInformationTypes()
+        )
         self.assertEqual(
-            InformationType.PUBLIC, namespace.getDefaultInformationType())
+            InformationType.PUBLIC, namespace.getDefaultInformationType()
+        )
 
     def test_forbidden_anyone(self):
         namespace = self.makeProjectGitNamespace(BranchSharingPolicy.FORBIDDEN)
@@ -640,117 +709,156 @@ class TestProjectGitNamespacePrivacyWithInformationType(TestCaseWithFactory):
 
     def test_public_or_proprietary_anyone(self):
         namespace = self.makeProjectGitNamespace(
-            BranchSharingPolicy.PUBLIC_OR_PROPRIETARY)
+            BranchSharingPolicy.PUBLIC_OR_PROPRIETARY
+        )
         self.assertContentEqual(
             NON_EMBARGOED_INFORMATION_TYPES,
-            namespace.getAllowedInformationTypes())
+            namespace.getAllowedInformationTypes(),
+        )
         self.assertEqual(
-            InformationType.PUBLIC, namespace.getDefaultInformationType())
+            InformationType.PUBLIC, namespace.getDefaultInformationType()
+        )
 
     def test_proprietary_or_public_anyone(self):
         namespace = self.makeProjectGitNamespace(
-            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC)
+            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC
+        )
         self.assertEqual([], namespace.getAllowedInformationTypes())
         self.assertIsNone(namespace.getDefaultInformationType())
 
     def test_proprietary_or_public_owner_grantee(self):
         namespace = self.makeProjectGitNamespace(
-            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC)
+            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC
+        )
         with person_logged_in(namespace.target.owner):
             getUtility(IService, "sharing").sharePillarInformation(
-                namespace.target, namespace.owner, namespace.target.owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+                namespace.target,
+                namespace.owner,
+                namespace.target.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
         self.assertContentEqual(
             NON_EMBARGOED_INFORMATION_TYPES,
-            namespace.getAllowedInformationTypes())
+            namespace.getAllowedInformationTypes(),
+        )
         self.assertEqual(
-            InformationType.PROPRIETARY,
-            namespace.getDefaultInformationType())
+            InformationType.PROPRIETARY, namespace.getDefaultInformationType()
+        )
 
     def test_proprietary_or_public_caller_grantee(self):
         namespace = self.makeProjectGitNamespace(
-            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC)
+            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC
+        )
         grantee = self.factory.makePerson()
         with person_logged_in(namespace.target.owner):
             getUtility(IService, "sharing").sharePillarInformation(
-                namespace.target, grantee, namespace.target.owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+                namespace.target,
+                grantee,
+                namespace.target.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
         self.assertContentEqual(
             NON_EMBARGOED_INFORMATION_TYPES,
-            namespace.getAllowedInformationTypes(grantee))
+            namespace.getAllowedInformationTypes(grantee),
+        )
         self.assertEqual(
             InformationType.PROPRIETARY,
-            namespace.getDefaultInformationType(grantee))
+            namespace.getDefaultInformationType(grantee),
+        )
 
     def test_proprietary_anyone(self):
         namespace = self.makeProjectGitNamespace(
-            BranchSharingPolicy.PROPRIETARY)
+            BranchSharingPolicy.PROPRIETARY
+        )
         self.assertEqual([], namespace.getAllowedInformationTypes())
         self.assertIsNone(namespace.getDefaultInformationType())
 
     def test_proprietary_repository_owner_grantee(self):
         namespace = self.makeProjectGitNamespace(
-            BranchSharingPolicy.PROPRIETARY)
+            BranchSharingPolicy.PROPRIETARY
+        )
         with person_logged_in(namespace.target.owner):
             getUtility(IService, "sharing").sharePillarInformation(
-                namespace.target, namespace.owner, namespace.target.owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+                namespace.target,
+                namespace.owner,
+                namespace.target.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
         self.assertContentEqual(
             [InformationType.PROPRIETARY],
-            namespace.getAllowedInformationTypes())
+            namespace.getAllowedInformationTypes(),
+        )
         self.assertEqual(
-            InformationType.PROPRIETARY,
-            namespace.getDefaultInformationType())
+            InformationType.PROPRIETARY, namespace.getDefaultInformationType()
+        )
 
     def test_proprietary_caller_grantee(self):
         namespace = self.makeProjectGitNamespace(
-            BranchSharingPolicy.PROPRIETARY)
+            BranchSharingPolicy.PROPRIETARY
+        )
         grantee = self.factory.makePerson()
         with person_logged_in(namespace.target.owner):
             getUtility(IService, "sharing").sharePillarInformation(
-                namespace.target, grantee, namespace.target.owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+                namespace.target,
+                grantee,
+                namespace.target.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
         self.assertContentEqual(
             [InformationType.PROPRIETARY],
-            namespace.getAllowedInformationTypes(grantee))
+            namespace.getAllowedInformationTypes(grantee),
+        )
         self.assertEqual(
             InformationType.PROPRIETARY,
-            namespace.getDefaultInformationType(grantee))
+            namespace.getDefaultInformationType(grantee),
+        )
 
     def test_embargoed_or_proprietary_anyone(self):
         namespace = self.makeProjectGitNamespace(
-            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY
+        )
         self.assertEqual([], namespace.getAllowedInformationTypes())
         self.assertIsNone(namespace.getDefaultInformationType())
 
     def test_embargoed_or_proprietary_owner_grantee(self):
         namespace = self.makeProjectGitNamespace(
-            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY
+        )
         with person_logged_in(namespace.target.owner):
             getUtility(IService, "sharing").sharePillarInformation(
-                namespace.target, namespace.owner, namespace.target.owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+                namespace.target,
+                namespace.owner,
+                namespace.target.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
         self.assertContentEqual(
             [InformationType.PROPRIETARY, InformationType.EMBARGOED],
-            namespace.getAllowedInformationTypes())
+            namespace.getAllowedInformationTypes(),
+        )
         self.assertEqual(
-            InformationType.EMBARGOED,
-            namespace.getDefaultInformationType())
+            InformationType.EMBARGOED, namespace.getDefaultInformationType()
+        )
 
     def test_embargoed_or_proprietary_caller_grantee(self):
         namespace = self.makeProjectGitNamespace(
-            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY
+        )
         grantee = self.factory.makePerson()
         with person_logged_in(namespace.target.owner):
             getUtility(IService, "sharing").sharePillarInformation(
-                namespace.target, grantee, namespace.target.owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+                namespace.target,
+                grantee,
+                namespace.target.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
         self.assertContentEqual(
             [InformationType.PROPRIETARY, InformationType.EMBARGOED],
-            namespace.getAllowedInformationTypes(grantee))
+            namespace.getAllowedInformationTypes(grantee),
+        )
         self.assertEqual(
             InformationType.EMBARGOED,
-            namespace.getDefaultInformationType(grantee))
+            namespace.getDefaultInformationType(grantee),
+        )
 
     def test_grantee_has_no_artifact_grant(self):
         # The owner of a new repository in a project whose default
@@ -760,20 +868,29 @@ class TestProjectGitNamespacePrivacyWithInformationType(TestCaseWithFactory):
         person = self.factory.makePerson()
         team = self.factory.makeTeam(members=[person])
         namespace = self.makeProjectGitNamespace(
-            BranchSharingPolicy.PROPRIETARY, person=person)
+            BranchSharingPolicy.PROPRIETARY, person=person
+        )
         with person_logged_in(namespace.target.owner):
-            getUtility(IService, 'sharing').sharePillarInformation(
-                namespace.target, team, namespace.target.owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+            getUtility(IService, "sharing").sharePillarInformation(
+                namespace.target,
+                team,
+                namespace.target.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
         repository = namespace.createRepository(
-            GitRepositoryType.HOSTED, person, self.factory.getUniqueUnicode())
+            GitRepositoryType.HOSTED, person, self.factory.getUniqueUnicode()
+        )
         [policy] = getUtility(IAccessPolicySource).find(
-            [(namespace.target, InformationType.PROPRIETARY)])
+            [(namespace.target, InformationType.PROPRIETARY)]
+        )
         apgfs = getUtility(IAccessPolicyGrantFlatSource)
         self.assertContentEqual(
-            [(namespace.target.owner, {policy: SharingPermission.ALL}, []),
-             (team, {policy: SharingPermission.ALL}, [])],
-            apgfs.findGranteePermissionsByPolicy([policy]))
+            [
+                (namespace.target.owner, {policy: SharingPermission.ALL}, []),
+                (team, {policy: SharingPermission.ALL}, []),
+            ],
+            apgfs.findGranteePermissionsByPolicy([policy]),
+        )
         self.assertTrue(removeSecurityProxy(repository).visibleByUser(person))
 
 
@@ -786,7 +903,8 @@ class TestPackageGitNamespace(TestCaseWithFactory, NamespaceMixin):
         if person is None:
             person = self.factory.makePerson()
         return get_git_namespace(
-            self.factory.makeDistributionSourcePackage(), person)
+            self.factory.makeDistributionSourcePackage(), person
+        )
 
     def test_name(self):
         # A package namespace has repositories that start with
@@ -795,10 +913,10 @@ class TestPackageGitNamespace(TestCaseWithFactory, NamespaceMixin):
         dsp = self.factory.makeDistributionSourcePackage()
         namespace = PackageGitNamespace(person, dsp)
         self.assertEqual(
-            "~%s/%s/+source/%s" % (
-                person.name, dsp.distribution.name,
-                dsp.sourcepackagename.name),
-            namespace.name)
+            "~%s/%s/+source/%s"
+            % (person.name, dsp.distribution.name, dsp.sourcepackagename.name),
+            namespace.name,
+        )
 
     def test_owner(self):
         # The person passed to a package namespace is the owner.
@@ -825,7 +943,9 @@ class TestPackageGitNamespace(TestCaseWithFactory, NamespaceMixin):
         repository = self.factory.makeGitRepository(target=dsp)
         self.assertTrue(
             repository.namespace.areRepositoriesMergeable(
-                repository, repository))
+                repository, repository
+            )
+        )
 
     def test_areRepositoriesMergeable_same_namespace(self):
         # Repositories of the same package are mergeable.
@@ -873,16 +993,20 @@ class TestPackageGitNamespace(TestCaseWithFactory, NamespaceMixin):
         # package.
         dsp = self.factory.makeDistributionSourcePackage()
         repositories = [
-            self.factory.makeGitRepository(target=dsp) for _ in range(3)]
+            self.factory.makeGitRepository(target=dsp) for _ in range(3)
+        ]
         self.factory.makeGitRepository(
-            target=self.factory.makeDistributionSourcePackage())
+            target=self.factory.makeDistributionSourcePackage()
+        )
         self.factory.makeGitRepository(target=self.factory.makeProduct())
         self.factory.makeGitRepository(
-            owner=repositories[0].owner, target=repositories[0].owner)
+            owner=repositories[0].owner, target=repositories[0].owner
+        )
         self.factory.makeGitRepository(target=self.factory.makeOCIProject())
         self.assertContentEqual(
             repositories,
-            repositories[0].namespace.collection.getRepositories())
+            repositories[0].namespace.collection.getRepositories(),
+        )
 
 
 class TestPackageGitNamespacePrivacyWithInformationType(TestCaseWithFactory):
@@ -907,9 +1031,11 @@ class TestPackageGitNamespacePrivacyWithInformationType(TestCaseWithFactory):
     def test_public_anyone(self):
         namespace = self.makePackageGitNamespace(BranchSharingPolicy.PUBLIC)
         self.assertContentEqual(
-            FREE_INFORMATION_TYPES, namespace.getAllowedInformationTypes())
+            FREE_INFORMATION_TYPES, namespace.getAllowedInformationTypes()
+        )
         self.assertEqual(
-            InformationType.PUBLIC, namespace.getDefaultInformationType())
+            InformationType.PUBLIC, namespace.getDefaultInformationType()
+        )
 
     def test_forbidden_anyone(self):
         namespace = self.makePackageGitNamespace(BranchSharingPolicy.FORBIDDEN)
@@ -918,123 +1044,162 @@ class TestPackageGitNamespacePrivacyWithInformationType(TestCaseWithFactory):
 
     def test_public_or_proprietary_anyone(self):
         namespace = self.makePackageGitNamespace(
-            BranchSharingPolicy.PUBLIC_OR_PROPRIETARY)
+            BranchSharingPolicy.PUBLIC_OR_PROPRIETARY
+        )
         self.assertContentEqual(
             NON_EMBARGOED_INFORMATION_TYPES,
-            namespace.getAllowedInformationTypes())
+            namespace.getAllowedInformationTypes(),
+        )
         self.assertEqual(
-            InformationType.PUBLIC, namespace.getDefaultInformationType())
+            InformationType.PUBLIC, namespace.getDefaultInformationType()
+        )
 
     def test_proprietary_or_public_anyone(self):
         namespace = self.makePackageGitNamespace(
-            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC)
+            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC
+        )
         self.assertEqual([], namespace.getAllowedInformationTypes())
         self.assertIsNone(namespace.getDefaultInformationType())
 
     def test_proprietary_or_public_owner_grantee(self):
         namespace = self.makePackageGitNamespace(
-            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC)
+            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC
+        )
         distribution = namespace.distro_source_package.distribution
         with person_logged_in(distribution.owner):
             getUtility(IService, "sharing").sharePillarInformation(
-                distribution, namespace.owner, distribution.owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+                distribution,
+                namespace.owner,
+                distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
         self.assertContentEqual(
             NON_EMBARGOED_INFORMATION_TYPES,
-            namespace.getAllowedInformationTypes())
+            namespace.getAllowedInformationTypes(),
+        )
         self.assertEqual(
-            InformationType.PROPRIETARY,
-            namespace.getDefaultInformationType())
+            InformationType.PROPRIETARY, namespace.getDefaultInformationType()
+        )
 
     def test_proprietary_or_public_caller_grantee(self):
         namespace = self.makePackageGitNamespace(
-            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC)
+            BranchSharingPolicy.PROPRIETARY_OR_PUBLIC
+        )
         distribution = namespace.distro_source_package.distribution
         grantee = self.factory.makePerson()
         with person_logged_in(distribution.owner):
             getUtility(IService, "sharing").sharePillarInformation(
-                distribution, grantee, distribution.owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+                distribution,
+                grantee,
+                distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
         self.assertContentEqual(
             NON_EMBARGOED_INFORMATION_TYPES,
-            namespace.getAllowedInformationTypes(grantee))
+            namespace.getAllowedInformationTypes(grantee),
+        )
         self.assertEqual(
             InformationType.PROPRIETARY,
-            namespace.getDefaultInformationType(grantee))
+            namespace.getDefaultInformationType(grantee),
+        )
 
     def test_proprietary_anyone(self):
         namespace = self.makePackageGitNamespace(
-            BranchSharingPolicy.PROPRIETARY)
+            BranchSharingPolicy.PROPRIETARY
+        )
         self.assertEqual([], namespace.getAllowedInformationTypes())
         self.assertIsNone(namespace.getDefaultInformationType())
 
     def test_proprietary_repository_owner_grantee(self):
         namespace = self.makePackageGitNamespace(
-            BranchSharingPolicy.PROPRIETARY)
+            BranchSharingPolicy.PROPRIETARY
+        )
         distribution = namespace.distro_source_package.distribution
         with person_logged_in(distribution.owner):
             getUtility(IService, "sharing").sharePillarInformation(
-                distribution, namespace.owner, distribution.owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+                distribution,
+                namespace.owner,
+                distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
         self.assertContentEqual(
             [InformationType.PROPRIETARY],
-            namespace.getAllowedInformationTypes())
+            namespace.getAllowedInformationTypes(),
+        )
         self.assertEqual(
-            InformationType.PROPRIETARY,
-            namespace.getDefaultInformationType())
+            InformationType.PROPRIETARY, namespace.getDefaultInformationType()
+        )
 
     def test_proprietary_caller_grantee(self):
         namespace = self.makePackageGitNamespace(
-            BranchSharingPolicy.PROPRIETARY)
+            BranchSharingPolicy.PROPRIETARY
+        )
         distribution = namespace.distro_source_package.distribution
         grantee = self.factory.makePerson()
         with person_logged_in(distribution.owner):
             getUtility(IService, "sharing").sharePillarInformation(
-                distribution, grantee, distribution.owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+                distribution,
+                grantee,
+                distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
         self.assertContentEqual(
             [InformationType.PROPRIETARY],
-            namespace.getAllowedInformationTypes(grantee))
+            namespace.getAllowedInformationTypes(grantee),
+        )
         self.assertEqual(
             InformationType.PROPRIETARY,
-            namespace.getDefaultInformationType(grantee))
+            namespace.getDefaultInformationType(grantee),
+        )
 
     def test_embargoed_or_proprietary_anyone(self):
         namespace = self.makePackageGitNamespace(
-            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY
+        )
         self.assertEqual([], namespace.getAllowedInformationTypes())
         self.assertIsNone(namespace.getDefaultInformationType())
 
     def test_embargoed_or_proprietary_owner_grantee(self):
         namespace = self.makePackageGitNamespace(
-            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY
+        )
         distribution = namespace.distro_source_package.distribution
         with person_logged_in(distribution.owner):
             getUtility(IService, "sharing").sharePillarInformation(
-                distribution, namespace.owner, distribution.owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+                distribution,
+                namespace.owner,
+                distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
         self.assertContentEqual(
             [InformationType.PROPRIETARY, InformationType.EMBARGOED],
-            namespace.getAllowedInformationTypes())
+            namespace.getAllowedInformationTypes(),
+        )
         self.assertEqual(
-            InformationType.EMBARGOED,
-            namespace.getDefaultInformationType())
+            InformationType.EMBARGOED, namespace.getDefaultInformationType()
+        )
 
     def test_embargoed_or_proprietary_caller_grantee(self):
         namespace = self.makePackageGitNamespace(
-            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+            BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY
+        )
         distribution = namespace.distro_source_package.distribution
         grantee = self.factory.makePerson()
         with person_logged_in(distribution.owner):
             getUtility(IService, "sharing").sharePillarInformation(
-                distribution, grantee, distribution.owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+                distribution,
+                grantee,
+                distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
         self.assertContentEqual(
             [InformationType.PROPRIETARY, InformationType.EMBARGOED],
-            namespace.getAllowedInformationTypes(grantee))
+            namespace.getAllowedInformationTypes(grantee),
+        )
         self.assertEqual(
             InformationType.EMBARGOED,
-            namespace.getDefaultInformationType(grantee))
+            namespace.getDefaultInformationType(grantee),
+        )
 
     def test_grantee_has_no_artifact_grant(self):
         # The owner of a new repository in a distribution whose default
@@ -1044,21 +1209,30 @@ class TestPackageGitNamespacePrivacyWithInformationType(TestCaseWithFactory):
         person = self.factory.makePerson()
         team = self.factory.makeTeam(members=[person])
         namespace = self.makePackageGitNamespace(
-            BranchSharingPolicy.PROPRIETARY, person=person)
+            BranchSharingPolicy.PROPRIETARY, person=person
+        )
         distribution = namespace.distro_source_package.distribution
         with person_logged_in(distribution.owner):
-            getUtility(IService, 'sharing').sharePillarInformation(
-                distribution, team, distribution.owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+            getUtility(IService, "sharing").sharePillarInformation(
+                distribution,
+                team,
+                distribution.owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
         repository = namespace.createRepository(
-            GitRepositoryType.HOSTED, person, self.factory.getUniqueUnicode())
+            GitRepositoryType.HOSTED, person, self.factory.getUniqueUnicode()
+        )
         [policy] = getUtility(IAccessPolicySource).find(
-            [(distribution, InformationType.PROPRIETARY)])
+            [(distribution, InformationType.PROPRIETARY)]
+        )
         apgfs = getUtility(IAccessPolicyGrantFlatSource)
         self.assertContentEqual(
-            [(distribution.owner, {policy: SharingPermission.ALL}, []),
-             (team, {policy: SharingPermission.ALL}, [])],
-            apgfs.findGranteePermissionsByPolicy([policy]))
+            [
+                (distribution.owner, {policy: SharingPermission.ALL}, []),
+                (team, {policy: SharingPermission.ALL}, []),
+            ],
+            apgfs.findGranteePermissionsByPolicy([policy]),
+        )
         self.assertTrue(removeSecurityProxy(repository).visibleByUser(person))
 
 
@@ -1084,7 +1258,8 @@ class BaseCanCreateRepositoriesMixin:
         person = self.factory.makePerson()
         namespace = self._getNamespace(person)
         self.assertFalse(
-            namespace.canCreateRepositories(self.factory.makePerson()))
+            namespace.canCreateRepositories(self.factory.makePerson())
+        )
 
     def test_team_member(self):
         # A member of a team is able to create a repository in this
@@ -1101,31 +1276,34 @@ class BaseCanCreateRepositoriesMixin:
         self.factory.makeTeam(owner=person)
         namespace = self._getNamespace(person)
         self.assertFalse(
-            namespace.canCreateRepositories(self.factory.makePerson()))
+            namespace.canCreateRepositories(self.factory.makePerson())
+        )
 
 
 class TestPersonalGitNamespaceCanCreateRepositories(
-    TestCaseWithFactory, BaseCanCreateRepositoriesMixin):
-
+    TestCaseWithFactory, BaseCanCreateRepositoriesMixin
+):
     def _getNamespace(self, owner):
         return PersonalGitNamespace(owner)
 
 
 class TestPackageGitNamespaceCanCreateBranches(
-    TestCaseWithFactory, BaseCanCreateRepositoriesMixin):
-
+    TestCaseWithFactory, BaseCanCreateRepositoriesMixin
+):
     def _getNamespace(self, owner):
         source_package = self.factory.makeSourcePackage()
         return PackageGitNamespace(owner, source_package)
 
 
 class TestProjectGitNamespaceCanCreateBranches(
-    TestCaseWithFactory, BaseCanCreateRepositoriesMixin):
-
-    def _getNamespace(self, owner,
-                      branch_sharing_policy=BranchSharingPolicy.PUBLIC):
+    TestCaseWithFactory, BaseCanCreateRepositoriesMixin
+):
+    def _getNamespace(
+        self, owner, branch_sharing_policy=BranchSharingPolicy.PUBLIC
+    ):
         project = self.factory.makeProduct(
-            branch_sharing_policy=branch_sharing_policy)
+            branch_sharing_policy=branch_sharing_policy
+        )
         return ProjectGitNamespace(owner, project)
 
     def setUp(self):
@@ -1154,8 +1332,11 @@ class TestProjectGitNamespaceCanCreateBranches(
         team = self.factory.makeTeam(members=[person])
         namespace = self._getNamespace(team, BranchSharingPolicy.PROPRIETARY)
         getUtility(IService, "sharing").sharePillarInformation(
-            namespace.target, team, namespace.target.owner,
-            {InformationType.PROPRIETARY: SharingPermission.ALL})
+            namespace.target,
+            team,
+            namespace.target.owner,
+            {InformationType.PROPRIETARY: SharingPermission.ALL},
+        )
         self.assertTrue(namespace.canCreateRepositories(person))
         self.assertFalse(namespace.canCreateRepositories(other_person))
 
@@ -1199,14 +1380,16 @@ class TestPersonalGitNamespaceAllowedInformationTypes(TestCaseWithFactory):
         person = self.factory.makePerson()
         namespace = PersonalGitNamespace(person)
         self.assertContentEqual(
-            FREE_INFORMATION_TYPES, namespace.getAllowedInformationTypes())
+            FREE_INFORMATION_TYPES, namespace.getAllowedInformationTypes()
+        )
 
     def test_public_team(self):
         # Personal repositories for public teams cannot be private.
         team = self.factory.makeTeam()
         namespace = PersonalGitNamespace(team)
         self.assertContentEqual(
-            FREE_INFORMATION_TYPES, namespace.getAllowedInformationTypes())
+            FREE_INFORMATION_TYPES, namespace.getAllowedInformationTypes()
+        )
 
     def test_private_team(self):
         # Personal repositories can be private or public for private teams.
@@ -1214,7 +1397,8 @@ class TestPersonalGitNamespaceAllowedInformationTypes(TestCaseWithFactory):
         namespace = PersonalGitNamespace(team)
         self.assertContentEqual(
             NON_EMBARGOED_INFORMATION_TYPES,
-            namespace.getAllowedInformationTypes())
+            namespace.getAllowedInformationTypes(),
+        )
 
 
 class TestOCIProjectGitNamespaceAllowedInformationTypes(TestCaseWithFactory):
@@ -1228,7 +1412,8 @@ class TestOCIProjectGitNamespaceAllowedInformationTypes(TestCaseWithFactory):
         person = self.factory.makePerson()
         namespace = OCIProjectGitNamespace(person, oci_project)
         self.assertContentEqual(
-            PUBLIC_INFORMATION_TYPES, namespace.getAllowedInformationTypes())
+            PUBLIC_INFORMATION_TYPES, namespace.getAllowedInformationTypes()
+        )
 
 
 class BaseValidateNewRepositoryMixin:
@@ -1245,7 +1430,9 @@ class BaseValidateNewRepositoryMixin:
         namespace = self._getNamespace(self.factory.makePerson())
         self.assertRaises(
             GitRepositoryCreatorNotOwner,
-            namespace.validateRegistrant, self.factory.makePerson())
+            namespace.validateRegistrant,
+            self.factory.makePerson(),
+        )
 
     def test_registrant_not_in_owner_team(self):
         # If the namespace owner is a team, and the registrant is not in the
@@ -1253,26 +1440,32 @@ class BaseValidateNewRepositoryMixin:
         namespace = self._getNamespace(self.factory.makeTeam())
         self.assertRaises(
             GitRepositoryCreatorNotMemberOfOwnerTeam,
-            namespace.validateRegistrant, self.factory.makePerson())
+            namespace.validateRegistrant,
+            self.factory.makePerson(),
+        )
 
     def test_existing_repository(self):
         # If a repository exists with the same name, then
         # GitRepositoryExists is raised.
         namespace = self._getNamespace(self.factory.makePerson())
         repository = namespace.createRepository(
-            GitRepositoryType.HOSTED, namespace.owner,
-            self.factory.getUniqueUnicode())
+            GitRepositoryType.HOSTED,
+            namespace.owner,
+            self.factory.getUniqueUnicode(),
+        )
         self.assertRaises(
             GitRepositoryExists,
-            namespace.validateRepositoryName, repository.name)
+            namespace.validateRepositoryName,
+            repository.name,
+        )
 
     def test_invalid_name(self):
         # If the repository name is not valid, a LaunchpadValidationError is
         # raised.
         namespace = self._getNamespace(self.factory.makePerson())
         self.assertRaises(
-            LaunchpadValidationError,
-            namespace.validateRepositoryName, "+foo")
+            LaunchpadValidationError, namespace.validateRepositoryName, "+foo"
+        )
 
     def test_permitted_first_character(self):
         # The first character of a repository name must be a letter or a
@@ -1284,7 +1477,9 @@ class BaseValidateNewRepositoryMixin:
             else:
                 self.assertRaises(
                     LaunchpadValidationError,
-                    namespace.validateRepositoryName, c)
+                    namespace.validateRepositoryName,
+                    c,
+                )
 
     def test_permitted_subsequent_character(self):
         # After the first character, letters, numbers and certain
@@ -1296,35 +1491,37 @@ class BaseValidateNewRepositoryMixin:
             else:
                 self.assertRaises(
                     LaunchpadValidationError,
-                    namespace.validateRepositoryName, "a" + c)
+                    namespace.validateRepositoryName,
+                    "a" + c,
+                )
 
 
 class TestPersonalGitNamespaceValidateNewRepository(
-    TestCaseWithFactory, BaseValidateNewRepositoryMixin):
-
+    TestCaseWithFactory, BaseValidateNewRepositoryMixin
+):
     def _getNamespace(self, owner):
         return PersonalGitNamespace(owner)
 
 
 class TestPackageGitNamespaceValidateNewRepository(
-    TestCaseWithFactory, BaseValidateNewRepositoryMixin):
-
+    TestCaseWithFactory, BaseValidateNewRepositoryMixin
+):
     def _getNamespace(self, owner):
         dsp = self.factory.makeDistributionSourcePackage()
         return PackageGitNamespace(owner, dsp)
 
 
 class TestOCIProjectGitNamespaceValidateNewRepository(
-    TestCaseWithFactory, BaseValidateNewRepositoryMixin):
-
+    TestCaseWithFactory, BaseValidateNewRepositoryMixin
+):
     def _getNamespace(self, owner):
         oci_project = self.factory.makeOCIProject()
         return OCIProjectGitNamespace(owner, oci_project)
 
 
 class TestProjectGitNamespaceValidateNewRepository(
-    TestCaseWithFactory, BaseValidateNewRepositoryMixin):
-
+    TestCaseWithFactory, BaseValidateNewRepositoryMixin
+):
     def _getNamespace(self, owner):
         project = self.factory.makeProduct()
         return ProjectGitNamespace(owner, project)
@@ -1344,8 +1541,8 @@ class TestPersonalGitRepositories(TestCaseWithFactory):
         """
         namespace = get_git_namespace(owner, owner)
         self.assertNotIn(
-            InformationType.PROPRIETARY,
-            namespace.getAllowedInformationTypes())
+            InformationType.PROPRIETARY, namespace.getAllowedInformationTypes()
+        )
 
     def assertPolicyCheckRaises(self, error, creator, owner):
         """Assert that the policy check raises an exception.
@@ -1372,8 +1569,10 @@ class TestPersonalGitRepositories(TestCaseWithFactory):
     def test_no_create_personal_repository_for_other_user(self):
         # One user can't create personal repositories owned by another.
         self.assertPolicyCheckRaises(
-            GitRepositoryCreatorNotOwner, self.factory.makePerson(),
-            self.factory.makePerson())
+            GitRepositoryCreatorNotOwner,
+            self.factory.makePerson(),
+            self.factory.makePerson(),
+        )
 
 
 class TestGitNamespaceMoveRepository(TestCaseWithFactory):
@@ -1401,21 +1600,27 @@ class TestGitNamespaceMoveRepository(TestCaseWithFactory):
         # A name clash will raise an exception.
         repository = self.factory.makeGitRepository(name="test")
         another = self.factory.makeGitRepository(
-            owner=repository.owner, name="test")
+            owner=repository.owner, name="test"
+        )
         namespace = another.namespace
         self.assertRaises(
-            GitRepositoryExists, namespace.moveRepository,
-            repository, repository.owner)
+            GitRepositoryExists,
+            namespace.moveRepository,
+            repository,
+            repository.owner,
+        )
 
     def test_move_with_rename(self):
         # A name clash with 'rename_if_necessary' set to True will cause the
         # repository to be renamed instead of raising an error.
         repository = self.factory.makeGitRepository(name="test")
         another = self.factory.makeGitRepository(
-            owner=repository.owner, name="test")
+            owner=repository.owner, name="test"
+        )
         namespace = another.namespace
         namespace.moveRepository(
-            repository, repository.owner, rename_if_necessary=True)
+            repository, repository.owner, rename_if_necessary=True
+        )
         self.assertEqual("test-1", repository.name)
         self.assertNamespacesEqual(namespace, repository.namespace)
 
@@ -1423,7 +1628,8 @@ class TestGitNamespaceMoveRepository(TestCaseWithFactory):
         # A new name for the repository can be specified as part of the move.
         repository = self.factory.makeGitRepository(name="test")
         another = self.factory.makeGitRepository(
-            owner=repository.owner, name="test")
+            owner=repository.owner, name="test"
+        )
         namespace = another.namespace
         namespace.moveRepository(repository, repository.owner, new_name="foo")
         self.assertEqual("foo", repository.name)
@@ -1449,10 +1655,12 @@ class TestGitNamespaceMoveRepository(TestCaseWithFactory):
         another.setTargetDefault(True)
         self.assertRaisesWithContent(
             GitDefaultConflict,
-            "The default repository for '%s' is already set to %s." % (
-                another.target.displayname, another.unique_name),
+            "The default repository for '%s' is already set to %s."
+            % (another.target.displayname, another.unique_name),
             another.namespace.moveRepository,
-            repository, getUtility(ILaunchpadCelebrities).admin.teamowner)
+            repository,
+            getUtility(ILaunchpadCelebrities).admin.teamowner,
+        )
 
     def test_owner_default_clash_raises(self):
         # A clash between owner_default repositories will raise an exception.
@@ -1462,11 +1670,16 @@ class TestGitNamespaceMoveRepository(TestCaseWithFactory):
         another.setOwnerDefault(True)
         self.assertRaisesWithContent(
             GitDefaultConflict,
-            "%s's default repository for '%s' is already set to %s." % (
-                another.owner.displayname, another.target.displayname,
-                another.unique_name),
+            "%s's default repository for '%s' is already set to %s."
+            % (
+                another.owner.displayname,
+                another.target.displayname,
+                another.unique_name,
+            ),
             another.namespace.moveRepository,
-            repository, getUtility(ILaunchpadCelebrities).admin.teamowner)
+            repository,
+            getUtility(ILaunchpadCelebrities).admin.teamowner,
+        )
 
     def test_preserves_target_default(self):
         # If there is no clash, target_default is preserved.
@@ -1475,11 +1688,13 @@ class TestGitNamespaceMoveRepository(TestCaseWithFactory):
         another = self.factory.makeGitRepository()
         namespace = another.namespace
         namespace.moveRepository(
-            repository, getUtility(ILaunchpadCelebrities).admin.teamowner)
+            repository, getUtility(ILaunchpadCelebrities).admin.teamowner
+        )
         self.assertNamespacesEqual(namespace, repository.namespace)
         repository_set = getUtility(IGitRepositorySet)
         self.assertEqual(
-            repository, repository_set.getDefaultRepository(another.target))
+            repository, repository_set.getDefaultRepository(another.target)
+        )
 
     def test_preserves_owner_default(self):
         # If there is no clash, owner_default is preserved.
@@ -1488,13 +1703,16 @@ class TestGitNamespaceMoveRepository(TestCaseWithFactory):
         another = self.factory.makeGitRepository()
         namespace = another.namespace
         namespace.moveRepository(
-            repository, getUtility(ILaunchpadCelebrities).admin.teamowner)
+            repository, getUtility(ILaunchpadCelebrities).admin.teamowner
+        )
         self.assertNamespacesEqual(namespace, repository.namespace)
         repository_set = getUtility(IGitRepositorySet)
         self.assertEqual(
             repository,
             repository_set.getDefaultRepositoryForOwner(
-                another.owner, another.target))
+                another.owner, another.target
+            ),
+        )
 
     def test_target_default_to_personal(self):
         # Moving a target_default repository to a personal namespace is
@@ -1503,7 +1721,8 @@ class TestGitNamespaceMoveRepository(TestCaseWithFactory):
         repository.setTargetDefault(True)
         namespace = get_git_namespace(repository.owner, repository.owner)
         namespace.moveRepository(
-            repository, getUtility(ILaunchpadCelebrities).admin.teamowner)
+            repository, getUtility(ILaunchpadCelebrities).admin.teamowner
+        )
         self.assertNamespacesEqual(namespace, repository.namespace)
         self.assertFalse(repository.target_default)
 
@@ -1514,6 +1733,7 @@ class TestGitNamespaceMoveRepository(TestCaseWithFactory):
         repository.setOwnerDefault(True)
         namespace = get_git_namespace(repository.owner, repository.owner)
         namespace.moveRepository(
-            repository, getUtility(ILaunchpadCelebrities).admin.teamowner)
+            repository, getUtility(ILaunchpadCelebrities).admin.teamowner
+        )
         self.assertNamespacesEqual(namespace, repository.namespace)
         self.assertFalse(repository.owner_default)

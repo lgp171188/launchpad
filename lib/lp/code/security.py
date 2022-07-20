@@ -4,21 +4,15 @@
 """Security adapters for the code module."""
 
 __all__ = [
-    'AccessBranch',
-    'BranchSubscriptionEdit',
-    'BranchSubscriptionView',
-    'GitSubscriptionEdit',
-    'GitSubscriptionView',
-    ]
+    "AccessBranch",
+    "BranchSubscriptionEdit",
+    "BranchSubscriptionView",
+    "GitSubscriptionEdit",
+    "GitSubscriptionView",
+]
 
-from lp.app.security import (
-    AuthorizationBase,
-    DelegatedAuthorization,
-    )
-from lp.code.interfaces.branch import (
-    IBranch,
-    user_has_special_branch_access,
-    )
+from lp.app.security import AuthorizationBase, DelegatedAuthorization
+from lp.code.interfaces.branch import IBranch, user_has_special_branch_access
 from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
 from lp.code.interfaces.branchsubscription import IBranchSubscription
 from lp.code.interfaces.cibuild import ICIBuild
@@ -26,12 +20,12 @@ from lp.code.interfaces.codeimport import ICodeImport
 from lp.code.interfaces.codeimportjob import (
     ICodeImportJobSet,
     ICodeImportJobWorkflow,
-    )
+)
 from lp.code.interfaces.codeimportmachine import ICodeImportMachine
 from lp.code.interfaces.codereviewcomment import (
     ICodeReviewComment,
     ICodeReviewCommentDeletion,
-    )
+)
 from lp.code.interfaces.codereviewvote import ICodeReviewVoteReference
 from lp.code.interfaces.diff import IPreviewDiff
 from lp.code.interfaces.gitactivity import IGitActivity
@@ -39,23 +33,20 @@ from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import (
     IGitRepository,
     user_has_special_git_repository_access,
-    )
-from lp.code.interfaces.gitrule import (
-    IGitRule,
-    IGitRuleGrant,
-    )
+)
+from lp.code.interfaces.gitrule import IGitRule, IGitRuleGrant
 from lp.code.interfaces.gitsubscription import IGitSubscription
 from lp.code.interfaces.revisionstatus import (
     IRevisionStatusArtifact,
     IRevisionStatusReport,
-    )
+)
 from lp.code.interfaces.sourcepackagerecipe import ISourcePackageRecipe
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
-    )
+)
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.product import IProduct
 from lp.security import (
@@ -63,21 +54,23 @@ from lp.security import (
     AdminByBuilddAdmin,
     OnlyBazaarExpertsAndAdmins,
     OnlyVcsImportsAndAdmins,
-    )
+)
 
 
 class ViewRevisionStatusReport(DelegatedAuthorization):
     """Anyone who can see a Git repository can see its status reports."""
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = IRevisionStatusReport
 
     def __init__(self, obj):
-        super().__init__(obj, obj.git_repository, 'launchpad.View')
+        super().__init__(obj, obj.git_repository, "launchpad.View")
 
 
 class EditRevisionStatusReport(AuthorizationBase):
     """The owner of a Git repository can edit its status reports."""
-    permission = 'launchpad.Edit'
+
+    permission = "launchpad.Edit"
     usedfor = IRevisionStatusReport
 
     def checkAuthenticated(self, user):
@@ -85,19 +78,19 @@ class EditRevisionStatusReport(AuthorizationBase):
 
 
 class ViewRevisionStatusArtifact(DelegatedAuthorization):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = IRevisionStatusArtifact
 
     def __init__(self, obj):
-        super().__init__(obj, obj.report, 'launchpad.View')
+        super().__init__(obj, obj.report, "launchpad.View")
 
 
 class EditRevisionStatusArtifact(DelegatedAuthorization):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IRevisionStatusArtifact
 
     def __init__(self, obj):
-        super().__init__(obj, obj.report, 'launchpad.Edit')
+        super().__init__(obj, obj.report, "launchpad.Edit")
 
 
 class EditCodeImport(AuthorizationBase):
@@ -106,13 +99,14 @@ class EditCodeImport(AuthorizationBase):
     Currently, we restrict the visibility of the new code import
     system to owners, members of ~vcs-imports and Launchpad admins.
     """
-    permission = 'launchpad.Edit'
+
+    permission = "launchpad.Edit"
     usedfor = ICodeImport
 
     def checkAuthenticated(self, user):
-        return (user.inTeam(self.obj.owner) or
-                user.in_admin or
-                user.in_vcs_imports)
+        return (
+            user.inTeam(self.obj.owner) or user.in_admin or user.in_vcs_imports
+        )
 
 
 class ModerateCodeImport(OnlyVcsImportsAndAdmins):
@@ -121,7 +115,8 @@ class ModerateCodeImport(OnlyVcsImportsAndAdmins):
     Currently, we restrict the visibility of code import moderation
     system to members of ~vcs-imports and Launchpad admins.
     """
-    permission = 'launchpad.Moderate'
+
+    permission = "launchpad.Moderate"
     usedfor = ICodeImport
 
 
@@ -131,7 +126,8 @@ class SeeCodeImportJobSet(OnlyVcsImportsAndAdmins):
     Currently, we restrict the visibility of the new code import
     system to members of ~vcs-imports and Launchpad admins.
     """
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = ICodeImportJobSet
 
 
@@ -141,7 +137,8 @@ class EditCodeImportJobWorkflow(OnlyVcsImportsAndAdmins):
     Currently, we restrict the visibility of the new code import
     system to members of ~vcs-imports and Launchpad admins.
     """
-    permission = 'launchpad.Edit'
+
+    permission = "launchpad.Edit"
     usedfor = ICodeImportJobWorkflow
 
 
@@ -150,14 +147,15 @@ class EditCodeImportMachine(OnlyBazaarExpertsAndAdmins):
 
     Access is restricted to Launchpad admins.
     """
-    permission = 'launchpad.Edit'
+
+    permission = "launchpad.Edit"
     usedfor = ICodeImportMachine
 
 
 class GitRepositoryExpensiveRequest(AuthorizationBase):
     """Restrict git repository repacks."""
 
-    permission = 'launchpad.ExpensiveRequest'
+    permission = "launchpad.ExpensiveRequest"
     usedfor = IGitRepository
 
     def checkAuthenticated(self, user):
@@ -171,7 +169,8 @@ class AccessBranch(AuthorizationBase):
     of the branch, they are in the team that owns the branch, they have an
     access grant to the branch, or a launchpad administrator.
     """
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = IBranch
 
     def checkAuthenticated(self, user):
@@ -183,19 +182,22 @@ class AccessBranch(AuthorizationBase):
 
 class EditBranch(AuthorizationBase):
     """The owner or admins can edit branches."""
-    permission = 'launchpad.Edit'
+
+    permission = "launchpad.Edit"
     usedfor = IBranch
 
     def checkAuthenticated(self, user):
         return (
-            user.inTeam(self.obj.owner) or
-            user_has_special_branch_access(user.person, self.obj) or
-            can_upload_linked_package(user, self.obj))
+            user.inTeam(self.obj.owner)
+            or user_has_special_branch_access(user.person, self.obj)
+            or can_upload_linked_package(user, self.obj)
+        )
 
 
 class ModerateBranch(EditBranch):
     """The owners, pillar owners, and admins can moderate branches."""
-    permission = 'launchpad.Moderate'
+
+    permission = "launchpad.Moderate"
 
     def checkAuthenticated(self, user):
         if super().checkAuthenticated(user):
@@ -230,7 +232,8 @@ def can_upload_linked_package(person_role, branch):
 
 class AdminBranch(AuthorizationBase):
     """The admins can administer branches."""
-    permission = 'launchpad.Admin'
+
+    permission = "launchpad.Admin"
     usedfor = IBranch
 
     def checkAuthenticated(self, user):
@@ -245,7 +248,8 @@ class ViewGitRepository(AuthorizationBase):
     repository, they have an access grant to the repository, or they are a
     Launchpad administrator.
     """
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = IGitRepository
 
     def checkAuthenticated(self, user):
@@ -257,21 +261,23 @@ class ViewGitRepository(AuthorizationBase):
 
 class EditGitRepository(AuthorizationBase):
     """The owner or admins can edit Git repositories."""
-    permission = 'launchpad.Edit'
+
+    permission = "launchpad.Edit"
     usedfor = IGitRepository
 
     def checkAuthenticated(self, user):
         # XXX cjwatson 2015-01-23: People who can upload source packages to
         # a distribution should be able to push to the corresponding
         # "official" repositories, once those are defined.
-        return (
-            user.inTeam(self.obj.owner) or
-            user_has_special_git_repository_access(user.person, self.obj))
+        return user.inTeam(
+            self.obj.owner
+        ) or user_has_special_git_repository_access(user.person, self.obj)
 
 
 class ModerateGitRepository(EditGitRepository):
     """The owners, pillar owners, and admins can moderate Git repositories."""
-    permission = 'launchpad.Moderate'
+
+    permission = "launchpad.Moderate"
 
     def checkAuthenticated(self, user):
         if super().checkAuthenticated(user):
@@ -292,12 +298,14 @@ class ModerateGitRepository(EditGitRepository):
 
 class AdminGitRepository(AdminByAdminsTeam):
     """The admins can administer Git repositories."""
+
     usedfor = IGitRepository
 
 
 class ViewGitRef(DelegatedAuthorization):
     """Anyone who can see a Git repository can see references within it."""
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = IGitRef
 
     def __init__(self, obj):
@@ -318,7 +326,8 @@ class ViewGitRef(DelegatedAuthorization):
 
 class EditGitRef(DelegatedAuthorization):
     """Anyone who can edit a Git repository can edit references within it."""
-    permission = 'launchpad.Edit'
+
+    permission = "launchpad.Edit"
     usedfor = IGitRef
 
     def __init__(self, obj):
@@ -327,7 +336,8 @@ class EditGitRef(DelegatedAuthorization):
 
 class ViewGitRule(DelegatedAuthorization):
     """Anyone who can see a Git repository can see its access rules."""
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = IGitRule
 
     def __init__(self, obj):
@@ -336,7 +346,8 @@ class ViewGitRule(DelegatedAuthorization):
 
 class EditGitRule(DelegatedAuthorization):
     """Anyone who can edit a Git repository can edit its access rules."""
-    permission = 'launchpad.Edit'
+
+    permission = "launchpad.Edit"
     usedfor = IGitRule
 
     def __init__(self, obj):
@@ -345,7 +356,8 @@ class EditGitRule(DelegatedAuthorization):
 
 class ViewGitRuleGrant(DelegatedAuthorization):
     """Anyone who can see a Git repository can see its access grants."""
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = IGitRuleGrant
 
     def __init__(self, obj):
@@ -354,7 +366,8 @@ class ViewGitRuleGrant(DelegatedAuthorization):
 
 class EditGitRuleGrant(DelegatedAuthorization):
     """Anyone who can edit a Git repository can edit its access grants."""
-    permission = 'launchpad.Edit'
+
+    permission = "launchpad.Edit"
     usedfor = IGitRuleGrant
 
     def __init__(self, obj):
@@ -363,7 +376,8 @@ class EditGitRuleGrant(DelegatedAuthorization):
 
 class ViewGitActivity(DelegatedAuthorization):
     """Anyone who can see a Git repository can see its activity logs."""
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = IGitActivity
 
     def __init__(self, obj):
@@ -371,7 +385,7 @@ class ViewGitActivity(DelegatedAuthorization):
 
 
 class BranchMergeProposalView(AuthorizationBase):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = IBranchMergeProposal
 
     @property
@@ -384,7 +398,9 @@ class BranchMergeProposalView(AuthorizationBase):
     @property
     def git_repositories(self):
         required = [
-            self.obj.source_git_repository, self.obj.target_git_repository]
+            self.obj.source_git_repository,
+            self.obj.target_git_repository,
+        ]
         if self.obj.prerequisite_git_repository:
             required.append(self.obj.prerequisite_git_repository)
         return required
@@ -396,13 +412,19 @@ class BranchMergeProposalView(AuthorizationBase):
         and prerequisite branches.
         """
         if self.obj.source_git_repository is not None:
-            return all(map(
-                lambda r: ViewGitRepository(r).checkAuthenticated(user),
-                self.git_repositories))
+            return all(
+                map(
+                    lambda r: ViewGitRepository(r).checkAuthenticated(user),
+                    self.git_repositories,
+                )
+            )
         else:
-            return all(map(
-                lambda b: AccessBranch(b).checkAuthenticated(user),
-                self.branches))
+            return all(
+                map(
+                    lambda b: AccessBranch(b).checkAuthenticated(user),
+                    self.branches,
+                )
+            )
 
     def checkUnauthenticated(self):
         """Is anyone able to view the branch merge proposal?
@@ -410,17 +432,23 @@ class BranchMergeProposalView(AuthorizationBase):
         Anyone can see a merge proposal between two public branches.
         """
         if self.obj.source_git_repository is not None:
-            return all(map(
-                lambda r: ViewGitRepository(r).checkUnauthenticated(),
-                self.git_repositories))
+            return all(
+                map(
+                    lambda r: ViewGitRepository(r).checkUnauthenticated(),
+                    self.git_repositories,
+                )
+            )
         else:
-            return all(map(
-                lambda b: AccessBranch(b).checkUnauthenticated(),
-                self.branches))
+            return all(
+                map(
+                    lambda b: AccessBranch(b).checkUnauthenticated(),
+                    self.branches,
+                )
+            )
 
 
 class PreviewDiffView(DelegatedAuthorization):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = IPreviewDiff
 
     def __init__(self, obj):
@@ -428,7 +456,7 @@ class PreviewDiffView(DelegatedAuthorization):
 
 
 class CodeReviewVoteReferenceView(DelegatedAuthorization):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = ICodeReviewVoteReference
 
     def __init__(self, obj):
@@ -436,7 +464,7 @@ class CodeReviewVoteReferenceView(DelegatedAuthorization):
 
 
 class CodeReviewVoteReferenceEdit(DelegatedAuthorization):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = ICodeReviewVoteReference
 
     def __init__(self, obj):
@@ -452,13 +480,15 @@ class CodeReviewVoteReferenceEdit(DelegatedAuthorization):
         Anyone with edit permissions on the target branch of the merge
         proposal can also edit the reviews.
         """
-        return (user.inTeam(self.obj.reviewer) or
-                user.inTeam(self.obj.registrant) or
-                super().checkAuthenticated(user))
+        return (
+            user.inTeam(self.obj.reviewer)
+            or user.inTeam(self.obj.registrant)
+            or super().checkAuthenticated(user)
+        )
 
 
 class CodeReviewCommentView(DelegatedAuthorization):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = ICodeReviewComment
 
     def __init__(self, obj):
@@ -466,7 +496,7 @@ class CodeReviewCommentView(DelegatedAuthorization):
 
 
 class CodeReviewCommentOwner(AuthorizationBase):
-    permission = 'launchpad.Owner'
+    permission = "launchpad.Owner"
     usedfor = ICodeReviewComment
 
     def checkAuthenticated(self, user):
@@ -475,7 +505,7 @@ class CodeReviewCommentOwner(AuthorizationBase):
 
 
 class CodeReviewCommentDelete(DelegatedAuthorization):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = ICodeReviewCommentDeletion
 
     def __init__(self, obj):
@@ -483,7 +513,7 @@ class CodeReviewCommentDelete(DelegatedAuthorization):
 
 
 class BranchMergeProposalEdit(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IBranchMergeProposal
 
     def checkAuthenticated(self, user):
@@ -496,9 +526,11 @@ class BranchMergeProposalEdit(AuthorizationBase):
           * the reviewer for the merge_target
           * an administrator
         """
-        if (user.inTeam(self.obj.registrant) or
-                user.inTeam(self.obj.merge_source.owner) or
-                user.inTeam(self.obj.merge_target.reviewer)):
+        if (
+            user.inTeam(self.obj.registrant)
+            or user.inTeam(self.obj.merge_source.owner)
+            or user.inTeam(self.obj.merge_target.reviewer)
+        ):
             return True
         return self.forwardCheckAuthenticated(user, self.obj.merge_target)
 
@@ -519,8 +551,8 @@ class DeleteSourcePackageRecipe(AuthorizationBase):
 
     def checkAuthenticated(self, user):
         return (
-            user.isOwner(self.obj) or
-            user.in_registry_experts or user.in_admin)
+            user.isOwner(self.obj) or user.in_registry_experts or user.in_admin
+        )
 
 
 class ViewSourcePackageRecipeBuild(DelegatedAuthorization):
@@ -559,7 +591,7 @@ class EditCIBuild(AdminByBuilddAdmin):
 
 
 class BranchSubscriptionEdit(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IBranchSubscription
 
     def checkAuthenticated(self, user):
@@ -571,18 +603,20 @@ class BranchSubscriptionEdit(AuthorizationBase):
         branch owner is a team, then members of the team can edit the
         subscription.
         """
-        return (user.inTeam(self.obj.branch.owner) or
-                user.inTeam(self.obj.person) or
-                user.inTeam(self.obj.subscribed_by) or
-                user.in_admin)
+        return (
+            user.inTeam(self.obj.branch.owner)
+            or user.inTeam(self.obj.person)
+            or user.inTeam(self.obj.subscribed_by)
+            or user.in_admin
+        )
 
 
 class BranchSubscriptionView(BranchSubscriptionEdit):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
 
 
 class GitSubscriptionEdit(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IGitSubscription
 
     def checkAuthenticated(self, user):
@@ -595,11 +629,13 @@ class GitSubscriptionEdit(AuthorizationBase):
         the repository owner is a team, then members of the team can edit
         the subscription.
         """
-        return (user.inTeam(self.obj.repository.owner) or
-                user.inTeam(self.obj.person) or
-                user.inTeam(self.obj.subscribed_by) or
-                user.in_admin)
+        return (
+            user.inTeam(self.obj.repository.owner)
+            or user.inTeam(self.obj.person)
+            or user.inTeam(self.obj.subscribed_by)
+            or user.in_admin
+        )
 
 
 class GitSubscriptionView(GitSubscriptionEdit):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"

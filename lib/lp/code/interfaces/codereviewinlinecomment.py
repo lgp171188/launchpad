@@ -4,15 +4,12 @@
 """Interfaces for inline comments with preview diffs."""
 
 __all__ = [
-    'ICodeReviewInlineComment',
-    'ICodeReviewInlineCommentSet',
-    ]
+    "ICodeReviewInlineComment",
+    "ICodeReviewInlineCommentSet",
+]
 
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.schema import Datetime
 
 from lp import _
@@ -23,23 +20,31 @@ from lp.registry.interfaces.person import IPerson
 
 class ICodeReviewInlineComment(Interface):
 
-    previewdiff_id = Attribute(_('The preview diff ID'))
+    previewdiff_id = Attribute(_("The preview diff ID"))
     previewdiff = Reference(
-        title=_('The preview diff'), schema=IPreviewDiff, required=True,
-        readonly=True)
+        title=_("The preview diff"),
+        schema=IPreviewDiff,
+        required=True,
+        readonly=True,
+    )
     person = Reference(
-        title=_('Person'), schema=IPerson, required=True, readonly=True)
+        title=_("Person"), schema=IPerson, required=True, readonly=True
+    )
     comment = Reference(
-        title=_('The branch merge proposal comment'),
-        schema=ICodeReviewComment, required=True, readonly=True)
+        title=_("The branch merge proposal comment"),
+        schema=ICodeReviewComment,
+        required=True,
+        readonly=True,
+    )
     date_created = Datetime(
-        title=_('The date on which the comments were published'),
-        required=True, readonly=True)
-    comments = Attribute(_('Inline comments'))
+        title=_("The date on which the comments were published"),
+        required=True,
+        readonly=True,
+    )
+    comments = Attribute(_("Inline comments"))
 
 
 class ICodeReviewInlineCommentSet(Interface):
-
     def ensureDraft(previewdiff, person, comments):
         """Ensure a `ICodeReviewInlineCommentDraft` is up to date. This method
         will also delete an existing draft if the comments are empty.

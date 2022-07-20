@@ -6,40 +6,24 @@
 import gc
 import sys
 
-from breezy import (
-    errors,
-    trace,
-    )
-from breezy.branch import (
-    Branch,
-    UnstackableBranchFormat,
-    )
+from breezy import errors, trace
+from breezy.branch import Branch, UnstackableBranchFormat
 from breezy.bzr.remote import RemoteBranch
 from breezy.controldir import format_registry
 from breezy.errors import AppendRevisionsOnlyViolation
-from breezy.tests import (
-    test_server,
-    TestCaseWithTransport,
-    TestNotApplicable,
-    )
-from breezy.tests.per_branch import (
-    branch_scenarios,
-    TestCaseWithControlDir,
-    )
-from testscenarios import (
-    load_tests_apply_scenarios,
-    WithScenarios,
-    )
+from breezy.tests import TestCaseWithTransport, TestNotApplicable, test_server
+from breezy.tests.per_branch import TestCaseWithControlDir, branch_scenarios
+from testscenarios import WithScenarios, load_tests_apply_scenarios
 
 from lp.codehosting.bzrutils import (
-    add_exception_logging_hook,
     DenyingServer,
+    add_exception_logging_hook,
     get_branch_stacked_on_url,
     get_vfs_format_classes,
     install_oops_handler,
     is_branch_stackable,
     remove_exception_logging_hook,
-    )
+)
 from lp.codehosting.tests.helpers import TestResultWrapper
 from lp.testing import TestCase
 
@@ -48,12 +32,15 @@ class TestGetBranchStackedOnURL(WithScenarios, TestCaseWithControlDir):
     """Tests for get_branch_stacked_on_url()."""
 
     scenarios = [
-        scenario for scenario in branch_scenarios()
-        if scenario[0] not in {
-            'BranchReferenceFormat',
-            'GitBranchFormat',
-            'SvnBranchFormat',
-            }]
+        scenario
+        for scenario in branch_scenarios()
+        if scenario[0]
+        not in {
+            "BranchReferenceFormat",
+            "GitBranchFormat",
+            "SvnBranchFormat",
+        }
+    ]
 
     def __str__(self):
         """Return the test id so that Zope test output shows the format."""
@@ -67,64 +54,70 @@ class TestGetBranchStackedOnURL(WithScenarios, TestCaseWithControlDir):
         TestCaseWithControlDir.tearDown(self)
 
     def run(self, result=None):
-        """Run the test, with the result wrapped so that it knows about skips.
-        """
+        """Run the test, with the result wrapped to know about skips."""
         if result is None:
             result = self.defaultTestResult()
         super().run(TestResultWrapper(result))
 
     def testGetBranchStackedOnUrl(self):
         # get_branch_stacked_on_url returns the URL of the stacked-on branch.
-        self.make_branch('stacked-on')
-        stacked_branch = self.make_branch('stacked')
+        self.make_branch("stacked-on")
+        stacked_branch = self.make_branch("stacked")
         try:
-            stacked_branch.set_stacked_on_url('../stacked-on')
+            stacked_branch.set_stacked_on_url("../stacked-on")
         except UnstackableBranchFormat:
-            raise TestNotApplicable('This format does not support stacking.')
+            raise TestNotApplicable("This format does not support stacking.")
         # Deleting the stacked-on branch ensures that Bazaar will raise an
         # error if it tries to open the stacked-on branch.
-        self.get_transport('.').delete_tree('stacked-on')
+        self.get_transport(".").delete_tree("stacked-on")
         self.assertEqual(
-            '../stacked-on',
-            get_branch_stacked_on_url(stacked_branch.controldir))
+            "../stacked-on",
+            get_branch_stacked_on_url(stacked_branch.controldir),
+        )
 
     def testGetBranchStackedOnUrlUnstackable(self):
         # get_branch_stacked_on_url raises UnstackableBranchFormat if it's
         # called on the bzrdir of a branch that cannot be stacked.
-        branch = self.make_branch('source')
+        branch = self.make_branch("source")
         try:
             branch.get_stacked_on_url()
         except errors.NotStacked:
-            raise TestNotApplicable('This format supports stacked branches.')
+            raise TestNotApplicable("This format supports stacked branches.")
         except UnstackableBranchFormat:
             pass
         self.assertRaises(
             UnstackableBranchFormat,
-            get_branch_stacked_on_url, branch.controldir)
+            get_branch_stacked_on_url,
+            branch.controldir,
+        )
 
     def testGetBranchStackedOnUrlNotStacked(self):
         # get_branch_stacked_on_url raises NotStacked if it's called on the
         # bzrdir of a non-stacked branch.
-        branch = self.make_branch('source')
+        branch = self.make_branch("source")
         try:
             branch.get_stacked_on_url()
         except errors.NotStacked:
             pass
         except UnstackableBranchFormat:
             raise TestNotApplicable(
-                'This format does not support stacked branches')
+                "This format does not support stacked branches"
+            )
         self.assertRaises(
-            errors.NotStacked, get_branch_stacked_on_url, branch.controldir)
+            errors.NotStacked, get_branch_stacked_on_url, branch.controldir
+        )
 
     def testGetBranchStackedOnUrlNoBranch(self):
         # get_branch_stacked_on_url raises a NotBranchError if it's called on
         # a bzrdir that's not got a branch.
-        a_bzrdir = self.make_controldir('source')
+        a_bzrdir = self.make_controldir("source")
         if a_bzrdir.has_branch():
             raise TestNotApplicable(
-                'This format does not support branchless bzrdirs.')
+                "This format does not support branchless bzrdirs."
+            )
         self.assertRaises(
-            errors.NotBranchError, get_branch_stacked_on_url, a_bzrdir)
+            errors.NotBranchError, get_branch_stacked_on_url, a_bzrdir
+        )
 
 
 class TestIsBranchStackable(TestCaseWithTransport):
@@ -133,13 +126,15 @@ class TestIsBranchStackable(TestCaseWithTransport):
     def test_packs_unstackable(self):
         # The original packs are unstackable.
         branch = self.make_branch(
-            'branch', format=format_registry.get("pack-0.92")())
+            "branch", format=format_registry.get("pack-0.92")()
+        )
         self.assertFalse(is_branch_stackable(branch))
 
     def test_1_9_stackable(self):
         # The original packs are unstackable.
         branch = self.make_branch(
-            'branch', format=format_registry.get("1.9")())
+            "branch", format=format_registry.get("1.9")()
+        )
         self.assertTrue(is_branch_stackable(branch))
 
 
@@ -149,11 +144,12 @@ class TestDenyingServer(TestCaseWithTransport):
     def test_denyingServer(self):
         # DenyingServer prevents creations of transports for the given URL
         # schemes between setUp() and tearDown().
-        branch = self.make_branch('branch')
+        branch = self.make_branch("branch")
         self.assertTrue(
-            branch.base.startswith('file://'),
-            "make_branch() didn't make branch with file:// URL")
-        file_denier = DenyingServer(['file://'])
+            branch.base.startswith("file://"),
+            "make_branch() didn't make branch with file:// URL",
+        )
+        file_denier = DenyingServer(["file://"])
         file_denier.start_server()
         self.assertRaises(AssertionError, Branch.open, branch.base)
         file_denier.stop_server()
@@ -162,7 +158,6 @@ class TestDenyingServer(TestCaseWithTransport):
 
 
 class TestExceptionLoggingHooks(TestCase):
-
     def logException(self, exception):
         """Log exception with Bazaar's exception logger."""
         try:
@@ -180,7 +175,7 @@ class TestExceptionLoggingHooks(TestCase):
 
         add_exception_logging_hook(hook)
         self.addCleanup(remove_exception_logging_hook, hook)
-        exception = RuntimeError('foo')
+        exception = RuntimeError("foo")
         self.logException(exception)
         self.assertEqual([(RuntimeError, exception)], exceptions)
 
@@ -203,13 +198,12 @@ class TestExceptionLoggingHooks(TestCase):
 
         add_exception_logging_hook(hook)
         remove_exception_logging_hook(hook)
-        self.logException(RuntimeError('foo'))
+        self.logException(RuntimeError("foo"))
         self.assertEqual([], exceptions)
 
 
 class TestGetVfsFormatClasses(TestCaseWithTransport):
-    """Tests for `lp.codehosting.bzrutils.get_vfs_format_classes`.
-    """
+    """Tests for `lp.codehosting.bzrutils.get_vfs_format_classes`."""
 
     def setUp(self):
         super().setUp()
@@ -223,7 +217,7 @@ class TestGetVfsFormatClasses(TestCaseWithTransport):
         # get_vfs_format_classes for a returns the underlying format classes
         # of the branch, repo and bzrdir, even if the branch is a
         # RemoteBranch.
-        vfs_branch = self.make_branch('.')
+        vfs_branch = self.make_branch(".")
         smart_server = test_server.SmartTCPServer_for_testing()
         smart_server.start_server(self.get_vfs_only_server())
         self.addCleanup(smart_server.stop_server)
@@ -236,7 +230,8 @@ class TestGetVfsFormatClasses(TestCaseWithTransport):
         # information.
         self.assertEqual(
             get_vfs_format_classes(vfs_branch),
-            get_vfs_format_classes(remote_branch))
+            get_vfs_format_classes(remote_branch),
+        )
 
 
 load_tests = load_tests_apply_scenarios

@@ -4,82 +4,64 @@
 """Implementation classes for IDiff, etc."""
 
 __all__ = [
-    'Diff',
-    'IncrementalDiff',
-    'PreviewDiff',
-    ]
+    "Diff",
+    "IncrementalDiff",
+    "PreviewDiff",
+]
 
-from contextlib import ExitStack
 import io
-from operator import attrgetter
 import sys
+from contextlib import ExitStack
+from operator import attrgetter
 from uuid import uuid1
 
+import simplejson
+import six
 from breezy import trace
 from breezy.diff import show_diff_trees
 from breezy.merge import Merge3Merger
-from breezy.patches import (
-    parse_patches,
-    Patch,
-    )
+from breezy.patches import Patch, parse_patches
 from breezy.plugins.difftacular.generate_diff import diff_ignore_branches
 from lazr.delegates import delegate_to
-import simplejson
-import six
-from storm.locals import (
-    Int,
-    Reference,
-    Storm,
-    Unicode,
-    )
+from storm.locals import Int, Reference, Storm, Unicode
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
-from lp.code.interfaces.diff import (
-    IDiff,
-    IIncrementalDiff,
-    IPreviewDiff,
-    )
+from lp.code.interfaces.diff import IDiff, IIncrementalDiff, IPreviewDiff
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.codehosting.bzrutils import read_locked
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    IntCol,
-    StringCol,
-    )
+from lp.services.database.sqlobject import ForeignKey, IntCol, StringCol
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.interfaces.client import (
     LIBRARIAN_SERVER_DEFAULT_TIMEOUT,
-    )
+)
 from lp.services.propertycache import get_property_cache
-from lp.services.timeout import (
-    get_default_timeout_function,
-    reduced_timeout,
-    )
+from lp.services.timeout import get_default_timeout_function, reduced_timeout
 
 
 @implementer(IDiff)
 class Diff(SQLBase):
     """See `IDiff`."""
 
-    diff_text = ForeignKey(foreignKey='LibraryFileAlias')
+    diff_text = ForeignKey(foreignKey="LibraryFileAlias")
 
     diff_lines_count = IntCol()
 
-    _diffstat = StringCol(dbName='diffstat')
+    _diffstat = StringCol(dbName="diffstat")
 
     def _get_diffstat(self):
         if self._diffstat is None:
             return None
-        return {key: tuple(value)
-                    for key, value
-                    in simplejson.loads(self._diffstat).items()}
+        return {
+            key: tuple(value)
+            for key, value in simplejson.loads(self._diffstat).items()
+        }
 
     def _set_diffstat(self, diffstat):
         if diffstat is None:
@@ -98,11 +80,11 @@ class Diff(SQLBase):
     @property
     def text(self):
         if self.diff_text is None:
-            return ''
+            return ""
         else:
             with reduced_timeout(
-                    0.01, webapp_max=2.0,
-                    default=LIBRARIAN_SERVER_DEFAULT_TIMEOUT):
+                0.01, webapp_max=2.0, default=LIBRARIAN_SERVER_DEFAULT_TIMEOUT
+            ):
                 timeout = get_default_timeout_function()()
             self.diff_text.open(timeout)
             try:
@@ -110,9 +92,9 @@ class Diff(SQLBase):
                 # Attempt to decode the diff somewhat intelligently,
                 # although this may not be a great heuristic.
                 try:
-                    return diff_bytes.decode('utf-8')
+                    return diff_bytes.decode("utf-8")
                 except UnicodeDecodeError:
-                    return diff_bytes.decode('windows-1252', 'replace')
+                    return diff_bytes.decode("windows-1252", "replace")
             finally:
                 self.diff_text.close()
 
@@ -126,8 +108,13 @@ class Diff(SQLBase):
         return diff_size > config.diff.max_read_size
 
     @classmethod
-    def mergePreviewFromBranches(cls, source_branch, source_revision,
-                                 target_branch, prerequisite_branch=None):
+    def mergePreviewFromBranches(
+        cls,
+        source_branch,
+        source_revision,
+        target_branch,
+        prerequisite_branch=None,
+    ):
         """Generate a merge preview diff from the supplied branches.
 
         :param source_branch: The branch that will be merged.
@@ -147,23 +134,38 @@ class Diff(SQLBase):
             merge_target = target_branch.basis_tree()
             if prerequisite_branch is not None:
                 prereq_revision = cls._getLCA(
-                    source_branch, source_revision, prerequisite_branch)
+                    source_branch, source_revision, prerequisite_branch
+                )
                 from_tree, _ignored_conflicts = cls._getMergedTree(
-                    prerequisite_branch, prereq_revision, target_branch,
-                    merge_target, cleanups)
+                    prerequisite_branch,
+                    prereq_revision,
+                    target_branch,
+                    merge_target,
+                    cleanups,
+                )
             else:
                 from_tree = merge_target
             to_tree, conflicts = cls._getMergedTree(
-                source_branch, source_revision, target_branch,
-                merge_target, cleanups)
+                source_branch,
+                source_revision,
+                target_branch,
+                merge_target,
+                cleanups,
+            )
             return cls.fromTrees(from_tree, to_tree), conflicts
         finally:
             for cleanup in reversed(cleanups):
                 cleanup()
 
     @classmethod
-    def _getMergedTree(cls, source_branch, source_revision, target_branch,
-                  merge_target, cleanups):
+    def _getMergedTree(
+        cls,
+        source_branch,
+        source_revision,
+        target_branch,
+        merge_target,
+        cleanups,
+    ):
         """Return a tree that is the result of a merge.
 
         :param source_branch: The branch to merge.
@@ -176,11 +178,15 @@ class Diff(SQLBase):
         """
         lca = cls._getLCA(source_branch, source_revision, target_branch)
         merge_base = source_branch.repository.revision_tree(lca)
-        merge_source = source_branch.repository.revision_tree(
-            source_revision)
+        merge_source = source_branch.repository.revision_tree(source_revision)
         merger = Merge3Merger(
-            merge_target, merge_target, merge_base, merge_source,
-            this_branch=target_branch, do_merge=False)
+            merge_target,
+            merge_target,
+            merge_base,
+            merge_source,
+            this_branch=target_branch,
+            do_merge=False,
+        )
 
         def dummy_warning(self, *args, **kwargs):
             pass
@@ -202,10 +208,10 @@ class Diff(SQLBase):
         :param source_revision: The revision of the source branch.
         :param target_branch: The branch to merge into.
         """
-        graph = target_branch.repository.get_graph(
-            source_branch.repository)
+        graph = target_branch.repository.get_graph(source_branch.repository)
         return graph.find_unique_lca(
-            source_revision, target_branch.last_revision())
+            source_revision, target_branch.last_revision()
+        )
 
     @classmethod
     def fromTrees(klass, from_tree, to_tree, filename=None):
@@ -215,8 +221,9 @@ class Diff(SQLBase):
         :to_tree: The new tree in the diff.
         """
         diff_content = io.BytesIO()
-        show_diff_trees(from_tree, to_tree, diff_content, old_label='',
-                        new_label='')
+        show_diff_trees(
+            from_tree, to_tree, diff_content, old_label="", new_label=""
+        )
         return klass.fromFileAtEnd(diff_content, filename)
 
     @classmethod
@@ -227,8 +234,9 @@ class Diff(SQLBase):
         return cls.fromFile(diff_content, size, filename)
 
     @classmethod
-    def fromFile(cls, diff_content, size, filename=None,
-                 strip_prefix_segments=0):
+    def fromFile(
+        cls, diff_content, size, filename=None, strip_prefix_segments=0
+    ):
         """Create a Diff from a textual diff.
 
         :diff_content: The diff text, as `bytes`.
@@ -239,19 +247,20 @@ class Diff(SQLBase):
         if size == 0:
             diff_text = None
             diff_lines_count = 0
-            diff_content_bytes = ''
+            diff_content_bytes = ""
         else:
             if filename is None:
-                filename = str(uuid1()) + '.txt'
+                filename = str(uuid1()) + ".txt"
             diff_text = getUtility(ILibraryFileAliasSet).create(
-                filename, size, diff_content, 'text/x-diff', restricted=True)
+                filename, size, diff_content, "text/x-diff", restricted=True
+            )
             diff_content.seek(0)
             diff_content_bytes = diff_content.read(size)
-            diff_lines_count = len(diff_content_bytes.strip().split(b'\n'))
+            diff_lines_count = len(diff_content_bytes.strip().split(b"\n"))
         try:
             diffstat = cls.generateDiffstat(
-                diff_content_bytes,
-                strip_prefix_segments=strip_prefix_segments)
+                diff_content_bytes, strip_prefix_segments=strip_prefix_segments
+            )
         except Exception:
             getUtility(IErrorReportingUtility).raising(sys.exc_info())
             # Set the diffstat to be empty.
@@ -264,9 +273,13 @@ class Diff(SQLBase):
             for path, (added, removed) in diffstat.items():
                 added_lines_count += added
                 removed_lines_count += removed
-        return cls(diff_text=diff_text, diff_lines_count=diff_lines_count,
-                   diffstat=diffstat, added_lines_count=added_lines_count,
-                   removed_lines_count=removed_lines_count)
+        return cls(
+            diff_text=diff_text,
+            diff_lines_count=diff_lines_count,
+            diffstat=diffstat,
+            added_lines_count=added_lines_count,
+            removed_lines_count=removed_lines_count,
+        )
 
     @staticmethod
     def generateDiffstat(diff_bytes, strip_prefix_segments=0):
@@ -284,15 +297,16 @@ class Diff(SQLBase):
         for patch in patches:
             if not isinstance(patch, Patch):
                 continue
-            path = patch.newname.decode('UTF-8', 'replace').split('\t')[0]
+            path = patch.newname.decode("UTF-8", "replace").split("\t")[0]
             if strip_prefix_segments:
-                path = path.split('/', strip_prefix_segments)[-1]
+                path = path.split("/", strip_prefix_segments)[-1]
             file_stats[path] = tuple(patch.stats_values()[:2])
         return file_stats
 
     @classmethod
-    def generateIncrementalDiff(cls, old_revision, new_revision,
-            source_branch, ignore_branches):
+    def generateIncrementalDiff(
+        cls, old_revision, new_revision, source_branch, ignore_branches
+    ):
         """Return a Diff whose contents are an incremental diff.
 
         The Diff's contents will show the changes made between old_revision
@@ -310,64 +324,73 @@ class Diff(SQLBase):
             for branch in [source_branch] + ignore_branches:
                 stack.enter_context(read_locked(branch))
             diff_ignore_branches(
-                source_branch, ignore_branches,
+                source_branch,
+                ignore_branches,
                 six.ensure_binary(old_revision.revision_id),
-                six.ensure_binary(new_revision.revision_id), diff_content)
+                six.ensure_binary(new_revision.revision_id),
+                diff_content,
+            )
         return cls.fromFileAtEnd(diff_content)
 
 
 @implementer(IIncrementalDiff)
-@delegate_to(IDiff, context='diff')
+@delegate_to(IDiff, context="diff")
 class IncrementalDiff(Storm):
     """See `IIncrementalDiff."""
 
-    __storm_table__ = 'IncrementalDiff'
+    __storm_table__ = "IncrementalDiff"
 
     id = Int(primary=True, allow_none=False)
 
-    diff_id = Int(name='diff', allow_none=False)
+    diff_id = Int(name="diff", allow_none=False)
 
-    diff = Reference(diff_id, 'Diff.id')
+    diff = Reference(diff_id, "Diff.id")
 
     branch_merge_proposal_id = Int(
-        name='branch_merge_proposal', allow_none=False)
+        name="branch_merge_proposal", allow_none=False
+    )
 
     branch_merge_proposal = Reference(
-        branch_merge_proposal_id, "BranchMergeProposal.id")
+        branch_merge_proposal_id, "BranchMergeProposal.id"
+    )
 
-    old_revision_id = Int(name='old_revision', allow_none=False)
+    old_revision_id = Int(name="old_revision", allow_none=False)
 
-    old_revision = Reference(old_revision_id, 'Revision.id')
+    old_revision = Reference(old_revision_id, "Revision.id")
 
-    new_revision_id = Int(name='new_revision', allow_none=False)
+    new_revision_id = Int(name="new_revision", allow_none=False)
 
-    new_revision = Reference(new_revision_id, 'Revision.id')
+    new_revision = Reference(new_revision_id, "Revision.id")
 
 
 @implementer(IPreviewDiff)
-@delegate_to(IDiff, context='diff')
+@delegate_to(IDiff, context="diff")
 class PreviewDiff(Storm):
     """See `IPreviewDiff`."""
-    __storm_table__ = 'PreviewDiff'
+
+    __storm_table__ = "PreviewDiff"
 
     id = Int(primary=True)
 
-    diff_id = Int(name='diff')
-    diff = Reference(diff_id, 'Diff.id')
+    diff_id = Int(name="diff")
+    diff = Reference(diff_id, "Diff.id")
 
     source_revision_id = Unicode(allow_none=False)
 
     target_revision_id = Unicode(allow_none=False)
 
-    prerequisite_revision_id = Unicode(name='dependent_revision_id')
+    prerequisite_revision_id = Unicode(name="dependent_revision_id")
 
     branch_merge_proposal_id = Int(
-        name='branch_merge_proposal', allow_none=False)
+        name="branch_merge_proposal", allow_none=False
+    )
     branch_merge_proposal = Reference(
-        branch_merge_proposal_id, 'BranchMergeProposal.id')
+        branch_merge_proposal_id, "BranchMergeProposal.id"
+    )
 
     date_created = UtcDateTimeCol(
-        dbName='date_created', default=UTC_NOW, notNull=True)
+        dbName="date_created", default=UTC_NOW, notNull=True
+    )
 
     conflicts = Unicode()
 
@@ -383,15 +406,17 @@ class PreviewDiff(Storm):
         # navigator 'select' widget in the UI.
         if bmp.source_branch is not None:
             source_revision = bmp.source_branch.getBranchRevision(
-                revision_id=self.source_revision_id)
+                revision_id=self.source_revision_id
+            )
             if source_revision and source_revision.sequence:
-                source_rev = 'r{}'.format(source_revision.sequence)
+                source_rev = "r{}".format(source_revision.sequence)
             else:
                 source_rev = self.source_revision_id
             target_revision = bmp.target_branch.getBranchRevision(
-                revision_id=self.target_revision_id)
+                revision_id=self.target_revision_id
+            )
             if target_revision and target_revision.sequence:
-                target_rev = 'r{}'.format(target_revision.sequence)
+                target_rev = "r{}".format(target_revision.sequence)
             else:
                 target_rev = self.target_revision_id
         else:
@@ -402,11 +427,11 @@ class PreviewDiff(Storm):
             source_rev = self.source_revision_id[:7]
             target_rev = self.target_revision_id[:7]
 
-        return '{} into {}'.format(source_rev, target_rev)
+        return "{} into {}".format(source_rev, target_rev)
 
     @property
     def has_conflicts(self):
-        return self.conflicts is not None and self.conflicts != ''
+        return self.conflicts is not None and self.conflicts != ""
 
     @classmethod
     def fromBranchMergeProposal(cls, bmp):
@@ -426,15 +451,19 @@ class PreviewDiff(Storm):
             else:
                 prerequisite_branch = None
             diff, conflicts = Diff.mergePreviewFromBranches(
-                source_branch, source_revision, target_branch,
-                prerequisite_branch)
+                source_branch,
+                source_revision,
+                target_branch,
+                prerequisite_branch,
+            )
             preview = cls()
-            preview.source_revision_id = source_revision.decode('utf-8')
-            preview.target_revision_id = target_revision.decode('utf-8')
+            preview.source_revision_id = source_revision.decode("utf-8")
+            preview.target_revision_id = target_revision.decode("utf-8")
             preview.branch_merge_proposal = bmp
             preview.diff = diff
-            preview.conflicts = ''.join(
-                str(conflict) + '\n' for conflict in conflicts)
+            preview.conflicts = "".join(
+                str(conflict) + "\n" for conflict in conflicts
+            )
         else:
             source_repository = bmp.source_git_repository
             target_repository = bmp.target_git_repository
@@ -442,27 +471,45 @@ class PreviewDiff(Storm):
             path = target_repository.getInternalPath()
             if source_repository != target_repository:
                 path += ":%s" % source_repository.getInternalPath()
-            if (prerequisite_repository is not None and
-                    prerequisite_repository != source_repository and
-                    prerequisite_repository != target_repository):
+            if (
+                prerequisite_repository is not None
+                and prerequisite_repository != source_repository
+                and prerequisite_repository != target_repository
+            ):
                 path += ":%s" % prerequisite_repository.getInternalPath()
             response = getUtility(IGitHostingClient).getMergeDiff(
-                path, bmp.target_git_commit_sha1, bmp.source_git_commit_sha1,
-                prerequisite=bmp.prerequisite_git_commit_sha1)
+                path,
+                bmp.target_git_commit_sha1,
+                bmp.source_git_commit_sha1,
+                prerequisite=bmp.prerequisite_git_commit_sha1,
+            )
             conflicts = "".join(
-                "Conflict in %s\n" % path for path in response['conflicts'])
+                "Conflict in %s\n" % path for path in response["conflicts"]
+            )
             preview = cls.create(
-                bmp, response['patch'].encode('utf-8'),
-                bmp.source_git_commit_sha1, bmp.target_git_commit_sha1,
-                bmp.prerequisite_git_commit_sha1, conflicts,
-                strip_prefix_segments=1)
+                bmp,
+                response["patch"].encode("utf-8"),
+                bmp.source_git_commit_sha1,
+                bmp.target_git_commit_sha1,
+                bmp.prerequisite_git_commit_sha1,
+                conflicts,
+                strip_prefix_segments=1,
+            )
         del get_property_cache(bmp).preview_diffs
         del get_property_cache(bmp).preview_diff
         return preview
 
     @classmethod
-    def create(cls, bmp, diff_content, source_revision_id, target_revision_id,
-               prerequisite_revision_id, conflicts, strip_prefix_segments=0):
+    def create(
+        cls,
+        bmp,
+        diff_content,
+        source_revision_id,
+        target_revision_id,
+        prerequisite_revision_id,
+        conflicts,
+        strip_prefix_segments=0,
+    ):
         """Create a PreviewDiff with specified values.
 
         :param bmp: The `BranchMergeProposal` this diff references.
@@ -476,11 +523,14 @@ class PreviewDiff(Storm):
         :return: A `PreviewDiff` with specified values.
         """
         diff_content = six.ensure_binary(diff_content)
-        filename = str(uuid1()) + '.txt'
+        filename = str(uuid1()) + ".txt"
         size = len(diff_content)
         diff = Diff.fromFile(
-            io.BytesIO(diff_content), size, filename,
-            strip_prefix_segments=strip_prefix_segments)
+            io.BytesIO(diff_content),
+            size,
+            filename,
+            strip_prefix_segments=strip_prefix_segments,
+        )
 
         preview = cls()
         preview.branch_merge_proposal = bmp
@@ -499,17 +549,20 @@ class PreviewDiff(Storm):
         # are different from the tips of the source or target branches.
         bmp = self.branch_merge_proposal
         get_id = attrgetter(
-            'last_scanned_id' if bmp.source_branch else 'commit_sha1')
-        if (self.source_revision_id != get_id(bmp.merge_source) or
-            self.target_revision_id != get_id(bmp.merge_target)):
+            "last_scanned_id" if bmp.source_branch else "commit_sha1"
+        )
+        if self.source_revision_id != get_id(
+            bmp.merge_source
+        ) or self.target_revision_id != get_id(bmp.merge_target):
             return True
         return (
-            bmp.merge_prerequisite is not None and
-            self.prerequisite_revision_id != get_id(bmp.merge_prerequisite))
+            bmp.merge_prerequisite is not None
+            and self.prerequisite_revision_id != get_id(bmp.merge_prerequisite)
+        )
 
     def getFileByName(self, filename):
         """See `IPreviewDiff`."""
-        if filename == 'preview.diff' and self.diff_text is not None:
+        if filename == "preview.diff" and self.diff_text is not None:
             return self.diff_text
         else:
             raise NotFoundError(filename)

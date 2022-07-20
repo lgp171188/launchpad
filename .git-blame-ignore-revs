@@ -70,3 +70,11 @@ c606443bdb2f342593c9a7c9437cb70c01f85f29
 95cf83968d59453397dfbdcbe30556fc8004479a
 # apply black to lp.charms
 a6bed71f3d2fdbceae20c2d435c993e8bededdce
+# apply black to lp.code
+94d8e9842b7c92f3f9b7f514fb49ebdc9af7e413
+# apply black to lp.codehosting
+ed7d7b97b8fb4ebe92799f922b0fa9c4bd1714e8
+# apply black to lp.coop
+1e6ead9387a1d073eea9271fe8dc646bb22fa3d2
+# apply black to lp.oci
+06b1048510a0b65bb0a6fc46d4e063510b52b5f6

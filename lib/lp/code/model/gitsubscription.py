@@ -2,20 +2,17 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'GitSubscription',
-    ]
+    "GitSubscription",
+]
 
-from storm.locals import (
-    Int,
-    Reference,
-    )
+from storm.locals import Int, Reference
 from zope.interface import implementer
 
 from lp.code.enums import (
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
-    )
+)
 from lp.code.interfaces.gitsubscription import IGitSubscription
 from lp.code.security import GitSubscriptionEdit
 from lp.registry.interfaces.person import validate_person
@@ -29,30 +26,42 @@ from lp.services.database.stormbase import StormBase
 class GitSubscription(StormBase):
     """A relationship between a person and a Git repository."""
 
-    __storm_table__ = 'GitSubscription'
+    __storm_table__ = "GitSubscription"
 
     id = Int(primary=True)
 
-    person_id = Int(name='person', allow_none=False, validator=validate_person)
-    person = Reference(person_id, 'Person.id')
+    person_id = Int(name="person", allow_none=False, validator=validate_person)
+    person = Reference(person_id, "Person.id")
 
-    repository_id = Int(name='repository', allow_none=False)
-    repository = Reference(repository_id, 'GitRepository.id')
+    repository_id = Int(name="repository", allow_none=False)
+    repository = Reference(repository_id, "GitRepository.id")
 
     notification_level = DBEnum(
-        enum=BranchSubscriptionNotificationLevel, allow_none=False,
-        default=DEFAULT)
+        enum=BranchSubscriptionNotificationLevel,
+        allow_none=False,
+        default=DEFAULT,
+    )
     max_diff_lines = DBEnum(
-        enum=BranchSubscriptionDiffSize, allow_none=True, default=DEFAULT)
+        enum=BranchSubscriptionDiffSize, allow_none=True, default=DEFAULT
+    )
     review_level = DBEnum(
-        enum=CodeReviewNotificationLevel, allow_none=False, default=DEFAULT)
+        enum=CodeReviewNotificationLevel, allow_none=False, default=DEFAULT
+    )
 
     subscribed_by_id = Int(
-        name='subscribed_by', allow_none=False, validator=validate_person)
-    subscribed_by = Reference(subscribed_by_id, 'Person.id')
+        name="subscribed_by", allow_none=False, validator=validate_person
+    )
+    subscribed_by = Reference(subscribed_by_id, "Person.id")
 
-    def __init__(self, person, repository, notification_level, max_diff_lines,
-                 review_level, subscribed_by):
+    def __init__(
+        self,
+        person,
+        repository,
+        notification_level,
+        max_diff_lines,
+        review_level,
+        subscribed_by,
+    ):
         super().__init__()
         self.person = person
         self.repository = repository

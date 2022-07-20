@@ -4,32 +4,30 @@
 """Base class view for sourcepackagerecipe listings."""
 
 __all__ = [
-    'BranchRecipeListingView',
-    'HasRecipesMenuMixin',
-    'PersonRecipeListingView',
-    'ProductRecipeListingView',
-    ]
+    "BranchRecipeListingView",
+    "HasRecipesMenuMixin",
+    "PersonRecipeListingView",
+    "ProductRecipeListingView",
+]
 
 
 from lp.code.browser.decorations import DecoratedBranch
 from lp.code.interfaces.branch import IBranch
 from lp.services.feeds.browser import FeedsMixin
-from lp.services.webapp import (
-    LaunchpadView,
-    Link,
-    )
+from lp.services.webapp import LaunchpadView, Link
 
 
 class HasRecipesMenuMixin:
     """A mixin for context menus for objects that implement IHasRecipes."""
 
     def view_recipes(self):
-        text = 'View source package recipes'
+        text = "View source package recipes"
         enabled = False
         if self.context.recipes.count():
             enabled = True
         return Link(
-            '+recipes', text, icon='info', enabled=enabled, site='code')
+            "+recipes", text, icon="info", enabled=enabled, site="code"
+        )
 
 
 class RecipeListingView(LaunchpadView, FeedsMixin):
@@ -41,8 +39,9 @@ class RecipeListingView(LaunchpadView, FeedsMixin):
 
     @property
     def page_title(self):
-        return 'Source Package Recipes for %(display_name)s' % {
-            'display_name': self.context.display_name}
+        return "Source Package Recipes for %(display_name)s" % {
+            "display_name": self.context.display_name
+        }
 
 
 class BranchRecipeListingView(RecipeListingView):
@@ -53,8 +52,9 @@ class BranchRecipeListingView(RecipeListingView):
         super().initialize()
         # Replace our context with a decorated branch, if it is not already
         # decorated.
-        if (IBranch.providedBy(self.context) and
-                not isinstance(self.context, DecoratedBranch)):
+        if IBranch.providedBy(self.context) and not isinstance(
+            self.context, DecoratedBranch
+        ):
             self.context = DecoratedBranch(self.context)
 
 

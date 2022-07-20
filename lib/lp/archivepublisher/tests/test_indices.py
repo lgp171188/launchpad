@@ -259,7 +259,7 @@ class TestNativeArchiveIndexes(TestNativePublishingBase):
     def testBinaryStanzaDescription(self):
         """Check the description field.
 
-        The description field should formated as:
+        The description field should be formatted as:
 
         Description: <single line synopsis>
          <extended description over several lines>
@@ -267,7 +267,7 @@ class TestNativeArchiveIndexes(TestNativePublishingBase):
         The extended description should allow the following formatting
         actions supported by the dpkg-friend tools:
 
-         * lines to be wraped should start with a space.
+         * lines to be wrapped should start with a space.
          * lines to be preserved empty should start with single space followed
            by a single full stop (DOT).
          * lines to be presented in Verbatim should start with two or

@@ -4,10 +4,10 @@
 """Interfaces for handling credentials for OCI registry actions."""
 
 __all__ = [
-    'IOCIPushRule',
-    'IOCIPushRuleSet',
-    'OCIPushRuleAlreadyExists',
-    ]
+    "IOCIPushRule",
+    "IOCIPushRuleSet",
+    "OCIPushRuleAlreadyExists",
+]
 
 import http.client
 
@@ -20,13 +20,10 @@ from lazr.restful.declarations import (
     mutator_for,
     operation_for_version,
     operation_parameters,
-    )
+)
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Int,
-    TextLine,
-    )
+from zope.schema import Int, TextLine
 
 from lp import _
 from lp.oci.interfaces.ocirecipe import IOCIRecipe
@@ -36,13 +33,14 @@ from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
 @error_status(http.client.CONFLICT)
 class OCIPushRuleAlreadyExists(Exception):
     """A new OCIPushRuleAlreadyExists was added with the
-       same details as an existing one.
+    same details as an existing one.
     """
 
     def __init__(self):
         super().__init__(
             "A push rule already exists with the same URL, image name, "
-            "and credentials")
+            "and credentials"
+        )
 
 
 class IOCIPushRuleView(Interface):
@@ -52,18 +50,25 @@ class IOCIPushRuleView(Interface):
 
     id = Int(title=_("ID"), required=False, readonly=True)
 
-    registry_url = exported(TextLine(
-        title=_("Registry URL"),
-        description=_(
-            "The registry URL for the credentials of this push rule"),
-        required=True,
-        readonly=True))
+    registry_url = exported(
+        TextLine(
+            title=_("Registry URL"),
+            description=_(
+                "The registry URL for the credentials of this push rule"
+            ),
+            required=True,
+            readonly=True,
+        )
+    )
 
-    username = exported(TextLine(
-        title=_("Username"),
-        description=_("The username for the credentials, if available."),
-        required=True,
-        readonly=True))
+    username = exported(
+        TextLine(
+            title=_("Username"),
+            description=_("The username for the credentials, if available."),
+            required=True,
+            readonly=True,
+        )
+    )
 
 
 class IOCIPushRuleEditableAttributes(Interface):
@@ -77,24 +82,30 @@ class IOCIPushRuleEditableAttributes(Interface):
         title=_("OCI recipe"),
         description=_("The recipe for which the rule is defined."),
         required=True,
-        readonly=False)
+        readonly=False,
+    )
 
     registry_credentials = Reference(
         IOCIRegistryCredentials,
         title=_("Registry credentials"),
         description=_("The registry credentials to use."),
         required=True,
-        readonly=False)
+        readonly=False,
+    )
 
-    image_name = exported(TextLine(
-        title=_("Image name"),
-        description=_("The intended name of the image on the registry."),
-        required=True,
-        readonly=True))
+    image_name = exported(
+        TextLine(
+            title=_("Image name"),
+            description=_("The intended name of the image on the registry."),
+            required=True,
+            readonly=True,
+        )
+    )
 
     @mutator_for(image_name)
     @operation_parameters(
-        image_name=TextLine(title=_("Image name"), required=True))
+        image_name=TextLine(title=_("Image name"), required=True)
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def setNewImageName(image_name):
@@ -113,9 +124,11 @@ class IOCIPushRuleEdit(Interface):
 
 
 @exported_as_webservice_entry(
-    publish_web_link=True, as_of="devel", singular_name="oci_push_rule")
-class IOCIPushRule(IOCIPushRuleEdit, IOCIPushRuleEditableAttributes,
-                   IOCIPushRuleView):
+    publish_web_link=True, as_of="devel", singular_name="oci_push_rule"
+)
+class IOCIPushRule(
+    IOCIPushRuleEdit, IOCIPushRuleEditableAttributes, IOCIPushRuleView
+):
     """A rule for pushing builds of an OCI recipe to a registry."""
 
 

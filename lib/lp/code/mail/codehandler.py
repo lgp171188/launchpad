@@ -16,29 +16,22 @@ from lp.code.errors import UserNotBranchReviewer
 from lp.code.interfaces.branchmergeproposal import IBranchMergeProposalGetter
 from lp.services.config import config
 from lp.services.database.sqlobject import SQLObjectNotFound
-from lp.services.mail.commands import (
-    EmailCommand,
-    EmailCommandCollection,
-    )
+from lp.services.mail.commands import EmailCommand, EmailCommandCollection
 from lp.services.mail.helpers import (
+    IncomingEmailError,
     ensure_not_weakly_authenticated,
     get_error_message,
     get_main_body,
     get_person_or_team,
-    IncomingEmailError,
     parse_commands,
-    )
-from lp.services.mail.interfaces import (
-    EmailProcessingError,
-    IMailHandler,
-    )
+)
+from lp.services.mail.interfaces import EmailProcessingError, IMailHandler
 from lp.services.mail.notification import send_process_error_notification
 from lp.services.mail.sendmail import simple_sendmail
 from lp.services.messages.interfaces.message import IMessageSet
 from lp.services.webapp.interfaces import ILaunchBag
 
-
-error_templates = os.path.join(os.path.dirname(__file__), 'errortemplates')
+error_templates = os.path.join(os.path.dirname(__file__), "errortemplates")
 
 
 class BadBranchMergeProposalAddress(Exception):
@@ -88,32 +81,34 @@ class VoteEmailCommand(CodeReviewEmailCommand):
     sort_order = 0
 
     _vote_alias = {
-        '+1': CodeReviewVote.APPROVE,
-        '+0': CodeReviewVote.ABSTAIN,
-        '0': CodeReviewVote.ABSTAIN,
-        '-0': CodeReviewVote.ABSTAIN,
-        '-1': CodeReviewVote.DISAPPROVE,
-        'needsfixing': CodeReviewVote.NEEDS_FIXING,
-        'needs-fixing': CodeReviewVote.NEEDS_FIXING,
-        'needsinfo': CodeReviewVote.NEEDS_INFO,
-        'needs-info': CodeReviewVote.NEEDS_INFO,
-        'needsinformation': CodeReviewVote.NEEDS_INFO,
-        'needs_information': CodeReviewVote.NEEDS_INFO,
-        'needs-information': CodeReviewVote.NEEDS_INFO,
-        'needsresubmitting': CodeReviewVote.NEEDS_RESUBMITTING,
-        'needs-resubmitting': CodeReviewVote.NEEDS_RESUBMITTING,
-        'resubmit': CodeReviewVote.NEEDS_RESUBMITTING,
-        }
+        "+1": CodeReviewVote.APPROVE,
+        "+0": CodeReviewVote.ABSTAIN,
+        "0": CodeReviewVote.ABSTAIN,
+        "-0": CodeReviewVote.ABSTAIN,
+        "-1": CodeReviewVote.DISAPPROVE,
+        "needsfixing": CodeReviewVote.NEEDS_FIXING,
+        "needs-fixing": CodeReviewVote.NEEDS_FIXING,
+        "needsinfo": CodeReviewVote.NEEDS_INFO,
+        "needs-info": CodeReviewVote.NEEDS_INFO,
+        "needsinformation": CodeReviewVote.NEEDS_INFO,
+        "needs_information": CodeReviewVote.NEEDS_INFO,
+        "needs-information": CodeReviewVote.NEEDS_INFO,
+        "needsresubmitting": CodeReviewVote.NEEDS_RESUBMITTING,
+        "needs-resubmitting": CodeReviewVote.NEEDS_RESUBMITTING,
+        "resubmit": CodeReviewVote.NEEDS_RESUBMITTING,
+    }
 
     def execute(self, context):
         """Extract the vote and tags from the args."""
         if len(self.string_args) == 0:
             raise EmailProcessingError(
                 get_error_message(
-                    'num-arguments-mismatch.txt',
-                    command_name='review',
-                    num_arguments_expected='one or more',
-                    num_arguments_got='0'))
+                    "num-arguments-mismatch.txt",
+                    command_name="review",
+                    num_arguments_expected="one or more",
+                    num_arguments_got="0",
+                )
+            )
 
         vote_string = self.string_args[0]
         vote_tag_list = self.string_args[1:]
@@ -125,18 +120,23 @@ class VoteEmailCommand(CodeReviewEmailCommand):
             if context.vote is None:
                 # Replace the _ with - in the names of the items.
                 # Slightly easier to type and read.
-                valid_votes = ', '.join(sorted(
-                    v.name.lower().replace('_', '-')
-                    for v in CodeReviewVote.items.items))
+                valid_votes = ", ".join(
+                    sorted(
+                        v.name.lower().replace("_", "-")
+                        for v in CodeReviewVote.items.items
+                    )
+                )
                 raise EmailProcessingError(
                     get_error_message(
-                        'dbschema-command-wrong-argument.txt',
-                        command_name='review',
+                        "dbschema-command-wrong-argument.txt",
+                        command_name="review",
                         arguments=valid_votes,
-                        example_argument='needs-fixing'))
+                        example_argument="needs-fixing",
+                    )
+                )
 
         if len(vote_tag_list) > 0:
-            context.vote_tags = ' '.join(vote_tag_list)
+            context.vote_tags = " ".join(vote_tag_list)
 
 
 class UpdateStatusEmailCommand(CodeReviewEmailCommand):
@@ -153,28 +153,32 @@ class UpdateStatusEmailCommand(CodeReviewEmailCommand):
         # This is what the browser code does right now.
         rev_id = context.merge_proposal.source_branch.last_scanned_id
         try:
-            if new_status in ('approved', 'approve'):
+            if new_status in ("approved", "approve"):
                 if context.vote is None:
                     context.vote = CodeReviewVote.APPROVE
                 context.merge_proposal.approveBranch(context.user, rev_id)
-            elif new_status in ('rejected', 'reject'):
+            elif new_status in ("rejected", "reject"):
                 if context.vote is None:
                     context.vote = CodeReviewVote.DISAPPROVE
                 context.merge_proposal.rejectBranch(context.user, rev_id)
             else:
                 raise EmailProcessingError(
                     get_error_message(
-                        'dbschema-command-wrong-argument.txt',
+                        "dbschema-command-wrong-argument.txt",
                         command_name=self.name,
-                        arguments='approved, rejected',
-                        example_argument='approved'))
+                        arguments="approved, rejected",
+                        example_argument="approved",
+                    )
+                )
         except (UserNotBranchReviewer, Unauthorized):
             raise EmailProcessingError(
                 get_error_message(
-                    'user-not-reviewer.txt',
+                    "user-not-reviewer.txt",
                     error_templates=error_templates,
                     command_name=self.name,
-                    target=context.merge_proposal.target_branch.bzr_identity))
+                    target=context.merge_proposal.target_branch.bzr_identity,
+                )
+            )
 
 
 class AddReviewerEmailCommand(CodeReviewEmailCommand):
@@ -182,47 +186,56 @@ class AddReviewerEmailCommand(CodeReviewEmailCommand):
 
     def execute(self, context):
         reviewer, review_tags = CodeEmailCommands.parseReviewRequest(
-            self.name, self.string_args)
+            self.name, self.string_args
+        )
         context.merge_proposal.nominateReviewer(
-            reviewer, context.user, review_tags,
-            _notify_listeners=context.notify_event_listeners)
+            reviewer,
+            context.user,
+            review_tags,
+            _notify_listeners=context.notify_event_listeners,
+        )
 
 
 class CodeEmailCommands(EmailCommandCollection):
     """A colleciton of email commands for code."""
 
     _commands = {
-        'vote': VoteEmailCommand,
-        'review': VoteEmailCommand,
-        'status': UpdateStatusEmailCommand,
-        'merge': UpdateStatusEmailCommand,
-        'reviewer': AddReviewerEmailCommand,
-        }
+        "vote": VoteEmailCommand,
+        "review": VoteEmailCommand,
+        "status": UpdateStatusEmailCommand,
+        "merge": UpdateStatusEmailCommand,
+        "reviewer": AddReviewerEmailCommand,
+    }
 
     @classmethod
     def getCommands(klass, message_body):
         """Extract the commands from the message body."""
         if message_body is None:
             return []
-        commands = [klass.get(name=name, string_args=args) for
-                    name, args in parse_commands(message_body,
-                                                 klass.parsingParameters())]
-        return sorted(commands, key=operator.attrgetter('sort_order'))
+        commands = [
+            klass.get(name=name, string_args=args)
+            for name, args in parse_commands(
+                message_body, klass.parsingParameters()
+            )
+        ]
+        return sorted(commands, key=operator.attrgetter("sort_order"))
 
     @classmethod
     def parseReviewRequest(klass, op_name, string_args):
         if len(string_args) == 0:
             raise EmailProcessingError(
                 get_error_message(
-                    'num-arguments-mismatch.txt',
+                    "num-arguments-mismatch.txt",
                     command_name=op_name,
-                    num_arguments_expected='one or more',
-                    num_arguments_got='0'))
+                    num_arguments_expected="one or more",
+                    num_arguments_got="0",
+                )
+            )
 
         # Pop the first arg as the reviewer.
         reviewer = get_person_or_team(string_args.pop(0))
         if len(string_args) > 0:
-            review_tags = ' '.join(string_args)
+            review_tags = " ".join(string_args)
         else:
             review_tags = None
         return (reviewer, review_tags)
@@ -232,7 +245,7 @@ class CodeEmailCommands(EmailCommandCollection):
 class CodeHandler:
     """Mail handler for the code domain."""
 
-    addr_pattern = re.compile(r'(mp\+)([^@]+).*')
+    addr_pattern = re.compile(r"(mp\+)([^@]+).*")
     allow_unknown_users = False
 
     def process(self, mail, email_addr, file_alias):
@@ -241,19 +254,25 @@ class CodeHandler:
         Emails may be converted to CodeReviewComments, and / or
         deferred to jobs to create BranchMergeProposals.
         """
-        if email_addr.startswith('merge@'):
-            body = get_error_message('mergedirectivenotsupported.txt')
+        if email_addr.startswith("merge@"):
+            body = get_error_message("mergedirectivenotsupported.txt")
             simple_sendmail(
-                config.canonical.noreply_from_address, [mail.get('from')],
-                'Merge directive not supported.', body)
+                config.canonical.noreply_from_address,
+                [mail.get("from")],
+                "Merge directive not supported.",
+                body,
+            )
         else:
             try:
                 return self.processComment(mail, email_addr, file_alias)
             except AssertionError:
-                body = get_error_message('messagemissingsubject.txt')
-                simple_sendmail('merge@code.launchpad.net',
-                    [mail.get('from')],
-                    'Error Creating Merge Proposal', body)
+                body = get_error_message("messagemissingsubject.txt")
+                simple_sendmail(
+                    "merge@code.launchpad.net",
+                    [mail.get("from")],
+                    "Error Creating Merge Proposal",
+                    body,
+                )
                 return True
 
     def processCommands(self, context, commands):
@@ -261,7 +280,8 @@ class CodeHandler:
         processing_errors = []
         try:
             with BranchMergeProposalNoPreviewDiffDelta.monitor(
-                    context.merge_proposal):
+                context.merge_proposal
+            ):
                 for command in commands:
                     try:
                         command.execute(context)
@@ -271,8 +291,8 @@ class CodeHandler:
             if len(processing_errors) > 0:
                 errors, commands = zip(*processing_errors)
                 raise IncomingEmailError(
-                    '\n'.join(str(error) for error in errors),
-                    list(commands))
+                    "\n".join(str(error) for error in errors), list(commands)
+                )
         finally:
             # Avoid traceback reference cycles.
             del processing_errors
@@ -293,9 +313,10 @@ class CodeHandler:
         except NonExistantBranchMergeProposalAddress:
             send_process_error_notification(
                 str(user.preferredemail.email),
-                'Submit Request Failure',
-                'There is no merge proposal at %s' % email_addr,
-                mail)
+                "Submit Request Failure",
+                "There is no merge proposal at %s" % email_addr,
+                mail,
+            )
             return True
         except BadBranchMergeProposalAddress:
             return False
@@ -307,28 +328,33 @@ class CodeHandler:
 
             # Make sure that the email is in fact signed.
             if processed_count > 0:
-                ensure_not_weakly_authenticated(mail, 'code review')
+                ensure_not_weakly_authenticated(mail, "code review")
 
             message = getUtility(IMessageSet).fromEmail(
                 mail.parsed_bytes,
                 owner=getUtility(ILaunchBag).user,
                 filealias=file_alias,
-                parsed_message=mail)
+                parsed_message=mail,
+            )
             merge_proposal.createCommentFromMessage(
-                message, context.vote, context.vote_tags, mail)
+                message, context.vote, context.vote_tags, mail
+            )
 
         except IncomingEmailError as error:
             send_process_error_notification(
                 str(user.preferredemail.email),
-                'Submit Request Failure',
-                error.message, mail, error.failing_command)
+                "Submit Request Failure",
+                error.message,
+                mail,
+                error.failing_command,
+            )
             transaction.abort()
         return True
 
     @staticmethod
     def _getReplyAddress(mail):
         """The address to use for automatic replies."""
-        return mail.get('Reply-to', mail['From'])
+        return mail.get("Reply-to", mail["From"])
 
     @classmethod
     def getBranchMergeProposal(klass, email_addr):

@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'GitRefWidget',
-    ]
+    "GitRefWidget",
+]
 
 from zope.browserpage import ViewPageTemplateFile
 from zope.formlib.interfaces import (
@@ -11,13 +11,9 @@ from zope.formlib.interfaces import (
     IInputWidget,
     MissingInputError,
     WidgetInputError,
-    )
+)
 from zope.formlib.utility import setUpWidget
-from zope.formlib.widget import (
-    BrowserWidget,
-    InputErrors,
-    InputWidget,
-    )
+from zope.formlib.widget import BrowserWidget, InputErrors, InputWidget
 from zope.interface import implementer
 from zope.schema import Choice
 from zope.schema.interfaces import IChoice
@@ -30,7 +26,7 @@ from lp.services.fields import URIField
 from lp.services.webapp.interfaces import (
     IAlwaysSubmittedWidget,
     IMultiLineWidgetLayout,
-    )
+)
 
 
 class IGitRepositoryField(IChoice):
@@ -50,13 +46,15 @@ class GitRepositoryField(Choice):
         super().__init__(**kwargs)
         if allow_external:
             self._uri_field = URIField(
-                __name__=self.__name__, title=self.title,
+                __name__=self.__name__,
+                title=self.title,
                 allowed_schemes=["git", "http", "https"],
                 allow_userinfo=True,
                 allow_port=True,
                 allow_query=False,
                 allow_fragment=False,
-                trailing_slash=False)
+                trailing_slash=False,
+            )
         else:
             self._uri_field = None
 
@@ -80,7 +78,6 @@ class GitRepositoryField(Choice):
 
 
 class GitRepositoryPickerWidget(VocabularyPickerWidget):
-
     def convertTokensToValues(self, tokens):
         if self.context._uri_field is not None:
             try:
@@ -111,17 +108,23 @@ class GitRefWidget(BrowserWidget, InputWidget):
         path_vocabulary = "GitBranch" if self.require_branch else "GitRef"
         fields = [
             GitRepositoryField(
-                __name__="repository", title="Repository",
-                required=self.context.required, vocabulary="GitRepository",
-                allow_external=self.allow_external),
-            Choice(
-                __name__="path", title="Branch",
+                __name__="repository",
+                title="Repository",
                 required=self.context.required,
-                vocabulary=path_vocabulary),
-            ]
+                vocabulary="GitRepository",
+                allow_external=self.allow_external,
+            ),
+            Choice(
+                __name__="path",
+                title="Branch",
+                required=self.context.required,
+                vocabulary=path_vocabulary,
+            ),
+        ]
         for field in fields:
             setUpWidget(
-                self, field.__name__, field, IInputWidget, prefix=self.name)
+                self, field.__name__, field, IInputWidget, prefix=self.name
+            )
         self._widgets_set_up = True
 
     def setBranchFormatValidator(self, branch_validator):
@@ -148,9 +151,9 @@ class GitRefWidget(BrowserWidget, InputWidget):
 
     def hasInput(self):
         """See `IInputWidget`."""
-        return (
-            ("%s.repository" % self.name) in self.request.form or
-            ("%s.path" % self.name) in self.request.form)
+        return ("%s.repository" % self.name) in self.request.form or (
+            "%s.path" % self.name
+        ) in self.request.form
 
     def hasValidInput(self):
         """See `IInputWidget`."""
@@ -170,19 +173,26 @@ class GitRefWidget(BrowserWidget, InputWidget):
         except MissingInputError:
             if self.context.required:
                 raise WidgetInputError(
-                    self.name, self.label,
+                    self.name,
+                    self.label,
                     LaunchpadValidationError(
-                        "Please choose a Git repository."))
+                        "Please choose a Git repository."
+                    ),
+                )
             else:
                 return None
         except ConversionError:
             entered_name = self.request.form_ng.getOne(
-                "%s.repository" % self.name)
+                "%s.repository" % self.name
+            )
             raise WidgetInputError(
-                self.name, self.label,
+                self.name,
+                self.label,
                 LaunchpadValidationError(
                     "There is no Git repository named '%s' registered in "
-                    "Launchpad." % entered_name))
+                    "Launchpad." % entered_name
+                ),
+            )
         if self.path_widget.hasInput():
             # We've potentially just tried to change the repository that is
             # involved, or changing from a bzr branch to a git repo, so there
@@ -196,26 +206,31 @@ class GitRefWidget(BrowserWidget, InputWidget):
                 ref = self.path_widget.getInputValue()
             except ConversionError:
                 raise WidgetInputError(
-                    self.name, self.label,
+                    self.name,
+                    self.label,
                     LaunchpadValidationError(
                         "The repository at %s does not contain a branch named "
-                        "'%s'." % (
+                        "'%s'."
+                        % (
                             repository.display_name,
-                            self.path_widget._getFormInput())))
+                            self.path_widget._getFormInput(),
+                        )
+                    ),
+                )
         else:
             ref = None
         if not ref and (repository or self.context.required):
             raise WidgetInputError(
-                self.name, self.label,
-                LaunchpadValidationError(
-                    "Please enter a Git branch path."))
+                self.name,
+                self.label,
+                LaunchpadValidationError("Please enter a Git branch path."),
+            )
         if self.branch_validator and ref is not None:
             valid, message = self.branch_validator(ref)
             if not valid:
                 raise WidgetInputError(
-                    self.name, self.label,
-                    LaunchpadValidationError(
-                        message))
+                    self.name, self.label, LaunchpadValidationError(message)
+                )
         return ref
 
     def error(self):

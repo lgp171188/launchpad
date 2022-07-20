@@ -3,7 +3,7 @@
 
 """The processing of translated packages descriptions (ddtp) tarballs.
 
-DDTP (Debian Descripton Translation Project) aims to offer the description
+DDTP (Debian Description Translation Project) aims to offer the description
 of all supported packages translated in several languages.
 
 DDTP-TARBALL is a custom format upload supported by Launchpad infrastructure

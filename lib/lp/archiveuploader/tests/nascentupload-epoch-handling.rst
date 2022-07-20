@@ -166,7 +166,7 @@ it will be ignored (with the error message below) every cron.daily cycle.
     'REJECTED'
 
 We also detect a collision when publishing the newer 'epoched' version
-containing a orig file with diferent contents than the one already
+containing a orig file with different contents than the one already
 published in 'non-epoched' version:
 
     >>> bar_src_queue_epoch2.realiseUpload()

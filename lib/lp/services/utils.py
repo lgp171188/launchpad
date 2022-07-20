@@ -8,7 +8,7 @@ stuff.
 """
 
 __all__ = [
-    'AutoDecorate',
+    'AutoDecorateMetaClass',
     'CachingIterator',
     'decorate_with',
     'docstring_dedent',
@@ -50,28 +50,32 @@ from twisted.python.util import mergeFunctionMetadata
 from zope.security.proxy import isinstance as zope_isinstance
 
 
-def AutoDecorate(*decorators):
-    """Factory to generate metaclasses that automatically apply decorators.
-
-    AutoDecorate is a metaclass factory that can be used to make a class
+class AutoDecorateMetaClass(type):
+    """
+    AutoDecorateMetaClass is a metaclass that can be used to make a class
     implicitly wrap all of its methods with one or more decorators.
+
+    Usage::
+
+        class A(metaclass=AutoDecorateMetaClass):
+            __decorators = (...)
+
     """
 
-    class AutoDecorateMetaClass(type):
-
-        def __new__(cls, class_name, bases, class_dict):
-            new_class_dict = {}
+    def __new__(mcs, class_name, bases, class_dict):
+        class_dict = dict(class_dict)
+        decorators = class_dict.pop("_{}__decorators".format(class_name), None)
+        if decorators is not None:
             for name, value in class_dict.items():
                 if type(value) == FunctionType:
                     for decorator in decorators:
                         value = decorator(value)
                         assert callable(value), (
-                            "Decorator %s didn't return a callable."
-                            % repr(decorator))
-                new_class_dict[name] = value
-            return type.__new__(cls, class_name, bases, new_class_dict)
-
-    return AutoDecorateMetaClass
+                            "Decorator {} didn't return a callable."
+                            .format(repr(decorator))
+                        )
+                    class_dict[name] = value
+        return type.__new__(mcs, class_name, bases, class_dict)
 
 
 def iter_split(string, splitter, splits=None):

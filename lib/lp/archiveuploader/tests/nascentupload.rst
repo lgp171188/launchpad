@@ -197,8 +197,8 @@ ed_binary contains only one 'architecture dependent binary':
     >>> ed_binary_upload.is_ppa
     False
 
-As expected 'native' and 'hasorig' doesn't make any sense for binary
-uploads, so they are alway False:
+As expected 'native' and 'hasorig' don't make any sense for binary
+uploads, so they are always False:
 
     >>> has_native(ed_binary_upload)
     False
@@ -738,8 +738,8 @@ Import the test keys again since the transaction was aborted before.
     >>> from lp.testing.gpgkeys import import_public_test_keys
     >>> import_public_test_keys()
 
-When using 'insecure' policy, NascentUpload instace stores the DSC
-sigining key reference as an IGPGKey:
+When using 'insecure' policy, NascentUpload instance stores the DSC
+signing key reference as an IGPGKey:
 
     >>> bar_ok = NascentUpload.from_changesfile_path(
     ...     datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'),

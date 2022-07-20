@@ -9,33 +9,27 @@ from zope.formlib.interfaces import (
     IDisplayWidget,
     IInputWidget,
     WidgetInputError,
-    )
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+)
+from zope.interface import Interface, implementer
 
 from lp.app.validators import LaunchpadValidationError
 from lp.code.browser.widgets.gitrepositorytarget import (
     GitRepositoryTargetDisplayWidget,
     GitRepositoryTargetWidget,
-    )
+)
 from lp.registry.vocabularies import (
     DistributionSourcePackageVocabulary,
     DistributionVocabulary,
     ProductVocabulary,
-    )
+)
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.soyuz.model.binaryandsourcepackagename import (
     BinaryAndSourcePackageNameVocabulary,
-    )
-from lp.testing import (
-    TestCaseWithFactory,
-    verifyObject,
-    )
+)
+from lp.testing import TestCaseWithFactory, verifyObject
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -58,9 +52,11 @@ class TestGitRepositoryTargetWidgetBase:
         super().setUp()
         self.distribution = self.factory.makeDistribution(name="fnord")
         distroseries = self.factory.makeDistroSeries(
-            distribution=self.distribution)
+            distribution=self.distribution
+        )
         self.package = self.factory.makeDSPCache(
-            distroseries=distroseries, sourcepackagename="snarf")
+            distroseries=distroseries, sourcepackagename="snarf"
+        )
         self.project = self.factory.makeProduct("pting")
         field = Reference(__name__="target", schema=Interface, title="target")
         self.context = Thing()
@@ -71,13 +67,15 @@ class TestGitRepositoryTargetWidgetBase:
     def test_implements(self):
         self.assertTrue(verifyObject(IBrowserWidget, self.widget))
         self.assertTrue(
-            verifyObject(self.expected_widget_interface, self.widget))
+            verifyObject(self.expected_widget_interface, self.widget)
+        )
 
     def test_template(self):
         # The render template is setup.
         self.assertTrue(
             self.widget.template.filename.endswith("gitrepository-target.pt"),
-            "Template was not set up.")
+            "Template was not set up.",
+        )
 
     def test_default_option(self):
         # This project field is the default option.
@@ -89,13 +87,15 @@ class TestGitRepositoryTargetWidgetBase:
         self.assertTrue(self.widget._widgets_set_up)
         self.assertIsInstance(
             self.widget.distribution_widget.context.vocabulary,
-            DistributionVocabulary)
+            DistributionVocabulary,
+        )
         self.assertIsInstance(
             self.widget.package_widget.context.vocabulary,
-            BinaryAndSourcePackageNameVocabulary)
+            BinaryAndSourcePackageNameVocabulary,
+        )
         self.assertIsInstance(
-            self.widget.project_widget.context.vocabulary,
-            ProductVocabulary)
+            self.widget.project_widget.context.vocabulary, ProductVocabulary
+        )
 
     def test_setUpSubWidgets_second_call(self):
         # The setUpSubWidgets method exits early if a flag is set to
@@ -113,7 +113,8 @@ class TestGitRepositoryTargetWidgetBase:
             self.widget.setUpSubWidgets()
         self.assertIsInstance(
             self.widget.package_widget.context.vocabulary,
-            DistributionSourcePackageVocabulary)
+            DistributionSourcePackageVocabulary,
+        )
 
     def test_setUpOptions_default_project_checked(self):
         # The radio button options are composed of the setup widgets with
@@ -121,99 +122,119 @@ class TestGitRepositoryTargetWidgetBase:
         self.widget.setUpSubWidgets()
         self.widget.setUpOptions()
         self.assertEqual(
-            '<input class="radioType" ' + self.expected_disabled_attr +
-            'id="field.target.option.personal" name="field.target" '
+            '<input class="radioType" '
+            + self.expected_disabled_attr
+            + 'id="field.target.option.personal" name="field.target" '
             'type="radio" value="personal" />',
-            self.widget.options["personal"])
+            self.widget.options["personal"],
+        )
         self.assertEqual(
-            '<input class="radioType" ' + self.expected_disabled_attr +
-            'id="field.target.option.package" name="field.target" '
+            '<input class="radioType" '
+            + self.expected_disabled_attr
+            + 'id="field.target.option.package" name="field.target" '
             'type="radio" value="package" />',
-            self.widget.options["package"])
+            self.widget.options["package"],
+        )
         self.assertEqual(
-            '<input class="radioType" checked="checked" ' +
-            self.expected_disabled_attr +
-            'id="field.target.option.project" name="field.target" '
+            '<input class="radioType" checked="checked" '
+            + self.expected_disabled_attr
+            + 'id="field.target.option.project" name="field.target" '
             'type="radio" value="project" />',
-            self.widget.options["project"])
+            self.widget.options["project"],
+        )
 
     def test_setUpOptions_personal_checked(self):
         # The personal radio button is selected when the form is submitted
         # when the target field's value is 'personal'.
         form = {
             "field.target": "personal",
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.widget.setUpSubWidgets()
         self.widget.setUpOptions()
         self.assertEqual(
-            '<input class="radioType" checked="checked" ' +
-            self.expected_disabled_attr +
-            'id="field.target.option.personal" name="field.target" '
+            '<input class="radioType" checked="checked" '
+            + self.expected_disabled_attr
+            + 'id="field.target.option.personal" name="field.target" '
             'type="radio" value="personal" />',
-            self.widget.options["personal"])
+            self.widget.options["personal"],
+        )
         self.assertEqual(
-            '<input class="radioType" ' + self.expected_disabled_attr +
-            'id="field.target.option.package" name="field.target" '
+            '<input class="radioType" '
+            + self.expected_disabled_attr
+            + 'id="field.target.option.package" name="field.target" '
             'type="radio" value="package" />',
-            self.widget.options["package"])
+            self.widget.options["package"],
+        )
         self.assertEqual(
-            '<input class="radioType" ' + self.expected_disabled_attr +
-            'id="field.target.option.project" name="field.target" '
+            '<input class="radioType" '
+            + self.expected_disabled_attr
+            + 'id="field.target.option.project" name="field.target" '
             'type="radio" value="project" />',
-            self.widget.options["project"])
+            self.widget.options["project"],
+        )
 
     def test_setUpOptions_package_checked(self):
         # The package radio button is selected when the form is submitted
         # when the target field's value is 'package'.
         form = {
             "field.target": "package",
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.widget.setUpSubWidgets()
         self.widget.setUpOptions()
         self.assertEqual(
-            '<input class="radioType" ' + self.expected_disabled_attr +
-            'id="field.target.option.personal" name="field.target" '
+            '<input class="radioType" '
+            + self.expected_disabled_attr
+            + 'id="field.target.option.personal" name="field.target" '
             'type="radio" value="personal" />',
-            self.widget.options["personal"])
+            self.widget.options["personal"],
+        )
         self.assertEqual(
-            '<input class="radioType" checked="checked" ' +
-            self.expected_disabled_attr +
-            'id="field.target.option.package" name="field.target" '
+            '<input class="radioType" checked="checked" '
+            + self.expected_disabled_attr
+            + 'id="field.target.option.package" name="field.target" '
             'type="radio" value="package" />',
-            self.widget.options["package"])
+            self.widget.options["package"],
+        )
         self.assertEqual(
-            '<input class="radioType" ' + self.expected_disabled_attr +
-            'id="field.target.option.project" name="field.target" '
+            '<input class="radioType" '
+            + self.expected_disabled_attr
+            + 'id="field.target.option.project" name="field.target" '
             'type="radio" value="project" />',
-            self.widget.options["project"])
+            self.widget.options["project"],
+        )
 
     def test_setUpOptions_project_checked(self):
         # The project radio button is selected when the form is submitted
         # when the target field's value is 'project'.
         form = {
             "field.target": "project",
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.widget.setUpSubWidgets()
         self.widget.setUpOptions()
         self.assertEqual(
-            '<input class="radioType" ' + self.expected_disabled_attr +
-            'id="field.target.option.personal" name="field.target" '
+            '<input class="radioType" '
+            + self.expected_disabled_attr
+            + 'id="field.target.option.personal" name="field.target" '
             'type="radio" value="personal" />',
-            self.widget.options["personal"])
+            self.widget.options["personal"],
+        )
         self.assertEqual(
-            '<input class="radioType" ' + self.expected_disabled_attr +
-            'id="field.target.option.package" name="field.target" '
+            '<input class="radioType" '
+            + self.expected_disabled_attr
+            + 'id="field.target.option.package" name="field.target" '
             'type="radio" value="package" />',
-            self.widget.options["package"])
+            self.widget.options["package"],
+        )
         self.assertEqual(
-            '<input class="radioType" checked="checked" ' +
-            self.expected_disabled_attr +
-            'id="field.target.option.project" name="field.target" '
+            '<input class="radioType" checked="checked" '
+            + self.expected_disabled_attr
+            + 'id="field.target.option.project" name="field.target" '
             'type="radio" value="project" />',
-            self.widget.options["project"])
+            self.widget.options["project"],
+        )
 
     def test_setRenderedValue_personal(self):
         # Passing a person will set the widget's render state to 'personal'.
@@ -228,10 +249,12 @@ class TestGitRepositoryTargetWidgetBase:
         self.assertEqual("package", self.widget.default_option)
         self.assertEqual(
             self.distribution,
-            self.widget.distribution_widget._getCurrentValue())
+            self.widget.distribution_widget._getCurrentValue(),
+        )
         self.assertEqual(
             self.package.sourcepackagename,
-            self.widget.package_widget._getCurrentValue())
+            self.widget.package_widget._getCurrentValue(),
+        )
 
     def test_setRenderedValue_project(self):
         # Passing a project will set the widget's render state to 'project'.
@@ -239,7 +262,8 @@ class TestGitRepositoryTargetWidgetBase:
         self.widget.setRenderedValue(self.project)
         self.assertEqual("project", self.widget.default_option)
         self.assertEqual(
-            self.project, self.widget.project_widget._getCurrentValue())
+            self.project, self.widget.project_widget._getCurrentValue()
+        )
 
     def test_call(self):
         # The __call__ method sets up the widgets and the options.
@@ -254,7 +278,8 @@ class TestGitRepositoryTargetWidgetBase:
 
 
 class TestGitRepositoryTargetDisplayWidget(
-    TestGitRepositoryTargetWidgetBase, TestCaseWithFactory):
+    TestGitRepositoryTargetWidgetBase, TestCaseWithFactory
+):
     """Test the GitRepositoryTargetDisplayWidget class."""
 
     widget_factory = GitRepositoryTargetDisplayWidget
@@ -262,16 +287,17 @@ class TestGitRepositoryTargetDisplayWidget(
     expected_disabled_attr = 'disabled="disabled" '
     expected_ids = [
         "field.target.option.project",
-        ]
+    ]
 
 
 class TestGitRepositoryTargetWidget(
-    TestGitRepositoryTargetWidgetBase, TestCaseWithFactory):
+    TestGitRepositoryTargetWidgetBase, TestCaseWithFactory
+):
     """Test the GitRepositoryTargetWidget class."""
 
     widget_factory = GitRepositoryTargetWidget
     expected_widget_interface = IInputWidget
-    expected_disabled_attr = ''
+    expected_disabled_attr = ""
     expected_ids = [
         "field.target.distribution",
         "field.target.option.personal",
@@ -279,7 +305,7 @@ class TestGitRepositoryTargetWidget(
         "field.target.option.project",
         "field.target.package",
         "field.target.project",
-        ]
+    ]
 
     @property
     def form(self):
@@ -288,7 +314,7 @@ class TestGitRepositoryTargetWidget(
             "field.target.distribution": "fnord",
             "field.target.package": "snarf",
             "field.target.project": "pting",
-            }
+        }
 
     def test_hasInput_false(self):
         # hasInput is false when the widget's name is not in the form data.
@@ -345,10 +371,11 @@ class TestGitRepositoryTargetWidget(
         # An error is raised when the package is not published in the distro.
         form = self.form
         form["field.target"] = "package"
-        form["field.target.package"] = 'non-existent'
+        form["field.target.package"] = "non-existent"
         self.widget.request = LaunchpadTestRequest(form=form)
         message = (
-            "There is no package named 'non-existent' published in Fnord.")
+            "There is no package named 'non-existent' published in Fnord."
+        )
         e = self.assertRaises(WidgetInputError, self.widget.getInputValue)
         self.assertEqual(LaunchpadValidationError(message), e.errors)
         self.assertEqual(html_escape(message), self.widget.error())
@@ -358,7 +385,7 @@ class TestGitRepositoryTargetWidget(
         # the package sub field is empty.
         form = self.form
         form["field.target"] = "package"
-        form["field.target.package"] = ''
+        form["field.target.package"] = ""
         self.widget.request = LaunchpadTestRequest(form=form)
         message = "Please enter a package name"
         e = self.assertRaises(WidgetInputError, self.widget.getInputValue)
@@ -369,12 +396,13 @@ class TestGitRepositoryTargetWidget(
         # An error is raised when the distribution is invalid.
         form = self.form
         form["field.target"] = "package"
-        form["field.target.package"] = ''
-        form["field.target.distribution"] = 'non-existent'
+        form["field.target.package"] = ""
+        form["field.target.distribution"] = "non-existent"
         self.widget.request = LaunchpadTestRequest(form=form)
         message = (
             "There is no distribution named 'non-existent' registered in "
-            "Launchpad")
+            "Launchpad"
+        )
         e = self.assertRaises(WidgetInputError, self.widget.getInputValue)
         self.assertEqual(LaunchpadValidationError(message), e.errors)
         self.assertEqual(html_escape(message), self.widget.error())
@@ -406,7 +434,8 @@ class TestGitRepositoryTargetWidget(
         self.widget.request = LaunchpadTestRequest(form=form)
         message = (
             "There is no project named 'non-existent' registered in "
-            "Launchpad")
+            "Launchpad"
+        )
         e = self.assertRaises(WidgetInputError, self.widget.getInputValue)
         self.assertEqual(LaunchpadValidationError(message), e.errors)
         self.assertEqual(html_escape(message), self.widget.error())

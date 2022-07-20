@@ -4,9 +4,9 @@
 """Code import scheduler interfaces."""
 
 __all__ = [
-    'ICodeImportScheduler',
-    'ICodeImportSchedulerApplication',
-    ]
+    "ICodeImportScheduler",
+    "ICodeImportSchedulerApplication",
+]
 
 
 from zope.interface import Interface

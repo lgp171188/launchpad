@@ -4,15 +4,12 @@
 """View classes for Git repository listings."""
 
 __all__ = [
-    'PersonTargetGitListingView',
-    'TargetGitListingView',
-    ]
+    "PersonTargetGitListingView",
+    "TargetGitListingView",
+]
 
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 
 from lp.app.enums import PRIVATE_INFORMATION_TYPES
 from lp.code.browser.gitrepository import GitRefBatchNavigator
@@ -20,13 +17,13 @@ from lp.code.enums import GitListingSort
 from lp.code.interfaces.branchcollection import IBranchCollection
 from lp.code.interfaces.gitcollection import IGitCollection
 from lp.code.interfaces.gitnamespace import (
-    get_git_namespace,
     IGitNamespacePolicy,
-    )
+    get_git_namespace,
+)
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.personociproject import IPersonOCIProject
 from lp.registry.interfaces.personproduct import IPersonProduct
 from lp.services.config import config
@@ -44,20 +41,22 @@ class IGitRepositoryBatchNavigator(Interface):
 class GitRepositoryBatchNavigator(TableBatchNavigator):
     """Batch up Git repository listings."""
 
-    variable_name_prefix = 'repo'
+    variable_name_prefix = "repo"
 
     def __init__(self, view, repo_collection):
         super().__init__(
             repo_collection.getRepositories(
                 eager_load=True,
-                sort_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST),
-            view.request, size=config.launchpad.branchlisting_batch_size)
+                sort_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
+            ),
+            view.request,
+            size=config.launchpad.branchlisting_batch_size,
+        )
         self.view = view
         self.column_count = 2
 
 
 class BaseGitListingView(LaunchpadView):
-
     @property
     def target(self):
         raise NotImplementedError()
@@ -112,7 +111,7 @@ class BaseGitListingView(LaunchpadView):
 
 class TargetGitListingView(BaseGitListingView):
 
-    page_title = 'Git'
+    page_title = "Git"
 
     @property
     def target(self):
@@ -120,11 +119,10 @@ class TargetGitListingView(BaseGitListingView):
 
     @cachedproperty
     def default_git_repository(self):
-        repo = getUtility(IGitRepositorySet).getDefaultRepository(
-            self.context)
+        repo = getUtility(IGitRepositorySet).getDefaultRepository(self.context)
         if repo is None:
             return None
-        elif check_permission('launchpad.View', repo):
+        elif check_permission("launchpad.View", repo):
             return repo
         else:
             return None
@@ -132,11 +130,11 @@ class TargetGitListingView(BaseGitListingView):
 
 class PersonTargetGitListingView(BaseGitListingView):
 
-    page_title = 'Git'
+    page_title = "Git"
 
     @property
     def label(self):
-        return 'Git repositories for %s' % self.target.displayname
+        return "Git repositories for %s" % self.target.displayname
 
     @property
     def target(self):
@@ -152,10 +150,11 @@ class PersonTargetGitListingView(BaseGitListingView):
     @cachedproperty
     def default_git_repository(self):
         repo = getUtility(IGitRepositorySet).getDefaultRepositoryForOwner(
-            self.context.person, self.target)
+            self.context.person, self.target
+        )
         if repo is None:
             return None
-        elif check_permission('launchpad.View', repo):
+        elif check_permission("launchpad.View", repo):
             return repo
         else:
             return None
@@ -168,7 +167,8 @@ class OCIProjectGitListingView(TargetGitListingView):
 
 
 class PersonDistributionSourcePackageGitListingView(
-        PersonTargetGitListingView):
+    PersonTargetGitListingView
+):
 
     # PersonDistributionSourcePackage:+branches doesn't exist.
     show_bzr_link = False
@@ -182,6 +182,6 @@ class PersonOCIProjectGitListingView(PersonTargetGitListingView):
 
 class PlainGitListingView(BaseGitListingView):
 
-    page_title = 'Git'
+    page_title = "Git"
     target = None
     default_git_repository = None

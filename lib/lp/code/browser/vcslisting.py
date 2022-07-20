@@ -9,14 +9,13 @@ from lp.registry.enums import VCSType
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.personociproject import IPersonOCIProject
 from lp.registry.interfaces.personproduct import IPersonProduct
 from lp.services.webapp import stepto
 
 
 class TargetDefaultVCSNavigationMixin:
-
     @stepto("+code")
     def traverse_code_view(self):
         if IOCIProject.providedBy(self.context):
@@ -25,17 +24,15 @@ class TargetDefaultVCSNavigationMixin:
         else:
             vcs = self.context.pillar.vcs
         if vcs in (VCSType.BZR, None):
-            view_name = '+branches'
+            view_name = "+branches"
         elif vcs == VCSType.GIT:
-            view_name = '+git'
+            view_name = "+git"
         else:
             raise AssertionError("Unknown VCS")
-        return queryMultiAdapter(
-            (self.context, self.request), name=view_name)
+        return queryMultiAdapter((self.context, self.request), name=view_name)
 
 
 class PersonTargetDefaultVCSNavigationMixin:
-
     @stepto("+code")
     def traverse_code_view(self):
         if IPersonProduct.providedBy(self.context):
@@ -52,10 +49,9 @@ class PersonTargetDefaultVCSNavigationMixin:
         else:
             vcs = target.pillar.vcs
         if vcs in (VCSType.BZR, None):
-            view_name = '+branches'
+            view_name = "+branches"
         elif vcs == VCSType.GIT:
-            view_name = '+git'
+            view_name = "+git"
         else:
             raise AssertionError("Unknown VCS")
-        return queryMultiAdapter(
-            (self.context, self.request), name=view_name)
+        return queryMultiAdapter((self.context, self.request), name=view_name)

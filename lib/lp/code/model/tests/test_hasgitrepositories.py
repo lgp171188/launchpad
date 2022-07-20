@@ -4,10 +4,7 @@
 """Tests for classes that implement IHasGitRepositories."""
 
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
-from lp.testing import (
-    TestCaseWithFactory,
-    verifyObject,
-    )
+from lp.testing import TestCaseWithFactory, verifyObject
 from lp.testing.layers import DatabaseFunctionalLayer
 
 

@@ -4,7 +4,7 @@
 """Implementations for the `seen_new_branch_hook` of `BranchFileSystemClient`.
 """
 
-__all__ = ['SetProcTitleHook']
+__all__ = ["SetProcTitleHook"]
 
 import setproctitle
 
@@ -19,6 +19,7 @@ class SetProcTitleHook:
         self.basename = setproctitle_mod.getproctitle()
 
     def seen(self, branch_url):
-        branch_url = branch_url.strip('/')
+        branch_url = branch_url.strip("/")
         self.setproctitle_mod.setproctitle(
-            self.basename + ' BRANCH:' + branch_url)
+            self.basename + " BRANCH:" + branch_url
+        )
