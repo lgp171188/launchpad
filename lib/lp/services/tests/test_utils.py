@@ -19,7 +19,7 @@ from testtools.matchers import (
     )
 
 from lp.services.utils import (
-    AutoDecorate,
+    AutoDecorateMetaClass,
     CachingIterator,
     decorate_with,
     docstring_dedent,
@@ -38,8 +38,8 @@ from lp.services.utils import (
 from lp.testing import TestCase
 
 
-class TestAutoDecorate(TestCase):
-    """Tests for AutoDecorate."""
+class TestAutoDecorateMetaClass(TestCase):
+    """Tests for AutoDecorateMetaClass."""
 
     def setUp(self):
         super().setUp()
@@ -59,11 +59,12 @@ class TestAutoDecorate(TestCase):
             return f(*args, **kwargs)
         return decorated
 
-    def test_auto_decorate(self):
-        # All of the decorators passed to AutoDecorate are applied as
-        # decorators in reverse order.
-        class AutoDecoratedClass(
-                metaclass=AutoDecorate(self.decorator_1, self.decorator_2)):
+    def test_auto_decorate_meta_class(self):
+        # All of the decorators passed along with AutoDecorateMetaClass
+        # are applied as decorators in reverse order.
+        class AutoDecoratedClass(metaclass=AutoDecorateMetaClass):
+
+            __decorators = (self.decorator_1, self.decorator_2)
 
             def method_a(s):
                 self.log.append('a')
