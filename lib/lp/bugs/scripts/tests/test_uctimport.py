@@ -336,12 +336,14 @@ class TestUCTImporter(TestCaseWithFactory):
 
         self.assertEqual(bug.cves, [lp_cve])
 
-        activities = bug.activity
-        self.assertEqual(len(activities), 1)
-        activity = activities[0]
-        self.assertEqual(activity.person, owner)
-        self.assertEqual(activity.whatchanged, "bug")
-        self.assertEqual(activity.message, "UCT CVE entry CVE-2022-23222")
+        activities = list(bug.activity)
+        self.assertEqual(len(activities), 16)
+        import_bug_activity = activities[-1]
+        self.assertEqual(import_bug_activity.person, owner)
+        self.assertEqual(import_bug_activity.whatchanged, "bug")
+        self.assertEqual(
+            import_bug_activity.message, "UCT CVE entry CVE-2022-23222"
+        )
 
         self.assertEqual(len(vulnerabilities), 1)
 
