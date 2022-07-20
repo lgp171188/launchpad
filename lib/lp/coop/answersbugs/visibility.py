@@ -4,9 +4,9 @@
 """Provides mixins for visibility tests in messages."""
 
 __all__ = [
-    'TestHideMessageControlMixin',
-    'TestMessageVisibilityMixin',
-    ]
+    "TestHideMessageControlMixin",
+    "TestMessageVisibilityMixin",
+]
 
 from lp.services.webapp.escaping import html_escape
 from lp.testing.pages import find_tag_by_id
@@ -64,7 +64,7 @@ class TestMessageVisibilityMixin:
 
 class TestHideMessageControlMixin:
 
-    control_text = 'mark-spam-1'
+    control_text = "mark-spam-1"
 
     def getContext(self, comment_owner=None):
         """To be overwridden by subclasses.
