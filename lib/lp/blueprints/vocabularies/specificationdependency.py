@@ -64,7 +64,7 @@ class SpecificationDepCandidatesVocabulary(SQLObjectVocabularyBase):
         Invalid candidates are:
 
          * None
-         * The spec that we're adding a depdency to
+         * The spec that we're adding a dependency to
          * Specs that depend on this one
 
         Preventing the last category prevents loops in the dependency graph.

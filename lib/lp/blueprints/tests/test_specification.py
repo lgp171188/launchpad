@@ -311,7 +311,7 @@ class SpecificationTests(TestCaseWithFactory):
             if error_expected:
                 self.assertRaises(Unauthorized, getattr, specification, "name")
             else:
-                # Just try to access an attribute. No execption should be
+                # Just try to access an attribute. No exception should be
                 # raised.
                 specification.name
 
@@ -326,7 +326,7 @@ class SpecificationTests(TestCaseWithFactory):
                     Unauthorized, setattr, specification, attribute, value
                 )
             else:
-                # Just try to change an attribute. No execption should be
+                # Just try to change an attribute. No exception should be
                 # raised.
                 setattr(specification, attribute, value)
 
@@ -522,7 +522,7 @@ class SpecificationTests(TestCaseWithFactory):
 
     def test_special_user_write_access(self):
         # Users with special privileges can change the attributes
-        # of public and private specifcations.
+        # of public and private specifications.
         specification = self.factory.makeSpecification()
         removeSecurityProxy(specification.target)._ensurePolicies(
             PRIVATE_INFORMATION_TYPES
@@ -552,7 +552,7 @@ class SpecificationTests(TestCaseWithFactory):
 
     def test_registry_write_access(self):
         # Users with special privileges can change the attributes
-        # of public and private specifcations.
+        # of public and private specifications.
         specification = self.factory.makeSpecification()
         removeSecurityProxy(specification.target)._ensurePolicies(
             PRIVATE_INFORMATION_TYPES

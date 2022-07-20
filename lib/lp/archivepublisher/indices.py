@@ -85,7 +85,7 @@ def format_description(summary, description):
     # description or the summary only if include_long_descriptions
     # is false, as:
     #
-    # Descrition: <SUMMARY>\n
+    # Description: <SUMMARY>\n
     #  <DESCRIPTION L1>
     #  ...
     #  <DESCRIPTION LN>
@@ -243,7 +243,7 @@ def build_translations_stanza_fields(bpr, packages):
     :param packages: a set of (Package, Description-md5) tuples used to
         determine if a package has already been added to the translation
         file. The (Package, Description-md5) tuple will be added if it
-        doesn't aready exist.
+        doesn't already exist.
     """
     bin_description = format_description(bpr.summary, bpr.description)
     # Our formatted description isn't \n-terminated, but apt

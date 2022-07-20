@@ -135,7 +135,7 @@ class Test_getWorkItemsDueBefore(TestCaseWithFactory):
         self.assertEqual(current_wi, container.items[0].actual_workitem)
 
     def test_multiple_milestone_separation(self):
-        # A single blueprint with workitems targetted to multiple
+        # A single blueprint with workitems targeted to multiple
         # milestones is processed so that the same blueprint appears
         # in both with only the relevant work items.
         spec = self.factory.makeSpecification(
@@ -178,7 +178,7 @@ class Test_getWorkItemsDueBefore(TestCaseWithFactory):
         )
 
         # Future milestone date has the same specification
-        # containing only the work item targetted to future.
+        # containing only the work item targeted to future.
         containers_future = workitems[self.future_milestone.dateexpected]
         self.assertContentEqual(
             [spec], [container.spec for container in containers_future]

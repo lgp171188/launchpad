@@ -117,7 +117,7 @@ class DiskPoolEntry:
     the disk for this file.
 
     'tempath' must be in the same filesystem as 'rootpath', it will be
-    used to store the instalation candidate while it is being downloaded
+    used to store the installation candidate while it is being downloaded
     from the Librarian.
 
     Remaining files in the 'temppath' indicated installation failures and
@@ -360,7 +360,7 @@ class DiskPoolEntry:
 
         # XXX cprov 2006-06-12: it may cause problems to the database, since
         # ZTM isn't handled properly in scripts/publish-distro.py. Things are
-        # commited mid-procedure & bare exception is caught.
+        # committed mid-procedure & bare exception is caught.
 
         # Update the data structures.
         self.symlink_components.add(self.file_component)

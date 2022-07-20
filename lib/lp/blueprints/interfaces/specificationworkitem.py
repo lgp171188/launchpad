@@ -49,7 +49,7 @@ class ISpecificationWorkItem(Interface):
         readonly=False,
         vocabulary="Milestone",
         description=_(
-            "The milestone to which this work item is targetted. If this "
+            "The milestone to which this work item is targeted. If this "
             "is not set, then the target is the specification's "
             "milestone."
         ),

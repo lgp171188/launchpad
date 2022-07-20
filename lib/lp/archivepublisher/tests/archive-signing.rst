@@ -156,7 +156,7 @@ object has to be adapted to `IArchiveGPGSigningKey`.
     >>> from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     ...     IArchiveGPGSigningKey)
 
-We will adapt Celso's PPA after modifing its distribution to allow
+We will adapt Celso's PPA after modifying its distribution to allow
 proper publish configuration based on the sampledata.
 
     >>> cprov = getUtility(IPersonSet).getByName('cprov')
@@ -184,7 +184,7 @@ It also implements exportSecretKey() which receive a `PymeKey` and
 export it in the appropriate location.
 
 We will create MockKey objects implementing only the methods required
-to test the export funtions
+to test the export functions.
 
     >>> class MockKey:
     ...     def __init__(self, secret):

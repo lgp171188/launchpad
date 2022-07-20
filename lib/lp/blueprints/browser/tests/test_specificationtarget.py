@@ -87,7 +87,7 @@ class TestHasSpecificationsViewInvolvement(TestCaseWithFactory):
 
     def test_adaptable_to_specificationtarget(self):
         # A project group should adapt to the products within to determine
-        # involvment.
+        # involvement.
         context = self.factory.makeProject(name="hazelnut")
         product = self.factory.makeProduct(projectgroup=context)
         naked_product = removeSecurityProxy(product)
@@ -250,7 +250,7 @@ class TestHasSpecificationsConfiguration(TestCaseWithFactory):
 
 
 class TestSpecificationsRobots(TestCaseWithFactory):
-    """Test the behaviour of specfications when usage is UNKNOWN."""
+    """Test the behaviour of specifications when usage is UNKNOWN."""
 
     layer = DatabaseFunctionalLayer
 

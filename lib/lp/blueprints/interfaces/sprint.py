@@ -259,7 +259,7 @@ class IHasSprints(Interface):
 
     sprints = Attribute("All sprints relevant to this context.")
 
-    past_sprints = Attribute("Sprints that occured in the past.")
+    past_sprints = Attribute("Sprints that occurred in the past.")
 
 
 class ISprintSet(Interface):
