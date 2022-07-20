@@ -133,6 +133,7 @@ Note = NamedTuple(
 CVE = NamedTuple(
     "CVE",
     [
+        ("path", Path),
         ("assigned_to", str),
         ("bugs", List[str]),
         ("cvss", List[Dict[str, Any]]),
@@ -161,7 +162,7 @@ class UCTImporter:
         Priority.NEGLIGIBLE: BugTaskImportance.WISHLIST,
     }
 
-    STATUS_MAP = {
+    BUG_TASK_STATUS_MAP = {
         PackageStatus.IGNORED: BugTaskStatus.WONTFIX,
         PackageStatus.NEEDS_TRIAGE: BugTaskStatus.UNKNOWN,
         PackageStatus.DOES_NOT_EXIST: BugTaskStatus.DOESNOTEXIST,
@@ -171,6 +172,12 @@ class UCTImporter:
         # PackageStatus.DEFERRED: ...,
         PackageStatus.NEEDED: BugTaskStatus.NEW,
         PackageStatus.PENDING: BugTaskStatus.FIXCOMMITTED,
+    }
+
+    VULNERABILITY_STATUS_MAP = {
+        "active": VulnerabilityStatus.ACTIVE,
+        "ignored": VulnerabilityStatus.IGNORED,
+        "retired": VulnerabilityStatus.RETIRED,
     }
 
     def __init__(self, logger: Optional[logging.Logger] = None) -> None:
@@ -231,7 +238,7 @@ class UCTImporter:
                 )
                 if distro_series is None:
                     continue
-                if cve_package_status.status not in self.STATUS_MAP:
+                if cve_package_status.status not in self.BUG_TASK_STATUS_MAP:
                     self.logger.warning(
                         "Can't find a suitable bug task status for %s",
                         cve_package_status.status,
@@ -263,7 +270,7 @@ class UCTImporter:
                     else None
                 )
                 statuses_with_explanations[series_package] = (
-                    self.STATUS_MAP[cve_package_status.status],
+                    self.BUG_TASK_STATUS_MAP[cve_package_status.status],
                     cve_package_status.reason,
                 )
 
@@ -422,7 +429,7 @@ class UCTImporter:
             distribution=distribution,
             creator=bug.owner,
             cve=lp_cve,
-            status=VulnerabilityStatus.NEEDS_TRIAGE,
+            status=self.infer_vulnerability_status(cve),
             description=cve.description,
             notes=format_cve_notes(cve.notes),
             mitigation=cve.mitigation,
@@ -436,6 +443,15 @@ class UCTImporter:
         self.logger.info("Create vulnerability with ID: %s", vulnerability)
 
         return vulnerability
+
+    def infer_vulnerability_status(self, cve: CVE) -> VulnerabilityStatus:
+        """
+        Infer vulnerability status based on the parent folder of the CVE file.
+        """
+        cve_folder_name = cve.path.absolute().parent.name
+        return self.VULNERABILITY_STATUS_MAP.get(
+            cve_folder_name, VulnerabilityStatus.NEEDS_TRIAGE
+        )
 
 
 def load_cve_from_file(cve_path: Path) -> CVE:
@@ -516,6 +532,7 @@ def load_cve_from_file(cve_path: Path) -> CVE:
     date_made_public = crd or public_date or public_date_at_USN
 
     cve = CVE(
+        path=cve_path,
         assigned_to=pop_cve_property(cve_data, "Assigned-to"),
         bugs=pop_cve_property(cve_data, "Bugs").split("\n"),
         cvss=pop_cve_property(cve_data, "CVSS"),
