@@ -4,32 +4,35 @@
 """Enums for the OCI app."""
 
 __all__ = [
-    'OCIRecipeBuildRequestStatus',
-    ]
+    "OCIRecipeBuildRequestStatus",
+]
 
-from lazr.enum import (
-    EnumeratedType,
-    Item,
-    )
+from lazr.enum import EnumeratedType, Item
 
 
 class OCIRecipeBuildRequestStatus(EnumeratedType):
     """The status of a request to build an OCI recipe."""
 
-    PENDING = Item("""
+    PENDING = Item(
+        """
         Pending
 
         This OCI recipe build request is pending.
-        """)
+        """
+    )
 
-    FAILED = Item("""
+    FAILED = Item(
+        """
         Failed
 
         This OCI recipe build request failed.
-        """)
+        """
+    )
 
-    COMPLETED = Item("""
+    COMPLETED = Item(
+        """
         Completed
 
         This OCI recipe build request completed successfully.
-        """)
+        """
+    )

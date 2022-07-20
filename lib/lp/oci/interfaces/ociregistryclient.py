@@ -4,11 +4,11 @@
 """Interface for communication with an OCI registry."""
 
 __all__ = [
-    'BlobUploadFailed',
-    'IOCIRegistryClient',
-    'ManifestUploadFailed',
-    'MultipleOCIRegistryError',
-    'OCIRegistryError',
+    "BlobUploadFailed",
+    "IOCIRegistryClient",
+    "ManifestUploadFailed",
+    "MultipleOCIRegistryError",
+    "OCIRegistryError",
 ]
 
 from zope.interface import Interface
@@ -31,8 +31,11 @@ class MultipleOCIRegistryError(OCIRegistryError):
 
     @property
     def errors(self):
-        return [i.errors for i in self.exceptions
-                if isinstance(i, OCIRegistryError)]
+        return [
+            i.errors
+            for i in self.exceptions
+            if isinstance(i, OCIRegistryError)
+        ]
 
 
 class BlobUploadFailed(OCIRegistryError):

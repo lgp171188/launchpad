@@ -3,9 +3,7 @@
 
 """OCI recipe subscription views."""
 
-__all__ = [
-    'OCIRecipePortletSubscribersContent'
-]
+__all__ = ["OCIRecipePortletSubscribersContent"]
 
 from zope.component import getUtility
 from zope.formlib.form import action
@@ -14,17 +12,14 @@ from zope.security.interfaces import ForbiddenAttribute
 from lp.app.browser.launchpadform import (
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+)
 from lp.oci.interfaces.ocirecipesubscription import IOCIRecipeSubscription
 from lp.registry.interfaces.person import IPersonSet
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp import LaunchpadView, canonical_url
 from lp.services.webapp.authorization import (
     check_permission,
     precache_permission_for_objects,
-    )
+)
 
 
 class OCIRecipePortletSubscribersContent(LaunchpadView):
@@ -38,20 +33,28 @@ class OCIRecipePortletSubscribersContent(LaunchpadView):
         # need the expense of running several complex SQL queries.
         subscriptions = list(self.context.subscriptions)
         person_ids = [sub.person.id for sub in subscriptions]
-        list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-            person_ids, need_validity=True))
+        list(
+            getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+                person_ids, need_validity=True
+            )
+        )
         if self.user is not None:
             subscribers = [
-                subscription.person for subscription in subscriptions]
+                subscription.person for subscription in subscriptions
+            ]
             precache_permission_for_objects(
-                self.request, "launchpad.LimitedView", subscribers)
+                self.request, "launchpad.LimitedView", subscribers
+            )
 
         visible_subscriptions = [
-            subscription for subscription in subscriptions
-            if check_permission("launchpad.LimitedView", subscription.person)]
+            subscription
+            for subscription in subscriptions
+            if check_permission("launchpad.LimitedView", subscription.person)
+        ]
         return sorted(
             visible_subscriptions,
-            key=lambda subscription: subscription.person.displayname)
+            key=lambda subscription: subscription.person.displayname,
+        )
 
 
 class RedirectToOCIRecipeMixin:
@@ -73,23 +76,25 @@ class RedirectToOCIRecipeMixin:
     cancel_url = next_url
 
 
-class OCIRecipeSubscriptionEditView(RedirectToOCIRecipeMixin,
-                                    LaunchpadEditFormView):
+class OCIRecipeSubscriptionEditView(
+    RedirectToOCIRecipeMixin, LaunchpadEditFormView
+):
     """The view for editing OCI recipe subscriptions."""
+
     schema = IOCIRecipeSubscription
     field_names = []
 
     @property
     def page_title(self):
         return (
-            "Edit subscription to OCI recipe %s" %
-            self.ocirecipe.displayname)
+            "Edit subscription to OCI recipe %s" % self.ocirecipe.displayname
+        )
 
     @property
     def label(self):
         return (
-            "Edit subscription to OCI recipe for %s" %
-            self.person.displayname)
+            "Edit subscription to OCI recipe for %s" % self.person.displayname
+        )
 
     def initialize(self):
         self.ocirecipe = self.context.recipe
@@ -102,11 +107,13 @@ class OCIRecipeSubscriptionEditView(RedirectToOCIRecipeMixin,
         self.ocirecipe.unsubscribe(self.person, self.user)
         self.request.response.addNotification(
             "%s has been unsubscribed from this OCI recipe."
-            % self.person.displayname)
+            % self.person.displayname
+        )
 
 
-class _OCIRecipeSubscriptionCreationView(RedirectToOCIRecipeMixin,
-                                         LaunchpadFormView):
+class _OCIRecipeSubscriptionCreationView(
+    RedirectToOCIRecipeMixin, LaunchpadFormView
+):
     """Contains the common functionality of the Add and Edit views."""
 
     schema = IOCIRecipeSubscription
@@ -127,11 +134,13 @@ class OCIRecipeSubscriptionAddView(_OCIRecipeSubscriptionCreationView):
         # subscribed before continuing.
         if self.context.getSubscription(self.user) is not None:
             self.request.response.addNotification(
-                "You are already subscribed to this OCI recipe.")
+                "You are already subscribed to this OCI recipe."
+            )
         else:
             self.context.subscribe(self.user, self.user)
             self.request.response.addNotification(
-                "You have subscribed to this OCI recipe.")
+                "You have subscribed to this OCI recipe."
+            )
 
 
 class OCIRecipeSubscriptionAddOtherView(_OCIRecipeSubscriptionCreationView):
@@ -150,12 +159,14 @@ class OCIRecipeSubscriptionAddOtherView(_OCIRecipeSubscriptionCreationView):
         if "person" in data:
             person = data["person"]
             subscription = self.context.getSubscription(person)
-            if (subscription is None
-                    and not self.context.userCanBeSubscribed(person)):
+            if subscription is None and not self.context.userCanBeSubscribed(
+                person
+            ):
                 self.setFieldError(
                     "person",
                     "Open and delegated teams cannot be subscribed to "
-                    "private OCI recipes.")
+                    "private OCI recipes.",
+                )
 
     @action("Subscribe", name="subscribe_action")
     def subscribe_action(self, action, data):
@@ -165,9 +176,11 @@ class OCIRecipeSubscriptionAddOtherView(_OCIRecipeSubscriptionCreationView):
         if subscription is None:
             self.context.subscribe(person, self.user)
             self.request.response.addNotification(
-                "%s has been subscribed to this OCI recipe." %
-                person.displayname)
+                "%s has been subscribed to this OCI recipe."
+                % person.displayname
+            )
         else:
             self.request.response.addNotification(
-                "%s was already subscribed to this OCI recipe." %
-                person.displayname)
+                "%s was already subscribed to this OCI recipe."
+                % person.displayname
+            )

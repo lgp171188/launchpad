@@ -9,12 +9,9 @@ from lp.app.security import (
     AnonymousAuthorization,
     AuthorizationBase,
     DelegatedAuthorization,
-    )
+)
 from lp.oci.interfaces.ocipushrule import IOCIPushRule
-from lp.oci.interfaces.ocirecipe import (
-    IOCIRecipe,
-    IOCIRecipeBuildRequest,
-    )
+from lp.oci.interfaces.ocirecipe import IOCIRecipe, IOCIRecipeBuildRequest
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.oci.interfaces.ocirecipesubscription import IOCIRecipeSubscription
 from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
@@ -22,17 +19,18 @@ from lp.security import AdminByBuilddAdmin
 
 
 class ViewOCIRecipeBuildRequest(DelegatedAuthorization):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = IOCIRecipeBuildRequest
 
     def __init__(self, obj):
-        super().__init__(obj, obj.recipe, 'launchpad.View')
+        super().__init__(obj, obj.recipe, "launchpad.View")
 
 
 class ViewOCIRecipe(AnonymousAuthorization):
     """Anyone can view public `IOCIRecipe`, but only subscribers can view
     private ones.
     """
+
     usedfor = IOCIRecipe
 
     def checkUnauthenticated(self):
@@ -43,13 +41,13 @@ class ViewOCIRecipe(AnonymousAuthorization):
 
 
 class EditOCIRecipe(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IOCIRecipe
 
     def checkAuthenticated(self, user):
         return (
-            user.isOwner(self.obj) or
-            user.in_commercial_admin or user.in_admin)
+            user.isOwner(self.obj) or user.in_commercial_admin or user.in_admin
+        )
 
 
 class AdminOCIRecipe(AuthorizationBase):
@@ -59,19 +57,20 @@ class AdminOCIRecipe(AuthorizationBase):
     settings, so they can only be changed by "PPA"/commercial admins, or by
     "PPA" self admins on OCI recipes that they can already edit.
     """
-    permission = 'launchpad.Admin'
+
+    permission = "launchpad.Admin"
     usedfor = IOCIRecipe
 
     def checkAuthenticated(self, user):
         if user.in_ppa_admin or user.in_commercial_admin or user.in_admin:
             return True
-        return (
-            user.in_ppa_self_admins
-            and EditOCIRecipe(self.obj).checkAuthenticated(user))
+        return user.in_ppa_self_admins and EditOCIRecipe(
+            self.obj
+        ).checkAuthenticated(user)
 
 
 class OCIRecipeSubscriptionEdit(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IOCIRecipeSubscription
 
     def checkAuthenticated(self, user):
@@ -84,14 +83,16 @@ class OCIRecipeSubscriptionEdit(AuthorizationBase):
         the OCI recipe owner is a team, then members of the team can edit
         the subscription.
         """
-        return (user.inTeam(self.obj.recipe.owner) or
-                user.inTeam(self.obj.person) or
-                user.inTeam(self.obj.subscribed_by) or
-                user.in_admin)
+        return (
+            user.inTeam(self.obj.recipe.owner)
+            or user.inTeam(self.obj.person)
+            or user.inTeam(self.obj.subscribed_by)
+            or user.in_admin
+        )
 
 
 class OCIRecipeSubscriptionView(AuthorizationBase):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = IOCIRecipeSubscription
 
     def checkUnauthenticated(self):
@@ -102,7 +103,7 @@ class OCIRecipeSubscriptionView(AuthorizationBase):
 
 
 class ViewOCIRecipeBuild(DelegatedAuthorization):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = IOCIRecipeBuild
 
     def iter_objects(self):
@@ -110,7 +111,7 @@ class ViewOCIRecipeBuild(DelegatedAuthorization):
 
 
 class EditOCIRecipeBuild(AdminByBuilddAdmin):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IOCIRecipeBuild
 
     def checkAuthenticated(self, user):
@@ -131,27 +132,28 @@ class AdminOCIRecipeBuild(AdminByBuilddAdmin):
 
 
 class ViewOCIRegistryCredentials(AuthorizationBase):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = IOCIRegistryCredentials
 
     def checkAuthenticated(self, user):
         # This must be kept in sync with user_can_edit_credentials_for_owner
         # in lp.oci.interfaces.ociregistrycredentials.
-        return (
-            user.isOwner(self.obj) or
-            user.in_admin)
+        return user.isOwner(self.obj) or user.in_admin
 
 
 class ViewOCIPushRule(AnonymousAuthorization):
     """Anyone can view an `IOCIPushRule`."""
+
     usedfor = IOCIPushRule
 
 
 class OCIPushRuleEdit(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IOCIPushRule
 
     def checkAuthenticated(self, user):
         return (
-            user.isOwner(self.obj.recipe) or
-            user.in_commercial_admin or user.in_admin)
+            user.isOwner(self.obj.recipe)
+            or user.in_commercial_admin
+            or user.in_admin
+        )

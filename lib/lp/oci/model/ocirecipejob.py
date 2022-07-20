@@ -4,25 +4,19 @@
 """A build job for OCI Recipe."""
 
 __all__ = [
-    'OCIRecipeJob',
-    ]
+    "OCIRecipeJob",
+]
 
+import transaction
 from lazr.delegates import delegate_to
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from storm.databases.postgres import JSON
 from storm.expr import Desc
 from storm.properties import Int
 from storm.references import Reference
 from storm.store import EmptyResultSet
-import transaction
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
@@ -31,27 +25,21 @@ from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import (
     OCIRecipeBuildRegistryUploadStatus,
     OCIRecipeBuildSetRegistryUploadStatus,
-    )
+)
 from lp.oci.interfaces.ocirecipejob import (
     IOCIRecipeJob,
     IOCIRecipeRequestBuildsJob,
     IOCIRecipeRequestBuildsJobSource,
-    )
+)
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.job.model.job import (
-    EnumeratedSubclass,
-    Job,
-    )
+from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.mail.sendmail import format_address_for_person
 from lp.services.propertycache import cachedproperty
@@ -62,28 +50,31 @@ from lp.soyuz.interfaces.binarypackagebuild import BuildSetStatus
 class OCIRecipeJobType(DBEnumeratedType):
     """Values that `IOCIRecipeJob.job_type` can take."""
 
-    REQUEST_BUILDS = DBItem(0, """
+    REQUEST_BUILDS = DBItem(
+        0,
+        """
         Request builds
 
         This job requests builds of an OCI recipe.
-        """)
+        """,
+    )
 
 
 @implementer(IOCIRecipeJob)
 class OCIRecipeJob(StormBase):
     """See `IOCIRecipeJob`."""
 
-    __storm_table__ = 'OCIRecipeJob'
+    __storm_table__ = "OCIRecipeJob"
 
-    job_id = Int(name='job', primary=True, allow_none=False)
-    job = Reference(job_id, 'Job.id')
+    job_id = Int(name="job", primary=True, allow_none=False)
+    job = Reference(job_id, "Job.id")
 
-    recipe_id = Int(name='recipe', allow_none=False)
-    recipe = Reference(recipe_id, 'OCIRecipe.id')
+    recipe_id = Int(name="recipe", allow_none=False)
+    recipe = Reference(recipe_id, "OCIRecipe.id")
 
     job_type = DBEnum(enum=OCIRecipeJobType, allow_none=False)
 
-    metadata = JSON('json_data', allow_none=False)
+    metadata = JSON("json_data", allow_none=False)
 
     def __init__(self, recipe, job_type, metadata, **job_args):
         """Constructor.
@@ -108,14 +99,12 @@ class OCIRecipeJob(StormBase):
 
 @delegate_to(IOCIRecipeJob)
 class OCIRecipeJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
-
     def __init__(self, recipe_job):
         self.context = recipe_job
 
     def __repr__(self):
         """An informative representation of the job."""
-        return "<%s for %s>" % (
-            self.__class__.__name__, self.recipe)
+        return "<%s for %s>" % (self.__class__.__name__, self.recipe)
 
     @classmethod
     def get(cls, job_id):
@@ -129,8 +118,9 @@ class OCIRecipeJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
         recipe_job = IStore(IOCIRecipeJob).get(IOCIRecipeJob, job_id)
         if recipe_job.job_type != cls.class_job_type:
             raise NotFoundError(
-                "No object found with id %d and type %s" %
-                (job_id, cls.class_job_type.title))
+                "No object found with id %d and type %s"
+                % (job_id, cls.class_job_type.title)
+            )
         return cls(recipe_job)
 
     @classmethod
@@ -140,19 +130,22 @@ class OCIRecipeJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
             OCIRecipeJob,
             OCIRecipeJob.job_type == cls.class_job_type,
             OCIRecipeJob.job == Job.id,
-            Job.id.is_in(Job.ready_jobs))
+            Job.id.is_in(Job.ready_jobs),
+        )
         return (cls(job) for job in jobs)
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
         oops_vars = super().getOopsVars()
-        oops_vars.extend([
-            ("job_id", self.context.job.id),
-            ("job_type", self.context.job_type.title),
-            ("oci_project_name", self.context.recipe.oci_project.name),
-            ("recipe_owner_name", self.context.recipe.owner.name),
-            ("recipe_name", self.context.recipe.name),
-            ])
+        oops_vars.extend(
+            [
+                ("job_id", self.context.job.id),
+                ("job_type", self.context.job_type.title),
+                ("oci_project_name", self.context.recipe.oci_project.name),
+                ("recipe_owner_name", self.context.recipe.owner.name),
+                ("recipe_name", self.context.recipe.name),
+            ]
+        )
         return oops_vars
 
 
@@ -173,9 +166,10 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
         metadata = {
             "requester": requester.id,
             "architectures": (
-                list(architectures) if architectures is not None else None),
+                list(architectures) if architectures is not None else None
+            ),
             # A dict of build_id: manifest location
-            "uploaded_manifests": {}
+            "uploaded_manifests": {},
         }
         recipe_job = OCIRecipeJob(recipe, cls.class_job_type, metadata)
         job = cls(recipe_job)
@@ -184,10 +178,15 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
 
     @classmethod
     def getByOCIRecipeAndID(cls, recipe, job_id):
-        job = IStore(OCIRecipeJob).find(
-            OCIRecipeJob,
-            OCIRecipeJob.recipe == recipe,
-            OCIRecipeJob.job_id == job_id).one()
+        job = (
+            IStore(OCIRecipeJob)
+            .find(
+                OCIRecipeJob,
+                OCIRecipeJob.recipe == recipe,
+                OCIRecipeJob.job_id == job_id,
+            )
+            .one()
+        )
         if job is None:
             raise NotFoundError("Could not find job ID %s" % job_id)
         return cls(job)
@@ -196,21 +195,24 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
     def findByOCIRecipe(cls, recipe, statuses=None, job_ids=None):
         conditions = [
             OCIRecipeJob.recipe == recipe,
-            OCIRecipeJob.job_type == cls.class_job_type]
+            OCIRecipeJob.job_type == cls.class_job_type,
+        ]
         if statuses is not None:
             conditions.append(Job._status.is_in(statuses))
         if job_ids is not None:
             conditions.append(OCIRecipeJob.job_id.is_in(job_ids))
-        oci_jobs = IStore(OCIRecipeJob).find(
-            OCIRecipeJob,
-            OCIRecipeJob.job_id == Job.id,
-            *conditions).order_by(Desc(OCIRecipeJob.job_id))
+        oci_jobs = (
+            IStore(OCIRecipeJob)
+            .find(OCIRecipeJob, OCIRecipeJob.job_id == Job.id, *conditions)
+            .order_by(Desc(OCIRecipeJob.job_id))
+        )
 
         def preload_jobs(rows):
             load_related(Job, rows, ["job_id"])
 
         return DecoratedResultSet(
-            oci_jobs, lambda oci_job: cls(oci_job), pre_iter_hook=preload_jobs)
+            oci_jobs, lambda oci_job: cls(oci_job), pre_iter_hook=preload_jobs
+        )
 
     def getOperationDescription(self):
         return "requesting builds of %s" % self.recipe
@@ -258,10 +260,15 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
         # Sort this by architecture/processor name, so it's consistent
         # when displayed
         if build_ids:
-            return IStore(OCIRecipeBuild).find(
-                OCIRecipeBuild, OCIRecipeBuild.id.is_in(build_ids),
-                OCIRecipeBuild.processor_id == Processor.id).order_by(
-                    Desc(Processor.name))
+            return (
+                IStore(OCIRecipeBuild)
+                .find(
+                    OCIRecipeBuild,
+                    OCIRecipeBuild.id.is_in(build_ids),
+                    OCIRecipeBuild.processor_id == Processor.id,
+                )
+                .order_by(Desc(Processor.name))
+            )
         else:
             return EmptyResultSet()
 
@@ -280,7 +287,9 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
         return {
             # Converts keys to integer since saving json to database
             # converts them to strings.
-            int(k): v for k, v in self.metadata["uploaded_manifests"].items()}
+            int(k): v
+            for k, v in self.metadata["uploaded_manifests"].items()
+        }
 
     def addUploadedManifest(self, build_id, manifest_info):
         self.metadata["uploaded_manifests"][int(build_id)] = manifest_info
@@ -290,8 +299,8 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
         builds = self.builds
         # This just returns a dict, but Zope is really helpful here
         status = removeSecurityProxy(
-                getUtility(IOCIRecipeSet).getStatusSummaryForBuilds(
-                    list(builds)))
+            getUtility(IOCIRecipeSet).getStatusSummaryForBuilds(list(builds))
+        )
 
         # This has a really long name!
         singleStatus = OCIRecipeBuildRegistryUploadStatus
@@ -299,13 +308,16 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
 
         # Set the pending upload status if either we're not done uploading,
         # or there was no upload requested in the first place (no push rules)
-        if status['status'] == BuildSetStatus.FULLYBUILT:
+        if status["status"] == BuildSetStatus.FULLYBUILT:
             upload_status = [
-                (x.registry_upload_status == singleStatus.UPLOADED or
-                 x.registry_upload_status == singleStatus.UNSCHEDULED)
-                for x in status['builds']]
+                (
+                    x.registry_upload_status == singleStatus.UPLOADED
+                    or x.registry_upload_status == singleStatus.UNSCHEDULED
+                )
+                for x in status["builds"]
+            ]
             if not all(upload_status):
-                status['status'] = BuildSetStatus.FULLYBUILT_PENDING
+                status["status"] = BuildSetStatus.FULLYBUILT_PENDING
 
         # Are we expecting an upload to be or to have been attempted?
         # This is slightly complicated as the upload depends on the push
@@ -318,36 +330,38 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
         # If all of the builds haven't finished, but the recipe currently
         # has push rules specified, then we will attempt an upload
         # in the future
-        if any(not x.date_finished and x.recipe.can_upload_to_registry
-               for x in builds):
+        if any(
+            not x.date_finished and x.recipe.can_upload_to_registry
+            for x in builds
+        ):
             upload_requested = True
-        status['upload_requested'] = upload_requested
+        status["upload_requested"] = upload_requested
 
         # Convert the set of registry statuses into a single line
         # for display
         upload_status = [x.registry_upload_status for x in builds]
         # Any of the builds failed
         if any(x == singleStatus.FAILEDTOUPLOAD for x in upload_status):
-            status['upload'] = setStatus.FAILEDTOUPLOAD
+            status["upload"] = setStatus.FAILEDTOUPLOAD
         # All of the builds uploaded
         elif all(x == singleStatus.UPLOADED for x in upload_status):
-            status['upload'] = setStatus.UPLOADED
+            status["upload"] = setStatus.UPLOADED
         # All of the builds are yet to attempt an upload
         elif all(x == singleStatus.UNSCHEDULED for x in upload_status):
-            status['upload'] = setStatus.UNSCHEDULED
+            status["upload"] = setStatus.UNSCHEDULED
         # Any of the builds have uploaded. Set after 'all of the builds'
         # have uploaded.
         elif any(x == singleStatus.UPLOADED for x in upload_status):
-            status['upload'] = setStatus.PARTIAL
+            status["upload"] = setStatus.PARTIAL
         # And if it's none of the above, we're waiting
         else:
-            status['upload'] = setStatus.PENDING
+            status["upload"] = setStatus.PENDING
 
         # Get the longest date and whether any of them are estimated
         # for the summary of the builds
         dates = [x.date for x in self.builds if x.date]
-        status['date'] = max(dates) if dates else None
-        status['date_estimated'] = any(x.estimate for x in self.builds)
+        status["date"] = max(dates) if dates else None
+        status["date_estimated"] = any(x.estimate for x in self.builds)
 
         return status
 
@@ -356,12 +370,15 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
         requester = self.requester
         if requester is None:
             log.info(
-                "Skipping %r because the requester has been deleted." % self)
+                "Skipping %r because the requester has been deleted." % self
+            )
             return
         try:
             self.builds = self.recipe.requestBuildsFromJob(
-                requester, build_request=self.build_request,
-                architectures=self.architectures)
+                requester,
+                build_request=self.build_request,
+                architectures=self.architectures,
+            )
             self.error_message = None
         except self.retry_error_types:
             raise
