@@ -4,21 +4,18 @@
 """Interfaces for a build record for OCI recipes."""
 
 __all__ = [
-    'CannotScheduleRegistryUpload',
-    'IOCIFile',
-    'IOCIFileSet',
-    'IOCIRecipeBuild',
-    'IOCIRecipeBuildSet',
-    'OCIRecipeBuildRegistryUploadStatus',
-    'OCIRecipeBuildSetRegistryUploadStatus',
-    ]
+    "CannotScheduleRegistryUpload",
+    "IOCIFile",
+    "IOCIFileSet",
+    "IOCIRecipeBuild",
+    "IOCIRecipeBuildSet",
+    "OCIRecipeBuildRegistryUploadStatus",
+    "OCIRecipeBuildSetRegistryUploadStatus",
+]
 
 import http.client
 
-from lazr.enum import (
-    EnumeratedType,
-    Item,
-    )
+from lazr.enum import EnumeratedType, Item
 from lazr.restful.declarations import (
     error_status,
     export_read_operation,
@@ -26,24 +23,10 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_entry,
     operation_for_version,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Dict,
-    Int,
-    List,
-    TextLine,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, Dict, Int, List, TextLine
 
 from lp import _
 from lp.app.interfaces.launchpad import IPrivacy
@@ -51,15 +34,12 @@ from lp.buildmaster.interfaces.buildfarmjob import (
     IBuildFarmJobAdmin,
     IBuildFarmJobEdit,
     ISpecificBuildFarmJobSource,
-    )
+)
 from lp.buildmaster.interfaces.packagebuild import (
     IPackageBuild,
     IPackageBuildView,
-    )
-from lp.oci.interfaces.ocirecipe import (
-    IOCIRecipe,
-    IOCIRecipeBuildRequest,
-    )
+)
+from lp.oci.interfaces.ocirecipe import IOCIRecipe, IOCIRecipeBuildRequest
 from lp.services.database.constants import DEFAULT
 from lp.services.fields import PublicPersonChoice
 from lp.services.librarian.interfaces import ILibraryFileAlias
@@ -78,36 +58,46 @@ class OCIRecipeBuildRegistryUploadStatus(EnumeratedType):
     that process.
     """
 
-    UNSCHEDULED = Item("""
+    UNSCHEDULED = Item(
+        """
         Unscheduled
 
         No upload of this OCI build to a registry is scheduled.
-        """)
+        """
+    )
 
-    PENDING = Item("""
+    PENDING = Item(
+        """
         Pending
 
         This OCI build is queued for upload to a registry.
-        """)
+        """
+    )
 
-    FAILEDTOUPLOAD = Item("""
+    FAILEDTOUPLOAD = Item(
+        """
         Failed to upload
 
         The last attempt to upload this OCI build to a registry failed.
-        """)
+        """
+    )
 
-    UPLOADED = Item("""
+    UPLOADED = Item(
+        """
         Uploaded
 
         This OCI build was successfully uploaded to a registry.
-        """)
+        """
+    )
 
-    SUPERSEDED = Item("""
+    SUPERSEDED = Item(
+        """
         Superseded
 
         The upload has been cancelled because another build will upload a
         more recent version.
-    """)
+    """
+    )
 
 
 class OCIRecipeBuildSetRegistryUploadStatus(EnumeratedType):
@@ -117,35 +107,45 @@ class OCIRecipeBuildSetRegistryUploadStatus(EnumeratedType):
     that process.
     """
 
-    UNSCHEDULED = Item("""
+    UNSCHEDULED = Item(
+        """
         Unscheduled
 
         No upload of these OCI builds to a registry is scheduled.
-        """)
+        """
+    )
 
-    PENDING = Item("""
+    PENDING = Item(
+        """
         Pending
 
         These OCI builds are queued for upload to a registry.
-        """)
+        """
+    )
 
-    FAILEDTOUPLOAD = Item("""
+    FAILEDTOUPLOAD = Item(
+        """
         Failed to upload
 
         The last attempt to upload these OCI builds to a registry failed.
-        """)
+        """
+    )
 
-    UPLOADED = Item("""
+    UPLOADED = Item(
+        """
         Uploaded
 
         These OCI builds were successfully uploaded to a registry.
-        """)
+        """
+    )
 
-    PARTIAL = Item("""
+    PARTIAL = Item(
+        """
         Partial
 
         Some OCI builds have uploaded to a registry.
-    """)
+    """
+    )
 
 
 class IOCIRecipeBuildView(IPackageBuildView, IPrivacy):
@@ -154,30 +154,51 @@ class IOCIRecipeBuildView(IPackageBuildView, IPrivacy):
     build_request = Reference(
         IOCIRecipeBuildRequest,
         title=_("The build request that caused this build to be created."),
-        required=False, readonly=True)
+        required=False,
+        readonly=True,
+    )
 
-    requester = exported(PublicPersonChoice(
-        title=_("Requester"),
-        description=_("The person who requested this OCI recipe build."),
-        vocabulary='ValidPersonOrTeam', required=True, readonly=True))
+    requester = exported(
+        PublicPersonChoice(
+            title=_("Requester"),
+            description=_("The person who requested this OCI recipe build."),
+            vocabulary="ValidPersonOrTeam",
+            required=True,
+            readonly=True,
+        )
+    )
 
-    recipe = exported(Reference(
-        IOCIRecipe,
-        title=_("The OCI recipe to build."),
-        required=True,
-        readonly=True))
+    recipe = exported(
+        Reference(
+            IOCIRecipe,
+            title=_("The OCI recipe to build."),
+            required=True,
+            readonly=True,
+        )
+    )
 
-    eta = exported(Datetime(
-        title=_("The datetime when the build job is estimated to complete."),
-        readonly=True))
+    eta = exported(
+        Datetime(
+            title=_(
+                "The datetime when the build job is estimated to complete."
+            ),
+            readonly=True,
+        )
+    )
 
-    estimate = exported(Bool(
-        title=_("If true, the date value is an estimate."), readonly=True))
+    estimate = exported(
+        Bool(title=_("If true, the date value is an estimate."), readonly=True)
+    )
 
-    date = exported(Datetime(
-        title=_(
-            "The date when the build completed or is estimated to complete."),
-        readonly=True))
+    date = exported(
+        Datetime(
+            title=_(
+                "The date when the build completed or is estimated to "
+                "complete."
+            ),
+            readonly=True,
+        )
+    )
 
     def getFiles():
         """Retrieve the build's `IOCIFile` records.
@@ -213,17 +234,26 @@ class IOCIRecipeBuildView(IPackageBuildView, IPrivacy):
         :return: The corresponding `ILibraryFileAlias`.
         """
 
-    distro_arch_series = exported(Reference(
-        IDistroArchSeries,
-        title=_("The series and architecture for which to build."),
-        required=True, readonly=True))
+    distro_arch_series = exported(
+        Reference(
+            IDistroArchSeries,
+            title=_("The series and architecture for which to build."),
+            required=True,
+            readonly=True,
+        )
+    )
 
     arch_tag = exported(
-        TextLine(title=_("Architecture tag"), required=True, readonly=True))
+        TextLine(title=_("Architecture tag"), required=True, readonly=True)
+    )
 
-    score = exported(Int(
-        title=_("Score of the related build farm job (if any)."),
-        required=False, readonly=True))
+    score = exported(
+        Int(
+            title=_("Score of the related build farm job (if any)."),
+            required=False,
+            readonly=True,
+        )
+    )
 
     manifest = Attribute(_("The manifest of the image."))
 
@@ -233,33 +263,48 @@ class IOCIRecipeBuildView(IPackageBuildView, IPrivacy):
         title=_("Registry upload jobs for this build."),
         # Really IOCIRegistryUploadJob.
         value_type=Reference(schema=Interface),
-        readonly=True)
+        readonly=True,
+    )
 
     # Really IOCIRegistryUploadJob
     last_registry_upload_job = Reference(
-        title=_("Last registry upload job for this build."), schema=Interface)
+        title=_("Last registry upload job for this build."), schema=Interface
+    )
 
-    registry_upload_status = exported(Choice(
-        title=_("Registry upload status"),
-        vocabulary=OCIRecipeBuildRegistryUploadStatus,
-        required=True, readonly=False
-    ))
+    registry_upload_status = exported(
+        Choice(
+            title=_("Registry upload status"),
+            vocabulary=OCIRecipeBuildRegistryUploadStatus,
+            required=True,
+            readonly=False,
+        )
+    )
 
-    registry_upload_error_summary = exported(TextLine(
-        title=_("Registry upload error summary"),
-        description=_(
-            "The error summary, if any, from the last attempt to upload this "
-            "build to a registry."),
-        required=False, readonly=True))
+    registry_upload_error_summary = exported(
+        TextLine(
+            title=_("Registry upload error summary"),
+            description=_(
+                "The error summary, if any, from the last attempt to upload "
+                "this build to a registry."
+            ),
+            required=False,
+            readonly=True,
+        )
+    )
 
-    registry_upload_errors = exported(List(
-        title=_("Detailed registry upload errors"),
-        description=_(
-            "A list of errors, as described in "
-            "https://docs.docker.com/registry/spec/api/#errors, from the last "
-            "attempt to upload this build to a registry."),
-        value_type=Dict(key_type=TextLine()),
-        required=False, readonly=True))
+    registry_upload_errors = exported(
+        List(
+            title=_("Detailed registry upload errors"),
+            description=_(
+                "A list of errors, as described in "
+                "https://docs.docker.com/registry/spec/api/#errors, from the "
+                "last attempt to upload this build to a registry."
+            ),
+            value_type=Dict(key_type=TextLine()),
+            required=False,
+            readonly=True,
+        )
+    )
 
     def hasMoreRecentBuild():
         """Checks if this recipe has a more recent build currently building or
@@ -295,17 +340,21 @@ class IOCIRecipeBuildAdmin(IBuildFarmJobAdmin):
 
 
 @exported_as_webservice_entry(
-    publish_web_link=True, as_of="devel", singular_name="oci_recipe_build")
-class IOCIRecipeBuild(IOCIRecipeBuildAdmin, IOCIRecipeBuildEdit,
-                      IOCIRecipeBuildView, IPackageBuild):
+    publish_web_link=True, as_of="devel", singular_name="oci_recipe_build"
+)
+class IOCIRecipeBuild(
+    IOCIRecipeBuildAdmin,
+    IOCIRecipeBuildEdit,
+    IOCIRecipeBuildView,
+    IPackageBuild,
+):
     """A build record for an OCI recipe."""
 
 
 class IOCIRecipeBuildSet(ISpecificBuildFarmJobSource):
     """A utility to create and access OCIRecipeBuilds."""
 
-    def new(requester, recipe, distro_arch_series,
-            date_created=DEFAULT):
+    def new(requester, recipe, distro_arch_series, date_created=DEFAULT):
         """Create an `IOCIRecipeBuild`."""
 
     def preloadBuildsData(builds):
@@ -318,23 +367,33 @@ class IOCIFile(Interface):
     build = Reference(
         IOCIRecipeBuild,
         title=_("The OCI recipe build producing this file."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
 
     library_file = Reference(
-        ILibraryFileAlias, title=_("A file in the librarian."),
-        required=True, readonly=True)
+        ILibraryFileAlias,
+        title=_("A file in the librarian."),
+        required=True,
+        readonly=True,
+    )
 
     layer_file_digest = TextLine(
-        title=_("Content-addressable hash of the file''s contents, "
-                "used for reassembling image layers when pushing "
-                "a build to a registry. This hash is in an opaque format "
-                "generated by the OCI build tool."),
-        required=False, readonly=True)
+        title=_(
+            "Content-addressable hash of the file''s contents, "
+            "used for reassembling image layers when pushing "
+            "a build to a registry. This hash is in an opaque format "
+            "generated by the OCI build tool."
+        ),
+        required=False,
+        readonly=True,
+    )
 
     date_last_used = Datetime(
         title=_("The datetime this file was last used in a build."),
         required=True,
-        readonly=False)
+        readonly=False,
+    )
 
 
 class IOCIFileSet(Interface):

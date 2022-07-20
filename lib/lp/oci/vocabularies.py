@@ -5,24 +5,16 @@
 
 __all__ = []
 
-from urllib.parse import (
-    quote,
-    unquote,
-    )
+from urllib.parse import quote, unquote
 
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.schema.vocabulary import SimpleTerm
 
-from lp.oci.interfaces.ociregistrycredentials import (
-    IOCIRegistryCredentialsSet,
-    )
+from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentialsSet
 from lp.oci.model.ocirecipe import OCIRecipe
 from lp.oci.model.ociregistrycredentials import OCIRegistryCredentials
-from lp.services.webapp.vocabulary import (
-    IHugeVocabulary,
-    StormVocabularyBase,
-    )
+from lp.services.webapp.vocabulary import IHugeVocabulary, StormVocabularyBase
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 
 
@@ -58,8 +50,11 @@ class OCIRegistryCredentialsVocabulary(StormVocabularyBase):
 
     @property
     def _entries(self):
-        return list(getUtility(
-            IOCIRegistryCredentialsSet).findByOwner(self.context.owner))
+        return list(
+            getUtility(IOCIRegistryCredentialsSet).findByOwner(
+                self.context.owner
+            )
+        )
 
     def __contains__(self, value):
         """See `IVocabulary`."""
@@ -71,8 +66,8 @@ class OCIRegistryCredentialsVocabulary(StormVocabularyBase):
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
         try:
-            if ' ' in token:
-                url, username = token.split(' ', 1)
+            if " " in token:
+                url, username = token.split(" ", 1)
                 url = unquote(url)
                 username = unquote(username)
             else:
@@ -90,8 +85,8 @@ class OCIRecipeVocabulary(StormVocabularyBase):
     """All OCI Recipes of a given OCI project."""
 
     _table = OCIRecipe
-    displayname = 'Select a recipe'
-    step_title = 'Search'
+    displayname = "Select a recipe"
+    step_title = "Search"
 
     def toTerm(self, recipe):
         token = "%s/%s" % (recipe.owner.name, recipe.name)
@@ -99,7 +94,7 @@ class OCIRecipeVocabulary(StormVocabularyBase):
         return SimpleTerm(recipe, token, title)
 
     def getTermByToken(self, token):
-        owner_name, recipe_name = token.split('/')
+        owner_name, recipe_name = token.split("/")
         recipe = self.context.getRecipeByNameAndOwner(recipe_name, owner_name)
         if recipe is None:
             raise LookupError(token)

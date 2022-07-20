@@ -7,6 +7,7 @@ import os
 import signal
 from unittest import mock
 
+import transaction
 from fixtures import FakeLogger
 from storm.locals import Store
 from testtools.matchers import (
@@ -14,8 +15,7 @@ from testtools.matchers import (
     MatchesDict,
     MatchesListwise,
     MatchesStructure,
-    )
-import transaction
+)
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -25,27 +25,24 @@ from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_ALLOW_CREATE,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
-    )
+)
 from lp.oci.interfaces.ocirecipebuildjob import (
     IOCIRecipeBuildJob,
     IOCIRegistryUploadJob,
-    )
+)
 from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
 from lp.oci.interfaces.ociregistryclient import (
     BlobUploadFailed,
     IOCIRegistryClient,
-    )
+)
 from lp.oci.model.ocirecipebuildjob import (
     OCIRecipeBuildJob,
     OCIRecipeBuildJobDerived,
     OCIRecipeBuildJobType,
     OCIRegistryUploadJob,
-    )
+)
 from lp.services.config import config
-from lp.services.database.locking import (
-    LockType,
-    try_advisory_lock,
-    )
+from lp.services.database.locking import LockType, try_advisory_lock
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
@@ -53,21 +50,15 @@ from lp.services.job.tests import block_on_job
 from lp.services.statsd.tests import StatsMixin
 from lp.services.webapp import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
-from lp.testing import (
-    admin_logged_in,
-    TestCaseWithFactory,
-    )
-from lp.testing.dbuser import (
-    dbuser,
-    switch_dbuser,
-    )
+from lp.testing import TestCaseWithFactory, admin_logged_in
+from lp.testing.dbuser import dbuser, switch_dbuser
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import (
     CelerySlowJobLayer,
     DatabaseFunctionalLayer,
     LaunchpadZopelessLayer,
-    )
+)
 from lp.testing.mail_helpers import pop_notifications
 
 
@@ -84,7 +75,6 @@ def run_isolated_jobs(jobs):
 
 @implementer(IOCIRegistryClient)
 class FakeRegistryClient:
-
     def __init__(self):
         self.upload = FakeMethod()
         self.uploadManifestList = FakeMethod()
@@ -100,28 +90,31 @@ class TestOCIRecipeBuildJob(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
 
     def test_provides_interface(self):
         oci_build = self.factory.makeOCIRecipeBuild()
         self.assertProvides(
             OCIRecipeBuildJob(
-                oci_build, OCIRecipeBuildJobType.REGISTRY_UPLOAD, {}),
-            IOCIRecipeBuildJob)
+                oci_build, OCIRecipeBuildJobType.REGISTRY_UPLOAD, {}
+            ),
+            IOCIRecipeBuildJob,
+        )
 
     def test_getOopsVars(self):
         oci_build = self.factory.makeOCIRecipeBuild()
         build_job = OCIRecipeBuildJob(
-                oci_build, OCIRecipeBuildJobType.REGISTRY_UPLOAD, {})
+            oci_build, OCIRecipeBuildJobType.REGISTRY_UPLOAD, {}
+        )
         derived = FakeOCIBuildJob(build_job)
         oops = derived.getOopsVars()
         expected = [
-            ('job_id', build_job.job.id),
-            ('job_type', build_job.job_type.title),
-            ('build_id', oci_build.id),
-            ('recipe_owner_id', oci_build.recipe.owner.id),
-            ('oci_project_name', oci_build.recipe.oci_project.name),
-            ]
+            ("job_id", build_job.job.id),
+            ("job_type", build_job.job_type.title),
+            ("build_id", oci_build.id),
+            ("recipe_owner_id", oci_build.recipe.owner.id),
+            ("oci_project_name", oci_build.recipe.oci_project.name),
+        ]
         self.assertEqual(expected, oops)
 
 
@@ -131,39 +124,49 @@ class TestOCIRecipeBuildJobDerived(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
 
     def test_repr(self):
         build = self.factory.makeOCIRecipeBuild()
         job = OCIRecipeBuildJob(
-            build, OCIRecipeBuildJobType.REGISTRY_UPLOAD, {})
+            build, OCIRecipeBuildJobType.REGISTRY_UPLOAD, {}
+        )
         derived_job = OCIRecipeBuildJobDerived(job)
         expected_repr = (
             "<OCIRecipeBuildJobDerived for "
-            "~%s/%s/+oci/%s/+recipe/%s/+build/%d>" % (
+            "~%s/%s/+oci/%s/+recipe/%s/+build/%d>"
+            % (
                 build.recipe.owner.name,
                 build.recipe.oci_project.pillar.name,
-                build.recipe.oci_project.name, build.recipe.name, build.id))
+                build.recipe.oci_project.name,
+                build.recipe.name,
+                build.id,
+            )
+        )
         self.assertEqual(expected_repr, repr(derived_job))
 
     def test_repr_fails_to_get_an_attribute(self):
         class ErrorOCIRecipeBuildJobDerived(OCIRecipeBuildJobDerived):
             def __getattribute__(self, item):
-                if item == 'build':
+                if item == "build":
                     raise AttributeError("Somethng is wrong with build")
                 return super().__getattribute__(item)
+
         oci_build = self.factory.makeOCIRecipeBuild()
         job = OCIRecipeBuildJob(
-            oci_build, OCIRecipeBuildJobType.REGISTRY_UPLOAD, {})
+            oci_build, OCIRecipeBuildJobType.REGISTRY_UPLOAD, {}
+        )
         derived_job = ErrorOCIRecipeBuildJobDerived(job)
         self.assertEqual(
             "<ErrorOCIRecipeBuildJobDerived ID#%s>" % derived_job.job_id,
-            repr(derived_job))
+            repr(derived_job),
+        )
 
 
 class MultiArchRecipeMixin:
-    def makeRecipe(self, include_i386=True, include_amd64=True,
-                   include_hppa=False):
+    def makeRecipe(
+        self, include_i386=True, include_amd64=True, include_hppa=False
+    ):
         processors = []
         if include_i386:
             processors.append("386")
@@ -174,19 +177,23 @@ class MultiArchRecipeMixin:
         archs = []
         recipe = self.factory.makeOCIRecipe(require_virtualized=False)
         distroseries = self.factory.makeDistroSeries(
-            distribution=recipe.oci_project.distribution)
+            distribution=recipe.oci_project.distribution
+        )
         for processor_name in processors:
             proc = getUtility(IProcessorSet).getByName(processor_name)
             distro_arch = self.factory.makeDistroArchSeries(
-                distroseries=distroseries, architecturetag=processor_name,
-                processor=proc)
+                distroseries=distroseries,
+                architecturetag=processor_name,
+                processor=proc,
+            )
             distro_arch.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
             archs.append(proc)
         recipe.setProcessors(archs)
         return recipe
 
-    def makeBuildRequest(self, include_i386=True, include_amd64=True,
-                         include_hppa=False):
+    def makeBuildRequest(
+        self, include_i386=True, include_amd64=True, include_hppa=False
+    ):
         recipe = self.makeRecipe(include_i386, include_amd64, include_hppa)
         # Creates a build request with a build in it.
         build_request = recipe.requestBuilds(recipe.owner)
@@ -197,66 +204,92 @@ class MultiArchRecipeMixin:
         return build_request
 
 
-class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
-                               StatsMixin):
+class TestOCIRegistryUploadJob(
+    TestCaseWithFactory, MultiArchRecipeMixin, StatsMixin
+):
 
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture({
-            'webhooks.new.enabled': 'true',
-            OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: 'on',
-            OCI_RECIPE_ALLOW_CREATE: 'on'
-            }))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    "webhooks.new.enabled": "true",
+                    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                    OCI_RECIPE_ALLOW_CREATE: "on",
+                }
+            )
+        )
         self.setUpStats()
 
     def makeOCIRecipeBuild(self, **kwargs):
         ocibuild = self.factory.makeOCIRecipeBuild(
-            builder=self.factory.makeBuilder(), **kwargs)
+            builder=self.factory.makeBuilder(), **kwargs
+        )
         ocibuild.updateStatus(BuildStatus.FULLYBUILT)
         self.makeWebhook(ocibuild.recipe)
         return ocibuild
 
     def makeWebhook(self, recipe):
         self.factory.makeWebhook(
-            target=recipe, event_types=["oci-recipe:build:0.1"])
+            target=recipe, event_types=["oci-recipe:build:0.1"]
+        )
 
-    def assertWebhookDeliveries(self, ocibuild,
-                                expected_registry_upload_statuses, logger):
+    def assertWebhookDeliveries(
+        self, ocibuild, expected_registry_upload_statuses, logger
+    ):
         hook = ocibuild.recipe.webhooks.one()
         deliveries = list(hook.deliveries)
         deliveries.reverse()
         build_req_url = (
-            None if ocibuild.build_request is None
-            else canonical_url(ocibuild.build_request, force_local_path=True))
-        expected_payloads = [{
-            "recipe_build": Equals(
-                canonical_url(ocibuild, force_local_path=True)),
-            "action": Equals("status-changed"),
-            "recipe": Equals(
-                canonical_url(ocibuild.recipe, force_local_path=True)),
-            "build_request": Equals(build_req_url),
-            "status": Equals("Successfully built"),
-            "registry_upload_status": Equals(expected),
-            } for expected in expected_registry_upload_statuses]
+            None
+            if ocibuild.build_request is None
+            else canonical_url(ocibuild.build_request, force_local_path=True)
+        )
+        expected_payloads = [
+            {
+                "recipe_build": Equals(
+                    canonical_url(ocibuild, force_local_path=True)
+                ),
+                "action": Equals("status-changed"),
+                "recipe": Equals(
+                    canonical_url(ocibuild.recipe, force_local_path=True)
+                ),
+                "build_request": Equals(build_req_url),
+                "status": Equals("Successfully built"),
+                "registry_upload_status": Equals(expected),
+            }
+            for expected in expected_registry_upload_statuses
+        ]
         matchers = [
             MatchesStructure(
                 event_type=Equals("oci-recipe:build:0.1"),
-                payload=MatchesDict(expected_payload))
-            for expected_payload in expected_payloads]
+                payload=MatchesDict(expected_payload),
+            )
+            for expected_payload in expected_payloads
+        ]
         self.assertThat(deliveries, MatchesListwise(matchers))
         with dbuser(config.IWebhookDeliveryJobSource.dbuser):
             for delivery in deliveries:
                 self.assertEqual(
-                    "<WebhookDeliveryJob for webhook %d on %r>" % (
-                        hook.id, hook.target),
-                    repr(delivery))
+                    "<WebhookDeliveryJob for webhook %d on %r>"
+                    % (hook.id, hook.target),
+                    repr(delivery),
+                )
             self.assertThat(
-                logger.output, LogsScheduledWebhooks([
-                    (hook, "oci-recipe:build:0.1", MatchesDict(
-                        expected_payload))
-                    for expected_payload in expected_payloads]))
+                logger.output,
+                LogsScheduledWebhooks(
+                    [
+                        (
+                            hook,
+                            "oci-recipe:build:0.1",
+                            MatchesDict(expected_payload),
+                        )
+                        for expected_payload in expected_payloads
+                    ]
+                ),
+            )
 
     def test_provides_interface(self):
         # `OCIRegistryUploadJob` objects provide `IOCIRegistryUploadJob`.
@@ -282,8 +315,10 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
             run_isolated_jobs([job])
 
         self.assertEqual([((ocibuild,), {})], client.upload.calls)
-        self.assertEqual([((build_request, {ocibuild}), {})],
-                         client.uploadManifestList.calls)
+        self.assertEqual(
+            [((build_request, {ocibuild}), {})],
+            client.uploadManifestList.calls,
+        )
         self.assertContentEqual([job], ocibuild.registry_upload_jobs)
         self.assertIsNone(job.error_summary)
         self.assertIsNone(job.errors)
@@ -291,12 +326,27 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
         self.assertWebhookDeliveries(ocibuild, ["Pending", "Uploaded"], logger)
         self.assertEqual(4, self.stats_client.incr.call_count)
         calls = [x[0][0] for x in self.stats_client.incr.call_args_list]
-        self.assertThat(calls, MatchesListwise([
-            Equals('job.start_count,env=test,type=OCIRecipeRequestBuildsJob'),
-            Equals(
-                'job.complete_count,env=test,type=OCIRecipeRequestBuildsJob'),
-            Equals('job.start_count,env=test,type=OCIRegistryUploadJob'),
-            Equals('job.complete_count,env=test,type=OCIRegistryUploadJob')]))
+        self.assertThat(
+            calls,
+            MatchesListwise(
+                [
+                    Equals(
+                        "job.start_count,env=test,"
+                        "type=OCIRecipeRequestBuildsJob"
+                    ),
+                    Equals(
+                        "job.complete_count,env=test,"
+                        "type=OCIRecipeRequestBuildsJob"
+                    ),
+                    Equals(
+                        "job.start_count,env=test,type=OCIRegistryUploadJob"
+                    ),
+                    Equals(
+                        "job.complete_count,env=test,type=OCIRegistryUploadJob"
+                    ),
+                ]
+            ),
+        )
 
     def test_run_multiple_architectures(self):
         build_request = self.makeBuildRequest()
@@ -317,27 +367,52 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
         self.assertEqual([((builds[0],), {})], client.upload.calls)
         # Should have tried to upload the manifest list with only the first
         # build.
-        self.assertEqual([((build_request, set(builds[:1])), {})],
-                         client.uploadManifestList.calls)
+        self.assertEqual(
+            [((build_request, set(builds[:1])), {})],
+            client.uploadManifestList.calls,
+        )
 
         with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
             JobRunner([upload_jobs[1]]).runAll()
         self.assertEqual(
-            [((builds[0],), {}), ((builds[1],), {})], client.upload.calls)
+            [((builds[0],), {}), ((builds[1],), {})], client.upload.calls
+        )
         # Should have tried to upload the manifest list with both builds.
         self.assertEqual(
-            [((build_request, set(builds[:1])), {}),
-             ((build_request, set(builds)), {})],
-            client.uploadManifestList.calls)
+            [
+                ((build_request, set(builds[:1])), {}),
+                ((build_request, set(builds)), {}),
+            ],
+            client.uploadManifestList.calls,
+        )
         calls = [x[0][0] for x in self.stats_client.incr.call_args_list]
-        self.assertThat(calls, MatchesListwise([
-            Equals('job.start_count,env=test,type=OCIRecipeRequestBuildsJob'),
-            Equals(
-                'job.complete_count,env=test,type=OCIRecipeRequestBuildsJob'),
-            Equals('job.start_count,env=test,type=OCIRegistryUploadJob'),
-            Equals('job.complete_count,env=test,type=OCIRegistryUploadJob'),
-            Equals('job.start_count,env=test,type=OCIRegistryUploadJob'),
-            Equals('job.complete_count,env=test,type=OCIRegistryUploadJob')]))
+        self.assertThat(
+            calls,
+            MatchesListwise(
+                [
+                    Equals(
+                        "job.start_count,env=test,"
+                        "type=OCIRecipeRequestBuildsJob"
+                    ),
+                    Equals(
+                        "job.complete_count,env=test,"
+                        "type=OCIRecipeRequestBuildsJob"
+                    ),
+                    Equals(
+                        "job.start_count,env=test,type=OCIRegistryUploadJob"
+                    ),
+                    Equals(
+                        "job.complete_count,env=test,type=OCIRegistryUploadJob"
+                    ),
+                    Equals(
+                        "job.start_count,env=test,type=OCIRegistryUploadJob"
+                    ),
+                    Equals(
+                        "job.complete_count,env=test,type=OCIRegistryUploadJob"
+                    ),
+                ]
+            ),
+        )
 
     def test_failing_upload_does_not_retries_automatically(self):
         build_request = self.makeBuildRequest(include_i386=False)
@@ -370,7 +445,8 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
 
         client = mock.Mock()
         client.uploadManifestList.side_effect = (
-            OCIRegistryUploadJob.ManifestListUploadError("Nope! Error."))
+            OCIRegistryUploadJob.ManifestListUploadError("Nope! Error.")
+        )
         self.useFixture(ZopeUtilityFixture(client, IOCIRegistryClient))
 
         with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
@@ -394,7 +470,8 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
     def test_getUploadedBuilds(self):
         # Create a build request with 3 builds.
         build_request = self.makeBuildRequest(
-            include_i386=True, include_amd64=True, include_hppa=True)
+            include_i386=True, include_amd64=True, include_hppa=True
+        )
         builds = build_request.builds
         self.assertEqual(3, builds.count())
 
@@ -435,16 +512,16 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
                         "Class": "",
                         "Name": "some-image",
                         "Action": "pull",
-                        },
+                    },
                     {
                         "Type": "repository",
                         "Class": "",
                         "Name": "some-image",
                         "Action": "push",
-                        },
-                    ],
-                },
-            ]
+                    },
+                ],
+            },
+        ]
         client.upload.failure = BlobUploadFailed(error_summary, errors)
         self.useFixture(ZopeUtilityFixture(client, IOCIRegistryClient))
         with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
@@ -455,7 +532,8 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
         self.assertEqual(errors, job.errors)
         self.assertEqual([], pop_notifications())
         self.assertWebhookDeliveries(
-            ocibuild, ["Pending", "Failed to upload"], logger)
+            ocibuild, ["Pending", "Failed to upload"], logger
+        )
 
     def test_run_failed_other_error(self):
         # A run that fails for some reason other than a registry error sets
@@ -475,7 +553,8 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
         self.assertIsNone(job.errors)
         self.assertEqual([], pop_notifications())
         self.assertWebhookDeliveries(
-            ocibuild, ["Pending", "Failed to upload"], logger)
+            ocibuild, ["Pending", "Failed to upload"], logger
+        )
 
     def test_run_does_not_oops(self):
         # The job can OOPS, but it is hidden by our exception handling
@@ -519,9 +598,10 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
         if pid == 0:  # child
             os.close(read)
             with try_advisory_lock(
-                    LockType.REGISTRY_UPLOAD,
-                    ocibuild.recipe.id,
-                    Store.of(ocibuild.recipe)):
+                LockType.REGISTRY_UPLOAD,
+                ocibuild.recipe.id,
+                Store.of(ocibuild.recipe),
+            ):
                 os.write(write, b"1")
                 try:
                     signal.pause()
@@ -537,13 +617,15 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
                 self.assertEqual(JobStatus.WAITING, job.status)
                 self.assertEqual([], runner.oops_ids)
                 self.assertIn(
-                    "Scheduling retry due to AdvisoryLockHeld", logger.output)
+                    "Scheduling retry due to AdvisoryLockHeld", logger.output
+                )
             finally:
                 os.kill(pid, signal.SIGINT)
 
 
-class TestOCIRegistryUploadJobViaCelery(TestCaseWithFactory,
-                                        MultiArchRecipeMixin):
+class TestOCIRegistryUploadJobViaCelery(
+    TestCaseWithFactory, MultiArchRecipeMixin
+):
     """Runs OCIRegistryUploadJob via Celery, to make sure the machinery
     around it works.
 
@@ -552,16 +634,21 @@ class TestOCIRegistryUploadJobViaCelery(TestCaseWithFactory,
     so we should make sure we are not breaking anything in the interaction
     with the job lifecycle via celery.
     """
+
     layer = CelerySlowJobLayer
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture({
-            'webhooks.new.enabled': 'true',
-            OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: 'on',
-            OCI_RECIPE_ALLOW_CREATE: 'on',
-            'jobs.celery.enabled_classes': 'OCIRegistryUploadJob',
-            }))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    "webhooks.new.enabled": "true",
+                    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                    OCI_RECIPE_ALLOW_CREATE: "on",
+                    "jobs.celery.enabled_classes": "OCIRegistryUploadJob",
+                }
+            )
+        )
 
     def test_run_upload(self):
         build_request = self.makeBuildRequest()

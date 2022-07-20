@@ -12,13 +12,10 @@ from lp.oci.interfaces.ocipushrule import (
     IOCIPushRule,
     IOCIPushRuleSet,
     OCIPushRuleAlreadyExists,
-    )
+)
 from lp.oci.model.ociregistrycredentials import OCIRegistryCredentials
 from lp.oci.tests.helpers import OCIConfigHelperMixin
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
@@ -37,25 +34,26 @@ class TestOCIPushRule(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_change_attribute(self):
         push_rule = self.factory.makeOCIPushRule()
         with person_logged_in(push_rule.recipe.owner):
-            push_rule.setNewImageName('new image name')
+            push_rule.setNewImageName("new image name")
 
         found_rule = push_rule.recipe.push_rules[0]
-        self.assertEqual(found_rule.image_name, 'new image name')
+        self.assertEqual(found_rule.image_name, "new image name")
 
     def test_change_image_name_existing(self):
         first = self.factory.makeOCIPushRule(image_name="first")
         second = self.factory.makeOCIPushRule(
             image_name="second",
-            registry_credentials=first.registry_credentials)
+            registry_credentials=first.registry_credentials,
+        )
         self.assertRaises(
-            OCIPushRuleAlreadyExists,
-            second.setNewImageName,
-            first.image_name)
+            OCIPushRuleAlreadyExists, second.setNewImageName, first.image_name
+        )
 
     def test_username_retrieval(self):
         credentials = self.factory.makeOCIRegistryCredentials()
         push_rule = self.factory.makeOCIPushRule(
-            registry_credentials=credentials)
+            registry_credentials=credentials
+        )
         self.assertEqual(credentials.username, push_rule.username)
 
     def test_valid_registry_url(self):
@@ -65,7 +63,11 @@ class TestOCIPushRule(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertRaisesRegex(
             ValidationError,
             "asdf://foo.com is not a valid URL for 'url' attribute",
-            OCIRegistryCredentials, owner, url, credentials)
+            OCIRegistryCredentials,
+            owner,
+            url,
+            credentials,
+        )
         # Avoid trying to flush the incomplete object on cleanUp.
         Store.of(owner).rollback()
 
@@ -89,14 +91,17 @@ class TestOCIPushRuleSet(OCIConfigHelperMixin, TestCaseWithFactory):
         push_rule = getUtility(IOCIPushRuleSet).new(
             recipe=recipe,
             registry_credentials=registry_credentials,
-            image_name=image_name)
+            image_name=image_name,
+        )
 
         self.assertThat(
             push_rule,
             MatchesStructure.byEquality(
                 recipe=recipe,
                 registry_credentials=registry_credentials,
-                image_name=image_name))
+                image_name=image_name,
+            ),
+        )
 
     def test_new_with_existing(self):
         recipe = self.factory.makeOCIRecipe()
@@ -105,9 +110,13 @@ class TestOCIPushRuleSet(OCIConfigHelperMixin, TestCaseWithFactory):
         getUtility(IOCIPushRuleSet).new(
             recipe=recipe,
             registry_credentials=registry_credentials,
-            image_name=image_name)
+            image_name=image_name,
+        )
 
         self.assertRaises(
             OCIPushRuleAlreadyExists,
             getUtility(IOCIPushRuleSet).new,
-            recipe, registry_credentials, image_name)
+            recipe,
+            registry_credentials,
+            image_name,
+        )
