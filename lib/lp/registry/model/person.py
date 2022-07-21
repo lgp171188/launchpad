@@ -221,7 +221,7 @@ from lp.services.database.sqlobject import (
     StringCol,
 )
 from lp.services.database.stormbase import StormBase
-from lp.services.database.stormexpr import fti_search
+from lp.services.database.stormexpr import WithMaterialized, fti_search
 from lp.services.helpers import backslashreplace, shortlist
 from lp.services.identity.interfaces.account import (
     INACTIVE_ACCOUNT_STATUSES,
@@ -1214,6 +1214,7 @@ class Person(
     def isAnyPillarOwner(self):
         """See IPerson."""
 
+        store = IStore(self)
         with_sql = [
             With(
                 "teams",
@@ -1225,8 +1226,9 @@ class Person(
                     % self.id
                 ),
             ),
-            With(
+            WithMaterialized(
                 "owned_entities",
+                store,
                 SQL(
                     """
                  SELECT Product.id
@@ -1244,7 +1246,6 @@ class Person(
                 ),
             ),
         ]
-        store = IStore(self)
         rs = (
             store.with_(with_sql)
             .using("owned_entities")
@@ -1610,8 +1611,9 @@ class Person(
         # the selectivity of the filter. Put that in a CTE to force it
         # to calculate the workitems up front, rather than doing a hash
         # join over all of Specification and SpecificationWorkItem.
-        assigned_specificationworkitem = With(
+        assigned_specificationworkitem = WithMaterialized(
             "assigned_specificationworkitem",
+            store,
             Union(
                 Select(
                     SpecificationWorkItem.id,
@@ -2024,8 +2026,10 @@ class Person(
             __storm_table__ = "RestrictedParticipation"
             teamID = Int(primary=True, name="team")
 
-        restricted_participation_cte = With(
+        store = Store.of(self)
+        restricted_participation_cte = WithMaterialized(
             "RestrictedParticipation",
+            store,
             Select(
                 TeamParticipation.teamID,
                 tables=[TeamParticipation],
@@ -2037,8 +2041,7 @@ class Person(
         )
 
         return (
-            Store.of(self)
-            .with_(restricted_participation_cte)
+            store.with_(restricted_participation_cte)
             .find(
                 Person,
                 Person.id.is_in(
@@ -4659,8 +4662,9 @@ class PersonSet:
         # selective that anything PostgreSQL might guess at.  Use a CTE to
         # ensure that it looks at them first.
         store = store.with_(
-            With(
+            WithMaterialized(
                 "RelevantPerson",
+                store,
                 Select(Person.id, where=conditions, tables=origin),
             )
         )
