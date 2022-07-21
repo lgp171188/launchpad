@@ -9,7 +9,7 @@ launchpad_dev or the database specified on the command line.
 One uses Python, the other iPython.
 """
 
-__all__ = ['python', 'ipython']
+__all__ = ["python", "ipython"]
 
 # This has entry points with corresponding scripts installed by setup.py.
 
@@ -19,11 +19,12 @@ import rlcompleter
 import sys
 import webbrowser
 
+import transaction
 from pytz import utc
 from storm.expr import *  # noqa: F401,F403
+
 # Bring in useful bits of Storm.
 from storm.locals import *  # noqa: F401,F403
-import transaction
 from zope.component import getUtility
 from zope.interface.verify import verifyObject
 from zope.security.proxy import removeSecurityProxy
@@ -42,10 +43,16 @@ from lp.services.scripts import execute_zcml_for_scripts
 from lp.services.webapp import canonical_url
 from lp.testing.factory import LaunchpadObjectFactory
 
-
 # Silence unused name warnings
-(utc, transaction, verifyObject, removeSecurityProxy, canonical_url,
- getUtility, rlcompleter)
+(
+    utc,
+    transaction,
+    verifyObject,
+    removeSecurityProxy,
+    canonical_url,
+    getUtility,
+    rlcompleter,
+)
 
 
 def _get_locals():
@@ -55,16 +62,16 @@ def _get_locals():
         dbuser = None
     dbconfig.override(dbuser=dbuser)
     execute_zcml_for_scripts()
-    readline.parse_and_bind('tab: complete')
+    readline.parse_and_bind("tab: complete")
     # Mimic the real interactive interpreter's loading of any
     # $PYTHONSTARTUP file.
-    startup = os.environ.get('PYTHONSTARTUP')
+    startup = os.environ.get("PYTHONSTARTUP")
     if startup:
         with open(startup) as f:
             exec(f.read(), globals())
     store = IMasterStore(Person)
 
-    if dbuser == 'launchpad':
+    if dbuser == "launchpad":
         # Create a few variables "in case they come in handy."
         # Do we really use these?  Are they worth carrying around?
         d = Distribution.get(1)
@@ -99,17 +106,19 @@ def _get_locals():
     res = {}
     res.update(locals())
     res.update(globals())
-    del res['_get_locals']
+    del res["_get_locals"]
     return res
 
 
 def python():
     import code
-    code.interact(banner='', local=_get_locals())
+
+    code.interact(banner="", local=_get_locals())
 
 
 def ipython():
     from IPython.frontend.terminal.ipapp import TerminalIPythonApp
+
     app = TerminalIPythonApp.instance()
     app.initialize(argv=[])
     app.shell.user_ns.update(_get_locals())
