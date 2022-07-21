@@ -19,16 +19,17 @@ Let's do some imports we will need to test this class.
 
 This class links the translations submitted by a translator with the
 associated POFile and POTMsgSet.  TranslationMessage and
-DummyTranslationMessage both implement ITranslationMessage:
+PlaceholderTranslationMessage both implement ITranslationMessage:
 
     >>> translationmessage = factory.makeCurrentTranslationMessage(
     ...     potmsgset=potmsgset, pofile=pofile_es)
     >>> verifyObject(ITranslationMessage, translationmessage)
     True
 
-    >>> dummy_message = potmsgset.getCurrentTranslationMessageOrDummy(
-    ...     factory.makePOFile('xh'))
-    >>> verifyObject(ITranslationMessage, dummy_message)
+    >>> placeholder_message = (
+    ...     potmsgset.getCurrentTranslationMessageOrPlaceholder(
+    ...         factory.makePOFile('xh')))
+    >>> verifyObject(ITranslationMessage, placeholder_message)
     True
 
 
@@ -51,7 +52,7 @@ language:
     >>> serbian = getUtility(ILanguageSet)['sr']
     >>> serbian.pluralforms
     3
-    >>> current_sr = potmsgset.getCurrentTranslationMessageOrDummy(
+    >>> current_sr = potmsgset.getCurrentTranslationMessageOrPlaceholder(
     ...     PlaceholderPOFile(potemplate, serbian))
     >>> current_sr.plural_forms
     1
@@ -59,7 +60,7 @@ language:
     >>> divehi = getUtility(ILanguageSet)['dv']
     >>> print(divehi.pluralforms)
     None
-    >>> current_dv = potmsgset.getCurrentTranslationMessageOrDummy(
+    >>> current_dv = potmsgset.getCurrentTranslationMessageOrPlaceholder(
     ...     PlaceholderPOFile(potemplate, divehi))
     >>> current_dv.plural_forms
     1
@@ -74,8 +75,9 @@ forms per language (3 for Serbian, as specified in the language).
     plural
     >>> serbian.pluralforms
     3
-    >>> current_sr = potmsgset_plural.getCurrentTranslationMessageOrDummy(
-    ...     PlaceholderPOFile(potemplate, serbian))
+    >>> current_sr = (
+    ...     potmsgset_plural.getCurrentTranslationMessageOrPlaceholder(
+    ...         PlaceholderPOFile(potemplate, serbian)))
     >>> current_sr.plural_forms
     3
 
@@ -84,8 +86,9 @@ a default of 2, which is the most common number of plural forms:
 
     >>> print(divehi.pluralforms)
     None
-    >>> current_dv = potmsgset_plural.getCurrentTranslationMessageOrDummy(
-    ...     PlaceholderPOFile(potemplate, divehi))
+    >>> current_dv = (
+    ...     potmsgset_plural.getCurrentTranslationMessageOrPlaceholder(
+    ...         PlaceholderPOFile(potemplate, divehi)))
     >>> current_dv.plural_forms
     2
 

@@ -76,8 +76,8 @@ from lp.translations.interfaces.translations import TranslationConstants
 from lp.translations.model.pomsgid import POMsgID
 from lp.translations.model.potranslation import POTranslation
 from lp.translations.model.translationmessage import (
-    DummyTranslationMessage,
     make_plurals_sql_fragment,
+    PlaceholderTranslationMessage,
     TranslationMessage,
     )
 from lp.translations.model.translationtemplateitem import (
@@ -274,17 +274,17 @@ class POTMsgSet(SQLBase):
         else:
             return self.msgid_plural.msgid
 
-    def getCurrentTranslationMessageOrDummy(self, pofile):
+    def getCurrentTranslationMessageOrPlaceholder(self, pofile):
         """See `IPOTMsgSet`."""
         template = pofile.potemplate
         current = self.getCurrentTranslation(
             template, pofile.language, template.translation_side)
         if current is None:
-            dummy = DummyTranslationMessage(pofile, self)
+            placeholder = PlaceholderTranslationMessage(pofile, self)
             side = pofile.potemplate.translation_side
             traits = getUtility(ITranslationSideTraitsSet).getTraits(side)
-            traits.setFlag(dummy, True)
-            return dummy
+            traits.setFlag(placeholder, True)
+            return placeholder
         else:
             current.setPOFile(pofile)
             return current

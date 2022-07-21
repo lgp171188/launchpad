@@ -502,10 +502,10 @@
                 set_schema="lp.translations.interfaces.translationmessage.ITranslationMessage"/>
         </class>
 
-        <!-- Dummy Translation Message. It's a read only class. -->
+        <!-- Placeholder Translation Message. It's a read only class. -->
 
         <class
-            class="lp.translations.model.translationmessage.DummyTranslationMessage">
+            class="lp.translations.model.translationmessage.PlaceholderTranslationMessage">
             <allow
                 interface="lp.translations.interfaces.translationmessage.ITranslationMessage"/>
         </class>
