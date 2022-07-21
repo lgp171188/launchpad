@@ -152,7 +152,7 @@ listed as an ordinary attachment.
     bar.txt
     More data
 
-Similary, if we add an attachment that does not look like a patch and
+Similarly, if we add an attachment that does not look like a patch and
 if we set the "patch" flag for this attachment...
 
     >>> user_browser.open(
@@ -310,7 +310,7 @@ the attachment should indeed be labeled as a patch
     What is a patch?
 
 We are sure that this file is indeed a patch, so let's activate the
-currenty inactive "yes" radion button of the question "Is this a patch?"
+currently inactive "yes" radion button of the question "Is this a patch?"
 again and submit the form.
 
     >>> patch_control_yes = user_browser.getControl('yes')

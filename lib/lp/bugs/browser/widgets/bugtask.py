@@ -149,7 +149,7 @@ class BugTaskAssigneeWidget(Widget):
             # to select an assignee.
             return self.assignee_chooser_widget.getInputValue()
         elif assignee_option == self.assign_to_me:
-            # The user has choosen to 'take' this bug.
+            # The user has chosen to 'take' this bug.
             return getUtility(ILaunchBag).user
         elif assignee_option == self.assigned_to:
             # This is effectively a no-op

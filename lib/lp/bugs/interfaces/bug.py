@@ -679,7 +679,7 @@ class IBugView(Interface):
 
         A Question can be created from a bug if:
         1. There is only one bugtask with a status of New, Incomplete,
-           Confirmed, or Wont Fix. Any other bugtasks must be Invalid.
+           Confirmed, or Won't Fix. Any other bugtasks must be Invalid.
         2. The bugtask's target uses Launchpad to track bugs.
         3. The bug was not made into a question previously.
         """
@@ -1420,7 +1420,7 @@ class IBugAddForm(IBug):
         required=True,
         description=_(
             "Ubuntu, Debian, Gentoo, etc. You can file bugs only on "
-            "distrubutions using Launchpad as their primary bug "
+            "distributions using Launchpad as their primary bug "
             "tracker."
         ),
         vocabulary="DistributionUsingMalone",
@@ -1535,7 +1535,7 @@ class IBugSet(Interface):
             applicable based on the bug report target) will be subscribed to
             all *public bugs only*
 
-          * if either product or distribution is specified, an appropiate
+          * if either product or distribution is specified, an appropriate
             bug task will be created
         """
 

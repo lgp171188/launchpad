@@ -11,7 +11,7 @@ Widget basics
 
 When searching by username we need to both select the corresponding
 radio button and enter a valid user name. The username input
-automatically selects the coresponding radio button when we type some
+automatically selects the corresponding radio button when we type some
 text into it by calling the selectWidget Javascript function.
 
     >>> browser.open('http://launchpad.test/firefox/+bugs?advanced=1')

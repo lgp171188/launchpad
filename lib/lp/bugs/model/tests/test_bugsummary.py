@@ -339,8 +339,8 @@ class TestBugSummary(TestCaseWithFactory):
         productseries_a = self.factory.makeProductSeries(product=product)
         productseries_b = self.factory.makeProductSeries(product=product)
 
-        # You can't have a BugTask targetted to a productseries without
-        # already having a BugTask targetted to the product. Create
+        # You can't have a BugTask targeted to a productseries without
+        # already having a BugTask targeted to the product. Create
         # this task explicitly.
         product_task = self.factory.makeBugTask(target=product)
 

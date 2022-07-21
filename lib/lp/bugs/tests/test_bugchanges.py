@@ -498,7 +498,7 @@ class TestBugChanges(TestCaseWithFactory):
 
     def test_bugwatch_not_modified(self):
         # Firing off a modified event without actually modifying
-        # anything intersting doesn't cause anything to be added to the
+        # anything interesting doesn't cause anything to be added to the
         # activity log.
         bug_watch = self.factory.makeBugWatch(bug=self.bug)
         self.saveOldChanges()
@@ -1424,7 +1424,7 @@ class TestBugChanges(TestCaseWithFactory):
         self._test_unassign_bugtask(self.bug_task, expected_recipients)
 
     def test_target_bugtask_to_milestone(self):
-        # When a bugtask is targetted to a milestone BugActivity and
+        # When a bugtask is targeted to a milestone BugActivity and
         # BugNotification records will be created.
         milestone = self.factory.makeMilestone(product=self.product)
         self.changeAttribute(self.bug_task, "milestone", milestone)
@@ -1451,7 +1451,7 @@ class TestBugChanges(TestCaseWithFactory):
         )
 
     def test_untarget_bugtask_from_milestone(self):
-        # When a bugtask is untargetted from a milestone both
+        # When a bugtask is untargeted from a milestone both
         # BugActivity and BugNotification records will be created.
         milestone = self.factory.makeMilestone(product=self.product)
         self.changeAttribute(self.bug_task, "milestone", milestone)

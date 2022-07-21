@@ -82,7 +82,7 @@ Then, if we match bug 1, only basic details of bug 8 are displayed:
       Closed (0 comments) last updated 2006-05-19...
       When I press print in Firefox...
 
-To help the user verify if a bug is indeed simliar to the problem
+To help the user verify if a bug is indeed similar to the problem
 being reported, the user's original summary is displayed above
 the list of potentially similar bugs.
 

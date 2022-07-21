@@ -310,7 +310,7 @@ class BugWatch(SQLBase):
         activity.bug_watch = self
         if result is None:
             # If no result is passed we assume that the activity
-            # succeded and set the result field accordingly.
+            # succeeded and set the result field accordingly.
             activity.result = BugWatchActivityStatus.SYNC_SUCCEEDED
         else:
             activity.result = result

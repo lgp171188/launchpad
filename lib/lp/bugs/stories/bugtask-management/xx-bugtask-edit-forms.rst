@@ -1,7 +1,7 @@
 Bug task edit forms
 ===================
 
-Aside from the options to edit the status of a bugtask vie Ajax
+Aside from the options to edit the status of a bugtask via Ajax
 and via inline forms of the main bug page (which are by default
 hidden via CSS), the details of a bug task status can be edited
 on dedicated pages.

@@ -331,7 +331,7 @@ class CheckwatchesMaster(WorkingBase):
                 new_next_check=datetime.now(pytz.timezone("UTC"))
             )
 
-        # Loop over the bug watches in batches as specificed by
+        # Loop over the bug watches in batches as specified by
         # batch_size until there are none left to update.
         with self.transaction:
             self.logger.info(
@@ -730,7 +730,7 @@ class CheckwatchesMaster(WorkingBase):
         )
 
         added_task.bugwatch = bug_watch
-        # Need to flush databse updates, so that the bug watch knows it
+        # Need to flush database updates, so that the bug watch knows it
         # is linked from a bug task.
         flush_database_updates()
 
@@ -775,7 +775,7 @@ class TwistedThreadScheduler(BaseScheduler):
         :type num_threads: int
 
         :param install_signal_handlers: Whether the Twisted reactor
-          should install signal handlers or not. This is intented for
+          should install signal handlers or not. This is intended for
           testing - set to False to avoid layer violations - but may
           be useful in other situations.
         :type install_signal_handlers: bool
@@ -838,7 +838,7 @@ class CheckWatchesCronScript(LaunchpadCronScript):
             dest="jobs",
             default=1,
             help=(
-                "The number of simulataneous jobs to run, %default by "
+                "The number of simultaneous jobs to run, %default by "
                 "default."
             ),
         )

@@ -333,7 +333,7 @@ list of all the bug IDs in the passed set that have been changed since
 that datetime. Bug IDs are returned as strings so as to maintain
 compatibility with BugWatch.remotebug.
 
-This is acheived by calling the Bug.search() method on the
+This is achieved by calling the Bug.search() method on the
 remote server and passing it a 'changed_since' parameter.
 
     >>> bugzilla._bugs = {}
