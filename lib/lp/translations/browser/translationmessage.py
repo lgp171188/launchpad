@@ -770,7 +770,7 @@ class BaseTranslationView(LaunchpadView):
                 # current translation, suggestion or the new translation
                 # field.
                 current_translation_message = (
-                    potmsgset.getCurrentTranslationMessageOrDummy(
+                    potmsgset.getCurrentTranslationMessageOrPlaceholder(
                         self.pofile))
                 if (selected_translation_key !=
                     msgset_ID_LANGCODE_translation_PLURALFORM_new):

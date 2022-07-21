@@ -87,7 +87,7 @@ We get a POTMsgSet and verify it's a singular form:
     >>> print(current)
     None
     >>> pt_BR_placeholder_current = (
-    ...     potmsgset.getCurrentTranslationMessageOrDummy(
+    ...     potmsgset.getCurrentTranslationMessageOrPlaceholder(
     ...         pt_BR_placeholderpofile))
     >>> pt_BR_placeholder_current.plural_forms
     1
@@ -117,7 +117,7 @@ back to the most common case:
     >>> print(apa_placeholderpofile.language.pluralforms)
     None
     >>> apa_placeholder_current = (
-    ...     plural_potmsgset.getCurrentTranslationMessageOrDummy(
+    ...     plural_potmsgset.getCurrentTranslationMessageOrPlaceholder(
     ...         apa_placeholderpofile))
     >>> apa_placeholder_current.plural_forms
     2
@@ -130,7 +130,7 @@ We can guess the pluralforms for this language through ILanguage.pluralforms:
     >>> ru_placeholderpofile = evolution_potemplate.getPlaceholderPOFile(
     ...     language_ru)
     >>> ru_placeholder_current = (
-    ...     plural_potmsgset.getCurrentTranslationMessageOrDummy(
+    ...     plural_potmsgset.getCurrentTranslationMessageOrPlaceholder(
     ...     	ru_placeholderpofile))
 
     >>> print(ru_placeholderpofile.language.pluralforms)
@@ -474,11 +474,11 @@ the 'wiki' space is for any submission done outside that IPOMsgSet.
     >>> len(wiki_submissions)
     0
 
-Now, we get a dummy message that has the same msgid as the previous one.
-A dummy message is one that is not yet stored in our database, we use
+Now, we get a placeholder message that has the same msgid as the previous one.
+A placeholder message is one that is not yet stored in our database, we use
 them to be able to render those messages in our UI, once we get a
 submission with a value for it, it's created in our database so it's not
-dummy anymore.
+placeholder anymore.
 
     >>> pmount_hoary_package = ubuntu_hoary.getSourcePackage('pmount')
     >>> pmount_man_template = getUtility(IPOTemplateSet).getSubset(

@@ -30,7 +30,7 @@ without the plural form information.
     >>> potmsgset = pofile_tlh.potemplate.getPOTMsgSetByMsgIDText(
     ...     u'evolution addressbook')
     >>> current_translationmessage = (
-    ...     potmsgset.getCurrentTranslationMessageOrDummy(pofile_tlh))
+    ...     potmsgset.getCurrentTranslationMessageOrPlaceholder(pofile_tlh))
     >>> translationmessage_page_view = create_view(
     ...     current_translationmessage, "+translate")
     >>> translationmessage_page_view.initialize()

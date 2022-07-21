@@ -68,11 +68,11 @@ Also, we can get the url to a translation message.
     >>> print(canonical_url(translationmessage))
     http://transl.../hoary/+source/evolution/+pots/evolution-2.2/es/1
 
-Even for a dummy one.
+Even for a placeholder one.
 
     >>> potmsgset = potemplate.getPOTMsgSetBySequence(20)
-    >>> translationmessage = potmsgset.getCurrentTranslationMessageOrDummy(
-    ...     pofile)
+    >>> translationmessage = (
+    ...     potmsgset.getCurrentTranslationMessageOrPlaceholder(pofile))
     >>> print(canonical_url(translationmessage))
     http://transl.../hoary/+source/evolution/+pots/evolution-2.2/es/20
 
@@ -97,7 +97,7 @@ with the distro subset.
     >>> print(canonical_url(pofile))
     http://translations.../evolution/trunk/+pots/evolution-2.2/es
 
-Also, we can get the url to a dummy one
+Also, we can get the url to a placeholder one.
 
     >>> potmsgset = potemplate.getPOTMsgSetBySequence(1)
     >>> translationmessage = potmsgset.getCurrentTranslation(
@@ -106,11 +106,11 @@ Also, we can get the url to a dummy one
     >>> print(canonical_url(translationmessage))
     http://translations.../evolution/trunk/+pots/evolution-2.2/es/1
 
-Even for a dummy PO msgset
+Even for a placeholder PO msgset.
 
     >>> potmsgset = potemplate.getPOTMsgSetBySequence(20)
-    >>> translationmessage = potmsgset.getCurrentTranslationMessageOrDummy(
-    ...     pofile)
+    >>> translationmessage = (
+    ...     potmsgset.getCurrentTranslationMessageOrPlaceholder(pofile))
     >>> print(canonical_url(translationmessage))
     http://translations.../evolution/trunk/+pots/evolution-2.2/es/20
 

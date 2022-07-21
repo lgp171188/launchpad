@@ -34,7 +34,7 @@ from lp.translations.interfaces.translationmessage import (
 from lp.translations.interfaces.translations import TranslationConstants
 from lp.translations.model.potranslation import POTranslation
 from lp.translations.model.translationmessage import (
-    DummyTranslationMessage,
+    PlaceholderTranslationMessage,
     TranslationMessage,
     )
 
@@ -52,11 +52,11 @@ class TestTranslationMessage(TestCaseWithFactory):
         message = self.factory.makeCurrentTranslationMessage()
         verifyObject(ITranslationMessage, message)
 
-    def test_dummy_translationmessage(self):
+    def test_placeholder_translationmessage(self):
         pofile = self.factory.makePOFile('nl')
         potmsgset = self.factory.makePOTMsgSet(pofile.potemplate)
-        dummy = DummyTranslationMessage(pofile, potmsgset)
-        verifyObject(ITranslationMessage, dummy)
+        placeholder = PlaceholderTranslationMessage(pofile, potmsgset)
+        verifyObject(ITranslationMessage, placeholder)
 
     def test_is_diverged_false(self):
         # ITranslationMessage.is_diverged is a little helper to let you
