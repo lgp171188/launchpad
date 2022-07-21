@@ -10,7 +10,7 @@ Let's do some imports we will need to test this class.
     >>> from lp.translations.interfaces.translationmessage import (
     ...     ITranslationMessage)
     >>> from lp.translations.interfaces.translator import ITranslatorSet
-    >>> from lp.translations.model.pofile import DummyPOFile
+    >>> from lp.translations.model.pofile import PlaceholderPOFile
 
     >>> login('carlos@canonical.com')
     >>> pofile_es = factory.makePOFile(language_code='es')
@@ -52,7 +52,7 @@ language:
     >>> serbian.pluralforms
     3
     >>> current_sr = potmsgset.getCurrentTranslationMessageOrDummy(
-    ...     DummyPOFile(potemplate, serbian))
+    ...     PlaceholderPOFile(potemplate, serbian))
     >>> current_sr.plural_forms
     1
 
@@ -60,7 +60,7 @@ language:
     >>> print(divehi.pluralforms)
     None
     >>> current_dv = potmsgset.getCurrentTranslationMessageOrDummy(
-    ...     DummyPOFile(potemplate, divehi))
+    ...     PlaceholderPOFile(potemplate, divehi))
     >>> current_dv.plural_forms
     1
 
@@ -75,7 +75,7 @@ forms per language (3 for Serbian, as specified in the language).
     >>> serbian.pluralforms
     3
     >>> current_sr = potmsgset_plural.getCurrentTranslationMessageOrDummy(
-    ...     DummyPOFile(potemplate, serbian))
+    ...     PlaceholderPOFile(potemplate, serbian))
     >>> current_sr.plural_forms
     3
 
@@ -85,7 +85,7 @@ a default of 2, which is the most common number of plural forms:
     >>> print(divehi.pluralforms)
     None
     >>> current_dv = potmsgset_plural.getCurrentTranslationMessageOrDummy(
-    ...     DummyPOFile(potemplate, divehi))
+    ...     PlaceholderPOFile(potemplate, divehi))
     >>> current_dv.plural_forms
     2
 

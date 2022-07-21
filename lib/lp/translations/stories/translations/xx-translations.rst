@@ -124,7 +124,7 @@ put Afrihili into the list of "preferred languages".
 
 If we select Croatian, we would expect to see the list of source package
 templates, and in the sample data we should have a croatian pofile for
-pmount. Note that we should also have an empty pofile (really a dummy
+pmount. Note that we should also have an empty pofile (really a placeholder
 pofile) for evolution-2.2
 
     >>> browser.open(
@@ -192,8 +192,8 @@ last translator is displayed.
     ...     find_tag_by_id(browser.contents, "pkgconf-mozilla-person")))
     Helge Kreutzmann
 
-DummyPOFile
------------
+PlaceholderPOFile
+-----------------
 
 There are no translations yet for pmount into Portuguese. Carlos has
 decided to start contributing translations to that package.
@@ -216,7 +216,7 @@ file):
     >>> '10.' in browser.contents
     True
 
-If everything works out ok, that means that DummyPOFile has actually
+If everything works out ok, that means that PlaceholderPOFile has actually
 returned all untranslated entries.
 
 Finally, lets also check that translated entries show up as well.

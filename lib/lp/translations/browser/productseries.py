@@ -401,7 +401,7 @@ class ProductSeriesView(LaunchpadView,
                         pot = self.context.getCurrentTranslationTemplates()[0]
                         pofile = pot.getPOFileByLang(lang.code)
                         if pofile is None:
-                            pofile = pot.getDummyPOFile(lang)
+                            pofile = pot.getPlaceholderPOFile(lang)
                         productserieslang = (
                             productserieslangset.getProductSeriesLanguage(
                                 self.context, lang, pofile=pofile))

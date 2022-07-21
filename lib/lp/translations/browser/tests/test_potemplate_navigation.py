@@ -8,7 +8,7 @@ from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.translations.browser.potemplate import POTemplateNavigation
-from lp.translations.model.pofile import DummyPOFile
+from lp.translations.model.pofile import PlaceholderPOFile
 
 
 class TestPOTemplateNavigation(TestCaseWithFactory):
@@ -26,10 +26,10 @@ class TestPOTemplateNavigation(TestCaseWithFactory):
         destination = nav.traverse('nl')
         self.assertEqual(pofile, destination)
 
-    def test_traverse_to_dummy_pofile(self):
+    def test_traverse_to_placeholder_pofile(self):
         nav = self._makeNavigation(self.factory.makePOTemplate())
         destination = nav.traverse('de')
-        self.assertIsInstance(destination, DummyPOFile)
+        self.assertIsInstance(destination, PlaceholderPOFile)
         self.assertEqual('de', destination.language.code)
 
     def test_traverse_nonexistent_language(self):

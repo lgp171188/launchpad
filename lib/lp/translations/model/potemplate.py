@@ -174,7 +174,7 @@ def get_pofiles_for(potemplates, language):
     :param language: the language that the `IPOFile`s should be for.
     :return: a list of exactly one `IPOFile` for each `POTemplate`
         in `potemplates`.  They will be `POFile`s where available,
-        and `DummyPOFile`s where not.
+        and `PlaceholderPOFile`s where not.
     """
     potemplates = list(potemplates)
     if len(potemplates) == 0:
@@ -191,7 +191,7 @@ def get_pofiles_for(potemplates, language):
     for entry, pofile in enumerate(result):
         assert pofile == result[entry], "This enumerate confuses me."
         if pofile is None:
-            result[entry] = potemplates[entry].getDummyPOFile(
+            result[entry] = potemplates[entry].getPlaceholderPOFile(
                 language, check_for_existing=False)
 
     return result
@@ -820,11 +820,11 @@ class POTemplate(SQLBase, RosettaStats):
 
         return pofile
 
-    def getDummyPOFile(self, language, requester=None,
-                       check_for_existing=True):
+    def getPlaceholderPOFile(self, language, requester=None,
+                             check_for_existing=True):
         """See `IPOTemplate`."""
         # Avoid circular import.
-        from lp.translations.model.pofile import DummyPOFile
+        from lp.translations.model.pofile import PlaceholderPOFile
 
         if check_for_existing:
             # see if a valid one exists.
@@ -832,7 +832,7 @@ class POTemplate(SQLBase, RosettaStats):
             assert existingpo is None, (
                 'There is already a valid IPOFile (%s)' % existingpo.title)
 
-        return DummyPOFile(self, language, owner=requester)
+        return PlaceholderPOFile(self, language, owner=requester)
 
     def createPOTMsgSetFromMsgIDs(self, msgid_singular, msgid_plural=None,
                                   context=None, sequence=0):

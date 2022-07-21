@@ -49,14 +49,14 @@ There are however more templates than the ones that have messages:
     pmount
 
 We can ask the DistroSeriesLanguage to fetch existing POFiles for these
-templates where they exist, or create matching DummyPOFiles where they
+templates where they exist, or create matching PlaceholderPOFiles where they
 don't.
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> def print_augmented_pofiles(distroserieslanguage, templates):
     ...     """Print `POFile`s for each of `templates`.
     ...
-    ...     Creates `DummyPOFile`s where needed.  Prints types.
+    ...     Creates `PlaceholderPOFile`s where needed.  Prints types.
     ...     """
     ...     for pofile in distroserieslanguage.getPOFilesFor(templates):
     ...         print("%s (%s) %s" % (
@@ -66,13 +66,13 @@ don't.
     >>> print_augmented_pofiles(hoary_spanish, hoary_templates)
     evolution-2.2     (es)   <class '...pofile.POFile'>
     man               (es)   <class '...pofile.POFile'>
-    man               (es)   <class '...pofile.DummyPOFile'>
+    man               (es)   <class '...pofile.PlaceholderPOFile'>
     pkgconf-mozilla   (es)   <class '...pofile.POFile'>
     pmount            (es)   <class '...pofile.POFile'>
 
 Note that the sorting is by template name, and there are two 'man'
 templates of which one has a real translation and the other uses a
-DummyPOFile.
+PlaceholderPOFile.
 
 When we ask for the whole list of templates, including non-current ones,
 we see one extra template that was not shown in the DistroSeriesLanguage
@@ -120,11 +120,11 @@ An EmptyDistroSeriesLanguage gives you the same set of templates to
 translate as a regular DistroSeriesLanguage would.
 
     >>> print_augmented_pofiles(hoary_amharic, hoary_templates)
-    evolution-2.2    (am)  <class '...pofile.DummyPOFile'>
-    man              (am)  <class '...pofile.DummyPOFile'>
-    man              (am)  <class '...pofile.DummyPOFile'>
-    pkgconf-mozilla  (am)  <class '...pofile.DummyPOFile'>
-    pmount           (am)  <class '...pofile.DummyPOFile'>
+    evolution-2.2    (am)  <class '...pofile.PlaceholderPOFile'>
+    man              (am)  <class '...pofile.PlaceholderPOFile'>
+    man              (am)  <class '...pofile.PlaceholderPOFile'>
+    pkgconf-mozilla  (am)  <class '...pofile.PlaceholderPOFile'>
+    pmount           (am)  <class '...pofile.PlaceholderPOFile'>
 
 Now, we should test that an EmptyDistroSeriesLanguage implements the full
 interface of a normal DistroSeriesLanguage.
@@ -197,8 +197,8 @@ pofile sort order:
 
     >>> print_augmented_pofiles(
     ...     hoary_amharic, hoary.getCurrentTranslationTemplates())
-    pmount           (am)  <class '...pofile.DummyPOFile'>
-    pkgconf-mozilla  (am)  <class '...pofile.DummyPOFile'>
-    man              (am)  <class '...pofile.DummyPOFile'>
-    man              (am)  <class '...pofile.DummyPOFile'>
-    evolution-2.2    (am)  <class '...pofile.DummyPOFile'>
+    pmount           (am)  <class '...pofile.PlaceholderPOFile'>
+    pkgconf-mozilla  (am)  <class '...pofile.PlaceholderPOFile'>
+    man              (am)  <class '...pofile.PlaceholderPOFile'>
+    man              (am)  <class '...pofile.PlaceholderPOFile'>
+    evolution-2.2    (am)  <class '...pofile.PlaceholderPOFile'>
