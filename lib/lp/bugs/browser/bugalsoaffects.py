@@ -129,7 +129,7 @@ class ChooseProductStep(LinkPackgingMixin, AlsoAffectsStep):
         currentseries we add a notification message telling the user the
         package could be linked to an upstream to avoid this extra step.
 
-        On the other hand, if the upstream can be infered and there's no task
+        On the other hand, if the upstream can be inferred and there's no task
         for it yet, we teleport the user straight to the next step.
         """
         bugtask = self.context
@@ -830,7 +830,7 @@ class BugAlsoAffectsProductWithProductCreationView(
         return names
 
     def _loadProductsUsingBugTracker(self):
-        """Find products using the bugtracker wich runs on the given URL.
+        """Find products using the bugtracker which runs on the given URL.
 
         These products are stored in self.existing_products.
 

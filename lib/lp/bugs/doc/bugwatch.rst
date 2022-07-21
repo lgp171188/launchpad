@@ -308,7 +308,7 @@ status mapping.
 
 If only the remote status is changed, not the bugtask's status, no
 event is fired off. The remote status is simply a string, it doesn't
-have to be convertable to a real Malone status.
+have to be convertible to a real Malone status.
 
     >>> debian_bugwatch.updateStatus(u'some status', BugTaskStatus.NEW)
 
@@ -453,7 +453,7 @@ creating a bug task with a conjoined primary.
     True
 
 We use ensureBugTracker() to populate in the parameters that we don't
-specifiy, such as the bug tracker's name.
+specify, such as the bug tracker's name.
 
     >>> bug_tracker = getUtility(IBugTrackerSet).ensureBugTracker(
     ...     bugtrackertype=BugTrackerType.ROUNDUP,
@@ -597,7 +597,7 @@ true.
     >>> run_once_failed_once_watch.can_be_rescheduled
     True
 
-If the most recent update on the watch succeded, can_be_rescheduled will
+If the most recent update on the watch succeeded, can_be_rescheduled will
 be False, regardless of the ratio of failures to successes.
 
     >>> transaction.commit()

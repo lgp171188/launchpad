@@ -270,7 +270,7 @@ class TestBugTaskView(TestCaseWithFactory):
                 bug.default_bugtask, name="+editstatus", form=form_data
             )
             # The bugtask's target won't have changed, since an error
-            # happend. The error will be listed in the view.
+            # happened. The error will be listed in the view.
             self.assertEqual(1, len(view.errors))
             self.assertEqual(product, bug.default_bugtask.target)
 
@@ -2591,7 +2591,7 @@ class TestBugTaskSearchListingView(BrowserTestCase):
         self.assertEqual(item.model, items[0])
 
     def test_no_next_prev_for_single_batch(self):
-        """The IJSONRequestCache should contain data about ajacent batches.
+        """The IJSONRequestCache should contain data about adjacent batches.
 
         mustache_model should contain items, the BugTaskListingItem.model
         for each BugTask.

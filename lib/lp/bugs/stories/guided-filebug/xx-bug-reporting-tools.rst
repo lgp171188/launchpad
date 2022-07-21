@@ -6,7 +6,7 @@ user's computer can upload a message containing extra information about
 the bug to Launchpad.
 
 There is no API for uploading blobs, thus they need to do a HTTP POST to
-a web form to upload debug data. There are several verions of Apport out
+a web form to upload debug data. There are several versions of Apport out
 there depending on the field names on +storeblob, so it's important that
 those names (including the name of the button) doesn't change. The lines
 that are important not to change are marked with a "Don't change!"

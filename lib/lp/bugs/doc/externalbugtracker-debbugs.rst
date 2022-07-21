@@ -85,7 +85,7 @@ Bug 563 resides in the archive. It is also fetchable:
 Getting the time
 ================
 
-We don't have acccess to the Debian servers exact time, but we trust it
+We don't have access to the Debian server's exact time, but we trust it
 being correct.
 
     >>> external_debbugs.getCurrentDBTime()
@@ -396,7 +396,7 @@ bug. DebBugs comment IDs are RFC822 message IDs.
     ['<20040309081430.98BF411EE67@tux>']
 
 However, it will only return IDs for comments which can actually be
-imported. Comments which have no useable date will not be imported.
+imported. Comments which have no usable date will not be imported.
 
     >>> external_debbugs.debbugs_db._data_file = (
     ...     'debbugs-comment-with-no-date.txt')
@@ -684,7 +684,7 @@ Importing bugs twice
 ....................
 
 If a Debian bug already exists in Launchpad (i.e it has a bug watch), it
-won't be imported again. A warning is logged so that the person runnning
+won't be imported again. A warning is logged so that the person running
 the script gets notified about it.
 
     >>> from lp.bugs.scripts.importdebianbugs import import_debian_bugs

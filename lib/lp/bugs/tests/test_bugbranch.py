@@ -209,7 +209,7 @@ class TestBugBranch(TestCaseWithFactory):
 
     def test_unlink_not_linked_branch(self):
         # When unlinkBranch is called with a branch that isn't already linked,
-        # nothing discernable happens.
+        # nothing discernible happens.
         bug = self.factory.makeBug()
         branch = self.factory.makeBranch()
         bug.unlinkBranch(branch, self.factory.makePerson())

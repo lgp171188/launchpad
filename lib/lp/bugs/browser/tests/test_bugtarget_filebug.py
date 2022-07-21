@@ -640,7 +640,7 @@ class FileBugViewBaseExtraDataTestCase(FileBugViewMixin, TestCaseWithFactory):
         )
 
     def test_description_and_comments(self):
-        # The first extra text part is added to the desciption, all other
+        # The first extra text part is added to the description, all other
         # extra parts become additional bug messages.
         token = self.process_extra_data(
             """\

@@ -123,5 +123,5 @@ class.
     >>> print(' '.join(dynamic_content.get('class')))
     dynamic hidden
 
-It is the responsibilty of Javascript running in the page to unhide
+It is the responsibility of Javascript running in the page to unhide
 the dynamic content and hide the static content.

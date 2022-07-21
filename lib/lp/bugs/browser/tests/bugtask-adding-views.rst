@@ -226,7 +226,7 @@ be created:
     Mozilla Firefox
 
 This worked without any problems since Evolution does use Malone as its
-offical bug tracker.
+official bug tracker.
 
     >>> evolution_task = bug_four.bugtasks[0]
     >>> evolution_task.target.bug_tracking_usage
@@ -258,7 +258,7 @@ tried to create a bugtask without a bug watch.
     >>> add_task_view.next_url is None
     True
 
-The user must explictly choose to create a bugtask without a bug
+The user must explicitly choose to create a bugtask without a bug
 watch.
 
     >>> form['field.link_upstream_how'] = u'UNLINKED_UPSTREAM'

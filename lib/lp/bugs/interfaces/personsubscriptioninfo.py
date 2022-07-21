@@ -86,7 +86,7 @@ class IAbstractSubscriptionInfoCollection(Interface):
 
     as_team_member = Attribute(
         "List of information objects about the subscriptions "
-        "through a team, exluding teams of which the person is an admin"
+        "through a team, excluding teams of which the person is an admin"
     )
 
     as_team_admin = Attribute(

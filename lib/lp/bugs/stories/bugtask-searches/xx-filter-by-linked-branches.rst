@@ -41,7 +41,7 @@ linkes branches are returned.
     4 Reflow problems with complex page layouts
      Mozilla Firefox Medium New
 
-Similary, we can search for branches that don't have linked branches, if
+Similarly, we can search for branches that don't have linked branches, if
 we uncheck 'Show bugs with linked branches'.
 
     >>> anon_browser.open(

@@ -59,7 +59,7 @@ def new_bugtracker(bugtracker_type, base_url="http://bugs.some.where"):
     """Create a new bug tracker using the 'launchpad db user.
 
     Before calling this function, the current transaction should be
-    commited, since the current connection to the database will be
+    committed, since the current connection to the database will be
     closed. After returning from this function, a new connection using
     the checkwatches db user is created.
     """

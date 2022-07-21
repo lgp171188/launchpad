@@ -255,7 +255,7 @@ class Trac(ExternalBugTracker):
             bug_id = int(bug_id)
         except ValueError:
             raise InvalidBugId(
-                "bug_id must be convertable an integer: %s" % str(bug_id)
+                "bug_id must be convertible to an integer: %s" % str(bug_id)
             )
 
         try:
@@ -473,7 +473,7 @@ class TracLPPlugin(Trac):
         if not valid_email(email):
             return email, None
         # If the display name is empty, set it to None so that it's
-        # useable by IPersonSet.ensurePerson().
+        # usable by IPersonSet.ensurePerson().
         elif display_name == "":
             return None, email
         # Both displayname and email are valid, return both.

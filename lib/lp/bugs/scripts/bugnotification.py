@@ -281,7 +281,7 @@ def notification_comment_batches(notifications):
     Generates `comment_group, notification` tuples.
 
     The notifications are searched in order for continuous spans containing
-    only one comment. Each continous span is given a unique number. Each
+    only one comment. Each continuous span is given a unique number. Each
     notification is yielded along with its span number.
     """
     comment_count = 0

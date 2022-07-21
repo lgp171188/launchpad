@@ -43,7 +43,7 @@ comment.
 The first comment may have bug attachments. While it is not possible
 to add an attachment via the web interface to the first comment, bugs
 submitted via the email interface can have file attachments, which are
-stored as bug attchments of the first comment. Similary, the first
+stored as bug attachments of the first comment. Similarly, the first
 comment of bugs imported from other bug trackers may have attachments.
 We display these attachments in the comment section of the Web UI,
 hence the activity stream contains the first comment, if it has attachments.

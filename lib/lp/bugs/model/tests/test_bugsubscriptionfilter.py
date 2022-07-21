@@ -417,7 +417,7 @@ class TestBugSubscriptionFilterPermissions(TestCaseWithFactory):
             bug_subscription_filter.find_all_tags
 
     def test_write_to_subscribers(self):
-        """`BugSubscriptionFilter`s can only be modifed by subscribers."""
+        """`BugSubscriptionFilter`s can only be modified by subscribers."""
         bug_subscription_filter = BugSubscriptionFilter(
             structural_subscription=self.subscription
         )

@@ -26,7 +26,7 @@ class BugNotificationLevel(DBEnumeratedType):
         Lifecycle
 
         Only send a low volume of notifications about new bugs registered,
-        bugs removed or bug targetting.
+        bugs removed or bug targeting.
         """,
     )
 

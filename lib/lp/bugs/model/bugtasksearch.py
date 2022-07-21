@@ -510,7 +510,7 @@ def _build_query(params):
             and params.product is None
             and params.productseries is None
         ):
-            # This search is *not* contrained to project related bugs, so
+            # This search is *not* constrained to project related bugs, so
             # include distro, distroseries, DSP and SP subscriptions.
             ss_clauses.append(
                 In(
@@ -569,7 +569,7 @@ def _build_query(params):
                 )
             )
         if params.distribution is None and params.distroseries is None:
-            # This search is *not* contrained to distro related bugs so
+            # This search is *not* constrained to distro related bugs so
             # include products, productseries, and project group subscriptions.
             projectgroup_match = True
             if params.projectgroup is not None:
@@ -1399,7 +1399,7 @@ def _build_upstream_clause(params):
     """Return an clause for returning upstream data if the data exists.
 
     This method will handles BugTasks that do not have upstream BugTasks
-    as well as thoses that do.
+    as well as those that do.
     """
     params = _require_params(params)
     upstream_clauses = []

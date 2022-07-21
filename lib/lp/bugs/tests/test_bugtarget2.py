@@ -144,7 +144,7 @@ class BugTargetBugFilingDuplicateSearchInherited:
 
     def test_enable_bugfiling_duplicate_search_changed_by_parent_change(self):
         # If enable_bugfiling_duplicate_search is changed for the parent
-        # object, it is changed for the bug traget too.
+        # object, it is changed for the bug target too.
         with person_logged_in(self.bug_supervisor):
             parent = self.bugtarget.bugtarget_parent
             parent.enable_bugfiling_duplicate_search = False
@@ -154,7 +154,7 @@ class BugTargetBugFilingDuplicateSearchInherited:
 class TestProductSeries(
     BugTargetBugFilingDuplicateSearchInherited, TestCaseWithFactory
 ):
-    """Tests for product serieses as bug targets."""
+    """Tests for product series as bug targets."""
 
     layer = DatabaseFunctionalLayer
 
@@ -183,7 +183,7 @@ class TestProductSeries(
 class TestSourcePackage(
     BugTargetBugFilingDuplicateSearchInherited, TestCaseWithFactory
 ):
-    """Tests for product serieses as bug targets."""
+    """Tests for source packages as bug targets."""
 
     layer = DatabaseFunctionalLayer
 

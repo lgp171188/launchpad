@@ -210,8 +210,8 @@ value of the current assignee:
     >>> widget.getInputValue().name == 'name12'
     True
 
-Assigning the bug to noone
---------------------------
+Assigning the bug to no-one
+---------------------------
 
 Lastly, a bug can be put "up for grabs" again by selecting the
 "assign_to_nobody" option.

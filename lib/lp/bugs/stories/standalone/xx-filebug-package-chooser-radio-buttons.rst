@@ -1,6 +1,6 @@
 The +filebug pages for a distribution and distribution package present a
 simple package selection widget, where you can either select the package
-in which you think the bug occurrs, or say "I don't know".
+in which you think the bug occurs, or say "I don't know".
 
 The default on the distribution +filebug page is "I don't know". We
 will use the advanced filebug form to skip searching for dupes.

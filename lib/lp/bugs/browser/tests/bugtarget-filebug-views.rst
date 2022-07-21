@@ -15,7 +15,7 @@ similar bug reports, etc.
     ...     title='Test Title', comment='Test description.')
 
 We define a helper method here so that we can instantiate
-FileBugViewBase and use it without any errors occuring, since we're
+FileBugViewBase and use it without any errors occurring, since we're
 bypassing most of the view machinery. We also define a mock widget class
 for the same purpose.
 

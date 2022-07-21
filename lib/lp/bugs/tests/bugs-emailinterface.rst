@@ -786,7 +786,7 @@ unsubscribed. Examples:
     False
 
 If the user sending the email does not have permission to perform
-the unsubscribe request, an error message wil be sent.
+the unsubscribe request, an error message will be sent.
 
     >>> login(sampledata.NO_PRIVILEGE_EMAIL)
     >>> submit_commands(bug_four, 'unsubscribe mark')
@@ -2552,7 +2552,7 @@ content-disposition header does not provide a filename.
 If the content-disposition header of a message part begins with "inline",
 it is stored as a bug attachment, if the header additionally provides
 a filename. This ensures that a message part containing debug information
-and the content type text/plain is stored as a bug attchment.
+and the content type text/plain is stored as a bug attachment.
 
     >>> submit_mail = b"""From: Sample Person <test@canonical.com>
     ... To: new@bugs.canonical.com

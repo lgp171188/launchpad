@@ -122,7 +122,7 @@ class RestrictedStructuralSubscriptionTestBase:
         )
 
     def test_remove_nonexistant_structural_subscription(self):
-        # removing a nonexistant subscription raises a
+        # removing a nonexistent subscription raises a
         # DeleteSubscriptionError
         login_person(self.ordinary_subscriber)
         self.assertRaises(

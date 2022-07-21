@@ -236,7 +236,7 @@ class FileBugViewBase(LaunchpadFormView):
 
         # The JSON cache must be populated before the super call, since
         # the form is rendered during LaunchpadFormView's initialize()
-        # when an action is invokved.
+        # when an action is invoked.
         cache = IJSONRequestCache(self.request)
         cache.objects["bug_private_by_default"] = (
             self.context.pillar.getDefaultBugInformationType()
@@ -306,7 +306,7 @@ class FileBugViewBase(LaunchpadFormView):
         else:
             bug_supervisor = None
 
-        # Work out whether the redirect should be overidden.
+        # Work out whether the redirect should be overridden.
         do_not_redirect = (
             self.request.form.get("no-redirect") is not None
             or [
@@ -858,9 +858,9 @@ class FileBugViewBase(LaunchpadFormView):
 
     def getAcknowledgementMessage(self, context):
         """An acknowlegement message displayed to the user."""
-        # If a given context doesnot have a custom message, we go up in the
-        # "object hierachy" until we find one. If no cusotmized messages
-        # exist for any conext, a default message is returned.
+        # If a given context does not have a custom message, we go up in the
+        # "object hierarchy" until we find one. If no customized messages
+        # exist for any context, a default message is returned.
         #
         # bug_reported_acknowledgement is defined as a "real" property
         # for IDistribution, IDistributionSourcePackage, IProduct and

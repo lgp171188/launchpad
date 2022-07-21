@@ -426,7 +426,7 @@ Subscribe simple-team to a number of bugs.
     >>> one_mem_browser.getControl('Subscribe user').click()
 
 
-Now we can do a query on the lastest bugs for simple team and expect
+Now we can do a query on the latest bugs for simple team and expect
 some results.
 
     >>> browser.open(

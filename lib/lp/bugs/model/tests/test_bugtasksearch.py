@@ -1413,7 +1413,7 @@ class DistroseriesTarget(
             sourcepackagename=sourcepackage.sourcepackagename,
         )
         self.factory.makeBugTask(target=other_sourcepackage)
-        # Create a bug in the same distrubution package.
+        # Create a bug in the same distribution package.
         dsp = self.searchtarget.distribution.getSourcePackage(
             sourcepackage.name
         )

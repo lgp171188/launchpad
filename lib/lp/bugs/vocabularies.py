@@ -402,7 +402,7 @@ class BugTaskMilestoneVocabulary:
             bugtask.milestone is not None
             and bugtask.milestone not in milestones
         ):
-            # Even if we inactivate a milestone, a bugtask might still be
+            # Even if we deactivate a milestone, a bugtask might still be
             # linked to it. Include such milestones in the vocabulary to
             # ensure that the +editstatus page doesn't break.
             milestones.append(bugtask.milestone)
