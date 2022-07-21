@@ -9,11 +9,8 @@ from zope.interface.verify import verifyObject
 from lp.registry.interfaces.persontransferjob import (
     IPersonDeactivateJob,
     IPersonDeactivateJobSource,
-    )
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+)
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 
@@ -24,7 +21,8 @@ class TestPersonDeactivateJob(TestCaseWithFactory):
 
     def makeJob(self):
         return getUtility(IPersonDeactivateJobSource).create(
-            self.factory.makePerson())
+            self.factory.makePerson()
+        )
 
     def test_interface(self):
         verifyObject(IPersonDeactivateJob, self.makeJob())
@@ -38,10 +36,11 @@ class TestPersonDeactivateJob(TestCaseWithFactory):
             bug.default_bugtask.transitionToAssignee(job.person)
         spec = self.factory.makeSpecification(assignee=job.person)
         product = self.factory.makeProduct(
-            owner=job.person, bug_supervisor=job.person)
+            owner=job.person, bug_supervisor=job.person
+        )
         distro = self.factory.makeDistribution(driver=job.person)
-        expected_name = job.person.name + '-deactivatedaccount'
-        with dbuser('person-merge-job'):
+        expected_name = job.person.name + "-deactivatedaccount"
+        with dbuser("person-merge-job"):
             job.run()
         self.assertIs(None, bug.default_bugtask.assignee)
         self.assertIs(None, spec.assignee)

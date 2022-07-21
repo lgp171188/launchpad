@@ -6,10 +6,10 @@
 import datetime
 import json
 
-from fixtures import FakeLogger
-from lazr.lifecycle.snapshot import Snapshot
 import pytz
 import soupmatchers
+from fixtures import FakeLogger
+from lazr.lifecycle.snapshot import Snapshot
 from storm.store import Store
 from testtools import ExpectedException
 from testtools.matchers import (
@@ -21,55 +21,49 @@ from testtools.matchers import (
     MatchesAny,
     MatchesStructure,
     Not,
-    )
+)
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import (
     FREE_INFORMATION_TYPES,
-    InformationType,
     PILLAR_INFORMATION_TYPES,
+    InformationType,
     ServiceUsage,
-    )
-from lp.app.errors import (
-    NotFoundError,
-    ServiceUsageForbidden,
-    )
+)
+from lp.app.errors import NotFoundError, ServiceUsageForbidden
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.services import IService
 from lp.blueprints.model.specification import (
     SPECIFICATION_POLICY_ALLOWED_TYPES,
-    )
+)
 from lp.bugs.enums import VulnerabilityStatus
 from lp.bugs.interfaces.bugtarget import BUG_POLICY_ALLOWED_TYPES
 from lp.bugs.interfaces.bugtask import BugTaskImportance
 from lp.code.model.branchnamespace import BRANCH_POLICY_ALLOWED_TYPES
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.enums import (
+    EXCLUSIVE_TEAM_POLICY,
+    INCLUSIVE_TEAM_POLICY,
     BranchSharingPolicy,
     BugSharingPolicy,
     DistributionDefaultTraversalPolicy,
-    EXCLUSIVE_TEAM_POLICY,
-    INCLUSIVE_TEAM_POLICY,
     SpecificationSharingPolicy,
     TeamMembershipPolicy,
-    )
+)
 from lp.registry.errors import (
     CannotChangeInformationType,
     CommercialSubscribersOnly,
     InclusiveTeamLinkageError,
     NoSuchDistroSeries,
     ProprietaryPillar,
-    )
+)
 from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyGrantSource,
     IAccessPolicySource,
-    )
-from lp.registry.interfaces.distribution import (
-    IDistribution,
-    IDistributionSet,
-    )
+)
+from lp.registry.interfaces.distribution import IDistribution, IDistributionSet
 from lp.registry.interfaces.distributionmirror import MirrorContent
 from lp.registry.interfaces.oopsreferences import IHasOOPSReferences
 from lp.registry.interfaces.person import IPersonSet
@@ -84,8 +78,11 @@ from lp.services.worlddata.interfaces.country import ICountrySet
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     IDistributionSourcePackageRelease,
-    )
+)
 from lp.testing import (
+    StormStatementRecorder,
+    TestCase,
+    TestCaseWithFactory,
     admin_logged_in,
     anonymous_logged_in,
     api_url,
@@ -93,20 +90,16 @@ from lp.testing import (
     login,
     login_person,
     person_logged_in,
-    StormStatementRecorder,
-    TestCase,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
     ZopelessDatabaseLayer,
-    )
+)
 from lp.testing.matchers import Provides
 from lp.testing.pages import webservice_for_person
 from lp.testing.views import create_initialized_view
 from lp.translations.enums import TranslationPermission
-
 
 PRIVATE_DISTRIBUTION_TYPES = [InformationType.PROPRIETARY]
 
@@ -124,17 +117,19 @@ class TestDistribution(TestCaseWithFactory):
         # The sharing policies are PUBLIC.
         distro = self.factory.makeDistribution()
         self.assertEqual(
-            BranchSharingPolicy.PUBLIC, distro.branch_sharing_policy)
-        self.assertEqual(
-            BugSharingPolicy.PUBLIC, distro.bug_sharing_policy)
+            BranchSharingPolicy.PUBLIC, distro.branch_sharing_policy
+        )
+        self.assertEqual(BugSharingPolicy.PUBLIC, distro.bug_sharing_policy)
 
     def test_owner_cannot_be_open_team(self):
         """Distro owners cannot be open teams."""
         for policy in INCLUSIVE_TEAM_POLICY:
             open_team = self.factory.makeTeam(membership_policy=policy)
             self.assertRaises(
-                InclusiveTeamLinkageError, self.factory.makeDistribution,
-                owner=open_team)
+                InclusiveTeamLinkageError,
+                self.factory.makeDistribution,
+                owner=open_team,
+            )
 
     def test_owner_can_be_closed_team(self):
         """Distro owners can be exclusive teams."""
@@ -145,68 +140,80 @@ class TestDistribution(TestCaseWithFactory):
     def test_distribution_repr_ansii(self):
         # Verify that ANSI displayname is ascii safe.
         distro = self.factory.makeDistribution(
-            name="distro", displayname='\xdc-distro')
-        ignore, displayname, name = repr(distro).rsplit(' ', 2)
+            name="distro", displayname="\xdc-distro"
+        )
+        ignore, displayname, name = repr(distro).rsplit(" ", 2)
         self.assertEqual("'\\xdc-distro'", displayname)
-        self.assertEqual('(distro)>', name)
+        self.assertEqual("(distro)>", name)
 
     def test_distribution_repr_unicode(self):
         # Verify that Unicode displayname is ascii safe.
         distro = self.factory.makeDistribution(
-            name="distro", displayname='\u0170-distro')
-        ignore, displayname, name = repr(distro).rsplit(' ', 2)
+            name="distro", displayname="\u0170-distro"
+        )
+        ignore, displayname, name = repr(distro).rsplit(" ", 2)
         self.assertEqual("'\\u0170-distro'", displayname)
 
     def test_guessPublishedSourcePackageName_no_distro_series(self):
         # Distribution without a series raises NotFoundError
         distro = self.factory.makeDistribution()
-        with ExpectedException(NotFoundError, '.*has no series.*'):
-            distro.guessPublishedSourcePackageName('package')
+        with ExpectedException(NotFoundError, ".*has no series.*"):
+            distro.guessPublishedSourcePackageName("package")
 
     def test_guessPublishedSourcePackageName_invalid_name(self):
         # Invalid name raises a NotFoundError
         distro = self.factory.makeDistribution()
         with ExpectedException(NotFoundError, "'Invalid package name.*"):
-            distro.guessPublishedSourcePackageName('a*package')
+            distro.guessPublishedSourcePackageName("a*package")
 
     def test_guessPublishedSourcePackageName_nothing_published(self):
         distroseries = self.factory.makeDistroSeries()
         with ExpectedException(NotFoundError, "'Unknown package:.*"):
             distroseries.distribution.guessPublishedSourcePackageName(
-                'a-package')
+                "a-package"
+            )
 
     def test_guessPublishedSourcePackageName_ignored_removed(self):
         # Removed binary package are ignored.
         distroseries = self.factory.makeDistroSeries()
         self.factory.makeBinaryPackagePublishingHistory(
             archive=distroseries.main_archive,
-            binarypackagename='binary-package',
-            status=PackagePublishingStatus.SUPERSEDED)
+            binarypackagename="binary-package",
+            status=PackagePublishingStatus.SUPERSEDED,
+        )
         with ExpectedException(NotFoundError, ".*Binary package.*"):
             distroseries.distribution.guessPublishedSourcePackageName(
-                'binary-package')
+                "binary-package"
+            )
 
     def test_guessPublishedSourcePackageName_sourcepackage_name(self):
         distroseries = self.factory.makeDistroSeries()
         spph = self.factory.makeSourcePackagePublishingHistory(
-            distroseries=distroseries, sourcepackagename='my-package')
+            distroseries=distroseries, sourcepackagename="my-package"
+        )
         self.assertEqual(
             spph.sourcepackagerelease.sourcepackagename,
             distroseries.distribution.guessPublishedSourcePackageName(
-                'my-package'))
+                "my-package"
+            ),
+        )
 
     def test_guessPublishedSourcePackageName_binarypackage_name(self):
         distroseries = self.factory.makeDistroSeries()
         spph = self.factory.makeSourcePackagePublishingHistory(
-            distroseries=distroseries, sourcepackagename='my-package')
+            distroseries=distroseries, sourcepackagename="my-package"
+        )
         self.factory.makeBinaryPackagePublishingHistory(
             archive=distroseries.main_archive,
-            binarypackagename='binary-package',
-            source_package_release=spph.sourcepackagerelease)
+            binarypackagename="binary-package",
+            source_package_release=spph.sourcepackagerelease,
+        )
         self.assertEqual(
             spph.sourcepackagerelease.sourcepackagename,
             distroseries.distribution.guessPublishedSourcePackageName(
-                'binary-package'))
+                "binary-package"
+            ),
+        )
 
     def test_guessPublishedSourcePackageName_exlude_ppa(self):
         # Package published in PPAs are not considered to be part of the
@@ -214,11 +221,14 @@ class TestDistribution(TestCaseWithFactory):
         distroseries = self.factory.makeUbuntuDistroSeries()
         ppa_archive = self.factory.makeArchive()
         self.factory.makeSourcePackagePublishingHistory(
-            distroseries=distroseries, sourcepackagename='my-package',
-            archive=ppa_archive)
+            distroseries=distroseries,
+            sourcepackagename="my-package",
+            archive=ppa_archive,
+        )
         with ExpectedException(NotFoundError, ".*not published in.*"):
             distroseries.distribution.guessPublishedSourcePackageName(
-                'my-package')
+                "my-package"
+            )
 
     def test_guessPublishedSourcePackageName_exlude_other_distro(self):
         # Published source package are only found in the distro
@@ -226,14 +236,18 @@ class TestDistribution(TestCaseWithFactory):
         distroseries1 = self.factory.makeDistroSeries()
         distroseries2 = self.factory.makeDistroSeries()
         spph = self.factory.makeSourcePackagePublishingHistory(
-            distroseries=distroseries1, sourcepackagename='my-package')
+            distroseries=distroseries1, sourcepackagename="my-package"
+        )
         self.assertEqual(
             spph.sourcepackagerelease.sourcepackagename,
             distroseries1.distribution.guessPublishedSourcePackageName(
-                'my-package'))
+                "my-package"
+            ),
+        )
         with ExpectedException(NotFoundError, ".*not published in.*"):
             distroseries2.distribution.guessPublishedSourcePackageName(
-                'my-package')
+                "my-package"
+            )
 
     def test_guessPublishedSourcePackageName_looks_for_source_first(self):
         # If both a binary and source package name shares the same name,
@@ -241,14 +255,19 @@ class TestDistribution(TestCaseWithFactory):
         # binary).
         distroseries = self.factory.makeDistroSeries()
         my_spph = self.factory.makeSourcePackagePublishingHistory(
-            distroseries=distroseries, sourcepackagename='my-package')
+            distroseries=distroseries, sourcepackagename="my-package"
+        )
         self.factory.makeBinaryPackagePublishingHistory(
             archive=distroseries.main_archive,
-            binarypackagename='my-package', sourcepackagename='other-package')
+            binarypackagename="my-package",
+            sourcepackagename="other-package",
+        )
         self.assertEqual(
             my_spph.sourcepackagerelease.sourcepackagename,
             distroseries.distribution.guessPublishedSourcePackageName(
-                'my-package'))
+                "my-package"
+            ),
+        )
 
     def test_guessPublishedSourcePackageName_uses_latest(self):
         # If multiple binaries match, it will return the source of the latest
@@ -256,28 +275,36 @@ class TestDistribution(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries()
         self.factory.makeBinaryPackagePublishingHistory(
             archive=distroseries.main_archive,
-            sourcepackagename='old-source-name',
-            binarypackagename='my-package')
+            sourcepackagename="old-source-name",
+            binarypackagename="my-package",
+        )
         self.factory.makeBinaryPackagePublishingHistory(
             archive=distroseries.main_archive,
-            sourcepackagename='new-source-name',
-            binarypackagename='my-package')
+            sourcepackagename="new-source-name",
+            binarypackagename="my-package",
+        )
         self.assertEqual(
-            'new-source-name',
+            "new-source-name",
             distroseries.distribution.guessPublishedSourcePackageName(
-                'my-package').name)
+                "my-package"
+            ).name,
+        )
 
     def test_guessPublishedSourcePackageName_official_package_branch(self):
         # It consider that a sourcepackage that has an official package
         # branch is published.
         sourcepackage = self.factory.makeSourcePackage(
-            sourcepackagename='my-package')
+            sourcepackagename="my-package"
+        )
         self.factory.makeRelatedBranchesForSourcePackage(
-            sourcepackage=sourcepackage)
+            sourcepackage=sourcepackage
+        )
         self.assertEqual(
-            'my-package',
+            "my-package",
             sourcepackage.distribution.guessPublishedSourcePackageName(
-                'my-package').name)
+                "my-package"
+            ).name,
+        )
 
     def test_derivatives_email(self):
         # Make sure the package_derivatives_email column stores data
@@ -293,15 +320,15 @@ class TestDistribution(TestCaseWithFactory):
         # package_derivatives_email requires lp.edit to set/change.
         distro = self.factory.makeDistribution()
         self.assertRaises(
-            Unauthorized,
-            setattr, distro, "package_derivatives_email", "foo")
+            Unauthorized, setattr, distro, "package_derivatives_email", "foo"
+        )
 
     def test_implements_interfaces(self):
         # Distribution fully implements its interfaces.
         distro = removeSecurityProxy(self.factory.makeDistribution())
         expected_interfaces = [
             IHasOOPSReferences,
-            ]
+        ]
         provides_all = MatchesAll(*map(Provides, expected_interfaces))
         self.assertThat(distro, provides_all)
 
@@ -309,31 +336,36 @@ class TestDistribution(TestCaseWithFactory):
         # Creating a new distribution also creates AccessPolicies for it.
         distro = self.factory.makeDistribution()
         ap = getUtility(IAccessPolicySource).findByPillar((distro,))
-        expected = [
-            InformationType.USERDATA, InformationType.PRIVATESECURITY]
+        expected = [InformationType.USERDATA, InformationType.PRIVATESECURITY]
         self.assertContentEqual(expected, [policy.type for policy in ap])
 
     def test_getAllowedBugInformationTypes(self):
         # All distros currently support just the non-proprietary
         # information types.
         self.assertContentEqual(
-            [InformationType.PUBLIC, InformationType.PUBLICSECURITY,
-             InformationType.PRIVATESECURITY, InformationType.USERDATA],
-            self.factory.makeDistribution().getAllowedBugInformationTypes())
+            [
+                InformationType.PUBLIC,
+                InformationType.PUBLICSECURITY,
+                InformationType.PRIVATESECURITY,
+                InformationType.USERDATA,
+            ],
+            self.factory.makeDistribution().getAllowedBugInformationTypes(),
+        )
 
     def test_getDefaultBugInformationType(self):
         # The default information type for distributions is always PUBLIC.
         self.assertEqual(
             InformationType.PUBLIC,
-            self.factory.makeDistribution().getDefaultBugInformationType())
+            self.factory.makeDistribution().getDefaultBugInformationType(),
+        )
 
     def test_getAllowedSpecificationInformationTypes(self):
         # All distros currently support only public specifications.
         distro = self.factory.makeDistribution()
         self.assertContentEqual(
             [InformationType.PUBLIC],
-            distro.getAllowedSpecificationInformationTypes()
-            )
+            distro.getAllowedSpecificationInformationTypes(),
+        )
 
     def test_getDefaultSpecificationInformtationType(self):
         # All distros currently support only Public by default
@@ -341,7 +373,8 @@ class TestDistribution(TestCaseWithFactory):
         distro = self.factory.makeDistribution()
         self.assertEqual(
             InformationType.PUBLIC,
-            distro.getDefaultSpecificationInformationType())
+            distro.getDefaultSpecificationInformationType(),
+        )
 
     def test_getOCIProject(self):
         distro = self.factory.makeDistribution()
@@ -364,7 +397,8 @@ class TestDistribution(TestCaseWithFactory):
         distro = self.factory.makeDistribution()
         first_name = self.factory.makeOCIProjectName(name=name)
         first_project = self.factory.makeOCIProject(
-            pillar=distro, ociprojectname=first_name)
+            pillar=distro, ociprojectname=first_name
+        )
         self.factory.makeOCIProject(pillar=distro)
 
         result = distro.searchOCIProjects(text=name)
@@ -372,14 +406,15 @@ class TestDistribution(TestCaseWithFactory):
         self.assertEqual(first_project, result[0])
 
     def test_searchOCIProjects_by_partial_name(self):
-        name = 'testpartialname'
+        name = "testpartialname"
         distro = self.factory.makeDistribution()
         first_name = self.factory.makeOCIProjectName(name=name)
         first_project = self.factory.makeOCIProject(
-            pillar=distro, ociprojectname=first_name)
+            pillar=distro, ociprojectname=first_name
+        )
         self.factory.makeOCIProject(pillar=distro)
 
-        result = distro.searchOCIProjects(text='partial')
+        result = distro.searchOCIProjects(text="partial")
         self.assertEqual(1, result.count())
         self.assertEqual(first_project, result[0])
 
@@ -389,7 +424,8 @@ class TestDistribution(TestCaseWithFactory):
         distro = self.factory.makeDistribution()
         self.assertEqual(
             DistributionDefaultTraversalPolicy.SERIES,
-            distro.default_traversal_policy)
+            distro.default_traversal_policy,
+        )
         self.assertFalse(distro.redirect_default_traversal)
 
     def test_default_traversal_permissions(self):
@@ -398,14 +434,23 @@ class TestDistribution(TestCaseWithFactory):
         distro = self.factory.makeDistribution()
         with person_logged_in(self.factory.makePerson()):
             self.assertRaises(
-                Unauthorized, setattr, distro, 'default_traversal_policy',
-                DistributionDefaultTraversalPolicy.SERIES)
+                Unauthorized,
+                setattr,
+                distro,
+                "default_traversal_policy",
+                DistributionDefaultTraversalPolicy.SERIES,
+            )
             self.assertRaises(
-                Unauthorized, setattr, distro, 'redirect_default_traversal',
-                True)
+                Unauthorized,
+                setattr,
+                distro,
+                "redirect_default_traversal",
+                True,
+            )
         with person_logged_in(distro.owner):
             distro.default_traversal_policy = (
-                DistributionDefaultTraversalPolicy.SERIES)
+                DistributionDefaultTraversalPolicy.SERIES
+            )
             distro.redirect_default_traversal = True
 
     def test_creation_grants_maintainer_access(self):
@@ -413,7 +458,8 @@ class TestDistribution(TestCaseWithFactory):
         # maintainer for all default policies.
         distribution = self.factory.makeDistribution()
         policies = getUtility(IAccessPolicySource).findByPillar(
-            (distribution,))
+            (distribution,)
+        )
         grants = getUtility(IAccessPolicyGrantSource).findByPolicy(policies)
         expected_grantess = {distribution.owner}
         grantees = {grant.grantee for grant in grants}
@@ -427,15 +473,17 @@ class TestDistribution(TestCaseWithFactory):
         with person_logged_in(owner):
             distribution = self.factory.makeDistribution(owner=owner)
         self.assertEqual(
-            BugSharingPolicy.PUBLIC, distribution.bug_sharing_policy)
+            BugSharingPolicy.PUBLIC, distribution.bug_sharing_policy
+        )
         self.assertEqual(
-            BranchSharingPolicy.PUBLIC, distribution.branch_sharing_policy)
+            BranchSharingPolicy.PUBLIC, distribution.branch_sharing_policy
+        )
         self.assertEqual(
             SpecificationSharingPolicy.PUBLIC,
-            distribution.specification_sharing_policy)
+            distribution.specification_sharing_policy,
+        )
         aps = getUtility(IAccessPolicySource).findByPillar([distribution])
-        expected = [
-            InformationType.USERDATA, InformationType.PRIVATESECURITY]
+        expected = [InformationType.USERDATA, InformationType.PRIVATESECURITY]
         self.assertContentEqual(expected, [policy.type for policy in aps])
 
     def test_proprietary_creation_sharing_policies(self):
@@ -444,15 +492,19 @@ class TestDistribution(TestCaseWithFactory):
         owner = self.factory.makePerson()
         with person_logged_in(owner):
             distribution = self.factory.makeDistribution(
-                owner=owner, information_type=InformationType.PROPRIETARY)
+                owner=owner, information_type=InformationType.PROPRIETARY
+            )
             self.assertEqual(
-                BugSharingPolicy.PROPRIETARY, distribution.bug_sharing_policy)
+                BugSharingPolicy.PROPRIETARY, distribution.bug_sharing_policy
+            )
             self.assertEqual(
                 BranchSharingPolicy.PROPRIETARY,
-                distribution.branch_sharing_policy)
+                distribution.branch_sharing_policy,
+            )
             self.assertEqual(
                 SpecificationSharingPolicy.PROPRIETARY,
-                distribution.specification_sharing_policy)
+                distribution.specification_sharing_policy,
+            )
         aps = getUtility(IAccessPolicySource).findByPillar([distribution])
         expected = [InformationType.PROPRIETARY]
         self.assertContentEqual(expected, [policy.type for policy in aps])
@@ -462,44 +514,52 @@ class TestDistribution(TestCaseWithFactory):
         # public.
         distribution = self.factory.makeDistribution(
             specification_sharing_policy=(
-                SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY),
+                SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
+            ),
             bug_sharing_policy=BugSharingPolicy.PUBLIC_OR_PROPRIETARY,
-            branch_sharing_policy=BranchSharingPolicy.PUBLIC_OR_PROPRIETARY)
+            branch_sharing_policy=BranchSharingPolicy.PUBLIC_OR_PROPRIETARY,
+        )
         self.useContext(person_logged_in(distribution.owner))
         spec = self.factory.makeSpecification(distribution=distribution)
         for info_type in PRIVATE_DISTRIBUTION_TYPES:
             with ExpectedException(
-                    CannotChangeInformationType,
-                    "Some blueprints are public."):
+                CannotChangeInformationType, "Some blueprints are public."
+            ):
                 distribution.information_type = info_type
         spec.transitionToInformationType(
-            InformationType.PROPRIETARY, distribution.owner)
+            InformationType.PROPRIETARY, distribution.owner
+        )
         dsp = self.factory.makeDistributionSourcePackage(
-            distribution=distribution)
+            distribution=distribution
+        )
         bug = self.factory.makeBug(target=dsp)
         for bug_info_type in FREE_INFORMATION_TYPES:
             bug.transitionToInformationType(bug_info_type, distribution.owner)
             for info_type in PRIVATE_DISTRIBUTION_TYPES:
                 with ExpectedException(
-                        CannotChangeInformationType,
-                        "Some bugs are neither proprietary nor embargoed."):
+                    CannotChangeInformationType,
+                    "Some bugs are neither proprietary nor embargoed.",
+                ):
                     distribution.information_type = info_type
         bug.transitionToInformationType(
-            InformationType.PROPRIETARY, distribution.owner)
+            InformationType.PROPRIETARY, distribution.owner
+        )
         distroseries = self.factory.makeDistroSeries(distribution=distribution)
         sp = self.factory.makeSourcePackage(distroseries=distroseries)
         branch = self.factory.makeBranch(sourcepackage=sp)
         for branch_info_type in FREE_INFORMATION_TYPES:
             branch.transitionToInformationType(
-                branch_info_type, distribution.owner)
+                branch_info_type, distribution.owner
+            )
             for info_type in PRIVATE_DISTRIBUTION_TYPES:
                 with ExpectedException(
-                        CannotChangeInformationType,
-                        "Some branches are neither proprietary nor "
-                        "embargoed."):
+                    CannotChangeInformationType,
+                    "Some branches are neither proprietary nor " "embargoed.",
+                ):
                     distribution.information_type = info_type
         branch.transitionToInformationType(
-            InformationType.PROPRIETARY, distribution.owner)
+            InformationType.PROPRIETARY, distribution.owner
+        )
         for info_type in PRIVATE_DISTRIBUTION_TYPES:
             distribution.information_type = info_type
 
@@ -510,11 +570,14 @@ class TestDistribution(TestCaseWithFactory):
                 distribution.information_type = InformationType.PUBLIC
                 distribution.translations_usage = usage.value
                 for info_type in PRIVATE_DISTRIBUTION_TYPES:
-                    if (distribution.translations_usage ==
-                            ServiceUsage.LAUNCHPAD):
+                    if (
+                        distribution.translations_usage
+                        == ServiceUsage.LAUNCHPAD
+                    ):
                         with ExpectedException(
-                                CannotChangeInformationType,
-                                "Translations are enabled."):
+                            CannotChangeInformationType,
+                            "Translations are enabled.",
+                        ):
                             distribution.information_type = info_type
                     else:
                         distribution.information_type = info_type
@@ -527,31 +590,37 @@ class TestDistribution(TestCaseWithFactory):
             distribution.information_type = InformationType.PROPRIETARY
             self.assertEqual(
                 BranchSharingPolicy.PROPRIETARY,
-                distribution.branch_sharing_policy)
+                distribution.branch_sharing_policy,
+            )
             self.assertEqual(
-                BugSharingPolicy.PROPRIETARY, distribution.bug_sharing_policy)
+                BugSharingPolicy.PROPRIETARY, distribution.bug_sharing_policy
+            )
             self.assertEqual(
                 SpecificationSharingPolicy.PROPRIETARY,
-                distribution.specification_sharing_policy)
+                distribution.specification_sharing_policy,
+            )
 
     def test_proprietary_to_public_leaves_policies(self):
         # Changing information type from public leaves sharing policies
         # unchanged.
         owner = self.factory.makePerson()
         distribution = self.factory.makeDistribution(
-            information_type=InformationType.PROPRIETARY, owner=owner)
+            information_type=InformationType.PROPRIETARY, owner=owner
+        )
         with person_logged_in(owner):
             distribution.information_type = InformationType.PUBLIC
             # Setting information type to the current type should be a no-op.
             distribution.information_type = InformationType.PUBLIC
         self.assertEqual(
-            BranchSharingPolicy.PROPRIETARY,
-            distribution.branch_sharing_policy)
+            BranchSharingPolicy.PROPRIETARY, distribution.branch_sharing_policy
+        )
         self.assertEqual(
-            BugSharingPolicy.PROPRIETARY, distribution.bug_sharing_policy)
+            BugSharingPolicy.PROPRIETARY, distribution.bug_sharing_policy
+        )
         self.assertEqual(
             SpecificationSharingPolicy.PROPRIETARY,
-            distribution.specification_sharing_policy)
+            distribution.specification_sharing_policy,
+        )
 
     def test_cacheAccessPolicies(self):
         # Distribution.access_policies is a list caching AccessPolicy.ids
@@ -564,7 +633,8 @@ class TestDistribution(TestCaseWithFactory):
         naked_distribution = removeSecurityProxy(distribution)
         self.assertContentEqual(
             [InformationType.USERDATA, InformationType.PRIVATESECURITY],
-            [p.type for p in aps.findByPillar([distribution])])
+            [p.type for p in aps.findByPillar([distribution])],
+        )
         self.assertIsNone(naked_distribution.access_policies)
 
         # A private distribution normally just allows the Proprietary
@@ -585,11 +655,12 @@ class TestDistribution(TestCaseWithFactory):
         # exist.
         naked_distribution.information_type = InformationType.PROPRIETARY
         naked_distribution.setBugSharingPolicy(
-            BugSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+            BugSharingPolicy.EMBARGOED_OR_PROPRIETARY
+        )
         [emb_policy] = aps.find([(distribution, InformationType.EMBARGOED)])
         self.assertContentEqual(
-            [prop_policy.id, emb_policy.id],
-            naked_distribution.access_policies)
+            [prop_policy.id, emb_policy.id], naked_distribution.access_policies
+        )
 
     def test_checkInformationType_bug_supervisor(self):
         # Bug supervisors of proprietary distributions must not have
@@ -606,8 +677,9 @@ class TestDistribution(TestCaseWithFactory):
                     self.assertEqual([], errors)
                 else:
                     with ExpectedException(
-                            CannotChangeInformationType,
-                            "Bug supervisor has inclusive membership."):
+                        CannotChangeInformationType,
+                        "Bug supervisor has inclusive membership.",
+                    ):
                         raise errors[0]
 
     def test_checkInformationType_questions(self):
@@ -615,15 +687,16 @@ class TestDistribution(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         for info_type in PRIVATE_DISTRIBUTION_TYPES:
             with person_logged_in(distribution.owner):
-                self.assertEqual([],
-                    list(distribution.checkInformationType(info_type)))
+                self.assertEqual(
+                    [], list(distribution.checkInformationType(info_type))
+                )
         self.factory.makeQuestion(target=distribution)
         for info_type in PRIVATE_DISTRIBUTION_TYPES:
             with person_logged_in(distribution.owner):
-                error, = list(distribution.checkInformationType(info_type))
+                (error,) = list(distribution.checkInformationType(info_type))
             with ExpectedException(
-                    CannotChangeInformationType,
-                    "This distribution has questions."):
+                CannotChangeInformationType, "This distribution has questions."
+            ):
                 raise error
 
     def test_checkInformationType_translations(self):
@@ -633,14 +706,16 @@ class TestDistribution(TestCaseWithFactory):
         for info_type in PRIVATE_DISTRIBUTION_TYPES:
             with person_logged_in(distribution.owner):
                 self.assertEqual(
-                    [], list(distribution.checkInformationType(info_type)))
+                    [], list(distribution.checkInformationType(info_type))
+                )
         self.factory.makePOTemplate(distroseries=distroseries)
         for info_type in PRIVATE_DISTRIBUTION_TYPES:
             with person_logged_in(distribution.owner):
-                error, = list(distribution.checkInformationType(info_type))
+                (error,) = list(distribution.checkInformationType(info_type))
             with ExpectedException(
-                    CannotChangeInformationType,
-                    "This distribution has translations."):
+                CannotChangeInformationType,
+                "This distribution has translations.",
+            ):
                 raise error
 
     def test_checkInformationType_queued_translations(self):
@@ -649,19 +724,22 @@ class TestDistribution(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries()
         distribution = distroseries.distribution
         entry = self.factory.makeTranslationImportQueueEntry(
-            distroseries=distroseries)
+            distroseries=distroseries
+        )
         for info_type in PRIVATE_DISTRIBUTION_TYPES:
             with person_logged_in(distribution.owner):
-                error, = list(distribution.checkInformationType(info_type))
+                (error,) = list(distribution.checkInformationType(info_type))
             with ExpectedException(
-                    CannotChangeInformationType,
-                    "This distribution has queued translations."):
+                CannotChangeInformationType,
+                "This distribution has queued translations.",
+            ):
                 raise error
         Store.of(entry).remove(entry)
         with person_logged_in(distribution.owner):
             for info_type in PRIVATE_DISTRIBUTION_TYPES:
                 self.assertContentEqual(
-                    [], distribution.checkInformationType(info_type))
+                    [], distribution.checkInformationType(info_type)
+                )
 
     def test_checkInformationType_series_only_bugs(self):
         # A distribution with bugtasks that are only targeted to a series
@@ -672,11 +750,13 @@ class TestDistribution(TestCaseWithFactory):
             bug.addTask(series.owner, series)
             bug.default_bugtask.delete()
             for info_type in PRIVATE_DISTRIBUTION_TYPES:
-                error, = list(series.distribution.checkInformationType(
-                    info_type))
+                (error,) = list(
+                    series.distribution.checkInformationType(info_type)
+                )
                 with ExpectedException(
-                        CannotChangeInformationType,
-                        "Some bugs are neither proprietary nor embargoed."):
+                    CannotChangeInformationType,
+                    "Some bugs are neither proprietary nor embargoed.",
+                ):
                     raise error
 
     def test_private_forbids_translations(self):
@@ -686,9 +766,10 @@ class TestDistribution(TestCaseWithFactory):
         for info_type in PRIVATE_DISTRIBUTION_TYPES:
             distribution.information_type = info_type
             with ExpectedException(
-                    ProprietaryPillar,
-                    "Translations are not supported for proprietary "
-                    "distributions."):
+                ProprietaryPillar,
+                "Translations are not supported for proprietary "
+                "distributions.",
+            ):
                 distribution.translations_usage = ServiceUsage.LAUNCHPAD
             for usage in ServiceUsage.items:
                 if usage == ServiceUsage.LAUNCHPAD:
@@ -702,21 +783,29 @@ class TestDistribution(TestCaseWithFactory):
         members = self.factory.makeTeam(owner=owner)
         kwargs = {}
         if information_type is not None:
-            kwargs['information_type'] = information_type
+            kwargs["information_type"] = information_type
         with person_logged_in(owner):
             return getUtility(IDistributionSet).new(
                 name=self.factory.getUniqueUnicode("distro"),
-                display_name="Fnord", title="Fnord",
-                description="test 1", summary="test 2",
+                display_name="Fnord",
+                title="Fnord",
+                description="test 1",
+                summary="test 2",
                 domainname="distro.example.org",
-                members=members, owner=owner, registrant=owner, **kwargs)
+                members=members,
+                owner=owner,
+                registrant=owner,
+                **kwargs,
+            )
 
     def test_information_type(self):
         # Distribution is created with specified information_type.
         distribution = self.createDistribution(
-            information_type=InformationType.PROPRIETARY)
+            information_type=InformationType.PROPRIETARY
+        )
         self.assertEqual(
-            InformationType.PROPRIETARY, distribution.information_type)
+            InformationType.PROPRIETARY, distribution.information_type
+        )
         # The owner can set information_type.
         with person_logged_in(removeSecurityProxy(distribution).owner):
             distribution.information_type = InformationType.PUBLIC
@@ -733,17 +822,19 @@ class TestDistribution(TestCaseWithFactory):
         # Creating a Proprietary distribution and switching it to Public
         # does not create a PUBLIC AccessPolicy.
         distribution = self.createDistribution(
-            information_type=InformationType.PROPRIETARY)
+            information_type=InformationType.PROPRIETARY
+        )
         aps = getUtility(IAccessPolicySource).findByPillar([distribution])
         self.assertContentEqual(
-            [InformationType.PROPRIETARY],
-            [ap.type for ap in aps])
-        removeSecurityProxy(distribution).information_type = (
-            InformationType.PUBLIC)
+            [InformationType.PROPRIETARY], [ap.type for ap in aps]
+        )
+        removeSecurityProxy(
+            distribution
+        ).information_type = InformationType.PUBLIC
         aps = getUtility(IAccessPolicySource).findByPillar([distribution])
         self.assertContentEqual(
-            [InformationType.PROPRIETARY],
-            [ap.type for ap in aps])
+            [InformationType.PROPRIETARY], [ap.type for ap in aps]
+        )
 
     def test_information_type_default(self):
         # The default information_type is PUBLIC.
@@ -752,15 +843,17 @@ class TestDistribution(TestCaseWithFactory):
         self.assertFalse(distribution.private)
 
     invalid_information_types = [
-        info_type for info_type in InformationType.items
-        if info_type not in PILLAR_INFORMATION_TYPES]
+        info_type
+        for info_type in InformationType.items
+        if info_type not in PILLAR_INFORMATION_TYPES
+    ]
 
     def test_information_type_init_invalid_values(self):
         # Cannot create Distribution.information_type with invalid values.
         for info_type in self.invalid_information_types:
             with ExpectedException(
-                    CannotChangeInformationType,
-                    "Not supported for distributions."):
+                CannotChangeInformationType, "Not supported for distributions."
+            ):
                 self.createDistribution(information_type=info_type)
 
     def test_information_type_set_invalid_values(self):
@@ -768,8 +861,8 @@ class TestDistribution(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         for info_type in self.invalid_information_types:
             with ExpectedException(
-                    CannotChangeInformationType,
-                    "Not supported for distributions."):
+                CannotChangeInformationType, "Not supported for distributions."
+            ):
                 with person_logged_in(distribution.owner):
                     distribution.information_type = info_type
 
@@ -784,7 +877,8 @@ class TestDistribution(TestCaseWithFactory):
 
         distribution.information_type = InformationType.PROPRIETARY
         self.assertEqual(
-            InformationType.PROPRIETARY, distribution.information_type)
+            InformationType.PROPRIETARY, distribution.information_type
+        )
         self.assertIsNotNone(distribution.commercial_subscription)
 
     def test_set_proprietary_fails_expired_commercial_subscription(self):
@@ -792,14 +886,17 @@ class TestDistribution(TestCaseWithFactory):
         # complimentary subscription.
         owner = self.factory.makePerson()
         distribution = self.factory.makeDistribution(
-            information_type=InformationType.PROPRIETARY, owner=owner)
+            information_type=InformationType.PROPRIETARY, owner=owner
+        )
         self.useContext(person_logged_in(owner))
 
         # The Distribution now has a complimentary commercial subscription.
-        new_expires_date = (
-            datetime.datetime.now(pytz.UTC) - datetime.timedelta(1))
+        new_expires_date = datetime.datetime.now(
+            pytz.UTC
+        ) - datetime.timedelta(1)
         naked_subscription = removeSecurityProxy(
-            distribution.commercial_subscription)
+            distribution.commercial_subscription
+        )
         naked_subscription.date_expires = new_expires_date
 
         # We can make the distribution PUBLIC.
@@ -809,23 +906,25 @@ class TestDistribution(TestCaseWithFactory):
         # However we can't change it back to Proprietary because our
         # commercial subscription has expired.
         with ExpectedException(
-                CommercialSubscribersOnly,
-                "A valid commercial subscription is required for private"
-                " distributions."):
+            CommercialSubscribersOnly,
+            "A valid commercial subscription is required for private"
+            " distributions.",
+        ):
             distribution.information_type = InformationType.PROPRIETARY
 
     def test_no_answers_for_proprietary(self):
         # Enabling Answers is forbidden while information_type is proprietary.
         distribution = self.factory.makeDistribution(
-            information_type=InformationType.PROPRIETARY)
+            information_type=InformationType.PROPRIETARY
+        )
         with person_logged_in(removeSecurityProxy(distribution).owner):
             self.assertEqual(ServiceUsage.UNKNOWN, distribution.answers_usage)
             for usage in ServiceUsage.items:
                 if usage == ServiceUsage.LAUNCHPAD:
                     with ExpectedException(
-                            ServiceUsageForbidden,
-                            "Answers not allowed for non-public "
-                            "distributions."):
+                        ServiceUsageForbidden,
+                        "Answers not allowed for non-public " "distributions.",
+                    ):
                         distribution.answers_usage = ServiceUsage.LAUNCHPAD
                 else:
                     # All other values are permitted.
@@ -834,7 +933,8 @@ class TestDistribution(TestCaseWithFactory):
     def test_answers_for_public(self):
         # Enabling answers is permitted while information_type is PUBLIC.
         distribution = self.factory.makeDistribution(
-            information_type=InformationType.PUBLIC)
+            information_type=InformationType.PUBLIC
+        )
         self.assertEqual(ServiceUsage.UNKNOWN, distribution.answers_usage)
         with person_logged_in(distribution.owner):
             for usage in ServiceUsage.items:
@@ -848,7 +948,8 @@ class TestDistribution(TestCaseWithFactory):
         with person_logged_in(distribution.owner):
             distribution.answers_usage = ServiceUsage.LAUNCHPAD
             with ExpectedException(
-                    CannotChangeInformationType, "Answers is enabled."):
+                CannotChangeInformationType, "Answers is enabled."
+            ):
                 distribution.information_type = InformationType.PROPRIETARY
 
 
@@ -869,47 +970,57 @@ class TestDistributionBugInformationTypes(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         self.assertContentEqual(
             FREE_INFORMATION_TYPES,
-            distribution.getAllowedBugInformationTypes())
+            distribution.getAllowedBugInformationTypes(),
+        )
         self.assertEqual(
-            InformationType.PUBLIC,
-            distribution.getDefaultBugInformationType())
+            InformationType.PUBLIC, distribution.getDefaultBugInformationType()
+        )
 
     def test_sharing_policy_public_or_proprietary(self):
         # bug_sharing_policy can enable Proprietary.
         distribution = self.makeDistributionWithPolicy(
-            BugSharingPolicy.PUBLIC_OR_PROPRIETARY)
+            BugSharingPolicy.PUBLIC_OR_PROPRIETARY
+        )
         self.assertContentEqual(
             FREE_INFORMATION_TYPES + (InformationType.PROPRIETARY,),
-            distribution.getAllowedBugInformationTypes())
+            distribution.getAllowedBugInformationTypes(),
+        )
         self.assertEqual(
-            InformationType.PUBLIC,
-            distribution.getDefaultBugInformationType())
+            InformationType.PUBLIC, distribution.getDefaultBugInformationType()
+        )
 
     def test_sharing_policy_proprietary_or_public(self):
         # bug_sharing_policy can enable and default to Proprietary.
         distribution = self.makeDistributionWithPolicy(
-            BugSharingPolicy.PROPRIETARY_OR_PUBLIC)
+            BugSharingPolicy.PROPRIETARY_OR_PUBLIC
+        )
         self.assertContentEqual(
             FREE_INFORMATION_TYPES + (InformationType.PROPRIETARY,),
-            distribution.getAllowedBugInformationTypes())
+            distribution.getAllowedBugInformationTypes(),
+        )
         self.assertEqual(
             InformationType.PROPRIETARY,
-            distribution.getDefaultBugInformationType())
+            distribution.getDefaultBugInformationType(),
+        )
 
     def test_sharing_policy_proprietary(self):
         # bug_sharing_policy can enable only Proprietary.
         distribution = self.makeDistributionWithPolicy(
-            BugSharingPolicy.PROPRIETARY)
+            BugSharingPolicy.PROPRIETARY
+        )
         self.assertContentEqual(
             [InformationType.PROPRIETARY],
-            distribution.getAllowedBugInformationTypes())
+            distribution.getAllowedBugInformationTypes(),
+        )
         self.assertEqual(
             InformationType.PROPRIETARY,
-            distribution.getDefaultBugInformationType())
+            distribution.getDefaultBugInformationType(),
+        )
 
 
 class TestDistributionSpecificationPolicyAndInformationTypes(
-        TestCaseWithFactory):
+    TestCaseWithFactory
+):
 
     layer = DatabaseFunctionalLayer
 
@@ -918,7 +1029,8 @@ class TestDistributionSpecificationPolicyAndInformationTypes(
         self.factory.makeCommercialSubscription(pillar=distribution)
         with person_logged_in(distribution.owner):
             distribution.setSpecificationSharingPolicy(
-                specification_sharing_policy)
+                specification_sharing_policy
+            )
         return distribution
 
     def test_no_policy(self):
@@ -927,66 +1039,83 @@ class TestDistributionSpecificationPolicyAndInformationTypes(
         distribution = self.factory.makeDistribution()
         self.assertContentEqual(
             [InformationType.PUBLIC],
-            distribution.getAllowedSpecificationInformationTypes())
+            distribution.getAllowedSpecificationInformationTypes(),
+        )
         self.assertEqual(
             InformationType.PUBLIC,
-            distribution.getDefaultSpecificationInformationType())
+            distribution.getDefaultSpecificationInformationType(),
+        )
 
     def test_sharing_policy_public(self):
         # Distributions with a purely public policy should use PUBLIC
         # information type.
         distribution = self.makeDistributionWithPolicy(
-            SpecificationSharingPolicy.PUBLIC)
+            SpecificationSharingPolicy.PUBLIC
+        )
         self.assertContentEqual(
             [InformationType.PUBLIC],
-            distribution.getAllowedSpecificationInformationTypes())
+            distribution.getAllowedSpecificationInformationTypes(),
+        )
         self.assertEqual(
             InformationType.PUBLIC,
-            distribution.getDefaultSpecificationInformationType())
+            distribution.getDefaultSpecificationInformationType(),
+        )
 
     def test_sharing_policy_public_or_proprietary(self):
         # specification_sharing_policy can enable Proprietary.
         distribution = self.makeDistributionWithPolicy(
-            SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY)
+            SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
+        )
         self.assertContentEqual(
             [InformationType.PUBLIC, InformationType.PROPRIETARY],
-            distribution.getAllowedSpecificationInformationTypes())
+            distribution.getAllowedSpecificationInformationTypes(),
+        )
         self.assertEqual(
             InformationType.PUBLIC,
-            distribution.getDefaultSpecificationInformationType())
+            distribution.getDefaultSpecificationInformationType(),
+        )
 
     def test_sharing_policy_proprietary_or_public(self):
         # specification_sharing_policy can enable and default to Proprietary.
         distribution = self.makeDistributionWithPolicy(
-            SpecificationSharingPolicy.PROPRIETARY_OR_PUBLIC)
+            SpecificationSharingPolicy.PROPRIETARY_OR_PUBLIC
+        )
         self.assertContentEqual(
             [InformationType.PUBLIC, InformationType.PROPRIETARY],
-            distribution.getAllowedSpecificationInformationTypes())
+            distribution.getAllowedSpecificationInformationTypes(),
+        )
         self.assertEqual(
             InformationType.PROPRIETARY,
-            distribution.getDefaultSpecificationInformationType())
+            distribution.getDefaultSpecificationInformationType(),
+        )
 
     def test_sharing_policy_proprietary(self):
         # specification_sharing_policy can enable only Proprietary.
         distribution = self.makeDistributionWithPolicy(
-            SpecificationSharingPolicy.PROPRIETARY)
+            SpecificationSharingPolicy.PROPRIETARY
+        )
         self.assertContentEqual(
             [InformationType.PROPRIETARY],
-            distribution.getAllowedSpecificationInformationTypes())
+            distribution.getAllowedSpecificationInformationTypes(),
+        )
         self.assertEqual(
             InformationType.PROPRIETARY,
-            distribution.getDefaultSpecificationInformationType())
+            distribution.getDefaultSpecificationInformationType(),
+        )
 
     def test_sharing_policy_embargoed_or_proprietary(self):
         # specification_sharing_policy can be embargoed and then proprietary.
         distribution = self.makeDistributionWithPolicy(
-            SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+            SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY
+        )
         self.assertContentEqual(
             [InformationType.PROPRIETARY, InformationType.EMBARGOED],
-            distribution.getAllowedSpecificationInformationTypes())
+            distribution.getAllowedSpecificationInformationTypes(),
+        )
         self.assertEqual(
             InformationType.EMBARGOED,
-            distribution.getDefaultSpecificationInformationType())
+            distribution.getDefaultSpecificationInformationType(),
+        )
 
 
 class BaseSharingPolicyTests:
@@ -1021,12 +1150,14 @@ class BaseSharingPolicyTests:
         # An unrelated user can't set sharing policies.
         person = self.factory.makePerson()
         self.assertRaises(
-            Unauthorized, self.setSharingPolicy, self.public_policy, person)
+            Unauthorized, self.setSharingPolicy, self.public_policy, person
+        )
 
     def test_anonymous_cannot_set_policy(self):
         # An anonymous user can't set sharing policies.
         self.assertRaises(
-            Unauthorized, self.setSharingPolicy, self.public_policy, None)
+            Unauthorized, self.setSharingPolicy, self.public_policy, None
+        )
 
     def test_proprietary_forbidden_without_commercial_sub(self):
         # No policy that allows Proprietary can be configured without a
@@ -1036,7 +1167,10 @@ class BaseSharingPolicyTests:
         for policy in self.commercial_policies:
             self.assertRaises(
                 CommercialSubscribersOnly,
-                self.setSharingPolicy, policy, self.distribution.owner)
+                self.setSharingPolicy,
+                policy,
+                self.distribution.owner,
+            )
 
     def test_proprietary_allowed_with_commercial_sub(self):
         # All policies are valid when there's a current commercial
@@ -1053,21 +1187,36 @@ class BaseSharingPolicyTests:
         self.factory.makeCommercialSubscription(pillar=self.distribution)
         self.assertEqual(
             [InformationType.PRIVATESECURITY, InformationType.USERDATA],
-            [policy.type for policy in
-             getUtility(IAccessPolicySource).findByPillar(
-                 [self.distribution])])
+            [
+                policy.type
+                for policy in getUtility(IAccessPolicySource).findByPillar(
+                    [self.distribution]
+                )
+            ],
+        )
         self.setSharingPolicy(
-            self.commercial_policies[0], self.commercial_admin)
+            self.commercial_policies[0], self.commercial_admin
+        )
         self.assertEqual(
-            [InformationType.PRIVATESECURITY, InformationType.USERDATA,
-             InformationType.PROPRIETARY],
-            [policy.type for policy in
-             getUtility(IAccessPolicySource).findByPillar(
-                 [self.distribution])])
+            [
+                InformationType.PRIVATESECURITY,
+                InformationType.USERDATA,
+                InformationType.PROPRIETARY,
+            ],
+            [
+                policy.type
+                for policy in getUtility(IAccessPolicySource).findByPillar(
+                    [self.distribution]
+                )
+            ],
+        )
         self.assertTrue(
-            getUtility(IService, 'sharing').checkPillarAccess(
-                [self.distribution], InformationType.PROPRIETARY,
-                self.distribution.owner))
+            getUtility(IService, "sharing").checkPillarAccess(
+                [self.distribution],
+                InformationType.PROPRIETARY,
+                self.distribution.owner,
+            )
+        )
 
     def test_unused_policies_are_pruned(self):
         # When a sharing policy is changed, the allowed information types may
@@ -1079,13 +1228,12 @@ class BaseSharingPolicyTests:
         ap_source = getUtility(IAccessPolicySource)
         distribution = self.factory.makeDistribution()
         [ap] = ap_source.find(
-            [(distribution, InformationType.PRIVATESECURITY)])
+            [(distribution, InformationType.PRIVATESECURITY)]
+        )
         self.factory.makeAccessPolicyArtifact(policy=ap)
 
         def getAccessPolicyTypes(pillar):
-            return [
-                ap.type
-                for ap in ap_source.findByPillar([pillar])]
+            return [ap.type for ap in ap_source.findByPillar([pillar])]
 
         # Now change the sharing policies to PROPRIETARY
         self.factory.makeCommercialSubscription(pillar=distribution)
@@ -1094,18 +1242,24 @@ class BaseSharingPolicyTests:
             # Just bug sharing policy has been changed so all previous policy
             # types are still valid.
             self.assertContentEqual(
-                [InformationType.PRIVATESECURITY, InformationType.USERDATA,
-                 InformationType.PROPRIETARY],
-                getAccessPolicyTypes(distribution))
+                [
+                    InformationType.PRIVATESECURITY,
+                    InformationType.USERDATA,
+                    InformationType.PROPRIETARY,
+                ],
+                getAccessPolicyTypes(distribution),
+            )
 
             distribution.setBranchSharingPolicy(
-                BranchSharingPolicy.PROPRIETARY)
+                BranchSharingPolicy.PROPRIETARY
+            )
             # Proprietary is permitted by the sharing policy, and there's a
             # Private Security artifact. But Private isn't in use or allowed
             # by a sharing policy, so it's now gone.
             self.assertContentEqual(
                 [InformationType.PRIVATESECURITY, InformationType.PROPRIETARY],
-                getAccessPolicyTypes(distribution))
+                getAccessPolicyTypes(distribution),
+            )
 
     def test_proprietary_distributions_forbid_public_policies(self):
         # A proprietary distribution forbids any sharing policy that would
@@ -1115,16 +1269,20 @@ class BaseSharingPolicyTests:
             self.distribution.information_type = InformationType.PROPRIETARY
         policies_permitting_public = [self.public_policy]
         policies_permitting_public.extend(
-            policy for policy in self.commercial_policies if
-            InformationType.PUBLIC in self.allowed_types[policy])
+            policy
+            for policy in self.commercial_policies
+            if InformationType.PUBLIC in self.allowed_types[policy]
+        )
         for policy in policies_permitting_public:
             with ExpectedException(
-                    ProprietaryPillar, "The pillar is Proprietary."):
+                ProprietaryPillar, "The pillar is Proprietary."
+            ):
                 self.setSharingPolicy(policy, owner)
 
 
 class TestDistributionBugSharingPolicy(
-        BaseSharingPolicyTests, TestCaseWithFactory):
+    BaseSharingPolicyTests, TestCaseWithFactory
+):
     """Test Distribution.bug_sharing_policy."""
 
     layer = DatabaseFunctionalLayer
@@ -1135,7 +1293,7 @@ class TestDistributionBugSharingPolicy(
         BugSharingPolicy.PUBLIC_OR_PROPRIETARY,
         BugSharingPolicy.PROPRIETARY_OR_PUBLIC,
         BugSharingPolicy.PROPRIETARY,
-        )
+    )
     allowed_types = BUG_POLICY_ALLOWED_TYPES
 
     def setSharingPolicy(self, policy, user):
@@ -1148,7 +1306,8 @@ class TestDistributionBugSharingPolicy(
 
 
 class TestDistributionBranchSharingPolicy(
-        BaseSharingPolicyTests, TestCaseWithFactory):
+    BaseSharingPolicyTests, TestCaseWithFactory
+):
     """Test Distribution.branch_sharing_policy."""
 
     layer = DatabaseFunctionalLayer
@@ -1160,7 +1319,7 @@ class TestDistributionBranchSharingPolicy(
         BranchSharingPolicy.PROPRIETARY_OR_PUBLIC,
         BranchSharingPolicy.PROPRIETARY,
         BranchSharingPolicy.EMBARGOED_OR_PROPRIETARY,
-        )
+    )
     allowed_types = BRANCH_POLICY_ALLOWED_TYPES
 
     def setSharingPolicy(self, policy, user):
@@ -1177,30 +1336,49 @@ class TestDistributionBranchSharingPolicy(
         self.factory.makeCommercialSubscription(pillar=self.distribution)
         self.assertEqual(
             [InformationType.PRIVATESECURITY, InformationType.USERDATA],
-            [policy.type for policy in
-             getUtility(IAccessPolicySource).findByPillar(
-                 [self.distribution])])
+            [
+                policy.type
+                for policy in getUtility(IAccessPolicySource).findByPillar(
+                    [self.distribution]
+                )
+            ],
+        )
         self.setSharingPolicy(
-            self.enum.EMBARGOED_OR_PROPRIETARY,
-            self.commercial_admin)
+            self.enum.EMBARGOED_OR_PROPRIETARY, self.commercial_admin
+        )
         self.assertEqual(
-            [InformationType.PRIVATESECURITY, InformationType.USERDATA,
-             InformationType.PROPRIETARY, InformationType.EMBARGOED],
-            [policy.type for policy in
-             getUtility(IAccessPolicySource).findByPillar(
-                 [self.distribution])])
+            [
+                InformationType.PRIVATESECURITY,
+                InformationType.USERDATA,
+                InformationType.PROPRIETARY,
+                InformationType.EMBARGOED,
+            ],
+            [
+                policy.type
+                for policy in getUtility(IAccessPolicySource).findByPillar(
+                    [self.distribution]
+                )
+            ],
+        )
         self.assertTrue(
-            getUtility(IService, 'sharing').checkPillarAccess(
-                [self.distribution], InformationType.PROPRIETARY,
-                self.distribution.owner))
+            getUtility(IService, "sharing").checkPillarAccess(
+                [self.distribution],
+                InformationType.PROPRIETARY,
+                self.distribution.owner,
+            )
+        )
         self.assertTrue(
-            getUtility(IService, 'sharing').checkPillarAccess(
-                [self.distribution], InformationType.EMBARGOED,
-                self.distribution.owner))
+            getUtility(IService, "sharing").checkPillarAccess(
+                [self.distribution],
+                InformationType.EMBARGOED,
+                self.distribution.owner,
+            )
+        )
 
 
 class TestDistributionSpecificationSharingPolicy(
-        BaseSharingPolicyTests, TestCaseWithFactory):
+    BaseSharingPolicyTests, TestCaseWithFactory
+):
     """Test Distribution.specification_sharing_policy."""
 
     layer = DatabaseFunctionalLayer
@@ -1212,7 +1390,7 @@ class TestDistributionSpecificationSharingPolicy(
         SpecificationSharingPolicy.PROPRIETARY_OR_PUBLIC,
         SpecificationSharingPolicy.PROPRIETARY,
         SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY,
-        )
+    )
     allowed_types = SPECIFICATION_POLICY_ALLOWED_TYPES
 
     def setSharingPolicy(self, policy, user):
@@ -1225,7 +1403,8 @@ class TestDistributionSpecificationSharingPolicy(
 
 
 class TestDistributionCurrentSourceReleases(
-    CurrentSourceReleasesMixin, TestCase):
+    CurrentSourceReleasesMixin, TestCase
+):
     """Test for Distribution.getCurrentSourceReleases().
 
     This works in the same way as
@@ -1245,20 +1424,25 @@ class TestDistributionCurrentSourceReleases(
         # version numbers. We don't care whether the version is
         # published in a earlier or later series.
         self.current_series = self.factory.makeDistroSeries(
-            self.distribution, '1.0', status=SeriesStatus.CURRENT)
+            self.distribution, "1.0", status=SeriesStatus.CURRENT
+        )
         self.publisher.getPubSource(
-            version='0.9', distroseries=self.current_series)
+            version="0.9", distroseries=self.current_series
+        )
         self.publisher.getPubSource(
-            version='1.0', distroseries=self.development_series)
-        self.assertCurrentVersion('1.0')
+            version="1.0", distroseries=self.development_series
+        )
+        self.assertCurrentVersion("1.0")
 
         self.publisher.getPubSource(
-            version='1.1', distroseries=self.current_series)
-        self.assertCurrentVersion('1.1')
+            version="1.1", distroseries=self.current_series
+        )
+        self.assertCurrentVersion("1.1")
 
     def test_distribution_series_cache(self):
         distribution = removeSecurityProxy(
-            self.factory.makeDistribution('foo'))
+            self.factory.makeDistribution("foo")
+        )
 
         cache = get_property_cache(distribution)
 
@@ -1271,9 +1455,15 @@ class TestDistributionCurrentSourceReleases(
 
         # Cache cleared.
         distribution.newSeries(
-            name='bar', display_name='Bar', title='Bar', summary='',
-            description='', version='1', previous_series=None,
-            registrant=self.factory.makePerson())
+            name="bar",
+            display_name="Bar",
+            title="Bar",
+            summary="",
+            description="",
+            version="1",
+            previous_series=None,
+            registrant=self.factory.makePerson(),
+        )
         self.assertNotIn("series", cache)
 
         # New cached value.
@@ -1283,27 +1473,28 @@ class TestDistributionCurrentSourceReleases(
 
 
 class SeriesByStatusTests(TestCaseWithFactory):
-    """Test IDistribution.getSeriesByStatus().
-    """
+    """Test IDistribution.getSeriesByStatus()."""
 
     layer = LaunchpadFunctionalLayer
 
     def test_get_none(self):
         distro = self.factory.makeDistribution()
-        self.assertEqual([],
-            list(distro.getSeriesByStatus(SeriesStatus.FROZEN)))
+        self.assertEqual(
+            [], list(distro.getSeriesByStatus(SeriesStatus.FROZEN))
+        )
 
     def test_get_current(self):
         distro = self.factory.makeDistribution()
-        series = self.factory.makeDistroSeries(distribution=distro,
-            status=SeriesStatus.CURRENT)
-        self.assertEqual([series],
-            list(distro.getSeriesByStatus(SeriesStatus.CURRENT)))
+        series = self.factory.makeDistroSeries(
+            distribution=distro, status=SeriesStatus.CURRENT
+        )
+        self.assertEqual(
+            [series], list(distro.getSeriesByStatus(SeriesStatus.CURRENT))
+        )
 
 
 class SeriesTests(TestCaseWithFactory):
-    """Test IDistribution.getSeries() and friends.
-    """
+    """Test IDistribution.getSeries() and friends."""
 
     layer = LaunchpadFunctionalLayer
 
@@ -1313,14 +1504,16 @@ class SeriesTests(TestCaseWithFactory):
 
     def test_get_by_name(self):
         distro = self.factory.makeDistribution()
-        series = self.factory.makeDistroSeries(distribution=distro,
-            name="dappere")
+        series = self.factory.makeDistroSeries(
+            distribution=distro, name="dappere"
+        )
         self.assertEqual(series, distro.getSeries("dappere"))
 
     def test_get_by_version(self):
         distro = self.factory.makeDistribution()
-        series = self.factory.makeDistroSeries(distribution=distro,
-            name="dappere", version="42.6")
+        series = self.factory.makeDistroSeries(
+            distribution=distro, name="dappere", version="42.6"
+        )
         self.assertEqual(series, distro.getSeries("42.6"))
 
     def test_development_series_alias(self):
@@ -1328,31 +1521,38 @@ class SeriesTests(TestCaseWithFactory):
         with person_logged_in(distro.owner):
             distro.development_series_alias = "devel"
         self.assertRaises(
-            NoSuchDistroSeries, distro.getSeries, "devel", follow_aliases=True)
+            NoSuchDistroSeries, distro.getSeries, "devel", follow_aliases=True
+        )
         series = self.factory.makeDistroSeries(
-            distribution=distro, status=SeriesStatus.DEVELOPMENT)
+            distribution=distro, status=SeriesStatus.DEVELOPMENT
+        )
         self.assertRaises(NoSuchDistroSeries, distro.getSeries, "devel")
         self.assertEqual(
-            series, distro.getSeries("devel", follow_aliases=True))
+            series, distro.getSeries("devel", follow_aliases=True)
+        )
 
     def test_getNonObsoleteSeries(self):
         distro = self.factory.makeDistribution()
         self.factory.makeDistroSeries(
-            distribution=distro, status=SeriesStatus.OBSOLETE)
+            distribution=distro, status=SeriesStatus.OBSOLETE
+        )
         current = self.factory.makeDistroSeries(
-            distribution=distro, status=SeriesStatus.CURRENT)
+            distribution=distro, status=SeriesStatus.CURRENT
+        )
         development = self.factory.makeDistroSeries(
-            distribution=distro, status=SeriesStatus.DEVELOPMENT)
+            distribution=distro, status=SeriesStatus.DEVELOPMENT
+        )
         experimental = self.factory.makeDistroSeries(
-            distribution=distro, status=SeriesStatus.EXPERIMENTAL)
+            distribution=distro, status=SeriesStatus.EXPERIMENTAL
+        )
         self.assertContentEqual(
             [current, development, experimental],
-            list(distro.getNonObsoleteSeries()))
+            list(distro.getNonObsoleteSeries()),
+        )
 
 
 class DerivativesTests(TestCaseWithFactory):
-    """Test IDistribution.derivatives.
-    """
+    """Test IDistribution.derivatives."""
 
     layer = LaunchpadFunctionalLayer
 
@@ -1361,7 +1561,8 @@ class DerivativesTests(TestCaseWithFactory):
         distro2 = self.factory.makeDistribution()
         previous_series = self.factory.makeDistroSeries(distribution=distro1)
         series = self.factory.makeDistroSeries(
-            distribution=distro2, previous_series=previous_series)
+            distribution=distro2, previous_series=previous_series
+        )
         self.assertContentEqual([series], distro1.derivatives)
 
 
@@ -1382,15 +1583,16 @@ class DistroSnapshotTestCase(TestCaseWithFactory):
         """
         snapshot = Snapshot(self.distribution, providing=IDistribution)
         omitted = [
-            'archive_mirrors',
-            'cdimage_mirrors',
-            'series',
-            'all_distro_archives',
-            ]
+            "archive_mirrors",
+            "cdimage_mirrors",
+            "series",
+            "all_distro_archives",
+        ]
         for attribute in omitted:
             self.assertFalse(
                 hasattr(snapshot, attribute),
-                "Snapshot should not include %s." % attribute)
+                "Snapshot should not include %s." % attribute,
+            )
 
 
 class TestDistributionPage(TestCaseWithFactory):
@@ -1399,31 +1601,37 @@ class TestDistributionPage(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super().setUp('foo.bar@canonical.com')
+        super().setUp("foo.bar@canonical.com")
         self.distro = self.factory.makeDistribution(
-            name="distro", displayname='distro')
-        self.admin = getUtility(IPersonSet).getByEmail(
-            'admin@canonical.com')
+            name="distro", displayname="distro"
+        )
+        self.admin = getUtility(IPersonSet).getByEmail("admin@canonical.com")
         self.simple_user = self.factory.makePerson()
         # Use a FakeLogger fixture to prevent Memcached warnings to be
         # printed to stdout while browsing pages.
         self.useFixture(FakeLogger())
 
     def test_distributionpage_addseries_link(self):
-        """ Verify that an admin sees the +addseries link."""
+        """Verify that an admin sees the +addseries link."""
         login_person(self.admin)
         view = create_initialized_view(
-            self.distro, '+index', principal=self.admin)
+            self.distro, "+index", principal=self.admin
+        )
         series_matches = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                'link to add a series', 'a',
-                attrs={'href':
-                    canonical_url(self.distro, view_name='+addseries')},
-                text='Add series'),
+                "link to add a series",
+                "a",
+                attrs={
+                    "href": canonical_url(self.distro, view_name="+addseries")
+                },
+                text="Add series",
+            ),
             soupmatchers.Tag(
-                'Active series and milestones widget', 'h2',
-                text='Active series and milestones'),
-            )
+                "Active series and milestones widget",
+                "h2",
+                text="Active series and milestones",
+            ),
+        )
         self.assertThat(view.render(), series_matches)
 
     def test_distributionpage_addseries_link_noadmin(self):
@@ -1432,40 +1640,58 @@ class TestDistributionPage(TestCaseWithFactory):
         """
         login_person(self.simple_user)
         view = create_initialized_view(
-            self.distro, '+index', principal=self.simple_user)
+            self.distro, "+index", principal=self.simple_user
+        )
         add_series_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                'link to add a series', 'a',
-                attrs={'href':
-                    canonical_url(self.distro, view_name='+addseries')},
-                text='Add series'))
+                "link to add a series",
+                "a",
+                attrs={
+                    "href": canonical_url(self.distro, view_name="+addseries")
+                },
+                text="Add series",
+            )
+        )
         series_header_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                'Active series and milestones widget', 'h2',
-                text='Active series and milestones'))
+                "Active series and milestones widget",
+                "h2",
+                text="Active series and milestones",
+            )
+        )
         self.assertThat(
             view.render(),
-            Not(MatchesAny(add_series_match, series_header_match)))
+            Not(MatchesAny(add_series_match, series_header_match)),
+        )
 
     def test_distributionpage_series_list_noadmin(self):
         """Verify that a non-admin does see the series list
         when there is a series.
         """
-        self.factory.makeDistroSeries(distribution=self.distro,
-            status=SeriesStatus.CURRENT)
+        self.factory.makeDistroSeries(
+            distribution=self.distro, status=SeriesStatus.CURRENT
+        )
         login_person(self.simple_user)
         view = create_initialized_view(
-            self.distro, '+index', principal=self.simple_user)
+            self.distro, "+index", principal=self.simple_user
+        )
         add_series_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                'link to add a series', 'a',
-                attrs={'href':
-                    canonical_url(self.distro, view_name='+addseries')},
-                text='Add series'))
+                "link to add a series",
+                "a",
+                attrs={
+                    "href": canonical_url(self.distro, view_name="+addseries")
+                },
+                text="Add series",
+            )
+        )
         series_header_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                'Active series and milestones widget', 'h2',
-                text='Active series and milestones'))
+                "Active series and milestones widget",
+                "h2",
+                text="Active series and milestones",
+            )
+        )
         self.assertThat(view.render(), series_header_match)
         self.assertThat(view.render(), Not(add_series_match))
 
@@ -1486,7 +1712,8 @@ class DistroRegistrantTestCase(TestCaseWithFactory):
 
     def test_distro_registrant_owner_differ(self):
         distribution = self.factory.makeDistribution(
-            name="boobuntu", owner=self.owner, registrant=self.registrant)
+            name="boobuntu", owner=self.owner, registrant=self.registrant
+        )
         self.assertNotEqual(distribution.owner, distribution.registrant)
         self.assertEqual(distribution.owner, self.owner)
         self.assertEqual(distribution.registrant, self.registrant)
@@ -1499,7 +1726,8 @@ class DistributionSet(TestCaseWithFactory):
 
     def test_implements_interface(self):
         self.assertThat(
-            getUtility(IDistributionSet), Provides(IDistributionSet))
+            getUtility(IDistributionSet), Provides(IDistributionSet)
+        )
 
     def test_getDerivedDistributions_finds_derived_distro(self):
         dsp = self.factory.makeDistroSeriesParent()
@@ -1511,12 +1739,14 @@ class DistributionSet(TestCaseWithFactory):
         distroset = getUtility(IDistributionSet)
         nonderived_distro = self.factory.makeDistribution()
         self.assertNotIn(
-            nonderived_distro, distroset.getDerivedDistributions())
+            nonderived_distro, distroset.getDerivedDistributions()
+        )
 
     def test_getDerivedDistributions_ignores_ubuntu_even_if_derived(self):
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.factory.makeDistroSeriesParent(
-            derived_series=ubuntu.currentseries)
+            derived_series=ubuntu.currentseries
+        )
         distroset = getUtility(IDistributionSet)
         self.assertNotIn(ubuntu, distroset.getDerivedDistributions())
 
@@ -1543,7 +1773,7 @@ class TestDistributionTranslations(TestCaseWithFactory):
         distro = self.factory.makeDistribution()
         new_series = self.factory.makeDistroSeries(distribution=distro)
         group = self.factory.makeTranslationGroup()
-        with celebrity_logged_in('rosetta_experts'):
+        with celebrity_logged_in("rosetta_experts"):
             distro.translations_usage = ServiceUsage.LAUNCHPAD
             distro.translation_focus = new_series
             distro.translationgroup = group
@@ -1555,7 +1785,7 @@ class TestDistributionTranslations(TestCaseWithFactory):
         distro = self.factory.makeDistribution()
         new_series = self.factory.makeDistroSeries(distribution=distro)
         group = self.factory.makeTranslationGroup()
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             distro.translationgroup = group
 
         new_group = self.factory.makeTranslationGroup()
@@ -1618,15 +1848,17 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
 
     Some tests already exist in xx-distribution.rst.
     """
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super().setUp()
-        self.person = self.factory.makePerson(
-            displayname="Test Person")
+        self.person = self.factory.makePerson(displayname="Test Person")
         self.webservice = webservice_for_person(
-            self.person, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            self.person,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
 
     def test_searchOCIProjects(self):
         name = self.factory.getUniqueUnicode("partial-")
@@ -1634,12 +1866,14 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             distro = self.factory.makeDistribution(owner=self.person)
             first_name = self.factory.makeOCIProjectName(name=name)
             first_project = self.factory.makeOCIProject(
-                pillar=distro, ociprojectname=first_name)
+                pillar=distro, ociprojectname=first_name
+            )
             self.factory.makeOCIProject(pillar=distro)
             distro_url = api_url(distro)
 
         response = self.webservice.named_get(
-            distro_url, "searchOCIProjects", text="partial")
+            distro_url, "searchOCIProjects", text="partial"
+        )
         self.assertEqual(200, response.status, response.body)
 
         search_body = response.jsonBody()
@@ -1648,7 +1882,8 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         with person_logged_in(self.person):
             self.assertEqual(
                 self.webservice.getAbsoluteUrl(api_url(first_project)),
-                search_body["entries"][0]["self_link"])
+                search_body["entries"][0]["self_link"],
+            )
 
     def test_oops_references_matching_distro(self):
         # The distro layer provides the context restriction, so we need to
@@ -1657,7 +1892,8 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         with person_logged_in(self.person):
             distro = self.factory.makeDistribution()
             self.factory.makeQuestion(
-                title="Crash with %s" % oopsid, target=distro)
+                title="Crash with %s" % oopsid, target=distro
+            )
             distro_url = api_url(distro)
 
         now = datetime.datetime.now(tz=pytz.utc)
@@ -1667,14 +1903,16 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             distro_url,
             "findReferencedOOPS",
             start_date=(now - day).isoformat(),
-            end_date=now.isoformat())
+            end_date=now.isoformat(),
+        )
         self.assertEqual([oopsid], yesterday_response.jsonBody())
 
         future_response = self.webservice.named_get(
             distro_url,
             "findReferencedOOPS",
             start_date=(now + day).isoformat(),
-            end_date=(now + day).isoformat())
+            end_date=(now + day).isoformat(),
+        )
         self.assertEqual([], future_response.jsonBody())
 
     def test_oops_references_different_distro(self):
@@ -1692,7 +1930,8 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             distro_url,
             "findReferencedOOPS",
             start_date=(now - day).isoformat(),
-            end_date=now.isoformat())
+            end_date=now.isoformat(),
+        )
         self.assertEqual([], empty_response.jsonBody())
 
     def test_setOCICredentials(self):
@@ -1709,21 +1948,23 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             registry_url="http://registry.test",
             username="test-username",
             password="test-password",
-            region="test-region"
+            region="test-region",
         )
 
         self.assertEqual(200, resp.status)
         with person_logged_in(self.person):
             self.assertEqual(
-                "http://registry.test",
-                distro.oci_registry_credentials.url
+                "http://registry.test", distro.oci_registry_credentials.url
             )
             credentials = distro.oci_registry_credentials.getCredentials()
-            self.assertDictEqual({
-                "username": "test-username",
-                "password": "test-password",
-                "region": "test-region"},
-                credentials)
+            self.assertDictEqual(
+                {
+                    "username": "test-username",
+                    "password": "test-password",
+                    "region": "test-region",
+                },
+                credentials,
+            )
 
     def test_setOCICredentials_no_oci_admin(self):
         # If there's no oci_project_admin to own the credentials, error
@@ -1739,9 +1980,7 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         )
 
         self.assertEqual(400, resp.status)
-        self.assertIn(
-            b"no OCI Project Admin for this distribution",
-            resp.body)
+        self.assertIn(b"no OCI Project Admin for this distribution", resp.body)
 
     def test_setOCICredentials_changes_credentials(self):
         # if we have existing credentials, we should change them
@@ -1762,8 +2001,7 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(200, resp.status)
         with person_logged_in(self.person):
             self.assertEqual(
-                "http://registry.test",
-                distro.oci_registry_credentials.url
+                "http://registry.test", distro.oci_registry_credentials.url
             )
 
     def test_deleteOCICredentials(self):
@@ -1776,9 +2014,7 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             distro.oci_registry_credentials = credentials
             distro_url = api_url(distro)
 
-        resp = self.webservice.named_post(
-            distro_url,
-            "deleteOCICredentials")
+        resp = self.webservice.named_post(distro_url, "deleteOCICredentials")
 
         self.assertEqual(200, resp.status)
         with person_logged_in(self.person):
@@ -1796,17 +2032,19 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         """Make sure the main mirror is appended to the list of mirrors for a
         given country.
         """
-        login('foo.bar@canonical.com')
-        france = getUtility(ICountrySet)['FR']
+        login("foo.bar@canonical.com")
+        france = getUtility(ICountrySet)["FR"]
         main_mirror = getUtility(ILaunchpadCelebrities).ubuntu_archive_mirror
         mirrors = main_mirror.distribution.getBestMirrorsForCountry(
-            france, MirrorContent.ARCHIVE)
+            france, MirrorContent.ARCHIVE
+        )
         self.assertTrue(len(mirrors) > 1, "Not enough mirrors")
         self.assertEqual(main_mirror, mirrors[-1])
 
         main_mirror = getUtility(ILaunchpadCelebrities).ubuntu_cdimage_mirror
         mirrors = main_mirror.distribution.getBestMirrorsForCountry(
-            france, MirrorContent.RELEASE)
+            france, MirrorContent.RELEASE
+        )
         self.assertTrue(len(mirrors) > 1, "Not enough mirrors")
         self.assertEqual(main_mirror, mirrors[-1])
 
@@ -1818,7 +2056,7 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         response = self.webservice.get(distro_url)
         json_body = response.jsonBody()
         self.assertEqual(200, response.status)
-        self.assertIsNone(json_body['security_admin_link'])
+        self.assertIsNone(json_body["security_admin_link"])
 
     def test_distribution_security_admin_set(self):
         with person_logged_in(self.person):
@@ -1826,40 +2064,37 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             distro_url = api_url(distro)
             person = self.factory.makePerson()
             distro.security_admin = person
-            person_url = 'http://api.launchpad.test/devel' + api_url(person)
+            person_url = "http://api.launchpad.test/devel" + api_url(person)
 
         response = self.webservice.get(distro_url)
         json_body = response.jsonBody()
         self.assertEqual(200, response.status)
         self.assertEqual(
             person_url,
-            json_body['security_admin_link'],
+            json_body["security_admin_link"],
         )
 
     def test_admin_can_set_distribution_security_admin(self):
         with admin_logged_in():
             distro = self.factory.makeDistribution()
             person = self.factory.makePerson()
-            person_url = 'http://api.launchpad.test/devel' + api_url(person)
+            person_url = "http://api.launchpad.test/devel" + api_url(person)
             self.assertIsNone(distro.security_admin)
             admin_user = getUtility(IPersonSet).getByEmail(
-                'admin@canonical.com'
+                "admin@canonical.com"
             )
             distro_url = api_url(distro)
 
         webservice = webservice_for_person(
-            admin_user, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel"
+            admin_user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
         )
 
         response = webservice.patch(
             distro_url,
             "application/json",
-            json.dumps(
-                {
-                    "security_admin_link": person_url
-                }
-            )
+            json.dumps({"security_admin_link": person_url}),
         )
         self.assertEqual(209, response.status)
         with admin_logged_in():
@@ -1870,18 +2105,18 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             distro = self.factory.makeDistribution(owner=self.person)
             self.assertIsNone(distro.security_admin)
             distro_url = api_url(distro)
-            person_url = (
-                'http://api.launchpad.test/devel' + api_url(self.person)
+            person_url = "http://api.launchpad.test/devel" + api_url(
+                self.person
             )
 
         response = self.webservice.patch(
             distro_url,
-            'application/json',
+            "application/json",
             json.dumps(
                 {
-                    'security_admin_link': person_url,
+                    "security_admin_link": person_url,
                 }
-            )
+            ),
         )
         self.assertEqual(209, response.status)
 
@@ -1892,18 +2127,18 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         with person_logged_in(self.person):
             distro = self.factory.makeDistribution()
             distro_url = api_url(distro)
-            person_url = (
-                'http://api.launchpad.test/devel' + api_url(self.person)
+            person_url = "http://api.launchpad.test/devel" + api_url(
+                self.person
             )
 
         response = self.webservice.patch(
             distro_url,
-            'application/json',
+            "application/json",
             json.dumps(
                 {
-                    'security_admin_link': person_url,
+                    "security_admin_link": person_url,
                 }
-            )
+            ),
         )
         self.assertEqual(401, response.status)
 
@@ -1913,9 +2148,7 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def assert_newVulnerability_only_the_required_params(
-            self,
-            distribution,
-            creator
+        self, distribution, creator
     ):
         vulnerability = distribution.newVulnerability(
             status=VulnerabilityStatus.NEEDS_TRIAGE,
@@ -1935,8 +2168,8 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
                 notes=None,
                 mitigation=None,
                 importance_explanation=None,
-                date_made_public=None
-            )
+                date_made_public=None,
+            ),
         )
 
     def test_vulnerabilities_no_vulnerability_present(self):
@@ -1945,12 +2178,8 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
 
     def test_vulnerabilities_vulnerabilities_present(self):
         distribution = self.factory.makeDistribution()
-        first_vulnerability = self.factory.makeVulnerability(
-            distribution
-        )
-        second_vulnerability = self.factory.makeVulnerability(
-            distribution
-        )
+        first_vulnerability = self.factory.makeVulnerability(distribution)
+        second_vulnerability = self.factory.makeVulnerability(distribution)
         self.assertEqual(
             {first_vulnerability, second_vulnerability},
             set(distribution.vulnerabilities),
@@ -1982,14 +2211,13 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
 
         with person_logged_in(owner):
             self.assert_newVulnerability_only_the_required_params(
-                distribution,
-                creator=owner
+                distribution, creator=owner
             )
 
     def test_newVulnerability_all_parameters(self):
         distribution = self.factory.makeDistribution()
         owner = distribution.owner
-        cve = self.factory.makeCVE(sequence='2022-1234')
+        cve = self.factory.makeCVE(sequence="2022-1234")
         now = datetime.datetime.now(pytz.UTC)
 
         with person_logged_in(owner):
@@ -2001,12 +2229,12 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
                 importance=BugTaskImportance.CRITICAL,
                 information_type=InformationType.PRIVATESECURITY,
                 cve=cve,
-                description='Vulnerability',
-                notes='lgp171188> Foo bar',
-                mitigation='Foo bar baz',
-                importance_explanation='Foo bar baz',
+                description="Vulnerability",
+                notes="lgp171188> Foo bar",
+                mitigation="Foo bar baz",
+                importance_explanation="Foo bar baz",
                 date_made_public=now,
-                )
+            )
             self.assertThat(
                 vulnerability,
                 MatchesStructure.byEquality(
@@ -2015,12 +2243,12 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
                     importance=BugTaskImportance.CRITICAL,
                     information_type=InformationType.PRIVATESECURITY,
                     cve=cve,
-                    description='Vulnerability',
-                    notes='lgp171188> Foo bar',
-                    mitigation='Foo bar baz',
-                    importance_explanation='Foo bar baz',
+                    description="Vulnerability",
+                    notes="lgp171188> Foo bar",
+                    mitigation="Foo bar baz",
+                    importance_explanation="Foo bar baz",
                     date_made_public=now,
-                )
+                ),
             )
 
     def test_newVulnerability_permissions(self):
@@ -2032,21 +2260,18 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
         # in the distribution.
         with person_logged_in(distribution.owner):
             self.assert_newVulnerability_only_the_required_params(
-                distribution,
-                creator=distribution.owner
+                distribution, creator=distribution.owner
             )
 
         with admin_logged_in():
             self.assert_newVulnerability_only_the_required_params(
-                distribution,
-                creator=person
+                distribution, creator=person
             )
         self.factory.makeCommercialSubscription(pillar=distribution)
 
-        with celebrity_logged_in('commercial_admin'):
+        with celebrity_logged_in("commercial_admin"):
             self.assert_newVulnerability_only_the_required_params(
-                distribution,
-                creator=person
+                distribution, creator=person
             )
 
         with person_logged_in(distribution.owner):
@@ -2057,8 +2282,7 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
         # distribution.
         with person_logged_in(person):
             self.assert_newVulnerability_only_the_required_params(
-                distribution,
-                creator=person
+                distribution, creator=person
             )
 
     def test_newVulnerability_cannot_be_called_by_unprivileged_users(self):
@@ -2083,7 +2307,7 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
             vulnerability,
             distribution.getVulnerability(
                 removeSecurityProxy(vulnerability).id
-            )
+            ),
         )
 
 
@@ -2094,7 +2318,7 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
     def test_vulnerability_api_url_data(self):
         distribution = self.factory.makeDistribution()
         person = distribution.owner
-        cve = self.factory.makeCVE('2022-1234')
+        cve = self.factory.makeCVE("2022-1234")
         now = datetime.datetime.now(pytz.UTC)
         vulnerability = removeSecurityProxy(
             self.factory.makeVulnerability(
@@ -2105,7 +2329,7 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
                 notes="Foo bar baz",
                 mitigation="Foo bar baz",
                 importance_explanation="Foo bar baz",
-                date_made_public=now
+                date_made_public=now,
             )
         )
         vulnerability_url = api_url(vulnerability)
@@ -2113,32 +2337,35 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
         webservice = webservice_for_person(
             person,
             permission=OAuthPermission.WRITE_PRIVATE,
-            default_api_version="devel"
+            default_api_version="devel",
         )
         with person_logged_in(person):
             distribution_url = webservice.getAbsoluteUrl(api_url(distribution))
             cve_url = webservice.getAbsoluteUrl(api_url(cve))
             creator_url = webservice.getAbsoluteUrl(api_url(person))
 
-        response = webservice.get(
-            vulnerability_url
-        )
+        response = webservice.get(vulnerability_url)
         self.assertEqual(200, response.status)
 
-        self.assertThat(response.jsonBody(), ContainsDict({
-            "id": Equals(vulnerability.id),
-            "distribution_link": Equals(distribution_url),
-            "cve_link": Equals(cve_url),
-            "creator_link": Equals(creator_url),
-            "status": Equals("Needs triage"),
-            "description": Equals("Foo bar baz"),
-            "notes": Equals("Foo bar baz"),
-            "mitigation": Equals("Foo bar baz"),
-            "importance": Equals("Undecided"),
-            "importance_explanation": Equals("Foo bar baz"),
-            "information_type": Equals("Public"),
-            "date_made_public": Equals(now.isoformat()),
-        }))
+        self.assertThat(
+            response.jsonBody(),
+            ContainsDict(
+                {
+                    "id": Equals(vulnerability.id),
+                    "distribution_link": Equals(distribution_url),
+                    "cve_link": Equals(cve_url),
+                    "creator_link": Equals(creator_url),
+                    "status": Equals("Needs triage"),
+                    "description": Equals("Foo bar baz"),
+                    "notes": Equals("Foo bar baz"),
+                    "mitigation": Equals("Foo bar baz"),
+                    "importance": Equals("Undecided"),
+                    "importance_explanation": Equals("Foo bar baz"),
+                    "information_type": Equals("Public"),
+                    "date_made_public": Equals(now.isoformat()),
+                }
+            ),
+        )
 
     def test_vulnerability_api_url_invalid_id(self):
         person = self.factory.makePerson()
@@ -2146,11 +2373,11 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
         webservice = webservice_for_person(
             person,
             permission=OAuthPermission.WRITE_PRIVATE,
-            default_api_version="devel"
+            default_api_version="devel",
         )
         with person_logged_in(person):
             distribution_url = api_url(distribution)
-        invalid_vulnerability_url = distribution_url + '/+vulnerability/foo'
+        invalid_vulnerability_url = distribution_url + "/+vulnerability/foo"
         response = webservice.get(invalid_vulnerability_url)
         self.assertEqual(404, response.status)
 
@@ -2160,19 +2387,19 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
         webservice = webservice_for_person(
             person,
             permission=OAuthPermission.WRITE_PRIVATE,
-            default_api_version="devel"
+            default_api_version="devel",
         )
         with person_logged_in(person):
             distribution_url = api_url(distribution)
-        vulnerability_url = distribution_url + '/+vulnerability/99999999'
+        vulnerability_url = distribution_url + "/+vulnerability/99999999"
         response = webservice.get(vulnerability_url)
         self.assertEqual(404, response.status)
 
     def test_vulnerabilities_collection_link(self):
         person = self.factory.makePerson()
         distribution = self.factory.makeDistribution(owner=person)
-        cve = self.factory.makeCVE('2022-1234')
-        another_cve = self.factory.makeCVE('2022-1235')
+        cve = self.factory.makeCVE("2022-1234")
+        another_cve = self.factory.makeCVE("2022-1235")
         now = datetime.datetime.now(pytz.UTC)
 
         first_vulnerability = removeSecurityProxy(
@@ -2184,7 +2411,7 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
                 notes="Foo bar baz",
                 mitigation="Foo bar baz",
                 importance_explanation="Foo bar baz",
-                date_made_public=now
+                date_made_public=now,
             )
         )
         second_vulnerability = removeSecurityProxy(
@@ -2196,7 +2423,7 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
                 notes="A B C",
                 mitigation="A B C",
                 importance_explanation="A B C",
-                date_made_public=now
+                date_made_public=now,
             )
         )
 
@@ -2204,7 +2431,7 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
         webservice = webservice_for_person(
             person,
             permission=OAuthPermission.WRITE_PRIVATE,
-            default_api_version="devel"
+            default_api_version="devel",
         )
         with person_logged_in(person):
             distribution_url = webservice.getAbsoluteUrl(api_url(distribution))
@@ -2212,51 +2439,55 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
             another_cve_url = webservice.getAbsoluteUrl(api_url(another_cve))
             creator_url = webservice.getAbsoluteUrl(api_url(person))
 
-        response = webservice.get(
-            distribution_url
-        )
+        response = webservice.get(distribution_url)
         response_json = response.jsonBody()
         self.assertEqual(200, response.status)
-        self.assertIn('vulnerabilities_collection_link', response_json)
+        self.assertIn("vulnerabilities_collection_link", response_json)
 
         response = webservice.get(
-            response_json['vulnerabilities_collection_link']
+            response_json["vulnerabilities_collection_link"]
         )
         response_json = response.jsonBody()
         self.assertEqual(200, response.status)
-        self.assertEqual(2, len(response_json['entries']))
+        self.assertEqual(2, len(response_json["entries"]))
         self.assertThat(
-            response_json['entries'][0],
-            ContainsDict({
-                "id": Equals(first_vulnerability.id),
-                "distribution_link": Equals(distribution_url),
-                "cve_link": Equals(cve_url),
-                "creator_link": Equals(creator_url),
-                "status": Equals("Needs triage"),
-                "description": Equals("Foo bar baz"),
-                "notes": Equals("Foo bar baz"),
-                "mitigation": Equals("Foo bar baz"),
-                "importance": Equals("Undecided"),
-                "importance_explanation": Equals("Foo bar baz"),
-                "information_type": Equals("Public"),
-                "date_made_public": Equals(now.isoformat()),
-        }))
+            response_json["entries"][0],
+            ContainsDict(
+                {
+                    "id": Equals(first_vulnerability.id),
+                    "distribution_link": Equals(distribution_url),
+                    "cve_link": Equals(cve_url),
+                    "creator_link": Equals(creator_url),
+                    "status": Equals("Needs triage"),
+                    "description": Equals("Foo bar baz"),
+                    "notes": Equals("Foo bar baz"),
+                    "mitigation": Equals("Foo bar baz"),
+                    "importance": Equals("Undecided"),
+                    "importance_explanation": Equals("Foo bar baz"),
+                    "information_type": Equals("Public"),
+                    "date_made_public": Equals(now.isoformat()),
+                }
+            ),
+        )
         self.assertThat(
-            response_json['entries'][1],
-            ContainsDict({
-                "id": Equals(second_vulnerability.id),
-                "distribution_link": Equals(distribution_url),
-                "cve_link": Equals(another_cve_url),
-                "creator_link": Equals(creator_url),
-                "status": Equals("Needs triage"),
-                "description": Equals("A B C"),
-                "notes": Equals("A B C"),
-                "mitigation": Equals("A B C"),
-                "importance": Equals("Undecided"),
-                "importance_explanation": Equals("A B C"),
-                "information_type": Equals("Public"),
-                "date_made_public": Equals(now.isoformat()),
-        }))
+            response_json["entries"][1],
+            ContainsDict(
+                {
+                    "id": Equals(second_vulnerability.id),
+                    "distribution_link": Equals(distribution_url),
+                    "cve_link": Equals(another_cve_url),
+                    "creator_link": Equals(creator_url),
+                    "status": Equals("Needs triage"),
+                    "description": Equals("A B C"),
+                    "notes": Equals("A B C"),
+                    "mitigation": Equals("A B C"),
+                    "importance": Equals("Undecided"),
+                    "importance_explanation": Equals("A B C"),
+                    "information_type": Equals("Public"),
+                    "date_made_public": Equals(now.isoformat()),
+                }
+            ),
+        )
 
     def test_newVulnerability_required_arguments_missing(self):
         distribution = self.factory.makeDistribution()
@@ -2268,20 +2499,20 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
         webservice = webservice_for_person(
             owner,
             permission=OAuthPermission.WRITE_PRIVATE,
-            default_api_version="devel"
+            default_api_version="devel",
         )
         response = webservice.named_post(
             distribution_url,
-            'newVulnerability',
+            "newVulnerability",
         )
         self.assertEqual(400, response.status)
         self.assertEqual(
             {
-                'status: Required input is missing.',
-                'creator: Required input is missing.',
-                'information_type: Required input is missing.'
+                "status: Required input is missing.",
+                "creator: Required input is missing.",
+                "information_type: Required input is missing.",
             },
-            set(response.body.decode().split('\n'))
+            set(response.body.decode().split("\n")),
         )
 
     def test_newVulnerability_default_arguments(self):
@@ -2296,30 +2527,35 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
         webservice = webservice_for_person(
             owner,
             permission=OAuthPermission.WRITE_PRIVATE,
-            default_api_version="devel"
+            default_api_version="devel",
         )
         response = webservice.named_post(
             distribution_url,
-            'newVulnerability',
-            status='Needs triage',
-            information_type='Public',
+            "newVulnerability",
+            status="Needs triage",
+            information_type="Public",
             creator=owner_url,
         )
         self.assertEqual(200, response.status)
-        self.assertThat(response.jsonBody(), ContainsDict({
-            "distribution_link": Equals(distribution_url),
-            "id": IsInstance(int),
-            "cve_link": Is(None),
-            "creator_link": Equals(owner_url),
-            "status": Equals("Needs triage"),
-            "description": Is(None),
-            "notes": Is(None),
-            "mitigation": Is(None),
-            "importance": Equals("Undecided"),
-            "importance_explanation": Is(None),
-            "information_type": Equals("Public"),
-            "date_made_public": Is(None),
-        }))
+        self.assertThat(
+            response.jsonBody(),
+            ContainsDict(
+                {
+                    "distribution_link": Equals(distribution_url),
+                    "id": IsInstance(int),
+                    "cve_link": Is(None),
+                    "creator_link": Equals(owner_url),
+                    "status": Equals("Needs triage"),
+                    "description": Is(None),
+                    "notes": Is(None),
+                    "mitigation": Is(None),
+                    "importance": Equals("Undecided"),
+                    "importance_explanation": Is(None),
+                    "information_type": Equals("Public"),
+                    "date_made_public": Is(None),
+                }
+            ),
+        )
 
     def test_newVulnerability_security_admin(self):
         distribution = self.factory.makeDistribution()
@@ -2335,30 +2571,35 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
         webservice = webservice_for_person(
             person,
             permission=OAuthPermission.WRITE_PRIVATE,
-            default_api_version="devel"
+            default_api_version="devel",
         )
         response = webservice.named_post(
             distribution_url,
-            'newVulnerability',
-            status='Needs triage',
-            information_type='Public',
+            "newVulnerability",
+            status="Needs triage",
+            information_type="Public",
             creator=owner_url,
         )
         self.assertEqual(200, response.status)
-        self.assertThat(response.jsonBody(), ContainsDict({
-            "distribution_link": Equals(distribution_url),
-            "id": IsInstance(int),
-            "cve_link": Is(None),
-            "creator_link": Equals(owner_url),
-            "status": Equals("Needs triage"),
-            "description": Is(None),
-            "notes": Is(None),
-            "mitigation": Is(None),
-            "importance": Equals("Undecided"),
-            "importance_explanation": Is(None),
-            "information_type": Equals("Public"),
-            "date_made_public": Is(None),
-        }))
+        self.assertThat(
+            response.jsonBody(),
+            ContainsDict(
+                {
+                    "distribution_link": Equals(distribution_url),
+                    "id": IsInstance(int),
+                    "cve_link": Is(None),
+                    "creator_link": Equals(owner_url),
+                    "status": Equals("Needs triage"),
+                    "description": Is(None),
+                    "notes": Is(None),
+                    "mitigation": Is(None),
+                    "importance": Equals("Undecided"),
+                    "importance_explanation": Is(None),
+                    "information_type": Equals("Public"),
+                    "date_made_public": Is(None),
+                }
+            ),
+        )
 
     def test_newVulnerability_unauthorized_users(self):
         distribution = self.factory.makeDistribution()
@@ -2370,13 +2611,13 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
         webservice = webservice_for_person(
             person,
             permission=OAuthPermission.WRITE_PRIVATE,
-            default_api_version="devel"
+            default_api_version="devel",
         )
         response = webservice.named_post(
             distribution_url,
-            'newVulnerability',
-            status='Needs triage',
-            information_type='Public',
+            "newVulnerability",
+            status="Needs triage",
+            information_type="Public",
             creator=owner_url,
         )
         self.assertEqual(401, response.status)
@@ -2384,7 +2625,7 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
     def test_newVulnerability_all_parameters(self):
         distribution = self.factory.makeDistribution()
         owner = distribution.owner
-        cve = self.factory.makeCVE(sequence='2022-1234')
+        cve = self.factory.makeCVE(sequence="2022-1234")
 
         api_base = "http://api.launchpad.test/devel"
         distribution_url = api_base + api_url(distribution)
@@ -2397,7 +2638,7 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
         webservice = webservice_for_person(
             owner,
             permission=OAuthPermission.WRITE_PRIVATE,
-            default_api_version="devel"
+            default_api_version="devel",
         )
         response = webservice.named_post(
             distribution_url,
@@ -2414,17 +2655,22 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
             date_made_public=now.isoformat(),
         )
         self.assertEqual(200, response.status)
-        self.assertThat(response.jsonBody(), ContainsDict({
-            "distribution_link": Equals(distribution_url),
-            "id": IsInstance(int),
-            "cve_link": Equals(cve_url),
-            "creator_link": Equals(owner_url),
-            "status": Equals("Active"),
-            "description": Equals("Vulnerability Foo"),
-            "notes": Equals("lgp171188> Foo bar"),
-            "mitigation": Equals("Foo bar baz"),
-            "importance": Equals("Critical"),
-            "importance_explanation": Equals("Foo bar bazz"),
-            "information_type": Equals("Private"),
-            "date_made_public": Equals(now.isoformat()),
-        }))
+        self.assertThat(
+            response.jsonBody(),
+            ContainsDict(
+                {
+                    "distribution_link": Equals(distribution_url),
+                    "id": IsInstance(int),
+                    "cve_link": Equals(cve_url),
+                    "creator_link": Equals(owner_url),
+                    "status": Equals("Active"),
+                    "description": Equals("Vulnerability Foo"),
+                    "notes": Equals("lgp171188> Foo bar"),
+                    "mitigation": Equals("Foo bar baz"),
+                    "importance": Equals("Critical"),
+                    "importance_explanation": Equals("Foo bar bazz"),
+                    "information_type": Equals("Private"),
+                    "date_made_public": Equals(now.isoformat()),
+                }
+            ),
+        )

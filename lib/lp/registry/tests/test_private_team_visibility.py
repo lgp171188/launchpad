@@ -19,28 +19,25 @@ from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 
 from lp.app.enums import InformationType
-from lp.registry.enums import (
-    PersonVisibility,
-    TeamMembershipPolicy,
-    )
+from lp.registry.enums import PersonVisibility, TeamMembershipPolicy
 from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
     TeamMembershipStatus,
-    )
+)
 from lp.services.webapp.authorization import (
     check_permission,
     clear_cache,
     precache_permission_for_objects,
-    )
+)
 from lp.services.webapp.interaction import ANONYMOUS
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
+    TestCaseWithFactory,
     login,
     login_celebrity,
     login_person,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -54,9 +51,11 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         self.priv_owner = self.factory.makePerson(name="priv-owner")
         self.priv_member = self.factory.makePerson(name="priv-member")
         self.priv_team = self.factory.makeTeam(
-            owner=self.priv_owner, name="priv-team",
+            owner=self.priv_owner,
+            name="priv-team",
             visibility=PersonVisibility.PRIVATE,
-            membership_policy=TeamMembershipPolicy.RESTRICTED)
+            membership_policy=TeamMembershipPolicy.RESTRICTED,
+        )
         login_person(self.priv_owner)
         self.priv_team.addMember(self.priv_member, reviewer=self.priv_owner)
 
@@ -69,48 +68,52 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         request = LaunchpadTestRequest()
         # First login as a person who has limitedView permission.
         precache_permission_for_objects(
-            request, 'launchpad.LimitedView', [self.priv_team])
+            request, "launchpad.LimitedView", [self.priv_team]
+        )
         login_person(some_person, participation=request)
-        self.assertEqual('priv-team', self.priv_team.name)
-        self.assertEqual('Priv Team', self.priv_team.displayname)
+        self.assertEqual("priv-team", self.priv_team.name)
+        self.assertEqual("Priv Team", self.priv_team.displayname)
         self.assertEqual(
-            'Priv Team (priv-team)', self.priv_team.unique_displayname)
+            "Priv Team (priv-team)", self.priv_team.unique_displayname
+        )
         self.assertIsNone(self.priv_team.icon)
-        self.assertRaises(Unauthorized, getattr, self.priv_team, 'allmembers')
+        self.assertRaises(Unauthorized, getattr, self.priv_team, "allmembers")
 
     def test_anonymous_users_have_no_limitedView_permission(self):
         login(ANONYMOUS)
         self.assertFalse(
-            check_permission('launchpad.LimitedView', self.priv_team))
+            check_permission("launchpad.LimitedView", self.priv_team)
+        )
 
     def test_some_person_cannot_see_team_details(self):
         # A person who is not in the team cannot see the membership and cannot
         # see other details of the team, such as the name.
         some_person = self.factory.makePerson()
         with person_logged_in(some_person):
-            self.assertRaises(Unauthorized, getattr, self.priv_team, 'name')
+            self.assertRaises(Unauthorized, getattr, self.priv_team, "name")
             self.assertRaises(
-                Unauthorized, getattr, self.priv_team, 'activemembers')
+                Unauthorized, getattr, self.priv_team, "activemembers"
+            )
 
     def test_team_owner_can_see_members(self):
         login_person(self.priv_owner)
         members = self.priv_team.activemembers
         self.assertContentEqual(
-            ['priv-member', 'priv-owner'],
-            [member.name for member in members])
+            ["priv-member", "priv-owner"], [member.name for member in members]
+        )
 
     def test_team_member_can_see_members(self):
         login_person(self.priv_member)
         members = self.priv_team.activemembers
         self.assertContentEqual(
-            ['priv-member', 'priv-owner'],
-            [member.name for member in members])
+            ["priv-member", "priv-owner"], [member.name for member in members]
+        )
 
     def test_commercial_admin_can_see_team_and_members(self):
-        login_celebrity('commercial_admin')
-        self.assertTrue(check_permission('launchpad.View', self.priv_team))
+        login_celebrity("commercial_admin")
+        self.assertTrue(check_permission("launchpad.View", self.priv_team))
         team_membership = self.priv_member.team_memberships[0]
-        self.assertTrue(check_permission('launchpad.View', team_membership))
+        self.assertTrue(check_permission("launchpad.View", team_membership))
 
     def team_owner_can_see_team_details(self):
         """A team owner must be able to access the team even if they are not a
@@ -120,11 +123,10 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         """
         membership_set = getUtility(ITeamMembershipSet)
         login_person(self.priv_owner)
-        tm = membership_set.getByPersonAndTeam(
-            self.priv_owner, self.priv_team)
+        tm = membership_set.getByPersonAndTeam(self.priv_owner, self.priv_team)
         tm.setStatus(TeamMembershipStatus.DEACTIVATED, self.priv_owner)
         self.assertFalse(self.priv_owner.inTeam(self.priv_team))
-        self.assertTrue(check_permission('launchpad.View', self.priv_team))
+        self.assertTrue(check_permission("launchpad.View", self.priv_team))
 
     def test_invited_team_admins_can_see_team(self):
         """Public teams can join private teams.  When adding one team to
@@ -142,7 +144,7 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
             pub_team.addMember(pub_member, reviewer=pub_owner)
             # At this point the public team owner cannot see the priv-team's
             # bits.
-            self.assertRaises(Unauthorized, getattr, self.priv_team, 'name')
+            self.assertRaises(Unauthorized, getattr, self.priv_team, "name")
         login_person(self.priv_owner)
         self.priv_team.addMember(pub_team, reviewer=self.priv_owner)
 
@@ -153,18 +155,18 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         # The public team's owner can now see the priv-team's bits since
         # their team has been invited to join.
         login_person(pub_owner)
-        self.assertEqual('priv-team', self.priv_team.name)
+        self.assertEqual("priv-team", self.priv_team.name)
 
         # But a non-admin member of the public team still cannot see anything
         # about the team.
         login_person(pub_member)
-        self.assertRaises(Unauthorized, getattr, self.priv_team, 'name')
+        self.assertRaises(Unauthorized, getattr, self.priv_team, "name")
 
     def _check_permission(self, user, visible):
         login_person(user)
         self.assertEqual(
-            visible,
-            check_permission('launchpad.LimitedView', self.priv_team))
+            visible, check_permission("launchpad.LimitedView", self.priv_team)
+        )
         clear_cache()
 
     def _test_subscriber_to_branch_owned_by_team(self, private=True):
@@ -180,7 +182,8 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         else:
             information_type = InformationType.PUBLIC
         private_team_branch = self.factory.makeBranch(
-            owner=self.priv_team, information_type=information_type)
+            owner=self.priv_team, information_type=information_type
+        )
         some_person = self.factory.makePerson()
         # All users can see public branches, so in that case, the team is
         # now visible, else team is still not visible.
@@ -188,8 +191,10 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         # Subscribe the user to the branch.
         login_person(self.priv_owner)
         self.factory.makeBranchSubscription(
-            branch=private_team_branch, person=some_person,
-            subscribed_by=self.priv_owner)
+            branch=private_team_branch,
+            person=some_person,
+            subscribed_by=self.priv_owner,
+        )
         # The team is now visible.
         self._check_permission(some_person, True)
 
@@ -209,23 +214,28 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         else:
             information_type = InformationType.PUBLIC
         private_branch = self.factory.makeBranch(
-            owner=branch_owner, information_type=information_type)
+            owner=branch_owner, information_type=information_type
+        )
         some_person = self.factory.makePerson()
         # Initially no visibility.
         self._check_permission(some_person, False)
         # Subscribe the team to the branch.
         login_person(branch_owner)
         self.factory.makeBranchSubscription(
-            branch=private_branch, person=self.priv_team,
-            subscribed_by=branch_owner)
+            branch=private_branch,
+            person=self.priv_team,
+            subscribed_by=branch_owner,
+        )
         # All users can see public branches, so in that case, the team is
         # now visible, else team is still not visible.
         self._check_permission(some_person, not private)
         # Subscribe the user to the branch.
         login_person(branch_owner)
         self.factory.makeBranchSubscription(
-            branch=private_branch, person=some_person,
-            subscribed_by=branch_owner)
+            branch=private_branch,
+            person=some_person,
+            subscribed_by=branch_owner,
+        )
         # The team is now visible.
         self._check_permission(some_person, True)
 
@@ -247,13 +257,19 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         else:
             information_type = InformationType.PUBLIC
         target_branch = self.factory.makeBranch(
-            owner=self.priv_owner, product=product,
-            information_type=information_type)
+            owner=self.priv_owner,
+            product=product,
+            information_type=information_type,
+        )
         source_branch = self.factory.makeBranch(
-            owner=self.priv_owner, product=product)
+            owner=self.priv_owner, product=product
+        )
         self.factory.makeBranchMergeProposal(
-            source_branch=source_branch, target_branch=target_branch,
-            reviewer=self.priv_team, registrant=self.priv_owner)
+            source_branch=source_branch,
+            target_branch=target_branch,
+            reviewer=self.priv_team,
+            registrant=self.priv_owner,
+        )
 
         # All users can see public branches, so in that case, the team is
         # now visible, else team is still not visible.
@@ -262,8 +278,10 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         # Subscribe the user to the branch.
         login_person(self.priv_owner)
         self.factory.makeBranchSubscription(
-            branch=target_branch, person=some_person,
-            subscribed_by=self.priv_owner)
+            branch=target_branch,
+            person=some_person,
+            subscribed_by=self.priv_owner,
+        )
         # The team is now visible.
         self._check_permission(some_person, True)
 
@@ -285,10 +303,13 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         else:
             information_type = InformationType.PUBLIC
         repository = self.factory.makeGitRepository(
-            owner=some_person, target=project,
-            information_type=information_type)
+            owner=some_person,
+            target=project,
+            information_type=information_type,
+        )
         self.factory.makeGitRuleGrant(
-            repository=repository, grantee=self.priv_team)
+            repository=repository, grantee=self.priv_team
+        )
         # The team is now visible to the repository owner.
         self._check_permission(some_person, True)
         # The team is still invisible to other users.
@@ -309,8 +330,7 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         self._check_permission(some_person, False)
         # Subscribe the user.
         login_person(self.priv_owner)
-        archive.newSubscription(
-            some_person, registrant=self.priv_owner)
+        archive.newSubscription(some_person, registrant=self.priv_owner)
         # The team is now visible.
         self._check_permission(some_person, True)
 
@@ -334,8 +354,8 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         else:
             information_type = InformationType.PUBLIC
         bug = self.factory.makeBug(
-            owner=bug_owner, target=product,
-            information_type=information_type)
+            owner=bug_owner, target=product, information_type=information_type
+        )
         # Initially no visibility.
         some_person = self.factory.makePerson()
         self._check_permission(some_person, False)
@@ -368,8 +388,8 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         else:
             information_type = InformationType.PUBLIC
         bug = self.factory.makeBug(
-            owner=bug_owner, target=product,
-            information_type=information_type)
+            owner=bug_owner, target=product, information_type=information_type
+        )
         # Initially no visibility.
         some_person = self.factory.makePerson()
         self._check_permission(some_person, False)

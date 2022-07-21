@@ -7,45 +7,34 @@ This module implements classes to walk HTTP and FTP sites to find files.
 """
 
 __all__ = [
-    'walk',
-    'combine_url',
-    ]
+    "walk",
+    "combine_url",
+]
 
 import ftplib
 import os
-from urllib.parse import (
-    unquote_plus,
-    urljoin,
-    urlsplit,
-    )
+from urllib.parse import unquote_plus, urljoin, urlsplit
 
-from lazr.uri import (
-    InvalidURIError,
-    URI,
-    )
 import requests
+from lazr.uri import URI, InvalidURIError
 
 from lp.registry.scripts.productreleasefinder import log
-from lp.registry.scripts.productreleasefinder.path import (
-    as_dir,
-    subdir,
-    )
+from lp.registry.scripts.productreleasefinder.path import as_dir, subdir
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
-from lp.services.timeout import (
-    TimeoutError,
-    urlfetch,
-    )
+from lp.services.timeout import TimeoutError, urlfetch
 from lp.services.webapp.url import urlappend
 
 
 class WalkerError(Exception):
     """An error in the base walker."""
+
     pass
 
 
 class HTTPWalkerError(WalkerError):
     """An error in the http walker."""
+
     pass
 
 
@@ -74,8 +63,9 @@ class WalkerBase:
         self.log = log.get_logger(type(self).__name__, log_parent)
         self.base = base
 
-        (scheme, netloc, path, query, fragment) \
-                 = urlsplit(base, self.URL_SCHEMES[0], self.FRAGMENTS)
+        (scheme, netloc, path, query, fragment) = urlsplit(
+            base, self.URL_SCHEMES[0], self.FRAGMENTS
+        )
         if scheme not in self.URL_SCHEMES:
             raise WalkerError("Can't handle %s scheme" % scheme)
         self.scheme = scheme
@@ -122,8 +112,9 @@ class WalkerBase:
             try:
                 (dirnames, filenames) = self.list(sub_dir)
             except WalkerError:
-                self.log.info('could not retrieve directory '
-                                   'listing for %s', sub_dir)
+                self.log.info(
+                    "could not retrieve directory " "listing for %s", sub_dir
+                )
                 continue
             except UnicodeEncodeError:
                 # This page is unparsable.
@@ -131,8 +122,8 @@ class WalkerBase:
                 # This problem should be reported to the project drivers
                 # so that they can attempt to get this fixed.
                 self.log.info(
-                    "Unicode error parsing %s page '%s'" %
-                    (self.base, sub_dir))
+                    "Unicode error parsing %s page '%s'" % (self.base, sub_dir)
+                )
                 continue
             yield (sub_dir, dirnames, filenames)
 
@@ -269,7 +260,7 @@ class HTTPWalker(WalkerBase):
 
     def open(self):
         """Open the HTTP connection."""
-        self.log.info('Walking %s://%s', self.scheme, self.host)
+        self.log.info("Walking %s://%s", self.scheme, self.host)
 
     def close(self):
         """Close the HTTP connection."""
@@ -282,8 +273,12 @@ class HTTPWalker(WalkerBase):
         """
         self.log.debug("Requesting %s with method %s", path, method)
         return urlfetch(
-            urljoin(self.base, path), method=method, allow_redirects=False,
-            use_proxy=True, allow_ftp=True)
+            urljoin(self.base, path),
+            method=method,
+            allow_redirects=False,
+            use_proxy=True,
+            allow_ftp=True,
+        )
 
     def isDirectory(self, path):
         """Return whether the path is a directory.
@@ -297,7 +292,7 @@ class HTTPWalker(WalkerBase):
         # If the URI scheme is FTP, then the URI comes from a Squid
         # FTP listing page, which includes the trailing slash on all
         # URIs that need it.
-        if self.scheme == 'ftp':
+        if self.scheme == "ftp":
             return False
 
         self.log.debug("Checking if %s is a directory" % path)
@@ -310,7 +305,8 @@ class HTTPWalker(WalkerBase):
             return False
         url = response.headers["location"]
         scheme, netloc, redirect_path, _, _ = urlsplit(
-            url, self.scheme, self.FRAGMENTS)
+            url, self.scheme, self.FRAGMENTS
+        )
 
         if len(scheme) and scheme != self.scheme:
             return False
@@ -354,7 +350,7 @@ class HTTPWalker(WalkerBase):
         dirnames = set()
         filenames = set()
         for url in urls:
-            if url.path.endswith(';type=a') or url.path.endswith(';type=i'):
+            if url.path.endswith(";type=a") or url.path.endswith(";type=i"):
                 # these links come from Squid's FTP dir listing to
                 # force either ASCII or binary download and can be
                 # ignored.

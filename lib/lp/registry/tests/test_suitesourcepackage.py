@@ -51,25 +51,28 @@ class TestSuiteSourcePackage(TestCaseWithFactory):
         # package name, separated by slashes.
         ssp = self.factory.makeSuiteSourcePackage()
         self.assertEqual(
-            '%s/%s/%s' % (
-                ssp.distribution.name, ssp.suite, ssp.sourcepackagename.name),
-            ssp.path)
+            "%s/%s/%s"
+            % (ssp.distribution.name, ssp.suite, ssp.sourcepackagename.name),
+            ssp.path,
+        )
 
     def test_repr(self):
         # The repr of a `SuiteSourcePackage` includes the path and clearly
         # refers to the type of the object.
         ssp = self.factory.makeSuiteSourcePackage()
-        self.assertEqual('<SuiteSourcePackage %s>' % ssp.path, repr(ssp))
+        self.assertEqual("<SuiteSourcePackage %s>" % ssp.path, repr(ssp))
 
     def test_equality(self):
         ssp1 = self.factory.makeSuiteSourcePackage()
         ssp2 = SuiteSourcePackage(
-            ssp1.distroseries, ssp1.pocket, ssp1.sourcepackagename)
+            ssp1.distroseries, ssp1.pocket, ssp1.sourcepackagename
+        )
         self.assertEqual(ssp1, ssp2)
 
     def test_displayname(self):
         # A suite source package has a display name.
         ssp = self.factory.makeSuiteSourcePackage()
         self.assertEqual(
-            '%s in %s' % (ssp.sourcepackagename.name, ssp.suite),
-            ssp.displayname)
+            "%s in %s" % (ssp.sourcepackagename.name, ssp.suite),
+            ssp.displayname,
+        )

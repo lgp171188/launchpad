@@ -2,26 +2,19 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'Karma',
-    'KarmaAction',
-    'KarmaActionSet',
-    'KarmaAssignedEvent',
-    'KarmaCache',
-    'KarmaCacheManager',
-    'KarmaTotalCache',
-    'KarmaCategory',
-    'KarmaContextMixin',
-    ]
+    "Karma",
+    "KarmaAction",
+    "KarmaActionSet",
+    "KarmaAssignedEvent",
+    "KarmaCache",
+    "KarmaCacheManager",
+    "KarmaTotalCache",
+    "KarmaCategory",
+    "KarmaContextMixin",
+]
 
 import pytz
-from storm.locals import (
-    DateTime,
-    Desc,
-    Int,
-    Reference,
-    ReferenceSet,
-    Unicode,
-    )
+from storm.locals import DateTime, Desc, Int, Reference, ReferenceSet, Unicode
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
@@ -36,7 +29,7 @@ from lp.registry.interfaces.karma import (
     IKarmaCategory,
     IKarmaContext,
     IKarmaTotalCache,
-    )
+)
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.database.constants import UTC_NOW
@@ -73,10 +66,18 @@ class Karma(StormBase):
     sourcepackagename_id = Int(name="sourcepackagename", allow_none=True)
     sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
     datecreated = DateTime(
-        name="datecreated", allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
+        name="datecreated", allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC
+    )
 
-    def __init__(self, person, action, product=None, distribution=None,
-                 sourcepackagename=None, datecreated=None):
+    def __init__(
+        self,
+        person,
+        action,
+        product=None,
+        distribution=None,
+        sourcepackagename=None,
+        datecreated=None,
+    ):
         super().__init__()
         self.person = person
         self.action = action
@@ -126,11 +127,17 @@ class KarmaActionSet:
         """See IKarmaActionSet."""
         if orderBy is None:
             orderBy = KarmaAction.sortingColumns
-        return IStore(KarmaAction).find(
-            KarmaAction,
-            KarmaAction.category == category,
-            Karma.action == KarmaAction.id,
-            Karma.person == person).config(distinct=True).order_by(orderBy)
+        return (
+            IStore(KarmaAction)
+            .find(
+                KarmaAction,
+                KarmaAction.category == category,
+                Karma.action == KarmaAction.id,
+                Karma.person == person,
+            )
+            .config(distinct=True)
+            .order_by(orderBy)
+        )
 
 
 @implementer(IKarmaCache)
@@ -159,9 +166,16 @@ class KarmaCache(StormBase):
     # It's a little odd for the constructor to explicitly take IDs, but this
     # is mainly called by cronscripts/foaf-update-karma-cache.py which only
     # has the IDs available to it.
-    def __init__(self, person_id, karmavalue, category_id=None,
-                 product_id=None, projectgroup_id=None, distribution_id=None,
-                 sourcepackagename_id=None):
+    def __init__(
+        self,
+        person_id,
+        karmavalue,
+        category_id=None,
+        product_id=None,
+        projectgroup_id=None,
+        distribution_id=None,
+        sourcepackagename_id=None,
+    ):
         super().__init__()
         self.person_id = person_id
         self.karmavalue = karmavalue
@@ -176,48 +190,80 @@ class KarmaCache(StormBase):
 class KarmaCacheManager:
     """See IKarmaCacheManager."""
 
-    def new(self, value, person_id, category_id, product_id=None,
-            distribution_id=None, sourcepackagename_id=None,
-            projectgroup_id=None):
+    def new(
+        self,
+        value,
+        person_id,
+        category_id,
+        product_id=None,
+        distribution_id=None,
+        sourcepackagename_id=None,
+        projectgroup_id=None,
+    ):
         """See IKarmaCacheManager."""
         karma_cache = KarmaCache(
-            karmavalue=value, person_id=person_id, category_id=category_id,
-            product_id=product_id, distribution_id=distribution_id,
+            karmavalue=value,
+            person_id=person_id,
+            category_id=category_id,
+            product_id=product_id,
+            distribution_id=distribution_id,
             sourcepackagename_id=sourcepackagename_id,
-            projectgroup_id=projectgroup_id)
+            projectgroup_id=projectgroup_id,
+        )
         IStore(KarmaCache).add(karma_cache)
         return karma_cache
 
-    def updateKarmaValue(self, value, person_id, category_id, product_id=None,
-                         distribution_id=None, sourcepackagename_id=None,
-                         projectgroup_id=None):
+    def updateKarmaValue(
+        self,
+        value,
+        person_id,
+        category_id,
+        product_id=None,
+        distribution_id=None,
+        sourcepackagename_id=None,
+        projectgroup_id=None,
+    ):
         """See IKarmaCacheManager."""
         entry = self._getEntry(
-            person_id=person_id, category_id=category_id,
-            product_id=product_id, distribution_id=distribution_id,
+            person_id=person_id,
+            category_id=category_id,
+            product_id=product_id,
+            distribution_id=distribution_id,
             projectgroup_id=projectgroup_id,
-            sourcepackagename_id=sourcepackagename_id)
+            sourcepackagename_id=sourcepackagename_id,
+        )
         if entry is None:
             raise NotFoundError("KarmaCache not found: %s" % vars())
         else:
             entry.karmavalue = value
             IStore(entry).flush()
 
-    def _getEntry(self, person_id, category_id, product_id=None,
-                  distribution_id=None, sourcepackagename_id=None,
-                  projectgroup_id=None):
+    def _getEntry(
+        self,
+        person_id,
+        category_id,
+        product_id=None,
+        distribution_id=None,
+        sourcepackagename_id=None,
+        projectgroup_id=None,
+    ):
         """Return the KarmaCache entry with the given arguments.
 
         Return None if it's not found.
         """
-        return IStore(KarmaCache).find(
-            KarmaCache,
-            KarmaCache.person == person_id,
-            KarmaCache.category == category_id,
-            KarmaCache.product == product_id,
-            KarmaCache.projectgroup == projectgroup_id,
-            KarmaCache.distribution == distribution_id,
-            KarmaCache.sourcepackagename == sourcepackagename_id).one()
+        return (
+            IStore(KarmaCache)
+            .find(
+                KarmaCache,
+                KarmaCache.person == person_id,
+                KarmaCache.category == category_id,
+                KarmaCache.product == product_id,
+                KarmaCache.projectgroup == projectgroup_id,
+                KarmaCache.distribution == distribution_id,
+                KarmaCache.sourcepackagename == sourcepackagename_id,
+            )
+            .one()
+        )
 
 
 @implementer(IKarmaTotalCache)
@@ -253,7 +299,8 @@ class KarmaCategory(StormBase):
     summary = Unicode(allow_none=False)
 
     karmaactions = ReferenceSet(
-        "id", "KarmaAction.category_id", order_by="KarmaAction.name")
+        "id", "KarmaAction.category_id", order_by="KarmaAction.name"
+    )
 
 
 @implementer(IKarmaContext)
@@ -276,6 +323,7 @@ class KarmaContextMixin:
     def getTopContributors(self, category=None, limit=None):
         """See IKarmaContext."""
         from lp.registry.model.person import Person
+
         store = IStore(Person)
         if IProduct.providedBy(self):
             condition = KarmaCache.product == self.id
@@ -285,13 +333,19 @@ class KarmaContextMixin:
             condition = KarmaCache.projectgroup == self.id
         else:
             raise AssertionError(
-                "Not a product, project group or distribution: %r" % self)
+                "Not a product, project group or distribution: %r" % self
+            )
 
         if category is not None:
             category = category.id
-        contributors = store.find(
-            (Person, KarmaCache.karmavalue),
-            KarmaCache.person_id == Person.id,
-            KarmaCache.category == category, condition).order_by(
-                Desc(KarmaCache.karmavalue)).config(limit=limit)
+        contributors = (
+            store.find(
+                (Person, KarmaCache.karmavalue),
+                KarmaCache.person_id == Person.id,
+                KarmaCache.category == category,
+                condition,
+            )
+            .order_by(Desc(KarmaCache.karmavalue))
+            .config(limit=limit)
+        )
         return list(contributors)

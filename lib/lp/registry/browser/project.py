@@ -4,29 +4,29 @@
 """Project-related View Classes"""
 
 __all__ = [
-    'ProjectActionMenu',
-    'ProjectAddProductView',
-    'ProjectAddQuestionView',
-    'ProjectAddView',
-    'ProjectAnswersMenu',
-    'ProjectBrandingView',
-    'ProjectBugsMenu',
-    'ProjectEditView',
-    'ProjectFacets',
-    'ProjectMaintainerReassignmentView',
-    'ProjectNavigation',
-    'ProjectOverviewMenu',
-    'ProjectRdfView',
-    'ProjectReviewView',
-    'ProjectSeriesSpecificationsMenu',
-    'ProjectSetBreadcrumb',
-    'ProjectSetContextMenu',
-    'ProjectSetNavigation',
-    'ProjectSetNavigationMenu',
-    'ProjectSetView',
-    'ProjectSpecificationsMenu',
-    'ProjectView',
-    ]
+    "ProjectActionMenu",
+    "ProjectAddProductView",
+    "ProjectAddQuestionView",
+    "ProjectAddView",
+    "ProjectAnswersMenu",
+    "ProjectBrandingView",
+    "ProjectBugsMenu",
+    "ProjectEditView",
+    "ProjectFacets",
+    "ProjectMaintainerReassignmentView",
+    "ProjectNavigation",
+    "ProjectOverviewMenu",
+    "ProjectRdfView",
+    "ProjectReviewView",
+    "ProjectSeriesSpecificationsMenu",
+    "ProjectSetBreadcrumb",
+    "ProjectSetContextMenu",
+    "ProjectSetNavigation",
+    "ProjectSetNavigationMenu",
+    "ProjectSetView",
+    "ProjectSpecificationsMenu",
+    "ProjectView",
+]
 
 
 from zope.browserpage import ViewPageTemplateFile
@@ -35,10 +35,7 @@ from zope.event import notify
 from zope.formlib import form
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextWidget
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 from zope.lifecycleevent import ObjectCreatedEvent
 from zope.schema import Choice
 
@@ -46,97 +43,89 @@ from lp import _
 from lp.answers.browser.question import QuestionAddView
 from lp.answers.browser.questiontarget import QuestionCollectionAnswersMenu
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+    action,
+)
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
 from lp.app.errors import NotFoundError
 from lp.blueprints.browser.specificationtarget import (
     HasSpecificationsMenuMixin,
-    )
+)
 from lp.bugs.browser.structuralsubscription import (
-    expose_structural_subscription_data_to_js,
     StructuralSubscriptionMenuMixin,
     StructuralSubscriptionTargetTraversalMixin,
-    )
-from lp.registry.browser import (
-    add_subscribe_link,
-    BaseRdfView,
-    )
+    expose_structural_subscription_data_to_js,
+)
+from lp.registry.browser import BaseRdfView, add_subscribe_link
 from lp.registry.browser.announcement import HasAnnouncementsView
 from lp.registry.browser.branding import BrandingChangeView
 from lp.registry.browser.menu import (
     IRegistryCollectionNavigationMenu,
     RegistryCollectionActionMenuBase,
-    )
+)
 from lp.registry.browser.objectreassignment import ObjectReassignmentView
 from lp.registry.browser.pillar import PillarViewMixin
 from lp.registry.browser.product import (
     ProductAddView,
     ProjectAddStepOne,
     ProjectAddStepTwo,
-    )
+)
 from lp.registry.interfaces.product import IProductSet
 from lp.registry.interfaces.projectgroup import (
     IProjectGroup,
     IProjectGroupSeries,
     IProjectGroupSet,
-    )
+)
 from lp.registry.model.milestonetag import (
     ProjectGroupMilestoneTag,
     validate_tags,
-    )
+)
 from lp.services.feeds.browser import FeedsMixin
-from lp.services.fields import (
-    PillarAliases,
-    PublicPersonChoice,
-    )
+from lp.services.fields import PillarAliases, PublicPersonChoice
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     ApplicationMenu,
-    canonical_url,
     ContextMenu,
-    enabled_with_permission,
     LaunchpadView,
     Link,
     Navigation,
     StandardLaunchpadFacets,
+    canonical_url,
+    enabled_with_permission,
     stepthrough,
     structured,
-    )
+)
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.breadcrumb import Breadcrumb
-from lp.services.webapp.menu import (
-    ALL_LINKS,
-    NavigationMenu,
-    )
+from lp.services.webapp.menu import ALL_LINKS, NavigationMenu
 
 
-class ProjectNavigation(Navigation,
-    StructuralSubscriptionTargetTraversalMixin):
+class ProjectNavigation(
+    Navigation, StructuralSubscriptionTargetTraversalMixin
+):
 
     usedfor = IProjectGroup
 
     def traverse(self, name):
         return self.context.getProduct(name)
 
-    @stepthrough('+milestone')
+    @stepthrough("+milestone")
     def traverse_milestone(self, name):
         return self.context.getMilestone(name)
 
-    @stepthrough('+announcement')
+    @stepthrough("+announcement")
     def traverse_announcement(self, name):
         return self.context.getAnnouncement(name)
 
-    @stepthrough('+series')
+    @stepthrough("+series")
     def traverse_series(self, series_name):
         return self.context.getSeries(series_name)
 
-    @stepthrough('+tags')
+    @stepthrough("+tags")
     def traverse_tags(self, name):
-        tags = name.split(',')
+        tags = name.split(",")
         if validate_tags(tags):
             return ProjectGroupMilestoneTag(self.context, tags)
 
@@ -155,22 +144,23 @@ class ProjectSetNavigation(Navigation):
 
 class ProjectSetBreadcrumb(Breadcrumb):
     """Builds a breadcrumb for an `IProjectGroupSet`."""
-    text = 'Project Groups'
+
+    text = "Project Groups"
 
 
 class ProjectSetContextMenu(ContextMenu):
 
     usedfor = IProjectGroupSet
-    links = ['register', 'listall']
+    links = ["register", "listall"]
 
-    @enabled_with_permission('launchpad.Moderate')
+    @enabled_with_permission("launchpad.Moderate")
     def register(self):
-        text = 'Register a project group'
-        return Link('+new', text, icon='add')
+        text = "Register a project group"
+        return Link("+new", text, icon="add")
 
     def listall(self):
-        text = 'List all project groups'
-        return Link('+all', text, icon='list')
+        text = "List all project groups"
+        return Link("+all", text, icon="list")
 
 
 class ProjectFacets(StandardLaunchpadFacets):
@@ -185,101 +175,109 @@ class ProjectFacets(StandardLaunchpadFacets):
     @property
     def enable_only(self):
         if not self.has_products:
-            return ['overview']
+            return ["overview"]
         else:
             return ALL_LINKS
 
 
 class ProjectAdminMenuMixin:
-
-    @enabled_with_permission('launchpad.Moderate')
+    @enabled_with_permission("launchpad.Moderate")
     def administer(self):
-        text = 'Administer'
-        return Link('+review', text, icon='edit')
+        text = "Administer"
+        return Link("+review", text, icon="edit")
 
 
 class ProjectEditMenuMixin(ProjectAdminMenuMixin):
-
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def branding(self):
-        text = 'Change branding'
-        return Link('+branding', text, icon='edit')
+        text = "Change branding"
+        return Link("+branding", text, icon="edit")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def reassign(self):
-        text = 'Change maintainer'
-        summary = 'Change the maintainer of this project group'
-        return Link('+reassign', text, summary, icon='edit')
+        text = "Change maintainer"
+        summary = "Change the maintainer of this project group"
+        return Link("+reassign", text, summary, icon="edit")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def driver(self):
-        text = 'Appoint driver'
-        summary = 'Appoint the driver of this project group'
-        return Link('+driver', text, summary, icon='edit')
+        text = "Appoint driver"
+        summary = "Appoint the driver of this project group"
+        return Link("+driver", text, summary, icon="edit")
 
 
 class ProjectOverviewMenu(ProjectEditMenuMixin, ApplicationMenu):
 
     usedfor = IProjectGroup
-    facet = 'overview'
+    facet = "overview"
     links = [
-        'branding', 'driver', 'reassign', 'top_contributors', 'announce',
-        'announcements', 'rdf', 'new_product', 'administer', 'milestones']
+        "branding",
+        "driver",
+        "reassign",
+        "top_contributors",
+        "announce",
+        "announcements",
+        "rdf",
+        "new_product",
+        "administer",
+        "milestones",
+    ]
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def new_product(self):
-        text = 'Register a project in %s' % self.context.displayname
-        return Link('+newproduct', text, icon='add')
+        text = "Register a project in %s" % self.context.displayname
+        return Link("+newproduct", text, icon="add")
 
     def top_contributors(self):
-        text = 'More contributors'
-        return Link('+topcontributors', text, icon='info')
+        text = "More contributors"
+        return Link("+topcontributors", text, icon="info")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def announce(self):
-        text = 'Make announcement'
-        summary = 'Publish an item of news for this project'
-        return Link('+announce', text, summary, icon='add')
+        text = "Make announcement"
+        summary = "Publish an item of news for this project"
+        return Link("+announce", text, summary, icon="add")
 
     def announcements(self):
-        text = 'Read all announcements'
+        text = "Read all announcements"
         enabled = bool(self.context.getAnnouncements())
-        return Link('+announcements', text, icon='info', enabled=enabled)
+        return Link("+announcements", text, icon="info", enabled=enabled)
 
     def milestones(self):
-        text = 'See all milestones'
-        return Link('+milestones', text, icon='info')
+        text = "See all milestones"
+        return Link("+milestones", text, icon="info")
 
     def rdf(self):
         text = structured(
             'Download <abbr title="Resource Description Framework">'
-            'RDF</abbr> metadata')
-        return Link('+rdf', text, icon='download-icon')
+            "RDF</abbr> metadata"
+        )
+        return Link("+rdf", text, icon="download-icon")
 
 
 class IProjectGroupActionMenu(Interface):
     """Marker interface for views that use ProjectActionMenu."""
 
 
-class ProjectActionMenu(ProjectAdminMenuMixin,
-                        StructuralSubscriptionMenuMixin,
-                        NavigationMenu):
+class ProjectActionMenu(
+    ProjectAdminMenuMixin, StructuralSubscriptionMenuMixin, NavigationMenu
+):
 
     usedfor = IProjectGroupActionMenu
-    facet = 'overview'
-    title = 'Action menu'
+    facet = "overview"
+    title = "Action menu"
 
     @cachedproperty
     def links(self):
         links = []
         add_subscribe_link(links)
-        links.extend(['edit', 'administer'])
+        links.extend(["edit", "administer"])
         return links
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def edit(self):
-        text = 'Change details'
-        return Link('+edit', text, icon='edit')
+        text = "Change details"
+        return Link("+edit", text, icon="edit")
 
 
 class IProjectGroupEditMenu(Interface):
@@ -290,77 +288,83 @@ class ProjectEditNavigationMenu(NavigationMenu, ProjectEditMenuMixin):
     """A sub-menu for different aspects of editing a Project's details."""
 
     usedfor = IProjectGroupEditMenu
-    facet = 'overview'
-    title = 'Change project group'
-    links = ('branding', 'reassign', 'driver', 'administer')
+    facet = "overview"
+    title = "Change project group"
+    links = ("branding", "reassign", "driver", "administer")
 
 
-class ProjectSpecificationsMenu(NavigationMenu,
-                                HasSpecificationsMenuMixin):
+class ProjectSpecificationsMenu(NavigationMenu, HasSpecificationsMenuMixin):
     usedfor = IProjectGroup
-    facet = 'specifications'
-    links = ['listall', 'doc', 'assignments', 'new', 'register_sprint']
+    facet = "specifications"
+    links = ["listall", "doc", "assignments", "new", "register_sprint"]
 
 
 class ProjectAnswersMenu(QuestionCollectionAnswersMenu):
     """Menu for the answers facet of projects."""
 
     usedfor = IProjectGroup
-    facet = 'answers'
-    links = QuestionCollectionAnswersMenu.links + ['new']
+    facet = "answers"
+    links = QuestionCollectionAnswersMenu.links + ["new"]
 
     def new(self):
-        text = 'Ask a question'
-        return Link('+addquestion', text, icon='add')
+        text = "Ask a question"
+        return Link("+addquestion", text, icon="add")
 
 
-class ProjectBugsMenu(StructuralSubscriptionMenuMixin,
-                      ApplicationMenu):
+class ProjectBugsMenu(StructuralSubscriptionMenuMixin, ApplicationMenu):
 
     usedfor = IProjectGroup
-    facet = 'bugs'
+    facet = "bugs"
 
     @cachedproperty
     def links(self):
-        links = ['new']
+        links = ["new"]
         add_subscribe_link(links)
         return links
 
     def new(self):
-        text = 'Report a Bug'
-        return Link('+filebug', text, icon='add')
+        text = "Report a Bug"
+        return Link("+filebug", text, icon="add")
 
 
 @implementer(IProjectGroupActionMenu)
 class ProjectView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
-
     @property
     def maintainer_widget(self):
         return InlinePersonEditPickerWidget(
-            self.context, IProjectGroup['owner'],
+            self.context,
+            IProjectGroup["owner"],
             format_link(self.context.owner, empty_value="Not yet selected"),
-            header='Change maintainer', edit_view='+reassign',
-            step_title='Select a new maintainer',
-            null_display_value="Not yet selected", show_create_team=True)
+            header="Change maintainer",
+            edit_view="+reassign",
+            step_title="Select a new maintainer",
+            null_display_value="Not yet selected",
+            show_create_team=True,
+        )
 
     @property
     def driver_widget(self):
         return InlinePersonEditPickerWidget(
-            self.context, IProjectGroup['driver'],
+            self.context,
+            IProjectGroup["driver"],
             format_link(self.context.driver, empty_value="Not yet selected"),
-            header='Change driver', edit_view='+driver',
-            step_title='Select a new driver',
+            header="Change driver",
+            edit_view="+driver",
+            step_title="Select a new driver",
             null_display_value="Not yet selected",
-            help_link="/+help-registry/driver.html", show_create_team=True)
+            help_link="/+help-registry/driver.html",
+            show_create_team=True,
+        )
 
     def initialize(self):
         super().initialize()
         expose_structural_subscription_data_to_js(
-            self.context, self.request, self.user)
+            self.context, self.request, self.user
+        )
 
     @property
     def page_title(self):
-        return '%s in Launchpad' % self.context.displayname
+        return "%s in Launchpad" % self.context.displayname
 
     @cachedproperty
     def has_many_projects(self):
@@ -380,16 +384,23 @@ class ProjectView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
 @implementer(IProjectGroupEditMenu)
 class ProjectEditView(LaunchpadEditFormView):
     """View class that lets you edit a Project object."""
+
     label = "Change project group details"
     page_title = label
     schema = IProjectGroup
     field_names = [
-        'display_name', 'summary', 'description',
-        'bug_reporting_guidelines', 'bug_reported_acknowledgement',
-        'homepageurl', 'bugtracker', 'sourceforgeproject',
-        'wikiurl']
+        "display_name",
+        "summary",
+        "description",
+        "bug_reporting_guidelines",
+        "bug_reported_acknowledgement",
+        "homepageurl",
+        "bugtracker",
+        "sourceforgeproject",
+        "wikiurl",
+    ]
 
-    @action('Change Details', name='change')
+    @action("Change Details", name="change")
     def edit(self, action, data):
         self.updateContextFromData(data)
 
@@ -406,7 +417,7 @@ class ProjectEditView(LaunchpadEditFormView):
 class ProjectReviewView(ProjectEditView):
 
     label = "Review upstream project group details"
-    default_field_names = ['name', 'owner', 'active', 'reviewed']
+    default_field_names = ["name", "owner", "active", "reviewed"]
 
     def setUpFields(self):
         """Setup the normal fields from the schema plus adds 'Registrant'.
@@ -416,27 +427,32 @@ class ProjectReviewView(ProjectEditView):
         need the ability to change it.
         """
         self.field_names = self.default_field_names[:]
-        admin = check_permission('launchpad.Admin', self.context)
+        admin = check_permission("launchpad.Admin", self.context)
         if not admin:
-            self.field_names.remove('owner')
-        moderator = check_permission('launchpad.Moderate', self.context)
+            self.field_names.remove("owner")
+        moderator = check_permission("launchpad.Moderate", self.context)
         if not moderator:
-            self.field_names.remove('name')
+            self.field_names.remove("name")
         super().setUpFields()
         self.form_fields = self._createAliasesField() + self.form_fields
         if admin:
-            self.form_fields = (
-                self.form_fields + self._createRegistrantField())
+            self.form_fields = self.form_fields + self._createRegistrantField()
 
     def _createAliasesField(self):
         """Return a PillarAliases field for IProjectGroup.aliases."""
         return form.Fields(
             PillarAliases(
-                __name__='aliases', title=_('Aliases'),
-                description=_('Other names (separated by space) under which '
-                              'this project group is known.'),
-                required=False, readonly=False),
-            render_context=self.render_context)
+                __name__="aliases",
+                title=_("Aliases"),
+                description=_(
+                    "Other names (separated by space) under which "
+                    "this project group is known."
+                ),
+                required=False,
+                readonly=False,
+            ),
+            render_context=self.render_context,
+        )
 
     def _createRegistrantField(self):
         """Return a popup widget person selector for the registrant.
@@ -447,18 +463,20 @@ class ProjectReviewView(ProjectEditView):
         """
         return form.Fields(
             PublicPersonChoice(
-                __name__='registrant',
-                title=_('Project Registrant'),
-                description=_('The person who originally registered the '
-                              'project group.  Distinct from the current '
-                              'owner.  This is historical data and should '
-                              'not be changed without good cause.'),
-                vocabulary='ValidPersonOrTeam',
+                __name__="registrant",
+                title=_("Project Registrant"),
+                description=_(
+                    "The person who originally registered the "
+                    "project group.  Distinct from the current "
+                    "owner.  This is historical data and should "
+                    "not be changed without good cause."
+                ),
+                vocabulary="ValidPersonOrTeam",
                 required=True,
                 readonly=False,
-                ),
-            render_context=self.render_context
-            )
+            ),
+            render_context=self.render_context,
+        )
 
 
 class ProjectGroupAddStepOne(ProjectAddStepOne):
@@ -466,13 +484,15 @@ class ProjectGroupAddStepOne(ProjectAddStepOne):
 
     The new project will automatically be a part of the project group.
     """
+
     page_title = "Register a project in your project group"
 
     @cachedproperty
     def label(self):
         """See `LaunchpadFormView`."""
-        return 'Register a project in Launchpad as a part of %s' % (
-            self.context.displayname)
+        return "Register a project in Launchpad as a part of %s" % (
+            self.context.displayname
+        )
 
     @property
     def _next_step(self):
@@ -489,22 +509,24 @@ class ProjectGroupAddStepTwo(ProjectAddStepTwo):
         """Create the product from the user data."""
         return getUtility(IProductSet).createProduct(
             owner=self.user,
-            name=data['name'],
-            title=data['display_name'],
-            summary=data['summary'],
-            display_name=data['display_name'],
-            licenses=data['licenses'],
-            license_info=data['license_info'],
-            information_type=data.get('information_type'),
+            name=data["name"],
+            title=data["display_name"],
+            summary=data["summary"],
+            display_name=data["display_name"],
+            licenses=data["licenses"],
+            license_info=data["license_info"],
+            information_type=data.get("information_type"),
             projectgroup=self.context,
-            )
+        )
 
     @property
     def label(self):
         """See `LaunchpadFormView`."""
-        return 'Register %s (%s) in Launchpad as a part of %s' % (
-            self.request.form['display_name'], self.request.form['name'],
-            self.context.displayname)
+        return "Register %s (%s) in Launchpad as a part of %s" % (
+            self.request.form["display_name"],
+            self.request.form["name"],
+            self.context.displayname,
+        )
 
 
 class ProjectAddProductView(ProductAddView):
@@ -518,23 +540,24 @@ class ProjectAddProductView(ProductAddView):
 
 class ProjectSetNavigationMenu(RegistryCollectionActionMenuBase):
     """Action menu for project group index."""
+
     usedfor = IProjectGroupSet
     links = [
-        'register_team',
-        'register_project',
-        'create_account',
-        'register_project_group',
-        'view_all_project_groups',
-        ]
+        "register_team",
+        "register_project",
+        "create_account",
+        "register_project_group",
+        "view_all_project_groups",
+    ]
 
-    @enabled_with_permission('launchpad.Moderate')
+    @enabled_with_permission("launchpad.Moderate")
     def register_project_group(self):
-        text = 'Register a project group'
-        return Link('+new', text, icon='add')
+        text = "Register a project group"
+        return Link("+new", text, icon="add")
 
     def view_all_project_groups(self):
-        text = 'View all project groups'
-        return Link('+all', text, icon='list')
+        text = "View all project groups"
+        return Link("+all", text, icon="list")
 
 
 @implementer(IRegistryCollectionNavigationMenu)
@@ -546,9 +569,9 @@ class ProjectSetView(LaunchpadView):
     def __init__(self, context, request):
         super().__init__(context, request)
         self.form = self.request.form_ng
-        self.search_string = self.form.getOne('text', None)
+        self.search_string = self.form.getOne("text", None)
         self.search_requested = False
-        if (self.search_string is not None):
+        if self.search_string is not None:
             self.search_requested = True
         self.results = None
 
@@ -559,8 +582,8 @@ class ProjectSetView(LaunchpadView):
         time the method is called, otherwise return previous results.
         """
         self.results = self.context.search(
-            text=self.search_string,
-            search_products=True)
+            text=self.search_string, search_products=True
+        )
         return self.results
 
     @property
@@ -576,61 +599,62 @@ class ProjectAddView(LaunchpadFormView):
 
     schema = IProjectGroup
     field_names = [
-        'name',
-        'display_name',
-        'summary',
-        'description',
-        'owner',
-        'homepageurl',
-        ]
+        "name",
+        "display_name",
+        "summary",
+        "description",
+        "owner",
+        "homepageurl",
+    ]
     custom_widget_homepageurl = CustomWidgetFactory(
-        TextWidget, displayWidth=30)
-    label = _('Register a project group with Launchpad')
+        TextWidget, displayWidth=30
+    )
+    label = _("Register a project group with Launchpad")
     page_title = label
     projectgroup = None
 
-    @action(_('Add'), name='add')
+    @action(_("Add"), name="add")
     def add_action(self, action, data):
         """Create the new Project from the form details."""
         self.projectgroup = getUtility(IProjectGroupSet).new(
-            name=data['name'].lower().strip(),
-            display_name=data['display_name'],
-            title=data['display_name'],
-            homepageurl=data['homepageurl'],
-            summary=data['summary'],
-            description=data['description'],
-            owner=data['owner'],
-            )
+            name=data["name"].lower().strip(),
+            display_name=data["display_name"],
+            title=data["display_name"],
+            homepageurl=data["homepageurl"],
+            summary=data["summary"],
+            description=data["description"],
+            owner=data["owner"],
+        )
         notify(ObjectCreatedEvent(self.projectgroup))
 
     @property
     def next_url(self):
-        assert self.projectgroup is not None, (
-            'No project group has been created')
+        assert (
+            self.projectgroup is not None
+        ), "No project group has been created"
         return canonical_url(self.projectgroup)
 
 
 class ProjectBrandingView(BrandingChangeView):
 
     schema = IProjectGroup
-    field_names = ['icon', 'logo', 'mugshot']
+    field_names = ["icon", "logo", "mugshot"]
 
 
 class ProjectRdfView(BaseRdfView):
     """A view that sets its mime-type to application/rdf+xml"""
 
-    template = ViewPageTemplateFile(
-        '../templates/project-rdf.pt')
+    template = ViewPageTemplateFile("../templates/project-rdf.pt")
 
     @property
     def filename(self):
-        return '%s-project' % self.context.name
+        return "%s-project" % self.context.name
 
 
 class ProjectAddQuestionView(QuestionAddView):
     """View used to create a question from an IProjectGroup context."""
 
-    search_field_names = ['product'] + QuestionAddView.search_field_names
+    search_field_names = ["product"] + QuestionAddView.search_field_names
 
     def setUpFields(self):
         # Add a 'product' field to the beginning of the form.
@@ -643,39 +667,53 @@ class ProjectAddQuestionView(QuestionAddView):
         # the language vocabulary factory will try to access the product
         # widget to find the final context.
         self.widgets = form.setUpWidgets(
-            fields.select('product'),
-            self.prefix, self.context, self.request,
-            data=self.initial_values, ignore_request=False)
+            fields.select("product"),
+            self.prefix,
+            self.context,
+            self.request,
+            data=self.initial_values,
+            ignore_request=False,
+        )
         self.widgets += form.setUpWidgets(
-            fields.omit('product'),
-            self.prefix, self.context, self.request,
-            data=self.initial_values, ignore_request=False)
+            fields.omit("product"),
+            self.prefix,
+            self.context,
+            self.request,
+            data=self.initial_values,
+            ignore_request=False,
+        )
 
     def createProductField(self):
         """Create a Choice field to select one of the project group's
         products."""
         return form.Fields(
             Choice(
-                __name__='product', vocabulary='ProjectProducts',
-                title=_('Project'),
+                __name__="product",
+                vocabulary="ProjectProducts",
+                title=_("Project"),
                 description=_(
-                    '${context} is a group of projects, which specific '
-                    'project do you have a question about?',
-                    mapping=dict(context=self.context.title)),
-                required=True),
-            render_context=self.render_context)
+                    "${context} is a group of projects, which specific "
+                    "project do you have a question about?",
+                    mapping=dict(context=self.context.title),
+                ),
+                required=True,
+            ),
+            render_context=self.render_context,
+        )
 
     @property
     def page_title(self):
         """The current page title."""
-        return _('Ask a question about a project in ${projectgroup}',
-                 mapping=dict(projectgroup=self.context.displayname))
+        return _(
+            "Ask a question about a project in ${projectgroup}",
+            mapping=dict(projectgroup=self.context.displayname),
+        )
 
     @property
     def question_target(self):
         """The IQuestionTarget to use is the selected product."""
-        if self.widgets['product'].hasValidInput():
-            return self.widgets['product'].getInputValue()
+        if self.widgets["product"].hasValidInput():
+            return self.widgets["product"].getInputValue()
         else:
             return None
 
@@ -683,23 +721,24 @@ class ProjectAddQuestionView(QuestionAddView):
 class ProjectSeriesSpecificationsMenu(ApplicationMenu):
 
     usedfor = IProjectGroupSeries
-    facet = 'specifications'
-    links = ['listall', 'doc', 'assignments']
+    facet = "specifications"
+    links = ["listall", "doc", "assignments"]
 
     def listall(self):
-        text = 'List all blueprints'
-        return Link('+specs?show=all', text, icon='info')
+        text = "List all blueprints"
+        return Link("+specs?show=all", text, icon="info")
 
     def doc(self):
-        text = 'List documentation'
-        summary = 'Show all completed informational specifications'
-        return Link('+documentation', text, summary, icon="info")
+        text = "List documentation"
+        summary = "Show all completed informational specifications"
+        return Link("+documentation", text, summary, icon="info")
 
     def assignments(self):
-        text = 'Assignments'
-        return Link('+assignments', text, icon='info')
+        text = "Assignments"
+        return Link("+assignments", text, icon="info")
 
 
 class ProjectMaintainerReassignmentView(ObjectReassignmentView):
     """View class for changing project maintainer."""
-    ownerOrMaintainerName = 'maintainer'
+
+    ownerOrMaintainerName = "maintainer"

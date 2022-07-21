@@ -2,15 +2,15 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'Poll',
-    'PollOption',
-    'PollOptionSet',
-    'PollSet',
-    'VoteCast',
-    'Vote',
-    'VoteSet',
-    'VoteCastSet',
-    ]
+    "Poll",
+    "PollOption",
+    "PollOptionSet",
+    "PollSet",
+    "VoteCast",
+    "Vote",
+    "VoteSet",
+    "VoteCastSet",
+]
 
 from datetime import datetime
 
@@ -25,7 +25,7 @@ from storm.locals import (
     Reference,
     Store,
     Unicode,
-    )
+)
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -45,7 +45,7 @@ from lp.registry.interfaces.poll import (
     PollAlgorithm,
     PollSecrecy,
     PollStatus,
-    )
+)
 from lp.registry.model.person import Person
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
@@ -58,37 +58,50 @@ from lp.services.webapp.authorization import check_permission
 @implementer(IPoll)
 class Poll(StormBase):
     """See IPoll."""
-    __storm_table__ = 'Poll'
-    sortingColumns = ['title', 'id']
+
+    __storm_table__ = "Poll"
+    sortingColumns = ["title", "id"]
     __storm_order__ = sortingColumns
 
     id = Int(primary=True)
 
     team_id = Int(
-        name='team', validator=validate_public_person, allow_none=False)
-    team = Reference(team_id, 'Person.id')
+        name="team", validator=validate_public_person, allow_none=False
+    )
+    team = Reference(team_id, "Person.id")
 
-    name = Unicode(name='name', allow_none=False)
+    name = Unicode(name="name", allow_none=False)
 
-    title = Unicode(name='title', allow_none=False)
+    title = Unicode(name="title", allow_none=False)
 
-    dateopens = DateTime(tzinfo=pytz.UTC, name='dateopens', allow_none=False)
+    dateopens = DateTime(tzinfo=pytz.UTC, name="dateopens", allow_none=False)
 
-    datecloses = DateTime(tzinfo=pytz.UTC, name='datecloses', allow_none=False)
+    datecloses = DateTime(tzinfo=pytz.UTC, name="datecloses", allow_none=False)
 
-    proposition = Unicode(name='proposition', allow_none=False)
+    proposition = Unicode(name="proposition", allow_none=False)
 
     type = DBEnum(
-        name='type', enum=PollAlgorithm, default=PollAlgorithm.SIMPLE)
+        name="type", enum=PollAlgorithm, default=PollAlgorithm.SIMPLE
+    )
 
-    allowspoilt = Bool(name='allowspoilt', default=True, allow_none=False)
+    allowspoilt = Bool(name="allowspoilt", default=True, allow_none=False)
 
     secrecy = DBEnum(
-        name='secrecy', enum=PollSecrecy, default=PollSecrecy.SECRET)
+        name="secrecy", enum=PollSecrecy, default=PollSecrecy.SECRET
+    )
 
-    def __init__(self, team, name, title, proposition, dateopens, datecloses,
-                 secrecy=PollSecrecy.SECRET, allowspoilt=True,
-                 type=PollAlgorithm.SIMPLE):
+    def __init__(
+        self,
+        team,
+        name,
+        title,
+        proposition,
+        dateopens,
+        datecloses,
+        secrecy=PollSecrecy.SECRET,
+        allowspoilt=True,
+        type=PollAlgorithm.SIMPLE,
+    ):
         super().__init__()
         self.team = team
         self.name = name
@@ -107,29 +120,29 @@ class Poll(StormBase):
     def isOpen(self, when=None):
         """See IPoll."""
         if when is None:
-            when = datetime.now(pytz.timezone('UTC'))
-        return (self.datecloses >= when and self.dateopens <= when)
+            when = datetime.now(pytz.timezone("UTC"))
+        return self.datecloses >= when and self.dateopens <= when
 
     @property
     def closesIn(self):
         """See IPoll."""
-        return self.datecloses - datetime.now(pytz.timezone('UTC'))
+        return self.datecloses - datetime.now(pytz.timezone("UTC"))
 
     @property
     def opensIn(self):
         """See IPoll."""
-        return self.dateopens - datetime.now(pytz.timezone('UTC'))
+        return self.dateopens - datetime.now(pytz.timezone("UTC"))
 
     def isClosed(self, when=None):
         """See IPoll."""
         if when is None:
-            when = datetime.now(pytz.timezone('UTC'))
+            when = datetime.now(pytz.timezone("UTC"))
         return self.datecloses <= when
 
     def isNotYetOpened(self, when=None):
         """See IPoll."""
         if when is None:
-            when = datetime.now(pytz.timezone('UTC'))
+            when = datetime.now(pytz.timezone("UTC"))
         return self.dateopens > when
 
     def getAllOptions(self):
@@ -154,7 +167,8 @@ class Poll(StormBase):
         assert self.isNotYetOpened(when=when)
         if option.poll != self:
             raise ValueError(
-                "Can't remove an option that doesn't belong to this poll")
+                "Can't remove an option that doesn't belong to this poll"
+            )
         option.destroySelf()
 
     def getOptionByName(self, name):
@@ -171,7 +185,8 @@ class Poll(StormBase):
         assert self.isOpen(when=when), "This poll is not open"
         assert not self.personVoted(person), "Can't vote twice in one poll"
         assert person.inTeam(self.team), (
-            "Person %r is not a member of this poll's team." % person)
+            "Person %r is not a member of this poll's team." % person
+        )
 
         # We only associate the option with the person if the poll is not a
         # SECRET one.
@@ -192,7 +207,8 @@ class Poll(StormBase):
         activeoptions = self.getActiveOptions()
         for option, preference in options.items():
             assert option.poll == self, (
-                "The option %r doesn't belong to this poll" % option)
+                "The option %r doesn't belong to this poll" % option
+            )
             assert option.active, "Option %r is not active" % option
             votes.append(voteset.new(self, option, preference, token, voter))
 
@@ -215,7 +231,8 @@ class Poll(StormBase):
             raise ValueError("This poll doesn't allow spoilt votes.")
         elif option is not None:
             assert option.poll == self, (
-                "The option %r doesn't belong to this poll" % option)
+                "The option %r doesn't belong to this poll" % option
+            )
             assert option.active, "Option %r is not active" % option
         token = create_token(20)
         # This is a simple-style poll, so you can vote only on a single option
@@ -249,7 +266,10 @@ class Poll(StormBase):
                 GROUP BY option
                 ORDER BY COUNT(*) DESC LIMIT 1
                 )
-            """ % (self.id, self.id)
+            """ % (
+            self.id,
+            self.id,
+        )
         results = Store.of(self).execute(query).get_all()
         if not results:
             return None
@@ -279,7 +299,9 @@ class Poll(StormBase):
                           v2.preference IS NULL
                          )
                         )
-                    """ % sqlvalues(option1.id, option2.id)
+                    """ % sqlvalues(
+                    option1.id, option2.id
+                )
                 if option1 == option2:
                     pairwise_row.append(None)
                 else:
@@ -293,19 +315,37 @@ class Poll(StormBase):
 class PollSet:
     """See IPollSet."""
 
-    def new(self, team, name, title, proposition, dateopens, datecloses,
-            secrecy, allowspoilt, poll_type=PollAlgorithm.SIMPLE,
-            check_permissions=True):
+    def new(
+        self,
+        team,
+        name,
+        title,
+        proposition,
+        dateopens,
+        datecloses,
+        secrecy,
+        allowspoilt,
+        poll_type=PollAlgorithm.SIMPLE,
+        check_permissions=True,
+    ):
         """See IPollSet."""
-        if (check_permissions and
-                not check_permission("launchpad.AnyLegitimatePerson", team)):
+        if check_permissions and not check_permission(
+            "launchpad.AnyLegitimatePerson", team
+        ):
             raise CannotCreatePoll(
-                "You do not have permission to create polls.")
+                "You do not have permission to create polls."
+            )
         poll = Poll(
-            team=team, name=name, title=title,
-            proposition=proposition, dateopens=dateopens,
-            datecloses=datecloses, secrecy=secrecy,
-            allowspoilt=allowspoilt, type=poll_type)
+            team=team,
+            name=name,
+            title=title,
+            proposition=proposition,
+            dateopens=dateopens,
+            datecloses=datecloses,
+            secrecy=secrecy,
+            allowspoilt=allowspoilt,
+            type=poll_type,
+        )
         IStore(Poll).add(poll)
         return poll
 
@@ -320,21 +360,23 @@ class PollSet:
             PollSort.NEWEST_FIRST: [Desc(Poll.id)],
             PollSort.OPENING: [Poll.dateopens, Poll.id],
             PollSort.CLOSING: [Poll.datecloses, Poll.id],
-            }[sort_by]
+        }[sort_by]
 
-    def find(self, team=None, status=None, order_by=PollSort.NEWEST_FIRST,
-             when=None):
+    def find(
+        self, team=None, status=None, order_by=PollSort.NEWEST_FIRST, when=None
+    ):
         """See IPollSet."""
         if status is None:
             status = PollStatus.ALL
         if when is None:
-            when = datetime.now(pytz.timezone('UTC'))
+            when = datetime.now(pytz.timezone("UTC"))
 
         status = set(status)
         status_clauses = []
         if PollStatus.OPEN in status:
             status_clauses.append(
-                And(Poll.dateopens <= when, Poll.datecloses > when))
+                And(Poll.dateopens <= when, Poll.datecloses > when)
+            )
         if PollStatus.CLOSED in status:
             status_clauses.append(Poll.datecloses <= when)
         if PollStatus.NOT_YET_OPENED in status:
@@ -353,11 +395,13 @@ class PollSet:
 
         return results.order_by(self._convertPollSortToOrderBy(order_by))
 
-    def findByTeam(self, team, status=None, order_by=PollSort.NEWEST_FIRST,
-                   when=None):
+    def findByTeam(
+        self, team, status=None, order_by=PollSort.NEWEST_FIRST, when=None
+    ):
         """See IPollSet."""
         return self.find(
-            team=team, status=status, order_by=order_by, when=when)
+            team=team, status=status, order_by=order_by, when=when
+        )
 
     def getByTeamAndName(self, team, name, default=None):
         """See IPollSet."""
@@ -372,13 +416,14 @@ class PollSet:
 @implementer(IPollOption)
 class PollOption(StormBase):
     """See IPollOption."""
-    __storm_table__ = 'PollOption'
-    __storm_order__ = ['title', 'id']
+
+    __storm_table__ = "PollOption"
+    __storm_order__ = ["title", "id"]
 
     id = Int(primary=True)
 
-    poll_id = Int(name='poll', allow_none=False)
-    poll = Reference(poll_id, 'Poll.id')
+    poll_id = Int(name="poll", allow_none=False)
+    poll = Reference(poll_id, "Poll.id")
 
     name = Unicode(allow_none=False)
 
@@ -416,25 +461,28 @@ class PollOptionSet:
 
     def getByPollAndId(self, poll, option_id, default=None):
         """See IPollOptionSet."""
-        option = IStore(PollOption).find(
-            PollOption, poll=poll, id=option_id).one()
+        option = (
+            IStore(PollOption).find(PollOption, poll=poll, id=option_id).one()
+        )
         return option if option is not None else default
 
 
 @implementer(IVoteCast)
 class VoteCast(StormBase):
     """See IVoteCast."""
-    __storm_table__ = 'VoteCast'
-    __storm_order__ = 'id'
+
+    __storm_table__ = "VoteCast"
+    __storm_order__ = "id"
 
     id = Int(primary=True)
 
     person_id = Int(
-        name='person', validator=validate_public_person, allow_none=False)
-    person = Reference(person_id, 'Person.id')
+        name="person", validator=validate_public_person, allow_none=False
+    )
+    person = Reference(person_id, "Person.id")
 
-    poll_id = Int(name='poll', allow_none=False)
-    poll = Reference(poll_id, 'Poll.id')
+    poll_id = Int(name="poll", allow_none=False)
+    poll = Reference(poll_id, "Poll.id")
 
     def __init__(self, person, poll):
         super().__init__()
@@ -456,23 +504,24 @@ class VoteCastSet:
 @implementer(IVote)
 class Vote(StormBase):
     """See IVote."""
-    __storm_table__ = 'Vote'
-    __storm_order__ = ['preference', 'id']
+
+    __storm_table__ = "Vote"
+    __storm_order__ = ["preference", "id"]
 
     id = Int(primary=True)
 
-    person_id = Int(name='person', validator=validate_public_person)
-    person = Reference(person_id, 'Person.id')
+    person_id = Int(name="person", validator=validate_public_person)
+    person = Reference(person_id, "Person.id")
 
-    poll_id = Int(name='poll', allow_none=False)
-    poll = Reference(poll_id, 'Poll.id')
+    poll_id = Int(name="poll", allow_none=False)
+    poll = Reference(poll_id, "Poll.id")
 
-    option_id = Int(name='option')
-    option = Reference(option_id, 'PollOption.id')
+    option_id = Int(name="option")
+    option = Reference(option_id, "PollOption.id")
 
-    preference = Int(name='preference')
+    preference = Int(name="preference")
 
-    token = Unicode(name='token', allow_none=False)
+    token = Unicode(name="token", allow_none=False)
 
     def __init__(self, poll, token, person=None, option=None, preference=None):
         super().__init__()
@@ -490,8 +539,12 @@ class VoteSet:
     def new(self, poll, option, preference, token, person):
         """See IVoteSet."""
         vote = Vote(
-            poll=poll, option=option, preference=preference, token=token,
-            person=person)
+            poll=poll,
+            option=option,
+            preference=preference,
+            token=token,
+            person=person,
+        )
         IStore(Vote).add(vote)
         return vote
 
@@ -503,5 +556,6 @@ class VoteSet:
         """See IVoteSet."""
         if option.poll.type != PollAlgorithm.SIMPLE:
             raise OptionIsNotFromSimplePoll(
-                '%r is not an option of a simple-style poll.' % option)
+                "%r is not an option of a simple-style poll." % option
+            )
         return IStore(Vote).find(Vote, option=option).count()

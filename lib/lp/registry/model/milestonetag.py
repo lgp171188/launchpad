@@ -4,45 +4,34 @@
 """Milestonetag model class."""
 
 __all__ = [
-    'MilestoneTag',
-    'ProjectGroupMilestoneTag',
-    'validate_tags',
-    ]
+    "MilestoneTag",
+    "ProjectGroupMilestoneTag",
+    "validate_tags",
+]
 
 
-from storm.expr import (
-    And,
-    Exists,
-    Select,
-    )
-from storm.properties import (
-    DateTime,
-    Int,
-    Unicode,
-    )
+from storm.expr import And, Exists, Select
+from storm.properties import DateTime, Int, Unicode
 from storm.references import Reference
 from zope.interface import implementer
 
 from lp.app.validators.name import valid_name
 from lp.registry.interfaces.milestonetag import IProjectGroupMilestoneTag
-from lp.registry.model.milestone import (
-    Milestone,
-    MilestoneData,
-    )
+from lp.registry.model.milestone import Milestone, MilestoneData
 from lp.registry.model.product import Product
 
 
 class MilestoneTag:
     """A tag belonging to a milestone."""
 
-    __storm_table__ = 'milestonetag'
+    __storm_table__ = "milestonetag"
 
     id = Int(primary=True)
-    milestone_id = Int(name='milestone', allow_none=False)
-    milestone = Reference(milestone_id, 'milestone.id')
+    milestone_id = Int(name="milestone", allow_none=False)
+    milestone = Reference(milestone_id, "milestone.id")
     tag = Unicode(allow_none=False)
-    created_by_id = Int(name='created_by', allow_none=False)
-    created_by = Reference(created_by_id, 'person.id')
+    created_by_id = Int(name="created_by", allow_none=False)
+    created_by = Reference(created_by_id, "person.id")
     date_created = DateTime(allow_none=False)
 
     def __init__(self, milestone, tag, created_by, date_created=None):
@@ -55,7 +44,6 @@ class MilestoneTag:
 
 @implementer(IProjectGroupMilestoneTag)
 class ProjectGroupMilestoneTag(MilestoneData):
-
     def __init__(self, target, tags):
         self.target = target
         # Tags is a sequence of Unicode strings.
@@ -65,7 +53,7 @@ class ProjectGroupMilestoneTag(MilestoneData):
 
     @property
     def name(self):
-        return ','.join(self.tags)
+        return ",".join(self.tags)
 
     @property
     def displayname(self):
@@ -78,25 +66,32 @@ class ProjectGroupMilestoneTag(MilestoneData):
         return self.displayname
 
     def _milestone_ids_expr(self, user):
-        tag_constraints = And(*[
-            Exists(
-                Select(
-                    1, tables=[MilestoneTag],
-                    where=And(
-                        MilestoneTag.milestone_id == Milestone.id,
-                        MilestoneTag.tag == tag)))
-            for tag in self.tags])
+        tag_constraints = And(
+            *[
+                Exists(
+                    Select(
+                        1,
+                        tables=[MilestoneTag],
+                        where=And(
+                            MilestoneTag.milestone_id == Milestone.id,
+                            MilestoneTag.tag == tag,
+                        ),
+                    )
+                )
+                for tag in self.tags
+            ]
+        )
         return Select(
             Milestone.id,
             tables=[Milestone, Product],
             where=And(
                 Milestone.productID == Product.id,
                 Product.projectgroup == self.target,
-                tag_constraints))
+                tag_constraints,
+            ),
+        )
 
 
 def validate_tags(tags):
     """Check that `separator` separated `tags` are valid tag names."""
-    return (
-        all(valid_name(tag) for tag in tags) and
-        len(set(tags)) == len(tags))
+    return all(valid_name(tag) for tag in tags) and len(set(tags)) == len(tags)

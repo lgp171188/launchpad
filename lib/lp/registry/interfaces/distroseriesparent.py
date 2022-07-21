@@ -4,17 +4,13 @@
 """DistroSeriesParent interface."""
 
 __all__ = [
-    'IDistroSeriesParent',
-    'IDistroSeriesParentSet',
-    ]
+    "IDistroSeriesParent",
+    "IDistroSeriesParentSet",
+]
 
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Choice,
-    Int,
-    )
+from zope.schema import Bool, Choice, Int
 
 from lp import _
 from lp.registry.interfaces.distroseries import IDistroSeries
@@ -24,53 +20,83 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 class IDistroSeriesParent(Interface):
     """`DistroSeriesParent` interface."""
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
 
     derived_series = Reference(
-        IDistroSeries, title=_("Derived Series"), required=True,
-        description=_("The derived distribution series."))
+        IDistroSeries,
+        title=_("Derived Series"),
+        required=True,
+        description=_("The derived distribution series."),
+    )
 
     parent_series = Reference(
-        IDistroSeries, title=_("Parent Series"), required=True,
-        description=_("The parent distribution series."))
+        IDistroSeries,
+        title=_("Parent Series"),
+        required=True,
+        description=_("The parent distribution series."),
+    )
 
     initialized = Bool(
-        title=_("Initialized"), required=True,
+        title=_("Initialized"),
+        required=True,
         description=_(
             "Whether or not the derived_series has been populated with "
-            "packages from its parent_series."))
+            "packages from its parent_series."
+        ),
+    )
 
     is_overlay = Bool(
-        title=_("Is this relationship an overlay?"), required=True,
-        default=False)
+        title=_("Is this relationship an overlay?"),
+        required=True,
+        default=False,
+    )
 
     inherit_overrides = Bool(
-        title=_("Inherit overrides"), required=True, default=False,
+        title=_("Inherit overrides"),
+        required=True,
+        default=False,
         description=_(
             "Should package overrides fall back to the parent series if "
-            "they're unset in the derived series?"))
+            "they're unset in the derived series?"
+        ),
+    )
 
     pocket = Choice(
-        title=_("The pocket for this overlay"), required=False,
-        vocabulary=PackagePublishingPocket)
+        title=_("The pocket for this overlay"),
+        required=False,
+        vocabulary=PackagePublishingPocket,
+    )
 
     component = Choice(
-        title=_("The component for this overlay"), required=False,
-        vocabulary='Component')
+        title=_("The component for this overlay"),
+        required=False,
+        vocabulary="Component",
+    )
 
     ordering = Int(
-            title=_("Parent build dependency ordering"), required=False,
-            default=1,
-            description=_(
-                "Parents are ordered in decreasing order of preference "
-                "starting from 1."))
+        title=_("Parent build dependency ordering"),
+        required=False,
+        default=1,
+        description=_(
+            "Parents are ordered in decreasing order of preference "
+            "starting from 1."
+        ),
+    )
 
 
 class IDistroSeriesParentSet(Interface):
     """`DistroSeriesParentSet` interface."""
 
-    def new(derived_series, parent_series, initialized, is_overlay=False,
-            pocket=None, component=None, ordering=1, inherit_overrides=False):
+    def new(
+        derived_series,
+        parent_series,
+        initialized,
+        is_overlay=False,
+        pocket=None,
+        component=None,
+        ordering=1,
+        inherit_overrides=False,
+    ):
         """Create a new `DistroSeriesParent`."""
 
     def getByDerivedSeries(derived_series):

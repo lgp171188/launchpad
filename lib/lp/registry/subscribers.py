@@ -3,14 +3,14 @@
 """Functions and classes that are subscribed to registry events."""
 
 __all__ = [
-    'product_licenses_modified',
-    ]
+    "product_licenses_modified",
+]
 
-from datetime import datetime
 import textwrap
+from datetime import datetime
 
-from lazr.restful.utils import get_current_browser_request
 import pytz
+from lazr.restful.utils import get_current_browser_request
 from zope.security.proxy import removeSecurityProxy
 
 from lp.registry.interfaces.product import License
@@ -20,7 +20,7 @@ from lp.services.mail.sendmail import (
     format_address,
     format_address_for_person,
     simple_sendmail,
-    )
+)
 from lp.services.webapp.escaping import structured
 from lp.services.webapp.publisher import canonical_url
 
@@ -45,30 +45,32 @@ class LicenseNotification:
         return (
             License.OTHER_PROPRIETARY in licenses
             or License.OTHER_OPEN_SOURCE in licenses
-            or [License.DONT_KNOW] == licenses)
+            or [License.DONT_KNOW] == licenses
+        )
 
     def getTemplateName(self):
         """Return the name of the email template for the licensing case."""
         licenses = list(self.product.licenses)
         if [License.DONT_KNOW] == licenses:
-            template_name = 'product-license-dont-know.txt'
+            template_name = "product-license-dont-know.txt"
         elif License.OTHER_PROPRIETARY in licenses:
-            template_name = 'product-license-other-proprietary.txt'
+            template_name = "product-license-other-proprietary.txt"
         else:
-            template_name = 'product-license-other-open-source.txt'
+            template_name = "product-license-other-open-source.txt"
         return template_name
 
     def getCommercialUseMessage(self):
         """Return a message explaining the current commercial subscription."""
         commercial_subscription = self.product.commercial_subscription
         if commercial_subscription is None:
-            return ''
+            return ""
         iso_date = commercial_subscription.date_expires.date().isoformat()
         if not self.product.has_current_commercial_subscription:
             message = "%s's commercial subscription expired on %s."
-        elif 'complimentary' in commercial_subscription.sales_system_id:
+        elif "complimentary" in commercial_subscription.sales_system_id:
             message = (
-                "%s's complimentary commercial subscription expires on %s.")
+                "%s's complimentary commercial subscription expires on %s."
+            )
         else:
             message = "%s's commercial subscription expires on %s."
         message = message % (self.product.displayname, iso_date)
@@ -85,26 +87,32 @@ class LicenseNotification:
         else:
             user_address = format_address_for_person(maintainer)
         from_address = format_address(
-            "Launchpad", config.canonical.noreply_from_address)
+            "Launchpad", config.canonical.noreply_from_address
+        )
         commercial_address = format_address(
-            'Commercial', 'commercial@launchpad.net')
+            "Commercial", "commercial@launchpad.net"
+        )
         substitutions = dict(
             user_displayname=maintainer.displayname,
             user_name=maintainer.name,
             product_name=self.product.name,
             product_url=canonical_url(self.product),
             commercial_use_expiration=self.getCommercialUseMessage(),
-            )
+        )
         # Email the user about licence policy.
         subject = (
             "Licence information for %(product_name)s "
-            "in Launchpad" % substitutions)
-        template = get_email_template(
-            self.getTemplateName(), app='registry')
+            "in Launchpad" % substitutions
+        )
+        template = get_email_template(self.getTemplateName(), app="registry")
         message = template % substitutions
         simple_sendmail(
-            from_address, user_address,
-            subject, message, headers={'Reply-To': commercial_address})
+            from_address,
+            user_address,
+            subject,
+            message,
+            headers={"Reply-To": commercial_address},
+        )
         # Inform that Launchpad recognized the licence change.
         self._addLicenseChangeToReviewWhiteboard()
         return True
@@ -113,12 +121,14 @@ class LicenseNotification:
         """Show a message in a browser page about the product's licence."""
         request = get_current_browser_request()
         message = self.getCommercialUseMessage()
-        if request is None or message == '':
+        if request is None or message == "":
             return False
         safe_message = structured(
-            '%s<br />Learn more about '
+            "%s<br />Learn more about "
             '<a href="https://help.launchpad.net/CommercialHosting">'
-            'commercial subscriptions</a>', message)
+            "commercial subscriptions</a>",
+            message,
+        )
         request.response.addNotification(safe_message)
         return True
 
@@ -127,14 +137,14 @@ class LicenseNotification:
         """Return the date formatted for messages."""
         if now is None:
             now = datetime.now(tz=pytz.UTC)
-        return now.strftime('%Y-%m-%d')
+        return now.strftime("%Y-%m-%d")
 
     def _addLicenseChangeToReviewWhiteboard(self):
         """Update the whiteboard for the reviewer's benefit."""
         now = self._formatDate()
-        whiteboard = 'User notified of licence policy on %s.' % now
+        whiteboard = "User notified of licence policy on %s." % now
         naked_product = removeSecurityProxy(self.product)
         if naked_product.reviewer_whiteboard is None:
             naked_product.reviewer_whiteboard = whiteboard
         else:
-            naked_product.reviewer_whiteboard += '\n' + whiteboard
+            naked_product.reviewer_whiteboard += "\n" + whiteboard

@@ -4,15 +4,12 @@
 """Views, menus and traversal related to PersonProducts."""
 
 __all__ = [
-    'PersonProductBreadcrumb',
-    'PersonProductFacets',
-    'PersonProductNavigation',
-    ]
+    "PersonProductBreadcrumb",
+    "PersonProductFacets",
+    "PersonProductNavigation",
+]
 
-from zope.component import (
-    getUtility,
-    queryAdapter,
-    )
+from zope.component import getUtility, queryAdapter
 from zope.interface import implementer
 from zope.traversing.interfaces import IPathAdapter
 
@@ -23,50 +20,52 @@ from lp.code.interfaces.branchnamespace import get_branch_namespace
 from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProduct
 from lp.services.webapp import (
-    canonical_url,
     Navigation,
     StandardLaunchpadFacets,
+    canonical_url,
     stepthrough,
-    )
+)
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
 from lp.snappy.interfaces.snap import ISnapSet
 
 
-class PersonProductNavigation(PersonTargetDefaultVCSNavigationMixin,
-                              Navigation):
+class PersonProductNavigation(
+    PersonTargetDefaultVCSNavigationMixin, Navigation
+):
     """Navigation to branches for this person/product."""
+
     usedfor = IPersonProduct
 
-    @stepthrough('+oci')
+    @stepthrough("+oci")
     def traverse_oci(self, name):
         oci_project = self.context.product.getOCIProject(name)
         return getUtility(IPersonOCIProjectFactory).create(
-            self.context.person, oci_project)
+            self.context.person, oci_project
+        )
 
     def traverse(self, branch_name):
         """Look for a branch in the person/product namespace."""
         namespace = get_branch_namespace(
-            person=self.context.person, product=self.context.product)
+            person=self.context.person, product=self.context.product
+        )
         branch = namespace.getByName(branch_name)
         if branch is None:
             raise NotFoundError
         else:
             return branch
 
-    @stepthrough('+snap')
+    @stepthrough("+snap")
     def traverse_snap(self, name):
         return getUtility(ISnapSet).getByPillarAndName(
-            owner=self.context.person,
-            pillar=self.context.product,
-            name=name)
+            owner=self.context.person, pillar=self.context.product, name=name
+        )
 
-    @stepthrough('+charm')
+    @stepthrough("+charm")
     def traverse_charm(self, name):
         return getUtility(ICharmRecipeSet).getByName(
-            owner=self.context.person,
-            project=self.context.product,
-            name=name)
+            owner=self.context.person, project=self.context.product, name=name
+        )
 
 
 @implementer(IMultiFacetedBreadcrumb)
@@ -87,11 +86,12 @@ class PersonProductBreadcrumb(Breadcrumb):
     @property
     def icon(self):
         return queryAdapter(
-            self.context.product, IPathAdapter, name='image').icon()
+            self.context.product, IPathAdapter, name="image"
+        ).icon()
 
 
 class PersonProductFacets(StandardLaunchpadFacets):
     """The links that will appear in the facet menu for an IPerson."""
 
     usedfor = IPersonProduct
-    enable_only = ['branches']
+    enable_only = ["branches"]

@@ -13,20 +13,17 @@ from zope.security.interfaces import Unauthorized
 from lp.app.browser.lazrjs import vocabulary_to_choice_edit_items
 from lp.app.enums import InformationType
 from lp.registry.browser.tests.test_product import make_product_form
-from lp.registry.enums import (
-    EXCLUSIVE_TEAM_POLICY,
-    TeamMembershipPolicy,
-    )
+from lp.registry.enums import EXCLUSIVE_TEAM_POLICY, TeamMembershipPolicy
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
 from lp.services.webapp import canonical_url
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.testing import (
     BrowserTestCase,
+    TestCaseWithFactory,
     celebrity_logged_in,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import Contains
 from lp.testing.sampledata import ADMIN_EMAIL
@@ -40,19 +37,21 @@ class TestProjectGroupView(BrowserTestCase):
 
     def setUp(self):
         super().setUp()
-        self.project_group = self.factory.makeProject(name='group')
+        self.project_group = self.factory.makeProject(name="group")
 
     def test_view_data_model(self):
         # The view's json request cache contains the expected data.
-        view = create_initialized_view(self.project_group, '+index')
+        view = create_initialized_view(self.project_group, "+index")
         cache = IJSONRequestCache(view.request)
         policy_items = [(item.name, item) for item in EXCLUSIVE_TEAM_POLICY]
         team_membership_policy_data = vocabulary_to_choice_edit_items(
             SimpleVocabulary.fromItems(policy_items),
-            value_fn=lambda item: item.name)
+            value_fn=lambda item: item.name,
+        )
         self.assertContentEqual(
             team_membership_policy_data,
-            cache.objects['team_membership_policy_data'])
+            cache.objects["team_membership_policy_data"],
+        )
 
     def test_proprietary_product(self):
         # Proprietary projects are not listed for people without access to
@@ -60,9 +59,10 @@ class TestProjectGroupView(BrowserTestCase):
         owner = self.factory.makePerson()
         product = self.factory.makeProduct(
             information_type=InformationType.PROPRIETARY,
-            projectgroup=self.project_group, owner=owner)
-        owner_browser = self.getViewBrowser(self.project_group,
-                                            user=owner)
+            projectgroup=self.project_group,
+            owner=owner,
+        )
+        owner_browser = self.getViewBrowser(self.project_group, user=owner)
         with person_logged_in(owner):
             product_name = product.name
         self.assertIn(product_name, owner_browser.contents)
@@ -75,13 +75,18 @@ class TestProjectGroupView(BrowserTestCase):
         owner = self.factory.makePerson()
         public_product = self.factory.makeProduct(
             information_type=InformationType.PUBLIC,
-            projectgroup=self.project_group, owner=owner)
+            projectgroup=self.project_group,
+            owner=owner,
+        )
         public_milestone = self.factory.makeMilestone(product=public_product)
         product = self.factory.makeProduct(
             information_type=InformationType.PROPRIETARY,
-            projectgroup=self.project_group, owner=owner)
-        milestone = self.factory.makeMilestone(product=product,
-                                               name=public_milestone.name)
+            projectgroup=self.project_group,
+            owner=owner,
+        )
+        milestone = self.factory.makeMilestone(
+            product=product, name=public_milestone.name
+        )
         (group_milestone,) = self.project_group.milestones
         self.factory.makeSpecification(milestone=public_milestone)
         with person_logged_in(owner):
@@ -101,31 +106,45 @@ class TestProjectGroupView(BrowserTestCase):
         # only the public is shown to people without access.
         owner = self.factory.makePerson()
         teammember = self.factory.makePerson()
-        owning_team = self.factory.makeTeam(owner=owner,
-                membership_policy=TeamMembershipPolicy.RESTRICTED)
+        owning_team = self.factory.makeTeam(
+            owner=owner, membership_policy=TeamMembershipPolicy.RESTRICTED
+        )
         with person_logged_in(owner):
             owning_team.addMember(teammember, owner)
         group = self.factory.makeProject(owner=owning_team)
         private = self.factory.makeProduct(
-            projectgroup=group, owner=owner,
-            information_type=InformationType.PROPRIETARY, name='private')
+            projectgroup=group,
+            owner=owner,
+            information_type=InformationType.PROPRIETARY,
+            name="private",
+        )
         public = self.factory.makeProduct(
-            projectgroup=group, owner=owner, name='public')
+            projectgroup=group, owner=owner, name="public"
+        )
         private_milestone = self.factory.makeMilestone(
-            product=private, name='1.0')
+            product=private, name="1.0"
+        )
         public_milestone = self.factory.makeMilestone(
-            product=public, name='1.0')
+            product=public, name="1.0"
+        )
         with person_logged_in(owner):
             self.factory.makeBug(
-                target=private, owner=owner, milestone=private_milestone,
-                title='This is the private bug')
+                target=private,
+                owner=owner,
+                milestone=private_milestone,
+                title="This is the private bug",
+            )
             self.factory.makeBug(
-                target=public, owner=owner, milestone=public_milestone,
-                title='This is the public bug')
+                target=public,
+                owner=owner,
+                milestone=public_milestone,
+                title="This is the public bug",
+            )
 
         group_milestone = group.milestones[0]
         browser = self.getViewBrowser(
-            group_milestone, user=self.factory.makePerson())
+            group_milestone, user=self.factory.makePerson()
+        )
         self.assertTrue("This is the public bug" in browser.contents)
         self.assertFalse("This is the private bug" in browser.contents)
 
@@ -137,17 +156,18 @@ class TestProjectGroupEditView(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.project_group = self.factory.makeProject(name='group')
+        self.project_group = self.factory.makeProject(name="group")
         # Use a FakeLogger fixture to prevent Memcached warnings to be
         # printed to stdout while browsing pages.
         self.useFixture(FakeLogger())
 
     def test_links_admin(self):
         # An admin can change details and administer a project group.
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             user = getUtility(ILaunchBag).user
             view = create_initialized_view(
-                self.project_group, '+index', principal=user)
+                self.project_group, "+index", principal=user
+            )
             contents = view.render()
             self.assertThat(contents, Contains("Change details"))
             self.assertThat(contents, Contains("Administer"))
@@ -155,10 +175,11 @@ class TestProjectGroupEditView(TestCaseWithFactory):
     def test_links_registry_expert(self):
         # A registry expert cannot change details but can administer a project
         # group.
-        with celebrity_logged_in('registry_experts'):
+        with celebrity_logged_in("registry_experts"):
             user = getUtility(ILaunchBag).user
             view = create_initialized_view(
-                self.project_group, '+index', principal=user)
+                self.project_group, "+index", principal=user
+            )
             contents = view.render()
             self.assertThat(contents, Not(Contains("Change details")))
             self.assertThat(contents, Contains("Administer"))
@@ -168,7 +189,8 @@ class TestProjectGroupEditView(TestCaseWithFactory):
         with person_logged_in(self.project_group.owner):
             user = getUtility(ILaunchBag).user
             view = create_initialized_view(
-                self.project_group, '+index', principal=user)
+                self.project_group, "+index", principal=user
+            )
             contents = view.render()
             self.assertThat(contents, Contains("Change details"))
             self.assertThat(contents, Not(Contains("Administer")))
@@ -176,20 +198,20 @@ class TestProjectGroupEditView(TestCaseWithFactory):
     def test_edit_view_admin(self):
         admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         browser = self.getUserBrowser(user=admin)
-        browser.open(canonical_url(self.project_group, view_name='+edit'))
-        browser.open(canonical_url(self.project_group, view_name='+review'))
+        browser.open(canonical_url(self.project_group, view_name="+edit"))
+        browser.open(canonical_url(self.project_group, view_name="+review"))
 
     def test_edit_view_registry_expert(self):
         registry_expert = self.factory.makeRegistryExpert()
         browser = self.getUserBrowser(user=registry_expert)
-        url = canonical_url(self.project_group, view_name='+edit')
+        url = canonical_url(self.project_group, view_name="+edit")
         self.assertRaises(Unauthorized, browser.open, url)
-        browser.open(canonical_url(self.project_group, view_name='+review'))
+        browser.open(canonical_url(self.project_group, view_name="+review"))
 
     def test_edit_view_owner(self):
         browser = self.getUserBrowser(user=self.project_group.owner)
-        browser.open(canonical_url(self.project_group, view_name='+edit'))
-        url = canonical_url(self.project_group, view_name='+review')
+        browser.open(canonical_url(self.project_group, view_name="+edit"))
+        url = canonical_url(self.project_group, view_name="+review")
         self.assertRaises(Unauthorized, browser.open, url)
 
 
@@ -204,19 +226,23 @@ class TestProjectGroupAddProductViews(TestCaseWithFactory):
         projectgroup = self.factory.makeProject()
         with person_logged_in(projectgroup.owner):
             view = create_initialized_view(
-                projectgroup, '+newproduct', form=form)
-        self.assertIn('information_type_data',
-                      IJSONRequestCache(view.request).objects)
-        self.assertIsNot(None, view.view.form_fields.get('information_type'))
+                projectgroup, "+newproduct", form=form
+            )
+        self.assertIn(
+            "information_type_data", IJSONRequestCache(view.request).objects
+        )
+        self.assertIsNot(None, view.view.form_fields.get("information_type"))
 
     def test_information_type_saved(self):
         # Setting information_type to PROPRIETARY via form actually works.
         projectgroup = self.factory.makeProject()
         form = make_product_form(
-            projectgroup.owner, action=2, proprietary=True)
+            projectgroup.owner, action=2, proprietary=True
+        )
         with person_logged_in(projectgroup.owner):
             view = create_initialized_view(
-                projectgroup, '+newproduct', form=form)
+                projectgroup, "+newproduct", form=form
+            )
         self.assertEqual(0, len(view.view.errors))
-        product = getUtility(IProductSet).getByName(form['field.name'])
+        product = getUtility(IProductSet).getByName(form["field.name"])
         self.assertEqual(InformationType.PROPRIETARY, product.information_type)

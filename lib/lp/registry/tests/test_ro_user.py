@@ -14,10 +14,11 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 class RoUserTestCase(unittest.TestCase):
     """Test that the read-only PostgreSQL user actually has read access"""
+
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        switch_dbuser('ro')
+        switch_dbuser("ro")
 
     def test(self):
         """Test that read-only users cannot make changes to the database."""
@@ -31,21 +32,19 @@ class RoUserTestCase(unittest.TestCase):
         # Except on sequences
         cur.execute("SAVEPOINT attempt")
         self.assertRaises(
-                psycopg2.Error, cur.execute, "SELECT nextval('person_id_seq')"
-                )
+            psycopg2.Error, cur.execute, "SELECT nextval('person_id_seq')"
+        )
         cur.execute("ROLLBACK TO SAVEPOINT attempt")
 
         # UPDATES should fail
         cur.execute("SAVEPOINT attempt")
         self.assertRaises(
-                psycopg2.Error, cur.execute, "UPDATE Person SET password=NULL"
-                )
+            psycopg2.Error, cur.execute, "UPDATE Person SET password=NULL"
+        )
         cur.execute("ROLLBACK TO SAVEPOINT attempt")
 
         # DELETES should fail.
         # We need to use a table with no FK references to it
         cur.execute("SAVEPOINT attempt")
-        self.assertRaises(
-                psycopg2.Error, cur.execute, "DELETE FROM WikiName"
-                )
+        self.assertRaises(psycopg2.Error, cur.execute, "DELETE FROM WikiName")
         cur.execute("ROLLBACK TO SAVEPOINT attempt")

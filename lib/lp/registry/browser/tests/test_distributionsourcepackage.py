@@ -14,23 +14,17 @@ from lp.services.webapp import canonical_url
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.archive import ArchivePurpose
 from lp.testing import (
+    TestCaseWithFactory,
     celebrity_logged_in,
     person_logged_in,
     test_tales,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+)
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 from lp.testing.matchers import (
     BrowsesWithQueryLimit,
     IsConfiguredBatchNavigator,
-    )
-from lp.testing.views import (
-    create_initialized_view,
-    create_view,
-    )
+)
+from lp.testing.views import create_initialized_view, create_view
 
 
 class TestDistributionSourcePackageFormatterAPI(TestCaseWithFactory):
@@ -38,13 +32,14 @@ class TestDistributionSourcePackageFormatterAPI(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_link(self):
-        self.factory.makeSourcePackageName('mouse')
+        self.factory.makeSourcePackageName("mouse")
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
-        dsp = ubuntu.getSourcePackage('mouse')
+        dsp = ubuntu.getSourcePackage("mouse")
         markup = (
             '<a href="/ubuntu/+source/mouse" class="sprite package-source">'
-            'mouse in Ubuntu</a>')
-        self.assertEqual(markup, test_tales('dsp/fmt:link', dsp=dsp))
+            "mouse in Ubuntu</a>"
+        )
+        self.assertEqual(markup, test_tales("dsp/fmt:link", dsp=dsp))
 
 
 class TestDistributionSourcePackageChangelogView(TestCaseWithFactory):
@@ -53,17 +48,19 @@ class TestDistributionSourcePackageChangelogView(TestCaseWithFactory):
 
     def test_packagediff_query_count(self):
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
-        spph = self.factory.makeSourcePackagePublishingHistory(
-            archive=archive)
+        spph = self.factory.makeSourcePackagePublishingHistory(archive=archive)
         dsp = archive.distribution.getSourcePackage(
-            spph.sourcepackagerelease.sourcepackagename)
+            spph.sourcepackagerelease.sourcepackagename
+        )
         changelog_browses_under_limit = BrowsesWithQueryLimit(
-            32, self.factory.makePerson(), '+changelog')
+            32, self.factory.makePerson(), "+changelog"
+        )
         self.assertThat(dsp, changelog_browses_under_limit)
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             for i in range(5):
                 self.factory.makePackageDiff(
-                    to_source=spph.sourcepackagerelease)
+                    to_source=spph.sourcepackagerelease
+                )
         self.assertThat(dsp, changelog_browses_under_limit)
 
 
@@ -73,23 +70,28 @@ class TestDistributionSourcePackagePublishingHistoryView(TestCaseWithFactory):
 
     def test_publishinghistory_query_count(self):
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
-        spph = self.factory.makeSourcePackagePublishingHistory(
-            archive=archive)
+        spph = self.factory.makeSourcePackagePublishingHistory(archive=archive)
         spn = spph.sourcepackagerelease.sourcepackagename
         dsp = archive.distribution.getSourcePackage(spn)
         publishinghistory_browses_under_limit = BrowsesWithQueryLimit(
-            27, self.factory.makePerson(), "+publishinghistory")
+            27, self.factory.makePerson(), "+publishinghistory"
+        )
         self.assertThat(dsp, publishinghistory_browses_under_limit)
         with person_logged_in(archive.owner):
             copy_source_archive = self.factory.makeArchive()
             copy_spph = self.factory.makeSourcePackagePublishingHistory(
-                archive=copy_source_archive, sourcepackagename=spn)
+                archive=copy_source_archive, sourcepackagename=spn
+            )
             copy_spph.copyTo(
-                spph.distroseries, spph.pocket, archive,
+                spph.distroseries,
+                spph.pocket,
+                archive,
                 creator=self.factory.makePerson(),
-                sponsor=self.factory.makePerson())
+                sponsor=self.factory.makePerson(),
+            )
             delete_spph = self.factory.makeSourcePackagePublishingHistory(
-                archive=archive, sourcepackagename=spn)
+                archive=archive, sourcepackagename=spn
+            )
             delete_spph.requestDeletion(self.factory.makePerson())
         # This is a lot of extra queries per publication, and should be
         # ratcheted down over time; but it at least ensures that we don't
@@ -104,25 +106,36 @@ class TestDistributionSourcePackagePublishingHistoryView(TestCaseWithFactory):
         creator = self.factory.makePerson()
         sponsor = self.factory.makePerson()
         copied_spph = spph.copyTo(
-            spph.distroseries, spph.pocket, archive, creator=creator,
-            sponsor=sponsor)
+            spph.distroseries,
+            spph.pocket,
+            archive,
+            creator=creator,
+            sponsor=sponsor,
+        )
         html = create_initialized_view(copied_spph, "+record-details").render()
         record_matches = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                "copy summary", "li", text=re.compile("sponsored by")),
+                "copy summary", "li", text=re.compile("sponsored by")
+            ),
             soupmatchers.Tag(
-                "copy creator", "a", text=creator.displayname,
+                "copy creator",
+                "a",
+                text=creator.displayname,
                 attrs={
                     "href": "/~%s" % creator.name,
                     "class": "sprite person",
-                    }),
+                },
+            ),
             soupmatchers.Tag(
-                "copy sponsor", "a", text=sponsor.displayname,
+                "copy sponsor",
+                "a",
+                text=sponsor.displayname,
                 attrs={
                     "href": "/~%s" % sponsor.name,
                     "class": "sprite person",
-                    }),
-            )
+                },
+            ),
+        )
         self.assertThat(html, record_matches)
 
     def test_is_batched(self):
@@ -131,19 +144,24 @@ class TestDistributionSourcePackagePublishingHistoryView(TestCaseWithFactory):
         component = self.factory.makeComponent()
         section = self.factory.makeSection()
         dsp = archive.distribution.getSourcePackage(spn)
-        statuses = (
-            ([PackagePublishingStatus.SUPERSEDED] * 5)
-            + [PackagePublishingStatus.PUBLISHED])
+        statuses = ([PackagePublishingStatus.SUPERSEDED] * 5) + [
+            PackagePublishingStatus.PUBLISHED
+        ]
         for status in statuses:
             self.factory.makeSourcePackagePublishingHistory(
-                archive=archive, sourcepackagename=spn, component=component,
+                archive=archive,
+                sourcepackagename=spn,
+                component=component,
                 distroseries=archive.distribution.currentseries,
-                section_name=section.name, status=status)
+                section_name=section.name,
+                status=status,
+            )
         view = create_initialized_view(dsp, "+publishinghistory")
         self.assertThat(
-            view.batchnav, IsConfiguredBatchNavigator('result', 'results'))
+            view.batchnav, IsConfiguredBatchNavigator("result", "results")
+        )
 
-        base_url = canonical_url(dsp) + '/+publishinghistory'
+        base_url = canonical_url(dsp) + "/+publishinghistory"
         browser = self.getUserBrowser(base_url)
         self.assertIn("<td>Published</td>", browser.contents)
         self.assertIn("<td>Superseded</td>", browser.contents)
@@ -158,50 +176,50 @@ class TestDistributionSourceView(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.factory.makeSourcePackageName('mouse')
+        self.factory.makeSourcePackageName("mouse")
         distro = self.factory.makeDistribution()
-        self.dsp = distro.getSourcePackage('mouse')
+        self.dsp = distro.getSourcePackage("mouse")
 
     def test_bugs_answers_usage_none(self):
         # The dict values are all False.
-        view = create_view(self.dsp, '+index')
-        self.assertFalse(view.bugs_answers_usage['uses_bugs'])
-        self.assertFalse(view.bugs_answers_usage['uses_answers'])
-        self.assertFalse(view.bugs_answers_usage['uses_both'])
-        self.assertFalse(view.bugs_answers_usage['uses_either'])
+        view = create_view(self.dsp, "+index")
+        self.assertFalse(view.bugs_answers_usage["uses_bugs"])
+        self.assertFalse(view.bugs_answers_usage["uses_answers"])
+        self.assertFalse(view.bugs_answers_usage["uses_both"])
+        self.assertFalse(view.bugs_answers_usage["uses_either"])
 
     def test_bugs_answers_usage_bugs(self):
         # The dict values are True for bugs and either.
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.dsp.distribution.official_malone = True
-        view = create_view(self.dsp, '+index')
-        self.assertTrue(view.bugs_answers_usage['uses_bugs'])
-        self.assertFalse(view.bugs_answers_usage['uses_answers'])
-        self.assertFalse(view.bugs_answers_usage['uses_both'])
-        self.assertTrue(view.bugs_answers_usage['uses_either'])
+        view = create_view(self.dsp, "+index")
+        self.assertTrue(view.bugs_answers_usage["uses_bugs"])
+        self.assertFalse(view.bugs_answers_usage["uses_answers"])
+        self.assertFalse(view.bugs_answers_usage["uses_both"])
+        self.assertTrue(view.bugs_answers_usage["uses_either"])
 
     def test_bugs_answers_usage_answers(self):
         # The dict values are True for answers and either.
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.dsp.distribution.answers_usage = ServiceUsage.LAUNCHPAD
-        view = create_view(self.dsp, '+index')
-        self.assertFalse(view.bugs_answers_usage['uses_bugs'])
-        self.assertTrue(view.bugs_answers_usage['uses_answers'])
-        self.assertFalse(view.bugs_answers_usage['uses_both'])
-        self.assertIs(True, view.bugs_answers_usage['uses_either'])
+        view = create_view(self.dsp, "+index")
+        self.assertFalse(view.bugs_answers_usage["uses_bugs"])
+        self.assertTrue(view.bugs_answers_usage["uses_answers"])
+        self.assertFalse(view.bugs_answers_usage["uses_both"])
+        self.assertIs(True, view.bugs_answers_usage["uses_either"])
 
     def test_bugs_answers_usage_both(self):
         # The dict values are all True.
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.dsp.distribution.official_malone = True
             self.dsp.distribution.answers_usage = ServiceUsage.LAUNCHPAD
-        view = create_view(self.dsp, '+index')
-        self.assertTrue(view.bugs_answers_usage['uses_bugs'])
-        self.assertTrue(view.bugs_answers_usage['uses_answers'])
-        self.assertTrue(view.bugs_answers_usage['uses_both'])
-        self.assertTrue(view.bugs_answers_usage['uses_either'])
+        view = create_view(self.dsp, "+index")
+        self.assertTrue(view.bugs_answers_usage["uses_bugs"])
+        self.assertTrue(view.bugs_answers_usage["uses_answers"])
+        self.assertTrue(view.bugs_answers_usage["uses_both"])
+        self.assertTrue(view.bugs_answers_usage["uses_either"])
 
     def test_new_bugtasks_count(self):
         self.factory.makeBugTask(target=self.dsp)
-        view = create_view(self.dsp, '+index')
+        view = create_view(self.dsp, "+index")
         self.assertEqual(1, view.new_bugtasks_count)

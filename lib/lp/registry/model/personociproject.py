@@ -5,21 +5,17 @@
 
 __all__ = []
 
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 
 from lp.registry.interfaces.personociproject import (
     IPersonOCIProject,
     IPersonOCIProjectFactory,
-    )
+)
 
 
 @implementer(IPersonOCIProject)
 @provider(IPersonOCIProjectFactory)
 class PersonOCIProject:
-
     def __init__(self, person, oci_project):
         self.person = person
         self.oci_project = oci_project
@@ -30,14 +26,17 @@ class PersonOCIProject:
 
     @property
     def display_name(self):
-        return '%s in %s' % (
-            self.person.display_name, self.oci_project.display_name)
+        return "%s in %s" % (
+            self.person.display_name,
+            self.oci_project.display_name,
+        )
 
     def __eq__(self, other):
         return (
-            IPersonOCIProject.providedBy(other) and
-            self.person == other.person and
-            self.oci_project == other.oci_project)
+            IPersonOCIProject.providedBy(other)
+            and self.person == other.person
+            and self.oci_project == other.oci_project
+        )
 
     def __ne__(self, other):
         return not self == other

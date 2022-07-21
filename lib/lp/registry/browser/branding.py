@@ -4,15 +4,12 @@
 """Browser views for items that can be displayed as images."""
 
 __all__ = [
-    'BrandingChangeView',
-    ]
+    "BrandingChangeView",
+]
 
 from zope.formlib.widget import CustomWidgetFactory
 
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadEditFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadEditFormView, action
 from lp.app.widgets.image import ImageChangeWidget
 from lp.services.webapp import canonical_url
 
@@ -28,19 +25,24 @@ class BrandingChangeView(LaunchpadEditFormView):
 
     @property
     def label(self):
-        return ('Change the images used to represent %s in Launchpad'
-                % self.context.displayname)
+        return (
+            "Change the images used to represent %s in Launchpad"
+            % self.context.displayname
+        )
 
     page_title = "Change branding"
 
     custom_widget_icon = CustomWidgetFactory(
-        ImageChangeWidget, ImageChangeWidget.EDIT_STYLE)
+        ImageChangeWidget, ImageChangeWidget.EDIT_STYLE
+    )
     custom_widget_logo = CustomWidgetFactory(
-        ImageChangeWidget, ImageChangeWidget.EDIT_STYLE)
+        ImageChangeWidget, ImageChangeWidget.EDIT_STYLE
+    )
     custom_widget_mugshot = CustomWidgetFactory(
-        ImageChangeWidget, ImageChangeWidget.EDIT_STYLE)
+        ImageChangeWidget, ImageChangeWidget.EDIT_STYLE
+    )
 
-    @action("Change Branding", name='change')
+    @action("Change Branding", name="change")
     def change_action(self, action, data):
         self.updateContextFromData(data)
 

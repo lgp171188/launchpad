@@ -13,12 +13,11 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestPersonRoles(TestCaseWithFactory):
-    """Test IPersonRoles adapter.
-     """
+    """Test IPersonRoles adapter."""
 
     layer = ZopelessDatabaseLayer
 
-    prefix = 'in_'
+    prefix = "in_"
 
     def setUp(self):
         super().setUp()
@@ -47,13 +46,15 @@ class TestPersonRoles(TestCaseWithFactory):
             roles = IPersonRoles(self.person)
             self.assertFalse(
                 getattr(roles, roles_attribute),
-                "%s should be False" % roles_attribute)
+                "%s should be False" % roles_attribute,
+            )
 
             team.addMember(self.person, team.teamowner)
             roles = IPersonRoles(self.person)
             self.assertTrue(
                 getattr(roles, roles_attribute),
-                "%s should be True" % roles_attribute)
+                "%s should be True" % roles_attribute,
+            )
             self.person.leave(team)
 
     def test_is_person(self):
@@ -63,7 +64,8 @@ class TestPersonRoles(TestCaseWithFactory):
             roles = IPersonRoles(celeb)
             self.assertTrue(
                 getattr(roles, roles_attribute),
-                "%s should be True" % roles_attribute)
+                "%s should be True" % roles_attribute,
+            )
 
     def test_in_AttributeError(self):
         # Do not check for non-existent attributes, even if it has the
@@ -128,8 +130,9 @@ class TestPersonRoles(TestCaseWithFactory):
         spec.approver = self.person
 
         roles = IPersonRoles(self.person)
-        self.assertTrue(roles.isOneOf(
-            spec, ['owner', 'drafter', 'assignee', 'approver']))
+        self.assertTrue(
+            roles.isOneOf(spec, ["owner", "drafter", "assignee", "approver"])
+        )
 
     def test_isOneOf_None(self):
         # Objects may have multiple roles that a person can fulfill.
@@ -141,8 +144,9 @@ class TestPersonRoles(TestCaseWithFactory):
         spec.approver = self.person
 
         roles = IPersonRoles(self.person)
-        self.assertTrue(roles.isOneOf(
-            spec, ['owner', 'drafter', 'assignee', 'approver']))
+        self.assertTrue(
+            roles.isOneOf(spec, ["owner", "drafter", "assignee", "approver"])
+        )
 
     def test_isOneOf_AttributeError(self):
         # Do not try to check for none-existent attributes.

@@ -4,20 +4,18 @@
 """Source package interfaces."""
 
 __all__ = [
-    'ISourcePackage',
-    'ISourcePackagePublic',
-    'ISourcePackageEdit',
-    'ISourcePackageFactory',
-    'SourcePackageFileType',
-    'SourcePackageType',
-    'SourcePackageUrgency',
-    ]
+    "ISourcePackage",
+    "ISourcePackagePublic",
+    "ISourcePackageEdit",
+    "ISourcePackageFactory",
+    "SourcePackageFileType",
+    "SourcePackageType",
+    "SourcePackageUrgency",
+]
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     export_read_operation,
     export_write_operation,
@@ -26,63 +24,61 @@ from lazr.restful.declarations import (
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
-    REQUEST_USER,
-    )
-from lazr.restful.fields import (
-    Reference,
-    ReferenceChoice,
-    )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Object,
-    TextLine,
-    )
+)
+from lazr.restful.fields import Reference, ReferenceChoice
+from zope.interface import Attribute, Interface
+from zope.schema import Choice, Object, TextLine
 
 from lp import _
-from lp.bugs.interfaces.bugtarget import (
-    IBugTarget,
-    IHasOfficialBugTags,
-    )
+from lp.bugs.interfaces.bugtarget import IBugTarget, IHasOfficialBugTags
 from lp.code.interfaces.hasbranches import (
     IHasBranches,
     IHasCodeImports,
     IHasMergeProposals,
-    )
+)
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.productseries import IProductSeries
-from lp.registry.interfaces.role import (
-    IHasDrivers,
-    IHasOwner,
-    )
+from lp.registry.interfaces.role import IHasDrivers, IHasOwner
 from lp.soyuz.interfaces.component import IComponent
 from lp.translations.interfaces.hastranslationimports import (
     IHasTranslationImports,
-    )
+)
 from lp.translations.interfaces.hastranslationtemplates import (
     IHasTranslationTemplates,
-    )
+)
 
 
-class ISourcePackagePublic(IBugTarget, IHasBranches, IHasMergeProposals,
-                           IHasOfficialBugTags, IHasCodeImports,
-                           IHasTranslationImports, IHasTranslationTemplates,
-                           IHasDrivers, IHasOwner):
+class ISourcePackagePublic(
+    IBugTarget,
+    IHasBranches,
+    IHasMergeProposals,
+    IHasOfficialBugTags,
+    IHasCodeImports,
+    IHasTranslationImports,
+    IHasTranslationTemplates,
+    IHasDrivers,
+    IHasOwner,
+):
     """Public attributes for SourcePackage."""
 
     name = exported(
         TextLine(
-            title=_("Name"), required=True, readonly=True,
-            description=_("The text name of this source package.")))
+            title=_("Name"),
+            required=True,
+            readonly=True,
+            description=_("The text name of this source package."),
+        )
+    )
 
     display_name = exported(
         TextLine(
-            title=_("Display name"), required=True, readonly=True,
-            description=_("A displayname, constructed, for this package")),
-        exported_as="displayname")
+            title=_("Display name"),
+            required=True,
+            readonly=True,
+            description=_("A displayname, constructed, for this package"),
+        ),
+        exported_as="displayname",
+    )
 
     displayname = Attribute("Display name (deprecated)")
 
@@ -91,86 +87,117 @@ class ISourcePackagePublic(IBugTarget, IHasBranches, IHasMergeProposals,
     title = Attribute("Title.")
 
     summary = Attribute(
-        'A description of the binary packages built from this package.')
+        "A description of the binary packages built from this package."
+    )
 
-    format = Attribute("Source Package Format. This is the format of the "
-                "current source package release for this name in this "
-                "distribution or distroseries. Calling this when there is "
-                "no current sourcepackagerelease will raise an exception.")
+    format = Attribute(
+        "Source Package Format. This is the format of the "
+        "current source package release for this name in this "
+        "distribution or distroseries. Calling this when there is "
+        "no current sourcepackagerelease will raise an exception."
+    )
 
-    distinctreleases = Attribute("Return a distinct list "
-        "of sourcepackagepublishinghistory for this source package.")
+    distinctreleases = Attribute(
+        "Return a distinct list "
+        "of sourcepackagepublishinghistory for this source package."
+    )
 
     distribution = exported(
         Reference(
             Interface,
             # Really IDistribution, circular import fixed in
             # _schema_circular_imports.
-            title=_("Distribution"), required=True, readonly=True,
-            description=_("The distribution for this source package.")))
+            title=_("Distribution"),
+            required=True,
+            readonly=True,
+            description=_("The distribution for this source package."),
+        )
+    )
 
     # The interface for this is really IDistroSeries, but importing that would
     # cause circular imports. Set in _schema_circular_imports.
     distroseries = exported(
         Reference(
-            Interface, title=_("Distribution Series"), required=True,
+            Interface,
+            title=_("Distribution Series"),
+            required=True,
             readonly=True,
-            description=_("The DistroSeries for this SourcePackage")))
+            description=_("The DistroSeries for this SourcePackage"),
+        )
+    )
 
     sourcepackagename = Attribute("SourcePackageName")
 
     # This is really a reference to an IProductSeries.
     productseries = exported(
         ReferenceChoice(
-            title=_("Project series"), required=False,
-            vocabulary="ProductSeries", readonly=True,
+            title=_("Project series"),
+            required=False,
+            vocabulary="ProductSeries",
+            readonly=True,
             schema=Interface,
             description=_(
                 "The registered project series that this source package "
                 "is based on. This series may be the same as the one that "
-                "earlier versions of this source packages were based on.")))
+                "earlier versions of this source packages were based on."
+            ),
+        )
+    )
 
-    releases = Attribute("The full set of source package releases that "
+    releases = Attribute(
+        "The full set of source package releases that "
         "have been published in this distroseries under this source "
-        "package name. The list should be sorted by version number.")
+        "package name. The list should be sorted by version number."
+    )
 
-    currentrelease = Attribute("""The latest published SourcePackageRelease
+    currentrelease = Attribute(
+        """The latest published SourcePackageRelease
         of a source package with this name in the distribution or
         distroseries, or None if no source package with that name is
-        published in this distroseries.""")
+        published in this distroseries."""
+    )
 
-    direct_packaging = Attribute("Return the Packaging record that is "
+    direct_packaging = Attribute(
+        "Return the Packaging record that is "
         "explicitly for this distroseries and source package name, "
         "or None if such a record does not exist. You should probably "
         "use ISourcePackage.packaging, which will also look through the "
-        "distribution ancestry to find a relevant packaging record.")
+        "distribution ancestry to find a relevant packaging record."
+    )
 
-    packaging = Attribute("The best Packaging record we have for this "
+    packaging = Attribute(
+        "The best Packaging record we have for this "
         "source package. If we have one for this specific distroseries "
         "and sourcepackagename, it will be returned, otherwise we look "
-        "for a match in parent and ubuntu distro seriess.")
+        "for a match in parent and ubuntu distro seriess."
+    )
 
-    published_by_pocket = Attribute("The set of source package releases "
+    published_by_pocket = Attribute(
+        "The set of source package releases "
         "currently published in this distro series, organised by "
         "pocket. The result is a dictionary, with the pocket dbschema "
         "as a key, and a list of {'spr': source package release, "
-        "'component_name': component name} as the value.")
+        "'component_name': component name} as the value."
+    )
 
     linked_branches = Attribute(
         "A mapping of pockets to officially linked branches, ordered by "
-        "pocket enum value.")
+        "pocket enum value."
+    )
 
     development_version = Attribute(
-        "This package on the distro's current series.")
+        "This package on the distro's current series."
+    )
 
     distribution_sourcepackage = Attribute(
-        "The IDistributionSourcePackage for this source package.")
+        "The IDistributionSourcePackage for this source package."
+    )
 
     drivers = Attribute(
-        "The drivers for the distroseries for this source package.")
+        "The drivers for the distroseries for this source package."
+    )
 
-    owner = Attribute(
-        "The owner of the distroseries for this source package.")
+    owner = Attribute("The owner of the distroseries for this source package.")
 
     def __hash__():
         """Sourcepackage hash method.
@@ -196,7 +223,7 @@ class ISourcePackagePublic(IBugTarget, IHasBranches, IHasMergeProposals,
     @operation_parameters(productseries=Reference(schema=IProductSeries))
     @call_with(owner=REQUEST_USER)
     @export_write_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def setPackaging(productseries, owner):
         """Update the existing packaging record, or create a new packaging
         record, that links the source package to the given productseries,
@@ -206,7 +233,7 @@ class ISourcePackagePublic(IBugTarget, IHasBranches, IHasMergeProposals,
     @operation_parameters(productseries=Reference(schema=IProductSeries))
     @call_with(owner=REQUEST_USER)
     @export_write_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def setPackagingReturnSharingDetailPermissions(productseries, owner):
         """Like setPackaging(), but returns getSharingDetailPermissions().
 
@@ -215,7 +242,7 @@ class ISourcePackagePublic(IBugTarget, IHasBranches, IHasMergeProposals,
         """
 
     @export_write_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def deletePackaging():
         """Delete the packaging for this sourcepackage."""
 
@@ -245,8 +272,11 @@ class ISourcePackagePublic(IBugTarget, IHasBranches, IHasMergeProposals,
 
     @operation_parameters(
         pocket=Choice(
-            title=_("Pocket"), required=True,
-            vocabulary=PackagePublishingPocket))
+            title=_("Pocket"),
+            required=True,
+            vocabulary=PackagePublishingPocket,
+        )
+    )
     # Actually returns an IBranch, but we say Interface here to avoid circular
     # imports. Correct interface specified in _schema_circular_imports.
     @operation_returns_entry(Interface)
@@ -260,13 +290,20 @@ class ISourcePackagePublic(IBugTarget, IHasBranches, IHasMergeProposals,
         """
 
     latest_published_component = Object(
-        title='The component in which the package was last published.',
-        schema=IComponent, readonly=True, required=False)
+        title="The component in which the package was last published.",
+        schema=IComponent,
+        readonly=True,
+        required=False,
+    )
 
-    latest_published_component_name = exported(TextLine(
-        title='The name of the component in which the package'
-               ' was last published.',
-        readonly=True, required=False))
+    latest_published_component_name = exported(
+        TextLine(
+            title="The name of the component in which the package"
+            " was last published.",
+            readonly=True,
+            required=False,
+        )
+    )
 
     def get_default_archive(component=None):
         """Get the default archive of this package.
@@ -308,9 +345,12 @@ class ISourcePackageEdit(Interface):
     # _schema_circular_imports.
     @operation_parameters(
         pocket=Choice(
-            title=_("Pocket"), required=True,
-            vocabulary=PackagePublishingPocket),
-        branch=Reference(Interface, title=_("Branch"), required=False))
+            title=_("Pocket"),
+            required=True,
+            vocabulary=PackagePublishingPocket,
+        ),
+        branch=Reference(Interface, title=_("Branch"), required=False),
+    )
     @call_with(registrant=REQUEST_USER)
     @export_write_operation()
     @operation_for_version("beta")
@@ -350,35 +390,49 @@ class SourcePackageFileType(DBEnumeratedType):
     documents the files we know about.
     """
 
-    EBUILD = DBItem(1, """
+    EBUILD = DBItem(
+        1,
+        """
         Ebuild File
 
         This is a Gentoo Ebuild, the core file that Gentoo uses as a source
         package release. Typically this is a shell script that pulls in the
         upstream tarballs, configures them and builds them into the
-        appropriate locations.  """)
+        appropriate locations.  """,
+    )
 
-    SRPM = DBItem(2, """
+    SRPM = DBItem(
+        2,
+        """
         Source RPM
 
         This is a Source RPM, a normal RPM containing the needed source code
         to build binary packages. It would include the Spec file as well as
-        all control and source code files.  """)
+        all control and source code files.  """,
+    )
 
-    DSC = DBItem(3, """
+    DSC = DBItem(
+        3,
+        """
         DSC File
 
         This is a DSC file containing the Ubuntu source package description,
         which in turn lists the orig.tar.gz and diff.tar.gz files used to
-        make up the package.  """)
+        make up the package.  """,
+    )
 
-    ORIG_TARBALL = DBItem(4, """
+    ORIG_TARBALL = DBItem(
+        4,
+        """
         Orig Tarball
 
         This file is an Ubuntu "orig" file, typically an upstream tarball or
-        other lightly-modified upstreamish thing.  """)
+        other lightly-modified upstreamish thing.  """,
+    )
 
-    DIFF = DBItem(5, """
+    DIFF = DBItem(
+        5,
+        """
         Diff File
 
         This is an Ubuntu "diff" file, containing changes that need to be
@@ -386,67 +440,95 @@ class SourcePackageFileType(DBEnumeratedType):
         diff creates additional directories with patches and documentation
         used to build the binary packages for Ubuntu.
 
-        This is only part of the 1.0 source package format.""")
+        This is only part of the 1.0 source package format.""",
+    )
 
-    NATIVE_TARBALL = DBItem(6, """
+    NATIVE_TARBALL = DBItem(
+        6,
+        """
         Native Tarball
 
         This is a tarball, usually of a mixture of Ubuntu and upstream code,
-        used in the build process for this source package.  """)
+        used in the build process for this source package.  """,
+    )
 
-    DEBIAN_TARBALL = DBItem(7, """
+    DEBIAN_TARBALL = DBItem(
+        7,
+        """
         Debian Tarball
 
         This file is an Ubuntu "orig" file, typically an upstream tarball or
         other lightly-modified upstreamish thing.
 
-        This is only part of the 3.0 (quilt) source package format.""")
+        This is only part of the 3.0 (quilt) source package format.""",
+    )
 
-    COMPONENT_ORIG_TARBALL = DBItem(8, """
+    COMPONENT_ORIG_TARBALL = DBItem(
+        8,
+        """
         Component Orig Tarball
 
         This file is an Ubuntu component "orig" file, typically an upstream
         tarball containing a component of the source package.
 
-        This is only part of the 3.0 (quilt) source package format.""")
+        This is only part of the 3.0 (quilt) source package format.""",
+    )
 
-    ORIG_TARBALL_SIGNATURE = DBItem(9, """
+    ORIG_TARBALL_SIGNATURE = DBItem(
+        9,
+        """
         Orig Tarball Signature
 
-        This file is a detached signature for an Ubuntu "orig" file.""")
+        This file is a detached signature for an Ubuntu "orig" file.""",
+    )
 
-    COMPONENT_ORIG_TARBALL_SIGNATURE = DBItem(10, """
+    COMPONENT_ORIG_TARBALL_SIGNATURE = DBItem(
+        10,
+        """
         Component Orig Tarball Signature
 
         This file is a detached signature for an Ubuntu component "orig"
-        file.""")
+        file.""",
+    )
 
-    SDIST = DBItem(11, """
+    SDIST = DBItem(
+        11,
+        """
         Python Source Distribution
 
         This file is a Python source distribution ("sdist").
-        """)
+        """,
+    )
 
-    GO_MODULE_INFO = DBItem(12, """
+    GO_MODULE_INFO = DBItem(
+        12,
+        """
         Go Module Info
 
         This file contains JSON metadata about a Go module, including its
         version.  See https://go.dev/ref/mod#goproxy-protocol for the
         format.
-        """)
+        """,
+    )
 
-    GO_MODULE_MOD = DBItem(13, """
+    GO_MODULE_MOD = DBItem(
+        13,
+        """
         go.mod
 
         This is the `go.mod` file for a Go module.  See
         https://go.dev/ref/mod#go-mod-file for the format.
-        """)
+        """,
+    )
 
-    GO_MODULE_ZIP = DBItem(14, """
+    GO_MODULE_ZIP = DBItem(
+        14,
+        """
         Zipped Go Module
 
         This is the zipped contents of a Go module.
-        """)
+        """,
+    )
 
 
 class SourcePackageType(DBEnumeratedType):
@@ -457,31 +539,43 @@ class SourcePackageType(DBEnumeratedType):
     package format that we understand.
     """
 
-    DPKG = DBItem(1, """
+    DPKG = DBItem(
+        1,
+        """
         The DEB Format
 
         This is the source package format used by Ubuntu, Debian, Linspire
         and similar distributions.
-        """)
+        """,
+    )
 
-    RPM = DBItem(2, """
+    RPM = DBItem(
+        2,
+        """
         The RPM Format
 
         This is the format used by Red Hat, Mandrake, SUSE and other similar
         distributions.
-        """)
+        """,
+    )
 
-    EBUILD = DBItem(3, """
+    EBUILD = DBItem(
+        3,
+        """
         The Ebuild Format
 
         This is the source package format used by Gentoo.
-        """)
+        """,
+    )
 
-    CI_BUILD = DBItem(4, """
+    CI_BUILD = DBItem(
+        4,
+        """
         CI Build
 
         An ad-hoc source package generated by a CI build.
-        """)
+        """,
+    )
 
 
 class SourcePackageUrgency(DBEnumeratedType):
@@ -493,37 +587,49 @@ class SourcePackageUrgency(DBEnumeratedType):
     for source package urgency.
     """
 
-    LOW = DBItem(1, """
+    LOW = DBItem(
+        1,
+        """
         Low Urgency
 
         This source package release does not contain any significant or
         important updates, it might be a cleanup or documentation update
         fixing typos and speling errors, or simply a minor upstream
         update.
-        """)
+        """,
+    )
 
-    MEDIUM = DBItem(2, """
+    MEDIUM = DBItem(
+        2,
+        """
         Medium Urgency
 
         This package contains updates that are worth considering, such
         as new upstream or packaging features, or significantly better
         documentation.
-        """)
+        """,
+    )
 
-    HIGH = DBItem(3, """
+    HIGH = DBItem(
+        3,
+        """
         Very Urgent
 
         This update contains updates that fix security problems or major
         system stability problems with previous releases of the package.
         Administrators should urgently evaluate the package for inclusion
         in their archives.
-        """)
+        """,
+    )
 
-    EMERGENCY = DBItem(4, """
+    EMERGENCY = DBItem(
+        4,
+        """
         Critically Urgent
 
         This release contains critical security or stability fixes that
         affect the integrity of systems using previous releases of the
         source package, and should be installed in the archive as soon
         as possible after appropriate review.
-        """)
+        """,
+    )

@@ -7,23 +7,17 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
-from lp.registry.enums import (
-    EXCLUSIVE_TEAM_POLICY,
-    INCLUSIVE_TEAM_POLICY,
-    )
+from lp.registry.enums import EXCLUSIVE_TEAM_POLICY, INCLUSIVE_TEAM_POLICY
 from lp.registry.errors import InclusiveTeamLinkageError
 from lp.registry.interfaces.projectgroup import IProjectGroupSet
 from lp.testing import (
+    TestCaseWithFactory,
     launchpadlib_for,
     login_celebrity,
     login_person,
     person_logged_in,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+)
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 
 
 class TestProjectGroup(TestCaseWithFactory):
@@ -41,8 +35,10 @@ class TestProjectGroup(TestCaseWithFactory):
         for policy in INCLUSIVE_TEAM_POLICY:
             open_team = self.factory.makeTeam(membership_policy=policy)
             self.assertRaises(
-                InclusiveTeamLinkageError, self.factory.makeProject,
-                owner=open_team)
+                InclusiveTeamLinkageError,
+                self.factory.makeProject,
+                owner=open_team,
+            )
 
     def test_owner_can_be_closed_team(self):
         """Project group owners can be exclusive teams."""
@@ -56,8 +52,10 @@ class TestProjectGroup(TestCaseWithFactory):
         project_group = removeSecurityProxy(self.factory.makeProject())
         owner = self.factory.makePerson()
         product = self.factory.makeProduct(
-            projectgroup=project_group, owner=owner,
-            information_type=InformationType.PROPRIETARY)
+            projectgroup=project_group,
+            owner=owner,
+            information_type=InformationType.PROPRIETARY,
+        )
         self.assertNotIn(product, project_group.getProducts(None))
         outsider = self.factory.makePerson()
         self.assertNotIn(product, project_group.getProducts(outsider))
@@ -72,58 +70,67 @@ class ProjectGroupSearchTestCase(TestCaseWithFactory):
         super().setUp()
         self.person = self.factory.makePerson()
         self.projectgroup1 = self.factory.makeProject(
-            name="zazzle", owner=self.person)
+            name="zazzle", owner=self.person
+        )
         self.projectgroup2 = self.factory.makeProject(
-            name="zazzle-dazzle", owner=self.person)
+            name="zazzle-dazzle", owner=self.person
+        )
         self.projectgroup3 = self.factory.makeProject(
-            name="razzle-dazzle", owner=self.person,
-            description="Giving 110% at all times.")
+            name="razzle-dazzle",
+            owner=self.person,
+            description="Giving 110% at all times.",
+        )
         self.projectgroupset = getUtility(IProjectGroupSet)
         login_person(self.person)
 
     def testSearchNoMatch(self):
         # Search for a string that does not exist.
         results = self.projectgroupset.search(
-            text="Fuzzle", search_products=False)
+            text="Fuzzle", search_products=False
+        )
         self.assertEqual(0, results.count())
 
     def testSearchMatch(self):
         # Search for a matching string.
         results = self.projectgroupset.search(
-            text="zazzle", search_products=False)
+            text="zazzle", search_products=False
+        )
         self.assertEqual(2, results.count())
         self.assertContentEqual(
-            [self.projectgroup1, self.projectgroup2], results)
+            [self.projectgroup1, self.projectgroup2], results
+        )
 
     def testSearchDifferingCaseMatch(self):
         # Search for a matching string with a different case.
         results = self.projectgroupset.search(
-            text="Zazzle", search_products=False)
+            text="Zazzle", search_products=False
+        )
         self.assertEqual(2, results.count())
         self.assertContentEqual(
-            [self.projectgroup1, self.projectgroup2], results)
+            [self.projectgroup1, self.projectgroup2], results
+        )
 
     def testProductSearchNoMatch(self):
         # Search for only project group even if a product matches.
         product = self.factory.makeProduct(
-            name="zazzle-product",
-            title="Hoozah",
-            owner=self.person)
+            name="zazzle-product", title="Hoozah", owner=self.person
+        )
         product.projectgroup = self.projectgroup1
         results = self.projectgroupset.search(
-            text="Hoozah", search_products=False)
+            text="Hoozah", search_products=False
+        )
         self.assertEqual(0, results.count())
 
     def testProductSearchMatch(self):
         # Search for products belonging to a project group.  Note the
         # project group is returned.
         product = self.factory.makeProduct(
-            name="zazzle-product",
-            title="Hoozah",
-            owner=self.person)
+            name="zazzle-product", title="Hoozah", owner=self.person
+        )
         product.projectgroup = self.projectgroup1
         results = self.projectgroupset.search(
-            text="Hoozah", search_products=True)
+            text="Hoozah", search_products=True
+        )
         self.assertEqual(1, results.count())
         self.assertEqual(self.projectgroup1, results[0])
 
@@ -138,14 +145,16 @@ class ProjectGroupSearchTestCase(TestCaseWithFactory):
         # those matched is returned.  This test demonstrates the current
         # wrong behaviour and needs to be fixed when the search is fixed.
         results = self.projectgroupset.search(
-            text="zazzle-dazzle", search_products=True)
+            text="zazzle-dazzle", search_products=True
+        )
         self.assertEqual(0, results.count())
 
     def testProductSearchPercentMatch(self):
         # Search including a percent sign.  The match succeeds and does not
         # raise an exception.
         results = self.projectgroupset.search(
-            text="110%", search_products=False)
+            text="110%", search_products=False
+        )
         self.assertEqual(1, results.count())
         self.assertEqual(self.projectgroup3, results[0])
 
@@ -156,25 +165,23 @@ class TestProjectGroupPermissions(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.pg = self.factory.makeProject(name='my-project-group')
+        self.pg = self.factory.makeProject(name="my-project-group")
 
     def test_attribute_changes_by_admin(self):
-        login_celebrity('admin')
-        self.pg.name = 'new-name'
-        self.pg.owner = self.factory.makePerson(name='project-group-owner')
+        login_celebrity("admin")
+        self.pg.name = "new-name"
+        self.pg.owner = self.factory.makePerson(name="project-group-owner")
 
     def test_attribute_changes_by_registry_admin(self):
-        login_celebrity('registry_experts')
-        new_owner = self.factory.makePerson(name='project-group-owner')
-        self.pg.name = 'new-name'
-        self.assertRaises(
-            Unauthorized, setattr, self.pg, 'owner', new_owner)
+        login_celebrity("registry_experts")
+        new_owner = self.factory.makePerson(name="project-group-owner")
+        self.pg.name = "new-name"
+        self.assertRaises(Unauthorized, setattr, self.pg, "owner", new_owner)
 
     def test_attribute_changes_by_owner(self):
         login_person(self.pg.owner)
-        self.assertRaises(
-            Unauthorized, setattr, self.pg, 'name', 'new-name')
-        self.pg.owner = self.factory.makePerson(name='project-group-owner')
+        self.assertRaises(Unauthorized, setattr, self.pg, "name", "new-name")
+        self.pg.owner = self.factory.makePerson(name="project-group-owner")
 
 
 class TestMilestones(TestCaseWithFactory):
@@ -186,8 +193,10 @@ class TestMilestones(TestCaseWithFactory):
         owner = self.factory.makePerson()
         project_group = self.factory.makeProject()
         product = self.factory.makeProduct(
-            information_type=InformationType.PROPRIETARY, owner=owner,
-            projectgroup=project_group)
+            information_type=InformationType.PROPRIETARY,
+            owner=owner,
+            projectgroup=project_group,
+        )
         milestone = self.factory.makeMilestone(product=product)
         self.assertContentEqual([], project_group.milestones)
         with person_logged_in(owner):
@@ -199,8 +208,10 @@ class TestMilestones(TestCaseWithFactory):
         owner = self.factory.makePerson()
         project_group = self.factory.makeProject()
         product = self.factory.makeProduct(
-            information_type=InformationType.PROPRIETARY, owner=owner,
-            projectgroup=project_group)
+            information_type=InformationType.PROPRIETARY,
+            owner=owner,
+            projectgroup=project_group,
+        )
         milestone = self.factory.makeMilestone(product=product)
         self.assertContentEqual([], project_group.milestones)
         with person_logged_in(owner):
@@ -217,7 +228,7 @@ class TestLaunchpadlibAPI(TestCaseWithFactory):
         # is raised when trying to deactivate a project that has source
         # releases.
         launchpad = launchpadlib_for("test", "salgado", "WRITE_PUBLIC")
-        project = launchpad.projects['evolution']
+        project = launchpad.projects["evolution"]
         project.active = False
         e = self.assertRaises(ClientError, project.lp_save)
 
@@ -225,5 +236,7 @@ class TestLaunchpadlibAPI(TestCaseWithFactory):
         self.assertEqual([], self.oopses)
         self.assertEqual(400, e.response.status)
         self.assertIn(
-            b'This project cannot be deactivated since it is linked to source '
-            b'packages.', e.content)
+            b"This project cannot be deactivated since it is linked to source "
+            b"packages.",
+            e.content,
+        )

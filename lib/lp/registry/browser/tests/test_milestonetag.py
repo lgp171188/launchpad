@@ -17,4 +17,4 @@ class TestProjectMilestoneTagView(TestCaseWithFactory):
         group = self.factory.makeProject()
         url = canonical_url(group) + "/+tags/fab/+index"
         browser = self.getUserBrowser(url=url)
-        self.assertTrue('fab' in browser.contents)
+        self.assertTrue("fab" in browser.contents)

@@ -4,13 +4,10 @@
 """Database class for Featured Projects."""
 
 __all__ = [
-    'FeaturedProject',
-    ]
+    "FeaturedProject",
+]
 
-from storm.locals import (
-    Int,
-    Reference,
-    )
+from storm.locals import Int, Reference
 from zope.interface import implementer
 
 from lp.registry.interfaces.featuredproject import IFeaturedProject
@@ -27,12 +24,12 @@ class FeaturedProject(StormBase):
     page.
     """
 
-    __storm_table__ = 'FeaturedProject'
-    __storm_order__ = ['id']
+    __storm_table__ = "FeaturedProject"
+    __storm_order__ = ["id"]
 
     id = Int(primary=True)
-    pillar_name_id = Int(name='pillar_name', allow_none=False)
-    pillar_name = Reference(pillar_name_id, 'PillarName.id')
+    pillar_name_id = Int(name="pillar_name", allow_none=False)
+    pillar_name = Reference(pillar_name_id, "PillarName.id")
 
     def __init__(self, pillar_name):
         super().__init__()

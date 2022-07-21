@@ -4,25 +4,13 @@
 """Interfaces including and related to ICommercialSubscription."""
 
 __all__ = [
-    'ICommercialSubscription',
-    ]
+    "ICommercialSubscription",
+]
 
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
+from lazr.restful.declarations import exported, exported_as_webservice_entry
 from lazr.restful.fields import ReferenceChoice
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Datetime,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Datetime, Int, Text, TextLine
 
 from lp import _
 from lp.services.fields import PublicPersonChoice
@@ -36,85 +24,107 @@ class ICommercialSubscription(Interface):
     hosting, a subscription needs to be purchased.
     """
 
-    id = Int(title=_('ID'), readonly=True, required=True)
+    id = Int(title=_("ID"), readonly=True, required=True)
 
     product = exported(
         ReferenceChoice(
             title=_("Product which has commercial subscription"),
             required=False,
             readonly=True,
-            vocabulary='Product',
+            vocabulary="Product",
             # Really IProduct, patched in _schema_circular_imports.py.
             schema=Interface,
             description=_(
-                "Project for which this commercial subscription is "
-                "applied.")))
+                "Project for which this commercial subscription is " "applied."
+            ),
+        )
+    )
 
     distribution = exported(
         ReferenceChoice(
             title=_("Distribution which has commercial subscription"),
             required=False,
             readonly=True,
-            vocabulary='Distribution',
+            vocabulary="Distribution",
             # Really IDistribution, patched in _schema_circular_imports.py.
             schema=Interface,
             description=_(
                 "Distribution for which this commercial subscription is "
-                "applied.")))
+                "applied."
+            ),
+        )
+    )
 
     pillar = Attribute(
-        "Pillar for which this commercial subscription is applied.")
+        "Pillar for which this commercial subscription is applied."
+    )
 
     date_created = exported(
         Datetime(
-            title=_('Date Created'),
+            title=_("Date Created"),
             readonly=True,
-            description=_("The date the first subscription was applied.")))
+            description=_("The date the first subscription was applied."),
+        )
+    )
 
     date_last_modified = exported(
         Datetime(
-            title=_('Date Modified'),
-            description=_("The date the subscription was modified.")))
+            title=_("Date Modified"),
+            description=_("The date the subscription was modified."),
+        )
+    )
 
     date_starts = exported(
         Datetime(
-            title=_('Beginning of Subscription'),
-            description=_("The date the subscription starts.")))
+            title=_("Beginning of Subscription"),
+            description=_("The date the subscription starts."),
+        )
+    )
 
     date_expires = exported(
         Datetime(
-            title=_('Expiration Date'),
-            description=_("The expiration date of the subscription.")))
+            title=_("Expiration Date"),
+            description=_("The expiration date of the subscription."),
+        )
+    )
 
     registrant = exported(
         PublicPersonChoice(
-            title=_('Registrant'),
+            title=_("Registrant"),
             required=True,
             readonly=True,
-            vocabulary='ValidPerson',
-            description=_("Person who redeemed the voucher.")))
+            vocabulary="ValidPerson",
+            description=_("Person who redeemed the voucher."),
+        )
+    )
 
     purchaser = exported(
         PublicPersonChoice(
-            title=_('Purchaser'),
+            title=_("Purchaser"),
             required=True,
             readonly=True,
-            vocabulary='ValidPerson',
-            description=_("Person who purchased the voucher.")))
+            vocabulary="ValidPerson",
+            description=_("Person who purchased the voucher."),
+        )
+    )
 
     sales_system_id = TextLine(
-        title=_('Voucher'),
-        description=_("Code to redeem subscription."))
+        title=_("Voucher"), description=_("Code to redeem subscription.")
+    )
 
     whiteboard = Text(
-        title=_("Whiteboard"), required=False,
-        description=_("Notes on this project subscription."))
+        title=_("Whiteboard"),
+        required=False,
+        description=_("Notes on this project subscription."),
+    )
 
     is_active = exported(
         Bool(
-            title=_('Active'),
+            title=_("Active"),
             readonly=True,
-            description=_("Whether this subscription is active.")))
+            description=_("Whether this subscription is active."),
+        )
+    )
 
     def delete():
         """Delete the expired Commercial Subscription.

@@ -12,7 +12,7 @@ import unittest
 from lp.registry.scripts.productreleasefinder.filter import (
     Filter,
     FilterPattern,
-    )
+)
 from lp.registry.scripts.productreleasefinder.hose import Hose
 from lp.testing import reset_logging
 
@@ -139,6 +139,7 @@ class Hose_Urls(unittest.TestCase):
 
     def testSetsUrlProperty(self):
         """Hose constructor sets urls property to reduceWork return value."""
+
         class TestHose(Hose):
             def reduceWork(self, url_list):
                 return "wibble"
@@ -156,24 +157,31 @@ class Hose_ReduceWork(unittest.TestCase):
     def testReducedList(self):
         """Hose.reduceWork returns same list when nothing to do."""
         h = Hose()
-        self.assertEqual(h.reduceWork(["http://localhost/", "file:///usr/"]),
-                         ["http://localhost/", "file:///usr/"])
+        self.assertEqual(
+            h.reduceWork(["http://localhost/", "file:///usr/"]),
+            ["http://localhost/", "file:///usr/"],
+        )
 
     def testReducesList(self):
         """Hose.reduceWork removes children elements from list."""
         h = Hose()
-        self.assertEqual(h.reduceWork(["http://localhost/",
-                                       "http://localhost/foo/bar/",
-                                       "http://localhost/wibble/",
-                                       "file:///usr/"]),
-                         ["http://localhost/", "file:///usr/"])
+        self.assertEqual(
+            h.reduceWork(
+                [
+                    "http://localhost/",
+                    "http://localhost/foo/bar/",
+                    "http://localhost/wibble/",
+                    "file:///usr/",
+                ]
+            ),
+            ["http://localhost/", "file:///usr/"],
+        )
 
 
 class Hose_LimitWalk(unittest.TestCase):
-
     def setUp(self):
         self.release_root = tempfile.mkdtemp()
-        self.release_url = 'file://' + self.release_root
+        self.release_url = "file://" + self.release_root
 
     def tearDown(self):
         shutil.rmtree(self.release_root, ignore_errors=True)
@@ -184,29 +192,34 @@ class Hose_LimitWalk(unittest.TestCase):
         # could contain a match.
 
         # Set up the releases tree:
-        for directory in ['bar',
-                          'foo',
-                          'foo/1.0',
-                          'foo/1.0/source',
-                          'foo/1.0/x64',
-                          'foo/1.5',
-                          'foo/1.5/source',
-                          'foo/2.0',
-                          'foo/2.0/source']:
+        for directory in [
+            "bar",
+            "foo",
+            "foo/1.0",
+            "foo/1.0/source",
+            "foo/1.0/x64",
+            "foo/1.5",
+            "foo/1.5/source",
+            "foo/2.0",
+            "foo/2.0/source",
+        ]:
             os.mkdir(os.path.join(self.release_root, directory))
-        for releasefile in ['foo/1.0/foo-1.0.tar.gz',
-                            'foo/1.0/source/foo-1.0.tar.gz',
-                            'foo/1.0/source/foo-2.0.tar.gz',
-                            'foo/1.0/x64/foo-1.0.tar.gz',
-                            'foo/1.5/source/foo-1.5.tar.gz',
-                            'foo/2.0/source/foo-2.0.tar.gz']:
-            fp = open(os.path.join(self.release_root, releasefile), 'wb')
-            fp.write(b'data')
+        for releasefile in [
+            "foo/1.0/foo-1.0.tar.gz",
+            "foo/1.0/source/foo-1.0.tar.gz",
+            "foo/1.0/source/foo-2.0.tar.gz",
+            "foo/1.0/x64/foo-1.0.tar.gz",
+            "foo/1.5/source/foo-1.5.tar.gz",
+            "foo/2.0/source/foo-2.0.tar.gz",
+        ]:
+            fp = open(os.path.join(self.release_root, releasefile), "wb")
+            fp.write(b"data")
             fp.close()
 
         # Run the hose over the test data
-        pattern = FilterPattern("key", self.release_url +
-                                "/foo/1.*/source/foo-1.*.tar.gz")
+        pattern = FilterPattern(
+            "key", self.release_url + "/foo/1.*/source/foo-1.*.tar.gz"
+        )
         hose = Hose([pattern])
 
         prefix_len = len(self.release_url)
@@ -219,12 +232,17 @@ class Hose_LimitWalk(unittest.TestCase):
                 matched.append(url[prefix_len:])
 
         # Make sure that the correct releases got found.
-        self.assertEqual(sorted(matched),
-                         ['/foo/1.0/source/foo-1.0.tar.gz',
-                          '/foo/1.5/source/foo-1.5.tar.gz'])
+        self.assertEqual(
+            sorted(matched),
+            [
+                "/foo/1.0/source/foo-1.0.tar.gz",
+                "/foo/1.5/source/foo-1.5.tar.gz",
+            ],
+        )
 
         # The only unmatched files that get checked exist in
         # directories that are parents of potential matches.
-        self.assertEqual(sorted(unmatched),
-                         ['/foo/1.0/foo-1.0.tar.gz',
-                          '/foo/1.0/source/foo-2.0.tar.gz'])
+        self.assertEqual(
+            sorted(unmatched),
+            ["/foo/1.0/foo-1.0.tar.gz", "/foo/1.0/source/foo-2.0.tar.gz"],
+        )

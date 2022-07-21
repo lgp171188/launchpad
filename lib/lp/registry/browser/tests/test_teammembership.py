@@ -7,12 +7,12 @@ from zope.component import getUtility
 from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
     TeamMembershipStatus,
-    )
+)
 from lp.testing import (
-    login_celebrity,
     StormStatementRecorder,
     TestCaseWithFactory,
-    )
+    login_celebrity,
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.views import create_view
@@ -24,7 +24,7 @@ class TestTeamMenu(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        login_celebrity('admin')
+        login_celebrity("admin")
         self.membership_set = getUtility(ITeamMembershipSet)
         self.team = self.factory.makeTeam()
         self.member = self.factory.makeTeam()
@@ -50,18 +50,19 @@ class TestTeamMenu(TestCaseWithFactory):
         #   10.Query the rest of the team data for the invalidated
         #      object in order to generate the canonical url.
         self.team.addMember(
-            self.member, self.team.teamowner, force_team_add=True)
+            self.member, self.team.teamowner, force_team_add=True
+        )
         form = {
-            'editactive': 1,
-            'expires': 'never',
-            'deactivate': 'Deactivate',
-            }
+            "editactive": 1,
+            "expires": "never",
+            "deactivate": "Deactivate",
+        }
         membership = self.membership_set.getByPersonAndTeam(
-            self.member, self.team)
-        view = create_view(
-            membership, "+index", method='POST', form=form)
+            self.member, self.team
+        )
+        view = create_view(membership, "+index", method="POST", form=form)
         with StormStatementRecorder() as recorder:
             view.processForm()
-        self.assertEqual('', view.errormessage)
+        self.assertEqual("", view.errormessage)
         self.assertEqual(TeamMembershipStatus.DEACTIVATED, membership.status)
         self.assertThat(recorder, HasQueryCount(LessThan(11)))

@@ -4,20 +4,12 @@
 """Person notifications."""
 
 __all__ = [
-    'IPersonNotification',
-    'IPersonNotificationSet',
-    ]
+    "IPersonNotification",
+    "IPersonNotificationSet",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Datetime,
-    Object,
-    Text,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Datetime, Object, Text, TextLine
 
 from lp import _
 from lp.registry.interfaces.person import IPerson
@@ -28,12 +20,16 @@ class IPersonNotification(Interface):
 
     person = Object(
         title=_("The person who will receive this notification."),
-        schema=IPerson)
+        schema=IPerson,
+    )
     date_emailed = Datetime(
         title=_("Date emailed"),
-        description=_("When was the notification sent? None, if it hasn't"
-                      " been sent yet."),
-        required=False)
+        description=_(
+            "When was the notification sent? None, if it hasn't"
+            " been sent yet."
+        ),
+        required=False,
+    )
     date_created = Datetime(title=_("Date created"))
     body = Text(title=_("Notification body."))
     subject = TextLine(title=_("Notification subject."))
@@ -41,7 +37,8 @@ class IPersonNotification(Interface):
     can_send = Attribute("Can the notification be sent?")
 
     to_addresses = Attribute(
-        "The list of addresses to send the notification to.")
+        "The list of addresses to send the notification to."
+    )
 
     def destroySelf():
         """Delete this notification."""

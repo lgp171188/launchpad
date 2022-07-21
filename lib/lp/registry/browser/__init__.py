@@ -4,42 +4,39 @@
 """Common registry browser helpers and mixins."""
 
 __all__ = [
-    'add_subscribe_link',
-    'BaseRdfView',
-    'get_status_counts',
-    'MilestoneOverlayMixin',
-    'RDFIndexView',
-    'RegistryEditFormView',
-    'RegistryDeleteViewMixin',
-    'StatusCount',
-    ]
+    "add_subscribe_link",
+    "BaseRdfView",
+    "get_status_counts",
+    "MilestoneOverlayMixin",
+    "RDFIndexView",
+    "RegistryEditFormView",
+    "RegistryDeleteViewMixin",
+    "StatusCount",
+]
 
 
-from operator import attrgetter
 import os
+from operator import attrgetter
 
 from storm.store import Store
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.folder import ExportedFolder
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadEditFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadEditFormView, action
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.blueprints.interfaces.specificationworkitem import (
     ISpecificationWorkItemSet,
-    )
+)
 from lp.bugs.interfaces.bugtask import IBugTaskSet
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.registry.interfaces.productseries import IProductSeries
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.webapp.publisher import (
-    canonical_url,
     DataDownloadView,
     LaunchpadView,
-    )
+    canonical_url,
+)
 
 
 class StatusCount:
@@ -55,7 +52,7 @@ class StatusCount:
         self.count = count
 
 
-def get_status_counts(workitems, status_attr, key='sortkey'):
+def get_status_counts(workitems, status_attr, key="sortkey"):
     """Return a list StatusCounts summarising the workitem."""
     statuses = {}
     for workitem in workitems:
@@ -68,12 +65,13 @@ def get_status_counts(workitems, status_attr, key='sortkey'):
         statuses[status] += 1
     return [
         StatusCount(status, statuses[status])
-        for status in sorted(statuses, key=attrgetter(key))]
+        for status in sorted(statuses, key=attrgetter(key))
+    ]
 
 
 def add_subscribe_link(links):
     """Add the subscription-related links."""
-    links.extend(['subscribe_to_bug_mail', 'edit_bug_mail'])
+    links.extend(["subscribe_to_bug_mail", "edit_bug_mail"])
 
 
 class MilestoneOverlayMixin:
@@ -84,7 +82,7 @@ class MilestoneOverlayMixin:
     @property
     def milestone_form_uri(self):
         """URI for form displayed by the formoverlay widget."""
-        return canonical_url(self.context) + '/+addmilestone/++form++'
+        return canonical_url(self.context) + "/+addmilestone/++form++"
 
     @property
     def series_api_uri(self):
@@ -95,11 +93,11 @@ class MilestoneOverlayMixin:
     def milestone_table_class(self):
         """The milestone table will be hidden if there are no milestones."""
         if self.context.has_milestones:
-            return 'listing'
+            return "listing"
         else:
             # The page can remove the 'hidden' class to make the table
             # visible.
-            return 'listing hidden'
+            return "listing hidden"
 
     @property
     def milestone_row_uri_template(self):
@@ -108,17 +106,18 @@ class MilestoneOverlayMixin:
         else:
             pillar = self.context.distribution
         uri = canonical_url(pillar, path_only_if_possible=True)
-        return '%s/+milestone/{name}/+productseries-table-row' % uri
+        return "%s/+milestone/{name}/+productseries-table-row" % uri
 
     @property
     def register_milestone_script(self):
         """Return the script to enable milestone creation via AJAX."""
         uris = {
-            'series_api_uri': self.series_api_uri,
-            'milestone_form_uri': self.milestone_form_uri,
-            'milestone_row_uri': self.milestone_row_uri_template,
-            }
-        return """
+            "series_api_uri": self.series_api_uri,
+            "milestone_form_uri": self.milestone_form_uri,
+            "milestone_row_uri": self.milestone_row_uri_template,
+        }
+        return (
+            """
             LPJS.use(
                 'node', 'lp.registry.milestoneoverlay',
                 'lp.registry.milestonetable',
@@ -148,7 +147,9 @@ class MilestoneOverlayMixin:
                     Y.lp.registry.milestonetable.setup(table_config);
                 });
             });
-            """ % uris
+            """
+            % uris
+        )
 
 
 class RegistryDeleteViewMixin:
@@ -166,8 +167,8 @@ class RegistryDeleteViewMixin:
             params.setProductSeries(target)
         else:
             params = BugTaskSearchParams(
-                milestone=target, user=self.user,
-                ignore_privacy=ignore_privacy)
+                milestone=target, user=self.user, ignore_privacy=ignore_privacy
+            )
         bugtasks = getUtility(IBugTaskSet).search(params)
         return list(bugtasks)
 
@@ -221,9 +222,12 @@ class RegistryDeleteViewMixin:
         # Series are not deleted because some objects like translations are
         # problematic. The series is assigned to obsolete-junk. They must be
         # renamed to avoid name collision.
-        date_time = series.datecreated.strftime('%Y%m%d-%H%M%S')
-        series.name = '%s-%s-%s' % (
-            series.product.name, series.name, date_time)
+        date_time = series.datecreated.strftime("%Y%m%d-%H%M%S")
+        series.name = "%s-%s-%s" % (
+            series.product.name,
+            series.name,
+            date_time,
+        )
         series.status = SeriesStatus.OBSOLETE
         series.releasefileglob = None
         series.product = getUtility(ILaunchpadCelebrities).obsolete_junk
@@ -268,7 +272,7 @@ class RegistryEditFormView(LaunchpadEditFormView):
 
     next_url = cancel_url
 
-    @action("Change", name='change')
+    @action("Change", name="change")
     def change_action(self, action, data):
         self.updateContextFromData(data)
 
@@ -290,16 +294,19 @@ class BaseRdfView(DataDownloadView):
         As a side-effect, HTTP headers are set for the mime type
         and filename for download."""
         unicodedata = self.template()
-        encodeddata = unicodedata.encode('utf-8')
+        encodeddata = unicodedata.encode("utf-8")
         return encodeddata
 
 
 class RDFIndexView(LaunchpadView):
     """View for /rdf page."""
+
     page_title = label = "Launchpad RDF"
 
 
 class RDFFolder(ExportedFolder):
     """Export the Launchpad RDF schemas."""
+
     folder = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), '../rdfspec/')
+        os.path.dirname(os.path.realpath(__file__)), "../rdfspec/"
+    )

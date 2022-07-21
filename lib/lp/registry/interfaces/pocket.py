@@ -9,15 +9,12 @@ is.
 """
 
 __all__ = [
-    'PackagePublishingPocket',
-    'pocketsuffix',
-    'suffixpocket',
-    ]
+    "PackagePublishingPocket",
+    "pocketsuffix",
+    "suffixpocket",
+]
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 
 
 class PackagePublishingPocket(DBEnumeratedType):
@@ -30,43 +27,58 @@ class PackagePublishingPocket(DBEnumeratedType):
     tools.
     """
 
-    RELEASE = DBItem(0, """
+    RELEASE = DBItem(
+        0,
+        """
         Release
 
         The package versions that were published
         when the distribution release was made.
-        """)
+        """,
+    )
 
-    SECURITY = DBItem(10, """
+    SECURITY = DBItem(
+        10,
+        """
         Security
 
         Package versions containing security fixes for the released
         distribution.
         It is a good idea to have security updates turned on for your system.
-        """)
+        """,
+    )
 
-    UPDATES = DBItem(20, """
+    UPDATES = DBItem(
+        20,
+        """
         Updates
 
         Package versions including new features after the distribution
         release has been made.
         Updates are usually turned on by default after a fresh install.
-        """)
+        """,
+    )
 
-    PROPOSED = DBItem(30, """
+    PROPOSED = DBItem(
+        30,
+        """
         Proposed
 
         Package versions including new functions that should be widely
         tested, but that are not yet part of a default installation.
         People who "live on the edge" will test these packages before they
         are accepted for use in "Updates".
-        """)
+        """,
+    )
 
-    BACKPORTS = DBItem(40, """
+    BACKPORTS = DBItem(
+        40,
+        """
         Backports
 
         Backported packages.
-        """)
+        """,
+    )
 
 
 pocketsuffix = {

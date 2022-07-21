@@ -12,14 +12,16 @@ import os
 import re
 import stat
 
-
 # Regular expressions make things easy
-patched_ext = re.compile(r'([._+-](orig|old|new|patch|patched)|~)$',
-                         re.IGNORECASE)
-version_ext = re.compile(r'[_-]v?([0-9][0-9a-z:.+]*'
-                         r'(?:[-_](?:pre|rc|alpha|beta|test)'
-                         r'(?:[0-9:.+][0-9a-z:.+]*|(?![a-z])))?)',
-                         re.IGNORECASE)
+patched_ext = re.compile(
+    r"([._+-](orig|old|new|patch|patched)|~)$", re.IGNORECASE
+)
+version_ext = re.compile(
+    r"[_-]v?([0-9][0-9a-z:.+]*"
+    r"(?:[-_](?:pre|rc|alpha|beta|test)"
+    r"(?:[0-9:.+][0-9a-z:.+]*|(?![a-z])))?)",
+    re.IGNORECASE,
+)
 
 
 class FileFormat:
@@ -59,25 +61,25 @@ class Extensions:
     """
 
     FORMAT = {
-        ".tar":    (FileFormat.TAR,),
-        ".patch":  (FileFormat.PATCH,),
+        ".tar": (FileFormat.TAR,),
+        ".patch": (FileFormat.PATCH,),
         ".dpatch": (FileFormat.PATCH,),
-        ".diff":   (FileFormat.PATCH,),
-        ".zip":    (FileFormat.ZIP,),
-        ".jar":    (FileFormat.ZIP,),
-        }
+        ".diff": (FileFormat.PATCH,),
+        ".zip": (FileFormat.ZIP,),
+        ".jar": (FileFormat.ZIP,),
+    }
 
     COMPRESS = {
-        ".gz":  (Compression.GZIP,),
+        ".gz": (Compression.GZIP,),
         ".bz2": (Compression.BZIP2,),
-        ".Z":   (Compression.COMPRESS,),
-        }
+        ".Z": (Compression.COMPRESS,),
+    }
 
     BOTH = {
-        ".tgz":  (FileFormat.TAR, Compression.GZIP),
-        ".tbz":  (FileFormat.TAR, Compression.BZIP2),
+        ".tgz": (FileFormat.TAR, Compression.GZIP),
+        ".tbz": (FileFormat.TAR, Compression.BZIP2),
         ".tbz2": (FileFormat.TAR, Compression.BZIP2),
-        }
+    }
 
 
 class Filenames:
@@ -101,8 +103,8 @@ class Directories:
     FORMAT = {
         "tarballs": FileFormat.TAR,
         "tarfiles": FileFormat.TAR,
-        "patches":  FileFormat.PATCH,
-        }
+        "patches": FileFormat.PATCH,
+    }
 
     IGNORE = ["{arch}", ".arch-ids", "CVS", "RCS", ".svn", "_darcs", ".bzr"]
 
@@ -189,6 +191,7 @@ class PathBase:
             del self._stat
         except AttributeError:
             pass
+
     stat = property(stat, fdel=_del_stat)
 
     @property
@@ -344,7 +347,7 @@ def match_ext(name, extensions):
     """
     for ext in sorted(extensions, key=len, reverse=True):
         if name.endswith(ext):
-            return (name[:-len(ext)], ext) + extensions[ext]
+            return (name[: -len(ext)], ext) + extensions[ext]
     else:
         return None
 
@@ -404,7 +407,7 @@ def split_version(name):
     match = version_ext.search(name)
     if match is not None:
         split = match.start()
-        return (name[:split], name[split + 1:])
+        return (name[:split], name[split + 1 :])
     else:
         return (name, None)
 
@@ -453,7 +456,7 @@ def subdir(root, path):
     if not under(root, path):
         raise ValueError("path must start with root")
 
-    return relative(path[len(root):])
+    return relative(path[len(root) :])
 
 
 def canon(path):
@@ -465,8 +468,9 @@ def canon(path):
     (path, base) = os.path.split(os.path.abspath(path))
     while path != "/":
         if os.path.islink(path):
-            path = os.path.normpath(os.path.join(os.path.dirname(path),
-                                                 os.readlink(path)))
+            path = os.path.normpath(
+                os.path.join(os.path.dirname(path), os.readlink(path))
+            )
         else:
             base = os.path.join(os.path.basename(path), base)
             path = os.path.dirname(path)

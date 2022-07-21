@@ -17,9 +17,9 @@ from lp.registry.model.announcement import Announcement
 from lp.services.database.interfaces import IStore
 from lp.testing import (
     BrowserTestCase,
-    normalize_whitespace,
     TestCaseWithFactory,
-    )
+    normalize_whitespace,
+)
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.views import create_initialized_view
 
@@ -37,27 +37,31 @@ class TestAnnouncement(TestCaseWithFactory):
         [reg_para] = root.cssselect("p.registered")
         self.assertEqual(
             "Written for Foo by Bar Baz",
-            normalize_whitespace(reg_para.text_content()))
+            normalize_whitespace(reg_para.text_content()),
+        )
 
     def test_announcement_info_with_publication_date(self):
         product = self.factory.makeProduct(displayname="Foo")
         announcer = self.factory.makePerson(displayname="Bar Baz")
         announced = datetime(2007, 1, 12, tzinfo=utc)
         announcement = product.announce(
-            announcer, "Hello World", publication_date=announced)
+            announcer, "Hello World", publication_date=announced
+        )
         view = create_initialized_view(announcement, "+index")
         root = html.fromstring(view())
         [reg_para] = root.cssselect("p.registered")
         self.assertEqual(
             "Written for Foo by Bar Baz on 2007-01-12",
-            normalize_whitespace(reg_para.text_content()))
+            normalize_whitespace(reg_para.text_content()),
+        )
 
 
 class TestAnnouncementPage(BrowserTestCase):
     layer = LaunchpadFunctionalLayer
 
     def assertHidesUnwantedAnnouncements(
-            self, context, view_name=None, user=None):
+        self, context, view_name=None, user=None
+    ):
         """
         Makes sure that unwanted announcements are not shown for the given
         context.
@@ -80,29 +84,42 @@ class TestAnnouncementPage(BrowserTestCase):
 
         real_user = self.factory.makePerson(karma=500)
         team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.MODERATED)
+            membership_policy=TeamMembershipPolicy.MODERATED
+        )
 
         if IProjectGroup.providedBy(context):
             project_group = context
         else:
             project_group = None
         first_product = self.factory.makeProduct(
-            owner=real_user, projectgroup=project_group)
+            owner=real_user, projectgroup=project_group
+        )
         first_announcement = first_product.announce(
-            real_user, "Some real announcement", "Yep, announced here",
-            publication_date=datetime.now(utc))
+            real_user,
+            "Some real announcement",
+            "Yep, announced here",
+            publication_date=datetime.now(utc),
+        )
 
         second_product = self.factory.makeProduct(
-            owner=team, projectgroup=project_group)
+            owner=team, projectgroup=project_group
+        )
         second_announcement = second_product.announce(
-            team, "Other real announcement", "Yep too, announced here",
-            publication_date=datetime.now(utc))
+            team,
+            "Other real announcement",
+            "Yep too, announced here",
+            publication_date=datetime.now(utc),
+        )
 
         inactive_product = self.factory.makeProduct(
-            owner=real_user, projectgroup=project_group)
+            owner=real_user, projectgroup=project_group
+        )
         inactive_announcement = inactive_product.announce(
-            real_user, "Do not show inactive, please", "Nope, not here",
-            publication_date=datetime.now(utc))
+            real_user,
+            "Do not show inactive, please",
+            "Nope, not here",
+            publication_date=datetime.now(utc),
+        )
         removeSecurityProxy(inactive_product).active = False
 
         browser = self.getViewBrowser(context, view_name, user=user)

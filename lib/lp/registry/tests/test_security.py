@@ -11,14 +11,14 @@ from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
     TeamMembershipStatus,
-    )
+)
 from lp.registry.security import PublicOrPrivateTeamsExistence
 from lp.testing import (
+    TestCaseWithFactory,
     admin_logged_in,
     person_logged_in,
     record_two_runs,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 

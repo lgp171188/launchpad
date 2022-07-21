@@ -4,37 +4,23 @@
 """Jobs classes to update products and send notifications."""
 
 __all__ = [
-    'ProductJob',
-    'ProductJobManager',
-    'CommercialExpiredJob',
-    'SevenDayCommercialExpirationJob',
-    'ThirtyDayCommercialExpirationJob',
-    ]
+    "ProductJob",
+    "ProductJobManager",
+    "CommercialExpiredJob",
+    "SevenDayCommercialExpirationJob",
+    "ThirtyDayCommercialExpirationJob",
+]
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
-from lazr.delegates import delegate_to
-from pytz import utc
 import simplejson
 import six
-from storm.expr import (
-    And,
-    Not,
-    Select,
-    )
-from storm.locals import (
-    Int,
-    Reference,
-    Unicode,
-    )
+from lazr.delegates import delegate_to
+from pytz import utc
+from storm.expr import And, Not, Select
+from storm.locals import Int, Reference, Unicode
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -42,12 +28,9 @@ from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
     ProductJobType,
-    )
+)
 from lp.registry.interfaces.person import IPersonSet
-from lp.registry.interfaces.product import (
-    IProduct,
-    License,
-    )
+from lp.registry.interfaces.product import IProduct, License
 from lp.registry.interfaces.productjob import (
     ICommercialExpiredJob,
     ICommercialExpiredJobSource,
@@ -59,16 +42,13 @@ from lp.registry.interfaces.productjob import (
     ISevenDayCommercialExpirationJobSource,
     IThirtyDayCommercialExpirationJob,
     IThirtyDayCommercialExpirationJobSource,
-    )
+)
 from lp.registry.model.commercialsubscription import CommercialSubscription
 from lp.registry.model.product import Product
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import Job
 from lp.services.job.runner import BaseRunnableJob
@@ -79,7 +59,7 @@ from lp.services.mail.sendmail import (
     format_address,
     format_address_for_person,
     simple_sendmail,
-    )
+)
 from lp.services.propertycache import cachedproperty
 from lp.services.scripts import log
 from lp.services.webapp.publisher import canonical_url
@@ -100,9 +80,11 @@ class ProductJobManager:
         total = 0
         total += self.createDailyJobs(CommercialExpiredJob, reviewer)
         total += self.createDailyJobs(
-            SevenDayCommercialExpirationJob, reviewer)
+            SevenDayCommercialExpirationJob, reviewer
+        )
         total += self.createDailyJobs(
-            ThirtyDayCommercialExpirationJob, reviewer)
+            ThirtyDayCommercialExpirationJob, reviewer
+        )
         return total
 
     def createDailyJobs(self, job_class, reviewer):
@@ -115,8 +97,9 @@ class ProductJobManager:
         total = 0
         for product in job_class.getExpiringProducts():
             self.logger.debug(
-                'Creating a %s for %s' %
-                (job_class.__class__.__name__, product.name))
+                "Creating a %s for %s"
+                % (job_class.__class__.__name__, product.name)
+            )
             job_class.create(product, reviewer)
             total += 1
         return total
@@ -126,19 +109,19 @@ class ProductJobManager:
 class ProductJob(StormBase):
     """Base class for product jobs."""
 
-    __storm_table__ = 'ProductJob'
+    __storm_table__ = "ProductJob"
 
     id = Int(primary=True)
 
-    job_id = Int(name='job')
+    job_id = Int(name="job")
     job = Reference(job_id, Job.id)
 
-    product_id = Int(name='product')
+    product_id = Int(name="product")
     product = Reference(product_id, Product.id)
 
     job_type = DBEnum(enum=ProductJobType, allow_none=False)
 
-    _json_data = Unicode('json_data')
+    _json_data = Unicode("json_data")
 
     @property
     def metadata(self):
@@ -177,7 +160,8 @@ class ProductJobDerived(BaseRunnableJob):
     def __repr__(self):
         return (
             "<{self.__class__.__name__} for {self.product.name} "
-            "status={self.job.status}>").format(self=self)
+            "status={self.job.status}>"
+        ).format(self=self)
 
     @classmethod
     def create(cls, product, metadata):
@@ -185,7 +169,8 @@ class ProductJobDerived(BaseRunnableJob):
         if not IProduct.providedBy(product):
             raise TypeError("Product must be an IProduct: %s" % repr(product))
         job = ProductJob(
-            product=product, job_type=cls.class_job_type, metadata=metadata)
+            product=product, job_type=cls.class_job_type, metadata=metadata
+        )
         return cls(job)
 
     @classmethod
@@ -194,16 +179,14 @@ class ProductJobDerived(BaseRunnableJob):
         conditions = [
             ProductJob.job_id == Job.id,
             ProductJob.product == product.id,
-            ]
+        ]
         if date_since is not None:
-            conditions.append(
-                Job.date_created >= date_since)
+            conditions.append(Job.date_created >= date_since)
         if job_type is not None:
-            conditions.append(
-                ProductJob.job_type == job_type)
+            conditions.append(ProductJob.job_type == job_type)
         return DecoratedResultSet(
-            IStore(ProductJob).find(
-                ProductJob, *conditions), cls)
+            IStore(ProductJob).find(ProductJob, *conditions), cls
+        )
 
     @classmethod
     def iterReady(cls):
@@ -211,8 +194,11 @@ class ProductJobDerived(BaseRunnableJob):
         store = IMasterStore(ProductJob)
         jobs = store.find(
             ProductJob,
-            And(ProductJob.job_type == cls.class_job_type,
-                ProductJob.job_id.is_in(Job.ready_jobs)))
+            And(
+                ProductJob.job_type == cls.class_job_type,
+                ProductJob.job_id.is_in(Job.ready_jobs),
+            ),
+        )
         return (cls(job) for job in jobs)
 
     @property
@@ -222,9 +208,11 @@ class ProductJobDerived(BaseRunnableJob):
     def getOopsVars(self):
         """See `IRunnableJob`."""
         vars = BaseRunnableJob.getOopsVars(self)
-        vars.extend([
-            ('product', self.context.product.name),
-            ])
+        vars.extend(
+            [
+                ("product", self.context.product.name),
+            ]
+        )
         return vars
 
 
@@ -232,45 +220,52 @@ class ProductJobDerived(BaseRunnableJob):
 @provider(IProductNotificationJobSource)
 class ProductNotificationJob(ProductJobDerived):
     """A Job that send an email to the product maintainer."""
+
     class_job_type = ProductJobType.REVIEWER_NOTIFICATION
 
     @classmethod
-    def create(cls, product, email_template_name,
-               subject, reviewer, reply_to_commercial=False):
+    def create(
+        cls,
+        product,
+        email_template_name,
+        subject,
+        reviewer,
+        reply_to_commercial=False,
+    ):
         """See `IProductNotificationJob`."""
         metadata = {
-            'email_template_name': email_template_name,
-            'subject': subject,
-            'reviewer_id': reviewer.id,
-            'reply_to_commercial': reply_to_commercial,
-            }
+            "email_template_name": email_template_name,
+            "subject": subject,
+            "reviewer_id": reviewer.id,
+            "reply_to_commercial": reply_to_commercial,
+        }
         return super().create(product, metadata)
 
     @property
     def subject(self):
         """See `IProductNotificationJob`."""
-        return self.metadata['subject']
+        return self.metadata["subject"]
 
     @property
     def email_template_name(self):
         """See `IProductNotificationJob`."""
-        return self.metadata['email_template_name']
+        return self.metadata["email_template_name"]
 
     @cachedproperty
     def reviewer(self):
         """See `IProductNotificationJob`."""
-        return getUtility(IPersonSet).get(self.metadata['reviewer_id'])
+        return getUtility(IPersonSet).get(self.metadata["reviewer_id"])
 
     @property
     def reply_to_commercial(self):
         """See `IProductNotificationJob`."""
-        return self.metadata['reply_to_commercial']
+        return self.metadata["reply_to_commercial"]
 
     @cachedproperty
     def reply_to(self):
         """See `IProductNotificationJob`."""
         if self.reply_to_commercial:
-            return 'Commercial <commercial@launchpad.net>'
+            return "Commercial <commercial@launchpad.net>"
         return None
 
     @cachedproperty
@@ -285,9 +280,14 @@ class ProductNotificationJob(ProductJobDerived):
             role = "the maintainer"
             users = maintainer
         reason = (
-            "You received this notification because you are %s of %s.\n%s" %
-            (role, self.product.displayname, self.message_data['product_url']))
-        header = 'Maintainer'
+            "You received this notification because you are %s of %s.\n%s"
+            % (
+                role,
+                self.product.displayname,
+                self.message_data["product_url"],
+            )
+        )
+        header = "Maintainer"
         notification_set = NotificationRecipientSet()
         notification_set.add(users, reason, header)
         return notification_set
@@ -296,12 +296,12 @@ class ProductNotificationJob(ProductJobDerived):
     def message_data(self):
         """See `IProductNotificationJob`."""
         return {
-            'product_name': self.product.name,
-            'product_displayname': self.product.displayname,
-            'product_url': canonical_url(self.product),
-            'reviewer_name': self.reviewer.name,
-            'reviewer_displayname': self.reviewer.displayname,
-            }
+            "product_name": self.product.name,
+            "product_displayname": self.product.displayname,
+            "product_url": canonical_url(self.product),
+            "reviewer_name": self.reviewer.name,
+            "reviewer_displayname": self.reviewer.displayname,
+        }
 
     def getErrorRecipients(self):
         """See `BaseRunnableJob`."""
@@ -312,57 +312,69 @@ class ProductNotificationJob(ProductJobDerived):
         reason, rationale = self.recipients.getReason(address)
         maintainer = self.recipients._emailToPerson[address]
         message_data = dict(self.message_data)
-        message_data['user_name'] = maintainer.name
-        message_data['user_displayname'] = maintainer.displayname
+        message_data["user_name"] = maintainer.name
+        message_data["user_displayname"] = maintainer.displayname
         raw_body = email_template % message_data
-        raw_body += '\n\n-- \n%s' % reason
+        raw_body += "\n\n-- \n%s" % reason
         body = MailWrapper().format(raw_body, force_wrap=True)
         headers = {
-            'X-Launchpad-Project':
-                '%(product_displayname)s (%(product_name)s)' % message_data,
-            'X-Launchpad-Message-Rationale': rationale,
-            'X-Launchpad-Message-For': self.product.owner.name,
-            }
+            "X-Launchpad-Project": "%(product_displayname)s (%(product_name)s)"
+            % message_data,
+            "X-Launchpad-Message-Rationale": rationale,
+            "X-Launchpad-Message-For": self.product.owner.name,
+        }
         if reply_to is not None:
-            headers['Reply-To'] = reply_to
+            headers["Reply-To"] = reply_to
         return body, headers
 
     def sendEmailToMaintainer(self, template_name, subject, from_address):
         """See `IProductNotificationJob`."""
         email_template = get_email_template(
-            "%s.txt" % template_name, app='registry')
+            "%s.txt" % template_name, app="registry"
+        )
         for address in self.recipients.getEmails():
             body, headers = self.getBodyAndHeaders(
-                email_template, address, self.reply_to)
+                email_template, address, self.reply_to
+            )
             simple_sendmail(from_address, address, subject, body, headers)
-        log.debug("%s has sent email to the maintainer of %s.",
-            self.log_name, self.product.name)
+        log.debug(
+            "%s has sent email to the maintainer of %s.",
+            self.log_name,
+            self.product.name,
+        )
 
     def run(self):
         """See `BaseRunnableJob`.
 
-         Subclasses that are updating products may make changes to the product
-         before or after calling this class' run() method.
+        Subclasses that are updating products may make changes to the product
+        before or after calling this class' run() method.
         """
         from_address = format_address(
-            'Launchpad', config.canonical.noreply_from_address)
+            "Launchpad", config.canonical.noreply_from_address
+        )
         self.sendEmailToMaintainer(
-            self.email_template_name, self.subject, from_address)
+            self.email_template_name, self.subject, from_address
+        )
 
 
 class CommericialExpirationMixin:
 
-    _email_template_name = 'product-commercial-subscription-expiration'
+    _email_template_name = "product-commercial-subscription-expiration"
     _subject_template = (
-        'The commercial subscription for %s in Launchpad is expiring')
+        "The commercial subscription for %s in Launchpad is expiring"
+    )
 
     @classmethod
     def create(cls, product, reviewer):
         """See `ExpirationSourceMixin`."""
         subject = cls._subject_template % product.name
         return super().create(
-            product, cls._email_template_name, subject, reviewer,
-            reply_to_commercial=True)
+            product,
+            cls._email_template_name,
+            subject,
+            reviewer,
+            reply_to_commercial=True,
+        )
 
     @classmethod
     def getExpiringProducts(cls):
@@ -372,16 +384,22 @@ class CommericialExpirationMixin:
             ProductJob.job_type == cls.class_job_type,
             ProductJob.job_id == Job.id,
             Job.date_created > past_date,
-            )
+        )
         conditions = [
             Product.active == True,
             CommercialSubscription.product == Product.id,
             CommercialSubscription.date_expires >= earliest_date,
             CommercialSubscription.date_expires < latest_date,
-            Not(Product.id.is_in(Select(
-                ProductJob.product_id,
-                tables=[ProductJob, Job], where=recent_jobs))),
-            ]
+            Not(
+                Product.id.is_in(
+                    Select(
+                        ProductJob.product_id,
+                        tables=[ProductJob, Job],
+                        where=recent_jobs,
+                    )
+                )
+            ),
+        ]
         return IStore(Product).find(Product, *conditions)
 
     @cachedproperty
@@ -391,17 +409,19 @@ class CommericialExpirationMixin:
         commercial_subscription = self.product.commercial_subscription
         iso_date = commercial_subscription.date_expires.date().isoformat()
         extra_data = {
-            'commercial_use_expiration': iso_date,
-            }
+            "commercial_use_expiration": iso_date,
+        }
         data.update(extra_data)
         return data
 
 
 @implementer(ISevenDayCommercialExpirationJob)
 @provider(ISevenDayCommercialExpirationJobSource)
-class SevenDayCommercialExpirationJob(CommericialExpirationMixin,
-                                      ProductNotificationJob):
+class SevenDayCommercialExpirationJob(
+    CommericialExpirationMixin, ProductNotificationJob
+):
     """A job that sends an email about an expiring commercial subscription."""
+
     class_job_type = ProductJobType.COMMERCIAL_EXPIRATION_7_DAYS
 
     @staticmethod
@@ -414,9 +434,11 @@ class SevenDayCommercialExpirationJob(CommericialExpirationMixin,
 
 @implementer(IThirtyDayCommercialExpirationJob)
 @provider(IThirtyDayCommercialExpirationJobSource)
-class ThirtyDayCommercialExpirationJob(CommericialExpirationMixin,
-                                       ProductNotificationJob):
+class ThirtyDayCommercialExpirationJob(
+    CommericialExpirationMixin, ProductNotificationJob
+):
     """A job that sends an email about an expiring commercial subscription."""
+
     class_job_type = ProductJobType.COMMERCIAL_EXPIRATION_30_DAYS
 
     @staticmethod
@@ -433,11 +455,13 @@ class ThirtyDayCommercialExpirationJob(CommericialExpirationMixin,
 @provider(ICommercialExpiredJobSource)
 class CommercialExpiredJob(CommericialExpirationMixin, ProductNotificationJob):
     """A job that sends an email about an expired commercial subscription."""
+
     class_job_type = ProductJobType.COMMERCIAL_EXPIRED
 
-    _email_template_name = ''  # email_template_name does not need this.
+    _email_template_name = ""  # email_template_name does not need this.
     _subject_template = (
-        'The commercial subscription for %s in Launchpad expired')
+        "The commercial subscription for %s in Launchpad expired"
+    )
 
     @staticmethod
     def _get_expiration_dates():
@@ -458,9 +482,9 @@ class CommercialExpiredJob(CommericialExpirationMixin, ProductNotificationJob):
         The email template is determined by the product's licences.
         """
         if self._is_proprietary:
-            return 'product-commercial-subscription-expired-proprietary'
+            return "product-commercial-subscription-expired-proprietary"
         else:
-            return 'product-commercial-subscription-expired-open-source'
+            return "product-commercial-subscription-expired-open-source"
 
     def _deactivateCommercialFeatures(self):
         """Deactivate the project or just the commercial features it uses."""

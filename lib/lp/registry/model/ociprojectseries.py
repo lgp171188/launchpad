@@ -4,16 +4,11 @@
 """Model implementing `IOCIProjectSeries`."""
 
 __all__ = [
-    'OCIProjectSeries',
-    ]
+    "OCIProjectSeries",
+]
 
 import pytz
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    Unicode,
-    )
+from storm.locals import DateTime, Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.app.validators.name import valid_name
@@ -34,7 +29,7 @@ class OCIProjectSeries(StormBase):
 
     id = Int(primary=True)
 
-    oci_project_id = Int(name='ociproject', allow_none=False)
+    oci_project_id = Int(name="ociproject", allow_none=False)
     oci_project = Reference(oci_project_id, "OCIProject.id")
 
     name = Unicode(name="name", allow_none=False)
@@ -42,19 +37,27 @@ class OCIProjectSeries(StormBase):
     summary = Unicode(name="summary", allow_none=False)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False)
+        name="date_created", tzinfo=pytz.UTC, allow_none=False
+    )
 
-    registrant_id = Int(name='registrant', allow_none=False)
+    registrant_id = Int(name="registrant", allow_none=False)
     registrant = Reference(registrant_id, "Person.id")
 
-    status = DBEnum(
-        name='status', allow_none=False, enum=SeriesStatus)
+    status = DBEnum(name="status", allow_none=False, enum=SeriesStatus)
 
-    def __init__(self, oci_project, name, summary,
-                 registrant, status, date_created=DEFAULT):
+    def __init__(
+        self,
+        oci_project,
+        name,
+        summary,
+        registrant,
+        status,
+        date_created=DEFAULT,
+    ):
         if not valid_name(name):
             raise InvalidName(
-                "%s is not a valid name for an OCI project series." % name)
+                "%s is not a valid name for an OCI project series." % name
+            )
         self.name = name
         self.oci_project = oci_project
         self.summary = summary

@@ -4,23 +4,20 @@
 """Interfaces for pillar and artifact access policies."""
 
 __all__ = [
-    'IAccessArtifact',
-    'IAccessArtifactGrant',
-    'IAccessArtifactGrantSource',
-    'IAccessArtifactSource',
-    'IAccessPolicy',
-    'IAccessPolicyArtifact',
-    'IAccessPolicyArtifactSource',
-    'IAccessPolicyGrant',
-    'IAccessPolicyGrantFlatSource',
-    'IAccessPolicyGrantSource',
-    'IAccessPolicySource',
-    ]
+    "IAccessArtifact",
+    "IAccessArtifactGrant",
+    "IAccessArtifactGrantSource",
+    "IAccessArtifactSource",
+    "IAccessPolicy",
+    "IAccessPolicyArtifact",
+    "IAccessPolicyArtifactSource",
+    "IAccessPolicyGrant",
+    "IAccessPolicyGrantFlatSource",
+    "IAccessPolicyGrantSource",
+    "IAccessPolicySource",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 
 class IAccessArtifact(Interface):
@@ -92,7 +89,6 @@ class IAccessPolicyGrant(Interface):
 
 
 class IAccessArtifactSource(Interface):
-
     def ensure(concrete_artifacts):
         """Return `IAccessArtifact`s for the concrete artifacts.
 
@@ -113,7 +109,6 @@ class IAccessArtifactSource(Interface):
 
 
 class IAccessArtifactGrantSource(Interface):
-
     def grant(grants):
         """Create `IAccessArtifactGrant`s.
 
@@ -147,7 +142,6 @@ class IAccessArtifactGrantSource(Interface):
 
 
 class IAccessPolicyArtifactSource(Interface):
-
     def create(links):
         """Create `IAccessPolicyArtifacts`s.
 
@@ -180,7 +174,6 @@ class IAccessPolicyArtifactSource(Interface):
 
 
 class IAccessPolicySource(Interface):
-
     def create(pillars_and_types):
         """Create an `IAccessPolicy` for the given pillars and types.
 
@@ -224,7 +217,6 @@ class IAccessPolicySource(Interface):
 
 
 class IAccessPolicyGrantSource(Interface):
-
     def grant(grants):
         """Create `IAccessPolicyGrant`s.
 

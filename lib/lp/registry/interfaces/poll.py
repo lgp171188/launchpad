@@ -2,32 +2,27 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'CannotCreatePoll',
-    'IPoll',
-    'IPollSet',
-    'IPollSubset',
-    'IPollOption',
-    'IPollOptionSet',
-    'IVote',
-    'IVoteCast',
-    'PollAlgorithm',
-    'PollSecrecy',
-    'PollStatus',
-    'IVoteSet',
-    'IVoteCastSet',
-    'OptionIsNotFromSimplePoll'
-    ]
+    "CannotCreatePoll",
+    "IPoll",
+    "IPollSet",
+    "IPollSubset",
+    "IPollOption",
+    "IPollOptionSet",
+    "IVote",
+    "IVoteCast",
+    "PollAlgorithm",
+    "PollSecrecy",
+    "PollStatus",
+    "IVoteSet",
+    "IVoteCastSet",
+    "OptionIsNotFromSimplePoll",
+]
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import http.client
+from datetime import datetime, timedelta
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+import pytz
+from lazr.enum import DBEnumeratedType, DBItem
 from lazr.restful.declarations import (
     collection_default_content,
     error_status,
@@ -38,25 +33,12 @@ from lazr.restful.declarations import (
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
-    )
+)
 from lazr.restful.fields import Reference
-import pytz
 from zope.component import getUtility
-from zope.interface import (
-    Attribute,
-    Interface,
-    invariant,
-    )
+from zope.interface import Attribute, Interface, invariant
 from zope.interface.exceptions import Invalid
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Int,
-    List,
-    Text,
-    TextLine,
-    )
+from zope.schema import Bool, Choice, Datetime, Int, List, Text, TextLine
 
 from lp import _
 from lp.app.validators.name import name_validator
@@ -83,48 +65,63 @@ class PollNameField(ContentNameField):
 class PollAlgorithm(DBEnumeratedType):
     """The algorithm used to accept and calculate the results."""
 
-    SIMPLE = DBItem(1, """
+    SIMPLE = DBItem(
+        1,
+        """
         Simple Voting
 
         The most simple method for voting; you just choose a single option.
-        """)
+        """,
+    )
 
-    CONDORCET = DBItem(2, """
+    CONDORCET = DBItem(
+        2,
+        """
         Condorcet Voting
 
         One of various methods used for calculating preferential votes. See
         http://www.electionmethods.org/CondorcetEx.htm for more information.
-        """)
+        """,
+    )
 
 
 class PollSecrecy(DBEnumeratedType):
     """The secrecy of a given Poll."""
 
-    OPEN = DBItem(1, """
+    OPEN = DBItem(
+        1,
+        """
         Public Votes (Anyone can see a person's vote)
 
         Everyone who wants will be able to see a person's vote.
-        """)
+        """,
+    )
 
-    ADMIN = DBItem(2, """
+    ADMIN = DBItem(
+        2,
+        """
         Semi-secret Votes (Only team administrators can see a person's vote)
 
         All team owners and administrators will be able to see a person's vote.
-        """)
+        """,
+    )
 
-    SECRET = DBItem(3, """
+    SECRET = DBItem(
+        3,
+        """
         Secret Votes (It's impossible to track a person's vote)
 
         We don't store the option a person voted in our database,
-        """)
+        """,
+    )
 
 
 class PollStatus:
     """This class stores the constants used when searching for polls."""
 
-    OPEN = 'open'
-    CLOSED = 'closed'
-    NOT_YET_OPENED = 'not-yet-opened'
+    OPEN = "open"
+    CLOSED = "closed"
+    NOT_YET_OPENED = "not-yet-opened"
     ALL = frozenset([OPEN, CLOSED, NOT_YET_OPENED])
 
 
@@ -137,51 +134,93 @@ class CannotCreatePoll(Exception):
 class IPoll(Interface):
     """A poll for a given proposition in a team."""
 
-    id = Int(title=_('The unique ID'), required=True, readonly=True)
+    id = Int(title=_("The unique ID"), required=True, readonly=True)
 
-    team = exported(Reference(
-        ITeam,
-        title=_('The team that this poll refers to.'), required=True,
-        readonly=True))
+    team = exported(
+        Reference(
+            ITeam,
+            title=_("The team that this poll refers to."),
+            required=True,
+            readonly=True,
+        )
+    )
 
-    name = exported(PollNameField(
-        title=_('The unique name of this poll'),
-        description=_('A short unique name, beginning with a lower-case '
-                      'letter or number, and containing only letters, '
-                      'numbers, dots, hyphens, or plus signs.'),
-        required=True, readonly=False, constraint=name_validator))
+    name = exported(
+        PollNameField(
+            title=_("The unique name of this poll"),
+            description=_(
+                "A short unique name, beginning with a lower-case "
+                "letter or number, and containing only letters, "
+                "numbers, dots, hyphens, or plus signs."
+            ),
+            required=True,
+            readonly=False,
+            constraint=name_validator,
+        )
+    )
 
-    title = exported(TextLine(
-        title=_('The title of this poll'), required=True, readonly=False))
+    title = exported(
+        TextLine(
+            title=_("The title of this poll"), required=True, readonly=False
+        )
+    )
 
-    dateopens = exported(Datetime(
-        title=_('The date and time when this poll opens'), required=True,
-        readonly=False))
+    dateopens = exported(
+        Datetime(
+            title=_("The date and time when this poll opens"),
+            required=True,
+            readonly=False,
+        )
+    )
 
-    datecloses = exported(Datetime(
-        title=_('The date and time when this poll closes'), required=True,
-        readonly=False))
+    datecloses = exported(
+        Datetime(
+            title=_("The date and time when this poll closes"),
+            required=True,
+            readonly=False,
+        )
+    )
 
-    proposition = exported(Text(
-        title=_('The proposition that is going to be voted'), required=True,
-        readonly=False))
+    proposition = exported(
+        Text(
+            title=_("The proposition that is going to be voted"),
+            required=True,
+            readonly=False,
+        )
+    )
 
-    type = exported(Choice(
-        title=_('The type of this poll'), required=True,
-        readonly=False, vocabulary=PollAlgorithm,
-        default=PollAlgorithm.CONDORCET))
+    type = exported(
+        Choice(
+            title=_("The type of this poll"),
+            required=True,
+            readonly=False,
+            vocabulary=PollAlgorithm,
+            default=PollAlgorithm.CONDORCET,
+        )
+    )
 
-    allowspoilt = exported(Bool(
-        title=_('Users can spoil their votes?'),
-        description=_(
-            'Allow users to leave the ballot blank (i.e. cast a vote for '
-            '"None of the above")'),
-        required=True, readonly=False, default=True))
+    allowspoilt = exported(
+        Bool(
+            title=_("Users can spoil their votes?"),
+            description=_(
+                "Allow users to leave the ballot blank (i.e. cast a vote for "
+                '"None of the above")'
+            ),
+            required=True,
+            readonly=False,
+            default=True,
+        )
+    )
 
-    secrecy = exported(Choice(
-        title=_('The secrecy of the Poll'), required=True,
-        readonly=False, vocabulary=PollSecrecy,
-        default=PollSecrecy.SECRET))
+    secrecy = exported(
+        Choice(
+            title=_("The secrecy of the Poll"),
+            required=True,
+            readonly=False,
+            vocabulary=PollSecrecy,
+            default=PollSecrecy.SECRET,
+        )
+    )
 
     @invariant
     def saneDates(poll):
@@ -192,7 +231,8 @@ class IPoll(Interface):
         """
         if poll.dateopens >= poll.datecloses:
             raise Invalid(
-                "A poll cannot close at the time (or before) it opens.")
+                "A poll cannot close at the time (or before) it opens."
+            )
         now = datetime.now(pytz.UTC)
         # Allow a bit of slack to account for time between form creation and
         # validation.
@@ -200,7 +240,8 @@ class IPoll(Interface):
         start_date = poll.dateopens.astimezone(pytz.UTC)
         if start_date < twelve_hours_ahead:
             raise Invalid(
-                "A poll cannot open less than 12 hours after it's created.")
+                "A poll cannot open less than 12 hours after it's created."
+            )
 
     def isOpen(when=None):
         """Return True if this Poll is still open.
@@ -313,8 +354,17 @@ class IPoll(Interface):
 class IPollSet(Interface):
     """The set of Poll objects."""
 
-    def new(team, name, title, proposition, dateopens, datecloses,
-            secrecy, allowspoilt, poll_type=PollAlgorithm.SIMPLE):
+    def new(
+        team,
+        name,
+        title,
+        proposition,
+        dateopens,
+        datecloses,
+        secrecy,
+        allowspoilt,
+        poll_type=PollAlgorithm.SIMPLE,
+    ):
         """Create a new Poll for the given team."""
 
     @operation_parameters(
@@ -323,16 +373,22 @@ class IPollSet(Interface):
             title=_("Poll statuses"),
             description=_(
                 "A list of one or more of 'open', 'closed', or "
-                "'not-yet-opened'.  Defaults to all statuses."),
-            value_type=Choice(values=PollStatus.ALL), min_length=1,
-            required=False),
+                "'not-yet-opened'.  Defaults to all statuses."
+            ),
+            value_type=Choice(values=PollStatus.ALL),
+            min_length=1,
+            required=False,
+        ),
         order_by=Choice(
-            title=_("Sort order"), vocabulary=PollSort, required=False))
+            title=_("Sort order"), vocabulary=PollSort, required=False
+        ),
+    )
     @operation_returns_collection_of(IPoll)
     @export_read_operation()
     @operation_for_version("devel")
-    def find(team=None, status=None, order_by=PollSort.NEWEST_FIRST,
-             when=None):
+    def find(
+        team=None, status=None, order_by=PollSort.NEWEST_FIRST, when=None
+    ):
         """Search for polls.
 
         :param team: An optional `ITeam` to filter by.
@@ -344,8 +400,9 @@ class IPollSet(Interface):
             specific date.
         """
 
-    def findByTeam(team, status=None, order_by=PollSort.NEWEST_FIRST,
-                   when=None):
+    def findByTeam(
+        team, status=None, order_by=PollSort.NEWEST_FIRST, when=None
+    ):
         """Return all Polls for the given team, filtered by status.
 
         :param team: A `ITeam` to filter by.
@@ -376,10 +433,18 @@ class IPollSubset(Interface):
 
     team = Attribute(_("The team of these polls."))
 
-    title = Attribute('Polls Page Title')
+    title = Attribute("Polls Page Title")
 
-    def new(name, title, proposition, dateopens, datecloses, secrecy,
-            allowspoilt, poll_type=PollAlgorithm.SIMPLE):
+    def new(
+        name,
+        title,
+        proposition,
+        dateopens,
+        datecloses,
+        secrecy,
+        allowspoilt,
+        poll_type=PollAlgorithm.SIMPLE,
+    ):
         """Create a new Poll for this team."""
 
     def getAll():
@@ -429,26 +494,33 @@ class PollOptionNameField(ContentNameField):
 class IPollOption(Interface):
     """An option to be voted in a given Poll."""
 
-    id = Int(title=_('The unique ID'), required=True, readonly=True)
+    id = Int(title=_("The unique ID"), required=True, readonly=True)
 
     poll = Int(
-        title=_('The Poll to which this option refers to.'), required=True,
-        readonly=True)
+        title=_("The Poll to which this option refers to."),
+        required=True,
+        readonly=True,
+    )
 
-    name = PollOptionNameField(
-        title=_('Name'), required=True, readonly=False)
+    name = PollOptionNameField(title=_("Name"), required=True, readonly=False)
 
     title = TextLine(
-        title=_('Title'),
+        title=_("Title"),
         description=_(
-            'The title of this option. A single brief sentence that '
-            'summarises the outcome for which people are voting if '
-            'they select this option.'),
-        required=True, readonly=False)
+            "The title of this option. A single brief sentence that "
+            "summarises the outcome for which people are voting if "
+            "they select this option."
+        ),
+        required=True,
+        readonly=False,
+    )
 
     active = Bool(
-        title=_('Is this option active?'), required=True, readonly=False,
-        default=True)
+        title=_("Is this option active?"),
+        required=True,
+        readonly=False,
+        default=True,
+    )
 
     def destroySelf():
         """Remove this option from the database."""
@@ -477,14 +549,17 @@ class IPollOptionSet(Interface):
 class IVoteCast(Interface):
     """Here we store who voted in a Poll, but not their votes."""
 
-    id = Int(title=_('The unique ID'), required=True, readonly=True)
+    id = Int(title=_("The unique ID"), required=True, readonly=True)
 
     person = Int(
-        title=_('The Person that voted.'), required=False, readonly=True)
+        title=_("The Person that voted."), required=False, readonly=True
+    )
 
     poll = Int(
-        title=_('The Poll in which the person voted.'), required=True,
-        readonly=True)
+        title=_("The Poll in which the person voted."),
+        required=True,
+        readonly=True,
+    )
 
 
 class IVoteCastSet(Interface):
@@ -501,26 +576,31 @@ class IVote(Interface):
     vote later.
     """
 
-    id = Int(
-        title=_('The unique ID'), required=True, readonly=True)
+    id = Int(title=_("The unique ID"), required=True, readonly=True)
 
     person = Int(
-        title=_('The Person that voted.'), required=False, readonly=True)
+        title=_("The Person that voted."), required=False, readonly=True
+    )
 
     poll = Int(
-        title=_('The Poll in which the person voted.'), required=True,
-        readonly=True)
+        title=_("The Poll in which the person voted."),
+        required=True,
+        readonly=True,
+    )
 
     option = Int(
-        title=_('The PollOption choosen.'), required=True, readonly=False)
+        title=_("The PollOption choosen."), required=True, readonly=False
+    )
 
     preference = Int(
-        title=_('The preference of the choosen PollOption'), required=True,
-        readonly=False)
+        title=_("The preference of the choosen PollOption"),
+        required=True,
+        readonly=False,
+    )
 
     token = Text(
-        title=_('The token we give to the user.'),
-        required=True, readonly=True)
+        title=_("The token we give to the user."), required=True, readonly=True
+    )
 
 
 class OptionIsNotFromSimplePoll(Exception):
