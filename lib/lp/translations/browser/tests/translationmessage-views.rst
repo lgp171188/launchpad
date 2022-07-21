@@ -26,7 +26,7 @@ without the plural form information.
     >>> translationmessage = TranslationMessage.get(1)
     >>> pofile = POFile.get(1)
     >>> language_tlh = getUtility(ILanguageSet).getLanguageByCode('tlh')
-    >>> pofile_tlh = pofile.potemplate.getDummyPOFile(language_tlh)
+    >>> pofile_tlh = pofile.potemplate.getPlaceholderPOFile(language_tlh)
     >>> potmsgset = pofile_tlh.potemplate.getPOTMsgSetByMsgIDText(
     ...     u'evolution addressbook')
     >>> current_translationmessage = (
@@ -50,7 +50,7 @@ Basic checks
 ------------
 
 Now, we will use objects that we have in our database, instead of
-dummy ones.
+placeholder ones.
 
     >>> server_url = '/'.join(
     ...     [canonical_url(current_translationmessage), '+translate'])

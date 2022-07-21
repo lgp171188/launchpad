@@ -508,7 +508,7 @@ class POFileUploadView(POFileView):
         by_maintainer = False
 
         if self.context.path is None:
-            # The POFile is a dummy one, we use the filename as the path.
+            # The POFile is a placeholder one, we use the filename as the path.
             path = filename
         else:
             path = self.context.path
@@ -541,15 +541,15 @@ class POFileBatchNavigator(BatchNavigator):
 
 
 class POFileTranslateView(BaseTranslationView, POFileMetadataViewMixin):
-    """The View class for a `POFile` or a `DummyPOFile`.
+    """The View class for a `POFile` or a `PlaceholderPOFile`.
 
     This view is based on `BaseTranslationView` and implements the API
     defined by that class.
 
-    `DummyPOFile`s are presented where there is no `POFile` in the
+    `PlaceholderPOFile`s are presented where there is no `POFile` in the
     database but the user may want to translate.  See how `POTemplate`
     traversal is done for details about how we decide between a `POFile`
-    or a `DummyPOFile`.
+    or a `PlaceholderPOFile`.
     """
 
     DEFAULT_SHOW = 'all'
@@ -806,7 +806,7 @@ class POFileTranslateView(BaseTranslationView, POFileMetadataViewMixin):
             return None
         pofile = potemplate.getPOFileByLang(self.context.language.code)
         if pofile is None:
-            pofile = potemplate.getDummyPOFile(
+            pofile = potemplate.getPlaceholderPOFile(
                 self.context.language, check_for_existing=False)
         return pofile
 

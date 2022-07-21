@@ -416,8 +416,9 @@ class IPOTemplate(IRosettaStats):
             loops when creating a new IPOTemplate.
         """
 
-    def getDummyPOFile(language, requester=None, check_for_existing=True):
-        """Return a DummyPOFile if there isn't already a persistent `IPOFile`
+    def getPlaceholderPOFile(language, requester=None,
+                             check_for_existing=True):
+        """Return a placeholder if there isn't already a persistent `IPOFile`.
 
         Raise `LanguageNotFound` if the language does not exist in the
         database.

@@ -37,7 +37,7 @@ from lp.translations.interfaces.distroserieslanguage import (
     IDistroSeriesLanguageSet,
     )
 from lp.translations.model.pofile import (
-    DummyPOFile,
+    PlaceholderPOFile,
     POFile,
     )
 from lp.translations.model.potemplate import (
@@ -194,7 +194,8 @@ class EmptyDistroSeriesLanguage(RosettaStats):
         """See `IDistroSeriesLanguage`."""
         templates = list(potemplates)
         language = self.language
-        return [DummyPOFile(template, language) for template in templates]
+        return [
+            PlaceholderPOFile(template, language) for template in templates]
 
     def currentCount(self, language=None):
         return 0

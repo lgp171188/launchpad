@@ -63,76 +63,81 @@ Plural forms
 Let's focus on handling of messages with plural forms.
 
 An empty translation does not need to exist in the database.  If not,
-a DummyPOFile is used instead.
+a PlaceholderPOFile is used instead.
 
     >>> evolution = getUtility(IProductSet).getByName('evolution')
     >>> evolution_trunk = evolution.getSeries('trunk')
     >>> evolution_potemplate = evolution_trunk.getPOTemplate('evolution-2.2')
     >>> language_pt_BR = getUtility(
     ...     ILanguageSet).getLanguageByCode('pt_BR')
-    >>> pt_BR_dummypofile = evolution_potemplate.getDummyPOFile(
+    >>> pt_BR_placeholderpofile = evolution_potemplate.getPlaceholderPOFile(
     ...     language_pt_BR)
 
 We get a POTMsgSet and verify it's a singular form:
 
-    >>> potmsgset = pt_BR_dummypofile.potemplate.getPOTMsgSetByMsgIDText(
-    ...     u'evolution addressbook')
+    >>> potmsgset = (
+    ...     pt_BR_placeholderpofile.potemplate.getPOTMsgSetByMsgIDText(
+    ...         'evolution addressbook'))
     >>> potmsgset.msgid_plural is None
     True
 
     >>> current = potmsgset.getCurrentTranslation(
-    ...     evolution_potemplate, pt_BR_dummypofile.language,
+    ...     evolution_potemplate, pt_BR_placeholderpofile.language,
     ...     evolution_potemplate.translation_side)
     >>> print(current)
     None
-    >>> pt_BR_dummy_current = potmsgset.getCurrentTranslationMessageOrDummy(
-    ...     pt_BR_dummypofile)
-    >>> pt_BR_dummy_current.plural_forms
+    >>> pt_BR_placeholder_current = (
+    ...     potmsgset.getCurrentTranslationMessageOrDummy(
+    ...         pt_BR_placeholderpofile))
+    >>> pt_BR_placeholder_current.plural_forms
     1
-    >>> pt_BR_dummy_current.translations
+    >>> pt_BR_placeholder_current.translations
     [None]
 
 A TranslationMessage knows what language it is in.
 
-    >>> print(pt_BR_dummy_current.language.code)
+    >>> print(pt_BR_placeholder_current.language.code)
     pt_BR
 
-Using another dummy pofile we'll get a POTMsgset that's not a singular
+Using another placeholder pofile we'll get a POTMsgset that's not a singular
 form:
 
     >>> language_apa = getUtility(ILanguageSet).getLanguageByCode('apa')
-    >>> apa_dummypofile = evolution_potemplate.getDummyPOFile(language_apa)
-    >>> plural_potmsgset = apa_dummypofile.potemplate.getPOTMsgSetByMsgIDText(
-    ...     u'%d contact', u'%d contacts')
-    >>> print(apa_dummypofile.language.code)
+    >>> apa_placeholderpofile = evolution_potemplate.getPlaceholderPOFile(
+    ...     language_apa)
+    >>> plural_potmsgset = (
+    ...     apa_placeholderpofile.potemplate.getPOTMsgSetByMsgIDText(
+    ...         '%d contact', '%d contacts'))
+    >>> print(apa_placeholderpofile.language.code)
     apa
 
 We don't know anything about pluralforms for this language, so we fall
 back to the most common case:
 
-    >>> print(apa_dummypofile.language.pluralforms)
+    >>> print(apa_placeholderpofile.language.pluralforms)
     None
-    >>> apa_dummy_current = (
+    >>> apa_placeholder_current = (
     ...     plural_potmsgset.getCurrentTranslationMessageOrDummy(
-    ...         apa_dummypofile))
-    >>> apa_dummy_current.plural_forms
+    ...         apa_placeholderpofile))
+    >>> apa_placeholder_current.plural_forms
     2
-    >>> apa_dummy_current.translations
+    >>> apa_placeholder_current.translations
     [None, None]
 
 We can guess the pluralforms for this language through ILanguage.pluralforms:
 
     >>> language_ru = getUtility(ILanguageSet).getLanguageByCode('ru')
-    >>> ru_dummypofile = evolution_potemplate.getDummyPOFile(language_ru)
-    >>> ru_dummy_current = (
+    >>> ru_placeholderpofile = evolution_potemplate.getPlaceholderPOFile(
+    ...     language_ru)
+    >>> ru_placeholder_current = (
     ...     plural_potmsgset.getCurrentTranslationMessageOrDummy(
-    ...     	ru_dummypofile))
+    ...     	ru_placeholderpofile))
 
-    >>> print(ru_dummypofile.language.pluralforms)
+    >>> print(ru_placeholderpofile.language.pluralforms)
     3
-    >>> ru_dummy_current.plural_forms
+    >>> ru_placeholder_current.plural_forms
     3
-    >>> ru_dummy_current.translations
+    >>> ru_placeholder_current.translations
     [None, None, None]
 
 
@@ -482,7 +487,7 @@ dummy anymore.
     >>> potmsgset_untranslated = pmount_man_template.getPOTMsgSetByMsgIDText(
     ...     'test man page')
     >>> language_es = getUtility(ILanguageSet).getLanguageByCode('es')
-    >>> pofile = pmount_man_template.getDummyPOFile(language_es)
+    >>> pofile = pmount_man_template.getPlaceholderPOFile(language_es)
     >>> print(pofile.title)
     Spanish (es) translation of man in Ubuntu Hoary package "pmount"
 
