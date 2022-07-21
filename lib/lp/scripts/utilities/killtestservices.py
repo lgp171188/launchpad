@@ -13,12 +13,12 @@ from lp.testing.layers import MemcachedLayer
 
 def main():
     args = sys.argv[1:]
-    if '-h' in args or '--help' in args:
+    if "-h" in args or "--help" in args:
         print(__doc__)
         return 0
     # Tell lp.services.config to use the testrunner config instance, so that
     # we don't kill the real services.
-    config.setInstance('testrunner')
+    config.setInstance("testrunner")
     config.generate_overrides()
     print("Killing Memcached....", end="")
     kill_by_pidfile(MemcachedLayer.getPidFile())

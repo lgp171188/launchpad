@@ -3,15 +3,14 @@
 
 """Test the helpers."""
 
-from testtools.testcase import ExpectedException
 import transaction
+from testtools.testcase import ExpectedException
 
 from lp.scripts.helpers import TransactionFreeOperation
 from lp.testing import TestCase
 
 
 class TestTransactionFreeOperation(TestCase):
-
     def setUp(self):
         """We can ignore transactions in general, but this test case cares."""
         super().setUp()
@@ -21,14 +20,16 @@ class TestTransactionFreeOperation(TestCase):
         """When a transaction is pending before the operation, raise."""
         transaction.begin()
         with ExpectedException(
-            AssertionError, 'Transaction open before operation'):
+            AssertionError, "Transaction open before operation"
+        ):
             with TransactionFreeOperation():
                 pass
 
     def test_transaction_during_operation(self):
         """When the operation creates a transaction, raise."""
         with ExpectedException(
-            AssertionError, 'Operation opened transaction!'):
+            AssertionError, "Operation opened transaction!"
+        ):
             with TransactionFreeOperation():
                 transaction.begin()
 
@@ -40,7 +41,8 @@ class TestTransactionFreeOperation(TestCase):
     def test_require_no_TransactionFreeOperation(self):
         """If TransactionFreeOperation is not used, raise."""
         with ExpectedException(
-                AssertionError, 'TransactionFreeOperation was not used.'):
+            AssertionError, "TransactionFreeOperation was not used."
+        ):
             with TransactionFreeOperation.require():
                 pass
 

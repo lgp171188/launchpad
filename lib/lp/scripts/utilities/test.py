@@ -21,8 +21,8 @@ import re
 import signal
 import sys
 import time
-from unittest import mock
 import warnings
+from unittest import mock
 
 import distro
 import six
@@ -30,10 +30,7 @@ from zope.testrunner import options
 from zope.testrunner.feature import Feature
 from zope.testrunner.runner import Runner
 
-from lp.scripts.utilities import (
-    importpedant,
-    warninghandler,
-    )
+from lp.scripts.utilities import importpedant, warninghandler
 from lp.services.config import config
 
 
@@ -42,7 +39,6 @@ def fix_doctest_output():
     _RealSpoofOut = doctest._SpoofOut
 
     class _SpoofOut(doctest._SpoofOut):
-
         def write(self, value):
             _RealSpoofOut.write(self, six.ensure_str(value))
 
@@ -53,16 +49,16 @@ def configure_environment():
     # Make tests run in a timezone no launchpad developers live in.
     # Our tests need to run in any timezone.
     # (This is no longer actually required, as PQM does this.)
-    os.environ['TZ'] = 'Asia/Calcutta'
+    os.environ["TZ"] = "Asia/Calcutta"
     time.tzset()
 
     # Httplib2 0.7 started validating SSL certificates, and the test suite
     # uses a self-signed certificate, so disable it with an env variable.
-    os.environ['LP_DISABLE_SSL_CERTIFICATE_VALIDATION'] = '1'
+    os.environ["LP_DISABLE_SSL_CERTIFICATE_VALIDATION"] = "1"
 
     # Storm's C extensions should already be enabled from
     # lp_sitecustomize.py, which our custom sitecustomize.py ran.
-    assert os.environ['STORM_CEXTENSIONS'] == '1'
+    assert os.environ["STORM_CEXTENSIONS"] == "1"
 
     # Install the import pedant import hook and atexit handler.
     importpedant.install_import_pedant()
@@ -70,10 +66,11 @@ def configure_environment():
     # Ensure that atexit handlers are executed on TERM.
     def exit_with_atexit_handlers(*ignored):
         sys.exit(-1 * signal.SIGTERM)
+
     signal.signal(signal.SIGTERM, exit_with_atexit_handlers)
 
     # Tell lp.services.config to use the testrunner config instance.
-    config.setInstance('testrunner')
+    config.setInstance("testrunner")
     config.generate_overrides()
 
     # Remove this module's directory from path, so that zope.testbrowser
@@ -81,17 +78,17 @@ def configure_environment():
     sys.path[:] = [p for p in sys.path if os.path.abspath(p) != config.root]
 
     # Turn on psycopg debugging wrapper
-    #import lp.services.database.debug
-    #lp.services.database.debug.install()
+    # import lp.services.database.debug
+    # lp.services.database.debug.install()
 
     # Unset the http_proxy environment variable, because we're going to make
     # requests to localhost and we don't want this to be proxied.
-    os.environ.pop('http_proxy', None)
+    os.environ.pop("http_proxy", None)
 
     # Suppress accessibility warning because the test runner does not have UI.
-    os.environ['GTK_MODULES'] = ''
+    os.environ["GTK_MODULES"] = ""
 
-    if distro.linux_distribution()[:2] == ('Ubuntu', '18.04'):
+    if distro.linux_distribution()[:2] == ("Ubuntu", "18.04"):
         # XXX cjwatson 2020-10-09: Certain versions of Python crash when
         # importing readline into a process that has libedit loaded
         # (https://bugs.python.org/issue38634,
@@ -104,7 +101,7 @@ def configure_environment():
         # libedit, and 20.04 has the Python bug fixed.  We should drop this
         # once 18.04 is fixed or once we no longer care about it, since this
         # workaround is pretty nasty.
-        sys.modules['readline'] = mock.Mock()
+        sys.modules["readline"] = mock.Mock()
 
 
 def filter_warnings():
@@ -113,24 +110,29 @@ def filter_warnings():
     # caused by our code that need to be silenced should have an accompanied
     # Bug reference.
     warnings.filterwarnings(
-        'ignore', 'PyCrypto', RuntimeWarning, 'twisted[.]conch[.]ssh',
-        )
+        "ignore",
+        "PyCrypto",
+        RuntimeWarning,
+        "twisted[.]conch[.]ssh",
+    )
     warnings.filterwarnings(
-        'ignore', 'twisted.python.plugin', DeprecationWarning,
-        )
+        "ignore",
+        "twisted.python.plugin",
+        DeprecationWarning,
+    )
     # This warning will be triggered if the beforeTraversal hook fails. We
     # want to ensure it is not raised as an error, as this will mask the
     # real problem.
     warnings.filterwarnings(
-        'always',
-        re.escape('clear_request_started() called outside of a request'),
-        UserWarning
-        )
+        "always",
+        re.escape("clear_request_started() called outside of a request"),
+        UserWarning,
+    )
     # Unicode warnings are always fatal
-    warnings.filterwarnings('error', category=UnicodeWarning)
+    warnings.filterwarnings("error", category=UnicodeWarning)
 
     # shortlist() raises an error when it is misused.
-    warnings.filterwarnings('error', r'shortlist\(\)')
+    warnings.filterwarnings("error", r"shortlist\(\)")
 
 
 class LaunchpadWarnings(Feature):
@@ -175,16 +177,15 @@ def randomise_listdir():
 
 defaults = {
     # Find tests in the tests and ftests directories
-    'tests_pattern': '^f?tests$',
-    'test_path': [os.path.join(config.root, 'lib')],
-    'package': ['canonical', 'lp', 'devscripts', 'launchpad_loggerhead'],
-    'layer': ['!(YUIAppServerLayer)'],
-    'require_unique_ids': True,
-    }
+    "tests_pattern": "^f?tests$",
+    "test_path": [os.path.join(config.root, "lib")],
+    "package": ["canonical", "lp", "devscripts", "launchpad_loggerhead"],
+    "layer": ["!(YUIAppServerLayer)"],
+    "require_unique_ids": True,
+}
 
 
 class LaunchpadRunner(Runner):
-
     def configure(self):
         super().configure()
         self.features.insert(0, LaunchpadWarnings(self))
@@ -207,21 +208,18 @@ def main():
     # from Launchpad config. Now that we've set the correct config instance,
     # we can safely import the rest.
     from lp.services.testing import profiled
-    from lp.services.testing.customresult import (
-        filter_tests,
-        patch_find_tests,
-        )
+    from lp.services.testing.customresult import filter_tests, patch_find_tests
 
     # Extract arguments so we can see them too. We need to strip
     # --resume-layer and --default stuff if found as get_options can't
     # handle it.
-    if len(sys.argv) > 1 and sys.argv[1] == '--resume-layer':
+    if len(sys.argv) > 1 and sys.argv[1] == "--resume-layer":
         main_process = False
         args = list(sys.argv)
         args.pop(1)  # --resume-layer
         args.pop(1)  # The layer name
         args.pop(1)  # The resume number
-        while len(args) > 1 and args[1] == '--default':
+        while len(args) > 1 and args[1] == "--default":
             args.pop(1)  # --default
             args.pop(1)  # The default value
         args.insert(0, sys.argv[0])
@@ -230,31 +228,34 @@ def main():
         args = sys.argv
 
     # thunk across to parallel support if needed.
-    if '--parallel' in sys.argv and '--list-tests' not in sys.argv:
+    if "--parallel" in sys.argv and "--list-tests" not in sys.argv:
         # thunk over to parallel testing.
         from lp.services.testing.parallel import main
+
         sys.exit(main(sys.argv))
 
     class LoadListAction(argparse.Action):
         def __call__(self, parser, namespace, values, option_string=None):
-            patch_find_tests(filter_tests(values, '--shuffle' in sys.argv))
+            patch_find_tests(filter_tests(values, "--shuffle" in sys.argv))
 
+    options.parser.add_argument("--load-list", type=str, action=LoadListAction)
     options.parser.add_argument(
-        '--load-list', type=str, action=LoadListAction)
-    options.parser.add_argument(
-        '--parallel', action='store_true',
-        help='Run tests in parallel processes. '
-            'Poorly isolated tests will break.')
+        "--parallel",
+        action="store_true",
+        help="Run tests in parallel processes. "
+        "Poorly isolated tests will break.",
+    )
 
     # tests_pattern is a regexp, so the parsed value is hard to compare
     # with the default value in the loop below.
-    options.parser.set_defaults(tests_pattern=defaults['tests_pattern'])
+    options.parser.set_defaults(tests_pattern=defaults["tests_pattern"])
     local_options = options.get_options(args=args)
     # Set our default options, if the options aren't specified.
     for name, value in defaults.items():
         parsed_option = getattr(local_options, name)
-        if (parsed_option == [] or
-                parsed_option == options.parser.get_default(name)):
+        if parsed_option == [] or parsed_option == options.parser.get_default(
+            name
+        ):
             # The option probably wasn't specified on the command line,
             # let's replace it with our default value. It could be that
             # the real default (as specified in zope.testrunner.options)
@@ -270,7 +271,8 @@ def main():
     try:
         script_parts = [os.path.abspath(sys.argv[0])]
         runner = LaunchpadRunner(
-            [], script_parts=script_parts, cwd=os.getcwd())
+            [], script_parts=script_parts, cwd=os.getcwd()
+        )
         runner.run()
         # Print Layer profiling report if requested.
         if main_process and local_options.verbose >= 3:

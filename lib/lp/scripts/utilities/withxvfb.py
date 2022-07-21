@@ -35,5 +35,5 @@ def main():
         "--server-args=-ac -screen 0 1024x768x24",
         # Try to get a free server number, starting at 99. See xvfb-run(1).
         "--auto-servernum",
-        ] + args
+    ] + args
     os.execvp("xvfb-run", args)

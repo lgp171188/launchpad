@@ -4,37 +4,32 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import logging
-from optparse import OptionParser
 import os
-from signal import (
-    SIGKILL,
-    SIGTERM,
-    )
 import time
+from optparse import OptionParser
+from signal import SIGKILL, SIGTERM
 
 from lp.services.osutils import process_exists
-from lp.services.pidfile import (
-    get_pid,
-    pidfile_path,
-    remove_pidfile,
-    )
-from lp.services.scripts import (
-    logger,
-    logger_options,
-    )
+from lp.services.pidfile import get_pid, pidfile_path, remove_pidfile
+from lp.services.scripts import logger, logger_options
 
 
 def main():
-    parser = OptionParser('Usage: %prog [options] [SERVICE ...]')
-    parser.add_option("-w", "--wait", metavar="SECS",
-        default=20, type="int",
+    parser = OptionParser("Usage: %prog [options] [SERVICE ...]")
+    parser.add_option(
+        "-w",
+        "--wait",
+        metavar="SECS",
+        default=20,
+        type="int",
         help="Wait up to SECS seconds for processes "
-            "to die before retrying with SIGKILL")
+        "to die before retrying with SIGKILL",
+    )
     logger_options(parser, logging.INFO)
     (options, args) = parser.parse_args()
     log = logger(options)
     if len(args) < 1:
-        parser.error('No service name provided')
+        parser.error("No service name provided")
 
     pids = []  # List of pids we tried to kill.
     services = args[:]
@@ -53,8 +48,8 @@ def main():
                 pids.append((service, pid))
             except OSError as x:
                 log.error(
-                    "Unable to SIGTERM %s (%d) - %s",
-                    service, pid, x.strerror)
+                    "Unable to SIGTERM %s (%d) - %s", service, pid, x.strerror
+                )
         else:
             log.debug("No PID file for %s", service)
 
@@ -65,12 +60,14 @@ def main():
         if not process_exists(pid):
             continue
         log.warning(
-            "SIGTERM failed to kill %s (%d). Trying SIGKILL", service, pid)
+            "SIGTERM failed to kill %s (%d). Trying SIGKILL", service, pid
+        )
         try:
             os.kill(pid, SIGKILL)
         except OSError as x:
             log.error(
-                "Unable to SIGKILL %s (%d) - %s", service, pid, x.strerror)
+                "Unable to SIGKILL %s (%d) - %s", service, pid, x.strerror
+            )
 
     wait_for_pids(pids, options.wait, log)
 

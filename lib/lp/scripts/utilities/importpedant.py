@@ -4,14 +4,17 @@
 import atexit
 import builtins
 import itertools
-from operator import attrgetter
 import types
 import warnings
-
+from operator import attrgetter
 
 # Silence bogus warnings from Hardy's python-pkg-resources package.
-warnings.filterwarnings('ignore', category=UserWarning, append=True,
-                        message=r'Module .*? is being added to sys.path')
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    append=True,
+    message=r"Module .*? is being added to sys.path",
+)
 
 
 original_import = builtins.__import__
@@ -21,63 +24,63 @@ naughty_imports = set()
 # __all__. The following dict maps from such modules to a list of attributes
 # that are allowed to be imported, whether or not they are in __all__.
 valid_imports_not_in_all = {
-    'http.cookiejar': {'domain_match'},
-    'importlib': {'resources'},
-    'openid.fetchers': {'Urllib2Fetcher'},
-    'openid.message': {'NamespaceAliasRegistrationError'},
-    'storm.database': {'STATE_DISCONNECTED'},
-    'talisker': {'run_gunicorn'},
-    'textwrap': {'dedent'},
-    'testtools.testresult.real': {'_details_to_str'},
-    'twisted.internet.threads': {'deferToThreadPool'},
+    "http.cookiejar": {"domain_match"},
+    "importlib": {"resources"},
+    "openid.fetchers": {"Urllib2Fetcher"},
+    "openid.message": {"NamespaceAliasRegistrationError"},
+    "storm.database": {"STATE_DISCONNECTED"},
+    "talisker": {"run_gunicorn"},
+    "textwrap": {"dedent"},
+    "testtools.testresult.real": {"_details_to_str"},
+    "twisted.internet.threads": {"deferToThreadPool"},
     # Even docs tell us to use this class. See docs on WebClientContextFactory.
-    'twisted.web.client': {'BrowserLikePolicyForHTTPS'},
-    'zope.component': {
-        'adapter',
-         'provideAdapter',
-         'provideHandler',
-         },
+    "twisted.web.client": {"BrowserLikePolicyForHTTPS"},
+    "zope.component": {
+        "adapter",
+        "provideAdapter",
+        "provideHandler",
+    },
     # https://github.com/zopefoundation/zope.interface/pull/248
-    'zope.interface.interfaces': {
-        'ComponentLookupError',
-        'Invalid',
-        'ObjectEvent',
-        'Registered',
-        'Unregistered',
-        },
-    }
+    "zope.interface.interfaces": {
+        "ComponentLookupError",
+        "Invalid",
+        "ObjectEvent",
+        "Registered",
+        "Unregistered",
+    },
+}
 
 
-unsafe_parts = {'browser', 'feed', 'xmlrpc', 'widgets'}
+unsafe_parts = {"browser", "feed", "xmlrpc", "widgets"}
 
 dubious = [
-    'lp.answers.browser.question',
-    'lp.app.browser.vocabulary',
-    'lp.blueprints.browser.sprint',
-    'lp.buildmaster.browser.builder',
-    'lp.bugs.browser.bug',
-    'lp.bugs.browser.bugalsoaffects',
-    'lp.bugs.browser.bugsubscription',
-    'lp.bugs.browser.bugtarget',
-    'lp.bugs.browser.bugtask',
-    'lp.bugs.browser.person',
-    'lp.code.browser.branchlisting',
-    'lp.code.browser.sourcepackagerecipe',
-    'lp.registry.browser.distroseries',
-    'lp.registry.browser.distroseriesdifference',
-    'lp.registry.browser.milestone',
-    'lp.registry.browser.pillar',
-    'lp.registry.browser.person',
-    'lp.registry.browser.project',
-    'lp.registry.browser.sourcepackage',
-    'lp.soyuz.browser.archive',
-    'lp.soyuz.browser.queue',
-    'lp.translations.browser.potemplate',
-    'lp.translations.browser.serieslanguage',
-    'lp.translations.browser.sourcepackage',
-    'lp.translations.browser.translationlinksaggregator',
-    'lp.translations.browser.translationtemplatesbuild',
-    ]
+    "lp.answers.browser.question",
+    "lp.app.browser.vocabulary",
+    "lp.blueprints.browser.sprint",
+    "lp.buildmaster.browser.builder",
+    "lp.bugs.browser.bug",
+    "lp.bugs.browser.bugalsoaffects",
+    "lp.bugs.browser.bugsubscription",
+    "lp.bugs.browser.bugtarget",
+    "lp.bugs.browser.bugtask",
+    "lp.bugs.browser.person",
+    "lp.code.browser.branchlisting",
+    "lp.code.browser.sourcepackagerecipe",
+    "lp.registry.browser.distroseries",
+    "lp.registry.browser.distroseriesdifference",
+    "lp.registry.browser.milestone",
+    "lp.registry.browser.pillar",
+    "lp.registry.browser.person",
+    "lp.registry.browser.project",
+    "lp.registry.browser.sourcepackage",
+    "lp.soyuz.browser.archive",
+    "lp.soyuz.browser.queue",
+    "lp.translations.browser.potemplate",
+    "lp.translations.browser.serieslanguage",
+    "lp.translations.browser.sourcepackage",
+    "lp.translations.browser.translationlinksaggregator",
+    "lp.translations.browser.translationtemplatesbuild",
+]
 
 
 def database_import_allowed_into(module_path):
@@ -89,10 +92,12 @@ def database_import_allowed_into(module_path):
         - The importer is in a nodule that does not face users.
         - The import is recognised to be dubious, but not a priority to fix.
     """
-    module_parts = set(module_path.split('.'))
-    return (unsafe_parts.isdisjoint(module_parts)
+    module_parts = set(module_path.split("."))
+    return (
+        unsafe_parts.isdisjoint(module_parts)
         or is_test_module(module_path)
-        or module_path in dubious)
+        or module_path in dubious
+    )
 
 
 def is_test_module(module_path):
@@ -100,8 +105,8 @@ def is_test_module(module_path):
 
     Otherwise returns False.
     """
-    name_splitted = module_path.split('.')
-    return ('tests' in name_splitted or 'testing' in name_splitted)
+    name_splitted = module_path.split(".")
+    return "tests" in name_splitted or "testing" in name_splitted
 
 
 class attrsgetter:
@@ -123,8 +128,10 @@ class PedantDisagreesError(ImportError):
         self.name = name
 
     def format_message(self):
-        return 'Generic PedantDisagreesError: %s imported into %s' % (
-            self.name, self.import_into)
+        return "Generic PedantDisagreesError: %s imported into %s" % (
+            self.name,
+            self.import_into,
+        )
 
     def __str__(self):
         return self.format_message()
@@ -134,16 +141,20 @@ class DatabaseImportPolicyViolation(PedantDisagreesError):
     """Database code is imported directly into other code."""
 
     def format_message(self):
-        return 'You should not import %s into %s' % (
-            self.name, self.import_into)
+        return "You should not import %s into %s" % (
+            self.name,
+            self.import_into,
+        )
 
 
 class FromStarPolicyViolation(PedantDisagreesError):
     """import * from a module that has no __all__."""
 
     def format_message(self):
-        return ('You should not import * from %s because it has no __all__'
-                ' (in %s)' % (self.name, self.import_into))
+        return (
+            "You should not import * from %s because it has no __all__"
+            " (in %s)" % (self.name, self.import_into)
+        )
 
 
 class NotInModuleAllPolicyViolation(PedantDisagreesError):
@@ -154,21 +165,24 @@ class NotInModuleAllPolicyViolation(PedantDisagreesError):
         self.attrname = attrname
 
     def format_message(self):
-        return ('You should not import %s into %s from %s,'
-                ' because it is not in its __all__.' %
-                (self.attrname, self.import_into, self.name))
+        return (
+            "You should not import %s into %s from %s,"
+            " because it is not in its __all__."
+            % (self.attrname, self.import_into, self.name)
+        )
 
 
 class NotFoundPolicyViolation(PedantDisagreesError):
     """import of zope.exceptions.NotFoundError into lp models modules."""
 
     def __init__(self, import_into):
-        PedantDisagreesError.__init__(self, import_into, '')
+        PedantDisagreesError.__init__(self, import_into, "")
 
     def format_message(self):
-        return ('%s\nDo not import zope.exceptions.NotFoundError.\n'
-                'Use lp.app.errors.NotFoundError instead.'
-                % self.import_into)
+        return (
+            "%s\nDo not import zope.exceptions.NotFoundError.\n"
+            "Use lp.app.errors.NotFoundError instead." % self.import_into
+        )
 
 
 # The names of the arguments form part of the interface of __import__(...),
@@ -180,60 +194,60 @@ def import_pedant(name, globals={}, locals={}, fromlist=[], level=0):
     module = original_import(name, globals, locals, fromlist, level)
     # Python's re module imports some odd stuff every time certain regexes
     # are used.  Let's optimize this.
-    if name == 'sre':
+    if name == "sre":
         return module
 
     # Some uses of __import__ pass None for globals, so handle that.
     import_into = None
     if globals is not None:
-        import_into = globals.get('__name__')
+        import_into = globals.get("__name__")
 
     if import_into is None:
         # We're being imported from the __import__ builtin.
         # We could find out by jumping up the stack a frame.
         # Let's not for now.
-        import_into = '__import__ hook'
+        import_into = "__import__ hook"
 
     # Check the "NotFoundError" policy.
-    if ('.model.' in import_into and name == 'zope.exceptions'):
-        if fromlist and 'NotFoundError' in fromlist:
+    if ".model." in import_into and name == "zope.exceptions":
+        if fromlist and "NotFoundError" in fromlist:
             raise NotFoundPolicyViolation(import_into)
 
     # Check the database import policy.
-    if '.model.' in name and not database_import_allowed_into(import_into):
+    if ".model." in name and not database_import_allowed_into(import_into):
         error = DatabaseImportPolicyViolation(import_into, name)
         naughty_imports.add(error)
 
     # Check the import from __all__ policy.
-    if fromlist is not None and import_into.startswith('lp'):
+    if fromlist is not None and import_into.startswith("lp"):
         # We only want to warn about "from foo import bar" violations in our
         # own code.
         fromlist = list(fromlist)
-        module_all = getattr(module, '__all__', None)
+        module_all = getattr(module, "__all__", None)
         if module_all is None:
-            if fromlist == ['*']:
+            if fromlist == ["*"]:
                 # "from foo import *" is naughty if foo has no __all__
                 error = FromStarPolicyViolation(import_into, name)
                 naughty_imports.add(error)
                 raise error
         else:
-            if fromlist == ['*']:
+            if fromlist == ["*"]:
                 # "from foo import *" is allowed if foo has an __all__
                 return module
             if is_test_module(import_into):
                 # We don't bother checking imports into test modules.
                 return module
-            allowed_fromlist = valid_imports_not_in_all.get(
-                name, set())
+            allowed_fromlist = valid_imports_not_in_all.get(name, set())
             for attrname in fromlist:
                 # Check that each thing we are importing into the module is
                 # either in __all__, is a module itself, or is a specific
                 # exception.
-                if attrname == '__doc__':
+                if attrname == "__doc__":
                     # You can always import __doc__.
                     continue
                 if isinstance(
-                    getattr(module, attrname, None), types.ModuleType):
+                    getattr(module, attrname, None), types.ModuleType
+                ):
                     # You can import modules even when they aren't declared in
                     # __all__.
                     continue
@@ -243,7 +257,8 @@ def import_pedant(name, globals={}, locals={}, fromlist=[], level=0):
                     continue
                 if attrname not in module_all:
                     error = NotInModuleAllPolicyViolation(
-                        import_into, name, attrname)
+                        import_into, name, attrname
+                    )
                     naughty_imports.add(error)
     return module
 
@@ -251,7 +266,7 @@ def import_pedant(name, globals={}, locals={}, fromlist=[], level=0):
 def report_naughty_imports():
     if naughty_imports:
         print()
-        print('** %d import policy violations **' % len(naughty_imports))
+        print("** %d import policy violations **" % len(naughty_imports))
 
         database_violations = []
         fromstar_violations = []
@@ -260,36 +275,43 @@ def report_naughty_imports():
             DatabaseImportPolicyViolation: database_violations,
             FromStarPolicyViolation: fromstar_violations,
             NotInModuleAllPolicyViolation: notinall_violations,
-            }
+        }
         for error in naughty_imports:
             sorting_map[error.__class__].append(error)
 
         if database_violations:
             print()
-            print("There were %s database import violations." % (
-                len(database_violations)))
+            print(
+                "There were %s database import violations."
+                % (len(database_violations))
+            )
             sorted_violations = sorted(
-                database_violations,
-                key=attrsgetter('name', 'import_into'))
+                database_violations, key=attrsgetter("name", "import_into")
+            )
 
             for name, sequence in itertools.groupby(
-                sorted_violations, attrgetter('name')):
+                sorted_violations, attrgetter("name")
+            ):
                 print("You should not import %s into:" % name)
                 for import_into, unused_duplicates_seq in itertools.groupby(
-                    sequence, attrgetter('import_into')):
+                    sequence, attrgetter("import_into")
+                ):
                     # Show first occurrence only, to avoid duplicates.
                     print("   ", import_into)
 
         if fromstar_violations:
             print()
-            print("There were %s imports 'from *' without an __all__." % (
-                len(fromstar_violations)))
+            print(
+                "There were %s imports 'from *' without an __all__."
+                % (len(fromstar_violations))
+            )
             sorted_violations = sorted(
-                fromstar_violations,
-                key=attrsgetter('import_into', 'name'))
+                fromstar_violations, key=attrsgetter("import_into", "name")
+            )
 
             for import_into, sequence in itertools.groupby(
-                sorted_violations, attrgetter('import_into')):
+                sorted_violations, attrgetter("import_into")
+            ):
                 print("You should not import * into %s from" % import_into)
                 for error in sequence:
                     print("   ", error.name)
@@ -298,16 +320,20 @@ def report_naughty_imports():
             print()
             print(
                 "There were %s imports of names not appearing in the __all__."
-                % len(notinall_violations))
+                % len(notinall_violations)
+            )
             sorted_violations = sorted(
                 notinall_violations,
-                key=attrsgetter('name', 'attrname', 'import_into'))
+                key=attrsgetter("name", "attrname", "import_into"),
+            )
 
             for (name, attrname), sequence in itertools.groupby(
-                sorted_violations, attrsgetter('name', 'attrname')):
+                sorted_violations, attrsgetter("name", "attrname")
+            ):
                 print("You should not import %s from %s:" % (attrname, name))
                 import_intos = sorted(
-                    {error.import_into for error in sequence})
+                    {error.import_into for error in sequence}
+                )
                 for import_into in import_intos:
                     print("   ", import_into)
 
