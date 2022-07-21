@@ -4,27 +4,21 @@
 """OCI Project Name implementation."""
 
 __all__ = [
-    'OCIProjectName',
-    'OCIProjectNameSet',
-    ]
+    "OCIProjectName",
+    "OCIProjectNameSet",
+]
 
 from storm.locals import Int
 from storm.properties import Unicode
 from zope.interface import implementer
 
 from lp.app.validators.name import valid_name
-from lp.registry.errors import (
-    InvalidName,
-    NoSuchOCIProjectName,
-    )
+from lp.registry.errors import InvalidName, NoSuchOCIProjectName
 from lp.registry.interfaces.ociprojectname import (
     IOCIProjectName,
     IOCIProjectNameSet,
-    )
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+)
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.stormbase import StormBase
 
 
@@ -41,7 +35,8 @@ class OCIProjectName(StormBase):
         super().__init__()
         if not valid_name(name):
             raise InvalidName(
-                "%s is not a valid name for an OCI project." % name)
+                "%s is not a valid name for an OCI project." % name
+            )
         self.name = name
 
 
@@ -55,8 +50,11 @@ class OCIProjectNameSet:
 
     def getByName(self, name):
         """See `IOCIProjectNameSet`."""
-        project_name = IStore(OCIProjectName).find(
-            OCIProjectName, OCIProjectName.name == name).one()
+        project_name = (
+            IStore(OCIProjectName)
+            .find(OCIProjectName, OCIProjectName.name == name)
+            .one()
+        )
         if project_name is None:
             raise NoSuchOCIProjectName(name)
         return project_name

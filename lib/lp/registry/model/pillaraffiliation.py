@@ -15,23 +15,20 @@ person, the relevant affiliation details may be determined.
 """
 
 __all__ = [
-    'IHasAffiliation',
-    ]
+    "IHasAffiliation",
+]
 
 from collections import namedtuple
 
 from zope.component import adapter
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 
 from lp.answers.interfaces.questionsperson import IQuestionsPerson
 from lp.app.interfaces.launchpad import IHasIcon
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.registry.model.teammembership import find_team_participations
 
 
@@ -47,7 +44,8 @@ class IHasAffiliation(Interface):
         If a person has no affiliation with this object, their entry is None.
         """
 
-BadgeDetails = namedtuple('BadgeDetails', ('url', 'label', 'role'))
+
+BadgeDetails = namedtuple("BadgeDetails", ("url", "label", "role"))
 
 
 @adapter(Interface)
@@ -64,9 +62,9 @@ class PillarAffiliation:
     # We rank the affiliations from most important to least important.
     # Unlisted roles are given a rank of 10.
     affiliation_priorities = {
-        'maintainer': 1,
-        'driver': 2,
-        'bug supervisor': 3,
+        "maintainer": 1,
+        "driver": 2,
+        "bug supervisor": 3,
     }
 
     def __init__(self, context):
@@ -76,8 +74,7 @@ class PillarAffiliation:
         return [self.context]
 
     def getIconUrl(self, pillar):
-        if (IHasIcon.providedBy(self.context)
-                    and self.context.icon is not None):
+        if IHasIcon.providedBy(self.context) and self.context.icon is not None:
             icon_url = self.context.icon.getURL()
             return icon_url
         if IHasIcon.providedBy(pillar) and pillar.icon is not None:
@@ -89,7 +86,7 @@ class PillarAffiliation:
             return "/@@/product-badge"
 
     def _getAffiliation(self, person, pillars):
-        """ Return the affiliation information for a person, if any.
+        """Return the affiliation information for a person, if any.
 
         Subclasses will override this method to perform specific affiliation
         checks.
@@ -98,23 +95,27 @@ class PillarAffiliation:
         return []
 
     def _getAffiliationTeamRoles(self, pillars):
-        """ Return teams for which a person needs to belong, if affiliated.
+        """Return teams for which a person needs to belong, if affiliated.
 
         A person is affiliated with a pillar if they are in the list of
         drivers or are the maintainer.
         """
         result = {}
         for pillar in pillars:
-            result[BadgeDetails(
-                self.getIconUrl(pillar),
-                pillar.displayname, 'maintainer')] = [pillar.owner]
-            result[BadgeDetails(
-                self.getIconUrl(pillar),
-                pillar.displayname, 'driver')] = pillar.drivers
+            result[
+                BadgeDetails(
+                    self.getIconUrl(pillar), pillar.displayname, "maintainer"
+                )
+            ] = [pillar.owner]
+            result[
+                BadgeDetails(
+                    self.getIconUrl(pillar), pillar.displayname, "driver"
+                )
+            ] = pillar.drivers
         return result
 
     def getAffiliationBadges(self, persons):
-        """ Return the affiliation badge details for people given a context.
+        """Return the affiliation badge details for people given a context.
 
         There are 2 ways we check for affiliation:
         1. Generic membership checks of particular teams as returned by
@@ -149,14 +150,17 @@ class PillarAffiliation:
             # Sort the affiliation list according to the importance of each
             # affiliation role.
             badges.sort(
-                key=lambda badge:
-                    self.affiliation_priorities.get(badge.role, 10))
+                key=lambda badge: self.affiliation_priorities.get(
+                    badge.role, 10
+                )
+            )
             result.append(badges)
         return result
 
 
 class BugTaskPillarAffiliation(PillarAffiliation):
     """An affiliation adapter for bug tasks."""
+
     def getPillars(self):
         result = []
         bug = self.context.bug
@@ -165,17 +169,20 @@ class BugTaskPillarAffiliation(PillarAffiliation):
         return result
 
     def _getAffiliationTeamRoles(self, pillars):
-        """ A person is affiliated with a bugtask based on (in order):
+        """A person is affiliated with a bugtask based on (in order):
         - owner of bugtask pillar
         - driver of bugtask pillar
         - bug supervisor of bugtask pillar
         """
         result = super()._getAffiliationTeamRoles(pillars)
         for pillar in pillars:
-            result[BadgeDetails(
-                self.getIconUrl(pillar),
-                pillar.displayname,
-                'bug supervisor')] = [pillar.bug_supervisor]
+            result[
+                BadgeDetails(
+                    self.getIconUrl(pillar),
+                    pillar.displayname,
+                    "bug supervisor",
+                )
+            ] = [pillar.bug_supervisor]
         return result
 
 
@@ -196,9 +203,13 @@ class BranchPillarAffiliation(BugTaskPillarAffiliation):
         result = super()._getAffiliation(person, pillars)
         for pillar in pillars:
             if self.getBranch().isPersonTrustedReviewer(person):
-                result.append(BadgeDetails(
-                    self.getIconUrl(pillar),
-                    pillar.displayname, 'trusted reviewer'))
+                result.append(
+                    BadgeDetails(
+                        self.getIconUrl(pillar),
+                        pillar.displayname,
+                        "trusted reviewer",
+                    )
+                )
         return result
 
 
@@ -216,18 +227,21 @@ class CodeReviewVotePillarAffiliation(BranchPillarAffiliation):
 
 class DistroSeriesPillarAffiliation(PillarAffiliation):
     """An affiliation adapter for distroseries."""
+
     def getPillars(self):
         return [self.context.distribution]
 
 
 class ProductSeriesPillarAffiliation(PillarAffiliation):
     """An affiliation adapter for productseries."""
+
     def getPillars(self):
         return [self.context.product]
 
 
 class SpecificationPillarAffiliation(PillarAffiliation):
     """An affiliation adapter for blueprints."""
+
     def getPillars(self):
         return [self.context.target]
 
@@ -250,18 +264,24 @@ class QuestionPillarAffiliation(PillarAffiliation):
         if IDistributionSourcePackage.providedBy(target):
             question_targets = (target, target.distribution)
         else:
-            question_targets = (target, )
+            question_targets = (target,)
         questions_person = IQuestionsPerson(person)
         for target in questions_person.getDirectAnswerQuestionTargets():
             if target in question_targets:
                 result.append(
                     BadgeDetails(
                         self.getIconUrl(pillars[0]),
-                        target.displayname, 'answer contact'))
+                        target.displayname,
+                        "answer contact",
+                    )
+                )
         for target in questions_person.getTeamAnswerQuestionTargets():
             if target in question_targets:
                 result.append(
                     BadgeDetails(
                         self.getIconUrl(pillars[0]),
-                        target.displayname, 'answer contact'))
+                        target.displayname,
+                        "answer contact",
+                    )
+                )
         return result

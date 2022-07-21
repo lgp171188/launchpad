@@ -7,11 +7,8 @@ from zope.component import getUtility
 from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
     TeamMembershipStatus,
-    )
-from lp.testing import (
-    launchpadlib_for,
-    TestCaseWithFactory,
-    )
+)
+from lp.testing import TestCaseWithFactory, launchpadlib_for
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -21,40 +18,34 @@ class TestTeamMembershipTransitions(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.person = self.factory.makePerson(name='some-person')
+        self.person = self.factory.makePerson(name="some-person")
         owner = self.factory.makePerson()
-        self.team = self.factory.makeTeam(
-            name='some-team',
-            owner=owner)
+        self.team = self.factory.makeTeam(name="some-team", owner=owner)
         membership_set = getUtility(ITeamMembershipSet)
         membership_set.new(
-            self.person,
-            self.team,
-            TeamMembershipStatus.APPROVED,
-            self.person)
+            self.person, self.team, TeamMembershipStatus.APPROVED, self.person
+        )
         self.launchpad = launchpadlib_for("test", owner.name)
 
     def test_no_such_status(self):
         # An error should be thrown when transitioning to a status that
         # doesn't exist.
-        team = self.launchpad.people['some-team']
+        team = self.launchpad.people["some-team"]
         team_membership = team.members_details[1]
         # The error in this instance should be a valueerror, b/c the
         # WADL used by launchpadlib will enforce the method args.
         self.assertRaises(
-            ValueError,
-            team_membership.setStatus,
-            status='NOTVALIDSTATUS')
+            ValueError, team_membership.setStatus, status="NOTVALIDSTATUS"
+        )
 
     def test_invalid_transition(self):
         # An error should be thrown when transitioning to a status that
         # isn't a valid move.
-        team = self.launchpad.people['some-team']
+        team = self.launchpad.people["some-team"]
         team_membership = team.members_details[1]
         # The error used here should be an HTTPError, since it is being
         # passed back by the server across the API.
         api_exception = self.assertRaises(
-            HTTPError,
-            team_membership.setStatus,
-            status='Proposed')
+            HTTPError, team_membership.setStatus, status="Proposed"
+        )
         self.assertEqual(400, api_exception.response.status)

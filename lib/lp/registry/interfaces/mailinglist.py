@@ -4,38 +4,27 @@
 """Mailing list interfaces."""
 
 __all__ = [
-    'CannotChangeSubscription',
-    'CannotSubscribe',
-    'CannotUnsubscribe',
-    'IHeldMessageDetails',
-    'IMailingList',
-    'IMailingListAPIView',
-    'IMailingListApplication',
-    'IMailingListSet',
-    'IMailingListSubscription',
-    'IMessageApproval',
-    'IMessageApprovalSet',
-    'MailingListStatus',
-    'PURGE_STATES',
-    'PostedMessageStatus',
-    'UnsafeToPurge',
-    ]
+    "CannotChangeSubscription",
+    "CannotSubscribe",
+    "CannotUnsubscribe",
+    "IHeldMessageDetails",
+    "IMailingList",
+    "IMailingListAPIView",
+    "IMailingListApplication",
+    "IMailingListSet",
+    "IMailingListSubscription",
+    "IMessageApproval",
+    "IMessageApprovalSet",
+    "MailingListStatus",
+    "PURGE_STATES",
+    "PostedMessageStatus",
+    "UnsafeToPurge",
+]
 
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Object,
-    Set,
-    Text,
-    TextLine,
-    )
+from zope.schema import Bool, Choice, Datetime, Object, Set, Text, TextLine
 
 from lp import _
 from lp.registry.interfaces.person import IPerson
@@ -59,88 +48,124 @@ class MailingListStatus(DBEnumeratedType):
 
     # REGISTERED and DECLINED are obsolete states, no longer used.
 
-    REGISTERED = DBItem(1, """
+    REGISTERED = DBItem(
+        1,
+        """
         Registered; request creation
 
         The team owner has requested that the mailing list for their team be
         created.
-        """)
+        """,
+    )
 
-    APPROVED = DBItem(2, """
+    APPROVED = DBItem(
+        2,
+        """
         Approved
 
         A Launchpad administrator has approved the request to create the team
         mailing list.
-        """)
+        """,
+    )
 
-    DECLINED = DBItem(3, """
+    DECLINED = DBItem(
+        3,
+        """
         Declined
 
         A Launchpad administrator has declined the request to create the team
         mailing list.
-        """)
+        """,
+    )
 
-    CONSTRUCTING = DBItem(4, """
+    CONSTRUCTING = DBItem(
+        4,
+        """
         Constructing
 
         Mailman is in the process of constructing a mailing list that has been
         approved for creation.
-        """)
+        """,
+    )
 
-    ACTIVE = DBItem(5, """
+    ACTIVE = DBItem(
+        5,
+        """
         Active
 
         Mailman has successfully created the mailing list, and it is now
         active.
-        """)
+        """,
+    )
 
-    FAILED = DBItem(6, """
+    FAILED = DBItem(
+        6,
+        """
         Failed
 
         Mailman was unsuccessful in creating the mailing list.
-        """)
+        """,
+    )
 
-    INACTIVE = DBItem(7, """
+    INACTIVE = DBItem(
+        7,
+        """
         Inactive
 
         A previously active mailing list has been made inactive by its team
         owner.
-        """)
+        """,
+    )
 
-    MODIFIED = DBItem(8, """
+    MODIFIED = DBItem(
+        8,
+        """
         Modified
 
         An active mailing list has been modified and this modification needs
         to be communicated to Mailman.
-        """)
+        """,
+    )
 
-    UPDATING = DBItem(9, """
+    UPDATING = DBItem(
+        9,
+        """
         Updating
 
         A modified mailing list is being updated by Mailman.
-        """)
+        """,
+    )
 
-    DEACTIVATING = DBItem(10, """
+    DEACTIVATING = DBItem(
+        10,
+        """
         Deactivating
 
         The mailing list has been flagged for deactivation by the team owner.
         Mailman will be informed of this and will take the necessary actions
         to deactivate the list.
-        """)
+        """,
+    )
 
-    MOD_FAILED = DBItem(11, """
+    MOD_FAILED = DBItem(
+        11,
+        """
         Modification failed
 
         Mailman was unsuccessful in modifying the mailing list.
-        """)
+        """,
+    )
 
-    PURGED = DBItem(12, """
+    PURGED = DBItem(
+        12,
+        """
         Purged
 
         All Mailman artifacts for this mailing list have been purged, so the
         list can be treated as if it never existed, except for foreign key
         references such as from a MessageApproval.
-        """)
+        """,
+    )
 
 
 PURGE_STATES = (
@@ -148,7 +173,7 @@ PURGE_STATES = (
     MailingListStatus.DECLINED,
     MailingListStatus.FAILED,
     MailingListStatus.INACTIVE,
-    )
+)
 
 
 class PostedMessageStatus(DBEnumeratedType):
@@ -158,138 +183,179 @@ class PostedMessageStatus(DBEnumeratedType):
     moderation, the message gets one of these statuses.
     """
 
-    NEW = DBItem(0, """
+    NEW = DBItem(
+        0,
+        """
         New status
 
         The message has been posted and held for first-post moderation, but no
         disposition of the message has yet been made.
-        """)
+        """,
+    )
 
-    APPROVAL_PENDING = DBItem(20, """
+    APPROVAL_PENDING = DBItem(
+        20,
+        """
         Approval pending
 
         The team administrator has approved this message, but Mailman has not
         yet been informed of this status.
-        """)
+        """,
+    )
 
-    REJECTION_PENDING = DBItem(30, """
+    REJECTION_PENDING = DBItem(
+        30,
+        """
         Decline pending
 
         The team administrator has declined this message, but Mailman has not
         yet been informed of this status.
-        """)
+        """,
+    )
 
-    APPROVED = DBItem(40, """
+    APPROVED = DBItem(
+        40,
+        """
         Approved
 
         A message held for first-post moderation has been approved.
-        """)
+        """,
+    )
 
-    REJECTED = DBItem(50, """
+    REJECTED = DBItem(
+        50,
+        """
         Rejected
 
         A message held for first-post moderation has been rejected.
-        """)
+        """,
+    )
 
-    DISCARD_PENDING = DBItem(60, """
+    DISCARD_PENDING = DBItem(
+        60,
+        """
         Discard pending
 
         The team administrator has discarded this message, but Mailman has not
         yet been informed of this status.
-        """)
+        """,
+    )
 
-    DISCARDED = DBItem(70, """
+    DISCARDED = DBItem(
+        70,
+        """
         Discarded
 
         A message held for first-post moderation has been discarded.
-        """)
+        """,
+    )
 
 
 class IMailingList(Interface):
     """A mailing list."""
 
     team = PublicPersonChoice(
-        title=_('Team'),
-        description=_('The team that this mailing list is associated with.'),
-        vocabulary='ValidTeam',
-        required=True, readonly=True)
+        title=_("Team"),
+        description=_("The team that this mailing list is associated with."),
+        vocabulary="ValidTeam",
+        required=True,
+        readonly=True,
+    )
 
     registrant = PublicPersonChoice(
-        title=_('Registrant'),
-        description=_('The person who registered the mailing list.'),
-        vocabulary='ValidPersonOrTeam',
-        required=True, readonly=True)
+        title=_("Registrant"),
+        description=_("The person who registered the mailing list."),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+        readonly=True,
+    )
 
     date_registered = Datetime(
-        title=_('Registration date'),
-        description=_('The date on which this mailing list was registered.'),
-        required=True, readonly=True)
+        title=_("Registration date"),
+        description=_("The date on which this mailing list was registered."),
+        required=True,
+        readonly=True,
+    )
 
     # Mailing lists are auto-approved now so these fields are no longer used,
     # but we won't drop the columns from the database because they might be
     # useful for the historical record.
     reviewer = PublicPersonChoice(
-        title=_('Reviewer'),
+        title=_("Reviewer"),
         description=_(
-            'The person who reviewed this mailing list registration, or '
-            'None if the registration has not yet been reviewed.'),
-        vocabulary='ValidPersonOrTeam')
+            "The person who reviewed this mailing list registration, or "
+            "None if the registration has not yet been reviewed."
+        ),
+        vocabulary="ValidPersonOrTeam",
+    )
 
     date_reviewed = Datetime(
-        title=_('Review date'),
-        description=_('The date on which this mailing list registration was '
-                      'reviewed, or None if the registration has not yet '
-                      'been reviewed.'))
+        title=_("Review date"),
+        description=_(
+            "The date on which this mailing list registration was "
+            "reviewed, or None if the registration has not yet "
+            "been reviewed."
+        ),
+    )
 
     date_activated = Datetime(
-        title=_('Activation date'),
-        description=_('The date on which this mailing list was activated, '
-                      'meaning that the Mailman process has successfully '
-                      'created it.  This may be None if the mailing list '
-                      'has not yet been activated, or that its activation '
-                      'has failed.'))
+        title=_("Activation date"),
+        description=_(
+            "The date on which this mailing list was activated, "
+            "meaning that the Mailman process has successfully "
+            "created it.  This may be None if the mailing list "
+            "has not yet been activated, or that its activation "
+            "has failed."
+        ),
+    )
 
     status = Choice(
-        title=_('Status'),
-        description=_('The status of the mailing list.'),
-        vocabulary='MailingListStatus',
+        title=_("Status"),
+        description=_("The status of the mailing list."),
+        vocabulary="MailingListStatus",
         required=True,
-        )
+    )
 
     welcome_message = Text(
-        title=_('Welcome message text'),
-        description=_('Any instructions or links that should be sent to new '
-                      'subscribers to this mailing list.'),
+        title=_("Welcome message text"),
+        description=_(
+            "Any instructions or links that should be sent to new "
+            "subscribers to this mailing list."
+        ),
         required=False,
-        )
+    )
 
     address = TextLine(
         title=_("This list's email address."),
-        description=_(
-            "The text representation of this team's email address."),
+        description=_("The text representation of this team's email address."),
         required=True,
-        readonly=True)
+        readonly=True,
+    )
 
     archive_url = TextLine(
         title=_("The url to the list's archives"),
         description=_(
-            'This is the url to the archive if the mailing list has ever '
-            'activated.  Such a list, even if now inactive, may still have '
-            'an archive.  If the list has never been activated, this will '
-            'be None.'),
-        readonly=True)
+            "This is the url to the archive if the mailing list has ever "
+            "activated.  Such a list, even if now inactive, may still have "
+            "an archive.  If the list has never been activated, this will "
+            "be None."
+        ),
+        readonly=True,
+    )
 
     is_public = Bool(
-        title=_('Is this mailing list, and its team, public?'),
-        readonly=True)
+        title=_("Is this mailing list, and its team, public?"), readonly=True
+    )
 
     is_usable = Bool(
-        title=_('Is this mailing list in a state to accept messages?'),
+        title=_("Is this mailing list in a state to accept messages?"),
         description=_(
             "This doesn't necessarily mean that the list is in perfect "
-            'shape; its status might be `MailingListStatus.MOD_FAILED`. But '
-            'it should be able to handle messages.'),
-        readonly=True)
+            "shape; its status might be `MailingListStatus.MOD_FAILED`. But "
+            "it should be able to handle messages."
+        ),
+        readonly=True,
+    )
 
     def startConstructing():
         """Set the status to the `MailingListStatus.CONSTRUCTING` state.
@@ -429,9 +495,8 @@ class IMailingListSet(Interface):
     """A set of mailing lists."""
 
     title = TextLine(
-        title=_('Title'),
-        description=_('The hard coded title.'),
-        readonly=True)
+        title=_("Title"), description=_("The hard coded title."), readonly=True
+    )
 
     def new(team, registrant=None):
         """Register a new team mailing list.
@@ -498,41 +563,52 @@ class IMailingListSet(Interface):
         """
 
     approved_lists = Set(
-        title=_('Approved lists'),
+        title=_("Approved lists"),
         description=_(
-            'All mailing lists with status `MailingListStatus.APPROVED`.'),
+            "All mailing lists with status `MailingListStatus.APPROVED`."
+        ),
         value_type=Object(schema=IMailingList),
-        readonly=True)
+        readonly=True,
+    )
 
     active_lists = Set(
-        title=_('Active lists'),
+        title=_("Active lists"),
         description=_(
-            'All mailing lists with status `MailingListStatus.ACTIVE`.'),
+            "All mailing lists with status `MailingListStatus.ACTIVE`."
+        ),
         value_type=Object(schema=IMailingList),
-        readonly=True)
+        readonly=True,
+    )
 
     modified_lists = Set(
-        title=_('Modified lists'),
+        title=_("Modified lists"),
         description=_(
-            'All mailing lists with status `MailingListStatus.MODIFIED`.'),
+            "All mailing lists with status `MailingListStatus.MODIFIED`."
+        ),
         value_type=Object(schema=IMailingList),
-        readonly=True)
+        readonly=True,
+    )
 
     deactivated_lists = Set(
-        title=_('Deactivated lists'),
-        description=_('All mailing lists with status '
-                      '`MailingListStatus.DEACTIVATING`.'),
+        title=_("Deactivated lists"),
+        description=_(
+            "All mailing lists with status "
+            "`MailingListStatus.DEACTIVATING`."
+        ),
         value_type=Object(schema=IMailingList),
-        readonly=True)
+        readonly=True,
+    )
 
     unsynchronized_lists = Set(
-        title=_('Unsynchronized lists'),
+        title=_("Unsynchronized lists"),
         description=_(
-            'All mailing lists with unsynchronized state, e.g. '
-            '`MailingListStatus.CONSTRUCTING` and '
-            '`MailingListStatus.UPDATING`.'),
+            "All mailing lists with unsynchronized state, e.g. "
+            "`MailingListStatus.CONSTRUCTING` and "
+            "`MailingListStatus.UPDATING`."
+        ),
         value_type=Object(schema=IMailingList),
-        readonly=True)
+        readonly=True,
+    )
 
     def updateTeamAddresses(old_hostname):
         """Update team addresses to refer to a different Launchpad instance.
@@ -670,90 +746,114 @@ class IMailingListSubscription(Interface):
     """A mailing list subscription."""
 
     person = PublicPersonChoice(
-        title=_('Person'),
-        description=_('The person who is subscribed to this mailing list.'),
-        vocabulary='ValidTeamMember',
-        required=True, readonly=True)
+        title=_("Person"),
+        description=_("The person who is subscribed to this mailing list."),
+        vocabulary="ValidTeamMember",
+        required=True,
+        readonly=True,
+    )
 
     mailing_list = Choice(
-        title=_('Mailing list'),
-        description=_('The mailing list for this subscription.'),
-        vocabulary='ActiveMailingList',
-        required=True, readonly=True)
+        title=_("Mailing list"),
+        description=_("The mailing list for this subscription."),
+        vocabulary="ActiveMailingList",
+        required=True,
+        readonly=True,
+    )
 
     date_joined = Datetime(
-        title=_('Date joined'),
+        title=_("Date joined"),
         description=_("The date this person joined the team's mailing list."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
 
     email_address = Object(
         schema=IEmailAddress,
-        title=_('Email address'),
+        title=_("Email address"),
         description=_(
             "The subscribed email address or None, meaning use the person's "
-            'preferred email address, even if that changes.'),
-        required=True)
+            "preferred email address, even if that changes."
+        ),
+        required=True,
+    )
 
     subscribed_address = Object(
         schema=IEmailAddress,
-        title=_('Email Address'),
-        description=_('The IEmailAddress this person is subscribed with.'),
-        readonly=True)
+        title=_("Email Address"),
+        description=_("The IEmailAddress this person is subscribed with."),
+        readonly=True,
+    )
 
 
 class IMessageApproval(Interface):
     """A held message."""
 
     message_id = Text(
-        title=_('Message-ID'),
-        description=_('The RFC 2822 Message-ID header.'),
-        required=True, readonly=True)
+        title=_("Message-ID"),
+        description=_("The RFC 2822 Message-ID header."),
+        required=True,
+        readonly=True,
+    )
 
     posted_by = PublicPersonChoice(
-        title=_('Posted by'),
-        description=_('The Launchpad member who posted the message.'),
-        vocabulary='ValidPersonOrTeam',
-        required=True, readonly=True)
+        title=_("Posted by"),
+        description=_("The Launchpad member who posted the message."),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+        readonly=True,
+    )
 
     posted_message = Object(
         schema=ILibraryFileAlias,
-        title=_('Posted message'),
-        description=_('An alias to the posted message in the librarian.'),
-        required=True, readonly=True)
+        title=_("Posted message"),
+        description=_("An alias to the posted message in the librarian."),
+        required=True,
+        readonly=True,
+    )
 
     message = Object(
         schema=IMessage,
-        title=_('The posted message object'),
-        description=_('The posted message'),
-        required=True, readonly=True)
+        title=_("The posted message object"),
+        description=_("The posted message"),
+        required=True,
+        readonly=True,
+    )
 
     posted_date = Datetime(
-        title=_('Date posted'),
-        description=_('The date this message was posted.'),
-        required=True, readonly=True)
+        title=_("Date posted"),
+        description=_("The date this message was posted."),
+        required=True,
+        readonly=True,
+    )
 
     mailing_list = Object(
         schema=IMailingList,
-        title=_('The mailing list'),
-        description=_('The mailing list this message was posted to.'),
-        required=True, readonly=True)
+        title=_("The mailing list"),
+        description=_("The mailing list this message was posted to."),
+        required=True,
+        readonly=True,
+    )
 
     status = Choice(
-        title=_('Status'),
-        description=_('The status of the held message.'),
-        vocabulary='PostedMessageStatus',
-        required=True)
+        title=_("Status"),
+        description=_("The status of the held message."),
+        vocabulary="PostedMessageStatus",
+        required=True,
+    )
 
     disposed_by = PublicPersonChoice(
-        title=_('Approved or rejected by'),
-        description=_('The person who approved or rejected this message.'),
-        vocabulary='ValidPersonOrTeam',
-        required=False)
+        title=_("Approved or rejected by"),
+        description=_("The person who approved or rejected this message."),
+        vocabulary="ValidPersonOrTeam",
+        required=False,
+    )
 
     disposal_date = Datetime(
-        title=_('Date approved or rejected'),
-        description=_('The date this message was approved or rejected.'),
-        required=False)
+        title=_("Date approved or rejected"),
+        description=_("The date this message was approved or rejected."),
+        required=False,
+    )
 
     def approve(reviewer):
         """Approve the message.
@@ -832,43 +932,56 @@ class IHeldMessageDetails(Interface):
     set of information about a held message, from several related but separate
     objects.
     """
+
     message_approval = Object(
         schema=IMessageApproval,
-        title=_('The held message record'),
-        description=_('The held message record'),
-        required=True)
+        title=_("The held message record"),
+        description=_("The held message record"),
+        required=True,
+    )
 
     message = Object(
         schema=IMessage,
-        title=_('The message record'),
-        description=_('The representation of the message in the librarian'),
-        required=True)
+        title=_("The message record"),
+        description=_("The representation of the message in the librarian"),
+        required=True,
+    )
 
     message_id = Text(
-        title=_('Message-ID'),
-        description=_('The RFC 2822 Message-ID header.'),
-        required=True, readonly=True)
+        title=_("Message-ID"),
+        description=_("The RFC 2822 Message-ID header."),
+        required=True,
+        readonly=True,
+    )
 
     subject = Text(
-        title=_('Subject'),
-        description=_('The RFC 2822 Subject header.'),
-        required=True, readonly=True)
+        title=_("Subject"),
+        description=_("The RFC 2822 Subject header."),
+        required=True,
+        readonly=True,
+    )
 
     author = Object(
         schema=IPerson,
-        title=_('Message author'),
-        description=_('The person who sent the message'),
-        required=True, readonly=True)
+        title=_("Message author"),
+        description=_("The person who sent the message"),
+        required=True,
+        readonly=True,
+    )
 
     date = Text(
-        title=_('Date'),
-        description=_('The RFC 2822 Date header.'),
-        required=True, readonly=True)
+        title=_("Date"),
+        description=_("The RFC 2822 Date header."),
+        required=True,
+        readonly=True,
+    )
 
     body = Text(
-        title=_('Plain text message body'),
-        description=_('The message body as plain text.'),
-        required=True, readonly=True)
+        title=_("Plain text message body"),
+        description=_("The message body as plain text."),
+        required=True,
+        readonly=True,
+    )
 
 
 class BaseSubscriptionErrors(Exception):
@@ -881,7 +994,7 @@ class BaseSubscriptionErrors(Exception):
             non-ascii text (since a person's display name is used here).
         :type error_string: str
         """
-        assert isinstance(error_string, str), 'Unicode expected'
+        assert isinstance(error_string, str), "Unicode expected"
         Exception.__init__(self, error_string)
         self._error_string = error_string
 
@@ -925,5 +1038,7 @@ class UnsafeToPurge(Exception):
         self._mailing_list = mailing_list
 
     def __str__(self):
-        return 'Cannot purge mailing list in %s state: %s' % (
-            self._mailing_list.status.name, self._mailing_list.team.name)
+        return "Cannot purge mailing list in %s state: %s" % (
+            self._mailing_list.status.name,
+            self._mailing_list.team.name,
+        )

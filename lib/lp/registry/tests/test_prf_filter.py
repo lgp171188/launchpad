@@ -9,7 +9,7 @@ import unittest
 from lp.registry.scripts.productreleasefinder.filter import (
     Filter,
     FilterPattern,
-    )
+)
 
 
 class Filter_Logging(unittest.TestCase):
@@ -75,7 +75,6 @@ class Filter_CheckUrl(unittest.TestCase):
 
 
 class Filter_IsPossibleParentUrl(unittest.TestCase):
-
     def makeFilter(self, key, urlglob):
         pattern = FilterPattern(key, urlglob)
         return Filter([pattern])

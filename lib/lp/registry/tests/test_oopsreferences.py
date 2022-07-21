@@ -3,23 +3,14 @@
 
 """Tests of the oopsreferences core."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 from pytz import utc
 
 from lp.registry.model.oopsreferences import referenced_oops
 from lp.services.database.interfaces import IStore
-from lp.services.messages.model.message import (
-    Message,
-    MessageSet,
-    )
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.services.messages.model.message import Message, MessageSet
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -33,16 +24,16 @@ class TestOopsReferences(TestCaseWithFactory):
 
     def test_oops_in_messagechunk(self):
         oopsid = "OOPS-abcdef1234"
-        MessageSet().fromText('foo', "foo %s bar" % oopsid)
+        MessageSet().fromText("foo", "foo %s bar" % oopsid)
         self.store.flush()
         now = datetime.now(tz=utc)
         day = timedelta(days=1)
         self.assertEqual(
-            {oopsid},
-            referenced_oops(now - day, now, "product=1", {}))
+            {oopsid}, referenced_oops(now - day, now, "product=1", {})
+        )
         self.assertEqual(
-            set(),
-            referenced_oops(now + day, now + day, "product=1", {}))
+            set(), referenced_oops(now + day, now + day, "product=1", {})
+        )
 
     def test_oops_in_messagesubject(self):
         oopsid = "OOPS-abcdef1234"
@@ -52,11 +43,11 @@ class TestOopsReferences(TestCaseWithFactory):
         now = datetime.now(tz=utc)
         day = timedelta(days=1)
         self.assertEqual(
-            {oopsid},
-            referenced_oops(now - day, now, "product=1", {}))
+            {oopsid}, referenced_oops(now - day, now, "product=1", {})
+        )
         self.assertEqual(
-            set(),
-            referenced_oops(now + day, now + day, "product=1", {}))
+            set(), referenced_oops(now + day, now + day, "product=1", {})
+        )
 
     def test_oops_in_bug_title(self):
         oopsid = "OOPS-abcdef1234"
@@ -67,11 +58,11 @@ class TestOopsReferences(TestCaseWithFactory):
         now = datetime.now(tz=utc)
         day = timedelta(days=1)
         self.assertEqual(
-            {oopsid},
-            referenced_oops(now - day, now, "product=1", {}))
+            {oopsid}, referenced_oops(now - day, now, "product=1", {})
+        )
         self.assertEqual(
-            set(),
-            referenced_oops(now + day, now + day, "product=1", {}))
+            set(), referenced_oops(now + day, now + day, "product=1", {})
+        )
 
     def test_oops_in_bug_description(self):
         oopsid = "OOPS-abcdef1234"
@@ -82,11 +73,11 @@ class TestOopsReferences(TestCaseWithFactory):
         now = datetime.now(tz=utc)
         day = timedelta(days=1)
         self.assertEqual(
-            {oopsid},
-            referenced_oops(now - day, now, "product=1", {}))
+            {oopsid}, referenced_oops(now - day, now, "product=1", {})
+        )
         self.assertEqual(
-            set(),
-            referenced_oops(now + day, now + day, "product=1", {}))
+            set(), referenced_oops(now + day, now + day, "product=1", {})
+        )
 
     def test_oops_in_question_title(self):
         oopsid = "OOPS-abcdef1234"
@@ -96,12 +87,22 @@ class TestOopsReferences(TestCaseWithFactory):
         day = timedelta(days=1)
         self.assertEqual(
             {oopsid},
-            referenced_oops(now - day, now, "product=%(product)s",
-            {'product': question.product.id}))
+            referenced_oops(
+                now - day,
+                now,
+                "product=%(product)s",
+                {"product": question.product.id},
+            ),
+        )
         self.assertEqual(
             set(),
-            referenced_oops(now + day, now + day, "product=%(product)s",
-            {'product': question.product.id}))
+            referenced_oops(
+                now + day,
+                now + day,
+                "product=%(product)s",
+                {"product": question.product.id},
+            ),
+        )
 
     def test_oops_in_question_wrong_context(self):
         oopsid = "OOPS-abcdef1234"
@@ -112,24 +113,40 @@ class TestOopsReferences(TestCaseWithFactory):
         self.store.flush()
         self.assertEqual(
             set(),
-            referenced_oops(now - day, now, "product=%(product)s",
-            {'product': question.product.id + 1}))
+            referenced_oops(
+                now - day,
+                now,
+                "product=%(product)s",
+                {"product": question.product.id + 1},
+            ),
+        )
 
     def test_oops_in_question_description(self):
         oopsid = "OOPS-abcdef1234"
         question = self.factory.makeQuestion(
-            description="Crash with %s" % oopsid)
+            description="Crash with %s" % oopsid
+        )
         self.store.flush()
         now = datetime.now(tz=utc)
         day = timedelta(days=1)
         self.assertEqual(
             {oopsid},
-            referenced_oops(now - day, now, "product=%(product)s",
-            {'product': question.product.id}))
+            referenced_oops(
+                now - day,
+                now,
+                "product=%(product)s",
+                {"product": question.product.id},
+            ),
+        )
         self.assertEqual(
             set(),
-            referenced_oops(now + day, now + day, "product=%(product)s",
-            {'product': question.product.id}))
+            referenced_oops(
+                now + day,
+                now + day,
+                "product=%(product)s",
+                {"product": question.product.id},
+            ),
+        )
 
     def test_oops_in_question_whiteboard(self):
         oopsid = "OOPS-abcdef1234"
@@ -141,12 +158,22 @@ class TestOopsReferences(TestCaseWithFactory):
         day = timedelta(days=1)
         self.assertEqual(
             {oopsid},
-            referenced_oops(now - day, now, "product=%(product)s",
-            {'product': question.product.id}))
+            referenced_oops(
+                now - day,
+                now,
+                "product=%(product)s",
+                {"product": question.product.id},
+            ),
+        )
         self.assertEqual(
             set(),
-            referenced_oops(now + day, now + day, "product=%(product)s",
-            {'product': question.product.id}))
+            referenced_oops(
+                now + day,
+                now + day,
+                "product=%(product)s",
+                {"product": question.product.id},
+            ),
+        )
 
     def test_oops_in_question_distribution(self):
         oopsid = "OOPS-abcdef1234"
@@ -159,12 +186,22 @@ class TestOopsReferences(TestCaseWithFactory):
         day = timedelta(days=1)
         self.assertEqual(
             {oopsid},
-            referenced_oops(now - day, now, "distribution=%(distribution)s",
-            {'distribution': distro.id}))
+            referenced_oops(
+                now - day,
+                now,
+                "distribution=%(distribution)s",
+                {"distribution": distro.id},
+            ),
+        )
         self.assertEqual(
             set(),
-            referenced_oops(now + day, now + day,
-            "distribution=%(distribution)s", {'distribution': distro.id}))
+            referenced_oops(
+                now + day,
+                now + day,
+                "distribution=%(distribution)s",
+                {"distribution": distro.id},
+            ),
+        )
 
     def test_referenced_oops_in_urls_bug_663249(self):
         # Sometimes OOPS ids appears as part of an URL. These should could as
@@ -178,17 +215,20 @@ class TestOopsReferences(TestCaseWithFactory):
         with person_logged_in(bug_old.owner):
             bug_old.description = (
                 "foo https://lp-oops.canonical.com/oops.py?oopsid=%s bar"
-                % oopsid_old)
+                % oopsid_old
+            )
         with person_logged_in(bug_new.owner):
             bug_new.description = (
                 "foo https://oops.canonical.com/oops.py?oopsid=%s bar"
-                % oopsid_new)
+                % oopsid_new
+            )
         self.store.flush()
         now = datetime.now(tz=utc)
         day = timedelta(days=1)
         self.assertEqual(
             {oopsid_old, oopsid_new},
-            referenced_oops(now - day, now, "product=1", {}))
+            referenced_oops(now - day, now, "product=1", {}),
+        )
         self.assertEqual(
-            set(),
-            referenced_oops(now + day, now + day, "product=1", {}))
+            set(), referenced_oops(now + day, now + day, "product=1", {})
+        )

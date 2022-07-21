@@ -4,50 +4,46 @@
 """Implementation classes for a Person."""
 
 __all__ = [
-    'get_person_visibility_terms',
-    'get_recipients',
-    'generate_nick',
-    'IrcID',
-    'IrcIDSet',
-    'JabberID',
-    'JabberIDSet',
-    'JoinTeamEvent',
-    'NicknameGenerationError',
-    'Owner',
-    'Person',
-    'person_sort_key',
-    'PersonLanguage',
-    'PersonSet',
-    'PersonSettings',
-    'SSHKey',
-    'SSHKeySet',
-    'TeamInvitationEvent',
-    'ValidPersonCache',
-    'WikiName',
-    'WikiNameSet',
-    ]
+    "get_person_visibility_terms",
+    "get_recipients",
+    "generate_nick",
+    "IrcID",
+    "IrcIDSet",
+    "JabberID",
+    "JabberIDSet",
+    "JoinTeamEvent",
+    "NicknameGenerationError",
+    "Owner",
+    "Person",
+    "person_sort_key",
+    "PersonLanguage",
+    "PersonSet",
+    "PersonSettings",
+    "SSHKey",
+    "SSHKeySet",
+    "TeamInvitationEvent",
+    "ValidPersonCache",
+    "WikiName",
+    "WikiNameSet",
+]
 
 import base64
 import copy
-from datetime import (
-    datetime,
-    timedelta,
-    )
-from operator import attrgetter
 import random
 import re
 import weakref
+from datetime import datetime, timedelta
+from operator import attrgetter
 
-from lazr.delegates import delegate_to
-from lazr.restful.utils import (
-    get_current_browser_request,
-    smartquote,
-    )
 import pytz
-from requests import PreparedRequest
 import six
+import transaction
+from lazr.delegates import delegate_to
+from lazr.restful.utils import get_current_browser_request, smartquote
+from requests import PreparedRequest
 from storm.base import Storm
 from storm.expr import (
+    SQL,
     Alias,
     And,
     Coalesce,
@@ -61,46 +57,24 @@ from storm.expr import (
     Not,
     Or,
     Select,
-    SQL,
     Table,
     Union,
     Upper,
     With,
-    )
+)
 from storm.info import ClassAlias
-from storm.locals import (
-    Int,
-    Reference,
-    ReferenceSet,
-    )
-from storm.store import (
-    EmptyResultSet,
-    Store,
-    )
-import transaction
+from storm.locals import Int, Reference, ReferenceSet
+from storm.store import EmptyResultSet, Store
 from twisted.conch.ssh.common import getNS
 from twisted.conch.ssh.keys import Key
-from zope.component import (
-    adapter,
-    getUtility,
-    )
+from zope.component import adapter, getUtility
 from zope.event import notify
-from zope.interface import (
-    alsoProvides,
-    classImplements,
-    implementer,
-    )
+from zope.interface import alsoProvides, classImplements, implementer
 from zope.interface.interfaces import ComponentLookupError
 from zope.lifecycleevent import ObjectCreatedEvent
 from zope.publisher.interfaces import Unauthorized
-from zope.security.checker import (
-    canAccess,
-    canWrite,
-    )
-from zope.security.proxy import (
-    ProxyFactory,
-    removeSecurityProxy,
-    )
+from zope.security.checker import canAccess, canWrite
+from zope.security.proxy import ProxyFactory, removeSecurityProxy
 
 from lp import _
 from lp.answers.enums import QuestionStatus
@@ -112,32 +86,26 @@ from lp.app.interfaces.launchpad import (
     IHasLogo,
     IHasMugshot,
     ILaunchpadCelebrities,
-    )
+)
 from lp.app.validators.email import valid_email
-from lp.app.validators.name import (
-    sanitize_name,
-    valid_name,
-    )
+from lp.app.validators.name import sanitize_name, valid_name
 from lp.blueprints.enums import SpecificationFilter
 from lp.blueprints.model.specification import (
     HasSpecificationsMixin,
     Specification,
-    )
+)
 from lp.blueprints.model.specificationsearch import (
     get_specification_active_product_filter,
     get_specification_privacy_filter,
     search_specifications,
-    )
+)
 from lp.blueprints.model.specificationworkitem import SpecificationWorkItem
 from lp.bugs.interfaces.bugtarget import IBugTarget
-from lp.bugs.interfaces.bugtask import (
-    BugTaskStatusSearch,
-    IBugTaskSet,
-    )
+from lp.bugs.interfaces.bugtask import BugTaskStatusSearch, IBugTaskSet
 from lp.bugs.interfaces.bugtasksearch import (
     BugTaskSearchParams,
     get_person_bugtasks_search_params,
-    )
+)
 from lp.bugs.model.bugtarget import HasBugsBase
 from lp.bugs.model.structuralsubscription import StructuralSubscription
 from lp.code.interfaces.branchcollection import IAllBranches
@@ -146,14 +114,14 @@ from lp.code.model.hasbranches import (
     HasBranchesMixin,
     HasMergeProposalsMixin,
     HasRequestedReviewsMixin,
-    )
+)
 from lp.registry.enums import (
     EXCLUSIVE_TEAM_POLICY,
     INCLUSIVE_TEAM_POLICY,
     PersonVisibility,
     TeamMembershipPolicy,
     TeamMembershipRenewalPolicy,
-    )
+)
 from lp.registry.errors import (
     InvalidName,
     JoinNotAllowed,
@@ -162,31 +130,25 @@ from lp.registry.errors import (
     NotPlaceholderAccount,
     PPACreationError,
     TeamMembershipPolicyError,
-    )
+)
 from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyGrantSource,
     IAccessPolicySource,
-    )
+)
 from lp.registry.interfaces.codeofconduct import ISignedCodeOfConductSet
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.gpg import IGPGKeySet
-from lp.registry.interfaces.irc import (
-    IIrcID,
-    IIrcIDSet,
-    )
-from lp.registry.interfaces.jabber import (
-    IJabberID,
-    IJabberIDSet,
-    )
+from lp.registry.interfaces.irc import IIrcID, IIrcIDSet
+from lp.registry.interfaces.jabber import IJabberID, IJabberIDSet
 from lp.registry.interfaces.karma import IKarmaActionSet
 from lp.registry.interfaces.mailinglist import (
     IMailingListSet,
     MailingListStatus,
     PostedMessageStatus,
-    )
+)
 from lp.registry.interfaces.mailinglistsubscription import (
     MailingListAutoSubscribePolicy,
-    )
+)
 from lp.registry.interfaces.person import (
     AlreadyConvertedException,
     ImmutableVisibilityError,
@@ -200,30 +162,24 @@ from lp.registry.interfaces.person import (
     TeamEmailAddressError,
     validate_membership_policy,
     validate_public_person,
-    )
+)
 from lp.registry.interfaces.persontransferjob import IPersonMergeJobSource
-from lp.registry.interfaces.product import (
-    IProduct,
-    IProductSet,
-    )
+from lp.registry.interfaces.product import IProduct, IProductSet
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.ssh import (
+    SSH_TEXT_TO_KEY_TYPE,
     ISSHKey,
     ISSHKeySet,
-    SSH_TEXT_TO_KEY_TYPE,
     SSHKeyAdditionError,
     SSHKeyType,
-    )
+)
 from lp.registry.interfaces.teammembership import (
     IJoinTeamEvent,
     ITeamInvitationEvent,
     TeamMembershipStatus,
-    )
-from lp.registry.interfaces.wikiname import (
-    IWikiName,
-    IWikiNameSet,
-    )
+)
+from lp.registry.interfaces.wikiname import IWikiName, IWikiNameSet
 from lp.registry.model.codeofconduct import SignedCodeOfConduct
 from lp.registry.model.karma import (
     Karma,
@@ -231,7 +187,7 @@ from lp.registry.model.karma import (
     KarmaCache,
     KarmaCategory,
     KarmaTotalCache,
-    )
+)
 from lp.registry.model.milestone import Milestone
 from lp.registry.model.personlocation import PersonLocation
 from lp.registry.model.pillar import PillarName
@@ -240,12 +196,9 @@ from lp.registry.model.teammembership import (
     TeamMembership,
     TeamMembershipSet,
     TeamParticipation,
-    )
+)
 from lp.services.config import config
-from lp.services.database import (
-    bulk,
-    postgresql,
-    )
+from lp.services.database import bulk, postgresql
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
@@ -253,12 +206,12 @@ from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.policy import PrimaryDatabasePolicy
 from lp.services.database.sqlbase import (
+    SQLBase,
     convert_storm_clause_to_string,
     cursor,
     quote,
-    SQLBase,
     sqlvalues,
-    )
+)
 from lp.services.database.sqlobject import (
     BoolCol,
     ForeignKey,
@@ -266,51 +219,39 @@ from lp.services.database.sqlobject import (
     SQLMultipleJoin,
     SQLObjectNotFound,
     StringCol,
-    )
+)
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import fti_search
-from lp.services.helpers import (
-    backslashreplace,
-    shortlist,
-    )
+from lp.services.helpers import backslashreplace, shortlist
 from lp.services.identity.interfaces.account import (
+    INACTIVE_ACCOUNT_STATUSES,
     AccountCreationRationale,
     AccountDeceasedError,
     AccountStatus,
     AccountSuspendedError,
     IAccount,
     IAccountSet,
-    INACTIVE_ACCOUNT_STATUSES,
-    )
+)
 from lp.services.identity.interfaces.emailaddress import (
+    VALID_EMAIL_STATUSES,
     EmailAddressAlreadyTaken,
     EmailAddressStatus,
     IEmailAddress,
     IEmailAddressSet,
     InvalidEmailAddress,
-    VALID_EMAIL_STATUSES,
-    )
+)
 from lp.services.identity.model.account import Account
-from lp.services.identity.model.emailaddress import (
-    EmailAddress,
-    HasOwnerMixin,
-    )
+from lp.services.identity.model.emailaddress import EmailAddress, HasOwnerMixin
 from lp.services.librarian.model import LibraryFileAlias
 from lp.services.mail.helpers import (
     get_contact_email_addresses,
     get_email_template,
-    )
+)
 from lp.services.mail.sendmail import simple_sendmail
-from lp.services.oauth.model import (
-    OAuthAccessToken,
-    OAuthRequestToken,
-    )
+from lp.services.oauth.model import OAuthAccessToken, OAuthRequestToken
 from lp.services.openid.adapters.openid import CurrentOpenIDEndPoint
 from lp.services.openid.model.openididentifier import OpenIdIdentifier
-from lp.services.propertycache import (
-    cachedproperty,
-    get_property_cache,
-    )
+from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.searchbuilder import any as search_any
 from lp.services.statistics.interfaces.statistic import ILaunchpadStatisticSet
 from lp.services.verification.interfaces.authtoken import LoginTokenType
@@ -319,26 +260,17 @@ from lp.services.verification.model.logintoken import LoginToken
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.publisher import canonical_url
 from lp.services.worlddata.model.language import Language
-from lp.soyuz.enums import (
-    ArchivePurpose,
-    ArchiveStatus,
-    )
-from lp.soyuz.interfaces.archive import (
-    IArchiveSet,
-    NoSuchPPA,
-    )
+from lp.soyuz.enums import ArchivePurpose, ArchiveStatus
+from lp.soyuz.interfaces.archive import IArchiveSet, NoSuchPPA
 from lp.soyuz.interfaces.archivesubscriber import IArchiveSubscriberSet
-from lp.soyuz.model.archive import (
-    Archive,
-    validate_ppa,
-    )
+from lp.soyuz.model.archive import Archive, validate_ppa
 from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 from lp.soyuz.model.reporting import LatestPersonSourcePackageReleaseCache
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 from lp.translations.interfaces.translationsperson import ITranslationsPerson
 from lp.translations.model.hastranslationimports import (
     HasTranslationImportsMixin,
-    )
+)
 
 
 @implementer(IJoinTeamEvent)
@@ -386,7 +318,7 @@ def validate_person_visibility(person, attr, value):
 
 def get_person_visibility_terms(user):
     """Generate the query needed for person privacy filtering."""
-    public_filter = (Person.visibility == PersonVisibility.PUBLIC)
+    public_filter = Person.visibility == PersonVisibility.PUBLIC
 
     # Anonymous users can only see public people.
     if user is None:
@@ -404,10 +336,15 @@ def get_person_visibility_terms(user):
         And(
             Person.id.is_in(
                 Select(
-                    TeamParticipation.teamID, tables=[TeamParticipation],
-                    where=(TeamParticipation.person == user))),
+                    TeamParticipation.teamID,
+                    tables=[TeamParticipation],
+                    where=(TeamParticipation.person == user),
+                )
+            ),
             Person.teamowner != None,
-            Person.visibility != PersonVisibility.PUBLIC))
+            Person.visibility != PersonVisibility.PUBLIC,
+        ),
+    )
 
 
 _person_sort_re = re.compile(r"(?:[^\w\s]|[\d_])", re.U)
@@ -417,7 +354,7 @@ def person_sort_key(person):
     """Identical to `person_sort_key` in the database."""
     # Strip noise out of display_name. We do not have to bother with
     # name, as we know it is just plain ascii.
-    display_name = _person_sort_re.sub('', person.display_name.lower())
+    display_name = _person_sort_re.sub("", person.display_name.lower())
     return "%s, %s" % (display_name.strip(), person.name)
 
 
@@ -425,7 +362,7 @@ def person_sort_key(person):
 class PersonSettings(Storm):
     "The relatively rarely used settings for person (not a team)."
 
-    __storm_table__ = 'PersonSettings'
+    __storm_table__ = "PersonSettings"
 
     personID = Int("person", default=None, primary=True)
     person = Reference(personID, "Person.id")
@@ -451,6 +388,7 @@ def readonly_settings(message, interface):
     # This is the setter we are going to use for every property.
     def unwritable(self, value):
         raise NotImplementedError(message)
+
     # This will become the dict of the class.
     data = {}
     # The interface.names() method returns the names on the interface.  If
@@ -470,9 +408,10 @@ def readonly_settings(message, interface):
         # Now we make a property with the name-specific getter and the generic
         # setter, and put it in the dictionary of the class we are making.
         data[name] = property(
-            closure_maker(interface[name].default), unwritable)
+            closure_maker(interface[name].default), unwritable
+        )
     # Now we have all the attributes we want.  We will make the class...
-    cls = type('Unwritable' + interface.__name__, (), data)
+    cls = type("Unwritable" + interface.__name__, (), data)
     # ...specify that the class implements the interface that we are working
     # with...
     classImplements(cls, interface)
@@ -480,16 +419,24 @@ def readonly_settings(message, interface):
     # read-only.
     return cls()
 
+
 _readonly_person_settings = readonly_settings(
-    'Teams do not support changing this attribute.', IPersonSettings)
+    "Teams do not support changing this attribute.", IPersonSettings
+)
 
 
 @implementer(IPerson, IHasIcon, IHasLogo, IHasMugshot)
-@delegate_to(IPersonSettings, context='_person_settings')
+@delegate_to(IPersonSettings, context="_person_settings")
 class Person(
-    SQLBase, HasBugsBase, HasSpecificationsMixin, HasTranslationImportsMixin,
-    HasBranchesMixin, HasMergeProposalsMixin, HasRequestedReviewsMixin,
-    QuestionsPersonMixin):
+    SQLBase,
+    HasBugsBase,
+    HasSpecificationsMixin,
+    HasTranslationImportsMixin,
+    HasBranchesMixin,
+    HasMergeProposalsMixin,
+    HasRequestedReviewsMixin,
+    QuestionsPersonMixin,
+):
     """A Person."""
 
     def __init__(self, *args, **kwargs):
@@ -511,23 +458,24 @@ class Person(
             return _readonly_person_settings
         else:
             # This is a person.
-            return IStore(PersonSettings).find(
-                PersonSettings,
-                PersonSettings.person == self).one()
+            return (
+                IStore(PersonSettings)
+                .find(PersonSettings, PersonSettings.person == self)
+                .one()
+            )
 
     sortingColumns = SQL("person_sort_key(Person.displayname, Person.name)")
     # Redefine the default ordering into Storm syntax.
-    _storm_sortingColumns = ('Person.displayname', 'Person.name')
+    _storm_sortingColumns = ("Person.displayname", "Person.name")
     # When doing any sort of set operations (union, intersect, except_) with
     # SQLObject we can't use sortingColumns because the table name Person is
     # not available in that context, so we use this one.
-    _sortingColumnsForSetOperations = SQL(
-        "person_sort_key(displayname, name)")
+    _sortingColumnsForSetOperations = SQL("person_sort_key(displayname, name)")
     _defaultOrder = sortingColumns
     _visibility_warning_cache_key = None
     _visibility_warning_cache = None
 
-    account = ForeignKey(dbName='account', foreignKey='Account', default=None)
+    account = ForeignKey(dbName="account", foreignKey="Account", default=None)
 
     def _validate_name(self, attr, value):
         """Check that rename is allowed."""
@@ -543,36 +491,45 @@ class Person(
             mailing_list = None
         else:
             mailing_list = getUtility(IMailingListSet).get(self.name)
-        can_rename = (self._SO_creating or
-                      not self.is_team or
-                      mailing_list is None or
-                      mailing_list.status == MailingListStatus.PURGED)
-        assert can_rename, 'Cannot rename teams with mailing lists'
+        can_rename = (
+            self._SO_creating
+            or not self.is_team
+            or mailing_list is None
+            or mailing_list.status == MailingListStatus.PURGED
+        )
+        assert can_rename, "Cannot rename teams with mailing lists"
         # Everything's okay, so let SQLObject do the normal thing.
         return value
 
-    name = StringCol(dbName='name', alternateID=True, notNull=True,
-                     storm_validator=_validate_name)
+    name = StringCol(
+        dbName="name",
+        alternateID=True,
+        notNull=True,
+        storm_validator=_validate_name,
+    )
 
     def __repr__(self):
         displayname = backslashreplace(self.displayname)
-        return '<Person at 0x%x %s (%s)>' % (id(self), self.name, displayname)
+        return "<Person at 0x%x %s (%s)>" % (id(self), self.name, displayname)
 
-    display_name = StringCol(dbName='displayname', notNull=True)
+    display_name = StringCol(dbName="displayname", notNull=True)
 
     @property
     def displayname(self):
         return self.display_name
 
-    teamdescription = StringCol(dbName='teamdescription', default=None)
+    teamdescription = StringCol(dbName="teamdescription", default=None)
     homepage_content = StringCol(default=None)
-    _description = StringCol(dbName='description', default=None)
+    _description = StringCol(dbName="description", default=None)
     icon = ForeignKey(
-        dbName='icon', foreignKey='LibraryFileAlias', default=None)
+        dbName="icon", foreignKey="LibraryFileAlias", default=None
+    )
     logo = ForeignKey(
-        dbName='logo', foreignKey='LibraryFileAlias', default=None)
+        dbName="logo", foreignKey="LibraryFileAlias", default=None
+    )
     mugshot = ForeignKey(
-        dbName='mugshot', foreignKey='LibraryFileAlias', default=None)
+        dbName="mugshot", foreignKey="LibraryFileAlias", default=None
+    )
 
     @property
     def account_status(self):
@@ -592,47 +549,62 @@ class Person(
         self.account.setStatus(status, user, comment)
 
     teamowner = ForeignKey(
-        dbName='teamowner', foreignKey='Person', default=None,
-        storm_validator=validate_public_person)
+        dbName="teamowner",
+        foreignKey="Person",
+        default=None,
+        storm_validator=validate_public_person,
+    )
 
-    sshkeys = SQLMultipleJoin('SSHKey', joinColumn='person')
+    sshkeys = SQLMultipleJoin("SSHKey", joinColumn="person")
 
     renewal_policy = DBEnum(
         enum=TeamMembershipRenewalPolicy,
-        default=TeamMembershipRenewalPolicy.NONE)
+        default=TeamMembershipRenewalPolicy.NONE,
+    )
     membership_policy = DBEnum(
-        name='subscriptionpolicy', enum=TeamMembershipPolicy,
+        name="subscriptionpolicy",
+        enum=TeamMembershipPolicy,
         default=TeamMembershipPolicy.RESTRICTED,
-        validator=validate_membership_policy)
-    defaultrenewalperiod = IntCol(dbName='defaultrenewalperiod', default=None)
+        validator=validate_membership_policy,
+    )
+    defaultrenewalperiod = IntCol(dbName="defaultrenewalperiod", default=None)
     defaultmembershipperiod = IntCol(
-        dbName='defaultmembershipperiod', default=None)
+        dbName="defaultmembershipperiod", default=None
+    )
     mailing_list_auto_subscribe_policy = DBEnum(
         enum=MailingListAutoSubscribePolicy,
-        default=MailingListAutoSubscribePolicy.ON_REGISTRATION)
+        default=MailingListAutoSubscribePolicy.ON_REGISTRATION,
+    )
 
-    merged = ForeignKey(dbName='merged', foreignKey='Person', default=None)
+    merged = ForeignKey(dbName="merged", foreignKey="Person", default=None)
 
     datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
     creation_rationale = DBEnum(enum=PersonCreationRationale, default=None)
     creation_comment = StringCol(default=None)
     registrant = ForeignKey(
-        dbName='registrant', foreignKey='Person', default=None,
-        storm_validator=validate_public_person)
+        dbName="registrant",
+        foreignKey="Person",
+        default=None,
+        storm_validator=validate_public_person,
+    )
     hide_email_addresses = BoolCol(notNull=True, default=False)
     verbose_bugnotifications = BoolCol(notNull=True, default=True)
 
-    signedcocs = ReferenceSet('<primary key>', 'SignedCodeOfConduct.owner_id')
-    _ircnicknames = SQLMultipleJoin('IrcID', joinColumn='person')
-    jabberids = SQLMultipleJoin('JabberID', joinColumn='person')
+    signedcocs = ReferenceSet("<primary key>", "SignedCodeOfConduct.owner_id")
+    _ircnicknames = SQLMultipleJoin("IrcID", joinColumn="person")
+    jabberids = SQLMultipleJoin("JabberID", joinColumn="person")
 
     visibility = DBEnum(
-        enum=PersonVisibility, default=PersonVisibility.PUBLIC,
-        validator=validate_person_visibility)
+        enum=PersonVisibility,
+        default=PersonVisibility.PUBLIC,
+        validator=validate_person_visibility,
+    )
 
     personal_standing = DBEnum(
-        enum=PersonalStanding, default=PersonalStanding.UNKNOWN,
-        allow_none=False)
+        enum=PersonalStanding,
+        default=PersonalStanding.UNKNOWN,
+        allow_none=False,
+    )
 
     personal_standing_reason = StringCol(default=None)
 
@@ -644,10 +616,12 @@ class Person(
         else:
             # Fallback to obsolete sources.
             texts = [
-                val for val in [self.homepage_content, self.teamdescription]
-                if val is not None]
+                val
+                for val in [self.homepage_content, self.teamdescription]
+                if val is not None
+            ]
             if len(texts) > 0:
-                return '\n'.join(texts)
+                return "\n".join(texts)
             return None
 
     @description.setter  # pyflakes:ignore
@@ -664,8 +638,12 @@ class Person(
     def languages(self):
         """See `IPerson`."""
         results = Store.of(self).find(
-            Language, And(Language.id == PersonLanguage.language_id,
-                          PersonLanguage.person_id == self.id))
+            Language,
+            And(
+                Language.id == PersonLanguage.language_id,
+                PersonLanguage.person_id == self.id,
+            ),
+        )
         results.order_by(Language.englishname)
         return list(results)
 
@@ -682,7 +660,8 @@ class Person(
         Order them by name if necessary.
         """
         get_property_cache(self).languages = sorted(
-            languages, key=attrgetter('englishname'))
+            languages, key=attrgetter("englishname")
+        )
 
     def deleteLanguagesCache(self):
         """Delete this person's cached languages, if it exists."""
@@ -690,9 +669,17 @@ class Person(
 
     def addLanguage(self, language):
         """See `IPerson`."""
-        person_language = Store.of(self).find(
-            PersonLanguage, And(PersonLanguage.language_id == language.id,
-                                PersonLanguage.person_id == self.id)).one()
+        person_language = (
+            Store.of(self)
+            .find(
+                PersonLanguage,
+                And(
+                    PersonLanguage.language_id == language.id,
+                    PersonLanguage.person_id == self.id,
+                ),
+            )
+            .one()
+        )
         if person_language is not None:
             # Nothing to do.
             return
@@ -701,9 +688,17 @@ class Person(
 
     def removeLanguage(self, language):
         """See `IPerson`."""
-        person_language = Store.of(self).find(
-            PersonLanguage, And(PersonLanguage.language_id == language.id,
-                                PersonLanguage.person_id == self.id)).one()
+        person_language = (
+            Store.of(self)
+            .find(
+                PersonLanguage,
+                And(
+                    PersonLanguage.language_id == language.id,
+                    PersonLanguage.person_id == self.id,
+                ),
+            )
+            .one()
+        )
         if person_language is None:
             # Nothing to do.
             return
@@ -720,10 +715,12 @@ class Person(
         """See `IPerson`."""
         if self.is_team:
             raise AlreadyConvertedException(
-                "%s has already been converted to a team." % self.name)
+                "%s has already been converted to a team." % self.name
+            )
         assert self.account_status == AccountStatus.NOACCOUNT, (
             "Only Person entries whose account_status is NOACCOUNT can be "
-            "converted into teams.")
+            "converted into teams."
+        )
         # Teams don't have Account records
         if self.account is not None:
             account_id = self.account.id
@@ -735,7 +732,8 @@ class Person(
         # Add the owner as a team admin manually because we know what we're
         # doing and we don't want any email notifications to be sent.
         TeamMembershipSet().new(
-            team_owner, self, TeamMembershipStatus.ADMIN, team_owner)
+            team_owner, self, TeamMembershipStatus.ADMIN, team_owner
+        )
 
     @property
     def oauth_access_tokens(self):
@@ -743,8 +741,11 @@ class Person(
         return Store.of(self).find(
             OAuthAccessToken,
             OAuthAccessToken.person == self,
-            Or(OAuthAccessToken.date_expires == None,
-               OAuthAccessToken.date_expires > UTC_NOW))
+            Or(
+                OAuthAccessToken.date_expires == None,
+                OAuthAccessToken.date_expires > UTC_NOW,
+            ),
+        )
 
     @property
     def oauth_request_tokens(self):
@@ -752,8 +753,11 @@ class Person(
         return Store.of(self).find(
             OAuthRequestToken,
             OAuthRequestToken.person == self,
-            Or(OAuthRequestToken.date_expires == None,
-               OAuthRequestToken.date_expires > UTC_NOW))
+            Or(
+                OAuthRequestToken.date_expires == None,
+                OAuthRequestToken.date_expires > UTC_NOW,
+            ),
+        )
 
     @property
     def latitude(self):
@@ -776,26 +780,28 @@ class Person(
     @cachedproperty
     def location(self):
         """See `IObjectWithLocation`."""
-        location = IStore(PersonLocation).find(
-            PersonLocation,
-            PersonLocation.person == self).one()
+        location = (
+            IStore(PersonLocation)
+            .find(PersonLocation, PersonLocation.person == self)
+            .one()
+        )
         return location
 
     @property
     def time_zone(self):
         """See `IHasLocation`."""
         if self.location is None:
-            return 'UTC'
+            return "UTC"
         # Wrap the location with a security proxy to make sure the user has
         # enough rights to see it.
         return ProxyFactory(self.location).time_zone
 
     def setLocation(self, latitude, longitude, time_zone, user):
         """See `ISetLocation`."""
-        assert not self.is_team, 'Cannot edit team location.'
-        assert ((latitude is None and longitude is None) or
-                (latitude is not None and longitude is not None)), (
-            "Cannot set a latitude without longitude (and vice-versa).")
+        assert not self.is_team, "Cannot edit team location."
+        assert (latitude is None and longitude is None) or (
+            latitude is not None and longitude is not None
+        ), "Cannot set a latitude without longitude (and vice-versa)."
 
         if self.location is not None:
             self.location.time_zone = six.ensure_text(time_zone)
@@ -805,27 +811,43 @@ class Person(
             self.location.date_last_modified = UTC_NOW
         else:
             get_property_cache(self).location = PersonLocation(
-                person=self, time_zone=time_zone, latitude=latitude,
-                longitude=longitude, last_modified_by=user)
+                person=self,
+                time_zone=time_zone,
+                latitude=latitude,
+                longitude=longitude,
+                last_modified_by=user,
+            )
 
     def findVisibleAssignedInProgressSpecs(self, user):
         """See `IPerson`."""
-        return self.specifications(user, in_progress=True, quantity=5,
-                                   sort=Desc(Specification.date_started),
-                                   filter=[SpecificationFilter.ASSIGNEE])
+        return self.specifications(
+            user,
+            in_progress=True,
+            quantity=5,
+            sort=Desc(Specification.date_started),
+            filter=[SpecificationFilter.ASSIGNEE],
+        )
 
     @property
     def unique_displayname(self):
         """See `IPerson`."""
         return "%s (%s)" % (self.displayname, self.name)
 
-    def specifications(self, user, sort=None, quantity=None, filter=None,
-                       in_progress=False, need_people=True, need_branches=True,
-                       need_workitems=False):
+    def specifications(
+        self,
+        user,
+        sort=None,
+        quantity=None,
+        filter=None,
+        in_progress=False,
+        need_people=True,
+        need_branches=True,
+        need_workitems=False,
+    ):
         """See `IHasSpecifications`."""
         from lp.blueprints.model.specificationsubscription import (
             SpecificationSubscription,
-            )
+        )
 
         # Make a new copy of the filter, so that we do not mutate what we
         # were passed as a filter.
@@ -843,9 +865,12 @@ class Person(
         # because the default if nothing is said is ANY.
 
         roles = {
-            SpecificationFilter.CREATOR, SpecificationFilter.ASSIGNEE,
-            SpecificationFilter.DRAFTER, SpecificationFilter.APPROVER,
-            SpecificationFilter.SUBSCRIBER}
+            SpecificationFilter.CREATOR,
+            SpecificationFilter.ASSIGNEE,
+            SpecificationFilter.DRAFTER,
+            SpecificationFilter.APPROVER,
+            SpecificationFilter.SUBSCRIBER,
+        }
         # If no roles are given, then we want everything.
         if filter.intersection(roles) == set():
             filter.update(roles)
@@ -863,20 +888,36 @@ class Person(
                 Specification.id.is_in(
                     Select(
                         SpecificationSubscription.specification_id,
-                        [SpecificationSubscription.person == self])))
+                        [SpecificationSubscription.person == self],
+                    )
+                )
+            )
 
         clauses = [Or(*role_clauses)]
         if SpecificationFilter.COMPLETE not in filter:
-            if (in_progress and SpecificationFilter.INCOMPLETE not in filter
-                and SpecificationFilter.ALL not in filter):
+            if (
+                in_progress
+                and SpecificationFilter.INCOMPLETE not in filter
+                and SpecificationFilter.ALL not in filter
+            ):
                 filter.update(
-                    [SpecificationFilter.INCOMPLETE,
-                    SpecificationFilter.STARTED])
+                    [
+                        SpecificationFilter.INCOMPLETE,
+                        SpecificationFilter.STARTED,
+                    ]
+                )
 
         return search_specifications(
-            self, clauses, user, sort, quantity, list(filter),
-            need_people=need_people, need_branches=need_branches,
-            need_workitems=need_workitems)
+            self,
+            clauses,
+            user,
+            sort,
+            quantity,
+            list(filter),
+            need_people=need_people,
+            need_branches=need_branches,
+            need_workitems=need_workitems,
+        )
 
     # XXX: Tom Berger 2008-04-14 bug=191799:
     # The implementation of these functions
@@ -888,20 +929,28 @@ class Person(
         from lp.registry.model.distribution import Distribution
         from lp.registry.model.distributionsourcepackage import (
             DistributionSourcePackage,
-            )
+        )
+
         origin = (
             StructuralSubscription,
             Join(
                 Distribution,
-                StructuralSubscription.distributionID == Distribution.id),
+                StructuralSubscription.distributionID == Distribution.id,
+            ),
             Join(
                 SourcePackageName,
-                StructuralSubscription.sourcepackagenameID ==
-                    SourcePackageName.id)
+                StructuralSubscription.sourcepackagenameID
+                == SourcePackageName.id,
+            ),
+        )
+        result = (
+            Store.of(self)
+            .using(*origin)
+            .find(
+                (Distribution, SourcePackageName),
+                StructuralSubscription.subscriberID == self.id,
             )
-        result = Store.of(self).using(*origin).find(
-            (Distribution, SourcePackageName),
-            StructuralSubscription.subscriberID == self.id)
+        )
         result.order_by(SourcePackageName.name)
 
         def decorator(row):
@@ -913,9 +962,12 @@ class Person(
         """See `IPerson`."""
         # This is our guarantee that _getDirectMemberIParticipateIn() will
         # never return None
-        assert self.hasParticipationEntryFor(team), (
-            "%s doesn't seem to be a member/participant in %s"
-            % (self.name, team.name))
+        assert self.hasParticipationEntryFor(
+            team
+        ), "%s doesn't seem to be a member/participant in %s" % (
+            self.name,
+            team.name,
+        )
         assert team.is_team, "You can't pass a person to this method."
         path = [team]
         team = self._getDirectMemberIParticipateIn(team)
@@ -935,17 +987,22 @@ class Person(
         query = And(
             TeamMembership.teamID == team.id,
             TeamMembership.personID == Person.q.id,
-            Or(TeamMembership.status == TeamMembershipStatus.ADMIN,
-               TeamMembership.status == TeamMembershipStatus.APPROVED),
+            Or(
+                TeamMembership.status == TeamMembershipStatus.ADMIN,
+                TeamMembership.status == TeamMembershipStatus.APPROVED,
+            ),
             TeamParticipation.teamID == Person.id,
-            TeamParticipation.personID == self.id)
-        clauseTables = ['TeamMembership', 'TeamParticipation']
+            TeamParticipation.personID == self.id,
+        )
+        clauseTables = ["TeamMembership", "TeamParticipation"]
         member = Person.selectFirst(
-            query, clauseTables=clauseTables, orderBy='datecreated')
+            query, clauseTables=clauseTables, orderBy="datecreated"
+        )
         assert member is not None, (
             "%(person)s is an indirect member of %(team)s but %(person)s "
             "is not a participant in any direct member of %(team)s"
-            % dict(person=self.name, team=team.name))
+            % dict(person=self.name, team=team.name)
+        )
         return member
 
     @property
@@ -964,36 +1021,43 @@ class Person(
 
     def searchTasks(self, search_params, *args, **kwargs):
         """See `IHasBugs`."""
-        prejoins = kwargs.pop('prejoins', [])
+        prejoins = kwargs.pop("prejoins", [])
         if search_params is None and len(args) == 0:
             # this method is called via webapi directly
             # calling this method on a Person object directly via the
             # webservice API means searching for user related tasks
-            user = kwargs.pop('user')
+            user = kwargs.pop("user")
             search_params = get_person_bugtasks_search_params(
-                user, self, **kwargs)
+                user, self, **kwargs
+            )
             return getUtility(IBugTaskSet).search(
-                *search_params, prejoins=prejoins)
+                *search_params, prejoins=prejoins
+            )
         if len(kwargs) > 0:
             # if keyword arguments are supplied, use the deault
             # implementation in HasBugsBase.
             return HasBugsBase.searchTasks(
-                self, search_params, prejoins=prejoins, **kwargs)
+                self, search_params, prejoins=prejoins, **kwargs
+            )
         else:
             # Otherwise pass all positional arguments to the
             # implementation in BugTaskSet.
             return getUtility(IBugTaskSet).search(
-                search_params, *args, prejoins=prejoins)
+                search_params, *args, prejoins=prejoins
+            )
 
     def getProjectsAndCategoriesContributedTo(self, user, limit=5):
         """See `IPerson`."""
         contributions = []
         results = self._getProjectsWithTheMostKarma(user, limit=limit)
         for product, distro, karma in results:
-            pillar = (product or distro)
+            pillar = product or distro
             contributions.append(
-                {'project': pillar,
-                 'categories': self._getContributedCategories(pillar)})
+                {
+                    "project": pillar,
+                    "categories": self._getContributedCategories(pillar),
+                }
+            )
         return contributions
 
     def _getProjectsWithTheMostKarma(self, user, limit=10):
@@ -1008,30 +1072,39 @@ class Person(
         # across all different categories) here; that's why we use a
         # "KarmaCache.category IS NULL" clause here.
         from lp.registry.model.distribution import Distribution
-        from lp.registry.model.product import (
-            Product,
-            ProductSet,
-            )
+        from lp.registry.model.product import Product, ProductSet
+
         tableset = Store.of(self).using(
-            KarmaCache, LeftJoin(Product, Product.id == KarmaCache.product_id),
-            LeftJoin(Distribution, Distribution.id ==
-                     KarmaCache.distribution_id))
+            KarmaCache,
+            LeftJoin(Product, Product.id == KarmaCache.product_id),
+            LeftJoin(
+                Distribution, Distribution.id == KarmaCache.distribution_id
+            ),
+        )
         result = tableset.find(
             (Product, Distribution, KarmaCache.karmavalue),
-             KarmaCache.person == self.id,
-             KarmaCache.category == None,
-             KarmaCache.projectgroup == None,
-             Or(
-                And(Product.id != None, Product.active == True,
-                    ProductSet.getProductPrivacyFilter(user)),
-                Distribution.id != None))
-        result.order_by(Desc(KarmaCache.karmavalue),
-                        Coalesce(Product.name, Distribution.name))
+            KarmaCache.person == self.id,
+            KarmaCache.category == None,
+            KarmaCache.projectgroup == None,
+            Or(
+                And(
+                    Product.id != None,
+                    Product.active == True,
+                    ProductSet.getProductPrivacyFilter(user),
+                ),
+                Distribution.id != None,
+            ),
+        )
+        result.order_by(
+            Desc(KarmaCache.karmavalue),
+            Coalesce(Product.name, Distribution.name),
+        )
         return result[:limit]
 
     def _genAffiliatedProductSql(self, user=None):
         """Helper to generate the product sql for getAffiliatePillars"""
         from lp.registry.model.product import ProductSet
+
         base_query = """
             SELECT name, 3 as kind, displayname
             FROM product
@@ -1042,22 +1115,30 @@ class Person(
                     OR product.owner = %(person)s
                     OR product.bug_supervisor = %(person)s
                 )
-        """ % sqlvalues(person=self)
+        """ % sqlvalues(
+            person=self
+        )
 
         return "%s AND (%s)" % (
             base_query,
             convert_storm_clause_to_string(
-                ProductSet.getProductPrivacyFilter(user)))
+                ProductSet.getProductPrivacyFilter(user)
+            ),
+        )
 
     def getAffiliatedPillars(self, user):
         """See `IPerson`."""
-        find_spec = (PillarName, SQL('kind'), SQL('displayname'))
+        find_spec = (PillarName, SQL("kind"), SQL("displayname"))
         base = """PillarName
                   JOIN (
                     %s
-            """ % self._genAffiliatedProductSql(user=user)
+            """ % self._genAffiliatedProductSql(
+            user=user
+        )
 
-        origin = base + """
+        origin = (
+            base
+            + """
                 UNION
                 SELECT name, 2 as kind, displayname
                 FROM project
@@ -1074,10 +1155,12 @@ class Person(
                     OR bug_supervisor = %(person)s
                 ) _pillar
                 ON PillarName.name = _pillar.name
-            """ % sqlvalues(person=self)
+            """
+            % sqlvalues(person=self)
+        )
 
         results = IStore(self).using(SQL(origin)).find(find_spec)
-        results = results.order_by('kind', 'displayname')
+        results = results.order_by("kind", "displayname")
 
         def get_pillar_name(result):
             pillar_name, kind, displayname = result
@@ -1088,23 +1171,22 @@ class Person(
     def getOwnedProjects(self, match_name=None, transitive=False, user=None):
         """See `IPerson`."""
         # Import here to work around a circular import problem.
-        from lp.registry.model.product import (
-            Product,
-            ProductSet,
-            )
+        from lp.registry.model.product import Product, ProductSet
 
         clauses = [
             Product.active == True,
-            ]
+        ]
 
         if transitive:
             # getProductPrivacyFilter may also use TeamParticipation, so
             # ensure we use a different one.
             ownership_participation = ClassAlias(TeamParticipation)
-            clauses.extend([
-                Product._ownerID == ownership_participation.teamID,
-                ownership_participation.personID == self.id,
-                ])
+            clauses.extend(
+                [
+                    Product._ownerID == ownership_participation.teamID,
+                    ownership_participation.personID == self.id,
+                ]
+            )
         else:
             clauses.append(Product._ownerID == self.id)
 
@@ -1115,24 +1197,38 @@ class Person(
                 Or(
                     Product.name.contains_string(match_name),
                     Product.display_name.contains_string(match_name),
-                    fti_search(Product, match_name)))
+                    fti_search(Product, match_name),
+                )
+            )
 
         if user is not None:
             clauses.append(ProductSet.getProductPrivacyFilter(user))
 
-        return IStore(Product).find(
-            Product, *clauses
-            ).config(distinct=True).order_by(Product.display_name)
+        return (
+            IStore(Product)
+            .find(Product, *clauses)
+            .config(distinct=True)
+            .order_by(Product.display_name)
+        )
 
     def isAnyPillarOwner(self):
         """See IPerson."""
 
         with_sql = [
-            With("teams", SQL("""
+            With(
+                "teams",
+                SQL(
+                    """
                  SELECT team FROM TeamParticipation
                  WHERE TeamParticipation.person = %d
-                """ % self.id)),
-            With("owned_entities", SQL("""
+                """
+                    % self.id
+                ),
+            ),
+            With(
+                "owned_entities",
+                SQL(
+                    """
                  SELECT Product.id
                  FROM Product
                  WHERE Product.owner IN (SELECT team FROM teams)
@@ -1144,11 +1240,17 @@ class Person(
                  SELECT Distribution.id
                  FROM Distribution
                  WHERE Distribution.owner IN (SELECT team FROM teams)
-                """))
-           ]
+                """
+                ),
+            ),
+        ]
         store = IStore(self)
-        rs = store.with_(with_sql).using("owned_entities").find(
-            SQL("count(*) > 0"),
+        rs = (
+            store.with_(with_sql)
+            .using("owned_entities")
+            .find(
+                SQL("count(*) > 0"),
+            )
         )
         return rs.one()
 
@@ -1157,31 +1259,41 @@ class Person(
         # Circular imports.
         from lp.registry.model.commercialsubscription import (
             CommercialSubscription,
-            )
+        )
         from lp.registry.model.distribution import Distribution
         from lp.registry.model.person import Person
         from lp.registry.model.product import Product
         from lp.registry.model.teammembership import TeamParticipation
-        person = Store.of(self).using(
-            Person,
-            Join(
-                TeamParticipation,
-                Person.id == TeamParticipation.personID),
-            LeftJoin(
-                Product, TeamParticipation.teamID == Product._ownerID),
-            LeftJoin(
-                Distribution,
-                TeamParticipation.teamID == Distribution.ownerID),
-            Join(
-                CommercialSubscription,
-                Or(
-                    CommercialSubscription.product_id == Product.id,
-                    CommercialSubscription.distribution_id == Distribution.id))
-            ).find(
+
+        person = (
+            Store.of(self)
+            .using(
                 Person,
-                CommercialSubscription.date_expires > datetime.now(
-                    pytz.UTC),
-                Person.id == self.id)
+                Join(
+                    TeamParticipation, Person.id == TeamParticipation.personID
+                ),
+                LeftJoin(
+                    Product, TeamParticipation.teamID == Product._ownerID
+                ),
+                LeftJoin(
+                    Distribution,
+                    TeamParticipation.teamID == Distribution.ownerID,
+                ),
+                Join(
+                    CommercialSubscription,
+                    Or(
+                        CommercialSubscription.product_id == Product.id,
+                        CommercialSubscription.distribution_id
+                        == Distribution.id,
+                    ),
+                ),
+            )
+            .find(
+                Person,
+                CommercialSubscription.date_expires > datetime.now(pytz.UTC),
+                Person.id == self.id,
+            )
+        )
         return not person.is_empty()
 
     def _getContributedCategories(self, pillar):
@@ -1196,22 +1308,27 @@ class Person(
             where_clause = "distribution = %s" % sqlvalues(pillar)
         else:
             raise AssertionError(
-                "Pillar must be a product or distro, got %s" % pillar)
+                "Pillar must be a product or distro, got %s" % pillar
+            )
         replacements = sqlvalues(person=self)
-        replacements['where_clause'] = where_clause
-        query = """
+        replacements["where_clause"] = where_clause
+        query = (
+            """
             SELECT DISTINCT KarmaCategory.id
             FROM KarmaCategory
             JOIN KarmaCache ON KarmaCache.category = KarmaCategory.id
             WHERE %(where_clause)s
                 AND category IS NOT NULL
                 AND person = %(person)s
-            """ % replacements
+            """
+            % replacements
+        )
         cur = cursor()
         cur.execute(query)
         ids = [id for [id] in cur.fetchall()]
         return IStore(KarmaCategory).find(
-            KarmaCategory, KarmaCategory.id.is_in(ids))
+            KarmaCategory, KarmaCategory.id.is_in(ids)
+        )
 
     @property
     def karma_category_caches(self):
@@ -1223,7 +1340,8 @@ class Person(
             KarmaCache.product == None,
             KarmaCache.projectgroup == None,
             KarmaCache.distribution == None,
-            KarmaCache.sourcepackagename == None)
+            KarmaCache.sourcepackagename == None,
+        )
         result = store.find((KarmaCache, KarmaCategory), conditions)
         result = result.order_by(KarmaCategory.title)
         return [karma_cache for (karma_cache, category) in result]
@@ -1232,8 +1350,9 @@ class Person(
     def karma(self):
         """See `IPerson`."""
         # May also be loaded from _members
-        cache = IStore(KarmaTotalCache).find(
-            KarmaTotalCache, person=self).one()
+        cache = (
+            IStore(KarmaTotalCache).find(KarmaTotalCache, person=self).one()
+        )
         if cache is None:
             # Newly created accounts may not be in the cache yet, meaning the
             # karma updater script hasn't run since the account was created.
@@ -1271,15 +1390,23 @@ class Person(
         """
         return not self.is_team and self.karma == 0
 
-    def assignKarma(self, action_name, product=None, distribution=None,
-                    sourcepackagename=None, datecreated=None):
+    def assignKarma(
+        self,
+        action_name,
+        product=None,
+        distribution=None,
+        sourcepackagename=None,
+        datecreated=None,
+    ):
         """See `IPerson`."""
         # Teams don't get Karma. Inactive accounts don't get Karma.
         # The system user and janitor, does not get karma.
         # No warning, as we don't want to place the burden on callsites
         # to check this.
-        if (not self.is_valid_person
-            or self.id == getUtility(ILaunchpadCelebrities).janitor.id):
+        if (
+            not self.is_valid_person
+            or self.id == getUtility(ILaunchpadCelebrities).janitor.id
+        ):
             return None
 
         if product is not None:
@@ -1288,27 +1415,36 @@ class Person(
             assert product is None
         else:
             raise AssertionError(
-                'You must provide either a product or a distribution.')
+                "You must provide either a product or a distribution."
+            )
 
         action = getUtility(IKarmaActionSet).getByName(action_name)
         if action is None:
             raise AssertionError(
-                "No KarmaAction found with name '%s'." % action_name)
+                "No KarmaAction found with name '%s'." % action_name
+            )
 
         if datecreated is None:
             datecreated = UTC_NOW
         karma = Karma(
-            person=self, action=action, product=product,
-            distribution=distribution, sourcepackagename=sourcepackagename,
-            datecreated=datecreated)
+            person=self,
+            action=action,
+            product=product,
+            distribution=distribution,
+            sourcepackagename=sourcepackagename,
+            datecreated=datecreated,
+        )
         Store.of(karma).flush()
         notify(KarmaAssignedEvent(self, karma))
         return karma
 
     def latestKarma(self, quantity=25):
         """See `IPerson`."""
-        return IStore(Karma).find(Karma, person=self).order_by(
-            Desc(Karma.datecreated))[:quantity]
+        return (
+            IStore(Karma)
+            .find(Karma, person=self)
+            .order_by(Desc(Karma.datecreated))[:quantity]
+        )
 
     # This is to cache TeamParticipation information as that's used tons of
     # times in each request.
@@ -1371,7 +1507,8 @@ class Person(
                 return True
 
         unknown_team_ids = {
-            team_id for team_id in team_ids
+            team_id
+            for team_id in team_ids
             if team_id not in self._inTeam_cache
         }
         if not unknown_team_ids:
@@ -1382,8 +1519,8 @@ class Person(
                 TeamParticipation.teamID,
                 And(
                     TeamParticipation.teamID.is_in(unknown_team_ids),
-                    TeamParticipation.personID == self.id
-                )
+                    TeamParticipation.personID == self.id,
+                ),
             )
         )
 
@@ -1407,8 +1544,9 @@ class Person(
             return
 
         if requester is None:
-            assert not self.is_team, (
-                "You need to specify a reviewer when a team joins another.")
+            assert (
+                not self.is_team
+            ), "You need to specify a reviewer when a team joins another."
             requester = self
 
         proposed = TeamMembershipStatus.PROPOSED
@@ -1416,14 +1554,17 @@ class Person(
 
         if team.membership_policy == TeamMembershipPolicy.RESTRICTED:
             raise JoinNotAllowed("This is a restricted team")
-        elif (team.membership_policy == TeamMembershipPolicy.MODERATED
-            or team.membership_policy == TeamMembershipPolicy.DELEGATED):
+        elif (
+            team.membership_policy == TeamMembershipPolicy.MODERATED
+            or team.membership_policy == TeamMembershipPolicy.DELEGATED
+        ):
             status = proposed
         elif team.membership_policy == TeamMembershipPolicy.OPEN:
             status = approved
         else:
             raise AssertionError(
-                "Unknown membership policy: %s" % team.membership_policy)
+                "Unknown membership policy: %s" % team.membership_policy
+            )
 
         # XXX Edwin Grubbs 2007-12-14 bug=117980
         # removeSecurityProxy won't be necessary after addMember()
@@ -1432,9 +1573,12 @@ class Person(
         # has the right permission to add the specified person to the team.
         naked_team = removeSecurityProxy(team)
         naked_team.addMember(
-            self, reviewer=requester, status=status,
+            self,
+            reviewer=requester,
+            status=status,
             force_team_add=True,
-            may_subscribe_to_list=may_subscribe_to_list)
+            may_subscribe_to_list=may_subscribe_to_list,
+        )
 
     def clearInTeamCache(self):
         """See `IPerson`."""
@@ -1447,14 +1591,18 @@ class Person(
     @cachedproperty
     def participant_ids(self):
         """See `IPerson`."""
-        return list(Store.of(self).find(
-            TeamParticipation.personID, TeamParticipation.teamID == self.id))
+        return list(
+            Store.of(self).find(
+                TeamParticipation.personID, TeamParticipation.teamID == self.id
+            )
+        )
 
     def getAssignedSpecificationWorkItemsDueBefore(self, date, user):
         """See `IPerson`."""
         from lp.registry.model.distribution import Distribution
         from lp.registry.model.person import Person
         from lp.registry.model.product import Product
+
         store = Store.of(self)
 
         # Since a workitem's assignee defaults to its specification's
@@ -1463,14 +1611,17 @@ class Person(
         # to calculate the workitems up front, rather than doing a hash
         # join over all of Specification and SpecificationWorkItem.
         assigned_specificationworkitem = With(
-            'assigned_specificationworkitem',
+            "assigned_specificationworkitem",
             Union(
                 Select(
                     SpecificationWorkItem.id,
                     where=And(
                         SpecificationWorkItem.assignee_id.is_in(
-                            self.participant_ids),
-                        Not(SpecificationWorkItem.deleted))),
+                            self.participant_ids
+                        ),
+                        Not(SpecificationWorkItem.deleted),
+                    ),
+                ),
                 Select(
                     SpecificationWorkItem.id,
                     where=And(
@@ -1478,68 +1629,108 @@ class Person(
                             Select(
                                 Specification.id,
                                 where=Specification._assigneeID.is_in(
-                                    self.participant_ids))),
-                        Not(SpecificationWorkItem.deleted))),
-                all=True))
+                                    self.participant_ids
+                                ),
+                            )
+                        ),
+                        Not(SpecificationWorkItem.deleted),
+                    ),
+                ),
+                all=True,
+            ),
+        )
 
         origin = [Specification]
         productjoin, query = get_specification_active_product_filter(self)
         origin.extend(productjoin)
-        query.append(Exists(Select(
-            1, tables=[Specification],
-            where=And(
-                Specification.id == SpecificationWorkItem.specification_id,
-                *get_specification_privacy_filter(user)))))
-        origin.extend([
-            Join(SpecificationWorkItem,
-                 SpecificationWorkItem.specification == Specification.id),
-            # WorkItems may not have a milestone and in that case they inherit
-            # the one from the spec.
-            Join(Milestone,
-                 Coalesce(SpecificationWorkItem.milestone_id,
-                          Specification.milestoneID) == Milestone.id)])
+        query.append(
+            Exists(
+                Select(
+                    1,
+                    tables=[Specification],
+                    where=And(
+                        Specification.id
+                        == SpecificationWorkItem.specification_id,
+                        *get_specification_privacy_filter(user),
+                    ),
+                )
+            )
+        )
+        origin.extend(
+            [
+                Join(
+                    SpecificationWorkItem,
+                    SpecificationWorkItem.specification == Specification.id,
+                ),
+                # WorkItems may not have a milestone and in that case they
+                # inherit the one from the spec.
+                Join(
+                    Milestone,
+                    Coalesce(
+                        SpecificationWorkItem.milestone_id,
+                        Specification.milestoneID,
+                    )
+                    == Milestone.id,
+                ),
+            ]
+        )
         today = datetime.today().date()
-        query.extend([
-            Milestone.dateexpected <= date, Milestone.dateexpected >= today,
-            SpecificationWorkItem.id.is_in(Select(
-                SQL('id'), tables='assigned_specificationworkitem'))])
-        result = store.with_(assigned_specificationworkitem).using(
-            *origin).find(SpecificationWorkItem, *query)
+        query.extend(
+            [
+                Milestone.dateexpected <= date,
+                Milestone.dateexpected >= today,
+                SpecificationWorkItem.id.is_in(
+                    Select(SQL("id"), tables="assigned_specificationworkitem")
+                ),
+            ]
+        )
+        result = (
+            store.with_(assigned_specificationworkitem)
+            .using(*origin)
+            .find(SpecificationWorkItem, *query)
+        )
         result.config(distinct=True)
 
         def eager_load(workitems):
             specs = bulk.load_related(
-                Specification, workitems, ['specification_id'])
-            bulk.load_related(Product, specs, ['productID'])
-            bulk.load_related(Distribution, specs, ['distributionID'])
+                Specification, workitems, ["specification_id"]
+            )
+            bulk.load_related(Product, specs, ["productID"])
+            bulk.load_related(Distribution, specs, ["distributionID"])
             assignee_ids = set(
                 [workitem.assignee_id for workitem in workitems]
-                + [spec._assigneeID for spec in specs])
+                + [spec._assigneeID for spec in specs]
+            )
             assignee_ids.discard(None)
             bulk.load(Person, assignee_ids, store)
             milestone_ids = set(
                 [workitem.milestone_id for workitem in workitems]
-                + [spec.milestoneID for spec in specs])
+                + [spec.milestoneID for spec in specs]
+            )
             milestone_ids.discard(None)
             bulk.load(Milestone, milestone_ids, store)
+
         return DecoratedResultSet(result, pre_iter_hook=eager_load)
 
     def getAssignedBugTasksDueBefore(self, date, user):
         """See `IPerson`."""
         from lp.bugs.model.bugtask import BugTask
+
         today = datetime.today().date()
         search_params = BugTaskSearchParams(
-            user, assignee=search_any(*self.participant_ids),
+            user,
+            assignee=search_any(*self.participant_ids),
             milestone_dateexpected_before=date,
-            milestone_dateexpected_after=today)
+            milestone_dateexpected_after=today,
+        )
 
         # Cast to a list to avoid DecoratedResultSet running pre_iter_hook
         # multiple times when load_related() iterates over the tasks.
         tasks = list(getUtility(IBugTaskSet).search(search_params))
         # Eager load the things we need that are not already eager loaded by
         # BugTaskSet.search().
-        bulk.load_related(Person, tasks, ['assignee_id'])
-        bulk.load_related(Milestone, tasks, ['milestone_id'])
+        bulk.load_related(Person, tasks, ["assignee_id"])
+        bulk.load_related(Milestone, tasks, ["milestone_id"])
 
         for task in tasks:
             # We skip primaries (instead of replicas) from conjoined
@@ -1551,14 +1742,17 @@ class Person(
             distroseries = task.distroseries
             if productseries is not None and task.product is None:
                 dev_focus_id = productseries.product.development_focusID
-                if (productseries.id == dev_focus_id and
-                    task.status not in BugTask._NON_CONJOINED_STATUSES):
+                if (
+                    productseries.id == dev_focus_id
+                    and task.status not in BugTask._NON_CONJOINED_STATUSES
+                ):
                     continue
             elif distroseries is not None:
                 candidate = None
                 for possible_replica in tasks:
                     sourcepackagename_id = (
-                        possible_replica.sourcepackagename_id)
+                        possible_replica.sourcepackagename_id
+                    )
                     if sourcepackagename_id == task.sourcepackagename_id:
                         candidate = possible_replica
                 # Distribution.currentseries is expensive to run for every
@@ -1566,8 +1760,10 @@ class Person(
                 # distribution), but it's a cached property and there's only
                 # one distribution with bugs in LP, so we can afford to do
                 # it here.
-                if (candidate is not None and
-                    distroseries.distribution.currentseries == distroseries):
+                if (
+                    candidate is not None
+                    and distroseries.distribution.currentseries == distroseries
+                ):
                     continue
             yield task
 
@@ -1587,26 +1783,38 @@ class Person(
     def super_teams(self):
         """See `IPerson`."""
         return PersonSet()._getPrecachedPersons(
-            [Join(
-                Person,
-                TeamParticipation,
-                Person.id == TeamParticipation.teamID)],
-            And(TeamParticipation.personID == self.id,
-                TeamParticipation.teamID != self.id),
-            need_api=True)
+            [
+                Join(
+                    Person,
+                    TeamParticipation,
+                    Person.id == TeamParticipation.teamID,
+                )
+            ],
+            And(
+                TeamParticipation.personID == self.id,
+                TeamParticipation.teamID != self.id,
+            ),
+            need_api=True,
+        )
 
     @property
     def sub_teams(self):
         """See `IPerson`."""
         return PersonSet()._getPrecachedPersons(
-            [Join(
-                Person,
-                TeamParticipation,
-                Person.id == TeamParticipation.personID)],
-            And(TeamParticipation.teamID == self.id,
+            [
+                Join(
+                    Person,
+                    TeamParticipation,
+                    Person.id == TeamParticipation.personID,
+                )
+            ],
+            And(
+                TeamParticipation.teamID == self.id,
                 TeamParticipation.personID != self.id,
-                Person.teamownerID != None),
-            need_api=True)
+                Person.teamownerID != None,
+            ),
+            need_api=True,
+        )
 
     def getTeamAdminsEmailAddresses(self):
         """See `IPerson`."""
@@ -1619,43 +1827,55 @@ class Person(
             to_addrs.update(get_contact_email_addresses(self.teamowner))
         return sorted(to_addrs)
 
-    def addMember(self, person, reviewer, comment=None, force_team_add=False,
-                  status=TeamMembershipStatus.APPROVED,
-                  may_subscribe_to_list=True):
+    def addMember(
+        self,
+        person,
+        reviewer,
+        comment=None,
+        force_team_add=False,
+        status=TeamMembershipStatus.APPROVED,
+        may_subscribe_to_list=True,
+    ):
         """See `IPerson`."""
         if not self.is_team:
             raise ValueError("You cannot add members to a person.")
-        if status not in [TeamMembershipStatus.APPROVED,
-                          TeamMembershipStatus.PROPOSED,
-                          TeamMembershipStatus.ADMIN]:
-            raise ValueError("You can't add a member with this status: %s."
-                             % status.name)
+        if status not in [
+            TeamMembershipStatus.APPROVED,
+            TeamMembershipStatus.PROPOSED,
+            TeamMembershipStatus.ADMIN,
+        ]:
+            raise ValueError(
+                "You can't add a member with this status: %s." % status.name
+            )
 
         event = JoinTeamEvent
         tm = TeamMembership.selectOneBy(person=person, team=self)
         if tm is not None:
             if tm.status == TeamMembershipStatus.ADMIN or (
-                tm.status == TeamMembershipStatus.APPROVED and status ==
-                TeamMembershipStatus.PROPOSED):
+                tm.status == TeamMembershipStatus.APPROVED
+                and status == TeamMembershipStatus.PROPOSED
+            ):
                 status = tm.status
         if person.is_team:
             assert not self.hasParticipationEntryFor(person), (
                 "Team '%s' is a member of '%s'. As a consequence, '%s' can't "
                 "be added as a member of '%s'"
-                % (self.name, person.name, person.name, self.name))
+                % (self.name, person.name, person.name, self.name)
+            )
             # By default, teams can only be invited as members, meaning that
             # one of the team's admins will have to accept the invitation
             # before the team is made a member. If force_team_add is True,
             # or the user is also an admin of the proposed member, then
             # we'll add a team as if it was a person.
             is_reviewer_admin_of_new_member = (
-                person in reviewer.getAdministratedTeams())
+                person in reviewer.getAdministratedTeams()
+            )
             if not force_team_add and not is_reviewer_admin_of_new_member:
                 if tm is None or tm.status not in (
                     TeamMembershipStatus.PROPOSED,
                     TeamMembershipStatus.APPROVED,
                     TeamMembershipStatus.ADMIN,
-                    ):
+                ):
                     status = TeamMembershipStatus.INVITED
                     event = TeamInvitationEvent
                 else:
@@ -1668,8 +1888,13 @@ class Person(
         expires = self.defaultexpirationdate
         if tm is None:
             tm = TeamMembershipSet().new(
-                person, self, status, reviewer, dateexpires=expires,
-                comment=comment)
+                person,
+                self,
+                status,
+                reviewer,
+                dateexpires=expires,
+                comment=comment,
+            )
             # Accessing the id attribute ensures that the team
             # creation has been flushed to the database.
             tm.id
@@ -1681,8 +1906,9 @@ class Person(
             status_changed = tm.setStatus(status, reviewer, comment)
 
         if not person.is_team and may_subscribe_to_list:
-            person.autoSubscribeToMailingList(self.mailing_list,
-                                              requester=reviewer)
+            person.autoSubscribeToMailingList(
+                self.mailing_list, requester=reviewer
+            )
         return (status_changed, tm.status)
 
     def _accept_or_decline_membership(self, team, status, comment):
@@ -1703,7 +1929,8 @@ class Person(
         to APPROVED.
         """
         self._accept_or_decline_membership(
-            team, TeamMembershipStatus.APPROVED, comment)
+            team, TeamMembershipStatus.APPROVED, comment
+        )
 
     def declineInvitationToBeMemberOf(self, team, comment):
         """Decline an invitation to become a member of the given team.
@@ -1713,7 +1940,8 @@ class Person(
         to INVITATION_DECLINED.
         """
         self._accept_or_decline_membership(
-            team, TeamMembershipStatus.INVITATION_DECLINED, comment)
+            team, TeamMembershipStatus.INVITATION_DECLINED, comment
+        )
 
     def retractTeamMembership(self, team, user, comment=None):
         """See `IPerson`"""
@@ -1723,13 +1951,15 @@ class Person(
             TeamMembershipStatus.ADMIN: TeamMembershipStatus.DEACTIVATED,
             TeamMembershipStatus.APPROVED: TeamMembershipStatus.DEACTIVATED,
             TeamMembershipStatus.PROPOSED: TeamMembershipStatus.DECLINED,
-            TeamMembershipStatus.INVITED:
-                TeamMembershipStatus.INVITATION_DECLINED,
-            }
+            TeamMembershipStatus.INVITED: (
+                TeamMembershipStatus.INVITATION_DECLINED
+            ),
+        }
         constraints = And(
             TeamMembership.personID == self.id,
             TeamMembership.teamID == team.id,
-            TeamMembership.status.is_in(active_and_transitioning.keys()))
+            TeamMembership.status.is_in(active_and_transitioning.keys()),
+        )
         tm = Store.of(self).find(TeamMembership, constraints).one()
         if tm is not None:
             # Flush the cache used by the inTeam method.
@@ -1745,20 +1975,25 @@ class Person(
         DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT days.
         """
         tm = TeamMembership.selectOneBy(person=self, team=team)
-        assert tm.canBeRenewedByMember(), (
-            "This membership can't be renewed by the member themselves.")
+        assert (
+            tm.canBeRenewedByMember()
+        ), "This membership can't be renewed by the member themselves."
 
-        assert (team.defaultrenewalperiod is not None
-                and team.defaultrenewalperiod > 0), (
-            'Teams with a renewal policy of ONDEMAND must specify '
-            'a default renewal period greater than 0.')
+        assert (
+            team.defaultrenewalperiod is not None
+            and team.defaultrenewalperiod > 0
+        ), (
+            "Teams with a renewal policy of ONDEMAND must specify "
+            "a default renewal period greater than 0."
+        )
         # Keep the same status, change the expiration date and send a
         # notification explaining the membership has been renewed.
         tm.dateexpires += timedelta(days=team.defaultrenewalperiod)
         tm.sendSelfRenewalNotification()
 
-    def setMembershipData(self, person, status, reviewer, expires=None,
-                          comment=None):
+    def setMembershipData(
+        self, person, status, reviewer, expires=None, comment=None
+    ):
         """See `IPerson`."""
         tm = TeamMembership.selectOneBy(person=person, team=self)
         assert tm is not None
@@ -1768,11 +2003,15 @@ class Person(
     def getOwnedTeams(self, user=None):
         """See `IPerson`."""
         query = And(
-            get_person_visibility_terms(user), Person.teamowner == self.id,
-            Person.merged == None)
-        return IStore(Person).find(
-            Person, query).order_by(
-                Upper(Person.display_name), Upper(Person.name))
+            get_person_visibility_terms(user),
+            Person.teamowner == self.id,
+            Person.merged == None,
+        )
+        return (
+            IStore(Person)
+            .find(Person, query)
+            .order_by(Upper(Person.display_name), Upper(Person.name))
+        )
 
     @cachedproperty
     def administrated_teams(self):
@@ -1780,33 +2019,50 @@ class Person(
 
     def getAdministratedTeams(self):
         """See `IPerson`."""
+
         class RestrictedParticipation:
-            __storm_table__ = 'RestrictedParticipation'
-            teamID = Int(primary=True, name='team')
+            __storm_table__ = "RestrictedParticipation"
+            teamID = Int(primary=True, name="team")
 
         restricted_participation_cte = With(
-            'RestrictedParticipation',
+            "RestrictedParticipation",
             Select(
-                TeamParticipation.teamID, tables=[TeamParticipation],
-                where=TeamParticipation.person == self))
+                TeamParticipation.teamID,
+                tables=[TeamParticipation],
+                where=TeamParticipation.person == self,
+            ),
+        )
         team_select = Select(
-            RestrictedParticipation.teamID, tables=[RestrictedParticipation])
+            RestrictedParticipation.teamID, tables=[RestrictedParticipation]
+        )
 
-        return Store.of(self).with_(restricted_participation_cte).find(
-            Person,
-            Person.id.is_in(
-                Union(
-                    Select(
-                        Person.id, tables=[Person],
-                        where=Person.teamownerID.is_in(team_select)),
-                    Select(
-                        TeamMembership.teamID, tables=[TeamMembership],
-                        where=And(
-                            TeamMembership.status ==
-                                TeamMembershipStatus.ADMIN,
-                            TeamMembership.personID.is_in(team_select))))),
-            Person.merged == None).order_by(
-                self._sortingColumnsForSetOperations)
+        return (
+            Store.of(self)
+            .with_(restricted_participation_cte)
+            .find(
+                Person,
+                Person.id.is_in(
+                    Union(
+                        Select(
+                            Person.id,
+                            tables=[Person],
+                            where=Person.teamownerID.is_in(team_select),
+                        ),
+                        Select(
+                            TeamMembership.teamID,
+                            tables=[TeamMembership],
+                            where=And(
+                                TeamMembership.status
+                                == TeamMembershipStatus.ADMIN,
+                                TeamMembership.personID.is_in(team_select),
+                            ),
+                        ),
+                    )
+                ),
+                Person.merged == None,
+            )
+            .order_by(self._sortingColumnsForSetOperations)
+        )
 
     def getDirectAdministrators(self):
         """See `IPerson`."""
@@ -1814,25 +2070,30 @@ class Person(
             raise ValueError("This method must only be used for teams.")
         owner = Person.select("id = %s" % sqlvalues(self.teamowner))
         return self.adminmembers.union(
-            owner, orderBy=self._sortingColumnsForSetOperations)
+            owner, orderBy=self._sortingColumnsForSetOperations
+        )
 
     def getMembersByStatus(self, status, orderBy=None):
         """See `IPerson`."""
-        query = ("TeamMembership.team = %s AND TeamMembership.status = %s "
-                 "AND TeamMembership.person = Person.id" %
-                 sqlvalues(self.id, status))
+        query = (
+            "TeamMembership.team = %s AND TeamMembership.status = %s "
+            "AND TeamMembership.person = Person.id"
+            % sqlvalues(self.id, status)
+        )
         if orderBy is None:
             orderBy = Person.sortingColumns
         return Person.select(
-            query, clauseTables=['TeamMembership'], orderBy=orderBy)
+            query, clauseTables=["TeamMembership"], orderBy=orderBy
+        )
 
     def _getEmailsByStatus(self, status):
         return Store.of(self).find(
             EmailAddress,
             EmailAddress.personID == self.id,
-            EmailAddress.status == status)
+            EmailAddress.status == status,
+        )
 
-    def checkInclusiveMembershipPolicyAllowed(self, policy='open'):
+    def checkInclusiveMembershipPolicyAllowed(self, policy="open"):
         """See `ITeam`"""
         if not self.is_team:
             raise ValueError("This method must only be used for teams.")
@@ -1842,27 +2103,31 @@ class Person(
             raise TeamMembershipPolicyError(
                 "The team membership policy cannot be %s because it "
                 "maintains one or more projects, project groups, or "
-                "distributions." % policy)
+                "distributions." % policy
+            )
 
         # Does this team have any PPAs
         for ppa in self.ppas:
             if ppa.status != ArchiveStatus.DELETED:
                 raise TeamMembershipPolicyError(
                     "The team membership policy cannot be %s because it "
-                    "has one or more active PPAs." % policy)
+                    "has one or more active PPAs." % policy
+                )
 
         # Does this team have any super teams that are closed?
         for team in self.super_teams:
             if team.membership_policy in EXCLUSIVE_TEAM_POLICY:
                 raise TeamMembershipPolicyError(
                     "The team membership policy cannot be %s because one "
-                    "or more if its super teams are not open." % policy)
+                    "or more if its super teams are not open." % policy
+                )
 
         # Does the team own a productseries.branch?
         if not getUtility(IAllBranches).ownedBy(self).isSeries().is_empty():
             raise TeamMembershipPolicyError(
                 "The team membership policy cannot be %s because it owns "
-                "or more branches linked to project series." % policy)
+                "or more branches linked to project series." % policy
+            )
         # Does this team subscribe or is assigned to any private bugs.
         # Circular imports.
         from lp.bugs.model.bug import Bug
@@ -1871,31 +2136,40 @@ class Person(
 
         # The team cannot be open if it is subscribed to or assigned to
         # private bugs.
-        private_bugs_involved = IStore(Bug).execute(Union(
-            Select(
-                Bug.id,
-                tables=(
-                    Bug,
-                    Join(BugSubscription, BugSubscription.bug_id == Bug.id)),
-                where=And(
-                    Bug.information_type.is_in(PRIVATE_INFORMATION_TYPES),
-                    BugSubscription.person_id == self.id)),
-            Select(
-                Bug.id,
-                tables=(
-                    Bug,
-                    Join(BugTask, BugTask.bug_id == Bug.id)),
-                where=And(Bug.information_type.is_in(
-                    PRIVATE_INFORMATION_TYPES),
-                    BugTask.assignee == self.id)),
-            limit=1))
+        private_bugs_involved = IStore(Bug).execute(
+            Union(
+                Select(
+                    Bug.id,
+                    tables=(
+                        Bug,
+                        Join(
+                            BugSubscription, BugSubscription.bug_id == Bug.id
+                        ),
+                    ),
+                    where=And(
+                        Bug.information_type.is_in(PRIVATE_INFORMATION_TYPES),
+                        BugSubscription.person_id == self.id,
+                    ),
+                ),
+                Select(
+                    Bug.id,
+                    tables=(Bug, Join(BugTask, BugTask.bug_id == Bug.id)),
+                    where=And(
+                        Bug.information_type.is_in(PRIVATE_INFORMATION_TYPES),
+                        BugTask.assignee == self.id,
+                    ),
+                ),
+                limit=1,
+            )
+        )
         if private_bugs_involved.rowcount:
             raise TeamMembershipPolicyError(
                 "The team membership policy cannot be %s because it is "
                 "subscribed to or assigned to one or more private "
-                "bugs." % policy)
+                "bugs." % policy
+            )
 
-    def checkExclusiveMembershipPolicyAllowed(self, policy='closed'):
+    def checkExclusiveMembershipPolicyAllowed(self, policy="closed"):
         """See `ITeam`"""
         if not self.is_team:
             raise ValueError("This method must only be used for teams.")
@@ -1905,7 +2179,8 @@ class Person(
             if member.membership_policy in INCLUSIVE_TEAM_POLICY:
                 raise TeamMembershipPolicyError(
                     "The team membership policy cannot be %s because one "
-                    "or more if its member teams are Open." % policy)
+                    "or more if its member teams are Open." % policy
+                )
 
     @property
     def wiki_names(self):
@@ -1958,18 +2233,28 @@ class Person(
         decorators = []
         # Teams don't have email, so a left join
         origins.append(
-            LeftJoin(email_table, And(
-                email_table.personID == person_table.id,
-                email_table.status == EmailAddressStatus.PREFERRED)))
+            LeftJoin(
+                email_table,
+                And(
+                    email_table.personID == person_table.id,
+                    email_table.status == EmailAddressStatus.PREFERRED,
+                ),
+            )
+        )
         columns.append(email_table)
         origins.append(
-            LeftJoin(account_table, And(
-                person_table.accountID == account_table.id,
-                account_table.status == AccountStatus.ACTIVE)))
+            LeftJoin(
+                account_table,
+                And(
+                    person_table.accountID == account_table.id,
+                    account_table.status == AccountStatus.ACTIVE,
+                ),
+            )
+        )
         columns.append(account_table)
 
         def handleemail(person, column):
-            #-- preferred email caching
+            # -- preferred email caching
             if not person:
                 return
             email = column
@@ -1978,7 +2263,7 @@ class Person(
         decorators.append(handleemail)
 
         def handleaccount(person, column):
-            #-- validity caching
+            # -- validity caching
             if not person:
                 return
             # valid if:
@@ -1986,13 +2271,12 @@ class Person(
                 # -- valid account found
                 column is not None
                 # -- preferred email found
-                and person.preferredemail is not None)
+                and person.preferredemail is not None
+            )
             get_property_cache(person).is_valid_person = valid
+
         decorators.append(handleaccount)
-        return dict(
-            joins=origins,
-            tables=columns,
-            decorators=decorators)
+        return dict(joins=origins, tables=columns, decorators=decorators)
 
     def _members(self, direct, status=None, preload_for_api=False):
         """Lookup all members of the team with optional precaching.
@@ -2008,28 +2292,33 @@ class Person(
         origin = [Person]
         if not direct:
             assert status is None
-            origin.append(Join(
-                TeamParticipation, TeamParticipation.person == Person.id))
+            origin.append(
+                Join(TeamParticipation, TeamParticipation.person == Person.id)
+            )
             conditions = And(
                 # Members of this team,
                 TeamParticipation.team == self.id,
                 # But not the team itself.
-                TeamParticipation.person != self.id)
+                TeamParticipation.person != self.id,
+            )
         else:
             if not isinstance(status, tuple):
                 status = (status,)
-            origin.append(Join(
-                TeamMembership, TeamMembership.personID == Person.id))
+            origin.append(
+                Join(TeamMembership, TeamMembership.personID == Person.id)
+            )
             conditions = And(
                 # Membership in this team,
                 TeamMembership.team == self.id,
                 # And approved or admin status
-                TeamMembership.status.is_in(status))
+                TeamMembership.status.is_in(status),
+            )
         # Use a PersonSet object that is not security proxied to allow
         # manipulation of the object.
         person_set = PersonSet()
         return person_set._getPrecachedPersons(
-            origin, conditions, store=Store.of(self), need_api=preload_for_api)
+            origin, conditions, store=Store.of(self), need_api=preload_for_api
+        )
 
     def _getMembersWithPreferredEmails(self):
         """Helper method for public getMembersWithPreferredEmails.
@@ -2043,10 +2332,11 @@ class Person(
             Person,
             Join(TeamParticipation, TeamParticipation.person == Person.id),
             Join(EmailAddress, EmailAddress.person == Person.id),
-            ]
+        ]
         conditions = And(
             TeamParticipation.team == self.id,
-            EmailAddress.status == EmailAddressStatus.PREFERRED)
+            EmailAddress.status == EmailAddressStatus.PREFERRED,
+        )
         return store.using(*origin).find((Person, EmailAddress), conditions)
 
     def getMembersWithPreferredEmails(self):
@@ -2076,8 +2366,8 @@ class Person(
     @property
     def api_invited_members(self):
         return self._members(
-            True, status=TeamMembershipStatus.INVITED,
-            preload_for_api=True)
+            True, status=TeamMembershipStatus.INVITED, preload_for_api=True
+        )
 
     @property
     def invited_member_count(self):
@@ -2092,8 +2382,8 @@ class Person(
     @property
     def api_deactivatedmembers(self):
         return self._members(
-            True, status=TeamMembershipStatus.DEACTIVATED,
-            preload_for_api=True)
+            True, status=TeamMembershipStatus.DEACTIVATED, preload_for_api=True
+        )
 
     @property
     def deactivated_member_count(self):
@@ -2108,8 +2398,8 @@ class Person(
     @property
     def api_expiredmembers(self):
         return self._members(
-            True, status=TeamMembershipStatus.EXPIRED,
-            preload_for_api=True)
+            True, status=TeamMembershipStatus.EXPIRED, preload_for_api=True
+        )
 
     @property
     def expired_member_count(self):
@@ -2124,8 +2414,8 @@ class Person(
     @property
     def api_proposedmembers(self):
         return self._members(
-            True, status=TeamMembershipStatus.PROPOSED,
-            preload_for_api=True)
+            True, status=TeamMembershipStatus.PROPOSED, preload_for_api=True
+        )
 
     @property
     def proposed_member_count(self):
@@ -2140,8 +2430,8 @@ class Person(
     @property
     def api_adminmembers(self):
         return self._members(
-            True, status=TeamMembershipStatus.ADMIN,
-            preload_for_api=True)
+            True, status=TeamMembershipStatus.ADMIN, preload_for_api=True
+        )
 
     @property
     def approvedmembers(self):
@@ -2152,16 +2442,17 @@ class Person(
     def activemembers(self):
         """See `IPerson`."""
         return self.approvedmembers.union(
-            self.adminmembers, orderBy=self._sortingColumnsForSetOperations)
+            self.adminmembers, orderBy=self._sortingColumnsForSetOperations
+        )
 
     @property
     def api_activemembers(self):
         """See `IPerson`."""
         return self._members(
             direct=True,
-            status=(
-                TeamMembershipStatus.APPROVED, TeamMembershipStatus.ADMIN),
-            preload_for_api=True)
+            status=(TeamMembershipStatus.APPROVED, TeamMembershipStatus.ADMIN),
+            preload_for_api=True,
+        )
 
     @property
     def active_member_count(self):
@@ -2173,7 +2464,8 @@ class Person(
         """See `IPerson`."""
         return self.expiredmembers.union(
             self.deactivatedmembers,
-            orderBy=self._sortingColumnsForSetOperations)
+            orderBy=self._sortingColumnsForSetOperations,
+        )
 
     @property
     def inactive_member_count(self):
@@ -2184,8 +2476,8 @@ class Person(
     def pendingmembers(self):
         """See `IPerson`."""
         return self.proposedmembers.union(
-            self.invited_members,
-            orderBy=self._sortingColumnsForSetOperations)
+            self.invited_members, orderBy=self._sortingColumnsForSetOperations
+        )
 
     @property
     def team_memberships(self):
@@ -2194,32 +2486,39 @@ class Person(
         store = Store.of(self)
         # Join on team to sort by team names. Upper is used in the sort so
         # sorting works as is user expected, e.g. (A b C) not (A C b).
-        return store.find(TeamMembership,
-            And(TeamMembership.personID == self.id,
+        return store.find(
+            TeamMembership,
+            And(
+                TeamMembership.personID == self.id,
                 TeamMembership.teamID == Team.id,
-                TeamMembership.status.is_in([
-                    TeamMembershipStatus.APPROVED,
-                    TeamMembershipStatus.ADMIN,
-                    ]))).order_by(
-                        Upper(Team.display_name),
-                        Upper(Team.name))
+                TeamMembership.status.is_in(
+                    [
+                        TeamMembershipStatus.APPROVED,
+                        TeamMembershipStatus.ADMIN,
+                    ]
+                ),
+            ),
+        ).order_by(Upper(Team.display_name), Upper(Team.name))
 
     def anyone_can_join(self):
         open_types = (
             TeamMembershipPolicy.OPEN,
-            TeamMembershipPolicy.DELEGATED
-            )
-        return (self.membership_policy in open_types)
+            TeamMembershipPolicy.DELEGATED,
+        )
+        return self.membership_policy in open_types
 
     @property
     def open_membership_invitations(self):
         """See `IPerson`."""
-        return TeamMembership.select("""
+        return TeamMembership.select(
+            """
             TeamMembership.person = %s AND status = %s
             AND Person.id = TeamMembership.team
-            """ % sqlvalues(self.id, TeamMembershipStatus.INVITED),
-            clauseTables=['Person'],
-            orderBy=Person.sortingColumns)
+            """
+            % sqlvalues(self.id, TeamMembershipStatus.INVITED),
+            clauseTables=["Person"],
+            orderBy=Person.sortingColumns,
+        )
 
     def canDeactivate(self):
         """See `IPerson`."""
@@ -2229,12 +2528,16 @@ class Person(
         product_set = getUtility(IProductSet)
         non_public_products = product_set.get_users_private_products(self)
         if not non_public_products.is_empty():
-            errors.append(('This account cannot be deactivated because it owns'
-                        ' the following non-public products: ') +
-                        ','.join([p.name for p in non_public_products]))
+            errors.append(
+                (
+                    "This account cannot be deactivated because it owns"
+                    " the following non-public products: "
+                )
+                + ",".join([p.name for p in non_public_products])
+            )
 
         if self.account_status != AccountStatus.ACTIVE:
-            errors.append('This account is already deactivated.')
+            errors.append("This account is already deactivated.")
 
         return errors
 
@@ -2251,7 +2554,7 @@ class Person(
             # The person can only be deactivated if they do not own any
             # non-public products.
             errors = self.canDeactivate()
-            assert not errors, ' & '.join(errors)
+            assert not errors, " & ".join(errors)
 
         if pre_deactivate and not comment:
             raise AssertionError("Require a comment to deactivate.")
@@ -2277,9 +2580,13 @@ class Person(
 
             # XXX flacoste 2007-11-26 bug=164635 The comparison using id in
             # the assert below works around a nasty intermittent failure.
-            assert bug_task.assignee.id == self.id, (
-               "Bugtask %s assignee isn't the one expected: %s != %s" % (
-                    bug_task.id, bug_task.assignee.name, self.name))
+            assert (
+                bug_task.assignee.id == self.id
+            ), "Bugtask %s assignee isn't the one expected: %s != %s" % (
+                bug_task.id,
+                bug_task.assignee.name,
+                self.name,
+            )
             bug_task.transitionToAssignee(None, validate=False)
 
         for spec in Store.of(self).find(Specification, _assignee=self):
@@ -2302,8 +2609,10 @@ class Person(
 
             # Products need to change the bug supervisor as well.
             if IProduct.providedBy(pillar):
-                if (pillar.bug_supervisor is not None and
-                    pillar.bug_supervisor.id == self.id):
+                if (
+                    pillar.bug_supervisor is not None
+                    and pillar.bug_supervisor.id == self.id
+                ):
                     pillar.bug_supervisor = None
                     changed = True
 
@@ -2311,26 +2620,30 @@ class Person(
                 # Since we removed the person from all teams, something is
                 # seriously broken here.
                 raise AssertionError(
-                    "%s was expected to be owner or driver of %s" %
-                    (self.name, pillar.name))
+                    "%s was expected to be owner or driver of %s"
+                    % (self.name, pillar.name)
+                )
 
         # Nuke all subscriptions of this person.
         removals = [
-            ('BranchSubscription', 'person'),
-            ('GitSubscription', 'person'),
-            ('BugSubscription', 'person'),
-            ('QuestionSubscription', 'person'),
-            ('SpecificationSubscription', 'person'),
-            ('AnswerContact', 'person'),
-            ('LatestPersonSourcePackageReleaseCache', 'creator'),
-            ('LatestPersonSourcePackageReleaseCache', 'maintainer')]
+            ("BranchSubscription", "person"),
+            ("GitSubscription", "person"),
+            ("BugSubscription", "person"),
+            ("QuestionSubscription", "person"),
+            ("SpecificationSubscription", "person"),
+            ("AnswerContact", "person"),
+            ("LatestPersonSourcePackageReleaseCache", "creator"),
+            ("LatestPersonSourcePackageReleaseCache", "maintainer"),
+        ]
         cur = cursor()
         for table, person_id_column in removals:
-            cur.execute("DELETE FROM %s WHERE %s=%d"
-                        % (table, person_id_column, self.id))
+            cur.execute(
+                "DELETE FROM %s WHERE %s=%d"
+                % (table, person_id_column, self.id)
+            )
 
         # Update the person's name.
-        base_new_name = self.name + '-deactivatedaccount'
+        base_new_name = self.name + "-deactivatedaccount"
         self.name = self._ensureNewName(base_new_name)
 
     def _ensureNewName(self, base_new_name):
@@ -2354,8 +2667,11 @@ class Person(
 
     def isMergePending(self):
         """See `IPublicPerson`."""
-        return not getUtility(
-            IPersonMergeJobSource).find(from_person=self).is_empty()
+        return (
+            not getUtility(IPersonMergeJobSource)
+            .find(from_person=self)
+            .is_empty()
+        )
 
     def visibilityConsistencyWarning(self, new_value):
         """Warning used when changing the team's visibility.
@@ -2368,71 +2684,72 @@ class Person(
 
         cur = cursor()
         references = list(
-            postgresql.listReferences(cur, 'person', 'id', indirect=False))
+            postgresql.listReferences(cur, "person", "id", indirect=False)
+        )
         # These tables will be skipped since they do not risk leaking
         # team membership information.
         # Note all of the table names and columns must be all lowercase.
         skip = {
-            ('accessartifactgrant', 'grantee'),
-            ('accessartifactgrant', 'grantor'),
-            ('accesspolicy', 'person'),
-            ('accesspolicygrant', 'grantee'),
-            ('accesspolicygrant', 'grantor'),
-            ('archive', 'owner'),
-            ('archivesubscriber', 'subscriber'),
-            ('branch', 'owner'),
-            ('branchsubscription', 'person'),
-            ('bugnotificationrecipient', 'person'),
-            ('bugsubscription', 'person'),
-            ('bugsummary', 'viewed_by'),
-            ('bugtask', 'assignee'),
-            ('codereviewvote', 'reviewer'),
-            ('emailaddress', 'person'),
-            ('gitactivity', 'changee'),
-            ('gitactivity', 'changer'),
-            ('gitrepository', 'owner'),
-            ('gitrule', 'creator'),
-            ('gitrulegrant', 'grantee'),
-            ('gitrulegrant', 'grantor'),
-            ('gitsubscription', 'person'),
-            ('gpgkey', 'owner'),
-            ('ircid', 'person'),
-            ('jabberid', 'person'),
-            ('karma', 'person'),
-            ('karmacache', 'person'),
-            ('karmatotalcache', 'person'),
-            ('logintoken', 'requester'),
-            ('personlanguage', 'person'),
-            ('personlocation', 'person'),
-            ('personsettings', 'person'),
-            ('persontransferjob', 'minor_person'),
-            ('persontransferjob', 'major_person'),
-            ('product', 'bug_supervisor'),
-            ('product', 'driver'),
-            ('product', 'owner'),
-            ('productseries', 'driver'),
-            ('productseries', 'owner'),
-            ('sharingjob', 'grantee'),
-            ('signedcodeofconduct', 'owner'),
-            ('snapbuild', 'requester'),
-            ('specificationsubscription', 'person'),
-            ('sshkey', 'person'),
-            ('structuralsubscription', 'subscriber'),
-            ('teammembership', 'acknowledged_by'),
-            ('teammembership', 'proposed_by'),
-            ('teammembership', 'reviewed_by'),
-            ('teammembership', 'team'),
-            ('teamparticipation', 'person'),
-            ('teamparticipation', 'team'),
-            ('usertouseremail', 'recipient'),
+            ("accessartifactgrant", "grantee"),
+            ("accessartifactgrant", "grantor"),
+            ("accesspolicy", "person"),
+            ("accesspolicygrant", "grantee"),
+            ("accesspolicygrant", "grantor"),
+            ("archive", "owner"),
+            ("archivesubscriber", "subscriber"),
+            ("branch", "owner"),
+            ("branchsubscription", "person"),
+            ("bugnotificationrecipient", "person"),
+            ("bugsubscription", "person"),
+            ("bugsummary", "viewed_by"),
+            ("bugtask", "assignee"),
+            ("codereviewvote", "reviewer"),
+            ("emailaddress", "person"),
+            ("gitactivity", "changee"),
+            ("gitactivity", "changer"),
+            ("gitrepository", "owner"),
+            ("gitrule", "creator"),
+            ("gitrulegrant", "grantee"),
+            ("gitrulegrant", "grantor"),
+            ("gitsubscription", "person"),
+            ("gpgkey", "owner"),
+            ("ircid", "person"),
+            ("jabberid", "person"),
+            ("karma", "person"),
+            ("karmacache", "person"),
+            ("karmatotalcache", "person"),
+            ("logintoken", "requester"),
+            ("personlanguage", "person"),
+            ("personlocation", "person"),
+            ("personsettings", "person"),
+            ("persontransferjob", "minor_person"),
+            ("persontransferjob", "major_person"),
+            ("product", "bug_supervisor"),
+            ("product", "driver"),
+            ("product", "owner"),
+            ("productseries", "driver"),
+            ("productseries", "owner"),
+            ("sharingjob", "grantee"),
+            ("signedcodeofconduct", "owner"),
+            ("snapbuild", "requester"),
+            ("specificationsubscription", "person"),
+            ("sshkey", "person"),
+            ("structuralsubscription", "subscriber"),
+            ("teammembership", "acknowledged_by"),
+            ("teammembership", "proposed_by"),
+            ("teammembership", "reviewed_by"),
+            ("teammembership", "team"),
+            ("teamparticipation", "person"),
+            ("teamparticipation", "team"),
+            ("usertouseremail", "recipient"),
             # Skip mailing lists because if the mailing list is purged, it's
             # not a problem.  Do this check separately below.
-            ('mailinglist', 'team'),
+            ("mailinglist", "team"),
             # The following is denormalised reporting data only loaded if the
             # user already has access to the team.
-            ('latestpersonsourcepackagereleasecache', 'creator'),
-            ('latestpersonsourcepackagereleasecache', 'maintainer'),
-            }
+            ("latestpersonsourcepackagereleasecache", "creator"),
+            ("latestpersonsourcepackagereleasecache", "maintainer"),
+        }
 
         warnings = set()
         ref_query = []
@@ -2442,24 +2759,28 @@ class Person(
             ref_query.append(
                 "SELECT '%(table)s' AS table FROM %(table)s "
                 "WHERE %(col)s = %(person_id)d"
-                % {'col': src_col, 'table': src_tab, 'person_id': self.id})
+                % {"col": src_col, "table": src_tab, "person_id": self.id}
+            )
         if ref_query:
-            cur.execute(' UNION '.join(ref_query))
+            cur.execute(" UNION ".join(ref_query))
             for src_tab in cur.fetchall():
                 table_name = (
-                    src_tab[0] if isinstance(src_tab, tuple) else src_tab)
-                if table_name[0] in 'aeiou':
-                    article = 'an'
+                    src_tab[0] if isinstance(src_tab, tuple) else src_tab
+                )
+                if table_name[0] in "aeiou":
+                    article = "an"
                 else:
-                    article = 'a'
-                warnings.add('%s %s' % (article, table_name))
+                    article = "a"
+                warnings.add("%s %s" % (article, table_name))
 
         # Non-purged mailing list check for transitioning to or from PUBLIC.
         if PersonVisibility.PUBLIC in [self.visibility, new_value]:
             mailing_list = getUtility(IMailingListSet).get(self.name)
-            if (mailing_list is not None and
-                mailing_list.status != MailingListStatus.PURGED):
-                warnings.add('a mailing list')
+            if (
+                mailing_list is not None
+                and mailing_list.status != MailingListStatus.PURGED
+            ):
+                warnings.add("a mailing list")
 
         # Compose warning string.
         warnings = sorted(warnings)
@@ -2471,12 +2792,14 @@ class Person(
             if len(warnings) == 1:
                 message = warnings[0]
             else:
-                message = '%s and %s' % (
-                    ', '.join(warnings[:-1]),
-                    warnings[-1])
+                message = "%s and %s" % (
+                    ", ".join(warnings[:-1]),
+                    warnings[-1],
+                )
             self._visibility_warning_cache = (
-                'This team cannot be converted to %s since it is '
-                'referenced by %s.' % (new_value, message))
+                "This team cannot be converted to %s since it is "
+                "referenced by %s." % (new_value, message)
+            )
             self._visibility_warning_cache_key = new_value
         return self._visibility_warning_cache
 
@@ -2484,12 +2807,14 @@ class Person(
     def member_memberships(self):
         """See `IPerson`."""
         return self._getMembershipsByStatuses(
-            [TeamMembershipStatus.ADMIN, TeamMembershipStatus.APPROVED])
+            [TeamMembershipStatus.ADMIN, TeamMembershipStatus.APPROVED]
+        )
 
     def getInactiveMemberships(self):
         """See `IPerson`."""
         return self._getMembershipsByStatuses(
-            [TeamMembershipStatus.EXPIRED, TeamMembershipStatus.DEACTIVATED])
+            [TeamMembershipStatus.EXPIRED, TeamMembershipStatus.DEACTIVATED]
+        )
 
     def getInvitedMemberships(self):
         """See `IPerson`."""
@@ -2514,18 +2839,23 @@ class Person(
             TeamMembership.status IN (%s)
             AND Person.id = TeamMembership.person
             AND TeamMembership.team = %d
-            """ % (statuses, self.id)
+            """ % (
+            statuses,
+            self.id,
+        )
         return TeamMembership.select(
-            query, clauseTables=['Person'],
-            prejoinClauseTables=['Person'],
-            orderBy=Person.sortingColumns)
+            query,
+            clauseTables=["Person"],
+            prejoinClauseTables=["Person"],
+            orderBy=Person.sortingColumns,
+        )
 
     def getLatestApprovedMembershipsForPerson(self, limit=5):
         """See `IPerson`."""
         result = self.team_memberships
         result = result.order_by(
-            Desc(TeamMembership.datejoined),
-            Desc(TeamMembership.id))
+            Desc(TeamMembership.datejoined), Desc(TeamMembership.id)
+        )
         return result[:limit]
 
     def getPathsToTeams(self):
@@ -2543,30 +2873,36 @@ class Person(
         # the oldest path information to be consistent with results from
         # IPerson.findPathToTeam.
         store = Store.of(self)
-        all_direct_memberships = store.find(TeamMembership,
+        all_direct_memberships = store.find(
+            TeamMembership,
             And(
                 TeamMembership.personID.is_in(
-                    [team.id for team in teams] + [self.id]),
+                    [team.id for team in teams] + [self.id]
+                ),
                 TeamMembership.teamID != self.id,
-                TeamMembership.status.is_in([
-                    TeamMembershipStatus.APPROVED,
-                    TeamMembershipStatus.ADMIN,
-                    ]))).order_by(
-                        Desc(TeamMembership.datejoined),
-                        Desc(TeamMembership.id))
+                TeamMembership.status.is_in(
+                    [
+                        TeamMembershipStatus.APPROVED,
+                        TeamMembershipStatus.ADMIN,
+                    ]
+                ),
+            ),
+        ).order_by(Desc(TeamMembership.datejoined), Desc(TeamMembership.id))
         # Cast the results to list now, because they will be iterated over
         # several times.
         all_direct_memberships = list(all_direct_memberships)
 
         # Pull out the memberships directly used by this person.
         user_memberships = [
-            membership for membership in
-            all_direct_memberships
-            if membership.person == self]
+            membership
+            for membership in all_direct_memberships
+            if membership.person == self
+        ]
 
         all_direct_memberships = [
-            (membership.team, membership.person) for membership in
-            all_direct_memberships]
+            (membership.team, membership.person)
+            for membership in all_direct_memberships
+        ]
 
         # Create a graph from the edges provided by the other data sets.
         graph = dict(all_direct_memberships)
@@ -2585,13 +2921,16 @@ class Person(
     @property
     def teams_participated_in(self):
         """See `IPerson`."""
-        return Person.select("""
+        return Person.select(
+            """
             Person.id = TeamParticipation.team
             AND TeamParticipation.person = %s
             AND Person.teamowner IS NOT NULL
-            """ % sqlvalues(self.id),
-            clauseTables=['TeamParticipation'],
-            orderBy=Person.sortingColumns)
+            """
+            % sqlvalues(self.id),
+            clauseTables=["TeamParticipation"],
+            orderBy=Person.sortingColumns,
+        )
 
     @property
     def teams_indirectly_participated_in(self):
@@ -2601,38 +2940,52 @@ class Person(
         origin = [
             Team,
             Join(TeamParticipation, Team.id == TeamParticipation.teamID),
-            LeftJoin(TeamMembership,
-                And(TeamMembership.person == self.id,
+            LeftJoin(
+                TeamMembership,
+                And(
+                    TeamMembership.person == self.id,
                     TeamMembership.teamID == TeamParticipation.teamID,
-                    TeamMembership.status.is_in([
-                        TeamMembershipStatus.APPROVED,
-                        TeamMembershipStatus.ADMIN])))]
-        find_objects = (Team)
-        return store.using(*origin).find(find_objects,
+                    TeamMembership.status.is_in(
+                        [
+                            TeamMembershipStatus.APPROVED,
+                            TeamMembershipStatus.ADMIN,
+                        ]
+                    ),
+                ),
+            ),
+        ]
+        find_objects = Team
+        return store.using(*origin).find(
+            find_objects,
             And(
                 TeamParticipation.person == self.id,
                 TeamParticipation.person != TeamParticipation.teamID,
-                TeamMembership.id == None))
+                TeamMembership.id == None,
+            ),
+        )
 
     @property
     def teams_with_icons(self):
         """See `IPerson`."""
-        return Person.select("""
+        return Person.select(
+            """
             Person.id = TeamParticipation.team
             AND TeamParticipation.person = %s
             AND Person.teamowner IS NOT NULL
             AND Person.icon IS NOT NULL
             AND TeamParticipation.team != %s
-            """ % sqlvalues(self.id, self.id),
-            clauseTables=['TeamParticipation'],
-            orderBy=Person.sortingColumns)
+            """
+            % sqlvalues(self.id, self.id),
+            clauseTables=["TeamParticipation"],
+            orderBy=Person.sortingColumns,
+        )
 
     @property
     def defaultexpirationdate(self):
         """See `IPerson`."""
         days = self.defaultmembershipperiod
         if days:
-            return datetime.now(pytz.timezone('UTC')) + timedelta(days)
+            return datetime.now(pytz.timezone("UTC")) + timedelta(days)
         else:
             return None
 
@@ -2641,7 +2994,7 @@ class Person(
         """See `IPerson`."""
         days = self.defaultrenewalperiod
         if days:
-            return datetime.now(pytz.timezone('UTC')) + timedelta(days)
+            return datetime.now(pytz.timezone("UTC")) + timedelta(days)
         else:
             return None
 
@@ -2649,10 +3002,10 @@ class Person(
         """See `IPersonSpecialRestricted`."""
         self.account.reactivate(comment)
         self.setPreferredEmail(preferred_email)
-        if '-deactivatedaccount' in self.name:
+        if "-deactivatedaccount" in self.name:
             # The name was changed by deactivate(). Restore the name, but we
             # must ensure it does not conflict with a current user.
-            name_parts = self.name.split('-deactivatedaccount')
+            name_parts = self.name.split("-deactivatedaccount")
             base_new_name = name_parts[0]
             self.name = self._ensureNewName(base_new_name)
 
@@ -2662,20 +3015,28 @@ class Person(
         if not IEmailAddress.providedBy(email):
             raise TypeError(
                 "Any person's email address must provide the IEmailAddress "
-                "interface. %s doesn't." % email)
+                "interface. %s doesn't." % email
+            )
         # XXX Steve Alexander 2005-07-05:
         # This is here because of an SQLobject comparison oddity.
-        assert email.personID == self.id, 'Wrong person! %r, %r' % (
-            email.personID, self.id)
+        assert email.personID == self.id, "Wrong person! %r, %r" % (
+            email.personID,
+            self.id,
+        )
 
         # We need the preferred email address. This method is called
         # recursively, however, and the email address may have just been
         # created. So we have to explicitly pull it from the master store
         # until we rewrite this 'icky mess.
-        preferred_email = IStore(EmailAddress).find(
-            EmailAddress,
-            EmailAddress.personID == self.id,
-            EmailAddress.status == EmailAddressStatus.PREFERRED).one()
+        preferred_email = (
+            IStore(EmailAddress)
+            .find(
+                EmailAddress,
+                EmailAddress.personID == self.id,
+                EmailAddress.status == EmailAddressStatus.PREFERRED,
+            )
+            .one()
+        )
 
         # This email is already validated and is this person's preferred
         # email, so we have nothing to do.
@@ -2701,14 +3062,18 @@ class Person(
             self._setPreferredEmail(email)
         # A team can have up to two addresses, the preferred one and one used
         # by the team mailing list.
-        if (self.mailing_list is not None
-            and self.mailing_list.status != MailingListStatus.PURGED):
+        if (
+            self.mailing_list is not None
+            and self.mailing_list.status != MailingListStatus.PURGED
+        ):
             mailing_list_email = getUtility(IEmailAddressSet).getByEmail(
-                self.mailing_list.address)
+                self.mailing_list.address
+            )
         else:
             mailing_list_email = None
         all_addresses = IStore(EmailAddress).find(
-            EmailAddress, EmailAddress.personID == self.id)
+            EmailAddress, EmailAddress.personID == self.id
+        )
         for address in all_addresses:
             # Delete all email addresses that are not the preferred email
             # address, or the team's email address. If this method was called
@@ -2719,9 +3084,15 @@ class Person(
 
     def _unsetPreferredEmail(self):
         """Change the preferred email address to VALIDATED."""
-        email_address = IStore(EmailAddress).find(
-            EmailAddress, personID=self.id,
-            status=EmailAddressStatus.PREFERRED).one()
+        email_address = (
+            IStore(EmailAddress)
+            .find(
+                EmailAddress,
+                personID=self.id,
+                status=EmailAddressStatus.PREFERRED,
+            )
+            .one()
+        )
         if email_address is not None:
             email_address.status = EmailAddressStatus.VALIDATED
         del get_property_cache(self).preferredemail
@@ -2746,11 +3117,18 @@ class Person(
         if not IEmailAddress.providedBy(email):
             raise TypeError(
                 "Any person's email address must provide the IEmailAddress "
-                "interface. %s doesn't." % email)
+                "interface. %s doesn't." % email
+            )
         assert email.personID == self.id
-        existing_preferred_email = IStore(EmailAddress).find(
-            EmailAddress, personID=self.id,
-            status=EmailAddressStatus.PREFERRED).one()
+        existing_preferred_email = (
+            IStore(EmailAddress)
+            .find(
+                EmailAddress,
+                personID=self.id,
+                status=EmailAddressStatus.PREFERRED,
+            )
+            .one()
+        )
         if existing_preferred_email is not None:
             original_recipients = existing_preferred_email.email
             existing_preferred_email.status = EmailAddressStatus.VALIDATED
@@ -2766,7 +3144,8 @@ class Person(
             self.security_field_changed(
                 "Preferred email address changed on Launchpad.",
                 "Your preferred email address is now <%s>." % email.email,
-                original_recipients)
+                original_recipients,
+            )
 
     @cachedproperty
     def preferredemail(self):
@@ -2786,11 +3165,10 @@ class Person(
     @property
     def safe_email_or_blank(self):
         """See `IPerson`."""
-        if (self.preferredemail is not None
-            and not self.hide_email_addresses):
+        if self.preferredemail is not None and not self.hide_email_addresses:
             return self.preferredemail.email
         else:
-            return ''
+            return ""
 
     @property
     def validatedemails(self):
@@ -2804,8 +3182,11 @@ class Person(
             requester = %s
             AND (tokentype=%s OR tokentype=%s)
             AND date_consumed IS NULL
-            """ % sqlvalues(self.id, LoginTokenType.VALIDATEEMAIL,
-                            LoginTokenType.VALIDATETEAMEMAIL)
+            """ % sqlvalues(
+            self.id,
+            LoginTokenType.VALIDATEEMAIL,
+            LoginTokenType.VALIDATETEAMEMAIL,
+        )
         return sorted({token.email for token in LoginToken.select(query)})
 
     @property
@@ -2817,8 +3198,14 @@ class Person(
     def pending_gpg_keys(self):
         """See `IPerson`."""
         logintokenset = getUtility(ILoginTokenSet)
-        return sorted({token.fingerprint for token in
-                      logintokenset.getPendingGPGKeys(requesterid=self.id)})
+        return sorted(
+            {
+                token.fingerprint
+                for token in logintokenset.getPendingGPGKeys(
+                    requesterid=self.id
+                )
+            }
+        )
 
     @property
     def inactive_gpg_keys(self):
@@ -2875,39 +3262,42 @@ class Person(
         for packages uploaded to PPAs by someone else than the user
         themselves.
         """
+        LPSPRC = LatestPersonSourcePackageReleaseCache
         clauses = []
         if uploader_only:
-            clauses.append(
-                LatestPersonSourcePackageReleaseCache.creator_id == self.id)
+            clauses.append(LPSPRC.creator_id == self.id)
         if ppa_only:
             # Source maintainer is irrelevant for PPA uploads.
             pass
         elif uploader_only:
-            lpspr = ClassAlias(LatestPersonSourcePackageReleaseCache, 'lpspr')
-            upload_distroseries_id = (
-                LatestPersonSourcePackageReleaseCache.upload_distroseries_id)
-            clauses.append(Not(Exists(Select(1,
-            where=And(
-                lpspr.sourcepackagename_id ==
-                    LatestPersonSourcePackageReleaseCache.sourcepackagename_id,
-                lpspr.upload_archive_id ==
-                    LatestPersonSourcePackageReleaseCache.upload_archive_id,
-                lpspr.upload_distroseries_id ==
-                    upload_distroseries_id,
-                lpspr.archive_purpose != ArchivePurpose.PPA,
-                lpspr.maintainer_id == self.id),
-            tables=lpspr))))
-        else:
+            lpspr = ClassAlias(LPSPRC, "lpspr")
+            upload_distroseries_id = LPSPRC.upload_distroseries_id
             clauses.append(
-                LatestPersonSourcePackageReleaseCache.maintainer_id == self.id)
+                Not(
+                    Exists(
+                        Select(
+                            1,
+                            where=And(
+                                lpspr.sourcepackagename_id
+                                == LPSPRC.sourcepackagename_id,
+                                lpspr.upload_archive_id
+                                == LPSPRC.upload_archive_id,
+                                lpspr.upload_distroseries_id
+                                == upload_distroseries_id,
+                                lpspr.archive_purpose != ArchivePurpose.PPA,
+                                lpspr.maintainer_id == self.id,
+                            ),
+                            tables=lpspr,
+                        )
+                    )
+                )
+            )
+        else:
+            clauses.append(LPSPRC.maintainer_id == self.id)
         if ppa_only:
-            clauses.append(
-                LatestPersonSourcePackageReleaseCache.archive_purpose ==
-                ArchivePurpose.PPA)
+            clauses.append(LPSPRC.archive_purpose == ArchivePurpose.PPA)
         else:
-            clauses.append(
-                LatestPersonSourcePackageReleaseCache.archive_purpose !=
-                ArchivePurpose.PPA)
+            clauses.append(LPSPRC.archive_purpose != ArchivePurpose.PPA)
         return clauses
 
     def _hasReleasesQuery(self, uploader_only=False, ppa_only=False):
@@ -2915,8 +3305,13 @@ class Person(
         See `_releasesQueryFilter` for details on the criteria used.
         """
         clauses = self._releasesQueryFilter(uploader_only, ppa_only)
-        rs = Store.of(self).using(LatestPersonSourcePackageReleaseCache).find(
-            LatestPersonSourcePackageReleaseCache.publication_id, *clauses)
+        rs = (
+            Store.of(self)
+            .using(LatestPersonSourcePackageReleaseCache)
+            .find(
+                LatestPersonSourcePackageReleaseCache.publication_id, *clauses
+            )
+        )
         return not rs.is_empty()
 
     def _latestReleasesQuery(self, uploader_only=False, ppa_only=False):
@@ -2924,19 +3319,26 @@ class Person(
         See `_releasesQueryFilter` for details on the criteria used."""
 
         clauses = self._releasesQueryFilter(uploader_only, ppa_only)
-        rs = Store.of(self).find(
-            LatestPersonSourcePackageReleaseCache, *clauses).order_by(
-            Desc(LatestPersonSourcePackageReleaseCache.dateuploaded))
+        rs = (
+            Store.of(self)
+            .find(LatestPersonSourcePackageReleaseCache, *clauses)
+            .order_by(Desc(LatestPersonSourcePackageReleaseCache.dateuploaded))
+        )
 
         def load_related_objects(rows):
             if rows and rows[0].maintainer_id:
-                list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-                    set(map(attrgetter("maintainer_id"), rows))))
+                list(
+                    getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+                        set(map(attrgetter("maintainer_id"), rows))
+                    )
+                )
             bulk.load_related(
-                SourcePackageName, rows, ['sourcepackagename_id'])
+                SourcePackageName, rows, ["sourcepackagename_id"]
+            )
             bulk.load_related(
-                SourcePackageRelease, rows, ['sourcepackagerelease_id'])
-            bulk.load_related(Archive, rows, ['upload_archive_id'])
+                SourcePackageRelease, rows, ["sourcepackagerelease_id"]
+            )
+            bulk.load_related(Archive, rows, ["upload_archive_id"])
 
         return DecoratedResultSet(rs, pre_iter_hook=load_related_objects)
 
@@ -2944,77 +3346,122 @@ class Person(
         """See `IPerson`."""
         spph = ClassAlias(SourcePackagePublishingHistory, "spph")
         ancestor_spph = ClassAlias(
-            SourcePackagePublishingHistory, "ancestor_spph")
+            SourcePackagePublishingHistory, "ancestor_spph"
+        )
         tables = (
             SourcePackageRelease,
-            Join(
-                spph,
-                spph.sourcepackagereleaseID ==
-                SourcePackageRelease.id),
+            Join(spph, spph.sourcepackagereleaseID == SourcePackageRelease.id),
             Join(Archive, Archive.id == spph.archiveID),
-            Join(ancestor_spph, ancestor_spph.id == spph.ancestorID))
-        rs = Store.of(self).using(*tables).find(
-            spph.id,
-            spph.creatorID == self.id,
-            ancestor_spph.archiveID != spph.archiveID,
-            Archive.purpose == ArchivePurpose.PRIMARY)
+            Join(ancestor_spph, ancestor_spph.id == spph.ancestorID),
+        )
+        rs = (
+            Store.of(self)
+            .using(*tables)
+            .find(
+                spph.id,
+                spph.creatorID == self.id,
+                ancestor_spph.archiveID != spph.archiveID,
+                Archive.purpose == ArchivePurpose.PRIMARY,
+            )
+        )
         return not rs.is_empty()
 
     def getLatestSynchronisedPublishings(self):
         """See `IPerson`."""
         spph = ClassAlias(SourcePackagePublishingHistory, "spph")
         ancestor_spph = ClassAlias(
-            SourcePackagePublishingHistory, "ancestor_spph")
-        rs = Store.of(self).find(
-            SourcePackagePublishingHistory,
-            SourcePackagePublishingHistory.id.is_in(
-                Select(
-                    spph.id,
-                    tables=[
-                        SourcePackageRelease,
-                        Join(
-                            spph, spph.sourcepackagereleaseID ==
-                            SourcePackageRelease.id),
-                        Join(Archive, Archive.id == spph.archiveID),
-                        Join(
-                            ancestor_spph,
-                            ancestor_spph.id == spph.ancestorID)],
-                    where=And(
-                        spph.creatorID == self.id,
-                        ancestor_spph.archiveID != spph.archiveID,
-                        Archive.purpose == ArchivePurpose.PRIMARY),
-                    order_by=[spph.distroseriesID,
-                              SourcePackageRelease.sourcepackagenameID,
-                              Desc(spph.datecreated), Desc(spph.id)],
-                    distinct=(
-                        spph.distroseriesID,
-                        SourcePackageRelease.sourcepackagenameID)
-                    ))).order_by(
-            Desc(SourcePackagePublishingHistory.datecreated),
-            Desc(SourcePackagePublishingHistory.id))
+            SourcePackagePublishingHistory, "ancestor_spph"
+        )
+        rs = (
+            Store.of(self)
+            .find(
+                SourcePackagePublishingHistory,
+                SourcePackagePublishingHistory.id.is_in(
+                    Select(
+                        spph.id,
+                        tables=[
+                            SourcePackageRelease,
+                            Join(
+                                spph,
+                                spph.sourcepackagereleaseID
+                                == SourcePackageRelease.id,
+                            ),
+                            Join(Archive, Archive.id == spph.archiveID),
+                            Join(
+                                ancestor_spph,
+                                ancestor_spph.id == spph.ancestorID,
+                            ),
+                        ],
+                        where=And(
+                            spph.creatorID == self.id,
+                            ancestor_spph.archiveID != spph.archiveID,
+                            Archive.purpose == ArchivePurpose.PRIMARY,
+                        ),
+                        order_by=[
+                            spph.distroseriesID,
+                            SourcePackageRelease.sourcepackagenameID,
+                            Desc(spph.datecreated),
+                            Desc(spph.id),
+                        ],
+                        distinct=(
+                            spph.distroseriesID,
+                            SourcePackageRelease.sourcepackagenameID,
+                        ),
+                    )
+                ),
+            )
+            .order_by(
+                Desc(SourcePackagePublishingHistory.datecreated),
+                Desc(SourcePackagePublishingHistory.id),
+            )
+        )
 
         def load_related_objects(rows):
             bulk.load_related(
-                SourcePackageRelease, rows, ['sourcepackagereleaseID'])
-            bulk.load_related(Archive, rows, ['archiveID'])
+                SourcePackageRelease, rows, ["sourcepackagereleaseID"]
+            )
+            bulk.load_related(Archive, rows, ["archiveID"])
 
         return DecoratedResultSet(rs, pre_iter_hook=load_related_objects)
 
-    def createRecipe(self, name, description, recipe_text, distroseries,
-                     registrant, daily_build_archive=None, build_daily=False):
+    def createRecipe(
+        self,
+        name,
+        description,
+        recipe_text,
+        distroseries,
+        registrant,
+        daily_build_archive=None,
+        build_daily=False,
+    ):
         """See `IPerson`."""
         from lp.code.model.sourcepackagerecipe import SourcePackageRecipe
+
         recipe = SourcePackageRecipe.new(
-            registrant, self, name, recipe_text, description, distroseries,
-            daily_build_archive, build_daily)
+            registrant,
+            self,
+            name,
+            recipe_text,
+            description,
+            distroseries,
+            daily_build_archive,
+            build_daily,
+        )
         Store.of(recipe).flush()
         return recipe
 
     def getRecipe(self, name):
         from lp.code.model.sourcepackagerecipe import SourcePackageRecipe
-        return Store.of(self).find(
-            SourcePackageRecipe, SourcePackageRecipe.owner == self,
-            SourcePackageRecipe.name == name).one()
+
+        return (
+            Store.of(self)
+            .find(
+                SourcePackageRecipe,
+                SourcePackageRecipe.owner == self,
+                SourcePackageRecipe.name == name,
+            )
+            .one()
+        )
 
     @cachedproperty
     def is_ubuntu_coc_signer(self):
@@ -3023,7 +3470,8 @@ class Person(
         store = Store.of(self)
         query = And(
             SignedCodeOfConduct.owner_id == self.id,
-            Person._is_ubuntu_coc_signer_condition())
+            Person._is_ubuntu_coc_signer_condition(),
+        )
         return not store.find(SignedCodeOfConduct, query).is_empty()
 
     @staticmethod
@@ -3031,8 +3479,10 @@ class Person(
         """Generate a Storm Expr for determing the coc signing status."""
         sigset = getUtility(ISignedCodeOfConductSet)
         lastdate = sigset.getLastAcceptedDate()
-        return And(SignedCodeOfConduct.active == True,
-            SignedCodeOfConduct.datecreated >= lastdate)
+        return And(
+            SignedCodeOfConduct.active == True,
+            SignedCodeOfConduct.datecreated >= lastdate,
+        )
 
     @property
     def activesignatures(self):
@@ -3053,8 +3503,9 @@ class Person(
 
     def getArchiveSubscriptions(self, requester):
         """See `IPerson`."""
-        subscriptions = getUtility(
-            IArchiveSubscriberSet).getBySubscriber(subscriber=self)
+        subscriptions = getUtility(IArchiveSubscriberSet).getBySubscriber(
+            subscriber=self
+        )
         return subscriptions
 
     def getArchiveSubscriptionURLs(self, requester):
@@ -3066,10 +3517,13 @@ class Person(
             if self.id != requester.id:
                 raise Unauthorized
         subscriptions = getUtility(
-            IArchiveSubscriberSet).getBySubscriberWithActiveToken(
-                subscriber=self)
-        return [token.archive_url for (subscription, token) in subscriptions
-                if token is not None]
+            IArchiveSubscriberSet
+        ).getBySubscriberWithActiveToken(subscriber=self)
+        return [
+            token.archive_url
+            for (subscription, token) in subscriptions
+            if token is not None
+        ]
 
     def getArchiveSubscriptionURL(self, requester, archive):
         """See `IPerson`."""
@@ -3079,16 +3533,18 @@ class Person(
         if requester.id != agent.id:
             if self.id != requester.id:
                 raise Unauthorized(
-                    'Only the context user can call this method')
+                    "Only the context user can call this method"
+                )
         # Verify if the user has a valid subscription on the given
         # archive and return None if it doesn't.
-        subscription = getUtility(
-            IArchiveSubscriberSet).getBySubscriber(
-                subscriber=self, archive=archive)
+        subscription = getUtility(IArchiveSubscriberSet).getBySubscriber(
+            subscriber=self, archive=archive
+        )
         if subscription.is_empty():
             raise Unauthorized(
-                'This person does not have a valid subscription for the '
-                'target archive')
+                "This person does not have a valid subscription for the "
+                "target archive"
+            )
         # Find the corresponding authorization token or create a new one.
         token = archive.getAuthToken(self)
         if token is None:
@@ -3099,7 +3555,8 @@ class Person(
     def ppas(self):
         """See `IPerson`."""
         return Archive.selectBy(
-            owner=self, purpose=ArchivePurpose.PPA, orderBy='name')
+            owner=self, purpose=ArchivePurpose.PPA, orderBy="name"
+        )
 
     def getVisiblePPAs(self, user):
         """See `IPerson`."""
@@ -3108,13 +3565,20 @@ class Person(
         from lp.soyuz.model.archive import get_enabled_archive_filter
 
         filter = get_enabled_archive_filter(
-            user, purpose=ArchivePurpose.PPA, include_public=True)
-        return Store.of(self).find(
-            Archive,
-            Archive.owner == self,
-            Archive.status.is_in(
-                (ArchiveStatus.ACTIVE, ArchiveStatus.DELETING)),
-            filter).order_by(Archive.name)
+            user, purpose=ArchivePurpose.PPA, include_public=True
+        )
+        return (
+            Store.of(self)
+            .find(
+                Archive,
+                Archive.owner == self,
+                Archive.status.is_in(
+                    (ArchiveStatus.ACTIVE, ArchiveStatus.DELETING)
+                ),
+                filter,
+            )
+            .order_by(Archive.name)
+        )
 
     def getPPAByName(self, distribution=None, name=None):
         """See `IPerson`."""
@@ -3122,14 +3586,21 @@ class Person(
         if distribution is None:
             distribution = getUtility(ILaunchpadCelebrities).ubuntu
         ppa = getUtility(IArchiveSet).getPPAOwnedByPerson(
-            self, distribution=distribution, name=name)
+            self, distribution=distribution, name=name
+        )
         if ppa is None:
             raise NoSuchPPA(name)
         return ppa
 
-    def createPPA(self, distribution=None, name=None, displayname=None,
-                  description=None, private=False,
-                  suppress_subscription_notifications=False):
+    def createPPA(
+        self,
+        distribution=None,
+        name=None,
+        displayname=None,
+        description=None,
+        private=False,
+        suppress_subscription_notifications=False,
+    ):
         """See `IPerson`."""
         if distribution is None:
             distribution = getUtility(ILaunchpadCelebrities).ubuntu
@@ -3139,11 +3610,17 @@ class Person(
         if errors:
             raise PPACreationError(errors)
         return getUtility(IArchiveSet).new(
-            owner=self, purpose=ArchivePurpose.PPA,
-            distribution=distribution, name=name, displayname=displayname,
-            description=description, private=private,
+            owner=self,
+            purpose=ArchivePurpose.PPA,
+            distribution=distribution,
+            name=name,
+            displayname=displayname,
+            description=description,
+            private=private,
             suppress_subscription_notifications=(
-                suppress_subscription_notifications))
+                suppress_subscription_notifications
+            ),
+        )
 
     def isBugContributor(self, user=None):
         """See `IPerson`."""
@@ -3152,19 +3629,23 @@ class Person(
 
     def isBugContributorInTarget(self, user=None, target=None):
         """See `IPerson`."""
-        assert (IBugTarget.providedBy(target) or
-                IProjectGroup.providedBy(target)), (
-            "%s isn't a valid bug target." % target)
+        assert IBugTarget.providedBy(target) or IProjectGroup.providedBy(
+            target
+        ), ("%s isn't a valid bug target." % target)
         search_params = BugTaskSearchParams(user=user, assignee=self)
         return not target.searchTasks(search_params).is_empty()
 
     @property
     def structural_subscriptions(self):
         """See `IPerson`."""
-        return IStore(self).find(
-            StructuralSubscription,
-            StructuralSubscription.subscriberID == self.id).order_by(
-                Desc(StructuralSubscription.date_created))
+        return (
+            IStore(self)
+            .find(
+                StructuralSubscription,
+                StructuralSubscription.subscriberID == self.id,
+            )
+            .order_by(Desc(StructuralSubscription.date_created))
+        )
 
     def autoSubscribeToMailingList(self, mailinglist, requester=None):
         """See `IPerson`."""
@@ -3187,8 +3668,10 @@ class Person(
         if policy == MailingListAutoSubscribePolicy.ALWAYS:
             mailinglist.subscribe(self)
             return True
-        elif (requester is self and
-              policy == MailingListAutoSubscribePolicy.ON_REGISTRATION):
+        elif (
+            requester is self
+            and policy == MailingListAutoSubscribePolicy.ON_REGISTRATION
+        ):
             # Assume that we requested to be joined.
             mailinglist.subscribe(self)
             return True
@@ -3200,9 +3683,10 @@ class Person(
     def recipes(self):
         """See `IHasRecipes`."""
         from lp.code.model.sourcepackagerecipe import SourcePackageRecipe
+
         recipes = Store.of(self).find(
-            SourcePackageRecipe,
-            SourcePackageRecipe.owner == self)
+            SourcePackageRecipe, SourcePackageRecipe.owner == self
+        )
         hook = SourcePackageRecipe.preLoadDataForSourcePackageRecipes
         return DecoratedResultSet(recipes, pre_iter_hook=hook)
 
@@ -3217,25 +3701,32 @@ class Person(
     def checkRename(self):
         """See `IPerson.`"""
         reasons = []
-        atom = 'person'
-        has_ppa = getUtility(IArchiveSet).getPPAOwnedByPerson(
-            self, has_packages=True,
-            statuses=[ArchiveStatus.ACTIVE,
-                      ArchiveStatus.DELETING]) is not None
+        atom = "person"
+        has_ppa = (
+            getUtility(IArchiveSet).getPPAOwnedByPerson(
+                self,
+                has_packages=True,
+                statuses=[ArchiveStatus.ACTIVE, ArchiveStatus.DELETING],
+            )
+            is not None
+        )
         has_mailing_list = None
         if ITeam.providedBy(self):
-            atom = 'team'
+            atom = "team"
             mailing_list = getUtility(IMailingListSet).get(self.name)
             has_mailing_list = (
-                mailing_list is not None and
-                mailing_list.status != MailingListStatus.PURGED)
+                mailing_list is not None
+                and mailing_list.status != MailingListStatus.PURGED
+            )
         if has_ppa:
-            reasons.append('an active PPA with packages published')
+            reasons.append("an active PPA with packages published")
         if has_mailing_list:
-            reasons.append('a mailing list')
+            reasons.append("a mailing list")
         if reasons:
-            return _('This %s has %s and may not be renamed.' % (
-                atom, ' and '.join(reasons)))
+            return _(
+                "This %s has %s and may not be renamed."
+                % (atom, " and ".join(reasons))
+            )
         else:
             return None
 
@@ -3245,21 +3736,25 @@ class Person(
 
     def checkAllowVisibility(self):
         role = IPersonRoles(self)
-        if (role.in_commercial_admin
+        if (
+            role.in_commercial_admin
             or role.in_admin
-            or self.hasCurrentCommercialSubscription()):
+            or self.hasCurrentCommercialSubscription()
+        ):
             return True
         else:
             return False
 
-    def security_field_changed(self, subject, change_description,
-        recipient_emails=None):
+    def security_field_changed(
+        self, subject, change_description, recipient_emails=None
+    ):
         """See `IPerson`."""
         tpl_substitutions = dict(
             field_changed=change_description,
-            )
+        )
         template = get_email_template(
-            'person-details-change.txt', app='registry')
+            "person-details-change.txt", app="registry"
+        )
         body = template % tpl_substitutions
         from_addr = config.canonical.bounce_address
         if not recipient_emails:
@@ -3271,7 +3766,7 @@ class Person(
     def transitionVisibility(self, visibility, user):
         if self.visibility == visibility:
             return
-        validate_person_visibility(self, 'visibility', visibility)
+        validate_person_visibility(self, "visibility", visibility)
         if not user.checkAllowVisibility():
             raise ImmutableVisibilityError()
         self.visibility = visibility
@@ -3298,7 +3793,7 @@ class PersonSet:
     """The set of persons."""
 
     def __init__(self):
-        self.title = 'People registered with Launchpad'
+        self.title = "People registered with Launchpad"
 
     def isNameBlacklisted(self, name, user=None):
         """See `IPersonSet`."""
@@ -3309,25 +3804,30 @@ class PersonSet:
         cur = cursor()
         cur.execute(
             "SELECT is_blacklisted_name(%(name)s, %(user_id)s)",
-            {"name": name, "user_id": user_id})
+            {"name": name, "user_id": user_id},
+        )
         return bool(cur.fetchone()[0])
 
     def getTopContributors(self, limit=50):
         """See `IPersonSet`."""
         # The odd ordering here is to ensure we hit the PostgreSQL
         # indexes. It will not make any real difference outside of tests.
-        query = """
+        query = (
+            """
             id IN (
                 SELECT person FROM KarmaTotalCache
                 ORDER BY karma_total DESC, person DESC
                 LIMIT %s
                 )
-            """ % limit
+            """
+            % limit
+        )
         top_people = shortlist(Person.select(query))
         return sorted(
             top_people,
             key=lambda obj: (obj.karma, obj.displayname, obj.id),
-            reverse=True)
+            reverse=True,
+        )
 
     def getByOpenIDIdentifier(self, identifier):
         """See `IPersonSet`."""
@@ -3339,23 +3839,30 @@ class PersonSet:
         # should never appear as its percent-encoded equivalent.
         identifier_suffix = None
         for root in CurrentOpenIDEndPoint.getAllRootURLs():
-            base = '%s+id/' % root
+            base = "%s+id/" % root
             if identifier.startswith(base):
-                identifier_suffix = identifier.replace(base, '', 1)
+                identifier_suffix = identifier.replace(base, "", 1)
                 break
         if identifier_suffix is None:
             return None
 
         try:
             account = getUtility(IAccountSet).getByOpenIDIdentifier(
-                identifier_suffix)
+                identifier_suffix
+            )
         except LookupError:
             return None
         return IPerson(account)
 
-    def getOrCreateByOpenIDIdentifier(self, openid_identifier, email_address,
-                                      full_name, creation_rationale, comment,
-                                      trust_email=True):
+    def getOrCreateByOpenIDIdentifier(
+        self,
+        openid_identifier,
+        email_address,
+        full_name,
+        creation_rationale,
+        comment,
+        trust_email=True,
+    ):
         """See `IPersonSet`."""
         # trust_email is an internal flag used by
         # getOrCreateSoftwareCenterCustomer. We don't want SCA to be
@@ -3376,20 +3883,23 @@ class PersonSet:
 
         assert email_address is not None and full_name is not None, (
             "Both email address and full name are required to create an "
-            "account.")
+            "account."
+        )
         db_updated = False
 
         assert isinstance(openid_identifier, str)
-        assert openid_identifier != '', (
-            "OpenID identifier must not be empty.")
+        assert openid_identifier != "", "OpenID identifier must not be empty."
 
         # Load the EmailAddress, Account and OpenIdIdentifier records
         # from the primary (if they exist). We use the primary to avoid
         # possible replication lag issues but this might actually be
         # unnecessary.
         with PrimaryDatabasePolicy():
-            identifier = IStore(OpenIdIdentifier).find(
-                OpenIdIdentifier, identifier=openid_identifier).one()
+            identifier = (
+                IStore(OpenIdIdentifier)
+                .find(OpenIdIdentifier, identifier=openid_identifier)
+                .one()
+            )
             email = getUtility(IEmailAddressSet).getByEmail(email_address)
 
             if identifier is None:
@@ -3399,8 +3909,11 @@ class PersonSet:
                 if email is None:
                     person_set = getUtility(IPersonSet)
                     person, email = person_set.createPersonAndEmail(
-                        email_address, creation_rationale, comment=comment,
-                        displayname=full_name)
+                        email_address,
+                        creation_rationale,
+                        comment=comment,
+                        displayname=full_name,
+                    )
                 elif trust_email:
                     person = email.person
                 else:
@@ -3419,10 +3932,12 @@ class PersonSet:
                 # Some autocreated Persons won't have a corresponding
                 # Account yet.
                 if not person.account:
-                    removeSecurityProxy(email.person).account = (
-                        getUtility(IAccountSet).new(
-                            AccountCreationRationale.OWNER_CREATED_LAUNCHPAD,
-                            full_name))
+                    removeSecurityProxy(email.person).account = getUtility(
+                        IAccountSet
+                    ).new(
+                        AccountCreationRationale.OWNER_CREATED_LAUNCHPAD,
+                        full_name,
+                    )
 
                 # Create the identifier, and link it.
                 identifier = OpenIdIdentifier()
@@ -3432,7 +3947,7 @@ class PersonSet:
                 db_updated = True
 
             person = IPerson(identifier.account, None)
-            assert person is not None, ('Received a personless account.')
+            assert person is not None, "Received a personless account."
 
             status = person.account.status
             if status == AccountStatus.ACTIVE:
@@ -3440,11 +3955,13 @@ class PersonSet:
                 pass
             elif status == AccountStatus.SUSPENDED:
                 raise AccountSuspendedError(
-                    "The account matching the identifier is suspended.")
+                    "The account matching the identifier is suspended."
+                )
             elif status == AccountStatus.DECEASED:
                 raise AccountDeceasedError(
                     "The account matching the identifier belongs to a "
-                    "deceased user.")
+                    "deceased user."
+                )
             elif not trust_email and status != AccountStatus.NOACCOUNT:
                 # If the email address is not completely trustworthy
                 # (ie. it comes from SCA) and the account has already
@@ -3452,10 +3969,13 @@ class PersonSet:
                 # end up adding a malicious OpenID identifier to an
                 # existing account.
                 raise NameAlreadyTaken(
-                    "The account matching the identifier is inactive.")
-            elif person.account.status in [AccountStatus.DEACTIVATED,
-                                           AccountStatus.NOACCOUNT,
-                                           AccountStatus.PLACEHOLDER]:
+                    "The account matching the identifier is inactive."
+                )
+            elif person.account.status in [
+                AccountStatus.DEACTIVATED,
+                AccountStatus.NOACCOUNT,
+                AccountStatus.PLACEHOLDER,
+            ]:
                 if person.account.status == AccountStatus.PLACEHOLDER:
                     # Placeholder accounts were never visible to anyone
                     # before, so make them appear fresh to the user.
@@ -3464,26 +3984,31 @@ class PersonSet:
                 removeSecurityProxy(person.account).reactivate(comment)
                 if email is None:
                     email = getUtility(IEmailAddressSet).new(
-                        email_address, person)
+                        email_address, person
+                    )
                 removeSecurityProxy(person).setPreferredEmail(email)
                 db_updated = True
             else:
                 raise AssertionError(
-                    "Unhandled account status: %r" % person.account.status)
+                    "Unhandled account status: %r" % person.account.status
+                )
 
             return person, db_updated
 
-    def getOrCreateSoftwareCenterCustomer(self, user, openid_identifier,
-                                          email_address, display_name):
+    def getOrCreateSoftwareCenterCustomer(
+        self, user, openid_identifier, email_address, display_name
+    ):
         """See `IPersonSet`."""
         if user != getUtility(ILaunchpadCelebrities).software_center_agent:
             raise Unauthorized()
-        person, _ = getUtility(
-            IPersonSet).getOrCreateByOpenIDIdentifier(
-                openid_identifier, email_address, display_name,
-                PersonCreationRationale.SOFTWARE_CENTER_PURCHASE,
-                "when purchasing an application via Software Center.",
-                trust_email=False)
+        person, _ = getUtility(IPersonSet).getOrCreateByOpenIDIdentifier(
+            openid_identifier,
+            email_address,
+            display_name,
+            PersonCreationRationale.SOFTWARE_CENTER_PURCHASE,
+            "when purchasing an application via Software Center.",
+            trust_email=False,
+        )
         return person
 
     def getUsernameForSSO(self, user, openid_identifier):
@@ -3492,27 +4017,29 @@ class PersonSet:
             raise Unauthorized()
         try:
             account = getUtility(IAccountSet).getByOpenIDIdentifier(
-                openid_identifier)
+                openid_identifier
+            )
         except LookupError:
             return None
         return IPerson(account).name
 
-    def setUsernameFromSSO(self, user, openid_identifier, name,
-                           dry_run=False):
+    def setUsernameFromSSO(self, user, openid_identifier, name, dry_run=False):
         """See `IPersonSet`."""
         if user != getUtility(ILaunchpadCelebrities).ubuntu_sso:
             raise Unauthorized()
         self._validateName(name)
         try:
             account = getUtility(IAccountSet).getByOpenIDIdentifier(
-                openid_identifier)
+                openid_identifier
+            )
         except LookupError:
             if not dry_run:
                 person = self.createPlaceholderPerson(openid_identifier, name)
         else:
             if account.status != AccountStatus.PLACEHOLDER:
                 raise NotPlaceholderAccount(
-                    "An account for that OpenID identifier already exists.")
+                    "An account for that OpenID identifier already exists."
+                )
             if not dry_run:
                 account = removeSecurityProxy(account)
                 person = IPerson(account)
@@ -3524,75 +4051,104 @@ class PersonSet:
             raise Unauthorized()
         try:
             account = getUtility(IAccountSet).getByOpenIDIdentifier(
-                openid_identifier)
+                openid_identifier
+            )
         except LookupError:
             return None
         return [s.getFullKeyText() for s in IPerson(account).sshkeys]
 
-    def addSSHKeyFromSSO(self, user, openid_identifier, key_text,
-                         dry_run=False):
+    def addSSHKeyFromSSO(
+        self, user, openid_identifier, key_text, dry_run=False
+    ):
         """See `IPersonSet`"""
         if user != getUtility(ILaunchpadCelebrities).ubuntu_sso:
             raise Unauthorized()
         try:
             account = getUtility(IAccountSet).getByOpenIDIdentifier(
-                openid_identifier)
+                openid_identifier
+            )
         except LookupError:
-            raise NoSuchAccount("No account found for openid identifier '%s'"
-                                % openid_identifier)
+            raise NoSuchAccount(
+                "No account found for openid identifier '%s'"
+                % openid_identifier
+            )
         getUtility(ISSHKeySet).new(
-            IPerson(account), key_text, send_notification=False,
-            dry_run=dry_run)
+            IPerson(account),
+            key_text,
+            send_notification=False,
+            dry_run=dry_run,
+        )
 
-    def deleteSSHKeyFromSSO(self, user, openid_identifier, key_text,
-                            dry_run=False):
+    def deleteSSHKeyFromSSO(
+        self, user, openid_identifier, key_text, dry_run=False
+    ):
         """See `IPersonSet`."""
         if user != getUtility(ILaunchpadCelebrities).ubuntu_sso:
             raise Unauthorized()
         try:
             account = getUtility(IAccountSet).getByOpenIDIdentifier(
-                openid_identifier)
+                openid_identifier
+            )
         except LookupError:
-            raise NoSuchAccount("No account found for openid identifier '%s'"
-                                % openid_identifier)
+            raise NoSuchAccount(
+                "No account found for openid identifier '%s'"
+                % openid_identifier
+            )
         keys = getUtility(ISSHKeySet).getByPersonAndKeyText(
-            IPerson(account),
-            key_text)
+            IPerson(account), key_text
+        )
         if not dry_run:
             # ISSHKeySet does not restrict the same SSH key being added
             # multiple times, so make sure we delte them all:
             for key in keys:
                 key.destroySelf(send_notification=False)
 
-    def newTeam(self, teamowner, name, display_name, teamdescription=None,
-                membership_policy=TeamMembershipPolicy.MODERATED,
-                defaultmembershipperiod=None, defaultrenewalperiod=None,
-                subscription_policy=None):
+    def newTeam(
+        self,
+        teamowner,
+        name,
+        display_name,
+        teamdescription=None,
+        membership_policy=TeamMembershipPolicy.MODERATED,
+        defaultmembershipperiod=None,
+        defaultrenewalperiod=None,
+        subscription_policy=None,
+    ):
         """See `IPersonSet`."""
         assert teamowner
         if self.getByName(name, ignore_merged=False) is not None:
-            raise NameAlreadyTaken(
-                "The name '%s' is already taken." % name)
+            raise NameAlreadyTaken("The name '%s' is already taken." % name)
         if subscription_policy is not None:
             # Support 1.0 API.
             membership_policy = subscription_policy
         team = Person(
-            teamowner=teamowner, name=name, display_name=display_name,
+            teamowner=teamowner,
+            name=name,
+            display_name=display_name,
             description=teamdescription,
             defaultmembershipperiod=defaultmembershipperiod,
             defaultrenewalperiod=defaultrenewalperiod,
-            membership_policy=membership_policy)
+            membership_policy=membership_policy,
+        )
         notify(ObjectCreatedEvent(team))
         # Here we add the owner as a team admin manually because we know what
         # we're doing (so we don't need to do any sanity checks) and we don't
         # want any email notifications to be sent.
         TeamMembershipSet().new(
-            teamowner, team, TeamMembershipStatus.ADMIN, teamowner)
+            teamowner, team, TeamMembershipStatus.ADMIN, teamowner
+        )
         return team
 
-    def createPersonAndEmail(self, email, rationale, comment=None, name=None,
-                             displayname=None, hide_email_addresses=False,
-                             registrant=None):
+    def createPersonAndEmail(
+        self,
+        email,
+        rationale,
+        comment=None,
+        name=None,
+        displayname=None,
+        hide_email_addresses=False,
+        registrant=None,
+    ):
         """See `IPersonSet`."""
 
         # This check is also done in EmailAddressSet.new() and also
@@ -3601,7 +4157,8 @@ class PersonSet:
         # generate_nick() will raise.
         if not valid_email(email):
             raise InvalidEmailAddress(
-                "%s is not a valid email address." % email)
+                "%s is not a valid email address." % email
+            )
 
         if name is None:
             name = generate_nick(email)
@@ -3615,46 +4172,70 @@ class PersonSet:
         account = getUtility(IAccountSet).new(account_rationale, displayname)
 
         person = self._newPerson(
-            name, displayname, hide_email_addresses, rationale=rationale,
-            comment=comment, registrant=registrant, account=account)
+            name,
+            displayname,
+            hide_email_addresses,
+            rationale=rationale,
+            comment=comment,
+            registrant=registrant,
+            account=account,
+        )
         email = getUtility(IEmailAddressSet).new(email, person)
 
         return person, email
 
-    def createPersonWithoutEmail(self, name, rationale, comment=None,
-                                 displayname=None, registrant=None):
+    def createPersonWithoutEmail(
+        self, name, rationale, comment=None, displayname=None, registrant=None
+    ):
         """Create and return a new Person without using an email address.
 
         See `IPersonSet`.
         """
         return self._newPerson(
-            name, displayname, hide_email_addresses=True, rationale=rationale,
-            comment=comment, registrant=registrant)
+            name,
+            displayname,
+            hide_email_addresses=True,
+            rationale=rationale,
+            comment=comment,
+            registrant=registrant,
+        )
 
     def createPlaceholderPerson(self, openid_identifier, name):
         """See `IPersonSet`."""
         account = getUtility(IAccountSet).new(
-            AccountCreationRationale.USERNAME_PLACEHOLDER, name,
+            AccountCreationRationale.USERNAME_PLACEHOLDER,
+            name,
             openid_identifier=openid_identifier,
-            status=AccountStatus.PLACEHOLDER)
+            status=AccountStatus.PLACEHOLDER,
+        )
         return self._newPerson(
-            name, name, True,
+            name,
+            name,
+            True,
             rationale=PersonCreationRationale.USERNAME_PLACEHOLDER,
-            comment="when setting a username in SSO", account=account)
+            comment="when setting a username in SSO",
+            account=account,
+        )
 
     def _validateName(self, name):
         if not valid_name(name):
-            raise InvalidName(
-                "%s is not a valid name for a person." % name)
+            raise InvalidName("%s is not a valid name for a person." % name)
         else:
             # The name should be okay, move on...
             pass
         if self.getByName(name, ignore_merged=False) is not None:
-            raise NameAlreadyTaken(
-                "The name '%s' is already taken." % name)
+            raise NameAlreadyTaken("The name '%s' is already taken." % name)
 
-    def _newPerson(self, name, displayname, hide_email_addresses,
-                   rationale, comment=None, registrant=None, account=None):
+    def _newPerson(
+        self,
+        name,
+        displayname,
+        hide_email_addresses,
+        rationale,
+        comment=None,
+        registrant=None,
+        account=None,
+    ):
         """Create and return a new Person with the given attributes."""
         self._validateName(name)
 
@@ -3666,25 +4247,42 @@ class PersonSet:
         else:
             account_id = account.id
         person = Person(
-            name=name, display_name=displayname, accountID=account_id,
-            creation_rationale=rationale, creation_comment=comment,
-            hide_email_addresses=hide_email_addresses, registrant=registrant)
+            name=name,
+            display_name=displayname,
+            accountID=account_id,
+            creation_rationale=rationale,
+            creation_comment=comment,
+            hide_email_addresses=hide_email_addresses,
+            registrant=registrant,
+        )
         return person
 
-    def ensurePerson(self, email, displayname, rationale, comment=None,
-                     registrant=None, name=None):
+    def ensurePerson(
+        self,
+        email,
+        displayname,
+        rationale,
+        comment=None,
+        registrant=None,
+        name=None,
+    ):
         """See `IPersonSet`."""
         person = getUtility(IPersonSet).getByEmail(email, filter_status=False)
         if person is None:
             person, email_address = self.createPersonAndEmail(
-                email, rationale, name=name, comment=comment,
-                displayname=displayname, registrant=registrant,
-                hide_email_addresses=True)
+                email,
+                rationale,
+                name=name,
+                comment=comment,
+                displayname=displayname,
+                registrant=registrant,
+                hide_email_addresses=True,
+            )
         return person
 
     def getByName(self, name, ignore_merged=True):
         """See `IPersonSet`."""
-        query = (Person.name == name)
+        query = Person.name == name
         if ignore_merged:
             query = And(query, Person.mergedID == None)
         return Person.selectOne(query)
@@ -3697,23 +4295,23 @@ class PersonSet:
         """See `IPersonSet`."""
         stats = getUtility(ILaunchpadStatisticSet)
         people_count = Person.select(
-            And(Person.teamownerID == None,
-                Person.mergedID == None)).count()
-        stats.update('people_count', people_count)
+            And(Person.teamownerID == None, Person.mergedID == None)
+        ).count()
+        stats.update("people_count", people_count)
         transaction.commit()
         teams_count = Person.select(
-            And(Person.q.teamownerID != None,
-                Person.q.mergedID == None)).count()
-        stats.update('teams_count', teams_count)
+            And(Person.q.teamownerID != None, Person.q.mergedID == None)
+        ).count()
+        stats.update("teams_count", teams_count)
         transaction.commit()
 
     def peopleCount(self):
         """See `IPersonSet`."""
-        return getUtility(ILaunchpadStatisticSet).value('people_count')
+        return getUtility(ILaunchpadStatisticSet).value("people_count")
 
     def teamsCount(self):
         """See `IPersonSet`."""
-        return getUtility(ILaunchpadStatisticSet).value('teams_count')
+        return getUtility(ILaunchpadStatisticSet).value("teams_count")
 
     def _teamEmailQuery(self, text):
         """Product the query for team email addresses."""
@@ -3722,15 +4320,18 @@ class PersonSet:
             Person.teamowner != None,
             Person.merged == None,
             EmailAddress.person == Person.id,
-            EmailAddress.email.lower().startswith(text))
+            EmailAddress.email.lower().startswith(text),
+        )
         return team_email_query
 
     def _teamNameQuery(self, text):
         """Produce the query for team names."""
         team_name_query = And(
             get_person_visibility_terms(getUtility(ILaunchBag).user),
-            Person.teamowner != None, Person.merged == None,
-            fti_search(Person, text))
+            Person.teamowner != None,
+            Person.merged == None,
+            fti_search(Person, text),
+        )
         return team_name_query
 
     def find(self, text=""):
@@ -3750,7 +4351,8 @@ class PersonSet:
             EmailAddress.person == Person.id,
             Person.account == Account.id,
             Not(Account.status.is_in(INACTIVE_ACCOUNT_STATUSES)),
-            EmailAddress.email.lower().startswith(lower_case_text))
+            EmailAddress.email.lower().startswith(lower_case_text),
+        )
 
         store = IStore(Person)
 
@@ -3760,58 +4362,58 @@ class PersonSet:
         # Otherwise the default ordering is taken from the ordering
         # declaration on the class.  The final result set will have the
         # appropriate ordering set.
-        results = store.find(
-            Person, person_email_query).order_by()
+        results = store.find(Person, person_email_query).order_by()
 
         person_name_query = And(
-            Person.teamowner == None, Person.merged == None,
+            Person.teamowner == None,
+            Person.merged == None,
             Person.account == Account.id,
             Not(Account.status.is_in(INACTIVE_ACCOUNT_STATUSES)),
-            fti_search(Person, text))
+            fti_search(Person, text),
+        )
 
-        results = results.union(store.find(
-            Person, person_name_query)).order_by()
+        results = results.union(
+            store.find(Person, person_name_query)
+        ).order_by()
         team_email_query = self._teamEmailQuery(lower_case_text)
         results = results.union(
-            store.find(Person, team_email_query)).order_by()
+            store.find(Person, team_email_query)
+        ).order_by()
         team_name_query = self._teamNameQuery(text)
-        results = results.union(
-            store.find(Person, team_name_query)).order_by()
+        results = results.union(store.find(Person, team_name_query)).order_by()
 
         return results.order_by(orderBy)
 
     def findPerson(
-            self, text="", exclude_inactive_accounts=True,
-            must_have_email=False, created_after=None, created_before=None):
+        self,
+        text="",
+        exclude_inactive_accounts=True,
+        must_have_email=False,
+        created_after=None,
+        created_before=None,
+    ):
         """See `IPersonSet`."""
         orderBy = Person._sortingColumnsForSetOperations
         store = IStore(Person)
-        base_query = And(
-            Person.teamowner == None,
-            Person.merged == None)
+        base_query = And(Person.teamowner == None, Person.merged == None)
 
         clause_tables = []
 
         if exclude_inactive_accounts:
-            clause_tables.append('Account')
+            clause_tables.append("Account")
             base_query = And(
                 base_query,
                 Person.account == Account.id,
-                Not(Account.status.is_in(INACTIVE_ACCOUNT_STATUSES)))
-        email_clause_tables = clause_tables + ['EmailAddress']
+                Not(Account.status.is_in(INACTIVE_ACCOUNT_STATUSES)),
+            )
+        email_clause_tables = clause_tables + ["EmailAddress"]
         if must_have_email:
             clause_tables = email_clause_tables
-            base_query = And(
-                base_query,
-                EmailAddress.person == Person.id)
+            base_query = And(base_query, EmailAddress.person == Person.id)
         if created_after is not None:
-            base_query = And(
-                base_query,
-                Person.datecreated > created_after)
+            base_query = And(base_query, Person.datecreated > created_after)
         if created_before is not None:
-            base_query = And(
-                base_query,
-                Person.datecreated < created_before)
+            base_query = And(base_query, Person.datecreated < created_before)
 
         # Short circuit for returning all users in order
         if not text:
@@ -3824,7 +4426,8 @@ class PersonSet:
         email_query = And(
             base_query,
             EmailAddress.person == Person.id,
-            EmailAddress.email.lower().startswith(text.lower()))
+            EmailAddress.email.lower().startswith(text.lower()),
+        )
 
         name_query = And(base_query, fti_search(Person, text))
         email_results = store.find(Person, email_query).order_by()
@@ -3845,9 +4448,14 @@ class PersonSet:
         name_results = store.find(Person, name_query).order_by()
         result = email_results.union(name_results).order_by(orderBy)
         if preload_for_api:
+
             def preload(people):
-                list(self.getPrecachedPersonsFromIDs(
-                    [person.id for person in people], need_api=True))
+                list(
+                    self.getPrecachedPersonsFromIDs(
+                        [person.id for person in people], need_api=True
+                    )
+                )
+
             result = DecoratedResultSet(result, pre_iter_hook=preload)
         return result
 
@@ -3869,27 +4477,38 @@ class PersonSet:
         if not emails:
             return EmptyResultSet()
         addresses = [
-            six.ensure_text(address).lower().strip() for address in emails]
+            six.ensure_text(address).lower().strip() for address in emails
+        ]
         hidden_query = True
         filter_query = True
         if not include_hidden:
             hidden_query = Person.hide_email_addresses == False
         if filter_status:
             filter_query = EmailAddress.status.is_in(VALID_EMAIL_STATUSES)
-        return IStore(Person).using(
-            Person,
-            Join(EmailAddress, EmailAddress.personID == Person.id)
-        ).find(
-            (EmailAddress, Person),
-            EmailAddress.email.lower().is_in(addresses),
-            filter_query, hidden_query)
+        return (
+            IStore(Person)
+            .using(
+                Person, Join(EmailAddress, EmailAddress.personID == Person.id)
+            )
+            .find(
+                (EmailAddress, Person),
+                EmailAddress.email.lower().is_in(addresses),
+                filter_query,
+                hidden_query,
+            )
+        )
 
-    def mergeAsync(self, from_person, to_person, requester, reviewer=None,
-                   delete=False):
+    def mergeAsync(
+        self, from_person, to_person, requester, reviewer=None, delete=False
+    ):
         """See `IPersonSet`."""
         return getUtility(IPersonMergeJobSource).create(
-            from_person=from_person, to_person=to_person, requester=requester,
-            reviewer=reviewer, delete=delete)
+            from_person=from_person,
+            to_person=to_person,
+            requester=requester,
+            reviewer=reviewer,
+            delete=delete,
+        )
 
     def getValidPersons(self, persons):
         """See `IPersonSet.`"""
@@ -3901,24 +4520,30 @@ class PersonSet:
         # items into the cache, allowing Person.is_valid_person calls to
         # not hit the DB.
         valid_person_ids = {
-                person_id.id for person_id in ValidPersonCache.select(
-                    "id IN %s" % sqlvalues(person_ids))}
-        return [
-            person for person in persons if person.id in valid_person_ids]
+            person_id.id
+            for person_id in ValidPersonCache.select(
+                "id IN %s" % sqlvalues(person_ids)
+            )
+        }
+        return [person for person in persons if person.id in valid_person_ids]
 
     def getPeopleWithBranches(self, product=None):
         """See `IPersonSet`."""
-        branch_clause = 'SELECT owner FROM Branch'
+        branch_clause = "SELECT owner FROM Branch"
         if product is not None:
-            branch_clause += ' WHERE product = %s' % quote(product)
-        return Person.select('''
+            branch_clause += " WHERE product = %s" % quote(product)
+        return Person.select(
+            """
             Person.id in (%s)
-            ''' % branch_clause)
+            """
+            % branch_clause
+        )
 
     def updatePersonalStandings(self):
         """See `IPersonSet`."""
         cur = cursor()
-        cur.execute("""
+        cur.execute(
+            """
         UPDATE Person
         SET personal_standing = %s
         WHERE personal_standing = %s
@@ -3929,51 +4554,88 @@ class PersonSet:
             GROUP BY posted_by
             HAVING COUNT(DISTINCT mailing_list) >= %s
             )
-        """ % sqlvalues(PersonalStanding.GOOD,
-                        PersonalStanding.UNKNOWN,
-                        PostedMessageStatus.APPROVED,
-                        config.standingupdater.approvals_needed))
+        """
+            % sqlvalues(
+                PersonalStanding.GOOD,
+                PersonalStanding.UNKNOWN,
+                PostedMessageStatus.APPROVED,
+                config.standingupdater.approvals_needed,
+            )
+        )
 
     def cacheBrandingForPeople(self, people):
         """See `IPersonSet`."""
         aliases = []
-        aliases.extend(person.iconID for person in people
-                       if person.iconID is not None)
-        aliases.extend(person.logoID for person in people
-                       if person.logoID is not None)
-        aliases.extend(person.mugshotID for person in people
-                       if person.mugshotID is not None)
+        aliases.extend(
+            person.iconID for person in people if person.iconID is not None
+        )
+        aliases.extend(
+            person.logoID for person in people if person.logoID is not None
+        )
+        aliases.extend(
+            person.mugshotID
+            for person in people
+            if person.mugshotID is not None
+        )
         if not aliases:
             return
         # Listify, since this is a pure cache.
-        list(LibraryFileAlias.select("LibraryFileAlias.id IN %s"
-             % sqlvalues(aliases), prejoins=["content"]))
+        list(
+            LibraryFileAlias.select(
+                "LibraryFileAlias.id IN %s" % sqlvalues(aliases),
+                prejoins=["content"],
+            )
+        )
 
     def getPrecachedPersonsFromIDs(
-        self, person_ids, need_api=False, need_karma=False,
-        need_ubuntu_coc=False, need_teamowner=False, need_location=False,
-        need_archive=False, need_preferred_email=False,
-        need_validity=False, need_icon=False):
+        self,
+        person_ids,
+        need_api=False,
+        need_karma=False,
+        need_ubuntu_coc=False,
+        need_teamowner=False,
+        need_location=False,
+        need_archive=False,
+        need_preferred_email=False,
+        need_validity=False,
+        need_icon=False,
+    ):
         """See `IPersonSet`."""
         person_ids = set(person_ids)
         person_ids.discard(None)
         if not person_ids:
             return EmptyResultSet()
         origin = [Person]
-        conditions = [
-            Person.id.is_in(person_ids)]
+        conditions = [Person.id.is_in(person_ids)]
         return self._getPrecachedPersons(
-            origin, conditions, need_api=need_api, need_karma=need_karma,
-            need_ubuntu_coc=need_ubuntu_coc, need_teamowner=need_teamowner,
-            need_location=need_location, need_archive=need_archive,
+            origin,
+            conditions,
+            need_api=need_api,
+            need_karma=need_karma,
+            need_ubuntu_coc=need_ubuntu_coc,
+            need_teamowner=need_teamowner,
+            need_location=need_location,
+            need_archive=need_archive,
             need_preferred_email=need_preferred_email,
-            need_validity=need_validity, need_icon=need_icon)
+            need_validity=need_validity,
+            need_icon=need_icon,
+        )
 
     def _getPrecachedPersons(
-        self, origin, conditions, store=None, need_api=False,
-        need_karma=False, need_ubuntu_coc=False, need_teamowner=False,
-        need_location=False, need_archive=False, need_preferred_email=False,
-        need_validity=False, need_icon=False):
+        self,
+        origin,
+        conditions,
+        store=None,
+        need_api=False,
+        need_karma=False,
+        need_ubuntu_coc=False,
+        need_teamowner=False,
+        need_location=False,
+        need_archive=False,
+        need_preferred_email=False,
+        need_validity=False,
+        need_icon=False,
+    ):
         """Lookup all members of the team with optional precaching.
 
         :param store: Provide ability to specify the store.
@@ -3996,37 +4658,46 @@ class PersonSet:
         # The conditions we've been given are almost certainly more
         # selective that anything PostgreSQL might guess at.  Use a CTE to
         # ensure that it looks at them first.
-        store = store.with_(With(
-            'RelevantPerson',
-            Select(Person.id, where=conditions, tables=origin)))
-        relevant_person = Table('RelevantPerson')
+        store = store.with_(
+            With(
+                "RelevantPerson",
+                Select(Person.id, where=conditions, tables=origin),
+            )
+        )
+        relevant_person = Table("RelevantPerson")
         origin = [
             Person,
-            Join(relevant_person, Column('id', relevant_person) == Person.id),
-            ]
+            Join(relevant_person, Column("id", relevant_person) == Person.id),
+        ]
         columns = [Person]
         decorators = []
         if need_karma or need_api:
             # New people have no karmatotalcache rows.
             origin.append(
-                LeftJoin(KarmaTotalCache,
-                    KarmaTotalCache.person == Person.id))
+                LeftJoin(KarmaTotalCache, KarmaTotalCache.person == Person.id)
+            )
             columns.append(KarmaTotalCache)
         if need_ubuntu_coc or need_api:
             columns.append(
                 Alias(
-                    Exists(Select(
-                        SignedCodeOfConduct,
-                        tables=[SignedCodeOfConduct],
-                        where=And(
-                            Person._is_ubuntu_coc_signer_condition(),
-                            SignedCodeOfConduct.owner_id == Person.id))),
-                    name='is_ubuntu_coc_signer'))
+                    Exists(
+                        Select(
+                            SignedCodeOfConduct,
+                            tables=[SignedCodeOfConduct],
+                            where=And(
+                                Person._is_ubuntu_coc_signer_condition(),
+                                SignedCodeOfConduct.owner_id == Person.id,
+                            ),
+                        )
+                    ),
+                    name="is_ubuntu_coc_signer",
+                )
+            )
         if need_location or need_api:
             # New people have no location rows
             origin.append(
-                LeftJoin(PersonLocation,
-                    PersonLocation.person == Person.id))
+                LeftJoin(PersonLocation, PersonLocation.person == Person.id)
+            )
             columns.append(PersonLocation)
         if need_archive or need_api:
             # Not everyone has PPAs.
@@ -4036,24 +4707,32 @@ class PersonSet:
                 Archive.id == None,
                 And(
                     Archive.owner == Person.id,
-                    Archive.id == Select(
+                    Archive.id
+                    == Select(
                         tables=Archive,
                         columns=Min(Archive.id),
                         where=And(
                             Archive.purpose == ArchivePurpose.PPA,
-                            Archive.owner == Person.id))))
-            origin.append(
-                LeftJoin(Archive, archive_conditions))
+                            Archive.owner == Person.id,
+                        ),
+                    ),
+                ),
+            )
+            origin.append(LeftJoin(Archive, archive_conditions))
             columns.append(Archive)
 
         # Checking validity requires having a preferred email.
         if not need_api and need_preferred_email and not need_validity:
             # Teams don't have email, so a left join
-            origin.append(LeftJoin(
-                EmailAddress,
-                And(
-                    EmailAddress.person == Person.id,
-                    EmailAddress.status == EmailAddressStatus.PREFERRED)))
+            origin.append(
+                LeftJoin(
+                    EmailAddress,
+                    And(
+                        EmailAddress.person == Person.id,
+                        EmailAddress.status == EmailAddressStatus.PREFERRED,
+                    ),
+                )
+            )
             columns.append(EmailAddress)
         if need_validity or need_api:
             valid_stuff = Person._validity_queries()
@@ -4067,10 +4746,12 @@ class PersonSet:
         if need_api:
             LogoAlias = ClassAlias(LibraryFileAlias, "LogoAlias")
             MugshotAlias = ClassAlias(LibraryFileAlias, "MugshotAlias")
-            origin.extend([
-                LeftJoin(LogoAlias, Person.logo == LogoAlias.id),
-                LeftJoin(MugshotAlias, Person.mugshot == MugshotAlias.id),
-                ])
+            origin.extend(
+                [
+                    LeftJoin(LogoAlias, Person.logo == LogoAlias.id),
+                    LeftJoin(MugshotAlias, Person.mugshot == MugshotAlias.id),
+                ]
+            )
             columns.extend([LogoAlias, MugshotAlias])
         if len(columns) == 1:
             column = columns[0]
@@ -4094,7 +4775,7 @@ class PersonSet:
             result = row[0]
             cache = get_property_cache(result)
             index = 1
-            #-- karma caching
+            # -- karma caching
             if need_karma or need_api:
                 karma = row[index]
                 index += 1
@@ -4103,22 +4784,22 @@ class PersonSet:
                 else:
                     karma_total = karma.karma_total
                 cache.karma = karma_total
-            #-- ubuntu code of conduct signer status caching.
+            # -- ubuntu code of conduct signer status caching.
             if need_ubuntu_coc or need_api:
                 signed = row[index]
                 index += 1
                 cache.is_ubuntu_coc_signer = signed
-            #-- location caching
+            # -- location caching
             if need_location or need_api:
                 location = row[index]
                 index += 1
                 cache.location = location
-            #-- archive caching
+            # -- archive caching
             if need_archive or need_api:
                 archive = row[index]
                 index += 1
                 cache.archive = archive
-            #-- preferred email caching
+            # -- preferred email caching
             if not need_api and need_preferred_email and not need_validity:
                 email = row[index]
                 index += 1
@@ -4128,14 +4809,18 @@ class PersonSet:
                 index += 1
                 decorator(result, column)
             return result
-        return DecoratedResultSet(raw_result,
+
+        return DecoratedResultSet(
+            raw_result,
             pre_iter_hook=preload_for_people,
-            result_decorator=prepopulate_person)
+            result_decorator=prepopulate_person,
+        )
 
     def getUserData(self, email):
         """See `IPersonSet`."""
         email_results = self.getByEmails(
-            [email], include_hidden=True, filter_status=False)
+            [email], include_hidden=True, filter_status=False
+        )
 
         # We should only have one result
         if email_results.count() > 1:
@@ -4179,7 +4864,8 @@ class PersonSet:
         # ssh keys
         if not account.sshkeys.is_empty():
             return_data["sshkeys"] = canonical_url(
-                account, view_name="+sshkeys")
+                account, view_name="+sshkeys"
+            )
         gpg_keys_urls = self._checkForGPGKeys(account)
         if gpg_keys_urls:
             return_data["openpgp-keys"] = gpg_keys_urls
@@ -4197,15 +4883,20 @@ class PersonSet:
         if branches.is_empty():
             return None
         search_url = canonical_url(
-            account, rootsite='code', view_name='+branches')
+            account, rootsite="code", view_name="+branches"
+        )
         req = PreparedRequest()
-        req.prepare_url(search_url, {
-            "field.category": "OWNED",
-            "field.category-empty-marker": "1",
-            "field.lifecycle": "ALL",
-            "field.lifecycle-empty-marker": "1",
-            "field.sort_by": "most recently changed first",
-            "field.sort_by-empty-marker": "1"})
+        req.prepare_url(
+            search_url,
+            {
+                "field.category": "OWNED",
+                "field.category-empty-marker": "1",
+                "field.lifecycle": "ALL",
+                "field.lifecycle-empty-marker": "1",
+                "field.sort_by": "most recently changed first",
+                "field.sort_by-empty-marker": "1",
+            },
+        )
         return req.url
 
     def _checkForGitRepositoryData(self, account):
@@ -4213,7 +4904,7 @@ class PersonSet:
         repositories = IGitCollection(account).visibleByUser(account)
         if repositories.is_empty():
             return None
-        return canonical_url(account, rootsite='code', view_name='+git')
+        return canonical_url(account, rootsite="code", view_name="+git")
 
     def _checkForBugs(self, account):
         """Check if related bug data exists for a given person."""
@@ -4231,7 +4922,8 @@ class PersonSet:
         commenter_params.bug_commenter = account
 
         results = account.searchTasks(
-            assignee_params, subscriber_params, owner_params, commenter_params)
+            assignee_params, subscriber_params, owner_params, commenter_params
+        )
         if results.is_empty():
             return None
         req = PreparedRequest()
@@ -4239,7 +4931,7 @@ class PersonSet:
         query_arguments = {
             "field.searchtext": "",
             "orderby": "-importance",
-            "field.omit_dupes.used": ""
+            "field.omit_dupes.used": "",
         }
         status_list = [status.token for status in BugTaskStatusSearch]
         query_arguments["field.status:list"] = status_list
@@ -4259,27 +4951,29 @@ class PersonSet:
         # Has performed translations
         if translation_person.hasTranslated():
             return canonical_url(
-                account, rootsite="translations",
-                view_name="+activity")
+                account, rootsite="translations", view_name="+activity"
+            )
         return None
 
     def _checkForAnswers(self, account):
         """Check if related questions and answers exist for a given person."""
         question_person = IQuestionsPerson(account)
         questions = question_person.searchQuestions(
-            status=QuestionStatus.items)
+            status=QuestionStatus.items
+        )
         if questions.is_empty():
             return None
         req = PreparedRequest()
         answers_url = canonical_url(
-            account, rootsite="answers", view_name="+questions")
+            account, rootsite="answers", view_name="+questions"
+        )
         query_arguments = {
             "field.search_text": "",
             "field.sort": "RELEVANCY",
             "field.sort-empty-marker": "1",
             "field.actions.search": "Search",
             "field.status-empty-marker": "1",
-            "field.status": [x.token for x in QuestionStatus]
+            "field.status": [x.token for x in QuestionStatus],
         }
         req.prepare_url(answers_url, query_arguments)
         return req.url
@@ -4295,7 +4989,8 @@ class PersonSet:
             query_arguments = {
                 "fingerprint": "on",
                 "op": "index",
-                "search": "0x{}".format(key.fingerprint)}
+                "search": "0x{}".format(key.fingerprint),
+            }
             req.prepare_url(keyserver_url, query_arguments)
             urls.append(req.url)
         return urls
@@ -4310,48 +5005,61 @@ class PersonSet:
 
         # Related packages is a general overview, if we have any of them
         # the related packages exist
-        if any([maintained_packages, uploaded_packages,
-               ppa_packages, synchronised_packages]):
-            overview['related-packages'] = canonical_url(
-                person, view_name='+related-packages')
+        if any(
+            [
+                maintained_packages,
+                uploaded_packages,
+                ppa_packages,
+                synchronised_packages,
+            ]
+        ):
+            overview["related-packages"] = canonical_url(
+                person, view_name="+related-packages"
+            )
 
         if maintained_packages:
-            overview['maintained-packages'] = canonical_url(
-                person, view_name="+maintained-packages")
+            overview["maintained-packages"] = canonical_url(
+                person, view_name="+maintained-packages"
+            )
         if uploaded_packages:
             overview["uploaded-packages"] = canonical_url(
-                person, view_name="+uploaded-packages")
+                person, view_name="+uploaded-packages"
+            )
         if ppa_packages:
             overview["ppa-packages"] = canonical_url(
-                person, view_name="+ppa-packages")
+                person, view_name="+ppa-packages"
+            )
         if synchronised_packages:
             overview["synchronised-packages"] = canonical_url(
-                person, view_name="+synchronised-packages")
+                person, view_name="+synchronised-packages"
+            )
 
         related_projects = not person.getAffiliatedPillars(person).is_empty()
         if related_projects:
             overview["related-projects"] = canonical_url(
-                person, view_name="+related-projects")
+                person, view_name="+related-projects"
+            )
         owned_teams = not person.getOwnedTeams(person).is_empty()
         if owned_teams:
             overview["owned-teams"] = canonical_url(
-                person, view_name="+owned-teams")
+                person, view_name="+owned-teams"
+            )
         return overview
 
 
 # Provide a storm alias from Person to Owner. This is useful in queries on
 # objects that have more than just an owner associated with them.
-Owner = ClassAlias(Person, 'Owner')
+Owner = ClassAlias(Person, "Owner")
 
 
 class PersonLanguage(StormBase):
-    __storm_table__ = 'PersonLanguage'
+    __storm_table__ = "PersonLanguage"
     id = Int(primary=True)
-    person_id = Int(name='person', allow_none=False)
-    person = Reference(person_id, 'Person.id')
+    person_id = Int(name="person", allow_none=False)
+    person = Reference(person_id, "Person.id")
 
-    language_id = Int(name='language', allow_none=False)
-    language = Reference(language_id, 'Language.id')
+    language_id = Int(name="language", allow_none=False)
+    language = Reference(language_id, "Language.id")
 
     def __init__(self, person, language):
         self.person = person
@@ -4365,12 +5073,12 @@ class PersonLanguage(StormBase):
 class SSHKey(SQLBase):
     _defaultOrder = ["person", "keytype", "keytext"]
 
-    _table = 'SSHKey'
+    _table = "SSHKey"
 
-    person = ForeignKey(foreignKey='Person', dbName='person', notNull=True)
-    keytype = DBEnum(name='keytype', allow_none=False, enum=SSHKeyType)
-    keytext = StringCol(dbName='keytext', notNull=True)
-    comment = StringCol(dbName='comment', notNull=True)
+    person = ForeignKey(foreignKey="Person", dbName="person", notNull=True)
+    keytype = DBEnum(name="keytype", allow_none=False, enum=SSHKeyType)
+    keytext = StringCol(dbName="keytext", notNull=True)
+    comment = StringCol(dbName="comment", notNull=True)
 
     def destroySelf(self, send_notification=True):
         if send_notification:
@@ -4387,13 +5095,14 @@ class SSHKey(SQLBase):
                 )
             self.person.security_field_changed(
                 "SSH key removed from your Launchpad account.",
-                change_description)
+                change_description,
+            )
         super().destroySelf()
 
     def getFullKeyText(self):
         try:
-            key_blob = base64.b64decode(self.keytext.encode('UTF-8'))
-            ssh_keytype = getNS(key_blob)[0].decode('ascii')
+            key_blob = base64.b64decode(self.keytext.encode("UTF-8"))
+            ssh_keytype = getNS(key_blob)[0].decode("ascii")
         except Exception:
             # We didn't always validate keys, so there might be some that
             # can't be loaded this way.
@@ -4406,8 +5115,9 @@ class SSHKey(SQLBase):
                 # on the curve), and we've always validated these so this
                 # shouldn't happen.
                 raise ValueError(
-                    "SSH key of type %s has invalid data '%s'" %
-                    (self.keytype, self.keytext))
+                    "SSH key of type %s has invalid data '%s'"
+                    % (self.keytype, self.keytext)
+                )
         key_text = "%s %s" % (ssh_keytype, self.keytext)
         if self.comment:
             key_text = "%s %s" % (key_text, self.comment)
@@ -4416,11 +5126,17 @@ class SSHKey(SQLBase):
 
 @implementer(ISSHKeySet)
 class SSHKeySet:
-
-    def new(self, person, sshkey, check_key=True, send_notification=True,
-            dry_run=False):
+    def new(
+        self,
+        person,
+        sshkey,
+        check_key=True,
+        send_notification=True,
+        dry_run=False,
+    ):
         kind, keytype, keytext, comment = self._extract_ssh_key_components(
-            sshkey)
+            sshkey
+        )
 
         if check_key:
             try:
@@ -4442,12 +5158,16 @@ class SSHKeySet:
                     "to your account." % keytype.title
                 )
             person.security_field_changed(
-                "New SSH key added to your account.",
-                change_description)
+                "New SSH key added to your account.", change_description
+            )
 
         if not dry_run:
-            return SSHKey(person=person, keytype=keytype, keytext=keytext,
-                          comment=comment)
+            return SSHKey(
+                person=person,
+                keytype=keytype,
+                keytext=keytext,
+                comment=comment,
+            )
 
     def getByID(self, id, default=None):
         try:
@@ -4457,19 +5177,26 @@ class SSHKeySet:
 
     def getByPeople(self, people):
         """See `ISSHKeySet`"""
-        return SSHKey.select("""
+        return SSHKey.select(
+            """
             SSHKey.person IN %s
-            """ % sqlvalues([person.id for person in people]))
+            """
+            % sqlvalues([person.id for person in people])
+        )
 
     def getByPersonAndKeyText(self, person, sshkey):
         _, keytype, keytext, comment = self._extract_ssh_key_components(sshkey)
         return IStore(SSHKey).find(
             SSHKey,
-            person=person, keytype=keytype, keytext=keytext, comment=comment)
+            person=person,
+            keytype=keytype,
+            keytext=keytext,
+            comment=comment,
+        )
 
     def _extract_ssh_key_components(self, sshkey):
         try:
-            ssh_key_components = sshkey.split(' ', 2)
+            ssh_key_components = sshkey.split(" ", 2)
         except AttributeError:
             raise SSHKeyAdditionError(key=sshkey)
 
@@ -4477,7 +5204,7 @@ class SSHKeySet:
             raise SSHKeyAdditionError(key=sshkey)
         elif len(ssh_key_components) == 2:
             kind, keytext = ssh_key_components
-            comment = ''
+            comment = ""
         else:
             kind, keytext, comment = ssh_key_components
 
@@ -4490,11 +5217,11 @@ class SSHKeySet:
 @implementer(IWikiName)
 class WikiName(SQLBase, HasOwnerMixin):
 
-    _table = 'WikiName'
+    _table = "WikiName"
 
-    person = ForeignKey(dbName='person', foreignKey='Person', notNull=True)
-    wiki = StringCol(dbName='wiki', notNull=True)
-    wikiname = StringCol(dbName='wikiname', notNull=True)
+    person = ForeignKey(dbName="person", foreignKey="Person", notNull=True)
+    wiki = StringCol(dbName="wiki", notNull=True)
+    wikiname = StringCol(dbName="wikiname", notNull=True)
 
     @property
     def url(self):
@@ -4503,7 +5230,6 @@ class WikiName(SQLBase, HasOwnerMixin):
 
 @implementer(IWikiNameSet)
 class WikiNameSet:
-
     def get(self, id):
         """See `IWikiNameSet`."""
         try:
@@ -4519,16 +5245,15 @@ class WikiNameSet:
 @implementer(IJabberID)
 class JabberID(SQLBase, HasOwnerMixin):
 
-    _table = 'JabberID'
-    _defaultOrder = ['jabberid']
+    _table = "JabberID"
+    _defaultOrder = ["jabberid"]
 
-    person = ForeignKey(dbName='person', foreignKey='Person', notNull=True)
-    jabberid = StringCol(dbName='jabberid', notNull=True)
+    person = ForeignKey(dbName="person", foreignKey="Person", notNull=True)
+    jabberid = StringCol(dbName="jabberid", notNull=True)
 
 
 @implementer(IJabberIDSet)
 class JabberIDSet:
-
     def new(self, person, jabberid):
         """See `IJabberIDSet`"""
         return JabberID(person=person, jabberid=jabberid)
@@ -4546,11 +5271,11 @@ class JabberIDSet:
 class IrcID(SQLBase, HasOwnerMixin):
     """See `IIrcID`"""
 
-    _table = 'IrcID'
+    _table = "IrcID"
 
-    person = ForeignKey(dbName='person', foreignKey='Person', notNull=True)
-    network = StringCol(dbName='network', notNull=True)
-    nickname = StringCol(dbName='nickname', notNull=True)
+    person = ForeignKey(dbName="person", foreignKey="Person", notNull=True)
+    network = StringCol(dbName="network", notNull=True)
+    nickname = StringCol(dbName="nickname", notNull=True)
 
 
 @implementer(IIrcIDSet)
@@ -4592,7 +5317,8 @@ def generate_nick(email_addr, is_registered=_is_nick_registered):
 
     if not valid_email(email_addr):
         raise NicknameGenerationError(
-            "%s is not a valid email address" % email_addr)
+            "%s is not a valid email address" % email_addr
+        )
 
     user = re.match(r"^(\S+)@(?:\S+)$", email_addr).groups()[0]
     user = user.replace(".", "-").replace("_", "-")
@@ -4619,42 +5345,44 @@ def generate_nick(email_addr, is_registered=_is_nick_registered):
     random.seed(sum(ord(letter) for letter in email_addr))
     try:
         attempts = 0
-        prefix = ''
-        suffix = ''
+        prefix = ""
+        suffix = ""
         mutated_nick = [letter for letter in generated_nick]
-        chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+        chars = "abcdefghijklmnopqrstuvwxyz0123456789"
         while attempts < 1000:
             attempts += 1
 
             # Prefer a nickname with a suffix
             suffix += random.choice(chars)
-            if _valid_nick(generated_nick + '-' + suffix):
-                return generated_nick + '-' + suffix
+            if _valid_nick(generated_nick + "-" + suffix):
+                return generated_nick + "-" + suffix
 
             # Next a prefix
             prefix += random.choice(chars)
-            if _valid_nick(prefix + '-' + generated_nick):
-                return prefix + '-' + generated_nick
+            if _valid_nick(prefix + "-" + generated_nick):
+                return prefix + "-" + generated_nick
 
             # Or a mutated character
             index = random.randint(0, len(mutated_nick) - 1)
             mutated_nick[index] = random.choice(chars)
-            if _valid_nick(''.join(mutated_nick)):
-                return ''.join(mutated_nick)
+            if _valid_nick("".join(mutated_nick)):
+                return "".join(mutated_nick)
 
             # Or a prefix + generated + suffix
-            if _valid_nick(prefix + '-' + generated_nick + '-' + suffix):
-                return prefix + '-' + generated_nick + '-' + suffix
+            if _valid_nick(prefix + "-" + generated_nick + "-" + suffix):
+                return prefix + "-" + generated_nick + "-" + suffix
 
             # Or a prefix + mutated + suffix
             if _valid_nick(
-                    prefix + '-' + ''.join(mutated_nick) + '-' + suffix):
-                return prefix + '-' + ''.join(mutated_nick) + '-' + suffix
+                prefix + "-" + "".join(mutated_nick) + "-" + suffix
+            ):
+                return prefix + "-" + "".join(mutated_nick) + "-" + suffix
 
         raise NicknameGenerationError(
             "No nickname could be generated. "
             "This should be impossible to trigger unless some twonk has "
-            "registered a match everything regexp in the black list.")
+            "registered a match everything regexp in the black list."
+        )
 
     finally:
         random.setstate(random_state)
@@ -4681,7 +5409,8 @@ def person_from_account(account):
     # browser request.
     if request is not None:
         cache = request.annotations.setdefault(
-            'launchpad.person_to_account_cache', weakref.WeakKeyDictionary())
+            "launchpad.person_to_account_cache", weakref.WeakKeyDictionary()
+        )
         person = cache.get(account)
 
     # If it's not in the cache, then we get it from the database, and in that
@@ -4730,16 +5459,18 @@ def _get_recipients_for_team(team):
     Helper for get_recipients, divided out simply to make get_recipients
     easier to understand in broad brush."""
     store = IStore(Person)
-    source = store.using(TeamMembership,
-                         Join(Person,
-                              TeamMembership.personID == Person.id),
-                         LeftJoin(EmailAddress,
-                                  And(
-                                      EmailAddress.person == Person.id,
-                                      EmailAddress.status ==
-                                        EmailAddressStatus.PREFERRED)),
-                         LeftJoin(Account,
-                             Person.accountID == Account.id))
+    source = store.using(
+        TeamMembership,
+        Join(Person, TeamMembership.personID == Person.id),
+        LeftJoin(
+            EmailAddress,
+            And(
+                EmailAddress.person == Person.id,
+                EmailAddress.status == EmailAddressStatus.PREFERRED,
+            ),
+        ),
+        LeftJoin(Account, Person.accountID == Account.id),
+    )
     pending_team_ids = [team.id]
     recipient_ids = set()
     seen = set()
@@ -4748,17 +5479,27 @@ def _get_recipients_for_team(team):
         # account, or are a team, or both.
         intermediate_transitive_results = source.find(
             (TeamMembership.personID, EmailAddress.personID),
-            In(TeamMembership.status,
-               [TeamMembershipStatus.ADMIN.value,
-                TeamMembershipStatus.APPROVED.value]),
+            In(
+                TeamMembership.status,
+                [
+                    TeamMembershipStatus.ADMIN.value,
+                    TeamMembershipStatus.APPROVED.value,
+                ],
+            ),
             In(TeamMembership.teamID, pending_team_ids),
             Or(
-                And(EmailAddress.personID != None,
-                    Account.status == AccountStatus.ACTIVE),
-                Person.teamownerID != None)).config(distinct=True)
+                And(
+                    EmailAddress.personID != None,
+                    Account.status == AccountStatus.ACTIVE,
+                ),
+                Person.teamownerID != None,
+            ),
+        ).config(distinct=True)
         next_ids = []
-        for (person_id,
-             preferred_email_marker) in intermediate_transitive_results:
+        for (
+            person_id,
+            preferred_email_marker,
+        ) in intermediate_transitive_results:
             if preferred_email_marker is None:
                 # This is a team without a preferred email address.
                 if person_id not in seen:
@@ -4768,6 +5509,5 @@ def _get_recipients_for_team(team):
                 recipient_ids.add(person_id)
         pending_team_ids = next_ids
     return getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-        recipient_ids,
-        need_validity=True,
-        need_preferred_email=True)
+        recipient_ids, need_validity=True, need_preferred_email=True
+    )

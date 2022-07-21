@@ -4,19 +4,16 @@
 """Find OOPS References within the LP database."""
 
 __all__ = [
-    'referenced_oops',
-    ]
+    "referenced_oops",
+]
 
 import re
 
-from lp.services.database.sqlbase import (
-    cursor,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import cursor, sqlvalues
 
 
 def referenced_oops(start_date, end_date, context_clause, context_params):
-    '''Find OOPS codes that are referenced somewhere in Launchpad.
+    """Find OOPS codes that are referenced somewhere in Launchpad.
 
     This returns OOPS references from:
      - any message, message chunk or bug.
@@ -33,16 +30,18 @@ def referenced_oops(start_date, end_date, context_clause, context_params):
     :param context_params: Parameters needed to evaluate context_clause.
         For instance: {'product': 12}
     :return: A set of the found OOPS ids.
-    '''
+    """
     # Note that the POSIX regexp syntax is subtly different to the Python,
     # and that we need to escape all \ characters to keep the SQL interpreter
     # happy.
-    posix_oops_match = (r"~* E'^(oops-\\w+)|(\\moops-\\w+)'")
+    posix_oops_match = r"~* E'^(oops-\\w+)|(\\moops-\\w+)'"
     params = dict(start_date=start_date, end_date=end_date)
     params.update(context_params)
     sql_params = sqlvalues(**params)
-    sql_params['posix_oops_match'] = posix_oops_match
-    query = ("""
+    sql_params["posix_oops_match"] = posix_oops_match
+    query = (
+        (
+            """
         WITH recent_messages AS
             (SELECT id FROM Message WHERE
              datecreated BETWEEN %(start_date)s AND %(end_date)s)
@@ -59,16 +58,21 @@ def referenced_oops(start_date, end_date, context_clause, context_params):
             (title %(posix_oops_match)s OR description %(posix_oops_match)s)
         UNION ALL
         SELECT title || ' ' || description || ' ' || COALESCE(whiteboard,'')
-        FROM Question WHERE """ + context_clause + """
+        FROM Question WHERE """
+            + context_clause
+            + """
             AND (datelastquery BETWEEN %(start_date)s AND %(end_date)s
                 OR datelastresponse BETWEEN %(start_date)s AND %(end_date)s)
             AND (title %(posix_oops_match)s
                 OR description %(posix_oops_match)s
                 OR whiteboard %(posix_oops_match)s)
-        """) % sql_params
+        """
+        )
+        % sql_params
+    )
 
     referenced_codes = set()
-    oops_re = re.compile(r'(?i)(?P<oops>\boops-\w+)')
+    oops_re = re.compile(r"(?i)(?P<oops>\boops-\w+)")
 
     cur = cursor()
     cur.execute(query)

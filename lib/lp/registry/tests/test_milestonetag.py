@@ -5,22 +5,19 @@
 
 import datetime
 
-from lazr.restfulclient.errors import BadRequest
 import transaction
+from lazr.restfulclient.errors import BadRequest
 
 from lp.registry.model.milestonetag import (
     MilestoneTag,
     ProjectGroupMilestoneTag,
-    )
+)
 from lp.testing import (
-    person_logged_in,
     TestCaseWithFactory,
     WebServiceTestCase,
-    )
-from lp.testing.layers import (
-    AppServerLayer,
-    DatabaseFunctionalLayer,
-    )
+    person_logged_in,
+)
+from lp.testing.layers import AppServerLayer, DatabaseFunctionalLayer
 
 
 class MilestoneTagTest(TestCaseWithFactory):
@@ -32,7 +29,7 @@ class MilestoneTagTest(TestCaseWithFactory):
         super().setUp()
         self.milestone = self.factory.makeMilestone()
         self.person = self.milestone.target.owner
-        self.tags = ['tag2', 'tag1', 'tag3']
+        self.tags = ["tag2", "tag1", "tag3"]
 
     def test_no_tags(self):
         # Ensure a newly created milestone does not have associated tags.
@@ -48,7 +45,7 @@ class MilestoneTagTest(TestCaseWithFactory):
         # Ensure you can override tags already associated with the milestone.
         with person_logged_in(self.person):
             self.milestone.setTags(self.tags, self.person)
-            new_tags = ['tag2', 'tag4', 'tag3']
+            new_tags = ["tag2", "tag4", "tag3"]
             self.milestone.setTags(new_tags, self.person)
         self.assertEqual(sorted(new_tags), self.milestone.getTags())
 
@@ -61,13 +58,13 @@ class MilestoneTagTest(TestCaseWithFactory):
 
     def test_user_metadata(self):
         # Ensure the correct user metadata is created when tags are added.
-        tag = 'tag1'
+        tag = "tag1"
         with person_logged_in(self.person):
             self.milestone.setTags([tag], self.person)
         values = self.milestone.getTagsData().values(
             MilestoneTag.created_by_id,
             MilestoneTag.date_created,
-            )
+        )
         created_by_id, date_created = next(values)
         self.assertEqual(self.person.id, created_by_id)
         self.assertIsInstance(date_created, datetime.datetime)
@@ -78,12 +75,12 @@ class MilestoneTagTest(TestCaseWithFactory):
         new_person = self.factory.makePerson()
         with person_logged_in(self.person):
             self.milestone.setTags(self.tags, self.person)
-            new_tags = ['tag2', 'tag4', 'tag3']
+            new_tags = ["tag2", "tag4", "tag3"]
             self.milestone.setTags(new_tags, new_person)
         values = self.milestone.getTagsData().values(
             MilestoneTag.tag,
             MilestoneTag.created_by_id,
-            )
+        )
         tag_person_map = dict(values)
         # Old tags are still created by self.person.
         for tag in set(self.tags).intersection(new_tags):
@@ -103,9 +100,8 @@ class ProjectGroupMilestoneTagTest(TestCaseWithFactory):
         self.owner = self.factory.makePerson()
         self.project_group = self.factory.makeProject(owner=self.owner)
         self.product = self.factory.makeProduct(
-            name="product1",
-            owner=self.owner,
-            projectgroup=self.project_group)
+            name="product1", owner=self.owner, projectgroup=self.project_group
+        )
         self.milestone = self.factory.makeMilestone(product=self.product)
 
     def _create_bugtasks(self, num, milestone=None):
@@ -113,8 +109,8 @@ class ProjectGroupMilestoneTagTest(TestCaseWithFactory):
         with person_logged_in(self.owner):
             for n in range(num):
                 bugtask = self.factory.makeBugTask(
-                    target=self.product,
-                    owner=self.owner)
+                    target=self.product, owner=self.owner
+                )
                 if milestone:
                     bugtask.milestone = milestone
                 bugtasks.append(bugtask)
@@ -125,32 +121,32 @@ class ProjectGroupMilestoneTagTest(TestCaseWithFactory):
         with person_logged_in(self.owner):
             for n in range(num):
                 specification = self.factory.makeSpecification(
-                    product=self.product,
-                    owner=self.owner,
-                    milestone=milestone)
+                    product=self.product, owner=self.owner, milestone=milestone
+                )
                 specifications.append(specification)
         return specifications
 
-    def _create_items_for_retrieval(self, factory, tag='tag1'):
+    def _create_items_for_retrieval(self, factory, tag="tag1"):
         with person_logged_in(self.owner):
             self.milestone.setTags([tag], self.owner)
             items = factory(5, self.milestone)
             milestonetag = ProjectGroupMilestoneTag(
-                target=self.project_group, tags=[tag])
+                target=self.project_group, tags=[tag]
+            )
         return items, milestonetag
 
-    def _create_items_for_untagged_milestone(self, factory, tag='tag1'):
+    def _create_items_for_untagged_milestone(self, factory, tag="tag1"):
         new_milestone = self.factory.makeMilestone(product=self.product)
         with person_logged_in(self.owner):
             self.milestone.setTags([tag], self.owner)
             items = factory(5, self.milestone)
             factory(3, new_milestone)
             milestonetag = ProjectGroupMilestoneTag(
-                target=self.project_group, tags=[tag])
+                target=self.project_group, tags=[tag]
+            )
         return items, milestonetag
 
-    def _create_items_for_multiple_tags(
-        self, factory, tags=('tag1', 'tag2')):
+    def _create_items_for_multiple_tags(self, factory, tags=("tag1", "tag2")):
         new_milestone = self.factory.makeMilestone(product=self.product)
         with person_logged_in(self.owner):
             self.milestone.setTags(tags, self.owner)
@@ -158,7 +154,8 @@ class ProjectGroupMilestoneTagTest(TestCaseWithFactory):
             items = factory(5, self.milestone)
             factory(3, new_milestone)
             milestonetag = ProjectGroupMilestoneTag(
-                target=self.project_group, tags=tags)
+                target=self.project_group, tags=tags
+            )
         return items, milestonetag
 
     # Add a test similar to TestProjectExcludeConjoinedPrimarySearch in
@@ -167,41 +164,47 @@ class ProjectGroupMilestoneTagTest(TestCaseWithFactory):
     def test_bugtask_retrieve_single_milestone(self):
         # Ensure that all bugtasks on a single milestone can be retrieved.
         bugtasks, milestonetag = self._create_items_for_retrieval(
-            self._create_bugtasks)
+            self._create_bugtasks
+        )
         self.assertContentEqual(bugtasks, milestonetag.bugtasks(self.owner))
 
     def test_bugtasks_for_untagged_milestone(self):
         # Ensure that bugtasks for a project group are retrieved
         # only if associated with milestones having specified tags.
         bugtasks, milestonetag = self._create_items_for_untagged_milestone(
-            self._create_bugtasks)
+            self._create_bugtasks
+        )
         self.assertContentEqual(bugtasks, milestonetag.bugtasks(self.owner))
 
     def test_bugtasks_multiple_tags(self):
         # Ensure that, in presence of multiple tags, only bugtasks
         # for milestones associated with all the tags are retrieved.
         bugtasks, milestonetag = self._create_items_for_multiple_tags(
-            self._create_bugtasks)
+            self._create_bugtasks
+        )
         self.assertContentEqual(bugtasks, milestonetag.bugtasks(self.owner))
 
     def test_specification_retrieval(self):
         # Ensure that all specifications on a milestone can be retrieved.
         specs, milestonetag = self._create_items_for_retrieval(
-            self._create_specifications)
+            self._create_specifications
+        )
         self.assertContentEqual(specs, milestonetag.getSpecifications(None))
 
     def test_specifications_for_untagged_milestone(self):
         # Ensure that specifications for a project group are retrieved
         # only if associated with milestones having specified tags.
         specs, milestonetag = self._create_items_for_untagged_milestone(
-            self._create_specifications)
+            self._create_specifications
+        )
         self.assertContentEqual(specs, milestonetag.getSpecifications(None))
 
     def test_specifications_multiple_tags(self):
         # Ensure that, in presence of multiple tags, only specifications
         # for milestones associated with all the tags are retrieved.
         specs, milestonetag = self._create_items_for_multiple_tags(
-            self._create_specifications)
+            self._create_specifications
+        )
         self.assertContentEqual(specs, milestonetag.getSpecifications(None))
 
 
@@ -222,22 +225,22 @@ class MilestoneTagWebServiceTest(WebServiceTestCase):
         self.assertEqual([], self.ws_milestone.getTags())
 
     def test_get_tags(self):
-        tags = ['zeta', 'alpha', 'beta']
+        tags = ["zeta", "alpha", "beta"]
         self.milestone.setTags(tags, self.owner)
         transaction.commit()
         self.assertEqual(sorted(tags), self.ws_milestone.getTags())
 
     def test_set_tags_initial(self):
-        tags = ['zeta', 'alpha', 'beta']
+        tags = ["zeta", "alpha", "beta"]
         self.ws_milestone.setTags(tags=tags)
         self.ws_milestone.lp_save()
         transaction.begin()
         self.assertEqual(sorted(tags), self.milestone.getTags())
 
     def test_set_tags_replace(self):
-        tags1 = ['zeta', 'alpha', 'beta']
+        tags1 = ["zeta", "alpha", "beta"]
         self.milestone.setTags(tags1, self.owner)
-        tags2 = ['delta', 'alpha', 'gamma']
+        tags2 = ["delta", "alpha", "gamma"]
         self.ws_milestone.setTags(tags=tags2)
         self.ws_milestone.lp_save()
         transaction.begin()
@@ -245,4 +248,5 @@ class MilestoneTagWebServiceTest(WebServiceTestCase):
 
     def test_set_tags_invalid(self):
         self.assertRaises(
-            BadRequest, self.ws_milestone.setTags, tags=['&%&%^&'])
+            BadRequest, self.ws_milestone.setTags, tags=["&%&%^&"]
+        )

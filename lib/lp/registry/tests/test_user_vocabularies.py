@@ -7,19 +7,16 @@ from zope.component import getUtility
 from zope.schema.vocabulary import getVocabularyRegistry
 
 from lp.registry.enums import TeamMembershipPolicy
-from lp.registry.interfaces.person import (
-    IPersonSet,
-    PersonVisibility,
-    )
+from lp.registry.interfaces.person import IPersonSet, PersonVisibility
 from lp.registry.model.person import Person
 from lp.services.database.interfaces import IStore
 from lp.testing import (
     ANONYMOUS,
+    TestCaseWithFactory,
     login,
     login_person,
     record_two_runs,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 
@@ -32,8 +29,7 @@ class TestUserTeamsParticipationPlusSelfVocabulary(TestCaseWithFactory):
     def _vocabTermValues(self):
         """Return the token values for the vocab."""
         vocabulary_registry = getVocabularyRegistry()
-        vocab = vocabulary_registry.get(
-            None, 'UserTeamsParticipationPlusSelf')
+        vocab = vocabulary_registry.get(None, "UserTeamsParticipationPlusSelf")
         return [term.value for term in vocab]
 
     def test_user_no_team(self):
@@ -62,7 +58,7 @@ class TestUserTeamsParticipationPlusSelfVocabulary(TestCaseWithFactory):
         team = self.factory.makeTeam(owner=team_owner)
         team.addMember(person=user, reviewer=team_owner)
         # Launchpad admin rights are needed to set private.
-        login('foo.bar@canonical.com')
+        login("foo.bar@canonical.com")
         team.visibility = PersonVisibility.PRIVATE
         login_person(user)
         self.assertEqual([user], self._vocabTermValues())
@@ -75,7 +71,8 @@ class TestUserTeamsParticipationPlusSelfVocabulary(TestCaseWithFactory):
 
         def make_private_team():
             team = self.factory.makeTeam(
-                owner=team_owner, visibility=PersonVisibility.PRIVATE)
+                owner=team_owner, visibility=PersonVisibility.PRIVATE
+            )
             team.addMember(person=user, reviewer=team_owner)
 
         def expand_vocabulary():
@@ -83,8 +80,11 @@ class TestUserTeamsParticipationPlusSelfVocabulary(TestCaseWithFactory):
             self.assertEqual([user], self._vocabTermValues())
 
         recorder1, recorder2 = record_two_runs(
-            expand_vocabulary, make_private_team, 5,
-            login_method=lambda: login_person(team_owner))
+            expand_vocabulary,
+            make_private_team,
+            5,
+            login_method=lambda: login_person(team_owner),
+        )
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_indirect_team_membership(self):
@@ -95,8 +95,7 @@ class TestUserTeamsParticipationPlusSelfVocabulary(TestCaseWithFactory):
         bravo = self.factory.makeTeam(owner=team_owner, displayname="Bravo")
         bravo.addMember(person=user, reviewer=team_owner)
         alpha = self.factory.makeTeam(owner=team_owner, displayname="Alpha")
-        alpha.addMember(
-            person=bravo, reviewer=team_owner, force_team_add=True)
+        alpha.addMember(person=bravo, reviewer=team_owner, force_team_add=True)
         login_person(user)
         self.assertEqual([user, alpha, bravo], self._vocabTermValues())
 
@@ -110,14 +109,16 @@ class TestAllUserTeamsParticipationPlusSelfVocabulary(TestCaseWithFactory):
         """Return the token values for the vocab."""
         vocabulary_registry = getVocabularyRegistry()
         vocab = vocabulary_registry.get(
-            context, 'AllUserTeamsParticipationPlusSelf')
+            context, "AllUserTeamsParticipationPlusSelf"
+        )
         return [term.value for term in vocab]
 
     def test_user_no_private_teams(self):
         # Private teams are shown in the vocabulary.
         team_owner = self.factory.makePerson()
         team = self.factory.makeTeam(
-            owner=team_owner, visibility=PersonVisibility.PRIVATE)
+            owner=team_owner, visibility=PersonVisibility.PRIVATE
+        )
         login_person(team_owner)
         self.assertEqual([team_owner, team], self._vocabTermValues())
 
@@ -130,7 +131,8 @@ class TestAllUserTeamsParticipationPlusSelfVocabulary(TestCaseWithFactory):
 
         def make_private_team():
             team = self.factory.makeTeam(
-                owner=team_owner, visibility=PersonVisibility.PRIVATE)
+                owner=team_owner, visibility=PersonVisibility.PRIVATE
+            )
             team.addMember(person=user, reviewer=team_owner)
             teams.append(team)
 
@@ -139,8 +141,11 @@ class TestAllUserTeamsParticipationPlusSelfVocabulary(TestCaseWithFactory):
             self.assertContentEqual([user] + teams, self._vocabTermValues())
 
         recorder1, recorder2 = record_two_runs(
-            expand_vocabulary, make_private_team, 5,
-            login_method=lambda: login_person(team_owner))
+            expand_vocabulary,
+            make_private_team,
+            5,
+            login_method=lambda: login_person(team_owner),
+        )
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_only_exclusive_teams_for_series_branches(self):
@@ -149,25 +154,31 @@ class TestAllUserTeamsParticipationPlusSelfVocabulary(TestCaseWithFactory):
         self.factory.makeProductSeries(branch=branch)
         team_owner = self.factory.makePerson()
         self.factory.makeTeam(
-            owner=team_owner, membership_policy=TeamMembershipPolicy.OPEN)
+            owner=team_owner, membership_policy=TeamMembershipPolicy.OPEN
+        )
         exclusive_team = self.factory.makeTeam(
-            owner=team_owner, membership_policy=TeamMembershipPolicy.MODERATED)
+            owner=team_owner, membership_policy=TeamMembershipPolicy.MODERATED
+        )
         login_person(team_owner)
         self.assertEqual(
-            [team_owner, exclusive_team], self._vocabTermValues(branch))
+            [team_owner, exclusive_team], self._vocabTermValues(branch)
+        )
 
     def test_all_teams_for_non_series_branches(self):
         # For non series branches, all teams are permitted in the vocab.
         branch = self.factory.makeBranch()
         team_owner = self.factory.makePerson()
         inclusive_team = self.factory.makeTeam(
-            owner=team_owner, membership_policy=TeamMembershipPolicy.OPEN)
+            owner=team_owner, membership_policy=TeamMembershipPolicy.OPEN
+        )
         exclusive_team = self.factory.makeTeam(
-            owner=team_owner, membership_policy=TeamMembershipPolicy.MODERATED)
+            owner=team_owner, membership_policy=TeamMembershipPolicy.MODERATED
+        )
         login_person(team_owner)
         self.assertContentEqual(
             [team_owner, exclusive_team, inclusive_team],
-            self._vocabTermValues(branch))
+            self._vocabTermValues(branch),
+        )
 
 
 class TestAllUserTeamsParticipationVocabulary(TestCaseWithFactory):
@@ -184,7 +195,7 @@ class TestAllUserTeamsParticipationVocabulary(TestCaseWithFactory):
         # over the items of AllUserTeamsPariticipationVocabulary, so
         # so iterate over all Persons and check membership.
         vocabulary_registry = getVocabularyRegistry()
-        vocab = vocabulary_registry.get(None, 'AllUserTeamsParticipation')
+        vocab = vocabulary_registry.get(None, "AllUserTeamsParticipation")
         return [p for p in IStore(Person).find(Person) if p in vocab]
 
     def test_user_no_team(self):
@@ -209,7 +220,8 @@ class TestAllUserTeamsParticipationVocabulary(TestCaseWithFactory):
         # Private teams are included in the vocabulary.
         user = self.factory.makePerson()
         team = self.factory.makeTeam(
-            members=[user], visibility=PersonVisibility.PRIVATE)
+            members=[user], visibility=PersonVisibility.PRIVATE
+        )
         login_person(user)
         self.assertEqual([team], self._vocabTermValues())
 
@@ -221,12 +233,14 @@ class TestAllUserTeamsParticipationVocabulary(TestCaseWithFactory):
     def test_commercial_admin(self):
         # The vocab does the membership check for commercial admins too.
         user = self.factory.makeCommercialAdmin()
-        com_admins = getUtility(IPersonSet).getByName('commercial-admins')
-        ppa_admins = getUtility(IPersonSet).getByName('launchpad-ppa-admins')
+        com_admins = getUtility(IPersonSet).getByName("commercial-admins")
+        ppa_admins = getUtility(IPersonSet).getByName("launchpad-ppa-admins")
         ppa_self_admins = getUtility(IPersonSet).getByName(
-            'launchpad-ppa-self-admins')
+            "launchpad-ppa-self-admins"
+        )
         team1 = self.factory.makeTeam(members=[user])
         login_person(user)
         self.assertContentEqual(
             [com_admins, ppa_admins, ppa_self_admins, team1],
-            self._vocabTermValues())
+            self._vocabTermValues(),
+        )

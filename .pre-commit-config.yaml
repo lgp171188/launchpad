@@ -53,6 +53,7 @@ repos:
             |codehosting
             |coop
             |oci
+            |registry
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
@@ -82,6 +83,7 @@ repos:
             |codehosting
             |coop
             |oci
+            |registry
           )/
     -   id: isort
         alias: isort-black
@@ -101,6 +103,7 @@ repos:
             |codehosting
             |coop
             |oci
+            |registry
           )/
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.9.2

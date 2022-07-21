@@ -4,17 +4,12 @@
 """NameBlacklist interfaces."""
 
 __all__ = [
-    'INameBlacklist',
-    'INameBlacklistSet',
-    ]
+    "INameBlacklist",
+    "INameBlacklistSet",
+]
 
 from zope.interface import Interface
-from zope.schema import (
-    Choice,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.schema import Choice, Int, Text, TextLine
 
 from lp import _
 
@@ -22,20 +17,25 @@ from lp import _
 class INameBlacklist(Interface):
     """The interface for the NameBlacklist table."""
 
-    id = Int(title=_('ID'), required=True, readonly=True)
-    regexp = TextLine(title=_('Regular expression'), required=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
+    regexp = TextLine(title=_("Regular expression"), required=True)
     comment = Text(
-        title=_('Comment'),
+        title=_("Comment"),
         description=_(
             "Why is the name blacklisted? Does the namespace belong to an "
-            "organization or is the namespace reserved by the application?"),
-        required=False)
+            "organization or is the namespace reserved by the application?"
+        ),
+        required=False,
+    )
     admin = Choice(
-        title=_('Admin'),
+        title=_("Admin"),
         description=_(
             "The team that is exempt from this restriction because it "
-            "administers this namespace for an organisation."),
-        vocabulary='ValidPersonOrTeam', required=False)
+            "administers this namespace for an organisation."
+        ),
+        vocabulary="ValidPersonOrTeam",
+        required=False,
+    )
 
 
 class INameBlacklistSet(Interface):

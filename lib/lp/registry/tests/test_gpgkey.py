@@ -3,11 +3,7 @@
 
 """Tests for GPGKeySet model."""
 
-from testtools.matchers import (
-    Contains,
-    Equals,
-    HasLength,
-    )
+from testtools.matchers import Contains, Equals, HasLength
 from zope.component import getUtility
 
 from lp.registry.interfaces.gpg import IGPGKeySet
@@ -27,8 +23,15 @@ class GPGKeySetTests(TestCaseWithFactory):
         keyset = getUtility(IGPGKeySet)
         person = self.factory.makePerson()
         fingerprint = "DEADBEEF12345678DEADBEEF12345678DEADBEEF"
-        keyset.new(person.id, "F0A432C2", fingerprint, 4096,
-                   GPGKeyAlgorithm.R, True, True)
+        keyset.new(
+            person.id,
+            "F0A432C2",
+            fingerprint,
+            4096,
+            GPGKeyAlgorithm.R,
+            True,
+            True,
+        )
 
         keys = keyset.getGPGKeysForPerson(person)
 
@@ -38,13 +41,15 @@ class GPGKeySetTests(TestCaseWithFactory):
     def test_sampledata_contains_gpgkeys(self):
         keyset = getUtility(IGPGKeySet)
         personset = getUtility(IPersonSet)
-        foobar = personset.getByName('name16')
+        foobar = personset.getByName("name16")
         keys = keyset.getGPGKeysForPerson(foobar)
 
         self.assertThat(keys, HasLength(1))
-        self.assertThat(keys[0].keyid, Equals('12345678'))
-        self.assertThat(keys[0].fingerprint,
-                        Equals('ABCDEF0123456789ABCDDCBA0000111112345678'))
+        self.assertThat(keys[0].keyid, Equals("12345678"))
+        self.assertThat(
+            keys[0].fingerprint,
+            Equals("ABCDEF0123456789ABCDDCBA0000111112345678"),
+        )
 
     def test_can_retrieve_keys_by_fingerprint(self):
         keyset = getUtility(IGPGKeySet)
@@ -81,12 +86,13 @@ class GPGKeySetTests(TestCaseWithFactory):
 
     def test_getGPGKeysForPerson_excludes_keys_with_logintoken(self):
         keyset = getUtility(IGPGKeySet)
-        email = 'foo@bar.com'
+        email = "foo@bar.com"
         person = self.factory.makePerson(email)
         key = self.factory.makeGPGKey(person)
         keyset.deactivate(key)
         getUtility(ILoginTokenSet).new(
-            person, email, email, LoginTokenType.VALIDATEGPG, key.fingerprint)
+            person, email, email, LoginTokenType.VALIDATEGPG, key.fingerprint
+        )
 
         inactive_keys = keyset.getGPGKeysForPerson(person, active=False)
         self.assertThat(inactive_keys, HasLength(0))

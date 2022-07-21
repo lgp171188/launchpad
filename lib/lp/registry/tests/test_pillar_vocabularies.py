@@ -8,32 +8,33 @@ from lp.registry.vocabularies import (
     DistributionOrProductOrProjectGroupVocabulary,
     DistributionOrProductVocabulary,
     PillarVocabularyBase,
-    )
+)
 from lp.testing import (
+    TestCaseWithFactory,
     admin_logged_in,
     celebrity_logged_in,
     login_person,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestPillarVocabularyBase(TestCaseWithFactory):
     """Test that the PillarVocabularyBase behaves as expected."""
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super().setUp()
         self.vocabulary = PillarVocabularyBase()
-        self.product = self.factory.makeProduct(name='orchid-snark')
-        self.distribution = self.factory.makeDistribution(name='zebra-snark')
-        self.project_group = self.factory.makeProject(name='apple-snark')
+        self.product = self.factory.makeProduct(name="orchid-snark")
+        self.distribution = self.factory.makeDistribution(name="zebra-snark")
+        self.project_group = self.factory.makeProject(name="apple-snark")
 
     def test_supported_filters(self):
         # The vocab supports the correct filters.
-        self.assertEqual([
-            PillarVocabularyBase.ALL_FILTER],
-            self.vocabulary.supportedFilters()
+        self.assertEqual(
+            [PillarVocabularyBase.ALL_FILTER],
+            self.vocabulary.supportedFilters(),
         )
 
     def test_Product_toTerm(self):
@@ -52,65 +53,68 @@ class TestPillarVocabularyBase(TestCaseWithFactory):
 
     def test_getTermByToken(self):
         # Tokens are case insentive because the product name is lowercase.
-        term = self.vocabulary.getTermByToken('ORCHID-SNARK')
+        term = self.vocabulary.getTermByToken("ORCHID-SNARK")
         self.assertEqual(self.product, term.value)
 
     def test_getTermByToken_LookupError(self):
         # getTermByToken() raises a LookupError when no match is found.
         self.assertRaises(
-            LookupError,
-            self.vocabulary.getTermByToken, 'does-notexist')
+            LookupError, self.vocabulary.getTermByToken, "does-notexist"
+        )
 
     def test_ordering(self):
         # Results are ordered by rank, with exact matches first.
-        terms = self.vocabulary.searchForTerms('snark')
+        terms = self.vocabulary.searchForTerms("snark")
         result = [term.value for term in terms]
         self.assertEqual(
-            [self.project_group, self.product, self.distribution], result)
+            [self.project_group, self.product, self.distribution], result
+        )
 
 
 class VocabFilterMixin:
-
     def _test_distribution_filter(self):
         # Only distributions should be included in the search results.
-        terms = self.vocabulary.searchForTerms('snark', vocab_filter='DISTRO')
+        terms = self.vocabulary.searchForTerms("snark", vocab_filter="DISTRO")
         result = [term.value for term in terms]
         self.assertEqual([self.distribution], result)
 
     def _test_project_filter(self):
         # Only projects should be included in the search results.
-        terms = self.vocabulary.searchForTerms(
-            'snark', vocab_filter='PROJECT')
+        terms = self.vocabulary.searchForTerms("snark", vocab_filter="PROJECT")
         result = [term.value for term in terms]
         self.assertEqual([self.product], result)
 
     def _test_projectgroup_filter(self):
         # Only project groups should be included in the search results.
         terms = self.vocabulary.searchForTerms(
-            'snark', vocab_filter='PROJECTGROUP')
+            "snark", vocab_filter="PROJECTGROUP"
+        )
         result = [term.value for term in terms]
         self.assertEqual([self.project_group], result)
 
 
-class TestDistributionOrProductVocabulary(TestCaseWithFactory,
-                                          VocabFilterMixin):
+class TestDistributionOrProductVocabulary(
+    TestCaseWithFactory, VocabFilterMixin
+):
     """Test that the ProductVocabulary behaves as expected."""
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super().setUp()
         self.vocabulary = DistributionOrProductVocabulary()
-        self.product = self.factory.makeProduct(name='orchid-snark')
-        self.distribution = self.factory.makeDistribution(name='zebra-snark')
+        self.product = self.factory.makeProduct(name="orchid-snark")
+        self.distribution = self.factory.makeDistribution(name="zebra-snark")
 
     def test_supported_filters(self):
         # The vocab supports the correct filters.
-        self.assertEqual([
-            DistributionOrProductVocabulary.ALL_FILTER,
-            DistributionOrProductVocabulary.PROJECT_FILTER,
-            DistributionOrProductVocabulary.DISTRO_FILTER,
+        self.assertEqual(
+            [
+                DistributionOrProductVocabulary.ALL_FILTER,
+                DistributionOrProductVocabulary.PROJECT_FILTER,
+                DistributionOrProductVocabulary.DISTRO_FILTER,
             ],
-            self.vocabulary.supportedFilters()
+            self.vocabulary.supportedFilters(),
         )
 
     def test_project_filter(self):
@@ -121,43 +125,47 @@ class TestDistributionOrProductVocabulary(TestCaseWithFactory,
 
     def test_inactive_products_are_excluded(self):
         # Inactive product are not in the vocabulary.
-        with celebrity_logged_in('registry_experts'):
+        with celebrity_logged_in("registry_experts"):
             self.product.active = False
-        terms = self.vocabulary.searchForTerms('snark')
+        terms = self.vocabulary.searchForTerms("snark")
         result = [term.value for term in terms]
         self.assertEqual([self.distribution], result)
         self.assertFalse(self.product in self.vocabulary)
 
     def test_project_groups_are_excluded(self):
         # Project groups are not in the vocabulary.
-        project_group = self.factory.makeProject(name='apple-snark')
-        terms = self.vocabulary.searchForTerms('snark')
+        project_group = self.factory.makeProject(name="apple-snark")
+        terms = self.vocabulary.searchForTerms("snark")
         result = [term.value for term in terms]
         self.assertEqual([self.product, self.distribution], result)
         self.assertFalse(project_group in self.vocabulary)
 
 
-class TestDistributionOrProductOrProjectGroupVocabulary(TestCaseWithFactory,
-                                                        VocabFilterMixin):
+class TestDistributionOrProductOrProjectGroupVocabulary(
+    TestCaseWithFactory, VocabFilterMixin
+):
     """Test for DistributionOrProductOrProjectGroupVocabulary."""
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super().setUp()
-        self.vocabulary = DistributionOrProductOrProjectGroupVocabulary()
-        self.product = self.factory.makeProduct(name='orchid-snark')
-        self.distribution = self.factory.makeDistribution(name='zebra-snark')
-        self.project_group = self.factory.makeProject(name='apple-snark')
+        self.vocabulary_class = DistributionOrProductOrProjectGroupVocabulary
+        self.vocabulary = self.vocabulary_class()
+        self.product = self.factory.makeProduct(name="orchid-snark")
+        self.distribution = self.factory.makeDistribution(name="zebra-snark")
+        self.project_group = self.factory.makeProject(name="apple-snark")
 
     def test_supported_filters(self):
         # The vocab supports the correct filters.
-        self.assertEqual([
-            DistributionOrProductOrProjectGroupVocabulary.ALL_FILTER,
-            DistributionOrProductOrProjectGroupVocabulary.PROJECT_FILTER,
-            DistributionOrProductOrProjectGroupVocabulary.PROJECTGROUP_FILTER,
-            DistributionOrProductOrProjectGroupVocabulary.DISTRO_FILTER,
+        self.assertEqual(
+            [
+                self.vocabulary_class.ALL_FILTER,
+                self.vocabulary_class.PROJECT_FILTER,
+                self.vocabulary_class.PROJECTGROUP_FILTER,
+                self.vocabulary_class.DISTRO_FILTER,
             ],
-            self.vocabulary.supportedFilters()
+            self.vocabulary.supportedFilters(),
         )
 
     def test_project_filter(self):
@@ -177,18 +185,18 @@ class TestDistributionOrProductOrProjectGroupVocabulary(TestCaseWithFactory,
 
     def test_inactive_products_are_excluded(self):
         # Inactive product are not in the vocabulary.
-        with celebrity_logged_in('registry_experts'):
+        with celebrity_logged_in("registry_experts"):
             self.product.active = False
-        terms = self.vocabulary.searchForTerms('snark')
+        terms = self.vocabulary.searchForTerms("snark")
         result = [term.value for term in terms]
         self.assertEqual([self.project_group, self.distribution], result)
         self.assertFalse(self.product in self.vocabulary)
 
     def test_inactive_product_groups_are_excluded(self):
         # Inactive project groups are not in the vocabulary.
-        with celebrity_logged_in('registry_experts'):
+        with celebrity_logged_in("registry_experts"):
             self.project_group.active = False
-        terms = self.vocabulary.searchForTerms('snark')
+        terms = self.vocabulary.searchForTerms("snark")
         result = [term.value for term in terms]
         self.assertEqual([self.product, self.distribution], result)
         self.assertFalse(self.project_group in self.vocabulary)
@@ -197,16 +205,18 @@ class TestDistributionOrProductOrProjectGroupVocabulary(TestCaseWithFactory,
         with admin_logged_in():
             owner = self.factory.makePerson()
             private = self.factory.makeProduct(
-                name="private-snark", owner=owner,
-                information_type=InformationType.PROPRIETARY)
+                name="private-snark",
+                owner=owner,
+                information_type=InformationType.PROPRIETARY,
+            )
 
         # Anonymous users don't get the private project.
-        terms = self.vocabulary.searchForTerms('snark')
+        terms = self.vocabulary.searchForTerms("snark")
         result = [term.value for term in terms]
         self.assertNotIn(private, result)
 
         # But the owner can see it.
         login_person(owner)
-        terms = self.vocabulary.searchForTerms('snark')
+        terms = self.vocabulary.searchForTerms("snark")
         result = [term.value for term in terms]
         self.assertIn(private, result)

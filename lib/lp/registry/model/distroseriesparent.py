@@ -4,43 +4,35 @@
 """Database class for table DistroSeriesParent."""
 
 __all__ = [
-    'DistroSeriesParent',
-    'DistroSeriesParentSet',
-    ]
+    "DistroSeriesParent",
+    "DistroSeriesParentSet",
+]
 
-from storm.locals import (
-    Bool,
-    Int,
-    Reference,
-    SQL,
-    Storm,
-    )
+from storm.locals import SQL, Bool, Int, Reference, Storm
 from zope.interface import implementer
 
 from lp.registry.interfaces.distroseriesparent import (
     IDistroSeriesParent,
     IDistroSeriesParentSet,
-    )
+)
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 
 
 @implementer(IDistroSeriesParent)
 class DistroSeriesParent(Storm):
     """See `IDistroSeriesParent`."""
-    __storm_table__ = 'DistroSeriesParent'
+
+    __storm_table__ = "DistroSeriesParent"
 
     id = Int(primary=True)
 
-    parent_series_id = Int(name='parent_series', allow_none=False)
-    parent_series = Reference(parent_series_id, 'DistroSeries.id')
+    parent_series_id = Int(name="parent_series", allow_none=False)
+    parent_series = Reference(parent_series_id, "DistroSeries.id")
 
-    derived_series_id = Int(name='derived_series', allow_none=False)
-    derived_series = Reference(derived_series_id, 'DistroSeries.id')
+    derived_series_id = Int(name="derived_series", allow_none=False)
+    derived_series = Reference(derived_series_id, "DistroSeries.id")
 
     initialized = Bool(allow_none=False)
 
@@ -48,10 +40,11 @@ class DistroSeriesParent(Storm):
     inherit_overrides = Bool(allow_none=False, default=False)
 
     pocket = DBEnum(
-        name='pocket', allow_none=True, enum=PackagePublishingPocket)
+        name="pocket", allow_none=True, enum=PackagePublishingPocket
+    )
 
-    component_id = Int(name='component', allow_none=True)
-    component = Reference(component_id, 'Component.id')
+    component_id = Int(name="component", allow_none=True)
+    component = Reference(component_id, "Component.id")
 
     ordering = Int(allow_none=False, default=1)
 
@@ -59,11 +52,20 @@ class DistroSeriesParent(Storm):
 @implementer(IDistroSeriesParentSet)
 class DistroSeriesParentSet:
     """See `IDistroSeriesParentSet`."""
+
     title = "Cross reference of parent and derived distroseries."
 
-    def new(self, derived_series, parent_series, initialized,
-            is_overlay=False, inherit_overrides=False, pocket=None,
-            component=None, ordering=1):
+    def new(
+        self,
+        derived_series,
+        parent_series,
+        initialized,
+        is_overlay=False,
+        inherit_overrides=False,
+        pocket=None,
+        component=None,
+        ordering=1,
+    ):
         """Make and return a new `DistroSeriesParent`."""
         store = IMasterStore(DistroSeriesParent)
         dsp = DistroSeriesParent()
@@ -83,14 +85,16 @@ class DistroSeriesParentSet:
         store = IStore(DistroSeriesParent)
         return store.find(
             DistroSeriesParent,
-            DistroSeriesParent.derived_series_id == derived_series.id)
+            DistroSeriesParent.derived_series_id == derived_series.id,
+        )
 
     def getByParentSeries(self, parent_series):
         """See `IDistroSeriesParentSet`."""
         store = IStore(DistroSeriesParent)
         return store.find(
             DistroSeriesParent,
-            DistroSeriesParent.parent_series_id == parent_series.id)
+            DistroSeriesParent.parent_series_id == parent_series.id,
+        )
 
     def getByDerivedAndParentSeries(self, derived_series, parent_series):
         """See `IDistroSeriesParentSet`."""
@@ -98,12 +102,13 @@ class DistroSeriesParentSet:
         return store.find(
             DistroSeriesParent,
             DistroSeriesParent.parent_series_id == parent_series.id,
-            DistroSeriesParent.derived_series_id == derived_series.id).one()
+            DistroSeriesParent.derived_series_id == derived_series.id,
+        ).one()
 
     def getFlattenedOverlayTree(self, derived_series):
         """See `IDistroSeriesParentSet`."""
         self.getByDerivedSeries(derived_series)
-        rec_overlay_query = '''
+        rec_overlay_query = """
             RECURSIVE t_parents(parent_series) AS (
                 SELECT parent_series
                 FROM DistroSeriesParent
@@ -114,14 +119,19 @@ class DistroSeriesParentSet:
                 FROM DistroSeriesParent dsp, t_parents p
                 WHERE dsp.derived_series = p.parent_series AND
                     dsp.is_overlay = True
-        ) '''
+        ) """
         store = IStore(DistroSeriesParent)
         # XXX: rvb 2011-05-20 bug=785733: Order by DSD.id for now.
         # Once the ordering is specified in the database, it should
         # be used to sort the results.
-        return store.with_(
-            SQL(rec_overlay_query, (derived_series.id, ))).find(
+        return (
+            store.with_(SQL(rec_overlay_query, (derived_series.id,)))
+            .find(
                 DistroSeriesParent,
-                SQL('DistroSeriesParent.parent_series IN '
-                    '(SELECT parent_series FROM t_parents)')
-                ).order_by(DistroSeriesParent.id)
+                SQL(
+                    "DistroSeriesParent.parent_series IN "
+                    "(SELECT parent_series FROM t_parents)"
+                ),
+            )
+            .order_by(DistroSeriesParent.id)
+        )

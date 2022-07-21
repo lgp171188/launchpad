@@ -11,22 +11,24 @@ from lp.registry.enums import SharingPermission
 from lp.registry.vocabularies import ProductVocabulary
 from lp.testing import (
     ANONYMOUS,
+    TestCaseWithFactory,
     celebrity_logged_in,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestProductVocabulary(TestCaseWithFactory):
     """Test that the ProductVocabulary behaves as expected."""
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super().setUp()
         self.vocabulary = ProductVocabulary()
         self.product = self.factory.makeProduct(
-            name='bedbugs', displayname='BedBugs')
+            name="bedbugs", displayname="BedBugs"
+        )
 
     def test_toTerm(self):
         # Product terms are composed of title, name, and the object.
@@ -37,99 +39,108 @@ class TestProductVocabulary(TestCaseWithFactory):
 
     def test_getTermByToken(self):
         # Tokens are case insentive because the product name is lowercase.
-        term = self.vocabulary.getTermByToken('BedBUGs')
+        term = self.vocabulary.getTermByToken("BedBUGs")
         self.assertEqual(self.product, term.value)
 
     def test_getTermByToken_LookupError(self):
         # getTermByToken() raises a LookupError when no match is found.
         self.assertRaises(
-            LookupError,
-            self.vocabulary.getTermByToken, 'does-notexist')
+            LookupError, self.vocabulary.getTermByToken, "does-notexist"
+        )
 
     def test_search_in_any_case(self):
         # Search is case insensitive and uses stem rules.
-        result = self.vocabulary.search('BEDBUG')
+        result = self.vocabulary.search("BEDBUG")
         self.assertEqual([self.product], list(result))
 
     def test_order_by_displayname(self):
         # Results are ordered by displayname.
         z_product = self.factory.makeProduct(
-            name='mule', displayname='Bed zebra')
+            name="mule", displayname="Bed zebra"
+        )
         a_product = self.factory.makeProduct(
-            name='orange', displayname='Bed apple')
-        result = self.vocabulary.search('bed')
-        self.assertEqual(
-            [a_product, z_product, self.product], list(result))
+            name="orange", displayname="Bed apple"
+        )
+        result = self.vocabulary.search("bed")
+        self.assertEqual([a_product, z_product, self.product], list(result))
 
     def test_order_by_relevance(self):
         # When the flag is enabled, the most relevant result is first.
         bar_product = self.factory.makeProduct(
-            name='foo-bar', displayname='Foo bar', summary='quux')
+            name="foo-bar", displayname="Foo bar", summary="quux"
+        )
         quux_product = self.factory.makeProduct(
-            name='foo-quux', displayname='Foo quux')
-        result = self.vocabulary.search('quux')
-        self.assertEqual(
-            [quux_product, bar_product], list(result))
+            name="foo-quux", displayname="Foo quux"
+        )
+        result = self.vocabulary.search("quux")
+        self.assertEqual([quux_product, bar_product], list(result))
 
     def test_search_with_or_expression(self):
         # Searches for either of two or more names are possible.
         blah_product = self.factory.makeProduct(
-            name='blah', displayname='Blah', summary='Blah blather')
-        baz_product = self.factory.makeProduct(
-            name='baz', displayname='Baz')
-        result = self.vocabulary.search('blah OR baz')
-        self.assertEqual(
-            [blah_product, baz_product], list(result))
+            name="blah", displayname="Blah", summary="Blah blather"
+        )
+        baz_product = self.factory.makeProduct(name="baz", displayname="Baz")
+        result = self.vocabulary.search("blah OR baz")
+        self.assertEqual([blah_product, baz_product], list(result))
 
     def test_exact_match_is_first(self):
         # When the flag is enabled, an exact name match always wins.
         the_quux_product = self.factory.makeProduct(
-            name='the-quux', displayname='The quux')
+            name="the-quux", displayname="The quux"
+        )
         quux_product = self.factory.makeProduct(
-            name='quux', displayname='The quux')
-        result = self.vocabulary.search('quux')
-        self.assertEqual(
-            [quux_product, the_quux_product], list(result))
+            name="quux", displayname="The quux"
+        )
+        result = self.vocabulary.search("quux")
+        self.assertEqual([quux_product, the_quux_product], list(result))
 
     def test_inactive_products_are_excluded(self):
         # Inactive products are not in the vocabulary.
-        with celebrity_logged_in('registry_experts'):
+        with celebrity_logged_in("registry_experts"):
             self.product.active = False
-        result = self.vocabulary.search('bedbugs')
+        result = self.vocabulary.search("bedbugs")
         self.assertEqual([], list(result))
 
     def test_private_products(self):
         # Embargoed and proprietary products are only returned if
         # the current user can see them.
-        public_product = self.factory.makeProduct('quux-public')
+        public_product = self.factory.makeProduct("quux-public")
         proprietary_owner = self.factory.makePerson()
         proprietary_product = self.factory.makeProduct(
-            name='quux-proprietary', owner=proprietary_owner,
-            information_type=InformationType.PROPRIETARY)
+            name="quux-proprietary",
+            owner=proprietary_owner,
+            information_type=InformationType.PROPRIETARY,
+        )
 
         # Anonymous users see only the public product.
         with person_logged_in(ANONYMOUS):
-            result = self.vocabulary.search('quux')
+            result = self.vocabulary.search("quux")
             self.assertEqual([public_product], list(result))
 
         # Ordinary logged in users see only the public product.
         user = self.factory.makePerson()
         with person_logged_in(user):
-            result = self.vocabulary.search('quux')
+            result = self.vocabulary.search("quux")
             self.assertEqual([public_product], list(result))
 
         # People with grants on a private product can see this product.
         with person_logged_in(proprietary_owner):
-            getUtility(IService, 'sharing').sharePillarInformation(
-                proprietary_product, user, proprietary_owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+            getUtility(IService, "sharing").sharePillarInformation(
+                proprietary_product,
+                user,
+                proprietary_owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
         with person_logged_in(user):
-            result = self.vocabulary.search('quux')
+            result = self.vocabulary.search("quux")
             self.assertEqual(
-                [proprietary_product, public_product], list(result))
+                [proprietary_product, public_product], list(result)
+            )
 
         # Admins can see all products.
-        with celebrity_logged_in('admin'):
-            result = self.vocabulary.search('quux')
+        with celebrity_logged_in("admin"):
+            result = self.vocabulary.search("quux")
             self.assertEqual(
-                [proprietary_product, public_product], list(result))
+                [proprietary_product, public_product], list(result)
+            )

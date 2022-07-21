@@ -4,15 +4,15 @@
 """Interfaces for querying OOPS references."""
 
 __all__ = [
-    'IHasOOPSReferences',
-    ]
+    "IHasOOPSReferences",
+]
 
 
 from lazr.restful.declarations import (
     export_read_operation,
     operation_for_version,
     operation_parameters,
-    )
+)
 from zope.interface import Interface
 from zope.schema import Datetime
 
@@ -25,9 +25,9 @@ class IHasOOPSReferences(Interface):
     @operation_parameters(
         start_date=Datetime(title=_("Modified after date")),
         end_date=Datetime(title=_("Modified before date")),
-        )
+    )
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def findReferencedOOPS(start_date, end_date):
         r"""Find OOPS reports between start_date and end_date.
 

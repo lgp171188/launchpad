@@ -9,24 +9,20 @@ import logging
 import responses
 
 from lp.registry.scripts.productreleasefinder.walker import (
-    combine_url,
     FTPWalker,
     HTTPWalker,
     WalkerBase,
     WalkerError,
-    )
+    combine_url,
+)
 from lp.services.timeout import (
     get_default_timeout_function,
     set_default_timeout_function,
-    )
-from lp.testing import (
-    reset_logging,
-    TestCase,
-    )
+)
+from lp.testing import TestCase, reset_logging
 
 
 class WalkerBase_Logging(TestCase):
-
     def testCreatesDefaultLogger(self):
         """WalkerBase creates a default logger."""
         w = WalkerBase("/")
@@ -40,7 +36,6 @@ class WalkerBase_Logging(TestCase):
 
 
 class WalkerBase_Base(TestCase):
-
     def testSetsBase(self):
         """WalkerBase sets the base property."""
         w = WalkerBase("ftp://localhost/")
@@ -152,11 +147,11 @@ class WalkerBase_walk(TestCase):
         """Verify that a UnicodeEncodeError is logged."""
 
         class TestWalker(WalkerBase):
-
             def list(self, sub_dir):
                 # Force the walker to handle an exception.
                 raise UnicodeEncodeError(
-                    'utf-8', 'source text', 0, 1, 'reason')
+                    "utf-8", "source text", 0, 1, "reason"
+                )
 
             def open(self):
                 pass
@@ -169,17 +164,17 @@ class WalkerBase_walk(TestCase):
         self.addCleanup(logger.setLevel, logger.level)
         logger.setLevel(logging.DEBUG)
         logger.addHandler(logging.StreamHandler(log_output))
-        walker = TestWalker('http://example.org/foo', logger)
+        walker = TestWalker("http://example.org/foo", logger)
         list(walker)
         self.assertEqual(
             "Unicode error parsing http://example.org/foo page '/foo/'\n",
-            log_output.getvalue())
+            log_output.getvalue(),
+        )
 
     def test_walk_open_fail(self):
         # The walker handles an exception raised during open().
 
         class TestWalker(WalkerBase):
-
             def list(self, sub_dir):
                 pass
 
@@ -194,16 +189,16 @@ class WalkerBase_walk(TestCase):
         self.addCleanup(logger.setLevel, logger.level)
         logger.setLevel(logging.DEBUG)
         logger.addHandler(logging.StreamHandler(log_output))
-        walker = TestWalker('ftp://example.org/foo', logger)
+        walker = TestWalker("ftp://example.org/foo", logger)
         list(walker)
         self.assertEqual(
             "Could not connect to ftp://example.org/foo\n"
             "Failure: Test failure.\n",
-            log_output.getvalue())
+            log_output.getvalue(),
+        )
 
 
 class FTPWalker_Base(TestCase):
-
     def testFtpScheme(self):
         """FTPWalker works when initialized with an ftp-scheme URL."""
         w = FTPWalker("ftp://localhost/")
@@ -230,7 +225,6 @@ class FTPWalker_Base(TestCase):
 
 
 class HTTPWalker_Base(TestCase):
-
     def testHttpScheme(self):
         """HTTPWalker works when initialized with an http-scheme URL."""
         w = HTTPWalker("http://localhost/")
@@ -252,19 +246,19 @@ class HTTPWalker_Base(TestCase):
 
 
 class HTTPWalker_ListDir(TestCase):
-
     def setUp(self):
         super().setUp()
         self.addCleanup(reset_logging)
         original_timeout_function = get_default_timeout_function()
         set_default_timeout_function(lambda: 60.0)
         self.addCleanup(
-            set_default_timeout_function, original_timeout_function)
+            set_default_timeout_function, original_timeout_function
+        )
 
     @responses.activate
     def testApacheListing(self):
         # Test that list() handles a standard Apache dir listing.
-        content = '''
+        content = """
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
 <html>
  <head>
@@ -282,26 +276,26 @@ class HTTPWalker_ListDir(TestCase):
 
 <address>Apache/2.2.3 (Unix) Server at <a href="mailto:ftp-adm@acc.umu.se">ftp.acc.umu.se</a> Port 80</address>
 </body></html>
-        '''  # noqa: E501
-        listing_url = 'http://ftp.gnome.org/pub/GNOME/sources/gnome-gpg/0.5/'
-        responses.add('GET', listing_url, body=content)
+        """  # noqa: E501
+        listing_url = "http://ftp.gnome.org/pub/GNOME/sources/gnome-gpg/0.5/"
+        responses.add("GET", listing_url, body=content)
         expected_filenames = [
-            'LATEST-IS-0.5.0',
-            'gnome-gpg-0.5.0.md5sum',
-            'gnome-gpg-0.5.0.tar.bz2',
-            'gnome-gpg-0.5.0.tar.gz',
-            ]
+            "LATEST-IS-0.5.0",
+            "gnome-gpg-0.5.0.md5sum",
+            "gnome-gpg-0.5.0.tar.bz2",
+            "gnome-gpg-0.5.0.tar.gz",
+        ]
         for filename in expected_filenames:
-            responses.add('HEAD', listing_url + filename)
+            responses.add("HEAD", listing_url + filename)
         walker = HTTPWalker(listing_url, logging.getLogger())
-        dirnames, filenames = walker.list('/pub/GNOME/sources/gnome-gpg/0.5/')
+        dirnames, filenames = walker.list("/pub/GNOME/sources/gnome-gpg/0.5/")
         self.assertEqual(dirnames, [])
         self.assertEqual(filenames, expected_filenames)
 
     @responses.activate
     def testSquidFtpListing(self):
         # Test that a Squid FTP listing can be parsed.
-        content = '''
+        content = """
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <!-- HTML listing generated by Squid 2.5.STABLE12 -->
 <!-- Wed, 06 Sep 2006 11:04:02 GMT -->
@@ -323,21 +317,26 @@ FTP Directory: <A HREF="/">ftp://ftp.gnome.org</A>/<A HREF="/pub/">pub</A>/<A HR
 <ADDRESS>
 Generated Wed, 06 Sep 2006 11:04:02 GMT by squid (squid/2.5.STABLE12)
 </ADDRESS></BODY></HTML>
-        '''  # noqa: E501
-        listing_url = 'ftp://ftp.gnome.org/pub/GNOME/sources/gnome-gpg/0.5/'
-        responses.add('GET', listing_url, body=content)
+        """  # noqa: E501
+        listing_url = "ftp://ftp.gnome.org/pub/GNOME/sources/gnome-gpg/0.5/"
+        responses.add("GET", listing_url, body=content)
         walker = HTTPWalker(listing_url, logging.getLogger())
-        dirnames, filenames = walker.list('/pub/GNOME/sources/gnome-gpg/0.5/')
+        dirnames, filenames = walker.list("/pub/GNOME/sources/gnome-gpg/0.5/")
         self.assertEqual(dirnames, [])
-        self.assertEqual(filenames, ['LATEST-IS-0.5.0',
-                                     'gnome-gpg-0.5.0.md5sum',
-                                     'gnome-gpg-0.5.0.tar.bz2',
-                                     'gnome-gpg-0.5.0.tar.gz'])
+        self.assertEqual(
+            filenames,
+            [
+                "LATEST-IS-0.5.0",
+                "gnome-gpg-0.5.0.md5sum",
+                "gnome-gpg-0.5.0.tar.bz2",
+                "gnome-gpg-0.5.0.tar.gz",
+            ],
+        )
 
     @responses.activate
     def testNonAsciiListing(self):
         # Test that list() handles non-ASCII output.
-        content = b'''
+        content = b"""
         <html>
           <head>
             <title>Listing</title>
@@ -359,15 +358,15 @@ Generated Wed, 06 Sep 2006 11:04:02 GMT by squid (squid/2.5.STABLE12)
           <a href="file1">file 1</a>
           </pre>
         </html>
-        '''
-        listing_url = 'http://example.com/foo/'
-        responses.add('GET', listing_url, body=content)
-        expected_filenames = ['file1', 'file2', 'file3', 'file99']
+        """
+        listing_url = "http://example.com/foo/"
+        responses.add("GET", listing_url, body=content)
+        expected_filenames = ["file1", "file2", "file3", "file99"]
         for filename in expected_filenames:
-            responses.add('HEAD', listing_url + filename)
+            responses.add("HEAD", listing_url + filename)
         walker = HTTPWalker(listing_url, logging.getLogger())
-        dirnames, filenames = walker.list('/foo/')
-        self.assertEqual(dirnames, ['subdir1/', 'subdir2/', 'subdir3/'])
+        dirnames, filenames = walker.list("/foo/")
+        self.assertEqual(dirnames, ["subdir1/", "subdir2/", "subdir3/"])
         self.assertEqual(filenames, expected_filenames)
 
     @responses.activate
@@ -377,7 +376,7 @@ Generated Wed, 06 Sep 2006 11:04:02 GMT by squid (squid/2.5.STABLE12)
         # We expect the returned directory and file names to only
         # include those links http://example.com/foo/ even in the
         # presence of "." and ".." path segments.
-        content = '''
+        content = """
         <html>
           <head>
             <title>Listing</title>
@@ -392,20 +391,20 @@ Generated Wed, 06 Sep 2006 11:04:02 GMT by squid (squid/2.5.STABLE12)
           <a href="dir/.">A subdirectory</a>
           </pre>
         </html>
-        '''
-        listing_url = 'http://example.com/foo/'
-        responses.add('GET', listing_url, body=content)
-        responses.add('HEAD', listing_url + 'file2')
+        """
+        listing_url = "http://example.com/foo/"
+        responses.add("GET", listing_url, body=content)
+        responses.add("HEAD", listing_url + "file2")
         walker = HTTPWalker(listing_url, logging.getLogger())
-        dirnames, filenames = walker.list('/foo/')
-        self.assertEqual(dirnames, ['dir/'])
-        self.assertEqual(filenames, ['file2'])
+        dirnames, filenames = walker.list("/foo/")
+        self.assertEqual(dirnames, ["dir/"])
+        self.assertEqual(filenames, ["file2"])
 
     @responses.activate
     def testNamedAnchors(self):
         # Test that the directory listing parser code handles named anchors.
         # These are <a> tags without an href attribute.
-        content = '''
+        content = """
         <html>
           <head>
             <title>Listing</title>
@@ -418,29 +417,28 @@ Generated Wed, 06 Sep 2006 11:04:02 GMT by squid (squid/2.5.STABLE12)
           <a href="#top">Go to top</a>
           </pre>
         </html>
-        '''
-        listing_url = 'http://example.com/foo/'
-        responses.add('GET', listing_url, body=content)
-        responses.add('HEAD', listing_url + 'file1')
+        """
+        listing_url = "http://example.com/foo/"
+        responses.add("GET", listing_url, body=content)
+        responses.add("HEAD", listing_url + "file1")
         walker = HTTPWalker(listing_url, logging.getLogger())
-        dirnames, filenames = walker.list('/foo/')
-        self.assertEqual(dirnames, ['dir1/'])
-        self.assertEqual(filenames, ['file1'])
+        dirnames, filenames = walker.list("/foo/")
+        self.assertEqual(dirnames, ["dir1/"])
+        self.assertEqual(filenames, ["file1"])
 
     @responses.activate
     def testGarbageListing(self):
         # Make sure that garbage doesn't trip up the dir lister.
-        content = b'\x01\x02\x03\x00\xff\xf2\xablkjsdflkjsfkljfds'
-        listing_url = 'http://example.com/foo/'
-        responses.add('GET', listing_url, body=content)
+        content = b"\x01\x02\x03\x00\xff\xf2\xablkjsdflkjsfkljfds"
+        listing_url = "http://example.com/foo/"
+        responses.add("GET", listing_url, body=content)
         walker = HTTPWalker(listing_url, logging.getLogger())
-        dirnames, filenames = walker.list('/foo/')
+        dirnames, filenames = walker.list("/foo/")
         self.assertEqual(dirnames, [])
         self.assertEqual(filenames, [])
 
 
 class HTTPWalker_IsDirectory(TestCase):
-
     def tearDown(self):
         reset_logging()
         super().tearDown()
@@ -451,22 +449,24 @@ class HTTPWalker_IsDirectory(TestCase):
         test = self
 
         class TestHTTPWalker(HTTPWalker):
-
             def request(self, method, path):
-                test.fail('%s was requested with method %s' % (path, method))
+                test.fail("%s was requested with method %s" % (path, method))
 
         logging.basicConfig(level=logging.CRITICAL)
-        walker = TestHTTPWalker('ftp://ftp.gnome.org/', logging.getLogger())
+        walker = TestHTTPWalker("ftp://ftp.gnome.org/", logging.getLogger())
 
-        self.assertEqual(walker.isDirectory('/foo/'), True)
-        self.assertEqual(walker.isDirectory('/foo'), False)
+        self.assertEqual(walker.isDirectory("/foo/"), True)
+        self.assertEqual(walker.isDirectory("/foo"), False)
 
 
 class Walker_CombineUrl(TestCase):
-
     def testConstructsUrl(self):
         """combine_url constructs the URL correctly."""
-        self.assertEqual(combine_url("file:///base", "/subdir/", "file"),
-                         "file:///subdir/file")
-        self.assertEqual(combine_url("file:///base", "/subdir", "file"),
-                         "file:///subdir/file")
+        self.assertEqual(
+            combine_url("file:///base", "/subdir/", "file"),
+            "file:///subdir/file",
+        )
+        self.assertEqual(
+            combine_url("file:///base", "/subdir", "file"),
+            "file:///subdir/file",
+        )

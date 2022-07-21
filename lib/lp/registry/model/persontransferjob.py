@@ -4,41 +4,27 @@
 """Job classes related to PersonTransferJob."""
 
 __all__ = [
-    'MembershipNotificationJob',
-    'PersonCloseAccountJob',
-    'PersonTransferJob',
-    ]
+    "MembershipNotificationJob",
+    "PersonCloseAccountJob",
+    "PersonTransferJob",
+]
 
 from datetime import datetime
 
-from lazr.delegates import delegate_to
 import pytz
 import simplejson
 import six
-from storm.expr import (
-    And,
-    Or,
-    )
-from storm.locals import (
-    Int,
-    Reference,
-    Unicode,
-    )
 import transaction
+from lazr.delegates import delegate_to
+from storm.expr import And, Or
+from storm.locals import Int, Reference, Unicode
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 
 from lp.app.errors import TeamAccountNotClosable
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.enums import PersonTransferJobType
-from lp.registry.interfaces.person import (
-    IPerson,
-    IPersonSet,
-    ITeam,
-    )
+from lp.registry.interfaces.person import IPerson, IPersonSet, ITeam
 from lp.registry.interfaces.persontransferjob import (
     IExpiringMembershipNotificationJob,
     IExpiringMembershipNotificationJobSource,
@@ -58,7 +44,7 @@ from lp.registry.interfaces.persontransferjob import (
     ITeamInvitationNotificationJobSource,
     ITeamJoinNotificationJob,
     ITeamJoinNotificationJobSource,
-    )
+)
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
 from lp.registry.mail.teammembership import TeamMembershipMailer
 from lp.registry.model.person import Person
@@ -67,15 +53,9 @@ from lp.registry.scripts.closeaccount import close_account
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.job.model.job import (
-    EnumeratedSubclass,
-    Job,
-    )
+from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.mail.sendmail import format_address_for_person
 from lp.services.scripts import log
@@ -85,29 +65,30 @@ from lp.services.scripts import log
 class PersonTransferJob(StormBase):
     """Base class for team membership and person merge jobs."""
 
-    __storm_table__ = 'PersonTransferJob'
+    __storm_table__ = "PersonTransferJob"
 
     id = Int(primary=True)
 
-    job_id = Int(name='job')
+    job_id = Int(name="job")
     job = Reference(job_id, Job.id)
 
-    major_person_id = Int(name='major_person')
+    major_person_id = Int(name="major_person")
     major_person = Reference(major_person_id, Person.id)
 
-    minor_person_id = Int(name='minor_person')
+    minor_person_id = Int(name="minor_person")
     minor_person = Reference(minor_person_id, Person.id)
 
     job_type = DBEnum(enum=PersonTransferJobType, allow_none=False)
 
-    _json_data = Unicode('json_data')
+    _json_data = Unicode("json_data")
 
     @property
     def metadata(self):
         return simplejson.loads(self._json_data)
 
-    def __init__(self, minor_person, major_person, job_type, metadata,
-                 requester=None):
+    def __init__(
+        self, minor_person, major_person, job_type, metadata, requester=None
+    ):
         """Constructor.
 
         :param minor_person: The person or team being added to or removed
@@ -152,17 +133,20 @@ class PersonTransferJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
     def create(cls, minor_person, major_person, metadata, requester=None):
         """See `IPersonTransferJob`."""
         if not IPerson.providedBy(minor_person):
-            raise TypeError("minor_person must be IPerson: %s"
-                            % repr(minor_person))
+            raise TypeError(
+                "minor_person must be IPerson: %s" % repr(minor_person)
+            )
         if not IPerson.providedBy(major_person):
-            raise TypeError("major_person must be IPerson: %s"
-                            % repr(major_person))
+            raise TypeError(
+                "major_person must be IPerson: %s" % repr(major_person)
+            )
         job = PersonTransferJob(
             minor_person=minor_person,
             major_person=major_person,
             job_type=cls.class_job_type,
             metadata=metadata,
-            requester=requester)
+            requester=requester,
+        )
         derived = cls(job)
         derived.celeryRunOnCommit()
         return derived
@@ -173,20 +157,25 @@ class PersonTransferJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
         store = IMasterStore(PersonTransferJob)
         jobs = store.find(
             PersonTransferJob,
-            And(PersonTransferJob.job_type == cls.class_job_type,
-                PersonTransferJob.job_id.is_in(Job.ready_jobs)))
+            And(
+                PersonTransferJob.job_type == cls.class_job_type,
+                PersonTransferJob.job_id.is_in(Job.ready_jobs),
+            ),
+        )
         return (cls(job) for job in jobs)
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
         vars = BaseRunnableJob.getOopsVars(self)
-        vars.extend([
-            ('major_person_name', self.context.major_person.name),
-            ('minor_person_name', self.context.minor_person.name),
-            ])
+        vars.extend(
+            [
+                ("major_person_name", self.context.major_person.name),
+                ("minor_person_name", self.context.minor_person.name),
+            ]
+        )
         return vars
 
-    _time_format = '%Y-%m-%d %H:%M:%S.%f'
+    _time_format = "%Y-%m-%d %H:%M:%S.%f"
 
     @classmethod
     def _serialiseDateTime(cls, dt):
@@ -208,26 +197,38 @@ class MembershipNotificationJob(PersonTransferJobDerived):
     config = config.IMembershipNotificationJobSource
 
     @classmethod
-    def create(cls, member, team, reviewer, old_status, new_status,
-               last_change_comment=None):
+    def create(
+        cls,
+        member,
+        team,
+        reviewer,
+        old_status,
+        new_status,
+        last_change_comment=None,
+    ):
         if not ITeam.providedBy(team):
-            raise TypeError('team must be ITeam: %s' % repr(team))
+            raise TypeError("team must be ITeam: %s" % repr(team))
         if not IPerson.providedBy(reviewer):
-            raise TypeError('reviewer must be IPerson: %s' % repr(reviewer))
+            raise TypeError("reviewer must be IPerson: %s" % repr(reviewer))
         if old_status not in TeamMembershipStatus:
-            raise TypeError("old_status must be TeamMembershipStatus: %s"
-                            % repr(old_status))
+            raise TypeError(
+                "old_status must be TeamMembershipStatus: %s"
+                % repr(old_status)
+            )
         if new_status not in TeamMembershipStatus:
-            raise TypeError("new_status must be TeamMembershipStatus: %s"
-                            % repr(new_status))
+            raise TypeError(
+                "new_status must be TeamMembershipStatus: %s"
+                % repr(new_status)
+            )
         metadata = {
-            'reviewer': reviewer.id,
-            'old_status': old_status.name,
-            'new_status': new_status.name,
-            'last_change_comment': last_change_comment,
-            }
+            "reviewer": reviewer.id,
+            "old_status": old_status.name,
+            "new_status": new_status.name,
+            "last_change_comment": last_change_comment,
+        }
         return super().create(
-            minor_person=member, major_person=team, metadata=metadata)
+            minor_person=member, major_person=team, metadata=metadata
+        )
 
     @property
     def member(self):
@@ -239,32 +240,38 @@ class MembershipNotificationJob(PersonTransferJobDerived):
 
     @property
     def reviewer(self):
-        return getUtility(IPersonSet).get(self.metadata['reviewer'])
+        return getUtility(IPersonSet).get(self.metadata["reviewer"])
 
     @property
     def old_status(self):
-        return TeamMembershipStatus.items[self.metadata['old_status']]
+        return TeamMembershipStatus.items[self.metadata["old_status"]]
 
     @property
     def new_status(self):
-        return TeamMembershipStatus.items[self.metadata['new_status']]
+        return TeamMembershipStatus.items[self.metadata["new_status"]]
 
     @property
     def last_change_comment(self):
-        return self.metadata['last_change_comment']
+        return self.metadata["last_change_comment"]
 
     def run(self):
         """See `IMembershipNotificationJob`."""
         TeamMembershipMailer.forMembershipStatusChange(
-            self.member, self.team, self.reviewer, self.old_status,
-            self.new_status, self.last_change_comment).sendAll()
-        log.debug('MembershipNotificationJob sent email')
+            self.member,
+            self.team,
+            self.reviewer,
+            self.old_status,
+            self.new_status,
+            self.last_change_comment,
+        ).sendAll()
+        log.debug("MembershipNotificationJob sent email")
 
     def __repr__(self):
         return (
             "<{self.__class__.__name__} about "
             "~{self.minor_person.name} in ~{self.major_person.name}; "
-            "status={self.job.status}>").format(self=self)
+            "status={self.job.status}>"
+        ).format(self=self)
 
 
 @implementer(IPersonMergeJob)
@@ -277,24 +284,29 @@ class PersonMergeJob(PersonTransferJobDerived):
     config = config.IPersonMergeJobSource
 
     @classmethod
-    def create(cls, from_person, to_person, requester, reviewer=None,
-               delete=False):
+    def create(
+        cls, from_person, to_person, requester, reviewer=None, delete=False
+    ):
         """See `IPersonMergeJobSource`."""
-        if (from_person.isMergePending() or
-            (not delete and to_person.isMergePending())):
+        if from_person.isMergePending() or (
+            not delete and to_person.isMergePending()
+        ):
             return None
         if from_person.is_team:
-            metadata = {'reviewer': reviewer.id}
+            metadata = {"reviewer": reviewer.id}
         else:
             metadata = {}
-        metadata['delete'] = bool(delete)
-        if metadata['delete']:
+        metadata["delete"] = bool(delete)
+        if metadata["delete"]:
             # Ideally not needed, but the DB column is not-null at the moment
             # and this minor bit of friction isn't worth changing that over.
             to_person = getUtility(ILaunchpadCelebrities).registry_experts
         return super().create(
-            minor_person=from_person, major_person=to_person,
-            metadata=metadata, requester=requester)
+            minor_person=from_person,
+            major_person=to_person,
+            metadata=metadata,
+            requester=requester,
+        )
 
     @classmethod
     def find(cls, from_person=None, to_person=None, any_person=False):
@@ -302,20 +314,21 @@ class PersonMergeJob(PersonTransferJobDerived):
         conditions = [
             PersonTransferJob.job_type == cls.class_job_type,
             PersonTransferJob.job_id == Job.id,
-            Job._status.is_in(Job.PENDING_STATUSES)]
+            Job._status.is_in(Job.PENDING_STATUSES),
+        ]
         arg_conditions = []
         if from_person is not None:
             arg_conditions.append(
-                PersonTransferJob.minor_person == from_person)
+                PersonTransferJob.minor_person == from_person
+            )
         if to_person is not None:
-            arg_conditions.append(
-                PersonTransferJob.major_person == to_person)
+            arg_conditions.append(PersonTransferJob.major_person == to_person)
         if any_person and from_person is not None and to_person is not None:
             arg_conditions = [Or(*arg_conditions)]
         conditions.extend(arg_conditions)
         return DecoratedResultSet(
-            IStore(PersonTransferJob).find(
-                PersonTransferJob, *conditions), cls)
+            IStore(PersonTransferJob).find(PersonTransferJob, *conditions), cls
+        )
 
     @property
     def from_person(self):
@@ -329,8 +342,8 @@ class PersonMergeJob(PersonTransferJobDerived):
 
     @property
     def reviewer(self):
-        if 'reviewer' in self.metadata:
-            return getUtility(IPersonSet).get(self.metadata['reviewer'])
+        if "reviewer" in self.metadata:
+            return getUtility(IPersonSet).get(self.metadata["reviewer"])
         else:
             return None
 
@@ -347,37 +360,48 @@ class PersonMergeJob(PersonTransferJobDerived):
         from_person_name = self.from_person.name
         to_person_name = self.to_person.name
 
-        if self.metadata.get('delete', False):
+        if self.metadata.get("delete", False):
             log.debug(
-                "%s is about to delete ~%s", self.log_name,
-                from_person_name)
+                "%s is about to delete ~%s", self.log_name, from_person_name
+            )
             merge_people(
                 from_person=self.from_person,
                 to_person=getUtility(ILaunchpadCelebrities).registry_experts,
-                reviewer=self.reviewer, delete=True)
-            log.debug(
-                "%s has deleted ~%s", self.log_name,
-                from_person_name)
+                reviewer=self.reviewer,
+                delete=True,
+            )
+            log.debug("%s has deleted ~%s", self.log_name, from_person_name)
         else:
             log.debug(
-                "%s is about to merge ~%s into ~%s", self.log_name,
-                from_person_name, to_person_name)
+                "%s is about to merge ~%s into ~%s",
+                self.log_name,
+                from_person_name,
+                to_person_name,
+            )
             merge_people(
-                from_person=self.from_person, to_person=self.to_person,
-                reviewer=self.reviewer)
+                from_person=self.from_person,
+                to_person=self.to_person,
+                reviewer=self.reviewer,
+            )
             log.debug(
-                "%s has merged ~%s into ~%s", self.log_name,
-                from_person_name, to_person_name)
+                "%s has merged ~%s into ~%s",
+                self.log_name,
+                from_person_name,
+                to_person_name,
+            )
 
     def __repr__(self):
         return (
             "<{self.__class__.__name__} to merge "
             "~{self.from_person.name} into ~{self.to_person.name}; "
-            "status={self.job.status}>").format(self=self)
+            "status={self.job.status}>"
+        ).format(self=self)
 
     def getOperationDescription(self):
-        return ('merging ~%s into ~%s' %
-                (self.from_person.name, self.to_person.name))
+        return "merging ~%s into ~%s" % (
+            self.from_person.name,
+            self.to_person.name,
+        )
 
 
 @implementer(IPersonDeactivateJob)
@@ -395,7 +419,8 @@ class PersonDeactivateJob(PersonTransferJobDerived):
         # Minor person has to be not null, so use the janitor.
         janitor = getUtility(ILaunchpadCelebrities).janitor
         return super().create(
-            minor_person=janitor, major_person=person, metadata={})
+            minor_person=janitor, major_person=person, metadata={}
+        )
 
     @classmethod
     def find(cls, person=None):
@@ -403,14 +428,15 @@ class PersonDeactivateJob(PersonTransferJobDerived):
         conditions = [
             PersonTransferJob.job_type == cls.class_job_type,
             PersonTransferJob.job_id == Job.id,
-            Job._status.is_in(Job.PENDING_STATUSES)]
+            Job._status.is_in(Job.PENDING_STATUSES),
+        ]
         arg_conditions = []
         if person:
             arg_conditions.append(PersonTransferJob.major_person == person)
         conditions.extend(arg_conditions)
         return DecoratedResultSet(
-            IStore(PersonTransferJob).find(
-                PersonTransferJob, *conditions), cls)
+            IStore(PersonTransferJob).find(PersonTransferJob, *conditions), cls
+        )
 
     @property
     def person(self):
@@ -428,17 +454,17 @@ class PersonDeactivateJob(PersonTransferJobDerived):
     def run(self):
         """Perform the merge."""
         person_name = self.person.name
-        log.debug('about to deactivate ~%s', person_name)
+        log.debug("about to deactivate ~%s", person_name)
         self.person.deactivate(validate=False, pre_deactivate=False)
-        log.debug('done deactivating ~%s', person_name)
+        log.debug("done deactivating ~%s", person_name)
 
     def __repr__(self):
         return (
-            "<{self.__class__.__name__} to deactivate "
-            "~{self.person.name}").format(self=self)
+            "<{self.__class__.__name__} to deactivate " "~{self.person.name}"
+        ).format(self=self)
 
     def getOperationDescription(self):
-        return 'deactivating ~%s' % self.person.name
+        return "deactivating ~%s" % self.person.name
 
 
 @implementer(IPersonCloseAccountJob)
@@ -460,7 +486,9 @@ class PersonCloseAccountJob(PersonTransferJobDerived):
 
         return super().create(
             minor_person=getUtility(ILaunchpadCelebrities).janitor,
-            major_person=person, metadata={})
+            major_person=person,
+            metadata={},
+        )
 
     @classmethod
     def find(cls, person=None):
@@ -468,14 +496,15 @@ class PersonCloseAccountJob(PersonTransferJobDerived):
         conditions = [
             PersonTransferJob.job_type == cls.class_job_type,
             PersonTransferJob.job_id == Job.id,
-            Job._status.is_in(Job.PENDING_STATUSES)]
+            Job._status.is_in(Job.PENDING_STATUSES),
+        ]
         arg_conditions = []
         if person:
             arg_conditions.append(PersonTransferJob.major_person == person)
         conditions.extend(arg_conditions)
         return DecoratedResultSet(
-            IStore(PersonTransferJob).find(
-                PersonTransferJob, *conditions), cls)
+            IStore(PersonTransferJob).find(PersonTransferJob, *conditions), cls
+        )
 
     @property
     def person(self):
@@ -497,17 +526,20 @@ class PersonCloseAccountJob(PersonTransferJobDerived):
             transaction.commit()
         except Exception:
             log.error(
-                "%s Account closure failed for user %s", self.log_name,
-                self.person.name)
+                "%s Account closure failed for user %s",
+                self.log_name,
+                self.person.name,
+            )
             transaction.abort()
 
     def __repr__(self):
         return (
             "<{self.__class__.__name__} to close account "
-            "~{self.person.name}").format(self=self)
+            "~{self.person.name}"
+        ).format(self=self)
 
     def getOperationDescription(self):
-        return 'closing account for ~%s' % self.person.name
+        return "closing account for ~%s" % self.person.name
 
 
 @implementer(ITeamInvitationNotificationJob)
@@ -522,9 +554,10 @@ class TeamInvitationNotificationJob(PersonTransferJobDerived):
     @classmethod
     def create(cls, member, team):
         if not ITeam.providedBy(team):
-            raise TypeError('team must be ITeam: %s' % repr(team))
+            raise TypeError("team must be ITeam: %s" % repr(team))
         return super().create(
-            minor_person=member, major_person=team, metadata={})
+            minor_person=member, major_person=team, metadata={}
+        )
 
     @property
     def member(self):
@@ -537,13 +570,15 @@ class TeamInvitationNotificationJob(PersonTransferJobDerived):
     def run(self):
         """See `ITeamInvitationNotificationJob`."""
         TeamMembershipMailer.forInvitationToJoinTeam(
-            self.member, self.team).sendAll()
+            self.member, self.team
+        ).sendAll()
 
     def __repr__(self):
         return (
             "<{self.__class__.__name__} for invitation of "
             "~{self.minor_person.name} to join ~{self.major_person.name}; "
-            "status={self.job.status}>").format(self=self)
+            "status={self.job.status}>"
+        ).format(self=self)
 
 
 @implementer(ITeamJoinNotificationJob)
@@ -558,9 +593,10 @@ class TeamJoinNotificationJob(PersonTransferJobDerived):
     @classmethod
     def create(cls, member, team):
         if not ITeam.providedBy(team):
-            raise TypeError('team must be ITeam: %s' % repr(team))
+            raise TypeError("team must be ITeam: %s" % repr(team))
         return super().create(
-            minor_person=member, major_person=team, metadata={})
+            minor_person=member, major_person=team, metadata={}
+        )
 
     @property
     def member(self):
@@ -578,7 +614,8 @@ class TeamJoinNotificationJob(PersonTransferJobDerived):
         return (
             "<{self.__class__.__name__} for "
             "~{self.minor_person.name} joining ~{self.major_person.name}; "
-            "status={self.job.status}>").format(self=self)
+            "status={self.job.status}>"
+        ).format(self=self)
 
 
 @implementer(IExpiringMembershipNotificationJob)
@@ -593,12 +630,13 @@ class ExpiringMembershipNotificationJob(PersonTransferJobDerived):
     @classmethod
     def create(cls, member, team, dateexpires):
         if not ITeam.providedBy(team):
-            raise TypeError('team must be ITeam: %s' % repr(team))
+            raise TypeError("team must be ITeam: %s" % repr(team))
         metadata = {
-            'dateexpires': cls._serialiseDateTime(dateexpires),
-            }
+            "dateexpires": cls._serialiseDateTime(dateexpires),
+        }
         return super().create(
-            minor_person=member, major_person=team, metadata=metadata)
+            minor_person=member, major_person=team, metadata=metadata
+        )
 
     @property
     def member(self):
@@ -610,18 +648,20 @@ class ExpiringMembershipNotificationJob(PersonTransferJobDerived):
 
     @property
     def dateexpires(self):
-        return self._deserialiseDateTime(self.metadata['dateexpires'])
+        return self._deserialiseDateTime(self.metadata["dateexpires"])
 
     def run(self):
         """See `IExpiringMembershipNotificationJob`."""
         TeamMembershipMailer.forExpiringMembership(
-            self.member, self.team, self.dateexpires).sendAll()
+            self.member, self.team, self.dateexpires
+        ).sendAll()
 
     def __repr__(self):
         return (
             "<{self.__class__.__name__} for upcoming expiry of "
             "~{self.minor_person.name} from ~{self.major_person.name}; "
-            "status={self.job.status}>").format(self=self)
+            "status={self.job.status}>"
+        ).format(self=self)
 
 
 @implementer(ISelfRenewalNotificationJob)
@@ -636,12 +676,13 @@ class SelfRenewalNotificationJob(PersonTransferJobDerived):
     @classmethod
     def create(cls, member, team, dateexpires):
         if not ITeam.providedBy(team):
-            raise TypeError('team must be ITeam: %s' % repr(team))
+            raise TypeError("team must be ITeam: %s" % repr(team))
         metadata = {
-            'dateexpires': cls._serialiseDateTime(dateexpires),
-            }
+            "dateexpires": cls._serialiseDateTime(dateexpires),
+        }
         return super().create(
-            minor_person=member, major_person=team, metadata=metadata)
+            minor_person=member, major_person=team, metadata=metadata
+        )
 
     @property
     def member(self):
@@ -653,15 +694,17 @@ class SelfRenewalNotificationJob(PersonTransferJobDerived):
 
     @property
     def dateexpires(self):
-        return self._deserialiseDateTime(self.metadata['dateexpires'])
+        return self._deserialiseDateTime(self.metadata["dateexpires"])
 
     def run(self):
         """See `ISelfRenewalNotificationJob`."""
         TeamMembershipMailer.forSelfRenewal(
-            self.member, self.team, self.dateexpires).sendAll()
+            self.member, self.team, self.dateexpires
+        ).sendAll()
 
     def __repr__(self):
         return (
             "<{self.__class__.__name__} for self-renewal of "
             "~{self.minor_person.name} in ~{self.major_person.name}; "
-            "status={self.job.status}>").format(self=self)
+            "status={self.job.status}>"
+        ).format(self=self)

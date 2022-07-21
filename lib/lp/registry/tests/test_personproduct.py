@@ -9,10 +9,7 @@ from lp.registry.enums import PersonVisibility
 from lp.registry.model.personproduct import PersonProduct
 from lp.services.webapp.interfaces import IBreadcrumb
 from lp.services.webapp.publisher import canonical_url
-from lp.testing import (
-    TestCaseWithFactory,
-    verifyObject,
-    )
+from lp.testing import TestCaseWithFactory, verifyObject
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -29,8 +26,10 @@ class TestPersonProduct(TestCaseWithFactory):
     def test_canonical_url(self):
         # The canonical_url of a person product is ~person/product.
         pp = self._makePersonProduct()
-        expected = 'http://launchpad.test/~%s/%s' % (
-            pp.person.name, pp.product.name)
+        expected = "http://launchpad.test/~%s/%s" % (
+            pp.person.name,
+            pp.product.name,
+        )
         self.assertEqual(expected, canonical_url(pp))
 
     def test_breadcrumb(self):
@@ -54,7 +53,8 @@ class TestPersonProduct(TestCaseWithFactory):
         # A person product is private if its product is.
         person = self.factory.makePerson()
         product = self.factory.makeProduct(
-            information_type=InformationType.PROPRIETARY)
+            information_type=InformationType.PROPRIETARY
+        )
         pp = PersonProduct(person, product)
         self.assertTrue(pp.private)
 

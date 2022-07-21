@@ -4,8 +4,8 @@
 """Database classes including and related to ProductLicense."""
 
 __all__ = [
-    'ProductLicense',
-    ]
+    "ProductLicense",
+]
 
 
 from zope.interface import implementer
@@ -21,5 +21,5 @@ from lp.services.database.sqlobject import ForeignKey
 class ProductLicense(SQLBase):
     """A product's licence."""
 
-    product = ForeignKey(dbName='product', foreignKey='Product', notNull=True)
-    license = DBEnum(name='license', allow_none=False, enum=License)
+    product = ForeignKey(dbName="product", foreignKey="Product", notNull=True)
+    license = DBEnum(name="license", allow_none=False, enum=License)

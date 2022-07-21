@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'TeamMembershipMailer',
-    ]
+    "TeamMembershipMailer",
+]
 
 from collections import OrderedDict
 from datetime import datetime
@@ -12,20 +12,14 @@ import pytz
 from zope.component import getUtility
 
 from lp.app.browser.tales import DurationFormatterAPI
-from lp.registry.enums import (
-    TeamMembershipPolicy,
-    TeamMembershipRenewalPolicy,
-    )
+from lp.registry.enums import TeamMembershipPolicy, TeamMembershipRenewalPolicy
 from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
     TeamMembershipStatus,
-    )
+)
 from lp.registry.model.person import get_recipients
 from lp.services.config import config
-from lp.services.mail.basemailer import (
-    BaseMailer,
-    RecipientReason,
-    )
+from lp.services.mail.basemailer import BaseMailer, RecipientReason
 from lp.services.mail.helpers import get_email_template
 from lp.services.mail.sendmail import format_address
 from lp.services.webapp.interfaces import ILaunchpadRoot
@@ -34,13 +28,13 @@ from lp.services.webapp.url import urlappend
 
 
 class TeamMembershipRecipientReason(RecipientReason):
-
     @classmethod
     def forMember(cls, member, team, recipient, **kwargs):
         header = cls.makeRationale("Member (%s)" % team.name, member)
         reason = (
             "You received this email because %(lc_entity_is)s the affected "
-            "member.")
+            "member."
+        )
         return cls(member, recipient, header, reason, **kwargs)
 
     @classmethod
@@ -51,7 +45,8 @@ class TeamMembershipRecipientReason(RecipientReason):
         # It's worth having a footer that makes a little more sense, though.
         header = cls.makeRationale("Member (%s)" % team.name, new_member)
         reason = (
-            "You received this email because %(lc_entity_is)s the new member.")
+            "You received this email because %(lc_entity_is)s the new member."
+        )
         return cls(new_member, recipient, header, reason, **kwargs)
 
     @classmethod
@@ -59,7 +54,8 @@ class TeamMembershipRecipientReason(RecipientReason):
         header = cls.makeRationale("Admin (%s)" % team.name, admin)
         reason = (
             "You received this email because %%(lc_entity_is)s an admin of "
-            "the %s team." % team.displayname)
+            "the %s team." % team.displayname
+        )
         return cls(admin, recipient, header, reason, **kwargs)
 
     @classmethod
@@ -67,12 +63,21 @@ class TeamMembershipRecipientReason(RecipientReason):
         header = cls.makeRationale("Owner (%s)" % team.name, owner)
         reason = (
             "You received this email because %%(lc_entity_is)s the owner "
-            "of the %s team." % team.displayname)
+            "of the %s team." % team.displayname
+        )
         return cls(owner, recipient, header, reason, **kwargs)
 
-    def __init__(self, subscriber, recipient, mail_header, reason_template,
-                 subject=None, template_name=None, reply_to=None,
-                 recipient_class=None):
+    def __init__(
+        self,
+        subscriber,
+        recipient,
+        mail_header,
+        reason_template,
+        subject=None,
+        template_name=None,
+        reply_to=None,
+        recipient_class=None,
+    ):
         super().__init__(subscriber, recipient, mail_header, reason_template)
         self.subject = subject
         self.template_name = template_name
@@ -82,7 +87,7 @@ class TeamMembershipRecipientReason(RecipientReason):
 
 class TeamMembershipMailer(BaseMailer):
 
-    app = 'registry'
+    app = "registry"
 
     @classmethod
     def forInvitationToJoinTeam(cls, member, team):
@@ -95,26 +100,37 @@ class TeamMembershipMailer(BaseMailer):
         """
         assert member.is_team
         membership = getUtility(ITeamMembershipSet).getByPersonAndTeam(
-            member, team)
+            member, team
+        )
         assert membership is not None
         recipients = OrderedDict()
         for admin in member.adminmembers:
             for recipient in get_recipients(admin):
                 recipients[recipient] = TeamMembershipRecipientReason.forAdmin(
-                    admin, member, recipient)
+                    admin, member, recipient
+                )
         from_addr = format_address(
-            team.displayname, config.canonical.noreply_from_address)
+            team.displayname, config.canonical.noreply_from_address
+        )
         subject = "Invitation for %s to join" % member.name
         return cls(
-            subject, "membership-invitation.txt", recipients, from_addr,
-            "team-membership-invitation", member, team, membership.proposed_by,
-            membership=membership)
+            subject,
+            "membership-invitation.txt",
+            recipients,
+            from_addr,
+            "team-membership-invitation",
+            member,
+            team,
+            membership.proposed_by,
+            membership=membership,
+        )
 
     @classmethod
     def forTeamJoin(cls, member, team):
         """Create a mailer for notifying about a new member joining a team."""
         membership = getUtility(ITeamMembershipSet).getByPersonAndTeam(
-            member, team)
+            member, team
+        )
         assert membership is not None
         subject = None
         template_name = None
@@ -122,7 +138,9 @@ class TeamMembershipMailer(BaseMailer):
         recipients = OrderedDict()
         reviewer = membership.proposed_by
         if reviewer != member and membership.status in [
-                TeamMembershipStatus.APPROVED, TeamMembershipStatus.ADMIN]:
+            TeamMembershipStatus.APPROVED,
+            TeamMembershipStatus.ADMIN,
+        ]:
             reviewer = membership.reviewed_by
             # Somebody added this person as a member, we better send a
             # notification to the person too.
@@ -133,15 +151,22 @@ class TeamMembershipMailer(BaseMailer):
                 template_name = "new-member-notification.txt"
                 subject = "You have been added to %s" % team.name
             for recipient in get_recipients(member):
-                recipients[recipient] = (
-                    TeamMembershipRecipientReason.forNewMember(
-                        member, team, recipient, subject=subject,
-                        template_name=template_name))
+                recipients[
+                    recipient
+                ] = TeamMembershipRecipientReason.forNewMember(
+                    member,
+                    team,
+                    recipient,
+                    subject=subject,
+                    template_name=template_name,
+                )
         # Open teams do not notify admins about new members.
         if team.membership_policy != TeamMembershipPolicy.OPEN:
             reply_to = None
             if membership.status in [
-                    TeamMembershipStatus.APPROVED, TeamMembershipStatus.ADMIN]:
+                TeamMembershipStatus.APPROVED,
+                TeamMembershipStatus.ADMIN,
+            ]:
                 template_name = "new-member-notification-for-admins.txt"
                 subject = "%s joined %s" % (member.name, team.name)
             elif membership.status == TeamMembershipStatus.PROPOSED:
@@ -152,7 +177,8 @@ class TeamMembershipMailer(BaseMailer):
                 if reviewer != member:
                     reply_to = reviewer.preferredemail.email
                     template_name = (
-                        "pending-membership-approval-for-third-party.txt")
+                        "pending-membership-approval-for-third-party.txt"
+                    )
                 else:
                     reply_to = member.preferredemail.email
                     template_name = "pending-membership-approval.txt"
@@ -160,7 +186,8 @@ class TeamMembershipMailer(BaseMailer):
                 subject = "%s wants to join" % member.name
             else:
                 raise AssertionError(
-                    "Unexpected membership status: %s" % membership.status)
+                    "Unexpected membership status: %s" % membership.status
+                )
             for admin in team.adminmembers:
                 for recipient in get_recipients(admin):
                     # The new member may also be a team admin; don't send
@@ -168,56 +195,84 @@ class TeamMembershipMailer(BaseMailer):
                     if recipient not in recipients:
                         if recipient == team.teamowner:
                             reason_factory = (
-                                TeamMembershipRecipientReason.forOwner)
+                                TeamMembershipRecipientReason.forOwner
+                            )
                         else:
                             reason_factory = (
-                                TeamMembershipRecipientReason.forAdmin)
+                                TeamMembershipRecipientReason.forAdmin
+                            )
                         recipients[recipient] = reason_factory(
-                            admin, team, recipient, subject=subject,
-                            template_name=template_name, reply_to=reply_to)
+                            admin,
+                            team,
+                            recipient,
+                            subject=subject,
+                            template_name=template_name,
+                            reply_to=reply_to,
+                        )
         from_addr = format_address(
-            team.displayname, config.canonical.noreply_from_address)
+            team.displayname, config.canonical.noreply_from_address
+        )
         return cls(
-            subject, template_name, recipients, from_addr, notification_type,
-            member, team, membership.proposed_by, membership=membership)
+            subject,
+            template_name,
+            recipients,
+            from_addr,
+            notification_type,
+            member,
+            team,
+            membership.proposed_by,
+            membership=membership,
+        )
 
     @classmethod
-    def forMembershipStatusChange(cls, member, team, reviewer,
-                                  old_status, new_status, last_change_comment):
+    def forMembershipStatusChange(
+        cls,
+        member,
+        team,
+        reviewer,
+        old_status,
+        new_status,
+        last_change_comment,
+    ):
         """Create a mailer for a membership status change."""
-        template_name = 'membership-statuschange'
-        notification_type = 'team-membership-change'
-        subject = (
-            'Membership change: %(member)s in %(team)s' %
-            {'member': member.name, 'team': team.name})
+        template_name = "membership-statuschange"
+        notification_type = "team-membership-change"
+        subject = "Membership change: %(member)s in %(team)s" % {
+            "member": member.name,
+            "team": team.name,
+        }
         if new_status == TeamMembershipStatus.EXPIRED:
-            template_name = 'membership-expired'
-            notification_type = 'team-membership-expired'
-            subject = '%s expired from team' % member.name
-        elif (new_status == TeamMembershipStatus.APPROVED and
-            old_status != TeamMembershipStatus.ADMIN):
+            template_name = "membership-expired"
+            notification_type = "team-membership-expired"
+            subject = "%s expired from team" % member.name
+        elif (
+            new_status == TeamMembershipStatus.APPROVED
+            and old_status != TeamMembershipStatus.ADMIN
+        ):
             if old_status == TeamMembershipStatus.INVITED:
-                template_name = 'membership-invitation-accepted'
-                notification_type = 'team-membership-invitation-accepted'
-                subject = (
-                    'Invitation to %s accepted by %s' %
-                    (member.name, reviewer.name))
+                template_name = "membership-invitation-accepted"
+                notification_type = "team-membership-invitation-accepted"
+                subject = "Invitation to %s accepted by %s" % (
+                    member.name,
+                    reviewer.name,
+                )
             elif old_status == TeamMembershipStatus.PROPOSED:
-                subject = '%s approved by %s' % (member.name, reviewer.name)
+                subject = "%s approved by %s" % (member.name, reviewer.name)
             else:
-                subject = '%s added by %s' % (member.name, reviewer.name)
+                subject = "%s added by %s" % (member.name, reviewer.name)
         elif new_status == TeamMembershipStatus.INVITATION_DECLINED:
-            template_name = 'membership-invitation-declined'
-            notification_type = 'team-membership-invitation-declined'
-            subject = (
-                'Invitation to %s declined by %s' %
-                (member.name, reviewer.name))
+            template_name = "membership-invitation-declined"
+            notification_type = "team-membership-invitation-declined"
+            subject = "Invitation to %s declined by %s" % (
+                member.name,
+                reviewer.name,
+            )
         elif new_status == TeamMembershipStatus.DEACTIVATED:
-            subject = '%s deactivated by %s' % (member.name, reviewer.name)
+            subject = "%s deactivated by %s" % (member.name, reviewer.name)
         elif new_status == TeamMembershipStatus.ADMIN:
-            subject = '%s made admin by %s' % (member.name, reviewer.name)
+            subject = "%s made admin by %s" % (member.name, reviewer.name)
         elif new_status == TeamMembershipStatus.DECLINED:
-            subject = '%s declined by %s' % (member.name, reviewer.name)
+            subject = "%s declined by %s" % (member.name, reviewer.name)
         else:
             # Use the default template and subject.
             pass
@@ -225,7 +280,9 @@ class TeamMembershipMailer(BaseMailer):
 
         if last_change_comment:
             comment = "\n%s said:\n %s\n" % (
-                reviewer.displayname, last_change_comment.strip())
+                reviewer.displayname,
+                last_change_comment.strip(),
+            )
         else:
             comment = ""
 
@@ -236,10 +293,11 @@ class TeamMembershipMailer(BaseMailer):
                     recipient_class = "bulk"
                 else:
                     recipient_class = "personal"
-                recipients[recipient] = (
-                    TeamMembershipRecipientReason.forMember(
-                        member, team, recipient,
-                        recipient_class=recipient_class))
+                recipients[
+                    recipient
+                ] = TeamMembershipRecipientReason.forMember(
+                    member, team, recipient, recipient_class=recipient_class
+                )
         # Don't send admin notifications for open teams: they're
         # unrestricted, so notifications on join/leave do not help the
         # admins.
@@ -249,27 +307,38 @@ class TeamMembershipMailer(BaseMailer):
                     # The new member may also be a team admin; don't send
                     # two notifications in that case.
                     if recipient not in recipients:
-                        recipients[recipient] = (
-                            TeamMembershipRecipientReason.forAdmin(
-                                admin, team, recipient,
-                                recipient_class="bulk"))
+                        recipients[
+                            recipient
+                        ] = TeamMembershipRecipientReason.forAdmin(
+                            admin, team, recipient, recipient_class="bulk"
+                        )
 
         extra_params = {
             "old_status": old_status,
             "new_status": new_status,
             "comment": comment,
-            }
+        }
         from_addr = format_address(
-            team.displayname, config.canonical.noreply_from_address)
+            team.displayname, config.canonical.noreply_from_address
+        )
         return cls(
-            subject, template_name, recipients, from_addr, notification_type,
-            member, team, reviewer, extra_params=extra_params)
+            subject,
+            template_name,
+            recipients,
+            from_addr,
+            notification_type,
+            member,
+            team,
+            reviewer,
+            extra_params=extra_params,
+        )
 
     @classmethod
     def forExpiringMembership(cls, member, team, dateexpires):
         """Create a mailer for warning about expiring membership."""
         membership = getUtility(ITeamMembershipSet).getByPersonAndTeam(
-            member, team)
+            member, team
+        )
         assert membership is not None
         if member.is_team:
             target = member.teamowner
@@ -283,8 +352,9 @@ class TeamMembershipMailer(BaseMailer):
         if team.renewal_policy == TeamMembershipRenewalPolicy.ONDEMAND:
             how_to_renew = (
                 "If you want, you can renew this membership at\n"
-                "<%s/+expiringmembership/%s>" %
-                (canonical_url(member), team.name))
+                "<%s/+expiringmembership/%s>"
+                % (canonical_url(member), team.name)
+            )
         elif not membership.canChangeExpirationDate(target):
             admins_names = []
             admins = team.getDirectAdministrators()
@@ -294,42 +364,57 @@ class TeamMembershipMailer(BaseMailer):
                 how_to_renew = (
                     "To prevent this membership from expiring, you should "
                     "contact the\nteam's administrator, %s.\n<%s>"
-                    % (admin.unique_displayname, canonical_url(admin)))
+                    % (admin.unique_displayname, canonical_url(admin))
+                )
             else:
                 for admin in admins:
                     admins_names.append(
-                        "%s <%s>" % (
-                            admin.unique_displayname, canonical_url(admin)))
+                        "%s <%s>"
+                        % (admin.unique_displayname, canonical_url(admin))
+                    )
 
                 how_to_renew = (
                     "To prevent this membership from expiring, you should "
-                    "get in touch\nwith one of the team's administrators:\n")
+                    "get in touch\nwith one of the team's administrators:\n"
+                )
                 how_to_renew += "\n".join(admins_names)
         else:
             how_to_renew = (
                 "To stay a member of this team you should extend your "
                 "membership at\n<%s/+member/%s>"
-                % (canonical_url(team), member.name))
+                % (canonical_url(team), member.name)
+            )
 
         recipients = OrderedDict()
         for recipient in get_recipients(target):
             recipients[recipient] = TeamMembershipRecipientReason.forMember(
-                member, team, recipient)
+                member, team, recipient
+            )
 
         formatter = DurationFormatterAPI(dateexpires - datetime.now(pytz.UTC))
         extra_params = {
             "how_to_renew": how_to_renew,
             "expiration_date": dateexpires.strftime("%Y-%m-%d"),
             "approximate_duration": formatter.approximateduration(),
-            }
+        }
 
         from_addr = format_address(
-            team.displayname, config.canonical.noreply_from_address)
+            team.displayname, config.canonical.noreply_from_address
+        )
         return cls(
-            subject, template_name, recipients, from_addr,
-            "team-membership-expiration-warning", member, team,
-            membership.proposed_by, membership=membership,
-            extra_params=extra_params, wrap=False, force_wrap=False)
+            subject,
+            template_name,
+            recipients,
+            from_addr,
+            "team-membership-expiration-warning",
+            member,
+            team,
+            membership.proposed_by,
+            membership=membership,
+            extra_params=extra_params,
+            wrap=False,
+            force_wrap=False,
+        )
 
     @classmethod
     def forSelfRenewal(cls, member, team, dateexpires):
@@ -341,23 +426,49 @@ class TeamMembershipMailer(BaseMailer):
         for admin in team.adminmembers:
             for recipient in get_recipients(admin):
                 recipients[recipient] = TeamMembershipRecipientReason.forAdmin(
-                    admin, team, recipient)
+                    admin, team, recipient
+                )
         extra_params = {"dateexpires": dateexpires.strftime("%Y-%m-%d")}
         from_addr = format_address(
-            team.displayname, config.canonical.noreply_from_address)
+            team.displayname, config.canonical.noreply_from_address
+        )
         return cls(
-            subject, template_name, recipients, from_addr,
-            "team-membership-renewed", member, team, None,
-            extra_params=extra_params)
+            subject,
+            template_name,
+            recipients,
+            from_addr,
+            "team-membership-renewed",
+            member,
+            team,
+            None,
+            extra_params=extra_params,
+        )
 
-    def __init__(self, subject, template_name, recipients, from_address,
-                 notification_type, member, team, reviewer, membership=None,
-                 extra_params={}, wrap=True, force_wrap=True):
+    def __init__(
+        self,
+        subject,
+        template_name,
+        recipients,
+        from_address,
+        notification_type,
+        member,
+        team,
+        reviewer,
+        membership=None,
+        extra_params={},
+        wrap=True,
+        force_wrap=True,
+    ):
         """See `BaseMailer`."""
         super().__init__(
-            subject, template_name, recipients, from_address,
-            notification_type=notification_type, wrap=wrap,
-            force_wrap=force_wrap)
+            subject,
+            template_name,
+            recipients,
+            from_address,
+            notification_type=notification_type,
+            wrap=wrap,
+            force_wrap=force_wrap,
+        )
         self.member = member
         self.team = team
         self.reviewer = reviewer
@@ -396,7 +507,9 @@ class TeamMembershipMailer(BaseMailer):
             params["recipient_class"] = reason.recipient_class
         params["member"] = self.member.unique_displayname
         params["membership_invitations_url"] = "%s/+invitation/%s" % (
-            canonical_url(self.member), self.team.name)
+            canonical_url(self.member),
+            self.team.name,
+        )
         params["team"] = self.team.unique_displayname
         params["team_url"] = canonical_url(self.team)
         if self.membership is not None:
@@ -407,10 +520,12 @@ class TeamMembershipMailer(BaseMailer):
             params["reviewer"] = self.reviewer.unique_displayname
         if self.team.mailing_list is not None:
             template = get_email_template(
-                "team-list-subscribe-block.txt", app="registry")
+                "team-list-subscribe-block.txt", app="registry"
+            )
             editemails_url = urlappend(
                 canonical_url(getUtility(ILaunchpadRoot)),
-                "~/+editmailinglists")
+                "~/+editmailinglists",
+            )
             list_instructions = template % {"editemails_url": editemails_url}
         else:
             list_instructions = ""

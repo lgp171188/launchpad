@@ -4,8 +4,8 @@
 """ILaunchpadContainer adapters."""
 
 __all__ = [
-    'LaunchpadProductContainer',
-    ]
+    "LaunchpadProductContainer",
+]
 
 
 from lp.services.webapp.interfaces import ILaunchpadContainer
@@ -13,7 +13,6 @@ from lp.services.webapp.publisher import LaunchpadContainer
 
 
 class LaunchpadProductContainer(LaunchpadContainer):
-
     def getParentContainers(self):
         """See `ILaunchpadContainer`."""
         # A project is within its project group.

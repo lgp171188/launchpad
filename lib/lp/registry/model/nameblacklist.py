@@ -4,22 +4,18 @@
 """Classes for managing the NameBlacklist table."""
 
 __all__ = [
-    'NameBlacklist',
-    'NameBlacklistSet',
-    ]
+    "NameBlacklist",
+    "NameBlacklistSet",
+]
 
 
-from storm.locals import (
-    Int,
-    Reference,
-    Unicode,
-    )
+from storm.locals import Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.registry.interfaces.nameblacklist import (
     INameBlacklist,
     INameBlacklistSet,
-    )
+)
 from lp.registry.model.person import Person
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
@@ -29,12 +25,12 @@ from lp.services.database.stormbase import StormBase
 class NameBlacklist(StormBase):
     """Class for the NameBlacklist table."""
 
-    __storm_table__ = 'NameBlacklist'
+    __storm_table__ = "NameBlacklist"
 
     id = Int(primary=True)
-    regexp = Unicode(name='regexp', allow_none=False)
-    comment = Unicode(name='comment', allow_none=True)
-    admin_id = Int(name='admin', allow_none=True)
+    regexp = Unicode(name="regexp", allow_none=False)
+    comment = Unicode(name="comment", allow_none=True)
+    admin_id = Int(name="admin", allow_none=True)
     admin = Reference(admin_id, Person.id)
 
 

@@ -3,11 +3,7 @@
 
 """Test OCIProjectSeries."""
 
-from testtools.matchers import (
-    ContainsDict,
-    Equals,
-    MatchesStructure,
-    )
+from testtools.matchers import ContainsDict, Equals, MatchesStructure
 from testtools.testcase import ExpectedException
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
@@ -18,11 +14,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.ociprojectseries import OCIProjectSeries
 from lp.services.database.constants import UTC_NOW
 from lp.services.webapp.interfaces import OAuthPermission
-from lp.testing import (
-    api_url,
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, api_url, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.pages import webservice_for_person
 
@@ -32,45 +24,50 @@ class TestOCIProjectSeries(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_implements_interface(self):
-        name = 'test-name'
+        name = "test-name"
         oci_project = self.factory.makeOCIProject()
-        summary = 'test_summary'
+        summary = "test_summary"
         registrant = self.factory.makePerson()
         status = SeriesStatus.DEVELOPMENT
         project_series = OCIProjectSeries(
-            oci_project, name, summary, registrant, status)
+            oci_project, name, summary, registrant, status
+        )
         self.assertProvides(project_series, IOCIProjectSeries)
 
     def test_init(self):
-        name = 'test-name'
+        name = "test-name"
         oci_project = self.factory.makeOCIProject()
-        summary = 'test_summary'
+        summary = "test_summary"
         registrant = self.factory.makePerson()
         status = SeriesStatus.DEVELOPMENT
         date_created = UTC_NOW
         project_series = OCIProjectSeries(
-            oci_project, name, summary, registrant, status, date_created)
+            oci_project, name, summary, registrant, status, date_created
+        )
         self.assertThat(
-            project_series, MatchesStructure.byEquality(
+            project_series,
+            MatchesStructure.byEquality(
                 oci_project=project_series.oci_project,
                 name=project_series.name,
                 summary=project_series.summary,
                 registrant=project_series.registrant,
                 status=project_series.status,
-                date_created=project_series.date_created))
+                date_created=project_series.date_created,
+            ),
+        )
 
     def test_invalid_name(self):
-        name = 'invalid%20name'
+        name = "invalid%20name"
         oci_project = self.factory.makeOCIProject()
-        summary = 'test_summary'
+        summary = "test_summary"
         registrant = self.factory.makePerson()
         status = SeriesStatus.DEVELOPMENT
         with ExpectedException(InvalidName):
             OCIProjectSeries(oci_project, name, summary, registrant, status)
 
     def test_edit_permissions_invalid(self):
-        name = 'test-name'
-        summary = 'test_summary'
+        name = "test-name"
+        summary = "test_summary"
         registrant = self.factory.makePerson()
         another_person = self.factory.makePerson()
 
@@ -79,16 +76,16 @@ class TestOCIProjectSeries(TestCaseWithFactory):
 
         with person_logged_in(driver):
             project_series = self.factory.makeOCIProject(
-                pillar=distribution).newSeries(
-                    name, summary, registrant)
+                pillar=distribution
+            ).newSeries(name, summary, registrant)
 
         with person_logged_in(another_person):
             with ExpectedException(Unauthorized):
-                project_series.name = 'not-allowed'
+                project_series.name = "not-allowed"
 
     def test_edit_permissions_valid(self):
-        name = 'test-name'
-        summary = 'test_summary'
+        name = "test-name"
+        summary = "test_summary"
         registrant = self.factory.makePerson()
 
         driver = self.factory.makePerson()
@@ -96,11 +93,11 @@ class TestOCIProjectSeries(TestCaseWithFactory):
 
         with person_logged_in(driver):
             project_series = self.factory.makeOCIProject(
-                pillar=distribution).newSeries(
-                    name, summary, registrant)
-            project_series.name = 'allowed'
+                pillar=distribution
+            ).newSeries(name, summary, registrant)
+            project_series.name = "allowed"
 
-            self.assertEqual(project_series.name, 'allowed')
+            self.assertEqual(project_series.name, "allowed")
 
 
 class TestOCIProjectSeriesWebservice(TestCaseWithFactory):
@@ -110,8 +107,10 @@ class TestOCIProjectSeriesWebservice(TestCaseWithFactory):
         super().setUp()
         self.person = self.factory.makePerson(displayname="Test Person")
         self.webservice = webservice_for_person(
-            self.person, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            self.person,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
 
     def getAbsoluteURL(self, target):
         """Get the webservice absolute URL of the given object or relative
@@ -127,35 +126,48 @@ class TestOCIProjectSeriesWebservice(TestCaseWithFactory):
 
     def test_get_oci_project_series(self):
         with person_logged_in(self.person):
-            project = removeSecurityProxy(self.factory.makeOCIProject(
-                registrant=self.person))
+            project = removeSecurityProxy(
+                self.factory.makeOCIProject(registrant=self.person)
+            )
             series = self.factory.makeOCIProjectSeries(
-                oci_project=project, registrant=self.person)
+                oci_project=project, registrant=self.person
+            )
             url = api_url(series)
 
         expected_url = "{project}/+series/{name}".format(
-            project=api_url(project), name=series.name)
+            project=api_url(project), name=series.name
+        )
         self.assertEqual(expected_url, url)
 
         ws_series = self.load_from_api(url)
 
-        self.assertThat(ws_series, ContainsDict({
-            'date_created': Equals(series.date_created.isoformat()),
-            'name': Equals(series.name),
-            'oci_project_link': Equals(self.getAbsoluteURL(project)),
-            'registrant_link': Equals(self.getAbsoluteURL(series.registrant)),
-            'status': Equals(series.status.title),
-            'summary': Equals(series.summary),
-            }))
+        self.assertThat(
+            ws_series,
+            ContainsDict(
+                {
+                    "date_created": Equals(series.date_created.isoformat()),
+                    "name": Equals(series.name),
+                    "oci_project_link": Equals(self.getAbsoluteURL(project)),
+                    "registrant_link": Equals(
+                        self.getAbsoluteURL(series.registrant)
+                    ),
+                    "status": Equals(series.status.title),
+                    "summary": Equals(series.summary),
+                }
+            ),
+        )
 
     def test_get_non_existent_series(self):
         with person_logged_in(self.person):
-            project = removeSecurityProxy(self.factory.makeOCIProject(
-                registrant=self.person))
+            project = removeSecurityProxy(
+                self.factory.makeOCIProject(registrant=self.person)
+            )
             series = self.factory.makeOCIProjectSeries(
-                oci_project=project, registrant=self.person)
+                oci_project=project, registrant=self.person
+            )
 
         url = "{project}/+series/{name}trash".format(
-            project=api_url(project), name=series.name)
-        resp = self.webservice.get(url + 'trash')
+            project=api_url(project), name=series.name
+        )
+        resp = self.webservice.get(url + "trash")
         self.assertEqual(404, resp.status, resp.body)

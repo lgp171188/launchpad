@@ -4,8 +4,8 @@
 """XMLRPC APIs for mailing lists."""
 
 __all__ = [
-    'MailingListAPIView',
-    ]
+    "MailingListAPIView",
+]
 
 import re
 import xmlrpc.client
@@ -22,22 +22,18 @@ from lp.registry.interfaces.mailinglist import (
     IMessageApprovalSet,
     MailingListStatus,
     PostedMessageStatus,
-    )
-from lp.registry.interfaces.person import (
-    IPersonSet,
-    PersonalStanding,
-    )
+)
+from lp.registry.interfaces.person import IPersonSet, PersonalStanding
 from lp.services.config import config
 from lp.services.encoding import escape_nonascii_uniquely
 from lp.services.identity.interfaces.account import INACTIVE_ACCOUNT_STATUSES
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressStatus,
     IEmailAddressSet,
-    )
+)
 from lp.services.messages.interfaces.message import IMessageSet
 from lp.services.webapp import LaunchpadXMLRPCView
 from lp.xmlrpc import faults
-
 
 # These constants must match those defined in Mailman.MemberAdaptor.
 ENABLED = 0
@@ -62,15 +58,16 @@ class MailingListAPIView(LaunchpadXMLRPCView):
         for mailing_list in list_set.unsynchronized_lists:
             name = removeSecurityProxy(mailing_list.team).name
             if mailing_list.status == MailingListStatus.CONSTRUCTING:
-                unsynchronized.append((name, 'constructing'))
+                unsynchronized.append((name, "constructing"))
             elif mailing_list.status == MailingListStatus.UPDATING:
-                unsynchronized.append((name, 'updating'))
+                unsynchronized.append((name, "updating"))
             else:
                 raise AssertionError(
-                    'Mailing list is neither CONSTRUCTING nor UPDATING: %s'
-                    % name)
+                    "Mailing list is neither CONSTRUCTING nor UPDATING: %s"
+                    % name
+                )
         if len(unsynchronized) > 0:
-            response['unsynchronized'] = unsynchronized
+            response["unsynchronized"] = unsynchronized
         creates = []
         for mailing_list in list_set.approved_lists:
             initializer = {}
@@ -78,29 +75,34 @@ class MailingListAPIView(LaunchpadXMLRPCView):
             # initialized when the list is created.  Currently, this is the
             # only value that can be initialized.
             if mailing_list.welcome_message is not None:
-                initializer['welcome_message'] = mailing_list.welcome_message
+                initializer["welcome_message"] = mailing_list.welcome_message
             creates.append(
-                (removeSecurityProxy(mailing_list.team).name, initializer))
+                (removeSecurityProxy(mailing_list.team).name, initializer)
+            )
             # In addition, all approved mailing lists that are being
             # constructed by Mailman need to have their status changed.
             mailing_list.startConstructing()
         if len(creates) > 0:
-            response['create'] = creates
+            response["create"] = creates
         # Next do mailing lists that are to be deactivated.
-        deactivated = [removeSecurityProxy(mailing_list.team).name
-                       for mailing_list in list_set.deactivated_lists]
+        deactivated = [
+            removeSecurityProxy(mailing_list.team).name
+            for mailing_list in list_set.deactivated_lists
+        ]
         if len(deactivated) > 0:
-            response['deactivate'] = deactivated
+            response["deactivate"] = deactivated
         # Do modified lists.  Currently, the only value that can be modified
         # is the welcome message.
         modified = []
         for mailing_list in list_set.modified_lists:
-            changes = (removeSecurityProxy(mailing_list.team).name,
-                       dict(welcome_message=mailing_list.welcome_message))
+            changes = (
+                removeSecurityProxy(mailing_list.team).name,
+                dict(welcome_message=mailing_list.welcome_message),
+            )
             modified.append(changes)
             mailing_list.startUpdating()
         if len(modified) > 0:
-            response['modify'] = modified
+            response["modify"] = modified
         return response
 
     def reportStatus(self, statuses):
@@ -111,26 +113,32 @@ class MailingListAPIView(LaunchpadXMLRPCView):
             mailing_list = list_set.get(team_name)
             if mailing_list is None:
                 return faults.NoSuchTeamMailingList(team_name)
-            if action_status == 'failure':
+            if action_status == "failure":
                 if mailing_list.status == MailingListStatus.CONSTRUCTING:
                     mailing_list.transitionToStatus(MailingListStatus.FAILED)
-                elif mailing_list.status in (MailingListStatus.UPDATING,
-                                             MailingListStatus.DEACTIVATING):
+                elif mailing_list.status in (
+                    MailingListStatus.UPDATING,
+                    MailingListStatus.DEACTIVATING,
+                ):
                     mailing_list.transitionToStatus(
-                        MailingListStatus.MOD_FAILED)
+                        MailingListStatus.MOD_FAILED
+                    )
                 else:
                     return faults.UnexpectedStatusReport(
-                        team_name, action_status)
-            elif action_status == 'success':
-                if mailing_list.status in (MailingListStatus.CONSTRUCTING,
-                                           MailingListStatus.UPDATING):
+                        team_name, action_status
+                    )
+            elif action_status == "success":
+                if mailing_list.status in (
+                    MailingListStatus.CONSTRUCTING,
+                    MailingListStatus.UPDATING,
+                ):
                     mailing_list.transitionToStatus(MailingListStatus.ACTIVE)
                 elif mailing_list.status == MailingListStatus.DEACTIVATING:
-                    mailing_list.transitionToStatus(
-                        MailingListStatus.INACTIVE)
+                    mailing_list.transitionToStatus(MailingListStatus.INACTIVE)
                 else:
                     return faults.UnexpectedStatusReport(
-                        team_name, action_status)
+                        team_name, action_status
+                    )
             else:
                 return faults.BadStatus(team_name, action_status)
         # Everything was fine.
@@ -183,7 +191,7 @@ class MailingListAPIView(LaunchpadXMLRPCView):
             # The team members is the union of all posters and subscribers.
             # Iterate through these addresses, creating the 3-tuple entry
             # required for the members map for this team.
-            for address in (posters | subscribers):
+            for address in posters | subscribers:
                 if address in subscribers:
                     status = ENABLED
                 else:
@@ -196,13 +204,18 @@ class MailingListAPIView(LaunchpadXMLRPCView):
             # never be used to forge spam onto a list.
             mailing_list = mailing_list_set.get(team_name)
             if config.mailman.archive_address and mailing_list.is_public:
-                members[config.mailman.archive_address] = ('', flags, ENABLED)
+                members[config.mailman.archive_address] = ("", flags, ENABLED)
             # The response must be a dictionary mapping team names to lists of
             # 4-tuples: (address, full_name, flags, status)
             response[team_name] = [
-                (address, members[address][0],
-                 members[address][1], members[address][2])
-                for address in sorted(members)]
+                (
+                    address,
+                    members[address][0],
+                    members[address][1],
+                    members[address][2],
+                )
+                for address in sorted(members)
+            ]
         return response
 
     def isTeamPublic(self, team_name):
@@ -214,8 +227,10 @@ class MailingListAPIView(LaunchpadXMLRPCView):
 
     def isRegisteredInLaunchpad(self, address):
         """See `IMailingListAPIView.`."""
-        if (config.mailman.archive_address and
-            address == config.mailman.archive_address):
+        if (
+            config.mailman.archive_address
+            and address == config.mailman.archive_address
+        ):
             # Hard code that the archive address is never registered in
             # Launchpad, so forged messages from that sender will always be
             # discarded.
@@ -224,18 +239,22 @@ class MailingListAPIView(LaunchpadXMLRPCView):
         if email_address is None:
             return False
         person = email_address.person
-        return (not person.is_team and
-                person.account_status not in INACTIVE_ACCOUNT_STATUSES and
-                email_address.status in (EmailAddressStatus.VALIDATED,
-                                         EmailAddressStatus.PREFERRED))
+        return (
+            not person.is_team
+            and person.account_status not in INACTIVE_ACCOUNT_STATUSES
+            and email_address.status
+            in (EmailAddressStatus.VALIDATED, EmailAddressStatus.PREFERRED)
+        )
 
     def inGoodStanding(self, address):
         """See `IMailingListAPIView`."""
         person = getUtility(IPersonSet).getByEmail(address)
         if person is None or person.is_team:
             return False
-        return person.personal_standing in (PersonalStanding.GOOD,
-                                            PersonalStanding.EXCELLENT)
+        return person.personal_standing in (
+            PersonalStanding.GOOD,
+            PersonalStanding.EXCELLENT,
+        )
 
     def holdMessage(self, team_name, bytes):
         """See `IMailingListAPIView`."""
@@ -250,11 +269,11 @@ class MailingListAPIView(LaunchpadXMLRPCView):
         # Although it is illegal for an email header to have unencoded
         # non-ascii characters, it is better to let the list owner
         # process the message than to cause an oops.
-        header_body_separator = re.compile(br'\r\n\r\n|\r\r|\n\n')
+        header_body_separator = re.compile(rb"\r\n\r\n|\r\r|\n\n")
         match = header_body_separator.search(bytes)
-        header = bytes[:match.start()]
+        header = bytes[: match.start()]
         header = escape_nonascii_uniquely(header)
-        bytes = header + bytes[match.start():]
+        bytes = header + bytes[match.start() :]
 
         mailing_list = getUtility(IMailingListSet).get(team_name)
         message = getUtility(IMessageSet).fromEmail(bytes)
@@ -271,10 +290,10 @@ class MailingListAPIView(LaunchpadXMLRPCView):
         # hasn't yet acted upon.  For each of these, set their state to final
         # approval.
         status_dispositions = (
-            (PostedMessageStatus.APPROVAL_PENDING, 'accept'),
-            (PostedMessageStatus.REJECTION_PENDING, 'decline'),
-            (PostedMessageStatus.DISCARD_PENDING, 'discard'),
-            )
+            (PostedMessageStatus.APPROVAL_PENDING, "accept"),
+            (PostedMessageStatus.REJECTION_PENDING, "decline"),
+            (PostedMessageStatus.DISCARD_PENDING, "discard"),
+        )
         for status, disposition in status_dispositions:
             held_messages = message_set.getHeldMessagesWithStatus(status)
             for message_id, team_name in held_messages:

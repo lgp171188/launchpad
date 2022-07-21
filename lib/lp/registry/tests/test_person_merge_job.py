@@ -3,8 +3,8 @@
 
 """Tests of `PersonMergeJob`."""
 
-from testtools.content import text_content
 import transaction
+from testtools.content import text_content
 from zope.component import getUtility
 from zope.interface.verify import verifyObject
 from zope.security.proxy import removeSecurityProxy
@@ -12,7 +12,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.registry.interfaces.persontransferjob import (
     IPersonMergeJob,
     IPersonMergeJobSource,
-    )
+)
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
@@ -23,16 +23,9 @@ from lp.services.job.tests import block_on_job
 from lp.services.log.logger import BufferLogger
 from lp.services.mail.sendmail import format_address_for_person
 from lp.services.scripts import log
-from lp.testing import (
-    person_logged_in,
-    run_script,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in, run_script
 from lp.testing.dbuser import dbuser
-from lp.testing.layers import (
-    CeleryJobLayer,
-    DatabaseFunctionalLayer,
-    )
+from lp.testing.layers import CeleryJobLayer, DatabaseFunctionalLayer
 
 
 def create_job(factory):
@@ -40,11 +33,12 @@ def create_job(factory):
 
     :param factory: A LaunchpadObjectFactory.
     """
-    from_person = factory.makePerson(name='void')
-    to_person = factory.makePerson(name='gestalt')
-    requester = factory.makePerson(name='requester')
+    from_person = factory.makePerson(name="void")
+    to_person = factory.makePerson(name="gestalt")
+    requester = factory.makePerson(name="requester")
     return getUtility(IPersonMergeJobSource).create(
-        from_person=from_person, to_person=to_person, requester=requester)
+        from_person=from_person, to_person=to_person, requester=requester
+    )
 
 
 def transfer_email(job):
@@ -81,7 +75,7 @@ class TestPersonMergeJob(TestCaseWithFactory):
         self.assertEqual(self.from_person, self.job.minor_person)
         self.assertEqual(self.to_person, self.job.to_person)
         self.assertEqual(self.to_person, self.job.major_person)
-        self.assertEqual({'delete': False}, self.job.metadata)
+        self.assertEqual({"delete": False}, self.job.metadata)
 
     def test_getErrorRecipients(self):
         # The requester is the recipient.
@@ -96,11 +90,15 @@ class TestPersonMergeJob(TestCaseWithFactory):
         # create returns None if either of the persons are already
         # in a pending merge job.
         duplicate_job = self.job_source.create(
-            from_person=self.from_person, to_person=self.to_person,
-            requester=self.requester)
+            from_person=self.from_person,
+            to_person=self.to_person,
+            requester=self.requester,
+        )
         inverted_job = self.job_source.create(
-            from_person=self.to_person, to_person=self.from_person,
-            requester=self.requester)
+            from_person=self.to_person,
+            to_person=self.from_person,
+            requester=self.requester,
+        )
         self.assertEqual(None, duplicate_job)
         self.assertEqual(None, inverted_job)
 
@@ -118,9 +116,12 @@ class TestPersonMergeJob(TestCaseWithFactory):
 
         self.assertEqual(self.to_person, self.from_person.merged)
         self.assertEqual(
-            ["DEBUG PersonMergeJob is about to merge ~void into ~gestalt",
-             "DEBUG PersonMergeJob has merged ~void into ~gestalt"],
-            logger.getLogBuffer().splitlines())
+            [
+                "DEBUG PersonMergeJob is about to merge ~void into ~gestalt",
+                "DEBUG PersonMergeJob has merged ~void into ~gestalt",
+            ],
+            logger.getLogBuffer().splitlines(),
+        )
         self.assertEqual(self.to_person, self.from_person.merged)
 
     def test_smoke(self):
@@ -128,18 +129,22 @@ class TestPersonMergeJob(TestCaseWithFactory):
         # Check the oopses in /var/tmp/lperr.test if the person.merged
         # assertion fails.
         self.transfer_email()
-        to_team = self.factory.makeTeam(name='legion')
-        from_team = self.factory.makeTeam(name='null')
+        to_team = self.factory.makeTeam(name="legion")
+        from_team = self.factory.makeTeam(name="null")
         with person_logged_in(from_team.teamowner):
             from_team.teamowner.leave(from_team)
         self.job_source.create(
-            from_person=from_team, to_person=to_team,
-            reviewer=from_team.teamowner, requester=self.factory.makePerson())
+            from_person=from_team,
+            to_person=to_team,
+            reviewer=from_team.teamowner,
+            requester=self.factory.makePerson(),
+        )
         transaction.commit()
 
         out, err, exit_code = run_script(
-            "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s" % (
-                IPersonMergeJobSource.getName()))
+            "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s"
+            % (IPersonMergeJobSource.getName())
+        )
 
         self.addDetail("stdout", text_content(out))
         self.addDetail("stderr", text_content(err))
@@ -153,11 +158,13 @@ class TestPersonMergeJob(TestCaseWithFactory):
         # A useful representation is available for PersonMergeJob instances.
         self.assertEqual(
             "<PersonMergeJob to merge ~void into ~gestalt; status=Waiting>",
-            repr(self.job))
+            repr(self.job),
+        )
 
     def test_getOperationDescription(self):
-        self.assertEqual('merging ~void into ~gestalt',
-                         self.job.getOperationDescription())
+        self.assertEqual(
+            "merging ~void into ~gestalt", self.job.getOperationDescription()
+        )
 
     def find(self, **kwargs):
         return list(self.job_source.find(**kwargs))
@@ -165,28 +172,33 @@ class TestPersonMergeJob(TestCaseWithFactory):
     def test_find(self):
         # find() looks for merge jobs.
         self.assertEqual([self.job], self.find())
+        self.assertEqual([self.job], self.find(from_person=self.from_person))
+        self.assertEqual([self.job], self.find(to_person=self.to_person))
         self.assertEqual(
-            [self.job], self.find(from_person=self.from_person))
-        self.assertEqual(
-            [self.job], self.find(to_person=self.to_person))
-        self.assertEqual(
-            [self.job], self.find(
-                from_person=self.from_person,
-                to_person=self.to_person))
-        self.assertEqual(
-            [], self.find(from_person=self.to_person))
+            [self.job],
+            self.find(from_person=self.from_person, to_person=self.to_person),
+        )
+        self.assertEqual([], self.find(from_person=self.to_person))
 
     def test_find_any_person(self):
         # find() any_person looks for merge jobs with either from_person
         # or to_person is true when both are specified.
         self.assertEqual(
-            [self.job], self.find(
-                from_person=self.to_person, to_person=self.to_person,
-                any_person=True))
+            [self.job],
+            self.find(
+                from_person=self.to_person,
+                to_person=self.to_person,
+                any_person=True,
+            ),
+        )
         self.assertEqual(
-            [self.job], self.find(
-                from_person=self.from_person, to_person=self.from_person,
-                any_person=True))
+            [self.job],
+            self.find(
+                from_person=self.from_person,
+                to_person=self.from_person,
+                any_person=True,
+            ),
+        )
 
     def test_find_only_pending_or_running(self):
         # find() only returns jobs that are pending.
@@ -202,7 +214,8 @@ class TestPersonMergeJob(TestCaseWithFactory):
         from_person = self.factory.makePerson()
         to_person = self.factory.makePerson()
         job = getUtility(IPersonMergeJobSource).create(
-            from_person, to_person, requester)
+            from_person, to_person, requester
+        )
         self.assertEqual(requester, job.requester)
 
 
@@ -213,9 +226,13 @@ class TestViaCelery(TestCaseWithFactory):
 
     def test_run(self):
         # When run it merges from_person into to_person.
-        self.useFixture(FeatureFixture({
-            'jobs.celery.enabled_classes': 'PersonMergeJob',
-        }))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    "jobs.celery.enabled_classes": "PersonMergeJob",
+                }
+            )
+        )
         job = create_job(self.factory)
         transfer_email(job)
         from_person = job.from_person

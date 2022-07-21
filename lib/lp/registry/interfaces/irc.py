@@ -4,20 +4,14 @@
 """IRC interfaces."""
 
 __all__ = [
-    'IIrcID',
-    'IIrcIDSet',
-    ]
+    "IIrcID",
+    "IIrcIDSet",
+]
 
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
+from lazr.restful.declarations import exported, exported_as_webservice_entry
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Int,
-    TextLine,
-    )
+from zope.schema import Int, TextLine
 
 from lp import _
 from lp.registry.interfaces.role import IHasOwner
@@ -26,16 +20,17 @@ from lp.registry.interfaces.role import IHasOwner
 @exported_as_webservice_entry("irc_id", as_of="beta")
 class IIrcID(IHasOwner):
     """A person's nickname on an IRC network."""
+
     id = Int(title=_("Database ID"), required=True, readonly=True)
     # schema=Interface will be overridden in person.py because of circular
     # dependencies.
     person = exported(
         Reference(
-            title=_("Owner"), required=True, schema=Interface, readonly=True))
-    network = exported(
-        TextLine(title=_("IRC network"), required=True))
-    nickname = exported(
-        TextLine(title=_("Nickname"), required=True))
+            title=_("Owner"), required=True, schema=Interface, readonly=True
+        )
+    )
+    network = exported(TextLine(title=_("IRC network"), required=True))
+    nickname = exported(TextLine(title=_("Nickname"), required=True))
 
     def destroySelf():
         """Delete this `IIrcID` from the database."""

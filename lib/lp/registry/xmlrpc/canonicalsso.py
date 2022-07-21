@@ -4,9 +4,9 @@
 """XMLRPC APIs for Canonical SSO to retrieve person details."""
 
 __all__ = [
-    'CanonicalSSOAPI',
-    'CanonicalSSOApplication',
-    ]
+    "CanonicalSSOAPI",
+    "CanonicalSSOApplication",
+]
 
 import six
 from zope.component import getUtility
@@ -17,7 +17,7 @@ from lp.registry.interfaces.person import (
     ICanonicalSSOAPI,
     ICanonicalSSOApplication,
     IPerson,
-    )
+)
 from lp.services.identity.interfaces.account import IAccountSet
 from lp.services.webapp import LaunchpadXMLRPCView
 
@@ -29,7 +29,8 @@ class CanonicalSSOAPI(LaunchpadXMLRPCView):
     def getPersonDetailsByOpenIDIdentifier(self, openid_identifier):
         try:
             account = getUtility(IAccountSet).getByOpenIDIdentifier(
-                six.ensure_text(openid_identifier, 'ascii'))
+                six.ensure_text(openid_identifier, "ascii")
+            )
         except LookupError:
             return None
         person = IPerson(account, None)
@@ -39,12 +40,13 @@ class CanonicalSSOAPI(LaunchpadXMLRPCView):
         time_zone = person.time_zone
         team_names = {
             removeSecurityProxy(t).name: t.private
-            for t in person.teams_participated_in}
+            for t in person.teams_participated_in
+        }
         return {
-            'name': person.name,
-            'time_zone': time_zone,
-            'teams': team_names,
-            }
+            "name": person.name,
+            "time_zone": time_zone,
+            "teams": team_names,
+        }
 
 
 @implementer(ICanonicalSSOApplication)

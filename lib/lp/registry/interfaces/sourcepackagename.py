@@ -4,18 +4,12 @@
 """Source package name interfaces."""
 
 __all__ = [
-    'ISourcePackageName',
-    'ISourcePackageNameSet',
-    ]
+    "ISourcePackageName",
+    "ISourcePackageNameSet",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Int,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Int, TextLine
 
 from lp import _
 from lp.app.validators.name import name_validator
@@ -27,12 +21,18 @@ class ISourcePackageName(Interface):
     This is a tiny table that allows multiple SourcePackage entities to share
     a single name.
     """
+
     id = Int(title=_("ID"), required=True)
-    name = TextLine(title=_("Valid Source package name"),
-                    required=True, constraint=name_validator)
+    name = TextLine(
+        title=_("Valid Source package name"),
+        required=True,
+        constraint=name_validator,
+    )
     potemplates = Attribute("The list of PO templates that this object has.")
-    packagings = Attribute("Everything we know about the packaging of "
-        "packages with this source package name.")
+    packagings = Attribute(
+        "Everything we know about the packaging of "
+        "packages with this source package name."
+    )
 
     def __str__():
         """Return the name"""

@@ -4,30 +4,23 @@
 """SSH key interfaces."""
 
 __all__ = [
-    'ISSHKey',
-    'ISSHKeySet',
-    'SSH_TEXT_TO_KEY_TYPE',
-    'SSHKeyAdditionError',
-    'SSHKeyType',
-    ]
+    "ISSHKey",
+    "ISSHKeySet",
+    "SSH_TEXT_TO_KEY_TYPE",
+    "SSHKeyAdditionError",
+    "SSHKeyType",
+]
 
 import http.client
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from lazr.restful.declarations import (
     error_status,
     exported,
     exported_as_webservice_entry,
-    )
+)
 from zope.interface import Interface
-from zope.schema import (
-    Choice,
-    Int,
-    TextLine,
-    )
+from zope.schema import Choice, Int, TextLine
 
 from lp import _
 
@@ -39,29 +32,41 @@ class SSHKeyType(DBEnumeratedType):
     authentication.  See OpenSSH's ssh-keygen(1) man page for details.
     """
 
-    RSA = DBItem(1, """
+    RSA = DBItem(
+        1,
+        """
         RSA
 
         RSA
-        """)
+        """,
+    )
 
-    DSA = DBItem(2, """
+    DSA = DBItem(
+        2,
+        """
         DSA
 
         DSA
-        """)
+        """,
+    )
 
-    ECDSA = DBItem(3, """
+    ECDSA = DBItem(
+        3,
+        """
         ECDSA
 
         ECDSA
-        """)
+        """,
+    )
 
-    ED25519 = DBItem(4, """
+    ED25519 = DBItem(
+        4,
+        """
         ED25519
 
         Ed25519
-        """)
+        """,
+    )
 
 
 SSH_TEXT_TO_KEY_TYPE = {
@@ -71,7 +76,7 @@ SSH_TEXT_TO_KEY_TYPE = {
     "ecdsa-sha2-nistp384": SSHKeyType.ECDSA,
     "ecdsa-sha2-nistp521": SSHKeyType.ECDSA,
     "ssh-ed25519": SSHKeyType.ED25519,
-    }
+}
 
 
 @exported_as_webservice_entry("ssh_key", as_of="beta")
@@ -80,13 +85,25 @@ class ISSHKey(Interface):
 
     id = Int(title=_("Database ID"), required=True, readonly=True)
     person = Int(title=_("Owner"), required=True, readonly=True)
-    personID = Int(title=_('Owner ID'), required=True, readonly=True)
-    keytype = exported(Choice(title=_("Key type"), required=True,
-                     vocabulary=SSHKeyType, readonly=True))
-    keytext = exported(TextLine(title=_("Key text"), required=True,
-                       readonly=True))
-    comment = exported(TextLine(title=_("Comment describing this key"),
-                       required=True, readonly=True))
+    personID = Int(title=_("Owner ID"), required=True, readonly=True)
+    keytype = exported(
+        Choice(
+            title=_("Key type"),
+            required=True,
+            vocabulary=SSHKeyType,
+            readonly=True,
+        )
+    )
+    keytext = exported(
+        TextLine(title=_("Key text"), required=True, readonly=True)
+    )
+    comment = exported(
+        TextLine(
+            title=_("Comment describing this key"),
+            required=True,
+            readonly=True,
+        )
+    )
 
     def destroySelf():
         """Remove this SSHKey from the database."""
@@ -98,8 +115,9 @@ class ISSHKey(Interface):
 class ISSHKeySet(Interface):
     """The set of SSHKeys."""
 
-    def new(person, sshkey, check_key=True, send_notification=True,
-            dry_run=False):
+    def new(
+        person, sshkey, check_key=True, send_notification=True, dry_run=False
+    ):
         """Create a new SSHKey pointing to the given Person.
 
         :param person: The IPerson to add the ssh key to.
@@ -141,25 +159,29 @@ class SSHKeyAdditionError(Exception):
 
     def __init__(self, *args, **kwargs):
         msg = ""
-        if 'key' in kwargs:
-            key = kwargs.pop('key')
+        if "key" in kwargs:
+            key = kwargs.pop("key")
             msg = "Invalid SSH key data: '%s'" % key
-        if 'kind' in kwargs:
-            kind = kwargs.pop('kind')
+        if "kind" in kwargs:
+            kind = kwargs.pop("kind")
             msg = "Invalid SSH key type: '%s'" % kind
-        if 'type_mismatch' in kwargs:
-            keytype, keydatatype = kwargs.pop('type_mismatch')
+        if "type_mismatch" in kwargs:
+            keytype, keydatatype = kwargs.pop("type_mismatch")
             msg = (
                 "Invalid SSH key data: key type '%s' does not match key data "
-                "type '%s'" % (keytype, keydatatype))
-        if 'exception' in kwargs:
-            exception = kwargs.pop('exception')
+                "type '%s'" % (keytype, keydatatype)
+            )
+        if "exception" in kwargs:
+            exception = kwargs.pop("exception")
             try:
                 exception_text = str(exception)
             except UnicodeDecodeError:
                 # On Python 2, Key.fromString can raise exceptions with
                 # non-UTF-8 messages.
-                exception_text = bytes(exception).decode(
-                    'unicode_escape').encode('unicode_escape')
+                exception_text = (
+                    bytes(exception)
+                    .decode("unicode_escape")
+                    .encode("unicode_escape")
+                )
             msg = "%s (%s)" % (msg, exception_text)
         super().__init__(msg, *args, **kwargs)

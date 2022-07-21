@@ -3,13 +3,10 @@
 
 """Mailing list interfaces related to list subscriptions."""
 
-__all__ = ['MailingListAutoSubscribePolicy']
+__all__ = ["MailingListAutoSubscribePolicy"]
 
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 
 
 class MailingListAutoSubscribePolicy(DBEnumeratedType):
@@ -24,22 +21,31 @@ class MailingListAutoSubscribePolicy(DBEnumeratedType):
     automatically subscribed to the mailing list.
     """
 
-    NEVER = DBItem(0, """
+    NEVER = DBItem(
+        0,
+        """
         Never subscribe to mailing lists
 
         Do not subscribe to mailing lists.
-        """)
+        """,
+    )
 
-    ON_REGISTRATION = DBItem(1, """
+    ON_REGISTRATION = DBItem(
+        1,
+        """
         Ask me when I join a team
 
         Launchpad will only ask about mailing subscriptions when you
         request to join a team.
-        """)
+        """,
+    )
 
-    ALWAYS = DBItem(2, """
+    ALWAYS = DBItem(
+        2,
+        """
         Always subscribe me to mailing lists
 
         Launchpad will automatically subscribe you to a team's
         mailing list, even when someone else adds you to the team.
-        """)
+        """,
+    )

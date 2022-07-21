@@ -4,20 +4,17 @@
 """A person's view on a source package in a distribution."""
 
 __all__ = [
-    'IPersonDistributionSourcePackage',
-    'IPersonDistributionSourcePackageFactory',
-    ]
+    "IPersonDistributionSourcePackage",
+    "IPersonDistributionSourcePackageFactory",
+]
 
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.schema import TextLine
 
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.person import IPerson
 
 

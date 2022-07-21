@@ -4,10 +4,7 @@
 """Tests for GPG key on the web."""
 
 from lp.services.webapp import canonical_url
-from lp.testing import (
-    login_person,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, login_person
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.views import create_initialized_view
 
@@ -21,9 +18,10 @@ class TestCanonicalUrl(TestCaseWithFactory):
         person = self.factory.makePerson()
         gpgkey = self.factory.makeGPGKey(person)
         self.assertEqual(
-            '%s/+gpg-keys/%s' % (
-                canonical_url(person, rootsite='api'), gpgkey.fingerprint),
-            canonical_url(gpgkey))
+            "%s/+gpg-keys/%s"
+            % (canonical_url(person, rootsite="api"), gpgkey.fingerprint),
+            canonical_url(gpgkey),
+        )
 
 
 class TestPersonGPGView(TestCaseWithFactory):
@@ -37,6 +35,7 @@ class TestPersonGPGView(TestCaseWithFactory):
         view = create_initialized_view(person, "+editpgpkeys")
         response = view.request.response
         self.assertEqual(302, response.getStatus())
-        expected_url = (
-            '%s/+editpgpkeys/+login?reauth=1' % canonical_url(person))
-        self.assertEqual(expected_url, response.getHeader('location'))
+        expected_url = "%s/+editpgpkeys/+login?reauth=1" % canonical_url(
+            person
+        )
+        self.assertEqual(expected_url, response.getHeader("location"))
