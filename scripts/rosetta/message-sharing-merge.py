@@ -7,7 +7,6 @@ import _pythonpath  # noqa: F401
 
 from lp.translations.utilities.translationmerger import MessageSharingMerge
 
-
 # This script merges POTMsgSets for sharing POTemplates.  This involves
 # deleting records that we'd never delete otherwise.  So before running,
 # make sure rosettaadmin has the privileges to delete POTMsgSets and
@@ -17,8 +16,8 @@ from lp.translations.utilities.translationmerger import MessageSharingMerge
 # GRANT DELETE ON  TranslationTemplateItem TO rosettaadmin;
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = MessageSharingMerge(
-        'lp.services.scripts.message-sharing-merge',
-        dbuser='rosettaadmin')
+        "lp.services.scripts.message-sharing-merge", dbuser="rosettaadmin"
+    )
     script.run()

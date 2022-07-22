@@ -6,8 +6,7 @@ import _pythonpath  # noqa: F401
 
 from lp.services.job.scripts.process_job_source import ProcessJobSource
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = ProcessJobSource()
     # ProcessJobSource handles its own locking.
     script.run()

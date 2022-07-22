@@ -19,11 +19,11 @@ import _pythonpath  # noqa: F401
 
 from lp.translations.scripts.translations_to_branch import (
     ExportTranslationsToBranch,
-    )
+)
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = ExportTranslationsToBranch(
-        'translations-export-to-branch', dbuser='translationstobranch')
-    script.config_name = 'translations_export_to_branch'
+        "translations-export-to-branch", dbuser="translationstobranch"
+    )
+    script.config_name = "translations_export_to_branch"
     script.lock_and_run()

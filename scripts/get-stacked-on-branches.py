@@ -35,6 +35,7 @@ def get_stacked_branches():
     """Iterate over all branches that, according to the db, are stacked."""
     # Avoiding circular import.
     from lp.code.model.branch import Branch
+
     return IStandbyStore(Branch).find(Branch, Not(Branch.stacked_on == None))
 
 
@@ -44,16 +45,24 @@ def main():
     See the module docstring for more information.
     """
     parser = OptionParser(
-        description="List the stacked branches in Launchpad.")
+        description="List the stacked branches in Launchpad."
+    )
     parser.parse_args()
 
     execute_zcml_for_scripts()
     for db_branch in get_stacked_branches():
         stacked_on = db_branch.stacked_on
-        print('%s %s %s %s %s' % (
-            db_branch.id, db_branch.branch_type.name, db_branch.unique_name,
-            stacked_on.id, stacked_on.unique_name))
+        print(
+            "%s %s %s %s %s"
+            % (
+                db_branch.id,
+                db_branch.branch_type.name,
+                db_branch.unique_name,
+                stacked_on.id,
+                stacked_on.unique_name,
+            )
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

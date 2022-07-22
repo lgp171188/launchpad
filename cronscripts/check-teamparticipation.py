@@ -23,12 +23,9 @@ from lp.registry.scripts.teamparticipation import (
     check_teamparticipation_consistency,
     fetch_team_participation_info,
     fix_teamparticipation_consistency,
-    )
+)
 from lp.services.scripts.base import LaunchpadCronScript
-from lp.services.utils import (
-    load_bz2_pickle,
-    save_bz2_pickle,
-    )
+from lp.services.utils import load_bz2_pickle, save_bz2_pickle
 
 
 class CheckTeamParticipationScript(LaunchpadCronScript):
@@ -37,14 +34,22 @@ class CheckTeamParticipationScript(LaunchpadCronScript):
     def add_my_options(self):
         self.parser.add_option(
             "--load-participation-info",
-            dest="load_info", metavar="FILE", help=(
+            dest="load_info",
+            metavar="FILE",
+            help=(
                 "File from which to load participation information "
-                "instead of going to the database."))
+                "instead of going to the database."
+            ),
+        )
         self.parser.add_option(
             "--save-participation-info",
-            dest="save_info", metavar="FILE", help=(
+            dest="save_info",
+            metavar="FILE",
+            help=(
                 "File in which to save participation information, for "
-                "later processing with --load-participation-info."))
+                "later processing with --load-participation-info."
+            ),
+        )
 
     def main(self):
         """Perform various checks on the `TeamParticipation` table."""
@@ -57,9 +62,10 @@ class CheckTeamParticipationScript(LaunchpadCronScript):
             save_bz2_pickle(participation_info, self.options.save_info)
         else:
             errors = check_teamparticipation_consistency(
-                self.logger, participation_info)
+                self.logger, participation_info
+            )
             fix_teamparticipation_consistency(self.logger, errors)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     CheckTeamParticipationScript("check-teamparticipation").run()

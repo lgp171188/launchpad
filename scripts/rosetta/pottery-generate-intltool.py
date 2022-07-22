@@ -12,7 +12,7 @@ import os.path
 from lpbuildd.pottery.intltool import generate_pots
 from lpbuildd.tests.fakebuilder import (
     UncontainedBackend as _UncontainedBackend,
-    )
+)
 
 from lp.services.scripts.base import LaunchpadScript
 

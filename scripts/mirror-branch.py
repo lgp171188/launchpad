@@ -28,26 +28,25 @@ Where:
 
 import _pythonpath  # noqa: F401
 
-from optparse import OptionParser
 import os
 import resource
 import sys
+from optparse import OptionParser
 
 import breezy.repository
 
 from lp.code.enums import BranchType
 from lp.codehosting.puller.worker import (
-    install_worker_ui_factory,
     PullerWorker,
     PullerWorkerProtocol,
-    )
+    install_worker_ui_factory,
+)
 from lp.services.webapp.errorlog import globalErrorUtility
 
-
 branch_type_map = {
-    BranchType.MIRRORED: 'mirror',
-    BranchType.IMPORTED: 'import'
-    }
+    BranchType.MIRRORED: "mirror",
+    BranchType.IMPORTED: "import",
+}
 
 
 def shut_up_deprecation_warning():
@@ -57,24 +56,36 @@ def shut_up_deprecation_warning():
     breezy.repository._deprecation_warning_done = True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = OptionParser()
     (options, arguments) = parser.parse_args()
-    (source_url, destination_url, branch_id, unique_name,
-     branch_type_name, default_stacked_on_url) = arguments
+    (
+        source_url,
+        destination_url,
+        branch_id,
+        unique_name,
+        branch_type_name,
+        default_stacked_on_url,
+    ) = arguments
 
     branch_type = BranchType.items[branch_type_name]
-    if branch_type == BranchType.IMPORTED and 'http_proxy' in os.environ:
-        del os.environ['http_proxy']
-    section_name = 'supermirror_%s_puller' % branch_type_map[branch_type]
+    if branch_type == BranchType.IMPORTED and "http_proxy" in os.environ:
+        del os.environ["http_proxy"]
+    section_name = "supermirror_%s_puller" % branch_type_map[branch_type]
     globalErrorUtility.configure(section_name)
     shut_up_deprecation_warning()
 
     resource.setrlimit(resource.RLIMIT_AS, (1500000000, 1500000000))
 
     # The worker outputs netstrings, which are bytes.
-    protocol = PullerWorkerProtocol(getattr(sys.stdout, 'buffer', sys.stdout))
+    protocol = PullerWorkerProtocol(getattr(sys.stdout, "buffer", sys.stdout))
     install_worker_ui_factory(protocol)
     PullerWorker(
-        source_url, destination_url, int(branch_id), unique_name, branch_type,
-        default_stacked_on_url, protocol).mirror()
+        source_url,
+        destination_url,
+        int(branch_id),
+        unique_name,
+        branch_type,
+        default_stacked_on_url,
+        protocol,
+    ).mirror()

@@ -32,9 +32,13 @@ class DebianBugImportScript(LaunchpadScript):
 
     def add_my_options(self):
         self.parser.add_option(
-            '-n', '--dry-run', action='store_true',
-           help="Don't commit the DB transaction.",
-           dest='dry_run', default=False)
+            "-n",
+            "--dry-run",
+            action="store_true",
+            help="Don't commit the DB transaction.",
+            dest="dry_run",
+            default=False,
+        )
 
     def main(self):
         if len(self.args) < 1:
@@ -51,8 +55,9 @@ class DebianBugImportScript(LaunchpadScript):
             self.txn.commit()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = DebianBugImportScript(
-        'lp.services.scripts.importdebianbugs',
-        dbuser=config.checkwatches.dbuser)
+        "lp.services.scripts.importdebianbugs",
+        dbuser=config.checkwatches.dbuser,
+    )
     script.run()

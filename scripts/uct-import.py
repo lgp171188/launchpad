@@ -20,7 +20,7 @@ class UCTImportScript(LaunchpadScript):
 
     def main(self):
         if len(self.args) != 1:
-            self.parser.error('Please specify a CVE file to import')
+            self.parser.error("Please specify a CVE file to import")
 
         importer = UCTImporter()
 
@@ -28,6 +28,6 @@ class UCTImportScript(LaunchpadScript):
         importer.import_cve_from_file(cve_path)
 
 
-if __name__ == '__main__':
-    script = UCTImportScript('lp.services.scripts.uctimport')
+if __name__ == "__main__":
+    script = UCTImportScript("lp.services.scripts.uctimport")
     script.run()

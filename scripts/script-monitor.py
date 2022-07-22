@@ -5,27 +5,20 @@
 
 """Monitor scripts."""
 
-__all__ = ['check_script']
+__all__ = ["check_script"]
 
 import _pythonpath  # noqa: F401
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
-from email.mime.text import MIMEText
-from optparse import OptionParser
 import smtplib
 import sys
+from datetime import datetime, timedelta
+from email.mime.text import MIMEText
+from optparse import OptionParser
 from time import strftime
 
 from lp.scripts.scriptmonitor import check_script
 from lp.services.database.sqlbase import connect
-from lp.services.scripts import (
-    db_options,
-    logger,
-    logger_options,
-    )
+from lp.services.scripts import db_options, logger, logger_options
 
 
 def main():
@@ -34,16 +27,18 @@ def main():
     # emails - this should be moved into a testable location.
     # Also duplicated code in scripts/script-monitor-nagios.py
     parser = OptionParser(
-            '%prog [options] (minutes) (host:scriptname) [host:scriptname]'
-            )
+        "%prog [options] (minutes) (host:scriptname) [host:scriptname]"
+    )
     db_options(parser)
     logger_options(parser)
 
     (options, args) = parser.parse_args()
 
     if len(args) < 2:
-        parser.error("Must specify at time in minutes and "
-            "at least one host and script")
+        parser.error(
+            "Must specify at time in minutes and "
+            "at least one host and script"
+        )
 
     # First argument is the number of minutes into the past
     # we want to look for the scripts on the specified hosts
@@ -53,19 +48,22 @@ def main():
 
         completed_from = strftime("%Y-%m-%d %H:%M:%S", start_date.timetuple())
         completed_to = strftime(
-            "%Y-%m-%d %H:%M:%S", datetime.now().timetuple())
+            "%Y-%m-%d %H:%M:%S", datetime.now().timetuple()
+        )
 
         hosts_scripts = []
         for arg in args:
             try:
-                hostname, scriptname = arg.split(':')
+                hostname, scriptname = arg.split(":")
             except TypeError:
                 parser.error(
-                    "%r is not in the format 'host:scriptname'" % (arg,))
+                    "%r is not in the format 'host:scriptname'" % (arg,)
+                )
             hosts_scripts.append((hostname, scriptname))
     except ValueError:
-        parser.error("Must specify time in minutes and "
-            "at least one host and script")
+        parser.error(
+            "Must specify time in minutes and " "at least one host and script"
+        )
 
     log = logger(options)
 
@@ -75,32 +73,35 @@ def main():
         error_found = False
         msg, subj = [], []
         for hostname, scriptname in hosts_scripts:
-            failure_msg = check_script(con, log, hostname,
-                scriptname, completed_from, completed_to)
+            failure_msg = check_script(
+                con, log, hostname, scriptname, completed_from, completed_to
+            )
             if failure_msg is not None:
                 msg.append(failure_msg)
                 subj.append("%s:%s" % (hostname, scriptname))
                 error_found = 2
         if error_found:
             # Construct our email.
-            msg = MIMEText('\n'.join(msg))
-            msg['Subject'] = "Scripts failed to run: %s" % ", ".join(subj)
-            msg['From'] = 'script-failures@launchpad.net'
-            msg['Reply-To'] = 'canonical-launchpad@lists.canonical.com'
-            msg['To'] = 'launchpad-error-reports@lists.canonical.com'
+            msg = MIMEText("\n".join(msg))
+            msg["Subject"] = "Scripts failed to run: %s" % ", ".join(subj)
+            msg["From"] = "script-failures@launchpad.net"
+            msg["Reply-To"] = "canonical-launchpad@lists.canonical.com"
+            msg["To"] = "launchpad-error-reports@lists.canonical.com"
 
             # Send out the email.
             smtp = smtplib.SMTP()
             smtp.connect()
             smtp.sendmail(
-                'script-failures@launchpad.net',
-                ['launchpad-error-reports@lists.canonical.com'],
-                msg.as_string())
+                "script-failures@launchpad.net",
+                ["launchpad-error-reports@lists.canonical.com"],
+                msg.as_string(),
+            )
             smtp.close()
             return 2
     except Exception:
         log.exception("Unhandled exception")
         return 1
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     sys.exit(main())

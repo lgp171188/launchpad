@@ -32,7 +32,8 @@ class SendPersonNotifications(LaunchpadCronScript):
         manager.purgeNotifications(unsent_notifications)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = SendPersonNotifications(
-        'send-person-notifications', dbuser=config.person_notification.dbuser)
+        "send-person-notifications", dbuser=config.person_notification.dbuser
+    )
     script.lock_and_run()

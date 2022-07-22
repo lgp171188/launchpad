@@ -18,10 +18,7 @@ enabled instead.
 
 import _pythonpath  # noqa: F401
 
-from lp.translations.scripts.gettext_check_messages import (
-    GettextCheckMessages,
-    )
+from lp.translations.scripts.gettext_check_messages import GettextCheckMessages
 
-
-if __name__ == '__main__':
-    GettextCheckMessages('gettext-check-messages').lock_and_run()
+if __name__ == "__main__":
+    GettextCheckMessages("gettext-check-messages").lock_and_run()
