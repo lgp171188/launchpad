@@ -3,18 +3,15 @@
 
 """Unit tests for `TranslationGroup` and related classes."""
 
-from lazr.restfulclient.errors import Unauthorized
 import transaction
+from lazr.restfulclient.errors import Unauthorized
 from zope.component import getUtility
 
 from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
     TeamMembershipStatus,
-    )
-from lp.testing import (
-    TestCaseWithFactory,
-    WebServiceTestCase,
-    )
+)
+from lp.testing import TestCaseWithFactory, WebServiceTestCase
 from lp.testing.layers import ZopelessDatabaseLayer
 from lp.translations.interfaces.translationgroup import ITranslationGroupSet
 
@@ -25,7 +22,8 @@ class TestTranslationGroupSet(TestCaseWithFactory):
     def _enrollInTeam(self, team, member):
         """Make `member` a member of `team`."""
         getUtility(ITeamMembershipSet).new(
-            member, team, TeamMembershipStatus.APPROVED, team.teamowner)
+            member, team, TeamMembershipStatus.APPROVED, team.teamowner
+        )
 
     def _makeTranslationTeam(self, group, member, language_code):
         """Create translation team and enroll `member` in it."""
@@ -40,15 +38,15 @@ class TestTranslationGroupSet(TestCaseWithFactory):
         # only once in getByPerson.
         group = self.factory.makeTranslationGroup()
         person = self.factory.makePerson()
-        translation_team = self._makeTranslationTeam(group, person, 'nl')
+        translation_team = self._makeTranslationTeam(group, person, "nl")
 
         nested_team = self.factory.makeTeam()
         self._enrollInTeam(translation_team, nested_team)
         self._enrollInTeam(nested_team, person)
 
         self.assertEqual(
-            [group],
-            list(getUtility(ITranslationGroupSet).getByPerson(person)))
+            [group], list(getUtility(ITranslationGroupSet).getByPerson(person))
+        )
 
     def test_getByPerson_distinct_translationteam(self):
         # getByPerson returns a group only once even if the person is a
@@ -56,16 +54,15 @@ class TestTranslationGroupSet(TestCaseWithFactory):
         group = self.factory.makeTranslationGroup()
         person = self.factory.makePerson()
 
-        self._makeTranslationTeam(group, person, 'es')
-        self._makeTranslationTeam(group, person, 'ca')
+        self._makeTranslationTeam(group, person, "es")
+        self._makeTranslationTeam(group, person, "ca")
 
         self.assertEqual(
-            [group],
-            list(getUtility(ITranslationGroupSet).getByPerson(person)))
+            [group], list(getUtility(ITranslationGroupSet).getByPerson(person))
+        )
 
 
 class TestWebService(WebServiceTestCase):
-
     def test_getByName(self):
         """getByName returns the TranslationGroup for the specified name."""
         group = self.factory.makeTranslationGroup()
@@ -80,7 +77,7 @@ class TestWebService(WebServiceTestCase):
         ws_group = self.wsObject(group)
         self.assertEqual(group.name, ws_group.name)
         self.assertEqual(group.title, ws_group.title)
-        ws_group.name = 'foo'
+        ws_group.name = "foo"
         e = self.assertRaises(Unauthorized, ws_group.lp_save)
         self.assertIn("'name', 'launchpad.Edit'", str(e))
 
@@ -89,4 +86,5 @@ class TestWebService(WebServiceTestCase):
         translation_group_set = getUtility(ITranslationGroupSet)
         self.assertContentEqual(
             [group.name for group in translation_group_set],
-            [group.name for group in self.service.translation_groups])
+            [group.name for group in self.service.translation_groups],
+        )

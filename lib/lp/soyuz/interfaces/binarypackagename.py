@@ -4,33 +4,32 @@
 """Binary package name interfaces."""
 
 __all__ = [
-    'IBinaryPackageName',
-    'IBinaryAndSourcePackageName',
-    'IBinaryPackageNameSet',
-    ]
+    "IBinaryPackageName",
+    "IBinaryAndSourcePackageName",
+    "IBinaryPackageNameSet",
+]
 
 from zope.interface import Interface
-from zope.schema import (
-    Int,
-    TextLine,
-    )
+from zope.schema import Int, TextLine
 
 from lp import _
 from lp.app.validators.name import name_validator
 
 
 class IBinaryPackageName(Interface):
-    id = Int(title=_('ID'), required=True)
+    id = Int(title=_("ID"), required=True)
 
-    name = TextLine(title=_('Valid Binary package name'),
-                    required=True, constraint=name_validator)
+    name = TextLine(
+        title=_("Valid Binary package name"),
+        required=True,
+        constraint=name_validator,
+    )
 
     def __str__():
         """Return the name"""
 
 
 class IBinaryPackageNameSet(Interface):
-
     def __getitem__(name):
         """Retrieve a binarypackagename by name."""
 
@@ -75,7 +74,10 @@ class IBinaryAndSourcePackageName(Interface):
     to report a bug in.
     """
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
 
-    name = TextLine(title=_('Binary or Source package name'),
-                    required=True, constraint=name_validator)
+    name = TextLine(
+        title=_("Binary or Source package name"),
+        required=True,
+        constraint=name_validator,
+    )

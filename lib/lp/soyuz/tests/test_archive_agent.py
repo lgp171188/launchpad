@@ -8,10 +8,10 @@ from zope.security.interfaces import Unauthorized
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.testing import (
+    TestCaseWithFactory,
     celebrity_logged_in,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -28,18 +28,18 @@ class TestSoftwareCenterAgent(TestCaseWithFactory):
         ppa = self.factory.makeArchive(owner=ppa_owner, private=True)
         person = self.factory.makePerson()
         # An error is raised if the user is not subscribed.
-        with celebrity_logged_in('software_center_agent') as agent:
+        with celebrity_logged_in("software_center_agent") as agent:
             self.assertRaises(
-                Unauthorized,
-                person.getArchiveSubscriptionURL, agent, ppa)
+                Unauthorized, person.getArchiveSubscriptionURL, agent, ppa
+            )
         # The PPA owner can create a valid subscription.
         with person_logged_in(ppa_owner):
             ppa.newSubscription(person, ppa_owner)
         # Now the agent can access a subscription URL.
-        with celebrity_logged_in('software_center_agent') as agent:
+        with celebrity_logged_in("software_center_agent") as agent:
             sources = person.getArchiveSubscriptionURL(agent, ppa)
         with person_logged_in(ppa.owner):
             authtoken = ppa.getAuthToken(person).token
-            url = ppa.archive_url.split('http://')[1]
+            url = ppa.archive_url.split("http://")[1]
         new_url = "http://%s:%s@%s" % (person.name, authtoken, url)
         self.assertEqual(sources, new_url)

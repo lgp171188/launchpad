@@ -86,3 +86,13 @@ ed7d7b97b8fb4ebe92799f922b0fa9c4bd1714e8
 4719b7aa672a2674c7fdbbde58772871b77c3301
 # apply black to lp.snappy
 cf7c6a08bd010dd260bff4690d64479fadf37e67
+# apply black to lp.soyuz
+5a98ef6df022b52adc06787b56f2482bc4a28a3e
+# apply black to lp.testing
+15e1c80d57296e830e0dd85f1e03245281a88f02
+# apply black to lp.{testopenid,tests}
+c7dedd4d8a3c642f77570e525be0af9714703eba
+# apply black to lp.translations
+b56a741985ca580c281f142bea589b1ef05d3e93
+# apply black to lp.xmlrpc
+0bf877facbd96ece340dd26a7429ebbf0fb9b65a

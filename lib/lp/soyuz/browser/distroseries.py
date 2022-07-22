@@ -2,9 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'DistroSeriesBuildsView',
-    'DistroSeriesQueueView',
-    ]
+    "DistroSeriesBuildsView",
+    "DistroSeriesQueueView",
+]
 
 from lp.soyuz.browser.build import BuildRecordsView
 from lp.soyuz.browser.queue import QueueItemsView
@@ -24,5 +24,5 @@ class DistroSeriesBuildsView(BuildRecordsView):
 class DistroSeriesQueueView(QueueItemsView):
     """A View to show an `IDistroSeries` object's uploads."""
 
-    label = 'Upload queue'
+    label = "Upload queue"
     page_title = label

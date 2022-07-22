@@ -8,9 +8,7 @@ import transaction
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadScriptLayer
 from lp.translations.enums import RosettaImportStatus
-from lp.translations.model.translationimportqueue import (
-    TranslationImportQueue,
-    )
+from lp.translations.model.translationimportqueue import TranslationImportQueue
 from lp.translations.scripts.import_queue_gardener import ImportQueueGardener
 
 
@@ -22,9 +20,10 @@ class TestTranslationsImportApproval(TestCaseWithFactory):
         super().setUp()
         self.queue = TranslationImportQueue()
         self.script = ImportQueueGardener(
-            'translations-import-queue-gardener',
-            dbuser='translations_import_queue_gardener',
-            test_args=[])
+            "translations-import-queue-gardener",
+            dbuser="translations_import_queue_gardener",
+            test_args=[],
+        )
         self.script.logger.setLevel(logging.FATAL)
         self.owner = self.factory.makePerson()
         self.productseries = self.factory.makeProductSeries()
@@ -35,13 +34,14 @@ class TestTranslationsImportApproval(TestCaseWithFactory):
 
         # Make two valid templates with different directories.
         self.factory.makePOTemplate(
-            path='po/evolution-3.2.pot',
-            productseries=self.productseries)
+            path="po/evolution-3.2.pot", productseries=self.productseries
+        )
         self.factory.makePOTemplate(
-            path='other-po/evolution-3.0.pot',
-            productseries=self.productseries)
+            path="other-po/evolution-3.0.pot", productseries=self.productseries
+        )
         tiqe = self.factory.makeTranslationImportQueueEntry(
-            path='po/fr.po', productseries=self.productseries)
+            path="po/fr.po", productseries=self.productseries
+        )
         transaction.commit()
         self.assertIsNone(tiqe.import_into)
         self.assertEqual(RosettaImportStatus.NEEDS_REVIEW, tiqe.status)
@@ -56,15 +56,17 @@ class TestTranslationsImportApproval(TestCaseWithFactory):
 
         # Make a valid template.
         self.factory.makePOTemplate(
-            path='po/evolution-3.2.pot',
-            productseries=self.productseries)
+            path="po/evolution-3.2.pot", productseries=self.productseries
+        )
         # Make a obsolete template with the same directory.
         self.factory.makePOTemplate(
-            path='po/evolution-3.0.pot',
+            path="po/evolution-3.0.pot",
             productseries=self.productseries,
-            iscurrent=False)
+            iscurrent=False,
+        )
         tiqe = self.factory.makeTranslationImportQueueEntry(
-            path='po/fr.po', productseries=self.productseries)
+            path="po/fr.po", productseries=self.productseries
+        )
         transaction.commit()
         self.assertIsNone(tiqe.import_into)
         self.assertEqual(RosettaImportStatus.NEEDS_REVIEW, tiqe.status)

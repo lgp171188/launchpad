@@ -24,25 +24,21 @@
 """A Web browser that can be driven by an application."""
 
 __all__ = [
-    'Browser',
-    'Command',
-    ]
+    "Browser",
+    "Command",
+]
 
 import gi
 
+gi.require_version("Gtk", "3.0")
+gi.require_version("WebKit", "3.0")
 
-gi.require_version('Gtk', '3.0')
-gi.require_version('WebKit', '3.0')
-
-from gi.repository import (  # noqa: E402
-    GLib,
-    Gtk,
-    WebKit,
-    )
+from gi.repository import GLib, Gtk, WebKit  # noqa: E402
 
 
 class Command:
     """A representation of the status and result of a command."""
+
     STATUS_RUNNING = object()
     STATUS_COMPLETE = object()
 
@@ -50,8 +46,9 @@ class Command:
     CODE_SUCCESS = 0
     CODE_FAIL = 1
 
-    def __init__(self, status=STATUS_RUNNING, return_code=CODE_UNKNOWN,
-                 content=None):
+    def __init__(
+        self, status=STATUS_RUNNING, return_code=CODE_UNKNOWN, content=None
+    ):
         self.status = status
         self.return_code = return_code
         self.content = content
@@ -60,9 +57,9 @@ class Command:
 class Browser(WebKit.WebView):
     """A browser that can be driven by an application."""
 
-    STATUS_PREFIX = '::::'
+    STATUS_PREFIX = "::::"
     TIMEOUT = 5000
-    INCREMENTAL_PREFIX = '>>>>'
+    INCREMENTAL_PREFIX = ">>>>"
     INITIAL_TIMEOUT = None
     INCREMENTAL_TIMEOUT = None
 
@@ -74,51 +71,65 @@ class Browser(WebKit.WebView):
         self.script = None
         self.command = None
         self.listeners = {}
-        self._connect('console-message', self._on_console_message, False)
+        self._connect("console-message", self._on_console_message, False)
 
-    def load_page(self, uri,
-                  timeout=TIMEOUT,
-                  initial_timeout=INITIAL_TIMEOUT,
-                  incremental_timeout=INCREMENTAL_TIMEOUT):
+    def load_page(
+        self,
+        uri,
+        timeout=TIMEOUT,
+        initial_timeout=INITIAL_TIMEOUT,
+        incremental_timeout=INCREMENTAL_TIMEOUT,
+    ):
         """Load a page and return the content."""
         self._setup_listening_operation(
-            timeout, initial_timeout, incremental_timeout)
-        if uri.startswith('/'):
-            uri = 'file://' + uri
+            timeout, initial_timeout, incremental_timeout
+        )
+        if uri.startswith("/"):
+            uri = "file://" + uri
         self.load_uri(uri)
         Gtk.main()
         return self.command
 
-    def run_script(self, script,
-                   timeout=TIMEOUT,
-                   initial_timeout=INITIAL_TIMEOUT,
-                   incremental_timeout=INCREMENTAL_TIMEOUT):
+    def run_script(
+        self,
+        script,
+        timeout=TIMEOUT,
+        initial_timeout=INITIAL_TIMEOUT,
+        incremental_timeout=INCREMENTAL_TIMEOUT,
+    ):
         """Run a script and return the result."""
         self._setup_listening_operation(
-            timeout, initial_timeout, incremental_timeout)
+            timeout, initial_timeout, incremental_timeout
+        )
         self.script = script
-        self._connect('notify::load-status', self._on_script_load_finished)
+        self._connect("notify::load-status", self._on_script_load_finished)
         self.load_string(
-            '<html><head></head><body></body></html>',
-            'text/html', 'UTF-8', 'file:///')
+            "<html><head></head><body></body></html>",
+            "text/html",
+            "UTF-8",
+            "file:///",
+        )
         Gtk.main()
         return self.command
 
-    def _setup_listening_operation(self, timeout, initial_timeout,
-                                   incremental_timeout):
+    def _setup_listening_operation(
+        self, timeout, initial_timeout, incremental_timeout
+    ):
         """Setup a one-time listening operation for command's completion."""
         self._create_window()
         self.command = Command()
         self._last_status = None
         self._incremental_timeout = incremental_timeout
         self._connect(
-            'status-bar-text-changed', self._on_status_bar_text_changed)
+            "status-bar-text-changed", self._on_status_bar_text_changed
+        )
         self._timeout_source = GLib.timeout_add(timeout, self._on_timeout)
         if initial_timeout is None:
             initial_timeout = incremental_timeout
         if initial_timeout is not None:
             self._incremental_timeout_source = GLib.timeout_add(
-                initial_timeout, self._on_timeout)
+                initial_timeout, self._on_timeout
+            )
         else:
             self._incremental_timeout_source = None
 
@@ -148,11 +159,12 @@ class Browser(WebKit.WebView):
             self._last_status = text[4:]
             if self._incremental_timeout:
                 self._incremental_timeout_source = GLib.timeout_add(
-                    self._incremental_timeout, self._on_timeout)
+                    self._incremental_timeout, self._on_timeout
+                )
         elif text.startswith(self.STATUS_PREFIX):
             self._clear_timeout()
             self._clear_incremental_timeout()
-            self._disconnect('status-bar-text-changed')
+            self._disconnect("status-bar-text-changed")
             self._clear_status()
             self.command.status = Command.STATUS_COMPLETE
             self.command.return_code = Command.CODE_SUCCESS
@@ -161,10 +173,10 @@ class Browser(WebKit.WebView):
 
     def _on_script_load_finished(self, view, load_status):
         # pywebkit does not have WebKit.LoadStatus.FINISHED.
-        statuses = ('WEBKIT_LOAD_FINISHED', 'WEBKIT_LOAD_FAILED')
+        statuses = ("WEBKIT_LOAD_FINISHED", "WEBKIT_LOAD_FAILED")
         if self.props.load_status.value_name not in statuses:
             return
-        self._disconnect('notify::load-status')
+        self._disconnect("notify::load-status")
         self.execute_script(self.script)
         self.script = None
 

@@ -3,27 +3,20 @@
 
 """Export translation snapshots to bzr branches where requested."""
 
-__all__ = ['ExportTranslationsToBranch']
+__all__ = ["ExportTranslationsToBranch"]
 
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import os.path
-
+from datetime import datetime, timedelta
 
 # FIRST Ensure correct plugins are loaded. Do not delete this comment or the
 # line below this comment.
 import lp.codehosting  # noqa: F401  # isort: split
 
+import pytz
 from breezy.errors import NotBranchError
 from breezy.revision import NULL_REVISION
-import pytz
-from storm.expr import (
-    And,
-    Join,
-    )
+from storm.expr import And, Join
 from zope.component import getUtility
 
 from lp.app.enums import ServiceUsage
@@ -34,22 +27,16 @@ from lp.code.model.branch import Branch
 from lp.code.model.directbranchcommit import (
     ConcurrentUpdateError,
     DirectBranchCommit,
-    )
+)
 from lp.codehosting.vfs import get_rw_server
 from lp.services.config import config
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStandbyStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStandbyStore
 from lp.services.helpers import shortlist
 from lp.services.mail.helpers import (
     get_contact_email_addresses,
     get_email_template,
-    )
-from lp.services.mail.sendmail import (
-    format_address,
-    simple_sendmail,
-    )
+)
+from lp.services.mail.sendmail import format_address, simple_sendmail
 from lp.services.scripts.base import LaunchpadCronScript
 from lp.services.webapp import errorlog
 from lp.translations.interfaces.potemplate import IPOTemplateSet
@@ -74,9 +61,13 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
     def add_my_options(self):
         """See `LaunchpadScript`."""
         self.parser.add_option(
-            '-n', '--no-fudge', action='store_true', dest='no_fudge',
+            "-n",
+            "--no-fudge",
+            action="store_true",
+            dest="no_fudge",
             default=False,
-            help="For testing: no fudge period for POFile changes.")
+            help="For testing: no fudge period for POFile changes.",
+        )
 
     def _checkForObjections(self, source):
         """Check for reasons why we can't commit to this branch.
@@ -88,18 +79,21 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
         """
         if source.translations_branch is None:
             raise ConcurrentUpdateError(
-                "Translations export for %s was just disabled." % (
-                    source.title))
+                "Translations export for %s was just disabled."
+                % (source.title)
+            )
 
         branch = source.translations_branch
         jobsource = getUtility(IRosettaUploadJobSource)
         unfinished_jobs = jobsource.findUnfinishedJobs(
-            branch, since=datetime.now(pytz.UTC) - timedelta(days=1))
+            branch, since=datetime.now(pytz.UTC) - timedelta(days=1)
+        )
 
         if unfinished_jobs.any():
             raise ConcurrentUpdateError(
                 "Translations branch for %s has pending translations "
-                "changes.  Not committing." % source.title)
+                "changes.  Not committing." % source.title
+            )
 
     def _makeDirectBranchCommit(self, db_branch):
         """Create a `DirectBranchCommit`.
@@ -107,8 +101,9 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
         :param db_branch: A `Branch` object as defined in Launchpad.
         :return: A `DirectBranchCommit` for `db_branch`.
         """
-        committer_id = 'Launchpad Translations on behalf of %s' % (
-            db_branch.owner.name)
+        committer_id = "Launchpad Translations on behalf of %s" % (
+            db_branch.owner.name
+        )
         return DirectBranchCommit(db_branch, committer_id=committer_id)
 
     def _commit(self, source, committer):
@@ -135,7 +130,8 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
         repository = branch.repository
         graph = repository.get_graph()
         for rev_id in graph.iter_lefthand_ancestry(
-                current_rev, (NULL_REVISION, )):
+            current_rev, (NULL_REVISION,)
+        ):
             revision = repository.get_revision(rev_id)
             revision_date = self._getRevisionTime(revision)
             if self._isTranslationsCommit(revision):
@@ -154,12 +150,15 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
         :param changed_since: a datetime object.
         """
         subset = getUtility(IPOTemplateSet).getSubset(
-            productseries=source, iscurrent=True)
+            productseries=source, iscurrent=True
+        )
         for template in subset:
             for pofile in template.pofiles:
-                if (changed_since is None or
-                    pofile.date_changed > changed_since or
-                    template.date_last_updated > changed_since):
+                if (
+                    changed_since is None
+                    or pofile.date_changed > changed_since
+                    or template.date_last_updated > changed_since
+                ):
                     yield pofile
 
     def _exportToBranch(self, source):
@@ -184,7 +183,8 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
             master_branch.branchChanged(**get_db_branch_info(**e.info))
             self.logger.warning(
                 "Skipped %s due to stale DB info, and scheduled a new scan.",
-                branch.bzr_identity)
+                branch.bzr_identity,
+            )
             if self.txn:
                 self.txn.commit()
             return
@@ -217,8 +217,7 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
                 language_code = pofile.getFullLanguageCode()
                 self.logger.debug("Exporting %s." % language_code)
 
-                pofile_path = os.path.join(
-                    base_path, language_code + '.po')
+                pofile_path = os.path.join(base_path, language_code + ".po")
                 pofile_contents = pofile.export()
 
                 committer.writeFile(pofile_path, pofile_contents)
@@ -264,16 +263,20 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
             except Exception as e:
                 items_failed += 1
                 self.logger.error(
-                    "Failure in %s/%s: %s", source.product.name, source.name,
-                    repr(e))
+                    "Failure in %s/%s: %s",
+                    source.product.name,
+                    source.name,
+                    repr(e),
+                )
                 if self.txn:
                     self.txn.abort()
 
             items_done += 1
 
         self.logger.info(
-            "Processed %d item(s); %d failure(s), %d unpushed branch(es)." % (
-                items_done, items_failed, unpushed_branches))
+            "Processed %d item(s); %d failure(s), %d unpushed branch(es)."
+            % (items_done, items_failed, unpushed_branches)
+        )
 
     def _sendMail(self, sender, recipients, subject, text):
         """Wrapper for `simple_sendmail`.  Fakeable for easy testing."""
@@ -286,17 +289,20 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
         no actual bzr branch behind this `IBranch` yet.
         """
         branch = productseries.translations_branch
-        self.logger.info("Notifying %s of unpushed branch %s." % (
-            branch.owner.name, branch.bzr_identity))
+        self.logger.info(
+            "Notifying %s of unpushed branch %s."
+            % (branch.owner.name, branch.bzr_identity)
+        )
 
-        template = get_email_template('unpushed-branch.txt', 'translations')
+        template = get_email_template("unpushed-branch.txt", "translations")
         text = template % {
-            'productseries': productseries.title,
-            'branch_url': branch.bzr_identity,
+            "productseries": productseries.title,
+            "branch_url": branch.bzr_identity,
         }
         recipients = get_contact_email_addresses(branch.owner)
         sender = format_address(
-            "Launchpad Translations", config.canonical.noreply_from_address)
+            "Launchpad Translations", config.canonical.noreply_from_address
+        )
         subject = "Launchpad: translations branch has not been set up."
         self._sendMail(sender, recipients, subject, text)
 
@@ -315,12 +321,15 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
         self.store = IStandbyStore(Product)
 
         product_join = Join(
-            ProductSeries, Product, ProductSeries.product == Product.id)
+            ProductSeries, Product, ProductSeries.product == Product.id
+        )
         productseries = self.store.using(product_join).find(
             ProductSeries,
             And(
                 Product.translations_usage == ServiceUsage.LAUNCHPAD,
-                ProductSeries.translations_branch != None))
+                ProductSeries.translations_branch != None,
+            ),
+        )
 
         # Anything deterministic will do, and even that is only for
         # testing.

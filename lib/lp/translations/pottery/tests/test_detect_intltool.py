@@ -28,8 +28,11 @@ class SetupTestPackageMixin:
         """
         # First build the path for the package.
         packagepath = os.path.join(
-            os.getcwd(), os.path.dirname(__file__),
-            self.test_data_dir, packagename + ".tar.bz2")
+            os.getcwd(),
+            os.path.dirname(__file__),
+            self.test_data_dir,
+            packagename + ".tar.bz2",
+        )
         # Then change into the temporary directory and unpack it.
         self.useTempDir()
         with tarfile.open(packagepath, "r|bz2") as tar:
@@ -42,14 +45,14 @@ class SetupTestPackageMixin:
         # Add files as requested.
         for path, content in buildfiles.items():
             directory = os.path.dirname(path)
-            if directory != '':
+            if directory != "":
                 try:
                     os.makedirs(directory)
                 except OSError as e:
                     # Doesn't matter if it already exists.
                     if e.errno != errno.EEXIST:
                         raise
-            with open(path, 'w') as the_file:
+            with open(path, "w") as the_file:
                 the_file.write(content)
 
     def test_pottery_generate_intltool_script(self):
@@ -57,16 +60,21 @@ class SetupTestPackageMixin:
         self.prepare_package("intltool_POTFILES_in_2")
 
         return_code, stdout, stderr = run_script(
-            'scripts/rosetta/pottery-generate-intltool.py', [])
+            "scripts/rosetta/pottery-generate-intltool.py", []
+        )
 
-        self.assertEqual(dedent("""\
+        self.assertEqual(
+            dedent(
+                """\
             module1/po/messages.pot
             po/messages.pot
-            """), stdout)
+            """
+            ),
+            stdout,
+        )
 
 
 class TestDetectIntltoolInBzrTree(TestCase, SetupTestPackageMixin):
-
     def prepare_tree(self):
         return ControlDir.create_standalone_workingtree(".")
 

@@ -3,20 +3,16 @@
 
 import logging
 
-from storm.expr import Not
-from storm.locals import (
-    ClassAlias,
-    Store,
-    )
 import transaction
+from storm.expr import Not
+from storm.locals import ClassAlias, Store
 from zope.component import getUtility
 
 from lp.translations.interfaces.potemplate import IPOTemplateSet
 from lp.translations.model.potemplate import POTemplate
 from lp.translations.model.translationtemplateitem import (
     TranslationTemplateItem,
-    )
-
+)
 
 # XXX wgrant 2014-08-27: This whole module is terribly misguided and
 # horrifyingly broken. It's probably unsalvageable and should be
@@ -67,13 +63,13 @@ class TranslationSplitterBase:
             self.splitPOTMsgSet(ubuntu_item)
             self.migrateTranslations(upstream_item.potmsgset, ubuntu_item)
             if num % 100 == 0:
-                logger.info('%d entries split.  Committing...', num)
+                logger.info("%d entries split.  Committing...", num)
                 transaction.commit()
             total = num
 
         if total % 100 != 0 or total == 0:
             transaction.commit()
-            logger.info('%d entries split.', total)
+            logger.info("%d entries split.", total)
 
 
 class TranslationSplitter(TranslationSplitterBase):
@@ -101,18 +97,18 @@ class TranslationSplitter(TranslationSplitterBase):
         # Product or DistributionSourcePackage sharing with the other
         # side but not some of the templates on their own side!
         store = Store.of(self.productseries)
-        UpstreamItem = ClassAlias(TranslationTemplateItem, 'UpstreamItem')
-        UpstreamTemplate = ClassAlias(POTemplate, 'UpstreamTemplate')
-        UbuntuItem = ClassAlias(TranslationTemplateItem, 'UbuntuItem')
-        UbuntuTemplate = ClassAlias(POTemplate, 'UbuntuTemplate')
+        UpstreamItem = ClassAlias(TranslationTemplateItem, "UpstreamItem")
+        UpstreamTemplate = ClassAlias(POTemplate, "UpstreamTemplate")
+        UbuntuItem = ClassAlias(TranslationTemplateItem, "UbuntuItem")
+        UbuntuTemplate = ClassAlias(POTemplate, "UbuntuTemplate")
         return store.find(
             (UpstreamItem, UbuntuItem),
             UpstreamItem.potmsgsetID == UbuntuItem.potmsgsetID,
             UbuntuItem.potemplateID == UbuntuTemplate.id,
-            UbuntuTemplate.sourcepackagenameID ==
-                self.sourcepackage.sourcepackagename.id,
-            UbuntuTemplate.distroseriesID ==
-                self.sourcepackage.distroseries.id,
+            UbuntuTemplate.sourcepackagenameID
+            == self.sourcepackage.sourcepackagename.id,
+            UbuntuTemplate.distroseriesID
+            == self.sourcepackage.distroseries.id,
             UpstreamItem.potemplateID == UpstreamTemplate.id,
             UpstreamTemplate.productseriesID == self.productseries.id,
         )
@@ -145,15 +141,17 @@ class TranslationTemplateSplitter(TranslationSplitterBase):
         sharing_subset = getUtility(IPOTemplateSet).getSharingSubset(
             product=self.potemplate.product,
             distribution=self.potemplate.distribution,
-            sourcepackagename=self.potemplate.sourcepackagename)
+            sourcepackagename=self.potemplate.sourcepackagename,
+        )
         sharing_ids = list(
-            sharing_subset.getSharingPOTemplateIDs(self.potemplate.name))
+            sharing_subset.getSharingPOTemplateIDs(self.potemplate.name)
+        )
 
-        ThisItem = ClassAlias(TranslationTemplateItem, 'ThisItem')
-        OtherItem = ClassAlias(TranslationTemplateItem, 'OtherItem')
+        ThisItem = ClassAlias(TranslationTemplateItem, "ThisItem")
+        OtherItem = ClassAlias(TranslationTemplateItem, "OtherItem")
         return Store.of(self.potemplate).find(
             (OtherItem, ThisItem),
             ThisItem.potemplateID == self.potemplate.id,
             OtherItem.potmsgsetID == ThisItem.potmsgsetID,
             Not(OtherItem.potemplateID.is_in(sharing_ids)),
-            )
+        )

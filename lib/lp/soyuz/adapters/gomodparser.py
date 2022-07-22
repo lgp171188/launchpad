@@ -11,8 +11,8 @@ __all__ = [
     "parse_go_mod",
 ]
 
-from contextlib import contextmanager
 import string
+from contextlib import contextmanager
 from typing import Iterator
 
 import pyparsing as pp

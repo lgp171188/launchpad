@@ -8,17 +8,18 @@ from zope.interface.verify import verifyObject
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.interfaces.translationexporter import (
     ITranslationFormatExporter,
-    )
+)
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
+)
 from lp.translations.utilities.gettext_po_exporter import (
     GettextPOChangedExporter,
-    )
+)
 
 
 class GettextPOChangedExporterTestCase(unittest.TestCase):
     """Class test for gettext's .po file exports of changed translations."""
+
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -27,9 +28,11 @@ class GettextPOChangedExporterTestCase(unittest.TestCase):
     def testInterface(self):
         """Check whether the object follows the interface."""
         self.assertTrue(
-            verifyObject(ITranslationFormatExporter,
-                         self.translation_exporter),
-            "GettextPOExporter doesn't follow the interface")
+            verifyObject(
+                ITranslationFormatExporter, self.translation_exporter
+            ),
+            "GettextPOExporter doesn't follow the interface",
+        )
 
     def testSupportedFormats(self):
         """Check that the exporter reports the correct formats."""
@@ -37,10 +40,12 @@ class GettextPOChangedExporterTestCase(unittest.TestCase):
             self.translation_exporter.format,
             TranslationFileFormat.POCHANGED,
             "Expected GettextPOChangedExporter to provide POCHANGED format "
-            "but got %r instead." % self.translation_exporter.format)
+            "but got %r instead." % self.translation_exporter.format,
+        )
         self.assertEqual(
             self.translation_exporter.supported_source_formats,
             [],
             "Expected GettextPOChangedExporter to support no source formats "
-            "but got %r instead." % (
-                self.translation_exporter.supported_source_formats))
+            "but got %r instead."
+            % (self.translation_exporter.supported_source_formats),
+        )

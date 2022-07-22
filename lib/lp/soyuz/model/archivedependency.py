@@ -3,15 +3,10 @@
 
 """Database class for ArchiveDependency."""
 
-__all__ = ['ArchiveDependency']
+__all__ = ["ArchiveDependency"]
 
 import pytz
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    Store,
-    )
+from storm.locals import DateTime, Int, Reference, Store
 from zope.interface import implementer
 
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -28,29 +23,30 @@ from lp.soyuz.interfaces.archivedependency import IArchiveDependency
 class ArchiveDependency(StormBase):
     """See `IArchiveDependency`."""
 
-    __storm_table__ = 'ArchiveDependency'
-    __storm_order__ = 'id'
+    __storm_table__ = "ArchiveDependency"
+    __storm_order__ = "id"
 
     id = Int(primary=True)
 
     date_created = DateTime(
-        name='date_created', tzinfo=pytz.UTC, allow_none=False,
-        default=UTC_NOW)
+        name="date_created", tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW
+    )
 
-    archive_id = Int(name='archive', allow_none=True)
-    archive = Reference(archive_id, 'Archive.id')
+    archive_id = Int(name="archive", allow_none=True)
+    archive = Reference(archive_id, "Archive.id")
 
-    snap_base_id = Int(name='snap_base', allow_none=True)
-    snap_base = Reference(snap_base_id, 'SnapBase.id')
+    snap_base_id = Int(name="snap_base", allow_none=True)
+    snap_base = Reference(snap_base_id, "SnapBase.id")
 
-    dependency_id = Int(name='dependency', allow_none=False)
-    dependency = Reference(dependency_id, 'Archive.id')
+    dependency_id = Int(name="dependency", allow_none=False)
+    dependency = Reference(dependency_id, "Archive.id")
 
     pocket = DBEnum(
-        name='pocket', allow_none=False, enum=PackagePublishingPocket)
+        name="pocket", allow_none=False, enum=PackagePublishingPocket
+    )
 
-    component_id = Int(name='component', allow_none=True)
-    component = Reference(component_id, 'Component.id')
+    component_id = Int(name="component", allow_none=True)
+    component = Reference(component_id, "Component.id")
 
     def __init__(self, parent, dependency, pocket, component=None):
         super().__init__()
@@ -76,7 +72,8 @@ class ArchiveDependency(StormBase):
             self.snap_base = value
         else:
             raise AssertionError(
-                "Unknown archive dependency parent %s" % value)
+                "Unknown archive dependency parent %s" % value
+            )
 
     @property
     def component_name(self):
@@ -93,7 +90,9 @@ class ArchiveDependency(StormBase):
             return self.dependency.displayname
 
         pocket_title = "%s - %s" % (
-            self.dependency.displayname, self.pocket.name)
+            self.dependency.displayname,
+            self.pocket.name,
+        )
 
         if self.component is None:
             return pocket_title
@@ -107,8 +106,11 @@ class ArchiveDependency(StormBase):
         else:
             distroseries = self.snap_base.distro_series
 
-        component_part = ", ".join(get_components_for_context(
-            self.component, distroseries, self.pocket))
+        component_part = ", ".join(
+            get_components_for_context(
+                self.component, distroseries, self.pocket
+            )
+        )
 
         return "%s (%s)" % (pocket_title, component_part)
 

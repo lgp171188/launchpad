@@ -1,18 +1,14 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 from lp.translations.interfaces.rosettastats import IRosettaStats
 
-
 __all__ = [
-    'IDistroSeriesLanguage',
-    'IDistroSeriesLanguageSet',
-    ]
+    "IDistroSeriesLanguage",
+    "IDistroSeriesLanguageSet",
+]
 
 
 class IDistroSeriesLanguage(IRosettaStats):
@@ -25,19 +21,22 @@ class IDistroSeriesLanguage(IRosettaStats):
 
     language = Attribute("The language.")
 
-    distroseries = Attribute("The distro series which has been "
-        "translated.")
+    distroseries = Attribute("The distro series which has been " "translated.")
 
     dateupdated = Attribute("The date these statistics were last updated.")
 
     title = Attribute("The title.")
 
-    pofiles = Attribute("The set of pofiles in this distroseries for this "
+    pofiles = Attribute(
+        "The set of pofiles in this distroseries for this "
         "language. This includes only the real pofiles where translations "
-        "exist.")
+        "exist."
+    )
 
-    contributor_count = Attribute("The number of contributors in total "
-        "for this language in the distribution.")
+    contributor_count = Attribute(
+        "The number of contributors in total "
+        "for this language in the distribution."
+    )
 
     def updateStatistics(ztm):
         """Update all the Rosetta stats for this distro series language."""

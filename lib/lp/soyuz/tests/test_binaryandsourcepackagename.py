@@ -8,21 +8,23 @@ from storm.store import Store
 from lp.soyuz.model.binaryandsourcepackagename import (
     BinaryAndSourcePackageName,
     BinaryAndSourcePackageNameVocabulary,
-    )
+)
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestBinaryAndSourcePackageNameVocabulary(TestCaseWithFactory):
     """Test that the ProductVocabulary behaves as expected."""
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super().setUp()
         self.vocabulary = BinaryAndSourcePackageNameVocabulary()
-        spn = self.factory.makeSourcePackageName(name='bedbugs')
-        self.bspn = Store.of(spn).find(
-            BinaryAndSourcePackageName, name=spn.name).one()
+        spn = self.factory.makeSourcePackageName(name="bedbugs")
+        self.bspn = (
+            Store.of(spn).find(BinaryAndSourcePackageName, name=spn.name).one()
+        )
 
     def test_toTerm(self):
         # Binary and source package name terms are composed of name,
@@ -34,11 +36,11 @@ class TestBinaryAndSourcePackageNameVocabulary(TestCaseWithFactory):
 
     def test_getTermByToken(self):
         # Tokens are case insentive because the name is lowercase.
-        term = self.vocabulary.getTermByToken('BedBUGs')
+        term = self.vocabulary.getTermByToken("BedBUGs")
         self.assertEqual(self.bspn, term.value)
 
     def test_getTermByToken_LookupError(self):
         # getTermByToken() raises a LookupError when no match is found.
         self.assertRaises(
-            LookupError,
-            self.vocabulary.getTermByToken, 'does-notexist')
+            LookupError, self.vocabulary.getTermByToken, "does-notexist"
+        )

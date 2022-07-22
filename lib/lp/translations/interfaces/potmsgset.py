@@ -1,60 +1,54 @@
 # Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from lazr.enum import (
-    EnumeratedType,
-    Item,
-    )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Int,
-    List,
-    Object,
-    Text,
-    )
+from lazr.enum import EnumeratedType, Item
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Int, List, Object, Text
 
 from lp import _
 from lp.translations.interfaces.pomsgid import IPOMsgID
 
-
 __all__ = [
-    'IPOTMsgSet',
-    'POTMsgSetInIncompatibleTemplatesError',
-    'TranslationCreditsType',
-    ]
+    "IPOTMsgSet",
+    "POTMsgSetInIncompatibleTemplatesError",
+    "TranslationCreditsType",
+]
 
 
 class TranslationCreditsType(EnumeratedType):
     """Identify a POTMsgSet as translation credits."""
 
-    NOT_CREDITS = Item("""
+    NOT_CREDITS = Item(
+        """
         Not a translation credits message
 
         This is a standard msgid and not translation credits.
-        """)
+        """
+    )
 
-    GNOME = Item("""
+    GNOME = Item(
+        """
         Gnome credits message
 
         How they do them in Gnome.
-        """)
+        """
+    )
 
-    KDE_EMAILS = Item("""
+    KDE_EMAILS = Item(
+        """
         KDE emails credits message
 
         How they do them in KDE for translator emails.
-        """)
+        """
+    )
 
-    KDE_NAMES = Item("""
+    KDE_NAMES = Item(
+        """
         KDE names credits message
 
         How they do them in KDE for translator names.
-        """)
+        """
+    )
 
 
 class POTMsgSetInIncompatibleTemplatesError(Exception):
@@ -70,26 +64,38 @@ class IPOTMsgSet(Interface):
 
     id = Int(
         title=_("The identifier of this POTMsgSet."),
-        readonly=True, required=True)
+        readonly=True,
+        required=True,
+    )
 
     context = Text(
-        title="String used to disambiguate messages with identical msgids.")
+        title="String used to disambiguate messages with identical msgids."
+    )
 
     msgid_singular = Object(
         title=_("The singular msgid for this message."),
-        description=_("""
+        description=_(
+            """
             A message ID along with the context uniquely identifies the
             template message.
-            """), readonly=True, required=True, schema=IPOMsgID)
+            """
+        ),
+        readonly=True,
+        required=True,
+        schema=IPOMsgID,
+    )
 
     msgid_plural = Object(
         title="The plural msgid for this message.",
-        description=("Provides a plural msgid for the message. "
-                     "If it's not a plural form message, this value"
-                     "should be None."),
+        description=(
+            "Provides a plural msgid for the message. "
+            "If it's not a plural form message, this value"
+            "should be None."
+        ),
         required=True,
         readonly=True,
-        schema=IPOMsgID)
+        schema=IPOMsgID,
+    )
 
     commenttext = Attribute("The manual comments this set has.")
 
@@ -102,25 +108,34 @@ class IPOTMsgSet(Interface):
     flags = Attribute("List of flags that apply to this message.")
 
     singular_text = Text(
-        title=_("The singular text for this message."), readonly=True)
+        title=_("The singular text for this message."), readonly=True
+    )
 
     plural_text = Text(
-        title=_("The plural text for this message or None."), readonly=True)
+        title=_("The plural text for this message or None."), readonly=True
+    )
 
     uses_english_msgids = Bool(
-        title=_("Uses English strings as msgids"), readonly=True,
-        description=_("""
+        title=_("Uses English strings as msgids"),
+        readonly=True,
+        description=_(
+            """
             Some formats, such as Mozilla's XPI, use symbolic msgids where
             gettext uses the original English strings to identify messages.
-            """))
+            """
+        ),
+    )
 
     credits_message_ids = List(
         title=_("List of possible msgids for translation credits"),
         readonly=True,
-        description=_("""
+        description=_(
+            """
             This class attribute is intended to be used to construct database
             queries that search for credits messages.
-            """))
+            """
+        ),
+    )
 
     def clone():
         """Return a new copy of this POTMsgSet."""
@@ -148,9 +163,9 @@ class IPOTMsgSet(Interface):
         :param side: The side from which this message is seen.
         """
 
-    def getLocalTranslationMessages(potemplate, language,
-                                    include_dismissed=False,
-                                    include_unreviewed=True):
+    def getLocalTranslationMessages(
+        potemplate, language, include_dismissed=False, include_unreviewed=True
+    ):
         """Return all local unused translation messages for the POTMsgSet.
 
         Unused are those which are not current or imported, and local are
@@ -190,7 +205,8 @@ class IPOTMsgSet(Interface):
         """
 
     def getExternallySuggestedOrUsedTranslationMessages(
-        suggested_languages=(), used_languages=()):
+        suggested_languages=(), used_languages=()
+    ):
         """Find externally suggested/used translations for the same message.
 
         This returns a mapping: language -> namedtuple (suggested, used)
@@ -232,8 +248,9 @@ class IPOTMsgSet(Interface):
             translations.
         """
 
-    def submitSuggestion(pofile, submitter, new_translations,
-                         from_import=False):
+    def submitSuggestion(
+        pofile, submitter, new_translations, from_import=False
+    ):
         """Submit a suggested translation for this message.
 
         If an identical message is already present, it will be returned
@@ -265,9 +282,14 @@ class IPOTMsgSet(Interface):
         :param side: translation side to look at.  (A `TranslationSide` value)
         """
 
-    def setCurrentTranslation(pofile, submitter, translations, origin,
-                              share_with_other_side=False,
-                              lock_timestamp=None):
+    def setCurrentTranslation(
+        pofile,
+        submitter,
+        translations,
+        origin,
+        share_with_other_side=False,
+        lock_timestamp=None,
+    ):
         """Set the message's translation in Ubuntu, or upstream, or both.
 
         :param pofile: `POFile` you're setting translations in.  Other
@@ -283,8 +305,9 @@ class IPOTMsgSet(Interface):
             that this change is based on.
         """
 
-    def resetCurrentTranslation(pofile, lock_timestamp=None,
-                                share_with_other_side=False):
+    def resetCurrentTranslation(
+        pofile, lock_timestamp=None, share_with_other_side=False
+    ):
         """Turn the current translation back into a suggestion.
 
         This deactivates the message's current translation.  The message
@@ -301,9 +324,13 @@ class IPOTMsgSet(Interface):
             translation side.
         """
 
-    def clearCurrentTranslation(pofile, submitter, origin,
-                                share_with_other_side=False,
-                                lock_timestamp=None):
+    def clearCurrentTranslation(
+        pofile,
+        submitter,
+        origin,
+        share_with_other_side=False,
+        lock_timestamp=None,
+    ):
         """Set the current message in `pofile` to be untranslated.
 
         If the current message is shared, this will also clear it in
@@ -328,15 +355,18 @@ class IPOTMsgSet(Interface):
 
         Messages that are likely to contain email addresses
         are shown only to logged-in users, and not to anonymous users.
-        """)
+        """
+    )
 
     is_translation_credit = Attribute(
-        """Whether this is a message set for crediting translators.""")
+        """Whether this is a message set for crediting translators."""
+    )
 
     translation_credits_type = Choice(
         title="The type of translation credit of this message.",
         required=True,
-        vocabulary=TranslationCreditsType)
+        vocabulary=TranslationCreditsType,
+    )
 
     def makeHTMLID(suffix=None):
         """Unique name for this `POTMsgSet` for use in HTML element ids.

@@ -4,20 +4,13 @@
 """In-process keyserver fixture."""
 
 __all__ = [
-    'InProcessKeyServerFixture',
-    ]
+    "InProcessKeyServerFixture",
+]
 
 from textwrap import dedent
 
-from fixtures import (
-    Fixture,
-    TempDir,
-    )
-from twisted.internet import (
-    defer,
-    endpoints,
-    reactor,
-    )
+from fixtures import Fixture, TempDir
+from twisted.internet import defer, endpoints, reactor
 from twisted.python.compat import nativeString
 from twisted.web import server
 
@@ -56,10 +49,16 @@ class InProcessKeyServerFixture(Fixture):
         resource = KeyServerResource(self.useFixture(TempDir()).path)
         endpoint = endpoints.serverFromString(reactor, nativeString("tcp:0"))
         self._port = yield endpoint.listen(server.Site(resource))
-        config.push("in-process-key-server-fixture", dedent("""
+        config.push(
+            "in-process-key-server-fixture",
+            dedent(
+                """
             [gpghandler]
             port: %s
-            """) % self._port.getHost().port)
+            """
+            )
+            % self._port.getHost().port,
+        )
         self.addCleanup(config.pop, "in-process-key-server-fixture")
 
     @defer.inlineCallbacks
@@ -72,5 +71,6 @@ class InProcessKeyServerFixture(Fixture):
     @property
     def url(self):
         """The URL that the web server will be running on."""
-        return ("http://%s:%d" % (
-            config.gpghandler.host, config.gpghandler.port)).encode("UTF-8")
+        return (
+            "http://%s:%d" % (config.gpghandler.host, config.gpghandler.port)
+        ).encode("UTF-8")

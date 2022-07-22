@@ -3,10 +3,7 @@
 
 """Test the POTemplate widgets."""
 
-from testscenarios import (
-    load_tests_apply_scenarios,
-    WithScenarios,
-    )
+from testscenarios import WithScenarios, load_tests_apply_scenarios
 
 from lp.app.errors import UnexpectedFormData
 from lp.services.features.testing import FeatureFixture
@@ -17,25 +14,32 @@ from lp.translations.browser.potemplate import IPOTemplateEditForm
 from lp.translations.browser.widgets.potemplate import (
     POTemplateAdminSourcePackageNameWidget,
     POTemplateEditSourcePackageNameWidget,
-    )
+)
 from lp.translations.interfaces.potemplate import IPOTemplate
 
 
 class TestPOTemplateEditSourcePackageNameWidget(
-    WithScenarios, TestCaseWithFactory):
+    WithScenarios, TestCaseWithFactory
+):
 
     layer = DatabaseFunctionalLayer
 
     scenarios = [
-        ("spn_picker", {
-            "features": {},
-            "interface": IPOTemplate,
-            }),
-        ("dsp_picker", {
-            "features": {"disclosure.dsp_picker.enabled": "on"},
-            "interface": IPOTemplateEditForm,
-            }),
-        ]
+        (
+            "spn_picker",
+            {
+                "features": {},
+                "interface": IPOTemplate,
+            },
+        ),
+        (
+            "dsp_picker",
+            {
+                "features": {"disclosure.dsp_picker.enabled": "on"},
+                "interface": IPOTemplateEditForm,
+            },
+        ),
+    ]
 
     def setUp(self):
         super().setUp()
@@ -47,7 +51,8 @@ class TestPOTemplateEditSourcePackageNameWidget(
         bound_field = field.bind(potemplate)
         request = LaunchpadTestRequest(form=form)
         return POTemplateEditSourcePackageNameWidget(
-            bound_field, bound_field.vocabulary, request)
+            bound_field, bound_field.vocabulary, request
+        )
 
     def test_productseries(self):
         potemplate = self.factory.makePOTemplate()
@@ -61,24 +66,32 @@ class TestPOTemplateEditSourcePackageNameWidget(
         widget = self.makeWidget(potemplate)
         self.assertEqual(distroseries.distribution, widget.getDistribution())
         self.assertEqual(
-            distroseries.distribution.name, widget.distribution_name)
+            distroseries.distribution.name, widget.distribution_name
+        )
 
 
 class TestPOTemplateAdminSourcePackageNameWidget(
-    WithScenarios, TestCaseWithFactory):
+    WithScenarios, TestCaseWithFactory
+):
 
     layer = DatabaseFunctionalLayer
 
     scenarios = [
-        ("spn_picker", {
-            "features": {},
-            "interface": IPOTemplate,
-            }),
-        ("dsp_picker", {
-            "features": {"disclosure.dsp_picker.enabled": "on"},
-            "interface": IPOTemplateEditForm,
-            }),
-        ]
+        (
+            "spn_picker",
+            {
+                "features": {},
+                "interface": IPOTemplate,
+            },
+        ),
+        (
+            "dsp_picker",
+            {
+                "features": {"disclosure.dsp_picker.enabled": "on"},
+                "interface": IPOTemplateEditForm,
+            },
+        ),
+    ]
 
     def setUp(self):
         super().setUp()
@@ -90,15 +103,16 @@ class TestPOTemplateAdminSourcePackageNameWidget(
         bound_field = field.bind(potemplate)
         request = LaunchpadTestRequest(form=form)
         return POTemplateAdminSourcePackageNameWidget(
-            bound_field, bound_field.vocabulary, request)
+            bound_field, bound_field.vocabulary, request
+        )
 
     def test_distroseries_id(self):
         potemplate = self.factory.makePOTemplate()
         distroseries = self.factory.makeDistroSeries()
         form = {
-            "field.distroseries": "%s/%s" % (
-                distroseries.distribution.name, distroseries.name),
-            }
+            "field.distroseries": "%s/%s"
+            % (distroseries.distribution.name, distroseries.name),
+        }
         widget = self.makeWidget(potemplate, form=form)
         self.assertEqual("field.distroseries", widget.distroseries_id)
 
@@ -106,9 +120,9 @@ class TestPOTemplateAdminSourcePackageNameWidget(
         potemplate = self.factory.makePOTemplate()
         distroseries = self.factory.makeDistroSeries()
         form = {
-            "field.distroseries": "%s/%s" % (
-                distroseries.distribution.name, distroseries.name),
-            }
+            "field.distroseries": "%s/%s"
+            % (distroseries.distribution.name, distroseries.name),
+        }
         widget = self.makeWidget(potemplate, form=form)
         self.assertEqual(distroseries.distribution, widget.getDistribution())
 
@@ -124,7 +138,9 @@ class TestPOTemplateAdminSourcePackageNameWidget(
         self.assertRaises(
             UnexpectedFormData,
             lambda: (
-                self.makeWidget(potemplate, form=form).getDistribution().name))
+                self.makeWidget(potemplate, form=form).getDistribution().name
+            ),
+        )
 
 
 load_tests = load_tests_apply_scenarios

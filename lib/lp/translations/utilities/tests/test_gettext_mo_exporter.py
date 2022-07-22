@@ -12,7 +12,7 @@ from lp.translations.utilities.gettext_mo_exporter import GettextMOExporter
 from lp.translations.utilities.gettext_po_parser import POParser
 from lp.translations.utilities.translation_common_format import (
     TranslationMessageData,
-    )
+)
 from lp.translations.utilities.translation_export import ExportFileStorage
 
 
@@ -23,7 +23,9 @@ class TestGettextMOExporter(TestCaseWithFactory):
 
     def _makeTranslationFileData(self, is_template=False):
         """Produce a TranslationFileData with one message: "foo"."""
-        file_data = POParser().parse(dedent("""
+        file_data = POParser().parse(
+            dedent(
+                """
             msgid ""
             msgstr ""
             "MIME-Version: 1.0\\n"
@@ -31,14 +33,16 @@ class TestGettextMOExporter(TestCaseWithFactory):
 
             msgid "foo"
             msgstr "bar"
-            """).encode("UTF-8"))
+            """
+            ).encode("UTF-8")
+        )
         file_data.is_template = is_template
-        file_data.language_code = 'my'
-        file_data.translation_domain = 'main'
+        file_data.language_code = "my"
+        file_data.translation_domain = "main"
         if is_template:
-            file_data.path = file_data.translation_domain + '.pot'
+            file_data.path = file_data.translation_domain + ".pot"
         else:
-            file_data.path = file_data.language_code + '.po'
+            file_data.path = file_data.language_code + ".po"
         return file_data
 
     def test_export_message(self):
@@ -48,7 +52,8 @@ class TestGettextMOExporter(TestCaseWithFactory):
         self.assertRaises(
             NotImplementedError,
             exporter.exportTranslationMessageData,
-            TranslationMessageData())
+            TranslationMessageData(),
+        )
 
     def test_export_MO_produces_MO(self):
         # Exporting a translation in MO format produces a proper MO
@@ -59,16 +64,19 @@ class TestGettextMOExporter(TestCaseWithFactory):
         GettextMOExporter().exportTranslationFile(file_data, storage)
 
         output = storage.export()
-        self.assertEqual('application/x-gmo', output.content_type)
+        self.assertEqual("application/x-gmo", output.content_type)
 
         # The file can even be converted back to PO format.
         retval, text, stderr = run_command(
-            '/usr/bin/msgunfmt', args=['-'], input=output.read(),
-            universal_newlines=False)
+            "/usr/bin/msgunfmt",
+            args=["-"],
+            input=output.read(),
+            universal_newlines=False,
+        )
 
         self.assertEqual(0, retval)
-        self.assertIn(b'MIME-Version', text)
-        self.assertIn(b'msgid', text)
+        self.assertIn(b"MIME-Version", text)
+        self.assertIn(b"msgid", text)
         self.assertIn(b'"foo"', text)
 
     def test_export_template_stays_pot(self):
@@ -80,10 +88,10 @@ class TestGettextMOExporter(TestCaseWithFactory):
         GettextMOExporter().exportTranslationFile(file_data, storage)
 
         output = storage.export()
-        self.assertEqual('application/x-po', output.content_type)
-        self.assertTrue(output.path.endswith('.pot'))
+        self.assertEqual("application/x-po", output.content_type)
+        self.assertTrue(output.path.endswith(".pot"))
         text = output.read()
-        self.assertIn(b'POT-Creation-Date:', text)
-        self.assertIn(b'MIME-Version:', text)
-        self.assertIn(b'msgid', text)
+        self.assertIn(b"POT-Creation-Date:", text)
+        self.assertIn(b"MIME-Version:", text)
+        self.assertIn(b"msgid", text)
         self.assertIn(b'"foo"', text)

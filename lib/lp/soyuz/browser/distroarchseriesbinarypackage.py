@@ -2,19 +2,16 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'DistroArchSeriesBinaryPackageNavigation',
-    'DistroArchSeriesBinaryPackageView',
-    ]
+    "DistroArchSeriesBinaryPackageNavigation",
+    "DistroArchSeriesBinaryPackageView",
+]
 
 from lazr.restful.utils import smartquote
 
-from lp.services.webapp import (
-    GetitemNavigation,
-    LaunchpadView,
-    )
+from lp.services.webapp import GetitemNavigation, LaunchpadView
 from lp.soyuz.interfaces.distroarchseriesbinarypackage import (
     IDistroArchSeriesBinaryPackage,
-    )
+)
 
 
 class DistroArchSeriesBinaryPackageNavigation(GetitemNavigation):
@@ -23,7 +20,6 @@ class DistroArchSeriesBinaryPackageNavigation(GetitemNavigation):
 
 
 class DistroArchSeriesBinaryPackageView(LaunchpadView):
-
     @property
     def page_title(self):
         return smartquote(self.context.title)

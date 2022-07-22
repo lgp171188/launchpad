@@ -4,12 +4,9 @@
 __all__ = [
     "IPackageTranslationsUploadJob",
     "IPackageTranslationsUploadJobSource",
-    ]
+]
 
-from lp.services.job.interfaces.job import (
-    IJobSource,
-    IRunnableJob,
-    )
+from lp.services.job.interfaces.job import IJobSource, IRunnableJob
 
 
 class IPackageTranslationsUploadJobSource(IJobSource):

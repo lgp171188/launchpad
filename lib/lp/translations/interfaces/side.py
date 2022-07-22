@@ -4,16 +4,13 @@
 """Traits of the two "sides" of translation: Ubuntu and upstream."""
 
 __all__ = [
-    'ITranslationSideTraits',
-    'ITranslationSideTraitsSet',
-    'TranslationSide',
-    ]
+    "ITranslationSideTraits",
+    "ITranslationSideTraitsSet",
+    "TranslationSide",
+]
 
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.schema import TextLine
 
 
@@ -22,6 +19,7 @@ class TranslationSide:
 
     These are "upstream" and "Ubuntu."
     """
+
     UPSTREAM = 1
     UBUNTU = 2
 
@@ -37,15 +35,19 @@ class ITranslationSideTraits(Interface):
     For an introduction to the Traits pattern, see
     http://www.cantrip.org/traits.html
     """
+
     side = Attribute("This TranslationSide")
     other_side_traits = Reference(
-        Interface, title="Traits for other side.", required=True,
-        readonly=True)
+        Interface, title="Traits for other side.", required=True, readonly=True
+    )
     flag_name = TextLine(
         title="The TranslationMessage flag for this side",
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     displayname = TextLine(
-        title="Display name for this side", required=True, readonly=True)
+        title="Display name for this side", required=True, readonly=True
+    )
 
     def getCurrentMessage(potemplate, potmsgset, language):
         """Find the current message on this side, if any."""

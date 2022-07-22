@@ -4,8 +4,8 @@
 """Widgets related to `IArchive`."""
 
 __all__ = [
-    'PPANameWidget',
-    ]
+    "PPANameWidget",
+]
 
 from urllib.parse import urljoin
 
@@ -24,4 +24,4 @@ class PPANameWidget(URIComponentWidget):
             root = config.personalpackagearchive.private_base_url
         else:
             root = config.personalpackagearchive.base_url
-        return urljoin(root, owner.name) + '/'
+        return urljoin(root, owner.name) + "/"

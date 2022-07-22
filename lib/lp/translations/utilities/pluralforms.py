@@ -2,11 +2,11 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BadPluralExpression',
-    'make_friendly_plural_forms',
-    'make_plurals_identity_map',
-    'plural_form_mapper',
-    ]
+    "BadPluralExpression",
+    "make_friendly_plural_forms",
+    "make_plurals_identity_map",
+    "plural_form_mapper",
+]
 
 import gettext
 import re
@@ -31,8 +31,8 @@ def make_friendly_plural_forms(expression, expected_forms):
             form = function(number)
         except ZeroDivisionError:
             raise BadPluralExpression(
-                "Division by zero in plural expression for n = %d."
-                % number)
+                "Division by zero in plural expression for n = %d." % number
+            )
 
         forms.setdefault(form, [])
         if len(forms[form]) < MAX_EXAMPLES:
@@ -42,12 +42,13 @@ def make_friendly_plural_forms(expression, expected_forms):
     if found_forms != list(range(expected_forms)):
         raise BadPluralExpression(
             "Plural expression should produce forms 0..%d, "
-            "but we found forms %s." % (expected_forms, found_forms))
+            "but we found forms %s." % (expected_forms, found_forms)
+        )
 
     return [
-        {'form': form, 'examples': examples}
+        {"form": form, "examples": examples}
         for (form, examples) in sorted(forms.items())
-        ]
+    ]
 
 
 def make_plural_function(expression):
@@ -62,14 +63,15 @@ def make_plural_function(expression):
 
     # Guard against '**' usage: it's not useful in evaluating
     # plural forms, yet can be used to introduce a DoS.
-    if expression.find('**') != -1:
+    if expression.find("**") != -1:
         raise BadPluralExpression("Invalid operator: **.")
 
     # We allow digits, whitespace [ \t], parentheses, "n", and operators
     # as allowed by GNU gettext implementation as well.
-    if not re.match('^[0-9 \t()n|&?:!=<>+%*/-]*$', expression):
+    if not re.match("^[0-9 \t()n|&?:!=<>+%*/-]*$", expression):
         raise BadPluralExpression(
-            "Plural expression contains disallowed characters.")
+            "Plural expression contains disallowed characters."
+        )
 
     try:
         function = gettext.c2py(expression)

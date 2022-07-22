@@ -3,27 +3,17 @@
 
 """Test Build features."""
 
-from datetime import timedelta
 import io
 import os.path
 import shutil
+from datetime import timedelta
 from urllib.request import urlopen
 
-from debian.deb822 import Changes
-from lazr.restfulclient.errors import (
-    BadRequest,
-    Unauthorized,
-    )
-from testtools.matchers import (
-    Equals,
-    MatchesListwise,
-    MatchesStructure,
-    )
 import transaction
-from zope.component import (
-    getUtility,
-    queryUtility,
-    )
+from debian.deb822 import Changes
+from lazr.restfulclient.errors import BadRequest, Unauthorized
+from testtools.matchers import Equals, MatchesListwise, MatchesStructure
+from zope.component import getUtility, queryUtility
 from zope.schema import getFields
 from zope.security.interfaces import Unauthorized as ZopeUnauthorized
 from zope.security.proxy import removeSecurityProxy
@@ -43,7 +33,7 @@ from lp.soyuz.enums import (
     PackagePublishingStatus,
     PackageUploadCustomFormat,
     PackageUploadStatus,
-    )
+)
 from lp.soyuz.interfaces.archivejob import IPackageUploadNotificationJobSource
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.component import IComponentSet
@@ -53,30 +43,27 @@ from lp.soyuz.interfaces.queue import (
     IPackageUploadSet,
     QueueAdminUnauthorizedError,
     QueueInconsistentStateError,
-    )
+)
 from lp.soyuz.interfaces.section import ISectionSet
 from lp.soyuz.model.packagecopyjob import IPackageCopyJobSource
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
+    StormStatementRecorder,
+    TestCase,
+    TestCaseWithFactory,
     admin_logged_in,
     api_url,
     launchpadlib_for,
     person_logged_in,
     record_two_runs,
-    StormStatementRecorder,
-    TestCase,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     ZopelessLayer,
-    )
-from lp.testing.matchers import (
-    HasQueryCount,
-    Provides,
-    )
+)
+from lp.testing.matchers import HasQueryCount, Provides
 
 
 class PackageUploadTestCase(TestCaseWithFactory):
@@ -95,23 +82,31 @@ class PackageUploadTestCase(TestCaseWithFactory):
 
     def test_add_log_entry(self):
         upload = self.factory.makePackageUpload(
-            status=PackageUploadStatus.UNAPPROVED)
+            status=PackageUploadStatus.UNAPPROVED
+        )
         upload = removeSecurityProxy(upload)
         self.assertEqual(0, len(upload.logs))
 
-        person = self.factory.makePerson(name='lpusername')
+        person = self.factory.makePerson(name="lpusername")
 
-        upload._addLog(person, PackageUploadStatus.REJECTED, 'just because')
+        upload._addLog(person, PackageUploadStatus.REJECTED, "just because")
 
         log = upload.logs[0]
-        self.assertThat(log, MatchesStructure.byEquality(
-            reviewer=person, old_status=PackageUploadStatus.UNAPPROVED,
-            new_status=PackageUploadStatus.REJECTED, comment='just because'))
+        self.assertThat(
+            log,
+            MatchesStructure.byEquality(
+                reviewer=person,
+                old_status=PackageUploadStatus.UNAPPROVED,
+                new_status=PackageUploadStatus.REJECTED,
+                comment="just because",
+            ),
+        )
 
         expected_repr = (
             "<PackageUploadLog ~lpusername "
             "changed {self.package_upload} to Rejected "
-            "on {self.date_created}>").format(self=log)
+            "on {self.date_created}>"
+        ).format(self=log)
         self.assertEqual(str(expected_repr), repr(log))
 
     def test_realiseUpload_for_overridden_component_archive(self):
@@ -122,24 +117,28 @@ class PackageUploadTestCase(TestCaseWithFactory):
 
         # Get some sample changes file content for the new upload.
         changes_file = open(
-            datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'), 'rb')
+            datadir("suite/bar_1.0-1/bar_1.0-1_source.changes"), "rb"
+        )
         changes_file_content = changes_file.read()
         changes_file.close()
 
         main_upload_release = self.test_publisher.getPubSource(
-            sourcename='main-upload', spr_only=True,
-            component='main', changes_file_content=changes_file_content)
+            sourcename="main-upload",
+            spr_only=True,
+            component="main",
+            changes_file_content=changes_file_content,
+        )
         package_upload = main_upload_release.package_upload
 
         self.assertEqual("primary", main_upload_release.upload_archive.name)
 
         # Override the upload to partner and verify the change.
-        partner_component = getUtility(IComponentSet)['partner']
-        main_component = getUtility(IComponentSet)['main']
+        partner_component = getUtility(IComponentSet)["partner"]
+        main_component = getUtility(IComponentSet)["main"]
         package_upload.overrideSource(
-            partner_component, None, [partner_component, main_component])
-        self.assertEqual(
-            "partner", main_upload_release.upload_archive.name)
+            partner_component, None, [partner_component, main_component]
+        )
+        self.assertEqual("partner", main_upload_release.upload_archive.name)
 
         # Now realise the upload and verify that the publishing is for
         # the partner archive.
@@ -163,7 +162,8 @@ class PackageUploadTestCase(TestCaseWithFactory):
         # publication that was created.
         upload = self.factory.makeSourcePackageUpload()
         self.factory.makeComponentSelection(
-            upload.distroseries, upload.sourcepackagerelease.component)
+            upload.distroseries, upload.sourcepackagerelease.component
+        )
         upload.setAccepted()
         [spph] = upload.realiseUpload()
         self.assertEqual(spph.packageupload, upload)
@@ -176,11 +176,14 @@ class PackageUploadTestCase(TestCaseWithFactory):
         tarfile.add_file("installer-amd64/1/hello", b"world")
         tarfile.close()
         upload = self.factory.makePackageUpload(
-            pocket=PackagePublishingPocket.PROPOSED)
+            pocket=PackagePublishingPocket.PROPOSED
+        )
         filename = "debian-installer-images_1_amd64.tar.gz"
         lfa = self.factory.makeLibraryFileAlias(
-            filename=filename, content=buf.getvalue(),
-            content_type="application/gzipped-tar")
+            filename=filename,
+            content=buf.getvalue(),
+            content_type="application/gzipped-tar",
+        )
         upload.addCustom(lfa, PackageUploadCustomFormat.DEBIAN_INSTALLER)
         transaction.commit()
         upload.setAccepted()
@@ -188,13 +191,18 @@ class PackageUploadTestCase(TestCaseWithFactory):
         logger = BufferLogger()
         self.assertEqual([], upload.realiseUpload(logger=logger))
         self.assertEqual(
-            "DEBUG Publishing custom %s to %s/%s\n" % (
-                filename, upload.distroseries.distribution.name,
-                upload.distroseries.name),
-            logger.getLogBuffer())
+            "DEBUG Publishing custom %s to %s/%s\n"
+            % (
+                filename,
+                upload.distroseries.distribution.name,
+                upload.distroseries.name,
+            ),
+            logger.getLogBuffer(),
+        )
         self.assertEqual(
             ["%s-proposed" % upload.distroseries.name],
-            upload.archive.dirty_suites)
+            upload.archive.dirty_suites,
+        )
 
     def test_overrideSource_ignores_None_component_change(self):
         # overrideSource accepts None as a component; it will not object
@@ -207,8 +215,13 @@ class PackageUploadTestCase(TestCaseWithFactory):
         self.assertEqual(current_component, spr.component)
         self.assertEqual(new_section, spr.section)
 
-    def makeSourcePackageUpload(self, pocket=None, sourcepackagename=None,
-                                section_name=None, changes_dict=None):
+    def makeSourcePackageUpload(
+        self,
+        pocket=None,
+        sourcepackagename=None,
+        section_name=None,
+        changes_dict=None,
+    ):
         """Make a useful source package upload for queue tests."""
         distroseries = self.test_publisher.distroseries
         distroseries.changeslist = "autotest_changes@ubuntu.com"
@@ -218,16 +231,25 @@ class PackageUploadTestCase(TestCaseWithFactory):
         if changes_dict is not None:
             changes.update(changes_dict)
         upload = self.factory.makePackageUpload(
-            archive=distroseries.main_archive, distroseries=distroseries,
-            pocket=pocket, changes_file_content=changes.dump().encode("UTF-8"),
-            signing_key=key)
+            archive=distroseries.main_archive,
+            distroseries=distroseries,
+            pocket=pocket,
+            changes_file_content=changes.dump().encode("UTF-8"),
+            signing_key=key,
+        )
         spr = self.factory.makeSourcePackageRelease(
-            sourcepackagename=sourcepackagename, distroseries=distroseries,
-            component="main", section_name=section_name,
-            changelog_entry="dummy")
+            sourcepackagename=sourcepackagename,
+            distroseries=distroseries,
+            component="main",
+            section_name=section_name,
+            changelog_entry="dummy",
+        )
         upload.addSource(spr)
-        spr.addFile(self.factory.makeLibraryFileAlias(
-            filename="%s_%s.dsc" % (spr.name, spr.version)))
+        spr.addFile(
+            self.factory.makeLibraryFileAlias(
+                filename="%s_%s.dsc" % (spr.name, spr.version)
+            )
+        )
         transaction.commit()
         return upload, uploader
 
@@ -239,15 +261,21 @@ class PackageUploadTestCase(TestCaseWithFactory):
         key = self.factory.makeGPGKey(owner=uploader)
         changes = Changes({"Changed-By": uploader.preferredemail.email})
         upload = self.factory.makePackageUpload(
-            archive=distroseries.main_archive, distroseries=distroseries,
+            archive=distroseries.main_archive,
+            distroseries=distroseries,
             changes_file_content=changes.dump().encode("UTF-8"),
-            signing_key=key)
+            signing_key=key,
+        )
         build = self.factory.makeBinaryPackageBuild(
-            distroarchseries=self.test_publisher.breezy_autotest_i386)
+            distroarchseries=self.test_publisher.breezy_autotest_i386
+        )
         upload.addBuild(build)
         bpr = self.factory.makeBinaryPackageRelease(build=build)
-        bpr.addFile(self.factory.makeLibraryFileAlias(
-            filename="%s_%s_i386.deb" % (bpr.name, bpr.version)))
+        bpr.addFile(
+            self.factory.makeLibraryFileAlias(
+                filename="%s_%s_i386.deb" % (bpr.name, bpr.version)
+            )
+        )
         transaction.commit()
         return upload, uploader
 
@@ -272,10 +300,12 @@ class PackageUploadTestCase(TestCaseWithFactory):
         upload.acceptFromQueue()
         self.runPackageUploadNotificationJob()
         # Emails sent are the uploader's notification and the announcement:
-        self.assertEmails([
-            uploader.preferredemail.email,
-            "autotest_changes@ubuntu.com",
-            ])
+        self.assertEmails(
+            [
+                uploader.preferredemail.email,
+                "autotest_changes@ubuntu.com",
+            ]
+        )
 
     def test_acceptFromQueue_source_backports_sends_no_announcement(self):
         # Accepting a source package into BACKPORTS does not send an
@@ -284,7 +314,8 @@ class PackageUploadTestCase(TestCaseWithFactory):
         self.test_publisher.prepareBreezyAutotest()
         self.test_publisher.distroseries.status = SeriesStatus.CURRENT
         upload, uploader = self.makeSourcePackageUpload(
-            pocket=PackagePublishingPocket.BACKPORTS)
+            pocket=PackagePublishingPocket.BACKPORTS
+        )
         upload.acceptFromQueue()
         self.runPackageUploadNotificationJob()
         # Only one email is sent, to the person in the changed-by field.  No
@@ -298,7 +329,8 @@ class PackageUploadTestCase(TestCaseWithFactory):
         self.test_publisher.distroseries.status = SeriesStatus.CURRENT
         upload, _ = self.makeSourcePackageUpload(
             pocket=PackagePublishingPocket.PROPOSED,
-            section_name="translations")
+            section_name="translations",
+        )
         upload.acceptFromQueue()
         self.runPackageUploadNotificationJob()
         self.assertEqual("DONE", upload.status.name)
@@ -312,9 +344,10 @@ class PackageUploadTestCase(TestCaseWithFactory):
         spr = upload.sourcepackagerelease
         [build] = spr.builds
         self.assertEqual(
-            "i386 build of %s %s in ubuntutest breezy-autotest RELEASE" % (
-                spr.name, spr.version),
-            build.title)
+            "i386 build of %s %s in ubuntutest breezy-autotest RELEASE"
+            % (spr.name, spr.version),
+            build.title,
+        )
 
     def test_acceptFromQueue_source_closes_bug(self):
         # Accepting a source package closes bugs appropriately.
@@ -334,7 +367,8 @@ class PackageUploadTestCase(TestCaseWithFactory):
         # Upload the next version of the same package, closing this bug.
         changes = Changes({"Launchpad-Bugs-Fixed": str(task.bug.id)})
         upload_two, _ = self.makeSourcePackageUpload(
-            sourcepackagename=spr.sourcepackagename, changes_dict=changes)
+            sourcepackagename=spr.sourcepackagename, changes_dict=changes
+        )
 
         # Accept the new upload.  It should reach the DONE state, and should
         # close the bug.
@@ -357,17 +391,31 @@ class PackageUploadTestCase(TestCaseWithFactory):
         uploader = self.factory.makePerson()
         changes = Changes({"Changed-By": uploader.preferredemail.email})
         upload_one = self.factory.makePackageUpload(
-            archive=distroseries.main_archive, distroseries=distroseries,
-            changes_file_content=changes.dump().encode("UTF-8"))
-        upload_one.addSource(self.factory.makeSourcePackageRelease(
-            sourcepackagename="cnews", distroseries=distroseries,
-            component="main", version="1.0"))
+            archive=distroseries.main_archive,
+            distroseries=distroseries,
+            changes_file_content=changes.dump().encode("UTF-8"),
+        )
+        upload_one.addSource(
+            self.factory.makeSourcePackageRelease(
+                sourcepackagename="cnews",
+                distroseries=distroseries,
+                component="main",
+                version="1.0",
+            )
+        )
         upload_two = self.factory.makePackageUpload(
-            archive=distroseries.main_archive, distroseries=distroseries,
-            changes_file_content=changes.dump().encode("UTF-8"))
-        upload_two.addSource(self.factory.makeSourcePackageRelease(
-            sourcepackagename="cnews", distroseries=distroseries,
-            component="main", version="1.0"))
+            archive=distroseries.main_archive,
+            distroseries=distroseries,
+            changes_file_content=changes.dump().encode("UTF-8"),
+        )
+        upload_two.addSource(
+            self.factory.makeSourcePackageRelease(
+                sourcepackagename="cnews",
+                distroseries=distroseries,
+                component="main",
+                version="1.0",
+            )
+        )
         transaction.commit()
         upload_one.setUnapproved()
         IStore(upload_one).flush()
@@ -376,7 +424,8 @@ class PackageUploadTestCase(TestCaseWithFactory):
 
         # There are now duplicate uploads in UNAPPROVED.
         unapproved = distroseries.getPackageUploads(
-            status=PackageUploadStatus.UNAPPROVED, name="cnews")
+            status=PackageUploadStatus.UNAPPROVED, name="cnews"
+        )
         self.assertEqual(2, unapproved.count())
 
         # Accepting one of them works.  (Since it's a single source upload,
@@ -386,25 +435,38 @@ class PackageUploadTestCase(TestCaseWithFactory):
         self.assertEqual("DONE", upload_one.status.name)
 
         log = upload_one.logs[0]
-        self.assertThat(log, MatchesStructure.byEquality(
-            reviewer=person, old_status=PackageUploadStatus.UNAPPROVED,
-            new_status=PackageUploadStatus.ACCEPTED, comment=None))
+        self.assertThat(
+            log,
+            MatchesStructure.byEquality(
+                reviewer=person,
+                old_status=PackageUploadStatus.UNAPPROVED,
+                new_status=PackageUploadStatus.ACCEPTED,
+                comment=None,
+            ),
+        )
         transaction.commit()
 
         # Trying to accept the second fails.
         self.assertRaises(
-            QueueInconsistentStateError, upload_two.acceptFromQueue)
+            QueueInconsistentStateError, upload_two.acceptFromQueue
+        )
         self.assertEqual("UNAPPROVED", upload_two.status.name)
 
         # Rejecting the second upload works.
-        upload_two.rejectFromQueue(person, 'Because yes')
+        upload_two.rejectFromQueue(person, "Because yes")
         self.assertEqual("REJECTED", upload_two.status.name)
 
         self.assertEqual(1, len(upload_two.logs))
         log = upload_two.logs[0]
-        self.assertThat(log, MatchesStructure.byEquality(
-            reviewer=person, old_status=PackageUploadStatus.UNAPPROVED,
-            new_status=PackageUploadStatus.REJECTED, comment='Because yes'))
+        self.assertThat(
+            log,
+            MatchesStructure.byEquality(
+                reviewer=person,
+                old_status=PackageUploadStatus.UNAPPROVED,
+                new_status=PackageUploadStatus.REJECTED,
+                comment="Because yes",
+            ),
+        )
 
     def test_rejectFromQueue_source_sends_email(self):
         # Rejecting a source package sends an email to the uploader.
@@ -428,7 +490,8 @@ class PackageUploadTestCase(TestCaseWithFactory):
         self.test_publisher.distroseries.status = SeriesStatus.CURRENT
         upload, _ = self.makeSourcePackageUpload(
             pocket=PackagePublishingPocket.PROPOSED,
-            section_name="translations")
+            section_name="translations",
+        )
         upload.rejectFromQueue(self.factory.makePerson())
         self.runPackageUploadNotificationJob()
         self.assertEmailQueueLength(0)
@@ -439,12 +502,13 @@ class PackageUploadTestCase(TestCaseWithFactory):
         self.test_publisher.prepareBreezyAutotest()
         upload, uploader = self.makeSourcePackageUpload()
         person = self.factory.makePerson()
-        upload.rejectFromQueue(user=person, comment='Because.')
+        upload.rejectFromQueue(user=person, comment="Because.")
         self.runPackageUploadNotificationJob()
         [msg] = self.assertEmailQueueLength(1)
         self.assertIn(
-            'Rejected:\nRejected by %s: Because.' % person.displayname,
-            str(msg))
+            "Rejected:\nRejected by %s: Because." % person.displayname,
+            str(msg),
+        )
 
     def test_getFileByName_source(self):
         self.test_publisher.prepareBreezyAutotest()
@@ -475,13 +539,15 @@ class TestPackageUploadSecurity(TestCaseWithFactory):
         # But other users cannot.
         with person_logged_in(self.factory.makePerson()):
             self.assertRaises(
-                ZopeUnauthorized, getattr, upload, "contains_source")
+                ZopeUnauthorized, getattr, upload, "contains_source"
+            )
 
     def test_non_queue_admin_cannot_edit_upload(self):
         upload = self.factory.makePackageUpload()
         with admin_logged_in():
             upload.addSource(
-                self.factory.makeSourcePackageRelease(component="main"))
+                self.factory.makeSourcePackageRelease(component="main")
+            )
         with person_logged_in(self.factory.makePerson()):
             self.assertRaises(ZopeUnauthorized, getattr, upload, "setDone")
 
@@ -492,7 +558,8 @@ class TestPackageUploadSecurity(TestCaseWithFactory):
             archive.newQueueAdmin(queue_admin, "main")
             upload = self.factory.makePackageUpload(archive=archive)
             upload.addSource(
-                self.factory.makeSourcePackageRelease(component="main"))
+                self.factory.makeSourcePackageRelease(component="main")
+            )
         with person_logged_in(queue_admin):
             upload.setDone()
 
@@ -505,39 +572,42 @@ class TestPackageUploadWithPackageCopyJob(TestCaseWithFactory):
     def makeUploadWithPackageCopyJob(self, sourcepackagename=None):
         """Create a `PackageUpload` plus attached `PlainPackageCopyJob`."""
         upload = self.factory.makeCopyJobPackageUpload(
-            sourcepackagename=sourcepackagename)
+            sourcepackagename=sourcepackagename
+        )
         return upload, getUtility(IPackageCopyJobSource).wrap(
-            upload.package_copy_job)
+            upload.package_copy_job
+        )
 
     def test_package_copy_job_property(self):
         # Test that we can set and get package_copy_job.
         pu, pcj = self.makeUploadWithPackageCopyJob()
-        self.assertEqual(
-            removeSecurityProxy(pcj).context, pu.package_copy_job)
+        self.assertEqual(removeSecurityProxy(pcj).context, pu.package_copy_job)
 
     def test_getByPackageCopyJobIDs(self):
         # getByPackageCopyJobIDs retrieves the right PackageCopyJob.
         pu, pcj = self.makeUploadWithPackageCopyJob()
-        result = getUtility(IPackageUploadSet).getByPackageCopyJobIDs(
-            [pcj.id])
+        result = getUtility(IPackageUploadSet).getByPackageCopyJobIDs([pcj.id])
         self.assertEqual(pu, result.one())
 
     def test_overrideSource_with_copy_job(self):
         # The overrides should be stored in the job's metadata.
         pu, pcj = self.makeUploadWithPackageCopyJob()
         old_component = getUtility(IComponentSet)[pcj.component_name]
-        component = getUtility(IComponentSet)['restricted']
-        section = getUtility(ISectionSet)['games']
+        component = getUtility(IComponentSet)["restricted"]
+        section = getUtility(ISectionSet)["games"]
 
         expected_metadata = {}
         expected_metadata.update(pcj.metadata)
-        expected_metadata.update({
-            'component_override': component.name,
-            'section_override': section.name,
-            })
+        expected_metadata.update(
+            {
+                "component_override": component.name,
+                "section_override": section.name,
+            }
+        )
 
         result = pu.overrideSource(
-            component, section, allowed_components=[component, old_component])
+            component, section, allowed_components=[component, old_component]
+        )
 
         self.assertTrue(result)
         self.assertEqual(expected_metadata, pcj.metadata)
@@ -547,8 +617,12 @@ class TestPackageUploadWithPackageCopyJob(TestCaseWithFactory):
         only_allowed_component = self.factory.makeComponent()
         section = self.factory.makeSection()
         self.assertRaises(
-            QueueAdminUnauthorizedError, pu.overrideSource,
-            only_allowed_component, section, [only_allowed_component])
+            QueueAdminUnauthorizedError,
+            pu.overrideSource,
+            only_allowed_component,
+            section,
+            [only_allowed_component],
+        )
 
     def test_overrideSource_checks_permission_for_new_component(self):
         pu, pcj = self.makeUploadWithPackageCopyJob()
@@ -556,8 +630,12 @@ class TestPackageUploadWithPackageCopyJob(TestCaseWithFactory):
         disallowed_component = self.factory.makeComponent()
         section = self.factory.makeSection()
         self.assertRaises(
-            QueueAdminUnauthorizedError, pu.overrideSource,
-            disallowed_component, section, [current_component])
+            QueueAdminUnauthorizedError,
+            pu.overrideSource,
+            disallowed_component,
+            section,
+            [current_component],
+        )
 
     def test_overrideSource_ignores_None_component_change(self):
         # overrideSource accepts None as a component; it will not object
@@ -592,7 +670,8 @@ class TestPackageUploadWithPackageCopyJob(TestCaseWithFactory):
 
         # It cannot be resurrected after rejection.
         self.assertRaises(
-            QueueInconsistentStateError, pu.acceptFromQueue, None)
+            QueueInconsistentStateError, pu.acceptFromQueue, None
+        )
 
     def test_package_name_and_version_are_as_in_job(self):
         # The PackageUpload knows the name and version of the package
@@ -603,7 +682,8 @@ class TestPackageUploadWithPackageCopyJob(TestCaseWithFactory):
         self.assertEqual(job.package_version, upload.package_version)
         self.assertEqual(job.package_name, upload.searchable_names)
         self.assertContentEqual(
-            [job.package_version], upload.searchable_versions)
+            [job.package_version], upload.searchable_versions
+        )
 
     def test_searchables_for_builds(self):
         distroseries = self.factory.makeDistroSeries()
@@ -611,23 +691,26 @@ class TestPackageUploadWithPackageCopyJob(TestCaseWithFactory):
         build = self.factory.makeBinaryPackageBuild()
         self.factory.makeBinaryPackageRelease(build=build)
         upload.addBuild(build)
-        name_array = [
-            b.build.binarypackages[0].name for b in upload.builds]
+        name_array = [b.build.binarypackages[0].name for b in upload.builds]
         name_array.extend(
-            [b.build.source_package_release.name for b in upload.builds])
-        names = ' '.join(sorted(name_array))
+            [b.build.source_package_release.name for b in upload.builds]
+        )
+        names = " ".join(sorted(name_array))
         self.assertEqual(names, upload.searchable_names)
         self.assertContentEqual(
             [b.build.binarypackages[0].version for b in upload.builds],
-            upload.searchable_versions)
+            upload.searchable_versions,
+        )
 
     def test_searchables_for_builds_duplication(self):
         distroseries = self.factory.makeDistroSeries()
         spr = self.factory.makeSourcePackageRelease()
         bpn = self.factory.makeBinaryPackageName(name=spr.name)
         binary = self.factory.makeBuildPackageUpload(
-            distroseries=distroseries, binarypackagename=bpn,
-            source_package_release=spr)
+            distroseries=distroseries,
+            binarypackagename=bpn,
+            source_package_release=spr,
+        )
         self.assertEqual(spr.name, binary.searchable_names)
 
     def test_searchables_for_custom(self):
@@ -635,13 +718,14 @@ class TestPackageUploadWithPackageCopyJob(TestCaseWithFactory):
         upload = self.factory.makeCustomPackageUpload(distroseries)
         self.assertEqual(
             upload.searchable_names,
-            upload.customfiles[0].libraryfilealias.filename)
+            upload.customfiles[0].libraryfilealias.filename,
+        )
         self.assertEqual([], upload.searchable_versions)
 
     def test_displayarchs_for_copy_job_is_sync(self):
         # For copy jobs, displayarchs is "sync."
         upload, job = self.makeUploadWithPackageCopyJob()
-        self.assertEqual('sync', upload.displayarchs)
+        self.assertEqual("sync", upload.displayarchs)
 
     def test_component_and_section_name(self):
         # An upload with a copy job takes its component and section
@@ -683,7 +767,8 @@ class TestPackageUploadCustom(TestCase):
         # Each element of `PackageUploadCustomFormat` has a handler.
         for customformat in PackageUploadCustomFormat.items:
             self.assertIsNotNone(
-                queryUtility(ICustomUploadHandler, customformat.name))
+                queryUtility(ICustomUploadHandler, customformat.name)
+            )
 
 
 class TestPackageUploadSet(TestCaseWithFactory):
@@ -730,7 +815,8 @@ class TestPackageUploadSet(TestCaseWithFactory):
         yesterday = upload.date_created - timedelta(1)
         self.assertContentEqual(
             [upload],
-            self.upload_set.getAll(distroseries, created_since_date=yesterday))
+            self.upload_set.getAll(distroseries, created_since_date=yesterday),
+        )
 
     def test_getAll_filters_by_created_since_date(self):
         distroseries = self.factory.makeDistroSeries()
@@ -738,28 +824,32 @@ class TestPackageUploadSet(TestCaseWithFactory):
         tomorrow = upload.date_created + timedelta(1)
         self.assertContentEqual(
             [],
-            self.upload_set.getAll(distroseries, created_since_date=tomorrow))
+            self.upload_set.getAll(distroseries, created_since_date=tomorrow),
+        )
 
     def test_getAll_matches_status(self):
         distroseries = self.factory.makeDistroSeries()
         upload = self.factory.makeSourcePackageUpload(distroseries)
         status = upload.status
         self.assertContentEqual(
-            [upload], self.upload_set.getAll(distroseries, status=status))
+            [upload], self.upload_set.getAll(distroseries, status=status)
+        )
 
     def test_getAll_filters_by_status(self):
         distroseries = self.factory.makeDistroSeries()
         self.factory.makeSourcePackageUpload(distroseries)
         status = PackageUploadStatus.DONE
         self.assertContentEqual(
-            [], self.upload_set.getAll(distroseries, status=status))
+            [], self.upload_set.getAll(distroseries, status=status)
+        )
 
     def test_getAll_matches_pocket(self):
         distroseries = self.factory.makeDistroSeries()
         upload = self.factory.makeSourcePackageUpload(distroseries)
         pocket = upload.pocket
         self.assertContentEqual(
-            [upload], self.upload_set.getAll(distroseries, pocket=pocket))
+            [upload], self.upload_set.getAll(distroseries, pocket=pocket)
+        )
 
     def test_getAll_filters_by_pocket(self):
         def find_different_pocket_than(pocket):
@@ -771,63 +861,76 @@ class TestPackageUploadSet(TestCaseWithFactory):
         upload = self.factory.makeSourcePackageUpload(distroseries)
         pocket = find_different_pocket_than(upload.pocket)
         self.assertContentEqual(
-            [], self.upload_set.getAll(distroseries, pocket=pocket))
+            [], self.upload_set.getAll(distroseries, pocket=pocket)
+        )
 
     def test_getAll_matches_custom_type(self):
         distroseries = self.factory.makeDistroSeries()
         custom_type = PackageUploadCustomFormat.DDTP_TARBALL
         upload = self.factory.makeCustomPackageUpload(
-            distroseries, custom_type=custom_type)
+            distroseries, custom_type=custom_type
+        )
         self.assertContentEqual(
             [upload],
-            self.upload_set.getAll(distroseries, custom_type=custom_type))
+            self.upload_set.getAll(distroseries, custom_type=custom_type),
+        )
 
     def test_getAll_filters_by_custom_type(self):
         distroseries = self.factory.makeDistroSeries()
         one_type = PackageUploadCustomFormat.DIST_UPGRADER
         other_type = PackageUploadCustomFormat.ROSETTA_TRANSLATIONS
         self.factory.makeCustomPackageUpload(
-            distroseries, custom_type=one_type)
+            distroseries, custom_type=one_type
+        )
         self.assertContentEqual(
-            [], self.upload_set.getAll(distroseries, custom_type=other_type))
+            [], self.upload_set.getAll(distroseries, custom_type=other_type)
+        )
 
     def test_getAll_matches_source_upload_by_package_name(self):
         distroseries = self.factory.makeDistroSeries()
         spn = self.factory.makeSourcePackageName()
         upload = self.factory.makeSourcePackageUpload(
-            distroseries, sourcepackagename=spn)
+            distroseries, sourcepackagename=spn
+        )
         self.assertContentEqual(
-            [upload], self.upload_set.getAll(distroseries, name=spn.name))
+            [upload], self.upload_set.getAll(distroseries, name=spn.name)
+        )
 
     def test_getAll_filters_source_upload_by_package_name(self):
         distroseries = self.factory.makeDistroSeries()
         self.factory.makeSourcePackageUpload(distroseries)
         other_name = self.factory.makeSourcePackageName().name
         self.assertContentEqual(
-            [], self.upload_set.getAll(distroseries, name=other_name))
+            [], self.upload_set.getAll(distroseries, name=other_name)
+        )
 
     def test_getAll_matches_build_upload_by_package_name(self):
         distroseries = self.factory.makeDistroSeries()
         bpn = self.factory.makeBinaryPackageName()
         upload = self.factory.makeBuildPackageUpload(
-            distroseries, binarypackagename=bpn)
+            distroseries, binarypackagename=bpn
+        )
         self.assertContentEqual(
-            [upload], self.upload_set.getAll(distroseries, name=bpn.name))
+            [upload], self.upload_set.getAll(distroseries, name=bpn.name)
+        )
 
     def test_getAll_filters_build_upload_by_package_name(self):
         distroseries = self.factory.makeDistroSeries()
         self.factory.makeBuildPackageUpload(distroseries)
         other_name = self.factory.makeBinaryPackageName().name
         self.assertContentEqual(
-            [], self.upload_set.getAll(distroseries, name=other_name))
+            [], self.upload_set.getAll(distroseries, name=other_name)
+        )
 
     def test_getAll_matches_custom_upload_by_file_name(self):
         distroseries = self.factory.makeDistroSeries()
         filename = self.factory.getUniqueUnicode()
         upload = self.factory.makeCustomPackageUpload(
-            distroseries, filename=filename)
+            distroseries, filename=filename
+        )
         self.assertContentEqual(
-            [upload], self.upload_set.getAll(distroseries, name=filename))
+            [upload], self.upload_set.getAll(distroseries, name=filename)
+        )
 
     def test_getAll_filters_custom_upload_by_file_name(self):
         distroseries = self.factory.makeDistroSeries()
@@ -835,105 +938,125 @@ class TestPackageUploadSet(TestCaseWithFactory):
         self.factory.makeCustomPackageUpload(distroseries, filename=filename)
         other_name = self.factory.getUniqueUnicode()
         self.assertContentEqual(
-            [], self.upload_set.getAll(distroseries, name=other_name))
+            [], self.upload_set.getAll(distroseries, name=other_name)
+        )
 
     def test_getAll_matches_copy_job_upload_by_package_name(self):
         distroseries = self.factory.makeDistroSeries()
         spn = self.factory.makeSourcePackageName()
         upload = self.factory.makeCopyJobPackageUpload(
-            distroseries, sourcepackagename=spn)
+            distroseries, sourcepackagename=spn
+        )
         self.assertContentEqual(
-            [upload], self.upload_set.getAll(distroseries, name=spn.name))
+            [upload], self.upload_set.getAll(distroseries, name=spn.name)
+        )
 
     def test_getAll_filters_copy_job_upload_by_package_name(self):
         distroseries = self.factory.makeDistroSeries()
         self.factory.makeCopyJobPackageUpload(distroseries)
         other_name = self.factory.makeSourcePackageName().name
         self.assertContentEqual(
-            [], self.upload_set.getAll(distroseries, name=other_name))
+            [], self.upload_set.getAll(distroseries, name=other_name)
+        )
 
     def test_getAll_without_exact_match_matches_substring_of_name(self):
         distroseries = self.factory.makeDistroSeries()
         spn = self.factory.makeSourcePackageName()
         upload = self.factory.makeSourcePackageUpload(
-            distroseries, sourcepackagename=spn)
+            distroseries, sourcepackagename=spn
+        )
         partial_name = spn.name[:-1]
         self.assertContentEqual(
-            [upload], self.upload_set.getAll(distroseries, name=partial_name))
+            [upload], self.upload_set.getAll(distroseries, name=partial_name)
+        )
 
     def test_getAll_with_exact_match_matches_exact_name(self):
         distroseries = self.factory.makeDistroSeries()
         spn = self.factory.makeSourcePackageName()
         upload = self.factory.makeSourcePackageUpload(
-            distroseries, sourcepackagename=spn)
+            distroseries, sourcepackagename=spn
+        )
         self.assertContentEqual(
             [upload],
             self.upload_set.getAll(
-                distroseries, name=spn.name, exact_match=True))
+                distroseries, name=spn.name, exact_match=True
+            ),
+        )
 
     def test_getAll_with_exact_match_does_not_match_substring_of_name(self):
         distroseries = self.factory.makeDistroSeries()
         spn = self.factory.makeSourcePackageName()
         self.factory.makeSourcePackageUpload(
-            distroseries, sourcepackagename=spn)
+            distroseries, sourcepackagename=spn
+        )
         partial_name = spn.name[:-1]
         self.assertContentEqual(
             [],
             self.upload_set.getAll(
-                distroseries, name=partial_name, exact_match=True))
+                distroseries, name=partial_name, exact_match=True
+            ),
+        )
 
     def test_getAll_without_exact_match_escapes_name(self):
         distroseries = self.factory.makeDistroSeries()
         self.assertContentEqual(
-            [], self.upload_set.getAll(distroseries, name="'"))
+            [], self.upload_set.getAll(distroseries, name="'")
+        )
 
     def test_getAll_with_exact_match_escapes_name(self):
         distroseries = self.factory.makeDistroSeries()
         self.assertContentEqual(
-            [], self.upload_set.getAll(
-                distroseries, name="'", exact_match=True))
+            [],
+            self.upload_set.getAll(distroseries, name="'", exact_match=True),
+        )
 
     def test_getAll_matches_source_upload_by_version(self):
         distroseries = self.factory.makeDistroSeries()
         upload = self.factory.makeSourcePackageUpload(distroseries)
         version = upload.displayversion
         self.assertContentEqual(
-            [upload], self.upload_set.getAll(distroseries, version=version))
+            [upload], self.upload_set.getAll(distroseries, version=version)
+        )
 
     def test_getAll_filters_source_upload_by_version(self):
         distroseries = self.factory.makeDistroSeries()
         self.factory.makeSourcePackageUpload(distroseries)
         other_version = self.factory.getUniqueUnicode()
         self.assertContentEqual(
-            [], self.upload_set.getAll(distroseries, version=other_version))
+            [], self.upload_set.getAll(distroseries, version=other_version)
+        )
 
     def test_getAll_matches_build_upload_by_version(self):
         distroseries = self.factory.makeDistroSeries()
         upload = self.factory.makeBuildPackageUpload(distroseries)
         version = upload.displayversion
         self.assertContentEqual(
-            [upload], self.upload_set.getAll(distroseries, version=version))
+            [upload], self.upload_set.getAll(distroseries, version=version)
+        )
 
     def test_getAll_filters_build_upload_by_version(self):
         distroseries = self.factory.makeDistroSeries()
         other_version = self.factory.getUniqueUnicode()
         self.factory.makeBuildPackageUpload(distroseries)
         self.assertContentEqual(
-            [], self.upload_set.getAll(distroseries, version=other_version))
+            [], self.upload_set.getAll(distroseries, version=other_version)
+        )
 
     def test_getAll_version_filter_ignores_custom_uploads(self):
         distroseries = self.factory.makeDistroSeries()
         other_version = self.factory.getUniqueUnicode()
         self.factory.makeCustomPackageUpload(distroseries)
         self.assertContentEqual(
-            [], self.upload_set.getAll(distroseries, version=other_version))
+            [], self.upload_set.getAll(distroseries, version=other_version)
+        )
 
     def test_getAll_version_filter_finds_copy_job_uploads(self):
         distroseries = self.factory.makeDistroSeries()
         upload = self.factory.makeCopyJobPackageUpload(distroseries)
         version = upload.package_copy_job.package_version
         self.assertContentEqual(
-            [upload], self.upload_set.getAll(distroseries, version=version))
+            [upload], self.upload_set.getAll(distroseries, version=version)
+        )
 
     def test_getAll_with_exact_match_matches_exact_version(self):
         distroseries = self.factory.makeDistroSeries()
@@ -942,7 +1065,9 @@ class TestPackageUploadSet(TestCaseWithFactory):
         self.assertContentEqual(
             [upload],
             self.upload_set.getAll(
-                distroseries, version=version, exact_match=True))
+                distroseries, version=version, exact_match=True
+            ),
+        )
 
     def test_getAll_w_exact_match_does_not_match_substring_of_version(self):
         distroseries = self.factory.makeDistroSeries()
@@ -951,17 +1076,22 @@ class TestPackageUploadSet(TestCaseWithFactory):
         self.assertContentEqual(
             [],
             self.upload_set.getAll(
-                distroseries, version=version, exact_match=True))
+                distroseries, version=version, exact_match=True
+            ),
+        )
 
     def test_getAll_can_combine_version_and_name(self):
         distroseries = self.factory.makeDistroSeries()
         spn = self.factory.makeSourcePackageName()
         upload = self.factory.makeSourcePackageUpload(
-            distroseries, sourcepackagename=spn)
+            distroseries, sourcepackagename=spn
+        )
         self.assertContentEqual(
             [upload],
             self.upload_set.getAll(
-                distroseries, name=spn.name, version=upload.displayversion))
+                distroseries, name=spn.name, version=upload.displayversion
+            ),
+        )
 
     def test_getAll_orders_in_reverse_historical_order(self):
         # The results from getAll are returned in order of creation,
@@ -983,7 +1113,8 @@ class TestPackageUploadSet(TestCaseWithFactory):
         store.flush()
         self.assertEqual(
             list(reversed(ordered_uploads)),
-            list(getUtility(IPackageUploadSet).getAll(series)))
+            list(getUtility(IPackageUploadSet).getAll(series)),
+        )
 
     def test_getAll_can_preload_exported_properties(self):
         # getAll preloads everything exported on the webservice.
@@ -1018,16 +1149,19 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         self.distroseries = self.factory.makeDistroSeries()
         self.main = self.factory.makeComponent("main")
         self.factory.makeComponentSelection(
-            distroseries=self.distroseries, component=self.main)
+            distroseries=self.distroseries, component=self.main
+        )
         self.universe = self.factory.makeComponent("universe")
         self.factory.makeComponentSelection(
-            distroseries=self.distroseries, component=self.universe)
+            distroseries=self.distroseries, component=self.universe
+        )
 
     def makeQueueAdmin(self, components):
         person = self.factory.makePerson()
         for component in components:
             getUtility(IArchivePermissionSet).newQueueAdmin(
-                self.distroseries.main_archive, person, component)
+                self.distroseries.main_archive, person, component
+            )
         return person
 
     def load(self, obj, person=None):
@@ -1047,7 +1181,8 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
             upload = self.factory.makePackageUpload(
                 distroseries=self.distroseries,
                 archive=self.distroseries.main_archive,
-                changes_file_content=changes.dump().encode("UTF-8"))
+                changes_file_content=changes.dump().encode("UTF-8"),
+            )
             spr = self.factory.makeSourcePackageRelease(**kwargs)
             upload.addSource(spr)
             for extension in ("dsc", "tar.gz"):
@@ -1060,23 +1195,31 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
     def makeCopyJobPackageUpload(self, person, **kwargs):
         with person_logged_in(person):
             upload = self.factory.makeCopyJobPackageUpload(
-                distroseries=self.distroseries, **kwargs)
+                distroseries=self.distroseries, **kwargs
+            )
         transaction.commit()
         return upload, self.load(upload, person)
 
-    def makeBinaryPackageUpload(self, person, binarypackagename=None,
-                                component=None):
+    def makeBinaryPackageUpload(
+        self, person, binarypackagename=None, component=None
+    ):
         with person_logged_in(person):
             upload = self.factory.makeBuildPackageUpload(
                 distroseries=self.distroseries,
-                binarypackagename=binarypackagename, component=component)
+                binarypackagename=binarypackagename,
+                component=component,
+            )
             self.factory.makeBinaryPackageRelease(
-                build=upload.builds[0].build, component=component)
+                build=upload.builds[0].build, component=component
+            )
             transaction.commit()
             for build in upload.builds:
                 for bpr in build.build.binarypackages:
                     filename = "%s_%s_%s.deb" % (
-                        bpr.name, bpr.version, bpr.build.arch_tag)
+                        bpr.name,
+                        bpr.version,
+                        bpr.build.arch_tag,
+                    )
                     lfa = self.factory.makeLibraryFileAlias(filename=filename)
                     bpr.addFile(lfa)
         transaction.commit()
@@ -1085,7 +1228,8 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
     def makeCustomPackageUpload(self, person, **kwargs):
         with person_logged_in(person):
             upload = self.factory.makeCustomPackageUpload(
-                distroseries=self.distroseries, **kwargs)
+                distroseries=self.distroseries, **kwargs
+            )
         transaction.commit()
         return upload, self.load(upload, person)
 
@@ -1101,20 +1245,23 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         transaction.commit()
         ws_upload = self.load(upload)
         self.assertRaises(
-            Unauthorized, getattr(ws_upload, method_name), **kwargs)
+            Unauthorized, getattr(ws_upload, method_name), **kwargs
+        )
 
     def test_edit_permissions(self):
         self.assertRequiresEdit("acceptFromQueue")
         self.assertRequiresEdit("rejectFromQueue")
         self.assertRequiresEdit("overrideSource", new_component="main")
         self.assertRequiresEdit(
-            "overrideBinaries", changes=[{"component": "main"}])
+            "overrideBinaries", changes=[{"component": "main"}]
+        )
 
     def test_acceptFromQueue_archive_admin(self):
         # acceptFromQueue as an archive admin accepts the upload.
         person = self.makeQueueAdmin([self.main])
         upload, ws_upload = self.makeSourcePackageUpload(
-            person, component=self.main)
+            person, component=self.main
+        )
 
         self.assertEqual("New", ws_upload.status)
         ws_upload.acceptFromQueue()
@@ -1135,7 +1282,8 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         # rejectFromQueue as an archive admin rejects the upload.
         person = self.makeQueueAdmin([self.main])
         upload, ws_upload = self.makeSourcePackageUpload(
-            person, component=self.main)
+            person, component=self.main
+        )
 
         self.assertEqual("New", ws_upload.status)
         ws_upload.rejectFromQueue()
@@ -1145,7 +1293,8 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         # API clients can inspect properties of source uploads.
         person = self.makeQueueAdmin([self.universe])
         upload, ws_upload = self.makeSourcePackageUpload(
-            person, sourcepackagename="hello", component=self.universe)
+            person, sourcepackagename="hello", component=self.universe
+        )
 
         self.assertTrue(ws_upload.contains_source)
         self.assertFalse(ws_upload.contains_build)
@@ -1163,14 +1312,16 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         # API clients can fetch files attached to source uploads.
         person = self.makeQueueAdmin([self.universe])
         upload, ws_upload = self.makeSourcePackageUpload(
-            person, component=self.universe)
+            person, component=self.universe
+        )
 
         ws_source_file_urls = ws_upload.sourceFileUrls()
         self.assertNotEqual(0, len(ws_source_file_urls))
         with person_logged_in(person):
             source_file_urls = [
                 ProxiedLibraryFileAlias(file.libraryfile, upload).http_url
-                for file in upload.sourcepackagerelease.files]
+                for file in upload.sourcepackagerelease.files
+            ]
         self.assertContentEqual(source_file_urls, ws_source_file_urls)
 
         browser = self.getNonRedirectingBrowser(user=person)
@@ -1183,28 +1334,33 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         # Overriding between two components requires queue admin of both.
         person = self.makeQueueAdmin([self.universe])
         upload, ws_upload = self.makeSourcePackageUpload(
-            person, component=self.universe)
+            person, component=self.universe
+        )
 
         self.assertEqual("New", ws_upload.status)
         self.assertEqual("universe", ws_upload.component_name)
-        self.assertRaises(Unauthorized, ws_upload.overrideSource,
-                          new_component="main")
+        self.assertRaises(
+            Unauthorized, ws_upload.overrideSource, new_component="main"
+        )
 
         with admin_logged_in():
             upload.overrideSource(
                 new_component=self.main,
-                allowed_components=[self.main, self.universe])
+                allowed_components=[self.main, self.universe],
+            )
         transaction.commit()
         with person_logged_in(person):
             self.assertEqual("main", upload.component_name)
-        self.assertRaises(Unauthorized, ws_upload.overrideSource,
-                          new_component="universe")
+        self.assertRaises(
+            Unauthorized, ws_upload.overrideSource, new_component="universe"
+        )
 
     def test_overrideSource_changes_properties(self):
         # Running overrideSource changes the corresponding properties.
         person = self.makeQueueAdmin([self.main, self.universe])
         upload, ws_upload = self.makeSourcePackageUpload(
-            person, component=self.universe)
+            person, component=self.universe
+        )
         with person_logged_in(person):
             new_section = self.factory.makeSection()
         transaction.commit()
@@ -1213,7 +1369,8 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         self.assertEqual("universe", ws_upload.component_name)
         self.assertNotEqual(new_section.name, ws_upload.section_name)
         ws_upload.overrideSource(
-            new_component="main", new_section=new_section.name)
+            new_component="main", new_section=new_section.name
+        )
         self.assertEqual("main", ws_upload.component_name)
         self.assertEqual(new_section.name, ws_upload.section_name)
         ws_upload.overrideSource(new_component="universe")
@@ -1228,14 +1385,15 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
             "component": "universe",
             "section": bpr.section.name,
             "priority": bpr.priority.name,
-            }
+        }
         self.assertEqual(expected_binary, ws_binary)
 
     def test_binary_info(self):
         # API clients can inspect properties of binary uploads.
         person = self.makeQueueAdmin([self.universe])
         upload, ws_upload = self.makeBinaryPackageUpload(
-            person, component=self.universe)
+            person, component=self.universe
+        )
         with person_logged_in(person):
             arch = upload.builds[0].build.arch_tag
             bprs = upload.builds[0].build.binarypackages
@@ -1251,7 +1409,8 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         # API clients can fetch files attached to binary uploads.
         person = self.makeQueueAdmin([self.universe])
         upload, ws_upload = self.makeBinaryPackageUpload(
-            person, component=self.universe)
+            person, component=self.universe
+        )
 
         ws_binary_file_urls = ws_upload.binaryFileUrls()
         self.assertNotEqual(0, len(ws_binary_file_urls))
@@ -1260,7 +1419,8 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
                 ProxiedLibraryFileAlias(file.libraryfile, build.build).http_url
                 for build in upload.builds
                 for bpr in build.build.binarypackages
-                for file in bpr.files]
+                for file in bpr.files
+            ]
         self.assertContentEqual(binary_file_urls, ws_binary_file_urls)
 
         browser = self.getNonRedirectingBrowser(user=person)
@@ -1274,67 +1434,89 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         # already been published in the same DistroArchSeries.
         person = self.makeQueueAdmin([self.universe])
         upload, ws_upload = self.makeBinaryPackageUpload(
-            person, binarypackagename="hello")
-        self.assertTrue(ws_upload.getBinaryProperties()[1]['is_new'])
+            person, binarypackagename="hello"
+        )
+        self.assertTrue(ws_upload.getBinaryProperties()[1]["is_new"])
         with person_logged_in(person):
             das = upload.builds[0].build.distro_arch_series
             self.factory.makeBinaryPackagePublishingHistory(
-                binarypackagename="hello", archive=das.main_archive,
-                distroarchseries=das, status=PackagePublishingStatus.PUBLISHED)
+                binarypackagename="hello",
+                archive=das.main_archive,
+                distroarchseries=das,
+                status=PackagePublishingStatus.PUBLISHED,
+            )
             transaction.commit()
-        self.assertFalse(ws_upload.getBinaryProperties()[1]['is_new'])
+        self.assertFalse(ws_upload.getBinaryProperties()[1]["is_new"])
 
     def test_overrideBinaries_limited_component_permissions(self):
         # Overriding between two components requires queue admin of both.
         person = self.makeQueueAdmin([self.universe])
         upload, ws_upload = self.makeBinaryPackageUpload(
-            person, binarypackagename="hello", component=self.universe)
+            person, binarypackagename="hello", component=self.universe
+        )
 
         self.assertEqual("New", ws_upload.status)
         self.assertEqual(
             {"universe"},
-            {binary["component"]
-                for binary in ws_upload.getBinaryProperties()})
+            {
+                binary["component"]
+                for binary in ws_upload.getBinaryProperties()
+            },
+        )
         self.assertRaises(
-            Unauthorized, ws_upload.overrideBinaries,
-            changes=[{"component": "main"}])
+            Unauthorized,
+            ws_upload.overrideBinaries,
+            changes=[{"component": "main"}],
+        )
 
         with admin_logged_in():
             upload.overrideBinaries(
                 [{"component": self.main}],
-                allowed_components=[self.main, self.universe])
+                allowed_components=[self.main, self.universe],
+            )
         transaction.commit()
 
         self.assertEqual(
             {"main"},
-            {binary["component"]
-                for binary in ws_upload.getBinaryProperties()})
+            {
+                binary["component"]
+                for binary in ws_upload.getBinaryProperties()
+            },
+        )
         self.assertRaises(
-            Unauthorized, ws_upload.overrideBinaries,
-            changes=[{"component": "universe"}])
+            Unauthorized,
+            ws_upload.overrideBinaries,
+            changes=[{"component": "universe"}],
+        )
 
     def test_overrideBinaries_disallows_new_archive(self):
         # overrideBinaries refuses to override the component to something
         # that requires a different archive.
         partner = self.factory.makeComponent("partner")
         self.factory.makeComponentSelection(
-            distroseries=self.distroseries, component=partner)
+            distroseries=self.distroseries, component=partner
+        )
         person = self.makeQueueAdmin([self.universe, partner])
         upload, ws_upload = self.makeBinaryPackageUpload(
-            person, component=self.universe)
+            person, component=self.universe
+        )
 
         self.assertEqual(
-            "universe", ws_upload.getBinaryProperties()[0]["component"])
+            "universe", ws_upload.getBinaryProperties()[0]["component"]
+        )
         self.assertRaises(
-            BadRequest, ws_upload.overrideBinaries,
-            changes=[{"component": "partner"}])
+            BadRequest,
+            ws_upload.overrideBinaries,
+            changes=[{"component": "partner"}],
+        )
 
     def test_overrideBinaries_without_name_changes_all_properties(self):
         # Running overrideBinaries with a change entry containing no "name"
         # field changes the corresponding properties of all binaries.
         person = self.makeQueueAdmin([self.main, self.universe])
         upload, ws_upload = self.makeBinaryPackageUpload(
-            person, component=self.universe)
+            person, component=self.universe
+        )
         with person_logged_in(person):
             new_section = self.factory.makeSection()
         transaction.commit()
@@ -1344,11 +1526,13 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
             self.assertEqual("universe", binary["component"])
             self.assertNotEqual(new_section.name, binary["section"])
             self.assertEqual("OPTIONAL", binary["priority"])
-        changes = [{
-            "component": "main",
-            "section": new_section.name,
-            "priority": "extra",
-            }]
+        changes = [
+            {
+                "component": "main",
+                "section": new_section.name,
+                "priority": "extra",
+            }
+        ]
         ws_upload.overrideBinaries(changes=changes)
         for binary in ws_upload.getBinaryProperties():
             self.assertEqual("main", binary["component"])
@@ -1361,7 +1545,8 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         # binaries.
         person = self.makeQueueAdmin([self.main, self.universe])
         upload, ws_upload = self.makeBinaryPackageUpload(
-            person, component=self.universe)
+            person, component=self.universe
+        )
         with person_logged_in(person):
             new_section = self.factory.makeSection()
         transaction.commit()
@@ -1376,11 +1561,11 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
             "name": ws_binaries[0]["name"],
             "component": "main",
             "priority": "standard",
-            }
+        }
         change_two = {
             "name": ws_binaries[1]["name"],
             "section": new_section.name,
-            }
+        }
         ws_upload.overrideBinaries(changes=[change_one, change_two])
         ws_binaries = ws_upload.getBinaryProperties()
         self.assertEqual("main", ws_binaries[0]["component"])
@@ -1394,14 +1579,17 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         # API clients can inspect properties of custom uploads.
         person = self.makeQueueAdmin([self.universe])
         upload, ws_upload = self.makeCustomPackageUpload(
-            person, custom_type=PackageUploadCustomFormat.DEBIAN_INSTALLER,
-            filename="debian-installer-images_1.tar.gz")
+            person,
+            custom_type=PackageUploadCustomFormat.DEBIAN_INSTALLER,
+            filename="debian-installer-images_1.tar.gz",
+        )
 
         self.assertFalse(ws_upload.contains_source)
         self.assertFalse(ws_upload.contains_build)
         self.assertFalse(ws_upload.contains_copy)
         self.assertEqual(
-            "debian-installer-images_1.tar.gz", ws_upload.display_name)
+            "debian-installer-images_1.tar.gz", ws_upload.display_name
+        )
         self.assertEqual("-", ws_upload.display_version)
         self.assertEqual("raw-installer", ws_upload.display_arches)
         ws_binaries = ws_upload.getBinaryProperties()
@@ -1409,22 +1597,25 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         expected_binary = {
             "name": "debian-installer-images_1.tar.gz",
             "customformat": "raw-installer",
-            }
+        }
         self.assertEqual(expected_binary, ws_binaries[0])
 
     def test_custom_fetch(self):
         # API clients can fetch files attached to custom uploads.
         person = self.makeQueueAdmin([self.universe])
         upload, ws_upload = self.makeCustomPackageUpload(
-            person, custom_type=PackageUploadCustomFormat.DEBIAN_INSTALLER,
-            filename="debian-installer-images_1.tar.gz")
+            person,
+            custom_type=PackageUploadCustomFormat.DEBIAN_INSTALLER,
+            filename="debian-installer-images_1.tar.gz",
+        )
 
         ws_custom_file_urls = ws_upload.customFileUrls()
         self.assertNotEqual(0, len(ws_custom_file_urls))
         with person_logged_in(person):
             custom_file_urls = [
                 ProxiedLibraryFileAlias(file.libraryfilealias, upload).http_url
-                for file in upload.customfiles]
+                for file in upload.customfiles
+            ]
         self.assertContentEqual(custom_file_urls, ws_custom_file_urls)
 
         browser = self.getNonRedirectingBrowser(user=person)
@@ -1438,15 +1629,18 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         # ordinary binaries and custom upload files.
         person = self.makeQueueAdmin([self.universe])
         upload, _ = self.makeBinaryPackageUpload(
-            person, binarypackagename="foo", component=self.universe)
+            person, binarypackagename="foo", component=self.universe
+        )
         with person_logged_in(person):
             arch = upload.builds[0].build.arch_tag
             bprs = upload.builds[0].build.binarypackages
             version = bprs[0].version
             lfa = self.factory.makeLibraryFileAlias(
-                filename="foo_%s_%s_translations.tar.gz" % (version, arch))
+                filename="foo_%s_%s_translations.tar.gz" % (version, arch)
+            )
             upload.addCustom(
-                lfa, PackageUploadCustomFormat.ROSETTA_TRANSLATIONS)
+                lfa, PackageUploadCustomFormat.ROSETTA_TRANSLATIONS
+            )
         transaction.commit()
         ws_upload = self.load(upload, person)
 
@@ -1459,7 +1653,7 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         expected_custom = {
             "name": "foo_%s_%s_translations.tar.gz" % (version, arch),
             "customformat": "raw-translations",
-            }
+        }
         self.assertEqual(expected_custom, ws_binaries[-1])
 
     def test_copy_info(self):
@@ -1468,7 +1662,8 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         person = self.makeQueueAdmin([self.universe])
         archive = self.factory.makeArchive()
         upload, ws_upload = self.makeCopyJobPackageUpload(
-            person, sourcepackagename="hello", source_archive=archive)
+            person, sourcepackagename="hello", source_archive=archive
+        )
 
         self.assertFalse(ws_upload.contains_source)
         self.assertFalse(ws_upload.contains_build)
@@ -1499,21 +1694,32 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         # API clients can see upload logs of a source uploads.
         admin = self.makeQueueAdmin([self.universe])
         upload, ws_upload = self.makeSourcePackageUpload(
-            admin, sourcepackagename="hello", component=self.universe)
+            admin, sourcepackagename="hello", component=self.universe
+        )
         with person_logged_in(admin):
-            upload.rejectFromQueue(admin, 'not a good change')
+            upload.rejectFromQueue(admin, "not a good change")
             upload.acceptFromQueue(admin)
 
         logs = removeSecurityProxy(upload).logs
         ws_logs = ws_upload.logs
         self.assertEqual(len(ws_logs), len(logs))
-        self.assertThat(ws_upload.logs, MatchesListwise([
-            MatchesStructure(
-                comment=Equals(log.comment),
-                date_created=Equals(log.date_created),
-                new_status=Equals(log.new_status.title),
-                old_status=Equals(log.old_status.title),
-                reviewer=MatchesStructure.byEquality(
-                    name=log.reviewer.name),
-                package_upload=MatchesStructure.byEquality(id=ws_upload.id))
-            for log in removeSecurityProxy(upload).logs]))
+        self.assertThat(
+            ws_upload.logs,
+            MatchesListwise(
+                [
+                    MatchesStructure(
+                        comment=Equals(log.comment),
+                        date_created=Equals(log.date_created),
+                        new_status=Equals(log.new_status.title),
+                        old_status=Equals(log.old_status.title),
+                        reviewer=MatchesStructure.byEquality(
+                            name=log.reviewer.name
+                        ),
+                        package_upload=MatchesStructure.byEquality(
+                            id=ws_upload.id
+                        ),
+                    )
+                    for log in removeSecurityProxy(upload).logs
+                ]
+            ),
+        )

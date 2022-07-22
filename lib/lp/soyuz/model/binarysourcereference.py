@@ -4,17 +4,14 @@
 """References from binary packages to source packages."""
 
 __all__ = [
-    'BinarySourceReference',
-    'BinarySourceReferenceSet',
-    ]
+    "BinarySourceReference",
+    "BinarySourceReferenceSet",
+]
 
 import warnings
 
 from debian.deb822 import PkgRelation
-from storm.locals import (
-    Int,
-    Reference,
-    )
+from storm.locals import Int, Reference
 from zope.interface import implementer
 
 from lp.services.database.bulk import create
@@ -27,7 +24,7 @@ from lp.soyuz.interfaces.binarysourcereference import (
     IBinarySourceReference,
     IBinarySourceReferenceSet,
     UnparsableBuiltUsing,
-    )
+)
 
 
 @implementer(IBinarySourceReference)
@@ -39,19 +36,24 @@ class BinarySourceReference(StormBase):
     id = Int(primary=True)
 
     binary_package_release_id = Int(
-        name="binary_package_release", allow_none=False)
+        name="binary_package_release", allow_none=False
+    )
     binary_package_release = Reference(
-        binary_package_release_id, "BinaryPackageRelease.id")
+        binary_package_release_id, "BinaryPackageRelease.id"
+    )
 
     source_package_release_id = Int(
-        name="source_package_release", allow_none=False)
+        name="source_package_release", allow_none=False
+    )
     source_package_release = Reference(
-        source_package_release_id, "SourcePackageRelease.id")
+        source_package_release_id, "SourcePackageRelease.id"
+    )
 
     reference_type = DBEnum(enum=BinarySourceReferenceType, allow_none=False)
 
-    def __init__(self, binary_package_release, source_package_release,
-                 reference_type):
+    def __init__(
+        self, binary_package_release, source_package_release, reference_type
+    ):
         """Construct a `BinarySourceReference`."""
         super().__init__()
         self.binary_package_release = binary_package_release
@@ -76,7 +78,8 @@ class BinarySourceReferenceSet:
         except Warning as error:
             raise UnparsableBuiltUsing(
                 "Invalid Built-Using field; cannot be parsed by deb822: %s"
-                % (error,))
+                % (error,)
+            )
 
         build = bpr.build
         values = []
@@ -84,12 +87,14 @@ class BinarySourceReferenceSet:
             if len(or_rel) != 1:
                 raise UnparsableBuiltUsing(
                     "Alternatives are not allowed in Built-Using field: %s"
-                    % (PkgRelation.str([or_rel]),))
+                    % (PkgRelation.str([or_rel]),)
+                )
             rel = or_rel[0]
             if rel["version"] is None or rel["version"][0] != "=":
                 raise UnparsableBuiltUsing(
                     "Built-Using must contain strict dependencies: %s"
-                    % (PkgRelation.str([or_rel]),))
+                    % (PkgRelation.str([or_rel]),)
+                )
 
             # "source-package-name (= version)" might refer to any of
             # several SPRs, for example if the same source package was
@@ -111,30 +116,43 @@ class BinarySourceReferenceSet:
             # SPR, although we pick the latest by ID just in case that
             # somehow ends up not being true.
             closest_spph = build.archive.getPublishedSources(
-                name=rel["name"], version=rel["version"][1],
+                name=rel["name"],
+                version=rel["version"][1],
                 distroseries=build.distro_series,
                 pocket=pocket_dependencies[build.pocket],
-                exact_match=True).first()
+                exact_match=True,
+            ).first()
             if closest_spph is None:
                 raise UnparsableBuiltUsing(
                     "Built-Using refers to source package %s (= %s), which is "
-                    "not known in %s in %s" %
-                    (rel["name"], rel["version"][1],
-                     build.distro_series.name, build.archive.reference))
+                    "not known in %s in %s"
+                    % (
+                        rel["name"],
+                        rel["version"][1],
+                        build.distro_series.name,
+                        build.archive.reference,
+                    )
+                )
             values.append(
-                (bpr.id, closest_spph.sourcepackagereleaseID, reference_type))
+                (bpr.id, closest_spph.sourcepackagereleaseID, reference_type)
+            )
 
         return create(
-            (BinarySourceReference.binary_package_release_id,
-             BinarySourceReference.source_package_release_id,
-             BinarySourceReference.reference_type),
-            values, get_objects=True)
+            (
+                BinarySourceReference.binary_package_release_id,
+                BinarySourceReference.source_package_release_id,
+                BinarySourceReference.reference_type,
+            ),
+            values,
+            get_objects=True,
+        )
 
     @classmethod
     def createFromSourcePackageReleases(cls, bpr, sprs, reference_type):
         """See `IBinarySourceReferenceSet`."""
         relationship = ", ".join(
-            ["%s (= %s)" % (spr.name, spr.version) for spr in sprs])
+            ["%s (= %s)" % (spr.name, spr.version) for spr in sprs]
+        )
         return cls.createFromRelationship(bpr, relationship, reference_type)
 
     @classmethod
@@ -143,4 +161,5 @@ class BinarySourceReferenceSet:
         return IStore(BinarySourceReference).find(
             BinarySourceReference,
             BinarySourceReference.binary_package_release == bpr,
-            BinarySourceReference.reference_type == reference_type)
+            BinarySourceReference.reference_type == reference_type,
+        )

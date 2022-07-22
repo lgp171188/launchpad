@@ -3,11 +3,11 @@
 
 """Test live filesystem build views."""
 
-from fixtures import FakeLogger
 import soupmatchers
+import transaction
+from fixtures import FakeLogger
 from storm.locals import Store
 from testtools.matchers import StartsWith
-import transaction
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
@@ -19,22 +19,19 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
 from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.testing import (
-    admin_logged_in,
     ANONYMOUS,
     BrowserTestCase,
+    TestCaseWithFactory,
+    admin_logged_in,
     login,
     person_logged_in,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+)
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 from lp.testing.pages import (
     extract_text,
     find_main_content,
     find_tags_by_class,
-    )
+)
 from lp.testing.views import create_initialized_view
 
 
@@ -49,18 +46,25 @@ class TestCanonicalUrlForLiveFSBuild(TestCaseWithFactory):
     def test_canonical_url(self):
         owner = self.factory.makePerson(name="person")
         distribution = self.factory.makeDistribution(
-            name="distro", owner=owner)
+            name="distro", owner=owner
+        )
         distroseries = self.factory.makeDistroSeries(
-            distribution=distribution, name="unstable")
+            distribution=distribution, name="unstable"
+        )
         livefs = self.factory.makeLiveFS(
-            registrant=owner, owner=owner, distroseries=distroseries,
-            name="livefs")
+            registrant=owner,
+            owner=owner,
+            distroseries=distroseries,
+            name="livefs",
+        )
         build = self.factory.makeLiveFSBuild(requester=owner, livefs=livefs)
         self.assertThat(
             canonical_url(build),
             StartsWith(
                 "http://launchpad.test/~person/+livefs/distro/unstable/livefs/"
-                "+build/"))
+                "+build/"
+            ),
+        )
 
 
 class TestLiveFSBuildView(TestCaseWithFactory):
@@ -78,7 +82,8 @@ class TestLiveFSBuildView(TestCaseWithFactory):
         build_view = create_initialized_view(build, "+index")
         self.assertEqual(
             [livefsfile.libraryfile.filename],
-            [lfa.filename for lfa in build_view.files])
+            [lfa.filename for lfa in build_view.files],
+        )
         # Deleted files won't be included.
         self.assertFalse(livefsfile.libraryfile.deleted)
         removeSecurityProxy(livefsfile.libraryfile).content = None
@@ -118,7 +123,8 @@ class TestLiveFSBuildOperations(BrowserTestCase):
         self.build_url = canonical_url(self.build)
         self.requester = self.build.requester
         self.buildd_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).buildd_admin])
+            member_of=[getUtility(ILaunchpadCelebrities).buildd_admin]
+        )
 
     def test_cancel_build(self):
         # The requester of a build can cancel it.
@@ -140,8 +146,11 @@ class TestLiveFSBuildOperations(BrowserTestCase):
         browser = self.getViewBrowser(self.build, user=user)
         self.assertRaises(LinkNotFoundError, browser.getLink, "Cancel build")
         self.assertRaises(
-            Unauthorized, self.getUserBrowser, self.build_url + "/+cancel",
-            user=user)
+            Unauthorized,
+            self.getUserBrowser,
+            self.build_url + "/+cancel",
+            user=user,
+        )
 
     def test_cancel_build_wrong_state(self):
         # If the build isn't queued, you can't cancel it.
@@ -172,7 +181,8 @@ class TestLiveFSBuildOperations(BrowserTestCase):
         browser.getControl("Rescore build").click()
         self.assertEqual(
             "Invalid integer data",
-            extract_text(find_tags_by_class(browser.contents, "message")[1]))
+            extract_text(find_tags_by_class(browser.contents, "message")[1]),
+        )
 
     def test_rescore_build_not_admin(self):
         # A non-admin user cannot cancel a build.
@@ -182,8 +192,11 @@ class TestLiveFSBuildOperations(BrowserTestCase):
         browser = self.getViewBrowser(self.build, user=user)
         self.assertRaises(LinkNotFoundError, browser.getLink, "Rescore build")
         self.assertRaises(
-            Unauthorized, self.getUserBrowser, self.build_url + "/+rescore",
-            user=user)
+            Unauthorized,
+            self.getUserBrowser,
+            self.build_url + "/+rescore",
+            user=user,
+        )
 
     def test_rescore_build_wrong_state(self):
         # If the build isn't NEEDSBUILD, you can't rescore it.
@@ -200,22 +213,32 @@ class TestLiveFSBuildOperations(BrowserTestCase):
         with person_logged_in(self.requester):
             self.build.cancel()
         browser = self.getViewBrowser(
-            self.build, "+rescore", user=self.buildd_admin)
+            self.build, "+rescore", user=self.buildd_admin
+        )
         self.assertEqual(self.build_url, browser.url)
-        self.assertThat(browser.contents, soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                "notification", "div", attrs={"class": "warning message"},
-                text="Cannot rescore this build because it is not queued.")))
+        self.assertThat(
+            browser.contents,
+            soupmatchers.HTMLContains(
+                soupmatchers.Tag(
+                    "notification",
+                    "div",
+                    attrs={"class": "warning message"},
+                    text="Cannot rescore this build because it is not queued.",
+                )
+            ),
+        )
 
     def test_builder_history(self):
         Store.of(self.build).flush()
         self.build.updateStatus(
-            BuildStatus.FULLYBUILT, builder=self.factory.makeBuilder())
+            BuildStatus.FULLYBUILT, builder=self.factory.makeBuilder()
+        )
         title = self.build.title
         browser = self.getViewBrowser(self.build.builder, "+history")
         self.assertTextMatchesExpressionIgnoreWhitespace(
             "Build history.*%s" % title,
-            extract_text(find_main_content(browser.contents)))
+            extract_text(find_main_content(browser.contents)),
+        )
         self.assertEqual(self.build_url, browser.getLink(title).url)
 
     def makeBuildingLiveFS(self, archive=None):

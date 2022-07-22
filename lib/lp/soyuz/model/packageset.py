@@ -1,65 +1,58 @@
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['Packageset', 'PackagesetSet']
+__all__ = ["Packageset", "PackagesetSet"]
 
 import pytz
 import six
 from storm.expr import SQL
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    Storm,
-    Unicode,
-    )
+from storm.locals import DateTime, Int, Reference, Storm, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.registry.interfaces.sourcepackagename import (
     ISourcePackageName,
     ISourcePackageNameSet,
-    )
+)
 from lp.registry.model.sourcepackagename import SourcePackageName
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.soyuz.interfaces.packageset import (
     DuplicatePackagesetName,
     IPackageset,
     IPackagesetSet,
     NoSuchPackageSet,
-    )
+)
 from lp.soyuz.model.packagesetgroup import PackagesetGroup
 from lp.soyuz.model.packagesetsources import PackagesetSources
 
 
 def _order_result_set(result_set):
     """Default order for package set and source package name result sets."""
-    return result_set.order_by('name')
+    return result_set.order_by("name")
 
 
 @implementer(IPackageset)
 class Packageset(Storm):
     """See `IPackageset`."""
-    __storm_table__ = 'Packageset'
+
+    __storm_table__ = "Packageset"
     id = Int(primary=True)
 
     date_created = DateTime(
-        name='date_created', allow_none=False, tzinfo=pytz.UTC)
+        name="date_created", allow_none=False, tzinfo=pytz.UTC
+    )
 
-    owner_id = Int(name='owner', allow_none=False)
-    owner = Reference(owner_id, 'Person.id')
+    owner_id = Int(name="owner", allow_none=False)
+    owner = Reference(owner_id, "Person.id")
 
-    name = Unicode(name='name', allow_none=False)
-    description = Unicode(name='description', allow_none=False)
+    name = Unicode(name="name", allow_none=False)
+    description = Unicode(name="description", allow_none=False)
 
-    distroseries_id = Int(name='distroseries', allow_none=False)
-    distroseries = Reference(distroseries_id, 'DistroSeries.id')
+    distroseries_id = Int(name="distroseries", allow_none=False)
+    distroseries = Reference(distroseries_id, "DistroSeries.id")
 
-    packagesetgroup_id = Int(name='packagesetgroup', allow_none=False)
-    packagesetgroup = Reference(packagesetgroup_id, 'PackagesetGroup.id')
+    packagesetgroup_id = Int(name="packagesetgroup", allow_none=False)
+    packagesetgroup = Reference(packagesetgroup_id, "PackagesetGroup.id")
 
     relative_build_score = Int(allow_none=False)
 
@@ -67,14 +60,16 @@ class Packageset(Storm):
         """See `IPackageset`."""
         handlers = (
             (ISourcePackageName, self._addSourcePackageNames),
-            (IPackageset, self._addDirectSuccessors))
+            (IPackageset, self._addDirectSuccessors),
+        )
         self._add_or_remove(data, handlers)
 
     def remove(self, data):
         """See `IPackageset`."""
         handlers = (
             (ISourcePackageName, self._removeSourcePackageNames),
-            (IPackageset, self._removeDirectSuccessors))
+            (IPackageset, self._removeDirectSuccessors),
+        )
         self._add_or_remove(data, handlers)
 
     def _add_or_remove(self, data, handlers):
@@ -102,56 +97,64 @@ class Packageset(Storm):
         """Add the given source package names to the package set.
 
         Souce package names already *directly* associated are ignored."""
-        query = '''
+        query = """
             INSERT INTO packagesetsources(packageset, sourcepackagename) (
                 SELECT ? AS packageset, spn.id AS sourcepackagename
                 FROM sourcepackagename spn WHERE spn.id IN (%s)
                 EXCEPT
                 SELECT packageset, sourcepackagename FROM packagesetsources
                 WHERE packageset = ?)
-        ''' % ','.join(str(source_name.id) for source_name in source_names)
+        """ % ",".join(
+            str(source_name.id) for source_name in source_names
+        )
         store.execute(query, (self.id, self.id), noresult=True)
 
     def _removeSourcePackageNames(self, source_names, store):
         """Remove the given source package names from the package set."""
-        query = '''
+        query = """
             DELETE FROM packagesetsources
             WHERE packageset = ? AND sourcepackagename IN (%s)
-        ''' % ','.join(str(source_name.id) for source_name in source_names)
+        """ % ",".join(
+            str(source_name.id) for source_name in source_names
+        )
         store.execute(query, (self.id,), noresult=True)
 
     def _addDirectSuccessors(self, packagesets, store):
         """Add the given package sets as directly included subsets."""
-        adsq = '''
+        adsq = """
             INSERT INTO packagesetinclusion(parent, child) (
                 SELECT ? AS parent, cps.id AS child
                 FROM packageset cps WHERE cps.id IN (%s)
                 EXCEPT
                 SELECT parent, child FROM packagesetinclusion
                 WHERE parent = ?)
-        ''' % ','.join(str(packageset.id) for packageset in packagesets)
+        """ % ",".join(
+            str(packageset.id) for packageset in packagesets
+        )
         store.execute(adsq, (self.id, self.id), noresult=True)
 
     def _removeDirectSuccessors(self, packagesets, store):
         """Remove the given package sets as directly included subsets."""
-        rdsq = '''
+        rdsq = """
             DELETE FROM packagesetinclusion
             WHERE parent = ? AND child IN (%s)
-        ''' % ','.join(str(packageset.id) for packageset in packagesets)
+        """ % ",".join(
+            str(packageset.id) for packageset in packagesets
+        )
         store.execute(rdsq, (self.id,), noresult=True)
 
     def _sourcesIncludedClause(self, direct_inclusion=False):
         if direct_inclusion == False:
-            source_name_query = '''
+            source_name_query = """
                 SELECT pss.sourcepackagename
                 FROM packagesetsources pss, flatpackagesetinclusion fpsi
                 WHERE pss.packageset = fpsi.child AND fpsi.parent = ?
-            '''
+            """
         else:
-            source_name_query = '''
+            source_name_query = """
                 SELECT pss.sourcepackagename FROM packagesetsources pss
                 WHERE pss.packageset = ?
-            '''
+            """
         return SourcePackageName.id.is_in(SQL(source_name_query, (self.id,)))
 
     def sourcesIncluded(self, direct_inclusion=False):
@@ -159,7 +162,8 @@ class Packageset(Storm):
         store = IStore(Packageset)
         result_set = store.find(
             SourcePackageName,
-            self._sourcesIncludedClause(direct_inclusion=direct_inclusion))
+            self._sourcesIncludedClause(direct_inclusion=direct_inclusion),
+        )
         return _order_result_set(result_set)
 
     def getSourcesIncluded(self, direct_inclusion=False):
@@ -173,7 +177,8 @@ class Packageset(Storm):
         result_set = store.find(
             SourcePackageName,
             SourcePackageName.id == sourcepackagename.id,
-            self._sourcesIncludedClause(direct_inclusion=direct_inclusion))
+            self._sourcesIncludedClause(direct_inclusion=direct_inclusion),
+        )
         return not result_set.is_empty()
 
     def setsIncludedBy(self, direct_inclusion=False):
@@ -182,16 +187,16 @@ class Packageset(Storm):
             # The very last clause in the query is necessary because each
             # package set is also a predecessor of itself in the flattened
             # hierarchy.
-            query = '''
+            query = """
                 SELECT fpsi.parent FROM flatpackagesetinclusion fpsi
                 WHERE fpsi.child = ? AND fpsi.parent != ?
-            '''
+            """
             params = (self.id, self.id)
         else:
-            query = '''
+            query = """
                 SELECT psi.parent FROM packagesetinclusion psi
                 WHERE psi.child = ?
-            '''
+            """
             params = (self.id,)
         store = IStore(Packageset)
         predecessors = SQL(query, params)
@@ -204,16 +209,16 @@ class Packageset(Storm):
             # The very last clause in the query is necessary because each
             # package set is also a successor of itself in the flattened
             # hierarchy.
-            query = '''
+            query = """
                 SELECT fpsi.child FROM flatpackagesetinclusion fpsi
                 WHERE fpsi.parent = ? AND fpsi.child != ?
-            '''
+            """
             params = (self.id, self.id)
         else:
-            query = '''
+            query = """
                 SELECT psi.child FROM packagesetinclusion psi
                 WHERE psi.parent = ?
-            '''
+            """
             params = (self.id,)
         store = IStore(Packageset)
         successors = SQL(query, params)
@@ -223,7 +228,7 @@ class Packageset(Storm):
     def sourcesSharedBy(self, other_package_set, direct_inclusion=False):
         """See `IPackageset`."""
         if direct_inclusion == False:
-            query = '''
+            query = """
                 SELECT pss_this.sourcepackagename
                 FROM
                     packagesetsources pss_this, packagesetsources pss_other,
@@ -233,18 +238,19 @@ class Packageset(Storm):
                     AND pss_this.packageset = fpsi_this.child
                     AND pss_other.packageset = fpsi_other.child
                     AND fpsi_this.parent = ?  AND fpsi_other.parent = ?
-            '''
+            """
         else:
-            query = '''
+            query = """
                 SELECT pss_this.sourcepackagename
                 FROM packagesetsources pss_this, packagesetsources pss_other
                 WHERE pss_this.sourcepackagename = pss_other.sourcepackagename
                     AND pss_this.packageset = ? AND pss_other.packageset = ?
-            '''
+            """
         store = IStore(Packageset)
         source_names = SQL(query, (self.id, other_package_set.id))
         result_set = store.find(
-            SourcePackageName, SourcePackageName.id.is_in(source_names))
+            SourcePackageName, SourcePackageName.id.is_in(source_names)
+        )
         return _order_result_set(result_set)
 
     def getSourcesSharedBy(self, other_package_set, direct_inclusion=False):
@@ -255,7 +261,7 @@ class Packageset(Storm):
     def sourcesNotSharedBy(self, other_package_set, direct_inclusion=False):
         """See `IPackageset`."""
         if direct_inclusion == False:
-            query = '''
+            query = """
                 SELECT pss_this.sourcepackagename
                 FROM packagesetsources pss_this,
                     flatpackagesetinclusion fpsi_this
@@ -267,27 +273,28 @@ class Packageset(Storm):
                     flatpackagesetinclusion fpsi_other
                 WHERE pss_other.packageset = fpsi_other.child
                     AND fpsi_other.parent = ?
-            '''
+            """
         else:
-            query = '''
+            query = """
                 SELECT pss_this.sourcepackagename
                 FROM packagesetsources pss_this WHERE pss_this.packageset = ?
                 EXCEPT
                 SELECT pss_other.sourcepackagename
                 FROM packagesetsources pss_other
                 WHERE pss_other.packageset = ?
-            '''
+            """
         store = IStore(Packageset)
         source_names = SQL(query, (self.id, other_package_set.id))
         result_set = store.find(
-            SourcePackageName, SourcePackageName.id.is_in(source_names))
+            SourcePackageName, SourcePackageName.id.is_in(source_names)
+        )
         return _order_result_set(result_set)
 
-    def getSourcesNotSharedBy(
-        self, other_package_set, direct_inclusion=False):
+    def getSourcesNotSharedBy(self, other_package_set, direct_inclusion=False):
         """See `IPackageset`."""
         result_set = self.sourcesNotSharedBy(
-            other_package_set, direct_inclusion)
+            other_package_set, direct_inclusion
+        )
         return list(result_set.values(SourcePackageName.name))
 
     def _api_add_or_remove(self, clauses, handler):
@@ -300,7 +307,7 @@ class Packageset(Storm):
     def addSources(self, names):
         """See `IPackageset`."""
         if isinstance(names, str):
-            names = [six.ensure_text(names, 'ASCII')]
+            names = [six.ensure_text(names, "ASCII")]
         clauses = (SourcePackageName, SourcePackageName.name.is_in(names))
         self._api_add_or_remove(clauses, self._addSourcePackageNames)
 
@@ -312,15 +319,19 @@ class Packageset(Storm):
     def addSubsets(self, names):
         """See `IPackageset`."""
         clauses = (
-            Packageset, Packageset.name.is_in(names),
-            Packageset.distroseries == self.distroseries)
+            Packageset,
+            Packageset.name.is_in(names),
+            Packageset.distroseries == self.distroseries,
+        )
         self._api_add_or_remove(clauses, self._addDirectSuccessors)
 
     def removeSubsets(self, names):
         """See `IPackageset`."""
         clauses = (
-            Packageset, Packageset.name.is_in(names),
-            Packageset.distroseries == self.distroseries)
+            Packageset,
+            Packageset.name.is_in(names),
+            Packageset.distroseries == self.distroseries,
+        )
         self._api_add_or_remove(clauses, self._removeDirectSuccessors)
 
     def relatedSets(self):
@@ -329,14 +340,15 @@ class Packageset(Storm):
         result_set = store.find(
             Packageset,
             Packageset.packagesetgroup == self.packagesetgroup,
-            Packageset.id != self.id)
+            Packageset.id != self.id,
+        )
         return _order_result_set(result_set)
 
     def destroySelf(self):
         store = IStore(Packageset)
         sources = store.find(
-            PackagesetSources,
-            PackagesetSources.packageset == self)
+            PackagesetSources, PackagesetSources.packageset == self
+        )
         sources.remove()
         store.remove(self)
         if self.relatedSets().is_empty():
@@ -390,8 +402,10 @@ class PackagesetSet:
         store = IStore(Packageset)
         name = six.ensure_text(name)
         package_set = store.find(
-            Packageset, Packageset.name == name,
-            Packageset.distroseries == distroseries).one()
+            Packageset,
+            Packageset.name == name,
+            Packageset.distroseries == distroseries,
+        ).one()
         if package_set is None:
             raise NoSuchPackageSet(name)
         return package_set
@@ -406,7 +420,8 @@ class PackagesetSet:
         """See `IPackagesetSet`."""
         store = IStore(Packageset)
         result_set = store.find(
-            Packageset, Packageset.distroseries == distroseries)
+            Packageset, Packageset.distroseries == distroseries
+        )
         return _order_result_set(result_set)
 
     def get(self):
@@ -428,29 +443,32 @@ class PackagesetSet:
             Packageset.id == PackagesetSources.packageset_id,
             Packageset.distroseries == distroseries,
             PackagesetSources.sourcepackagename_id.is_in(
-                sourcepackagename_ids))
+                sourcepackagename_ids
+            ),
+        )
         packagesets_by_package = {}
         for package, packageset in tuples:
             packagesets_by_package.setdefault(package, []).append(packageset)
         return packagesets_by_package
 
-    def setsIncludingSource(self, sourcepackagename, distroseries=None,
-                            direct_inclusion=False):
+    def setsIncludingSource(
+        self, sourcepackagename, distroseries=None, direct_inclusion=False
+    ):
         """See `IPackagesetSet`."""
         sourcepackagename = self._nameToSourcePackageName(sourcepackagename)
 
         if direct_inclusion:
-            query = '''
+            query = """
                 SELECT pss.packageset FROM packagesetsources pss
                 WHERE pss.sourcepackagename = ?
-            '''
+            """
         else:
-            query = '''
+            query = """
                 SELECT fpsi.parent
                 FROM packagesetsources pss, flatpackagesetinclusion fpsi
                 WHERE pss.sourcepackagename = ?
                 AND pss.packageset = fpsi.child
-            '''
+            """
         store = IStore(Packageset)
         psets = SQL(query, (sourcepackagename.id,))
         clauses = [Packageset.id.is_in(psets)]

@@ -4,9 +4,9 @@
 """Helper functions for running external commands."""
 
 __all__ = [
-    'run_command',
-    'run_script',
-    ]
+    "run_command",
+    "run_script",
+]
 
 import subprocess
 import sys
@@ -31,8 +31,12 @@ def run_command(command, args=None, input=None, universal_newlines=True):
         stdin = None
 
     child = subprocess.Popen(
-        command_line, stdin=stdin, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, universal_newlines=universal_newlines)
+        command_line,
+        stdin=stdin,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=universal_newlines,
+    )
     stdout, stderr = child.communicate(input)
     result = child.wait()
     return (result, stdout, stderr)
@@ -53,5 +57,8 @@ def run_script(script, args=None, input=None, universal_newlines=True):
         interpreter_args.extend(args)
 
     return run_command(
-        sys.executable, interpreter_args, input,
-        universal_newlines=universal_newlines)
+        sys.executable,
+        interpreter_args,
+        input,
+        universal_newlines=universal_newlines,
+    )

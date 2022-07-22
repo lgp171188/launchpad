@@ -1,8 +1,8 @@
 # Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import timedelta
 import unittest
+from datetime import timedelta
 
 import transaction
 
@@ -12,13 +12,13 @@ from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
 from lp.translations.browser.productseries import (
     ProductSeriesTranslationsExportView,
-    )
+)
 from lp.translations.browser.sourcepackage import (
     SourcePackageTranslationsExportView,
-    )
+)
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
+)
 from lp.translations.model.poexportrequest import POExportRequest
 
 
@@ -40,7 +40,8 @@ class BaseExportViewMixin(TestCaseWithFactory):
     def createTranslationTemplate(self, name, priority=0):
         """Attaches a template to appropriate container."""
         raise NotImplementedError(
-            'This must be provided by an executable test.')
+            "This must be provided by an executable test."
+        )
 
     def test_uses_translations_no_templates(self):
         # With no templates in an object, it's not using translations yet.
@@ -65,22 +66,22 @@ class BaseExportViewMixin(TestCaseWithFactory):
         template1 = self.createTranslationTemplate("one")
         template1.source_file_format = TranslationFileFormat.XPI
         self.assertEqual(
-            TranslationFileFormat.XPI,
-            self.view.getDefaultFormat())
+            TranslationFileFormat.XPI, self.view.getDefaultFormat()
+        )
 
         # With multiple templates, format with a lower ID is returned
         # if they are different, where PO (1) < XPI (3).
         template2 = self.createTranslationTemplate("two")
         template2.source_file_format = TranslationFileFormat.PO
         self.assertEqual(
-            TranslationFileFormat.PO,
-            self.view.getDefaultFormat())
+            TranslationFileFormat.PO, self.view.getDefaultFormat()
+        )
 
         # Obsolete templates do not affect default file format.
         template2.iscurrent = False
         self.assertEqual(
-            TranslationFileFormat.XPI,
-            self.view.getDefaultFormat())
+            TranslationFileFormat.XPI, self.view.getDefaultFormat()
+        )
 
     def test_processForm_empty(self):
         # With no templates, empty ResultSet is returned for templates,
@@ -113,23 +114,23 @@ class BaseExportViewMixin(TestCaseWithFactory):
         self.assertIsNone(translations)
 
         # Adding a PO file to this template makes it returned.
-        pofile_sr = self.factory.makePOFile('sr', potemplate=template1)
+        pofile_sr = self.factory.makePOFile("sr", potemplate=template1)
         templates, translations = self.view.processForm()
         self.assertContentEqual([pofile_sr.id], translations)
 
         # If there are two PO files on the same template, they are
         # both returned.
-        pofile_es = self.factory.makePOFile('es', potemplate=template1)
+        pofile_es = self.factory.makePOFile("es", potemplate=template1)
         templates, translations = self.view.processForm()
         self.assertContentEqual([pofile_sr.id, pofile_es.id], translations)
 
         # With more than one template, PO files from both are returned.
         template2 = self.createTranslationTemplate("two", priority=2)
-        pofile_sr2 = self.factory.makePOFile('sr', potemplate=template2)
+        pofile_sr2 = self.factory.makePOFile("sr", potemplate=template2)
         templates, translations = self.view.processForm()
         self.assertContentEqual(
-            [pofile_sr.id, pofile_es.id, pofile_sr2.id],
-            translations)
+            [pofile_sr.id, pofile_es.id, pofile_sr2.id], translations
+        )
 
 
 class TestProductSeries(BaseExportViewMixin):
@@ -137,7 +138,8 @@ class TestProductSeries(BaseExportViewMixin):
 
     def createTranslationTemplate(self, name, priority=0):
         potemplate = self.factory.makePOTemplate(
-            name=name, productseries=self.container)
+            name=name, productseries=self.container
+        )
         potemplate.priority = priority
         return potemplate
 
@@ -145,7 +147,8 @@ class TestProductSeries(BaseExportViewMixin):
         super().setUp()
         self.container = self.factory.makeProductSeries()
         self.view = ProductSeriesTranslationsExportView(
-            self.container, LaunchpadTestRequest())
+            self.container, LaunchpadTestRequest()
+        )
 
 
 class TestSourcePackage(BaseExportViewMixin):
@@ -153,8 +156,10 @@ class TestSourcePackage(BaseExportViewMixin):
 
     def createTranslationTemplate(self, name, priority=0):
         potemplate = self.factory.makePOTemplate(
-            name=name, distroseries=self.container.distroseries,
-            sourcepackagename=self.container.sourcepackagename)
+            name=name,
+            distroseries=self.container.distroseries,
+            sourcepackagename=self.container.sourcepackagename,
+        )
         potemplate.priority = priority
         return potemplate
 
@@ -162,7 +167,8 @@ class TestSourcePackage(BaseExportViewMixin):
         super().setUp()
         self.container = self.factory.makeSourcePackage()
         self.view = SourcePackageTranslationsExportView(
-            self.container, LaunchpadTestRequest())
+            self.container, LaunchpadTestRequest()
+        )
 
 
 class TestPOExportQueueStatusDescriptions(TestCaseWithFactory):
@@ -173,20 +179,24 @@ class TestPOExportQueueStatusDescriptions(TestCaseWithFactory):
         super().setUp()
         self.container = self.factory.makeProductSeries()
         self.view = ProductSeriesTranslationsExportView(
-            self.container, LaunchpadTestRequest())
+            self.container, LaunchpadTestRequest()
+        )
 
     def test_describeQueueSize(self):
         self.assertEqual(
             "The export queue is currently empty.",
-            self.view.describeQueueSize(0))
+            self.view.describeQueueSize(0),
+        )
 
         self.assertEqual(
             "There is 1 file request on the export queue.",
-            self.view.describeQueueSize(1))
+            self.view.describeQueueSize(1),
+        )
 
         self.assertEqual(
             "There are 2 file requests on the export queue.",
-            self.view.describeQueueSize(2))
+            self.view.describeQueueSize(2),
+        )
 
     def test_describeBacklog(self):
         backlog = None
@@ -195,7 +205,8 @@ class TestPOExportQueueStatusDescriptions(TestCaseWithFactory):
         backlog = timedelta(hours=2)
         self.assertEqual(
             "The backlog is approximately 2 hours.",
-            self.view.describeBacklog(backlog).strip())
+            self.view.describeBacklog(backlog).strip(),
+        )
 
     def test_export_queue_status(self):
         self.view.initialize()
@@ -207,8 +218,7 @@ class TestPOExportQueueStatusDescriptions(TestCaseWithFactory):
         size = self.view.describeQueueSize(0)
         backlog = self.view.describeBacklog(None)
         status = "%s %s" % (size, backlog)
-        self.assertEqual(
-            status.strip(), self.view.export_queue_status.strip())
+        self.assertEqual(status.strip(), self.view.export_queue_status.strip())
 
         potemplate = self.factory.makePOTemplate()
         queue.addRequest(requester, potemplates=[potemplate])
@@ -217,8 +227,7 @@ class TestPOExportQueueStatusDescriptions(TestCaseWithFactory):
         size = self.view.describeQueueSize(1)
         backlog = self.view.describeBacklog(queue.estimateBacklog())
         status = "%s %s" % (size, backlog)
-        self.assertEqual(
-            status.strip(), self.view.export_queue_status.strip())
+        self.assertEqual(status.strip(), self.view.export_queue_status.strip())
 
 
 def test_suite():
@@ -226,6 +235,7 @@ def test_suite():
     loader = unittest.TestLoader()
     suite.addTest(loader.loadTestsFromTestCase(TestProductSeries))
     suite.addTest(loader.loadTestsFromTestCase(TestSourcePackage))
-    suite.addTest(loader.loadTestsFromTestCase(
-        TestPOExportQueueStatusDescriptions))
+    suite.addTest(
+        loader.loadTestsFromTestCase(TestPOExportQueueStatusDescriptions)
+    )
     return suite

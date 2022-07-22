@@ -8,25 +8,26 @@ from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.soyuz.adapters.packagelocation import PackageLocation
-from lp.soyuz.enums import (
-    ArchivePurpose,
-    PackagePublishingStatus,
-    )
+from lp.soyuz.enums import ArchivePurpose, PackagePublishingStatus
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.packagecloner import IPackageCloner
 from lp.soyuz.interfaces.publishing import (
-    active_publishing_status,
     IPublishingSet,
-    )
+    active_publishing_status,
+)
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class PackageInfo:
-
-    def __init__(self, name, version,
-                 status=PackagePublishingStatus.PUBLISHED, component="main"):
+    def __init__(
+        self,
+        name,
+        version,
+        status=PackagePublishingStatus.PUBLISHED,
+        component="main",
+    ):
         self.name = name
         self.version = version
         self.status = status
@@ -46,13 +47,14 @@ class PackageClonerTests(TestCaseWithFactory):
         """
         expected_set = {(info.name, info.version) for info in expected}
         sources = archive.getPublishedSources(
-            distroseries=distroseries,
-            status=active_publishing_status)
+            distroseries=distroseries, status=active_publishing_status
+        )
         actual_set = set()
         for source in sources:
             source = removeSecurityProxy(source)
             actual_set.add(
-                (source.source_package_name, source.source_package_version))
+                (source.source_package_name, source.source_package_version)
+            )
         self.assertEqual(expected_set, actual_set)
 
     def createSourceDistribution(self, package_infos):
@@ -72,18 +74,24 @@ class PackageClonerTests(TestCaseWithFactory):
         distro = self.factory.makeDistribution(name=distro_name)
         distroseries_name = "maudlin"
         distroseries = self.factory.makeDistroSeries(
-            distribution=distro, name=distroseries_name)
+            distribution=distro, name=distroseries_name
+        )
         das = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag="i386",
-            processor=getUtility(IProcessorSet).getByName('386'))
+            distroseries=distroseries,
+            architecturetag="i386",
+            processor=getUtility(IProcessorSet).getByName("386"),
+        )
         distroseries.nominatedarchindep = das
         return distroseries
 
     def getTargetArchive(self, distribution, processors=None):
         """Get a target archive for copying in to."""
         return self.factory.makeArchive(
-            name="test-copy-archive", purpose=ArchivePurpose.COPY,
-            distribution=distribution, processors=processors)
+            name="test-copy-archive",
+            purpose=ArchivePurpose.COPY,
+            distribution=distribution,
+            processors=processors,
+        )
 
     def createSourcePublication(self, info, distroseries):
         """Create a SourcePackagePublishingHistory based on a PackageInfo."""
@@ -91,35 +99,51 @@ class PackageClonerTests(TestCaseWithFactory):
         sources = archive.getPublishedSources(
             distroseries=distroseries,
             status=active_publishing_status,
-            name=info.name, exact_match=True)
+            name=info.name,
+            exact_match=True,
+        )
         for src in sources:
             src.supersede()
         self.factory.makeSourcePackagePublishingHistory(
             sourcepackagename=self.factory.getOrMakeSourcePackageName(
-                name=info.name),
-            distroseries=distroseries, component=self.factory.makeComponent(
-                info.component),
-            version=info.version, architecturehintlist='any',
-            archive=archive, status=info.status,
-            pocket=PackagePublishingPocket.RELEASE)
+                name=info.name
+            ),
+            distroseries=distroseries,
+            component=self.factory.makeComponent(info.component),
+            version=info.version,
+            architecturehintlist="any",
+            archive=archive,
+            status=info.status,
+            pocket=PackagePublishingPocket.RELEASE,
+        )
 
     def createSourcePublications(self, package_infos, distroseries):
         """Create a source publication for each item in package_infos."""
         for package_info in package_infos:
             self.createSourcePublication(package_info, distroseries)
 
-    def makeCopyArchive(self, package_infos, component="main",
-                        source_pocket=None, target_pocket=None,
-                        processors=None):
+    def makeCopyArchive(
+        self,
+        package_infos,
+        component="main",
+        source_pocket=None,
+        target_pocket=None,
+        processors=None,
+    ):
         """Make a copy archive based on a new distribution."""
         distroseries = self.createSourceDistribution(package_infos)
         copy_archive = self.getTargetArchive(
-            distroseries.distribution, processors=processors)
+            distroseries.distribution, processors=processors
+        )
         to_component = getUtility(IComponentSet).ensure(component)
         self.copyArchive(
-            copy_archive, distroseries, from_pocket=source_pocket,
-            to_pocket=target_pocket, to_component=to_component,
-            processors=processors)
+            copy_archive,
+            distroseries,
+            from_pocket=source_pocket,
+            to_pocket=target_pocket,
+            to_component=to_component,
+            processors=processors,
+        )
         return (copy_archive, distroseries)
 
     def checkBuilds(self, archive, package_infos):
@@ -129,10 +153,13 @@ class PackageClonerTests(TestCaseWithFactory):
         created for it.
         """
         expected_builds = list(
-            (info.name, info.version) for info in package_infos)
+            (info.name, info.version) for info in package_infos
+        )
         builds = list(
             getUtility(IBinaryPackageBuildSet).getBuildsForArchive(
-            archive, status=BuildStatus.NEEDSBUILD))
+                archive, status=BuildStatus.NEEDSBUILD
+            )
+        )
         actual_builds = list()
         for build in builds:
             naked_build = removeSecurityProxy(build)
@@ -140,9 +167,18 @@ class PackageClonerTests(TestCaseWithFactory):
             actual_builds.append((spr.name, spr.version))
         self.assertEqual(sorted(expected_builds), sorted(actual_builds))
 
-    def copyArchive(self, to_archive, to_distroseries, from_archive=None,
-                    from_distroseries=None, from_pocket=None, to_pocket=None,
-                    to_component=None, packagesets=None, processors=None):
+    def copyArchive(
+        self,
+        to_archive,
+        to_distroseries,
+        from_archive=None,
+        from_distroseries=None,
+        from_pocket=None,
+        to_pocket=None,
+        to_component=None,
+        packagesets=None,
+        processors=None,
+    ):
         """Use a PackageCloner to copy an archive."""
         if from_distroseries is None:
             from_distroseries = to_distroseries
@@ -155,59 +191,68 @@ class PackageClonerTests(TestCaseWithFactory):
         if packagesets is None:
             packagesets = []
         origin = PackageLocation(
-            from_archive, from_distroseries.distribution, from_distroseries,
-            from_pocket)
+            from_archive,
+            from_distroseries.distribution,
+            from_distroseries,
+            from_pocket,
+        )
         destination = PackageLocation(
-            to_archive, to_distroseries.distribution, to_distroseries,
-            to_pocket)
+            to_archive,
+            to_distroseries.distribution,
+            to_distroseries,
+            to_pocket,
+        )
         origin.packagesets = packagesets
         if to_component is not None:
             destination.component = to_component
         cloner = getUtility(IPackageCloner)
         cloner.clonePackages(
-            origin, destination, distroarchseries_list=None,
-            processors=processors)
+            origin,
+            destination,
+            distroarchseries_list=None,
+            processors=processors,
+        )
         return cloner
 
     def testCopiesPublished(self):
         """Test that PUBLISHED sources are copied."""
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED)
+            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+        )
         copy_archive, distroseries = self.makeCopyArchive([package_info])
-        self.checkCopiedSources(
-            copy_archive, distroseries, [package_info])
+        self.checkCopiedSources(copy_archive, distroseries, [package_info])
 
     def testCopiesPending(self):
         """Test that PENDING sources are copied."""
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PENDING)
+            "bzr", "2.1", status=PackagePublishingStatus.PENDING
+        )
         copy_archive, distroseries = self.makeCopyArchive([package_info])
-        self.checkCopiedSources(
-            copy_archive, distroseries, [package_info])
+        self.checkCopiedSources(copy_archive, distroseries, [package_info])
 
     def testDoesntCopySuperseded(self):
         """Test that SUPERSEDED sources are not copied."""
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.SUPERSEDED)
+            "bzr", "2.1", status=PackagePublishingStatus.SUPERSEDED
+        )
         copy_archive, distroseries = self.makeCopyArchive([package_info])
-        self.checkCopiedSources(
-            copy_archive, distroseries, [])
+        self.checkCopiedSources(copy_archive, distroseries, [])
 
     def testDoesntCopyDeleted(self):
         """Test that DELETED sources are not copied."""
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.DELETED)
+            "bzr", "2.1", status=PackagePublishingStatus.DELETED
+        )
         copy_archive, distroseries = self.makeCopyArchive([package_info])
-        self.checkCopiedSources(
-            copy_archive, distroseries, [])
+        self.checkCopiedSources(copy_archive, distroseries, [])
 
     def testDoesntCopyObsolete(self):
         """Test that OBSOLETE sources are not copied."""
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.OBSOLETE)
+            "bzr", "2.1", status=PackagePublishingStatus.OBSOLETE
+        )
         copy_archive, distroseries = self.makeCopyArchive([package_info])
-        self.checkCopiedSources(
-            copy_archive, distroseries, [])
+        self.checkCopiedSources(copy_archive, distroseries, [])
 
     def testCopiesAllComponents(self):
         """Test that packages from all components are copied.
@@ -219,215 +264,274 @@ class PackageClonerTests(TestCaseWithFactory):
         """
         package_infos = [
             PackageInfo(
-                "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED,
-                component="universe"),
+                "bzr",
+                "2.1",
+                status=PackagePublishingStatus.PUBLISHED,
+                component="universe",
+            ),
             PackageInfo(
-                "apt", "2.2", status=PackagePublishingStatus.PUBLISHED,
-                component="main")]
-        copy_archive, distroseries = self.makeCopyArchive(package_infos,
-            component="main")
+                "apt",
+                "2.2",
+                status=PackagePublishingStatus.PUBLISHED,
+                component="main",
+            ),
+        ]
+        copy_archive, distroseries = self.makeCopyArchive(
+            package_infos, component="main"
+        )
         self.checkCopiedSources(copy_archive, distroseries, package_infos)
 
     def testSubsetsBasedOnPackageset(self):
         """Test that --package-set limits the sources copied."""
         package_infos = [
             PackageInfo(
-                "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED),
+                "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+            ),
             PackageInfo(
-                "apt", "2.2", status=PackagePublishingStatus.PUBLISHED),
-            ]
+                "apt", "2.2", status=PackagePublishingStatus.PUBLISHED
+            ),
+        ]
         distroseries = self.createSourceDistribution(package_infos)
         spn = self.factory.getOrMakeSourcePackageName(name="apt")
         packageset = self.factory.makePackageset(
-            distroseries=distroseries, packages=(spn,))
+            distroseries=distroseries, packages=(spn,)
+        )
         copy_archive = self.getTargetArchive(distroseries.distribution)
         self.copyArchive(copy_archive, distroseries, packagesets=[packageset])
-        self.checkCopiedSources(
-            copy_archive, distroseries, [package_infos[1]])
+        self.checkCopiedSources(copy_archive, distroseries, [package_infos[1]])
 
     def testUnionsPackagesets(self):
         """Test that package sets are unioned when copying archives."""
         package_infos = [
             PackageInfo(
-                "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED),
+                "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+            ),
             PackageInfo(
-                "apt", "2.2", status=PackagePublishingStatus.PUBLISHED),
+                "apt", "2.2", status=PackagePublishingStatus.PUBLISHED
+            ),
             PackageInfo(
-                "gcc", "4.5", status=PackagePublishingStatus.PUBLISHED),
-            ]
+                "gcc", "4.5", status=PackagePublishingStatus.PUBLISHED
+            ),
+        ]
         distroseries = self.createSourceDistribution(package_infos)
         apt_spn = self.factory.getOrMakeSourcePackageName(name="apt")
         gcc_spn = self.factory.getOrMakeSourcePackageName(name="gcc")
         apt_packageset = self.factory.makePackageset(
-            distroseries=distroseries, packages=(apt_spn,))
+            distroseries=distroseries, packages=(apt_spn,)
+        )
         gcc_packageset = self.factory.makePackageset(
-            distroseries=distroseries, packages=(gcc_spn,))
+            distroseries=distroseries, packages=(gcc_spn,)
+        )
         copy_archive = self.getTargetArchive(distroseries.distribution)
         self.copyArchive(
-            copy_archive, distroseries,
-            packagesets=[apt_packageset, gcc_packageset])
-        self.checkCopiedSources(
-            copy_archive, distroseries, package_infos[1:])
+            copy_archive,
+            distroseries,
+            packagesets=[apt_packageset, gcc_packageset],
+        )
+        self.checkCopiedSources(copy_archive, distroseries, package_infos[1:])
 
     def testRecursivelyCopiesPackagesets(self):
         """Test that package set copies include subsets."""
         package_infos = [
             PackageInfo(
-                "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED),
+                "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+            ),
             PackageInfo(
-                "apt", "2.2", status=PackagePublishingStatus.PUBLISHED),
+                "apt", "2.2", status=PackagePublishingStatus.PUBLISHED
+            ),
             PackageInfo(
-                "gcc", "4.5", status=PackagePublishingStatus.PUBLISHED),
-            ]
+                "gcc", "4.5", status=PackagePublishingStatus.PUBLISHED
+            ),
+        ]
         distroseries = self.createSourceDistribution(package_infos)
         apt_spn = self.factory.getOrMakeSourcePackageName(name="apt")
         gcc_spn = self.factory.getOrMakeSourcePackageName(name="gcc")
         apt_packageset = self.factory.makePackageset(
-            distroseries=distroseries, packages=(apt_spn,))
+            distroseries=distroseries, packages=(apt_spn,)
+        )
         gcc_packageset = self.factory.makePackageset(
-            distroseries=distroseries, packages=(gcc_spn,))
+            distroseries=distroseries, packages=(gcc_spn,)
+        )
         apt_packageset.add((gcc_packageset,))
         copy_archive = self.getTargetArchive(distroseries.distribution)
         self.copyArchive(
-            copy_archive, distroseries, packagesets=[apt_packageset])
-        self.checkCopiedSources(
-            copy_archive, distroseries, package_infos[1:])
+            copy_archive, distroseries, packagesets=[apt_packageset]
+        )
+        self.checkCopiedSources(copy_archive, distroseries, package_infos[1:])
 
     def testCloneFromPPA(self):
         """Test we can create a copy archive with a PPA as the source."""
         distroseries = self.createSourceDistroSeries()
         ppa = self.factory.makeArchive(
-            purpose=ArchivePurpose.PPA,
-            distribution=distroseries.distribution)
+            purpose=ArchivePurpose.PPA, distribution=distroseries.distribution
+        )
         package_info = PackageInfo(
-                "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED,
-                component="universe")
+            "bzr",
+            "2.1",
+            status=PackagePublishingStatus.PUBLISHED,
+            component="universe",
+        )
         self.factory.makeSourcePackagePublishingHistory(
             sourcepackagename=self.factory.getOrMakeSourcePackageName(
-                name=package_info.name),
-            distroseries=distroseries, component=self.factory.makeComponent(
-                package_info.component),
-            version=package_info.version, archive=ppa,
-            status=package_info.status, architecturehintlist='any',
-            pocket=PackagePublishingPocket.RELEASE)
+                name=package_info.name
+            ),
+            distroseries=distroseries,
+            component=self.factory.makeComponent(package_info.component),
+            version=package_info.version,
+            archive=ppa,
+            status=package_info.status,
+            architecturehintlist="any",
+            pocket=PackagePublishingPocket.RELEASE,
+        )
         copy_archive = self.getTargetArchive(distroseries.distribution)
         self.copyArchive(copy_archive, distroseries, from_archive=ppa)
-        self.checkCopiedSources(
-            copy_archive, distroseries, [package_info])
+        self.checkCopiedSources(copy_archive, distroseries, [package_info])
 
     def testCreatesNoBuildsWithNoProcessors(self):
         """Test that no builds are created if we specify no processors."""
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED)
+            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+        )
         copy_archive, distroseries = self.makeCopyArchive([package_info])
         self.checkBuilds(copy_archive, [])
 
     def testCreatesBuilds(self):
         """Test that a copy archive creates builds for the copied packages."""
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED)
+            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+        )
         # This is the processor for the DAS that the source has, so we expect
         # to get builds.
-        processors = [getUtility(IProcessorSet).getByName('386')]
+        processors = [getUtility(IProcessorSet).getByName("386")]
         copy_archive, distroseries = self.makeCopyArchive(
-            [package_info], processors=processors)
+            [package_info], processors=processors
+        )
         self.checkBuilds(copy_archive, [package_info])
 
     def testNoBuildsIfProcessorNotInSource(self):
         """Test that no builds are created for a processor without a DAS."""
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED)
+            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+        )
         # This is a processor without a DAS in the source, so we expect no
         # builds.
         processors = [self.factory.makeProcessor(name="armel")]
         copy_archive, distroseries = self.makeCopyArchive(
-            [package_info], processors=processors)
+            [package_info], processors=processors
+        )
         self.checkBuilds(copy_archive, [])
 
     def testBuildsOnlyForProcessorsInSource(self):
         """Test that builds are only created for processors in source."""
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED)
+            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+        )
         # One of these processors has a DAS in the source, so we expect one
         # set of builds.
         processors = [
             self.factory.makeProcessor(name="armel"),
-            getUtility(IProcessorSet).getByName('386')]
+            getUtility(IProcessorSet).getByName("386"),
+        ]
         copy_archive, distroseries = self.makeCopyArchive(
-            [package_info], processors=processors)
+            [package_info], processors=processors
+        )
         self.checkBuilds(copy_archive, [package_info])
 
     def testCreatesSubsetOfBuilds(self):
         """Test that builds are only created for requested processors."""
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED)
+            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+        )
         distroseries = self.createSourceDistribution([package_info])
         # Create a DAS for a second processor.
         self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag="amd64",
-            processor=getUtility(IProcessorSet).getByName('amd64'))
+            distroseries=distroseries,
+            architecturetag="amd64",
+            processor=getUtility(IProcessorSet).getByName("amd64"),
+        )
         # The request builds for only one of the processors, so we
         # expect just one build for each source.
-        processors = [getUtility(IProcessorSet).getByName('386')]
+        processors = [getUtility(IProcessorSet).getByName("386")]
         copy_archive = self.getTargetArchive(distroseries.distribution)
-        self.copyArchive(
-            copy_archive, distroseries, processors=processors)
+        self.copyArchive(copy_archive, distroseries, processors=processors)
         self.checkBuilds(copy_archive, [package_info])
 
     def testCreatesMultipleBuilds(self):
         """Test that multiple processors result in mutiple builds."""
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED)
+            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+        )
         distroseries = self.createSourceDistribution([package_info])
         # Create a DAS for a second processor.
-        amd64 = getUtility(IProcessorSet).getByName('amd64')
+        amd64 = getUtility(IProcessorSet).getByName("amd64")
         self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag="amd64",
-            processor=amd64)
+            distroseries=distroseries, architecturetag="amd64", processor=amd64
+        )
         # The request builds for both processors, so we expect two builds
         # per source.
-        processors = [getUtility(IProcessorSet).getByName('386'), amd64]
+        processors = [getUtility(IProcessorSet).getByName("386"), amd64]
         copy_archive = self.getTargetArchive(distroseries.distribution)
-        self.copyArchive(
-            copy_archive, distroseries, processors=processors)
+        self.copyArchive(copy_archive, distroseries, processors=processors)
         self.checkBuilds(copy_archive, [package_info, package_info])
 
-    def diffArchives(self, target_archive, target_distroseries,
-                     source_archive=None, source_distroseries=None):
+    def diffArchives(
+        self,
+        target_archive,
+        target_distroseries,
+        source_archive=None,
+        source_distroseries=None,
+    ):
         """Run a packageSetDiff of two archives."""
         if source_distroseries is None:
             source_distroseries = target_distroseries
         if source_archive is None:
             source_archive = source_distroseries.distribution.main_archive
         source_location = PackageLocation(
-            source_archive, source_distroseries.distribution,
-            source_distroseries, PackagePublishingPocket.RELEASE)
+            source_archive,
+            source_distroseries.distribution,
+            source_distroseries,
+            PackagePublishingPocket.RELEASE,
+        )
         target_location = PackageLocation(
-            target_archive, target_distroseries.distribution,
-            target_distroseries, PackagePublishingPocket.RELEASE)
+            target_archive,
+            target_distroseries.distribution,
+            target_distroseries,
+            PackagePublishingPocket.RELEASE,
+        )
         cloner = getUtility(IPackageCloner)
         return cloner.packageSetDiff(source_location, target_location)
 
-    def checkPackageDiff(self, expected_changed, expected_new, actual,
-                         archive):
+    def checkPackageDiff(
+        self, expected_changed, expected_new, actual, archive
+    ):
         """Check that the diff of two archives is as expected."""
         actual_changed_keys, actual_new_keys = actual
-        expected_changed_tuples = [(e.name, e.version)
-                                   for e in expected_changed]
+        expected_changed_tuples = [
+            (e.name, e.version) for e in expected_changed
+        ]
         expected_new_tuples = [(e.name, e.version) for e in expected_new]
 
         def get_tuples(source_keys):
             tuples = []
             for source_key in source_keys:
                 source = getUtility(IPublishingSet).getByIdAndArchive(
-                    source_key, archive, source=True)
-                self.assertNotEqual(source, None, "Got a non-existent "
-                        "source publishing record: %d" % source_key)
+                    source_key, archive, source=True
+                )
+                self.assertNotEqual(
+                    source,
+                    None,
+                    "Got a non-existent "
+                    "source publishing record: %d" % source_key,
+                )
                 naked_source = removeSecurityProxy(source)
                 tuples.append(
-                    (naked_source.source_package_name,
-                     naked_source.source_package_version))
+                    (
+                        naked_source.source_package_name,
+                        naked_source.source_package_version,
+                    )
+                )
             return tuples
+
         actual_changed_tuples = get_tuples(actual_changed_keys)
         actual_new_tuples = get_tuples(actual_new_keys)
         self.assertContentEqual(expected_changed_tuples, actual_changed_tuples)
@@ -436,171 +540,204 @@ class PackageClonerTests(TestCaseWithFactory):
     def testPackageSetDiffWithNothingNew(self):
         """Test packageSetDiff."""
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED)
+            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+        )
         copy_archive, distroseries = self.makeCopyArchive([package_info])
         diff = self.diffArchives(copy_archive, distroseries)
         self.checkPackageDiff(
-            [], [], diff, distroseries.distribution.main_archive)
+            [], [], diff, distroseries.distribution.main_archive
+        )
 
     def testPackageSetDiffWithNewPackages(self):
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED)
+            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+        )
         copy_archive, distroseries = self.makeCopyArchive([package_info])
         package_infos = [
             PackageInfo(
-            "apt", "1.2", status=PackagePublishingStatus.PUBLISHED),
-            PackageInfo(
-            "gcc", "4.5", status=PackagePublishingStatus.PENDING),
+                "apt", "1.2", status=PackagePublishingStatus.PUBLISHED
+            ),
+            PackageInfo("gcc", "4.5", status=PackagePublishingStatus.PENDING),
         ]
         self.createSourcePublications(package_infos, distroseries)
         diff = self.diffArchives(copy_archive, distroseries)
         self.checkPackageDiff(
-            [], package_infos, diff, distroseries.distribution.main_archive)
+            [], package_infos, diff, distroseries.distribution.main_archive
+        )
 
     def testPackageSetDiffWithChangedPackages(self):
         package_infos = [
             PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED),
+                "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+            ),
             PackageInfo(
-            "apt", "1.2", status=PackagePublishingStatus.PUBLISHED),
+                "apt", "1.2", status=PackagePublishingStatus.PUBLISHED
+            ),
         ]
         copy_archive, distroseries = self.makeCopyArchive(package_infos)
         package_infos = [
             PackageInfo(
-            "bzr", "2.2", status=PackagePublishingStatus.PUBLISHED),
-            PackageInfo(
-            "apt", "1.3", status=PackagePublishingStatus.PENDING),
+                "bzr", "2.2", status=PackagePublishingStatus.PUBLISHED
+            ),
+            PackageInfo("apt", "1.3", status=PackagePublishingStatus.PENDING),
         ]
         self.createSourcePublications(package_infos, distroseries)
         diff = self.diffArchives(copy_archive, distroseries)
         self.checkPackageDiff(
-            package_infos, [], diff, distroseries.distribution.main_archive)
+            package_infos, [], diff, distroseries.distribution.main_archive
+        )
 
     def testPackageSetDiffWithBoth(self):
         package_infos = [
             PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED),
+                "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+            ),
             PackageInfo(
-            "apt", "1.2", status=PackagePublishingStatus.PUBLISHED),
+                "apt", "1.2", status=PackagePublishingStatus.PUBLISHED
+            ),
         ]
         copy_archive, distroseries = self.makeCopyArchive(package_infos)
         package_infos = [
             PackageInfo(
-            "bzr", "2.2", status=PackagePublishingStatus.PUBLISHED),
-            PackageInfo(
-            "gcc", "1.3", status=PackagePublishingStatus.PENDING),
+                "bzr", "2.2", status=PackagePublishingStatus.PUBLISHED
+            ),
+            PackageInfo("gcc", "1.3", status=PackagePublishingStatus.PENDING),
         ]
         self.createSourcePublications(package_infos, distroseries)
         diff = self.diffArchives(copy_archive, distroseries)
         self.checkPackageDiff(
-            [package_infos[0]], [package_infos[1]], diff,
-            distroseries.distribution.main_archive)
+            [package_infos[0]],
+            [package_infos[1]],
+            diff,
+            distroseries.distribution.main_archive,
+        )
 
-    def mergeCopy(self, target_archive, target_distroseries,
-                  source_archive=None, source_distroseries=None):
+    def mergeCopy(
+        self,
+        target_archive,
+        target_distroseries,
+        source_archive=None,
+        source_distroseries=None,
+    ):
         if source_distroseries is None:
             source_distroseries = target_distroseries
         if source_archive is None:
             source_archive = source_distroseries.distribution.main_archive
         source_location = PackageLocation(
-            source_archive, source_distroseries.distribution,
-            source_distroseries, PackagePublishingPocket.RELEASE)
+            source_archive,
+            source_distroseries.distribution,
+            source_distroseries,
+            PackagePublishingPocket.RELEASE,
+        )
         target_location = PackageLocation(
-            target_archive, target_distroseries.distribution,
-            target_distroseries, PackagePublishingPocket.RELEASE)
+            target_archive,
+            target_distroseries.distribution,
+            target_distroseries,
+            PackagePublishingPocket.RELEASE,
+        )
         cloner = getUtility(IPackageCloner)
         return cloner.mergeCopy(source_location, target_location)
 
     def test_mergeCopy_initializes_sourcepackagename(self):
         copy_archive, distroseries = self.makeCopyArchive([])
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED)
+            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+        )
         self.createSourcePublications([package_info], distroseries)
         self.mergeCopy(copy_archive, distroseries)
         [spph] = copy_archive.getPublishedSources()
         self.assertEqual(
-            spph.sourcepackagerelease.sourcepackagename,
-            spph.sourcepackagename)
+            spph.sourcepackagerelease.sourcepackagename, spph.sourcepackagename
+        )
 
     def testMergeCopyNoChanges(self):
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED)
+            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+        )
         copy_archive, distroseries = self.makeCopyArchive([package_info])
         self.mergeCopy(copy_archive, distroseries)
-        self.checkCopiedSources(
-            copy_archive, distroseries, [package_info])
+        self.checkCopiedSources(copy_archive, distroseries, [package_info])
 
     def testMergeCopyWithNewPackages(self):
         package_info = PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED)
+            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+        )
         copy_archive, distroseries = self.makeCopyArchive([package_info])
         package_infos = [
             PackageInfo(
-            "apt", "1.2", status=PackagePublishingStatus.PUBLISHED),
-            PackageInfo(
-            "gcc", "4.5", status=PackagePublishingStatus.PENDING),
+                "apt", "1.2", status=PackagePublishingStatus.PUBLISHED
+            ),
+            PackageInfo("gcc", "4.5", status=PackagePublishingStatus.PENDING),
         ]
         self.createSourcePublications(package_infos, distroseries)
         self.mergeCopy(copy_archive, distroseries)
         self.checkCopiedSources(
-            copy_archive, distroseries, [package_info] + package_infos)
+            copy_archive, distroseries, [package_info] + package_infos
+        )
 
     def testMergeCopyWithChangedPackages(self):
         package_infos = [
             PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED),
+                "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+            ),
             PackageInfo(
-            "apt", "1.2", status=PackagePublishingStatus.PUBLISHED),
+                "apt", "1.2", status=PackagePublishingStatus.PUBLISHED
+            ),
         ]
         copy_archive, distroseries = self.makeCopyArchive(package_infos)
         package_infos = [
             PackageInfo(
-            "bzr", "2.2", status=PackagePublishingStatus.PUBLISHED),
-            PackageInfo(
-            "apt", "1.3", status=PackagePublishingStatus.PENDING),
+                "bzr", "2.2", status=PackagePublishingStatus.PUBLISHED
+            ),
+            PackageInfo("apt", "1.3", status=PackagePublishingStatus.PENDING),
         ]
         self.createSourcePublications(package_infos, distroseries)
         self.mergeCopy(copy_archive, distroseries)
         # Critically there is only one record for each info, as the
         # others have been obsoleted.
-        self.checkCopiedSources(
-            copy_archive, distroseries, package_infos)
+        self.checkCopiedSources(copy_archive, distroseries, package_infos)
 
     def testMergeCopyWithBoth(self):
         package_infos = [
             PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED),
+                "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+            ),
             PackageInfo(
-            "apt", "1.2", status=PackagePublishingStatus.PUBLISHED),
+                "apt", "1.2", status=PackagePublishingStatus.PUBLISHED
+            ),
         ]
         copy_archive, distroseries = self.makeCopyArchive(package_infos)
         package_infos2 = [
             PackageInfo(
-            "bzr", "2.2", status=PackagePublishingStatus.PUBLISHED),
-            PackageInfo(
-            "gcc", "1.3", status=PackagePublishingStatus.PENDING),
+                "bzr", "2.2", status=PackagePublishingStatus.PUBLISHED
+            ),
+            PackageInfo("gcc", "1.3", status=PackagePublishingStatus.PENDING),
         ]
         self.createSourcePublications(package_infos2, distroseries)
         self.mergeCopy(copy_archive, distroseries)
         # Again bzr is obsoleted, gcc is added and apt remains.
         self.checkCopiedSources(
-            copy_archive, distroseries, [package_infos[1]] + package_infos2)
+            copy_archive, distroseries, [package_infos[1]] + package_infos2
+        )
 
     def testMergeCopyCreatesBuilds(self):
         package_infos = [
             PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED),
+                "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+            ),
             PackageInfo(
-            "apt", "1.2", status=PackagePublishingStatus.PUBLISHED),
+                "apt", "1.2", status=PackagePublishingStatus.PUBLISHED
+            ),
         ]
-        processors = [getUtility(IProcessorSet).getByName('386')]
+        processors = [getUtility(IProcessorSet).getByName("386")]
         copy_archive, distroseries = self.makeCopyArchive(
-            package_infos, processors=processors)
+            package_infos, processors=processors
+        )
         package_infos2 = [
             PackageInfo(
-            "bzr", "2.2", status=PackagePublishingStatus.PUBLISHED),
-            PackageInfo(
-            "gcc", "1.3", status=PackagePublishingStatus.PENDING),
+                "bzr", "2.2", status=PackagePublishingStatus.PUBLISHED
+            ),
+            PackageInfo("gcc", "1.3", status=PackagePublishingStatus.PENDING),
         ]
         self.createSourcePublications(package_infos2, distroseries)
         self.mergeCopy(copy_archive, distroseries)
@@ -611,14 +748,17 @@ class PackageClonerTests(TestCaseWithFactory):
     def testMergeCopyCreatesNoBuildsWhenNoArchitectures(self):
         package_infos = [
             PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED),
+                "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+            ),
         ]
         # We specify no processors at creation time.
         copy_archive, distroseries = self.makeCopyArchive(
-            package_infos, processors=[])
+            package_infos, processors=[]
+        )
         package_infos2 = [
             PackageInfo(
-            "bzr", "2.2", status=PackagePublishingStatus.PUBLISHED),
+                "bzr", "2.2", status=PackagePublishingStatus.PUBLISHED
+            ),
         ]
         self.createSourcePublications(package_infos2, distroseries)
         self.mergeCopy(copy_archive, distroseries)
@@ -628,32 +768,35 @@ class PackageClonerTests(TestCaseWithFactory):
     def testMergeCopyCreatesBuildsForMultipleArchitectures(self):
         package_infos = [
             PackageInfo(
-            "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED),
+                "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
+            ),
             PackageInfo(
-            "apt", "1.2", status=PackagePublishingStatus.PUBLISHED),
+                "apt", "1.2", status=PackagePublishingStatus.PUBLISHED
+            ),
         ]
         distroseries = self.createSourceDistribution(package_infos)
         # Create a DAS for a second processor.
-        amd64 = getUtility(IProcessorSet).getByName('amd64')
+        amd64 = getUtility(IProcessorSet).getByName("amd64")
         self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag="amd64",
-            processor=amd64)
+            distroseries=distroseries, architecturetag="amd64", processor=amd64
+        )
         # The request builds for both processors, so we expect two builds
         # per source.
-        processors = [getUtility(IProcessorSet).getByName('386'), amd64]
+        processors = [getUtility(IProcessorSet).getByName("386"), amd64]
         copy_archive = self.getTargetArchive(
-            distroseries.distribution, processors=processors)
-        self.copyArchive(
-            copy_archive, distroseries, processors=processors)
+            distroseries.distribution, processors=processors
+        )
+        self.copyArchive(copy_archive, distroseries, processors=processors)
         package_infos2 = [
             PackageInfo(
-            "bzr", "2.2", status=PackagePublishingStatus.PUBLISHED),
-            PackageInfo(
-            "gcc", "1.3", status=PackagePublishingStatus.PENDING),
+                "bzr", "2.2", status=PackagePublishingStatus.PUBLISHED
+            ),
+            PackageInfo("gcc", "1.3", status=PackagePublishingStatus.PENDING),
         ]
         self.createSourcePublications(package_infos2, distroseries)
         self.mergeCopy(copy_archive, distroseries)
         # We get all builds twice, one for each architecture.
         self.checkBuilds(
             copy_archive,
-            package_infos + package_infos + package_infos2 + package_infos2)
+            package_infos + package_infos + package_infos2 + package_infos2,
+        )

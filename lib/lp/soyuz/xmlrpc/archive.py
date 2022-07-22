@@ -4,8 +4,8 @@
 """Implementations of the XML-RPC APIs for Soyuz archives."""
 
 __all__ = [
-    'ArchiveAPI',
-    ]
+    "ArchiveAPI",
+]
 
 import logging
 
@@ -15,17 +15,13 @@ from zope.interface import implementer
 from zope.interface.interfaces import ComponentLookupError
 from zope.security.proxy import removeSecurityProxy
 
-from lp.services.macaroons.interfaces import (
-    IMacaroonIssuer,
-    NO_USER,
-    )
+from lp.services.macaroons.interfaces import NO_USER, IMacaroonIssuer
 from lp.services.webapp import LaunchpadXMLRPCView
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.interfaces.archiveapi import IArchiveAPI
 from lp.soyuz.interfaces.archiveauthtoken import IArchiveAuthTokenSet
 from lp.xmlrpc import faults
 from lp.xmlrpc.helpers import return_fault
-
 
 log = logging.getLogger(__name__)
 
@@ -61,7 +57,8 @@ class ArchiveAPI(LaunchpadXMLRPCView):
         if archive is None:
             log.info("%s@%s: No archive found", username, archive_reference)
             raise faults.NotFound(
-                message="No archive found for '%s'." % archive_reference)
+                message="No archive found for '%s'." % archive_reference
+            )
         archive = removeSecurityProxy(archive)
         token_set = getUtility(IArchiveAuthTokenSet)
 
@@ -75,25 +72,31 @@ class ArchiveAPI(LaunchpadXMLRPCView):
             else:
                 log.info(
                     "%s@%s: Macaroon verification failed",
-                    username, archive_reference)
+                    username,
+                    archive_reference,
+                )
                 raise faults.Unauthorized()
 
         # Fall back to checking archive auth tokens.
         if username.startswith("+"):
             token = token_set.getActiveNamedTokenForArchive(
-                archive, username[1:])
+                archive, username[1:]
+            )
         else:
             token = token_set.getActiveTokenForArchiveAndPersonName(
-                archive, username)
+                archive, username
+            )
         if token is None:
             log.info("%s@%s: No valid tokens", username, archive_reference)
             raise faults.NotFound(
-                message="No valid tokens for '%s' in '%s'." % (
-                    username, archive_reference))
+                message="No valid tokens for '%s' in '%s'."
+                % (username, archive_reference)
+            )
         secret = removeSecurityProxy(token).token
         if password != secret:
             log.info(
-                "%s@%s: Password does not match", username, archive_reference)
+                "%s@%s: Password does not match", username, archive_reference
+            )
             raise faults.Unauthorized()
         else:
             log.info("%s@%s: Authorized", username, archive_reference)
@@ -103,4 +106,5 @@ class ArchiveAPI(LaunchpadXMLRPCView):
         # This thunk exists because you can't use a decorated function as
         # the implementation of a method exported over XML-RPC.
         return self._checkArchiveAuthToken(
-            archive_reference, username, password)
+            archive_reference, username, password
+        )

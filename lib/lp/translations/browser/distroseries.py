@@ -4,20 +4,17 @@
 """Translations view classes related to `IDistroSeries`."""
 
 __all__ = [
-    'DistroSeriesLanguagePackView',
-    'DistroSeriesTemplatesView',
-    'DistroSeriesTranslationsAdminView',
-    'DistroSeriesTranslationsMenu',
-    'DistroSeriesView',
-    'check_distroseries_translations_viewable',
-    ]
+    "DistroSeriesLanguagePackView",
+    "DistroSeriesTemplatesView",
+    "DistroSeriesTranslationsAdminView",
+    "DistroSeriesTranslationsMenu",
+    "DistroSeriesView",
+    "check_distroseries_translations_viewable",
+]
 
 from zope.component import getUtility
 
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadEditFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadEditFormView, action
 from lp.app.enums import service_uses_launchpad
 from lp.app.errors import TranslationUnavailable
 from lp.registry.interfaces.distroseries import IDistroSeries
@@ -25,26 +22,23 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.menu import (
-    enabled_with_permission,
     Link,
     NavigationMenu,
-    )
-from lp.services.webapp.publisher import (
-    canonical_url,
-    LaunchpadView,
-    )
+    enabled_with_permission,
+)
+from lp.services.webapp.publisher import LaunchpadView, canonical_url
 from lp.translations.browser.potemplate import BaseSeriesTemplatesView
 from lp.translations.browser.translations import TranslationsMixin
 from lp.translations.interfaces.distroserieslanguage import (
     IDistroSeriesLanguageSet,
-    )
+)
 
 
 class DistroSeriesTranslationsAdminView(LaunchpadEditFormView):
     schema = IDistroSeries
     page_title = "Settings"
     label = "Translation settings"
-    field_names = ['hide_all_translations', 'defer_translation_imports']
+    field_names = ["hide_all_translations", "defer_translation_imports"]
 
     @property
     def cancel_url(self):
@@ -56,11 +50,13 @@ class DistroSeriesTranslationsAdminView(LaunchpadEditFormView):
     def change_action(self, action, data):
         self.updateContextFromData(data)
         self.request.response.addInfoNotification(
-            'Your changes have been applied.')
+            "Your changes have been applied."
+        )
 
 
 class DistroSeriesLanguagePackView(LaunchpadEditFormView):
     """Browser view to manage used language packs."""
+
     schema = IDistroSeries
     label = "Language packs"
     page_title = "Language packs"
@@ -73,9 +69,9 @@ class DistroSeriesLanguagePackView(LaunchpadEditFormView):
 
         :returns: True if the user is a Language Pack Admin (but not a
             Rosetta admin)."""
-        return (check_permission("launchpad.LanguagePacksAdmin",
-                                 self.context) and not
-                check_permission("launchpad.TranslationsAdmin", self.context))
+        return check_permission(
+            "launchpad.LanguagePacksAdmin", self.context
+        ) and not check_permission("launchpad.TranslationsAdmin", self.context)
 
     def is_translations_admin(self, action=None):
         """Find out if the current user is a Rosetta Admin.
@@ -90,27 +86,30 @@ class DistroSeriesLanguagePackView(LaunchpadEditFormView):
 
     def initialize(self):
         self.old_request_value = (
-            self.context.language_pack_full_export_requested)
+            self.context.language_pack_full_export_requested
+        )
         if self.is_translations_admin():
             self.field_names = [
-                'language_pack_base',
-                'language_pack_delta',
-                'language_pack_proposed',
-                'language_pack_full_export_requested',
+                "language_pack_base",
+                "language_pack_delta",
+                "language_pack_proposed",
+                "language_pack_full_export_requested",
             ]
         elif self.is_langpack_admin():
-            self.field_names = ['language_pack_full_export_requested']
+            self.field_names = ["language_pack_full_export_requested"]
         else:
             self.field_names = []
         super().initialize()
-        self.displayname = '%s %s' % (
+        self.displayname = "%s %s" % (
             self.context.distribution.displayname,
-            self.context.version)
+            self.context.version,
+        )
         if self.is_langpack_admin():
-            self.adminlabel = 'Request a full language pack export of %s' % (
-                self.displayname)
+            self.adminlabel = "Request a full language pack export of %s" % (
+                self.displayname
+            )
         else:
-            self.adminlabel = 'Settings for language packs'
+            self.adminlabel = "Settings for language packs"
 
     @cachedproperty
     def unused_language_packs(self):
@@ -132,9 +131,11 @@ class DistroSeriesLanguagePackView(LaunchpadEditFormView):
 
         current = self.context.language_pack_base
         latest = self.context.last_full_language_pack_exported
-        if (current is None or
-            latest is None or
-            current.file.http_url == latest.file.http_url):
+        if (
+            current is None
+            or latest is None
+            or current.file.http_url == latest.file.http_url
+        ):
             return False
         else:
             return True
@@ -146,48 +147,57 @@ class DistroSeriesLanguagePackView(LaunchpadEditFormView):
 
         current = self.context.language_pack_delta
         latest = self.context.last_delta_language_pack_exported
-        if (current is None or
-            latest is None or
-            current.file.http_url == latest.file.http_url):
+        if (
+            current is None
+            or latest is None
+            or current.file.http_url == latest.file.http_url
+        ):
             return False
         else:
             return True
 
     def _request_full_export(self):
-        if (self.old_request_value !=
-            self.context.language_pack_full_export_requested):
+        if (
+            self.old_request_value
+            != self.context.language_pack_full_export_requested
+        ):
             # There are changes.
             if self.context.language_pack_full_export_requested:
                 self.request.response.addInfoNotification(
                     "Your request has been noted. Next language pack export "
-                    "will include all available translations.")
+                    "will include all available translations."
+                )
             else:
                 self.request.response.addInfoNotification(
                     "Your request has been noted. Next language pack "
                     "export will be made relative to the current base "
-                    "language pack.")
+                    "language pack."
+                )
 
     @action("Change Settings", condition=is_translations_admin)
     def change_action(self, action, data):
-        if ('language_pack_base' in data and
-            data['language_pack_base'] != self.context.language_pack_base):
+        if (
+            "language_pack_base" in data
+            and data["language_pack_base"] != self.context.language_pack_base
+        ):
             # language_pack_base changed, the delta one must be invalidated.
-            data['language_pack_delta'] = None
+            data["language_pack_delta"] = None
         self.updateContextFromData(data)
         self._request_full_export()
         self.request.response.addInfoNotification(
-            'Your changes have been applied.')
+            "Your changes have been applied."
+        )
         self.next_url = canonical_url(
-            self.context, rootsite='translations',
-            view_name='+language-packs')
+            self.context, rootsite="translations", view_name="+language-packs"
+        )
 
     @action("Request", condition=is_langpack_admin)
     def request_action(self, action, data):
         self.updateContextFromData(data)
         self._request_full_export()
         self.next_url = canonical_url(
-            self.context, rootsite='translations',
-            view_name='+language-packs')
+            self.context, rootsite="translations", view_name="+language-packs"
+        )
 
 
 class DistroSeriesTemplatesView(BaseSeriesTemplatesView):
@@ -198,8 +208,10 @@ class DistroSeriesTemplatesView(BaseSeriesTemplatesView):
 
     def constructTemplateURL(self, template):
         """See `BaseSeriesTemplatesView`."""
-        return '+source/%s/+pots/%s' % (
-            template.sourcepackagename.name, template.name)
+        return "+source/%s/+pots/%s" % (
+            template.sourcepackagename.name,
+            template.name,
+        )
 
 
 class DistroSeriesView(LaunchpadView, TranslationsMixin):
@@ -207,12 +219,13 @@ class DistroSeriesView(LaunchpadView, TranslationsMixin):
     label = "Translation status by language"
 
     def initialize(self):
-        self.displayname = '%s %s' % (
+        self.displayname = "%s %s" % (
             self.context.distribution.displayname,
-            self.context.version)
+            self.context.version,
+        )
 
     def checkTranslationsViewable(self):
-        """ Check if user can view translations for this `IDistroSeries`"""
+        """Check if user can view translations for this `IDistroSeries`"""
 
         # Is user allowed to see translations for this distroseries?
         # If not, raise TranslationUnavailable.
@@ -239,7 +252,8 @@ class DistroSeriesView(LaunchpadView, TranslationsMixin):
         for lang in self.translatable_languages:
             if lang not in existing_languages:
                 distroserieslang = distroserieslangset.getEmpty(
-                    self.context, lang)
+                    self.context, lang
+                )
                 distroserieslangs.append(distroserieslang)
 
         return sorted(distroserieslangs, key=lambda a: a.language.englishname)
@@ -247,7 +261,7 @@ class DistroSeriesView(LaunchpadView, TranslationsMixin):
     def isPreferredLanguage(self, language):
         # if there are no preferred languages, mark all
         # languages as preferred
-        if (len(self.translatable_languages) == 0):
+        if len(self.translatable_languages) == 0:
             return True
         else:
             return language in self.translatable_languages
@@ -264,8 +278,10 @@ class DistroSeriesView(LaunchpadView, TranslationsMixin):
     @cachedproperty
     def show_page_content(self):
         """Whether the main content of the page should be shown."""
-        return (service_uses_launchpad(self.context.translations_usage) or
-               self.is_translations_admin)
+        return (
+            service_uses_launchpad(self.context.translations_usage)
+            or self.is_translations_admin
+        )
 
     def can_configure_translations(self):
         """Whether or not the user can configure translations."""
@@ -279,39 +295,47 @@ class DistroSeriesView(LaunchpadView, TranslationsMixin):
 class DistroSeriesTranslationsMenu(NavigationMenu):
 
     usedfor = IDistroSeries
-    facet = 'translations'
+    facet = "translations"
     links = [
-        'translations', 'templates', 'admin', 'language_packs',
-        'latest_full_language_pack', 'latest_delta_language_pack', 'imports']
+        "translations",
+        "templates",
+        "admin",
+        "language_packs",
+        "latest_full_language_pack",
+        "latest_delta_language_pack",
+        "imports",
+    ]
 
     def translations(self):
-        return Link('', 'Overview', site='translations')
+        return Link("", "Overview", site="translations")
 
     def imports(self):
-        return Link('+imports', 'Import queue', site='translations')
+        return Link("+imports", "Import queue", site="translations")
 
-    @enabled_with_permission('launchpad.TranslationsAdmin')
+    @enabled_with_permission("launchpad.TranslationsAdmin")
     def admin(self):
-        return Link('+translations-admin', 'Settings', site='translations')
+        return Link("+translations-admin", "Settings", site="translations")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def templates(self):
-        return Link('+templates', 'Templates', site='translations')
+        return Link("+templates", "Templates", site="translations")
 
     def language_packs(self):
-        return Link('+language-packs', 'Language packs', site='translations')
+        return Link("+language-packs", "Language packs", site="translations")
 
     def latest_full_language_pack(self):
         return Link(
-            '+latest-full-language-pack',
-            'Latest full language pack',
-            site='translations')
+            "+latest-full-language-pack",
+            "Latest full language pack",
+            site="translations",
+        )
 
     def latest_delta_language_pack(self):
         return Link(
-            '+latest-delta-language-pack',
-            'Latest delta language pack',
-            site='translations')
+            "+latest-delta-language-pack",
+            "Latest delta language pack",
+            site="translations",
+        )
 
 
 def check_distroseries_translations_viewable(distroseries):
@@ -336,23 +360,25 @@ def check_distroseries_translations_viewable(distroseries):
         # Yup, viewable.
         return
 
-    if check_permission(
-        'launchpad.TranslationsAdmin', distroseries):
+    if check_permission("launchpad.TranslationsAdmin", distroseries):
         return
 
     future = [
         SeriesStatus.EXPERIMENTAL,
         SeriesStatus.DEVELOPMENT,
         SeriesStatus.FUTURE,
-        ]
+    ]
     if distroseries.status in future:
         raise TranslationUnavailable(
-            "Translations for this release series are not available yet.")
+            "Translations for this release series are not available yet."
+        )
     elif distroseries.status == SeriesStatus.OBSOLETE:
         raise TranslationUnavailable(
             "This release series is obsolete.  Its translations are no "
-            "longer available.")
+            "longer available."
+        )
     else:
         raise TranslationUnavailable(
             "Translations for this release series are not currently "
-            "available.  Please come back soon.")
+            "available.  Please come back soon."
+        )

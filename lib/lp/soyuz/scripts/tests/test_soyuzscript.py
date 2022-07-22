@@ -19,36 +19,44 @@ class TestSoyuzScript(unittest.TestCase):
 
     layer = LaunchpadZopelessLayer
 
-    def getSoyuz(self, version=None, component=None, arch=None,
-                 suite=None, distribution_name='ubuntu',
-                 ppa=None, partner=False, ppa_name='ppa'):
+    def getSoyuz(
+        self,
+        version=None,
+        component=None,
+        arch=None,
+        suite=None,
+        distribution_name="ubuntu",
+        ppa=None,
+        partner=False,
+        ppa_name="ppa",
+    ):
         """Return a SoyuzScript instance.
 
         Allow tests to use a set of default options and pass an
         inactive logger to SoyuzScript.
         """
-        test_args = ['-d', distribution_name, '-y']
+        test_args = ["-d", distribution_name, "-y"]
 
         if suite is not None:
-            test_args.extend(['-s', suite])
+            test_args.extend(["-s", suite])
 
         if version is not None:
-            test_args.extend(['-e', version])
+            test_args.extend(["-e", version])
 
         if arch is not None:
-            test_args.extend(['-a', arch])
+            test_args.extend(["-a", arch])
 
         if component is not None:
-            test_args.extend(['-c', component])
+            test_args.extend(["-c", component])
 
         if ppa is not None:
-            test_args.extend(['-p', ppa])
-            test_args.extend(['--ppa-name', ppa_name])
+            test_args.extend(["-p", ppa])
+            test_args.extend(["--ppa-name", ppa_name])
 
         if partner:
-            test_args.append('-j')
+            test_args.append("-j")
 
-        soyuz = SoyuzScript(name='soyuz-script', test_args=test_args)
+        soyuz = SoyuzScript(name="soyuz-script", test_args=test_args)
         # Store output messages, for future checks.
         soyuz.logger = BufferLogger()
         soyuz.setupLocation()

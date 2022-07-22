@@ -4,29 +4,26 @@
 """Functions for language pack creation script."""
 
 __all__ = [
-    'export_language_pack',
-    ]
+    "export_language_pack",
+]
 
 import datetime
 import gc
 import os
-from shutil import copyfileobj
 import sys
 import tempfile
+from shutil import copyfileobj
 
-from storm.store import Store
 import transaction
+from storm.store import Store
 from zope.component import getUtility
 
 from lp.registry.interfaces.distribution import IDistributionSet
-from lp.services.database.sqlbase import (
-    cursor,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import cursor, sqlvalues
 from lp.services.librarian.interfaces.client import (
     ILibrarianClient,
     UploadFailed,
-    )
+)
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.translations.enums import LanguagePackType
 from lp.translations.interfaces.languagepack import ILanguagePackSet
@@ -41,7 +38,8 @@ def iter_sourcepackage_translationdomain_mapping(series):
     a sourcepackage has.
     """
     cur = cursor()
-    cur.execute("""
+    cur.execute(
+        """
         SELECT SourcePackageName.name, POTemplate.translation_domain
         FROM
             SourcePackageName
@@ -50,7 +48,9 @@ def iter_sourcepackage_translationdomain_mapping(series):
                 POTemplate.distroseries = %s AND
                 POTemplate.languagepack = TRUE
         ORDER BY SourcePackageName.name, POTemplate.translation_domain
-        """ % sqlvalues(series))
+        """
+        % sqlvalues(series)
+    )
 
     yield from cur.fetchall()
 
@@ -68,7 +68,7 @@ def export(distroseries, component, update, force_utf8, logger):
     """
     # We will need when the export started later to add the timestamp for this
     # export inside the exported tarball.
-    start_date = datetime.datetime.utcnow().strftime('%Y%m%d')
+    start_date = datetime.datetime.utcnow().strftime("%Y%m%d")
     export_set = getUtility(IVPOExportSet)
 
     logger.debug("Selecting PO files for export")
@@ -79,7 +79,8 @@ def export(distroseries, component, update, force_utf8, logger):
         date = distroseries.language_pack_base.date_exported
 
     pofile_count = export_set.get_distroseries_pofiles_count(
-        distroseries, date, component, languagepack=True)
+        distroseries, date, component, languagepack=True
+    )
     logger.info("Number of PO files to export: %d" % pofile_count)
 
     filehandle = tempfile.TemporaryFile()
@@ -87,10 +88,11 @@ def export(distroseries, component, update, force_utf8, logger):
 
     # XXX JeroenVermeulen 2008-02-06: Is there anything here that we can unify
     # with the export-queue code?
-    path_prefix = 'rosetta-%s' % distroseries.name
+    path_prefix = "rosetta-%s" % distroseries.name
 
     pofiles = export_set.get_distroseries_pofiles(
-        distroseries, date, component, languagepack=True)
+        distroseries, date, component, languagepack=True
+    )
 
     # Manual caching.  Fetch POTMsgSets in bulk per template, and cache
     # them across POFiles if subsequent POFiles belong to the same
@@ -100,8 +102,9 @@ def export(distroseries, component, update, force_utf8, logger):
 
     for index, pofile in enumerate(pofiles):
         number = index + 1
-        logger.debug("Exporting PO file %d (%d/%d)" %
-            (pofile.id, number, pofile_count))
+        logger.debug(
+            "Exporting PO file %d (%d/%d)" % (pofile.id, number, pofile_count)
+        )
 
         potemplate = pofile.potemplate
         if potemplate != cached_potemplate:
@@ -120,7 +123,8 @@ def export(distroseries, component, update, force_utf8, logger):
 
             cached_potemplate = potemplate
             cached_potmsgsets = [
-                potmsgset for potmsgset in potemplate.getPOTMsgSets()]
+                potmsgset for potmsgset in potemplate.getPOTMsgSets()
+            ]
 
             if ((index + 1) % 5) == 0:
                 # Garbage-collect once in 5 templates (but not at the
@@ -130,19 +134,21 @@ def export(distroseries, component, update, force_utf8, logger):
 
         domain = potemplate.translation_domain
         code = pofile.getFullLanguageCode()
-        path = os.path.join(path_prefix, code, 'LC_MESSAGES', '%s.po' % domain)
+        path = os.path.join(path_prefix, code, "LC_MESSAGES", "%s.po" % domain)
 
         try:
             # We don't want obsolete entries here, it makes no sense for a
             # language pack.
             contents = pofile.export(
-                ignore_obsolete=True, force_utf8=force_utf8)
+                ignore_obsolete=True, force_utf8=force_utf8
+            )
 
             # Store it in the tarball.
             archive.add_file(path, contents)
         except Exception:
             logger.exception(
-                "Uncaught exception while exporting PO file %d" % pofile.id)
+                "Uncaught exception while exporting PO file %d" % pofile.id
+            )
 
         store.invalidate(pofile)
 
@@ -151,17 +157,19 @@ def export(distroseries, component, update, force_utf8, logger):
     # started, not when it finished because that notes how old is the
     # information the export contains.
     archive.add_file(
-        'rosetta-%s/timestamp.txt' % distroseries.name,
-        ('%s\n' % start_date).encode('UTF-8'))
+        "rosetta-%s/timestamp.txt" % distroseries.name,
+        ("%s\n" % start_date).encode("UTF-8"),
+    )
 
     logger.info("Adding mapping file")
-    mapping_text = ''
+    mapping_text = ""
     mapping = iter_sourcepackage_translationdomain_mapping(distroseries)
     for sourcepackagename, translationdomain in mapping:
         mapping_text += "%s %s\n" % (sourcepackagename, translationdomain)
     archive.add_file(
-        'rosetta-%s/mapping.txt' % distroseries.name,
-        mapping_text.encode('UTF-8'))
+        "rosetta-%s/mapping.txt" % distroseries.name,
+        mapping_text.encode("UTF-8"),
+    )
 
     logger.info("Done.")
 
@@ -172,8 +180,14 @@ def export(distroseries, component, update, force_utf8, logger):
     return filehandle, size
 
 
-def export_language_pack(distribution_name, series_name, logger,
-                         component=None, force_utf8=False, output_file=None):
+def export_language_pack(
+    distribution_name,
+    series_name,
+    logger,
+    component=None,
+    force_utf8=False,
+    output_file=None,
+):
     """Export a language pack for the given distribution series.
 
     :param distribution_name: Name of the distribution we want to export the
@@ -196,7 +210,7 @@ def export_language_pack(distribution_name, series_name, logger,
     if distroseries.language_pack_full_export_requested:
         # We were instructed that this export must be a full one.
         update = False
-        logger.info('Got a request to do a full language pack export.')
+        logger.info("Got a request to do a full language pack export.")
         # Also, unset that flag so next export will proceed normally,
         # but do it afterwards so we don't lock any tables.
         full_export_requested_flag_needs_reset = True
@@ -213,20 +227,21 @@ def export_language_pack(distribution_name, series_name, logger,
     # Export the translations to a tarball.
     try:
         filehandle, size = export(
-            distroseries, component, update, force_utf8, logger)
+            distroseries, component, update, force_utf8, logger
+        )
     except Exception:
         # Generic exception statements are used in order to prevent premature
         # termination of the script.
-        logger.exception('Uncaught exception while exporting')
+        logger.exception("Uncaught exception while exporting")
         return None
 
     if output_file is not None:
         # Save the tarball to a file.
 
-        if output_file == '-':
+        if output_file == "-":
             output_filehandle = sys.stdout
         else:
-            output_filehandle = open(output_file, 'wb')
+            output_filehandle = open(output_file, "wb")
 
         copyfileobj(filehandle, output_filehandle)
 
@@ -236,16 +251,23 @@ def export_language_pack(distribution_name, series_name, logger,
         # Upload the tarball to the librarian.
 
         if update:
-            suffix = '-update'
+            suffix = "-update"
         else:
-            suffix = ''
+            suffix = ""
 
         if component is None:
-            filename = '%s-%s-translations%s.tar.gz' % (
-                distribution_name, series_name, suffix)
+            filename = "%s-%s-translations%s.tar.gz" % (
+                distribution_name,
+                series_name,
+                suffix,
+            )
         else:
-            filename = '%s-%s-%s-translations%s.tar.gz' % (
-                distribution_name, series_name, component, suffix)
+            filename = "%s-%s-%s-translations%s.tar.gz" % (
+                distribution_name,
+                series_name,
+                component,
+                suffix,
+            )
 
         try:
             uploader = getUtility(ILibrarianClient)
@@ -256,18 +278,20 @@ def export_language_pack(distribution_name, series_name, logger,
                 name=filename,
                 size=size,
                 file=filehandle,
-                contentType='application/x-gtar')
+                contentType="application/x-gtar",
+            )
         except UploadFailed as e:
-            logger.error('Uploading to the Librarian failed: %s', e)
+            logger.error("Uploading to the Librarian failed: %s", e)
             return None
         except Exception:
             # Generic exception statements are used in order to prevent
             # premature termination of the script.
             logger.exception(
-                'Uncaught exception while uploading to the Librarian')
+                "Uncaught exception while uploading to the Librarian"
+            )
             return None
 
-        logger.debug('Upload complete, file alias: %d' % file_alias)
+        logger.debug("Upload complete, file alias: %d" % file_alias)
 
         if full_export_requested_flag_needs_reset:
             distroseries.language_pack_full_export_requested = False
@@ -280,8 +304,9 @@ def export_language_pack(distribution_name, series_name, logger,
             lang_pack_type = LanguagePackType.FULL
 
         language_pack = language_pack_set.addLanguagePack(
-            distroseries, file_alias, lang_pack_type)
+            distroseries, file_alias, lang_pack_type
+        )
 
-        logger.info('Registered the language pack.')
+        logger.info("Registered the language pack.")
 
         return language_pack

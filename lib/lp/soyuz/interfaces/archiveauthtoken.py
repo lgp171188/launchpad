@@ -4,20 +4,13 @@
 """ArchiveAuthToken interface."""
 
 __all__ = [
-    'IArchiveAuthToken',
-    'IArchiveAuthTokenSet',
-    ]
+    "IArchiveAuthToken",
+    "IArchiveAuthTokenSet",
+]
 
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Datetime,
-    Int,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Datetime, Int, TextLine
 
 from lp import _
 from lp.registry.interfaces.person import IPerson
@@ -26,38 +19,62 @@ from lp.soyuz.interfaces.archive import IArchive
 
 class IArchiveAuthTokenView(Interface):
     """Interface for Archive Authorization Tokens requiring launchpad.View."""
-    id = Int(title=_('ID'), required=True, readonly=True)
+
+    id = Int(title=_("ID"), required=True, readonly=True)
 
     archive = Reference(
-        IArchive, title=_("Archive"), required=True, readonly=True,
-        description=_("The archive for this authorization token."))
+        IArchive,
+        title=_("Archive"),
+        required=True,
+        readonly=True,
+        description=_("The archive for this authorization token."),
+    )
 
     person = Reference(
-        IPerson, title=_("Person"), required=False, readonly=True,
-        description=_("The person for this authorization token."))
-    person_id = Attribute('db person value')
+        IPerson,
+        title=_("Person"),
+        required=False,
+        readonly=True,
+        description=_("The person for this authorization token."),
+    )
+    person_id = Attribute("db person value")
 
     date_created = Datetime(
-        title=_("Date Created"), required=True, readonly=True,
-        description=_("The timestamp when the token was created."))
+        title=_("Date Created"),
+        required=True,
+        readonly=True,
+        description=_("The timestamp when the token was created."),
+    )
 
     date_deactivated = Datetime(
-        title=_("Date De-activated"), required=False,
-        description=_("The timestamp when the token was de-activated."))
+        title=_("Date De-activated"),
+        required=False,
+        description=_("The timestamp when the token was de-activated."),
+    )
 
     token = TextLine(
-        title=_("Token"), required=True, readonly=True,
-        description=_("The access token to the archive for this person."))
+        title=_("Token"),
+        required=True,
+        readonly=True,
+        description=_("The access token to the archive for this person."),
+    )
 
     archive_url = TextLine(
-        title=_("Archive url"), readonly=True,
+        title=_("Archive url"),
+        readonly=True,
         description=_(
-            "External archive URL including basic auth for this person"))
+            "External archive URL including basic auth for this person"
+        ),
+    )
 
     name = TextLine(
-        title=_("Name"), required=False, readonly=True,
+        title=_("Name"),
+        required=False,
+        readonly=True,
         description=_(
-            "The name in the case of a named authorization token, or None."))
+            "The name in the case of a named authorization token, or None."
+        ),
+    )
 
     def deactivate():
         """Deactivate the token by setting date_deactivated to UTC_NOW."""

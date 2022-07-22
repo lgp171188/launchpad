@@ -3,10 +3,7 @@
 
 """Tests for `POTMsgSet.clearCurrentTranslation`."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 from pytz import UTC
 from zope.component import getUtility
@@ -19,8 +16,7 @@ from lp.translations.interfaces.side import ITranslationSideTraitsSet
 from lp.translations.interfaces.translationmessage import (
     RosettaTranslationOrigin,
     TranslationConflict,
-    )
-
+)
 
 ORIGIN = RosettaTranslationOrigin.SCM
 
@@ -28,7 +24,8 @@ ORIGIN = RosettaTranslationOrigin.SCM
 def get_traits(potemplate):
     """Obtain the translation side traits for template."""
     return getUtility(ITranslationSideTraitsSet).getTraits(
-        potemplate.translation_side)
+        potemplate.translation_side
+    )
 
 
 class ScenarioMixin:
@@ -52,7 +49,8 @@ class ScenarioMixin:
         package = self.factory.makeSourcePackage()
         return self.factory.makePOTemplate(
             distroseries=package.distroseries,
-            sourcepackagename=package.sourcepackagename)
+            sourcepackagename=package.sourcepackagename,
+        )
 
     def _makePOFile(self, potemplate=None):
         """Create a `POFile` for the given template.
@@ -62,13 +60,15 @@ class ScenarioMixin:
         """
         if potemplate is None:
             potemplate = self.makePOTemplate()
-        return self.factory.makePOFile('nl', potemplate=potemplate)
+        return self.factory.makePOFile("nl", potemplate=potemplate)
 
-    def _makeTranslationMessage(self, potmsgset, pofile, translations=None,
-                                diverged=False):
+    def _makeTranslationMessage(
+        self, potmsgset, pofile, translations=None, diverged=False
+    ):
         """Create a (non-current) TranslationMessage for potmsgset."""
         message = self.factory.makeSuggestion(
-            pofile=pofile, potmsgset=potmsgset, translations=translations)
+            pofile=pofile, potmsgset=potmsgset, translations=translations
+        )
         if diverged:
             removeSecurityProxy(message).potemplate = pofile.potemplate
         return message
@@ -83,10 +83,12 @@ class ScenarioMixin:
         potmsgset.clearCurrentTranslation(pofile, template.owner, ORIGIN)
 
         current = get_traits(template).getCurrentMessage(
-            potmsgset, template, pofile.language)
+            potmsgset, template, pofile.language
+        )
         self.assertEqual(
             [],
-            [msgstr for msgstr in current.translations if msgstr is not None])
+            [msgstr for msgstr in current.translations if msgstr is not None],
+        )
 
     def test_deactivates_shared_message(self):
         pofile = self._makePOFile()
@@ -124,13 +126,15 @@ class ScenarioMixin:
         shared_tm = self._makeTranslationMessage(potmsgset, pofile)
         traits.setFlag(shared_tm, True)
         diverged_tm = self._makeTranslationMessage(
-            potmsgset, pofile, diverged=True)
+            potmsgset, pofile, diverged=True
+        )
         traits.setFlag(diverged_tm, True)
 
         potmsgset.clearCurrentTranslation(pofile, template.owner, ORIGIN)
 
         current = traits.getCurrentMessage(
-            potmsgset, template, pofile.language)
+            potmsgset, template, pofile.language
+        )
         self.assertNotEqual(shared_tm, current)
         self.assertNotEqual(diverged_tm, current)
         self.assertTrue(current.is_empty)
@@ -180,7 +184,8 @@ class ScenarioMixin:
         traits.other_side_traits.setFlag(tm, True)
 
         potmsgset.clearCurrentTranslation(
-            pofile, template.owner, ORIGIN, share_with_other_side=True)
+            pofile, template.owner, ORIGIN, share_with_other_side=True
+        )
 
         self.assertFalse(traits.getFlag(tm))
         self.assertFalse(traits.other_side_traits.getFlag(tm))
@@ -191,7 +196,8 @@ class ScenarioMixin:
         traits = get_traits(template)
         potmsgset = self.factory.makePOTMsgSet(template)
         diverged_tm = self._makeTranslationMessage(
-            potmsgset, pofile, diverged=True)
+            potmsgset, pofile, diverged=True
+        )
         traits.setFlag(diverged_tm, True)
         blank_shared_tm = self._makeTranslationMessage(potmsgset, pofile, [])
         traits.setFlag(blank_shared_tm, True)
@@ -200,7 +206,8 @@ class ScenarioMixin:
 
         self.assertTrue(traits.getFlag(blank_shared_tm))
         current = traits.getCurrentMessage(
-            potmsgset, template, pofile.language)
+            potmsgset, template, pofile.language
+        )
         self.assertEqual(blank_shared_tm, current)
 
     def test_reviews_new_blank(self):
@@ -215,7 +222,8 @@ class ScenarioMixin:
         potmsgset.clearCurrentTranslation(pofile, reviewer, ORIGIN)
 
         blank = get_traits(template).getCurrentMessage(
-            potmsgset, template, pofile.language)
+            potmsgset, template, pofile.language
+        )
 
         self.assertNotEqual(None, blank.date_reviewed)
         self.assertEqual(reviewer, blank.reviewer)
@@ -229,52 +237,60 @@ class ScenarioMixin:
         traits = get_traits(template)
         potmsgset = self.factory.makePOTMsgSet(template)
         blank = self.factory.makeSuggestion(
-            potmsgset=potmsgset, pofile=pofile, translations=[])
+            potmsgset=potmsgset, pofile=pofile, translations=[]
+        )
 
         old_review_date = datetime.now(UTC) - timedelta(days=7)
         old_reviewer = self.factory.makePerson()
         blank.markReviewed(old_reviewer, timestamp=old_review_date)
 
         current = self.factory.makeCurrentTranslationMessage(
-            pofile=pofile, potmsgset=potmsgset)
+            pofile=pofile, potmsgset=potmsgset
+        )
 
         new_reviewer = self.factory.makePerson()
 
         potmsgset.clearCurrentTranslation(pofile, new_reviewer, ORIGIN)
 
         current = traits.getCurrentMessage(
-            potmsgset, template, pofile.language)
+            potmsgset, template, pofile.language
+        )
 
         self.assertEqual(new_reviewer, current.reviewer)
-        self.assertSqlAttributeEqualsDate(current, 'date_reviewed', UTC_NOW)
+        self.assertSqlAttributeEqualsDate(current, "date_reviewed", UTC_NOW)
 
     def test_detects_conflict(self):
         pofile = self._makePOFile()
         current_message = self.factory.makeCurrentTranslationMessage(
-            pofile=pofile)
+            pofile=pofile
+        )
         old = datetime.now(UTC) - timedelta(days=7)
 
         self.assertRaises(
             TranslationConflict,
             current_message.potmsgset.clearCurrentTranslation,
-            pofile, self.factory.makePerson(), ORIGIN, lock_timestamp=old)
+            pofile,
+            self.factory.makePerson(),
+            ORIGIN,
+            lock_timestamp=old,
+        )
 
 
-class TestClearCurrentTranslationUpstream(TestCaseWithFactory,
-                                          ScenarioMixin):
+class TestClearCurrentTranslationUpstream(TestCaseWithFactory, ScenarioMixin):
     """Test clearCurrentTranslationUpstream on upstream side."""
+
     makePOTemplate = ScenarioMixin.makeUpstreamTemplate
     makeOtherPOTemplate = ScenarioMixin.makeUbuntuTemplate
 
     def setUp(self):
-        super().setUp('carlos@canonical.com')
+        super().setUp("carlos@canonical.com")
 
 
-class TestClearCurrentTranslationUbuntu(TestCaseWithFactory,
-                                        ScenarioMixin):
+class TestClearCurrentTranslationUbuntu(TestCaseWithFactory, ScenarioMixin):
     """Test clearCurrentTranslationUpstream on Ubuntu side."""
+
     makePOTemplate = ScenarioMixin.makeUbuntuTemplate
     makeOtherPOTemplate = ScenarioMixin.makeUpstreamTemplate
 
     def setUp(self):
-        super().setUp('carlos@canonical.com')
+        super().setUp("carlos@canonical.com")

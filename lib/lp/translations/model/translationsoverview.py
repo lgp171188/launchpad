@@ -1,25 +1,19 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['TranslationsOverview']
+__all__ = ["TranslationsOverview"]
 
 from zope.interface import implementer
 
-from lp.app.enums import (
-    InformationType,
-    ServiceUsage,
-    )
+from lp.app.enums import InformationType, ServiceUsage
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.product import Product
-from lp.services.database.sqlbase import (
-    cursor,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import cursor, sqlvalues
 from lp.services.utils import round_half_up
 from lp.translations.interfaces.translationsoverview import (
     ITranslationsOverview,
     MalformedKarmaCacheData,
-    )
+)
 
 
 @implementer(ITranslationsOverview)
@@ -37,16 +31,17 @@ class TranslationsOverview:
             real_minimum = (self.MAXIMUM_SIZE + self.MINIMUM_SIZE) / 2.0
         else:
             offset = minimum - self.MINIMUM_SIZE
-            multiplier = (float(self.MAXIMUM_SIZE - self.MINIMUM_SIZE) /
-                          (maximum - minimum))
+            multiplier = float(self.MAXIMUM_SIZE - self.MINIMUM_SIZE) / (
+                maximum - minimum
+            )
             real_minimum = self.MINIMUM_SIZE
 
         normalized_sizes = []
         for (pillar, size) in pillars:
             new_size = round_half_up(
-                real_minimum +
-                (size - offset - real_minimum) * multiplier)
-            normalized_sizes.append({'pillar': pillar, 'weight': new_size})
+                real_minimum + (size - offset - real_minimum) * multiplier
+            )
+            normalized_sizes.append({"pillar": pillar, "weight": new_size})
         return normalized_sizes
 
     def getMostTranslatedPillars(self, limit=50):
@@ -79,10 +74,12 @@ class TranslationsOverview:
               HAVING SUM(karmavalue) > 0
               ORDER BY total_karma DESC
               LIMIT %s) AS something
-          ORDER BY name""" % sqlvalues(ServiceUsage.LAUNCHPAD,
-                                       InformationType.PUBLIC,
-                                       ServiceUsage.LAUNCHPAD,
-                                       limit)
+          ORDER BY name""" % sqlvalues(
+            ServiceUsage.LAUNCHPAD,
+            InformationType.PUBLIC,
+            ServiceUsage.LAUNCHPAD,
+            limit,
+        )
         cur = cursor()
         cur.execute(query)
 
@@ -103,7 +100,8 @@ class TranslationsOverview:
                 pillar = Distribution.get(distro_id)
             else:
                 raise MalformedKarmaCacheData(
-                    "Lots of karma for non-existing product or distribution.")
+                    "Lots of karma for non-existing product or distribution."
+                )
             all_pillars.append((pillar, relative_karma))
 
         # Normalize the relative karma values between MINIMUM_SIZE and

@@ -8,16 +8,16 @@ information from an archive pool.
 """
 
 __all__ = [
-    'ArchiveFilesystemInfo',
-    'ArchiveComponentItems',
-    'MangledArchiveError',
-    'PackagesMap',
-    ]
+    "ArchiveFilesystemInfo",
+    "ArchiveComponentItems",
+    "MangledArchiveError",
+    "PackagesMap",
+]
 
-from collections import defaultdict
 import os
 import shutil
 import tempfile
+from collections import defaultdict
 
 import apt_pkg
 import six
@@ -41,6 +41,7 @@ class ArchiveFilesystemInfo:
     from a Package Archive and holds them as internal attributes
     to be used for other classes.
     """
+
     sources_tagfile = None
     srcfile = None
     binaries_tagfile = None
@@ -48,8 +49,9 @@ class ArchiveFilesystemInfo:
     di_tagfile = None
     difile = None
 
-    def __init__(self, root, distroseries, component, arch=None,
-                 source_only=False):
+    def __init__(
+        self, root, distroseries, component, arch=None, source_only=False
+    ):
 
         # Holds the distribution informations
         self.distroseries = distroseries
@@ -59,12 +61,14 @@ class ArchiveFilesystemInfo:
 
         dist_dir = os.path.join(root, "dists", distroseries, component)
         if not os.path.exists(dist_dir):
-            raise MangledArchiveError("No archive directory for %s/%s" %
-                                      (distroseries, component))
+            raise MangledArchiveError(
+                "No archive directory for %s/%s" % (distroseries, component)
+            )
 
         # Extract Sources index.
         sources_prefix = os.path.join(
-            root, "dists", distroseries, component, "source", "Sources")
+            root, "dists", distroseries, component, "source", "Sources"
+        )
         self.srcfile, self.sources_tagfile = self.openTagFile(sources_prefix)
 
         # Detect source-only mode and skip binary index parsing.
@@ -77,13 +81,21 @@ class ArchiveFilesystemInfo:
             raise NoBinaryArchive
 
         self.binfile, self.binaries_tagfile = self.openTagFile(
-            os.path.join(dist_bin_dir, "Packages"))
+            os.path.join(dist_bin_dir, "Packages")
+        )
 
         try:
             self.difile, self.di_tagfile = self.openTagFile(
                 os.path.join(
-                    root, "dists", distroseries, component,
-                    "debian-installer", "binary-%s" % arch, "Packages"))
+                    root,
+                    "dists",
+                    distroseries,
+                    component,
+                    "debian-installer",
+                    "binary-%s" % arch,
+                    "Packages",
+                )
+            )
         except MangledArchiveError:
             # d-i binary indexes may be missing.  Put something empty in
             # place so that PackagesMap doesn't need to care.
@@ -108,7 +120,8 @@ class ArchiveFilesystemInfo:
                 return os.fdopen(fd), tagfile
         else:
             raise MangledArchiveError(
-                "Archive missing any variant of %s" % prefix)
+                "Archive missing any variant of %s" % prefix
+            )
 
     def cleanup(self):
         os.unlink(self.sources_tagfile)
@@ -125,8 +138,9 @@ class ArchiveComponentItems:
     for each architecture/component pair that will be imported
     """
 
-    def __init__(self, archive_root, distroseries, components, archs,
-                 source_only=False):
+    def __init__(
+        self, archive_root, distroseries, components, archs, source_only=False
+    ):
         # Store ArchiveFilesystemInfo objects built in this context.
         self._archive_archs = []
 
@@ -135,27 +149,39 @@ class ArchiveComponentItems:
         if source_only:
             for component in components:
                 self._buildArchiveFilesystemInfo(
-                    archive_root, distroseries, component,
-                    source_only=source_only)
+                    archive_root,
+                    distroseries,
+                    component,
+                    source_only=source_only,
+                )
             return
 
         # Run through components and architectures.
         for component in components:
             for arch in archs:
                 self._buildArchiveFilesystemInfo(
-                    archive_root, distroseries, component, arch)
+                    archive_root, distroseries, component, arch
+                )
 
-    def _buildArchiveFilesystemInfo(self, archive_root, distroseries,
-                                    component, arch=None, source_only=False):
+    def _buildArchiveFilesystemInfo(
+        self,
+        archive_root,
+        distroseries,
+        component,
+        arch=None,
+        source_only=False,
+    ):
         """Create and store the ArchiveFilesystemInfo objects."""
         try:
             archive_info = ArchiveFilesystemInfo(
-                archive_root, distroseries, component, arch, source_only)
+                archive_root, distroseries, component, arch, source_only
+            )
         except NoBinaryArchive:
             log.warning(
                 "The archive for %s/%s doesn't contain "
-                "a directory for %s, skipping" %
-                (distroseries, component, arch))
+                "a directory for %s, skipping"
+                % (distroseries, component, arch)
+            )
             return
         self._archive_archs.append(archive_info)
 
@@ -183,6 +209,7 @@ class PackagesMap:
     The binary is also a dict but has the architecturetag as the keys, and
     the values are a dict that holds the same information as on source map.
     """
+
     def __init__(self, arch_component_items):
         self.create_maps(arch_component_items)
         arch_component_items.cleanup()
@@ -206,18 +233,21 @@ class PackagesMap:
                 for section in sources:
                     try:
                         src_tmp = dict(section)
-                        src_tmp['Component'] = six.ensure_binary(
-                            info_set.component)
-                        src_name = six.ensure_text(src_tmp['Package'])
+                        src_tmp["Component"] = six.ensure_binary(
+                            info_set.component
+                        )
+                        src_name = six.ensure_text(src_tmp["Package"])
                     except KeyError:
                         log.exception(
                             "Invalid Sources stanza in %s",
-                            info_set.sources_tagfile)
+                            info_set.sources_tagfile,
+                        )
                         continue
                     self.src_map[src_name].append(src_tmp)
             except SystemError:
                 log.exception(
-                    "Invalid Sources stanza in %s", info_set.sources_tagfile)
+                    "Invalid Sources stanza in %s", info_set.sources_tagfile
+                )
 
             # Check if it's in source-only mode.  If so, skip binary index
             # mapping.
@@ -234,13 +264,15 @@ class PackagesMap:
                 try:
                     bin_tmp = dict(section)
                     # The component isn't listed in the tagfile.
-                    bin_tmp['Component'] = six.ensure_binary(
-                        info_set.component)
-                    bin_name = six.ensure_text(bin_tmp['Package'])
+                    bin_tmp["Component"] = six.ensure_binary(
+                        info_set.component
+                    )
+                    bin_name = six.ensure_text(bin_tmp["Package"])
                 except KeyError:
                     log.exception(
                         "Invalid Releases stanza in %s",
-                        info_set.binaries_tagfile)
+                        info_set.binaries_tagfile,
+                    )
                     continue
                 tmpbin_map[bin_name] = bin_tmp
 
@@ -249,11 +281,13 @@ class PackagesMap:
             for section in dibinaries:
                 try:
                     dibin_tmp = dict(section)
-                    dibin_tmp['Component'] = six.ensure_binary(
-                        info_set.component)
-                    dibin_name = six.ensure_text(dibin_tmp['Package'])
+                    dibin_tmp["Component"] = six.ensure_binary(
+                        info_set.component
+                    )
+                    dibin_name = six.ensure_text(dibin_tmp["Package"])
                 except KeyError:
-                    log.exception("Invalid D-I Releases stanza in %s" %
-                                  info_set.difile)
+                    log.exception(
+                        "Invalid D-I Releases stanza in %s" % info_set.difile
+                    )
                     continue
                 tmpbin_map[dibin_name] = dibin_tmp

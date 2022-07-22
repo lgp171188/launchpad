@@ -4,19 +4,19 @@
 """Common file format classes shared across all formats."""
 
 __all__ = [
-    'TranslationFileData',
-    'TranslationMessageData',
-    ]
+    "TranslationFileData",
+    "TranslationMessageData",
+]
 
 from zope.interface import implementer
 
 from lp.translations.interfaces.translationcommonformat import (
     ITranslationFileData,
     ITranslationMessageData,
-    )
+)
 from lp.translations.interfaces.translationimporter import (
     TranslationFormatSyntaxError,
-    )
+)
 
 
 @implementer(ITranslationFileData)
@@ -44,9 +44,9 @@ class TranslationMessageData:
         self.plural_text = None
         self.context = None
         self._translations = []
-        self.comment = ''
-        self.source_comment = ''
-        self.file_references = ''
+        self.comment = ""
+        self.source_comment = ""
+        self.file_references = ""
         self.flags = set()
         self.is_obsolete = False
 
@@ -64,23 +64,26 @@ class TranslationMessageData:
         #
         # We raise an error if plural_form < len(self.translations) and
         # self.translations[plural_form] is not None.
-        assert plural_form is not None, 'plural_form cannot be None!'
+        assert plural_form is not None, "plural_form cannot be None!"
 
         is_duplicate = (
-            plural_form < len(self._translations) and
-            self._translations[plural_form] is not None and
-            self._translations[plural_form] != translation)
+            plural_form < len(self._translations)
+            and self._translations[plural_form] is not None
+            and self._translations[plural_form] != translation
+        )
         if is_duplicate:
             error = (
-                "Message has more than one translation for plural form %d." %
-                plural_form)
+                "Message has more than one translation for plural form %d."
+                % plural_form
+            )
             raise TranslationFormatSyntaxError(message=error)
 
         if plural_form >= len(self.translations):
             # There is a hole in the list of translations so we fill it with
             # None.
             self._translations.extend(
-                [None] * (1 + plural_form - len(self._translations)))
+                [None] * (1 + plural_form - len(self._translations))
+            )
 
         self._translations[plural_form] = translation
 

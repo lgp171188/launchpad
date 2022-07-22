@@ -2,19 +2,16 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'ExportResult',
-    'process_queue',
-    ]
+    "ExportResult",
+    "process_queue",
+]
 
 import io
 import os
 import traceback
 
 import psycopg2
-from zope.component import (
-    getAdapter,
-    getUtility,
-    )
+from zope.component import getAdapter, getUtility
 
 from lp.registry.interfaces.productseries import IProductSeries
 from lp.registry.interfaces.sourcepackage import ISourcePackage
@@ -24,7 +21,7 @@ from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.mail.helpers import (
     get_contact_email_addresses,
     get_email_template,
-    )
+)
 from lp.services.mail.sendmail import simple_sendmail
 from lp.services.webapp import canonical_url
 from lp.translations.interfaces.poexportrequest import IPOExportRequestSet
@@ -32,13 +29,11 @@ from lp.translations.interfaces.pofile import IPOFile
 from lp.translations.interfaces.potemplate import IPOTemplate
 from lp.translations.interfaces.translationcommonformat import (
     ITranslationFileData,
-    )
-from lp.translations.interfaces.translationexporter import (
-    ITranslationExporter,
-    )
+)
+from lp.translations.interfaces.translationexporter import ITranslationExporter
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
+)
 
 
 class ExportResult:
@@ -62,21 +57,23 @@ class ExportResult:
         export_requested_at = self._getExportRequestOrigin()
         self.name = self._getShortRequestName(export_requested_at)
 
-        self.request_url = canonical_url(
-            export_requested_at,
-            rootsite='translations') + '/+export'
+        self.request_url = (
+            canonical_url(export_requested_at, rootsite="translations")
+            + "/+export"
+        )
 
     def _getShortRequestName(self, request):
         """Return a short request name for use in email subjects."""
         if IPOFile.providedBy(request):
-            title = '%s translation of %s' % (
+            title = "%s translation of %s" % (
                 request.language.englishname,
-                request.potemplate.name)
+                request.potemplate.name,
+            )
             productseries = request.potemplate.productseries
             distroseries = request.potemplate.distroseries
             sourcepackagename = request.potemplate.sourcepackagename
         elif IPOTemplate.providedBy(request):
-            title = '%s template' % (request.name)
+            title = "%s template" % (request.name)
             productseries = request.productseries
             distroseries = request.distroseries
             sourcepackagename = request.sourcepackagename
@@ -93,19 +90,22 @@ class ExportResult:
         else:
             raise AssertionError(
                 "We can not figure out short name for this translation "
-                "export origin.")
+                "export origin."
+            )
 
         if productseries is not None:
-            root = '%s %s' % (
+            root = "%s %s" % (
                 productseries.product.displayname,
-                productseries.name)
+                productseries.name,
+            )
         else:
-            root = '%s %s %s' % (
+            root = "%s %s %s" % (
                 distroseries.distribution.displayname,
                 distroseries.displayname,
-                sourcepackagename.name)
+                sourcepackagename.name,
+            )
         if title is not None:
-            return '%s - %s' % (root, title)
+            return "%s - %s" % (root, title)
         else:
             return root
 
@@ -134,8 +134,9 @@ class ExportResult:
                 pofiles.add(request)
             if potemplate.displayname != last_template_name:
                 self.logger.debug(
-                    'Exporting objects for %s, related to template %s'
-                    % (self.person.displayname, potemplate.displayname))
+                    "Exporting objects for %s, related to template %s"
+                    % (self.person.displayname, potemplate.displayname)
+                )
                 last_template_name = potemplate.displayname
 
             # Determine productseries or sourcepackage for any
@@ -144,12 +145,14 @@ class ExportResult:
                 productseries.add(potemplate.productseries)
             elif potemplate.sourcepackagename is not None:
                 sourcepackage = potemplate.distroseries.getSourcePackage(
-                    potemplate.sourcepackagename)
+                    potemplate.sourcepackagename
+                )
                 sourcepackages.add(sourcepackage)
             else:
                 raise AssertionError(
                     "Requesting a translation export which belongs to "
-                    "neither a ProductSeries nor a SourcePackage.")
+                    "neither a ProductSeries nor a SourcePackage."
+                )
 
         if len(pofiles) == 1 and len(direct_potemplates) == 0:
             # One POFile was requested.
@@ -179,7 +182,8 @@ class ExportResult:
             else:
                 raise AssertionError(
                     "Requesting a translation export which belongs to "
-                    "neither a ProductSeries nor a SourcePackage.")
+                    "neither a ProductSeries nor a SourcePackage."
+                )
             if container.getCurrentTranslationTemplates().count() == 1:
                 export_requested_at = container
 
@@ -199,59 +203,59 @@ class ExportResult:
 
     def _getFailureEmailBody(self):
         """Send an email notification about the export failing."""
-        template = get_email_template(
-            'poexport-failure.txt', 'translations')
+        template = get_email_template("poexport-failure.txt", "translations")
         return template % {
-            'person': self.person.displayname,
-            'request_url': self.request_url,
-            }
+            "person": self.person.displayname,
+            "request_url": self.request_url,
+        }
 
     def _getFailedRequestsDescription(self):
         """Return a printable description of failed export requests."""
         failed_requests = self._getRequestedExportsNames()
         if len(failed_requests) > 0:
-            failed_requests_text = 'Failed export request included:\n'
-            failed_requests_text += '\n'.join(
-                '  * ' + request for request in failed_requests)
+            failed_requests_text = "Failed export request included:\n"
+            failed_requests_text += "\n".join(
+                "  * " + request for request in failed_requests
+            )
         else:
-            failed_requests_text = 'There were no export requests.'
+            failed_requests_text = "There were no export requests."
         return failed_requests_text
 
     def _getAdminFailureNotificationEmailBody(self):
         """Send an email notification about failed export to admins."""
         template = get_email_template(
-            'poexport-failure-admin-notification.txt', 'translations')
+            "poexport-failure-admin-notification.txt", "translations"
+        )
         failed_requests = self._getFailedRequestsDescription()
         return template % {
-            'person': self.person.displayname,
-            'person_id': self.person.name,
-            'request_url': self.request_url,
-            'failure_message': self.failure,
-            'failed_requests': failed_requests,
-            }
+            "person": self.person.displayname,
+            "person_id": self.person.name,
+            "request_url": self.request_url,
+            "failure_message": self.failure,
+            "failed_requests": failed_requests,
+        }
 
     def _getUnicodeDecodeErrorEmailBody(self):
         """Send an email notification to admins about UnicodeDecodeError."""
         template = get_email_template(
-            'poexport-failure-unicodedecodeerror.txt',
-            'translations')
+            "poexport-failure-unicodedecodeerror.txt", "translations"
+        )
         failed_requests = self._getFailedRequestsDescription()
         return template % {
-            'person': self.person.displayname,
-            'person_id': self.person.name,
-            'request_url': self.request_url,
-            'failed_requests': failed_requests,
-            }
+            "person": self.person.displayname,
+            "person_id": self.person.name,
+            "request_url": self.request_url,
+            "failed_requests": failed_requests,
+        }
 
     def _getSuccessEmailBody(self):
         """Send an email notification about the export working."""
-        template = get_email_template(
-            'poexport-success.txt', 'translations')
+        template = get_email_template("poexport-success.txt", "translations")
         return template % {
-            'person': self.person.displayname,
-            'download_url': self.url,
-            'request_url': self.request_url,
-            }
+            "person": self.person.displayname,
+            "download_url": self.url,
+            "request_url": self.request_url,
+        }
 
     def setExportFile(self, exported_file):
         """Attach an exported file to the result, for upload to the Librarian.
@@ -276,18 +280,22 @@ class ExportResult:
         if self.exported_file.path is None:
             # The exported path is unknown, use translation domain as its
             # filename.
-            assert self.exported_file.file_extension, (
-                'File extension must have a value!.')
-            path = 'launchpad-export.%s' % self.exported_file.file_extension
+            assert (
+                self.exported_file.file_extension
+            ), "File extension must have a value!."
+            path = "launchpad-export.%s" % self.exported_file.file_extension
         else:
             # Convert the path to a single file name so it's noted in
             # librarian.
-            path = self.exported_file.path.replace(os.sep, '_')
+            path = self.exported_file.path.replace(os.sep, "_")
 
         alias_set = getUtility(ILibraryFileAliasSet)
         alias = alias_set.create(
-            name=path, size=self.exported_file.size, file=self.exported_file,
-            contentType=self.exported_file.content_type)
+            name=path,
+            size=self.exported_file.size,
+            file=self.exported_file,
+            contentType=self.exported_file.content_type,
+        )
 
         self.url = alias.getURL()
         if logger is not None:
@@ -307,9 +315,10 @@ class ExportResult:
             body = self._getFailureEmailBody()
         elif self.failure is not None and self.url is not None:
             raise AssertionError(
-                'We cannot have a URL for the export and a failure.')
+                "We cannot have a URL for the export and a failure."
+            )
         else:
-            raise AssertionError('On success, an exported URL is expected.')
+            raise AssertionError("On success, an exported URL is expected.")
 
         recipients = list(get_contact_email_addresses(self.person))
 
@@ -317,8 +326,9 @@ class ExportResult:
             simple_sendmail(
                 from_addr=config.rosetta.notification_address,
                 to_addrs=[recipient],
-                subject='Launchpad translation download: %s' % self.name,
-                body=body)
+                subject="Launchpad translation download: %s" % self.name,
+                body=body,
+            )
 
         if self.failure is None:
             # There are no errors, so nothing else to do here.
@@ -337,9 +347,9 @@ class ExportResult:
         simple_sendmail(
             from_addr=config.rosetta.notification_address,
             to_addrs=[config.launchpad.errors_address],
-            subject=(
-                'Launchpad translation download errors: %s' % self.name),
-            body=admins_email_body)
+            subject=("Launchpad translation download errors: %s" % self.name),
+            body=admins_email_body,
+        )
 
     def addFailure(self):
         """Store an exception that broke the export."""
@@ -358,9 +368,9 @@ def generate_translationfiledata(file_list, format):
     the memory usage for an export doesn't accumulate.
     """
     if format == TranslationFileFormat.POCHANGED:
-        adaptername = 'changed_messages'
+        adaptername = "changed_messages"
     else:
-        adaptername = 'all_messages'
+        adaptername = "all_messages"
 
     for file in file_list:
         yield getAdapter(file, ITranslationFileData, adaptername)
@@ -385,7 +395,8 @@ def process_request(person, objects, format, logger):
     try:
         exported_file = translation_exporter.exportTranslationFiles(
             generate_translationfiledata(requested_objects, format),
-            target_format=format)
+            target_format=format,
+        )
     except psycopg2.Error:
         # It's a DB exception, we don't catch it either, the export
         # should be done again in a new transaction.

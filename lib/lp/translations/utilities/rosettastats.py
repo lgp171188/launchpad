@@ -5,13 +5,12 @@ from zope.interface import implementer
 
 from lp.translations.interfaces.rosettastats import IRosettaStats
 
-
 # XXX: Carlos Perello Marin 2005-04-14 bug=396:
 # This code should be change to be an adaptor.
 
+
 @implementer(IRosettaStats)
 class RosettaStats:
-
     def testStatistics(self):
         """See IRosettaStats."""
         if (self.newCount() + self.updatesCount()) != self.rosettaCount():
@@ -62,9 +61,13 @@ class RosettaStats:
         """See IRosettaStats."""
         untranslated = self.messageCount() - self.translatedCount(language)
         # Statistics should not be ever less than 0
-        assert untranslated >= 0, (
-            'Stats error in %r id %d, %d untranslated' % (
-                self, self.id, untranslated))
+        assert (
+            untranslated >= 0
+        ), "Stats error in %r id %d, %d untranslated" % (
+            self,
+            self.id,
+            untranslated,
+        )
         return untranslated
 
     def newCount(self, language=None):

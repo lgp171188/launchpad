@@ -4,20 +4,17 @@
 """Helpers for TestOpenID page tests."""
 
 __all__ = [
-    'complete_from_browser',
-    'EchoView',
-    'make_identifier_select_endpoint',
-    'ZopeFetcher',
-    ]
+    "complete_from_browser",
+    "EchoView",
+    "make_identifier_select_endpoint",
+    "ZopeFetcher",
+]
 
 import io
 from urllib.error import HTTPError
 
 from openid import fetchers
-from openid.consumer.discover import (
-    OPENID_IDP_2_0_TYPE,
-    OpenIDServiceEndpoint,
-    )
+from openid.consumer.discover import OPENID_IDP_2_0_TYPE, OpenIDServiceEndpoint
 from zope.testbrowser.wsgi import Browser
 
 from lp.services.encoding import wsgi_native_string
@@ -30,10 +27,10 @@ class EchoView(LaunchpadView):
 
     def render(self):
         out = io.StringIO()
-        print('Request method: %s' % self.request.method, file=out)
+        print("Request method: %s" % self.request.method, file=out)
         keys = sorted(self.request.form.keys())
         for key in keys:
-            print('%s:%s' % (key, self.request.form[key]), file=out)
+            print("%s:%s" % (key, self.request.form[key]), file=out)
         return out.getvalue()
 
 
@@ -45,7 +42,7 @@ class ZopeFetcher(fetchers.HTTPFetcher):
         if headers is not None:
             for key, value in headers.items():
                 browser.addHeader(key, wsgi_native_string(value))
-        browser.addHeader('X-Zope-Handle-Errors', wsgi_native_string('True'))
+        browser.addHeader("X-Zope-Handle-Errors", wsgi_native_string("True"))
         try:
             browser.open(url, data=body)
         except HTTPError as e:
@@ -53,7 +50,8 @@ class ZopeFetcher(fetchers.HTTPFetcher):
         else:
             status = 200
         return fetchers.HTTPResponse(
-            browser.url, status, browser.headers, browser.contents)
+            browser.url, status, browser.headers, browser.contents
+        )
 
 
 def complete_from_browser(consumer, browser):
@@ -65,11 +63,13 @@ def complete_from_browser(consumer, browser):
     This function parses the body of the +echo view into a set of query
     arguments representing the OpenID response.
     """
-    assert browser.contents.startswith('Request method'), (
-        "Browser contents does not look like it came from +echo")
+    assert browser.contents.startswith(
+        "Request method"
+    ), "Browser contents does not look like it came from +echo"
     # Skip the first line.
-    query = dict(line.split(':', 1)
-                 for line in browser.contents.splitlines()[1:])
+    query = dict(
+        line.split(":", 1) for line in browser.contents.splitlines()[1:]
+    )
 
     response = consumer.complete(query, browser.url)
     return response

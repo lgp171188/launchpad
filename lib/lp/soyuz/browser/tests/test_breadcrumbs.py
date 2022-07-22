@@ -6,20 +6,16 @@ from zope.component import getUtility
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.webapp.publisher import canonical_url
 from lp.soyuz.browser.archivesubscription import PersonalArchiveSubscription
-from lp.testing import (
-    login,
-    login_person,
-    )
+from lp.testing import login, login_person
 from lp.testing.breadcrumbs import BaseBreadcrumbTestCase
 
 
 class TestDistroArchSeriesBreadcrumb(BaseBreadcrumbTestCase):
-
     def setUp(self):
         super().setUp()
-        self.ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-        self.hoary = self.ubuntu.getSeries('hoary')
-        self.hoary_i386 = self.hoary['i386']
+        self.ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+        self.hoary = self.ubuntu.getSeries("hoary")
+        self.hoary_i386 = self.hoary["i386"]
 
     def test_distroarchseries(self):
         das_url = canonical_url(self.hoary_i386)
@@ -36,7 +32,7 @@ class TestDistroArchSeriesBreadcrumb(BaseBreadcrumbTestCase):
 
     def test_distroarchseriesbinarypackagerelease(self):
         pmount_hoary_i386 = self.hoary_i386.getBinaryPackage("pmount")
-        pmount_release = pmount_hoary_i386['0.1-1']
+        pmount_release = pmount_hoary_i386["0.1-1"]
         pmount_release_url = canonical_url(pmount_release)
         crumbs = self.getBreadcrumbsForObject(pmount_release)
         self.assertEqual(crumbs[-1].url, pmount_release_url)
@@ -44,13 +40,12 @@ class TestDistroArchSeriesBreadcrumb(BaseBreadcrumbTestCase):
 
 
 class TestArchiveSubscriptionBreadcrumb(BaseBreadcrumbTestCase):
-
     def setUp(self):
         super().setUp()
 
         # Create a private ppa
         self.ppa = self.factory.makeArchive()
-        login('foo.bar@canonical.com')
+        login("foo.bar@canonical.com")
         self.ppa.private = True
 
         owner = self.ppa.owner
@@ -58,12 +53,15 @@ class TestArchiveSubscriptionBreadcrumb(BaseBreadcrumbTestCase):
         self.ppa_subscription = self.ppa.newSubscription(owner, owner)
         self.ppa_token = self.ppa.newAuthToken(owner)
         self.personal_archive_subscription = PersonalArchiveSubscription(
-            owner, self.ppa)
+            owner, self.ppa
+        )
 
     def test_personal_archive_subscription(self):
         subscription_url = canonical_url(self.personal_archive_subscription)
         crumbs = self.getBreadcrumbsForObject(
-            self.personal_archive_subscription)
+            self.personal_archive_subscription
+        )
         self.assertEqual(subscription_url, crumbs[-1].url)
         self.assertEqual(
-            "Access to %s" % self.ppa.displayname, crumbs[-1].text)
+            "Access to %s" % self.ppa.displayname, crumbs[-1].text
+        )

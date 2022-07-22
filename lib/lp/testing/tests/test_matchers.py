@@ -1,27 +1,14 @@
 # Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from testtools.matchers import (
-    Equals,
-    Is,
-    KeysEqual,
-    LessThan,
-    Not,
-    )
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from testtools.matchers import Equals, Is, KeysEqual, LessThan, Not
+from zope.interface import Interface, implementer
 from zope.interface.exceptions import BrokenImplementation
 from zope.interface.verify import verifyObject
 from zope.security.checker import NamesChecker
 from zope.security.proxy import ProxyFactory
 
-from lp.testing import (
-    RequestTimelineCollector,
-    TestCase,
-    TestCaseWithFactory,
-    )
+from lp.testing import RequestTimelineCollector, TestCase, TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import (
     BrowsesWithQueryLimit,
@@ -35,7 +22,7 @@ from lp.testing.matchers import (
     IsProxied,
     Provides,
     ProvidesAndIsProxied,
-    )
+)
 
 
 class ITestInterface(Interface):
@@ -54,37 +41,36 @@ class Implementor:
 
 
 class DoesNotProvideTests(TestCase):
-
     def test_describe(self):
         obj = object()
         mismatch = DoesNotProvide(obj, ITestInterface)
         self.assertEqual(
             "%r does not provide %r." % (obj, ITestInterface),
-            mismatch.describe())
+            mismatch.describe(),
+        )
 
 
 class DoesNotCorrectlyProvideMismatchTests(TestCase):
-
     def test_describe(self):
         obj = object()
         mismatch = DoesNotCorrectlyProvide(obj, ITestInterface)
         self.assertEqual(
             "%r claims to provide %r, but does not do so correctly."
-                % (obj, ITestInterface),
-            mismatch.describe())
+            % (obj, ITestInterface),
+            mismatch.describe(),
+        )
 
     def test_describe_with_extra(self):
         obj = object()
-        mismatch = DoesNotCorrectlyProvide(
-            obj, ITestInterface, extra="foo")
+        mismatch = DoesNotCorrectlyProvide(obj, ITestInterface, extra="foo")
         self.assertEqual(
             "%r claims to provide %r, but does not do so correctly: foo"
-                % (obj, ITestInterface),
-            mismatch.describe())
+            % (obj, ITestInterface),
+            mismatch.describe(),
+        )
 
 
 class ProvidesTests(TestCase):
-
     def test_str(self):
         matcher = Provides(ITestInterface)
         self.assertEqual("provides %r." % ITestInterface, str(matcher))
@@ -111,7 +97,6 @@ class ProvidesTests(TestCase):
         self.assertEqual(ITestInterface, mismatch.interface)
 
     def match_does_not_verify(self):
-
         @implementer(ITestInterface)
         class BadlyImplementedClass:
             pass
@@ -143,7 +128,6 @@ class ProvidesTests(TestCase):
 
 
 class IsNotProxiedTests(TestCase):
-
     def test_describe(self):
         obj = object()
         mismatch = IsNotProxied(obj)
@@ -151,7 +135,6 @@ class IsNotProxiedTests(TestCase):
 
 
 class IsProxiedTests(TestCase):
-
     def test_str(self):
         matcher = IsProxied()
         self.assertEqual("Is proxied.", str(matcher))
@@ -171,16 +154,16 @@ class IsProxiedTests(TestCase):
 
 
 class ProvidesAndIsProxiedTests(TestCase):
-
     def test_str(self):
         matcher = ProvidesAndIsProxied(ITestInterface)
         self.assertEqual(
-            "Provides %r and is proxied." % ITestInterface,
-            str(matcher))
+            "Provides %r and is proxied." % ITestInterface, str(matcher)
+        )
 
     def test_match(self):
         obj = ProxyFactory(
-            Implementor(), checker=NamesChecker(names=("doFoo", )))
+            Implementor(), checker=NamesChecker(names=("doFoo",))
+        )
         matcher = ProvidesAndIsProxied(ITestInterface)
         self.assertThat(obj, matcher)
         self.assertEqual(None, matcher.match(obj))
@@ -219,7 +202,7 @@ class TestQueryMatching(TestCase):
         collector.queries = [
             (0, 1, "SQL-main-standby", "SELECT 1 FROM Person", None),
             (2, 3, "SQL-main-standby", "SELECT 1 FROM Product", None),
-            ]
+        ]
         mismatch = matcher.match(collector)
         self.assertThat(mismatch, Not(Is(None)))
         details = mismatch.get_details()
@@ -227,29 +210,43 @@ class TestQueryMatching(TestCase):
         for name, content in details.items():
             self.assertEqual("queries", name)
             self.assertEqual("text", content.content_type.type)
-            lines.append(''.join(content.iter_text()))
+            lines.append("".join(content.iter_text()))
         separator = "-" * 70
         expected_lines = [
-            "0-1@SQL-main-standby SELECT 1 FROM Person\n" + separator + "\n" +
-            "2-3@SQL-main-standby SELECT 1 FROM Product\n" + separator,
-            ]
+            "0-1@SQL-main-standby SELECT 1 FROM Person\n"
+            + separator
+            + "\n"
+            + "2-3@SQL-main-standby SELECT 1 FROM Product\n"
+            + separator,
+        ]
         self.assertEqual(expected_lines, lines)
         self.assertEqual(
             "queries do not match: %s" % (LessThan(2).match(2).describe(),),
-            mismatch.describe())
+            mismatch.describe(),
+        )
 
     def test_with_backtrace(self):
         matcher = HasQueryCount(LessThan(2))
         collector = RequestTimelineCollector()
         collector.count = 2
         collector.queries = [
-            (0, 1, "SQL-main-standby", "SELECT 1 FROM Person",
-             '  File "example", line 2, in <module>\n'
-             '    Store.of(Person).one()\n'),
-            (2, 3, "SQL-main-standby", "SELECT 1 FROM Product",
-             '  File "example", line 3, in <module>\n'
-             '    Store.of(Product).one()\n'),
-            ]
+            (
+                0,
+                1,
+                "SQL-main-standby",
+                "SELECT 1 FROM Person",
+                '  File "example", line 2, in <module>\n'
+                "    Store.of(Person).one()\n",
+            ),
+            (
+                2,
+                3,
+                "SQL-main-standby",
+                "SELECT 1 FROM Product",
+                '  File "example", line 3, in <module>\n'
+                "    Store.of(Product).one()\n",
+            ),
+        ]
         mismatch = matcher.match(collector)
         self.assertThat(mismatch, Not(Is(None)))
         details = mismatch.get_details()
@@ -257,21 +254,29 @@ class TestQueryMatching(TestCase):
         for name, content in details.items():
             self.assertEqual("queries", name)
             self.assertEqual("text", content.content_type.type)
-            lines.append(''.join(content.iter_text()))
+            lines.append("".join(content.iter_text()))
         separator = "-" * 70
         backtrace_separator = "." * 70
         expected_lines = [
-            '0-1@SQL-main-standby SELECT 1 FROM Person\n' + separator + '\n' +
-            '  File "example", line 2, in <module>\n' +
-            '    Store.of(Person).one()\n' + backtrace_separator + '\n' +
-            '2-3@SQL-main-standby SELECT 1 FROM Product\n' + separator + '\n' +
-            '  File "example", line 3, in <module>\n' +
-            '    Store.of(Product).one()\n' + backtrace_separator,
-            ]
+            "0-1@SQL-main-standby SELECT 1 FROM Person\n"
+            + separator
+            + "\n"
+            + '  File "example", line 2, in <module>\n'
+            + "    Store.of(Person).one()\n"
+            + backtrace_separator
+            + "\n"
+            + "2-3@SQL-main-standby SELECT 1 FROM Product\n"
+            + separator
+            + "\n"
+            + '  File "example", line 3, in <module>\n'
+            + "    Store.of(Product).one()\n"
+            + backtrace_separator,
+        ]
         self.assertEqual(expected_lines, lines)
         self.assertEqual(
             "queries do not match: %s" % (LessThan(2).match(2).describe(),),
-            mismatch.describe())
+            mismatch.describe(),
+        )
 
     def test_byEquality(self):
         old_collector = RequestTimelineCollector()
@@ -279,14 +284,14 @@ class TestQueryMatching(TestCase):
         old_collector.queries = [
             (0, 1, "SQL-main-standby", "SELECT 1 FROM Person", None),
             (2, 3, "SQL-main-standby", "SELECT 1 FROM Product", None),
-            ]
+        ]
         new_collector = RequestTimelineCollector()
         new_collector.count = 3
         new_collector.queries = [
             (0, 1, "SQL-main-standby", "SELECT 1 FROM Person", None),
             (2, 3, "SQL-main-standby", "SELECT 1 FROM Product", None),
             (4, 5, "SQL-main-standby", "SELECT 1 FROM Distribution", None),
-            ]
+        ]
         matcher = HasQueryCount.byEquality(old_collector)
         mismatch = matcher.match(new_collector)
         self.assertThat(mismatch, Not(Is(None)))
@@ -300,19 +305,28 @@ class TestQueryMatching(TestCase):
         new_lines.append("".join(details["queries"].iter_text()))
         separator = "-" * 70
         expected_old_lines = [
-            "0-1@SQL-main-standby SELECT 1 FROM Person\n" + separator + "\n" +
-            "2-3@SQL-main-standby SELECT 1 FROM Product\n" + separator,
-            ]
+            "0-1@SQL-main-standby SELECT 1 FROM Person\n"
+            + separator
+            + "\n"
+            + "2-3@SQL-main-standby SELECT 1 FROM Product\n"
+            + separator,
+        ]
         expected_new_lines = [
-            "0-1@SQL-main-standby SELECT 1 FROM Person\n" + separator + "\n" +
-            "2-3@SQL-main-standby SELECT 1 FROM Product\n" + separator + "\n" +
-            "4-5@SQL-main-standby SELECT 1 FROM Distribution\n" + separator,
-            ]
+            "0-1@SQL-main-standby SELECT 1 FROM Person\n"
+            + separator
+            + "\n"
+            + "2-3@SQL-main-standby SELECT 1 FROM Product\n"
+            + separator
+            + "\n"
+            + "4-5@SQL-main-standby SELECT 1 FROM Distribution\n"
+            + separator,
+        ]
         self.assertEqual(expected_old_lines, old_lines)
         self.assertEqual(expected_new_lines, new_lines)
         self.assertEqual(
             "queries do not match: %s" % (Equals(2).match(3).describe(),),
-            mismatch.describe())
+            mismatch.describe(),
+        )
 
 
 class TestBrowserQueryMatching(TestCaseWithFactory):
@@ -328,15 +342,12 @@ class TestBrowserQueryMatching(TestCaseWithFactory):
 
 
 class DoesNotContainTests(TestCase):
-
     def test_describe(self):
         mismatch = DoesNotContain("foo", "bar")
-        self.assertEqual(
-            "'foo' does not contain 'bar'.", mismatch.describe())
+        self.assertEqual("'foo' does not contain 'bar'.", mismatch.describe())
 
 
 class ContainsTests(TestCase):
-
     def test_str(self):
         matcher = Contains("bar")
         self.assertEqual("Contains 'bar'.", str(matcher))
@@ -361,7 +372,6 @@ class ContainsTests(TestCase):
 
 
 class EqualsIgnoringWhitespaceTests(TestCase):
-
     def test_bytes(self):
         matcher = EqualsIgnoringWhitespace(b"abc")
         self.assertEqual("EqualsIgnoringWhitespace(%r)" % b"abc", str(matcher))
@@ -374,8 +384,8 @@ class EqualsIgnoringWhitespaceTests(TestCase):
         matcher = EqualsIgnoringWhitespace(b"one \t two \n three")
         mismatch = matcher.match(b" one \r three ")
         self.assertEqual(
-            "%r != %r" % (b"one three", b"one two three"),
-            mismatch.describe())
+            "%r != %r" % (b"one three", b"one two three"), mismatch.describe()
+        )
 
     def test_match_unicode(self):
         matcher = EqualsIgnoringWhitespace("one \t two \n \u1234  ")
@@ -385,8 +395,8 @@ class EqualsIgnoringWhitespaceTests(TestCase):
         matcher = EqualsIgnoringWhitespace("one \t two \n \u1234  ")
         mismatch = matcher.match(" one \r \u1234 ")
         self.assertEqual(
-            "%r != %r" % ("one \u1234", "one two \u1234"),
-            mismatch.describe())
+            "%r != %r" % ("one \u1234", "one two \u1234"), mismatch.describe()
+        )
 
     def test_match_non_string(self):
         matcher = EqualsIgnoringWhitespace(1234)

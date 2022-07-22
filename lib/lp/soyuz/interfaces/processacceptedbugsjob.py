@@ -4,18 +4,14 @@
 __all__ = [
     "IProcessAcceptedBugsJob",
     "IProcessAcceptedBugsJobSource",
-    ]
+]
 
 from lazr.restful.fields import Reference
 from zope.interface import Attribute
 
 from lp import _
 from lp.registry.interfaces.distroseries import IDistroSeries
-from lp.services.job.interfaces.job import (
-    IJob,
-    IJobSource,
-    IRunnableJob,
-    )
+from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
 
 
@@ -23,16 +19,25 @@ class IProcessAcceptedBugsJob(IRunnableJob):
     """An `IJob` to close bugs for accepted package uploads."""
 
     job = Reference(
-        schema=IJob, title=_("The common Job attributes"),
-        required=True, readonly=True)
+        schema=IJob,
+        title=_("The common Job attributes"),
+        required=True,
+        readonly=True,
+    )
 
     distroseries = Reference(
-        schema=IDistroSeries, title=_("Context distroseries"),
-        required=True, readonly=True)
+        schema=IDistroSeries,
+        title=_("Context distroseries"),
+        required=True,
+        readonly=True,
+    )
 
     sourcepackagerelease = Reference(
-        schema=ISourcePackageRelease, title=_("Context sourcepackagerelease"),
-        required=True, readonly=True)
+        schema=ISourcePackageRelease,
+        title=_("Context sourcepackagerelease"),
+        required=True,
+        readonly=True,
+    )
 
     metadata = Attribute(_("A dict of data about the job."))
 

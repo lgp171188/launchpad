@@ -3,13 +3,10 @@
 
 """Test the choice of "translations to review" for a user."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
-from pytz import UTC
 import transaction
+from pytz import UTC
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import ServiceUsage
@@ -37,25 +34,30 @@ class ReviewTestMixin:
         self.base_time = datetime.now(UTC)
         self.person = self.factory.makePerson()
         self.translationgroup = self.factory.makeTranslationGroup(
-            owner=self.factory.makePerson())
-        self.dutch = LanguageSet().getLanguageByCode('nl')
+            owner=self.factory.makePerson()
+        )
+        self.dutch = LanguageSet().getLanguageByCode("nl")
         TranslatorSet().new(
-            translationgroup=self.translationgroup, language=self.dutch,
-            translator=self.person)
+            translationgroup=self.translationgroup,
+            language=self.dutch,
+            translator=self.person,
+        )
 
         if for_product:
             self.distroseries = None
             self.distribution = None
             self.sourcepackagename = None
             self.productseries = removeSecurityProxy(
-                self.factory.makeProductSeries())
+                self.factory.makeProductSeries()
+            )
             self.product = self.productseries.product
             self.supercontext = self.product
         else:
             self.productseries = None
             self.product = None
             self.distroseries = removeSecurityProxy(
-                self.factory.makeDistroSeries())
+                self.factory.makeDistroSeries()
+            )
             self.distribution = self.distroseries.distribution
             self.distribution.translation_focus = self.distroseries
             self.sourcepackagename = self.factory.makeSourcePackageName()
@@ -66,23 +68,37 @@ class ReviewTestMixin:
         self.supercontext.translations_usage = ServiceUsage.LAUNCHPAD
 
         self.potemplate = self.factory.makePOTemplate(
-            productseries=self.productseries, distroseries=self.distroseries,
-            sourcepackagename=self.sourcepackagename)
-        self.pofile = removeSecurityProxy(self.factory.makePOFile(
-            potemplate=self.potemplate, language_code='nl'))
+            productseries=self.productseries,
+            distroseries=self.distroseries,
+            sourcepackagename=self.sourcepackagename,
+        )
+        self.pofile = removeSecurityProxy(
+            self.factory.makePOFile(
+                potemplate=self.potemplate, language_code="nl"
+            )
+        )
         self.potmsgset = self.factory.makePOTMsgSet(
-            potemplate=self.potemplate, singular='hi')
+            potemplate=self.potemplate, singular="hi"
+        )
         self.translation = self.factory.makeCurrentTranslationMessage(
-            potmsgset=self.potmsgset, pofile=self.pofile,
-            translator=self.person, translations=['bi'],
-            date_created=self.base_time, date_reviewed=self.base_time)
+            potmsgset=self.potmsgset,
+            pofile=self.pofile,
+            translator=self.person,
+            translations=["bi"],
+            date_created=self.base_time,
+            date_reviewed=self.base_time,
+        )
 
         later_time = self.base_time + timedelta(0, 3600)
         self.suggestion = removeSecurityProxy(
             self.factory.makeSuggestion(
-                potmsgset=self.potmsgset, pofile=self.pofile,
-                translator=self.factory.makePerson(), translations=['wi'],
-                date_created=later_time))
+                potmsgset=self.potmsgset,
+                pofile=self.pofile,
+                translator=self.factory.makePerson(),
+                translations=["wi"],
+                date_created=later_time,
+            )
+        )
 
         self.pofile.updateStatistics()
         self.assertEqual(self.pofile.unreviewed_count, 1)
@@ -90,8 +106,7 @@ class ReviewTestMixin:
     def _getReviewables(self, *args, **kwargs):
         """Shorthand for `self.person.getReviewableTranslationFiles`."""
         person = ITranslationsPerson(self.person)
-        return list(person.getReviewableTranslationFiles(
-            *args, **kwargs))
+        return list(person.getReviewableTranslationFiles(*args, **kwargs))
 
 
 class ReviewableTranslationFilesTest:
@@ -109,7 +124,8 @@ class ReviewableTranslationFilesTest:
         # The no_older_than parameter keeps translations that the
         # reviewer worked on at least that recently.
         self.assertEqual(
-            self._getReviewables(no_older_than=self.base_time), [self.pofile])
+            self._getReviewables(no_older_than=self.base_time), [self.pofile]
+        )
 
     def test_getReviewableTranslationFiles_no_older_than_filter(self):
         # The no_older_than parameter filters translations that the
@@ -132,7 +148,7 @@ class ReviewableTranslationFilesTest:
     def test_getReviewableTranslationFiles_other_language(self):
         # We only get translations in languages that the person is a
         # reviewer for.
-        self.pofile.language = LanguageSet().getLanguageByCode('de')
+        self.pofile.language = LanguageSet().getLanguageByCode("de")
         self.assertEqual(self._getReviewables(), [])
 
     def test_getReviewableTranslationFiles_no_new_suggestions(self):
@@ -143,18 +159,21 @@ class ReviewableTranslationFilesTest:
 
     def test_getReviewableTranslationFiles_ignores_english(self):
         # POFiles that "translate to English" are ignored.
-        english = LanguageSet().getLanguageByCode('en')
+        english = LanguageSet().getLanguageByCode("en")
         TranslatorSet().new(
-            translationgroup=self.translationgroup, language=english,
-            translator=self.person)
+            translationgroup=self.translationgroup,
+            language=english,
+            translator=self.person,
+        )
         self.pofile.language = english
         self.assertEqual(self._getReviewables(), [])
 
 
-class TestReviewableProductTranslationFiles(TestCaseWithFactory,
-                                            ReviewTestMixin,
-                                            ReviewableTranslationFilesTest):
+class TestReviewableProductTranslationFiles(
+    TestCaseWithFactory, ReviewTestMixin, ReviewableTranslationFilesTest
+):
     """Test `Person.getReviewableTranslationFiles` for products."""
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -164,15 +183,17 @@ class TestReviewableProductTranslationFiles(TestCaseWithFactory,
     def test_getReviewableTranslationFiles_project_deactivated(self):
         # Deactive project are excluded from the list.
         from lp.testing import celebrity_logged_in
-        with celebrity_logged_in('admin'):
+
+        with celebrity_logged_in("admin"):
             self.product.active = False
         self.assertEqual([], self._getReviewables())
 
 
-class TestReviewableDistroTranslationFiles(TestCaseWithFactory,
-                                           ReviewTestMixin,
-                                           ReviewableTranslationFilesTest):
+class TestReviewableDistroTranslationFiles(
+    TestCaseWithFactory, ReviewTestMixin, ReviewableTranslationFilesTest
+):
     """Test `Person.getReviewableTranslationFiles` for distros."""
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

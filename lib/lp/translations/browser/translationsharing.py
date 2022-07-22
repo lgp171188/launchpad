@@ -4,8 +4,8 @@
 """Views and mixins to use for translation sharing."""
 
 __all__ = [
-    'TranslationSharingDetailsMixin',
-    ]
+    "TranslationSharingDetailsMixin",
+]
 
 
 from lp.services.webapp import canonical_url
@@ -31,26 +31,28 @@ class TranslationSharingDetailsMixin:
         """Construct the link to the sharing details page."""
         tag_template = (
             '<a class="sprite %(icon)s" id="sharing-details"'
-            ' href="%(href)s">%(text)s</a>')
+            ' href="%(href)s">%(text)s</a>'
+        )
 
         sourcepackage = self.getTranslationSourcePackage()
         if sourcepackage is None:
             return ""
         productseries = sourcepackage.productseries
-        can_edit_upstream = (
-            productseries is None or
-            check_permission('launchpad.Edit', productseries))
+        can_edit_upstream = productseries is None or check_permission(
+            "launchpad.Edit", productseries
+        )
         if can_edit_upstream:
-            icon = 'edit'
+            icon = "edit"
             if self.is_sharing():
                 text = "Edit sharing details"
             else:
                 text = "Set up sharing"
         else:
-            icon = 'info'
+            icon = "info"
             text = "View sharing details"
         href = canonical_url(
             sourcepackage,
-            rootsite='translations',
-            view_name='+sharing-details')
+            rootsite="translations",
+            view_name="+sharing-details",
+        )
         return tag_template % dict(icon=icon, text=text, href=href)

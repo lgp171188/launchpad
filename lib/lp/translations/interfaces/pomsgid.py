@@ -2,15 +2,11 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from zope.interface import Interface
-from zope.schema import (
-    Int,
-    Text,
-    )
+from zope.schema import Int, Text
 
 from lp import _
 
-
-__all__ = ('IPOMsgID', )
+__all__ = ("IPOMsgID",)
 
 
 class IPOMsgID(Interface):
@@ -18,7 +14,8 @@ class IPOMsgID(Interface):
 
     id = Int(
         title=_("The identifier of this POMsgID."),
-        readonly=True, required=True)
+        readonly=True,
+        required=True,
+    )
 
-    msgid = Text(
-        title=_("A msgid string."))
+    msgid = Text(title=_("A msgid string."))

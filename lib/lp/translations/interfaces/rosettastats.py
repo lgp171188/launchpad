@@ -3,8 +3,7 @@
 
 from zope.interface import Interface
 
-
-__all__ = ('IRosettaStats', )
+__all__ = ("IRosettaStats",)
 
 
 class IRosettaStats(Interface):
@@ -59,8 +58,7 @@ class IRosettaStats(Interface):
         """
 
     def translatedCount(language=None):
-        """Return the total number of msgsets that are translated in Rosetta.
-        """
+        """Return the total number of translated msgsets in Rosetta."""
 
     def untranslatedCount(language=None):
         """Return the number of msgsets that are untranslated."""

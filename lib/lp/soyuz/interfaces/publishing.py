@@ -4,28 +4,29 @@
 """Publishing interfaces."""
 
 __all__ = [
-    'DeletionError',
-    'IArchiveSafePublisher',
-    'IBinaryPackagePublishingHistory',
-    'IBinaryPackagePublishingHistoryEdit',
-    'IBinaryPackagePublishingHistoryPublic',
-    'IPublishingEdit',
-    'IPublishingSet',
-    'ISourcePackagePublishingHistory',
-    'ISourcePackagePublishingHistoryEdit',
-    'ISourcePackagePublishingHistoryPublic',
-    'MissingSymlinkInPool',
-    'NotInPool',
-    'OverrideError',
-    'PoolFileOverwriteError',
-    'active_publishing_status',
-    'inactive_publishing_status',
-    'name_priority_map',
-    ]
+    "DeletionError",
+    "IArchiveSafePublisher",
+    "IBinaryPackagePublishingHistory",
+    "IBinaryPackagePublishingHistoryEdit",
+    "IBinaryPackagePublishingHistoryPublic",
+    "IPublishingEdit",
+    "IPublishingSet",
+    "ISourcePackagePublishingHistory",
+    "ISourcePackagePublishingHistoryEdit",
+    "ISourcePackagePublishingHistoryPublic",
+    "MissingSymlinkInPool",
+    "NotInPool",
+    "OverrideError",
+    "PoolFileOverwriteError",
+    "active_publishing_status",
+    "inactive_publishing_status",
+    "name_priority_map",
+]
 
 import http.client
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     error_status,
     export_operation_as,
@@ -37,22 +38,10 @@ from lazr.restful.declarations import (
     operation_parameters,
     operation_returns_collection_of,
     operation_returns_entry,
-    REQUEST_USER,
-    )
+)
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Date,
-    Datetime,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Date, Datetime, Int, Text, TextLine
 
 from lp import _
 from lp.registry.interfaces.distroseries import IDistroSeries
@@ -63,11 +52,10 @@ from lp.soyuz.enums import (
     BinaryPackageFormat,
     PackagePublishingPriority,
     PackagePublishingStatus,
-    )
+)
 from lp.soyuz.interfaces.binarypackagerelease import (
     IBinaryPackageReleaseDownloadCount,
-    )
-
+)
 
 #
 # Exceptions
@@ -110,13 +98,13 @@ class DeletionError(Exception):
 
 
 name_priority_map = {
-    'required': PackagePublishingPriority.REQUIRED,
-    'important': PackagePublishingPriority.IMPORTANT,
-    'standard': PackagePublishingPriority.STANDARD,
-    'optional': PackagePublishingPriority.OPTIONAL,
-    'extra': PackagePublishingPriority.EXTRA,
-    '': None,
-    }
+    "required": PackagePublishingPriority.REQUIRED,
+    "important": PackagePublishingPriority.IMPORTANT,
+    "standard": PackagePublishingPriority.STANDARD,
+    "optional": PackagePublishingPriority.OPTIONAL,
+    "extra": PackagePublishingPriority.EXTRA,
+    "": None,
+}
 
 
 #
@@ -144,23 +132,25 @@ class IPublishingView(Interface):
     displayname = exported(
         TextLine(
             title=_("Display Name"),
-            description=_("Text representation of the current record.")),
-        exported_as="display_name")
+            description=_("Text representation of the current record."),
+        ),
+        exported_as="display_name",
+    )
     age = Attribute("Age of the publishing record.")
 
     component_name = exported(
-        TextLine(
-            title=_("Component Name"),
-            required=False, readonly=True))
+        TextLine(title=_("Component Name"), required=False, readonly=True)
+    )
     section_name = exported(
-        TextLine(
-            title=_("Section Name"),
-            required=False, readonly=True))
+        TextLine(title=_("Section Name"), required=False, readonly=True)
+    )
 
     pool_name = TextLine(
-        title="Name to use when publishing this record in the pool.")
+        title="Name to use when publishing this record in the pool."
+    )
     pool_version = TextLine(
-        title="Version to use when publishing this record in the pool.")
+        title="Version to use when publishing this record in the pool."
+    )
 
     def publish(diskpool, log):
         """Publish or ensure contents of this publish record
@@ -192,7 +182,8 @@ class IPublishingEdit(Interface):
 
     @call_with(removed_by=REQUEST_USER)
     @operation_parameters(
-        removal_comment=TextLine(title=_("Removal comment"), required=False))
+        removal_comment=TextLine(title=_("Removal comment"), required=False)
+    )
     @export_operation_as("requestDeletion")
     @export_write_operation()
     @operation_for_version("beta")
@@ -215,210 +206,282 @@ class IPublishingEdit(Interface):
 
 class ISourcePackagePublishingHistoryPublic(IPublishingView):
     """A source package publishing history record."""
+
     id = Int(
-            title=_('ID'), required=True, readonly=True,
-            )
+        title=_("ID"),
+        required=True,
+        readonly=True,
+    )
     sourcepackagenameID = Int(
-        title=_('The DB id for the sourcepackagename.'),
-        required=False, readonly=False)
-    sourcepackagename = Attribute('The source package name being published')
+        title=_("The DB id for the sourcepackagename."),
+        required=False,
+        readonly=False,
+    )
+    sourcepackagename = Attribute("The source package name being published")
     sourcepackagereleaseID = Int(
-        title=_('The DB id for the sourcepackagerelease.'),
-        required=False, readonly=False)
+        title=_("The DB id for the sourcepackagerelease."),
+        required=False,
+        readonly=False,
+    )
     sourcepackagerelease = Attribute(
-        'The source package release being published')
+        "The source package release being published"
+    )
     format = Choice(
-        title=_("Source package format"), vocabulary=SourcePackageType,
-        required=True, readonly=True)
+        title=_("Source package format"),
+        vocabulary=SourcePackageType,
+        required=True,
+        readonly=True,
+    )
     status = exported(
         Choice(
-            title=_('Package Publishing Status'),
-            description=_('The status of this publishing record'),
+            title=_("Package Publishing Status"),
+            description=_("The status of this publishing record"),
             vocabulary=PackagePublishingStatus,
-            required=False, readonly=False,
-            ))
+            required=False,
+            readonly=False,
+        )
+    )
     distroseriesID = Attribute("DB ID for distroseries.")
     distroseries = exported(
         Reference(
             IDistroSeries,
-            title=_('The distro series being published into'),
-            required=False, readonly=False,
-            ),
-        exported_as="distro_series")
+            title=_("The distro series being published into"),
+            required=False,
+            readonly=False,
+        ),
+        exported_as="distro_series",
+    )
     component = Int(
-            title=_('The component being published into'),
-            required=False, readonly=False,
-            )
+        title=_("The component being published into"),
+        required=False,
+        readonly=False,
+    )
     sectionID = Attribute("DB ID for the section")
     section = Int(
-            title=_('The section being published into'),
-            required=False, readonly=False,
-            )
+        title=_("The section being published into"),
+        required=False,
+        readonly=False,
+    )
     datepublished = exported(
         Datetime(
-            title=_('The date on which this record was published'),
-            required=False, readonly=False,
-            ),
-        exported_as="date_published")
+            title=_("The date on which this record was published"),
+            required=False,
+            readonly=False,
+        ),
+        exported_as="date_published",
+    )
     scheduleddeletiondate = exported(
         Datetime(
-            title=_('The date on which this record is scheduled for '
-                    'deletion'),
-            required=False, readonly=False,
+            title=_(
+                "The date on which this record is scheduled for " "deletion"
             ),
-        exported_as="scheduled_deletion_date")
+            required=False,
+            readonly=False,
+        ),
+        exported_as="scheduled_deletion_date",
+    )
     pocket = exported(
         Choice(
-            title=_('Pocket'),
-            description=_('The pocket into which this entry is published'),
+            title=_("Pocket"),
+            description=_("The pocket into which this entry is published"),
             vocabulary=PackagePublishingPocket,
-            required=True, readonly=True,
-            ))
+            required=True,
+            readonly=True,
+        )
+    )
     channel = TextLine(
-        title=_("Channel"), required=False, readonly=False,
+        title=_("Channel"),
+        required=False,
+        readonly=False,
         description=_(
             "The channel into which this entry is published "
-            "(only for archives published using Artifactory)"))
+            "(only for archives published using Artifactory)"
+        ),
+    )
     archive = exported(
         Reference(
             # Really IArchive, patched in lp.soyuz.interfaces.webservice.
             Interface,
-            title=_('Archive ID'), required=True, readonly=True,
-            ))
+            title=_("Archive ID"),
+            required=True,
+            readonly=True,
+        )
+    )
     copied_from_archive = exported(
         Reference(
             # Really IArchive, patched in lp.soyuz.interfaces.webservice.
             Interface,
-            title=_('Original archive ID where this package was copied from.'),
-            required=False, readonly=True,
-            ))
+            title=_("Original archive ID where this package was copied from."),
+            required=False,
+            readonly=True,
+        )
+    )
     supersededby = Int(
-            title=_('The sourcepackagerelease which superseded this one'),
-            required=False, readonly=False,
-            )
+        title=_("The sourcepackagerelease which superseded this one"),
+        required=False,
+        readonly=False,
+    )
     datesuperseded = exported(
         Datetime(
-            title=_('The date on which this record was marked superseded'),
-            required=False, readonly=False,
-            ),
-        exported_as="date_superseded")
+            title=_("The date on which this record was marked superseded"),
+            required=False,
+            readonly=False,
+        ),
+        exported_as="date_superseded",
+    )
     datecreated = exported(
         Datetime(
-            title=_('The date on which this record was created'),
-            required=True, readonly=False,
-            ),
-        exported_as="date_created")
+            title=_("The date on which this record was created"),
+            required=True,
+            readonly=False,
+        ),
+        exported_as="date_created",
+    )
     datemadepending = exported(
         Datetime(
-            title=_('The date on which this record was set as pending '
-                    'removal'),
-            required=False, readonly=False,
+            title=_(
+                "The date on which this record was set as pending " "removal"
             ),
-        exported_as="date_made_pending")
+            required=False,
+            readonly=False,
+        ),
+        exported_as="date_made_pending",
+    )
     dateremoved = exported(
         Datetime(
-            title=_('The date on which this record was removed from the '
-                    'published set'),
-            required=False, readonly=False,
+            title=_(
+                "The date on which this record was removed from the "
+                "published set"
             ),
-        exported_as="date_removed")
+            required=False,
+            readonly=False,
+        ),
+        exported_as="date_removed",
+    )
     removed_byID = Attribute("DB ID for removed_by.")
     removed_by = exported(
         Reference(
             IPerson,
-            title=_('The IPerson responsible for the removal'),
-            required=False, readonly=False,
-            ))
+            title=_("The IPerson responsible for the removal"),
+            required=False,
+            readonly=False,
+        )
+    )
     removal_comment = exported(
         Text(
-            title=_('Reason why this publication is going to be removed.'),
-            required=False, readonly=False,
-        ))
+            title=_("Reason why this publication is going to be removed."),
+            required=False,
+            readonly=False,
+        )
+    )
 
     meta_sourcepackage = Attribute(
         "Return an ISourcePackage meta object correspondent to the "
-        "sourcepackagerelease attribute inside a specific distroseries")
+        "sourcepackagerelease attribute inside a specific distroseries"
+    )
     meta_distributionsourcepackagerelease = Attribute(
         "Return an IDistributionSourcePackageRelease meta object "
         "correspondent to the sourcepackagerelease attribute inside "
-        "this distribution")
+        "this distribution"
+    )
 
     source_package_name = exported(
-        TextLine(
-            title=_("Source Package Name"),
-            required=False, readonly=True))
+        TextLine(title=_("Source Package Name"), required=False, readonly=True)
+    )
     source_package_version = exported(
         TextLine(
-            title=_("Source Package Version"),
-            required=False, readonly=True))
+            title=_("Source Package Version"), required=False, readonly=True
+        )
+    )
 
     package_creator = exported(
         Reference(
             IPerson,
-            title=_('Package Creator'),
-            description=_('The IPerson who created the source package.'),
-            required=False, readonly=True,
-        ))
+            title=_("Package Creator"),
+            description=_("The IPerson who created the source package."),
+            required=False,
+            readonly=True,
+        )
+    )
     package_maintainer = exported(
         Reference(
             IPerson,
-            title=_('Package Maintainer'),
-            description=_('The IPerson who maintains the source package.'),
-            required=False, readonly=True,
-        ))
+            title=_("Package Maintainer"),
+            description=_("The IPerson who maintains the source package."),
+            required=False,
+            readonly=True,
+        )
+    )
     package_signer = exported(
         Reference(
             IPerson,
-            title=_('Package Signer'),
-            description=_('The IPerson who signed the source package.'),
-            required=False, readonly=True,
-        ))
+            title=_("Package Signer"),
+            description=_("The IPerson who signed the source package."),
+            required=False,
+            readonly=True,
+        )
+    )
 
     newer_distroseries_version = Attribute(
         "An `IDistroSeriosSourcePackageRelease` with a newer version of this "
         "package that has been published in the main distribution series, "
-        "if one exists, or None.")
+        "if one exists, or None."
+    )
 
     ancestor = Reference(
-         # Really ISourcePackagePublishingHistory, patched in
-         # lp.soyuz.interfaces.webservice.
+        # Really ISourcePackagePublishingHistory, patched in
+        # lp.soyuz.interfaces.webservice.
         Interface,
-        title=_('Ancestor'),
-        description=_('The previous release of this source package.'),
-        required=False, readonly=True)
+        title=_("Ancestor"),
+        description=_("The previous release of this source package."),
+        required=False,
+        readonly=True,
+    )
 
     creatorID = Attribute("DB ID for creator.")
     creator = exported(
         Reference(
             IPerson,
-            title=_('Publication Creator'),
-            description=_('The IPerson who created this publication.'),
-            required=False, readonly=True
-        ))
+            title=_("Publication Creator"),
+            description=_("The IPerson who created this publication."),
+            required=False,
+            readonly=True,
+        )
+    )
 
     sponsorID = Attribute("DB ID for sponsor.")
     sponsor = exported(
         Reference(
             IPerson,
-            title=_('Publication sponsor'),
-            description=_('The IPerson who sponsored the creation of '
-                'this publication.'),
-            required=False, readonly=True
-        ))
+            title=_("Publication sponsor"),
+            description=_(
+                "The IPerson who sponsored the creation of "
+                "this publication."
+            ),
+            required=False,
+            readonly=True,
+        )
+    )
 
     packageupload = exported(
         Reference(
             # Really IPackageUpload, patched in lp.soyuz.interfaces.webservice.
             Interface,
-            title=_('Package upload'),
-            description=_('The Package Upload that caused the creation of '
-                'this publication.'),
-            required=False, readonly=True
-        ))
+            title=_("Package upload"),
+            description=_(
+                "The Package Upload that caused the creation of "
+                "this publication."
+            ),
+            required=False,
+            readonly=True,
+        )
+    )
 
     @operation_parameters(
         active_binaries_only=Bool(
-            title=_("Only return active publications"), required=False))
+            title=_("Only return active publications"), required=False
+        )
+    )
     # Really IBinaryPackagePublishingHistory, patched in
     # lp.soyuz.interfaces.webservice.
     @operation_returns_collection_of(Interface)
@@ -484,7 +547,7 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
         """
 
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def changelogUrl():
         """The URL for this source package release's changelog.
 
@@ -561,7 +624,8 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
 
     @export_read_operation()
     @operation_parameters(
-        include_meta=Bool(title=_("Include Metadata"), required=False))
+        include_meta=Bool(title=_("Include Metadata"), required=False)
+    )
     @operation_for_version("beta")
     def sourceFileUrls(include_meta=False):
         """URLs for this source publication's uploaded source files.
@@ -581,7 +645,8 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
 
     @export_read_operation()
     @operation_parameters(
-        to_version=TextLine(title=_("To Version"), required=True))
+        to_version=TextLine(title=_("To Version"), required=True)
+    )
     @operation_for_version("beta")
     def packageDiffUrl(to_version):
         """URL of the debdiff file between this and the supplied version.
@@ -600,7 +665,8 @@ class ISourcePackagePublishingHistoryEdit(IPublishingEdit):
     @operation_returns_entry(Interface)
     @operation_parameters(
         new_component=TextLine(title="The new component name."),
-        new_section=TextLine(title="The new section name."))
+        new_section=TextLine(title="The new section name."),
+    )
     @export_write_operation()
     @call_with(creator=REQUEST_USER)
     @operation_for_version("devel")
@@ -615,8 +681,9 @@ class ISourcePackagePublishingHistoryEdit(IPublishingEdit):
 
 
 @exported_as_webservice_entry(as_of="beta", publish_web_link=False)
-class ISourcePackagePublishingHistory(ISourcePackagePublishingHistoryPublic,
-                                      ISourcePackagePublishingHistoryEdit):
+class ISourcePackagePublishingHistory(
+    ISourcePackagePublishingHistoryPublic, ISourcePackagePublishingHistoryEdit
+):
     """A source package publishing history record."""
 
 
@@ -628,19 +695,27 @@ class ISourcePackagePublishingHistory(ISourcePackagePublishingHistoryPublic,
 class IBinaryPackagePublishingHistoryPublic(IPublishingView):
     """A binary package publishing record."""
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
     binarypackagenameID = Int(
-        title=_('The DB id for the binarypackagename.'),
-        required=False, readonly=False)
-    binarypackagename = Attribute('The binary package name being published')
+        title=_("The DB id for the binarypackagename."),
+        required=False,
+        readonly=False,
+    )
+    binarypackagename = Attribute("The binary package name being published")
     binarypackagereleaseID = Int(
-        title=_('The DB id for the binarypackagerelease.'),
-        required=False, readonly=False)
+        title=_("The DB id for the binarypackagerelease."),
+        required=False,
+        readonly=False,
+    )
     binarypackagerelease = Attribute(
-        "The binary package release being published")
+        "The binary package release being published"
+    )
     binarypackageformat = Choice(
-        title=_("Binary package format"), vocabulary=BinaryPackageFormat,
-        required=True, readonly=True)
+        title=_("Binary package format"),
+        vocabulary=BinaryPackageFormat,
+        required=True,
+        readonly=True,
+    )
     # This and source_package_version are exported here to
     # avoid clients needing to indirectly look this up via a build.
     # This can cause security errors due to the differing levels of access.
@@ -648,163 +723,220 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
     source_package_name = exported(
         TextLine(
             title=_("Source Package Name"),
-            description=_('The source package name that built this binary.'),
-            required=False, readonly=True))
+            description=_("The source package name that built this binary."),
+            required=False,
+            readonly=True,
+        )
+    )
     source_package_version = exported(
         TextLine(
             title=_("Source Package Version"),
             description=_(
-                'The source package version that built this binary.'),
-            required=False, readonly=True))
+                "The source package version that built this binary."
+            ),
+            required=False,
+            readonly=True,
+        )
+    )
     distroarchseriesID = Int(
         title=_("The DB id for the distroarchseries."),
-        required=False, readonly=False)
+        required=False,
+        readonly=False,
+    )
     distroarchseries = exported(
         Reference(
             # Really IDistroArchSeries, patched in
             # lp.soyuz.interfaces.webservice.
             Interface,
             title=_("Distro Arch Series"),
-            description=_('The distroarchseries being published into'),
-            required=False, readonly=False,
-            ),
-        exported_as="distro_arch_series")
+            description=_("The distroarchseries being published into"),
+            required=False,
+            readonly=False,
+        ),
+        exported_as="distro_arch_series",
+    )
     distroseries = Attribute("The distroseries being published into")
     component = Int(
-            title=_('The component being published into'),
-            required=False, readonly=False,
-            )
+        title=_("The component being published into"),
+        required=False,
+        readonly=False,
+    )
     section = Int(
-            title=_('The section being published into'),
-            required=False, readonly=False,
-            )
+        title=_("The section being published into"),
+        required=False,
+        readonly=False,
+    )
     priority = Int(
-            title=_('The priority being published into'),
-            required=False, readonly=False,
-            )
+        title=_("The priority being published into"),
+        required=False,
+        readonly=False,
+    )
     phased_update_percentage = exported(
         Int(
-            title=_('The percentage of users for whom this package should be '
-                    'recommended, or None to publish the update for everyone'),
-            required=False, readonly=True,
-            ))
+            title=_(
+                "The percentage of users for whom this package should be "
+                "recommended, or None to publish the update for everyone"
+            ),
+            required=False,
+            readonly=True,
+        )
+    )
     datepublished = exported(
         Datetime(
             title=_("Date Published"),
-            description=_('The date on which this record was published'),
-            required=False, readonly=False,
-            ),
-        exported_as="date_published")
+            description=_("The date on which this record was published"),
+            required=False,
+            readonly=False,
+        ),
+        exported_as="date_published",
+    )
     scheduleddeletiondate = exported(
         Datetime(
             title=_("Scheduled Deletion Date"),
-            description=_('The date on which this record is scheduled for '
-                    'deletion'),
-            required=False, readonly=False,
+            description=_(
+                "The date on which this record is scheduled for " "deletion"
             ),
-        exported_as="scheduled_deletion_date")
+            required=False,
+            readonly=False,
+        ),
+        exported_as="scheduled_deletion_date",
+    )
     status = exported(
         Choice(
-            title=_('Status'),
-            description=_('The status of this publishing record'),
+            title=_("Status"),
+            description=_("The status of this publishing record"),
             vocabulary=PackagePublishingStatus,
-            required=False, readonly=False,
-            ))
+            required=False,
+            readonly=False,
+        )
+    )
     pocket = exported(
         Choice(
-            title=_('Pocket'),
-            description=_('The pocket into which this entry is published'),
+            title=_("Pocket"),
+            description=_("The pocket into which this entry is published"),
             vocabulary=PackagePublishingPocket,
-            required=True, readonly=True,
-            ))
+            required=True,
+            readonly=True,
+        )
+    )
     channel = TextLine(
-        title=_("Channel"), required=False, readonly=False,
+        title=_("Channel"),
+        required=False,
+        readonly=False,
         description=_(
             "The channel into which this entry is published "
-            "(only for archives published using Artifactory)"))
+            "(only for archives published using Artifactory)"
+        ),
+    )
     supersededby = Int(
-            title=_('The build which superseded this one'),
-            required=False, readonly=False,
-            )
+        title=_("The build which superseded this one"),
+        required=False,
+        readonly=False,
+    )
     creator = exported(
         Reference(
             IPerson,
-            title=_('Publication Creator'),
-            description=_('The IPerson who created this publication.'),
-            required=False, readonly=True
-        ))
+            title=_("Publication Creator"),
+            description=_("The IPerson who created this publication."),
+            required=False,
+            readonly=True,
+        )
+    )
     datecreated = exported(
         Datetime(
-            title=_('Date Created'),
-            description=_('The date on which this record was created'),
-            required=True, readonly=False,
-            ),
-        exported_as="date_created")
+            title=_("Date Created"),
+            description=_("The date on which this record was created"),
+            required=True,
+            readonly=False,
+        ),
+        exported_as="date_created",
+    )
     datesuperseded = exported(
         Datetime(
             title=_("Date Superseded"),
             description=_(
-                'The date on which this record was marked superseded'),
-            required=False, readonly=False,
+                "The date on which this record was marked superseded"
             ),
-        exported_as="date_superseded")
+            required=False,
+            readonly=False,
+        ),
+        exported_as="date_superseded",
+    )
     datemadepending = exported(
         Datetime(
             title=_("Date Made Pending"),
             description=_(
-                'The date on which this record was set as pending removal'),
-            required=False, readonly=False,
+                "The date on which this record was set as pending removal"
             ),
-        exported_as="date_made_pending")
+            required=False,
+            readonly=False,
+        ),
+        exported_as="date_made_pending",
+    )
     dateremoved = exported(
         Datetime(
             title=_("Date Removed"),
             description=_(
-                'The date on which this record was removed from the '
-                'published set'),
-            required=False, readonly=False,
+                "The date on which this record was removed from the "
+                "published set"
             ),
-        exported_as="date_removed")
+            required=False,
+            readonly=False,
+        ),
+        exported_as="date_removed",
+    )
     archive = exported(
         Reference(
             # Really IArchive, patched in lp.soyuz.interfaces.webservice.
             Interface,
-            title=_('Archive'),
+            title=_("Archive"),
             description=_("The context archive for this publication."),
-            required=True, readonly=True,
-            ))
+            required=True,
+            readonly=True,
+        )
+    )
     copied_from_archive = exported(
         Reference(
             # Really IArchive, patched in lp.soyuz.interfaces.webservice.
             Interface,
-            title=_('Original archive ID where this package was copied from.'),
-            required=False, readonly=True,
-        ))
+            title=_("Original archive ID where this package was copied from."),
+            required=False,
+            readonly=True,
+        )
+    )
     removed_by = exported(
         Reference(
             IPerson,
             title=_("Removed By"),
-            description=_('The Person responsible for the removal'),
-            required=False, readonly=False,
-        ))
+            description=_("The Person responsible for the removal"),
+            required=False,
+            readonly=False,
+        )
+    )
     removal_comment = exported(
         Text(
             title=_("Removal Comment"),
             description=_(
-                'Reason why this publication is going to be removed.'),
-            required=False, readonly=False))
+                "Reason why this publication is going to be removed."
+            ),
+            required=False,
+            readonly=False,
+        )
+    )
 
-    distroarchseriesbinarypackagerelease = Attribute("The object that "
-        "represents this binarypackagerelease in this distroarchseries.")
+    distroarchseriesbinarypackagerelease = Attribute(
+        "The object that "
+        "represents this binarypackagerelease in this distroarchseries."
+    )
 
     binary_package_name = exported(
-        TextLine(
-            title=_("Binary Package Name"),
-            required=False, readonly=True))
+        TextLine(title=_("Binary Package Name"), required=False, readonly=True)
+    )
     binary_package_version = exported(
         TextLine(
-            title=_("Binary Package Version"),
-            required=False, readonly=True))
+            title=_("Binary Package Version"), required=False, readonly=True
+        )
+    )
     build = exported(
         Reference(
             # Really IBinaryPackageBuild, fixed in
@@ -812,21 +944,25 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
             Interface,
             title=_("Build"),
             description=_("The build that produced this binary package."),
-            required=True, readonly=True))
+            required=True,
+            readonly=True,
+        )
+    )
     architecture_specific = exported(
-        Bool(
-            title=_("Architecture Specific"),
-            required=False, readonly=True))
+        Bool(title=_("Architecture Specific"), required=False, readonly=True)
+    )
     priority_name = exported(
-        TextLine(
-            title=_("Priority Name"),
-            required=False, readonly=True))
+        TextLine(title=_("Priority Name"), required=False, readonly=True)
+    )
     is_debug = exported(
         Bool(
             title=_("Debug Package"),
             description=_("Is this a debug package publication?"),
-            required=False, readonly=True),
-        as_of="devel")
+            required=False,
+            readonly=True,
+        ),
+        as_of="devel",
+    )
 
     def getOtherPublications():
         """Return remaining publications with the same overrides.
@@ -868,7 +1004,8 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
 
     @operation_parameters(
         start_date=Date(title=_("Start date"), required=False),
-        end_date=Date(title=_("End date"), required=False))
+        end_date=Date(title=_("End date"), required=False),
+    )
     @operation_returns_collection_of(IBinaryPackageReleaseDownloadCount)
     @export_read_operation()
     @operation_for_version("beta")
@@ -881,7 +1018,8 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
 
     @operation_parameters(
         start_date=Date(title=_("Start date"), required=False),
-        end_date=Date(title=_("End date"), required=False))
+        end_date=Date(title=_("End date"), required=False),
+    )
     @export_read_operation()
     @operation_for_version("beta")
     def getDailyDownloadTotals(start_date=None, end_date=None):
@@ -893,7 +1031,8 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
 
     @export_read_operation()
     @operation_parameters(
-        include_meta=Bool(title=_("Include Metadata"), required=False))
+        include_meta=Bool(title=_("Include Metadata"), required=False)
+    )
     @operation_for_version("devel")
     def binaryFileUrls(include_meta=False):
         """URLs for this binary publication's binary files.
@@ -919,13 +1058,19 @@ class IBinaryPackagePublishingHistoryEdit(IPublishingEdit):
         # is passed over the webservice.
         new_priority=TextLine(title="The new priority name."),
         new_phased_update_percentage=Int(
-            title="The new phased update percentage."))
+            title="The new phased update percentage."
+        ),
+    )
     @export_write_operation()
     @call_with(creator=REQUEST_USER)
     @operation_for_version("devel")
-    def changeOverride(new_component=None, new_section=None,
-                       new_priority=None, new_phased_update_percentage=None,
-                       creator=None):
+    def changeOverride(
+        new_component=None,
+        new_section=None,
+        new_priority=None,
+        new_phased_update_percentage=None,
+        creator=None,
+    ):
         """Change the component/section/priority/phase of this publication.
 
         It is changed only if the argument is not None.
@@ -940,16 +1085,18 @@ class IBinaryPackagePublishingHistoryEdit(IPublishingEdit):
 
 
 @exported_as_webservice_entry(as_of="beta", publish_web_link=False)
-class IBinaryPackagePublishingHistory(IBinaryPackagePublishingHistoryPublic,
-                                      IBinaryPackagePublishingHistoryEdit):
+class IBinaryPackagePublishingHistory(
+    IBinaryPackagePublishingHistoryPublic, IBinaryPackagePublishingHistoryEdit
+):
     """A binary package publishing record."""
 
 
 class IPublishingSet(Interface):
     """Auxiliary methods for dealing with sets of publications."""
 
-    def publishBinaries(archive, distroseries, pocket, binaries,
-                        copied_from_archives=None):
+    def publishBinaries(
+        archive, distroseries, pocket, binaries, copied_from_archives=None
+    ):
         """Efficiently publish multiple BinaryPackageReleases in an Archive.
 
         Creates `IBinaryPackagePublishingHistory` records for each
@@ -987,11 +1134,21 @@ class IPublishingSet(Interface):
             records.
         """
 
-    def newSourcePublication(archive, sourcepackagerelease, distroseries,
-                             pocket, component=None, section=None,
-                             ancestor=None, create_dsd_job=True,
-                             copied_from_archive=None, creator=None,
-                             sponsor=None, packageupload=None, channel=None):
+    def newSourcePublication(
+        archive,
+        sourcepackagerelease,
+        distroseries,
+        pocket,
+        component=None,
+        section=None,
+        ancestor=None,
+        create_dsd_job=True,
+        copied_from_archive=None,
+        creator=None,
+        sponsor=None,
+        packageupload=None,
+        channel=None,
+    ):
         """Create a new `SourcePackagePublishingHistory`.
 
         :param archive: An `IArchive`
@@ -1065,8 +1222,9 @@ class IPublishingSet(Interface):
         calls getBuildsForSourceIds.
         """
 
-    def getUnpublishedBuildsForSources(one_or_more_source_publications,
-                                       build_states=None):
+    def getUnpublishedBuildsForSources(
+        one_or_more_source_publications, build_states=None
+    ):
         """Return all the unpublished builds for each source.
 
         :param one_or_more_source_publications: list of, or a single
@@ -1150,8 +1308,9 @@ class IPublishingSet(Interface):
         published in more than one place/architecture.)
         """
 
-    def getActiveArchSpecificPublications(sourcepackagerelease, archive,
-                                          distroseries, pocket):
+    def getActiveArchSpecificPublications(
+        sourcepackagerelease, archive, distroseries, pocket
+    ):
         """Find architecture-specific binary publications for a source.
 
         For example, say source package release contains binary packages of:
@@ -1175,8 +1334,9 @@ class IPublishingSet(Interface):
             release in the given `archive`, `distroseries`, and `pocket`.
         """
 
-    def getSourcesForPublishing(archive, distroseries=None, pocket=None,
-                                component=None):
+    def getSourcesForPublishing(
+        archive, distroseries=None, pocket=None, component=None
+    ):
         """Get source publications which are published in a given context.
 
         :param archive: The `Archive` to search.
@@ -1189,8 +1349,9 @@ class IPublishingSet(Interface):
             preloaded.
         """
 
-    def getBinariesForPublishing(archive, distroarchseries=None, pocket=None,
-                                 component=None):
+    def getBinariesForPublishing(
+        archive, distroarchseries=None, pocket=None, component=None
+    ):
         """Get binary publications which are published in a given context.
 
         :param archive: The `Archive` to search.
@@ -1232,16 +1393,16 @@ class IPublishingSet(Interface):
         :return: a `LibraryFileAlias` instance or None
         """
 
-    def setMultipleDeleted(publication_class, ds, removed_by,
-                           removal_comment=None):
+    def setMultipleDeleted(
+        publication_class, ds, removed_by, removal_comment=None
+    ):
         """Mark publications as deleted.
 
         This is a supporting operation for a deletion request.
         """
 
     def findCorrespondingDDEBPublications(pubs):
-        """Find corresponding DDEB publications, given a list of publications.
-        """
+        """Find DDEB publications corresponding to a list of publications."""
 
     def requestDeletion(pub, removed_by, removal_comment=None):
         """Delete the source and binary publications specified.
@@ -1295,14 +1456,15 @@ class IPublishingSet(Interface):
         the source_package_pub, allowing the use of the cached results.
         """
 
+
 active_publishing_status = (
     PackagePublishingStatus.PENDING,
     PackagePublishingStatus.PUBLISHED,
-    )
+)
 
 
 inactive_publishing_status = (
     PackagePublishingStatus.SUPERSEDED,
     PackagePublishingStatus.DELETED,
     PackagePublishingStatus.OBSOLETE,
-    )
+)

@@ -4,9 +4,9 @@
 """Initialize a distroseries from its parent distroseries."""
 
 __all__ = [
-    'InitializationError',
-    'InitializeDistroSeries',
-    ]
+    "InitializationError",
+    "InitializeDistroSeries",
+]
 
 from collections import OrderedDict
 from operator import methodcaller
@@ -26,23 +26,14 @@ from lp.services.database.interfaces import IMasterStore
 from lp.services.database.sqlbase import sqlvalues
 from lp.services.scripts import log
 from lp.soyuz.adapters.packagelocation import PackageLocation
-from lp.soyuz.enums import (
-    ArchivePurpose,
-    PackageUploadStatus,
-    )
-from lp.soyuz.interfaces.archive import (
-    CannotCopy,
-    IArchiveSet,
-    )
+from lp.soyuz.enums import ArchivePurpose, PackageUploadStatus
+from lp.soyuz.interfaces.archive import CannotCopy, IArchiveSet
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.distributionjob import (
     IDistroSeriesDifferenceJobSource,
-    )
+)
 from lp.soyuz.interfaces.packagecloner import IPackageCloner
-from lp.soyuz.interfaces.packageset import (
-    IPackagesetSet,
-    NoSuchPackageSet,
-    )
+from lp.soyuz.interfaces.packageset import IPackagesetSet, NoSuchPackageSet
 from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.interfaces.queue import IPackageUploadSet
 from lp.soyuz.model.binarypackagebuild import COPY_ARCHIVE_SCORE_PENALTY
@@ -57,12 +48,14 @@ class InitializationError(Exception):
 # Pockets to consider when initializing the derived series from its
 # parent(s), mapped to the pockets that they should be cloned/copied to.  We
 # need this because some pockets are unmodifiable in unreleased series.
-INIT_POCKETS = OrderedDict([
-    (PackagePublishingPocket.RELEASE, PackagePublishingPocket.RELEASE),
-    (PackagePublishingPocket.SECURITY, PackagePublishingPocket.PROPOSED),
-    (PackagePublishingPocket.UPDATES, PackagePublishingPocket.PROPOSED),
-    (PackagePublishingPocket.PROPOSED, PackagePublishingPocket.PROPOSED),
-    ])
+INIT_POCKETS = OrderedDict(
+    [
+        (PackagePublishingPocket.RELEASE, PackagePublishingPocket.RELEASE),
+        (PackagePublishingPocket.SECURITY, PackagePublishingPocket.PROPOSED),
+        (PackagePublishingPocket.UPDATES, PackagePublishingPocket.PROPOSED),
+        (PackagePublishingPocket.PROPOSED, PackagePublishingPocket.PROPOSED),
+    ]
+)
 
 
 class InitializeDistroSeries:
@@ -106,17 +99,25 @@ class InitializeDistroSeries:
     """
 
     def __init__(
-        self, distroseries, parents=(), arches=(), archindep_archtag=None,
-        packagesets=None, rebuild=False, overlays=(), overlay_pockets=(),
-        overlay_components=()):
+        self,
+        distroseries,
+        parents=(),
+        arches=(),
+        archindep_archtag=None,
+        packagesets=None,
+        rebuild=False,
+        overlays=(),
+        overlay_pockets=(),
+        overlay_components=(),
+    ):
         self.distroseries = distroseries
         self.parent_ids = [int(id) for id in parents]
         # Load parent objects in bulk...
         parents_bulk = bulk.load(DistroSeries, self.parent_ids)
         # ... sort the parents to match the order in the 'parents' parameter.
         self.parents = sorted(
-            parents_bulk,
-            key=lambda parent: self.parent_ids.index(parent.id))
+            parents_bulk, key=lambda parent: self.parent_ids.index(parent.id)
+        )
         self.arches = arches
         self.archindep_archtag = archindep_archtag
         if packagesets is None:
@@ -124,10 +125,12 @@ class InitializeDistroSeries:
             self.packagesets = None
         else:
             self.packagesets_ids = [
-                six.ensure_text(packageset, 'ASCII')
-                for packageset in packagesets]
+                six.ensure_text(packageset, "ASCII")
+                for packageset in packagesets
+            ]
             self.packagesets = bulk.load(
-                Packageset, [int(packageset) for packageset in packagesets])
+                Packageset, [int(packageset) for packageset in packagesets]
+            )
         self.rebuild = rebuild
         self.overlays = overlays
         self.overlay_pockets = overlay_pockets
@@ -135,7 +138,8 @@ class InitializeDistroSeries:
         self._store = IMasterStore(DistroSeries)
 
         self.first_derivation = (
-            not self.distroseries.distribution.has_published_sources)
+            not self.distroseries.distribution.has_published_sources
+        )
 
         if self.first_derivation:
             # Use-case #1.
@@ -145,26 +149,33 @@ class InitializeDistroSeries:
             # Use-case #2.
             self.derivation_parents = [self.distroseries.previous_series]
             self.derivation_parent_ids = [
-                p.id for p in self.derivation_parents if p is not None]
+                p.id for p in self.derivation_parents if p is not None
+            ]
             if self.parent_ids == []:
                 self.parents = (
-                    self.distroseries.previous_series.getParentSeries())
+                    self.distroseries.previous_series.getParentSeries()
+                )
         self._create_source_names_by_parent()
 
     def check(self):
         if self.distroseries.isDerivedSeries():
             raise InitializationError(
-                ("Series {child.name} has already been initialised"
-                 ".").format(
-                    child=self.distroseries))
+                (
+                    "Series {child.name} has already been initialised" "."
+                ).format(child=self.distroseries)
+            )
         self._checkPublisherConfig()
-        if (self.distroseries.distribution.has_published_sources and
-            self.distroseries.previous_series is None):
+        if (
+            self.distroseries.distribution.has_published_sources
+            and self.distroseries.previous_series is None
+        ):
             raise InitializationError(
-                ("Series {child.name} has no previous series and "
-                 "the distribution already has initialised series"
-                 ".").format(
-                    child=self.distroseries))
+                (
+                    "Series {child.name} has no previous series and "
+                    "the distribution already has initialised series"
+                    "."
+                ).format(child=self.distroseries)
+            )
         self._checkParents()
         self._checkArchindep()
         for parent in self.derivation_parents:
@@ -179,20 +190,25 @@ class InitializeDistroSeries:
             # No archindep_archtag was given, so we try to figure out
             # a proper one among the parents'.
             potential_nominated_arches = self._potential_nominated_arches(
-                 self.derivation_parents)
+                self.derivation_parents
+            )
             if len(potential_nominated_arches) == 0:
                 raise InitializationError(
                     "The distroseries has no architectures selected to "
-                    "build architecture independent binaries.")
+                    "build architecture independent binaries."
+                )
         else:
             # Make sure that the given archindep_archtag is among the
             # selected architectures.
-            if (self.arches is not None and
-                len(self.arches) != 0 and
-                self.archindep_archtag not in self.arches):
+            if (
+                self.arches is not None
+                and len(self.arches) != 0
+                and self.archindep_archtag not in self.arches
+            ):
                 raise InitializationError(
                     "The selected architecture independent architecture tag "
-                    "is not among the selected architectures.")
+                    "is not among the selected architectures."
+                )
 
     def _checkPublisherConfig(self):
         """A series cannot be initialized if it has no publisher config
@@ -200,13 +216,16 @@ class InitializeDistroSeries:
         """
         publisherconfigset = getUtility(IPublisherConfigSet)
         config = publisherconfigset.getByDistribution(
-            self.distroseries.distribution)
+            self.distroseries.distribution
+        )
         if config is None:
             raise InitializationError(
-                ("Distribution {child.name} has no publisher configuration. "
-                 "Please ask an administrator to set this up"
-                 ".").format(
-                    child=self.distroseries.distribution))
+                (
+                    "Distribution {child.name} has no publisher "
+                    "configuration. Please ask an administrator to set this "
+                    "up."
+                ).format(child=self.distroseries.distribution)
+            )
 
     def _checkParents(self):
         """If self.first_derivation, the parents list cannot be empty."""
@@ -215,7 +234,8 @@ class InitializeDistroSeries:
             if len(self.parent_ids) == 0:
                 raise InitializationError(
                     "No other series in the distribution is initialised "
-                    "and a parent was not explicitly specified.")
+                    "and a parent was not explicitly specified."
+                )
 
     def _checkBuilds(self, parent):
         """Assert there are no pending builds for the given parent series.
@@ -236,13 +256,16 @@ class InitializeDistroSeries:
 
         arch_tags = self.arches if len(self.arches) != 0 else None
         pending_builds = parent.getBuildRecords(
-            BuildStatus.NEEDSBUILD, pocket=list(INIT_POCKETS),
-            arch_tag=arch_tags, name=spns)
+            BuildStatus.NEEDSBUILD,
+            pocket=list(INIT_POCKETS),
+            arch_tag=arch_tags,
+            name=spns,
+        )
 
         if not pending_builds.is_empty():
             raise InitializationError(
-                "The parent series has pending builds "
-                "for selected sources.")
+                "The parent series has pending builds " "for selected sources."
+            )
 
     def _checkQueue(self, parent):
         """Assert upload queue is empty on the given parent series.
@@ -252,12 +275,12 @@ class InitializeDistroSeries:
         initializeFromParent method.
         Restrict the check to the selected packages if a limited set of
         packagesets is used by the initialization.
-         """
+        """
         statuses = [
             PackageUploadStatus.NEW,
             PackageUploadStatus.ACCEPTED,
             PackageUploadStatus.UNAPPROVED,
-            ]
+        ]
         spns = self.source_names_by_parent.get(parent.id, None)
         if spns is not None and len(spns) == 0:
             # If no sources are selected in this parent, skip the check.
@@ -266,23 +289,33 @@ class InitializeDistroSeries:
         # all sources.
 
         items = getUtility(IPackageUploadSet).getBuildsForSources(
-            parent, statuses, list(INIT_POCKETS), spns)
+            parent, statuses, list(INIT_POCKETS), spns
+        )
         if not items.is_empty():
             raise InitializationError(
                 "The parent series has builds waiting in its upload "
-                "queues that match your selection.")
+                "queues that match your selection."
+            )
 
     def _checkSeries(self):
         error = (
             "Cannot copy distroarchseries from parent; there are "
             "already one or more distroarchseries initialised for "
-            "this series.")
+            "this series."
+        )
         sources = self.distroseries.getAllPublishedSources()
         binaries = self.distroseries.getAllPublishedBinaries()
         if not all(
-            map(methodcaller('is_empty'), (
-                sources, binaries, self.distroseries.architectures,
-                self.distroseries.sections))):
+            map(
+                methodcaller("is_empty"),
+                (
+                    sources,
+                    binaries,
+                    self.distroseries.architectures,
+                    self.distroseries.sections,
+                ),
+            )
+        ):
             raise InitializationError(error)
         if self.distroseries.components:
             raise InitializationError(error)
@@ -307,23 +340,32 @@ class InitializeDistroSeries:
             dsp_set = getUtility(IDistroSeriesParentSet)
             if self.overlays and self.overlays[count]:
                 pocket = PackagePublishingPocket.getTermByToken(
-                    self.overlay_pockets[count]).value
+                    self.overlay_pockets[count]
+                ).value
                 component_set = getUtility(IComponentSet)
                 component = component_set[self.overlay_components[count]]
                 dsp_set.new(
-                    self.distroseries, parent, initialized=False,
-                    is_overlay=True, pocket=pocket, component=component,
-                    ordering=count)
+                    self.distroseries,
+                    parent,
+                    initialized=False,
+                    is_overlay=True,
+                    pocket=pocket,
+                    component=component,
+                    ordering=count,
+                )
             else:
                 dsp_set.new(
-                    self.distroseries, parent, initialized=False,
-                    is_overlay=False, ordering=count)
+                    self.distroseries,
+                    parent,
+                    initialized=False,
+                    is_overlay=False,
+                    ordering=count,
+                )
             count += 1
 
     def _set_initialized(self):
         dsp_set = getUtility(IDistroSeriesParentSet)
-        distroseriesparents = dsp_set.getByDerivedSeries(
-            self.distroseries)
+        distroseriesparents = dsp_set.getByDerivedSeries(self.distroseries)
         for distroseriesparent in distroseriesparents:
             distroseriesparent.initialized = True
 
@@ -332,15 +374,20 @@ class InitializeDistroSeries:
         # series? (note that the parent's order does not matter here)
         dsp_set = getUtility(IDistroSeriesParentSet)
         previous_series_parents = [
-            dsp.parent_series for dsp in dsp_set.getByDerivedSeries(
-                self.distroseries.previous_series)]
+            dsp.parent_series
+            for dsp in dsp_set.getByDerivedSeries(
+                self.distroseries.previous_series
+            )
+        ]
         return set(previous_series_parents) == set(self.parents)
 
     def _create_dsds(self):
         log.info("Creating DistroSeriesDifferences.")
         if not self.first_derivation:
-            if (self._has_same_parents_as_previous_series() and
-                self.packagesets_ids is None):
+            if (
+                self._has_same_parents_as_previous_series()
+                and self.packagesets_ids is None
+            ):
                 # If the parents are the same as previous_series's
                 # parents and all the packagesets are being copied,
                 # then we simply copy the DSDs from previous_series
@@ -357,7 +404,8 @@ class InitializeDistroSeries:
             self._create_dsd_jobs()
 
     def _copy_dsds_from_previous_series(self):
-        self._store.execute("""
+        self._store.execute(
+            """
             INSERT INTO DistroSeriesDifference
                 (derived_series, source_package_name, package_diff,
                 status, difference_type, parent_package_diff,
@@ -370,9 +418,11 @@ class InitializeDistroSeries:
                 parent_source_version, base_version, parent_series
             FROM DistroSeriesDifference AS dsd
                 WHERE dsd.derived_series = %s
-            """ % sqlvalues(
-                self.distroseries.id,
-                self.distroseries.previous_series.id))
+            """
+            % sqlvalues(
+                self.distroseries.id, self.distroseries.previous_series.id
+            )
+        )
 
     def _create_dsd_jobs(self):
         job_source = getUtility(IDistroSeriesDifferenceJobSource)
@@ -382,40 +432,51 @@ class InitializeDistroSeries:
         log.info("Copying distroseries configuration from parents.")
         self.distroseries.backports_not_automatic = any(
             parent.backports_not_automatic
-                for parent in self.derivation_parents)
+            for parent in self.derivation_parents
+        )
         self.distroseries.proposed_not_automatic = any(
-            parent.proposed_not_automatic
-                for parent in self.derivation_parents)
+            parent.proposed_not_automatic for parent in self.derivation_parents
+        )
         self.distroseries.include_long_descriptions = any(
             parent.include_long_descriptions
-                for parent in self.derivation_parents)
+            for parent in self.derivation_parents
+        )
         self.distroseries.index_compressors = list(
-            self.derivation_parents[0].index_compressors)
+            self.derivation_parents[0].index_compressors
+        )
         self.distroseries.publish_by_hash = any(
-            parent.publish_by_hash
-                for parent in self.derivation_parents)
+            parent.publish_by_hash for parent in self.derivation_parents
+        )
         self.distroseries.advertise_by_hash = any(
-            parent.advertise_by_hash
-                for parent in self.derivation_parents)
+            parent.advertise_by_hash for parent in self.derivation_parents
+        )
         self.distroseries.strict_supported_component_dependencies = any(
             parent.strict_supported_component_dependencies
-                for parent in self.derivation_parents)
+            for parent in self.derivation_parents
+        )
 
     def _copy_architectures(self):
         log.info("Copying distroarchseries from parents.")
-        das_filter = ' AND distroseries IN %s ' % (
-                sqlvalues([p.id for p in self.derivation_parents]))
+        das_filter = " AND distroseries IN %s " % (
+            sqlvalues([p.id for p in self.derivation_parents])
+        )
         if self.arches:
-            das_filter += ' AND architecturetag IN %s ' % (
-                sqlvalues(self.arches))
-        self._store.execute("""
+            das_filter += " AND architecturetag IN %s " % (
+                sqlvalues(self.arches)
+            )
+        self._store.execute(
+            """
             INSERT INTO DistroArchSeries
             (distroseries, processor, architecturetag, owner, official)
             SELECT %s, processor, architecturetag, %s, bool_and(official)
             FROM DistroArchSeries WHERE enabled = TRUE %s
             GROUP BY processor, architecturetag
-            """ % (sqlvalues(self.distroseries, self.distroseries.owner)
-            + (das_filter, )))
+            """
+            % (
+                sqlvalues(self.distroseries, self.distroseries.owner)
+                + (das_filter,)
+            )
+        )
         self._store.flush()
 
     def _set_nominatedarchindep(self):
@@ -425,18 +486,22 @@ class InitializeDistroSeries:
             # the selected architectures and the list of the parent's
             # arch-indep builders.
             arch_tag = self._potential_nominated_arches(
-                self.derivation_parents).pop()
+                self.derivation_parents
+            ).pop()
             self.distroseries.nominatedarchindep = (
-                self.distroseries.getDistroArchSeries(arch_tag))
+                self.distroseries.getDistroArchSeries(arch_tag)
+            )
         else:
             self.distroseries.nominatedarchindep = (
-                self.distroseries.getDistroArchSeries(self.archindep_archtag))
+                self.distroseries.getDistroArchSeries(self.archindep_archtag)
+            )
 
     def _potential_nominated_arches(self, parent_list):
         parent_indep_archtags = {
             parent.nominatedarchindep.architecturetag
             for parent in parent_list
-            if parent.nominatedarchindep is not None}
+            if parent.nominatedarchindep is not None
+        }
 
         if len(self.arches) == 0:
             return parent_indep_archtags
@@ -458,7 +523,8 @@ class InitializeDistroSeries:
                     continue
                 try:
                     parent_arch = parent.getDistroArchSeries(
-                        arch.architecturetag)
+                        arch.architecturetag
+                    )
                 except NotFoundError:
                     continue
 
@@ -488,12 +554,13 @@ class InitializeDistroSeries:
             return False
 
         target_archive_empty = target_archive.getPublishedSources().is_empty()
-        case_1a = (target_archive != archive and
-                   target_archive_empty)
-        case_1b = (target_archive == archive and
-                   (target_archive_empty or
-                    target_archive.getPublishedSources(
-                        distroseries=self.distroseries).is_empty()))
+        case_1a = target_archive != archive and target_archive_empty
+        case_1b = target_archive == archive and (
+            target_archive_empty
+            or target_archive.getPublishedSources(
+                distroseries=self.distroseries
+            ).is_empty()
+        )
         return case_1a or case_1b
 
     def _create_source_names_by_parent(self):
@@ -549,27 +616,37 @@ class InitializeDistroSeries:
                     continue
 
                 target_archive = archive_set.getByDistroPurpose(
-                    self.distroseries.distribution, archive.purpose)
+                    self.distroseries.distribution, archive.purpose
+                )
                 if archive.purpose is ArchivePurpose.PRIMARY:
-                    assert target_archive is not None, (
-                        "Target archive doesn't exist?")
+                    assert (
+                        target_archive is not None
+                    ), "Target archive doesn't exist?"
                 if self._use_cloner(target_archive, archive):
                     for source_pocket, target_pocket in INIT_POCKETS.items():
                         origin = PackageLocation(
-                            archive, parent.distribution, parent,
-                            source_pocket)
+                            archive, parent.distribution, parent, source_pocket
+                        )
                         destination = PackageLocation(
-                            target_archive, self.distroseries.distribution,
-                            self.distroseries, target_pocket)
+                            target_archive,
+                            self.distroseries.distribution,
+                            self.distroseries,
+                            target_pocket,
+                        )
                         processors = None
                         if self.rebuild:
                             processors = [
                                 das[1].processor
-                                for das in distroarchseries_list]
+                                for das in distroarchseries_list
+                            ]
                             distroarchseries_list = ()
                         getUtility(IPackageCloner).clonePackages(
-                            origin, destination, distroarchseries_list,
-                            processors, spns)
+                            origin,
+                            destination,
+                            distroarchseries_list,
+                            processors,
+                            spns,
+                        )
                 else:
                     # XXX: rvb 2011-06-23 bug=801112: do_copy is atomic (all
                     # or none of the sources will be copied). This might
@@ -577,23 +654,36 @@ class InitializeDistroSeries:
                     # single conflict in the destination series.
                     sources_published = []
                     try:
-                        for source_pocket, target_pocket in (
-                                INIT_POCKETS.items()):
+                        for (
+                            source_pocket,
+                            target_pocket,
+                        ) in INIT_POCKETS.items():
                             sources = archive.getPublishedSources(
-                                distroseries=parent, pocket=source_pocket,
-                                status=active_publishing_status, name=spns)
-                            sources_published.extend(do_copy(
-                                sources, target_archive, self.distroseries,
-                                target_pocket,
-                                include_binaries=not self.rebuild,
-                                check_permissions=False, strict_binaries=False,
-                                close_bugs=False, create_dsd_job=False,
-                                person=None))
+                                distroseries=parent,
+                                pocket=source_pocket,
+                                status=active_publishing_status,
+                                name=spns,
+                            )
+                            sources_published.extend(
+                                do_copy(
+                                    sources,
+                                    target_archive,
+                                    self.distroseries,
+                                    target_pocket,
+                                    include_binaries=not self.rebuild,
+                                    check_permissions=False,
+                                    strict_binaries=False,
+                                    close_bugs=False,
+                                    create_dsd_job=False,
+                                    person=None,
+                                )
+                            )
                         if self.rebuild:
                             rebuilds = []
                             for pubrec in sources_published:
                                 builds = pubrec.createMissingBuilds(
-                                   list(self.distroseries.architectures))
+                                    list(self.distroseries.architectures)
+                                )
                                 rebuilds.extend(builds)
                             self._rescore_rebuilds(rebuilds)
                     except CannotCopy as error:
@@ -601,7 +691,7 @@ class InitializeDistroSeries:
 
     def _rescore_rebuilds(self, builds):
         """Rescore the passed builds so that they have an appropriately low
-         score.
+        score.
         """
         for build in builds:
             build.buildqueue_record.lastscore -= COPY_ARCHIVE_SCORE_PENALTY
@@ -611,27 +701,33 @@ class InitializeDistroSeries:
         distro series into this one.
         """
         # Copy the component selections
-        self._store.execute('''
+        self._store.execute(
+            """
             INSERT INTO ComponentSelection (distroseries, component)
             SELECT DISTINCT %s AS distroseries, cs.component AS component
             FROM ComponentSelection AS cs WHERE cs.distroseries IN %s
-            ''' % sqlvalues(self.distroseries.id,
-            self.derivation_parent_ids))
+            """
+            % sqlvalues(self.distroseries.id, self.derivation_parent_ids)
+        )
         # Copy the section selections
-        self._store.execute('''
+        self._store.execute(
+            """
             INSERT INTO SectionSelection (distroseries, section)
             SELECT DISTINCT %s as distroseries, ss.section AS section
             FROM SectionSelection AS ss WHERE ss.distroseries IN %s
-            ''' % sqlvalues(self.distroseries.id,
-            self.derivation_parent_ids))
+            """
+            % sqlvalues(self.distroseries.id, self.derivation_parent_ids)
+        )
         # Copy the source format selections
-        self._store.execute('''
+        self._store.execute(
+            """
             INSERT INTO SourcePackageFormatSelection (distroseries, format)
             SELECT DISTINCT %s as distroseries, spfs.format AS format
             FROM SourcePackageFormatSelection AS spfs
             WHERE spfs.distroseries IN %s
-            ''' % sqlvalues(self.distroseries.id,
-            self.derivation_parent_ids))
+            """
+            % sqlvalues(self.distroseries.id, self.derivation_parent_ids)
+        )
 
     def _copy_packaging_links(self):
         """Copy the packaging links from the parent series to this one."""
@@ -644,7 +740,7 @@ class InitializeDistroSeries:
                 # source from this parent. We will not copy any links for this
                 # parent
                 continue
-            sql = ("""
+            sql = """
                 INSERT INTO
                     Packaging(
                         distroseries, sourcepackagename, productseries,
@@ -666,8 +762,10 @@ class InitializeDistroSeries:
                     -- Select only the packaging links that are in the parent
                     -- that are not in the child.
                     ChildSeries.id = %s
-                """ % sqlvalues(parent_id, self.distroseries.id))
-            sql_filter = ("""
+                """ % sqlvalues(
+                parent_id, self.distroseries.id
+            )
+            sql_filter = """
                 AND Packaging.sourcepackagename in (
                 SELECT
                     Sourcepackagename.id
@@ -676,8 +774,10 @@ class InitializeDistroSeries:
                 WHERE
                     Sourcepackagename.name IN %s
                 )
-                """ % sqlvalues(spns))
-            sql_end = ("""
+                """ % sqlvalues(
+                spns
+            )
+            sql_end = """
                 AND Packaging.sourcepackagename in (
                 SELECT Packaging.sourcepackagename
                 FROM Packaging
@@ -695,7 +795,9 @@ class InitializeDistroSeries:
                     WHERE id = ChildSeries.id
                     )
                 )
-                """ % sqlvalues(parent_id))
+                """ % sqlvalues(
+                parent_id
+            )
             if spns is not None:
                 self._store.execute(sql + sql_filter + sql_end)
             else:
@@ -706,46 +808,62 @@ class InitializeDistroSeries:
         log.info("Copying packagesets from parents.")
         packagesets = self._store.find(
             Packageset,
-            Packageset.distroseries_id.is_in(self.derivation_parent_ids))
+            Packageset.distroseries_id.is_in(self.derivation_parent_ids),
+        )
         parent_to_child = {}
         # Create the packagesets and any archivepermissions and filters if
         # we're not copying cross-distribution.
         parent_distro_ids = [
-            parent.distribution.id for parent in self.derivation_parents]
+            parent.distribution.id for parent in self.derivation_parents
+        ]
         for parent_ps in packagesets:
             # Cross-distro initializations get packagesets owned by the
             # distro owner, otherwise the old owner is preserved.
-            if (self.packagesets_ids is not None and
-                str(parent_ps.id) not in self.packagesets_ids):
+            if (
+                self.packagesets_ids is not None
+                and str(parent_ps.id) not in self.packagesets_ids
+            ):
                 continue
             packageset_set = getUtility(IPackagesetSet)
             # First, try to fetch an existing packageset with this name.
             try:
                 child_ps = packageset_set.getByName(
-                    self.distroseries, parent_ps.name)
+                    self.distroseries, parent_ps.name
+                )
             except NoSuchPackageSet:
                 if self.distroseries.distribution.id in parent_distro_ids:
                     new_owner = parent_ps.owner
                 else:
                     new_owner = self.distroseries.owner
                 child_ps = getUtility(IPackagesetSet).new(
-                    parent_ps.name, parent_ps.description,
-                    new_owner, distroseries=self.distroseries,
-                    related_set=parent_ps)
+                    parent_ps.name,
+                    parent_ps.description,
+                    new_owner,
+                    distroseries=self.distroseries,
+                    related_set=parent_ps,
+                )
             parent_to_child[parent_ps] = child_ps
             # Copy archivepermissions and filters if we're not copying
             # cross-distribution.
-            if (self.distroseries.distribution ==
-                    parent_ps.distroseries.distribution):
-                self._store.execute("""
+            if (
+                self.distroseries.distribution
+                == parent_ps.distroseries.distribution
+            ):
+                self._store.execute(
+                    """
                     INSERT INTO Archivepermission
                     (person, permission, archive, packageset, explicit)
                     SELECT person, permission, %s, %s, explicit
                     FROM Archivepermission WHERE packageset = %s
-                    """ % sqlvalues(
-                        self.distroseries.main_archive, child_ps.id,
-                        parent_ps.id))
-                self._store.execute("""
+                    """
+                    % sqlvalues(
+                        self.distroseries.main_archive,
+                        child_ps.id,
+                        parent_ps.id,
+                    )
+                )
+                self._store.execute(
+                    """
                     INSERT INTO DistroArchSeriesFilter
                     (distroarchseries, packageset, sense,
                      creator, date_created, date_last_modified)
@@ -764,39 +882,50 @@ class InitializeDistroSeries:
                         dasf.packageset = %s
                         AND olddas.distroseries = %s
                         AND newdas.id IS NOT NULL
-                    """ % sqlvalues(
-                        child_ps.id, self.distroseries.id,
-                        parent_ps.id, parent_ps.distroseries.id))
+                    """
+                    % sqlvalues(
+                        child_ps.id,
+                        self.distroseries.id,
+                        parent_ps.id,
+                        parent_ps.distroseries.id,
+                    )
+                )
         # Copy the relations between sets, and the contents.
         for old_series_ps, new_series_ps in parent_to_child.items():
-            old_series_sets = old_series_ps.setsIncluded(
-                direct_inclusion=True)
+            old_series_sets = old_series_ps.setsIncluded(direct_inclusion=True)
             for old_series_child in old_series_sets:
                 new_series_ps.add(parent_to_child[old_series_child])
-            new_series_ps.add(old_series_ps.sourcesIncluded(
-                direct_inclusion=True))
+            new_series_ps.add(
+                old_series_ps.sourcesIncluded(direct_inclusion=True)
+            )
 
     def _copy_pocket_permissions(self):
         """Copy per-distroseries/pocket permissions from the parent series."""
         log.info("Copying permissions from parents.")
         for parent in self.derivation_parents:
             if self.distroseries.distribution == parent.distribution:
-                self._store.execute("""
+                self._store.execute(
+                    """
                     INSERT INTO Archivepermission
                     (person, permission, archive, pocket, distroseries)
                     SELECT person, permission, %s, pocket, %s
                     FROM Archivepermission
                     WHERE pocket IS NOT NULL AND distroseries = %s
-                    """ % sqlvalues(
-                        self.distroseries.main_archive, self.distroseries.id,
-                        parent.id))
+                    """
+                    % sqlvalues(
+                        self.distroseries.main_archive,
+                        self.distroseries.id,
+                        parent.id,
+                    )
+                )
 
     def _copy_base_images(self):
         """Copy base images (`PocketChroot`s) from the parent series."""
         log.info("Copying base images from parents.")
         for parent in self.derivation_parents:
             if self.distroseries.distribution == parent.distribution:
-                self._store.execute("""
+                self._store.execute(
+                    """
                     INSERT INTO PocketChroot
                     (distroarchseries, pocket, chroot, image_type)
                     SELECT
@@ -813,4 +942,6 @@ class InitializeDistroSeries:
                         AND olddas.distroseries = %s
                         AND olddas.enabled
                         AND newdas.id IS NOT NULL
-                    """ % sqlvalues(self.distroseries.id, parent.id))
+                    """
+                    % sqlvalues(self.distroseries.id, parent.id)
+                )

@@ -3,10 +3,10 @@
 
 """In-process keyserver fixture tests."""
 
+import treq
 from testtools.twistedsupport import (
     AsynchronousDeferredRunTestForBrokenTwisted,
-    )
-import treq
+)
 from twisted.internet import defer
 
 from lp.services.config import config
@@ -20,7 +20,8 @@ from lp.testing.keyserver.web import GREETING
 class TestInProcessKeyServerFixture(TestCase):
 
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=30)
+        timeout=30
+    )
 
     @defer.inlineCallbacks
     def test_url(self):
@@ -28,15 +29,18 @@ class TestInProcessKeyServerFixture(TestCase):
         fixture = self.useFixture(InProcessKeyServerFixture())
         yield fixture.start()
         self.assertEqual(
-            ("http://%s:%d" % (
-                config.gpghandler.host,
-                config.gpghandler.port)).encode("UTF-8"),
-            fixture.url)
+            (
+                "http://%s:%d"
+                % (config.gpghandler.host, config.gpghandler.port)
+            ).encode("UTF-8"),
+            fixture.url,
+        )
 
     @defer.inlineCallbacks
     def test_starts_properly(self):
         # The fixture starts properly and we can load the page.
         from twisted.internet import reactor
+
         fixture = self.useFixture(InProcessKeyServerFixture())
         yield fixture.start()
         client = self.useFixture(TReqFixture(reactor)).client

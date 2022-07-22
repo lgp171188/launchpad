@@ -7,14 +7,11 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import IncompatibleArguments
-from lp.buildmaster.enums import (
-    BuildFarmJobType,
-    BuildStatus,
-    )
+from lp.buildmaster.enums import BuildFarmJobType, BuildStatus
 from lp.buildmaster.interfaces.buildfarmjob import (
     IBuildFarmJob,
     IBuildFarmJobSource,
-    )
+)
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.sourcepackage import SourcePackage
@@ -25,20 +22,17 @@ from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 from lp.soyuz.tests.test_binarypackagebuild import BaseTestCaseWithThreeBuilds
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.sampledata import ADMIN_EMAIL
 
 
 class TestHasBuildRecordsInterface(BaseTestCaseWithThreeBuilds):
     """Tests the implementation of IHasBuildRecords by the
-       Distribution content class by default.
+    Distribution content class by default.
 
-       Inherit and set self.context to another content class to test
-       other implementations.
+    Inherit and set self.context to another content class to test
+    other implementations.
     """
 
     layer = LaunchpadZopelessLayer
@@ -78,18 +72,23 @@ class TestDistributionHasBuildRecords(TestCaseWithFactory):
         # Create the machinery we need to create builds, such as
         # DistroArchSeries and builders.
         self.processor_one = self.factory.makeProcessor(
-            supports_virtualized=True)
+            supports_virtualized=True
+        )
         self.processor_two = self.factory.makeProcessor(
-            supports_virtualized=True)
+            supports_virtualized=True
+        )
         self.distroseries = self.factory.makeDistroSeries()
         self.distribution = self.distroseries.distribution
         self.das_one = self.factory.makeDistroArchSeries(
-            distroseries=self.distroseries, processor=self.processor_one)
+            distroseries=self.distroseries, processor=self.processor_one
+        )
         self.das_two = self.factory.makeDistroArchSeries(
-            distroseries=self.distroseries, processor=self.processor_two)
+            distroseries=self.distroseries, processor=self.processor_two
+        )
         self.archive = self.factory.makeArchive(
             distribution=self.distroseries.distribution,
-            purpose=ArchivePurpose.PRIMARY)
+            purpose=ArchivePurpose.PRIMARY,
+        )
         with person_logged_in(self.admin):
             self.publisher = SoyuzTestPublisher()
             self.publisher.prepareBreezyAutotest()
@@ -106,7 +105,9 @@ class TestDistributionHasBuildRecords(TestCaseWithFactory):
             spph = self.publisher.getPubSource(
                 sourcename=self.factory.getUniqueString(),
                 version="%s.%s" % (self.factory.getUniqueInteger(), i),
-                distroseries=self.distroseries, architecturehintlist='any')
+                distroseries=self.distroseries,
+                architecturehintlist="any",
+            )
             builds = removeSecurityProxy(spph.createMissingBuilds())
             for b in builds:
                 b.updateStatus(BuildStatus.BUILDING)
@@ -144,16 +145,19 @@ class TestDistroArchSeriesHasBuildRecords(TestDistributionHasBuildRecords):
         builds = self.das_one.getBuildRecords().count()
         self.assertEqual(5, builds)
         builds = self.das_one.getBuildRecords(
-            build_state=BuildStatus.FULLYBUILT).count()
+            build_state=BuildStatus.FULLYBUILT
+        ).count()
         self.assertEqual(4, builds)
         spn = self.builds[0].source_package_release.sourcepackagename.name
         builds = self.das_one.getBuildRecords(name=spn).count()
         self.assertEqual(1, builds)
         builds = self.das_one.getBuildRecords(
-            pocket=PackagePublishingPocket.RELEASE).count()
+            pocket=PackagePublishingPocket.RELEASE
+        ).count()
         self.assertEqual(5, builds)
         builds = self.das_one.getBuildRecords(
-            pocket=PackagePublishingPocket.UPDATES).count()
+            pocket=PackagePublishingPocket.UPDATES
+        ).count()
         self.assertEqual(0, builds)
 
 
@@ -169,7 +173,8 @@ class TestArchiveHasBuildRecords(TestHasBuildRecordsInterface):
         # An archive can optionally return the more general
         # package build objects.
         getUtility(IBuildFarmJobSource).new(
-            BuildFarmJobType.RECIPEBRANCHBUILD, archive=self.context)
+            BuildFarmJobType.RECIPEBRANCHBUILD, archive=self.context
+        )
 
         builds = self.context.getBuildRecords(binary_only=True)
         self.assertEqual(3, builds.count())
@@ -180,11 +185,17 @@ class TestArchiveHasBuildRecords(TestHasBuildRecordsInterface):
     def test_incompatible_arguments(self):
         # binary_only=False is incompatible with arch_tag and name.
         self.assertRaises(
-            IncompatibleArguments, self.context.getBuildRecords,
-            binary_only=False, arch_tag="anything")
+            IncompatibleArguments,
+            self.context.getBuildRecords,
+            binary_only=False,
+            arch_tag="anything",
+        )
         self.assertRaises(
-            IncompatibleArguments, self.context.getBuildRecords,
-            binary_only=False, name="anything")
+            IncompatibleArguments,
+            self.context.getBuildRecords,
+            binary_only=False,
+            name="anything",
+        )
 
 
 class TestBuilderHasBuildRecords(TestHasBuildRecordsInterface):
@@ -204,33 +215,45 @@ class TestBuilderHasBuildRecords(TestHasBuildRecordsInterface):
         # A builder can optionally return the more general
         # build farm job objects.
         from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
+
         getUtility(IBuildFarmJobSource).new(
             job_type=BuildFarmJobType.RECIPEBRANCHBUILD,
-            status=BuildStatus.BUILDING, builder=self.context)
+            status=BuildStatus.BUILDING,
+            builder=self.context,
+        )
 
         builds = self.context.getBuildRecords(binary_only=True)
         binary_only_count = builds.count()
 
         self.assertTrue(
-            all([IBinaryPackageBuild.providedBy(build) for build in builds]))
+            all([IBinaryPackageBuild.providedBy(build) for build in builds])
+        )
 
         builds = self.context.getBuildRecords(binary_only=False)
         all_count = builds.count()
 
         self.assertFalse(
-            any([IBinaryPackageBuild.providedBy(build) for build in builds]))
+            any([IBinaryPackageBuild.providedBy(build) for build in builds])
+        )
         self.assertTrue(
-            all([IBuildFarmJob.providedBy(build) for build in builds]))
+            all([IBuildFarmJob.providedBy(build) for build in builds])
+        )
         self.assertBetween(0, binary_only_count, all_count)
 
     def test_incompatible_arguments(self):
         # binary_only=False is incompatible with arch_tag and name.
         self.assertRaises(
-            IncompatibleArguments, self.context.getBuildRecords,
-            binary_only=False, arch_tag="anything")
+            IncompatibleArguments,
+            self.context.getBuildRecords,
+            binary_only=False,
+            arch_tag="anything",
+        )
         self.assertRaises(
-            IncompatibleArguments, self.context.getBuildRecords,
-            binary_only=False, name="anything")
+            IncompatibleArguments,
+            self.context.getBuildRecords,
+            binary_only=False,
+            name="anything",
+        )
 
 
 class TestSourcePackageHasBuildRecords(TestHasBuildRecordsInterface):
@@ -240,7 +263,8 @@ class TestSourcePackageHasBuildRecords(TestHasBuildRecordsInterface):
         super().setUp()
         gedit_name = self.builds[0].source_package_release.sourcepackagename
         self.context = SourcePackage(
-            gedit_name, self.builds[0].distro_arch_series.distroseries)
+            gedit_name, self.builds[0].distro_arch_series.distroseries
+        )
 
         # Convert the other two builds to be builds of
         # gedit as well so that the one source package (gedit) will have
@@ -250,7 +274,7 @@ class TestSourcePackageHasBuildRecords(TestHasBuildRecordsInterface):
             removeSecurityProxy(spr).sourcepackagename = gedit_name
             IStore(SourcePackagePublishingHistory).find(
                 SourcePackagePublishingHistory, sourcepackagerelease=spr
-                ).set(sourcepackagenameID=gedit_name.id)
+            ).set(sourcepackagenameID=gedit_name.id)
 
         # Set them as successfully built
         for build in self.builds:
@@ -260,19 +284,23 @@ class TestSourcePackageHasBuildRecords(TestHasBuildRecordsInterface):
     def test_get_build_records(self):
         # We can fetch builds records from a SourcePackage.
         builds = self.context.getBuildRecords(
-            build_state=BuildStatus.FULLYBUILT).count()
+            build_state=BuildStatus.FULLYBUILT
+        ).count()
         self.assertEqual(3, builds)
         builds = self.context.getBuildRecords(
-            pocket=PackagePublishingPocket.RELEASE).count()
+            pocket=PackagePublishingPocket.RELEASE
+        ).count()
         self.assertEqual(2, builds)
         builds = self.context.getBuildRecords(
-            pocket=PackagePublishingPocket.UPDATES).count()
+            pocket=PackagePublishingPocket.UPDATES
+        ).count()
         self.assertEqual(0, builds)
 
     def test_ordering_date(self):
         # Build records returned are ordered by creation date.
         builds = self.context.getBuildRecords(
-            build_state=BuildStatus.FULLYBUILT)
+            build_state=BuildStatus.FULLYBUILT
+        )
         date_created = [build.date_created for build in builds]
         self.assertTrue(date_created[0] > date_created[1] > date_created[2])
 
@@ -281,11 +309,14 @@ class TestSourcePackageHasBuildRecords(TestHasBuildRecordsInterface):
         spph = self.factory.makeSourcePackagePublishingHistory()
         spr = spph.sourcepackagerelease
         source_package = SourcePackage.new(
-            spph.sourcepackagerelease.sourcepackagename, spph.distroseries)
+            spph.sourcepackagerelease.sourcepackagename, spph.distroseries
+        )
         build1 = self.factory.makeBinaryPackageBuild(
-            source_package_release=spr)
+            source_package_release=spr
+        )
         build2 = self.factory.makeBinaryPackageBuild(
-            source_package_release=spr)
+            source_package_release=spr
+        )
         build1.queueBuild()
         build2.queueBuild()
         build1.buildqueue_record.lastscore = 10
@@ -303,7 +334,8 @@ class TestSourcePackageHasBuildRecords(TestHasBuildRecordsInterface):
         processor = self.factory.makeProcessor(supports_virtualized=True)
         distroseries = self.factory.makeDistroSeries()
         das = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, processor=processor)
+            distroseries=distroseries, processor=processor
+        )
         with person_logged_in(admin):
             publisher = SoyuzTestPublisher()
             publisher.prepareBreezyAutotest()
@@ -311,15 +343,17 @@ class TestSourcePackageHasBuildRecords(TestHasBuildRecordsInterface):
             distroseries.nominatedarchindep = das
             self.factory.makeBuilder(processors=[processor])
         spph = self.factory.makeSourcePackagePublishingHistory(
-            sourcepackagename=spn, distroseries=distroseries)
+            sourcepackagename=spn, distroseries=distroseries
+        )
         spph.createMissingBuilds()
         # Create a copy archive.
         copy = self.factory.makeArchive(
-            purpose=ArchivePurpose.COPY,
-            distribution=distroseries.distribution)
+            purpose=ArchivePurpose.COPY, distribution=distroseries.distribution
+        )
         # And copy the publication into it.
         copy_spph = spph.copyTo(
-            distroseries, PackagePublishingPocket.RELEASE, copy)
+            distroseries, PackagePublishingPocket.RELEASE, copy
+        )
         [copy_build] = copy_spph.createMissingBuilds()
         builds = copy.getBuildRecords()
         self.assertEqual([copy_build], list(builds))

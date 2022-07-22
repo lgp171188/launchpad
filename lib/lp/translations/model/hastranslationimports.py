@@ -4,14 +4,14 @@
 """Model code for `IHasTranslationImports."""
 
 __all__ = [
-    'HasTranslationImportsMixin',
-    ]
+    "HasTranslationImportsMixin",
+]
 
 from zope.component import getUtility
 
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
-    )
+)
 
 
 class HasTranslationImportsMixin:
@@ -22,8 +22,9 @@ class HasTranslationImportsMixin:
         translation_import_queue = getUtility(ITranslationImportQueue)
         return translation_import_queue.getFirstEntryToImport(target=self)
 
-    def getTranslationImportQueueEntries(self, import_status=None,
-                                         file_extension=None):
+    def getTranslationImportQueueEntries(
+        self, import_status=None, file_extension=None
+    ):
         """See `IHasTranslationImports`."""
         if file_extension is None:
             extensions = None
@@ -31,5 +32,7 @@ class HasTranslationImportsMixin:
             extensions = [file_extension]
         translation_import_queue = getUtility(ITranslationImportQueue)
         return translation_import_queue.getAllEntries(
-            target=self, import_status=import_status,
-            file_extensions=extensions)
+            target=self,
+            import_status=import_status,
+            file_extensions=extensions,
+        )

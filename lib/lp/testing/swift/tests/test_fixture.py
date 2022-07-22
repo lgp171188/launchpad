@@ -10,12 +10,7 @@ from hashlib import md5
 
 from requests.exceptions import ConnectionError
 from swiftclient import client as swiftclient
-from testtools.matchers import (
-    GreaterThan,
-    LessThan,
-    MatchesStructure,
-    Not,
-    )
+from testtools.matchers import GreaterThan, LessThan, MatchesStructure, Not
 
 from lp.services.config import config
 from lp.services.librarianserver import swift
@@ -57,18 +52,23 @@ class TestSwiftFixture(TestCase):
         client.put_container(cname)
         exc = self.assertRaises(
             swiftclient.ClientException,
-            client.get_object, cname, "nonexistent")
+            client.get_object,
+            cname,
+            "nonexistent",
+        )
         self.assertEqual(404, exc.http_status)
 
     def test_get_403(self):
         client = self.swift_fixture.connect(key="bad key")
         exc = self.assertRaises(
-            swiftclient.ClientException, client.get_container, "size")
+            swiftclient.ClientException, client.get_container, "size"
+        )
         # swiftclient should possibly set exc.http_status here, but doesn't.
         self.assertEqual(
-            'Authorization Failure. '
-            'Authorization Failed: Forbidden (HTTP 403)',
-            str(exc))
+            "Authorization Failure. "
+            "Authorization Failed: Forbidden (HTTP 403)",
+            str(exc),
+        )
 
     def test_put(self):
         client = self.swift_fixture.connect()
@@ -80,7 +80,8 @@ class TestSwiftFixture(TestCase):
             self.assertEqual(str(len(message) * x), headers["content-length"])
             self.assertEqual("text/something", headers["content-type"])
             client.put_object(
-                cname, oname, message * (x + 1), content_type="text/something")
+                cname, oname, message * (x + 1), content_type="text/something"
+            )
 
     def test_get_container(self):
         # Basic container listing.
@@ -98,7 +99,8 @@ class TestSwiftFixture(TestCase):
         self.assertEqual(md5(message).hexdigest(), obj["hash"])
         self.assertEqual("text/something", obj["content-type"])
         last_modified = datetime.strptime(
-            obj["last_modified"], "%Y-%m-%dT%H:%M:%S.%f")  # ISO format
+            obj["last_modified"], "%Y-%m-%dT%H:%M:%S.%f"
+        )  # ISO format
         self.assertThat(last_modified, Not(LessThan(start)))
         self.assertThat(last_modified, Not(GreaterThan(datetime.utcnow())))
 
@@ -184,8 +186,8 @@ class TestSwiftFixture(TestCase):
         client = self.swift_fixture.connect()
         self.swift_fixture.shutdown()
         self.assertRaises(
-            swiftclient.ClientException,
-            client.get_object, "size", str(size))
+            swiftclient.ClientException, client.get_object, "size", str(size)
+        )
 
         # Things work fine when the Swift server is up.
         self.swift_fixture.startup()
@@ -197,8 +199,8 @@ class TestSwiftFixture(TestCase):
         # authenticated.
         self.swift_fixture.shutdown()
         self.assertRaises(
-            ConnectionError,
-            client.get_object, "size", str(size))
+            ConnectionError, client.get_object, "size", str(size)
+        )
 
         # If we bring it back up, the client retries and succeeds.
         self.swift_fixture.startup()
@@ -206,28 +208,37 @@ class TestSwiftFixture(TestCase):
         self.assertEqual(body, b"0" * size)
 
     def test_env(self):
-        self.assertThat(config.librarian_server, MatchesStructure.byEquality(
-            os_auth_url='http://localhost:{}/keystone/v2.0/'.format(
-                self.swift_fixture.daemon_port),
-            os_username=fakeswift.DEFAULT_USERNAME,
-            os_password=fakeswift.DEFAULT_PASSWORD,
-            os_tenant_name=fakeswift.DEFAULT_TENANT_NAME,
-            ))
+        self.assertThat(
+            config.librarian_server,
+            MatchesStructure.byEquality(
+                os_auth_url="http://localhost:{}/keystone/v2.0/".format(
+                    self.swift_fixture.daemon_port
+                ),
+                os_username=fakeswift.DEFAULT_USERNAME,
+                os_password=fakeswift.DEFAULT_PASSWORD,
+                os_tenant_name=fakeswift.DEFAULT_TENANT_NAME,
+            ),
+        )
 
     def test_old_instance_env(self):
         old_swift_fixture = self.useFixture(SwiftFixture(old_instance=True))
-        self.assertThat(config.librarian_server, MatchesStructure.byEquality(
-            os_auth_url='http://localhost:{}/keystone/v2.0/'.format(
-                self.swift_fixture.daemon_port),
-            os_username=fakeswift.DEFAULT_USERNAME,
-            os_password=fakeswift.DEFAULT_PASSWORD,
-            os_tenant_name=fakeswift.DEFAULT_TENANT_NAME,
-            old_os_auth_url='http://localhost:{}/keystone/v2.0/'.format(
-                old_swift_fixture.daemon_port),
-            old_os_username=fakeswift.DEFAULT_USERNAME,
-            old_os_password=fakeswift.DEFAULT_PASSWORD,
-            old_os_tenant_name=fakeswift.DEFAULT_TENANT_NAME,
-            ))
+        self.assertThat(
+            config.librarian_server,
+            MatchesStructure.byEquality(
+                os_auth_url="http://localhost:{}/keystone/v2.0/".format(
+                    self.swift_fixture.daemon_port
+                ),
+                os_username=fakeswift.DEFAULT_USERNAME,
+                os_password=fakeswift.DEFAULT_PASSWORD,
+                os_tenant_name=fakeswift.DEFAULT_TENANT_NAME,
+                old_os_auth_url="http://localhost:{}/keystone/v2.0/".format(
+                    old_swift_fixture.daemon_port
+                ),
+                old_os_username=fakeswift.DEFAULT_USERNAME,
+                old_os_password=fakeswift.DEFAULT_PASSWORD,
+                old_os_tenant_name=fakeswift.DEFAULT_TENANT_NAME,
+            ),
+        )
 
     def test_reconfigures_librarian_server(self):
         # Fixtures providing old and new Swift instances don't interfere
@@ -237,7 +248,8 @@ class TestSwiftFixture(TestCase):
         message = b"Hello World!"
         with swift.connection() as client:
             cname, oname = self.makeSampleObject(
-                client, message, "text/something")
+                client, message, "text/something"
+            )
             headers, body = client.get_object(cname, oname)
             self.assertEqual(message, body)
         self.useFixture(SwiftFixture(old_instance=True))
@@ -248,20 +260,30 @@ class TestSwiftFixture(TestCase):
         with swift.connection(swift.connection_pools[0]) as old_client:
             exc = self.assertRaises(
                 swiftclient.ClientException,
-                old_client.get_object, cname, oname)
+                old_client.get_object,
+                cname,
+                oname,
+            )
             self.assertEqual(404, exc.http_status)
             old_cname, old_oname = self.makeSampleObject(
-                old_client, message, "text/something")
+                old_client, message, "text/something"
+            )
             headers, body = old_client.get_object(old_cname, old_oname)
             self.assertEqual(message, body)
         with swift.connection(swift.connection_pools[1]) as client:
             exc = self.assertRaises(
                 swiftclient.ClientException,
-                client.get_object, old_cname, old_oname)
+                client.get_object,
+                old_cname,
+                old_oname,
+            )
             self.assertEqual(404, exc.http_status)
         # The last (i.e. newest) connection pool is the default.
         with swift.connection() as client:
             exc = self.assertRaises(
                 swiftclient.ClientException,
-                client.get_object, old_cname, old_oname)
+                client.get_object,
+                old_cname,
+                old_oname,
+            )
             self.assertEqual(404, exc.http_status)

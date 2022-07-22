@@ -4,10 +4,10 @@
 """Logic for bulk copying of source/binary publishing history data."""
 
 __all__ = [
-    'build_package_location',
-    'PackageLocation',
-    'PackageLocationError',
-    ]
+    "build_package_location",
+    "PackageLocation",
+    "PackageLocationError",
+]
 
 
 from zope.component import getUtility
@@ -23,6 +23,7 @@ class PackageLocation:
     It groups distribution, distroseries and pocket in a way they
     can be easily manipulated and compared.
     """
+
     archive = None
     distribution = None
     distroseries = None
@@ -31,8 +32,16 @@ class PackageLocation:
     packagesets = None
     channel = None
 
-    def __init__(self, archive, distribution, distroseries, pocket,
-                 component=None, packagesets=None, channel=None):
+    def __init__(
+        self,
+        archive,
+        distribution,
+        distroseries,
+        pocket,
+        component=None,
+        packagesets=None,
+        channel=None,
+    ):
         """Initialize the PackageLocation from the given parameters."""
         self.archive = archive
         self.distribution = distribution
@@ -43,40 +52,48 @@ class PackageLocation:
         self.channel = channel
 
     def __eq__(self, other):
-        if (self.distribution == other.distribution and
-            self.archive == other.archive and
-            self.distroseries == other.distroseries and
-            self.component == other.component and
-            self.pocket == other.pocket and
-            self.packagesets == other.packagesets and
-            self.channel == other.channel):
+        if (
+            self.distribution == other.distribution
+            and self.archive == other.archive
+            and self.distroseries == other.distroseries
+            and self.component == other.component
+            and self.pocket == other.pocket
+            and self.packagesets == other.packagesets
+            and self.channel == other.channel
+        ):
             return True
         return False
 
     def __hash__(self):
-        return hash((
-            self.archive,
-            self.distribution,
-            self.distroseries,
-            self.pocket,
-            self.component,
-            None if self.packagesets is None else tuple(self.packagesets),
-            self.channel,
-            ))
+        return hash(
+            (
+                self.archive,
+                self.distribution,
+                self.distroseries,
+                self.pocket,
+                self.component,
+                None if self.packagesets is None else tuple(self.packagesets),
+                self.channel,
+            )
+        )
 
     def __str__(self):
-        result = '%s: %s-%s' % (
-            self.archive.reference, self.distroseries.name, self.pocket.name)
+        result = "%s: %s-%s" % (
+            self.archive.reference,
+            self.distroseries.name,
+            self.pocket.name,
+        )
 
         if self.component is not None:
-            result += ' (%s)' % self.component.name
+            result += " (%s)" % self.component.name
 
         if len(self.packagesets) > 0:
-            result += ' [%s]' % (
-                ", ".join([str(p.name) for p in self.packagesets]),)
+            result += " [%s]" % (
+                ", ".join([str(p.name) for p in self.packagesets]),
+            )
 
         if self.channel is not None:
-            result += ' {%s}' % self.channel
+            result += " {%s}" % self.channel
 
         return result
 
@@ -85,9 +102,15 @@ class PackageLocationError(Exception):
     """Raised when something went wrong when building PackageLocation."""
 
 
-def build_package_location(distribution_name, suite=None, purpose=None,
-                           person_name=None, archive_name=None,
-                           packageset_names=None, channel=None):
+def build_package_location(
+    distribution_name,
+    suite=None,
+    purpose=None,
+    person_name=None,
+    archive_name=None,
+    packageset_names=None,
+    channel=None,
+):
     """Convenience function to build PackageLocation objects."""
 
     # XXX kiko 2007-10-24:
@@ -108,61 +131,70 @@ def build_package_location(distribution_name, suite=None, purpose=None,
     try:
         distribution = getUtility(IDistributionSet)[distribution_name]
     except NotFoundError as err:
-        raise PackageLocationError(
-            "Could not find distribution %s" % err)
+        raise PackageLocationError("Could not find distribution %s" % err)
 
     if purpose == ArchivePurpose.PPA:
-        assert person_name is not None and archive_name is not None, (
-            "person_name and archive_name should be passed for PPA archives.")
+        assert (
+            person_name is not None and archive_name is not None
+        ), "person_name and archive_name should be passed for PPA archives."
         archive = getUtility(IArchiveSet).getPPAByDistributionAndOwnerName(
-            distribution, person_name, archive_name)
+            distribution, person_name, archive_name
+        )
         if archive is None:
             raise PackageLocationError(
                 "Could not find a PPA for %s named %s"
-                % (person_name, archive_name))
+                % (person_name, archive_name)
+            )
         if distribution != archive.distribution:
             raise PackageLocationError(
                 "The specified archive is not for distribution %s"
-                % distribution_name)
+                % distribution_name
+            )
     elif purpose == ArchivePurpose.PARTNER:
         assert person_name is None and archive_name is None, (
             "person_name and archive_name shoudn't be passed for "
-            "PARTNER archive.")
+            "PARTNER archive."
+        )
         archive = getUtility(IArchiveSet).getByDistroPurpose(
-            distribution, purpose)
+            distribution, purpose
+        )
         if archive is None:
             raise PackageLocationError(
-                "Could not find %s archive for %s" % (
-                purpose.title, distribution_name))
+                "Could not find %s archive for %s"
+                % (purpose.title, distribution_name)
+            )
     elif purpose == ArchivePurpose.COPY:
-        assert archive_name is not None, (
-            "archive_name should be passed for COPY archives")
+        assert (
+            archive_name is not None
+        ), "archive_name should be passed for COPY archives"
         archive = getUtility(IArchiveSet).getByDistroPurpose(
-            distribution, purpose, name=archive_name)
+            distribution, purpose, name=archive_name
+        )
         if archive is None:
             raise PackageLocationError(
-                "Could not find %s archive with the name '%s' for %s" % (
-                    purpose.title, archive_name, distribution.name))
+                "Could not find %s archive with the name '%s' for %s"
+                % (purpose.title, archive_name, distribution.name)
+            )
     else:
         assert person_name is None and archive_name is None, (
             "person_name and archive_name shoudn't be passed when purpose "
-            "is omitted.")
+            "is omitted."
+        )
         archive = distribution.main_archive
 
     if suite is not None:
         try:
-            distroseries, pocket = distribution.getDistroSeriesAndPocket(
-                suite)
+            distroseries, pocket = distribution.getDistroSeriesAndPocket(suite)
         except NotFoundError as err:
-            raise PackageLocationError(
-                "Could not find suite %s" % err)
+            raise PackageLocationError("Could not find suite %s" % err)
     else:
         distroseries = distribution.currentseries
         pocket = PackagePublishingPocket.RELEASE
 
     if pocket != PackagePublishingPocket.RELEASE and channel is not None:
         raise PackageLocationError(
-            "Channels may only be used with the RELEASE pocket.")
+            "Channels may only be used with the RELEASE pocket."
+        )
 
     packagesets = []
     if packageset_names:
@@ -170,12 +202,19 @@ def build_package_location(distribution_name, suite=None, purpose=None,
         for packageset_name in packageset_names:
             try:
                 packageset = packageset_set.getByName(
-                    distroseries, packageset_name)
+                    distroseries, packageset_name
+                )
             except NotFoundError as err:
                 raise PackageLocationError(
-                    "Could not find packageset %s" % err)
+                    "Could not find packageset %s" % err
+                )
             packagesets.append(packageset)
 
     return PackageLocation(
-        archive, distribution, distroseries, pocket,
-        packagesets=packagesets, channel=channel)
+        archive,
+        distribution,
+        distroseries,
+        pocket,
+        packagesets=packagesets,
+        channel=channel,
+    )

@@ -8,12 +8,7 @@ __all__ = []
 
 from lp.testing import person_logged_in
 from lp.testing.factory import LaunchpadObjectFactory
-from lp.testing.yuixhr import (
-    login_as_person,
-    make_suite,
-    setup,
-    )
-
+from lp.testing.yuixhr import login_as_person, make_suite, setup
 
 # This is one half of a YUI app test.  The other half is a .js test of
 # exactly the same name as your Python file, just with different file
@@ -82,19 +77,19 @@ def example(request, data):
     # Again, this is a semi-random example.  Rip this whole fixture
     # out, and write the ones that you need.
     factory = LaunchpadObjectFactory()
-    data['admin'] = factory.makeAdministrator()
-    data['user'] = factory.makePerson()
-    with person_logged_in(data['admin']):
-        data['product'] = factory.makeProduct(owner=data['admin'])
+    data["admin"] = factory.makeAdministrator()
+    data["user"] = factory.makePerson()
+    with person_logged_in(data["admin"]):
+        data["product"] = factory.makeProduct(owner=data["admin"])
     # This logs the browser in as a given person.  You need to use
     # this function for that purpose--the standard lp.testing login
     # functions are insufficient.
-    login_as_person(data['user'])
+    login_as_person(data["user"])
     # Now we've done everything we said we would.  Let's imagine that
     # we had to also write some file to disk that would need to be
     # cleaned up at the end of the test.  We might stash information
     # about that in "data" too.
-    data['some random data we might need for cleaning up'] = 'rutebega'
+    data["some random data we might need for cleaning up"] = "rutebega"
     # Now we are done.  We don't need to return anything, because we
     # have been mutating the "data" dict that was passed in.  (This
     # will become slightly more important if you ever want to use
@@ -114,8 +109,8 @@ def example(request, data):
     # wanted to, and do something with it.  We don't really need to do
     # anything with it, so we'll just show that the data is still
     # around, and then stop.
-    assert (
-        data['some random data we might need for cleaning up'] == 'rutebega')
+    assert data["some random data we might need for cleaning up"] == "rutebega"
+
 
 # Sometimes you might have setup and teardown code that can be shared
 # within your test suite as part of several larger jobs.  You can use
@@ -141,8 +136,9 @@ def extended_example(request, data):
     #
     # For this example, we will log in as the user and make something.
     factory = LaunchpadObjectFactory()
-    with person_logged_in(data['user']):
-        data['another_product'] = factory.makeProduct(owner=data['user'])
+    with person_logged_in(data["user"]):
+        data["another_product"] = factory.makeProduct(owner=data["user"])
+
 
 # That's the end of the example fixtures.
 

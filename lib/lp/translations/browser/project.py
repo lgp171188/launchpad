@@ -4,19 +4,15 @@
 """ProjectGroup-related View Classes"""
 
 __all__ = [
-    'ProjectSettingsView',
-    'ProjectTranslationsMenu',
-    'ProjectView',
-    ]
+    "ProjectSettingsView",
+    "ProjectTranslationsMenu",
+    "ProjectView",
+]
 
 from lp.app.browser.launchpadform import action
 from lp.registry.browser.project import ProjectEditView
 from lp.registry.interfaces.projectgroup import IProjectGroup
-from lp.services.webapp import (
-    canonical_url,
-    enabled_with_permission,
-    Link,
-    )
+from lp.services.webapp import Link, canonical_url, enabled_with_permission
 from lp.services.webapp.menu import NavigationMenu
 from lp.services.webapp.publisher import LaunchpadView
 from lp.translations.browser.translations import TranslationsMixin
@@ -25,22 +21,22 @@ from lp.translations.browser.translations import TranslationsMixin
 class ProjectTranslationsMenu(NavigationMenu):
 
     usedfor = IProjectGroup
-    facet = 'translations'
-    links = ['products', 'settings', 'overview']
+    facet = "translations"
+    links = ["products", "settings", "overview"]
 
-    @enabled_with_permission('launchpad.TranslationsAdmin')
+    @enabled_with_permission("launchpad.TranslationsAdmin")
     def settings(self):
-        text = 'Change permissions'
-        return Link('+settings', text, icon='edit', site='translations')
+        text = "Change permissions"
+        return Link("+settings", text, icon="edit", site="translations")
 
     def products(self):
-        text = 'Products'
-        return Link('', text, site='translations')
+        text = "Products"
+        return Link("", text, site="translations")
 
     def overview(self):
-        text = 'Overview'
-        link = canonical_url(self.context, rootsite='translations')
-        return Link(link, text, icon='translation')
+        text = "Overview"
+        link = canonical_url(self.context, rootsite="translations")
+        return Link(link, text, icon="translation")
 
 
 class ProjectView(LaunchpadView):
@@ -66,6 +62,6 @@ class ProjectSettingsView(TranslationsMixin, ProjectEditView):
 
     next_url = cancel_url
 
-    @action('Change', name='change')
+    @action("Change", name="change")
     def edit(self, action, data):
         self.updateContextFromData(data)

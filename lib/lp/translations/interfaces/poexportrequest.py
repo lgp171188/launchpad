@@ -1,36 +1,32 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = [
-    'IPOExportRequestSet',
-    'IPOExportRequest'
-    ]
+__all__ = ["IPOExportRequestSet", "IPOExportRequest"]
 
 from zope.interface import Interface
-from zope.schema import (
-    Datetime,
-    Int,
-    Object,
-    )
+from zope.schema import Datetime, Int, Object
 
 from lp.registry.interfaces.person import IPerson
 from lp.translations.interfaces.pofile import IPOFile
 from lp.translations.interfaces.potemplate import IPOTemplate
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
+)
 
 
 class IPOExportRequestSet(Interface):
     entry_count = Int(
-        title='Number of entries waiting in the queue.',
-        required=True, readonly=True)
+        title="Number of entries waiting in the queue.",
+        required=True,
+        readonly=True,
+    )
 
     def estimateBacklog():
         """Return approximate age of oldest request on the export queue."""
 
-    def addRequest(person, potemplates=None, pofiles=None,
-                   format=TranslationFileFormat.PO):
+    def addRequest(
+        person, potemplates=None, pofiles=None, format=TranslationFileFormat.PO
+    ):
         """Add a request to export a set of files.
 
         :param potemplates: PO template or list of PO templates to export, or
@@ -62,16 +58,26 @@ class IPOExportRequestSet(Interface):
 
 class IPOExportRequest(Interface):
     person = Object(
-        title='The person who made the request.',
-        required=True, readonly=True, schema=IPerson)
+        title="The person who made the request.",
+        required=True,
+        readonly=True,
+        schema=IPerson,
+    )
 
     date_created = Datetime(
-        title="Request's creation timestamp.", required=True, readonly=True)
+        title="Request's creation timestamp.", required=True, readonly=True
+    )
 
     potemplate = Object(
-        title='The translation template to which the requested file belong.',
-        required=True, readonly=True, schema=IPOTemplate)
+        title="The translation template to which the requested file belong.",
+        required=True,
+        readonly=True,
+        schema=IPOTemplate,
+    )
 
     pofile = Object(
-        title='The translation file requested, if any.',
-        required=True, readonly=True, schema=IPOFile)
+        title="The translation file requested, if any.",
+        required=True,
+        readonly=True,
+        schema=IPOFile,
+    )

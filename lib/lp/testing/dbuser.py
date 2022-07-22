@@ -4,19 +4,16 @@
 """Provides a context manager to run parts of a test as a different dbuser."""
 
 __all__ = [
-    'dbuser',
-    'lp_dbuser',
-    'switch_dbuser',
-    ]
+    "dbuser",
+    "lp_dbuser",
+    "switch_dbuser",
+]
 
 from contextlib import contextmanager
 
-from storm.database import (
-    STATE_CONNECTED,
-    STATE_DISCONNECTED,
-    )
-from storm.zope.interfaces import IZStorm
 import transaction
+from storm.database import STATE_CONNECTED, STATE_DISCONNECTED
+from storm.zope.interfaces import IZStorm
 from zope.component import getUtility
 
 from lp.services.config import dbconfig
@@ -47,7 +44,7 @@ def update_store_connections():
             # only called by the test suite to kill the existing
             # connections so the Store's reconnect with updated
             # connection settings.
-            store._event.emit('register-transaction')
+            store._event.emit("register-transaction")
 
             connection._raw_connection = None
             connection._state = STATE_DISCONNECTED
@@ -73,7 +70,7 @@ def dbuser(temporary_name):
     temporary_name is the name of the dbuser that should be in place for the
     code in the "with" block.
     """
-    old_name = getattr(dbconfig.overrides, 'dbuser', None)
+    old_name = getattr(dbconfig.overrides, "dbuser", None)
     switch_dbuser(temporary_name)
     yield
     switch_dbuser(old_name)
@@ -84,4 +81,4 @@ def lp_dbuser():
 
     Use with the LaunchpadZopelessLayer layer and subclasses.
     """
-    return dbuser('launchpad')
+    return dbuser("launchpad")

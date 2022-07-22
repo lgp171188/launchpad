@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'FakeMethod',
-    ]
+    "FakeMethod",
+]
 
 
 class FakeMethod:

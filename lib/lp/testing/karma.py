@@ -4,9 +4,9 @@
 """Helper functions/classes to be used when testing the karma framework."""
 
 __all__ = [
-    'KarmaAssignedEventListener',
-    'KarmaRecorder',
-    ]
+    "KarmaAssignedEventListener",
+    "KarmaRecorder",
+]
 
 from lp.registry.interfaces.karma import IKarmaAssignedEvent
 from lp.registry.interfaces.person import IPerson
@@ -24,8 +24,14 @@ class KarmaRecorder:
     property.
     """
 
-    def __init__(self, person=None, action_name=None, product=None,
-                 distribution=None, sourcepackagename=None):
+    def __init__(
+        self,
+        person=None,
+        action_name=None,
+        product=None,
+        distribution=None,
+        sourcepackagename=None,
+    ):
         """Create a `KarmaRecorder`, but do not activate it yet.
 
         :param person: If given, record only karma for this `Person`.
@@ -53,11 +59,14 @@ class KarmaRecorder:
     def filter(self, karma):
         """Does `karma` match our filters?"""
         return (
-            self._filterFor(self.person, karma.person) and
-            self._filterFor(self.action_name, karma.action.name) and
-            self._filterFor(self.product, karma.product) and
-            self._filterFor(self.distribution, karma.distribution) and
-            self._filterFor(self.sourcepackagename, karma.sourcepackagename))
+            self._filterFor(self.person, karma.person)
+            and self._filterFor(self.action_name, karma.action.name)
+            and self._filterFor(self.product, karma.product)
+            and self._filterFor(self.distribution, karma.distribution)
+            and self._filterFor(
+                self.sourcepackagename, karma.sourcepackagename
+            )
+        )
 
     def record(self, karma):
         """Overridable: record the assignment of karma.
@@ -79,7 +88,8 @@ class KarmaRecorder:
     def register_listener(self):
         """Register listener.  Must be `unregister`ed later."""
         self.listener = ZopeEventHandlerFixture(
-            self.receive, (IPerson, IKarmaAssignedEvent))
+            self.receive, (IPerson, IKarmaAssignedEvent)
+        )
         self.listener.setUp()
 
     def unregister_listener(self):

@@ -18,12 +18,15 @@ def _trigger_livefs_build_webhook(livefsbuild, action):
         payload = {
             "livefs_build": canonical_url(livefsbuild, force_local_path=True),
             "action": action,
-            }
-        payload.update(compose_webhook_payload(
-            ILiveFSBuild, livefsbuild,
-            ["livefs", "status"]))
+        }
+        payload.update(
+            compose_webhook_payload(
+                ILiveFSBuild, livefsbuild, ["livefs", "status"]
+            )
+        )
         getUtility(IWebhookSet).trigger(
-            livefsbuild.livefs, "livefs:build:0.1", payload)
+            livefsbuild.livefs, "livefs:build:0.1", payload
+        )
 
 
 def livefs_build_created(livefsbuild, event):

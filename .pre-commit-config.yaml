@@ -57,6 +57,12 @@ repos:
             |scripts
             |services
             |snappy
+            |soyuz
+            |testing
+            |testopenid
+            |tests
+            |translations
+            |xmlrpc
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
@@ -90,6 +96,12 @@ repos:
             |scripts
             |services
             |snappy
+            |soyuz
+            |testing
+            |testopenid
+            |tests
+            |translations
+            |xmlrpc
           )/
     -   id: isort
         alias: isort-black
@@ -113,6 +125,12 @@ repos:
             |scripts
             |services
             |snappy
+            |soyuz
+            |testing
+            |testopenid
+            |tests
+            |translations
+            |xmlrpc
           )/
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.9.2

@@ -3,10 +3,7 @@
 
 """Unit tests for TranslationsPerson."""
 
-from lp.testing import (
-    TestCaseWithFactory,
-    verifyObject,
-    )
+from lp.testing import TestCaseWithFactory, verifyObject
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.translations.interfaces.translationsperson import ITranslationsPerson
 
