@@ -4,28 +4,29 @@
 """Queue interfaces."""
 
 __all__ = [
-    'CustomUploadError',
-    'ICustomUploadHandler',
-    'IHasQueueItems',
-    'IPackageUpload',
-    'IPackageUploadBuild',
-    'IPackageUploadCustom',
-    'IPackageUploadLog',
-    'IPackageUploadQueue',
-    'IPackageUploadSet',
-    'IPackageUploadSource',
-    'NonBuildableSourceUploadError',
-    'QueueAdminUnauthorizedError',
-    'QueueBuildAcceptError',
-    'QueueInconsistentStateError',
-    'QueueSourceAcceptError',
-    'QueueStateWriteProtectedError'
-    ]
+    "CustomUploadError",
+    "ICustomUploadHandler",
+    "IHasQueueItems",
+    "IPackageUpload",
+    "IPackageUploadBuild",
+    "IPackageUploadCustom",
+    "IPackageUploadLog",
+    "IPackageUploadQueue",
+    "IPackageUploadSet",
+    "IPackageUploadSource",
+    "NonBuildableSourceUploadError",
+    "QueueAdminUnauthorizedError",
+    "QueueBuildAcceptError",
+    "QueueInconsistentStateError",
+    "QueueSourceAcceptError",
+    "QueueStateWriteProtectedError",
+]
 
 import http.client
 
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     error_status,
     export_read_operation,
@@ -34,25 +35,10 @@ from lazr.restful.declarations import (
     exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
-    REQUEST_USER,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Dict,
-    Int,
-    List,
-    TextLine,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, Dict, Int, List, TextLine
 from zope.security.interfaces import Unauthorized
 
 from lp import _
@@ -120,37 +106,57 @@ class IPackageUploadQueue(Interface):
 class IPackageUploadLog(Interface):
     """A log entry recording a change in a package upload's status."""
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
 
     package_upload = exported(
         Reference(
-            Interface, title=_("The package upload that generated this log"),
-            required=True, readonly=True))
+            Interface,
+            title=_("The package upload that generated this log"),
+            required=True,
+            readonly=True,
+        )
+    )
 
     date_created = exported(
         Datetime(
-            title=_("When this action happened."), required=True,
-            readonly=True))
+            title=_("When this action happened."), required=True, readonly=True
+        )
+    )
 
     reviewer = exported(
         Reference(
-            IPerson, title=_("Who did this action."),
-            required=True, readonly=True))
+            IPerson,
+            title=_("Who did this action."),
+            required=True,
+            readonly=True,
+        )
+    )
 
     old_status = exported(
         Choice(
-            vocabulary=PackageUploadStatus, description=_("Old status."),
-            required=True, readonly=True))
+            vocabulary=PackageUploadStatus,
+            description=_("Old status."),
+            required=True,
+            readonly=True,
+        )
+    )
 
     new_status = exported(
         Choice(
-            vocabulary=PackageUploadStatus, description=_("New status."),
-            required=True, readonly=True))
+            vocabulary=PackageUploadStatus,
+            description=_("New status."),
+            required=True,
+            readonly=True,
+        )
+    )
 
     comment = exported(
         TextLine(
             title=_("User's comment about this change."),
-            required=False, readonly=True))
+            required=False,
+            readonly=True,
+        )
+    )
 
 
 @exported_as_webservice_entry(publish_web_link=False, as_of="beta")
@@ -159,65 +165,96 @@ class IPackageUpload(Interface):
 
     id = exported(
         Int(
-            title=_("ID"), required=True, readonly=True,
-            ))
+            title=_("ID"),
+            required=True,
+            readonly=True,
+        )
+    )
 
     status = exported(
         Choice(
             vocabulary=PackageUploadStatus,
             description=_("The status of this upload."),
-            title=_("Queue status"), required=False, readonly=True,
-            ))
+            title=_("Queue status"),
+            required=False,
+            readonly=True,
+        )
+    )
 
     distroseries = exported(
         Reference(
             # Really IDistroSeries, patched in lp.soyuz.interfaces.webservice.
             schema=Interface,
             description=_("The distroseries targeted by this upload."),
-            title=_("Series"), required=True, readonly=False,
-            ))
+            title=_("Series"),
+            required=True,
+            readonly=False,
+        )
+    )
 
     pocket = exported(
         Choice(
             vocabulary=PackagePublishingPocket,
             description=_("The pocket targeted by this upload."),
-            title=_("The pocket"), required=True, readonly=False,
-            ))
+            title=_("The pocket"),
+            required=True,
+            readonly=False,
+        )
+    )
 
     date_created = exported(
         Datetime(
-            title=_('Date created'),
-            description=_("The date this package upload was done.")))
+            title=_("Date created"),
+            description=_("The date this package upload was done."),
+        )
+    )
 
-    changesfile = Attribute("The librarian alias for the changes file "
-                            "associated with this upload")
+    changesfile = Attribute(
+        "The librarian alias for the changes file "
+        "associated with this upload"
+    )
     changes_file_url = exported(
         TextLine(
             title=_("Changes file URL"),
-            description=_("Librarian URL for the changes file associated with "
-                          "this upload. Will be None if the upload was copied "
-                          "from another series."),
-            required=False, readonly=True),
-        as_of="devel")
+            description=_(
+                "Librarian URL for the changes file associated with "
+                "this upload. Will be None if the upload was copied "
+                "from another series."
+            ),
+            required=False,
+            readonly=True,
+        ),
+        as_of="devel",
+    )
 
     signing_key = Attribute("Changesfile Signing Key.")
 
     package_copy_job = Reference(
         schema=IPackageCopyJob,
         description=_("The PackageCopyJob for this upload, if it has one."),
-        title=_("Raw Package Copy Job"), required=False, readonly=True)
+        title=_("Raw Package Copy Job"),
+        required=False,
+        readonly=True,
+    )
 
     concrete_package_copy_job = Reference(
         schema=IPackageCopyJob,
         description=_("Concrete IPackageCopyJob implementation, if any."),
-        title=_("Package Copy Job"), required=False, readonly=True)
+        title=_("Package Copy Job"),
+        required=False,
+        readonly=True,
+    )
 
     archive = exported(
         Reference(
             # Really IArchive, patched in lp.soyuz.interfaces.webservice.
             schema=Interface,
             description=_("The archive for this upload."),
-            title=_("Archive"), required=True, readonly=True))
+            title=_("Archive"),
+            required=True,
+            readonly=True,
+        )
+    )
     sources = Attribute("The queue sources associated with this queue item")
     builds = Attribute("The queue builds associated with the queue item")
 
@@ -226,99 +263,139 @@ class IPackageUpload(Interface):
             CollectionField(
                 title=_("The package upload logs"),
                 value_type=Reference(schema=IPackageUploadLog),
-                readonly=True)),
-        as_of="devel")
+                readonly=True,
+            )
+        ),
+        as_of="devel",
+    )
 
-    customfiles = Attribute("Custom upload files associated with this "
-                            "queue item")
+    customfiles = Attribute(
+        "Custom upload files associated with this " "queue item"
+    )
     custom_file_urls = exported(
         List(
             title=_("Custom file URLs"),
-            description=_("Librarian URLs for all the custom files attached "
-                          "to this upload."),
+            description=_(
+                "Librarian URLs for all the custom files attached "
+                "to this upload."
+            ),
             value_type=TextLine(),
             required=False,
-            readonly=True),
-        ("devel", dict(exported=False)), as_of="beta", exported=True)
+            readonly=True,
+        ),
+        ("devel", dict(exported=False)),
+        as_of="beta",
+        exported=True,
+    )
 
     copy_source_archive = exported(
         Reference(
             # Really IArchive, patched in lp.soyuz.interfaces.webservice.
             schema=Interface,
-            description=_("The archive from which this package was copied, if "
-                          "any."),
-            title=_("Copy source archive"), required=False, readonly=True))
+            description=_(
+                "The archive from which this package was copied, if " "any."
+            ),
+            title=_("Copy source archive"),
+            required=False,
+            readonly=True,
+        )
+    )
 
     displayname = exported(
         TextLine(
-            title=_("Generic displayname for a queue item"), readonly=True),
-        exported_as="display_name")
+            title=_("Generic displayname for a queue item"), readonly=True
+        ),
+        exported_as="display_name",
+    )
     displayversion = exported(
         TextLine(
             title=_("This item's displayable source package version"),
-            readonly=True),
-        exported_as="display_version")
+            readonly=True,
+        ),
+        exported_as="display_version",
+    )
     displayarchs = exported(
-        TextLine(
-            title=_("Architectures related to this item"), readonly=True),
-        exported_as="display_arches")
+        TextLine(title=_("Architectures related to this item"), readonly=True),
+        exported_as="display_arches",
+    )
 
     sourcepackagerelease = Attribute(
-        "The source package release for this item")
+        "The source package release for this item"
+    )
 
     searchable_names = TextLine(
-        title=_("Searchable names for this item"), readonly=True)
+        title=_("Searchable names for this item"), readonly=True
+    )
     searchable_versions = List(
-        title=_("Searchable versions for this item"), readonly=True)
+        title=_("Searchable versions for this item"), readonly=True
+    )
 
     package_name = exported(
         TextLine(
-            title=_("Name of the uploaded source package"), readonly=True),
-        as_of="devel")
+            title=_("Name of the uploaded source package"), readonly=True
+        ),
+        as_of="devel",
+    )
 
     package_version = exported(
         TextLine(title=_("Source package version"), readonly=True),
-        as_of="devel")
+        as_of="devel",
+    )
 
     component_name = exported(
         TextLine(title=_("Source package component name"), readonly=True),
-        as_of="devel")
+        as_of="devel",
+    )
 
     section_name = exported(
         TextLine(title=_("Source package section name"), readonly=True),
-        as_of="devel")
+        as_of="devel",
+    )
 
     contains_source = exported(
         Bool(
             title=_("Whether or not this upload contains sources"),
-            readonly=True),
-        as_of="devel")
+            readonly=True,
+        ),
+        as_of="devel",
+    )
     contains_build = exported(
         Bool(
             title=_("Whether or not this upload contains binaries"),
-            readonly=True),
-        as_of="devel")
+            readonly=True,
+        ),
+        as_of="devel",
+    )
     contains_copy = exported(
         Bool(
-            title=_("Whether or not this upload contains a copy from another "
-                    "series."),
-            readonly=True),
-        as_of="devel")
+            title=_(
+                "Whether or not this upload contains a copy from another "
+                "series."
+            ),
+            readonly=True,
+        ),
+        as_of="devel",
+    )
     contains_installer = Attribute(
-        "whether or not this upload contains installers images")
+        "whether or not this upload contains installers images"
+    )
     contains_translation = Attribute(
-        "whether or not this upload contains translations")
+        "whether or not this upload contains translations"
+    )
     contains_upgrader = Attribute(
-        "whether or not this upload contains upgrader images")
+        "whether or not this upload contains upgrader images"
+    )
     contains_ddtp = Attribute(
-        "whether or not this upload contains DDTP images")
+        "whether or not this upload contains DDTP images"
+    )
     contains_signing = Attribute(
-        "whether or not this upload contains signing images")
+        "whether or not this upload contains signing images"
+    )
     contains_uefi = Attribute(
         "whether or not this upload contains a signed UEFI boot loader image"
-        " (deprecated)")
-    isPPA = Attribute(
-        "Return True if this PackageUpload is a PPA upload.")
+        " (deprecated)"
+    )
+    isPPA = Attribute("Return True if this PackageUpload is a PPA upload.")
 
     components = Attribute(
         """The set of components used in this upload.
@@ -326,7 +403,8 @@ class IPackageUpload(Interface):
         For sources, this is the component on the associated
         sourcepackagerelease.  For binaries, this is all the components
         on all the binarypackagerelease records arising from the build.
-        """)
+        """
+    )
 
     @export_read_operation()
     @operation_for_version("devel")
@@ -397,10 +475,10 @@ class IPackageUpload(Interface):
     def acceptFromUploader(changesfile_path, logger=None):
         """Perform upload acceptance during upload-time.
 
-         * Move the upload to accepted queue in all cases.
-         * Publish and close bugs for 'single-source' uploads.
-         * Skip bug-closing for PPA uploads.
-         * Grant karma to people involved with the upload.
+        * Move the upload to accepted queue in all cases.
+        * Publish and close bugs for 'single-source' uploads.
+        * Skip bug-closing for PPA uploads.
+        * Grant karma to people involved with the upload.
         """
 
     @export_write_operation()
@@ -409,12 +487,13 @@ class IPackageUpload(Interface):
     def acceptFromQueue(user=None):
         """Call setAccepted, do a flush, and send notification email.
 
-         * Grant karma to people involved with the upload.
+        * Grant karma to people involved with the upload.
         """
 
     @export_write_operation()
     @operation_parameters(
-        comment=TextLine(title=_("Rejection comment"), required=False))
+        comment=TextLine(title=_("Rejection comment"), required=False)
+    )
     @call_with(user=REQUEST_USER)
     @operation_for_version("devel")
     def rejectFromQueue(user, comment=None):
@@ -444,8 +523,9 @@ class IPackageUpload(Interface):
         the given custom type.
         """
 
-    def notify(status=None, summary_text=None, changes_file_object=None,
-               logger=None):
+    def notify(
+        status=None, summary_text=None, changes_file_object=None, logger=None
+    ):
         """Notify by email when there is a new distroseriesqueue entry.
 
         This will send new, accept, announce and rejection messages as
@@ -468,12 +548,17 @@ class IPackageUpload(Interface):
 
     @operation_parameters(
         new_component=TextLine(title="The new component name."),
-        new_section=TextLine(title="The new section name."))
+        new_section=TextLine(title="The new section name."),
+    )
     @call_with(allowed_components=None, user=REQUEST_USER)
     @export_write_operation()
-    @operation_for_version('devel')
-    def overrideSource(new_component=None, new_section=None,
-                       allowed_components=None, user=None):
+    @operation_for_version("devel")
+    def overrideSource(
+        new_component=None,
+        new_section=None,
+        allowed_components=None,
+        user=None,
+    ):
         """Override the source package contained in this queue item.
 
         :param new_component: An IComponent to replace the existing one
@@ -504,11 +589,14 @@ class IPackageUpload(Interface):
                 "all binaries in the upload. It may also have 'component', "
                 "'section', and 'priority' items which replace the "
                 "corresponding existing one in the upload's overridden "
-                "binaries."),
-            value_type=Dict(key_type=TextLine())))
+                "binaries."
+            ),
+            value_type=Dict(key_type=TextLine()),
+        )
+    )
     @call_with(allowed_components=None, user=REQUEST_USER)
     @export_write_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def overrideBinaries(changes, allowed_components=None, user=None):
         """Override binary packages in a binary queue item.
 
@@ -532,20 +620,23 @@ class IPackageUpload(Interface):
         """
 
 
-patch_reference_property(IPackageUploadLog, 'package_upload', IPackageUpload)
+patch_reference_property(IPackageUploadLog, "package_upload", IPackageUpload)
 
 
 class IPackageUploadBuild(Interface):
     """A Queue item's related builds."""
 
     id = Int(
-            title=_("ID"), required=True, readonly=True,
-            )
+        title=_("ID"),
+        required=True,
+        readonly=True,
+    )
 
     packageupload = Int(
-            title=_("PackageUpload"), required=True,
-            readonly=False,
-            )
+        title=_("PackageUpload"),
+        required=True,
+        readonly=False,
+    )
 
     build = Int(title=_("The related build"), required=True, readonly=False)
 
@@ -580,17 +671,22 @@ class IPackageUploadSource(Interface):
     """A Queue item's related sourcepackagereleases."""
 
     id = Int(
-            title=_("ID"), required=True, readonly=True,
-            )
+        title=_("ID"),
+        required=True,
+        readonly=True,
+    )
 
     packageupload = Int(
-            title=_("PackageUpload"), required=True,
-            readonly=False,
-            )
+        title=_("PackageUpload"),
+        required=True,
+        readonly=False,
+    )
 
     sourcepackagerelease = Int(
-            title=_("The related source package release"), required=True,
-            readonly=False)
+        title=_("The related source package release"),
+        required=True,
+        readonly=False,
+    )
 
     def getSourceAncestryForDiffs():
         """Return a suitable ancestry publication for this context.
@@ -667,22 +763,28 @@ class IPackageUploadCustom(Interface):
     """
 
     id = Int(
-            title=_("ID"), required=True, readonly=True,
-            )
+        title=_("ID"),
+        required=True,
+        readonly=True,
+    )
 
     packageupload = Int(
-            title=_("PackageUpload"), required=True,
-            readonly=False,
-            )
+        title=_("PackageUpload"),
+        required=True,
+        readonly=False,
+    )
 
     customformat = Int(
-            title=_("The custom format for the file"), required=True,
-            readonly=False,
-            )
+        title=_("The custom format for the file"),
+        required=True,
+        readonly=False,
+    )
 
     libraryfilealias = Int(
-            title=_("The file"), required=True, readonly=False,
-            )
+        title=_("The file"),
+        required=True,
+        readonly=False,
+    )
 
     def publish(logger=None):
         """Publish this custom item directly into the filesystem.
@@ -772,9 +874,17 @@ class IPackageUploadSet(Interface):
         distroseries, same for pocket.
         """
 
-    def getAll(distroseries, created_since_date=None, status=None,
-               archive=None, pocket=None, custom_type=None,
-               name=None, version=None, exact_match=False):
+    def getAll(
+        distroseries,
+        created_since_date=None,
+        status=None,
+        archive=None,
+        pocket=None,
+        custom_type=None,
+        name=None,
+        version=None,
+        exact_match=False,
+    ):
         """Get package upload records for a series with optional filtering.
 
         :param distroseries: the `IDistroSeries` to consider.
@@ -805,8 +915,9 @@ class IPackageUploadSet(Interface):
         :return: a matching `IPackageUpload` object.
         """
 
-    def getBuildsForSources(distroseries, status=None, pockets=None,
-                            names=None):
+    def getBuildsForSources(
+        distroseries, status=None, pockets=None, names=None
+    ):
         """Return binary package upload records for a series with optional
         filtering.
 

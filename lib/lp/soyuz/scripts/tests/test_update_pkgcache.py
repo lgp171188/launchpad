@@ -28,7 +28,8 @@ class TestPackageCacheUpdater(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         archives = [
             self.factory.makeArchive(distribution=distribution)
-            for _ in range(2)]
+            for _ in range(2)
+        ]
         for archive in archives:
             self.assertEqual(0, archive.sources_cached)
             self.factory.makeSourcePackagePublishingHistory(archive=archive)

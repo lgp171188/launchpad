@@ -4,8 +4,8 @@
 """Browser views for packagesets."""
 
 __all__ = [
-    'PackagesetSetNavigation',
-    ]
+    "PackagesetSetNavigation",
+]
 
 from zope.component import getUtility
 
@@ -16,6 +16,7 @@ from lp.soyuz.interfaces.packageset import IPackagesetSet
 
 class PackagesetSetNavigation(GetitemNavigation):
     """Navigation methods for PackagesetSet."""
+
     usedfor = IPackagesetSet
 
     def traverse(self, distribution_name):

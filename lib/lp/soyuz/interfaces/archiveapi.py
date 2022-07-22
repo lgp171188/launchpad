@@ -4,9 +4,9 @@
 """Interfaces for internal archive APIs."""
 
 __all__ = [
-    'IArchiveAPI',
-    'IArchiveApplication',
-    ]
+    "IArchiveAPI",
+    "IArchiveApplication",
+]
 
 from zope.interface import Interface
 

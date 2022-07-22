@@ -4,23 +4,17 @@
 """Soyuz vocabularies."""
 
 __all__ = [
-    'ComponentVocabulary',
-    'FilteredDistroArchSeriesVocabulary',
-    'make_archive_vocabulary',
-    'PackageReleaseVocabulary',
-    'PPAVocabulary',
-    ]
+    "ComponentVocabulary",
+    "FilteredDistroArchSeriesVocabulary",
+    "make_archive_vocabulary",
+    "PackageReleaseVocabulary",
+    "PPAVocabulary",
+]
 
-from storm.locals import (
-    And,
-    Or,
-    )
+from storm.locals import And, Or
 from zope.component import getUtility
 from zope.interface import implementer
-from zope.schema.vocabulary import (
-    SimpleTerm,
-    SimpleVocabulary,
-    )
+from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 from zope.security.interfaces import Unauthorized
 
 from lp.registry.model.distroseries import DistroSeries
@@ -31,13 +25,10 @@ from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.vocabulary import (
     IHugeVocabulary,
     SQLObjectVocabularyBase,
-    )
+)
 from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.archive import IArchiveSet
-from lp.soyuz.model.archive import (
-    Archive,
-    get_enabled_archive_filter,
-    )
+from lp.soyuz.model.archive import Archive, get_enabled_archive_filter
 from lp.soyuz.model.component import Component
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
@@ -46,7 +37,7 @@ from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 class ComponentVocabulary(SQLObjectVocabularyBase):
 
     _table = Component
-    _orderBy = 'name'
+    _orderBy = "name"
 
     def toTerm(self, obj):
         return SimpleTerm(obj, obj.id, obj.name)
@@ -56,49 +47,56 @@ class FilteredDistroArchSeriesVocabulary(SQLObjectVocabularyBase):
     """All arch series of a particular distribution."""
 
     _table = DistroArchSeries
-    _orderBy = ['DistroSeries.version', 'architecturetag', 'id']
+    _orderBy = ["DistroSeries.version", "architecturetag", "id"]
 
     def toTerm(self, obj):
-        name = "%s %s (%s)" % (obj.distroseries.distribution.name,
-                               obj.distroseries.name, obj.architecturetag)
+        name = "%s %s (%s)" % (
+            obj.distroseries.distribution.name,
+            obj.distroseries.name,
+            obj.architecturetag,
+        )
         return SimpleTerm(obj, obj.id, name)
 
     def __iter__(self):
         distribution = getUtility(ILaunchBag).distribution
         if distribution:
-            results = IStore(DistroSeries).find(
-                self._table,
-                DistroSeries.id == DistroArchSeries.distroseriesID,
-                DistroSeries.distributionID == distribution.id).order_by(
-                    *self._orderBy)
+            results = (
+                IStore(DistroSeries)
+                .find(
+                    self._table,
+                    DistroSeries.id == DistroArchSeries.distroseriesID,
+                    DistroSeries.distributionID == distribution.id,
+                )
+                .order_by(*self._orderBy)
+            )
             for distroarchseries in results:
                 yield self.toTerm(distroarchseries)
 
 
 class PackageReleaseVocabulary(SQLObjectVocabularyBase):
     _table = SourcePackageRelease
-    _orderBy = 'id'
+    _orderBy = "id"
 
     def toTerm(self, obj):
-        return SimpleTerm(
-            obj, obj.id, obj.name + " " + obj.version)
+        return SimpleTerm(obj, obj.id, obj.name + " " + obj.version)
 
 
 @implementer(IHugeVocabulary)
 class PPAVocabulary(SQLObjectVocabularyBase):
 
     _table = Archive
-    _orderBy = ['Person.name, Archive.name']
-    _clauseTables = ['Person']
+    _orderBy = ["Person.name, Archive.name"]
+    _clauseTables = ["Person"]
     # This should probably also filter by privacy, but that becomes
     # problematic when you need to remove a dependency that you can no
     # longer see.
     _filter = And(
         Archive._enabled == True,
         Person.q.id == Archive.q.ownerID,
-        Archive.q.purpose == ArchivePurpose.PPA)
-    displayname = 'Select a PPA'
-    step_title = 'Search'
+        Archive.q.purpose == ArchivePurpose.PPA,
+    )
+    displayname = "Select a PPA"
+    step_title = "Search"
 
     def toTerm(self, archive):
         """See `IVocabulary`."""
@@ -127,37 +125,43 @@ class PPAVocabulary(SQLObjectVocabularyBase):
 
         query = query.lower()
 
-        if query.startswith('~'):
-            query = query.strip('~')
-        if query.startswith('ppa:'):
+        if query.startswith("~"):
+            query = query.strip("~")
+        if query.startswith("ppa:"):
             query = query[4:]
         try:
-            query_split = query.split('/')
+            query_split = query.split("/")
             if len(query_split) == 3:
                 owner_name, distro_name, archive_name = query_split
             else:
                 owner_name, archive_name = query_split
         except ValueError:
             search_clause = Or(
-                fti_search(Archive, query), fti_search(Person, query))
+                fti_search(Archive, query), fti_search(Person, query)
+            )
         else:
             search_clause = And(
-                Person.name == owner_name, Archive.name == archive_name)
+                Person.name == owner_name, Archive.name == archive_name
+            )
 
         clause = And(
             self._filter,
             get_enabled_archive_filter(
-                getUtility(ILaunchBag).user, purpose=ArchivePurpose.PPA,
-                include_public=True),
-            search_clause)
+                getUtility(ILaunchBag).user,
+                purpose=ArchivePurpose.PPA,
+                include_public=True,
+            ),
+            search_clause,
+        )
         return self._table.select(
-            clause, orderBy=self._orderBy, clauseTables=self._clauseTables)
+            clause, orderBy=self._orderBy, clauseTables=self._clauseTables
+        )
 
 
 def make_archive_vocabulary(archives):
     terms = []
     for archive in archives:
-        label = '%s [%s]' % (archive.displayname, archive.reference)
+        label = "%s [%s]" % (archive.displayname, archive.reference)
         terms.append(SimpleTerm(archive, archive.reference, label))
     terms.sort(key=lambda x: x.value.reference)
     return SimpleVocabulary(terms)

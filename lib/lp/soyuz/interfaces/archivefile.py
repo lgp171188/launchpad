@@ -4,17 +4,13 @@
 """Interface for a file in an archive."""
 
 __all__ = [
-    'IArchiveFile',
-    'IArchiveFileSet',
-    ]
+    "IArchiveFile",
+    "IArchiveFileSet",
+]
 
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Datetime,
-    Int,
-    TextLine,
-    )
+from zope.schema import Datetime, Int, TextLine
 
 from lp import _
 from lp.services.librarian.interfaces import ILibraryFileAlias
@@ -32,23 +28,35 @@ class IArchiveFile(Interface):
 
     archive = Reference(
         title=_("The archive containing the index file."),
-        schema=IArchive, required=True, readonly=True)
+        schema=IArchive,
+        required=True,
+        readonly=True,
+    )
 
     container = TextLine(
         title=_("An identifier for the component that manages this file."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
 
     path = TextLine(
         title=_("The path to the index file within the published archive."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
 
     library_file = Reference(
         title=_("The index file in the librarian."),
-        schema=ILibraryFileAlias, required=True, readonly=True)
+        schema=ILibraryFileAlias,
+        required=True,
+        readonly=True,
+    )
 
     scheduled_deletion_date = Datetime(
         title=_("The date when this file should stop being published."),
-        required=False, readonly=False)
+        required=False,
+        readonly=False,
+    )
 
 
 class IArchiveFileSet(Interface):
@@ -76,8 +84,13 @@ class IArchiveFileSet(Interface):
         :param content_type: The MIME type of the file.
         """
 
-    def getByArchive(archive, container=None, path=None, only_condemned=False,
-                     eager_load=False):
+    def getByArchive(
+        archive,
+        container=None,
+        path=None,
+        only_condemned=False,
+        eager_load=False,
+    ):
         """Get files in an archive.
 
         :param archive: Return files in this `IArchive`.

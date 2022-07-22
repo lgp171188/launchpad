@@ -4,23 +4,17 @@
 """Tests for `DistroSeriesBinaryPackage`."""
 
 __all__ = [
-    'TestDistroSeriesBinaryPackage',
-    ]
+    "TestDistroSeriesBinaryPackage",
+]
 
-from testtools.matchers import (
-    Equals,
-    NotEquals,
-    )
+from testtools.matchers import Equals, NotEquals
 
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
 from lp.soyuz.model.distroseriesbinarypackage import DistroSeriesBinaryPackage
 from lp.soyuz.model.distroseriespackagecache import DistroSeriesPackageCache
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import (
-    StormStatementRecorder,
-    TestCaseWithFactory,
-    )
+from lp.testing import StormStatementRecorder, TestCaseWithFactory
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.matchers import HasQueryCount
@@ -38,12 +32,15 @@ class TestDistroSeriesBinaryPackage(TestCaseWithFactory):
         self.distroseries = self.publisher.distroseries
         self.distribution = self.distroseries.distribution
         binaries = self.publisher.getPubBinaries(
-            binaryname='foo-bin', summary='Foo is the best')
+            binaryname="foo-bin", summary="Foo is the best"
+        )
         binary_pub = binaries[0]
         self.binary_package_name = (
-            binary_pub.binarypackagerelease.binarypackagename)
+            binary_pub.binarypackagerelease.binarypackagename
+        )
         self.distroseries_binary_package = DistroSeriesBinaryPackage(
-            self.distroseries, self.binary_package_name)
+            self.distroseries, self.binary_package_name
+        )
 
     def test_cache_attribute_when_two_cache_objects(self):
         # We have situations where there are cache objects for each
@@ -54,21 +51,30 @@ class TestDistroSeriesBinaryPackage(TestCaseWithFactory):
 
         # Publish the same binary in another distro archive.
         self.publisher.getPubBinaries(
-            binaryname='foo-bin', summary='Foo is the best',
-            archive=distro_archive_2)
+            binaryname="foo-bin",
+            summary="Foo is the best",
+            archive=distro_archive_2,
+        )
 
         logger = BufferLogger()
         with dbuser(config.statistician.dbuser):
             DistroSeriesPackageCache._update(
-                self.distroseries, [self.binary_package_name],
-                distro_archive_1, logger)
+                self.distroseries,
+                [self.binary_package_name],
+                distro_archive_1,
+                logger,
+            )
 
             DistroSeriesPackageCache._update(
-                self.distroseries, [self.binary_package_name],
-                distro_archive_2, logger)
+                self.distroseries,
+                [self.binary_package_name],
+                distro_archive_2,
+                logger,
+            )
 
         self.assertEqual(
-            'Foo is the best', self.distroseries_binary_package.summary)
+            "Foo is the best", self.distroseries_binary_package.summary
+        )
 
     def test_none_cache_passed_at_init_counts_as_cached(self):
         # If the value None is passed as the constructor parameter
@@ -77,7 +83,8 @@ class TestDistroSeriesBinaryPackage(TestCaseWithFactory):
         # later does not lead to the execution of an SQL query to
         # retrieve a DistroSeriesPackageCache record.
         binary_package = DistroSeriesBinaryPackage(
-            self.distroseries, self.binary_package_name, cache=None)
+            self.distroseries, self.binary_package_name, cache=None
+        )
         with StormStatementRecorder() as recorder:
             binary_package.cache
         self.assertThat(recorder, HasQueryCount(Equals(0)))

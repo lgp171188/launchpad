@@ -2,11 +2,11 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'DistributionSourcePackageReleaseBreadcrumb',
-    'DistributionSourcePackageReleaseNavigation',
-    'DistributionSourcePackageReleasePublishingHistoryView',
-    'DistributionSourcePackageReleaseView',
-    ]
+    "DistributionSourcePackageReleaseBreadcrumb",
+    "DistributionSourcePackageReleaseNavigation",
+    "DistributionSourcePackageReleasePublishingHistoryView",
+    "DistributionSourcePackageReleaseView",
+]
 
 import operator
 
@@ -15,14 +15,14 @@ from lazr.restful.utils import smartquote
 from lp.archivepublisher.debversion import Version
 from lp.registry.browser.distributionsourcepackage import (
     PublishingHistoryViewMixin,
-    )
+)
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
-    canonical_url,
     LaunchpadView,
     Navigation,
+    canonical_url,
     stepthrough,
-    )
+)
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.soyuz.adapters.proxiedsourcefiles import ProxiedSourceLibraryFileAlias
 from lp.soyuz.browser.build import get_build_by_id_str
@@ -30,7 +30,7 @@ from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     IDistributionSourcePackageRelease,
-    )
+)
 
 
 class DistributionSourcePackageReleaseBreadcrumb(Breadcrumb):
@@ -44,18 +44,20 @@ class DistributionSourcePackageReleaseBreadcrumb(Breadcrumb):
 class DistributionSourcePackageReleaseNavigation(Navigation):
     usedfor = IDistributionSourcePackageRelease
 
-    @stepthrough('+build')
+    @stepthrough("+build")
     def traverse_build(self, name):
         build = get_build_by_id_str(IBinaryPackageBuildSet, name)
-        if (build is None
-            or build.archive not in
-                self.context.distribution.all_distro_archives
-            or build.source_package_release !=
-                self.context.sourcepackagerelease):
+        if (
+            build is None
+            or build.archive
+            not in self.context.distribution.all_distro_archives
+            or build.source_package_release
+            != self.context.sourcepackagerelease
+        ):
             return None
         return build
 
-    @stepthrough('+latestbuild')
+    @stepthrough("+latestbuild")
     def redirect_latestbuild(self, name):
         build = self.context.getBuildsByArchTag(name).first()
         if build is not None:
@@ -64,7 +66,7 @@ class DistributionSourcePackageReleaseNavigation(Navigation):
 
 
 class DistributionSourcePackageReleaseView(LaunchpadView):
-    """View logic for `DistributionSourcePackageRelease` objects. """
+    """View logic for `DistributionSourcePackageRelease` objects."""
 
     usedfor = IDistributionSourcePackageRelease
 
@@ -92,7 +94,7 @@ class DistributionSourcePackageReleaseView(LaunchpadView):
             publishing
             for publishing in self._cached_publishing_history
             if publishing.status == PackagePublishingStatus.PUBLISHED
-            ]
+        ]
 
     @property
     def files(self):
@@ -100,8 +102,10 @@ class DistributionSourcePackageReleaseView(LaunchpadView):
         last_publication = self._cached_publishing_history[0]
         return [
             ProxiedSourceLibraryFileAlias(
-                source_file.libraryfile, last_publication)
-            for source_file in self.context.files]
+                source_file.libraryfile, last_publication
+            )
+            for source_file in self.context.files
+        ]
 
     @cachedproperty
     def sponsor(self):
@@ -133,15 +137,19 @@ class DistributionSourcePackageReleaseView(LaunchpadView):
         # Build a local list of `IBinaryPackageBuilds` ordered by ascending
         # 'architecture_tag'.
         cached_builds = sorted(
-            self.context.builds, key=operator.attrgetter('arch_tag'))
+            self.context.builds, key=operator.attrgetter("arch_tag")
+        )
 
         # Build a list of unique `IDistroSeries` related with the local
         # builds ordered by descending version.
         def distroseries_sort_key(item):
             return Version(item.version)
+
         sorted_distroseries = sorted(
             {build.distro_series for build in cached_builds},
-            key=distroseries_sort_key, reverse=True)
+            key=distroseries_sort_key,
+            reverse=True,
+        )
 
         # Group builds as dictionaries.
         distroseries_builds = []
@@ -150,21 +158,23 @@ class DistributionSourcePackageReleaseView(LaunchpadView):
                 build
                 for build in cached_builds
                 if build.distro_series == distroseries
-                ]
+            ]
             distroseries_builds.append(
-                {'distroseries': distroseries, 'builds': builds})
+                {"distroseries": distroseries, "builds": builds}
+            )
 
         return distroseries_builds
 
 
 class DistributionSourcePackageReleasePublishingHistoryView(
-        LaunchpadView, PublishingHistoryViewMixin):
+    LaunchpadView, PublishingHistoryViewMixin
+):
     """Presenting `DistributionSourcePackageRelease` publishing history."""
 
     usedfor = IDistributionSourcePackageRelease
 
-    page_title = 'Publishing history'
+    page_title = "Publishing history"
 
     @property
     def label(self):
-        return 'Publishing history of %s' % smartquote(self.context.title)
+        return "Publishing history of %s" % smartquote(self.context.title)

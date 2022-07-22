@@ -1,53 +1,34 @@
 # Copyright 2010-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from collections import OrderedDict
 import io
 import json
 import logging
-from pathlib import Path
 import tarfile
 import tempfile
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    )
 import zipfile
+from collections import OrderedDict
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
+import zstandard
 from lazr.delegates import delegate_to
-from pkginfo import (
-    SDist,
-    Wheel,
-    )
+from pkginfo import SDist, Wheel
 from storm.expr import And
-from storm.locals import (
-    Int,
-    JSON,
-    Reference,
-    )
+from storm.locals import JSON, Int, Reference
 from wheel_filename import parse_wheel_filename
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
-import zstandard
+from zope.interface import implementer, provider
 
 from lp.code.enums import RevisionStatusArtifactType
 from lp.code.interfaces.cibuild import ICIBuildSet
 from lp.code.interfaces.revisionstatus import (
     IRevisionStatusArtifact,
     IRevisionStatusArtifactSet,
-    )
+)
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.sourcepackage import SourcePackageFileType
@@ -55,25 +36,19 @@ from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IMasterStore
 from lp.services.database.stormbase import StormBase
-from lp.services.job.model.job import (
-    EnumeratedSubclass,
-    Job,
-    )
+from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.librarian.interfaces.client import LibrarianServerError
 from lp.services.librarian.utils import copy_and_close
 from lp.services.mail.sendmail import format_address_for_person
-from lp.soyuz.adapters.gomodparser import (
-    GoModParserException,
-    parse_go_mod,
-    )
+from lp.soyuz.adapters.gomodparser import GoModParserException, parse_go_mod
 from lp.soyuz.enums import (
     ArchiveJobType,
     ArchiveRepositoryFormat,
     BinaryPackageFileType,
     BinaryPackageFormat,
     PackageUploadStatus,
-    )
+)
 from lp.soyuz.interfaces.archivejob import (
     IArchiveJob,
     IArchiveJobSource,
@@ -81,12 +56,11 @@ from lp.soyuz.interfaces.archivejob import (
     ICIBuildUploadJobSource,
     IPackageUploadNotificationJob,
     IPackageUploadNotificationJobSource,
-    )
+)
 from lp.soyuz.interfaces.binarypackagename import IBinaryPackageNameSet
 from lp.soyuz.interfaces.publishing import IPublishingSet
 from lp.soyuz.interfaces.queue import IPackageUploadSet
 from lp.soyuz.model.archive import Archive
-
 
 logger = logging.getLogger(__name__)
 
@@ -95,19 +69,19 @@ logger = logging.getLogger(__name__)
 class ArchiveJob(StormBase):
     """Base class for jobs related to Archives."""
 
-    __storm_table__ = 'ArchiveJob'
+    __storm_table__ = "ArchiveJob"
 
     id = Int(primary=True)
 
-    job_id = Int(name='job')
+    job_id = Int(name="job")
     job = Reference(job_id, Job.id)
 
-    archive_id = Int(name='archive')
+    archive_id = Int(name="archive")
     archive = Reference(archive_id, Archive.id)
 
     job_type = DBEnum(enum=ArchiveJobType, allow_none=False)
 
-    metadata = JSON('json_data')
+    metadata = JSON("json_data")
 
     def __init__(self, archive, job_type, metadata):
         """Create an ArchiveJob.
@@ -151,18 +125,23 @@ class ArchiveJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
         store = IMasterStore(ArchiveJob)
         jobs = store.find(
             ArchiveJob,
-            And(ArchiveJob.job_type == cls.class_job_type,
-                ArchiveJob.job_id.is_in(Job.ready_jobs)))
+            And(
+                ArchiveJob.job_type == cls.class_job_type,
+                ArchiveJob.job_id.is_in(Job.ready_jobs),
+            ),
+        )
         return (cls(job) for job in jobs)
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
         vars = super().getOopsVars()
-        vars.extend([
-            ('archive_id', self.context.archive.id),
-            ('archive_job_id', self.context.id),
-            ('archive_job_type', self.context.job_type.title),
-            ])
+        vars.extend(
+            [
+                ("archive_id", self.context.archive.id),
+                ("archive_job_id", self.context.id),
+                ("archive_job_type", self.context.job_type.title),
+            ]
+        )
         return vars
 
 
@@ -178,35 +157,42 @@ class PackageUploadNotificationJob(ArchiveJobDerived):
     def create(cls, packageupload, summary_text=None):
         """See `IPackageUploadNotificationJobSource`."""
         metadata = {
-            'packageupload_id': packageupload.id,
-            'packageupload_status': packageupload.status.title,
-            'summary_text': summary_text,
-            }
+            "packageupload_id": packageupload.id,
+            "packageupload_status": packageupload.status.title,
+            "summary_text": summary_text,
+        }
         return super().create(packageupload.archive, metadata)
 
     def getOopsVars(self):
         """See `ArchiveJobDerived`."""
         vars = super().getOopsVars()
-        vars.extend([
-            ('packageupload_id', self.metadata['packageupload_id']),
-            ('packageupload_status', self.metadata['packageupload_status']),
-            ('summary_text', self.metadata['summary_text']),
-            ])
+        vars.extend(
+            [
+                ("packageupload_id", self.metadata["packageupload_id"]),
+                (
+                    "packageupload_status",
+                    self.metadata["packageupload_status"],
+                ),
+                ("summary_text", self.metadata["summary_text"]),
+            ]
+        )
         return vars
 
     @property
     def packageupload(self):
         return getUtility(IPackageUploadSet).get(
-            self.metadata['packageupload_id'])
+            self.metadata["packageupload_id"]
+        )
 
     @property
     def packageupload_status(self):
         return PackageUploadStatus.getTermByToken(
-            self.metadata['packageupload_status']).value
+            self.metadata["packageupload_status"]
+        ).value
 
     @property
     def summary_text(self):
-        return self.metadata['summary_text']
+        return self.metadata["summary_text"]
 
     def run(self):
         """See `IRunnableJob`."""
@@ -216,8 +202,11 @@ class PackageUploadNotificationJob(ArchiveJobDerived):
         else:
             changes_file_object = io.BytesIO(packageupload.changesfile.read())
         packageupload.notify(
-            status=self.packageupload_status, summary_text=self.summary_text,
-            changes_file_object=changes_file_object, logger=logger)
+            status=self.packageupload_status,
+            summary_text=self.summary_text,
+            changes_file_object=changes_file_object,
+            logger=logger,
+        )
 
 
 class ScanException(Exception):
@@ -227,8 +216,13 @@ class ScanException(Exception):
 class SourceArtifactMetadata:
     """Metadata extracted from a source package."""
 
-    def __init__(self, format: SourcePackageFileType, name: str, version: str,
-                 user_defined_fields: Optional[List[Tuple[str, str]]] = None):
+    def __init__(
+        self,
+        format: SourcePackageFileType,
+        name: str,
+        version: str,
+        user_defined_fields: Optional[List[Tuple[str, str]]] = None,
+    ):
         self.format = format
         self.name = name
         self.version = version
@@ -238,10 +232,17 @@ class SourceArtifactMetadata:
 class BinaryArtifactMetadata:
     """Metadata extracted from a binary package."""
 
-    def __init__(self, format: BinaryPackageFormat, name: str, version: str,
-                 summary: str, description: str, architecturespecific: bool,
-                 homepage: str,
-                 user_defined_fields: Optional[List[Tuple[str, str]]] = None):
+    def __init__(
+        self,
+        format: BinaryPackageFormat,
+        name: str,
+        version: str,
+        summary: str,
+        description: str,
+        architecturespecific: bool,
+        homepage: str,
+        user_defined_fields: Optional[List[Tuple[str, str]]] = None,
+    ):
         self.format = format
         self.name = name
         self.version = version
@@ -256,7 +257,6 @@ ArtifactMetadata = Union[SourceArtifactMetadata, BinaryArtifactMetadata]
 
 
 class ScannedArtifact:
-
     def __init__(
         self, *, artifact: IRevisionStatusArtifact, metadata: ArtifactMetadata
     ):
@@ -286,7 +286,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
         BinaryPackageFormat.WHL: BinaryPackageFileType.WHL,
         BinaryPackageFormat.CONDA_V1: BinaryPackageFileType.CONDA_V1,
         BinaryPackageFormat.CONDA_V2: BinaryPackageFileType.CONDA_V2,
-        }
+    }
 
     # We're only interested in uploading certain kinds of packages to
     # certain kinds of archives.
@@ -295,32 +295,39 @@ class CIBuildUploadJob(ArchiveJobDerived):
             BinaryPackageFormat.DEB,
             BinaryPackageFormat.UDEB,
             BinaryPackageFormat.DDEB,
-            },
+        },
         ArchiveRepositoryFormat.PYTHON: {
             SourcePackageFileType.SDIST,
             BinaryPackageFormat.WHL,
-            },
+        },
         ArchiveRepositoryFormat.CONDA: {
             BinaryPackageFormat.CONDA_V1,
             BinaryPackageFormat.CONDA_V2,
-            },
+        },
         ArchiveRepositoryFormat.GO_PROXY: {
             SourcePackageFileType.GO_MODULE_INFO,
             SourcePackageFileType.GO_MODULE_MOD,
             SourcePackageFileType.GO_MODULE_ZIP,
-            },
-        }
+        },
+    }
 
     @classmethod
-    def create(cls, ci_build, requester, target_archive, target_distroseries,
-               target_pocket, target_channel=None):
+    def create(
+        cls,
+        ci_build,
+        requester,
+        target_archive,
+        target_distroseries,
+        target_pocket,
+        target_channel=None,
+    ):
         """See `ICIBuildUploadJobSource`."""
         metadata = {
             "ci_build_id": ci_build.id,
             "target_distroseries_id": target_distroseries.id,
             "target_pocket": target_pocket.title,
             "target_channel": target_channel,
-            }
+        }
         derived = super().create(target_archive, metadata)
         derived.job.requester = requester
         return derived
@@ -328,33 +335,39 @@ class CIBuildUploadJob(ArchiveJobDerived):
     def __repr__(self):
         """Returns an informative representation of the job."""
         parts = [
-            "%s to upload %r to %s %s" % (
+            "%s to upload %r to %s %s"
+            % (
                 self.__class__.__name__,
                 self.ci_build,
                 self.archive.reference,
                 self.target_distroseries.getSuite(self.target_pocket),
-                ),
-            ]
+            ),
+        ]
         if self.target_channel is not None:
             parts.append(" {%s}" % self.target_channel)
         return "<%s>" % "".join(parts)
 
     def getOopsVars(self):
         vars = super().getOopsVars()
-        vars.extend([
-            (key, self.metadata[key])
-            for key in (
-                "ci_build_id",
-                "target_distroseries_id",
-                "target_pocket",
-                "target_channel",
-                )])
+        vars.extend(
+            [
+                (key, self.metadata[key])
+                for key in (
+                    "ci_build_id",
+                    "target_distroseries_id",
+                    "target_pocket",
+                    "target_channel",
+                )
+            ]
+        )
         return vars
 
     def getOperationDescription(self):
         """See `IRunnableJob`."""
         return "uploading %s to %s" % (
-            self.ci_build.title, self.archive.reference)
+            self.ci_build.title,
+            self.archive.reference,
+        )
 
     def getErrorRecipients(self):
         return [format_address_for_person(self.requester)]
@@ -366,12 +379,14 @@ class CIBuildUploadJob(ArchiveJobDerived):
     @property
     def target_distroseries(self):
         return getUtility(IDistroSeriesSet).get(
-            self.metadata["target_distroseries_id"])
+            self.metadata["target_distroseries_id"]
+        )
 
     @property
     def target_pocket(self):
         return PackagePublishingPocket.getTermByToken(
-            self.metadata["target_pocket"]).value
+            self.metadata["target_pocket"]
+        ).value
 
     @property
     def target_channel(self):
@@ -387,7 +402,8 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 wheel = Wheel(str(path))
             except Exception as e:
                 logger.warning(
-                    "Failed to scan %s as a Python wheel: %s", path.name, e)
+                    "Failed to scan %s as a Python wheel: %s", path.name, e
+                )
                 continue
             logger.info("%s is a Python wheel", path.name)
             all_metadata[path.name] = BinaryArtifactMetadata(
@@ -410,7 +426,8 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 sdist = SDist(str(path))
             except Exception as e:
                 logger.warning(
-                    "Failed to scan %s as a Python sdist: %s", path.name, e)
+                    "Failed to scan %s as a Python sdist: %s", path.name, e
+                )
                 continue
             logger.info("%s is a Python sdist", path.name)
             all_metadata[path.name] = SourceArtifactMetadata(
@@ -421,8 +438,10 @@ class CIBuildUploadJob(ArchiveJobDerived):
         return all_metadata
 
     def _scanCondaMetadata(
-        self, format: BinaryPackageFormat, index: Dict[Any, Any],
-        about: Dict[Any, Any]
+        self,
+        format: BinaryPackageFormat,
+        index: Dict[Any, Any],
+        about: Dict[Any, Any],
     ) -> Optional[BinaryArtifactMetadata]:
         return BinaryArtifactMetadata(
             format=format,
@@ -449,17 +468,20 @@ class CIBuildUploadJob(ArchiveJobDerived):
             try:
                 with tarfile.open(str(path)) as tar:
                     index = json.loads(
-                        tar.extractfile("info/index.json").read().decode())
+                        tar.extractfile("info/index.json").read().decode()
+                    )
                     about = json.loads(
-                        tar.extractfile("info/about.json").read().decode())
+                        tar.extractfile("info/about.json").read().decode()
+                    )
             except Exception as e:
                 logger.warning(
-                    "Failed to scan %s as a Conda v1 package: %s",
-                    path.name, e)
+                    "Failed to scan %s as a Conda v1 package: %s", path.name, e
+                )
                 continue
             logger.info("%s is a Conda v1 package", path.name)
             all_metadata[path.name] = self._scanCondaMetadata(
-                BinaryPackageFormat.CONDA_V1, index, about)
+                BinaryPackageFormat.CONDA_V1, index, about
+            )
         return all_metadata
 
     def _scanCondaV2(
@@ -474,21 +496,25 @@ class CIBuildUploadJob(ArchiveJobDerived):
                     info = io.BytesIO()
                     with zipf.open("info-%s.tar.zst" % path.stem) as raw_info:
                         zstandard.ZstdDecompressor().copy_stream(
-                            raw_info, info)
+                            raw_info, info
+                        )
                     info.seek(0)
                     with tarfile.open(fileobj=info) as tar:
                         index = json.loads(
-                            tar.extractfile("info/index.json").read().decode())
+                            tar.extractfile("info/index.json").read().decode()
+                        )
                         about = json.loads(
-                            tar.extractfile("info/about.json").read().decode())
+                            tar.extractfile("info/about.json").read().decode()
+                        )
             except Exception as e:
                 logger.warning(
-                    "Failed to scan %s as a Conda v2 package: %s",
-                    path.name, e)
+                    "Failed to scan %s as a Conda v2 package: %s", path.name, e
+                )
                 continue
             logger.info("%s is a Conda v2 package", path.name)
             all_metadata[path.name] = self._scanCondaMetadata(
-                BinaryPackageFormat.CONDA_V2, index, about)
+                BinaryPackageFormat.CONDA_V2, index, about
+            )
         return all_metadata
 
     def _scanGoMod(self, paths: Iterable[Path]) -> Dict[str, ArtifactMetadata]:
@@ -510,18 +536,23 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 except Exception as e:
                     logger.warning(
                         "Failed to load Go module version from %s: %s",
-                        info_path.name, e)
+                        info_path.name,
+                        e,
+                    )
             try:
                 with open(str(path)) as mod_file:
                     module_path = parse_go_mod(mod_file.read())
             except GoModParserException as e:
                 logger.warning(
-                    "Failed to scan %s as a Go module: %s",
-                    path.name, e)
+                    "Failed to scan %s as a Go module: %s", path.name, e
+                )
                 continue
             logger.info(
                 "(%s, %s, %s) are a Go module",
-                info_path.name, path.name, zip_path.name)
+                info_path.name,
+                path.name,
+                zip_path.name,
+            )
             metadata_kwargs = {
                 "name": module_path,
                 "version": version,
@@ -530,7 +561,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 # through without needing to add a column to a large table
                 # that's only relevant to a tiny minority of rows.
                 "user_defined_fields": [("module-path", module_path)],
-                }
+            }
             all_metadata[info_path.name] = SourceArtifactMetadata(
                 format=SourcePackageFileType.GO_MODULE_INFO,
                 **metadata_kwargs,
@@ -552,7 +583,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
             self._scanCondaV1,
             self._scanCondaV2,
             self._scanGoMod,
-            )
+        )
         paths = [directory / child for child in directory.iterdir()]
         all_metadata = OrderedDict()
         for scanner in scanners:
@@ -572,9 +603,9 @@ class CIBuildUploadJob(ArchiveJobDerived):
         Returns a list of `ScannedArtifact`s containing metadata for
         relevant artifacts.
         """
-        allowed_formats = (
-            self.format_by_repository_format.get(
-                self.archive.repository_format, set()))
+        allowed_formats = self.format_by_repository_format.get(
+            self.archive.repository_format, set()
+        )
         scanned = []
         with tempfile.TemporaryDirectory(prefix="ci-build-copy-job") as tmpdir:
             tmpdirpath = Path(tmpdir)
@@ -592,11 +623,15 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 if metadata.format not in allowed_formats:
                     logger.info(
                         "Skipping %s (not relevant to %s archives)",
-                        name, self.archive.repository_format)
+                        name,
+                        self.archive.repository_format,
+                    )
                     continue
                 scanned.append(
                     ScannedArtifact(
-                        artifact=artifact_by_name[name], metadata=metadata))
+                        artifact=artifact_by_name[name], metadata=metadata
+                    )
+                )
         return scanned
 
     def _uploadSources(self, scanned: Sequence[ScannedArtifact]) -> None:
@@ -607,7 +642,8 @@ class CIBuildUploadJob(ArchiveJobDerived):
         # we make use of that if necessary.
         releases = {
             release.sourcepackagename: release
-            for release in self.ci_build.sourcepackages}
+            for release in self.ci_build.sourcepackages
+        }
         distroseries = self.ci_build.distro_arch_series.distroseries
         build_target = self.ci_build.git_repository.target
         spr = releases.get(build_target.sourcepackagename)
@@ -623,7 +659,8 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 version=first_metadata.version,
                 creator=self.requester,
                 archive=self.archive,
-                user_defined_fields=first_metadata.user_defined_fields)
+                user_defined_fields=first_metadata.user_defined_fields,
+            )
         for scanned_artifact in scanned:
             metadata = scanned_artifact.metadata
             if not isinstance(metadata, SourceArtifactMetadata):
@@ -631,25 +668,34 @@ class CIBuildUploadJob(ArchiveJobDerived):
             library_file = scanned_artifact.artifact.library_file
             logger.info(
                 "Uploading %s to %s %s (%s)",
-                library_file.filename, self.archive.reference,
+                library_file.filename,
+                self.archive.reference,
                 self.target_distroseries.getSuite(self.target_pocket),
-                self.target_channel)
+                self.target_channel,
+            )
             for sprf in spr.files:
-                if (sprf.libraryfile == library_file and
-                        sprf.filetype == metadata.format):
+                if (
+                    sprf.libraryfile == library_file
+                    and sprf.filetype == metadata.format
+                ):
                     break
             else:
                 spr.addFile(library_file, filetype=metadata.format)
         getUtility(IPublishingSet).newSourcePublication(
-            archive=self.archive, sourcepackagerelease=spr,
-            distroseries=self.target_distroseries, pocket=self.target_pocket,
-            creator=self.requester, channel=self.target_channel)
+            archive=self.archive,
+            sourcepackagerelease=spr,
+            distroseries=self.target_distroseries,
+            pocket=self.target_pocket,
+            creator=self.requester,
+            channel=self.target_channel,
+        )
 
     def _uploadBinaries(self, scanned: Iterable[ScannedArtifact]) -> None:
         """Upload binaries from an iterable of `ScannedArtifact`s."""
         releases = {
             (release.binarypackagename, release.binpackageformat): release
-            for release in self.ci_build.binarypackages}
+            for release in self.ci_build.binarypackages
+        }
         binaries = OrderedDict()
         for scanned_artifact in scanned:
             metadata = scanned_artifact.metadata
@@ -658,11 +704,14 @@ class CIBuildUploadJob(ArchiveJobDerived):
             library_file = scanned_artifact.artifact.library_file
             logger.info(
                 "Uploading %s to %s %s (%s)",
-                library_file.filename, self.archive.reference,
+                library_file.filename,
+                self.archive.reference,
                 self.target_distroseries.getSuite(self.target_pocket),
-                self.target_channel)
+                self.target_channel,
+            )
             binarypackagename = getUtility(IBinaryPackageNameSet).ensure(
-                metadata.name)
+                metadata.name
+            )
             filetype = self.filetype_by_format[metadata.format]
             bpr = releases.get((binarypackagename, metadata.format))
             if bpr is None:
@@ -674,10 +723,13 @@ class CIBuildUploadJob(ArchiveJobDerived):
                     binpackageformat=metadata.format,
                     architecturespecific=metadata.architecturespecific,
                     homepage=metadata.homepage,
-                    user_defined_fields=metadata.user_defined_fields)
+                    user_defined_fields=metadata.user_defined_fields,
+                )
             for bpf in bpr.files:
-                if (bpf.libraryfile == library_file and
-                        bpf.filetype == filetype):
+                if (
+                    bpf.libraryfile == library_file
+                    and bpf.filetype == filetype
+                ):
                     break
             else:
                 bpr.addFile(library_file, filetype=filetype)
@@ -686,8 +738,12 @@ class CIBuildUploadJob(ArchiveJobDerived):
             # (component, etc.).  None of this is relevant here.
             binaries[bpr] = (None, None, None, None)
         getUtility(IPublishingSet).publishBinaries(
-            self.archive, self.target_distroseries, self.target_pocket,
-            binaries, channel=self.target_channel)
+            self.archive,
+            self.target_distroseries,
+            self.target_pocket,
+            binaries,
+            channel=self.target_channel,
+        )
 
     def run(self) -> None:
         """See `IRunnableJob`."""
@@ -697,10 +753,12 @@ class CIBuildUploadJob(ArchiveJobDerived):
             # here as well just in case.
             logger.warning(
                 "Source CI build is for %s, which is not a package",
-                repr(build_target))
+                repr(build_target),
+            )
             return
         artifacts = getUtility(IRevisionStatusArtifactSet).findByCIBuild(
-            self.ci_build)
+            self.ci_build
+        )
         scanned = self._scanArtifacts(artifacts)
         if scanned:
             self._uploadSources(scanned)
@@ -708,4 +766,5 @@ class CIBuildUploadJob(ArchiveJobDerived):
         else:
             names = [artifact.library_file.filename for artifact in artifacts]
             raise ScanException(
-                "Could not find any usable files in %s" % names)
+                "Could not find any usable files in %s" % names
+            )

@@ -9,14 +9,11 @@ import shutil
 import tempfile
 
 from storm.store import Store
-from testtools.matchers import (
-    Equals,
-    MatchesListwise,
-    )
+from testtools.matchers import Equals, MatchesListwise
 from testtools.twistedsupport import (
     AsynchronousDeferredRunTest,
     AsynchronousDeferredRunTestForBrokenTwisted,
-    )
+)
 from twisted.internet import defer
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -24,36 +21,27 @@ from zope.security.proxy import removeSecurityProxy
 from lp.archivepublisher.diskpool import poolify
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
-    )
-from lp.buildmaster.enums import (
-    BuilderCleanStatus,
-    BuildStatus,
-    )
-from lp.buildmaster.interactor import (
-    BuilderInteractor,
-    extract_vitals_from_db,
-    )
+)
+from lp.buildmaster.enums import BuilderCleanStatus, BuildStatus
+from lp.buildmaster.interactor import BuilderInteractor, extract_vitals_from_db
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
-    )
+)
 from lp.buildmaster.manager import BuilddManager
 from lp.buildmaster.tests.mock_workers import (
     AbortingWorker,
     BuildingWorker,
     OkWorker,
     WaitingWorker,
-    )
+)
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
     TestHandleStatusMixin,
     TestVerifySuccessfulBuildMixin,
-    )
+)
 from lp.buildmaster.tests.test_manager import MockBuilderFactory
-from lp.registry.interfaces.pocket import (
-    PackagePublishingPocket,
-    pocketsuffix,
-    )
+from lp.registry.interfaces.pocket import PackagePublishingPocket, pocketsuffix
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.services.authserver.testing import InProcessAuthServerFixture
@@ -63,22 +51,14 @@ from lp.services.log.logger import BufferLogger
 from lp.services.macaroons.testing import MacaroonVerifies
 from lp.services.statsd.tests import StatsMixin
 from lp.services.webapp import canonical_url
-from lp.soyuz.adapters.archivedependencies import (
-    get_sources_list_for_building,
-    )
-from lp.soyuz.enums import (
-    ArchivePurpose,
-    PackagePublishingStatus,
-    )
+from lp.soyuz.adapters.archivedependencies import get_sources_list_for_building
+from lp.soyuz.enums import ArchivePurpose, PackagePublishingStatus
 from lp.soyuz.tests.soyuz import Base64KeyMatches
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.keyserver import InProcessKeyServerFixture
-from lp.testing.layers import (
-    LaunchpadZopelessLayer,
-    ZopelessDatabaseLayer,
-    )
+from lp.testing.layers import LaunchpadZopelessLayer, ZopelessDatabaseLayer
 
 
 class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
@@ -93,27 +73,54 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=30)
+        timeout=30
+    )
 
     def setUp(self):
         super().setUp()
-        switch_dbuser('testadmin')
+        switch_dbuser("testadmin")
         self.setUpStats()
 
     @defer.inlineCallbacks
-    def assertExpectedInteraction(self, call_log, builder, build, behaviour,
-                                  chroot, archive, archive_purpose,
-                                  component=None, extra_uploads=None,
-                                  filemap_names=None):
+    def assertExpectedInteraction(
+        self,
+        call_log,
+        builder,
+        build,
+        behaviour,
+        chroot,
+        archive,
+        archive_purpose,
+        component=None,
+        extra_uploads=None,
+        filemap_names=None,
+    ):
         matcher = yield self.makeExpectedInteraction(
-            builder, build, behaviour, chroot, archive, archive_purpose,
-            component, extra_uploads, filemap_names)
+            builder,
+            build,
+            behaviour,
+            chroot,
+            archive,
+            archive_purpose,
+            component,
+            extra_uploads,
+            filemap_names,
+        )
         self.assertThat(call_log, matcher)
 
     @defer.inlineCallbacks
-    def makeExpectedInteraction(self, builder, build, behaviour, chroot,
-                                archive, archive_purpose, component=None,
-                                extra_uploads=None, filemap_names=None):
+    def makeExpectedInteraction(
+        self,
+        builder,
+        build,
+        behaviour,
+        chroot,
+        archive,
+        archive_purpose,
+        component=None,
+        extra_uploads=None,
+        filemap_names=None,
+    ):
         """Build the log of calls that we expect to be made to the worker.
 
         :param builder: The builder we are using to build the binary package.
@@ -132,7 +139,8 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         ds_name = das.distroseries.name
         suite = ds_name + pocketsuffix[build.pocket]
         archives, trusted_keys = yield get_sources_list_for_building(
-            behaviour, das, build.source_package_release.name)
+            behaviour, das, build.source_package_release.name
+        )
         arch_indep = das.isNominatedArchIndep
         if component is None:
             component = build.current_component.name
@@ -143,33 +151,47 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
 
         upload_logs = [
             MatchesListwise(
-                [Equals('ensurepresent')] +
-                [item if hasattr(item, 'match') else Equals(item)
-                 for item in upload])
-            for upload in [(chroot.http_url, '', '')] + extra_uploads]
+                [Equals("ensurepresent")]
+                + [
+                    item if hasattr(item, "match") else Equals(item)
+                    for item in upload
+                ]
+            )
+            for upload in [(chroot.http_url, "", "")] + extra_uploads
+        ]
 
         extra_args = {
-            'arch_indep': arch_indep,
-            'arch_tag': das.architecturetag,
-            'archive_private': archive.private,
-            'archive_purpose': archive_purpose.name,
-            'archives': archives,
-            'build_debug_symbols': archive.build_debug_symbols,
-            'build_url': canonical_url(build),
-            'distribution': das.distroseries.distribution.name,
-            'fast_cleanup': builder.virtualized,
-            'image_type': 'chroot',
-            'ogrecomponent': component,
-            'series': ds_name,
-            'suite': suite,
-            'trusted_keys': trusted_keys,
-            }
+            "arch_indep": arch_indep,
+            "arch_tag": das.architecturetag,
+            "archive_private": archive.private,
+            "archive_purpose": archive_purpose.name,
+            "archives": archives,
+            "build_debug_symbols": archive.build_debug_symbols,
+            "build_url": canonical_url(build),
+            "distribution": das.distroseries.distribution.name,
+            "fast_cleanup": builder.virtualized,
+            "image_type": "chroot",
+            "ogrecomponent": component,
+            "series": ds_name,
+            "suite": suite,
+            "trusted_keys": trusted_keys,
+        }
         build_log = [
-            ('build', build.build_cookie, 'binarypackage',
-             chroot.content.sha1, filemap_names, extra_args)]
-        return MatchesListwise([
-            item if hasattr(item, 'match') else Equals(item)
-            for item in upload_logs + build_log])
+            (
+                "build",
+                build.build_cookie,
+                "binarypackage",
+                chroot.content.sha1,
+                filemap_names,
+                extra_args,
+            )
+        ]
+        return MatchesListwise(
+            [
+                item if hasattr(item, "match") else Equals(item)
+                for item in upload_logs + build_log
+            ]
+        )
 
     @defer.inlineCallbacks
     def test_non_virtual_ppa_dispatch(self):
@@ -184,7 +206,8 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
         vitals = extract_vitals_from_db(builder)
         build = self.factory.makeBinaryPackageBuild(
-            builder=builder, archive=archive)
+            builder=builder, archive=archive
+        )
         lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         bq = build.queueBuild()
@@ -192,16 +215,26 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         interactor = BuilderInteractor()
         behaviour = interactor.getBuildBehaviour(bq, builder, worker)
         yield interactor._startBuild(
-            bq, vitals, builder, worker, behaviour, BufferLogger())
+            bq, vitals, builder, worker, behaviour, BufferLogger()
+        )
         yield self.assertExpectedInteraction(
-            worker.call_log, builder, build, behaviour, lf, archive,
-            ArchivePurpose.PRIMARY, 'universe')
+            worker.call_log,
+            builder,
+            build,
+            behaviour,
+            lf,
+            archive,
+            ArchivePurpose.PRIMARY,
+            "universe",
+        )
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ('build.count,builder_name={},env=test,'
-             'job_type=PACKAGEBUILD'.format(
-                builder.name),))
+            (
+                "build.count,builder_name={},env=test,"
+                "job_type=PACKAGEBUILD".format(builder.name),
+            ),
+        )
 
     @defer.inlineCallbacks
     def test_non_virtual_ppa_dispatch_with_primary_ancestry(self):
@@ -213,12 +246,14 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
         vitals = extract_vitals_from_db(builder)
         build = self.factory.makeBinaryPackageBuild(
-            builder=builder, archive=archive)
+            builder=builder, archive=archive
+        )
         self.factory.makeSourcePackagePublishingHistory(
             distroseries=build.distro_series,
             archive=archive.distribution.main_archive,
             sourcepackagename=build.source_package_release.sourcepackagename,
-            component='main')
+            component="main",
+        )
         lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         bq = build.queueBuild()
@@ -226,21 +261,29 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         interactor = BuilderInteractor()
         behaviour = interactor.getBuildBehaviour(bq, builder, worker)
         yield interactor._startBuild(
-            bq, vitals, builder, worker, behaviour, BufferLogger())
+            bq, vitals, builder, worker, behaviour, BufferLogger()
+        )
         yield self.assertExpectedInteraction(
-            worker.call_log, builder, build, behaviour, lf, archive,
-            ArchivePurpose.PRIMARY, 'main')
+            worker.call_log,
+            builder,
+            build,
+            behaviour,
+            lf,
+            archive,
+            ArchivePurpose.PRIMARY,
+            "main",
+        )
 
     @defer.inlineCallbacks
     def test_virtual_ppa_dispatch(self):
         archive = self.factory.makeArchive(virtualized=True)
         worker = OkWorker()
-        builder = self.factory.makeBuilder(
-            virtualized=True, vm_host="foohost")
+        builder = self.factory.makeBuilder(virtualized=True, vm_host="foohost")
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
         vitals = extract_vitals_from_db(builder)
         build = self.factory.makeBinaryPackageBuild(
-            builder=builder, archive=archive)
+            builder=builder, archive=archive
+        )
         lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         bq = build.queueBuild()
@@ -248,39 +291,55 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         interactor = BuilderInteractor()
         behaviour = interactor.getBuildBehaviour(bq, builder, worker)
         yield interactor._startBuild(
-            bq, vitals, builder, worker, behaviour, BufferLogger())
+            bq, vitals, builder, worker, behaviour, BufferLogger()
+        )
         yield self.assertExpectedInteraction(
-            worker.call_log, builder, build, behaviour, lf, archive,
-            ArchivePurpose.PPA)
+            worker.call_log,
+            builder,
+            build,
+            behaviour,
+            lf,
+            archive,
+            ArchivePurpose.PPA,
+        )
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ('build.count,builder_name={},env=test,'
-             'job_type=PACKAGEBUILD'.format(
-                builder.name),))
+            (
+                "build.count,builder_name={},env=test,"
+                "job_type=PACKAGEBUILD".format(builder.name),
+            ),
+        )
 
     @defer.inlineCallbacks
     def test_private_source_dispatch(self):
         self.useFixture(InProcessAuthServerFixture())
         self.pushConfig(
-            "launchpad", internal_macaroon_secret_key="some-secret")
+            "launchpad", internal_macaroon_secret_key="some-secret"
+        )
         archive = self.factory.makeArchive(private=True)
         worker = OkWorker()
         builder = self.factory.makeBuilder()
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
         vitals = extract_vitals_from_db(builder)
         build = self.factory.makeBinaryPackageBuild(
-            builder=builder, archive=archive)
+            builder=builder, archive=archive
+        )
         sprf = build.source_package_release.addFile(
             self.factory.makeLibraryFileAlias(db_only=True),
-            filetype=SourcePackageFileType.ORIG_TARBALL)
+            filetype=SourcePackageFileType.ORIG_TARBALL,
+        )
         sprf_url = (
-            'http://private-ppa.launchpad.test/%s/%s/ubuntu/pool/%s/%s'
-            % (archive.owner.name, archive.name,
-               poolify(
-                   build.source_package_release.sourcepackagename.name,
-                   'main').as_posix(),
-               sprf.libraryfile.filename))
+            "http://private-ppa.launchpad.test/%s/%s/ubuntu/pool/%s/%s"
+            % (
+                archive.owner.name,
+                archive.name,
+                poolify(
+                    build.source_package_release.sourcepackagename.name, "main"
+                ).as_posix(),
+                sprf.libraryfile.filename,
+            )
+        )
         lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         bq = build.queueBuild()
@@ -288,26 +347,38 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         interactor = BuilderInteractor()
         behaviour = interactor.getBuildBehaviour(bq, builder, worker)
         yield interactor._startBuild(
-            bq, vitals, builder, worker, behaviour, BufferLogger())
+            bq, vitals, builder, worker, behaviour, BufferLogger()
+        )
         yield self.assertExpectedInteraction(
-            worker.call_log, builder, build, behaviour, lf, archive,
+            worker.call_log,
+            builder,
+            build,
+            behaviour,
+            lf,
+            archive,
             ArchivePurpose.PPA,
             extra_uploads=[
-                (Equals(sprf_url),
-                 Equals('buildd'),
-                 MacaroonVerifies('binary-package-build', archive))],
-            filemap_names=[sprf.libraryfile.filename])
+                (
+                    Equals(sprf_url),
+                    Equals("buildd"),
+                    MacaroonVerifies("binary-package-build", archive),
+                )
+            ],
+            filemap_names=[sprf.libraryfile.filename],
+        )
 
     @defer.inlineCallbacks
     def test_partner_dispatch_no_publishing_history(self):
         archive = self.factory.makeArchive(
-            virtualized=False, purpose=ArchivePurpose.PARTNER)
+            virtualized=False, purpose=ArchivePurpose.PARTNER
+        )
         worker = OkWorker()
         builder = self.factory.makeBuilder(virtualized=False)
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
         vitals = extract_vitals_from_db(builder)
         build = self.factory.makeBinaryPackageBuild(
-            builder=builder, archive=archive)
+            builder=builder, archive=archive
+        )
         lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         bq = build.queueBuild()
@@ -315,50 +386,70 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         interactor = BuilderInteractor()
         behaviour = interactor.getBuildBehaviour(bq, builder, worker)
         yield interactor._startBuild(
-            bq, vitals, builder, worker, behaviour, BufferLogger())
+            bq, vitals, builder, worker, behaviour, BufferLogger()
+        )
         yield self.assertExpectedInteraction(
-            worker.call_log, builder, build, behaviour, lf, archive,
-            ArchivePurpose.PARTNER)
+            worker.call_log,
+            builder,
+            build,
+            behaviour,
+            lf,
+            archive,
+            ArchivePurpose.PARTNER,
+        )
 
     def test_dont_dispatch_release_builds(self):
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
         builder = self.factory.makeBuilder()
         distroseries = self.factory.makeDistroSeries(
-            status=SeriesStatus.CURRENT, distribution=archive.distribution)
+            status=SeriesStatus.CURRENT, distribution=archive.distribution
+        )
         distro_arch_series = self.factory.makeDistroArchSeries(
-            distroseries=distroseries)
+            distroseries=distroseries
+        )
         build = self.factory.makeBinaryPackageBuild(
-            builder=builder, archive=archive,
+            builder=builder,
+            archive=archive,
             distroarchseries=distro_arch_series,
-            pocket=PackagePublishingPocket.RELEASE)
+            pocket=PackagePublishingPocket.RELEASE,
+        )
         lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         behaviour = IBuildFarmJobBehaviour(build)
         behaviour.setBuilder(builder, None)
         e = self.assertRaises(
-            AssertionError, behaviour.verifyBuildRequest, BufferLogger())
+            AssertionError, behaviour.verifyBuildRequest, BufferLogger()
+        )
         expected_message = (
             "%s (%s) can not be built for pocket %s: invalid pocket due "
-            "to the series status of %s." % (
-                build.title, build.id, build.pocket.name,
-                build.distro_series.name))
+            "to the series status of %s."
+            % (
+                build.title,
+                build.id,
+                build.pocket.name,
+                build.distro_series.name,
+            )
+        )
         self.assertEqual(expected_message, str(e))
 
     def test_dont_dispatch_security_builds(self):
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
         builder = self.factory.makeBuilder()
         build = self.factory.makeBinaryPackageBuild(
-            builder=builder, archive=archive,
-            pocket=PackagePublishingPocket.SECURITY)
+            builder=builder,
+            archive=archive,
+            pocket=PackagePublishingPocket.SECURITY,
+        )
         lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         behaviour = IBuildFarmJobBehaviour(build)
         behaviour.setBuilder(builder, None)
         e = self.assertRaises(
-            AssertionError, behaviour.verifyBuildRequest, BufferLogger())
+            AssertionError, behaviour.verifyBuildRequest, BufferLogger()
+        )
         self.assertEqual(
-            'Soyuz is not yet capable of building SECURITY uploads.',
-            str(e))
+            "Soyuz is not yet capable of building SECURITY uploads.", str(e)
+        )
 
     @defer.inlineCallbacks
     def test_arch_indep(self):
@@ -368,12 +459,12 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         behaviour = IBuildFarmJobBehaviour(build)
         behaviour.setBuilder(builder, None)
         extra_args = yield behaviour.extraBuildArgs()
-        self.assertFalse(extra_args['arch_indep'])
+        self.assertFalse(extra_args["arch_indep"])
         build = self.factory.makeBinaryPackageBuild(arch_indep=True)
         behaviour = IBuildFarmJobBehaviour(build)
         behaviour.setBuilder(builder, None)
         extra_args = yield behaviour.extraBuildArgs()
-        self.assertTrue(extra_args['arch_indep'])
+        self.assertTrue(extra_args["arch_indep"])
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_archives_proposed(self):
@@ -381,22 +472,24 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         # security, updates, and proposed pockets in the primary archive.
         builder = self.factory.makeBuilder()
         build = self.factory.makeBinaryPackageBuild(
-            pocket=PackagePublishingPocket.PROPOSED)
+            pocket=PackagePublishingPocket.PROPOSED
+        )
         for component_name in ("main", "universe"):
             self.factory.makeComponentSelection(
-                build.distro_series, component_name)
+                build.distro_series, component_name
+            )
         behaviour = IBuildFarmJobBehaviour(build)
         behaviour.setBuilder(builder, None)
         expected_archives = [
-            "deb %s %s main universe" % (
-                build.archive.archive_url, build.distro_series.name),
-            "deb %s %s-security main universe" % (
-                build.archive.archive_url, build.distro_series.name),
-            "deb %s %s-updates main universe" % (
-                build.archive.archive_url, build.distro_series.name),
-            "deb %s %s-proposed main universe" % (
-                build.archive.archive_url, build.distro_series.name),
-            ]
+            "deb %s %s main universe"
+            % (build.archive.archive_url, build.distro_series.name),
+            "deb %s %s-security main universe"
+            % (build.archive.archive_url, build.distro_series.name),
+            "deb %s %s-updates main universe"
+            % (build.archive.archive_url, build.distro_series.name),
+            "deb %s %s-proposed main universe"
+            % (build.archive.archive_url, build.distro_series.name),
+        ]
         extra_args = yield behaviour.extraBuildArgs()
         self.assertEqual(expected_archives, extra_args["archives"])
 
@@ -407,22 +500,24 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         # archive.
         builder = self.factory.makeBuilder()
         build = self.factory.makeBinaryPackageBuild(
-            pocket=PackagePublishingPocket.BACKPORTS)
+            pocket=PackagePublishingPocket.BACKPORTS
+        )
         for component_name in ("main", "universe"):
             self.factory.makeComponentSelection(
-                build.distro_series, component_name)
+                build.distro_series, component_name
+            )
         behaviour = IBuildFarmJobBehaviour(build)
         behaviour.setBuilder(builder, None)
         expected_archives = [
-            "deb %s %s main universe" % (
-                build.archive.archive_url, build.distro_series.name),
-            "deb %s %s-security main universe" % (
-                build.archive.archive_url, build.distro_series.name),
-            "deb %s %s-updates main universe" % (
-                build.archive.archive_url, build.distro_series.name),
-            "deb %s %s-backports main universe" % (
-                build.archive.archive_url, build.distro_series.name),
-            ]
+            "deb %s %s main universe"
+            % (build.archive.archive_url, build.distro_series.name),
+            "deb %s %s-security main universe"
+            % (build.archive.archive_url, build.distro_series.name),
+            "deb %s %s-updates main universe"
+            % (build.archive.archive_url, build.distro_series.name),
+            "deb %s %s-backports main universe"
+            % (build.archive.archive_url, build.distro_series.name),
+        ]
         extra_args = yield behaviour.extraBuildArgs()
         self.assertEqual(expected_archives, extra_args["archives"])
 
@@ -436,23 +531,26 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         build = self.factory.makeBinaryPackageBuild(archive=archive)
         for component_name in ("main", "universe"):
             self.factory.makeComponentSelection(
-                build.distro_series, component_name)
+                build.distro_series, component_name
+            )
         self.factory.makeBinaryPackagePublishingHistory(
-            distroarchseries=build.distro_arch_series, pocket=build.pocket,
-            archive=archive, status=PackagePublishingStatus.PUBLISHED)
+            distroarchseries=build.distro_arch_series,
+            pocket=build.pocket,
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+        )
         behaviour = IBuildFarmJobBehaviour(build)
         behaviour.setBuilder(builder, None)
         primary = build.distribution.main_archive
         expected_archives = [
-            "deb %s %s main" % (
-                archive.archive_url, build.distro_series.name),
-            "deb %s %s main universe" % (
-                primary.archive_url, build.distro_series.name),
-            "deb %s %s-security main universe" % (
-                primary.archive_url, build.distro_series.name),
-            "deb %s %s-updates main universe" % (
-                primary.archive_url, build.distro_series.name),
-            ]
+            "deb %s %s main" % (archive.archive_url, build.distro_series.name),
+            "deb %s %s main universe"
+            % (primary.archive_url, build.distro_series.name),
+            "deb %s %s-security main universe"
+            % (primary.archive_url, build.distro_series.name),
+            "deb %s %s-updates main universe"
+            % (primary.archive_url, build.distro_series.name),
+        ]
         extra_args = yield behaviour.extraBuildArgs()
         self.assertEqual(expected_archives, extra_args["archives"])
 
@@ -464,45 +562,62 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         builder = self.factory.makeBuilder()
         key_path = os.path.join(gpgkeysdir, "ppa-sample@canonical.com.sec")
         yield IArchiveGPGSigningKey(archive).setSigningKey(
-            key_path, async_keyserver=True)
+            key_path, async_keyserver=True
+        )
         build = self.factory.makeBinaryPackageBuild(archive=archive)
         self.factory.makeBinaryPackagePublishingHistory(
-            distroarchseries=build.distro_arch_series, pocket=build.pocket,
-            archive=archive, status=PackagePublishingStatus.PUBLISHED)
+            distroarchseries=build.distro_arch_series,
+            pocket=build.pocket,
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+        )
         behaviour = IBuildFarmJobBehaviour(build)
         behaviour.setBuilder(builder, None)
         args = yield behaviour.extraBuildArgs()
-        self.assertThat(args["trusted_keys"], MatchesListwise([
-            Base64KeyMatches("0D57E99656BEFB0897606EE9A022DD1F5001B46D"),
-            ]))
+        self.assertThat(
+            args["trusted_keys"],
+            MatchesListwise(
+                [
+                    Base64KeyMatches(
+                        "0D57E99656BEFB0897606EE9A022DD1F5001B46D"
+                    ),
+                ]
+            ),
+        )
 
     def test_verifyBuildRequest(self):
         # Don't allow a virtual build on a non-virtual builder.
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
         builder = self.factory.makeBuilder(virtualized=False)
         build = self.factory.makeBinaryPackageBuild(
-            builder=builder, archive=archive,
-            pocket=PackagePublishingPocket.RELEASE)
+            builder=builder,
+            archive=archive,
+            pocket=PackagePublishingPocket.RELEASE,
+        )
         lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
         behaviour = IBuildFarmJobBehaviour(build)
         behaviour.setBuilder(builder, None)
         e = self.assertRaises(
-            AssertionError, behaviour.verifyBuildRequest, BufferLogger())
+            AssertionError, behaviour.verifyBuildRequest, BufferLogger()
+        )
         self.assertEqual(
-            'Attempt to build virtual archive on a non-virtual builder.',
-            str(e))
+            "Attempt to build virtual archive on a non-virtual builder.",
+            str(e),
+        )
 
     def test_verifyBuildRequest_no_chroot(self):
         # Don't dispatch a build when the DAS has no chroot.
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
         builder = self.factory.makeBuilder()
         build = self.factory.makeBinaryPackageBuild(
-            builder=builder, archive=archive)
+            builder=builder, archive=archive
+        )
         behaviour = IBuildFarmJobBehaviour(build)
         behaviour.setBuilder(builder, None)
         e = self.assertRaises(
-            CannotBuild, behaviour.verifyBuildRequest, BufferLogger())
+            CannotBuild, behaviour.verifyBuildRequest, BufferLogger()
+        )
         self.assertIn("Missing CHROOT", str(e))
 
 
@@ -529,13 +644,14 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        switch_dbuser('testadmin')
+        switch_dbuser("testadmin")
 
         self.builder = self.factory.makeBuilder()
         self.manager = BuilddManager()
         self.interactor = BuilderInteractor()
         self.build = self.factory.makeBinaryPackageBuild(
-            builder=self.builder, pocket=PackagePublishingPocket.RELEASE)
+            builder=self.builder, pocket=PackagePublishingPocket.RELEASE
+        )
         lf = self.factory.makeLibraryFileAlias(db_only=True)
         self.build.distro_arch_series.addOrUpdateChroot(lf)
         self.candidate = self.build.queueBuild()
@@ -549,8 +665,13 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
         bf = MockBuilderFactory(self.builder, candidate)
         worker_status = yield worker.status()
         yield self.interactor.updateBuild(
-            bf.getVitals('foo'), worker, worker_status, bf,
-            self.interactor.getBuildBehaviour, self.manager)
+            bf.getVitals("foo"),
+            worker,
+            worker_status,
+            bf,
+            self.interactor.getBuildBehaviour,
+            self.manager,
+        )
         self.manager.flushLogTails()
 
     def assertBuildProperties(self, build):
@@ -569,12 +690,13 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             self.assertEqual(BuildStatus.FAILEDTOBUILD, self.build.status)
 
         d = self.updateBuild(
-            self.candidate, WaitingWorker('BuildStatus.PACKAGEFAIL'))
+            self.candidate, WaitingWorker("BuildStatus.PACKAGEFAIL")
+        )
         return d.addCallback(got_update)
 
     def test_depwait_collection(self):
         # Package build was left in dependency wait.
-        DEPENDENCIES = 'baz (>= 1.0.1)'
+        DEPENDENCIES = "baz (>= 1.0.1)"
 
         def got_update(ignored):
             self.assertBuildProperties(self.build)
@@ -582,7 +704,8 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             self.assertEqual(DEPENDENCIES, self.build.dependencies)
 
         d = self.updateBuild(
-            self.candidate, WaitingWorker('BuildStatus.DEPFAIL', DEPENDENCIES))
+            self.candidate, WaitingWorker("BuildStatus.DEPFAIL", DEPENDENCIES)
+        )
         return d.addCallback(got_update)
 
     def test_chrootfail_collection(self):
@@ -592,7 +715,8 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             self.assertEqual(BuildStatus.CHROOTWAIT, self.build.status)
 
         d = self.updateBuild(
-            self.candidate, WaitingWorker('BuildStatus.CHROOTFAIL'))
+            self.candidate, WaitingWorker("BuildStatus.CHROOTFAIL")
+        )
         return d.addCallback(got_update)
 
     def test_building_collection(self):
@@ -609,7 +733,8 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
         def got_update(ignored):
             self.assertEqual(
                 "Waiting for worker process to be terminated",
-                self.candidate.logtail)
+                self.candidate.logtail,
+            )
 
         d = self.updateBuild(self.candidate, AbortingWorker())
         return d.addCallback(got_update)
@@ -623,10 +748,9 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
         pub.requestDeletion(spr.creator)
 
         def got_update(ignored):
-            self.assertEqual(
-                BuildStatus.SUPERSEDED, self.build.status)
+            self.assertEqual(BuildStatus.SUPERSEDED, self.build.status)
 
-        d = self.updateBuild(self.candidate, WaitingWorker('BuildStatus.OK'))
+        d = self.updateBuild(self.candidate, WaitingWorker("BuildStatus.OK"))
         return d.addCallback(got_update)
 
     def test_uploading_collection(self):
@@ -637,27 +761,28 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             # upload processing succeeded.
             self.assertIs(None, self.build.upload_log)
 
-        d = self.updateBuild(self.candidate, WaitingWorker('BuildStatus.OK'))
+        d = self.updateBuild(self.candidate, WaitingWorker("BuildStatus.OK"))
         return d.addCallback(got_update)
 
     def test_log_file_collection(self):
         self.build.updateStatus(BuildStatus.FULLYBUILT)
-        old_tmps = sorted(os.listdir('/tmp'))
+        old_tmps = sorted(os.listdir("/tmp"))
 
-        worker = WaitingWorker('BuildStatus.OK')
+        worker = WaitingWorker("BuildStatus.OK")
 
         def got_log(logfile_lfa_id):
             # Grabbing logs should not leave new files in /tmp (bug #172798)
             logfile_lfa = getUtility(ILibraryFileAliasSet)[logfile_lfa_id]
-            new_tmps = sorted(os.listdir('/tmp'))
+            new_tmps = sorted(os.listdir("/tmp"))
             self.assertEqual(old_tmps, new_tmps)
 
             # The new librarian file is stored compressed with a .gz
             # extension and text/plain file type for easy viewing in
             # browsers, as it decompresses and displays the file inline.
             self.assertTrue(
-                logfile_lfa.filename.endswith('_FULLYBUILT.txt.gz'))
-            self.assertEqual('text/plain', logfile_lfa.mimetype)
+                logfile_lfa.filename.endswith("_FULLYBUILT.txt.gz")
+            )
+            self.assertEqual("text/plain", logfile_lfa.mimetype)
             self.layer.txn.commit()
 
             # LibrarianFileAlias does not implement tell() or seek(), which
@@ -665,7 +790,7 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             # of the librarian first.
             fd, fname = tempfile.mkstemp()
             self.addCleanup(os.remove, fname)
-            tmp = os.fdopen(fd, 'wb')
+            tmp = os.fdopen(fd, "wb")
             tmp.write(logfile_lfa.read())
             tmp.close()
             uncompressed_file = gzip.open(fname).read()
@@ -677,11 +802,12 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             # Check that the original file from the worker matches the
             # uncompressed file in the librarian.
             def got_orig_log(ignored):
-                orig_file_content = open(tmp_orig_file_name, 'rb').read()
+                orig_file_content = open(tmp_orig_file_name, "rb").read()
                 self.assertEqual(orig_file_content, uncompressed_file)
 
             d = removeSecurityProxy(worker).getFile(
-                'buildlog', tmp_orig_file_name)
+                "buildlog", tmp_orig_file_name
+            )
             return d.addCallback(got_orig_log)
 
         behaviour = IBuildFarmJobBehaviour(self.build)
@@ -696,9 +822,12 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
         # Go behind Storm's back since the field validator on
         # Archive.private prevents us from setting it to True with
         # existing published sources.
-        Store.of(self.build).execute("""
+        Store.of(self.build).execute(
+            """
             UPDATE archive SET private=True
-            WHERE archive.id = %s""" % self.build.archive.id)
+            WHERE archive.id = %s"""
+            % self.build.archive.id
+        )
         Store.of(self.build).invalidate()
 
         def got_update(ignored):
@@ -706,7 +835,7 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             self.layer.txn.commit()
             self.assertTrue(self.build.log.restricted)
 
-        d = self.updateBuild(self.candidate, WaitingWorker('BuildStatus.OK'))
+        d = self.updateBuild(self.candidate, WaitingWorker("BuildStatus.OK"))
         return d.addCallback(got_update)
 
 
@@ -728,17 +857,20 @@ class MakeBinaryPackageBuildMixin:
 
 
 class TestGetUploadMethodsForBinaryPackageBuild(
-    MakeBinaryPackageBuildMixin, TestGetUploadMethodsMixin,
-    TestCaseWithFactory):
+    MakeBinaryPackageBuildMixin, TestGetUploadMethodsMixin, TestCaseWithFactory
+):
     """IPackageBuild.getUpload-related methods work with binary builds."""
 
 
 class TestVerifySuccessfulBuildForBinaryPackageBuild(
-    MakeBinaryPackageBuildMixin, TestVerifySuccessfulBuildMixin,
-    TestCaseWithFactory):
+    MakeBinaryPackageBuildMixin,
+    TestVerifySuccessfulBuildMixin,
+    TestCaseWithFactory,
+):
     """IBuildFarmJobBehaviour.verifySuccessfulBuild works."""
 
 
 class TestHandleStatusForBinaryPackageBuild(
-    MakeBinaryPackageBuildMixin, TestHandleStatusMixin, TestCaseWithFactory):
+    MakeBinaryPackageBuildMixin, TestHandleStatusMixin, TestCaseWithFactory
+):
     """IPackageBuild.handleStatus works with binary builds."""

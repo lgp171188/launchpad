@@ -15,10 +15,14 @@ class TestPPAVocabulary(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_toTerm_empty_description(self):
-        archive = self.factory.makeArchive(description='')
+        archive = self.factory.makeArchive(description="")
         vocab = PPAVocabulary()
         term = vocab.toTerm(archive)
-        self.assertThat(term, MatchesStructure.byEquality(
-            value=archive,
-            token=archive.reference,
-            title='No description available'))
+        self.assertThat(
+            term,
+            MatchesStructure.byEquality(
+                value=archive,
+                token=archive.reference,
+                title="No description available",
+            ),
+        )

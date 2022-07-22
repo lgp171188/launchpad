@@ -7,14 +7,11 @@ PackageLocation and SoyuzScript.
 """
 
 __all__ = [
-    'SoyuzScriptError',
-    'SoyuzScript',
-    ]
+    "SoyuzScriptError",
+    "SoyuzScript",
+]
 
-from lp.services.scripts.base import (
-    LaunchpadScript,
-    LaunchpadScriptFailure,
-    )
+from lp.services.scripts.base import LaunchpadScript, LaunchpadScriptFailure
 from lp.soyuz.adapters.packagelocation import build_package_location
 from lp.soyuz.enums import ArchivePurpose
 
@@ -48,6 +45,7 @@ class SoyuzScript(LaunchpadScript):
 
     See `add_my_options` for the default `SoyuzScript` command-line options.
     """
+
     location = None
     success_message = "Done."
 
@@ -65,45 +63,79 @@ class SoyuzScript(LaunchpadScript):
     def add_transaction_options(self):
         """Add SoyuzScript transaction-related options."""
         self.parser.add_option(
-            '-n', '--dry-run', dest='dryrun', default=False,
-            action='store_true', help='Do not commit changes.')
+            "-n",
+            "--dry-run",
+            dest="dryrun",
+            default=False,
+            action="store_true",
+            help="Do not commit changes.",
+        )
 
         self.parser.add_option(
-            '-y', '--confirm-all', dest='confirm_all',
-            default=False, action='store_true',
-            help='Do not prompt the user for confirmation.')
+            "-y",
+            "--confirm-all",
+            dest="confirm_all",
+            default=False,
+            action="store_true",
+            help="Do not prompt the user for confirmation.",
+        )
 
     def add_distro_options(self):
         """Add SoyuzScript distro-related options."""
         self.parser.add_option(
-            '-d', '--distribution', dest='distribution_name',
-            default='ubuntu', action='store',
-            help='Distribution name.')
+            "-d",
+            "--distribution",
+            dest="distribution_name",
+            default="ubuntu",
+            action="store",
+            help="Distribution name.",
+        )
 
         self.parser.add_option(
-            '-s', '--suite', dest='suite', default=None,
-            action='store', help='Suite name.')
+            "-s",
+            "--suite",
+            dest="suite",
+            default=None,
+            action="store",
+            help="Suite name.",
+        )
 
     def add_package_location_options(self):
         """Add SoyuzScript package location-related options."""
         self.parser.add_option(
-            "-c", "--component", dest="component", default=None,
-            help="Component name.")
+            "-c",
+            "--component",
+            dest="component",
+            default=None,
+            help="Component name.",
+        )
 
     def add_archive_options(self):
         """Add SoyuzScript archive-related options."""
         self.parser.add_option(
-            '-p', '--ppa', dest='archive_owner_name', action='store',
-            help='Archive owner name in case of PPA operations')
+            "-p",
+            "--ppa",
+            dest="archive_owner_name",
+            action="store",
+            help="Archive owner name in case of PPA operations",
+        )
 
         self.parser.add_option(
-            '--ppa-name', dest='archive_name', action='store', default="ppa",
-            help='PPA name in case of PPA operations')
+            "--ppa-name",
+            dest="archive_name",
+            action="store",
+            default="ppa",
+            help="PPA name in case of PPA operations",
+        )
 
         self.parser.add_option(
-            '-j', '--partner', dest='partner_archive', default=False,
-            action='store_true',
-            help='Specify partner archive')
+            "-j",
+            "--partner",
+            dest="partner_archive",
+            default=False,
+            action="store_true",
+            help="Specify partner archive",
+        )
 
     def _getUserConfirmation(self, full_question=None, valid_answers=None):
         """Use input to collect user feedback.
@@ -112,13 +144,13 @@ class SoyuzScript(LaunchpadScript):
         'valid_answers' (defaults to 'yes') or False otherwise.
         """
         if valid_answers is None:
-            valid_answers = ['yes', 'no']
-        display_answers = '[%s]' % (', '.join(valid_answers))
+            valid_answers = ["yes", "no"]
+        display_answers = "[%s]" % (", ".join(valid_answers))
 
         if full_question is None:
-            full_question = 'Confirm this transaction? %s ' % display_answers
+            full_question = "Confirm this transaction? %s " % display_answers
         else:
-            full_question = '%s %s' % (full_question, display_answers)
+            full_question = "%s %s" % (full_question, display_answers)
 
         answer = None
         while answer not in valid_answers:
@@ -140,22 +172,24 @@ class SoyuzScript(LaunchpadScript):
         """Setup `PackageLocation` for context distribution and suite."""
         # These can raise PackageLocationError, but we're happy to pass
         # it upwards.
-        if getattr(self.options, 'partner_archive', ''):
+        if getattr(self.options, "partner_archive", ""):
             self.location = build_package_location(
                 self.options.distribution_name,
                 self.options.suite,
-                ArchivePurpose.PARTNER)
-        elif getattr(self.options, 'archive_owner_name', ''):
+                ArchivePurpose.PARTNER,
+            )
+        elif getattr(self.options, "archive_owner_name", ""):
             self.location = build_package_location(
                 self.options.distribution_name,
                 self.options.suite,
                 ArchivePurpose.PPA,
                 self.options.archive_owner_name,
-                self.options.archive_name)
+                self.options.archive_name,
+            )
         else:
             self.location = build_package_location(
-                self.options.distribution_name,
-                self.options.suite)
+                self.options.distribution_name, self.options.suite
+            )
 
     def finishProcedure(self):
         """Script finalization procedure.
@@ -170,7 +204,7 @@ class SoyuzScript(LaunchpadScript):
         Returns True if the transaction was committed, False otherwise.
         """
         if self.options.dryrun:
-            self.logger.info('Dry run, so nothing to commit.')
+            self.logger.info("Dry run, so nothing to commit.")
             self.txn.abort()
             return False
 
@@ -178,7 +212,7 @@ class SoyuzScript(LaunchpadScript):
 
         if confirmed:
             self.txn.commit()
-            self.logger.info('Transaction committed.')
+            self.logger.info("Transaction committed.")
             self.logger.info(self.success_message)
             return True
         else:

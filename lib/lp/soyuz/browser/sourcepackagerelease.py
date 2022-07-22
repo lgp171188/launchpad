@@ -4,16 +4,13 @@
 """Browser view for a sourcepackagerelease"""
 
 __all__ = [
-    'linkify_changelog',
-    'SourcePackageReleaseView',
-    ]
+    "linkify_changelog",
+    "SourcePackageReleaseView",
+]
 
 import re
 
-from lp.app.browser.stringformatter import (
-    FormattersAPI,
-    linkify_bug_numbers,
-    )
+from lp.app.browser.stringformatter import FormattersAPI, linkify_bug_numbers
 from lp.services.webapp import LaunchpadView
 from lp.services.webapp.escaping import html_escape
 
@@ -45,7 +42,7 @@ def linkify_changelog(user, changelog, preloaded_person_data=None):
     numbers mentioned.
     """
     if changelog is None:
-        return ''
+        return ""
 
     # Remove any email addresses if the user is not logged in.
     changelog = obfuscate_email(user, changelog)
@@ -66,7 +63,6 @@ def linkify_changelog(user, changelog, preloaded_person_data=None):
 
 
 class SourcePackageReleaseView(LaunchpadView):
-
     @property
     def changelog_entry(self):
         """Return a linkified changelog entry."""
@@ -81,8 +77,8 @@ class SourcePackageReleaseView(LaunchpadView):
     def highlighted_copyright(self):
         """Return the copyright with markup that highlights paths and URLs."""
         if not self.context.copyright:
-            return ''
+            return ""
         # Match any string with 2 or more non-consecutive slashes in it.
-        pattern = re.compile(r'([\S]+/[\S]+/[\S]+)')
+        pattern = re.compile(r"([\S]+/[\S]+/[\S]+)")
         highlight = r'<span class="highlight">\1</span>'
         return pattern.sub(highlight, self.context.copyright)

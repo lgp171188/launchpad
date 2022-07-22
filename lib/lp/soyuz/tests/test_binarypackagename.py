@@ -26,7 +26,8 @@ class TestBinaryPackageNameSet(TestCaseWithFactory):
 
     def test___getitem__not_found(self):
         self.assertRaises(
-            NotFoundError, lambda name: self.name_set[name], "notfound")
+            NotFoundError, lambda name: self.name_set[name], "notfound"
+        )
 
     def test_getAll_contains_one(self):
         name = self.factory.makeBinaryPackageName()
@@ -49,38 +50,40 @@ class TestBinaryPackageNameSet(TestCaseWithFactory):
 
     def test_getOrCreateByName_create(self):
         self.assertEqual(
-            "apackage", self.name_set.getOrCreateByName("apackage").name)
+            "apackage", self.name_set.getOrCreateByName("apackage").name
+        )
 
     def test_ensure_get(self):
         name = self.factory.makeBinaryPackageName()
         self.assertEqual(name, self.name_set.ensure(name.name))
 
     def test_ensure_create(self):
-        self.assertEqual(
-            "apackage", self.name_set.ensure("apackage").name)
+        self.assertEqual("apackage", self.name_set.ensure("apackage").name)
 
     def createPublishingRecords(self, status=None):
         distroseries = self.factory.makeDistroSeries()
         distroarchseries = self.factory.makeDistroArchSeries(
-            distroseries=distroseries)
+            distroseries=distroseries
+        )
         archives = [
             self.factory.makeArchive(distribution=distroseries.distribution),
             self.factory.makeArchive(distribution=distroseries.distribution),
-            ]
+        ]
         names = [
             self.factory.makeBinaryPackageName(),
             self.factory.makeBinaryPackageName(),
             self.factory.makeBinaryPackageName(),
-            ]
+        ]
         for i in range(2):
             bpr = self.factory.makeBinaryPackageRelease(
-                binarypackagename=names[i])
+                binarypackagename=names[i]
+            )
             self.factory.makeBinaryPackagePublishingHistory(
                 binarypackagerelease=bpr,
                 status=PackagePublishingStatus.PUBLISHED,
                 archive=archives[i],
                 distroarchseries=distroarchseries,
-                )
+            )
         return names, distroarchseries, archives
 
     def test_getNotNewByNames_excludes_unpublished(self):
@@ -88,50 +91,69 @@ class TestBinaryPackageNameSet(TestCaseWithFactory):
         self.assertContentEqual(
             [names[0], names[1]],
             self.name_set.getNotNewByNames(
-                [name.id for name in names], distroarchseries.distroseries,
-                [archive.id for archive in archives]))
+                [name.id for name in names],
+                distroarchseries.distroseries,
+                [archive.id for archive in archives],
+            ),
+        )
 
     def test_getNotNewByNames_excludes_by_status(self):
         names, distroarchseries, archives = self.createPublishingRecords()
-        bpr = self.factory.makeBinaryPackageRelease(
-            binarypackagename=names[2])
+        bpr = self.factory.makeBinaryPackageRelease(binarypackagename=names[2])
         self.factory.makeBinaryPackagePublishingHistory(
             binarypackagerelease=bpr,
             status=PackagePublishingStatus.DELETED,
-            archive=archives[0], distroarchseries=distroarchseries)
+            archive=archives[0],
+            distroarchseries=distroarchseries,
+        )
         self.assertContentEqual(
             [names[0], names[1]],
             self.name_set.getNotNewByNames(
-                [name.id for name in names], distroarchseries.distroseries,
-                [archive.id for archive in archives]))
+                [name.id for name in names],
+                distroarchseries.distroseries,
+                [archive.id for archive in archives],
+            ),
+        )
 
     def test_getNotNewByNames_excludes_by_name_id(self):
         names, distroarchseries, archives = self.createPublishingRecords()
         self.assertEqual(
             [names[1]],
-            list(self.name_set.getNotNewByNames(
-                [name.id for name in names[1:]],
-                distroarchseries.distroseries,
-                [archive.id for archive in archives])))
+            list(
+                self.name_set.getNotNewByNames(
+                    [name.id for name in names[1:]],
+                    distroarchseries.distroseries,
+                    [archive.id for archive in archives],
+                )
+            ),
+        )
 
     def test_getNotNewByNames_excludes_by_distroseries(self):
         names, distroarchseries, archives = self.createPublishingRecords()
-        bpr = self.factory.makeBinaryPackageRelease(
-            binarypackagename=names[2])
+        bpr = self.factory.makeBinaryPackageRelease(binarypackagename=names[2])
         self.factory.makeBinaryPackagePublishingHistory(
             binarypackagerelease=bpr,
             status=PackagePublishingStatus.PUBLISHED,
-            archive=archives[0])
+            archive=archives[0],
+        )
         self.assertContentEqual(
             [names[0], names[1]],
             self.name_set.getNotNewByNames(
-                [name.id for name in names], distroarchseries.distroseries,
-                [archive.id for archive in archives]))
+                [name.id for name in names],
+                distroarchseries.distroseries,
+                [archive.id for archive in archives],
+            ),
+        )
 
     def test_getNotNewByNames_excludes_by_archive(self):
         names, distroarchseries, archives = self.createPublishingRecords()
         self.assertEqual(
             [names[0]],
-            list(self.name_set.getNotNewByNames(
-                [name.id for name in names], distroarchseries.distroseries,
-                [archive.id for archive in archives[:1]])))
+            list(
+                self.name_set.getNotNewByNames(
+                    [name.id for name in names],
+                    distroarchseries.distroseries,
+                    [archive.id for archive in archives[:1]],
+                )
+            ),
+        )

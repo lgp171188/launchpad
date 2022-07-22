@@ -4,17 +4,17 @@
 """Browser views for builds."""
 
 __all__ = [
-    'BuildBreadcrumb',
-    'BuildCancelView',
-    'BuildContextMenu',
-    'BuildNavigation',
-    'BuildRecordsView',
-    'BuildRescoringView',
-    'BuildUrl',
-    'BuildView',
-    'DistributionBuildRecordsView',
-    'get_build_by_id_str',
-    ]
+    "BuildBreadcrumb",
+    "BuildCancelView",
+    "BuildContextMenu",
+    "BuildNavigation",
+    "BuildRecordsView",
+    "BuildRescoringView",
+    "BuildUrl",
+    "BuildView",
+    "DistributionBuildRecordsView",
+    "get_build_by_id_str",
+]
 
 
 from itertools import groupby
@@ -22,56 +22,41 @@ from operator import attrgetter
 
 from lazr.batchnavigator import ListRangeFactory
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp import _
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    )
-from lp.app.errors import (
-    NotFoundError,
-    UnexpectedFormData,
-    )
-from lp.buildmaster.enums import (
-    BuildQueueStatus,
-    BuildStatus,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action
+from lp.app.errors import NotFoundError, UnexpectedFormData
+from lp.buildmaster.enums import BuildQueueStatus, BuildStatus
 from lp.buildmaster.interfaces.buildfarmjob import (
     IBuildFarmJobDB,
     InconsistentBuildFarmJobError,
     ISpecificBuildFarmJobSource,
-    )
+)
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.services.librarian.browser import (
     FileNavigationMixin,
     ProxiedLibraryFileAlias,
-    )
+)
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
-    canonical_url,
     ContextMenu,
-    enabled_with_permission,
     GetitemNavigation,
     LaunchpadView,
     Link,
-    )
-from lp.services.webapp.batching import (
-    BatchNavigator,
-    StormRangeFactory,
-    )
+    canonical_url,
+    enabled_with_permission,
+)
+from lp.services.webapp.batching import BatchNavigator, StormRangeFactory
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import ICanonicalUrlData
 from lp.soyuz.enums import PackageUploadStatus
 from lp.soyuz.interfaces.binarypackagebuild import (
     IBinaryPackageBuild,
     IBuildRescoreForm,
-    )
+)
 
 
 def get_build_by_id_str(utility, id_str):
@@ -107,6 +92,7 @@ class BuildUrl:
     Copy archives will be presented under the archives page:
        /ubuntu/+archive/my-special-archive/+build/1234
     """
+
     rootsite = None
 
     def __init__(self, context):
@@ -129,10 +115,11 @@ class BuildNavigation(GetitemNavigation, FileNavigationMixin):
 
 
 class BuildContextMenu(ContextMenu):
-    """Overview menu for build records """
+    """Overview menu for build records"""
+
     usedfor = IBinaryPackageBuild
 
-    links = ['ppa', 'records', 'retry', 'rescore', 'cancel']
+    links = ["ppa", "records", "retry", "rescore", "cancel"]
 
     @property
     def is_ppa_build(self):
@@ -141,37 +128,41 @@ class BuildContextMenu(ContextMenu):
 
     def ppa(self):
         return Link(
-            canonical_url(self.context.archive), text='View PPA',
-            enabled=self.is_ppa_build)
+            canonical_url(self.context.archive),
+            text="View PPA",
+            enabled=self.is_ppa_build,
+        )
 
     def records(self):
         return Link(
-            canonical_url(self.context.archive, view_name='+builds'),
-            text='View build records', enabled=self.is_ppa_build)
+            canonical_url(self.context.archive, view_name="+builds"),
+            text="View build records",
+            enabled=self.is_ppa_build,
+        )
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def retry(self):
         """Only enabled for build records that are active."""
-        text = 'Retry this build'
+        text = "Retry this build"
         return Link(
-            '+retry', text, icon='retry',
-            enabled=self.context.can_be_retried)
+            "+retry", text, icon="retry", enabled=self.context.can_be_retried
+        )
 
-    @enabled_with_permission('launchpad.Admin')
+    @enabled_with_permission("launchpad.Admin")
     def rescore(self):
         """Only enabled for pending build records."""
-        text = 'Rescore build'
+        text = "Rescore build"
         return Link(
-            '+rescore', text, icon='edit',
-            enabled=self.context.can_be_rescored)
+            "+rescore", text, icon="edit", enabled=self.context.can_be_rescored
+        )
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def cancel(self):
         """Only enabled for pending/active virtual builds."""
-        text = 'Cancel build'
+        text = "Cancel build"
         return Link(
-            '+cancel', text, icon='edit',
-            enabled=self.context.can_be_cancelled)
+            "+cancel", text, icon="edit", enabled=self.context.can_be_cancelled
+        )
 
 
 class BuildBreadcrumb(Breadcrumb):
@@ -183,12 +174,13 @@ class BuildBreadcrumb(Breadcrumb):
         # name and version. But for distro archives there are already
         # breadcrumbs for both, so we omit them.
         if self.context.archive.is_ppa or self.context.archive.is_copy:
-            return '%s build of %s %s' % (
+            return "%s build of %s %s" % (
                 self.context.arch_tag,
                 self.context.source_package_release.sourcepackagename.name,
-                self.context.source_package_release.version)
+                self.context.source_package_release.version,
+            )
         else:
-            return '%s build' % self.context.arch_tag
+            return "%s build" % self.context.arch_tag
 
 
 class BuildView(LaunchpadView):
@@ -213,22 +205,25 @@ class BuildView(LaunchpadView):
         """
         return [
             binarypackagerelease.title
-            for binarypackagerelease, binarypackagename
-                in self.context.getBinaryPackageNamesForDisplay()]
+            for binarypackagerelease, _ in (
+                self.context.getBinaryPackageNamesForDisplay()
+            )
+        ]
 
     @cachedproperty
     def has_published_binaries(self):
         """Whether or not binaries were already published for this build."""
         # Binaries imported by gina (missing `PackageUpload` record)
         # are always published.
-        imported_binaries = (
-            self.package_upload is None and
-            bool(self.context.binarypackages))
+        imported_binaries = self.package_upload is None and bool(
+            self.context.binarypackages
+        )
         # Binaries uploaded from the buildds are published when the
         # corresponding `PackageUpload` status is DONE.
         uploaded_binaries = (
-            self.package_upload is not None and
-            self.package_upload.status == PackageUploadStatus.DONE)
+            self.package_upload is not None
+            and self.package_upload.status == PackageUploadStatus.DONE
+        )
 
         if imported_binaries or uploaded_binaries:
             return True
@@ -256,7 +251,7 @@ class BuildView(LaunchpadView):
         if component is not None:
             return component.name
         else:
-            return 'unknown'
+            return "unknown"
 
     @cachedproperty
     def files(self):
@@ -266,9 +261,9 @@ class BuildView(LaunchpadView):
 
         return [
             ProxiedLibraryFileAlias(alias, self.context)
-            for bpr, bpf, alias, content
-                in self.context.getBinaryFilesForDisplay()
-                if not alias.deleted]
+            for _, _, alias, _ in self.context.getBinaryFilesForDisplay()
+            if not alias.deleted
+        ]
 
     @property
     def dispatch_time_estimate_available(self):
@@ -278,8 +273,10 @@ class BuildView(LaunchpadView):
         in state WAITING.
         """
         return (
-            self.context.status == BuildStatus.NEEDSBUILD and
-            self.context.buildqueue_record.status == BuildQueueStatus.WAITING)
+            self.context.status == BuildStatus.NEEDSBUILD
+            and self.context.buildqueue_record.status
+            == BuildQueueStatus.WAITING
+        )
 
     @cachedproperty
     def eta(self):
@@ -320,22 +317,23 @@ class BuildRetryView(BuildView):
 
     @property
     def label(self):
-        return 'Retry %s' % self.context.title
+        return "Retry %s" % self.context.title
 
     def retry_build(self):
         """Check user confirmation and perform the build record retry."""
         if not self.context.can_be_retried:
             self.request.response.addErrorNotification(
-                'Build can not be retried')
+                "Build can not be retried"
+            )
         else:
-            action = self.request.form.get('RETRY', None)
+            action = self.request.form.get("RETRY", None)
             # No action, return None to present the form again.
             if action is None:
                 return
 
             # Invoke context method to retry the build record.
             self.context.retry()
-            self.request.response.addInfoNotification('Build has been queued')
+            self.request.response.addInfoNotification("Build has been queued")
 
         self.request.response.redirect(canonical_url(self.context))
 
@@ -347,7 +345,7 @@ class BuildRescoringView(LaunchpadFormView):
 
     @property
     def label(self):
-        return 'Rescore %s' % self.context.title
+        return "Rescore %s" % self.context.title
 
     def initialize(self):
         """See `ILaunchpadFormView`.
@@ -370,10 +368,9 @@ class BuildRescoringView(LaunchpadFormView):
     @action(_("Rescore"), name="rescore")
     def action_rescore(self, action, data):
         """Set the given score value."""
-        score = data.get('priority')
+        score = data.get("priority")
         self.context.rescore(score)
-        self.request.response.addNotification(
-            "Build rescored to %s." % score)
+        self.request.response.addNotification("Build rescored to %s." % score)
 
 
 class BuildCancelView(LaunchpadFormView):
@@ -387,6 +384,7 @@ class BuildCancelView(LaunchpadFormView):
     @property
     def cancel_url(self):
         return canonical_url(self.context)
+
     next_url = cancel_url
 
     @action("Cancel build", name="cancel")
@@ -395,7 +393,8 @@ class BuildCancelView(LaunchpadFormView):
         self.context.cancel()
         if self.context.status == BuildStatus.CANCELLING:
             self.request.response.addNotification(
-                "Build cancellation in progress.")
+                "Build cancellation in progress."
+            )
         elif self.context.status == BuildStatus.CANCELLED:
             self.request.response.addNotification("Build cancelled.")
         else:
@@ -406,7 +405,8 @@ def setupCompleteBuilds(batch):
     """Pre-populate new object with buildqueue items."""
     builds = getSpecificJobs(batch)
     getUtility(IBuildQueueSet).preloadForBuildFarmJobs(
-        [build for build in builds if build is not None])
+        [build for build in builds if build is not None]
+    )
     return builds
 
 
@@ -417,17 +417,19 @@ def getSpecificJobs(jobs):
     If the job is already a specific job, it will be returned unchanged.
     """
     builds = []
-    key = attrgetter('job_type.name')
+    key = attrgetter("job_type.name")
     nonspecific_jobs = sorted(
-        (job for job in jobs if IBuildFarmJobDB.providedBy(job)), key=key)
+        (job for job in jobs if IBuildFarmJobDB.providedBy(job)), key=key
+    )
     job_builds = {}
     for job_type_name, grouped_jobs in groupby(nonspecific_jobs, key=key):
         # Fetch the jobs in batches grouped by their job type.
-        source = getUtility(
-            ISpecificBuildFarmJobSource, job_type_name)
-        builds = [build for build
-            in source.getByBuildFarmJobs(list(grouped_jobs))
-            if build is not None]
+        source = getUtility(ISpecificBuildFarmJobSource, job_type_name)
+        builds = [
+            build
+            for build in source.getByBuildFarmJobs(list(grouped_jobs))
+            if build is not None
+        ]
         for build in builds:
             try:
                 job_builds[build.build_farm_job.id] = build
@@ -442,11 +444,13 @@ def getSpecificJobs(jobs):
     # Return the corresponding builds.
     try:
         return [
-            job_builds[job.id]
-            if IBuildFarmJobDB.providedBy(job) else job for job in jobs]
+            job_builds[job.id] if IBuildFarmJobDB.providedBy(job) else job
+            for job in jobs
+        ]
     except KeyError:
         raise InconsistentBuildFarmJobError(
-            "Could not find all the related specific jobs.")
+            "Could not find all the related specific jobs."
+        )
 
 
 class BuildRecordsView(LaunchpadView):
@@ -458,7 +462,7 @@ class BuildRecordsView(LaunchpadView):
     DistroSeries, DistroArchSeries and SourcePackage view classes.
     """
 
-    page_title = 'Builds'
+    page_title = "Builds"
 
     # Currenly most build records views are interested in binaries
     # only, but subclasses can set this if desired.
@@ -468,7 +472,7 @@ class BuildRecordsView(LaunchpadView):
 
     @property
     def label(self):
-        return 'Builds for %s' % self.context.displayname
+        return "Builds for %s" % self.context.displayname
 
     def setupBuildList(self):
         """Setup a batched build records list.
@@ -477,10 +481,10 @@ class BuildRecordsView(LaunchpadView):
         invoke it in template.
         """
         # recover selected build state
-        state_tag = self.request.get('build_state', '')
-        self.text = self.request.get('build_text', None)
+        state_tag = self.request.get("build_state", "")
+        self.text = self.request.get("build_text", None)
 
-        if self.text == '':
+        if self.text == "":
             self.text = None
 
         # build self.state & self.available_states structures
@@ -494,23 +498,29 @@ class BuildRecordsView(LaunchpadView):
 
         # request context build records according to the selected state
         builds = self.context.getBuildRecords(
-            build_state=self.state, name=self.text, arch_tag=self.arch_tag,
-            user=self.user, binary_only=binary_only)
+            build_state=self.state,
+            name=self.text,
+            arch_tag=self.arch_tag,
+            user=self.user,
+            binary_only=binary_only,
+        )
         self.batchnav = BatchNavigator(
-            builds, self.request, range_factory=self.range_factory(builds))
+            builds, self.request, range_factory=self.range_factory(builds)
+        )
         # We perform this extra step because we don't what to issue one
         # extra query to retrieve the BuildQueue for each Build (batch item)
         # A more elegant approach should be extending Batching class and
         # integrating the fix into it. However the current solution is
         # simpler and shorter, producing the same result. cprov 20060810
         self.complete_builds = setupCompleteBuilds(
-            self.batchnav.currentBatch())
+            self.batchnav.currentBatch()
+        )
 
     @property
     def arch_tag(self):
         """Return the architecture tag from the request."""
-        arch_tag = self.request.get('arch_tag', None)
-        if arch_tag == '' or arch_tag == 'all':
+        arch_tag = self.request.get("arch_tag", None)
+        if arch_tag == "" or arch_tag == "all":
             return None
         else:
             return arch_tag
@@ -520,12 +530,13 @@ class BuildRecordsView(LaunchpadView):
         """Return the architecture options for the context."""
         # Guard against contexts that cannot tell us the available
         # distroarchseries.
-        if hasattr(self.context, 'architectures') is False:
+        if hasattr(self.context, "architectures") is False:
             return []
 
         # Grab all the architecture tags for the context.
         arch_tags = [
-            arch.architecturetag for arch in self.context.architectures]
+            arch.architecturetag for arch in self.context.architectures
+        ]
 
         # We cannot assume that the arch_tags will be distinct, so
         # create a distinct and sorted list:
@@ -533,22 +544,24 @@ class BuildRecordsView(LaunchpadView):
 
         # Create the initial 'all architectures' option.
         if self.arch_tag is None:
-            selected = 'selected'
+            selected = "selected"
         else:
             selected = None
         options = [
-            dict(name='All architectures', value='all', selected=selected)]
+            dict(name="All architectures", value="all", selected=selected)
+        ]
 
         # Create the options for the select box, ensuring to mark
         # the currently selected one.
         for arch_tag in arch_tags:
             if arch_tag == self.arch_tag:
-                selected = 'selected'
+                selected = "selected"
             else:
                 selected = None
 
             options.append(
-                dict(name=arch_tag, value=arch_tag, selected=selected))
+                dict(name=arch_tag, value=arch_tag, selected=selected)
+            )
 
         return options
 
@@ -566,21 +579,21 @@ class BuildRecordsView(LaunchpadView):
         """
         # Default states map.
         state_map = {
-            'built': BuildStatus.FULLYBUILT,
-            'failed': BuildStatus.FAILEDTOBUILD,
-            'depwait': BuildStatus.MANUALDEPWAIT,
-            'chrootwait': BuildStatus.CHROOTWAIT,
-            'superseded': BuildStatus.SUPERSEDED,
-            'uploadfail': BuildStatus.FAILEDTOUPLOAD,
-            'all': None,
-            }
+            "built": BuildStatus.FULLYBUILT,
+            "failed": BuildStatus.FAILEDTOBUILD,
+            "depwait": BuildStatus.MANUALDEPWAIT,
+            "chrootwait": BuildStatus.CHROOTWAIT,
+            "superseded": BuildStatus.SUPERSEDED,
+            "uploadfail": BuildStatus.FAILEDTOUPLOAD,
+            "all": None,
+        }
         # Include pristine (not yet assigned to a builder) builds,
         # if requested.
         if self.show_builder_info:
             extra_state_map = {
-                'building': BuildStatus.BUILDING,
-                'pending': BuildStatus.NEEDSBUILD,
-                }
+                "building": BuildStatus.BUILDING,
+                "pending": BuildStatus.NEEDSBUILD,
+            }
             state_map.update(**extra_state_map)
 
         # Lookup for the correspondent state or fallback to the default
@@ -590,7 +603,8 @@ class BuildRecordsView(LaunchpadView):
                 self.state = state_map[tag]
             except (KeyError, TypeError):
                 raise UnexpectedFormData(
-                    'No suitable state found for value "%s"' % tag)
+                    'No suitable state found for value "%s"' % tag
+                )
         else:
             self.state = self.default_build_state
 
@@ -601,15 +615,16 @@ class BuildRecordsView(LaunchpadView):
             if state:
                 name = state.title.strip()
             else:
-                name = 'All states'
+                name = "All states"
 
             if state == self.state:
-                selected = 'selected'
+                selected = "selected"
             else:
                 selected = None
 
             self.available_states.append(
-                dict(name=name, value=tag, selected=selected))
+                dict(name=name, value=tag, selected=selected)
+            )
 
     @property
     def default_build_state(self):

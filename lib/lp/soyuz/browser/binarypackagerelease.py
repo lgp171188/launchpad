@@ -2,19 +2,16 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BinaryPackageReleaseNavigation',
-    'BinaryPackageView',
-    ]
+    "BinaryPackageReleaseNavigation",
+    "BinaryPackageView",
+]
 
 from lp.services.webapp import Navigation
-from lp.services.webapp.publisher import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp.publisher import LaunchpadView, canonical_url
 from lp.soyuz.browser.packagerelationship import (
     PackageRelationshipSet,
     relationship_builder,
-    )
+)
 from lp.soyuz.interfaces.binarypackagerelease import IBinaryPackageRelease
 
 
@@ -65,7 +62,8 @@ class BinaryPackageView(LaunchpadView):
         for reference in self.context.built_using_references:
             spr = reference.source_package_release
             sp = spr.upload_distroseries.getSourcePackage(
-                spr.sourcepackagename)
+                spr.sourcepackagename
+            )
             sp_url = canonical_url(sp) if sp is not None else None
-            relationship_set.add(spr.name, '=', spr.version, sp_url)
+            relationship_set.add(spr.name, "=", spr.version, sp_url)
         return relationship_set

@@ -1,10 +1,7 @@
 # Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 import pytz
 from zope.component import getUtility
@@ -13,15 +10,9 @@ from zope.security.proxy import removeSecurityProxy
 from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import LaunchpadFunctionalLayer
-from lp.testing.sampledata import (
-    ADMIN_EMAIL,
-    BOB_THE_BUILDER_NAME,
-    )
+from lp.testing.sampledata import ADMIN_EMAIL, BOB_THE_BUILDER_NAME
 
 
 class TestBuildStartEstimation(TestCaseWithFactory):
@@ -39,8 +30,10 @@ class TestBuildStartEstimation(TestCaseWithFactory):
         self.distroseries = self.factory.makeDistroSeries()
         self.bob = getUtility(IBuilderSet).getByName(BOB_THE_BUILDER_NAME)
         das = self.factory.makeDistroArchSeries(
-            distroseries=self.distroseries, processor=self.bob.processor,
-            architecturetag='i386')
+            distroseries=self.distroseries,
+            processor=self.bob.processor,
+            architecturetag="i386",
+        )
         with person_logged_in(self.admin):
             self.distroseries.nominatedarchindep = das
         self.publisher.addFakeChroots(distroseries=self.distroseries)
@@ -51,7 +44,8 @@ class TestBuildStartEstimation(TestCaseWithFactory):
     def test_estimation(self):
         pkg = self.publisher.getPubSource(
             sourcename=self.factory.getUniqueString(),
-            distroseries=self.distroseries)
+            distroseries=self.distroseries,
+        )
         build = pkg.createMissingBuilds()[0]
         now = datetime.now(pytz.UTC)
         estimate = self.job_start_estimate(build)
@@ -60,15 +54,18 @@ class TestBuildStartEstimation(TestCaseWithFactory):
     def test_disabled_archives(self):
         pkg1 = self.publisher.getPubSource(
             sourcename=self.factory.getUniqueString(),
-            distroseries=self.distroseries)
+            distroseries=self.distroseries,
+        )
         [build1] = pkg1.createMissingBuilds()
         build1.buildqueue_record.lastscore = 1000
         # No user-serviceable parts inside
-        removeSecurityProxy(build1.buildqueue_record).estimated_duration = (
-            timedelta(minutes=10))
+        removeSecurityProxy(
+            build1.buildqueue_record
+        ).estimated_duration = timedelta(minutes=10)
         pkg2 = self.publisher.getPubSource(
             sourcename=self.factory.getUniqueString(),
-            distroseries=self.distroseries)
+            distroseries=self.distroseries,
+        )
         [build2] = pkg2.createMissingBuilds()
         build2.buildqueue_record.lastscore = 100
         now = datetime.now(pytz.UTC)

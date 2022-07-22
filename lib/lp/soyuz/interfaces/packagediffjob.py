@@ -4,12 +4,9 @@
 __all__ = [
     "IPackageDiffJob",
     "IPackageDiffJobSource",
-    ]
+]
 
-from lp.services.job.interfaces.job import (
-    IJobSource,
-    IRunnableJob,
-    )
+from lp.services.job.interfaces.job import IJobSource, IRunnableJob
 
 
 class IPackageDiffJobSource(IJobSource):

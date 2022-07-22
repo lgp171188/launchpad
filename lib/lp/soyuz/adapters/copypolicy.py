@@ -9,8 +9,7 @@ decided at runtime, such as whether to auto-accept a package or not.
 
 # All of this module's functionality can be reached through the
 # ICopyPolicy adapter.
-__all__ = [
-    ]
+__all__ = []
 
 
 from zope.interface import implementer
@@ -47,10 +46,12 @@ class BasicCopyPolicy:
         auto_approve_pockets = (
             PackagePublishingPocket.RELEASE,
             PackagePublishingPocket.PROPOSED,
-            )
-        if (pocket in auto_approve_pockets and
-            distroseries.isUnstable() and
-            distroseries.status != SeriesStatus.FROZEN):
+        )
+        if (
+            pocket in auto_approve_pockets
+            and distroseries.isUnstable()
+            and distroseries.status != SeriesStatus.FROZEN
+        ):
             return True
 
         return False
@@ -82,7 +83,7 @@ class MassSyncCopyPolicy(BasicCopyPolicy):
 policies = [
     InsecureCopyPolicy,
     MassSyncCopyPolicy,
-    ]
+]
 
 
 enum_to_policy = {policy.enum_value: policy() for policy in policies}

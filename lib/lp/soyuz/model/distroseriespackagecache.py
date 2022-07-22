@@ -2,29 +2,22 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'DistroSeriesPackageCache',
-    ]
+    "DistroSeriesPackageCache",
+]
 
 from collections import defaultdict
 from operator import attrgetter
 
-from storm.expr import (
-    Desc,
-    Max,
-    Select,
-    )
+from storm.expr import Desc, Max, Select
 from zope.interface import implementer
 
 from lp.services.database import bulk
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
+from lp.services.database.sqlobject import ForeignKey, StringCol
 from lp.soyuz.interfaces.distroseriespackagecache import (
     IDistroSeriesPackageCache,
-    )
+)
 from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
@@ -34,14 +27,17 @@ from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
 
 @implementer(IDistroSeriesPackageCache)
 class DistroSeriesPackageCache(SQLBase):
-    _table = 'DistroSeriesPackageCache'
+    _table = "DistroSeriesPackageCache"
 
-    archive = ForeignKey(dbName='archive',
-        foreignKey='Archive', notNull=True)
-    distroseries = ForeignKey(dbName='distroseries',
-        foreignKey='DistroSeries', notNull=True)
-    binarypackagename = ForeignKey(dbName='binarypackagename',
-        foreignKey='BinaryPackageName', notNull=True)
+    archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
+    distroseries = ForeignKey(
+        dbName="distroseries", foreignKey="DistroSeries", notNull=True
+    )
+    binarypackagename = ForeignKey(
+        dbName="binarypackagename",
+        foreignKey="BinaryPackageName",
+        notNull=True,
+    )
 
     name = StringCol(notNull=False, default=None)
     summary = StringCol(notNull=False, default=None)
@@ -51,15 +47,24 @@ class DistroSeriesPackageCache(SQLBase):
 
     @classmethod
     def findCurrentBinaryPackageNames(cls, archive, distroseries):
-        bpn_ids = IStore(BinaryPackagePublishingHistory).find(
-            BinaryPackagePublishingHistory.binarypackagenameID,
-            BinaryPackagePublishingHistory.distroarchseriesID.is_in(
-                Select(
-                    DistroArchSeries.id, tables=[DistroArchSeries],
-                    where=DistroArchSeries.distroseries == distroseries)),
-            BinaryPackagePublishingHistory.archive == archive,
-            BinaryPackagePublishingHistory.status.is_in(
-                active_publishing_status)).config(distinct=True)
+        bpn_ids = (
+            IStore(BinaryPackagePublishingHistory)
+            .find(
+                BinaryPackagePublishingHistory.binarypackagenameID,
+                BinaryPackagePublishingHistory.distroarchseriesID.is_in(
+                    Select(
+                        DistroArchSeries.id,
+                        tables=[DistroArchSeries],
+                        where=DistroArchSeries.distroseries == distroseries,
+                    )
+                ),
+                BinaryPackagePublishingHistory.archive == archive,
+                BinaryPackagePublishingHistory.status.is_in(
+                    active_publishing_status
+                ),
+            )
+            .config(distinct=True)
+        )
         return bulk.load(BinaryPackageName, bpn_ids)
 
     @classmethod
@@ -74,10 +79,15 @@ class DistroSeriesPackageCache(SQLBase):
         else:
             archives = distroseries.distribution.all_distro_archive_ids
 
-        return IStore(cls).find(
-            cls,
-            cls.distroseries == distroseries,
-            cls.archiveID.is_in(archives)).order_by(cls.name)
+        return (
+            IStore(cls)
+            .find(
+                cls,
+                cls.distroseries == distroseries,
+                cls.archiveID.is_in(archives),
+            )
+            .order_by(cls.name)
+        )
 
     @classmethod
     def removeOld(cls, distroseries, archive, log):
@@ -96,14 +106,16 @@ class DistroSeriesPackageCache(SQLBase):
             bpns = set()
         else:
             bpns = set(
-                cls.findCurrentBinaryPackageNames(archive, distroseries))
+                cls.findCurrentBinaryPackageNames(archive, distroseries)
+            )
 
         # remove the cache entries for binary packages we no longer want
         for cache in cls._find(distroseries, archive):
             if cache.binarypackagename not in bpns:
                 log.debug(
                     "Removing binary cache for '%s' (%s)"
-                    % (cache.name, cache.id))
+                    % (cache.name, cache.id)
+                )
                 cache.destroySelf()
 
     @classmethod
@@ -116,28 +128,42 @@ class DistroSeriesPackageCache(SQLBase):
         (in full batches of 100 elements)
         """
         # get the set of published binarypackagereleases
-        all_details = list(IStore(BinaryPackageRelease).find(
-            (BinaryPackageRelease.binarypackagenameID,
-             BinaryPackageRelease.summary, BinaryPackageRelease.description,
-             Max(BinaryPackageRelease.datecreated)),
-            BinaryPackageRelease.id ==
-                BinaryPackagePublishingHistory.binarypackagereleaseID,
-            BinaryPackagePublishingHistory.binarypackagenameID.is_in(
-                [bpn.id for bpn in binarypackagenames]),
-            BinaryPackagePublishingHistory.distroarchseriesID.is_in(
-                Select(
-                    DistroArchSeries.id, tables=[DistroArchSeries],
-                    where=DistroArchSeries.distroseries == distroseries)),
-            BinaryPackagePublishingHistory.archive == archive,
-            BinaryPackagePublishingHistory.status.is_in(
-                active_publishing_status),
-            ).group_by(
+        all_details = list(
+            IStore(BinaryPackageRelease)
+            .find(
+                (
+                    BinaryPackageRelease.binarypackagenameID,
+                    BinaryPackageRelease.summary,
+                    BinaryPackageRelease.description,
+                    Max(BinaryPackageRelease.datecreated),
+                ),
+                BinaryPackageRelease.id
+                == BinaryPackagePublishingHistory.binarypackagereleaseID,
+                BinaryPackagePublishingHistory.binarypackagenameID.is_in(
+                    [bpn.id for bpn in binarypackagenames]
+                ),
+                BinaryPackagePublishingHistory.distroarchseriesID.is_in(
+                    Select(
+                        DistroArchSeries.id,
+                        tables=[DistroArchSeries],
+                        where=DistroArchSeries.distroseries == distroseries,
+                    )
+                ),
+                BinaryPackagePublishingHistory.archive == archive,
+                BinaryPackagePublishingHistory.status.is_in(
+                    active_publishing_status
+                ),
+            )
+            .group_by(
                 BinaryPackageRelease.binarypackagenameID,
                 BinaryPackageRelease.summary,
-                BinaryPackageRelease.description
-            ).order_by(
+                BinaryPackageRelease.description,
+            )
+            .order_by(
                 BinaryPackageRelease.binarypackagenameID,
-                Desc(Max(BinaryPackageRelease.datecreated))))
+                Desc(Max(BinaryPackageRelease.datecreated)),
+            )
+        )
         if not all_details:
             log.debug("No binary releases found.")
             return
@@ -148,15 +174,21 @@ class DistroSeriesPackageCache(SQLBase):
             details_map[bpn].append((summary, description))
 
         all_caches = IStore(cls).find(
-            cls, cls.distroseries == distroseries, cls.archive == archive,
+            cls,
+            cls.distroseries == distroseries,
+            cls.archive == archive,
             cls.binarypackagenameID.is_in(
-                [bpn.id for bpn in binarypackagenames]))
+                [bpn.id for bpn in binarypackagenames]
+            ),
+        )
         cache_map = {cache.binarypackagename: cache for cache in all_caches}
 
         for bpn in set(binarypackagenames) - set(cache_map):
             cache_map[bpn] = cls(
-                archive=archive, distroseries=distroseries,
-                binarypackagename=bpn)
+                archive=archive,
+                distroseries=distroseries,
+                binarypackagename=bpn,
+            )
 
         for bpn in binarypackagenames:
             cache = cache_map[bpn]
@@ -176,8 +208,8 @@ class DistroSeriesPackageCache(SQLBase):
                 descriptions.add(description)
 
             # and update the caches
-            cache.summaries = ' '.join(sorted(summaries))
-            cache.descriptions = ' '.join(sorted(descriptions))
+            cache.summaries = " ".join(sorted(summaries))
+            cache.descriptions = " ".join(sorted(descriptions))
 
     @classmethod
     def updateAll(cls, distroseries, archive, log, ztm, commit_chunk=500):
@@ -199,9 +231,12 @@ class DistroSeriesPackageCache(SQLBase):
             return 0
 
         # Get the set of package names to deal with.
-        bpns = list(sorted(
-            cls.findCurrentBinaryPackageNames(archive, distroseries),
-            key=attrgetter('name')))
+        bpns = list(
+            sorted(
+                cls.findCurrentBinaryPackageNames(archive, distroseries),
+                key=attrgetter("name"),
+            )
+        )
 
         number_of_updates = 0
         chunks = []
@@ -217,7 +252,8 @@ class DistroSeriesPackageCache(SQLBase):
             bulk.load(BinaryPackageName, [bpn.id for bpn in chunk])
             log.debug(
                 "Considering binaries %s",
-                ', '.join([bpn.name for bpn in chunk]))
+                ", ".join([bpn.name for bpn in chunk]),
+            )
             cls._update(distroseries, chunk, archive, log)
             number_of_updates += len(chunk)
             log.debug("Committing")

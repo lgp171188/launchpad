@@ -4,15 +4,12 @@
 """Component interfaces."""
 
 __all__ = [
-    'IComponent',
-    'IComponentSelection',
-    'IComponentSet',
-    ]
+    "IComponent",
+    "IComponentSelection",
+    "IComponentSet",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.schema import Choice
 
 from lp import _
@@ -25,13 +22,16 @@ class IComponent(Interface):
     distribution components; for Ubuntu this means, for instance,
     'main', 'restricted', 'universe', etc.
     """
+
     id = Attribute("The ID")
     name = Choice(
-        title=_("Component Name"), vocabulary="Component", required=True)
+        title=_("Component Name"), vocabulary="Component", required=True
+    )
 
 
 class IComponentSelection(Interface):
     """Represents a single component allowed within a DistroSeries."""
+
     id = Attribute("The ID")
     distroseries = Attribute("Target DistroSeries")
     component = Attribute("Selected Component")

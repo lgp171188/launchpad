@@ -4,8 +4,8 @@
 """Builder behaviour for binary package builds."""
 
 __all__ = [
-    'BinaryPackageBuildBehaviour',
-    ]
+    "BinaryPackageBuildBehaviour",
+]
 
 from collections import OrderedDict
 
@@ -15,10 +15,10 @@ from zope.interface import implementer
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
-    )
+)
 from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
-    )
+)
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
 from lp.services.twistedsupport import cancel_on_timeout
@@ -26,7 +26,7 @@ from lp.services.webapp import urlappend
 from lp.soyuz.adapters.archivedependencies import (
     get_primary_current_component,
     get_sources_list_for_building,
-    )
+)
 from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.model.publishing import makePoolPath
 
@@ -56,9 +56,14 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
         # as:
         # buildlog_ubuntu_dapper_i386_foo_1.0-ubuntu0_FULLYBUILT.txt
         # it fix request from bug # 30617
-        return ('buildlog_%s-%s-%s.%s_%s_%s.txt' % (
-            distroname, distroseriesname, archname, sourcename, version,
-            state))
+        return "buildlog_%s-%s-%s.%s_%s_%s.txt" % (
+            distroname,
+            distroseriesname,
+            archname,
+            sourcename,
+            version,
+            state,
+        )
 
     @defer.inlineCallbacks
     def determineFilesToSend(self):
@@ -73,22 +78,27 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
                 self.build.archive.archive_url,
                 makePoolPath(
                     self.build.source_package_release.sourcepackagename.name,
-                    self.build.current_component.name))
+                    self.build.current_component.name,
+                ),
+            )
         filemap = OrderedDict()
         macaroon_raw = None
         for source_file in self.build.source_package_release.files:
             lfa = source_file.libraryfile
             if not self.build.archive.private:
                 filemap[lfa.filename] = {
-                    'sha1': lfa.content.sha1, 'url': lfa.http_url}
+                    "sha1": lfa.content.sha1,
+                    "url": lfa.http_url,
+                }
             else:
                 if macaroon_raw is None:
                     macaroon_raw = yield self.issueMacaroon()
                 filemap[lfa.filename] = {
-                    'sha1': lfa.content.sha1,
-                    'url': urlappend(pool_url, lfa.filename),
-                    'username': 'buildd',
-                    'password': macaroon_raw}
+                    "sha1": lfa.content.sha1,
+                    "url": urlappend(pool_url, lfa.filename),
+                    "username": "buildd",
+                    "password": macaroon_raw,
+                }
         return filemap
 
     def verifyBuildRequest(self, logger):
@@ -103,7 +113,8 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
         build = self.build
         if build.archive.require_virtualized and not self._builder.virtualized:
             raise AssertionError(
-                "Attempt to build virtual archive on a non-virtual builder.")
+                "Attempt to build virtual archive on a non-virtual builder."
+            )
 
         # Assert that we are not silently building SECURITY jobs.
         # See findBuildCandidates. Once we start building SECURITY
@@ -112,36 +123,49 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
         # addressed in the work on the blueprint:
         # https://blueprints.launchpad.net/soyuz/+spec/security-in-soyuz
         target_pocket = build.pocket
-        assert target_pocket != PackagePublishingPocket.SECURITY, (
-            "Soyuz is not yet capable of building SECURITY uploads.")
+        assert (
+            target_pocket != PackagePublishingPocket.SECURITY
+        ), "Soyuz is not yet capable of building SECURITY uploads."
 
         # Ensure build has the needed chroot
         chroot = build.distro_arch_series.getChroot(pocket=build.pocket)
         if chroot is None:
             raise CannotBuild(
-                "Missing CHROOT for %s/%s/%s" % (
+                "Missing CHROOT for %s/%s/%s"
+                % (
                     build.distro_series.distribution.name,
                     build.distro_series.name,
-                    build.distro_arch_series.architecturetag))
+                    build.distro_arch_series.architecturetag,
+                )
+            )
 
         # This should already have been checked earlier, but just check again
         # here in case of programmer errors.
         reason = build.archive.checkUploadToPocket(
-            build.distro_series,
-            build.pocket)
+            build.distro_series, build.pocket
+        )
         assert reason is None, (
-                "%s (%s) can not be built for pocket %s: invalid pocket due "
-                "to the series status of %s." %
-                    (build.title, build.id, build.pocket.name,
-                     build.distro_series.name))
+            "%s (%s) can not be built for pocket %s: invalid pocket due "
+            "to the series status of %s."
+            % (
+                build.title,
+                build.id,
+                build.pocket.name,
+                build.distro_series.name,
+            )
+        )
 
     def issueMacaroon(self):
         """See `IBuildFarmJobBehaviour`."""
         return cancel_on_timeout(
             self._authserver.callRemote(
-                "issueMacaroon", "binary-package-build", "BinaryPackageBuild",
-                self.build.id),
-            config.builddmaster.authentication_timeout)
+                "issueMacaroon",
+                "binary-package-build",
+                "BinaryPackageBuild",
+                self.build.id,
+            ),
+            config.builddmaster.authentication_timeout,
+        )
 
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None):
@@ -153,30 +177,37 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
 
         # Build extra arguments.
         args = yield super().extraBuildArgs(logger=logger)
-        args['arch_indep'] = build.arch_indep
-        args['distribution'] = das.distroseries.distribution.name
-        args['suite'] = das.distroseries.getSuite(build.pocket)
+        args["arch_indep"] = build.arch_indep
+        args["distribution"] = das.distroseries.distribution.name
+        args["suite"] = das.distroseries.getSuite(build.pocket)
 
         archive_purpose = build.archive.purpose
-        if (archive_purpose == ArchivePurpose.PPA and
-            not build.archive.require_virtualized):
+        if (
+            archive_purpose == ArchivePurpose.PPA
+            and not build.archive.require_virtualized
+        ):
             # If we're building a non-virtual PPA, override the purpose
             # to PRIMARY and use the primary component override.
             # This ensures that the package mangling tools will run over
             # the built packages.
-            args['archive_purpose'] = ArchivePurpose.PRIMARY.name
+            args["archive_purpose"] = ArchivePurpose.PRIMARY.name
             args["ogrecomponent"] = (
-                get_primary_current_component(build.archive,
+                get_primary_current_component(
+                    build.archive,
                     build.distro_series,
-                    build.source_package_release.name)).name
+                    build.source_package_release.name,
+                )
+            ).name
         else:
-            args['archive_purpose'] = archive_purpose.name
-            args["ogrecomponent"] = (
-                build.current_component.name)
+            args["archive_purpose"] = archive_purpose.name
+            args["ogrecomponent"] = build.current_component.name
 
-        args['archives'], args['trusted_keys'] = (
-            yield get_sources_list_for_building(
-                self, das, build.source_package_release.name, logger=logger))
-        args['build_debug_symbols'] = build.archive.build_debug_symbols
+        (
+            args["archives"],
+            args["trusted_keys"],
+        ) = yield get_sources_list_for_building(
+            self, das, build.source_package_release.name, logger=logger
+        )
+        args["build_debug_symbols"] = build.archive.build_debug_symbols
 
         return args

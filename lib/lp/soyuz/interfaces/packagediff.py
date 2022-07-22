@@ -4,23 +4,16 @@
 """Interfaces related to package-diff system."""
 
 __all__ = [
-    'IPackageDiff',
-    'IPackageDiffSet',
-    'PackageDiffAlreadyRequested',
-    ]
+    "IPackageDiff",
+    "IPackageDiffSet",
+    "PackageDiffAlreadyRequested",
+]
 
 import http.client
 
 from lazr.restful.declarations import error_status
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Datetime,
-    Object,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Choice, Datetime, Object
 
 from lp import _
 from lp.services.librarian.interfaces import ILibraryFileAlias
@@ -33,7 +26,7 @@ class PackageDiffRequestException(Exception):
 
 
 class PackageDiffAlreadyRequested(PackageDiffRequestException):
-    """Raised on attempts to request an already recorded diff request. """
+    """Raised on attempts to request an already recorded diff request."""
 
 
 class IPackageDiff(Interface):
@@ -41,41 +34,46 @@ class IPackageDiff(Interface):
 
     See `doc/package-diff.rst` for details about the attributes.
     """
+
     id = Attribute("The PackageDiff unique number.")
 
     from_source = Attribute(_("The base ISourcePackageRelease."))
     to_source = Attribute(_("The target ISourcePackageRelease."))
 
     date_requested = Datetime(
-        title=_('Date Requested'), required=True, readonly=True)
+        title=_("Date Requested"), required=True, readonly=True
+    )
 
     requester = Choice(
-        title=_('User'),
+        title=_("User"),
         required=True,
-        vocabulary='ValidPerson',
-        description=_("The person requesting the diff."))
+        vocabulary="ValidPerson",
+        description=_("The person requesting the diff."),
+    )
 
-    date_fulfilled = Datetime(
-        title=_('Date Fulfilled'), required=False)
+    date_fulfilled = Datetime(title=_("Date Fulfilled"), required=False)
 
     diff_content = Object(
         schema=ILibraryFileAlias,
         title=_("The ILibraryFileAlias containing the diff."),
-        required=False)
+        required=False,
+    )
 
     status = Choice(
-        title=_('Status'),
-        description=_('The status of this package diff request.'),
-        vocabulary='PackageDiffStatus',
-        required=False, default=PackageDiffStatus.PENDING,
-        )
+        title=_("Status"),
+        description=_("The status of this package diff request."),
+        vocabulary="PackageDiffStatus",
+        required=False,
+        default=PackageDiffStatus.PENDING,
+    )
 
     title = Attribute("The Package diff title.")
 
     private = Attribute(
         "Whether or not the package diff content is private. "
         "A package diff is considered private when 'to_source' was "
-        "originally uploaded to a private archive.")
+        "originally uploaded to a private archive."
+    )
 
     def performDiff():
         """Performs a diff between two packages."""

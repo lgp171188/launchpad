@@ -4,27 +4,16 @@
 """ArchivePermission interface."""
 
 __all__ = [
-    'IArchivePermission',
-    'IArchivePermissionSet',
-    'IArchiveUploader',
-    'IArchiveQueueAdmin',
-    ]
+    "IArchivePermission",
+    "IArchivePermissionSet",
+    "IArchiveUploader",
+    "IArchiveQueueAdmin",
+]
 
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
+from lazr.restful.declarations import exported, exported_as_webservice_entry
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, TextLine
 
 from lp import _
 from lp.registry.interfaces.distroseries import IDistroSeries
@@ -45,82 +34,104 @@ class IArchivePermission(Interface):
 
     date_created = exported(
         Datetime(
-            title=_('Date Created'), required=False, readonly=False,
-            description=_("The timestamp when the permission was created.")))
+            title=_("Date Created"),
+            required=False,
+            readonly=False,
+            description=_("The timestamp when the permission was created."),
+        )
+    )
 
     archive = exported(
         Reference(
             IArchive,
             title=_("Archive"),
-            description=_("The archive that this permission is for.")))
+            description=_("The archive that this permission is for."),
+        )
+    )
 
     permission = exported(
         Choice(
             title=_("The permission type being granted."),
-            values=ArchivePermissionType, readonly=False, required=True))
+            values=ArchivePermissionType,
+            readonly=False,
+            required=True,
+        )
+    )
 
     person = exported(
         PublicPersonChoice(
             title=_("Person"),
             description=_("The person or team being granted the permission."),
-            required=True, vocabulary="ValidPersonOrTeam"))
+            required=True,
+            vocabulary="ValidPersonOrTeam",
+        )
+    )
 
     component = Reference(
         IComponent,
         title=_("Component"),
-        description=_("The component that this permission is related to."))
+        description=_("The component that this permission is related to."),
+    )
 
     sourcepackagename = Reference(
         ISourcePackageName,
         title=_("Source Package Name"),
-        description=_("The source package name that this permission is "
-                      "related to."))
+        description=_(
+            "The source package name that this permission is " "related to."
+        ),
+    )
 
     # This is the *text* component name, as opposed to `component` above
     # which is the `IComponent` and we don't want to export that.
     component_name = exported(
-        TextLine(
-            title=_("Component Name"),
-            required=True))
+        TextLine(title=_("Component Name"), required=True)
+    )
 
     # This is the *text* package name, as opposed to `sourcepackagename`
     # which is the `ISourcePackageName` and we don't want to export
     # that.
     source_package_name = exported(
-        TextLine(
-            title=_("Source Package Name"),
-            required=True))
+        TextLine(title=_("Source Package Name"), required=True)
+    )
 
     packageset = Reference(
-            IPackageset,
-            title=_("Packageset"),
-            description=_("The package set that this permission is for."))
+        IPackageset,
+        title=_("Packageset"),
+        description=_("The package set that this permission is for."),
+    )
 
     explicit = exported(
         Bool(
             title=_("Explicit"),
             description=_(
                 "Set this flag for package sets with high-profile packages "
-                "requiring specialist skills for proper handling.")))
+                "requiring specialist skills for proper handling."
+            ),
+        )
+    )
 
     package_set_name = exported(
-        TextLine(
-            title=_("Package set name"),
-            required=True))
+        TextLine(title=_("Package set name"), required=True)
+    )
 
     distro_series_name = exported(
         TextLine(
             title=_(
                 "The name of the distro series associated with the "
-                "package set."),
-            required=True))
+                "package set."
+            ),
+            required=True,
+        )
+    )
 
     pocket = exported(
         Choice(
             title=_("Pocket"),
             description=_("The pocket that this permission is for."),
             vocabulary=PackagePublishingPocket,
-            required=True))
+            required=True,
+        )
+    )
 
     distroseries = exported(
         Reference(
@@ -128,8 +139,11 @@ class IArchivePermission(Interface):
             title=_("Distro series"),
             description=_(
                 "The distro series that this permission is for (only for "
-                "pocket permissions)."),
-            required=False))
+                "pocket permissions)."
+            ),
+            required=False,
+        )
+    )
 
 
 class IArchiveUploader(IArchivePermission):
@@ -261,7 +275,8 @@ class IArchivePermissionSet(Interface):
         """
 
     def packagesetsForSource(
-        archive, sourcepackagename, direct_permissions=True):
+        archive, sourcepackagename, direct_permissions=True
+    ):
         """All package set based permissions for the given archive and source.
 
         This method is meant to aid the process of "debugging" package set
@@ -281,8 +296,9 @@ class IArchivePermissionSet(Interface):
             archive in question.
         """
 
-    def isSourceUploadAllowed(archive, sourcepackagename, person,
-                              distroseries):
+    def isSourceUploadAllowed(
+        archive, sourcepackagename, person, distroseries
+    ):
         """True if the person is allowed to upload the given source package.
 
         Return True if there exists a permission that combines

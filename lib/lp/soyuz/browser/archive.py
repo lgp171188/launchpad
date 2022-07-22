@@ -4,70 +4,53 @@
 """Browser views for archive."""
 
 __all__ = [
-    'ArchiveAdminView',
-    'ArchiveActivateView',
-    'ArchiveBadges',
-    'ArchiveBuildsView',
-    'ArchiveDeleteView',
-    'ArchiveEditDependenciesView',
-    'ArchiveEditView',
-    'ArchiveIndexActionsMenu',
-    'ArchiveNavigation',
-    'ArchiveNavigationMenu',
-    'ArchivePackageCopyingView',
-    'ArchivePackageDeletionView',
-    'ArchivePackagesActionMenu',
-    'ArchivePackagesView',
-    'ArchiveView',
-    'ArchiveViewBase',
-    'EnableProcessorsMixin',
-    'PackageCopyingMixin',
-    'traverse_named_ppa',
-    ]
+    "ArchiveAdminView",
+    "ArchiveActivateView",
+    "ArchiveBadges",
+    "ArchiveBuildsView",
+    "ArchiveDeleteView",
+    "ArchiveEditDependenciesView",
+    "ArchiveEditView",
+    "ArchiveIndexActionsMenu",
+    "ArchiveNavigation",
+    "ArchiveNavigationMenu",
+    "ArchivePackageCopyingView",
+    "ArchivePackageDeletionView",
+    "ArchivePackagesActionMenu",
+    "ArchivePackagesView",
+    "ArchiveView",
+    "ArchiveViewBase",
+    "EnableProcessorsMixin",
+    "PackageCopyingMixin",
+    "traverse_named_ppa",
+]
 
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 from operator import attrgetter
 
-from lazr.restful.utils import smartquote
 import pytz
+from lazr.restful.utils import smartquote
 from storm.expr import Desc
 from zope.component import getUtility
 from zope.formlib import form
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextAreaWidget
-from zope.interface import (
-    implementer,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    List,
-    TextLine,
-    )
+from zope.interface import Interface, implementer
+from zope.schema import Bool, Choice, List, TextLine
 from zope.schema.interfaces import IContextSourceBinder
-from zope.schema.vocabulary import (
-    SimpleTerm,
-    SimpleVocabulary,
-    )
+from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp import _
 from lp.app.browser.badge import HasBadgeBase
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
-from lp.app.browser.lazrjs import (
-    TextAreaEditorWidget,
-    TextLineEditorWidget,
-    )
+    action,
+)
+from lp.app.browser.lazrjs import TextAreaEditorWidget, TextLineEditorWidget
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.widgets.itemswidgets import (
@@ -75,12 +58,12 @@ from lp.app.widgets.itemswidgets import (
     LaunchpadDropdownWidget,
     LaunchpadRadioWidget,
     PlainMultiCheckBoxWidget,
-    )
+)
 from lp.app.widgets.textwidgets import StrippedTextWidget
 from lp.buildmaster.enums import BuildStatus
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuildSource,
-    )
+)
 from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
@@ -91,7 +74,7 @@ from lp.registry.model.person import Person
 from lp.services.browser_helpers import (
     get_plural_text,
     get_user_agent_distroseries,
-    )
+)
 from lp.services.database.bulk import load_related
 from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.helpers import english_list
@@ -99,40 +82,34 @@ from lp.services.job.model.job import Job
 from lp.services.librarian.browser import (
     DeletedProxiedLibraryFileAlias,
     FileNavigationMixin,
-    )
+)
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
-    canonical_url,
-    enabled_with_permission,
     LaunchpadView,
     Link,
     Navigation,
+    canonical_url,
+    enabled_with_permission,
     stepthrough,
-    )
+)
 from lp.services.webapp.authorization import (
     check_permission,
     precache_permission_for_objects,
-    )
+)
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.escaping import structured
-from lp.services.webapp.interfaces import (
-    ICanonicalUrlData,
-    IStructuredString,
-    )
+from lp.services.webapp.interfaces import ICanonicalUrlData, IStructuredString
 from lp.services.webapp.menu import NavigationMenu
 from lp.services.webapp.publisher import RedirectionView
 from lp.services.worlddata.interfaces.country import ICountrySet
 from lp.soyuz.adapters.archivedependencies import (
     default_component_dependency_name,
     default_pocket_dependency,
-    )
+)
 from lp.soyuz.adapters.archivesourcepublication import (
     ArchiveSourcePublications,
-    )
-from lp.soyuz.browser.build import (
-    BuildRecordsView,
-    get_build_by_id_str,
-    )
+)
+from lp.soyuz.browser.build import BuildRecordsView, get_build_by_id_str
 from lp.soyuz.browser.sourceslist import SourcesListEntriesWidget
 from lp.soyuz.browser.widgets.archive import PPANameWidget
 from lp.soyuz.enums import (
@@ -140,7 +117,7 @@ from lp.soyuz.enums import (
     ArchiveStatus,
     PackageCopyPolicy,
     PackagePublishingStatus,
-    )
+)
 from lp.soyuz.interfaces.archive import (
     ArchiveDependencyError,
     CannotCopy,
@@ -149,27 +126,24 @@ from lp.soyuz.interfaces.archive import (
     IArchiveSet,
     NoSuchPPA,
     validate_external_dependencies,
-    )
+)
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.archivesubscriber import IArchiveSubscriberSet
 from lp.soyuz.interfaces.binarypackagebuild import (
     BuildSetStatus,
     IBinaryPackageBuildSet,
-    )
+)
 from lp.soyuz.interfaces.binarypackagename import IBinaryPackageNameSet
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.packagecopyjob import IPlainPackageCopyJobSource
 from lp.soyuz.interfaces.packagecopyrequest import IPackageCopyRequestSet
 from lp.soyuz.interfaces.packageset import IPackagesetSet
 from lp.soyuz.interfaces.publishing import (
+    IPublishingSet,
     active_publishing_status,
     inactive_publishing_status,
-    IPublishingSet,
-    )
-from lp.soyuz.model.archive import (
-    Archive,
-    validate_ppa,
-    )
+)
+from lp.soyuz.model.archive import Archive, validate_ppa
 from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 from lp.soyuz.scripts.packagecopier import check_copy_permissions
 from lp.soyuz.vocabularies import make_archive_vocabulary
@@ -207,6 +181,7 @@ class DistributionArchiveURL:
     IDistribution as /<distro>/+archive/<name>, for example:
     /ubuntu/+archive/partner
     """
+
     rootsite = None
 
     def __init__(self, context):
@@ -224,6 +199,7 @@ class DistributionArchiveURL:
 @implementer(ICanonicalUrlData)
 class PPAURL:
     """Dynamic URL declaration for named PPAs."""
+
     rootsite = None
 
     def __init__(self, context):
@@ -236,7 +212,9 @@ class PPAURL:
     @property
     def path(self):
         return "+archive/%s/%s" % (
-            self.context.distribution.name, self.context.name)
+            self.context.distribution.name,
+            self.context.name,
+        )
 
 
 class ArchiveNavigation(Navigation, FileNavigationMixin):
@@ -244,25 +222,25 @@ class ArchiveNavigation(Navigation, FileNavigationMixin):
 
     usedfor = IArchive
 
-    @stepthrough('+build')
+    @stepthrough("+build")
     def traverse_build(self, name):
         build = get_build_by_id_str(IBinaryPackageBuildSet, name)
         if build is None or build.archive != self.context:
             return None
         return build
 
-    @stepthrough('+recipebuild')
+    @stepthrough("+recipebuild")
     def traverse_recipebuild(self, name):
         build = get_build_by_id_str(ISourcePackageRecipeBuildSource, name)
         if build is None or build.archive != self.context:
             return None
         return build
 
-    @stepthrough('+sourcepub')
+    @stepthrough("+sourcepub")
     def traverse_sourcepub(self, name):
         return self._traverse_publication(name, source=True)
 
-    @stepthrough('+binarypub')
+    @stepthrough("+binarypub")
     def traverse_binarypub(self, name):
         return self._traverse_publication(name, source=False)
 
@@ -275,9 +253,10 @@ class ArchiveNavigation(Navigation, FileNavigationMixin):
         # The ID is not enough on its own to identify the publication,
         # we need to make sure it matches the context archive as well.
         return getUtility(IPublishingSet).getByIdAndArchive(
-            pub_id, self.context, source)
+            pub_id, self.context, source
+        )
 
-    @stepthrough('+binaryhits')
+    @stepthrough("+binaryhits")
     def traverse_binaryhits(self, name_str):
         """Traverse to an `IBinaryPackageReleaseDownloadCount`.
 
@@ -311,13 +290,13 @@ class ArchiveNavigation(Navigation, FileNavigationMixin):
             return None
 
         try:
-            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            date = datetime.strptime(date_str, "%Y-%m-%d").date()
         except ValueError:
             return None
 
         # 'unknown' should always be safe, since the key is the two letter
         # ISO code, and 'unknown' has more than two letters.
-        if country_str == 'unknown':
+        if country_str == "unknown":
             country = None
         else:
             try:
@@ -327,14 +306,15 @@ class ArchiveNavigation(Navigation, FileNavigationMixin):
 
         return self.context.getPackageDownloadCount(bpr, date, country)
 
-    @stepthrough('+subscriptions')
+    @stepthrough("+subscriptions")
     def traverse_subscription(self, person_name):
         person = getUtility(IPersonSet).getByName(person_name)
         if person is None:
             return None
 
         subscriptions = getUtility(IArchiveSubscriberSet).getBySubscriber(
-            person, archive=self.context)
+            person, archive=self.context
+        )
 
         # If a person is subscribed with a direct subscription as well as
         # via a team, subscriptions will contain both, so need to grab
@@ -345,16 +325,17 @@ class ArchiveNavigation(Navigation, FileNavigationMixin):
 
         return None
 
-    @stepthrough('+upload')
+    @stepthrough("+upload")
     def traverse_upload_permission(self, name):
         """Traverse the data part of the URL for upload permissions."""
         return self._traverse_permission(name, ArchivePermissionType.UPLOAD)
 
-    @stepthrough('+queue-admin')
+    @stepthrough("+queue-admin")
     def traverse_queue_admin_permission(self, name):
         """Traverse the data part of the URL for queue admin permissions."""
         return self._traverse_permission(
-            name, ArchivePermissionType.QUEUE_ADMIN)
+            name, ArchivePermissionType.QUEUE_ADMIN
+        )
 
     def _traverse_permission(self, name, permission_type):
         """Traversal helper function.
@@ -379,27 +360,27 @@ class ArchiveNavigation(Navigation, FileNavigationMixin):
             return None
 
         # Obtain the item type and name from the URL parameters.
-        item_type = get_url_param('type')
-        item = get_url_param('item')
+        item_type = get_url_param("type")
+        item = get_url_param("item")
 
         if item_type is None or item is None:
             return None
 
         the_item = None
         kwargs = {}
-        if item_type == 'component':
+        if item_type == "component":
             # See if "item" is a component name.
             try:
                 the_item = getUtility(IComponentSet)[item]
             except NotFoundError:
                 pass
-        elif item_type == 'packagename':
+        elif item_type == "packagename":
             # See if "item" is a source package name.
             the_item = getUtility(ISourcePackageNameSet).queryByName(item)
-        elif item_type == 'packageset':
+        elif item_type == "packageset":
             the_item = None
             # Was a 'series' URL param passed?
-            series = get_url_param('series')
+            series = get_url_param("series")
             if series is not None:
                 # Get the requested distro series.
                 try:
@@ -408,12 +389,12 @@ class ArchiveNavigation(Navigation, FileNavigationMixin):
                     series = None
             if series is not None:
                 the_item = getUtility(IPackagesetSet).getByName(series, item)
-        elif item_type == 'pocket':
+        elif item_type == "pocket":
             # See if "item" is a pocket name.
             try:
                 the_item = PackagePublishingPocket.items[item]
                 # Was a 'series' URL param passed?
-                series = get_url_param('series')
+                series = get_url_param("series")
                 if series is not None:
                     # Get the requested distro series.
                     try:
@@ -428,7 +409,8 @@ class ArchiveNavigation(Navigation, FileNavigationMixin):
 
         if the_item is not None:
             result_set = getUtility(IArchivePermissionSet).checkAuthenticated(
-                user, self.context, permission_type, the_item, **kwargs)
+                user, self.context, permission_type, the_item, **kwargs
+            )
             try:
                 return result_set[0]
             except IndexError:
@@ -436,7 +418,7 @@ class ArchiveNavigation(Navigation, FileNavigationMixin):
         else:
             return None
 
-    @stepthrough('+dependency')
+    @stepthrough("+dependency")
     def traverse_dependency(self, id):
         """Traverse to an archive dependency by archive ID.
 
@@ -457,7 +439,7 @@ class ArchiveNavigation(Navigation, FileNavigationMixin):
 
         return self.context.getArchiveDependency(archive)
 
-    @stepthrough('+sourcefiles')
+    @stepthrough("+sourcefiles")
     def traverse_sourcefiles(self, sourcepackagename):
         """Traverse to a source file in the archive.
 
@@ -480,11 +462,12 @@ class ArchiveNavigation(Navigation, FileNavigationMixin):
         version = self.request.stepstogo.consume()
         filename = self.request.stepstogo.consume()
 
-        if not check_permission('launchpad.View', self.context):
+        if not check_permission("launchpad.View", self.context):
             raise Unauthorized()
 
         library_file = self.context.getSourceFileByName(
-            sourcepackagename, version, filename)
+            sourcepackagename, version, filename
+        )
 
         # Deleted library files result in a NotFound-like error.
         if library_file.deleted:
@@ -495,24 +478,24 @@ class ArchiveNavigation(Navigation, FileNavigationMixin):
             return None
 
         return RedirectionView(
-            library_file.getURL(include_token=True), self.request)
+            library_file.getURL(include_token=True), self.request
+        )
 
 
 class ArchiveMenuMixin:
-
     def ppa(self):
-        text = 'View PPA'
-        return Link(canonical_url(self.context), text, icon='info')
+        text = "View PPA"
+        return Link(canonical_url(self.context), text, icon="info")
 
-    @enabled_with_permission('launchpad.Admin')
+    @enabled_with_permission("launchpad.Admin")
     def admin(self):
-        text = 'Administer archive'
-        return Link('+admin', text, icon='edit')
+        text = "Administer archive"
+        return Link("+admin", text, icon="edit")
 
-    @enabled_with_permission('launchpad.Append')
+    @enabled_with_permission("launchpad.Append")
     def manage_subscribers(self):
-        text = 'Manage access'
-        link = Link('+subscriptions', text, icon='edit')
+        text = "Manage access"
+        link = Link("+subscriptions", text, icon="edit")
 
         # This link should only be available for private archives:
         view = self.context
@@ -521,54 +504,53 @@ class ArchiveMenuMixin:
             link.enabled = False
         return link
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def edit(self):
-        text = 'Change details'
+        text = "Change details"
         view = self.context
-        return Link(
-            '+edit', text, icon='edit', enabled=view.context.is_active)
+        return Link("+edit", text, icon="edit", enabled=view.context.is_active)
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def delete_ppa(self):
-        text = 'Delete PPA'
+        text = "Delete PPA"
         view = self.context
         return Link(
-            '+delete', text, icon='trash-icon',
-            enabled=view.context.is_active)
+            "+delete", text, icon="trash-icon", enabled=view.context.is_active
+        )
 
     def builds(self):
-        text = 'View all builds'
-        return Link('+builds', text, icon='info')
+        text = "View all builds"
+        return Link("+builds", text, icon="info")
 
     def builds_successful(self):
-        text = 'View successful builds'
-        return Link('+builds?build_state=built', text, icon='info')
+        text = "View successful builds"
+        return Link("+builds?build_state=built", text, icon="info")
 
     def builds_pending(self):
-        text = 'View pending builds'
-        return Link('+builds?build_state=pending', text, icon='info')
+        text = "View pending builds"
+        return Link("+builds?build_state=pending", text, icon="info")
 
     def builds_building(self):
-        text = 'View in-progress builds'
-        return Link('+builds?build_state=building', text, icon='info')
+        text = "View in-progress builds"
+        return Link("+builds?build_state=building", text, icon="info")
 
     def packages(self):
-        text = 'View package details'
-        link = Link('+packages', text, icon='info')
+        text = "View package details"
+        link = Link("+packages", text, icon="info")
         # Disable the link for P3As if they don't have upload rights,
         # except if the user is a commercial admin.
         if self.context.private:
-            if not check_permission('launchpad.Append', self.context):
+            if not check_permission("launchpad.Append", self.context):
                 admins = getUtility(ILaunchpadCelebrities).commercial_admin
                 if not self.user.inTeam(admins):
                     link.enabled = False
         return link
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def delete(self):
         """Display a delete menu option for non-copy archives."""
-        text = 'Delete packages'
-        link = Link('+delete-packages', text, icon='trash-icon')
+        text = "Delete packages"
+        link = Link("+delete-packages", text, icon="trash-icon")
 
         # This link should not be available for copy archives or
         # archives without any sources.
@@ -579,34 +561,43 @@ class ArchiveMenuMixin:
             link.enabled = False
         return link
 
-    @enabled_with_permission('launchpad.AnyPerson')
+    @enabled_with_permission("launchpad.AnyPerson")
     def copy(self):
         """Display a copy menu option for non-copy archives."""
-        text = 'Copy packages'
-        link = Link('+copy-packages', text, icon='package-sync')
+        text = "Copy packages"
+        link = Link("+copy-packages", text, icon="package-sync")
 
         # This link should not be available for copy archives.
         if self.context.is_copy:
             link.enabled = False
         return link
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def edit_dependencies(self):
-        text = 'Edit PPA dependencies'
+        text = "Edit PPA dependencies"
         view = self.context
         return Link(
-            '+edit-dependencies', text, icon='edit',
-            enabled=view.context.is_active)
+            "+edit-dependencies",
+            text,
+            icon="edit",
+            enabled=view.context.is_active,
+        )
 
 
 class ArchiveNavigationMenu(NavigationMenu, ArchiveMenuMixin):
     """Overview Menu for IArchive."""
 
     usedfor = IArchive
-    facet = 'overview'
-    links = ['admin', 'builds', 'builds_building',
-             'builds_pending', 'builds_successful',
-             'packages', 'ppa']
+    facet = "overview"
+    links = [
+        "admin",
+        "builds",
+        "builds_building",
+        "builds_pending",
+        "builds_successful",
+        "packages",
+        "ppa",
+    ]
 
 
 class IArchiveIndexActionsMenu(Interface):
@@ -615,10 +606,17 @@ class IArchiveIndexActionsMenu(Interface):
 
 class ArchiveIndexActionsMenu(NavigationMenu, ArchiveMenuMixin):
     """Archive index navigation menu."""
+
     usedfor = IArchiveIndexActionsMenu
-    facet = 'overview'
-    links = ['admin', 'edit', 'edit_dependencies',
-             'manage_subscribers', 'packages', 'delete_ppa']
+    facet = "overview"
+    links = [
+        "admin",
+        "edit",
+        "edit_dependencies",
+        "manage_subscribers",
+        "packages",
+        "delete_ppa",
+    ]
 
 
 class IArchivePackagesActionMenu(Interface):
@@ -627,9 +625,10 @@ class IArchivePackagesActionMenu(Interface):
 
 class ArchivePackagesActionMenu(NavigationMenu, ArchiveMenuMixin):
     """An action menu for archive package-related actions."""
+
     usedfor = IArchivePackagesActionMenu
-    facet = 'overview'
-    links = ['copy', 'delete']
+    facet = "overview"
+    links = ["copy", "delete"]
 
 
 class ArchiveViewBase(LaunchpadView, SourcesListEntriesWidget):
@@ -640,16 +639,18 @@ class ArchiveViewBase(LaunchpadView, SourcesListEntriesWidget):
         # the current user has lp.Edit then add a link to +edit to fix
         # this.
         if not self.context.publish and self.context.is_active:
-            can_edit = check_permission('launchpad.Edit', self.context)
+            can_edit = check_permission("launchpad.Edit", self.context)
             notification = "Publishing has been disabled for this archive."
             if can_edit:
-                edit_url = canonical_url(self.context) + '/+edit'
+                edit_url = canonical_url(self.context) + "/+edit"
                 notification += (
-                    " <a href=%s>(re-enable publishing)</a>" % edit_url)
+                    " <a href=%s>(re-enable publishing)</a>" % edit_url
+                )
             if self.context.private:
                 notification += (
                     " Since this archive is private, no builds are "
-                    "being dispatched.")
+                    "being dispatched."
+                )
             self.request.response.addNotification(structured(notification))
         super().initialize()
         # Set properties for SourcesListEntriesWidget.
@@ -666,25 +667,29 @@ class ArchiveViewBase(LaunchpadView, SourcesListEntriesWidget):
 
         def package_plural(control):
             if control == 1:
-                return 'package'
-            return 'packages'
+                return "package"
+            return "packages"
 
         # Calculate the label for the package counters respecting
         # singular/plural forms.
         number_of_sources = self.context.number_of_sources
-        source_label = '%s source %s' % (
-            number_of_sources, package_plural(number_of_sources))
+        source_label = "%s source %s" % (
+            number_of_sources,
+            package_plural(number_of_sources),
+        )
 
         number_of_binaries = self.context.number_of_binaries
-        binary_label = '%s binary %s' % (
-            number_of_binaries, package_plural(number_of_binaries))
+        binary_label = "%s binary %s" % (
+            number_of_binaries,
+            package_plural(number_of_binaries),
+        )
 
         used = self.context.estimated_size
         if self.context.authorized_size:
             # Quota is stored in MiB, convert it to bytes.
-            quota = self.context.authorized_size * (2 ** 20)
+            quota = self.context.authorized_size * (2**20)
             # Calculate the usage factor and limit it to 100%.
-            used_factor = (float(used) / quota)
+            used_factor = float(used) / quota
             if used_factor > 1:
                 used_factor = 1
         else:
@@ -694,9 +699,9 @@ class ArchiveViewBase(LaunchpadView, SourcesListEntriesWidget):
         # Calculate the appropriate CSS class to be used with the usage
         # factor. Highlight it (in red) if usage is over 90% of the quota.
         if used_factor > 0.90:
-            used_css_class = 'red'
+            used_css_class = "red"
         else:
-            used_css_class = 'green'
+            used_css_class = "green"
 
         # Usage percentage with 2 degrees of precision (more than enough
         # for humans).
@@ -710,7 +715,8 @@ class ArchiveViewBase(LaunchpadView, SourcesListEntriesWidget):
             used=used,
             used_percentage=used_percentage,
             used_css_class=used_css_class,
-            quota=quota)
+            quota=quota,
+        )
 
     @property
     def archive_label(self):
@@ -721,9 +727,9 @@ class ArchiveViewBase(LaunchpadView, SourcesListEntriesWidget):
         not worth splitting off into a separate template or macro)
         """
         if self.context.is_ppa:
-            return 'PPA'
+            return "PPA"
         else:
-            return 'archive'
+            return "archive"
 
     @cachedproperty
     def build_counters(self):
@@ -741,7 +747,7 @@ class ArchiveViewBase(LaunchpadView, SourcesListEntriesWidget):
         The dependencies section is presented if there are any dependency set
         or if the user has permission to change it.
         """
-        can_edit = check_permission('launchpad.Edit', self.context)
+        can_edit = check_permission("launchpad.Edit", self.context)
         return can_edit or len(self.dependencies) > 0
 
     @property
@@ -755,15 +761,17 @@ class ArchiveViewBase(LaunchpadView, SourcesListEntriesWidget):
         disabled_dependencies = [
             archive_dependency
             for archive_dependency in self.dependencies
-            if not archive_dependency.dependency.enabled]
-        can_edit = check_permission('launchpad.Edit', self.context)
+            if not archive_dependency.dependency.enabled
+        ]
+        can_edit = check_permission("launchpad.Edit", self.context)
         return can_edit and len(disabled_dependencies) > 0
 
     @cachedproperty
     def package_copy_requests(self):
         """Return any package copy requests associated with this archive."""
-        copy_requests = getUtility(
-            IPackageCopyRequestSet).getByTargetArchive(self.context)
+        copy_requests = getUtility(IPackageCopyRequestSet).getByTargetArchive(
+            self.context
+        )
         return list(copy_requests)
 
     @property
@@ -773,7 +781,9 @@ class ArchiveViewBase(LaunchpadView, SourcesListEntriesWidget):
             return None
 
         if self.context.status in (
-            ArchiveStatus.DELETED, ArchiveStatus.DELETING):
+            ArchiveStatus.DELETED,
+            ArchiveStatus.DELETING,
+        ):
             return "This %s has been deleted." % self.archive_label
         else:
             return "This %s has been disabled." % self.archive_label
@@ -794,33 +804,47 @@ class ArchiveSeriesVocabularyFactory:
         series_terms = []
         for distroseries in context.series_with_sources:
             series_terms.append(
-                SimpleTerm(distroseries, token=distroseries.name,
-                           title=distroseries.displayname))
+                SimpleTerm(
+                    distroseries,
+                    token=distroseries.name,
+                    title=distroseries.displayname,
+                )
+            )
         return SimpleVocabulary(series_terms)
 
 
 class SeriesFilterWidget(LaunchpadDropdownWidget):
     """Redefining default display value as 'Any series'."""
+
     _messageNoValue = _("any", "Any series")
 
 
 class StatusFilterWidget(LaunchpadDropdownWidget):
     """Redefining default display value as 'Any status'."""
+
     _messageNoValue = _("any", "Any status")
 
 
 class IPPAPackageFilter(Interface):
     """The interface used as the schema for the package filtering form."""
-    name_filter = TextLine(
-        title=_("Package name contains"), required=False)
+
+    name_filter = TextLine(title=_("Package name contains"), required=False)
 
     series_filter = Choice(
-        source=ArchiveSeriesVocabularyFactory(), required=False)
+        source=ArchiveSeriesVocabularyFactory(), required=False
+    )
 
-    status_filter = Choice(vocabulary=SimpleVocabulary((
-        SimpleTerm(active_publishing_status, 'published', 'Published'),
-        SimpleTerm(inactive_publishing_status, 'superseded', 'Superseded'),
-        )), required=False)
+    status_filter = Choice(
+        vocabulary=SimpleVocabulary(
+            (
+                SimpleTerm(active_publishing_status, "published", "Published"),
+                SimpleTerm(
+                    inactive_publishing_status, "superseded", "Superseded"
+                ),
+            )
+        ),
+        required=False,
+    )
 
 
 class ArchiveSourcePackageListViewBase(ArchiveViewBase, LaunchpadFormView):
@@ -841,9 +865,10 @@ class ArchiveSourcePackageListViewBase(ArchiveViewBase, LaunchpadFormView):
 
     @property
     def specified_name_filter(self):
-        """Return the specified name filter if one was specified """
+        """Return the specified name filter if one was specified"""
         requested_name_filter = self.request.query_string_params.get(
-            'field.name_filter')
+            "field.name_filter"
+        )
 
         if requested_name_filter and requested_name_filter[0]:
             return requested_name_filter[0]
@@ -856,16 +881,16 @@ class ArchiveSourcePackageListViewBase(ArchiveViewBase, LaunchpadFormView):
         This is needed because zope's form library does not consider
         query string params (GET params) during a post request.
         """
-        field_name = 'field.' + filter_name
+        field_name = "field." + filter_name
         requested_filter = self.request.query_string_params.get(field_name)
 
         # If an empty filter was specified, then it's explicitly
         # been set to empty - so we use None.
-        if requested_filter == ['']:
+        if requested_filter == [""]:
             return None
 
         # If the requested filter is none, then we use the default.
-        default_filter_attr = 'default_' + filter_name
+        default_filter_attr = "default_" + filter_name
         if requested_filter is None:
             return getattr(self, default_filter_attr)
 
@@ -880,23 +905,26 @@ class ArchiveSourcePackageListViewBase(ArchiveViewBase, LaunchpadFormView):
     @property
     def plain_status_filter_widget(self):
         """Render a <select> control with no <div>s around it."""
-        return self.widgets['status_filter'].renderValue(
-            self.getSelectedFilterValue('status_filter'))
+        return self.widgets["status_filter"].renderValue(
+            self.getSelectedFilterValue("status_filter")
+        )
 
     @property
     def plain_series_filter_widget(self):
         """Render a <select> control with no <div>s around it."""
-        return self.widgets['series_filter'].renderValue(
-            self.getSelectedFilterValue('series_filter'))
+        return self.widgets["series_filter"].renderValue(
+            self.getSelectedFilterValue("series_filter")
+        )
 
     @property
     def filtered_sources(self):
         """Return the source results for display after filtering."""
         return self.context.getPublishedSources(
             name=self.specified_name_filter,
-            status=self.getSelectedFilterValue('status_filter'),
-            distroseries=self.getSelectedFilterValue('series_filter'),
-            eager_load=True)
+            status=self.getSelectedFilterValue("status_filter"),
+            distroseries=self.getSelectedFilterValue("series_filter"),
+            eager_load=True,
+        )
 
     @property
     def default_status_filter(self):
@@ -904,8 +932,11 @@ class ArchiveSourcePackageListViewBase(ArchiveViewBase, LaunchpadFormView):
 
         Subclasses of ArchiveViewBase can override this when required.
         """
-        return self.widgets['status_filter'].vocabulary.getTermByToken(
-            'published').value
+        return (
+            self.widgets["status_filter"]
+            .vocabulary.getTermByToken("published")
+            .value
+        )
 
     @property
     def default_series_filter(self):
@@ -946,30 +977,36 @@ class ArchiveView(ArchiveSourcePackageListViewBase):
         """Redirect if our context is a main archive."""
         if self.context.is_main:
             self.request.response.redirect(
-                canonical_url(self.context.distribution))
+                canonical_url(self.context.distribution)
+            )
             return
         super().initialize()
 
     @property
     def displayname_edit_widget(self):
-        display_name = IArchive['displayname']
+        display_name = IArchive["displayname"]
         title = "Edit the displayname"
         return TextLineEditorWidget(
-            self.context, display_name, title, 'h1', max_width='95%',
-            truncate_lines=1)
+            self.context,
+            display_name,
+            title,
+            "h1",
+            max_width="95%",
+            truncate_lines=1,
+        )
 
     @property
     def default_series_filter(self):
         """Return the distroseries identified by the user-agent."""
         version_number = get_user_agent_distroseries(
-            self.request.getHeader('HTTP_USER_AGENT'))
+            self.request.getHeader("HTTP_USER_AGENT")
+        )
 
         # Check if this version is one of the available
         # distroseries for this archive:
-        vocabulary = self.widgets['series_filter'].vocabulary
+        vocabulary = self.widgets["series_filter"].vocabulary
         for term in vocabulary:
-            if (term.value is not None and
-                term.value.version == version_number):
+            if term.value is not None and term.value.version == version_number:
                 return term.value
 
         # Otherwise we default to 'any'
@@ -982,19 +1019,24 @@ class ArchiveView(ArchiveSourcePackageListViewBase):
         if self.context.is_ppa:
             linkify_text = not self.context.owner.is_probationary
         archive = self.context
-        description = IArchive['description']
+        description = IArchive["description"]
         title = self.archive_label + " description"
         # Don't hide empty archive descriptions.  Even though the interface
         # says they are required, the model doesn't.
         return TextAreaEditorWidget(
-            archive, description, title, hide_empty=False,
-            linkify_text=linkify_text)
+            archive,
+            description,
+            title,
+            hide_empty=False,
+            linkify_text=linkify_text,
+        )
 
     @cachedproperty
     def latest_updates(self):
         """Return the last five published sources for this archive."""
         sources = self.context.getPublishedSources(
-            status=PackagePublishingStatus.PUBLISHED)
+            status=PackagePublishingStatus.PUBLISHED
+        )
         sources.order_by(Desc(SourcePackagePublishingHistory.datepublished))
         result_tuples = sources[:5]
 
@@ -1005,43 +1047,48 @@ class ArchiveView(ArchiveSourcePackageListViewBase):
         # each status is too long for use here, so define a dict of
         # concise status descriptions that will fit in a small area.
         status_names = {
-            'FULLYBUILT': 'Successfully built',
-            'FULLYBUILT_PENDING': 'Successfully built',
-            'NEEDSBUILD': 'Waiting to build',
-            'FAILEDTOBUILD': 'Failed to build:',
-            'BUILDING': 'Currently building',
-            'UPLOADING': 'Currently uploading',
-            }
+            "FULLYBUILT": "Successfully built",
+            "FULLYBUILT_PENDING": "Successfully built",
+            "NEEDSBUILD": "Waiting to build",
+            "FAILEDTOBUILD": "Failed to build:",
+            "BUILDING": "Currently building",
+            "UPLOADING": "Currently uploading",
+        }
 
         now = datetime.now(tz=pytz.UTC)
         source_ids = [result_tuple.id for result_tuple in result_tuples]
         summaries = getUtility(
-            IPublishingSet).getBuildStatusSummariesForSourceIdsAndArchive(
-                source_ids, self.context)
+            IPublishingSet
+        ).getBuildStatusSummariesForSourceIdsAndArchive(
+            source_ids, self.context
+        )
         for source_id, status_summary in summaries.items():
-            date_published = status_summary['date_published']
-            source_package_name = status_summary['source_package_name']
-            current_status = status_summary['status']
+            date_published = status_summary["date_published"]
+            source_package_name = status_summary["source_package_name"]
+            current_status = status_summary["status"]
             duration = now - date_published
 
             # We'd like to include the builds in the latest updates
             # iff the build failed.
             builds = []
             if current_status == BuildSetStatus.FAILEDTOBUILD:
-                builds = status_summary['builds']
+                builds = status_summary["builds"]
 
-            latest_updates_list.append({
-                'source_id': source_id,
-                'date_published': date_published,
-                'title': source_package_name,
-                'status': status_names[current_status.title],
-                'status_class': current_status.title,
-                'duration': duration,
-                'builds': builds,
-                })
+            latest_updates_list.append(
+                {
+                    "source_id": source_id,
+                    "date_published": date_published,
+                    "title": source_package_name,
+                    "status": status_names[current_status.title],
+                    "status_class": current_status.title,
+                    "duration": duration,
+                    "builds": builds,
+                }
+            )
 
         latest_updates_list.sort(
-            key=lambda x: (x['date_published'], x['source_id']), reverse=True)
+            key=lambda x: (x["date_published"], x["source_id"]), reverse=True
+        )
         return latest_updates_list
 
     def num_updates_over_last_days(self, num_days=30):
@@ -1049,19 +1096,22 @@ class ArchiveView(ArchiveSourcePackageListViewBase):
         now = datetime.now(tz=pytz.UTC)
         created_since = now - timedelta(num_days)
         return self.context.getPublishedSources(
-            created_since_date=created_since).count()
+            created_since_date=created_since
+        ).count()
 
     @property
     def num_pkgs_building(self):
         """Return the number of building/waiting to build packages."""
-        pkgs_building_count, pkgs_waiting_count = (
-            self.context.num_pkgs_building)
+        (
+            pkgs_building_count,
+            pkgs_waiting_count,
+        ) = self.context.num_pkgs_building
         # The total is just used for conditionals in the template.
         return {
-            'building': pkgs_building_count,
-            'waiting': pkgs_waiting_count,
-            'total': pkgs_building_count + pkgs_waiting_count,
-            }
+            "building": pkgs_building_count,
+            "waiting": pkgs_waiting_count,
+            "total": pkgs_building_count + pkgs_waiting_count,
+        }
 
 
 @implementer(IArchivePackagesActionMenu)
@@ -1080,7 +1130,8 @@ class ArchivePackagesView(ArchiveSourcePackageListViewBase):
     def series_list_string(self):
         """Return an English string of the distroseries."""
         return english_list(
-            series.displayname for series in self.series_with_sources)
+            series.displayname for series in self.series_with_sources
+        )
 
     @property
     def is_copy(self):
@@ -1100,11 +1151,11 @@ class ArchivePackagesView(ArchiveSourcePackageListViewBase):
         # related objects.
         pcjs = [removeSecurityProxy(ppcj).context for ppcj in ppcjs]
         # Pre-load related Jobs.
-        jobs = load_related(Job, pcjs, ['job_id'])
+        jobs = load_related(Job, pcjs, ["job_id"])
         # Pre-load related requesters.
-        load_related(Person, jobs, ['requester_id'])
+        load_related(Person, jobs, ["requester_id"])
         # Pre-load related source archives.
-        load_related(Archive, pcjs, ['source_archive_id'])
+        load_related(Archive, pcjs, ["source_archive_id"])
 
         return ppcjs.config(limit=5)
 
@@ -1117,11 +1168,11 @@ class ArchivePackagesView(ArchiveSourcePackageListViewBase):
         job_source = getUtility(IPlainPackageCopyJobSource)
         count = job_source.getIncompleteJobsForArchive(self.context).count()
         if count > 5:
-            return 'Showing 5 of %s' % count
+            return "Showing 5 of %s" % count
 
     @cachedproperty
     def has_append_perm(self):
-        return check_permission('launchpad.Append', self.context)
+        return check_permission("launchpad.Append", self.context)
 
 
 class ArchiveSourceSelectionFormView(ArchiveSourcePackageListViewBase):
@@ -1136,15 +1187,14 @@ class ArchiveSourceSelectionFormView(ArchiveSourcePackageListViewBase):
 
         This should be called during actions of subclasses.
         """
-        query_string = self.request.get('QUERY_STRING', '')
+        query_string = self.request.get("QUERY_STRING", "")
         if query_string:
             self.next_url = "%s?%s" % (self.request.URL, query_string)
         else:
             self.next_url = self.request.URL
 
     def setUpWidgets(self, context=None):
-        """Setup our custom widget which depends on the filter widget values.
-        """
+        """Setup our custom widget depending on the filter widget values."""
         # To create the selected sources field, we need to define a
         # vocabulary based on the currently selected sources (using self
         # batched_sources) but this itself requires the current values of
@@ -1155,9 +1205,13 @@ class ArchiveSourceSelectionFormView(ArchiveSourcePackageListViewBase):
         self.form_fields += self.createSelectedSourcesField()
 
         self.widgets += form.setUpWidgets(
-            self.form_fields.select('selected_sources'),
-            self.prefix, self.context, self.request,
-            data=self.initial_values, ignore_request=False)
+            self.form_fields.select("selected_sources"),
+            self.prefix,
+            self.context,
+            self.request,
+            data=self.initial_values,
+            ignore_request=False,
+        )
 
     def focusedElementScript(self):
         """Override `LaunchpadFormView`.
@@ -1165,7 +1219,7 @@ class ArchiveSourceSelectionFormView(ArchiveSourcePackageListViewBase):
         Ensure focus is only set if there are sources actually presented.
         """
         if not self.has_sources_for_display:
-            return ''
+            return ""
         return LaunchpadFormView.focusedElementScript(self)
 
     def createSelectedSourcesField(self):
@@ -1180,26 +1234,33 @@ class ArchiveSourceSelectionFormView(ArchiveSourcePackageListViewBase):
         for pub in self.batched_sources:
             terms.append(SimpleTerm(pub, str(pub.id), pub.displayname))
         return form.Fields(
-            List(__name__='selected_sources',
-                 title=_('Available sources'),
-                 value_type=Choice(vocabulary=SimpleVocabulary(terms)),
-                 required=False,
-                 default=[],
-                 description=_('Select one or more sources to be submitted '
-                               'to an action.')))
+            List(
+                __name__="selected_sources",
+                title=_("Available sources"),
+                value_type=Choice(vocabulary=SimpleVocabulary(terms)),
+                required=False,
+                default=[],
+                description=_(
+                    "Select one or more sources to be submitted "
+                    "to an action."
+                ),
+            )
+        )
 
     @property
     def action_url(self):
         """The forms should post to themselves, including GET params."""
-        return "%s?%s" % (self.request.getURL(), self.request['QUERY_STRING'])
+        return "%s?%s" % (self.request.getURL(), self.request["QUERY_STRING"])
 
 
 class IArchivePackageDeletionForm(IPPAPackageFilter):
     """Schema used to delete packages within an archive."""
 
     deletion_comment = TextLine(
-        title=_("Deletion comment"), required=False,
-        description=_("The reason why the package is being deleted."))
+        title=_("Deletion comment"),
+        required=False,
+        description=_("The reason why the package is being deleted."),
+    )
 
 
 class ArchivePackageDeletionView(ArchiveSourceSelectionFormView):
@@ -1211,12 +1272,13 @@ class ArchivePackageDeletionView(ArchiveSourceSelectionFormView):
 
     schema = IArchivePackageDeletionForm
     custom_widget_deletion_comment = CustomWidgetFactory(
-        StrippedTextWidget, displayWidth=50)
-    label = 'Delete packages'
+        StrippedTextWidget, displayWidth=50
+    )
+    label = "Delete packages"
 
     @property
     def label(self):
-        return 'Delete packages from %s' % self.context.displayname
+        return "Delete packages from %s" % self.context.displayname
 
     @property
     def default_status_filter(self):
@@ -1232,8 +1294,9 @@ class ArchivePackageDeletionView(ArchiveSourceSelectionFormView):
         """
         return self.context.getSourcesForDeletion(
             name=self.specified_name_filter,
-            status=self.getSelectedFilterValue('status_filter'),
-            distroseries=self.getSelectedFilterValue('series_filter'))
+            status=self.getSelectedFilterValue("status_filter"),
+            distroseries=self.getSelectedFilterValue("series_filter"),
+        )
 
     @cachedproperty
     def has_sources(self):
@@ -1251,10 +1314,10 @@ class ArchivePackageDeletionView(ArchiveSourceSelectionFormView):
         Ensure we have, at least, one source selected and deletion_comment
         is given.
         """
-        form.getWidgetsData(self.widgets, 'field', data)
+        form.getWidgetsData(self.widgets, "field", data)
 
-        if len(data.get('selected_sources', [])) == 0:
-            self.setFieldError('selected_sources', 'No sources selected.')
+        if len(data.get("selected_sources", [])) == 0:
+            self.setFieldError("selected_sources", "No sources selected.")
 
     @action(_("Request Deletion"), name="delete", validator="validate_delete")
     def delete_action(self, action, data):
@@ -1266,22 +1329,27 @@ class ArchivePackageDeletionView(ArchiveSourceSelectionFormView):
         if len(self.errors) != 0:
             return
 
-        comment = data.get('deletion_comment')
-        selected_sources = data.get('selected_sources')
+        comment = data.get("deletion_comment")
+        selected_sources = data.get("selected_sources")
 
         # Perform deletion of the source and its binaries.
         publishing_set = getUtility(IPublishingSet)
         publishing_set.requestDeletion(selected_sources, self.user, comment)
 
         # Present a page notification describing the action.
-        messages = [structured(
-            '<p>Source and binaries deleted by %s:', self.user.displayname)]
+        messages = [
+            structured(
+                "<p>Source and binaries deleted by %s:", self.user.displayname
+            )
+        ]
         for source in selected_sources:
-            messages.append(structured('<br/>%s', source.displayname))
-        messages.append(structured(
-            '</p>\n<p>Deletion comment: %s</p>', comment))
+            messages.append(structured("<br/>%s", source.displayname))
+        messages.append(
+            structured("</p>\n<p>Deletion comment: %s</p>", comment)
+        )
         notification = structured(
-            '\n'.join([msg.escapedtext for msg in messages]))
+            "\n".join([msg.escapedtext for msg in messages])
+        )
         self.request.response.addNotification(notification)
 
         self.setNextURL()
@@ -1289,18 +1357,28 @@ class ArchivePackageDeletionView(ArchiveSourceSelectionFormView):
 
 class DestinationArchiveDropdownWidget(LaunchpadDropdownWidget):
     """Redefining default display value as 'This PPA'."""
+
     _messageNoValue = _("vocabulary-copy-to-context-ppa", "This PPA")
 
 
 class DestinationSeriesDropdownWidget(LaunchpadDropdownWidget):
     """Redefining default display value as 'The same series'."""
+
     _messageNoValue = _("vocabulary-copy-to-same-series", "The same series")
 
 
-def copy_asynchronously(source_pubs, dest_archive, dest_series, dest_pocket,
-                        include_binaries, dest_url=None,
-                        dest_display_name=None, person=None,
-                        check_permissions=True, sponsored=None):
+def copy_asynchronously(
+    source_pubs,
+    dest_archive,
+    dest_series,
+    dest_pocket,
+    include_binaries,
+    dest_url=None,
+    dest_display_name=None,
+    person=None,
+    check_permissions=True,
+    sponsored=None,
+):
     """Schedule jobs to copy packages later.
 
     :return: A `structured` with human-readable feedback about the
@@ -1310,25 +1388,35 @@ def copy_asynchronously(source_pubs, dest_archive, dest_series, dest_pocket,
     """
     if check_permissions:
         check_copy_permissions(
-            person, dest_archive, dest_series, dest_pocket, source_pubs)
+            person, dest_archive, dest_series, dest_pocket, source_pubs
+        )
 
     job_source = getUtility(IPlainPackageCopyJobSource)
     for spph in source_pubs:
         job_source.create(
-            spph.source_package_name, spph.archive, dest_archive,
+            spph.source_package_name,
+            spph.archive,
+            dest_archive,
             dest_series if dest_series is not None else spph.distroseries,
-            dest_pocket, include_binaries=include_binaries,
+            dest_pocket,
+            include_binaries=include_binaries,
             package_version=spph.sourcepackagerelease.version,
             copy_policy=PackageCopyPolicy.INSECURE,
-            requester=person, sponsored=sponsored, unembargo=True,
-            source_distroseries=spph.distroseries, source_pocket=spph.pocket)
+            requester=person,
+            sponsored=sponsored,
+            unembargo=True,
+            source_distroseries=spph.distroseries,
+            source_pocket=spph.pocket,
+        )
 
     return copy_asynchronously_message(
-        len(source_pubs), dest_archive, dest_url, dest_display_name)
+        len(source_pubs), dest_archive, dest_url, dest_display_name
+    )
 
 
-def copy_asynchronously_message(source_pubs_count, dest_archive, dest_url=None,
-                                dest_display_name=None):
+def copy_asynchronously_message(
+    source_pubs_count, dest_archive, dest_url=None, dest_display_name=None
+):
     """Return a message detailing the sync action.
 
     :param source_pubs_count: The number of source pubs requested for syncing.
@@ -1339,26 +1427,33 @@ def copy_asynchronously_message(source_pubs_count, dest_archive, dest_url=None,
         Defaults to the target archive's display name.
     """
     if dest_url is None:
-        dest_url = canonical_url(dest_archive) + '/+packages'
+        dest_url = canonical_url(dest_archive) + "/+packages"
 
     if dest_display_name is None:
         dest_display_name = dest_archive.displayname
 
     package_or_packages = get_plural_text(
-        source_pubs_count, "package", "packages")
+        source_pubs_count, "package", "packages"
+    )
     if source_pubs_count == 0:
         return structured(
             'Requested sync of %s %s to <a href="%s">%s</a>.',
-            source_pubs_count, package_or_packages, dest_url,
-            dest_display_name)
+            source_pubs_count,
+            package_or_packages,
+            dest_url,
+            dest_display_name,
+        )
     else:
-        this_or_these = get_plural_text(
-            source_pubs_count, "this", "these")
+        this_or_these = get_plural_text(source_pubs_count, "this", "these")
         return structured(
             'Requested sync of %s %s to <a href="%s">%s</a>.<br />'
             "Please allow some time for %s to be processed.",
-            source_pubs_count, package_or_packages, dest_url,
-            dest_display_name, this_or_these)
+            source_pubs_count,
+            package_or_packages,
+            dest_url,
+            dest_display_name,
+            this_or_these,
+        )
 
 
 def render_cannotcopy_as_html(cannotcopy_exception):
@@ -1378,17 +1473,30 @@ def render_cannotcopy_as_html(cannotcopy_exception):
         <ul>
         %s
         </ul>
-        """ % (intro, "<li>%s</li>" * len(error_lines))
+        """ % (
+        intro,
+        "<li>%s</li>" * len(error_lines),
+    )
     return structured(html_text, *error_lines)
 
 
 class PackageCopyingMixin:
     """A mixin class that adds helpers for package copying."""
 
-    def do_copy(self, sources_field_name, source_pubs, dest_archive,
-                dest_series, dest_pocket, include_binaries,
-                dest_url=None, dest_display_name=None, person=None,
-                check_permissions=True, sponsored_person=None):
+    def do_copy(
+        self,
+        sources_field_name,
+        source_pubs,
+        dest_archive,
+        dest_series,
+        dest_pocket,
+        include_binaries,
+        dest_url=None,
+        dest_display_name=None,
+        person=None,
+        check_permissions=True,
+        sponsored_person=None,
+    ):
         """Copy packages and add appropriate feedback to the browser page.
 
         This will copy asynchronously, scheduling jobs that will be
@@ -1418,44 +1526,56 @@ class PackageCopyingMixin:
         """
         try:
             notification = copy_asynchronously(
-                source_pubs, dest_archive, dest_series, dest_pocket,
-                include_binaries, dest_url=dest_url,
-                dest_display_name=dest_display_name, person=person,
+                source_pubs,
+                dest_archive,
+                dest_series,
+                dest_pocket,
+                include_binaries,
+                dest_url=dest_url,
+                dest_display_name=dest_display_name,
+                person=person,
                 check_permissions=check_permissions,
-                sponsored=sponsored_person)
+                sponsored=sponsored_person,
+            )
         except CannotCopy as error:
             self.setFieldError(
-                sources_field_name, render_cannotcopy_as_html(error))
+                sources_field_name, render_cannotcopy_as_html(error)
+            )
             return False
 
         self.request.response.addNotification(notification)
         return True
 
 
-class ArchivePackageCopyingView(ArchiveSourceSelectionFormView,
-                                PackageCopyingMixin):
+class ArchivePackageCopyingView(
+    ArchiveSourceSelectionFormView, PackageCopyingMixin
+):
     """Archive package copying view class.
 
     This view presents a package selection slot in a POST form implementing
     a copying action that can be performed upon a set of selected packages.
     """
+
     schema = IPPAPackageFilter
     custom_widget_destination_archive = DestinationArchiveDropdownWidget
     custom_widget_destination_series = DestinationSeriesDropdownWidget
     custom_widget_include_binaries = LaunchpadRadioWidget
-    label = 'Copy packages'
+    label = "Copy packages"
 
     @property
     def label(self):
-        return 'Copy packages from %s' % self.context.displayname
+        return "Copy packages from %s" % self.context.displayname
 
     default_pocket = PackagePublishingPocket.RELEASE
 
     @property
     def default_status_filter(self):
         """Present published records by default."""
-        return self.widgets['status_filter'].vocabulary.getTermByToken(
-            'published').value
+        return (
+            self.widgets["status_filter"]
+            .vocabulary.getTermByToken("published")
+            .value
+        )
 
     def setUpFields(self):
         """Override `ArchiveSourceSelectionFormView`.
@@ -1464,10 +1584,11 @@ class ArchivePackageCopyingView(ArchiveSourceSelectionFormView,
         """
         ArchiveSourceSelectionFormView.setUpFields(self)
         self.form_fields = (
-            self.createDestinationArchiveField() +
-            self.createDestinationSeriesField() +
-            self.createIncludeBinariesField() +
-            self.form_fields)
+            self.createDestinationArchiveField()
+            + self.createDestinationSeriesField()
+            + self.createIncludeBinariesField()
+            + self.form_fields
+        )
 
     @cachedproperty
     def ppas_for_user(self):
@@ -1489,20 +1610,24 @@ class ArchivePackageCopyingView(ArchiveSourceSelectionFormView,
         # XXX cprov 2009-07-17 bug=385503: copies cannot be properly traced
         # that's why we explicitly don't allow them do be done via the UI
         # in main archives, only PPAs.
-        return (self.context.is_ppa and
-                self.context.checkArchivePermission(self.user))
+        return self.context.is_ppa and self.context.checkArchivePermission(
+            self.user
+        )
 
     def createDestinationArchiveField(self):
         """Create the 'destination_archive' field."""
         # Do not include the context PPA in the dropdown widget.
         ppas = [ppa for ppa in self.ppas_for_user if self.context != ppa]
         return form.Fields(
-            Choice(__name__='destination_archive',
-                   title=_('Destination PPA'),
-                   vocabulary=make_archive_vocabulary(ppas),
-                   description=_("Select the destination PPA."),
-                   missing_value=self.context,
-                   required=not self.can_copy_to_context_ppa))
+            Choice(
+                __name__="destination_archive",
+                title=_("Destination PPA"),
+                vocabulary=make_archive_vocabulary(ppas),
+                description=_("Select the destination PPA."),
+                missing_value=self.context,
+                required=not self.can_copy_to_context_ppa,
+            )
+        )
 
     def createDestinationSeriesField(self):
         """Create the 'destination_series' field."""
@@ -1516,13 +1641,17 @@ class ArchivePackageCopyingView(ArchiveSourceSelectionFormView,
             if series.status == SeriesStatus.OBSOLETE:
                 continue
             terms.append(
-                SimpleTerm(series, str(series.name), series.displayname))
+                SimpleTerm(series, str(series.name), series.displayname)
+            )
         return form.Fields(
-            Choice(__name__='destination_series',
-                   title=_('Destination series'),
-                   vocabulary=SimpleVocabulary(terms),
-                   description=_("Select the destination series."),
-                   required=False))
+            Choice(
+                __name__="destination_series",
+                title=_("Destination series"),
+                vocabulary=SimpleVocabulary(terms),
+                description=_("Select the destination series."),
+                required=False,
+            )
+        )
 
     def createIncludeBinariesField(self):
         """Create the 'include_binaries' field.
@@ -1538,20 +1667,27 @@ class ArchivePackageCopyingView(ArchiveSourceSelectionFormView,
         option when rendered.
         """
         rebuild_sources = SimpleTerm(
-                False, 'REBUILD_SOURCES', _('Rebuild the copied sources'))
+            False, "REBUILD_SOURCES", _("Rebuild the copied sources")
+        )
         copy_binaries = SimpleTerm(
-            True, 'COPY_BINARIES', _('Copy existing binaries'))
+            True, "COPY_BINARIES", _("Copy existing binaries")
+        )
         terms = [rebuild_sources, copy_binaries]
 
         return form.Fields(
-            Choice(__name__='include_binaries',
-                   title=_('Copy options'),
-                   vocabulary=SimpleVocabulary(terms),
-                   description=_("How the selected sources should be copied "
-                                 "to the destination archive."),
-                   missing_value=rebuild_sources,
-                   default=False,
-                   required=True))
+            Choice(
+                __name__="include_binaries",
+                title=_("Copy options"),
+                vocabulary=SimpleVocabulary(terms),
+                description=_(
+                    "How the selected sources should be copied "
+                    "to the destination archive."
+                ),
+                missing_value=rebuild_sources,
+                default=False,
+                required=True,
+            )
+        )
 
     @action(_("Update"), name="update")
     def update_action(self, action, data):
@@ -1571,22 +1707,27 @@ class ArchivePackageCopyingView(ArchiveSourceSelectionFormView,
         if `do_copy` succeeds, an informational messages is set containing
         the copied packages.
         """
-        selected_sources = data.get('selected_sources')
-        destination_archive = data.get('destination_archive')
-        destination_series = data.get('destination_series')
-        include_binaries = data.get('include_binaries')
+        selected_sources = data.get("selected_sources")
+        destination_archive = data.get("destination_archive")
+        destination_series = data.get("destination_series")
+        include_binaries = data.get("include_binaries")
         destination_pocket = self.default_pocket
 
         if len(selected_sources) == 0:
-            self.setFieldError('selected_sources', 'No sources selected.')
+            self.setFieldError("selected_sources", "No sources selected.")
             return
 
         # PackageCopyingMixin.do_copy() does the work of copying and
         # setting up on-page notifications.
         if self.do_copy(
-            'selected_sources', selected_sources, destination_archive,
-            destination_series, destination_pocket, include_binaries,
-            person=self.user):
+            "selected_sources",
+            selected_sources,
+            destination_archive,
+            destination_series,
+            destination_pocket,
+            include_binaries,
+            person=self.user,
+        ):
             # The copy worked so we can redirect back to the page to
             # show the result.
             self.setNextURL()
@@ -1607,11 +1748,14 @@ class ArchiveEditDependenciesView(ArchiveViewBase, LaunchpadFormView):
 
     custom_widget_selected_dependencies = CustomWidgetFactory(
         PlainMultiCheckBoxWidget,
-        cssClass='line-through-when-checked ppa-dependencies')
+        cssClass="line-through-when-checked ppa-dependencies",
+    )
     custom_widget_primary_dependencies = CustomWidgetFactory(
-        LaunchpadRadioWidget, cssClass='highlight-selected')
+        LaunchpadRadioWidget, cssClass="highlight-selected"
+    )
     custom_widget_primary_components = CustomWidgetFactory(
-        LaunchpadRadioWidget, cssClass='highlight-selected')
+        LaunchpadRadioWidget, cssClass="highlight-selected"
+    )
 
     label = "Edit PPA dependencies"
     page_title = label
@@ -1632,10 +1776,11 @@ class ArchiveEditDependenciesView(ArchiveViewBase, LaunchpadFormView):
         LaunchpadFormView.setUpFields(self)
 
         self.form_fields = (
-            self.createSelectedDependenciesField() +
-            self.createPrimaryDependenciesField() +
-            self.createPrimaryComponentsField() +
-            self.form_fields)
+            self.createSelectedDependenciesField()
+            + self.createPrimaryDependenciesField()
+            + self.createPrimaryComponentsField()
+            + self.form_fields
+        )
 
     def focusedElementScript(self):
         """Override `LaunchpadFormView`.
@@ -1660,23 +1805,30 @@ class ArchiveEditDependenciesView(ArchiveViewBase, LaunchpadFormView):
             dependency = archive_dependency.dependency
             if not dependency.is_ppa:
                 continue
-            if check_permission('launchpad.View', dependency):
+            if check_permission("launchpad.View", dependency):
                 dependency_label = structured(
                     '<a href="%s">%s</a>',
-                    canonical_url(dependency), archive_dependency.title)
+                    canonical_url(dependency),
+                    archive_dependency.title,
+                )
             else:
                 dependency_label = archive_dependency.title
             term = SimpleTerm(
-                dependency, dependency.reference, dependency_label)
+                dependency, dependency.reference, dependency_label
+            )
             terms.append(term)
         return form.Fields(
-            List(__name__='selected_dependencies',
-                 title=_('Extra dependencies'),
-                 value_type=Choice(vocabulary=SimpleVocabulary(terms)),
-                 required=False,
-                 default=[],
-                 description=_(
-                    'Select one or more dependencies to be removed.')))
+            List(
+                __name__="selected_dependencies",
+                title=_("Extra dependencies"),
+                value_type=Choice(vocabulary=SimpleVocabulary(terms)),
+                required=False,
+                default=[],
+                description=_(
+                    "Select one or more dependencies to be removed."
+                ),
+            )
+        )
 
     def createPrimaryDependenciesField(self):
         """Create the 'primary_dependencies' field.
@@ -1695,49 +1847,65 @@ class ArchiveEditDependenciesView(ArchiveViewBase, LaunchpadFormView):
         option when rendered.
         """
         release = SimpleTerm(
-            PackagePublishingPocket.RELEASE, 'RELEASE',
-            _('Basic (only released packages).'))
+            PackagePublishingPocket.RELEASE,
+            "RELEASE",
+            _("Basic (only released packages)."),
+        )
         security = SimpleTerm(
-            PackagePublishingPocket.SECURITY, 'SECURITY',
-            _('Security (basic dependencies and important security '
-              'updates).'))
+            PackagePublishingPocket.SECURITY,
+            "SECURITY",
+            _(
+                "Security (basic dependencies and important security "
+                "updates)."
+            ),
+        )
         updates = SimpleTerm(
-            PackagePublishingPocket.UPDATES, 'UPDATES',
-            _('Default (security dependencies and recommended updates).'))
+            PackagePublishingPocket.UPDATES,
+            "UPDATES",
+            _("Default (security dependencies and recommended updates)."),
+        )
         proposed = SimpleTerm(
-            PackagePublishingPocket.PROPOSED, 'PROPOSED',
-            _('Proposed (default dependencies and proposed updates).'))
+            PackagePublishingPocket.PROPOSED,
+            "PROPOSED",
+            _("Proposed (default dependencies and proposed updates)."),
+        )
         backports = SimpleTerm(
-            PackagePublishingPocket.BACKPORTS, 'BACKPORTS',
-            _('Backports (default dependencies and unsupported updates).'))
+            PackagePublishingPocket.BACKPORTS,
+            "BACKPORTS",
+            _("Backports (default dependencies and unsupported updates)."),
+        )
 
         terms = [release, security, updates, proposed, backports]
 
         primary_dependency = self.context.getArchiveDependency(
-            self.context.distribution.main_archive)
+            self.context.distribution.main_archive
+        )
         if primary_dependency is None:
             default_value = default_pocket_dependency
         else:
             default_value = primary_dependency.pocket
 
         primary_dependency_vocabulary = SimpleVocabulary(terms)
-        current_term = primary_dependency_vocabulary.getTerm(
-            default_value)
+        current_term = primary_dependency_vocabulary.getTerm(default_value)
 
         return form.Fields(
-            Choice(__name__='primary_dependencies',
-                   title=_(
-                    "%s dependencies"
-                    % self.context.distribution.displayname),
-                   vocabulary=primary_dependency_vocabulary,
-                   description=_(
+            Choice(
+                __name__="primary_dependencies",
+                title=_(
+                    "%s dependencies" % self.context.distribution.displayname
+                ),
+                vocabulary=primary_dependency_vocabulary,
+                description=_(
                     "Select which packages of the %s primary archive "
                     "should be used as build-dependencies when building "
                     "sources in this PPA."
-                    % self.context.distribution.displayname),
-                   missing_value=current_term,
-                   default=default_value,
-                   required=True))
+                    % self.context.distribution.displayname
+                ),
+                missing_value=current_term,
+                default=default_value,
+                required=True,
+            )
+        )
 
     def createPrimaryComponentsField(self):
         """Create the 'primary_components' field.
@@ -1753,46 +1921,63 @@ class ArchiveEditDependenciesView(ArchiveViewBase, LaunchpadFormView):
         components' option when rendered. Other components, such as 'main',
         or 'contrib' will be added to the list of options if they are used.
         """
-        multiverse = getUtility(IComponentSet)['multiverse']
+        multiverse = getUtility(IComponentSet)["multiverse"]
 
         all_components = SimpleTerm(
-            multiverse, 'ALL_COMPONENTS',
-            _('Use all %s components available.' %
-              self.context.distribution.displayname))
+            multiverse,
+            "ALL_COMPONENTS",
+            _(
+                "Use all %s components available."
+                % self.context.distribution.displayname
+            ),
+        )
         follow_primary = SimpleTerm(
-            None, 'FOLLOW_PRIMARY',
-            _('Use the same components used for each source in the %s '
-              'primary archive.' % self.context.distribution.displayname))
+            None,
+            "FOLLOW_PRIMARY",
+            _(
+                "Use the same components used for each source in the %s "
+                "primary archive." % self.context.distribution.displayname
+            ),
+        )
 
         primary_dependency = self.context.getArchiveDependency(
-            self.context.distribution.main_archive)
+            self.context.distribution.main_archive
+        )
         if primary_dependency is None:
             default_value = getUtility(IComponentSet)[
-                default_component_dependency_name]
+                default_component_dependency_name
+            ]
         else:
             default_value = primary_dependency.component
 
         terms = [all_components, follow_primary]
         if default_value and default_value != multiverse:
             current_component = SimpleTerm(
-                default_value, 'OTHER_COMPONENT',
-                _('Unsupported component (%s)' % default_value.name))
+                default_value,
+                "OTHER_COMPONENT",
+                _("Unsupported component (%s)" % default_value.name),
+            )
             terms.append(current_component)
         primary_components_vocabulary = SimpleVocabulary(terms)
         current_term = primary_components_vocabulary.getTerm(default_value)
 
         return form.Fields(
-            Choice(__name__='primary_components',
-                   title=_('%s components' %
-                           self.context.distribution.displayname),
-                   vocabulary=primary_components_vocabulary,
-                   description=_("Which %s components of the archive pool "
-                                 "should be used when fetching build "
-                                 "dependencies." %
-                                 self.context.distribution.displayname),
-                   missing_value=current_term,
-                   default=default_value,
-                   required=True))
+            Choice(
+                __name__="primary_components",
+                title=_(
+                    "%s components" % self.context.distribution.displayname
+                ),
+                vocabulary=primary_components_vocabulary,
+                description=_(
+                    "Which %s components of the archive pool "
+                    "should be used when fetching build "
+                    "dependencies." % self.context.distribution.displayname
+                ),
+                missing_value=current_term,
+                default=default_value,
+                required=True,
+            )
+        )
 
     @cachedproperty
     def has_dependencies(self):
@@ -1801,11 +1986,11 @@ class ArchiveEditDependenciesView(ArchiveViewBase, LaunchpadFormView):
 
     @property
     def messages(self):
-        return '\n'.join(map(get_escapedtext, self._messages))
+        return "\n".join(map(get_escapedtext, self._messages))
 
     def _remove_dependencies(self, data):
         """Perform the removal of the selected dependencies."""
-        selected_dependencies = data.get('selected_dependencies', [])
+        selected_dependencies = data.get("selected_dependencies", [])
 
         if len(selected_dependencies) == 0:
             return
@@ -1815,41 +2000,50 @@ class ArchiveEditDependenciesView(ArchiveViewBase, LaunchpadFormView):
             self.context.removeArchiveDependency(dependency)
 
         # Present a page notification describing the action.
-        self._messages.append('<p>Dependencies removed:')
+        self._messages.append("<p>Dependencies removed:")
         for dependency in selected_dependencies:
             self._messages.append(
-                structured('<br/>%s', dependency.displayname))
-        self._messages.append('</p>')
+                structured("<br/>%s", dependency.displayname)
+            )
+        self._messages.append("</p>")
 
     def _add_ppa_dependencies(self, data):
         """Record the selected dependency."""
-        dependency_candidate = data.get('dependency_candidate')
+        dependency_candidate = data.get("dependency_candidate")
         if dependency_candidate is None:
             return
 
         self.context.addArchiveDependency(
-            dependency_candidate, PackagePublishingPocket.RELEASE,
-            getUtility(IComponentSet)['main'])
+            dependency_candidate,
+            PackagePublishingPocket.RELEASE,
+            getUtility(IComponentSet)["main"],
+        )
 
-        self._messages.append(structured(
-            '<p>Dependency added: %s</p>', dependency_candidate.displayname))
+        self._messages.append(
+            structured(
+                "<p>Dependency added: %s</p>", dependency_candidate.displayname
+            )
+        )
 
     def _add_primary_dependencies(self, data):
         """Record the selected dependency."""
         # Received values.
-        dependency_pocket = data.get('primary_dependencies')
-        dependency_component = data.get('primary_components')
+        dependency_pocket = data.get("primary_dependencies")
+        dependency_component = data.get("primary_components")
 
         # Check if the given values correspond to the default scenario
         # for the context archive.
         default_component_dependency = getUtility(IComponentSet)[
-            default_component_dependency_name]
+            default_component_dependency_name
+        ]
         is_default_dependency = (
-            dependency_pocket == default_pocket_dependency and
-            dependency_component == default_component_dependency)
+            dependency_pocket == default_pocket_dependency
+            and dependency_component == default_component_dependency
+        )
 
         primary_dependency = self.context.getArchiveDependency(
-            self.context.distribution.main_archive)
+            self.context.distribution.main_archive
+        )
 
         # No action is required if there is no primary_dependency
         # override set and the given values match it.
@@ -1858,27 +2052,36 @@ class ArchiveEditDependenciesView(ArchiveViewBase, LaunchpadFormView):
 
         # Similarly, no action is required if the given values match
         # the existing primary_dependency override.
-        if (primary_dependency is not None and
-            primary_dependency.pocket == dependency_pocket and
-            primary_dependency.component == dependency_component):
+        if (
+            primary_dependency is not None
+            and primary_dependency.pocket == dependency_pocket
+            and primary_dependency.component == dependency_component
+        ):
             return
 
         # Remove any primary dependencies overrides.
         if primary_dependency is not None:
             self.context.removeArchiveDependency(
-                self.context.distribution.main_archive)
+                self.context.distribution.main_archive
+            )
 
         if is_default_dependency:
             self._messages.append(
-                '<p>Default primary dependencies restored.</p>')
+                "<p>Default primary dependencies restored.</p>"
+            )
             return
 
         # Install the required primary archive dependency override.
         primary_dependency = self.context.addArchiveDependency(
-            self.context.distribution.main_archive, dependency_pocket,
-            dependency_component)
-        self._messages.append(structured(
-            '<p>Primary dependency added: %s</p>', primary_dependency.title))
+            self.context.distribution.main_archive,
+            dependency_pocket,
+            dependency_component,
+        )
+        self._messages.append(
+            structured(
+                "<p>Primary dependency added: %s</p>", primary_dependency.title
+            )
+        )
 
     @action(_("Save"), name="save")
     def save_action(self, action, data):
@@ -1896,14 +2099,13 @@ class ArchiveEditDependenciesView(ArchiveViewBase, LaunchpadFormView):
         try:
             self._add_ppa_dependencies(data)
         except ArchiveDependencyError as e:
-            self.setFieldError('dependency_candidate', str(e))
+            self.setFieldError("dependency_candidate", str(e))
             return
         self._remove_dependencies(data)
 
         # Issue a notification if anything was changed.
         if len(self.messages) > 0:
-            self.request.response.addNotification(
-                structured(self.messages))
+            self.request.response.addNotification(structured(self.messages))
         # Redirect after POST.
         self.next_url = self.request.URL
 
@@ -1912,11 +2114,11 @@ class ArchiveActivateView(LaunchpadFormView):
     """PPA activation view class."""
 
     schema = IArchive
-    field_names = ('name', 'displayname', 'description')
+    field_names = ("name", "displayname", "description")
     custom_widget_description = CustomWidgetFactory(TextAreaWidget, height=3)
     custom_widget_name = CustomWidgetFactory(PPANameWidget, label="URL")
-    label = 'Activate a Personal Package Archive'
-    page_title = 'Activate PPA'
+    label = "Activate a Personal Package Archive"
+    page_title = "Activate PPA"
 
     @property
     def ubuntu(self):
@@ -1925,7 +2127,7 @@ class ArchiveActivateView(LaunchpadFormView):
     @cachedproperty
     def visible_ppas(self):
         ppas = self.context.getVisiblePPAs(self.user)
-        precache_permission_for_objects(self.request, 'launchpad.View', ppas)
+        precache_permission_for_objects(self.request, "launchpad.View", ppas)
         return ppas
 
     @property
@@ -1934,7 +2136,7 @@ class ArchiveActivateView(LaunchpadFormView):
         # Suggest a default value of "ppa" for the name for the
         # first PPA activation.
         if self.context.archive is None:
-            return {'name': 'ppa'}
+            return {"name": "ppa"}
         return {}
 
     def setUpFields(self):
@@ -1948,9 +2150,11 @@ class ArchiveActivateView(LaunchpadFormView):
 
         if self.context.archive is None:
             accepted = Bool(
-                __name__='accepted',
+                __name__="accepted",
                 title=_("I have read and accepted the PPA Terms of Use."),
-                required=True, default=False)
+                required=True,
+                default=False,
+            )
             self.form_fields += form.Fields(accepted)
 
     def validate(self, data):
@@ -1960,22 +2164,27 @@ class ArchiveActivateView(LaunchpadFormView):
 
         default_ppa = self.context.archive
 
-        proposed_name = data.get('name')
+        proposed_name = data.get("name")
         if proposed_name is None and default_ppa is not None:
             self.addError(
-                'The default PPA is already activated. Please specify a '
-                'name for the new PPA and resubmit the form.')
+                "The default PPA is already activated. Please specify a "
+                "name for the new PPA and resubmit the form."
+            )
 
         errors = validate_ppa(
-            self.context, self.ubuntu, proposed_name,
-            private=self.is_private_team)
+            self.context,
+            self.ubuntu,
+            proposed_name,
+            private=self.is_private_team,
+        )
         if errors is not None:
             self.addError(errors)
 
-        if default_ppa is None and not data.get('accepted'):
+        if default_ppa is None and not data.get("accepted"):
             self.setFieldError(
-                'accepted',
-                "PPA Terms of Service must be accepted to activate a PPA.")
+                "accepted",
+                "PPA Terms of Service must be accepted to activate a PPA.",
+            )
 
     @action(_("Activate"), name="activate")
     def save_action(self, action, data):
@@ -1983,12 +2192,16 @@ class ArchiveActivateView(LaunchpadFormView):
         # 'name' field is omitted from the form data for default PPAs and
         # it's dealt with by IArchive.new(), which will use the default
         # PPA name.
-        name = data.get('name', None)
-        displayname = data['displayname']
-        description = data['description']
+        name = data.get("name", None)
+        displayname = data["displayname"]
+        description = data["description"]
         ppa = self.context.createPPA(
-            self.ubuntu, name, displayname, description,
-            private=self.is_private_team)
+            self.ubuntu,
+            name,
+            displayname,
+            description,
+            private=self.is_private_team,
+        )
         self.next_url = canonical_url(ppa)
 
     @property
@@ -2025,20 +2238,21 @@ class BaseArchiveEditView(LaunchpadEditFormView, ArchiveViewBase):
     @action(_("Save"), name="save", validator="validate_save")
     def save_action(self, action, data):
         # Archive is enabled and user wants it disabled.
-        if self.context.enabled == True and data['enabled'] == False:
+        if self.context.enabled == True and data["enabled"] == False:
             self.context.disable()
         # Archive is disabled and user wants it enabled.
-        if self.context.enabled == False and data['enabled'] == True:
+        if self.context.enabled == False and data["enabled"] == True:
             self.context.enable()
         # IArchive.enabled is a read-only property that cannot be set
         # directly.
-        del(data['enabled'])
-        new_processors = data.get('processors')
+        del data["enabled"]
+        new_processors = data.get("processors")
         if new_processors is not None:
             if set(self.context.processors) != set(new_processors):
                 self.context.setProcessors(
-                    new_processors, check_permissions=True, user=self.user)
-            del data['processors']
+                    new_processors, check_permissions=True, user=self.user
+                )
+            del data["processors"]
         self.updateContextFromData(data)
         self.next_url = canonical_url(self.context)
 
@@ -2048,13 +2262,13 @@ class BaseArchiveEditView(LaunchpadEditFormView, ArchiveViewBase):
 
     def validate_save(self, action, data):
         """Check that we're not reenabling a deleted archive.."""
-        form.getWidgetsData(self.widgets, 'field', data)
+        form.getWidgetsData(self.widgets, "field", data)
 
         # Deleted PPAs can't be reactivated.
-        if ((data.get('enabled') or data.get('publish'))
-            and not self.context.is_active):
-            self.setFieldError(
-                "enabled", "Deleted PPAs can't be enabled.")
+        if (
+            data.get("enabled") or data.get("publish")
+        ) and not self.context.is_active:
+            self.setFieldError("enabled", "Deleted PPAs can't be enabled.")
 
 
 class EnableProcessorsMixin:
@@ -2064,52 +2278,63 @@ class EnableProcessorsMixin:
         """Creates the 'processors' field."""
         terms = []
         disabled = []
-        if check_permission('launchpad.Admin', self.context):
+        if check_permission("launchpad.Admin", self.context):
             can_modify = lambda proc: True
         else:
             can_modify = lambda proc: not proc.restricted
-        for processor in sorted(available_processors, key=attrgetter('name')):
-            terms.append(SimpleTerm(
-                processor, token=processor.name,
-                title="%s (%s)" % (processor.title, processor.name)))
+        for processor in sorted(available_processors, key=attrgetter("name")):
+            terms.append(
+                SimpleTerm(
+                    processor,
+                    token=processor.name,
+                    title="%s (%s)" % (processor.title, processor.name),
+                )
+            )
             if not can_modify(processor):
                 disabled.append(processor)
-        old_field = IArchive['processors']
+        old_field = IArchive["processors"]
         widget = CustomWidgetFactory(
-            LabeledMultiCheckBoxWidget, disabled_items=disabled)
+            LabeledMultiCheckBoxWidget, disabled_items=disabled
+        )
         return form.Fields(
-            List(__name__=old_field.__name__,
-                 title=old_field.title,
-                 value_type=Choice(vocabulary=SimpleVocabulary(terms)),
-                 required=False,
-                 description=old_field.description if description is None
-                     else description),
-             render_context=self.render_context, custom_widget=widget)
+            List(
+                __name__=old_field.__name__,
+                title=old_field.title,
+                value_type=Choice(vocabulary=SimpleVocabulary(terms)),
+                required=False,
+                description=old_field.description
+                if description is None
+                else description,
+            ),
+            render_context=self.render_context,
+            custom_widget=widget,
+        )
 
 
 class ArchiveEditView(BaseArchiveEditView, EnableProcessorsMixin):
 
     field_names = [
-        'displayname',
-        'description',
-        'enabled',
-        'publish',
-        'build_debug_symbols',
-        'publish_debug_symbols',
-        ]
+        "displayname",
+        "description",
+        "enabled",
+        "publish",
+        "build_debug_symbols",
+        "publish_debug_symbols",
+    ]
     custom_widget_description = CustomWidgetFactory(
-        TextAreaWidget, height=10, width=30)
-    page_title = 'Change details'
+        TextAreaWidget, height=10, width=30
+    )
+    page_title = "Change details"
 
     @property
     def label(self):
-        return 'Edit %s' % self.context.displayname
+        return "Edit %s" % self.context.displayname
 
     @property
     def initial_values(self):
         return {
-            'processors': self.context.processors,
-            }
+            "processors": self.context.processors,
+        }
 
     def setUpFields(self):
         """Override `LaunchpadEditFormView`.
@@ -2121,90 +2346,99 @@ class ArchiveEditView(BaseArchiveEditView, EnableProcessorsMixin):
             self.context.available_processors,
             "The architectures on which the archive can build. Some "
             "architectures are restricted and may only be enabled or "
-            "disabled by administrators.")
+            "disabled by administrators.",
+        )
 
     def validate(self, data):
-        if 'processors' in data:
+        if "processors" in data:
             available_processors = set(self.context.available_processors)
-            widget = self.widgets['processors']
+            widget = self.widgets["processors"]
             for processor in self.context.processors:
-                if processor not in data['processors']:
+                if processor not in data["processors"]:
                     if processor not in available_processors:
                         # This processor is not currently available for
                         # selection, but is enabled.  Leave it untouched.
-                        data['processors'].append(processor)
+                        data["processors"].append(processor)
                     elif processor.name in widget.disabled_items:
                         # This processor is restricted and currently
                         # enabled.  Leave it untouched.
-                        data['processors'].append(processor)
+                        data["processors"].append(processor)
 
 
 class ArchiveAdminView(BaseArchiveEditView, EnableProcessorsMixin):
 
     field_names = [
-        'enabled',
-        'private',
-        'suppress_subscription_notifications',
-        'require_virtualized',
-        'permit_obsolete_series_uploads',
-        'authorized_size',
-        'relative_build_score',
-        'external_dependencies',
-        'publishing_method',
-        'repository_format',
-        ]
+        "enabled",
+        "private",
+        "suppress_subscription_notifications",
+        "require_virtualized",
+        "permit_obsolete_series_uploads",
+        "authorized_size",
+        "relative_build_score",
+        "external_dependencies",
+        "publishing_method",
+        "repository_format",
+    ]
     custom_widget_external_dependencies = CustomWidgetFactory(
-        TextAreaWidget, height=3)
+        TextAreaWidget, height=3
+    )
     custom_widget_publishing_method = LaunchpadDropdownWidget
     custom_widget_repository_format = LaunchpadDropdownWidget
-    page_title = 'Administer'
+    page_title = "Administer"
 
     @property
     def label(self):
-        return 'Administer %s' % self.context.displayname
+        return "Administer %s" % self.context.displayname
 
     def validate_save(self, action, data):
         """Validate the save action on ArchiveAdminView."""
         super().validate_save(action, data)
 
-        if data.get('private') != self.context.private:
+        if data.get("private") != self.context.private:
             # The privacy is being switched.
             if not self.context.getPublishedSources().is_empty():
                 self.setFieldError(
-                    'private',
-                    'This archive already has published sources. It is '
-                    'not possible to switch the privacy.')
+                    "private",
+                    "This archive already has published sources. It is "
+                    "not possible to switch the privacy.",
+                )
 
-        if self.owner_is_private_team and not data['private']:
+        if self.owner_is_private_team and not data["private"]:
             self.setFieldError(
-                'private',
-                'Private teams may not have public archives.')
+                "private", "Private teams may not have public archives."
+            )
 
         # Check the external_dependencies field.
-        ext_deps = data.get('external_dependencies')
+        ext_deps = data.get("external_dependencies")
         if ext_deps is not None:
             errors = validate_external_dependencies(ext_deps)
             if len(errors) != 0:
                 error_text = "\n".join(errors)
-                self.setFieldError('external_dependencies', error_text)
+                self.setFieldError("external_dependencies", error_text)
 
-        if data.get('publishing_method') != self.context.publishing_method:
+        if data.get("publishing_method") != self.context.publishing_method:
             # The publishing method is being switched.
-            if (not self.context.getPublishedSources().is_empty() or
-                    not self.context.getAllPublishedBinaries().is_empty()):
+            if (
+                not self.context.getPublishedSources().is_empty()
+                or not self.context.getAllPublishedBinaries().is_empty()
+            ):
                 self.setFieldError(
-                    'publishing_method',
-                    'This archive already has published packages. It is '
-                    'not possible to switch the publishing method.')
+                    "publishing_method",
+                    "This archive already has published packages. It is "
+                    "not possible to switch the publishing method.",
+                )
 
-        if data.get('repository_format') != self.context.repository_format:
+        if data.get("repository_format") != self.context.repository_format:
             # The repository format is being switched.
-            if (not self.context.getPublishedSources().is_empty() or
-                    not self.context.getAllPublishedBinaries().is_empty()):
+            if (
+                not self.context.getPublishedSources().is_empty()
+                or not self.context.getAllPublishedBinaries().is_empty()
+            ):
                 self.setFieldError(
-                    'repository_format',
-                    'This archive already has published packages. It is '
-                    'not possible to switch the repository format.')
+                    "repository_format",
+                    "This archive already has published packages. It is "
+                    "not possible to switch the repository format.",
+                )
 
     @property
     def owner_is_private_team(self):
@@ -2232,7 +2466,9 @@ class ArchiveDeleteView(LaunchpadFormView):
     @property
     def can_be_deleted(self):
         return self.context.status not in (
-            ArchiveStatus.DELETING, ArchiveStatus.DELETED)
+            ArchiveStatus.DELETING,
+            ArchiveStatus.DELETED,
+        )
 
     @property
     def waiting_for_deletion(self):
@@ -2253,4 +2489,5 @@ class ArchiveDeleteView(LaunchpadFormView):
         self.context.delete(self.user)
         self.request.response.addInfoNotification(
             "Deletion of '%s' has been requested and the repository will be "
-            "removed shortly." % self.context.title)
+            "removed shortly." % self.context.title
+        )

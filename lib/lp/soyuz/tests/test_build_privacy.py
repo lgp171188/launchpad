@@ -7,10 +7,7 @@ from zope.security.interfaces import Unauthorized
 from lp.registry.interfaces.person import IPersonSet
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.sampledata import ADMIN_EMAIL
 
@@ -26,7 +23,8 @@ class TestBuildPrivacy(TestCaseWithFactory):
         processor = self.factory.makeProcessor(supports_virtualized=True)
         distroseries = self.factory.makeDistroSeries()
         das = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, processor=processor)
+            distroseries=distroseries, processor=processor
+        )
         with person_logged_in(self.admin):
             publisher = SoyuzTestPublisher()
             publisher.prepareBreezyAutotest()
@@ -39,18 +37,25 @@ class TestBuildPrivacy(TestCaseWithFactory):
         public_spph = publisher.getPubSource(
             sourcename=self.factory.getUniqueString(),
             version="%s.1" % self.factory.getUniqueInteger(),
-            distroseries=distroseries, archive=self.public_archive)
+            distroseries=distroseries,
+            archive=self.public_archive,
+        )
         [public_build] = public_spph.createMissingBuilds()
         private_spph = publisher.getPubSource(
             sourcename=self.factory.getUniqueString(),
             version="%s.1" % self.factory.getUniqueInteger(),
-            distroseries=distroseries, archive=self.private_archive)
+            distroseries=distroseries,
+            archive=self.private_archive,
+        )
         with person_logged_in(self.admin):
             [private_build] = private_spph.createMissingBuilds()
-        self.expected_title = '%s build of %s %s in %s %s RELEASE' % (
-            das.architecturetag, private_spph.source_package_name,
+        self.expected_title = "%s build of %s %s in %s %s RELEASE" % (
+            das.architecturetag,
+            private_spph.source_package_name,
             private_spph.source_package_version,
-            distroseries.distribution.name, distroseries.name)
+            distroseries.distribution.name,
+            distroseries.name,
+        )
 
     def test_admin_can_see_private_builds(self):
         # Admin users can see all builds.
@@ -71,13 +76,15 @@ class TestBuildPrivacy(TestCaseWithFactory):
         # Admins that look after the builders ("buildd-admins"), can not see
         # private builds.
         buildd_admin = getUtility(IPersonSet).getByName(
-            'launchpad-buildd-admins')
+            "launchpad-buildd-admins"
+        )
         with person_logged_in(buildd_admin):
             private = getUtility(IArchiveSet).get(self.private_archive.id)
             self.assertRaises(
-                Unauthorized, getattr, private, 'getBuildRecords')
+                Unauthorized, getattr, private, "getBuildRecords"
+            )
 
     def test_anonymous_cannot_see_private_builds(self):
         # An anonymous user can't query the builds for the private archive.
         private = getUtility(IArchiveSet).get(self.private_archive.id)
-        self.assertRaises(Unauthorized, getattr, private, 'getBuildRecords')
+        self.assertRaises(Unauthorized, getattr, private, "getBuildRecords")

@@ -13,15 +13,9 @@ from lp.soyuz.enums import DistroArchSeriesFilterSense
 from lp.soyuz.interfaces.distroarchseriesfilter import (
     IDistroArchSeriesFilter,
     IDistroArchSeriesFilterSet,
-    )
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    ZopelessDatabaseLayer,
-    )
+)
+from lp.testing import TestCaseWithFactory, person_logged_in
+from lp.testing.layers import DatabaseFunctionalLayer, ZopelessDatabaseLayer
 
 
 class TestDistroArchSeriesFilter(TestCaseWithFactory):
@@ -38,14 +32,16 @@ class TestDistroArchSeriesFilter(TestCaseWithFactory):
         das = self.factory.makeDistroArchSeries()
         dasf = self.factory.makeDistroArchSeriesFilter(distroarchseries=das)
         self.assertEqual(
-            "<DistroArchSeriesFilter for %s>" % das.title, repr(dasf))
+            "<DistroArchSeriesFilter for %s>" % das.title, repr(dasf)
+        )
 
     def test_isSourceIncluded_include(self):
         # INCLUDE filters report that a source is included if it is in the
         # packageset.
         spns = [self.factory.makeSourcePackageName() for _ in range(3)]
         dasf = self.factory.makeDistroArchSeriesFilter(
-            sense=DistroArchSeriesFilterSense.INCLUDE)
+            sense=DistroArchSeriesFilterSense.INCLUDE
+        )
         dasf.packageset.add(spns[:2])
         self.assertTrue(dasf.isSourceIncluded(spns[0]))
         self.assertTrue(dasf.isSourceIncluded(spns[1]))
@@ -56,7 +52,8 @@ class TestDistroArchSeriesFilter(TestCaseWithFactory):
         # the packageset.
         spns = [self.factory.makeSourcePackageName() for _ in range(3)]
         dasf = self.factory.makeDistroArchSeriesFilter(
-            sense=DistroArchSeriesFilterSense.EXCLUDE)
+            sense=DistroArchSeriesFilterSense.EXCLUDE
+        )
         dasf.packageset.add(spns[:2])
         self.assertFalse(dasf.isSourceIncluded(spns[0]))
         self.assertFalse(dasf.isSourceIncluded(spns[1]))
@@ -88,7 +85,8 @@ class TestDistroArchSeriesFilterSet(TestCaseWithFactory):
         # The DistroArchSeriesFilterSet class implements
         # IDistroArchSeriesFilterSet.
         self.assertProvides(
-            getUtility(IDistroArchSeriesFilterSet), IDistroArchSeriesFilterSet)
+            getUtility(IDistroArchSeriesFilterSet), IDistroArchSeriesFilterSet
+        )
 
     def test_new(self):
         # The arguments passed when creating a filter are present on the new
@@ -98,12 +96,23 @@ class TestDistroArchSeriesFilterSet(TestCaseWithFactory):
         sense = DistroArchSeriesFilterSense.EXCLUDE
         creator = self.factory.makePerson()
         dasf = getUtility(IDistroArchSeriesFilterSet).new(
-            distroarchseries=das, packageset=packageset, sense=sense,
-            creator=creator)
+            distroarchseries=das,
+            packageset=packageset,
+            sense=sense,
+            creator=creator,
+        )
         now = get_transaction_timestamp(IStore(dasf))
-        self.assertThat(dasf, MatchesStructure.byEquality(
-            distroarchseries=das, packageset=packageset, sense=sense,
-            creator=creator, date_created=now, date_last_modified=now))
+        self.assertThat(
+            dasf,
+            MatchesStructure.byEquality(
+                distroarchseries=das,
+                packageset=packageset,
+                sense=sense,
+                creator=creator,
+                date_created=now,
+                date_last_modified=now,
+            ),
+        )
 
     def test_getByDistroArchSeries(self):
         # getByDistroArchSeries returns the filter for a DAS, if any.
@@ -120,5 +129,6 @@ class TestDistroArchSeriesFilterSet(TestCaseWithFactory):
         self.assertContentEqual([], dasf_set.findByPackageset(packageset))
         dasfs = [
             self.factory.makeDistroArchSeriesFilter(packageset=packageset)
-            for _ in range(2)]
+            for _ in range(2)
+        ]
         self.assertContentEqual(dasfs, dasf_set.findByPackageset(packageset))

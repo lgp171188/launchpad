@@ -2,9 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    '_filter_ubuntu_translation_file',
-    'PackageTranslationsUploadJob',
-    ]
+    "_filter_ubuntu_translation_file",
+    "PackageTranslationsUploadJob",
+]
 
 import json
 import os
@@ -12,20 +12,14 @@ import tempfile
 
 from lazr.delegates import delegate_to
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.job.interfaces.job import JobType
-from lp.services.job.model.job import (
-    EnumeratedSubclass,
-    Job,
-    )
+from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.utils import filechunks
@@ -33,10 +27,10 @@ from lp.services.mail.sendmail import format_address_for_person
 from lp.soyuz.interfaces.packagetranslationsuploadjob import (
     IPackageTranslationsUploadJob,
     IPackageTranslationsUploadJobSource,
-    )
+)
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
-    )
+)
 
 
 def _filter_ubuntu_translation_file(filename):
@@ -47,22 +41,22 @@ def _filter_ubuntu_translation_file(filename):
 
     Passed to `ITranslationImportQueue.addOrUpdateEntriesFromTarball`.
     """
-    source_prefix = 'source/'
+    source_prefix = "source/"
     if not filename.startswith(source_prefix):
         return None
 
-    filename = filename[len(source_prefix):]
+    filename = filename[len(source_prefix) :]
 
     blocked_prefixes = [
         # Translations for use by debconf--not used in Ubuntu.
-        'debian/po/',
+        "debian/po/",
         # Debian Installer translations--treated separately.
-        'd-i/',
+        "d-i/",
         # Documentation--not translatable in Launchpad.
-        'help/',
-        'man/po/',
-        'man/po4a/',
-        ]
+        "help/",
+        "man/po/",
+        "man/po4a/",
+    ]
 
     for prefix in blocked_prefixes:
         if filename.startswith(prefix):
@@ -74,7 +68,8 @@ def _filter_ubuntu_translation_file(filename):
 @delegate_to(IPackageTranslationsUploadJob)
 @provider(IPackageTranslationsUploadJobSource)
 class PackageTranslationsUploadJobDerived(
-        BaseRunnableJob, metaclass=EnumeratedSubclass):
+    BaseRunnableJob, metaclass=EnumeratedSubclass
+):
 
     config = config.IPackageTranslationsUploadJobSource
 
@@ -88,19 +83,23 @@ class PackageTranslationsUploadJobDerived(
             "job_class": self.__class__.__name__,
             "source": self.sourcepackagename.name,
             "series": self.distroseries,
-            }
+        }
 
     @classmethod
-    def create(cls, distroseries, libraryfilealias, sourcepackagename,
-               requester):
+    def create(
+        cls, distroseries, libraryfilealias, sourcepackagename, requester
+    ):
         job = Job(
             base_job_type=JobType.UPLOAD_PACKAGE_TRANSLATIONS,
             requester=requester,
             base_json_data=json.dumps(
-                {'distroseries': distroseries.id,
-                 'libraryfilealias': libraryfilealias.id,
-                 'sourcepackagename': sourcepackagename.id,
-                 }))
+                {
+                    "distroseries": distroseries.id,
+                    "libraryfilealias": libraryfilealias.id,
+                    "sourcepackagename": sourcepackagename.id,
+                }
+            ),
+        )
         derived = cls(job)
         derived.celeryRunOnCommit()
         return derived
@@ -108,13 +107,17 @@ class PackageTranslationsUploadJobDerived(
     @classmethod
     def iterReady(cls):
         jobs = IStore(Job).find(
-            Job, Job.id.is_in(Job.ready_jobs),
-            Job.base_job_type == JobType.UPLOAD_PACKAGE_TRANSLATIONS)
+            Job,
+            Job.id.is_in(Job.ready_jobs),
+            Job.base_job_type == JobType.UPLOAD_PACKAGE_TRANSLATIONS,
+        )
         return (cls(job) for job in jobs)
 
     def getOperationDescription(self):
         return "uploading translations of %s in %s" % (
-            self.sourcepackagename.name, self.distroseries)
+            self.sourcepackagename.name,
+            self.distroseries,
+        )
 
     def getErrorRecipients(self):
         if self.requester is not None:
@@ -123,15 +126,15 @@ class PackageTranslationsUploadJobDerived(
 
     @property
     def distroseries_id(self):
-        return json.loads(self.base_json_data)['distroseries']
+        return json.loads(self.base_json_data)["distroseries"]
 
     @property
     def libraryfilealias_id(self):
-        return json.loads(self.base_json_data)['libraryfilealias']
+        return json.loads(self.base_json_data)["libraryfilealias"]
 
     @property
     def sourcepackagename_id(self):
-        return json.loads(self.base_json_data)['sourcepackagename']
+        return json.loads(self.base_json_data)["sourcepackagename"]
 
     @property
     def distroseries(self):
@@ -149,16 +152,17 @@ class PackageTranslationsUploadJobDerived(
 @implementer(IPackageTranslationsUploadJob)
 @provider(IPackageTranslationsUploadJobSource)
 class PackageTranslationsUploadJob(PackageTranslationsUploadJobDerived):
-
     def attachTranslationFiles(self, by_maintainer):
         distroseries = self.distroseries
         sourcepackagename = self.sourcepackagename
         libraryfilealias = self.libraryfilealias
         only_templates = distroseries.getSourcePackage(
-            sourcepackagename).has_sharing_translation_templates
+            sourcepackagename
+        ).has_sharing_translation_templates
         importer = self.requester
         with tempfile.NamedTemporaryFile(
-                prefix='package-translations-upload-job-') as tarball:
+            prefix="package-translations-upload-job-"
+        ) as tarball:
             libraryfilealias.open()
             try:
                 for chunk in filechunks(self.libraryfilealias):
@@ -170,11 +174,14 @@ class PackageTranslationsUploadJob(PackageTranslationsUploadJobDerived):
             queue = getUtility(ITranslationImportQueue)
 
             queue.addOrUpdateEntriesFromTarball(
-                tarball, by_maintainer, importer,
+                tarball,
+                by_maintainer,
+                importer,
                 sourcepackagename=sourcepackagename,
                 distroseries=distroseries,
                 filename_filter=_filter_ubuntu_translation_file,
-                only_templates=only_templates)
+                only_templates=only_templates,
+            )
 
     def run(self):
         self.attachTranslationFiles(True)

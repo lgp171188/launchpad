@@ -8,14 +8,11 @@ from zope.security.interfaces import Unauthorized
 from lp.soyuz.interfaces.archive import CannotSwitchPrivacy
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
+    TestCaseWithFactory,
     celebrity_logged_in,
     person_logged_in,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadZopelessLayer,
-    )
+)
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadZopelessLayer
 
 
 class TestArchivePrivacy(TestCaseWithFactory):
@@ -27,7 +24,7 @@ class TestArchivePrivacy(TestCaseWithFactory):
         ppa = self.factory.makeArchive(private=True)
         non_subscriber = self.factory.makePerson()
         with person_logged_in(non_subscriber):
-            self.assertRaises(Unauthorized, getattr, ppa, 'description')
+            self.assertRaises(Unauthorized, getattr, ppa, "description")
 
     def test_subscription(self):
         # Once you have a subscription, you can access private PPAs.
@@ -41,7 +38,7 @@ class TestArchivePrivacy(TestCaseWithFactory):
     def test_owner_changing_privacy(self):
         ppa = self.factory.makeArchive()
         with person_logged_in(ppa.owner):
-            self.assertRaises(Unauthorized, setattr, ppa, 'private', True)
+            self.assertRaises(Unauthorized, setattr, ppa, "private", True)
 
     def test_owner_with_commercial_subscription_changing_privacy(self):
         ppa = self.factory.makeArchive()
@@ -50,17 +47,17 @@ class TestArchivePrivacy(TestCaseWithFactory):
             # XXX: jml 2012-06-11: We actually want this to be allowed, but I
             # can't think of any way to grant this without also granting other
             # attributes that have launchpad.Admin.
-            self.assertRaises(Unauthorized, setattr, ppa, 'private', True)
+            self.assertRaises(Unauthorized, setattr, ppa, "private", True)
 
     def test_admin_changing_privacy(self):
         ppa = self.factory.makeArchive()
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             ppa.private = True
         self.assertEqual(True, ppa.private)
 
     def test_commercial_admin_changing_privacy(self):
         ppa = self.factory.makeArchive()
-        with celebrity_logged_in('commercial_admin'):
+        with celebrity_logged_in("commercial_admin"):
             ppa.private = True
         self.assertEqual(True, ppa.private)
 
@@ -92,7 +89,9 @@ class TestPrivacySwitching(TestCaseWithFactory):
         publisher.getPubSource(archive=private_ppa)
 
         self.assertRaises(
-            CannotSwitchPrivacy, setattr, public_ppa, 'private', True)
+            CannotSwitchPrivacy, setattr, public_ppa, "private", True
+        )
 
         self.assertRaises(
-            CannotSwitchPrivacy, setattr, private_ppa, 'private', False)
+            CannotSwitchPrivacy, setattr, private_ppa, "private", False
+        )

@@ -3,24 +3,23 @@
 
 """Make a distroseries obsolete."""
 
-__all__ = ['ObsoleteDistroseries']
+__all__ = ["ObsoleteDistroseries"]
 
 from itertools import chain
 
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import UTC_NOW
-from lp.soyuz.scripts.ftpmasterbase import (
-    SoyuzScript,
-    SoyuzScriptError,
-    )
+from lp.soyuz.scripts.ftpmasterbase import SoyuzScript, SoyuzScriptError
 
 
 class ObsoleteDistroseries(SoyuzScript):
     """`SoyuzScript` that obsoletes a distroseries."""
 
     usage = "%prog -d <distribution> -s <suite>"
-    description = ("Make obsolete (schedule for removal) packages in an "
-                  "obsolete distroseries.")
+    description = (
+        "Make obsolete (schedule for removal) packages in an "
+        "obsolete distroseries."
+    )
 
     def add_my_options(self):
         """Add -d, -s, dry-run and confirmation options."""
@@ -41,24 +40,27 @@ class ObsoleteDistroseries(SoyuzScript):
         """
         assert self.location, (
             "location is not available, call SoyuzScript.setupLocation() "
-            "before calling mainTask().")
+            "before calling mainTask()."
+        )
 
         # Shortcut variable name to reduce long lines.
         distroseries = self.location.distroseries
 
         self._checkParameters(distroseries)
 
-        self.logger.info("Obsoleting all packages for distroseries %s in "
-                         "the %s distribution." % (
-                            distroseries.name,
-                            distroseries.distribution.name))
+        self.logger.info(
+            "Obsoleting all packages for distroseries %s in "
+            "the %s distribution."
+            % (distroseries.name, distroseries.distribution.name)
+        )
 
         # First, mark all Published sources as Obsolete.
         sources = distroseries.getAllPublishedSources()
         binaries = distroseries.getAllPublishedBinaries()
         self.logger.info(
             "Obsoleting published packages (%d sources, %d binaries)."
-            % (sources.count(), binaries.count()))
+            % (sources.count(), binaries.count())
+        )
         for package in chain(sources, binaries):
             self.logger.debug("Obsoleting %s" % package.displayname)
             package.requestObsolescence()
@@ -70,10 +72,12 @@ class ObsoleteDistroseries(SoyuzScript):
         binaries = distroseries.getAllUncondemnedBinaries()
         self.logger.info(
             "Scheduling deletion of other packages (%d sources, %d binaries)."
-            % (sources.count(), binaries.count()))
+            % (sources.count(), binaries.count())
+        )
         for package in chain(sources, binaries):
             self.logger.debug(
-                "Scheduling deletion of %s" % package.displayname)
+                "Scheduling deletion of %s" % package.displayname
+            )
             package.scheduleddeletiondate = UTC_NOW
 
         # The packages from both phases will be caught by death row
@@ -91,9 +95,11 @@ class ObsoleteDistroseries(SoyuzScript):
             # user let this option default, so complain and exit.
             raise SoyuzScriptError(
                 "Please specify a valid distroseries name with -s/--suite "
-                "and which is not the most recent distroseries.")
+                "and which is not the most recent distroseries."
+            )
 
         # Is the distroseries in an obsolete state?  Bail out now if not.
         if distroseries.status != SeriesStatus.OBSOLETE:
             raise SoyuzScriptError(
-                "%s is not at status OBSOLETE." % distroseries.name)
+                "%s is not at status OBSOLETE." % distroseries.name
+            )

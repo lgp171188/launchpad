@@ -1,9 +1,9 @@
 # Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import timedelta
 import json
 import os.path
+from datetime import timedelta
 
 import responses
 from testtools.matchers import (
@@ -14,7 +14,7 @@ from testtools.matchers import (
     MatchesListwise,
     MatchesRegex,
     MatchesStructure,
-    )
+)
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -26,19 +26,19 @@ from lp.soyuz.enums import (
     ArchivePermissionType,
     ArchivePurpose,
     PackagePublishingStatus,
-    )
+)
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.packagecopyjob import IPlainPackageCopyJobSource
 from lp.soyuz.model.archivepermission import ArchivePermission
 from lp.testing import (
-    admin_logged_in,
     ANONYMOUS,
+    TestCaseWithFactory,
+    admin_logged_in,
     api_url,
     login,
     person_logged_in,
     record_two_runs,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
@@ -53,32 +53,43 @@ class TestArchiveWebservice(TestCaseWithFactory):
         with admin_logged_in() as _admin:
             admin = _admin
             self.archive = self.factory.makeArchive(
-                purpose=ArchivePurpose.PRIMARY)
+                purpose=ArchivePurpose.PRIMARY
+            )
             distroseries = self.factory.makeDistroSeries(
-                distribution=self.archive.distribution)
+                distribution=self.archive.distribution
+            )
             person = self.factory.makePerson()
         self.main_archive_url = api_url(self.archive)
         self.distroseries_url = api_url(distroseries)
         self.person_url = api_url(person)
         self.ws = webservice_for_person(
-            admin, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            admin,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
 
     def test_checkUpload_bad_pocket(self):
         # Make sure a 403 error and not an OOPS is returned when
         # CannotUploadToPocket is raised when calling checkUpload.
         response = self.ws.named_get(
-            self.main_archive_url, "checkUpload",
+            self.main_archive_url,
+            "checkUpload",
             distroseries=self.distroseries_url,
             sourcepackagename="mozilla-firefox",
             pocket="Updates",
             component="restricted",
-            person=self.person_url)
-        self.assertThat(response, MatchesStructure.byEquality(
-            status=403,
-            body=(
-                b"Not permitted to upload to the UPDATES pocket in a series "
-                b"in the 'DEVELOPMENT' state.")))
+            person=self.person_url,
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=403,
+                body=(
+                    b"Not permitted to upload to the UPDATES pocket in a "
+                    b"series in the 'DEVELOPMENT' state."
+                ),
+            ),
+        )
 
     def test_getAllPermissions_constant_query_count(self):
         # getAllPermissions has a query count constant in the number of
@@ -86,15 +97,18 @@ class TestArchiveWebservice(TestCaseWithFactory):
         def create_permission():
             with admin_logged_in():
                 ArchivePermission(
-                    archive=self.archive, person=self.factory.makePerson(),
+                    archive=self.archive,
+                    person=self.factory.makePerson(),
                     component=getUtility(IComponentSet)["main"],
-                    permission=ArchivePermissionType.UPLOAD)
+                    permission=ArchivePermissionType.UPLOAD,
+                )
 
         def get_permissions():
             self.ws.named_get(self.main_archive_url, "getAllPermissions")
 
         recorder1, recorder2 = record_two_runs(
-            get_permissions, create_permission, 1)
+            get_permissions, create_permission, 1
+        )
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_delete(self):
@@ -102,22 +116,28 @@ class TestArchiveWebservice(TestCaseWithFactory):
             ppa = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
             ppa_url = api_url(ppa)
             ws = webservice_for_person(
-                ppa.owner, permission=OAuthPermission.WRITE_PRIVATE,
-                default_api_version="devel")
+                ppa.owner,
+                permission=OAuthPermission.WRITE_PRIVATE,
+                default_api_version="devel",
+            )
 
         # DELETE on an archive resource doesn't actually remove it
         # immediately, but it asks the publisher to delete it later.
         self.assertEqual(
-            'Active', self.getWebserviceJSON(ws, ppa_url)['status'])
+            "Active", self.getWebserviceJSON(ws, ppa_url)["status"]
+        )
         self.assertEqual(200, ws.delete(ppa_url).status)
         self.assertEqual(
-            'Deleting', self.getWebserviceJSON(ws, ppa_url)['status'])
+            "Deleting", self.getWebserviceJSON(ws, ppa_url)["status"]
+        )
 
         # Deleting the PPA again fails.
         self.assertThat(
             ws.delete(ppa_url),
             MatchesStructure.byEquality(
-                status=400, body=b"Archive already deleted."))
+                status=400, body=b"Archive already deleted."
+            ),
+        )
 
     def test_delete_is_restricted(self):
         with admin_logged_in():
@@ -126,7 +146,8 @@ class TestArchiveWebservice(TestCaseWithFactory):
             ws = webservice_for_person(
                 self.factory.makePerson(),
                 permission=OAuthPermission.WRITE_PRIVATE,
-                default_api_version="devel")
+                default_api_version="devel",
+            )
 
         # A random user can't delete someone else's PPA.
         self.assertEqual(401, ws.delete(ppa_url).status)
@@ -136,8 +157,10 @@ class TestArchiveWebservice(TestCaseWithFactory):
             archive = self.factory.makeArchive()
             archive_url = api_url(archive)
             ws = webservice_for_person(
-                archive.owner, permission=OAuthPermission.WRITE_PRIVATE,
-                default_api_version="devel")
+                archive.owner,
+                permission=OAuthPermission.WRITE_PRIVATE,
+                default_api_version="devel",
+            )
 
         ws_archive = self.getWebserviceJSON(ws, archive_url)
 
@@ -149,12 +172,15 @@ class TestArchiveWebservice(TestCaseWithFactory):
             archive = self.factory.makeArchive()
             archive_url = api_url(archive)
             ws = webservice_for_person(
-                archive.owner, permission=OAuthPermission.WRITE_PRIVATE,
-                default_api_version="devel")
+                archive.owner,
+                permission=OAuthPermission.WRITE_PRIVATE,
+                default_api_version="devel",
+            )
 
         # Setting it to False works.
         response = ws.patch(
-            archive_url, "application/json", json.dumps({"publish": False}))
+            archive_url, "application/json", json.dumps({"publish": False})
+        )
         self.assertEqual(209, response.status)
 
         ws_archive = self.getWebserviceJSON(ws, archive_url)
@@ -165,16 +191,19 @@ class TestArchiveWebservice(TestCaseWithFactory):
             archive = self.factory.makeArchive()
             archive_url = api_url(archive)
             ws = webservice_for_person(
-                archive.owner, permission=OAuthPermission.WRITE_PRIVATE,
-                default_api_version="devel")
+                archive.owner,
+                permission=OAuthPermission.WRITE_PRIVATE,
+                default_api_version="devel",
+            )
             response = ws.patch(
-                archive_url, "application/json",
-                json.dumps({"publish": False}))
+                archive_url, "application/json", json.dumps({"publish": False})
+            )
             self.assertEqual(209, response.status)
 
         # Setting it back to True works because archive is Active.
         ws.patch(
-            archive_url, "application/json", json.dumps({"publish": True}))
+            archive_url, "application/json", json.dumps({"publish": True})
+        )
 
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         self.assertTrue(ws_archive["publish"])
@@ -184,21 +213,24 @@ class TestArchiveWebservice(TestCaseWithFactory):
             archive = self.factory.makeArchive()
             archive_url = api_url(archive)
             ws = webservice_for_person(
-                archive.owner, permission=OAuthPermission.WRITE_PRIVATE,
-                default_api_version="devel")
+                archive.owner,
+                permission=OAuthPermission.WRITE_PRIVATE,
+                default_api_version="devel",
+            )
             response = ws.patch(
-                    archive_url, "application/json",
-                    json.dumps({"publish": False}))
+                archive_url, "application/json", json.dumps({"publish": False})
+            )
             self.assertEqual(209, response.status)
             response = ws.delete(archive_url)
             self.assertEqual(200, response.status)
             ws_archive = self.getWebserviceJSON(ws, archive_url)
-            self.assertEqual('Deleting', ws_archive["status"])
+            self.assertEqual("Deleting", ws_archive["status"])
 
             # Setting it to True with archive status
             # different from Active won't work.
             response = ws.patch(
-                archive_url, "application/json", json.dumps({"publish": True}))
+                archive_url, "application/json", json.dumps({"publish": True})
+            )
 
             self.assertEqual(400, response.status)
             self.assertEqual(b"Deleted PPAs can't be enabled.", response.body)
@@ -222,10 +254,12 @@ class TestSigningKey(TestCaseWithFactory):
             secret_key = gpghandler.importSecretKey(key_file.read())
         public_key = gpghandler.retrieveKey(secret_key.fingerprint)
         public_key_data = public_key.export()
-        removeSecurityProxy(archive).signing_key_fingerprint = (
-            public_key.fingerprint)
+        removeSecurityProxy(
+            archive
+        ).signing_key_fingerprint = public_key.fingerprint
         key_url = gpghandler.getURLForKeyInServer(
-            public_key.fingerprint, action="get")
+            public_key.fingerprint, action="get"
+        )
         responses.add("GET", key_url, body=public_key_data)
         gpghandler.resetLocalState()
         return public_key.fingerprint, public_key_data
@@ -237,7 +271,8 @@ class TestSigningKey(TestCaseWithFactory):
         fingerprint, public_key_data = self._setUpSigningKey(archive)
         archive_url = api_url(archive)
         ws = webservice_for_person(
-            self.factory.makePerson(), default_api_version="devel")
+            self.factory.makePerson(), default_api_version="devel"
+        )
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         self.assertEqual(fingerprint, ws_archive["signing_key_fingerprint"])
         response = ws.named_get(archive_url, "getSigningKeyData")
@@ -254,8 +289,10 @@ class TestSigningKey(TestCaseWithFactory):
             archive.newSubscription(subscriber, archive.owner)
         archive_url = api_url(archive)
         ws = webservice_for_person(
-            subscriber, permission=OAuthPermission.READ_PRIVATE,
-            default_api_version="devel")
+            subscriber,
+            permission=OAuthPermission.READ_PRIVATE,
+            default_api_version="devel",
+        )
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         self.assertEqual(fingerprint, ws_archive["signing_key_fingerprint"])
         response = ws.named_get(archive_url, "getSigningKeyData")
@@ -270,12 +307,15 @@ class TestSigningKey(TestCaseWithFactory):
         fingerprint, public_key_data = self._setUpSigningKey(archive)
         archive_url = api_url(archive)
         ws = webservice_for_person(
-            self.factory.makePerson(), permission=OAuthPermission.READ_PRIVATE,
-            default_api_version="devel")
+            self.factory.makePerson(),
+            permission=OAuthPermission.READ_PRIVATE,
+            default_api_version="devel",
+        )
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         self.assertEqual(
             "tag:launchpad.net:2008:redacted",
-            ws_archive["signing_key_fingerprint"])
+            ws_archive["signing_key_fingerprint"],
+        )
         response = ws.named_get(archive_url, "getSigningKeyData")
         self.assertEqual(401, response.status)
 
@@ -289,12 +329,15 @@ class TestExternalDependencies(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         archive_url = api_url(archive)
         ws = webservice_for_person(
-            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC
+        )
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         self.assertIsNone(ws_archive["external_dependencies"])
         response = ws.patch(
-            archive_url, "application/json",
-            json.dumps({"external_dependencies": "random"}))
+            archive_url,
+            "application/json",
+            json.dumps({"external_dependencies": "random"}),
+        )
         self.assertEqual(401, response.status)
 
     def test_external_dependencies_owner(self):
@@ -302,12 +345,15 @@ class TestExternalDependencies(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         archive_url = api_url(archive)
         ws = webservice_for_person(
-            archive.owner, permission=OAuthPermission.WRITE_PUBLIC)
+            archive.owner, permission=OAuthPermission.WRITE_PUBLIC
+        )
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         self.assertIsNone(ws_archive["external_dependencies"])
         response = ws.patch(
-            archive_url, "application/json",
-            json.dumps({"external_dependencies": "random"}))
+            archive_url,
+            "application/json",
+            json.dumps({"external_dependencies": "random"}),
+        )
         self.assertEqual(401, response.status)
 
     def test_external_dependencies_ppa_owner_invalid(self):
@@ -317,15 +363,22 @@ class TestExternalDependencies(TestCaseWithFactory):
         archive = self.factory.makeArchive(owner=ppa_admin)
         archive_url = api_url(archive)
         ws = webservice_for_person(
-            archive.owner, permission=OAuthPermission.WRITE_PUBLIC)
+            archive.owner, permission=OAuthPermission.WRITE_PUBLIC
+        )
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         self.assertIsNone(ws_archive["external_dependencies"])
         response = ws.patch(
-            archive_url, "application/json",
-            json.dumps({"external_dependencies": "random"}))
-        self.assertThat(response, MatchesStructure(
-            status=Equals(400),
-            body=Contains(b"Invalid external dependencies")))
+            archive_url,
+            "application/json",
+            json.dumps({"external_dependencies": "random"}),
+        )
+        self.assertThat(
+            response,
+            MatchesStructure(
+                status=Equals(400),
+                body=Contains(b"Invalid external dependencies"),
+            ),
+        )
 
     def test_external_dependencies_ppa_owner_valid(self):
         """PPA admins can look and touch."""
@@ -334,15 +387,21 @@ class TestExternalDependencies(TestCaseWithFactory):
         archive = self.factory.makeArchive(owner=ppa_admin)
         archive_url = api_url(archive)
         ws = webservice_for_person(
-            archive.owner, permission=OAuthPermission.WRITE_PUBLIC)
+            archive.owner, permission=OAuthPermission.WRITE_PUBLIC
+        )
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         self.assertIsNone(ws_archive["external_dependencies"])
         response = ws.patch(
-            archive_url, "application/json",
-            json.dumps({
-                "external_dependencies":
-                    "deb http://example.org suite components",
-                }))
+            archive_url,
+            "application/json",
+            json.dumps(
+                {
+                    "external_dependencies": (
+                        "deb http://example.org suite components"
+                    ),
+                }
+            ),
+        )
         self.assertEqual(209, response.status)
 
 
@@ -357,18 +416,31 @@ class TestArchiveDependencies(TestCaseWithFactory):
         archive_url = api_url(archive)
         dependency_url = api_url(dependency)
         ws = webservice_for_person(
-            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            self.factory.makePerson(),
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         ws_dependencies = self.getWebserviceJSON(
-            ws, ws_archive["dependencies_collection_link"])
+            ws, ws_archive["dependencies_collection_link"]
+        )
         self.assertEqual([], ws_dependencies["entries"])
         response = ws.named_post(
-            archive_url, "addArchiveDependency",
-            dependency=dependency_url, pocket="Release", component="main")
-        self.assertThat(response, MatchesStructure(
-            status=Equals(401),
-            body=MatchesRegex(br".*addArchiveDependency.*launchpad.Edit.*")))
+            archive_url,
+            "addArchiveDependency",
+            dependency=dependency_url,
+            pocket="Release",
+            component="main",
+        )
+        self.assertThat(
+            response,
+            MatchesStructure(
+                status=Equals(401),
+                body=MatchesRegex(
+                    rb".*addArchiveDependency.*launchpad.Edit.*"
+                ),
+            ),
+        )
 
     def test_addArchiveDependency_owner(self):
         """Archive owners can add archive dependencies."""
@@ -377,28 +449,48 @@ class TestArchiveDependencies(TestCaseWithFactory):
         archive_url = api_url(archive)
         dependency_url = api_url(dependency)
         ws = webservice_for_person(
-            archive.owner, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            archive.owner,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         ws_dependencies = self.getWebserviceJSON(
-            ws, ws_archive["dependencies_collection_link"])
+            ws, ws_archive["dependencies_collection_link"]
+        )
         self.assertEqual([], ws_dependencies["entries"])
         response = ws.named_post(
-            archive_url, "addArchiveDependency",
-            dependency=dependency_url, pocket="Release", component="asdf")
+            archive_url,
+            "addArchiveDependency",
+            dependency=dependency_url,
+            pocket="Release",
+            component="asdf",
+        )
         self.assertThat(
             response,
-            MatchesStructure(status=Equals(404), body=Contains(b"asdf")))
+            MatchesStructure(status=Equals(404), body=Contains(b"asdf")),
+        )
         response = ws.named_post(
-            archive_url, "addArchiveDependency",
-            dependency=dependency_url, pocket="Release", component="main")
+            archive_url,
+            "addArchiveDependency",
+            dependency=dependency_url,
+            pocket="Release",
+            component="main",
+        )
         self.assertEqual(201, response.status)
         archive_dependency_url = response.getHeader("Location")
         ws_dependencies = self.getWebserviceJSON(
-            ws, ws_archive["dependencies_collection_link"])
-        self.assertThat(ws_dependencies["entries"], MatchesListwise([
-            ContainsDict({"self_link": Equals(archive_dependency_url)}),
-            ]))
+            ws, ws_archive["dependencies_collection_link"]
+        )
+        self.assertThat(
+            ws_dependencies["entries"],
+            MatchesListwise(
+                [
+                    ContainsDict(
+                        {"self_link": Equals(archive_dependency_url)}
+                    ),
+                ]
+            ),
+        )
 
     def test_addArchiveDependency_invalid(self):
         """Invalid requests generate a BadRequest error."""
@@ -406,17 +498,27 @@ class TestArchiveDependencies(TestCaseWithFactory):
         dependency = self.factory.makeArchive()
         with person_logged_in(archive.owner):
             archive.addArchiveDependency(
-                dependency, PackagePublishingPocket.RELEASE)
+                dependency, PackagePublishingPocket.RELEASE
+            )
         archive_url = api_url(archive)
         dependency_url = api_url(dependency)
         ws = webservice_for_person(
-            archive.owner, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            archive.owner,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            archive_url, "addArchiveDependency",
-            dependency=dependency_url, pocket="Release")
-        self.assertThat(response, MatchesStructure.byEquality(
-            status=400, body=b"This dependency is already registered."))
+            archive_url,
+            "addArchiveDependency",
+            dependency=dependency_url,
+            pocket="Release",
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=400, body=b"This dependency is already registered."
+            ),
+        )
 
     def test_removeArchiveDependency_random_user(self):
         """Normal users cannot remove archive dependencies."""
@@ -424,18 +526,27 @@ class TestArchiveDependencies(TestCaseWithFactory):
         dependency = self.factory.makeArchive()
         with person_logged_in(archive.owner):
             archive.addArchiveDependency(
-                dependency, PackagePublishingPocket.RELEASE)
+                dependency, PackagePublishingPocket.RELEASE
+            )
         archive_url = api_url(archive)
         dependency_url = api_url(dependency)
         ws = webservice_for_person(
-            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            self.factory.makePerson(),
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            archive_url, "removeArchiveDependency", dependency=dependency_url)
-        self.assertThat(response, MatchesStructure(
-            status=Equals(401),
-            body=MatchesRegex(
-                br".*removeArchiveDependency.*launchpad.Edit.*")))
+            archive_url, "removeArchiveDependency", dependency=dependency_url
+        )
+        self.assertThat(
+            response,
+            MatchesStructure(
+                status=Equals(401),
+                body=MatchesRegex(
+                    rb".*removeArchiveDependency.*launchpad.Edit.*"
+                ),
+            ),
+        )
 
     def test_removeArchiveDependency_owner(self):
         """Archive owners can remove archive dependencies."""
@@ -443,18 +554,23 @@ class TestArchiveDependencies(TestCaseWithFactory):
         dependency = self.factory.makeArchive()
         with person_logged_in(archive.owner):
             archive.addArchiveDependency(
-                dependency, PackagePublishingPocket.RELEASE)
+                dependency, PackagePublishingPocket.RELEASE
+            )
         archive_url = api_url(archive)
         dependency_url = api_url(dependency)
         ws = webservice_for_person(
-            archive.owner, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            archive.owner,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            archive_url, "removeArchiveDependency", dependency=dependency_url)
+            archive_url, "removeArchiveDependency", dependency=dependency_url
+        )
         self.assertEqual(200, response.status)
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         ws_dependencies = self.getWebserviceJSON(
-            ws, ws_archive["dependencies_collection_link"])
+            ws, ws_archive["dependencies_collection_link"]
+        )
         self.assertEqual([], ws_dependencies["entries"])
 
 
@@ -472,7 +588,8 @@ class TestProcessors(TestCaseWithFactory):
         ws = webservice_for_person(ppa_admin, default_api_version="beta")
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         self.assertNotIn(
-            "enabled_restricted_processors_collection_link", ws_archive)
+            "enabled_restricted_processors_collection_link", ws_archive
+        )
 
     def test_erpAvailableInDevel(self):
         """The enabled_restricted_processors property is in devel."""
@@ -483,59 +600,80 @@ class TestProcessors(TestCaseWithFactory):
         ws = webservice_for_person(ppa_admin, default_api_version="devel")
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         ws_erp = self.getWebserviceJSON(
-            ws, ws_archive["enabled_restricted_processors_collection_link"])
+            ws, ws_archive["enabled_restricted_processors_collection_link"]
+        )
         self.assertEqual([], ws_erp["entries"])
 
     def test_processors(self):
         """Attributes about processors are available."""
         self.factory.makeProcessor(
-            'new-arm', 'New ARM Title', 'New ARM Description')
+            "new-arm", "New ARM Title", "New ARM Description"
+        )
         ws = webservice_for_person(
-            self.factory.makePerson(), default_api_version="devel")
+            self.factory.makePerson(), default_api_version="devel"
+        )
         response = ws.named_get("/+processors", "getByName", name="new-arm")
         self.assertEqual(200, response.status)
-        self.assertThat(response.jsonBody(), ContainsDict({
-            "name": Equals("new-arm"),
-            "title": Equals("New ARM Title"),
-            "description": Equals("New ARM Description"),
-            }))
+        self.assertThat(
+            response.jsonBody(),
+            ContainsDict(
+                {
+                    "name": Equals("new-arm"),
+                    "title": Equals("New ARM Title"),
+                    "description": Equals("New ARM Description"),
+                }
+            ),
+        )
 
     def setProcessors(self, user, archive_url, names):
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC)
+            user, permission=OAuthPermission.WRITE_PUBLIC
+        )
         return ws.named_post(
-            archive_url, 'setProcessors',
-            processors=['/+processors/%s' % name for name in names],
-            api_version='devel')
+            archive_url,
+            "setProcessors",
+            processors=["/+processors/%s" % name for name in names],
+            api_version="devel",
+        )
 
     def assertProcessors(self, user, archive_url, names):
-        body = webservice_for_person(user).get(
-            archive_url + '/processors', api_version='devel').jsonBody()
+        body = (
+            webservice_for_person(user)
+            .get(archive_url + "/processors", api_version="devel")
+            .jsonBody()
+        )
         self.assertContentEqual(
-            names, [entry['name'] for entry in body['entries']])
+            names, [entry["name"] for entry in body["entries"]]
+        )
 
     def test_setProcessors_admin(self):
         """An admin can add a new processor to the enabled restricted set."""
         ppa_admin_team = getUtility(ILaunchpadCelebrities).ppa_admin
         ppa_admin = self.factory.makePerson(member_of=[ppa_admin_team])
         self.factory.makeProcessor(
-            'arm', 'ARM', 'ARM', restricted=True, build_by_default=False)
+            "arm", "ARM", "ARM", restricted=True, build_by_default=False
+        )
         ppa_url = api_url(self.factory.makeArchive(purpose=ArchivePurpose.PPA))
-        self.assertProcessors(ppa_admin, ppa_url, ['386', 'hppa', 'amd64'])
+        self.assertProcessors(ppa_admin, ppa_url, ["386", "hppa", "amd64"])
 
-        response = self.setProcessors(ppa_admin, ppa_url, ['386', 'arm'])
+        response = self.setProcessors(ppa_admin, ppa_url, ["386", "arm"])
         self.assertEqual(200, response.status)
-        self.assertProcessors(ppa_admin, ppa_url, ['386', 'arm'])
+        self.assertProcessors(ppa_admin, ppa_url, ["386", "arm"])
 
     def test_setProcessors_non_owner_forbidden(self):
         """Only PPA admins and archive owners can call setProcessors."""
         self.factory.makeProcessor(
-            'unrestricted', 'Unrestricted', 'Unrestricted', restricted=False,
-            build_by_default=False)
+            "unrestricted",
+            "Unrestricted",
+            "Unrestricted",
+            restricted=False,
+            build_by_default=False,
+        )
         ppa_url = api_url(self.factory.makeArchive(purpose=ArchivePurpose.PPA))
 
         response = self.setProcessors(
-            self.factory.makePerson(), ppa_url, ['386', 'unrestricted'])
+            self.factory.makePerson(), ppa_url, ["386", "unrestricted"]
+        )
         self.assertEqual(401, response.status)
 
     def test_setProcessors_owner(self):
@@ -543,61 +681,73 @@ class TestProcessors(TestCaseWithFactory):
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
         ppa_url = api_url(archive)
         owner = archive.owner
-        self.assertProcessors(owner, ppa_url, ['386', 'hppa', 'amd64'])
+        self.assertProcessors(owner, ppa_url, ["386", "hppa", "amd64"])
 
-        response = self.setProcessors(owner, ppa_url, ['386'])
+        response = self.setProcessors(owner, ppa_url, ["386"])
         self.assertEqual(200, response.status)
-        self.assertProcessors(owner, ppa_url, ['386'])
+        self.assertProcessors(owner, ppa_url, ["386"])
 
-        response = self.setProcessors(owner, ppa_url, ['386', 'amd64'])
+        response = self.setProcessors(owner, ppa_url, ["386", "amd64"])
         self.assertEqual(200, response.status)
-        self.assertProcessors(owner, ppa_url, ['386', 'amd64'])
+        self.assertProcessors(owner, ppa_url, ["386", "amd64"])
 
     def test_setProcessors_owner_restricted_forbidden(self):
         """The archive owner cannot enable/disable restricted processors."""
         ppa_admin_team = getUtility(ILaunchpadCelebrities).ppa_admin
         ppa_admin = self.factory.makePerson(member_of=[ppa_admin_team])
         self.factory.makeProcessor(
-            'arm', 'ARM', 'ARM', restricted=True, build_by_default=False)
+            "arm", "ARM", "ARM", restricted=True, build_by_default=False
+        )
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
         ppa_url = api_url(archive)
         owner = archive.owner
 
-        response = self.setProcessors(owner, ppa_url, ['386', 'arm'])
+        response = self.setProcessors(owner, ppa_url, ["386", "arm"])
         self.assertEqual(403, response.status)
 
         # If a PPA admin enables arm, the owner cannot disable it.
-        response = self.setProcessors(ppa_admin, ppa_url, ['386', 'arm'])
+        response = self.setProcessors(ppa_admin, ppa_url, ["386", "arm"])
         self.assertEqual(200, response.status)
-        self.assertProcessors(owner, ppa_url, ['386', 'arm'])
+        self.assertProcessors(owner, ppa_url, ["386", "arm"])
 
-        response = self.setProcessors(owner, ppa_url, ['386'])
+        response = self.setProcessors(owner, ppa_url, ["386"])
         self.assertEqual(403, response.status)
 
     def test_enableRestrictedProcessor(self):
         """A new processor can be added to the enabled restricted set."""
         archive = self.factory.makeArchive()
         arm = self.factory.makeProcessor(
-            name='arm', restricted=True, build_by_default=False)
+            name="arm", restricted=True, build_by_default=False
+        )
         ppa_admin_team = getUtility(ILaunchpadCelebrities).ppa_admin
         ppa_admin = self.factory.makePerson(member_of=[ppa_admin_team])
         archive_url = api_url(archive)
         arm_url = api_url(arm)
         ws = webservice_for_person(
-            ppa_admin, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            ppa_admin,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         ws_erp = self.getWebserviceJSON(
-            ws, ws_archive["enabled_restricted_processors_collection_link"])
+            ws, ws_archive["enabled_restricted_processors_collection_link"]
+        )
         self.assertEqual([], ws_erp["entries"])
         response = ws.named_post(
-            archive_url, "enableRestrictedProcessor", processor=arm_url)
+            archive_url, "enableRestrictedProcessor", processor=arm_url
+        )
         self.assertEqual(200, response.status)
         ws_erp = self.getWebserviceJSON(
-            ws, ws_archive["enabled_restricted_processors_collection_link"])
-        self.assertThat(ws_erp["entries"], MatchesListwise([
-            ContainsDict({"self_link": EndsWith(arm_url)}),
-            ]))
+            ws, ws_archive["enabled_restricted_processors_collection_link"]
+        )
+        self.assertThat(
+            ws_erp["entries"],
+            MatchesListwise(
+                [
+                    ContainsDict({"self_link": EndsWith(arm_url)}),
+                ]
+            ),
+        )
 
     def test_enableRestrictedProcessor_owner(self):
         """A new processor can be added to the enabled restricted set.
@@ -606,20 +756,29 @@ class TestProcessors(TestCaseWithFactory):
         """
         archive = self.factory.makeArchive()
         arm = self.factory.makeProcessor(
-            name='arm', restricted=True, build_by_default=False)
+            name="arm", restricted=True, build_by_default=False
+        )
         archive_url = api_url(archive)
         arm_url = api_url(arm)
         ws = webservice_for_person(
-            archive.owner, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            archive.owner,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         ws_erp = self.getWebserviceJSON(
-            ws, ws_archive["enabled_restricted_processors_collection_link"])
+            ws, ws_archive["enabled_restricted_processors_collection_link"]
+        )
         self.assertEqual([], ws_erp["entries"])
         response = ws.named_post(
-            archive_url, "enableRestrictedProcessor", processor=arm_url)
-        self.assertThat(response, MatchesStructure(
-            status=Equals(401), body=Contains(b"'launchpad.Admin'")))
+            archive_url, "enableRestrictedProcessor", processor=arm_url
+        )
+        self.assertThat(
+            response,
+            MatchesStructure(
+                status=Equals(401), body=Contains(b"'launchpad.Admin'")
+            ),
+        )
 
     def test_enableRestrictedProcessor_nonPrivUser(self):
         """A new processor can be added to the enabled restricted set.
@@ -628,20 +787,29 @@ class TestProcessors(TestCaseWithFactory):
         """
         archive = self.factory.makeArchive()
         arm = self.factory.makeProcessor(
-            name='arm', restricted=True, build_by_default=False)
+            name="arm", restricted=True, build_by_default=False
+        )
         archive_url = api_url(archive)
         arm_url = api_url(arm)
         ws = webservice_for_person(
-            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            self.factory.makePerson(),
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         ws_archive = self.getWebserviceJSON(ws, archive_url)
         ws_erp = self.getWebserviceJSON(
-            ws, ws_archive["enabled_restricted_processors_collection_link"])
+            ws, ws_archive["enabled_restricted_processors_collection_link"]
+        )
         self.assertEqual([], ws_erp["entries"])
         response = ws.named_post(
-            archive_url, "enableRestrictedProcessor", processor=arm_url)
-        self.assertThat(response, MatchesStructure(
-            status=Equals(401), body=Contains(b"'launchpad.Admin'")))
+            archive_url, "enableRestrictedProcessor", processor=arm_url
+        )
+        self.assertThat(
+            response,
+            MatchesStructure(
+                status=Equals(401), body=Contains(b"'launchpad.Admin'")
+            ),
+        )
 
 
 class TestCopyPackage(TestCaseWithFactory):
@@ -654,38 +822,65 @@ class TestCopyPackage(TestCaseWithFactory):
         sponsored_dude = self.factory.makePerson()
         source_archive = self.factory.makeArchive()
         target_archive = self.factory.makeArchive(
-            purpose=ArchivePurpose.PRIMARY)
+            purpose=ArchivePurpose.PRIMARY
+        )
         source = self.factory.makeSourcePackagePublishingHistory(
-            archive=source_archive, status=PackagePublishingStatus.PUBLISHED)
+            archive=source_archive, status=PackagePublishingStatus.PUBLISHED
+        )
         source_name = source.source_package_name
         version = source.source_package_version
         to_pocket = PackagePublishingPocket.RELEASE
         to_series = self.factory.makeDistroSeries(
-            distribution=target_archive.distribution)
+            distribution=target_archive.distribution
+        )
         with person_logged_in(target_archive.owner):
             target_archive.newComponentUploader(uploader_dude, "universe")
-        return (source, source_archive, source_name, target_archive,
-                to_pocket, to_series, uploader_dude, sponsored_dude, version)
+        return (
+            source,
+            source_archive,
+            source_name,
+            target_archive,
+            to_pocket,
+            to_series,
+            uploader_dude,
+            sponsored_dude,
+            version,
+        )
 
     def test_copyPackage(self):
         """Basic smoke test"""
-        (source, source_archive, source_name, target_archive, to_pocket,
-         to_series, uploader_dude, sponsored_dude,
-         version) = self.setup_data()
+        (
+            source,
+            source_archive,
+            source_name,
+            target_archive,
+            to_pocket,
+            to_series,
+            uploader_dude,
+            sponsored_dude,
+            version,
+        ) = self.setup_data()
 
         target_archive_url = api_url(target_archive)
         source_archive_url = api_url(source_archive)
         sponsored_dude_url = api_url(sponsored_dude)
         ws = webservice_for_person(
-            uploader_dude, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            uploader_dude,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
 
         response = ws.named_post(
-            target_archive_url, "copyPackage",
-            source_name=source_name, version=version,
-            from_archive=source_archive_url, to_pocket=to_pocket.name,
-            to_series=to_series.name, include_binaries=False,
-            sponsored=sponsored_dude_url)
+            target_archive_url,
+            "copyPackage",
+            source_name=source_name,
+            version=version,
+            from_archive=source_archive_url,
+            to_pocket=to_pocket.name,
+            to_series=to_series.name,
+            include_binaries=False,
+            sponsored=sponsored_dude_url,
+        )
         self.assertEqual(200, response.status)
 
         login(ANONYMOUS)
@@ -695,22 +890,39 @@ class TestCopyPackage(TestCaseWithFactory):
         self.assertFalse(copy_job.move)
 
     def test_copyPackage_move(self):
-        (source, source_archive, source_name, target_archive, to_pocket,
-         to_series, uploader, _, version) = self.setup_data()
+        (
+            source,
+            source_archive,
+            source_name,
+            target_archive,
+            to_pocket,
+            to_series,
+            uploader,
+            _,
+            version,
+        ) = self.setup_data()
         with person_logged_in(source_archive.owner):
             source_archive.newComponentUploader(uploader, "main")
 
         target_archive_url = api_url(target_archive)
         source_archive_url = api_url(source_archive)
         ws = webservice_for_person(
-            uploader, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            uploader,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
 
         response = ws.named_post(
-            target_archive_url, "copyPackage",
-            source_name=source_name, version=version,
-            from_archive=source_archive_url, to_pocket=to_pocket.name,
-            to_series=to_series.name, include_binaries=False, move=True)
+            target_archive_url,
+            "copyPackage",
+            source_name=source_name,
+            version=version,
+            from_archive=source_archive_url,
+            to_pocket=to_pocket.name,
+            to_series=to_series.name,
+            include_binaries=False,
+            move=True,
+        )
         self.assertEqual(200, response.status)
 
         login(ANONYMOUS)
@@ -721,24 +933,39 @@ class TestCopyPackage(TestCaseWithFactory):
 
     def test_copyPackages(self):
         """Basic smoke test"""
-        (source, source_archive, source_name, target_archive, to_pocket,
-         to_series, uploader_dude, sponsored_dude,
-         version) = self.setup_data()
+        (
+            source,
+            source_archive,
+            source_name,
+            target_archive,
+            to_pocket,
+            to_series,
+            uploader_dude,
+            sponsored_dude,
+            version,
+        ) = self.setup_data()
         from_series = source.distroseries
 
         target_archive_url = api_url(target_archive)
         source_archive_url = api_url(source_archive)
         sponsored_dude_url = api_url(sponsored_dude)
         ws = webservice_for_person(
-            uploader_dude, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            uploader_dude,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
 
         response = ws.named_post(
-            target_archive_url, "copyPackages",
-            source_names=[source_name], from_archive=source_archive_url,
-            to_pocket=to_pocket.name, to_series=to_series.name,
-            from_series=from_series.name, include_binaries=False,
-            sponsored=sponsored_dude_url)
+            target_archive_url,
+            "copyPackages",
+            source_names=[source_name],
+            from_archive=source_archive_url,
+            to_pocket=to_pocket.name,
+            to_series=to_series.name,
+            from_series=from_series.name,
+            include_binaries=False,
+            sponsored=sponsored_dude_url,
+        )
         self.assertEqual(200, response.status)
 
         login(ANONYMOUS)
@@ -772,14 +999,17 @@ class TestGetPublishedBinaries(TestCaseWithFactory):
         private_archive = self.factory.makeArchive(private=True)
         with admin_logged_in():
             self.factory.makeBinaryPackagePublishingHistory(
-                archive=private_archive)
+                archive=private_archive
+            )
         subscriber = self.factory.makePerson()
         with person_logged_in(private_archive.owner):
             private_archive.newSubscription(subscriber, private_archive.owner)
         archive_url = api_url(private_archive)
         ws = webservice_for_person(
-            subscriber, permission=OAuthPermission.READ_PRIVATE,
-            default_api_version="devel")
+            subscriber,
+            permission=OAuthPermission.READ_PRIVATE,
+            default_api_version="devel",
+        )
         response = ws.named_get(archive_url, "getPublishedBinaries")
         self.assertEqual(200, response.status)
         self.assertEqual(1, response.jsonBody()["total_size"])
@@ -788,8 +1018,10 @@ class TestGetPublishedBinaries(TestCaseWithFactory):
         private_archive = self.factory.makeArchive(private=True)
         archive_url = api_url(private_archive)
         ws = webservice_for_person(
-            self.factory.makePerson(), permission=OAuthPermission.READ_PRIVATE,
-            default_api_version="devel")
+            self.factory.makePerson(),
+            permission=OAuthPermission.READ_PRIVATE,
+            default_api_version="devel",
+        )
         response = ws.named_get(archive_url, "getPublishedBinaries")
         self.assertEqual(401, response.status)
 
@@ -797,11 +1029,14 @@ class TestGetPublishedBinaries(TestCaseWithFactory):
         datecreated = self.factory.getUniqueDate()
         later_date = datecreated + timedelta(minutes=1)
         self.factory.makeBinaryPackagePublishingHistory(
-            archive=self.archive, datecreated=datecreated)
+            archive=self.archive, datecreated=datecreated
+        )
         ws = webservice_for_person(self.person, default_api_version="beta")
         response = ws.named_get(
-            self.archive_url, "getPublishedBinaries",
-            created_since_date=later_date.isoformat())
+            self.archive_url,
+            "getPublishedBinaries",
+            created_since_date=later_date.isoformat(),
+        )
         self.assertEqual(200, response.status)
         self.assertEqual(0, response.jsonBody()["total_size"])
 
@@ -810,7 +1045,8 @@ class TestGetPublishedBinaries(TestCaseWithFactory):
         self.factory.makeBinaryPackagePublishingHistory(archive=self.archive)
         ws = webservice_for_person(self.person, default_api_version="beta")
         response = ws.named_get(
-            self.archive_url, "getPublishedBinaries", ordered=False)
+            self.archive_url, "getPublishedBinaries", ordered=False
+        )
         self.assertEqual(200, response.status)
         self.assertEqual(2, response.jsonBody()["total_size"])
 
@@ -823,11 +1059,13 @@ class TestGetPublishedBinaries(TestCaseWithFactory):
         def create_bpph():
             with admin_logged_in():
                 self.factory.makeBinaryPackagePublishingHistory(
-                    archive=self.archive)
+                    archive=self.archive
+                )
 
         def get_binaries():
             webservice.named_get(
-                archive_url, 'getPublishedBinaries').jsonBody()
+                archive_url, "getPublishedBinaries"
+            ).jsonBody()
 
         recorder1, recorder2 = record_two_runs(get_binaries, create_bpph, 1)
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
@@ -841,15 +1079,17 @@ class TestGetPublishedBinaries(TestCaseWithFactory):
             archive.newComponentUploader(uploader, archive.default_component)
         archive_url = api_url(archive)
         ws = webservice_for_person(
-            uploader, permission=OAuthPermission.READ_PRIVATE)
+            uploader, permission=OAuthPermission.READ_PRIVATE
+        )
 
         def create_bpph():
             with admin_logged_in():
                 self.factory.makeBinaryPackagePublishingHistory(
-                    archive=archive)
+                    archive=archive
+                )
 
         def get_binaries():
-            ws.named_get(archive_url, 'getPublishedBinaries').jsonBody()
+            ws.named_get(archive_url, "getPublishedBinaries").jsonBody()
 
         recorder1, recorder2 = record_two_runs(get_binaries, create_bpph, 1)
         # XXX cjwatson 2019-07-01: There are still some O(n) queries from
@@ -858,7 +1098,8 @@ class TestGetPublishedBinaries(TestCaseWithFactory):
         # need to arrange for AuthorizationBase.forwardCheckAuthenticated to
         # be able to use iter_authorization's cache.
         self.assertThat(
-            recorder2, HasQueryCount(Equals(recorder1.count + 3), recorder1))
+            recorder2, HasQueryCount(Equals(recorder1.count + 3), recorder1)
+        )
 
     def test_getPublishedBinaries_filter_by_component(self):
         # self.archive cannot be used, as this is a PPA, which only
@@ -867,18 +1108,21 @@ class TestGetPublishedBinaries(TestCaseWithFactory):
         archive_url = api_url(archive)
         for component in ("main", "main", "universe"):
             self.factory.makeBinaryPackagePublishingHistory(
-                archive=archive, component=component)
+                archive=archive, component=component
+            )
         ws = webservice_for_person(self.person, default_api_version="devel")
 
         for component, expected_count in (
-            ("main", 2), ("universe", 1), ("restricted", 0)):
+            ("main", 2),
+            ("universe", 1),
+            ("restricted", 0),
+        ):
             response = ws.named_get(
-                archive_url, "getPublishedBinaries",
-                component_name=component)
+                archive_url, "getPublishedBinaries", component_name=component
+            )
 
             self.assertEqual(200, response.status)
-            self.assertEqual(
-                expected_count, response.jsonBody()["total_size"])
+            self.assertEqual(expected_count, response.jsonBody()["total_size"])
             for entry in response.jsonBody()["entries"]:
                 self.assertEqual(component, entry["component_name"])
 
@@ -900,25 +1144,33 @@ class TestRemoveCopyNotification(TestCaseWithFactory):
         requester = self.factory.makePerson()
         source = getUtility(IPlainPackageCopyJobSource)
         job = source.create(
-            package_name="foo", source_archive=source_archive,
-            target_archive=self.archive, target_distroseries=distroseries,
+            package_name="foo",
+            source_archive=source_archive,
+            target_archive=self.archive,
+            target_distroseries=distroseries,
             target_pocket=PackagePublishingPocket.RELEASE,
-            package_version="1.0-1", include_binaries=True,
-            requester=requester)
+            package_version="1.0-1",
+            include_binaries=True,
+            requester=requester,
+        )
         job.start()
         job.fail()
 
         ws = webservice_for_person(
-            self.person, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            self.person,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            self.archive_url, "removeCopyNotification", job_id=job.id)
+            self.archive_url, "removeCopyNotification", job_id=job.id
+        )
         self.assertEqual(200, response.status)
 
         login(ANONYMOUS)
         source = getUtility(IPlainPackageCopyJobSource)
         self.assertEqual(
-            None, source.getIncompleteJobsForArchive(self.archive).any())
+            None, source.getIncompleteJobsForArchive(self.archive).any()
+        )
 
 
 class TestArchiveSet(TestCaseWithFactory):
@@ -928,25 +1180,53 @@ class TestArchiveSet(TestCaseWithFactory):
 
     def test_getByReference(self):
         random = self.factory.makePerson()
-        body = webservice_for_person(None).named_get(
-            '/archives', 'getByReference', reference='ubuntu',
-            api_version='devel').jsonBody()
-        self.assertEqual(body['reference'], 'ubuntu')
-        body = webservice_for_person(random).named_get(
-            '/archives', 'getByReference', reference='ubuntu',
-            api_version='devel').jsonBody()
-        self.assertEqual(body['reference'], 'ubuntu')
+        body = (
+            webservice_for_person(None)
+            .named_get(
+                "/archives",
+                "getByReference",
+                reference="ubuntu",
+                api_version="devel",
+            )
+            .jsonBody()
+        )
+        self.assertEqual(body["reference"], "ubuntu")
+        body = (
+            webservice_for_person(random)
+            .named_get(
+                "/archives",
+                "getByReference",
+                reference="ubuntu",
+                api_version="devel",
+            )
+            .jsonBody()
+        )
+        self.assertEqual(body["reference"], "ubuntu")
 
     def test_getByReference_ppa(self):
-        body = webservice_for_person(None).named_get(
-            '/archives', 'getByReference', reference='~cprov/ubuntu/ppa',
-            api_version='devel').jsonBody()
-        self.assertEqual(body['reference'], '~cprov/ubuntu/ppa')
+        body = (
+            webservice_for_person(None)
+            .named_get(
+                "/archives",
+                "getByReference",
+                reference="~cprov/ubuntu/ppa",
+                api_version="devel",
+            )
+            .jsonBody()
+        )
+        self.assertEqual(body["reference"], "~cprov/ubuntu/ppa")
 
     def test_getByReference_invalid(self):
-        body = webservice_for_person(None).named_get(
-            '/archives', 'getByReference', reference='~cprov/ubuntu',
-            api_version='devel').jsonBody()
+        body = (
+            webservice_for_person(None)
+            .named_get(
+                "/archives",
+                "getByReference",
+                reference="~cprov/ubuntu",
+                api_version="devel",
+            )
+            .jsonBody()
+        )
         self.assertIs(None, body)
 
     def test_getByReference_private(self):
@@ -955,15 +1235,36 @@ class TestArchiveSet(TestCaseWithFactory):
             owner = archive.owner
             reference = archive.reference
             random = self.factory.makePerson()
-        body = webservice_for_person(None).named_get(
-            '/archives', 'getByReference', reference=reference,
-            api_version='devel').jsonBody()
+        body = (
+            webservice_for_person(None)
+            .named_get(
+                "/archives",
+                "getByReference",
+                reference=reference,
+                api_version="devel",
+            )
+            .jsonBody()
+        )
         self.assertIs(None, body)
-        body = webservice_for_person(random).named_get(
-            '/archives', 'getByReference', reference=reference,
-            api_version='devel').jsonBody()
+        body = (
+            webservice_for_person(random)
+            .named_get(
+                "/archives",
+                "getByReference",
+                reference=reference,
+                api_version="devel",
+            )
+            .jsonBody()
+        )
         self.assertIs(None, body)
-        body = webservice_for_person(owner).named_get(
-            '/archives', 'getByReference', reference=reference,
-            api_version='devel').jsonBody()
-        self.assertEqual(body['reference'], reference)
+        body = (
+            webservice_for_person(owner)
+            .named_get(
+                "/archives",
+                "getByReference",
+                reference=reference,
+                api_version="devel",
+            )
+            .jsonBody()
+        )
+        self.assertEqual(body["reference"], reference)

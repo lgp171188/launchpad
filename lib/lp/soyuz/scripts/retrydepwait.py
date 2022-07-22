@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'RetryDepwaitTunableLoop',
-    ]
+    "RetryDepwaitTunableLoop",
+]
 
 
 import transaction
@@ -13,10 +13,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.bulk import load_related
 from lp.services.database.interfaces import IStore
-from lp.services.looptuner import (
-    LoopTuner,
-    TunableLoop,
-    )
+from lp.services.looptuner import LoopTuner, TunableLoop
 from lp.soyuz.interfaces.binarypackagebuild import UnparsableDependencies
 from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
 from lp.soyuz.model.distroarchseries import PocketChroot
@@ -43,7 +40,7 @@ class RetryDepwaitTunableLoop(TunableLoop):
             BinaryPackageBuild,
             BinaryPackageBuild.id >= self.start_at,
             BinaryPackageBuild.status == BuildStatus.MANUALDEPWAIT,
-            ).order_by(BinaryPackageBuild.id)
+        ).order_by(BinaryPackageBuild.id)
 
     def isDone(self):
         return self.findBuilds().is_empty()
@@ -51,20 +48,25 @@ class RetryDepwaitTunableLoop(TunableLoop):
     def __call__(self, chunk_size):
         bpbs = list(self.findBuilds()[:chunk_size])
         sprs = load_related(
-            SourcePackageRelease, bpbs, ['source_package_release_id'])
-        load_related(SourcePackageName, sprs, ['sourcepackagenameID'])
+            SourcePackageRelease, bpbs, ["source_package_release_id"]
+        )
+        load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
         chroots = IStore(PocketChroot).find(
             PocketChroot,
             PocketChroot.distroarchseriesID.is_in(
-                b.distro_arch_series_id for b in bpbs),
-            PocketChroot.chroot != None)
+                b.distro_arch_series_id for b in bpbs
+            ),
+            PocketChroot.chroot != None,
+        )
         chroot_series = {chroot.distroarchseriesID for chroot in chroots}
         for build in bpbs:
             das = build.distro_arch_series
-            if (das.distroseries.status == SeriesStatus.OBSOLETE
-                    or not build.can_be_retried
-                    or das.id not in chroot_series
-                    or not das.enabled):
+            if (
+                das.distroseries.status == SeriesStatus.OBSOLETE
+                or not build.can_be_retried
+                or das.id not in chroot_series
+                or not das.enabled
+            ):
                 continue
             try:
                 build.updateDependencies()
@@ -73,7 +75,7 @@ class RetryDepwaitTunableLoop(TunableLoop):
                 continue
 
             if not build.dependencies:
-                self.log.debug('Retrying %s', build.title)
+                self.log.debug("Retrying %s", build.title)
                 build.retry()
                 build.buildqueue_record.score()
 

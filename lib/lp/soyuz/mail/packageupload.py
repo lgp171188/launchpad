@@ -2,11 +2,11 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'PackageUploadMailer',
-    ]
+    "PackageUploadMailer",
+]
 
-from collections import OrderedDict
 import os.path
+from collections import OrderedDict
 
 import six
 from zope.component import getUtility
@@ -16,24 +16,18 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher.utils import get_ppa_reference
 from lp.archiveuploader.changesfile import ChangesFile
 from lp.archiveuploader.utils import (
-    parse_maintainer_bytes,
     ParseMaintError,
+    parse_maintainer_bytes,
     rfc822_encode_address,
-    )
+)
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
 from lp.services.encoding import guess as guess_encoding
-from lp.services.mail.basemailer import (
-    BaseMailer,
-    RecipientReason,
-    )
+from lp.services.mail.basemailer import BaseMailer, RecipientReason
 from lp.services.mail.mailwrapper import MailWrapper
 from lp.services.mail.notificationrecipientset import StubPerson
-from lp.services.mail.sendmail import (
-    format_address,
-    format_address_for_person,
-    )
+from lp.services.mail.sendmail import format_address, format_address_for_person
 from lp.services.webapp import canonical_url
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 
@@ -43,7 +37,6 @@ class AnnouncementStubPerson(StubPerson):
 
 
 class PackageUploadRecipientReason(RecipientReason):
-
     @classmethod
     def forRequester(cls, requester, recipient):
         header = cls.makeRationale("Requester", requester)
@@ -57,7 +50,8 @@ class PackageUploadRecipientReason(RecipientReason):
         header = cls.makeRationale("Maintainer", maintainer)
         reason = (
             "You are receiving this email because %(lc_entity_is)s listed as "
-            "this package's maintainer.")
+            "this package's maintainer."
+        )
         return cls(maintainer, recipient, header, reason)
 
     @classmethod
@@ -65,7 +59,8 @@ class PackageUploadRecipientReason(RecipientReason):
         header = cls.makeRationale("Changed-By", changed_by)
         reason = (
             "You are receiving this email because %(lc_entity_is)s the most "
-            "recent person listed in this package's changelog.")
+            "recent person listed in this package's changelog."
+        )
         return cls(changed_by, recipient, header, reason)
 
     @classmethod
@@ -73,7 +68,8 @@ class PackageUploadRecipientReason(RecipientReason):
         header = cls.makeRationale("PPA Uploader", uploader)
         reason = (
             "You are receiving this email because %(lc_entity_has)s upload "
-            "permissions to this PPA.")
+            "permissions to this PPA."
+        )
         return cls(uploader, recipient, header, reason)
 
     @classmethod
@@ -85,13 +81,13 @@ class PackageUploadRecipientReason(RecipientReason):
         template_values["lc_entity_has"] = "you have"
         if self.recipient != self.subscriber or self.subscriber.is_team:
             template_values["lc_entity_has"] = (
-                "your team %s has" % self.subscriber.displayname)
+                "your team %s has" % self.subscriber.displayname
+            )
         return template_values
 
     def getReason(self):
         """See `RecipientReason`."""
-        return MailWrapper(width=72).format(
-            super().getReason())
+        return MailWrapper(width=72).format(super().getReason())
 
 
 def debug(logger, msg, *args, **kwargs):
@@ -124,8 +120,10 @@ def add_recipient(recipients, person, reason_factory, logger=None):
     for recipient in get_recipients(person):
         if recipient not in recipients:
             debug(
-                logger, "Adding recipient: '%s'" % format_address_for_person(
-                    recipient))
+                logger,
+                "Adding recipient: '%s'"
+                % format_address_for_person(recipient),
+            )
             reason = reason_factory(person, recipient)
             recipients[recipient] = reason
 
@@ -136,22 +134,26 @@ def fetch_information(spr, bprs, changes, previous_version=None):
 
     if changes:
         changelog = ChangesFile.formatChangesComment(
-            sanitize_string(changes.get('Changes')))
-        date = changes.get('Date')
+            sanitize_string(changes.get("Changes"))
+        )
+        date = changes.get("Date")
         if date is not None:
             date = six.ensure_text(date)
         try:
             changedby = parse_maintainer_bytes(
-                changes.get('Changed-By'), 'Changed-By')
+                changes.get("Changed-By"), "Changed-By"
+            )
         except ParseMaintError:
             pass
         try:
             maintainer = parse_maintainer_bytes(
-                changes.get('Maintainer'), 'Maintainer')
+                changes.get("Maintainer"), "Maintainer"
+            )
         except ParseMaintError:
             pass
-        notify_changed_by = changes.get(
-            'Launchpad-Notify-Changed-By', b'') == b'yes'
+        notify_changed_by = (
+            changes.get("Launchpad-Notify-Changed-By", b"") == b"yes"
+        )
     elif spr or bprs:
         if not spr and bprs:
             spr = bprs[0].build.source_package_release
@@ -159,19 +161,22 @@ def fetch_information(spr, bprs, changes, previous_version=None):
         date = spr.dateuploaded
         if spr.creator and spr.creator.preferredemail:
             changedby = (
-                spr.creator.displayname, spr.creator.preferredemail.email)
+                spr.creator.displayname,
+                spr.creator.preferredemail.email,
+            )
         if spr.maintainer and spr.maintainer.preferredemail:
             maintainer = (
                 spr.maintainer.displayname,
-                spr.maintainer.preferredemail.email)
+                spr.maintainer.preferredemail.email,
+            )
 
     return {
-        'changelog': changelog,
-        'date': date,
-        'changedby': changedby,
-        'maintainer': maintainer,
-        'notify_changed_by': notify_changed_by,
-        }
+        "changelog": changelog,
+        "date": date,
+        "changedby": changedby,
+        "maintainer": maintainer,
+        "notify_changed_by": notify_changed_by,
+    }
 
 
 def addr_to_person(addr):
@@ -194,8 +199,11 @@ def is_valid_uploader(person, distribution):
     if person is None:
         return None
     else:
-        return not getUtility(IArchivePermissionSet).componentsForUploader(
-            distribution.main_archive, person).is_empty()
+        return (
+            not getUtility(IArchivePermissionSet)
+            .componentsForUploader(distribution.main_archive, person)
+            .is_empty()
+        )
 
 
 def is_auto_sync_upload(spr, bprs, pocket, changed_by):
@@ -207,26 +215,35 @@ def is_auto_sync_upload(spr, bprs, pocket, changed_by):
     """
     changed_by = addr_to_person(changed_by)
     return (
-        spr and
-        not bprs and
-        changed_by == getUtility(ILaunchpadCelebrities).katie and
-        pocket != PackagePublishingPocket.SECURITY)
+        spr
+        and not bprs
+        and changed_by == getUtility(ILaunchpadCelebrities).katie
+        and pocket != PackagePublishingPocket.SECURITY
+    )
 
 
 ACTION_DESCRIPTIONS = {
-    'new': 'New',
-    'unapproved': 'Waiting for approval',
-    'rejected': 'Rejected',
-    'accepted': 'Accepted',
-    'announcement': 'Accepted',
-    }
+    "new": "New",
+    "unapproved": "Waiting for approval",
+    "rejected": "Rejected",
+    "accepted": "Accepted",
+    "announcement": "Accepted",
+}
 
 
-def calculate_subject(spr, bprs, customfiles, archive, distroseries,
-                      pocket, action, changesfile_object=None):
+def calculate_subject(
+    spr,
+    bprs,
+    customfiles,
+    archive,
+    distroseries,
+    pocket,
+    action,
+    changesfile_object=None,
+):
     """Return the email subject for the notification."""
     names = set()
-    version = '-'
+    version = "-"
     if spr:
         names.add(spr.name)
         version = spr.version
@@ -236,9 +253,11 @@ def calculate_subject(spr, bprs, customfiles, archive, distroseries,
     for custom in customfiles:
         names.add(custom.libraryfilealias.filename)
     if names:
-        archive_and_suite = '%s/%s' % (
-            archive.reference, distroseries.getSuite(pocket))
-        name_and_version = '%s %s' % (', '.join(names), version)
+        archive_and_suite = "%s/%s" % (
+            archive.reference,
+            distroseries.getSuite(pocket),
+        )
+        name_and_version = "%s %s" % (", ".join(names), version)
     else:
         if changesfile_object is None:
             return None
@@ -247,8 +266,11 @@ def calculate_subject(spr, bprs, customfiles, archive, distroseries,
         # Don't introduce confusion by including it.
         archive_and_suite = archive.reference
         name_and_version = os.path.basename(changesfile_object.name)
-    subject = '[%s] %s (%s)' % (
-        archive_and_suite, name_and_version, ACTION_DESCRIPTIONS[action])
+    subject = "[%s] %s (%s)" % (
+        archive_and_suite,
+        name_and_version,
+        ACTION_DESCRIPTIONS[action],
+    )
     return subject
 
 
@@ -261,8 +283,10 @@ def build_uploaded_files_list(spr, builds, customfiles, logger):
     if spr:
         for sprfile in spr.files:
             yield (
-                sprfile.libraryfile.filename, spr.component.name,
-                spr.section.name)
+                sprfile.libraryfile.filename,
+                spr.component.name,
+                spr.section.name,
+            )
 
     # Component and section don't get set for builds and custom, since
     # this information is only used in the summary string for source
@@ -270,70 +294,91 @@ def build_uploaded_files_list(spr, builds, customfiles, logger):
     for build in builds:
         for bpr in build.build.binarypackages:
             for bpf in bpr.files:
-                yield bpf.libraryfile.filename, '', ''
+                yield bpf.libraryfile.filename, "", ""
 
     if customfiles:
         for customfile in customfiles:
-            yield customfile.libraryfilealias.filename, '', ''
+            yield customfile.libraryfilealias.filename, "", ""
 
 
 def build_summary(spr, files, action):
     """Build a summary string based on the files present in the upload."""
     summary = []
     for filename, component, section in files:
-        if action == 'new':
+        if action == "new":
             summary.append("NEW: %s" % filename)
         else:
             summary.append(" OK: %s" % filename)
             if filename.endswith("dsc"):
-                summary.append("     -> Component: %s Section: %s" % (
-                    component, section))
+                summary.append(
+                    "     -> Component: %s Section: %s" % (component, section)
+                )
     return summary
 
 
 class PackageUploadMailer(BaseMailer):
 
-    app = 'soyuz'
+    app = "soyuz"
 
     @classmethod
-    def getRecipientsForAction(cls, action, info, blamee, spr, bprs, archive,
-                               distroseries, pocket, announce_from_person=None,
-                               logger=None):
+    def getRecipientsForAction(
+        cls,
+        action,
+        info,
+        blamee,
+        spr,
+        bprs,
+        archive,
+        distroseries,
+        pocket,
+        announce_from_person=None,
+        logger=None,
+    ):
         # If this is a binary or mixed upload, we don't send *any* emails
         # provided it's not a rejection or a security upload:
         if (
-            bprs and action != 'rejected' and
-            pocket != PackagePublishingPocket.SECURITY):
+            bprs
+            and action != "rejected"
+            and pocket != PackagePublishingPocket.SECURITY
+        ):
             debug(logger, "Not sending email; upload is from a build.")
-            return {}, ''
+            return {}, ""
 
-        if spr and spr.source_package_recipe_build and action == 'accepted':
+        if spr and spr.source_package_recipe_build and action == "accepted":
             debug(logger, "Not sending email; upload is from a recipe.")
-            return {}, ''
+            return {}, ""
 
-        if spr and spr.section.name == 'translations':
+        if spr and spr.section.name == "translations":
             debug(
                 logger,
-                "Skipping acceptance and announcement for language packs.")
-            return {}, ''
+                "Skipping acceptance and announcement for language packs.",
+            )
+            return {}, ""
 
         debug(logger, "Building recipients list.")
         recipients = OrderedDict()
 
         add_recipient(
-            recipients, blamee, PackageUploadRecipientReason.forRequester,
-            logger=logger)
+            recipients,
+            blamee,
+            PackageUploadRecipientReason.forRequester,
+            logger=logger,
+        )
 
-        changer = addr_to_person(info['changedby'])
-        maintainer = addr_to_person(info['maintainer'])
+        changer = addr_to_person(info["changedby"])
+        maintainer = addr_to_person(info["maintainer"])
 
         if blamee is None and not archive.is_copy:
             debug(
                 logger,
-                "Changes file is unsigned; adding changer as recipient.")
+                "Changes file is unsigned; adding changer as recipient.",
+            )
             add_recipient(
-                recipients, changer, PackageUploadRecipientReason.forChangedBy,
-                logger=logger)
+                recipients,
+                changer,
+                PackageUploadRecipientReason.forChangedBy,
+                logger=logger,
+            )
 
         if archive.is_ppa:
             # For PPAs, any person or team mentioned explicitly in the
@@ -341,8 +386,11 @@ class PackageUploadMailer(BaseMailer):
             # emailed.
             for permission in archive.getUploadersForComponent():
                 add_recipient(
-                    recipients, permission.person,
-                    PackageUploadRecipientReason.forPPAUploader, logger=logger)
+                    recipients,
+                    permission.person,
+                    PackageUploadRecipientReason.forPPAUploader,
+                    logger=logger,
+                )
 
             # If the "Launchpad-Notify-Changed-By: yes" field is set in the
             # .changes file, we also consider changed-by.  The latter is
@@ -351,11 +399,14 @@ class PackageUploadMailer(BaseMailer):
             # notify the developer in question.  We assume that any systems
             # clever enough to set this field are also clever enough to set
             # a reasonable Changed-By field.
-            if info['notify_changed_by']:
+            if info["notify_changed_by"]:
                 debug(logger, "Adding changed-by to recipients")
                 add_recipient(
-                    recipients, changer,
-                    PackageUploadRecipientReason.forChangedBy, logger=logger)
+                    recipients,
+                    changer,
+                    PackageUploadRecipientReason.forChangedBy,
+                    logger=logger,
+                )
         elif archive.is_copy:
             # For copy archives, notifying anyone else will probably only
             # confuse them.
@@ -366,38 +417,49 @@ class PackageUploadMailer(BaseMailer):
                 if is_valid_uploader(maintainer, distroseries.distribution):
                     debug(logger, "Adding maintainer to recipients")
                     add_recipient(
-                        recipients, maintainer,
+                        recipients,
+                        maintainer,
                         PackageUploadRecipientReason.forMaintainer,
-                        logger=logger)
+                        logger=logger,
+                    )
 
                 if is_valid_uploader(changer, distroseries.distribution):
                     debug(logger, "Adding changed-by to recipients")
                     add_recipient(
-                        recipients, changer,
+                        recipients,
+                        changer,
                         PackageUploadRecipientReason.forChangedBy,
-                        logger=logger)
+                        logger=logger,
+                    )
 
-        if (announce_from_person is not None and
-                announce_from_person.preferredemail is not None):
+        if (
+            announce_from_person is not None
+            and announce_from_person.preferredemail is not None
+        ):
             announce_from_addr = (
                 announce_from_person.displayname,
-                announce_from_person.preferredemail.email)
+                announce_from_person.preferredemail.email,
+            )
         else:
-            announce_from_addr = info['changedby']
+            announce_from_addr = info["changedby"]
 
         # If we're sending an acceptance notification for a non-PPA upload,
         # announce if possible. Avoid announcing backports, binary-only
         # security uploads, or autosync uploads.
-        if (action == 'accepted' and distroseries.changeslist
-                and archive.is_main
-                and pocket != PackagePublishingPocket.BACKPORTS
-                and not (
-                    pocket == PackagePublishingPocket.SECURITY and spr is None)
-                and not is_auto_sync_upload(
-                    spr, bprs, pocket, announce_from_addr)):
+        if (
+            action == "accepted"
+            and distroseries.changeslist
+            and archive.is_main
+            and pocket != PackagePublishingPocket.BACKPORTS
+            and not (
+                pocket == PackagePublishingPocket.SECURITY and spr is None
+            )
+            and not is_auto_sync_upload(spr, bprs, pocket, announce_from_addr)
+        ):
             recipient = AnnouncementStubPerson(distroseries.changeslist)
-            recipients[recipient] = (
-                PackageUploadRecipientReason.forAnnouncement(recipient))
+            recipients[
+                recipient
+            ] = PackageUploadRecipientReason.forAnnouncement(recipient)
 
         if announce_from_addr is not None:
             announce_from_address = format_address(*announce_from_addr)
@@ -406,18 +468,48 @@ class PackageUploadMailer(BaseMailer):
         return recipients, announce_from_address
 
     @classmethod
-    def forAction(cls, action, blamee, spr, bprs, customfiles, archive,
-                  distroseries, pocket, changes=None, changesfile_object=None,
-                  announce_from_person=None, previous_version=None,
-                  logger=None, **kwargs):
+    def forAction(
+        cls,
+        action,
+        blamee,
+        spr,
+        bprs,
+        customfiles,
+        archive,
+        distroseries,
+        pocket,
+        changes=None,
+        changesfile_object=None,
+        announce_from_person=None,
+        previous_version=None,
+        logger=None,
+        **kwargs
+    ):
         info = fetch_information(
-            spr, bprs, changes, previous_version=previous_version)
+            spr, bprs, changes, previous_version=previous_version
+        )
         recipients, announce_from_address = cls.getRecipientsForAction(
-            action, info, blamee, spr, bprs, archive, distroseries, pocket,
-            announce_from_person=announce_from_person, logger=logger)
+            action,
+            info,
+            blamee,
+            spr,
+            bprs,
+            archive,
+            distroseries,
+            pocket,
+            announce_from_person=announce_from_person,
+            logger=logger,
+        )
         subject = calculate_subject(
-            spr, bprs, customfiles, archive, distroseries, pocket, action,
-            changesfile_object=changesfile_object)
+            spr,
+            bprs,
+            customfiles,
+            archive,
+            distroseries,
+            pocket,
+            action,
+            changesfile_object=changesfile_object,
+        )
         if subject is None:
             # We don't even have enough information to build a minimal
             # subject, so do nothing.
@@ -434,21 +526,57 @@ class PackageUploadMailer(BaseMailer):
         template_name += ".txt"
         from_address = format_address(
             config.uploader.default_sender_name,
-            config.uploader.default_sender_address)
+            config.uploader.default_sender_address,
+        )
         return cls(
-            subject, template_name, recipients, from_address, action, info,
-            blamee, spr, bprs, customfiles, archive, distroseries, pocket,
-            changes=changes, announce_from_address=announce_from_address,
-            logger=logger, **kwargs)
+            subject,
+            template_name,
+            recipients,
+            from_address,
+            action,
+            info,
+            blamee,
+            spr,
+            bprs,
+            customfiles,
+            archive,
+            distroseries,
+            pocket,
+            changes=changes,
+            announce_from_address=announce_from_address,
+            logger=logger,
+            **kwargs,
+        )
 
-    def __init__(self, subject, template_name, recipients, from_address,
-                 action, info, blamee, spr, bprs, customfiles, archive,
-                 distroseries, pocket, summary_text=None, changes=None,
-                 changesfile_content=None, announce_from_address=None,
-                 previous_version=None, logger=None):
+    def __init__(
+        self,
+        subject,
+        template_name,
+        recipients,
+        from_address,
+        action,
+        info,
+        blamee,
+        spr,
+        bprs,
+        customfiles,
+        archive,
+        distroseries,
+        pocket,
+        summary_text=None,
+        changes=None,
+        changesfile_content=None,
+        announce_from_address=None,
+        previous_version=None,
+        logger=None,
+    ):
         super().__init__(
-            subject, template_name, recipients, from_address,
-            notification_type="package-upload")
+            subject,
+            template_name,
+            recipients,
+            from_address,
+            notification_type="package-upload",
+        )
         self.action = action
         self.info = info
         self.blamee = blamee
@@ -464,7 +592,7 @@ class PackageUploadMailer(BaseMailer):
         self.announce_from_address = announce_from_address
         self.previous_version = previous_version
 
-        if action == 'rejected':
+        if action == "rejected":
             self.summarystring = summary_text
         else:
             files = build_uploaded_files_list(spr, bprs, customfiles, logger)
@@ -475,8 +603,10 @@ class PackageUploadMailer(BaseMailer):
 
     def _getFromAddress(self, email, recipient):
         """See `BaseMailer`."""
-        if (zope_isinstance(recipient, AnnouncementStubPerson) and
-                self.announce_from_address is not None):
+        if (
+            zope_isinstance(recipient, AnnouncementStubPerson)
+            and self.announce_from_address is not None
+        ):
             return self.announce_from_address
         else:
             return super()._getFromAddress(email, recipient)
@@ -484,25 +614,28 @@ class PackageUploadMailer(BaseMailer):
     def _getHeaders(self, email, recipient):
         """See `BaseMailer`."""
         headers = super()._getHeaders(email, recipient)
-        headers['X-Katie'] = 'Launchpad actually'
-        headers['X-Launchpad-Archive'] = self.archive.reference
+        headers["X-Katie"] = "Launchpad actually"
+        headers["X-Launchpad-Archive"] = self.archive.reference
 
         # The deprecated PPA reference header is included for Ubuntu PPAs to
         # avoid breaking existing consumers.
-        if self.archive.is_ppa and self.archive.distribution.name == 'ubuntu':
-            headers['X-Launchpad-PPA'] = get_ppa_reference(self.archive)
+        if self.archive.is_ppa and self.archive.distribution.name == "ubuntu":
+            headers["X-Launchpad-PPA"] = get_ppa_reference(self.archive)
 
         # Include a 'X-Launchpad-Component' header with the component and
         # the section of the source package uploaded in order to facilitate
         # filtering on the part of the email recipients.
         if self.spr:
-            headers['X-Launchpad-Component'] = 'component=%s, section=%s' % (
-                self.spr.component.name, self.spr.section.name)
+            headers["X-Launchpad-Component"] = "component=%s, section=%s" % (
+                self.spr.component.name,
+                self.spr.section.name,
+            )
 
         # All emails from here have a Bcc to the default recipient.
         bcc_text = format_address(
             config.uploader.default_recipient_name,
-            config.uploader.default_recipient_address)
+            config.uploader.default_recipient_address,
+        )
         if zope_isinstance(recipient, AnnouncementStubPerson):
             name = None
             if self.spr:
@@ -514,7 +647,7 @@ class PackageUploadMailer(BaseMailer):
                 email_base = distribution.package_derivatives_email
                 if email_base:
                     bcc_text += ", " + email_base.format(package_name=name)
-        headers['Bcc'] = bcc_text
+        headers["Bcc"] = bcc_text
 
         return headers
 
@@ -526,8 +659,11 @@ class PackageUploadMailer(BaseMailer):
             else:
                 changesfile_text = "Sorry, changesfile not available."
             ctrl.addAttachment(
-                changesfile_text, content_type='text/plain',
-                filename='changesfile', charset='utf-8')
+                changesfile_text,
+                content_type="text/plain",
+                filename="changesfile",
+                charset="utf-8",
+            )
 
     def _getTemplateName(self, email, recipient):
         """See `BaseMailer`."""
@@ -539,59 +675,73 @@ class PackageUploadMailer(BaseMailer):
     def _getTemplateParams(self, email, recipient):
         """See `BaseMailer`."""
         params = super()._getTemplateParams(email, recipient)
-        params.update({
-            'STATUS': ACTION_DESCRIPTIONS[self.action],
-            'SUMMARY': self.summarystring,
-            'DATE': '',
-            'CHANGESFILE': '',
-            'DISTRO': self.distroseries.distribution.title,
-            'ANNOUNCE': 'No announcement sent',
-            'CHANGEDBY': '',
-            'MAINTAINER': '',
-            'ORIGIN': '',
-            'SIGNER': '',
-            'SPR_URL': '',
-            'ARCHIVE_URL': canonical_url(self.archive),
-            'USERS_ADDRESS': config.launchpad.users_address,
-            })
+        params.update(
+            {
+                "STATUS": ACTION_DESCRIPTIONS[self.action],
+                "SUMMARY": self.summarystring,
+                "DATE": "",
+                "CHANGESFILE": "",
+                "DISTRO": self.distroseries.distribution.title,
+                "ANNOUNCE": "No announcement sent",
+                "CHANGEDBY": "",
+                "MAINTAINER": "",
+                "ORIGIN": "",
+                "SIGNER": "",
+                "SPR_URL": "",
+                "ARCHIVE_URL": canonical_url(self.archive),
+                "USERS_ADDRESS": config.launchpad.users_address,
+            }
+        )
         changes = self.changes
         if changes is None:
             changes = {}
 
-        if self.info['date'] is not None:
-            params['DATE'] = 'Date: %s' % self.info['date']
-        if self.info['changelog'] is not None:
-            params['CHANGESFILE'] = self.info['changelog']
+        if self.info["date"] is not None:
+            params["DATE"] = "Date: %s" % self.info["date"]
+        if self.info["changelog"] is not None:
+            params["CHANGESFILE"] = self.info["changelog"]
         if self.spr:
-            params['SPR_URL'] = canonical_url(
+            params["SPR_URL"] = canonical_url(
                 self.distroseries.distribution.getSourcePackageRelease(
-                    self.spr))
+                    self.spr
+                )
+            )
 
         # Some syncs (e.g. from Debian) will involve packages whose
         # changed-by person was auto-created in LP and hence does not have a
         # preferred email address set.  We'll get a None here.
-        changedby_person = addr_to_person(self.info['changedby'])
-        if self.info['changedby']:
-            params['CHANGEDBY'] = '\nChanged-By: %s' % rfc822_encode_address(
-                *self.info['changedby'])
-        if (self.blamee is not None and self.blamee != changedby_person
-                and self.blamee.preferredemail):
-            params['SIGNER'] = '\nSigned-By: %s' % rfc822_encode_address(
-                self.blamee.displayname, self.blamee.preferredemail.email)
-        if (self.info['maintainer']
-                and self.info['maintainer'] != self.info['changedby']):
-            params['MAINTAINER'] = '\nMaintainer: %s' % rfc822_encode_address(
-                *self.info['maintainer'])
+        changedby_person = addr_to_person(self.info["changedby"])
+        if self.info["changedby"]:
+            params["CHANGEDBY"] = "\nChanged-By: %s" % rfc822_encode_address(
+                *self.info["changedby"]
+            )
+        if (
+            self.blamee is not None
+            and self.blamee != changedby_person
+            and self.blamee.preferredemail
+        ):
+            params["SIGNER"] = "\nSigned-By: %s" % rfc822_encode_address(
+                self.blamee.displayname, self.blamee.preferredemail.email
+            )
+        if (
+            self.info["maintainer"]
+            and self.info["maintainer"] != self.info["changedby"]
+        ):
+            params["MAINTAINER"] = "\nMaintainer: %s" % rfc822_encode_address(
+                *self.info["maintainer"]
+            )
 
-        origin = changes.get('Origin')
+        origin = changes.get("Origin")
         if origin:
-            params['ORIGIN'] = '\nOrigin: %s' % origin
-        if self.action == 'unapproved':
-            params['SUMMARY'] += (
-                "\nThis upload awaits approval by a distro manager\n")
+            params["ORIGIN"] = "\nOrigin: %s" % origin
+        if self.action == "unapproved":
+            params[
+                "SUMMARY"
+            ] += "\nThis upload awaits approval by a distro manager\n"
         if self.distroseries.changeslist:
-            params['ANNOUNCE'] = "Announcing to %s" % (
-                self.distroseries.changeslist)
+            params["ANNOUNCE"] = "Announcing to %s" % (
+                self.distroseries.changeslist
+            )
 
         return params
 
@@ -609,13 +759,14 @@ class PackageUploadMailer(BaseMailer):
     def generateEmail(self, email, recipient, force_no_attachments=False):
         """See `BaseMailer`."""
         ctrl = super().generateEmail(
-            email, recipient, force_no_attachments=force_no_attachments)
+            email, recipient, force_no_attachments=force_no_attachments
+        )
         debug(self.logger, "Sent a mail:")
         debug(self.logger, "  Subject: %s" % ctrl.subject)
         debug(self.logger, "  Sender: %s" % ctrl.from_addr)
         debug(self.logger, "  Recipients: %s" % ", ".join(ctrl.to_addrs))
-        if 'Bcc' in ctrl.headers:
-            debug(self.logger, "  Bcc: %s" % ctrl.headers['Bcc'])
+        if "Bcc" in ctrl.headers:
+            debug(self.logger, "  Bcc: %s" % ctrl.headers["Bcc"])
         debug(self.logger, "  Body:")
         for line in ctrl.body.splitlines():
             debug(self.logger, six.ensure_text(line, errors="replace"))

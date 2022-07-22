@@ -4,16 +4,17 @@
 """Distribution architecture series interfaces."""
 
 __all__ = [
-    'ChrootNotPublic',
-    'FilterSeriesMismatch',
-    'IDistroArchSeries',
-    'InvalidChrootUploaded',
-    'IPocketChroot',
-    ]
+    "ChrootNotPublic",
+    "FilterSeriesMismatch",
+    "IDistroArchSeries",
+    "InvalidChrootUploaded",
+    "IPocketChroot",
+]
 
 import http.client
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     error_status,
     export_read_operation,
@@ -23,24 +24,10 @@ from lazr.restful.declarations import (
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
-    REQUEST_USER,
-    )
-from lazr.restful.fields import (
-    Reference,
-    ReferenceChoice,
-    )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Bytes,
-    Choice,
-    Int,
-    Text,
-    TextLine,
-    )
+)
+from lazr.restful.fields import Reference, ReferenceChoice
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Bytes, Choice, Int, Text, TextLine
 
 from lp import _
 from lp.app.validators.name import name_validator
@@ -74,10 +61,13 @@ class FilterSeriesMismatch(Exception):
     def __init__(self, distroarchseries, packageset):
         super().__init__(
             "The requested package set is for %s and cannot be set as a "
-            "filter for %s %s." % (
+            "filter for %s %s."
+            % (
                 packageset.distroseries.fullseriesname,
                 distroarchseries.distroseries.fullseriesname,
-                distroarchseries.architecturetag))
+                distroarchseries.architecturetag,
+            )
+        )
 
 
 class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
@@ -88,11 +78,19 @@ class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
         Reference(
             IDistroSeries,
             title=_("The context distroseries"),
-            required=False, readonly=False))
+            required=False,
+            readonly=False,
+        )
+    )
     processor = exported(
         ReferenceChoice(
-            title=_("Processor"), required=True, readonly=True,
-            vocabulary='Processor', schema=IProcessor))
+            title=_("Processor"),
+            required=True,
+            readonly=True,
+            vocabulary="Processor",
+            schema=IProcessor,
+        )
+    )
     architecturetag = exported(
         TextLine(
             title=_("Architecture Tag"),
@@ -100,80 +98,113 @@ class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
                 "The architecture tag, or short piece of text that "
                 "identifies this architecture. All binary packages in the "
                 "archive will use this tag in their filename. Please get it "
-                "correct. It should really never be changed!"),
+                "correct. It should really never be changed!"
+            ),
             required=True,
-            constraint=name_validator),
-        exported_as="architecture_tag")
+            constraint=name_validator,
+        ),
+        exported_as="architecture_tag",
+    )
     official = exported(
         Bool(
             title=_("Official Support"),
             description=_(
                 "Indicate whether or not this port has official "
-                "support from the vendor of the distribution."),
-            required=True))
+                "support from the vendor of the distribution."
+            ),
+            required=True,
+        )
+    )
     owner = exported(
         Reference(
             IPerson,
-            title=_('The person who registered this port.'),
-            required=True))
+            title=_("The person who registered this port."),
+            required=True,
+        )
+    )
     package_count = exported(
         Int(
             title=_("Package Count"),
             description=_(
-                'A cache of the number of packages published '
-                'in the RELEASE pocket of this port.'),
-            readonly=False, required=False))
+                "A cache of the number of packages published "
+                "in the RELEASE pocket of this port."
+            ),
+            readonly=False,
+            required=False,
+        )
+    )
     supports_virtualized = exported(
         Bool(
             title=_("PPA support available"),
-            description=_("Indicate whether or not this port has support "
-                          "for building PPA packages."),
-            readonly=True, required=False))
+            description=_(
+                "Indicate whether or not this port has support "
+                "for building PPA packages."
+            ),
+            readonly=True,
+            required=False,
+        )
+    )
     enabled = exported(
         Bool(
             title=_("Enabled"),
             description=_(
                 "Whether or not this DistroArchSeries is enabled for build "
-                "creation and publication."),
-            readonly=False, required=False),
-        as_of="devel")
+                "creation and publication."
+            ),
+            readonly=False,
+            required=False,
+        ),
+        as_of="devel",
+    )
 
     # Joins.
-    packages = Attribute('List of binary packages in this port.')
+    packages = Attribute("List of binary packages in this port.")
 
     # Page layouts helpers.
     title = exported(
         TextLine(
-            title=_('Title'),
-            description=_("The title of this distroarchseries.")))
+            title=_("Title"),
+            description=_("The title of this distroarchseries."),
+        )
+    )
 
     displayname = exported(
         TextLine(
             title=_("Display name"),
-            description=_("The display name of this distroarchseries.")),
-        exported_as="display_name")
+            description=_("The display name of this distroarchseries."),
+        ),
+        exported_as="display_name",
+    )
 
     # Other useful bits.
     isNominatedArchIndep = exported(
         Bool(
             title=_("Is Nominated Arch Independent"),
             description=_(
-                'True if this distroarchseries is the NominatedArchIndep '
-                'one.')),
-        exported_as="is_nominated_arch_indep")
+                "True if this distroarchseries is the NominatedArchIndep "
+                "one."
+            ),
+        ),
+        exported_as="is_nominated_arch_indep",
+    )
     main_archive = exported(
         Reference(
             # Really IArchive, patched in lp.soyuz.interfaces.webservice.
             Interface,
-            title=_('Main Archive'),
-            description=_("The main archive of the distroarchseries.")))
+            title=_("Main Archive"),
+            description=_("The main archive of the distroarchseries."),
+        )
+    )
     chroot_url = exported(
         TextLine(
             title=_("Build chroot URL"),
             description=_(
                 "The URL to the current build chroot for this "
-                "distroarchseries."),
-            readonly=True))
+                "distroarchseries."
+            ),
+            readonly=True,
+        )
+    )
 
     def updatePackageCount():
         """Update the cached binary package count for this distro arch
@@ -203,7 +234,8 @@ class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
 
     @operation_parameters(
         pocket=Choice(vocabulary=PackagePublishingPocket, required=False),
-        image_type=Choice(vocabulary=BuildBaseImageType, required=False))
+        image_type=Choice(vocabulary=BuildBaseImageType, required=False),
+    )
     @export_read_operation()
     @operation_for_version("devel")
     def getChrootURL(pocket=None, image_type=None):
@@ -215,7 +247,8 @@ class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
 
     @operation_parameters(
         pocket=Choice(vocabulary=PackagePublishingPocket, required=True),
-        image_type=Choice(vocabulary=BuildBaseImageType, required=True))
+        image_type=Choice(vocabulary=BuildBaseImageType, required=True),
+    )
     @export_read_operation()
     @operation_for_version("devel")
     def getChrootHash(pocket, image_type):
@@ -262,11 +295,12 @@ class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
 
 
 class IDistroArchSeriesModerate(Interface):
-
     @operation_parameters(
-        data=Bytes(), sha1sum=Text(),
+        data=Bytes(),
+        sha1sum=Text(),
         pocket=Choice(vocabulary=PackagePublishingPocket, required=False),
-        image_type=Choice(vocabulary=BuildBaseImageType, required=False))
+        image_type=Choice(vocabulary=BuildBaseImageType, required=False),
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def setChroot(data, sha1sum, pocket=None, image_type=None):
@@ -281,14 +315,17 @@ class IDistroArchSeriesModerate(Interface):
     @operation_parameters(
         # Really ILiveFSBuild, patched in lp.soyuz.interfaces.webservice.
         livefsbuild=Reference(
-            Interface, title=_("Live filesystem build"), required=True),
+            Interface, title=_("Live filesystem build"), required=True
+        ),
         filename=TextLine(title=_("Filename"), required=True),
         pocket=Choice(vocabulary=PackagePublishingPocket, required=False),
-        image_type=Choice(vocabulary=BuildBaseImageType, required=False))
+        image_type=Choice(vocabulary=BuildBaseImageType, required=False),
+    )
     @export_write_operation()
     @operation_for_version("devel")
-    def setChrootFromBuild(livefsbuild, filename, pocket=None,
-                           image_type=None):
+    def setChrootFromBuild(
+        livefsbuild, filename, pocket=None, image_type=None
+    ):
         """Set the chroot tarball from a live filesystem build.
 
         The pocket defaults to "Release"; the image type defaults to "Chroot
@@ -297,7 +334,8 @@ class IDistroArchSeriesModerate(Interface):
 
     @operation_parameters(
         pocket=Choice(vocabulary=PackagePublishingPocket, required=False),
-        image_type=Choice(vocabulary=BuildBaseImageType, required=False))
+        image_type=Choice(vocabulary=BuildBaseImageType, required=False),
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def removeChroot(pocket=None, image_type=None):
@@ -312,7 +350,10 @@ class IDistroArchSeriesModerate(Interface):
         packageset=Reference(Interface, title=_("Package set"), required=True),
         sense=Choice(
             vocabulary=DistroArchSeriesFilterSense,
-            title=_("Sense"), required=True))
+            title=_("Sense"),
+            required=True,
+        ),
+    )
     @call_with(creator=REQUEST_USER)
     @export_write_operation()
     @operation_for_version("devel")
@@ -356,9 +397,11 @@ class IDistroArchSeries(IDistroArchSeriesPublic, IDistroArchSeriesModerate):
 
 class IPocketChroot(Interface):
     """PocketChroot Table Interface"""
+
     id = Attribute("Identifier")
     distroarchseries = Attribute(
-        "The DistroArchSeries this chroot belongs to.")
+        "The DistroArchSeries this chroot belongs to."
+    )
     pocket = Attribute("The Pocket this chroot is for.")
     chroot = Attribute("The file alias of the chroot.")
     image_type = Attribute("The type of this image.")
