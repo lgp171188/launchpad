@@ -310,6 +310,8 @@ def compile_with_materialized(compile, with_expr, state):
     tokens = []
     tokens.append(compile(with_expr.name, state, token=True))
     tokens.append(" AS ")
+    # XXX cjwatson 2022-07-22: Replace this version check with something
+    # like `With(materialized=True)` once we're on PostgreSQL 12 everywhere.
     if with_expr.store._database._version >= 120000:
         tokens.append("MATERIALIZED ")
     tokens.append(compile(with_expr.select, state))
