@@ -82,3 +82,5 @@ ed7d7b97b8fb4ebe92799f922b0fa9c4bd1714e8
 0a9f5f09fc0c930b73619e77524e60f2740595ed
 # apply black to lp.scripts
 66301b8ad409deeb9092dfe62c8e4ef6f3093302
+# apply black to lp.services
+4719b7aa672a2674c7fdbbde58772871b77c3301
