@@ -4,8 +4,8 @@
 """SnappySeries views."""
 
 __all__ = [
-    'SnappySeriesSetNavigation',
-    ]
+    "SnappySeriesSetNavigation",
+]
 
 from lp.services.webapp import GetitemNavigation
 from lp.snappy.interfaces.snappyseries import ISnappySeriesSet
@@ -13,4 +13,5 @@ from lp.snappy.interfaces.snappyseries import ISnappySeriesSet
 
 class SnappySeriesSetNavigation(GetitemNavigation):
     """Navigation methods for `ISnappySeriesSet`."""
+
     usedfor = ISnappySeriesSet

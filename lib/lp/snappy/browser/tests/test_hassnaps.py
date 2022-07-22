@@ -4,10 +4,7 @@
 """Test views for objects that have snap packages."""
 
 import soupmatchers
-from testscenarios import (
-    load_tests_apply_scenarios,
-    WithScenarios,
-    )
+from testscenarios import WithScenarios, load_tests_apply_scenarios
 
 from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.gitrepository import IGitRepository
@@ -35,19 +32,28 @@ class TestHasSnapsView(WithScenarios, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     scenarios = [
-        ("Branch", {
-            "context_type": "branch",
-            "context_factory": make_branch,
-            }),
-        ("GitRepository", {
-            "context_type": "repository",
-            "context_factory": make_git_repository,
-            }),
-        ("GitRef", {
-            "context_type": "branch",
-            "context_factory": make_git_ref,
-            }),
-        ]
+        (
+            "Branch",
+            {
+                "context_type": "branch",
+                "context_factory": make_branch,
+            },
+        ),
+        (
+            "GitRepository",
+            {
+                "context_type": "repository",
+                "context_factory": make_git_repository,
+            },
+        ),
+        (
+            "GitRef",
+            {
+                "context_type": "branch",
+                "context_factory": make_git_ref,
+            },
+        ),
+    ]
 
     def makeSnap(self, context):
         if IBranch.providedBy(context):
@@ -63,16 +69,18 @@ class TestHasSnapsView(WithScenarios, TestCaseWithFactory):
         view = create_initialized_view(context, "+index")
         self.assertEqual(
             "No snap packages using this %s." % self.context_type,
-            view.snaps_link)
+            view.snaps_link,
+        )
 
     def test_snaps_link_one_snap(self):
         # An object with one snap package shows a link to that snap package.
         context = self.context_factory(self)
         snap = self.makeSnap(context)
         view = create_initialized_view(context, "+index")
-        expected_link = (
-            '<a href="%s">1 snap package</a> using this %s.' %
-            (canonical_url(snap), self.context_type))
+        expected_link = '<a href="%s">1 snap package</a> using this %s.' % (
+            canonical_url(snap),
+            self.context_type,
+        )
         self.assertEqual(expected_link, view.snaps_link)
 
     def test_snaps_link_more_snaps(self):
@@ -82,8 +90,9 @@ class TestHasSnapsView(WithScenarios, TestCaseWithFactory):
         self.makeSnap(context)
         view = create_initialized_view(context, "+index")
         expected_link = (
-            '<a href="+snaps">2 snap packages</a> using this %s.' %
-            self.context_type)
+            '<a href="+snaps">2 snap packages</a> using this %s.'
+            % self.context_type
+        )
         self.assertEqual(expected_link, view.snaps_link)
 
 
@@ -94,14 +103,20 @@ class TestHasSnapsMenu(WithScenarios, TestCaseWithFactory):
     needs_git_hosting_fixture = False
 
     scenarios = [
-        ("Branch", {
-            "context_factory": make_branch,
-            }),
-        ("GitRef", {
-            "context_factory": make_git_ref,
-            "needs_git_hosting_fixture": True,
-            }),
-        ]
+        (
+            "Branch",
+            {
+                "context_factory": make_branch,
+            },
+        ),
+        (
+            "GitRef",
+            {
+                "context_factory": make_git_ref,
+                "needs_git_hosting_fixture": True,
+            },
+        ),
+    ]
 
     def setUp(self):
         super().setUp()
@@ -119,10 +134,17 @@ class TestHasSnapsMenu(WithScenarios, TestCaseWithFactory):
         context = self.context_factory(self)
         view = create_initialized_view(context, "+index")
         new_snap_url = canonical_url(context, view_name="+new-snap")
-        self.assertThat(view(), soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                "creation link", "a", attrs={"href": new_snap_url},
-                text="Create snap package")))
+        self.assertThat(
+            view(),
+            soupmatchers.HTMLContains(
+                soupmatchers.Tag(
+                    "creation link",
+                    "a",
+                    attrs={"href": new_snap_url},
+                    text="Create snap package",
+                )
+            ),
+        )
 
     def test_creation_link_snaps(self):
         # An object with snap packages shows a creation link.
@@ -130,10 +152,17 @@ class TestHasSnapsMenu(WithScenarios, TestCaseWithFactory):
         self.makeSnap(context)
         view = create_initialized_view(context, "+index")
         new_snap_url = canonical_url(context, view_name="+new-snap")
-        self.assertThat(view(), soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                "creation link", "a", attrs={"href": new_snap_url},
-                text="Create snap package")))
+        self.assertThat(
+            view(),
+            soupmatchers.HTMLContains(
+                soupmatchers.Tag(
+                    "creation link",
+                    "a",
+                    attrs={"href": new_snap_url},
+                    text="Create snap package",
+                )
+            ),
+        )
 
 
 load_tests = load_tests_apply_scenarios

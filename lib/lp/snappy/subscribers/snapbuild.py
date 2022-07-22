@@ -21,12 +21,17 @@ def _trigger_snap_build_webhook(snapbuild, action):
         payload = {
             "snap_build": canonical_url(snapbuild, force_local_path=True),
             "action": action,
-            }
-        payload.update(compose_webhook_payload(
-            ISnapBuild, snapbuild,
-            ["snap", "build_request", "status", "store_upload_status"]))
+        }
+        payload.update(
+            compose_webhook_payload(
+                ISnapBuild,
+                snapbuild,
+                ["snap", "build_request", "status", "store_upload_status"],
+            )
+        )
         getUtility(IWebhookSet).trigger(
-            snapbuild.snap, "snap:build:0.1", payload)
+            snapbuild.snap, "snap:build:0.1", payload
+        )
 
 
 def snap_build_created(snapbuild, event):
@@ -44,8 +49,9 @@ def snap_build_status_changed(snapbuild, event):
             getUtility(ISnapStoreUploadJobSource).create(snapbuild)
         else:
             log.info(
-                "%r is not configured for upload to the store." %
-                snapbuild.snap)
+                "%r is not configured for upload to the store."
+                % snapbuild.snap
+            )
 
 
 def snap_build_store_upload_status_changed(snapbuild, event):

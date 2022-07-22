@@ -13,22 +13,29 @@ class TestChannelsValidator(TestCaseWithFactory):
 
     def test_channels_validator_valid(self):
         self.assertTrue(
-            channels_validator(['1.1/beta/fix-123', '1.1/edge/fix-123']))
-        self.assertTrue(channels_validator(['1.1/beta', '1.1/edge']))
-        self.assertTrue(channels_validator(['beta/fix-123', 'edge/fix-123']))
-        self.assertTrue(channels_validator(['beta', 'edge']))
+            channels_validator(["1.1/beta/fix-123", "1.1/edge/fix-123"])
+        )
+        self.assertTrue(channels_validator(["1.1/beta", "1.1/edge"]))
+        self.assertTrue(channels_validator(["beta/fix-123", "edge/fix-123"]))
+        self.assertTrue(channels_validator(["beta", "edge"]))
 
     def test_channels_validator_multiple_tracks(self):
         self.assertRaises(
-            LaunchpadValidationError, channels_validator,
-            ['1.1/stable', '2.1/edge'])
+            LaunchpadValidationError,
+            channels_validator,
+            ["1.1/stable", "2.1/edge"],
+        )
 
     def test_channels_validator_multiple_branches(self):
         self.assertRaises(
-            LaunchpadValidationError, channels_validator,
-            ['stable/fix-123', 'edge/fix-124'])
+            LaunchpadValidationError,
+            channels_validator,
+            ["stable/fix-123", "edge/fix-124"],
+        )
 
     def test_channels_validator_invalid_channel(self):
         self.assertRaises(
-            LaunchpadValidationError, channels_validator,
-            ['1.1/stable/invalid/too-long'])
+            LaunchpadValidationError,
+            channels_validator,
+            ["1.1/stable/invalid/too-long"],
+        )

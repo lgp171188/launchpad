@@ -7,7 +7,7 @@ from zope.formlib.interfaces import (
     IBrowserWidget,
     IInputWidget,
     WidgetInputError,
-    )
+)
 from zope.schema import List
 
 from lp.app.validators import LaunchpadValidationError
@@ -17,10 +17,7 @@ from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.snappy.browser.widgets.storechannels import StoreChannelsWidget
 from lp.snappy.vocabularies import SnapStoreChannelVocabulary
-from lp.testing import (
-    TestCaseWithFactory,
-    verifyObject,
-    )
+from lp.testing import TestCaseWithFactory, verifyObject
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -43,7 +40,8 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
     def test_template(self):
         self.assertTrue(
             self.widget.template.filename.endswith("storechannels.pt"),
-            "Template was not set up.")
+            "Template was not set up.",
+        )
 
     def test_setUpSubWidgets_first_call(self):
         # The subwidgets are set up and a flag is set.
@@ -51,7 +49,8 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
         self.assertTrue(self.widget._widgets_set_up)
         self.assertIsNotNone(getattr(self.widget, "track_widget", None))
         self.assertIsInstance(
-            self.widget.risks_widget.vocabulary, SnapStoreChannelVocabulary)
+            self.widget.risks_widget.vocabulary, SnapStoreChannelVocabulary
+        )
         self.assertTrue(self.widget.has_risks_vocabulary)
         self.assertIsNotNone(getattr(self.widget, "branch_widget", None))
 
@@ -72,7 +71,7 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
 
     def test_setRenderedValue_no_track_or_branch(self):
         # Channels do not include a track or branch
-        risks = ['candidate', 'edge']
+        risks = ["candidate", "edge"]
         self.widget.setRenderedValue(risks)
         self.assertIsNone(self.widget.track_widget._getCurrentValue())
         self.assertEqual(risks, self.widget.risks_widget._getCurrentValue())
@@ -80,32 +79,37 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
 
     def test_setRenderedValue_with_track(self):
         # Channels including a track
-        channels = ['2.2/candidate', '2.2/edge']
+        channels = ["2.2/candidate", "2.2/edge"]
         self.widget.setRenderedValue(channels)
-        self.assertEqual('2.2', self.widget.track_widget._getCurrentValue())
+        self.assertEqual("2.2", self.widget.track_widget._getCurrentValue())
         self.assertEqual(
-            ['candidate', 'edge'], self.widget.risks_widget._getCurrentValue())
+            ["candidate", "edge"], self.widget.risks_widget._getCurrentValue()
+        )
         self.assertIsNone(self.widget.branch_widget._getCurrentValue())
 
     def test_setRenderedValue_with_branch(self):
         # Channels including a branch
-        channels = ['candidate/fix-123', 'edge/fix-123']
+        channels = ["candidate/fix-123", "edge/fix-123"]
         self.widget.setRenderedValue(channels)
         self.assertIsNone(self.widget.track_widget._getCurrentValue())
         self.assertEqual(
-            ['candidate', 'edge'], self.widget.risks_widget._getCurrentValue())
+            ["candidate", "edge"], self.widget.risks_widget._getCurrentValue()
+        )
         self.assertEqual(
-            'fix-123', self.widget.branch_widget._getCurrentValue())
+            "fix-123", self.widget.branch_widget._getCurrentValue()
+        )
 
     def test_setRenderedValue_with_track_and_branch(self):
         # Channels including a track and branch
-        channels = ['2.2/candidate/fix-123', '2.2/edge/fix-123']
+        channels = ["2.2/candidate/fix-123", "2.2/edge/fix-123"]
         self.widget.setRenderedValue(channels)
-        self.assertEqual('2.2', self.widget.track_widget._getCurrentValue())
+        self.assertEqual("2.2", self.widget.track_widget._getCurrentValue())
         self.assertEqual(
-            ['candidate', 'edge'], self.widget.risks_widget._getCurrentValue())
+            ["candidate", "edge"], self.widget.risks_widget._getCurrentValue()
+        )
         self.assertEqual(
-            'fix-123', self.widget.branch_widget._getCurrentValue())
+            "fix-123", self.widget.branch_widget._getCurrentValue()
+        )
 
     def test_setRenderedValue_invalid_value(self):
         # Multiple channels, different tracks or branches, unsupported
@@ -113,30 +117,36 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
             ValueError,
             "Channels belong to different tracks: "
             "['2.2/candidate', '2.1/edge']",
-            self.widget.setRenderedValue, ['2.2/candidate', '2.1/edge'])
+            self.widget.setRenderedValue,
+            ["2.2/candidate", "2.1/edge"],
+        )
         self.assertRaisesWithContent(
             ValueError,
             "Channels belong to different branches: "
             "['candidate/fix-123', 'edge/fix-124']",
             self.widget.setRenderedValue,
-            ['candidate/fix-123', 'edge/fix-124'])
+            ["candidate/fix-123", "edge/fix-124"],
+        )
         self.assertRaisesWithContent(
             ValueError,
             "Channels belong to different tracks: "
             "['2.2/candidate', 'edge/fix-123']",
             self.widget.setRenderedValue,
-            ['2.2/candidate', 'edge/fix-123'])
+            ["2.2/candidate", "edge/fix-123"],
+        )
 
     def test_hasInput_false(self):
         # hasInput is false when there is no risk set in the form data.
         self.widget.request = LaunchpadTestRequest(
-            form={"field.channels.track": "track"})
+            form={"field.channels.track": "track"}
+        )
         self.assertFalse(self.widget.hasInput())
 
     def test_hasInput_true(self):
         # hasInput is true if there are risks set in the form data.
         self.widget.request = LaunchpadTestRequest(
-            form={"field.channels.risks": ["beta"]})
+            form={"field.channels.risks": ["beta"]}
+        )
         self.assertTrue(self.widget.hasInput())
 
     def test_hasValidInput_false(self):
@@ -146,7 +156,7 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
             "field.channels.track": "",
             "field.channels.risks": ["invalid"],
             "field.channels.branch": "",
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertFalse(self.widget.hasValidInput())
 
@@ -156,7 +166,7 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
             "field.channels.track": "track",
             "field.channels.risks": ["stable", "beta"],
             "field.channels.branch": "branch",
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertTrue(self.widget.hasValidInput())
 
@@ -172,7 +182,7 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
             "field.channels.track": "tra/ck",
             "field.channels.risks": ["beta"],
             "field.channels.branch": "",
-            }
+        }
         self.assertGetInputValueError(form, "Track name cannot include '/'.")
 
     def test_getInputValue_invalid_branch(self):
@@ -181,7 +191,7 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
             "field.channels.track": "",
             "field.channels.risks": ["beta"],
             "field.channels.branch": "bra/nch",
-            }
+        }
         self.assertGetInputValueError(form, "Branch name cannot include '/'.")
 
     def test_getInputValue_no_track_or_branch(self):
@@ -190,7 +200,8 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
                 "field.channels.track": "",
                 "field.channels.risks": ["beta", "edge"],
                 "field.channels.branch": "",
-                })
+            }
+        )
         expected = ["beta", "edge"]
         self.assertEqual(expected, self.widget.getInputValue())
 
@@ -200,7 +211,8 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
                 "field.channels.track": "track",
                 "field.channels.risks": ["beta", "edge"],
                 "field.channels.branch": "",
-                })
+            }
+        )
         expected = ["track/beta", "track/edge"]
         self.assertEqual(expected, self.widget.getInputValue())
 
@@ -210,7 +222,8 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
                 "field.channels.track": "",
                 "field.channels.risks": ["beta", "edge"],
                 "field.channels.branch": "fix-123",
-                })
+            }
+        )
         expected = ["beta/fix-123", "edge/fix-123"]
         self.assertEqual(expected, self.widget.getInputValue())
 
@@ -220,7 +233,8 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
                 "field.channels.track": "track",
                 "field.channels.risks": ["beta", "edge"],
                 "field.channels.branch": "fix-123",
-                })
+            }
+        )
         expected = ["track/beta/fix-123", "track/edge/fix-123"]
         self.assertEqual(expected, self.widget.getInputValue())
 
@@ -232,7 +246,8 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
         soup = BeautifulSoup(markup)
         fields = soup.find_all(["input"], {"id": re.compile(".*")})
         expected_ids = [
-            "field.channels.risks.%d" % i for i in range(len(StoreRisk))]
+            "field.channels.risks.%d" % i for i in range(len(StoreRisk))
+        ]
         expected_ids.append("field.channels.track")
         expected_ids.append("field.channels.branch")
         ids = [field["id"] for field in fields]

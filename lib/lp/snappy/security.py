@@ -9,28 +9,20 @@ from lp.app.security import (
     AnonymousAuthorization,
     AuthorizationBase,
     DelegatedAuthorization,
-    )
+)
 from lp.security import AdminByBuilddAdmin
 from lp.services.webapp.security import EditByRegistryExpertsOrAdmins
-from lp.snappy.interfaces.snap import (
-    ISnap,
-    ISnapBuildRequest,
-    )
-from lp.snappy.interfaces.snapbase import (
-    ISnapBase,
-    ISnapBaseSet,
-    )
+from lp.snappy.interfaces.snap import ISnap, ISnapBuildRequest
+from lp.snappy.interfaces.snapbase import ISnapBase, ISnapBaseSet
 from lp.snappy.interfaces.snapbuild import ISnapBuild
-from lp.snappy.interfaces.snappyseries import (
-    ISnappySeries,
-    ISnappySeriesSet,
-    )
+from lp.snappy.interfaces.snappyseries import ISnappySeries, ISnappySeriesSet
 from lp.snappy.interfaces.snapsubscription import ISnapSubscription
 
 
 class ViewSnap(AuthorizationBase):
     """Private snaps are only visible to their owners and admins."""
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = ISnap
 
     def checkAuthenticated(self, user):
@@ -41,13 +33,13 @@ class ViewSnap(AuthorizationBase):
 
 
 class EditSnap(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = ISnap
 
     def checkAuthenticated(self, user):
         return (
-            user.isOwner(self.obj) or
-            user.in_commercial_admin or user.in_admin)
+            user.isOwner(self.obj) or user.in_commercial_admin or user.in_admin
+        )
 
 
 class AdminSnap(AuthorizationBase):
@@ -57,19 +49,20 @@ class AdminSnap(AuthorizationBase):
     settings, so they can only be changed by "PPA"/commercial admins, or by
     "PPA" self admins on snap packages that they can already edit.
     """
-    permission = 'launchpad.Admin'
+
+    permission = "launchpad.Admin"
     usedfor = ISnap
 
     def checkAuthenticated(self, user):
         if user.in_ppa_admin or user.in_commercial_admin or user.in_admin:
             return True
-        return (
-            user.in_ppa_self_admins
-            and EditSnap(self.obj).checkAuthenticated(user))
+        return user.in_ppa_self_admins and EditSnap(
+            self.obj
+        ).checkAuthenticated(user)
 
 
 class SnapSubscriptionEdit(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = ISnapSubscription
 
     def checkAuthenticated(self, user):
@@ -82,14 +75,16 @@ class SnapSubscriptionEdit(AuthorizationBase):
         the Snap owner is a team, then members of the team can edit
         the subscription.
         """
-        return (user.inTeam(self.obj.snap.owner) or
-                user.inTeam(self.obj.person) or
-                user.inTeam(self.obj.subscribed_by) or
-                user.in_admin)
+        return (
+            user.inTeam(self.obj.snap.owner)
+            or user.inTeam(self.obj.person)
+            or user.inTeam(self.obj.subscribed_by)
+            or user.in_admin
+        )
 
 
 class SnapSubscriptionView(AuthorizationBase):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = ISnapSubscription
 
     def checkUnauthenticated(self):
@@ -100,15 +95,15 @@ class SnapSubscriptionView(AuthorizationBase):
 
 
 class ViewSnapBuildRequest(DelegatedAuthorization):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = ISnapBuildRequest
 
     def __init__(self, obj):
-        super().__init__(obj, obj.snap, 'launchpad.View')
+        super().__init__(obj, obj.snap, "launchpad.View")
 
 
 class ViewSnapBuild(DelegatedAuthorization):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = ISnapBuild
 
     def iter_objects(self):
@@ -117,7 +112,7 @@ class ViewSnapBuild(DelegatedAuthorization):
 
 
 class EditSnapBuild(AdminByBuilddAdmin):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = ISnapBuild
 
     def checkAuthenticated(self, user):
@@ -139,6 +134,7 @@ class AdminSnapBuild(AdminByBuilddAdmin):
 
 class ViewSnappySeries(AnonymousAuthorization):
     """Anyone can view an `ISnappySeries`."""
+
     usedfor = ISnappySeries
 
 
@@ -152,6 +148,7 @@ class EditSnappySeriesSet(EditByRegistryExpertsOrAdmins):
 
 class ViewSnapBase(AnonymousAuthorization):
     """Anyone can view an `ISnapBase`."""
+
     usedfor = ISnapBase
 
 
