@@ -20,4 +20,8 @@ class TestMemcacheFixture(TestCase):
     def test_set_expire_requires_integer(self):
         self.assertRaises(
             MemcacheIllegalInputError,
-            self.client.set, "key", "value", expire=0.5)
+            self.client.set,
+            "key",
+            "value",
+            expire=0.5,
+        )

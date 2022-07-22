@@ -2,9 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'download_body',
-    'MAX_RENDERABLE',
-    ]
+    "download_body",
+    "MAX_RENDERABLE",
+]
 
 
 from lp.app.browser.tales import download_link
@@ -13,8 +13,7 @@ from lp.services.webapp.publisher import (
     DataDownloadView,
     LaunchpadView,
     UserAttributeCache,
-    )
-
+)
 
 MAX_RENDERABLE = 10000
 
@@ -22,11 +21,11 @@ MAX_RENDERABLE = 10000
 class CommentBodyDownloadView(DataDownloadView, UserAttributeCache):
     """Download the body text of a comment."""
 
-    content_type = 'text/plain'
+    content_type = "text/plain"
 
     @property
     def filename(self):
-        return 'comment-%d.txt' % self.context.index
+        return "comment-%d.txt" % self.context.index
 
     def getBody(self):
         """The body of the HTTP response is the message body."""

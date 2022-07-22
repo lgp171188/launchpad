@@ -9,11 +9,7 @@ __all__ = []
 from zope.component import adapter
 from zope.interface import implementer
 
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStandbyStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStandbyStore, IStore
 from lp.services.database.sqlbase import session_store
 from lp.services.session.interfaces import IUseSessionStore
 

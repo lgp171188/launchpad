@@ -2,34 +2,27 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'CountryNameVocabulary',
-    'LanguageVocabulary',
-    'TimezoneNameVocabulary',
-    ]
+    "CountryNameVocabulary",
+    "LanguageVocabulary",
+    "TimezoneNameVocabulary",
+]
 
 import pytz
 import six
 from zope.component import getUtility
 from zope.interface import alsoProvides
-from zope.schema.vocabulary import (
-    SimpleTerm,
-    SimpleVocabulary,
-    )
+from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 
 from lp.services.webapp.vocabulary import SQLObjectVocabularyBase
-from lp.services.worlddata.interfaces.language import (
-    ILanguage,
-    ILanguageSet,
-    )
+from lp.services.worlddata.interfaces.language import ILanguage, ILanguageSet
 from lp.services.worlddata.interfaces.timezone import ITimezoneNameVocabulary
 from lp.services.worlddata.model.country import Country
 from lp.services.worlddata.model.language import Language
 
-
 # create a sorted list of the common time zone names, with UTC at the start
 _values = sorted(six.ensure_text(tz) for tz in pytz.common_timezones)
-_values.remove('UTC')
-_values.insert(0, 'UTC')
+_values.remove("UTC")
+_values.insert(0, "UTC")
 
 _timezone_vocab = SimpleVocabulary.fromValues(_values)
 alsoProvides(_timezone_vocab, ITimezoneNameVocabulary)
@@ -43,11 +36,12 @@ def TimezoneNameVocabulary(context=None):
 # Country.name may have non-ASCII characters, so we can't use
 # NamedSQLObjectVocabulary here.
 
+
 class CountryNameVocabulary(SQLObjectVocabularyBase):
     """A vocabulary for country names."""
 
     _table = Country
-    _orderBy = 'name'
+    _orderBy = "name"
 
     def toTerm(self, obj):
         return SimpleTerm(obj, obj.id, obj.name)
@@ -57,13 +51,14 @@ class LanguageVocabulary(SQLObjectVocabularyBase):
     """All the languages known by Launchpad."""
 
     _table = Language
-    _orderBy = 'englishname'
+    _orderBy = "englishname"
 
     def __contains__(self, language):
         """See `IVocabulary`."""
         assert ILanguage.providedBy(language), (
             "'in LanguageVocabulary' requires ILanguage as left operand, "
-            "got %s instead." % type(language))
+            "got %s instead." % type(language)
+        )
         return super().__contains__(language)
 
     def toTerm(self, obj):

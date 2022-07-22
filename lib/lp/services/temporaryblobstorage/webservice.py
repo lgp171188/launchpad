@@ -10,11 +10,11 @@ which tells `lazr.restful` that it should look for webservice exports here.
 """
 
 __all__ = [
-    'ITemporaryBlobStorage',
-    'ITemporaryStorageManager',
-    ]
+    "ITemporaryBlobStorage",
+    "ITemporaryStorageManager",
+]
 
 from lp.services.temporaryblobstorage.interfaces import (
     ITemporaryBlobStorage,
     ITemporaryStorageManager,
-    )
+)

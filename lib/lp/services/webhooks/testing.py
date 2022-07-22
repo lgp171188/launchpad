@@ -4,15 +4,15 @@
 """Webhook testing helpers."""
 
 __all__ = [
-    'LogsScheduledWebhooks',
-    ]
+    "LogsScheduledWebhooks",
+]
 
 from testtools.matchers import (
     AfterPreprocessing,
     Matcher,
     MatchesSetwise,
     StartsWith,
-    )
+)
 
 
 class LogsOneScheduledWebhook(Matcher):
@@ -25,13 +25,15 @@ class LogsOneScheduledWebhook(Matcher):
 
     def match(self, line):
         prefix = (
-            "Scheduled <WebhookDeliveryJob for webhook %d on %r> (%s): " %
-            (self.webhook.id, self.webhook.target, self.event_type))
+            "Scheduled <WebhookDeliveryJob for webhook %d on %r> (%s): "
+            % (self.webhook.id, self.webhook.target, self.event_type)
+        )
         mismatch = StartsWith(prefix).match(line)
         if mismatch is not None:
             return mismatch
         return AfterPreprocessing(eval, self.payload_matcher).match(
-            line[len(prefix):])
+            line[len(prefix) :]
+        )
 
 
 class LogsScheduledWebhooks(MatchesSetwise):
@@ -42,11 +44,18 @@ class LogsScheduledWebhooks(MatchesSetwise):
     """
 
     def __init__(self, expected_webhooks):
-        super().__init__(*(
-            LogsOneScheduledWebhook(webhook, event_type, payload_matcher)
-            for webhook, event_type, payload_matcher in expected_webhooks))
+        super().__init__(
+            *(
+                LogsOneScheduledWebhook(webhook, event_type, payload_matcher)
+                for webhook, event_type, payload_matcher in expected_webhooks
+            )
+        )
 
     def match(self, logger_output):
         return super().match(
-            [line for line in logger_output.splitlines()
-             if line.startswith("Scheduled <WebhookDeliveryJob ")])
+            [
+                line
+                for line in logger_output.splitlines()
+                if line.startswith("Scheduled <WebhookDeliveryJob ")
+            ]
+        )

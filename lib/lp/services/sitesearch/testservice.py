@@ -10,20 +10,17 @@ when given certain user-configurable URLs.
 
 
 import errno
-from http.server import BaseHTTPRequestHandler
 import os
 import signal
 import socket
 import subprocess
 import time
+from http.server import BaseHTTPRequestHandler
 
 import six
 
 from lp.services.osutils import remove_if_exists
-from lp.services.pidfile import (
-    get_pid,
-    pidfile_path,
-    )
+from lp.services.pidfile import get_pid, pidfile_path
 from lp.services.webapp.url import urlsplit
 
 
@@ -37,7 +34,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.return_file(urlmap[self.path])
         else:
             # Return our default route.
-            self.return_file(urlmap['*'])
+            self.return_file(urlmap["*"])
 
     def return_file(self, filename):
         """Return a HTTP response with 'filename' for content.
@@ -46,11 +43,11 @@ class RequestHandler(BaseHTTPRequestHandler):
             storage location.
         """
         self.send_response(200)
-        self.send_header('Content-Type', self.default_content_type)
+        self.send_header("Content-Type", self.default_content_type)
         self.end_headers()
 
         filepath = os.path.join(self.content_dir, filename)
-        with open(filepath, 'rb') as f:
+        with open(filepath, "rb") as f:
             content_body = f.read()
         self.wfile.write(content_body)
 
@@ -58,10 +55,11 @@ class RequestHandler(BaseHTTPRequestHandler):
         """See `BaseHTTPRequestHandler.log_message()`."""
         # Substitute the base class's logger with the Python Standard
         # Library logger.
-        message = ("%s - - [%s] %s" %
-                   (self.address_string(),
-                    self.log_date_time_string(),
-                    format % args))
+        message = "%s - - [%s] %s" % (
+            self.address_string(),
+            self.log_date_time_string(),
+            format % args,
+        )
         self.log.info(message)
 
 
@@ -70,7 +68,7 @@ def url_to_file_map(mapfile):
     mapping = {}
     with open(mapfile) as f:
         for line in f:
-            if line.startswith('#') or len(line.strip()) == 0:
+            if line.startswith("#") or len(line.strip()) == 0:
                 # Skip comments and blank lines.
                 continue
             url, fname = line.split()
@@ -115,7 +113,7 @@ def wait_for_service(host, port, timeout=15.0):
                 sock.connect((host, port))
             except OSError as err:
                 if err.args[0] in [errno.ECONNREFUSED, errno.ECONNABORTED]:
-                    elapsed = (time.time() - start)
+                    elapsed = time.time() - start
                     if elapsed > timeout:
                         raise RuntimeError("Socket poll time exceeded.")
                 else:
@@ -152,10 +150,11 @@ def wait_for_service_shutdown(host, port, seconds_to_wait=10.0):
                 else:
                     raise
             else:
-                elapsed = (time.time() - start)
+                elapsed = time.time() - start
                 if elapsed > seconds_to_wait:
                     raise RuntimeError(
-                        "The service did not shut down in the allotted time.")
+                        "The service did not shut down in the allotted time."
+                    )
             time.sleep(0.1)
     finally:
         sock.close()  # Clean up.
@@ -164,7 +163,7 @@ def wait_for_service_shutdown(host, port, seconds_to_wait=10.0):
 def hostpair(url):
     """Parse the host and port number out of a URL string."""
     parts = urlsplit(url)
-    host, port = six.ensure_str(parts[1]).split(':')
+    host, port = six.ensure_str(parts[1]).split(":")
     port = int(port)
     return (host, port)
 
@@ -177,13 +176,21 @@ def start_as_process(service_binary_name):
     """
     script = os.path.join(
         os.path.dirname(__file__),
-        os.pardir, os.pardir, os.pardir, os.pardir, 'bin',
-        service_binary_name)
+        os.pardir,
+        os.pardir,
+        os.pardir,
+        os.pardir,
+        "bin",
+        service_binary_name,
+    )
     # Make sure we aren't using the parent stdin and stdout to avoid spam
     # and have fewer things that can go wrong shutting down the process.
     proc = subprocess.Popen(
-        script, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT)
+        script,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
     proc.stdin.close()
     return proc
 

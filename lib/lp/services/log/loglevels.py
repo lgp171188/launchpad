@@ -7,26 +7,25 @@ Custom log levels are registered in lp_sitecustomize.py.
 """
 
 __all__ = [
-    'CRITICAL',
-    'DEBUG',
-    'DEBUG1',
-    'DEBUG2',
-    'DEBUG3',
-    'DEBUG4',
-    'DEBUG5',
-    'DEBUG6',
-    'DEBUG7',
-    'DEBUG8',
-    'DEBUG9',
-    'ERROR',
-    'FATAL',
-    'INFO',
-    'WARNING',
-    ]
+    "CRITICAL",
+    "DEBUG",
+    "DEBUG1",
+    "DEBUG2",
+    "DEBUG3",
+    "DEBUG4",
+    "DEBUG5",
+    "DEBUG6",
+    "DEBUG7",
+    "DEBUG8",
+    "DEBUG9",
+    "ERROR",
+    "FATAL",
+    "INFO",
+    "WARNING",
+]
 
 
 import logging
-
 
 # Reexport standard log levels.
 DEBUG = logging.DEBUG

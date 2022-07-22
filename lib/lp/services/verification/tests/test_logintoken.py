@@ -12,10 +12,7 @@ from zope.component import getUtility
 
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.mail_helpers import pop_notifications
 
@@ -33,17 +30,22 @@ class TestLoginToken(TestCaseWithFactory):
 
         with person_logged_in(user1):
             token = getUtility(ILoginTokenSet).new(
-                user1, user1.preferredemail.email, user2.preferredemail.email,
-                LoginTokenType.ACCOUNTMERGE)
+                user1,
+                user1.preferredemail.email,
+                user2.preferredemail.email,
+                LoginTokenType.ACCOUNTMERGE,
+            )
 
         token.sendMergeRequestEmail()
         (message,) = pop_notifications()
         self.assertEqual(
-            "Launchpad Account Merge <noreply@launchpad.net>",
-            message['from'])
+            "Launchpad Account Merge <noreply@launchpad.net>", message["from"]
+        )
         self.assertEqual(
-            "Launchpad: Merge of Accounts Requested", message['subject'])
-        expected_message = dedent("""
+            "Launchpad: Merge of Accounts Requested", message["subject"]
+        )
+        expected_message = dedent(
+            """
             Hello
 
             Launchpad: request to merge accounts
@@ -73,9 +75,11 @@ class TestLoginToken(TestCaseWithFactory):
 
             The Launchpad team
             https://launchpad.net
-            """)
+            """
+        )
         expected_matcher = DocTestMatches(
-            expected_message, doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE)
+            expected_message, doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE
+        )
         self.assertThat(
-            six.ensure_text(message.get_payload(decode=True)),
-            expected_matcher)
+            six.ensure_text(message.get_payload(decode=True)), expected_matcher
+        )

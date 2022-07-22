@@ -2,15 +2,15 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'FormNamespaceView',
-    'JsonModelNamespaceView',
-    ]
+    "FormNamespaceView",
+    "JsonModelNamespaceView",
+]
 
 
 from zope.browserpage.viewpagetemplatefile import (
     BoundPageTemplate,
     ViewPageTemplateFile,
-    )
+)
 from zope.component import getMultiAdapter
 from zope.interface import implementer
 from zope.publisher.defaultview import getDefaultViewName
@@ -27,7 +27,7 @@ class FormNamespaceView(view):
 
     # Use a class variable for the template so that it does not need
     # to be created during the traverse.
-    template = ViewPageTemplateFile('templates/launchpad-form-body.pt')
+    template = ViewPageTemplateFile("templates/launchpad-form-body.pt")
 
     def traverse(self, name, ignored):
         """Form traversal adapter.
@@ -43,7 +43,8 @@ class FormNamespaceView(view):
             # Note: without explicitly creating the BoundPageTemplate here
             # the view fails to render.
             context.index = BoundPageTemplate(
-                FormNamespaceView.template, context)
+                FormNamespaceView.template, context
+            )
         else:
             raise TraversalError("The URL does not correspond to a form.")
 
@@ -75,14 +76,14 @@ class JsonModelNamespaceView(view):
         if IBrowserPublisher.providedBy(self.context):
             view = self.context
         else:
-            defaultviewname = getDefaultViewName(
-                self.context, self.request)
+            defaultviewname = getDefaultViewName(self.context, self.request)
             view = getMultiAdapter(
-                (self.context, self.request), name=defaultviewname)
+                (self.context, self.request), name=defaultviewname
+            )
         if view is None:
             return
         naked_view = removeSecurityProxy(view)
         naked_view.initialize()
         cache = naked_view.getCacheJSON()
-        self.request.response.setHeader('content-type', 'application/json')
+        self.request.response.setHeader("content-type", "application/json")
         return cache

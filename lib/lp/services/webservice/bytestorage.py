@@ -4,23 +4,20 @@
 """Base classes for HTTP resources."""
 
 __all__ = [
-    'LibraryBackedByteStorage',
+    "LibraryBackedByteStorage",
 ]
 
 
 from io import BytesIO
 
 from lazr.restful.interfaces import IByteStorage
-from zope.component import (
-    getMultiAdapter,
-    getUtility,
-    )
+from zope.component import getMultiAdapter, getUtility
 from zope.interface import implementer
 
 from lp.services.librarian.interfaces import (
     ILibraryFileAliasSet,
     ILibraryFileAliasWithParent,
-    )
+)
 from lp.services.webapp.interfaces import ICanonicalUrlData
 
 
@@ -55,9 +52,10 @@ class LibraryBackedByteStorage:
         if self.file_alias.restricted:
             lfa_with_parent = getMultiAdapter(
                 (self.file_alias, self.entry.context),
-                ILibraryFileAliasWithParent)
+                ILibraryFileAliasWithParent,
+            )
             token = lfa_with_parent.createToken()
-            return self.file_alias.private_url + '?token=%s' % token
+            return self.file_alias.private_url + "?token=%s" % token
         return self.file_alias.getURL()
 
     @property
@@ -77,8 +75,11 @@ class LibraryBackedByteStorage:
         if filename is None:
             filename = self.filename
         stored = getUtility(ILibraryFileAliasSet).create(
-            name=filename, size=len(representation),
-            file=BytesIO(representation), contentType=mediaType)
+            name=filename,
+            size=len(representation),
+            file=BytesIO(representation),
+            contentType=mediaType,
+        )
         setattr(self.entry, self.field.__name__, stored)
 
     def deleteStored(self):

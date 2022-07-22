@@ -26,14 +26,10 @@ from lp.registry.interfaces.sourcepackage import ISourcePackage
 from lp.services.database.sqlbase import block_implicit_flushes
 from lp.services.identity.interfaces.account import IAccount
 from lp.services.webapp.interaction import get_current_principal
-from lp.services.webapp.interfaces import (
-    ILoggedInEvent,
-    IOpenLaunchBag,
-    )
+from lp.services.webapp.interfaces import ILoggedInEvent, IOpenLaunchBag
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
-
-_utc_tz = pytz.timezone('UTC')
+_utc_tz = pytz.timezone("UTC")
 
 
 @implementer(IOpenLaunchBag)
@@ -41,37 +37,37 @@ class LaunchBag:
 
     # Map Interface to attribute name.
     _registry = {
-        IPerson: 'person',
-        IProjectGroup: 'projectgroup',
-        IProduct: 'product',
-        IDistribution: 'distribution',
-        IDistroSeries: 'distroseries',
-        IDistroArchSeries: 'distroarchseries',
-        ISourcePackage: 'sourcepackage',
-        ISpecification: 'specification',
-        IBug: 'bug',
-        IBugTask: 'bugtask',
-        }
+        IPerson: "person",
+        IProjectGroup: "projectgroup",
+        IProduct: "product",
+        IDistribution: "distribution",
+        IDistroSeries: "distroseries",
+        IDistroArchSeries: "distroarchseries",
+        ISourcePackage: "sourcepackage",
+        ISpecification: "specification",
+        IBug: "bug",
+        IBugTask: "bugtask",
+    }
 
     _store = threading.local()
 
     def setLogin(self, login):
-        '''See IOpenLaunchBag.'''
+        """See IOpenLaunchBag."""
         if isinstance(login, bytes):
-            login = login.decode('UTF-8')
+            login = login.decode("UTF-8")
         self._store.login = login
 
     @property
     def login(self):
-        return getattr(self._store, 'login', None)
+        return getattr(self._store, "login", None)
 
     def setDeveloper(self, is_developer):
-        '''See IOpenLaunchBag.'''
+        """See IOpenLaunchBag."""
         self._store.developer = is_developer
 
     @property
     def developer(self):
-        return getattr(self._store, 'developer', False)
+        return getattr(self._store, "developer", False)
 
     @property
     @block_implicit_flushes
@@ -161,8 +157,7 @@ class LaunchBag:
 
 
 def set_login_in_launchbag_when_principal_identified(event):
-    """This IPrincipalIdentifiedEvent subscriber sets 'login' in launchbag.
-    """
+    """This IPrincipalIdentifiedEvent subscriber sets 'login' in launchbag."""
     launchbag = getUtility(IOpenLaunchBag)
     # Basic auths principal identified event is also an ILoggedInEvent.
     # Cookie auth separates these two events.
@@ -192,8 +187,7 @@ def set_developer_in_launchbag_before_traversal(event):
 
 
 def reset_login_in_launchbag_on_logout(event):
-    """Subscriber for ILoggedOutEvent that sets 'login' in launchbag to None.
-    """
+    """Subscriber for ILoggedOutEvent that clears the launchbag's 'login'."""
     launchbag = getUtility(IOpenLaunchBag)
     launchbag.setLogin(None)
 

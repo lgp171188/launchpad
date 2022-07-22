@@ -1,8 +1,8 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from launchpadlib.testing.helpers import salgado_with_full_permissions
 import transaction
+from launchpadlib.testing.helpers import salgado_with_full_permissions
 
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import AppServerLayer
@@ -16,12 +16,13 @@ class TestLaunchpadLib(TestCaseWithFactory):
     def setUp(self):
         super().setUp()
         self.launchpad = salgado_with_full_permissions.login()
-        self.project = self.launchpad.projects['firefox']
+        self.project = self.launchpad.projects["firefox"]
 
     def verifyAttributes(self, element):
         """Verify that launchpadlib can parse the element's attributes."""
-        attribute_names = (element.lp_attributes
-            + element.lp_entries + element.lp_collections)
+        attribute_names = (
+            element.lp_attributes + element.lp_entries + element.lp_collections
+        )
         for name in attribute_names:
             getattr(element, name)
 
@@ -42,7 +43,8 @@ class TestLaunchpadLib(TestCaseWithFactory):
         branch_name = self.factory.makeBranch().unique_name
         transaction.commit()
         branch = self.launchpad.branches.getByUniqueName(
-            unique_name=branch_name)
+            unique_name=branch_name
+        )
         self.verifyAttributes(branch)
 
     def test_milestone(self):

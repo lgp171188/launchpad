@@ -2,19 +2,15 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'ScriptActivity',
-    'ScriptActivitySet',
-    ]
+    "ScriptActivity",
+    "ScriptActivitySet",
+]
 
 import socket
 
 import pytz
 import six
-from storm.locals import (
-    DateTime,
-    Int,
-    Unicode,
-    )
+from storm.locals import DateTime, Int, Unicode
 from zope.interface import implementer
 
 from lp.services.database.interfaces import IStore
@@ -22,14 +18,14 @@ from lp.services.database.stormbase import StormBase
 from lp.services.scripts.interfaces.scriptactivity import (
     IScriptActivity,
     IScriptActivitySet,
-    )
+)
 from lp.services.scripts.metrics import emit_script_activity_metric
 
 
 @implementer(IScriptActivity)
 class ScriptActivity(StormBase):
 
-    __storm_table__ = 'ScriptActivity'
+    __storm_table__ = "ScriptActivity"
 
     id = Int(primary=True)
     name = Unicode(allow_none=False)
@@ -47,15 +43,16 @@ class ScriptActivity(StormBase):
 
 @implementer(IScriptActivitySet)
 class ScriptActivitySet:
-
-    def recordSuccess(self, name, date_started, date_completed,
-                      hostname=None):
+    def recordSuccess(self, name, date_started, date_completed, hostname=None):
         """See IScriptActivitySet"""
         if hostname is None:
             hostname = socket.gethostname()
         activity = ScriptActivity(
-            name=six.ensure_text(name), hostname=six.ensure_text(hostname),
-            date_started=date_started, date_completed=date_completed)
+            name=six.ensure_text(name),
+            hostname=six.ensure_text(hostname),
+            date_started=date_started,
+            date_completed=date_completed,
+        )
         IStore(ScriptActivity).add(activity)
         # Pass equivalent information through to statsd as well.
         emit_script_activity_metric(name, date_completed - date_started)
@@ -64,5 +61,6 @@ class ScriptActivitySet:
     def getLastActivity(self, name):
         """See IScriptActivitySet"""
         rows = IStore(ScriptActivity).find(
-            ScriptActivity, name=six.ensure_text(name))
+            ScriptActivity, name=six.ensure_text(name)
+        )
         return rows.order_by(ScriptActivity.date_started).last()

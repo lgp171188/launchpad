@@ -5,18 +5,16 @@
 
 import os
 
-from fixtures import TempDir
 import pytz
+from fixtures import TempDir
 
 from lp.services.twistedsupport.loggingsupport import LaunchpadLogFile
 from lp.testing import TestCase
-
 
 UTC = pytz.utc
 
 
 class TestLaunchpadLogFile(TestCase):
-
     def setUp(self):
         super().setUp()
         self.temp_dir = self.useFixture(TempDir()).path
@@ -33,25 +31,31 @@ class TestLaunchpadLogFile(TestCase):
         of more files that we have rotated.
         """
         # Default behaviour.
-        log_file = LaunchpadLogFile('test.log', self.temp_dir)
+        log_file = LaunchpadLogFile("test.log", self.temp_dir)
         self.assertEqual(5, log_file.maxRotatedFiles)
         self.assertEqual(3, log_file.compressLast)
 
         # Keeping only compressed rotated logs.
         log_file = LaunchpadLogFile(
-            'test.log', self.temp_dir, maxRotatedFiles=1, compressLast=1)
+            "test.log", self.temp_dir, maxRotatedFiles=1, compressLast=1
+        )
         self.assertEqual(1, log_file.maxRotatedFiles)
         self.assertEqual(1, log_file.compressLast)
 
         # Inconsistent parameters, compression more than kept rotated files.
         self.assertRaises(
-            AssertionError, LaunchpadLogFile, 'test.log', self.temp_dir,
-            maxRotatedFiles=1, compressLast=2)
+            AssertionError,
+            LaunchpadLogFile,
+            "test.log",
+            self.temp_dir,
+            maxRotatedFiles=1,
+            compressLast=2,
+        )
 
-    def createTestFile(self, name, content='nothing'):
+    def createTestFile(self, name, content="nothing"):
         """Create a new file in the test directory."""
         file_path = os.path.join(self.temp_dir, name)
-        fd = open(file_path, 'w')
+        fd = open(file_path, "w")
         fd.write(content)
         fd.close()
         return file_path
@@ -69,18 +73,19 @@ class TestLaunchpadLogFile(TestCase):
         Only corresponding log files (plain and compressed) are returned,
         the newest first.
         """
-        log_file = LaunchpadLogFile('test.log', self.temp_dir)
-        self.assertEqual(['test.log'], self.listTestFiles())
+        log_file = LaunchpadLogFile("test.log", self.temp_dir)
+        self.assertEqual(["test.log"], self.listTestFiles())
         self.assertEqual([], log_file.listLogs())
 
-        self.createTestFile('boing')
+        self.createTestFile("boing")
         self.assertEqual([], log_file.listLogs())
 
-        self.createTestFile('test.log.2000-12-31')
-        self.createTestFile('test.log.2000-12-30.bz2')
+        self.createTestFile("test.log.2000-12-31")
+        self.createTestFile("test.log.2000-12-30.bz2")
         self.assertEqual(
-            ['test.log.2000-12-31', 'test.log.2000-12-30.bz2'],
-            [os.path.basename(log_path) for log_path in log_file.listLogs()])
+            ["test.log.2000-12-31", "test.log.2000-12-30.bz2"],
+            [os.path.basename(log_path) for log_path in log_file.listLogs()],
+        )
 
     def testRotate(self):
         """Check `LaunchpadLogFile.rotate`.
@@ -90,7 +95,8 @@ class TestLaunchpadLogFile(TestCase):
         compressed files are created.
         """
         log_file = LaunchpadLogFile(
-            'test.log', self.temp_dir, maxRotatedFiles=2, compressLast=1)
+            "test.log", self.temp_dir, maxRotatedFiles=2, compressLast=1
+        )
 
         # Monkey-patch DailyLogFile.suffix to be time independent.
         self.local_index = 0
@@ -102,16 +108,14 @@ class TestLaunchpadLogFile(TestCase):
         log_file.suffix = testSuffix
 
         log_file.rotate()
-        self.assertEqual(
-            ['test.log', 'test.log.1'],
-            self.listTestFiles())
+        self.assertEqual(["test.log", "test.log.1"], self.listTestFiles())
 
         log_file.rotate()
         self.assertEqual(
-            ['test.log', 'test.log.1.bz2', 'test.log.2'],
-            self.listTestFiles())
+            ["test.log", "test.log.1.bz2", "test.log.2"], self.listTestFiles()
+        )
 
         log_file.rotate()
         self.assertEqual(
-            ['test.log', 'test.log.2.bz2', 'test.log.3'],
-            self.listTestFiles())
+            ["test.log", "test.log.2.bz2", "test.log.3"], self.listTestFiles()
+        )

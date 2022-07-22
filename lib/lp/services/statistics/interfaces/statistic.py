@@ -4,18 +4,12 @@
 """Launchpad statistic storage interfaces."""
 
 __all__ = [
-    'ILaunchpadStatistic',
-    'ILaunchpadStatisticSet',
-    ]
+    "ILaunchpadStatistic",
+    "ILaunchpadStatisticSet",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Int,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Int, TextLine
 
 from lp import _
 
@@ -27,8 +21,8 @@ class ILaunchpadStatistic(Interface):
     are integers.
     """
 
-    name = TextLine(title=_('Field Name'), required=True, readonly=True)
-    value = Int(title=_('Value'), required=True, readonly=True)
+    name = TextLine(title=_("Field Name"), required=True, readonly=True)
+    value = Int(title=_("Value"), required=True, readonly=True)
     dateupdated = Attribute("The date this statistic was updated.")
 
 

@@ -8,23 +8,20 @@ to use Celery may break if this is used.
 """
 
 __all__ = [
-    'celery_app',
-    'celery_run_job',
-    'celery_run_job_ignore_result',
-    'find_missing_ready',
-    'run_missing_ready',
-    ]
+    "celery_app",
+    "celery_run_job",
+    "celery_run_job_ignore_result",
+    "find_missing_ready",
+    "run_missing_ready",
+]
 
-from logging import info
 import os
+from logging import info
 from uuid import uuid4
 
-from celery import (
-    Celery,
-    Task,
-    )
-from lazr.jobrunner.celerytask import RunJob
 import transaction
+from celery import Celery, Task
+from lazr.jobrunner.celerytask import RunJob
 
 from lp.code.model.branchjob import BranchScanJob
 from lp.scripts.helpers import TransactionFreeOperation
@@ -34,16 +31,12 @@ from lp.services.database.sqlbase import disconnect_stores
 from lp.services.features import (
     install_feature_controller,
     make_script_feature_controller,
-    )
+)
 from lp.services.job.model.job import UniversalJobSource
-from lp.services.job.runner import (
-    BaseJobRunner,
-    celery_enabled,
-    )
+from lp.services.job.runner import BaseJobRunner, celery_enabled
 from lp.services.mail.sendmail import set_immediate_mail_delivery
 
-
-os.environ.setdefault('CELERY_CONFIG_MODULE', 'lp.services.job.celeryconfig')
+os.environ.setdefault("CELERY_CONFIG_MODULE", "lp.services.job.celeryconfig")
 
 celery_app = Celery()
 
@@ -87,21 +80,24 @@ class CeleryRunJobIgnoreResult(CeleryRunJob):
 
 celery_run_job = celery_app.register_task(CeleryRunJob())
 celery_run_job_ignore_result = celery_app.register_task(
-    CeleryRunJobIgnoreResult())
+    CeleryRunJobIgnoreResult()
+)
 
 
 class FindMissingReady:
-
     def __init__(self, job_source):
         from lazr.jobrunner.celerytask import list_queued
+
         self.job_source = job_source
         self.queue_contents = list_queued(celery_app, [job_source.task_queue])
-        self.queued_job_ids = {task[1][0][0] for task in
-                                  self.queue_contents}
+        self.queued_job_ids = {task[1][0][0] for task in self.queue_contents}
 
     def find_missing_ready(self):
-        return [job for job in self.job_source.iterReady()
-                if job.job_id not in self.queued_job_ids]
+        return [
+            job
+            for job in self.job_source.iterReady()
+            if job.job_id not in self.queued_job_ids
+        ]
 
 
 def find_missing_ready(job_source):
@@ -114,8 +110,17 @@ class PrefixedTask(Task):
 
     task_id_prefix = None
 
-    def apply_async(self, args=None, kwargs=None, task_id=None, producer=None,
-                    link=None, link_error=None, shadow=None, **options):
+    def apply_async(
+        self,
+        args=None,
+        kwargs=None,
+        task_id=None,
+        producer=None,
+        link=None,
+        link_error=None,
+        shadow=None,
+        **options
+    ):
         """Create a task_id if none is specified.
 
         Override the quite generic default task_id with one containing
@@ -124,14 +129,22 @@ class PrefixedTask(Task):
         See also `celery.task.Task.apply_async()`.
         """
         if task_id is None and self.task_id_prefix is not None:
-            task_id = '%s_%s' % (self.task_id_prefix, uuid4())
+            task_id = "%s_%s" % (self.task_id_prefix, uuid4())
         return super().apply_async(
-            args=args, kwargs=kwargs, task_id=task_id, producer=producer,
-            link=link, link_error=link_error, shadow=shadow, **options)
+            args=args,
+            kwargs=kwargs,
+            task_id=task_id,
+            producer=producer,
+            link=link,
+            link_error=link_error,
+            shadow=shadow,
+            **options,
+        )
 
 
 @celery_app.task(
-    base=PrefixedTask, task_id_prefix='RunMissingReady', ignore_result=True)
+    base=PrefixedTask, task_id_prefix="RunMissingReady", ignore_result=True
+)
 def run_missing_ready(_no_init=False):
     """Task to run any jobs that are ready but not scheduled.
 
@@ -139,7 +152,7 @@ def run_missing_ready(_no_init=False):
     :param _no_init: For tests.  If True, do not perform the initialization.
     """
     if not _no_init:
-        task_init('run_missing_ready')
+        task_init("run_missing_ready")
     with TransactionFreeOperation():
         count = 0
         for job in find_missing_ready(BranchScanJob):
@@ -148,7 +161,7 @@ def run_missing_ready(_no_init=False):
             job.extractJobState()
             job.celeryCommitHook(True)
             count += 1
-        info('Scheduled %d missing jobs.', count)
+        info("Scheduled %d missing jobs.", count)
         transaction.commit()
 
 
@@ -173,5 +186,5 @@ def task_init(dbuser):
     """
     ensure_zcml()
     disconnect_stores()
-    dbconfig.override(dbuser=dbuser, isolation_level='read_committed')
-    install_feature_controller(make_script_feature_controller('celery'))
+    dbconfig.override(dbuser=dbuser, isolation_level="read_committed")
+    install_feature_controller(make_script_feature_controller("celery"))

@@ -4,20 +4,16 @@
 """Interfaces for searching and working with results."""
 
 __all__ = [
-    'BingSearchService',
-    'PageMatch',
-    'PageMatches',
-    ]
+    "BingSearchService",
+    "PageMatch",
+    "PageMatches",
+]
 
-from urllib.parse import (
-    parse_qsl,
-    urlencode,
-    urlunparse,
-    )
+from urllib.parse import parse_qsl, urlencode, urlunparse
 
+import requests
 from lazr.restful.utils import get_current_browser_request
 from lazr.uri import URI
-import requests
 from zope.interface import implementer
 
 from lp.services.config import config
@@ -26,12 +22,9 @@ from lp.services.sitesearch.interfaces import (
     ISearchResults,
     ISearchService,
     SiteSearchResponseError,
-    )
+)
 from lp.services.timeline.requesttimeline import get_request_timeline
-from lp.services.timeout import (
-    TimeoutError,
-    urlfetch,
-    )
+from lp.services.timeout import TimeoutError, urlfetch
 from lp.services.webapp import urlparse
 from lp.services.webapp.escaping import structured
 
@@ -58,9 +51,9 @@ class PageMatch:
         Configured in config.vhosts.use_https.
         """
         if config.vhosts.use_https:
-            return 'https'
+            return "https"
         else:
-            return 'http'
+            return "http"
 
     @property
     def url_rewrite_hostname(self):
@@ -107,7 +100,7 @@ class PageMatch:
         :return: A URL str.
         """
         url = self._sanitize_query_string(url)
-        if self.url_rewrite_hostname == 'launchpad.net':
+        if self.url_rewrite_hostname == "launchpad.net":
             # Do not rewrite the url is the hostname is the public hostname.
             return self._strip_trailing_slash(url)
         parts = urlparse(url)
@@ -117,9 +110,11 @@ class PageMatch:
                 return url
         local_scheme = self.url_rewrite_scheme
         local_hostname = parts[1].replace(
-            'launchpad.net', self.url_rewrite_hostname)
+            "launchpad.net", self.url_rewrite_hostname
+        )
         local_parts = tuple(
-            [local_scheme] + [local_hostname] + list(parts[2:]))
+            [local_scheme] + [local_hostname] + list(parts[2:])
+        )
         url = urlunparse(local_parts)
         return self._strip_trailing_slash(url)
 
@@ -165,12 +160,12 @@ class BingSearchService:
 
     _default_values = {
         # XXX: maxiberta 2018-03-26: Set `mkt` based on the current request.
-        'customConfig': None,
-        'mkt': 'en-US',
-        'count': 20,
-        'offset': 0,
-        'q': None,
-        }
+        "customConfig": None,
+        "mkt": "en-US",
+        "count": 20,
+        "offset": 0,
+        "q": None,
+    }
 
     @property
     def subscription_key(self):
@@ -210,49 +205,53 @@ class BingSearchService:
         action = timeline.start("bing-search-api", search_url)
         try:
             response = urlfetch(
-                search_url, headers=search_headers, use_proxy=True)
+                search_url, headers=search_headers, use_proxy=True
+            )
         except (TimeoutError, requests.RequestException) as error:
             raise SiteSearchResponseError(
-                "The response errored: %s" % str(error))
+                "The response errored: %s" % str(error)
+            )
         finally:
             action.finish()
         try:
             bing_doc = response.json()
         except ValueError:
             raise SiteSearchResponseError(
-                "The response was incomplete, no JSON.")
+                "The response was incomplete, no JSON."
+            )
         page_matches = self._parse_search_response(bing_doc, start)
         return page_matches
 
     def _checkParameter(self, name, value, is_int=False):
         """Check that a parameter value is not None or an empty string."""
-        if value in (None, ''):
+        if value in (None, ""):
             raise ValueError("Missing value for parameter '%s'." % name)
         if is_int:
             try:
                 int(value)
             except ValueError:
                 raise ValueError(
-                    "Value for parameter '%s' is not an int." % name)
+                    "Value for parameter '%s' is not an int." % name
+                )
 
     def create_search_url(self, terms, start=0):
         """Return a Bing Custom Search search url."""
-        self._checkParameter('q', terms)
-        self._checkParameter('offset', start, is_int=True)
-        self._checkParameter('customConfig', self.custom_config_id)
+        self._checkParameter("q", terms)
+        self._checkParameter("offset", start, is_int=True)
+        self._checkParameter("customConfig", self.custom_config_id)
         search_params = dict(self._default_values)
-        search_params['q'] = terms.encode('utf8')
-        search_params['offset'] = start
-        search_params['customConfig'] = self.custom_config_id
+        search_params["q"] = terms.encode("utf8")
+        search_params["offset"] = start
+        search_params["customConfig"] = self.custom_config_id
         query_string = urlencode(sorted(search_params.items()))
-        return self.site + '?' + query_string
+        return self.site + "?" + query_string
 
     def create_search_headers(self):
         """Return a dict with Bing Custom Search compatible request headers."""
-        self._checkParameter('subscription_key', self.subscription_key)
+        self._checkParameter("subscription_key", self.subscription_key)
         return {
-            'Ocp-Apim-Subscription-Key': self.subscription_key,
-            }
+            "Ocp-Apim-Subscription-Key": self.subscription_key,
+        }
 
     def _parse_search_response(self, bing_doc, start=0):
         """Return a `PageMatches` object.
@@ -264,56 +263,61 @@ class BingSearchService:
             or cannot be parsed.
         """
         try:
-            response_type = bing_doc['_type']
+            response_type = bing_doc["_type"]
         except (AttributeError, KeyError, ValueError):
             raise SiteSearchResponseError(
-                "Could not get the '_type' from the Bing JSON response.")
+                "Could not get the '_type' from the Bing JSON response."
+            )
 
-        if response_type == 'ErrorResponse':
+        if response_type == "ErrorResponse":
             try:
-                errors = [error['message'] for error in bing_doc['errors']]
+                errors = [error["message"] for error in bing_doc["errors"]]
                 raise SiteSearchResponseError(
-                    "Error response from Bing: %s" % '; '.join(errors))
+                    "Error response from Bing: %s" % "; ".join(errors)
+                )
             except (AttributeError, KeyError, TypeError, ValueError):
                 raise SiteSearchResponseError(
-                    "Unable to parse the Bing JSON error response.")
-        elif response_type != 'SearchResponse':
+                    "Unable to parse the Bing JSON error response."
+                )
+        elif response_type != "SearchResponse":
             raise SiteSearchResponseError(
-                "Unknown Bing JSON response type: '%s'." % response_type)
+                "Unknown Bing JSON response type: '%s'." % response_type
+            )
 
         page_matches = []
         total = 0
         try:
-            results = bing_doc['webPages']['value']
+            results = bing_doc["webPages"]["value"]
         except (AttributeError, KeyError, ValueError):
             # Bing did not match any pages. Return an empty PageMatches.
             return PageMatches(page_matches, start, total)
 
         try:
-            total = int(bing_doc['webPages']['totalEstimatedMatches'])
+            total = int(bing_doc["webPages"]["totalEstimatedMatches"])
         except (AttributeError, KeyError, ValueError):
             # The datatype is not what PageMatches requires.
             raise SiteSearchResponseError(
-                "Could not get the total from the Bing JSON response.")
+                "Could not get the total from the Bing JSON response."
+            )
         if total < 0:
             # See bug 683115.
             total = 0
         for result in results:
-            url = result.get('url')
-            title = result.get('name')
-            summary = result.get('snippet')
+            url = result.get("url")
+            title = result.get("name")
+            summary = result.get("snippet")
             if None in (url, title, summary):
                 # There is not enough data to create a PageMatch object.
                 # This can be caused by an empty title or summary which
                 # has been observed for pages that are from vhosts that
                 # should not be indexed.
                 continue
-            summary = summary.replace('<br>', '')
+            summary = summary.replace("<br>", "")
             # Strings in Bing's search results are unescaped by default.  We
             # could alternatively fix this by sending textFormat=HTML, but
             # let's just do our own escaping for now.
-            title = structured('%s', title).escapedtext
-            summary = structured('%s', summary).escapedtext
+            title = structured("%s", title).escapedtext
+            summary = structured("%s", summary).escapedtext
             page_matches.append(PageMatch(title, url, summary))
 
         return PageMatches(page_matches, start, total)

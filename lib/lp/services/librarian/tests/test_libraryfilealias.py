@@ -10,11 +10,7 @@ import transaction
 from zope.component import getUtility
 
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
-from lp.testing import (
-    ANONYMOUS,
-    login,
-    logout,
-    )
+from lp.testing import ANONYMOUS, login, logout
 from lp.testing.layers import LaunchpadFunctionalLayer
 
 
@@ -25,8 +21,11 @@ class TestLibraryFileAlias(unittest.TestCase):
         login(ANONYMOUS)
         self.text_content = b"This is content\non two lines."
         self.file_alias = getUtility(ILibraryFileAliasSet).create(
-            'content.txt', len(self.text_content),
-            io.BytesIO(self.text_content), 'text/plain')
+            "content.txt",
+            len(self.text_content),
+            io.BytesIO(self.text_content),
+            "text/plain",
+        )
         # Make it possible to retrieve the content from the Librarian.
         transaction.commit()
 

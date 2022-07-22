@@ -4,42 +4,29 @@
 """OAuth interfaces."""
 
 __all__ = [
-    'OAUTH_REALM',
-    'OAUTH_CHALLENGE',
-    'IOAuthAccessToken',
-    'IOAuthConsumer',
-    'IOAuthConsumerSet',
-    'IOAuthRequestToken',
-    'IOAuthRequestTokenSet',
-    'IOAuthSignedRequest',
-    'TokenException',
-    ]
+    "OAUTH_REALM",
+    "OAUTH_CHALLENGE",
+    "IOAuthAccessToken",
+    "IOAuthConsumer",
+    "IOAuthConsumerSet",
+    "IOAuthRequestToken",
+    "IOAuthRequestTokenSet",
+    "IOAuthSignedRequest",
+    "TokenException",
+]
 
 import http.client
 
 from lazr.restful.declarations import error_status
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Object,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, Object, TextLine
 
 from lp import _
 from lp.registry.interfaces.person import IPerson
-from lp.services.webapp.interfaces import (
-    AccessLevel,
-    OAuthPermission,
-    )
-
+from lp.services.webapp.interfaces import AccessLevel, OAuthPermission
 
 # The challenge included in responses with a 401 status.
-OAUTH_REALM = 'https://api.launchpad.net'
+OAUTH_REALM = "https://api.launchpad.net"
 OAUTH_CHALLENGE = 'OAuth realm="%s"' % OAUTH_REALM
 
 
@@ -47,32 +34,46 @@ class IOAuthConsumer(Interface):
     """An application which acts on behalf of a Launchpad user."""
 
     date_created = Datetime(
-        title=_('Date created'), required=True, readonly=True)
+        title=_("Date created"), required=True, readonly=True
+    )
     disabled = Bool(
-        title=_('Disabled?'), required=False, readonly=False,
-        description=_('Disabled consumers are not allowed to access any '
-                      'protected resources.'))
+        title=_("Disabled?"),
+        required=False,
+        readonly=False,
+        description=_(
+            "Disabled consumers are not allowed to access any "
+            "protected resources."
+        ),
+    )
     key = TextLine(
-        title=_('Key'), required=True, readonly=True,
-        description=_('The unique key which identifies a consumer. It is '
-                      'included by the consumer in each request made.'))
+        title=_("Key"),
+        required=True,
+        readonly=True,
+        description=_(
+            "The unique key which identifies a consumer. It is "
+            "included by the consumer in each request made."
+        ),
+    )
 
     is_integrated_desktop = Attribute(
         """This attribute is true if the consumer corresponds to a
-        user account on a personal computer or similar device.""")
+        user account on a personal computer or similar device."""
+    )
 
     integrated_desktop_name = Attribute(
         """If the consumer corresponds to a user account on a personal
         computer or similar device, this is the self-reported name of
         the computer. If the consumer is a specific web or desktop
-        application, this is None.""")
+        application, this is None."""
+    )
 
     integrated_desktop_type = Attribute(
         """If the consumer corresponds to a user account on a personal
         computer or similar device, this is the self-reported type of
         that computer (usually the operating system plus the word
         "desktop"). If the consumer is a specific web or desktop
-        application, this is None.""")
+        application, this is None."""
+    )
 
     def isSecretValid(secret):
         """Check if a secret is valid for this consumer."""
@@ -103,7 +104,7 @@ class IOAuthConsumer(Interface):
 class IOAuthConsumerSet(Interface):
     """The set of OAuth consumers."""
 
-    def new(key, secret=''):
+    def new(key, secret=""):
         """Return the newly created consumer.
 
         You must make sure the given `key` is not already in use by another
@@ -136,30 +137,49 @@ class IOAuthToken(Interface):
     """
 
     consumer = Object(
-        schema=IOAuthConsumer, title=_('The consumer.'),
-        description=_("The consumer which will access Launchpad on the "
-                      "user's behalf."))
+        schema=IOAuthConsumer,
+        title=_("The consumer."),
+        description=_(
+            "The consumer which will access Launchpad on the " "user's behalf."
+        ),
+    )
     person = Object(
-        schema=IPerson, title=_('Person'), required=False, readonly=False,
-        description=_('The user on whose behalf the consumer is accessing.'))
+        schema=IPerson,
+        title=_("Person"),
+        required=False,
+        readonly=False,
+        description=_("The user on whose behalf the consumer is accessing."),
+    )
     key = TextLine(
-        title=_('Key'), required=True, readonly=True,
-        description=_('The key used to identify this token.  It is included '
-                      'by the consumer in each request.'))
-    product = Choice(title=_('Project'), required=False, vocabulary='Product')
+        title=_("Key"),
+        required=True,
+        readonly=True,
+        description=_(
+            "The key used to identify this token.  It is included "
+            "by the consumer in each request."
+        ),
+    )
+    product = Choice(title=_("Project"), required=False, vocabulary="Product")
     projectgroup = Choice(
-        title=_('Project Group'), required=False, vocabulary='ProjectGroup')
+        title=_("Project Group"), required=False, vocabulary="ProjectGroup"
+    )
     sourcepackagename = Choice(
-        title=_("Package"), required=False, vocabulary='SourcePackageName')
+        title=_("Package"), required=False, vocabulary="SourcePackageName"
+    )
     distribution = Choice(
-        title=_("Distribution"), required=False, vocabulary='Distribution')
+        title=_("Distribution"), required=False, vocabulary="Distribution"
+    )
     context = Attribute("FIXME")
 
     is_expired = Bool(
         title=_("Whether or not this token has expired."),
-        required=False, readonly=True,
-        description=_("A token may only be usable for a limited time, "
-                      "after which it will expire."))
+        required=False,
+        readonly=True,
+        description=_(
+            "A token may only be usable for a limited time, "
+            "after which it will expire."
+        ),
+    )
 
     def isSecretValid(secret):
         """Check if a secret is valid for this token."""
@@ -173,20 +193,34 @@ class IOAuthAccessToken(IOAuthToken):
     """
 
     permission = Choice(
-        title=_('Access level'), required=True, readonly=False,
+        title=_("Access level"),
+        required=True,
+        readonly=False,
         vocabulary=AccessLevel,
-        description=_('The level of access given to the application acting '
-                      'on your behalf.'))
+        description=_(
+            "The level of access given to the application acting "
+            "on your behalf."
+        ),
+    )
 
     date_created = Datetime(
-        title=_('Date created'), required=True, readonly=True,
-        description=_('The date some request token was exchanged for '
-                      'this token.'))
+        title=_("Date created"),
+        required=True,
+        readonly=True,
+        description=_(
+            "The date some request token was exchanged for " "this token."
+        ),
+    )
 
     date_expires = Datetime(
-        title=_('Date expires'), required=False, readonly=False,
-        description=_('From this date onwards this token can not be used '
-                      'by the consumer to access protected resources.'))
+        title=_("Date expires"),
+        required=False,
+        readonly=False,
+        description=_(
+            "From this date onwards this token can not be used "
+            "by the consumer to access protected resources."
+        ),
+    )
 
 
 class IOAuthRequestToken(IOAuthToken):
@@ -197,31 +231,55 @@ class IOAuthRequestToken(IOAuthToken):
     """
 
     permission = Choice(
-        title=_('Permission'), required=True, readonly=False,
+        title=_("Permission"),
+        required=True,
+        readonly=False,
         vocabulary=OAuthPermission,
-        description=_('The permission you give to the application which may '
-                      'act on your behalf.'))
+        description=_(
+            "The permission you give to the application which may "
+            "act on your behalf."
+        ),
+    )
     date_created = Datetime(
-        title=_('Date created'), required=True, readonly=True,
-        description=_('The date the token was created. The request token '
-                      'will be good for a limited time after this date.'))
+        title=_("Date created"),
+        required=True,
+        readonly=True,
+        description=_(
+            "The date the token was created. The request token "
+            "will be good for a limited time after this date."
+        ),
+    )
 
     date_expires = Datetime(
-        title=_('Date expires'), required=False, readonly=False,
-        description=_('The expiration date for the permission you give to '
-                      'the application which may act on your behalf.'))
+        title=_("Date expires"),
+        required=False,
+        readonly=False,
+        description=_(
+            "The expiration date for the permission you give to "
+            "the application which may act on your behalf."
+        ),
+    )
 
     date_reviewed = Datetime(
-        title=_('Date reviewed'), required=True, readonly=True,
-        description=_('The date in which the user authorized (or not) the '
-                      'consumer to access their protected resources on '
-                      'Launchpad.'))
+        title=_("Date reviewed"),
+        required=True,
+        readonly=True,
+        description=_(
+            "The date in which the user authorized (or not) the "
+            "consumer to access their protected resources on "
+            "Launchpad."
+        ),
+    )
 
     is_reviewed = Bool(
-        title=_('Has this token been reviewed?'),
-        required=False, readonly=True,
-        description=_('A reviewed request token can only be exchanged for an '
-                      'access token (in case the user granted access).'))
+        title=_("Has this token been reviewed?"),
+        required=False,
+        readonly=True,
+        description=_(
+            "A reviewed request token can only be exchanged for an "
+            "access token (in case the user granted access)."
+        ),
+    )
 
     def review(user, permission, context=None):
         """Grant `permission` as `user` to this token's consumer.
@@ -266,6 +324,7 @@ class IOAuthSignedRequest(Interface):
 # Note that these exceptions are marked as UNAUTHORIZED (401 status)
 # so they may be raised but will not cause an OOPS to be generated.  The
 # client will see them as an UNAUTHORIZED error.
+
 
 @error_status(http.client.UNAUTHORIZED)
 class _TokenException(Exception):

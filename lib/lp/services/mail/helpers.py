@@ -1,10 +1,10 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from io import BytesIO
 import os.path
 import re
 import time
+from io import BytesIO
 from uuid import uuid1
 
 from zope.component import getUtility
@@ -13,14 +13,13 @@ from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.mail.interfaces import (
     EmailProcessingError,
     IWeaklyAuthenticatedPrincipal,
-    )
+)
 from lp.services.webapp import canonical_url
 from lp.services.webapp.interaction import get_current_principal
 from lp.services.webapp.interfaces import ILaunchBag
 
-
-NO_KEY_TEMPLATE = 'key-not-registered.txt'
-NOT_SIGNED_TEMPLATE = 'not-signed.txt'
+NO_KEY_TEMPLATE = "key-not-registered.txt"
+NOT_SIGNED_TEMPLATE = "not-signed.txt"
 
 
 class IncomingEmailError(Exception):
@@ -40,17 +39,17 @@ def get_main_body(signed_msg):
     Content-Type, or ISO-8859-1 if unspecified (in order to minimise the
     chances of `UnicodeDecodeError`s).
     """
-    msg = getattr(signed_msg, 'signedMessage', None)
+    msg = getattr(signed_msg, "signedMessage", None)
     if msg is None:
         # The email wasn't signed.
         msg = signed_msg
     if msg.is_multipart():
         for part in msg.walk():
-            if part.get_content_type() == 'text/plain':
-                charset = part.get_content_charset('ISO-8859-1')
+            if part.get_content_type() == "text/plain":
+                charset = part.get_content_charset("ISO-8859-1")
                 return part.get_payload(decode=True).decode(charset)
     else:
-        charset = msg.get_content_charset('ISO-8859-1')
+        charset = msg.get_content_charset("ISO-8859-1")
         return msg.get_payload(decode=True).decode(charset)
 
 
@@ -86,17 +85,18 @@ def reformat_wiki_text(text):
     # This implementation is neither correct nor complete.
 
     # Strip macros (anchors, TOC, etc'...)
-    re_macro = re.compile(r'\[\[.*?\]\]')
-    text = re_macro.sub('', text)
+    re_macro = re.compile(r"\[\[.*?\]\]")
+    text = re_macro.sub("", text)
 
     # sterilize links
-    re_link = re.compile(r'\[(.*?)\]')
+    re_link = re.compile(r"\[(.*?)\]")
     text = re_link.sub(
-        lambda match: ' '.join(match.group(1).split(' ')[1:]), text)
+        lambda match: " ".join(match.group(1).split(" ")[1:]), text
+    )
 
     # Strip comments
-    re_comment = re.compile(r'^#.*?$', re.MULTILINE)
-    text = re_comment.sub('', text)
+    re_comment = re.compile(r"^#.*?$", re.MULTILINE)
+    text = re_comment.sub("", text)
 
     return text
 
@@ -121,24 +121,24 @@ def parse_commands(content, command_names):
 
     for line in content.splitlines():
         # All commands have to be indented.
-        if line.startswith(' ') or line.startswith('\t'):
+        if line.startswith(" ") or line.startswith("\t"):
             command_string = line.strip()
-            if command_string == 'done':
+            if command_string == "done":
                 # If the 'done' statement is encountered,
                 # stop reading any more commands.
                 break
-            words = command_string.split(' ', 1)
+            words = command_string.split(" ", 1)
             if len(words) > 0:
                 # Capitalization gets ignored
                 first = words.pop(0).lower()
-                if first.endswith(':'):
+                if first.endswith(":"):
                     first = first[:-1]
                 if first in command_names:
                     if len(words) > 0:
                         words = words[0]
                         if command_names[first]:
                             words = words.lower()
-                        words = words.split(' ')
+                        words = words.split(" ")
                     commands.append((first, words))
     return commands
 
@@ -153,7 +153,8 @@ def get_error_message(filename, error_templates=None, **interpolation_items):
     """
     if error_templates is None:
         error_templates = os.path.join(
-            os.path.dirname(__file__), 'errortemplates')
+            os.path.dirname(__file__), "errortemplates"
+        )
     fullpath = os.path.join(error_templates, filename)
     with open(fullpath) as f:
         error_template = f.read()
@@ -175,12 +176,14 @@ def get_person_or_team(person_name_or_email):
     valid_person_vocabulary = ValidPersonOrTeamVocabulary()
     try:
         person_term = valid_person_vocabulary.getTermByToken(
-            person_name_or_email)
+            person_name_or_email
+        )
     except LookupError:
         raise EmailProcessingError(
             get_error_message(
-                'no-such-person.txt',
-                name_or_email=person_name_or_email))
+                "no-such-person.txt", name_or_email=person_name_or_email
+            )
+        )
     return person_term.value
 
 
@@ -201,17 +204,21 @@ def ensure_not_weakly_authenticated(signed_msg, context):
     if IWeaklyAuthenticatedPrincipal.providedBy(cur_principal):
         if signed_msg.signature is None:
             error_message = get_error_message(
-                NOT_SIGNED_TEMPLATE, None, context=context)
+                NOT_SIGNED_TEMPLATE, None, context=context
+            )
         else:
-            import_url = canonical_url(
-                getUtility(ILaunchBag).user) + '/+editpgpkeys'
+            import_url = (
+                canonical_url(getUtility(ILaunchBag).user) + "/+editpgpkeys"
+            )
             error_message = get_error_message(
-                NO_KEY_TEMPLATE, None, import_url=import_url, context=context)
+                NO_KEY_TEMPLATE, None, import_url=import_url, context=context
+            )
         raise IncomingEmailError(error_message)
 
 
-def ensure_sane_signature_timestamp(timestamp, context,
-                                    error_template='old-signature.txt'):
+def ensure_sane_signature_timestamp(
+    timestamp, context, error_template="old-signature.txt"
+):
     """Ensure the signature was generated recently but not in the future.
 
     If the timestamp is wrong, the message is rejected rather than just
@@ -230,8 +237,10 @@ def ensure_sane_signature_timestamp(timestamp, context,
     fourty_eight_hours_ago = now - fourty_eight_hours
     ten_minutes_in_the_future = now + ten_minutes
 
-    if (timestamp < fourty_eight_hours_ago
-            or timestamp > ten_minutes_in_the_future):
+    if (
+        timestamp < fourty_eight_hours_ago
+        or timestamp > ten_minutes_in_the_future
+    ):
         error_message = get_error_message(error_template, context=context)
         raise IncomingEmailError(error_message)
 
@@ -245,10 +254,14 @@ def save_mail_to_librarian(raw_mail, restricted=False):
     # File the raw_mail in the Librarian.  We generate a filename to avoid
     # people guessing the URL.  We don't want URLs to private bug messages to
     # be guessable for example.
-    file_name = str(uuid1()) + '.txt'
+    file_name = str(uuid1()) + ".txt"
     file_alias = getUtility(ILibraryFileAliasSet).create(
-        file_name, len(raw_mail), BytesIO(raw_mail), 'message/rfc822',
-        restricted=restricted)
+        file_name,
+        len(raw_mail),
+        BytesIO(raw_mail),
+        "message/rfc822",
+        restricted=restricted,
+    )
     return file_alias
 
 
@@ -260,11 +273,12 @@ def get_email_template(filename, app=None):
     """
     if app is None:
         base = os.path.dirname(__file__)
-        fullpath = os.path.join(base, 'emailtemplates', filename)
+        fullpath = os.path.join(base, "emailtemplates", filename)
     else:
         import lp
+
         base = os.path.dirname(lp.__file__)
-        fullpath = os.path.join(base, app, 'emailtemplates', filename)
+        fullpath = os.path.join(base, app, "emailtemplates", filename)
     with open(fullpath) as f:
         return f.read()
 
@@ -281,6 +295,8 @@ def get_contact_email_addresses(person):
 
     # Circular imports force this import.
     from lp.registry.model.person import get_recipients
+
     return {
         str(removeSecurityProxy(mail_person).preferredemail.email)
-        for mail_person in get_recipients(person)}
+        for mail_person in get_recipients(person)
+    }

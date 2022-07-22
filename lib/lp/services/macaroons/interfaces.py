@@ -4,16 +4,13 @@
 """Interface to a policy for issuing and verifying macaroons."""
 
 __all__ = [
-    'BadMacaroonContext',
-    'IMacaroonIssuer',
-    'IMacaroonVerificationResult',
-    'NO_USER',
-    ]
+    "BadMacaroonContext",
+    "IMacaroonIssuer",
+    "IMacaroonVerificationResult",
+    "NO_USER",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.schema import Bool
 
 
@@ -41,7 +38,8 @@ class IMacaroonVerificationResult(Interface):
     user = Attribute(
         "The user on whose behalf the macaroon was issued, if positively "
         "verified (may be an `IPerson` or `NO_USER`), or None if no user "
-        "verification was performed.")
+        "verification was performed."
+    )
 
 
 class IMacaroonIssuerPublic(Interface):
@@ -50,10 +48,17 @@ class IMacaroonIssuerPublic(Interface):
     identifier = Attribute("An identifying name for this issuer.")
 
     issuable_via_authserver = Bool(
-        "Does this issuer allow issuing macaroons via the authserver?")
+        "Does this issuer allow issuing macaroons via the authserver?"
+    )
 
-    def verifyMacaroon(macaroon, context, require_context=True, errors=None,
-                       user=None, **kwargs):
+    def verifyMacaroon(
+        macaroon,
+        context,
+        require_context=True,
+        errors=None,
+        user=None,
+        **kwargs
+    ):
         """Verify that `macaroon` is valid for `context`.
 
         :param macaroon: A `Macaroon`.

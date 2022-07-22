@@ -5,7 +5,7 @@
 
 __all__ = [
     "create_access_token_secret",
-    ]
+]
 
 import binascii
 import os

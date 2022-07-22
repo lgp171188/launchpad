@@ -10,7 +10,7 @@ which tells `lazr.restful` that it should look for webservice exports here.
 """
 
 __all__ = [
-    'IEmailAddress',
-    ]
+    "IEmailAddress",
+]
 
 from lp.services.identity.interfaces.emailaddress import IEmailAddress

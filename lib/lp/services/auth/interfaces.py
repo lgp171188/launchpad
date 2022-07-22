@@ -8,9 +8,10 @@ __all__ = [
     "IAccessTokenSet",
     "IAccessTokenTarget",
     "IAccessTokenVerifiedRequest",
-    ]
+]
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     export_read_operation,
     export_write_operation,
@@ -18,18 +19,10 @@ from lazr.restful.declarations import (
     exported_as_webservice_entry,
     operation_for_version,
     operation_returns_collection_of,
-    REQUEST_USER,
-    )
+)
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Int,
-    List,
-    TextLine,
-    )
+from zope.schema import Bool, Choice, Datetime, Int, List, TextLine
 
 from lp import _
 from lp.services.auth.enums import AccessTokenScope
@@ -46,56 +39,96 @@ class IAccessToken(Interface):
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    date_created = exported(Datetime(
-        title=_("Creation date"),
-        description=_("When the token was created."),
-        required=True, readonly=True))
+    date_created = exported(
+        Datetime(
+            title=_("Creation date"),
+            description=_("When the token was created."),
+            required=True,
+            readonly=True,
+        )
+    )
 
-    owner = exported(PublicPersonChoice(
-        title=_("Owner"),
-        description=_("The person who created the token."),
-        vocabulary="ValidPersonOrTeam", required=True, readonly=True))
+    owner = exported(
+        PublicPersonChoice(
+            title=_("Owner"),
+            description=_("The person who created the token."),
+            vocabulary="ValidPersonOrTeam",
+            required=True,
+            readonly=True,
+        )
+    )
 
-    description = exported(TextLine(
-        title=_("Description"),
-        description=_("A short description of the token."), required=True))
+    description = exported(
+        TextLine(
+            title=_("Description"),
+            description=_("A short description of the token."),
+            required=True,
+        )
+    )
 
     git_repository = Reference(
         title=_("Git repository"),
         description=_("The Git repository for which the token was issued."),
         # Really IGitRepository, patched in _schema_circular_imports.py.
-        schema=Interface, required=True, readonly=True)
+        schema=Interface,
+        required=True,
+        readonly=True,
+    )
 
-    target = exported(Reference(
-        title=_("Target"),
-        description=_("The target for which the token was issued."),
-        # Really IAccessTokenTarget, patched in _schema_circular_imports.py.
-        schema=Interface, required=True, readonly=True))
+    target = exported(
+        Reference(
+            title=_("Target"),
+            description=_("The target for which the token was issued."),
+            # Really IAccessTokenTarget, patched below.
+            schema=Interface,
+            required=True,
+            readonly=True,
+        )
+    )
 
-    scopes = exported(List(
-        value_type=Choice(vocabulary=AccessTokenScope),
-        title=_("Scopes"),
-        description=_("A list of scopes granted by the token."),
-        required=True, readonly=True))
+    scopes = exported(
+        List(
+            value_type=Choice(vocabulary=AccessTokenScope),
+            title=_("Scopes"),
+            description=_("A list of scopes granted by the token."),
+            required=True,
+            readonly=True,
+        )
+    )
 
-    date_last_used = exported(Datetime(
-        title=_("Date last used"),
-        description=_("When the token was last used."),
-        required=False, readonly=True))
+    date_last_used = exported(
+        Datetime(
+            title=_("Date last used"),
+            description=_("When the token was last used."),
+            required=False,
+            readonly=True,
+        )
+    )
 
-    date_expires = exported(Datetime(
-        title=_("Expiry date"),
-        description=_("When the token should expire or was revoked."),
-        required=False, readonly=True))
+    date_expires = exported(
+        Datetime(
+            title=_("Expiry date"),
+            description=_("When the token should expire or was revoked."),
+            required=False,
+            readonly=True,
+        )
+    )
 
     is_expired = Bool(
         description=_("Whether this token has expired."),
-        required=False, readonly=True)
+        required=False,
+        readonly=True,
+    )
 
-    revoked_by = exported(PublicPersonChoice(
-        title=_("Revoked by"),
-        description=_("The person who revoked the token, if any."),
-        vocabulary="ValidPersonOrTeam", required=False, readonly=True))
+    revoked_by = exported(
+        PublicPersonChoice(
+            title=_("Revoked by"),
+            description=_("The person who revoked the token, if any."),
+            vocabulary="ValidPersonOrTeam",
+            required=False,
+            readonly=True,
+        )
+    )
 
     def updateLastUsed():
         """Update this token's last-used date, if possible."""

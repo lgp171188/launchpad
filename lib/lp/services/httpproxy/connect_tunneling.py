@@ -7,8 +7,8 @@ See https://twistedmatrix.com/trac/ticket/8806 (and reference
 implementation at https://github.com/scrapy/scrapy/pull/397/files)."""
 
 __all__ = [
-    'TunnelingAgent',
-    ]
+    "TunnelingAgent",
+]
 
 import re
 
@@ -27,10 +27,18 @@ class TunnelingTCP4ClientEndpoint(TCP4ClientEndpoint):
     To accomplish that, this endpoint sends an HTTP CONNECT to the proxy.
     """
 
-    _responseMatcher = re.compile(br'HTTP/1\.. 200')
+    _responseMatcher = re.compile(rb"HTTP/1\.. 200")
 
-    def __init__(self, reactor, host, port, proxyConf, contextFactory,
-                 timeout=30, bindAddress=None):
+    def __init__(
+        self,
+        reactor,
+        host,
+        port,
+        proxyConf,
+        contextFactory,
+        timeout=30,
+        bindAddress=None,
+    ):
         proxyHost, proxyPort, self._proxyAuthHeader = proxyConf
         super().__init__(reactor, proxyHost, proxyPort, timeout, bindAddress)
         self._tunneledHost = host
@@ -42,11 +50,13 @@ class TunnelingTCP4ClientEndpoint(TCP4ClientEndpoint):
 
     def requestTunnel(self, protocol):
         """Asks the proxy to open a tunnel."""
-        tunnelReq = b'CONNECT %s:%d HTTP/1.1\n' % (self._tunneledHost,
-                                                   self._tunneledPort)
+        tunnelReq = b"CONNECT %s:%d HTTP/1.1\n" % (
+            self._tunneledHost,
+            self._tunneledPort,
+        )
         if self._proxyAuthHeader:
-            tunnelReq += b'Proxy-Authorization: %s\n' % self._proxyAuthHeader
-        tunnelReq += b'\n'
+            tunnelReq += b"Proxy-Authorization: %s\n" % self._proxyAuthHeader
+        tunnelReq += b"\n"
         protocol.transport.write(tunnelReq)
         self._protocolDataReceived = protocol.dataReceived
         protocol.dataReceived = self.processProxyResponse
@@ -61,11 +71,13 @@ class TunnelingTCP4ClientEndpoint(TCP4ClientEndpoint):
         self._protocol.dataReceived = self._protocolDataReceived
         if TunnelingTCP4ClientEndpoint._responseMatcher.match(bytes):
             self._protocol.transport.startTLS(
-                    self._contextFactory, self._protocolFactory)
+                self._contextFactory, self._protocolFactory
+            )
             self._tunnelReadyDeferred.callback(self._protocol)
         else:
             self._tunnelReadyDeferred.errback(
-                TunnelError('Could not open CONNECT tunnel.'))
+                TunnelError("Could not open CONNECT tunnel.")
+            )
 
     def connectFailed(self, reason):
         """Propagates the errback to the appropriate deferred."""
@@ -84,10 +96,18 @@ class TunnelingAgent(Agent):
     requests.
     """
 
-    def __init__(self, reactor, proxyConf, contextFactory=None,
-                 connectTimeout=None, bindAddress=None, pool=None):
-        super().__init__(reactor, contextFactory,
-            connectTimeout, bindAddress, pool)
+    def __init__(
+        self,
+        reactor,
+        proxyConf,
+        contextFactory=None,
+        connectTimeout=None,
+        bindAddress=None,
+        pool=None,
+    ):
+        super().__init__(
+            reactor, contextFactory, connectTimeout, bindAddress, pool
+        )
         self._contextFactory = contextFactory
         self._connectTimeout = connectTimeout
         self._bindAddress = bindAddress
@@ -95,6 +115,11 @@ class TunnelingAgent(Agent):
 
     def _getEndpoint(self, url):
         return TunnelingTCP4ClientEndpoint(
-            self._reactor, url.host, url.port,
-            self._proxyConf, self._contextFactory, self._connectTimeout,
-            self._bindAddress)
+            self._reactor,
+            url.host,
+            url.port,
+            self._proxyConf,
+            self._contextFactory,
+            self._connectTimeout,
+            self._bindAddress,
+        )

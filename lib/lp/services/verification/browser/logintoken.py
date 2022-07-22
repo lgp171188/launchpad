@@ -2,45 +2,38 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BaseTokenView',
-    'BugTrackerHandshakeView',
-    'ClaimTeamView',
-    'LoginTokenSetNavigation',
-    'LoginTokenView',
-    'MergePeopleView',
-    'ValidateEmailView',
-    'ValidateTeamEmailView',
-    'ValidateGPGKeyView',
-    ]
+    "BaseTokenView",
+    "BugTrackerHandshakeView",
+    "ClaimTeamView",
+    "LoginTokenSetNavigation",
+    "LoginTokenView",
+    "MergePeopleView",
+    "ValidateEmailView",
+    "ValidateTeamEmailView",
+    "ValidateGPGKeyView",
+]
 
-from urllib.parse import (
-    urlencode,
-    urljoin,
-    )
+from urllib.parse import urlencode, urljoin
 
 from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextAreaWidget
-from zope.interface import (
-    alsoProvides,
-    directlyProvides,
-    Interface,
-    )
+from zope.interface import Interface, alsoProvides, directlyProvides
 from zope.security.proxy import removeSecurityProxy
 
 from lp import _
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+    action,
+)
 from lp.app.widgets.itemswidgets import LaunchpadRadioWidget
 from lp.registry.browser.team import HasRenewalPolicyMixin
 from lp.registry.interfaces.person import (
     AlreadyConvertedException,
     IPersonSet,
     ITeam,
-    )
+)
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.gpg.interfaces import (
     GPGKeyExpired,
@@ -48,21 +41,17 @@ from lp.services.gpg.interfaces import (
     GPGKeyRevoked,
     GPGVerificationError,
     IGPGHandler,
-    )
+)
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressStatus,
     IEmailAddressSet,
-    )
+)
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import (
     IGPGKeyValidationForm,
     ILoginTokenSet,
-    )
-from lp.services.webapp import (
-    canonical_url,
-    GetitemNavigation,
-    LaunchpadView,
-    )
+)
+from lp.services.webapp import GetitemNavigation, LaunchpadView, canonical_url
 from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import IAlwaysSubmittedWidget
 from lp.services.webapp.vhosts import allvhosts
@@ -85,22 +74,24 @@ class LoginTokenView(LaunchpadView):
     they got this token because they tried to do something that required email
     address confirmation, but that confirmation is already concluded.
     """
+
     PAGES = {
-        LoginTokenType.ACCOUNTMERGE: '+accountmerge',
-        LoginTokenType.VALIDATEEMAIL: '+validateemail',
-        LoginTokenType.VALIDATETEAMEMAIL: '+validateteamemail',
-        LoginTokenType.VALIDATEGPG: '+validategpg',
-        LoginTokenType.VALIDATESIGNONLYGPG: '+validatesignonlygpg',
-        LoginTokenType.TEAMCLAIM: '+claimteam',
-        LoginTokenType.BUGTRACKER: '+bugtracker-handshake',
-        }
-    page_title = 'You have already done this'
-    label = 'Confirmation already concluded'
+        LoginTokenType.ACCOUNTMERGE: "+accountmerge",
+        LoginTokenType.VALIDATEEMAIL: "+validateemail",
+        LoginTokenType.VALIDATETEAMEMAIL: "+validateteamemail",
+        LoginTokenType.VALIDATEGPG: "+validategpg",
+        LoginTokenType.VALIDATESIGNONLYGPG: "+validatesignonlygpg",
+        LoginTokenType.TEAMCLAIM: "+claimteam",
+        LoginTokenType.BUGTRACKER: "+bugtracker-handshake",
+    }
+    page_title = "You have already done this"
+    label = "Confirmation already concluded"
 
     def render(self):
         if self.context.date_consumed is None:
             url = urljoin(
-                str(self.request.URL), self.PAGES[self.context.tokentype])
+                str(self.request.URL), self.PAGES[self.context.tokentype]
+            )
             self.request.response.redirect(url)
         else:
             return super().render()
@@ -127,8 +118,9 @@ class BaseTokenView:
         if self._next_url_for_cancel is not None:
             return self._next_url_for_cancel
         assert self.default_next_url is not self._missing, (
-            'The implementation of %s should provide a value for '
-            'default_next_url' % self.__class__.__name__)
+            "The implementation of %s should provide a value for "
+            "default_next_url" % self.__class__.__name__
+        )
         return self.default_next_url
 
     @property
@@ -144,8 +136,10 @@ class BaseTokenView:
         (i.e. create a new account with a VALIDATEEMAIL token).
         """
         assert self.expected_token_types
-        if (self.context.date_consumed is not None
-            or self.context.tokentype not in self.expected_token_types):
+        if (
+            self.context.date_consumed is not None
+            or self.context.tokentype not in self.expected_token_types
+        ):
             self.request.response.redirect(canonical_url(self.context))
             return True
         else:
@@ -171,50 +165,62 @@ class BaseTokenView:
 
 
 class ClaimTeamView(
-    BaseTokenView, HasRenewalPolicyMixin, LaunchpadEditFormView):
+    BaseTokenView, HasRenewalPolicyMixin, LaunchpadEditFormView
+):
 
     schema = ITeam
     field_names = [
-        'teamowner', 'display_name', 'description', 'membership_policy',
-        'defaultmembershipperiod', 'renewal_policy', 'defaultrenewalperiod']
+        "teamowner",
+        "display_name",
+        "description",
+        "membership_policy",
+        "defaultmembershipperiod",
+        "renewal_policy",
+        "defaultrenewalperiod",
+    ]
     invariant_context = None
-    label = 'Claim Launchpad team'
+    label = "Claim Launchpad team"
     custom_widget_description = CustomWidgetFactory(
-        TextAreaWidget, height=10, width=30)
+        TextAreaWidget, height=10, width=30
+    )
     custom_widget_renewal_policy = CustomWidgetFactory(
-        LaunchpadRadioWidget, orientation='vertical')
+        LaunchpadRadioWidget, orientation="vertical"
+    )
     custom_widget_membership_policy = CustomWidgetFactory(
-        LaunchpadRadioWidget, orientation='vertical')
+        LaunchpadRadioWidget, orientation="vertical"
+    )
 
     expected_token_types = (LoginTokenType.TEAMCLAIM,)
 
     def initialize(self):
         if not self.redirectIfInvalidOrConsumedToken():
             self.claimed_profile = getUtility(IPersonSet).getByEmail(
-                self.context.email, filter_status=False)
+                self.context.email, filter_status=False
+            )
             # Let's pretend the claimed profile provides ITeam while we
             # render/process this page, so that it behaves like a team.
             directlyProvides(removeSecurityProxy(self.claimed_profile), ITeam)
         super().initialize()
 
     def setUpWidgets(self, context=None):
-        self.form_fields['teamowner'].for_display = True
+        self.form_fields["teamowner"].for_display = True
         super().setUpWidgets(context=self.claimed_profile)
-        alsoProvides(self.widgets['teamowner'], IAlwaysSubmittedWidget)
+        alsoProvides(self.widgets["teamowner"], IAlwaysSubmittedWidget)
 
     @property
     def initial_values(self):
-        return {'teamowner': self.context.requester}
+        return {"teamowner": self.context.requester}
 
     @property
     def default_next_url(self):
         return canonical_url(self.claimed_profile)
 
-    @action(_('Continue'), name='confirm')
+    @action(_("Continue"), name="confirm")
     def confirm_action(self, action, data):
         try:
             self.claimed_profile.convertToTeam(
-                team_owner=self.context.requester)
+                team_owner=self.context.requester
+            )
         except AlreadyConvertedException as e:
             self.request.response.addErrorNotification(e)
             self.context.consume()
@@ -225,11 +231,13 @@ class ClaimTeamView(
         # just converted into a team.  Of course, we can't do that, so we'll
         # have to remove its security proxy before we update it.
         self.updateContextFromData(
-            data, context=removeSecurityProxy(self.claimed_profile))
+            data, context=removeSecurityProxy(self.claimed_profile)
+        )
         self.request.response.addInfoNotification(
-            _('Team claimed successfully'))
+            _("Team claimed successfully")
+        )
 
-    @action(_('Cancel'), name='cancel', validator='validate_cancel')
+    @action(_("Cancel"), name="cancel", validator="validate_cancel")
     def cancel_action(self, action, data):
         self._cancel()
 
@@ -238,17 +246,20 @@ class ValidateGPGKeyView(BaseTokenView, LaunchpadFormView):
 
     schema = IGPGKeyValidationForm
     field_names = []
-    expected_token_types = (LoginTokenType.VALIDATEGPG,
-                            LoginTokenType.VALIDATESIGNONLYGPG)
+    expected_token_types = (
+        LoginTokenType.VALIDATEGPG,
+        LoginTokenType.VALIDATESIGNONLYGPG,
+    )
 
     @property
     def label(self):
         if self.context.tokentype == LoginTokenType.VALIDATESIGNONLYGPG:
-            return 'Confirm sign-only OpenPGP key'
+            return "Confirm sign-only OpenPGP key"
         else:
             assert self.context.tokentype == LoginTokenType.VALIDATEGPG, (
-                'unexpected token type: %r' % self.context.tokentype)
-            return 'Confirm OpenPGP key'
+                "unexpected token type: %r" % self.context.tokentype
+            )
+            return "Confirm OpenPGP key"
 
     @property
     def default_next_url(self):
@@ -257,7 +268,7 @@ class ValidateGPGKeyView(BaseTokenView, LaunchpadFormView):
     def initialize(self):
         if not self.redirectIfInvalidOrConsumedToken():
             if self.context.tokentype == LoginTokenType.VALIDATESIGNONLYGPG:
-                self.field_names = ['text_signature']
+                self.field_names = ["text_signature"]
         super().initialize()
 
     def validate(self, data):
@@ -265,62 +276,82 @@ class ValidateGPGKeyView(BaseTokenView, LaunchpadFormView):
         if self.context.tokentype == LoginTokenType.VALIDATESIGNONLYGPG:
             self._validateSignOnlyGPGKey(data)
 
-    @action(_('Cancel'), name='cancel', validator='validate_cancel')
+    @action(_("Cancel"), name="cancel", validator="validate_cancel")
     def cancel_action(self, action, data):
         self._cancel()
 
-    @action(_('Continue'), name='continue')
+    @action(_("Continue"), name="continue")
     def continue_action_gpg(self, action, data):
         assert self.gpg_key is not None
         can_encrypt = (
-            self.context.tokentype != LoginTokenType.VALIDATESIGNONLYGPG)
+            self.context.tokentype != LoginTokenType.VALIDATESIGNONLYGPG
+        )
         self._activateGPGKey(self.gpg_key, can_encrypt=can_encrypt)
 
     def _validateSignOnlyGPGKey(self, data):
         # Verify the signed content.
-        signedcontent = data.get('text_signature')
+        signedcontent = data.get("text_signature")
         if signedcontent is None:
             return
 
         try:
             signature = getUtility(IGPGHandler).getVerifiedSignature(
-                signedcontent.encode('ASCII'))
+                signedcontent.encode("ASCII")
+            )
         except (GPGVerificationError, GPGKeyExpired, UnicodeEncodeError) as e:
-            self.addError(_(
-                'Launchpad could not verify your signature: ${err}',
-                mapping=dict(err=str(e))))
+            self.addError(
+                _(
+                    "Launchpad could not verify your signature: ${err}",
+                    mapping=dict(err=str(e)),
+                )
+            )
             return
 
         if signature.fingerprint != self.context.fingerprint:
-            self.addError(_(
-                'The key used to sign the content (${fprint}) is not the '
-                'key you were registering',
-                mapping=dict(fprint=signature.fingerprint)))
+            self.addError(
+                _(
+                    "The key used to sign the content (${fprint}) is not the "
+                    "key you were registering",
+                    mapping=dict(fprint=signature.fingerprint),
+                )
+            )
             return
 
         # We compare the word-splitted content to avoid failures due
         # to whitespace differences.
-        if (signature.plain_data.split()
-                != self.context.validation_phrase.encode('UTF-8').split()):
-            self.addError(_(
-                'The signed content does not match the message found '
-                'in the email.'))
+        if (
+            signature.plain_data.split()
+            != self.context.validation_phrase.encode("UTF-8").split()
+        ):
+            self.addError(
+                _(
+                    "The signed content does not match the message found "
+                    "in the email."
+                )
+            )
             return
 
     def _activateGPGKey(self, key, can_encrypt):
         person_url = canonical_url(self.context.requester)
-        lpkey, new, = self.context.activateGPGKey(key, can_encrypt)
+        (
+            lpkey,
+            new,
+        ) = self.context.activateGPGKey(key, can_encrypt)
 
         if new:
-            self.request.response.addInfoNotification(_(
-                "The key ${lpkey} was successfully validated. ",
-                mapping=dict(lpkey=lpkey.displayname)))
+            self.request.response.addInfoNotification(
+                _(
+                    "The key ${lpkey} was successfully validated. ",
+                    mapping=dict(lpkey=lpkey.displayname),
+                )
+            )
         else:
             msgid = _(
-                'Key ${lpkey} successfully reactivated. '
+                "Key ${lpkey} successfully reactivated. "
                 '<a href="${url}/+editpgpkeys">See more Information'
-                '</a>',
-                mapping=dict(lpkey=lpkey.displayname, url=person_url))
+                "</a>",
+                mapping=dict(lpkey=lpkey.displayname, url=person_url),
+            )
             self.request.response.addInfoNotification(structured(msgid))
 
     def _getGPGKey(self):
@@ -340,35 +371,38 @@ class ValidateGPGKeyView(BaseTokenView, LaunchpadFormView):
         try:
             key = gpghandler.retrieveActiveKey(fingerprint)
         except GPGKeyNotFoundError:
-            self.addError(
-                structured(_(
-                'Launchpad could not import the OpenPGP key %{fingerprint}. '
-                'Check that you published it correctly in the '
-                'global key ring (using <kbd>gpg --send-keys '
-                'KEY</kbd>) and that you entered the fingerprint '
-                'correctly (as produced by <kbd>gpg --fingerprint '
+            message = _(
+                "Launchpad could not import the OpenPGP key %{fingerprint}. "
+                "Check that you published it correctly in the "
+                "global key ring (using <kbd>gpg --send-keys "
+                "KEY</kbd>) and that you entered the fingerprint "
+                "correctly (as produced by <kbd>gpg --fingerprint "
                 'YOU</kdb>). Try later or <a href="${url}/+editpgpkeys"> '
-                'cancel your request</a>.',
-                mapping=dict(fingerprint=fingerprint, url=person_url))))
+                "cancel your request</a>.",
+                mapping=dict(fingerprint=fingerprint, url=person_url),
+            )
+            self.addError(structured(message))
         except GPGKeyRevoked as e:
             # If key is globally revoked, skip the import and consume the
             # token.
-            self.addError(
-                    structured(_(
-                'The key ${key} cannot be validated because it has been '
-                'publicly revoked. You will need to generate a new key '
-                '(using <kbd>gpg --genkey</kbd>) and repeat the previous '
+            message = _(
+                "The key ${key} cannot be validated because it has been "
+                "publicly revoked. You will need to generate a new key "
+                "(using <kbd>gpg --genkey</kbd>) and repeat the previous "
                 'process to <a href="${url}/+editpgpkeys">find and '
-                'import</a> the new key.',
-                mapping=dict(key=e.key.fingerprint, url=person_url))))
+                "import</a> the new key.",
+                mapping=dict(key=e.key.fingerprint, url=person_url),
+            )
+            self.addError(structured(message))
         except GPGKeyExpired as e:
-            self.addError(
-                        structured(_(
-                'The key ${key} cannot be validated because it has expired. '
-                'Change the expiry date (in a terminal, enter '
-                '<kbd>gpg --edit-key <var>your@email.address</var></kbd> '
-                'then enter <kbd>expire</kbd>), and try again.',
-                mapping=dict(key=e.key.fingerprint))))
+            message = _(
+                "The key ${key} cannot be validated because it has expired. "
+                "Change the expiry date (in a terminal, enter "
+                "<kbd>gpg --edit-key <var>your@email.address</var></kbd> "
+                "then enter <kbd>expire</kbd>), and try again.",
+                mapping=dict(key=e.key.fingerprint),
+            )
+            self.addError(structured(message))
         else:
             return key
 
@@ -378,7 +412,7 @@ class ValidateEmailView(BaseTokenView, LaunchpadFormView):
     schema = Interface
     field_names = []
     expected_token_types = (LoginTokenType.VALIDATEEMAIL,)
-    label = 'Confirm email address'
+    label = "Confirm email address"
 
     def initialize(self):
         if self.redirectIfInvalidOrConsumedToken():
@@ -388,7 +422,9 @@ class ValidateEmailView(BaseTokenView, LaunchpadFormView):
     def validate(self, data):
         """Make sure the email address this token refers to is not in use."""
         validated = (
-            EmailAddressStatus.VALIDATED, EmailAddressStatus.PREFERRED)
+            EmailAddressStatus.VALIDATED,
+            EmailAddressStatus.PREFERRED,
+        )
         requester = self.context.requester
 
         emailset = getUtility(IEmailAddressSet)
@@ -399,21 +435,27 @@ class ValidateEmailView(BaseTokenView, LaunchpadFormView):
                 # Yes, hardcoding an autogenerated field name is an evil
                 # hack, but if it fails nothing will happen.
                 # -- Guilherme Salgado 2005-07-09
-                url = allvhosts.configs['mainsite'].rooturl
-                query = urlencode([('field.dupe_person', dupe.name)])
-                url += '/people/+requestmerge?' + query
-                self.addError(structured(
-                    'This email address is already registered for another '
-                    'Launchpad user account. This account can be a '
-                    'duplicate of yours, created automatically, and in this '
-                    'case you should be able to <a href="%(url)s">merge them'
-                    '</a> into a single one.',
-                    url=url))
+                url = allvhosts.configs["mainsite"].rooturl
+                query = urlencode([("field.dupe_person", dupe.name)])
+                url += "/people/+requestmerge?" + query
+                self.addError(
+                    structured(
+                        "This email address is already registered for another "
+                        "Launchpad user account. This account can be a "
+                        "duplicate of yours, created automatically, and in "
+                        "this case you should be able to "
+                        '<a href="%(url)s">merge them</a> into a single one.',
+                        url=url,
+                    )
+                )
             elif email.status in validated:
-                self.addError(_(
-                    "This email address is already registered and validated "
-                    "for your Launchpad account. There's no need to validate "
-                    "it again."))
+                self.addError(
+                    _(
+                        "This email address is already registered and "
+                        "validated for your Launchpad account. There's no "
+                        "need to validate it again."
+                    )
+                )
             else:
                 # Yay, email is not used by anybody else and is not yet
                 # validated.
@@ -424,15 +466,16 @@ class ValidateEmailView(BaseTokenView, LaunchpadFormView):
         if self.context.redirection_url is not None:
             return self.context.redirection_url
         else:
-            assert self.context.requester is not None, (
-                "LoginTokens of this type must have a requester")
+            assert (
+                self.context.requester is not None
+            ), "LoginTokens of this type must have a requester"
             return canonical_url(self.context.requester)
 
-    @action(_('Cancel'), name='cancel', validator='validate_cancel')
+    @action(_("Cancel"), name="cancel", validator="validate_cancel")
     def cancel_action(self, action, data):
         self._cancel()
 
-    @action(_('Continue'), name='continue')
+    @action(_("Continue"), name="continue")
     def continue_action(self, action, data):
         """Mark the new email address as VALIDATED in the database.
 
@@ -447,7 +490,8 @@ class ValidateEmailView(BaseTokenView, LaunchpadFormView):
 
         self.context.consume()
         self.request.response.addInfoNotification(
-            _('Email address successfully confirmed.'))
+            _("Email address successfully confirmed.")
+        )
 
     def _ensureEmail(self):
         """Make sure self.requester has this token's email address as one of
@@ -457,7 +501,8 @@ class ValidateEmailView(BaseTokenView, LaunchpadFormView):
         email = emailset.getByEmail(self.context.email)
         if email is None:
             email = emailset.new(
-                email=self.context.email, person=self.context.requester)
+                email=self.context.email, person=self.context.requester
+            )
         return email
 
     def markEmailAsValid(self, email):
@@ -481,7 +526,7 @@ class MergePeopleView(BaseTokenView, LaunchpadFormView):
     field_names = []
     expected_token_types = (LoginTokenType.ACCOUNTMERGE,)
     mergeCompleted = False
-    label = 'Merge Launchpad accounts'
+    label = "Merge Launchpad accounts"
 
     @property
     def default_next_url(self):
@@ -490,14 +535,15 @@ class MergePeopleView(BaseTokenView, LaunchpadFormView):
     def initialize(self):
         self.redirectIfInvalidOrConsumedToken()
         self.dupe = getUtility(IPersonSet).getByEmail(
-            self.context.email, filter_status=False)
+            self.context.email, filter_status=False
+        )
         super().initialize()
 
-    @action(_('Cancel'), name='cancel', validator='validate_cancel')
+    @action(_("Cancel"), name="cancel", validator="validate_cancel")
     def cancel_action(self, action, data):
         self._cancel()
 
-    @action(_('Confirm'), name='confirm')
+    @action(_("Confirm"), name="confirm")
     def confirm_action(self, action, data):
         """Perform the merge."""
         # Merge requests must have a valid user account (one with a preferred
@@ -505,17 +551,24 @@ class MergePeopleView(BaseTokenView, LaunchpadFormView):
         assert self.context.requester.preferredemail is not None
         self._doMerge()
         if self.mergeCompleted:
-            self.success(_(
-                'The accounts are being merged. This can take up to an hour '
-                'to complete, after which everything that belonged to the '
-                'duplicated account will belong to your own account.'))
+            self.success(
+                _(
+                    "The accounts are being merged. This can take up to an "
+                    "hour to complete, after which everything that belonged "
+                    "to the duplicated account will belong to your own "
+                    "account."
+                )
+            )
         else:
-            self.success(_(
-                'The email address %s has been assigned to you, but the '
-                'duplicate account you selected has other registered email '
-                'addresses too. To complete the merge, you have to prove '
-                'that you have access to all those email addresses.'
-                % self.context.email))
+            self.success(
+                _(
+                    "The email address %s has been assigned to you, but the "
+                    "duplicate account you selected has other registered "
+                    "email addresses too. To complete the merge, you have to "
+                    "prove that you have access to all those email addresses."
+                    % self.context.email
+                )
+            )
         self.context.consume()
 
     def _doMerge(self):
@@ -552,29 +605,33 @@ class MergePeopleView(BaseTokenView, LaunchpadFormView):
             self.mergeCompleted = False
             return
         getUtility(IPersonSet).mergeAsync(
-            self.dupe, requester, requester, reviewer=requester)
+            self.dupe, requester, requester, reviewer=requester
+        )
         merge_message = _(
-            'A merge is queued and is expected to complete in a few minutes.')
+            "A merge is queued and is expected to complete in a few minutes."
+        )
         self.request.response.addInfoNotification(merge_message)
         self.mergeCompleted = True
 
 
 class BugTrackerHandshakeView(BaseTokenView):
     """A view for authentication BugTracker handshake tokens."""
+
     expected_token_types = (LoginTokenType.BUGTRACKER,)
 
     def __call__(self):
         # We don't render any templates from this view as it's a
         # machine-only one, so we set the response to be plaintext.
-        self.request.response.setHeader('Content-type', 'text/plain')
+        self.request.response.setHeader("Content-type", "text/plain")
 
         # Reject the request if it is not a POST - but do not consume
         # the token.
-        if self.request.method != 'POST':
+        if self.request.method != "POST":
             self.request.response.setStatus(405)
-            self.request.response.setHeader('Allow', 'POST')
-            return ("Only POST requests are accepted for bugtracker "
-                    "handshakes.")
+            self.request.response.setHeader("Allow", "POST")
+            return (
+                "Only POST requests are accepted for bugtracker " "handshakes."
+            )
 
         # If the token has been used already or is invalid, return an
         # HTTP 410 (Gone).
@@ -586,5 +643,5 @@ class BugTrackerHandshakeView(BaseTokenView):
         # tells the remote tracker that authentication was successful.
         self.context.consume()
         self.request.response.setStatus(200)
-        self.request.response.setHeader('Content-type', 'text/plain')
+        self.request.response.setHeader("Content-type", "text/plain")
         return "Handshake token validated."

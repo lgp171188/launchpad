@@ -4,34 +4,29 @@
 """Menus and facets."""
 
 __all__ = [
-    'ALL_LINKS',
-    'enabled_with_permission',
-    'get_current_view',
-    'get_facet',
-    'FacetMenu',
-    'ApplicationMenu',
-    'ContextMenu',
-    'NavigationMenu',
-    'Link',
-    'LinkData',
-    'FacetLink',
-    'MenuLink',
-    ]
+    "ALL_LINKS",
+    "enabled_with_permission",
+    "get_current_view",
+    "get_facet",
+    "FacetMenu",
+    "ApplicationMenu",
+    "ContextMenu",
+    "NavigationMenu",
+    "Link",
+    "LinkData",
+    "FacetLink",
+    "MenuLink",
+]
 
 import types
 
 from lazr.delegates import delegate_to
 from lazr.restful.utils import get_current_browser_request
-from lazr.uri import (
-    InvalidURIError,
-    URI,
-    )
+from lazr.uri import URI, InvalidURIError
 from zope.component import getMultiAdapter
 from zope.interface import implementer
-from zope.security.proxy import (
-    isinstance as zope_isinstance,
-    removeSecurityProxy,
-    )
+from zope.security.proxy import isinstance as zope_isinstance
+from zope.security.proxy import removeSecurityProxy
 
 from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import (
@@ -43,12 +38,12 @@ from lp.services.webapp.interfaces import (
     ILinkData,
     IMenuBase,
     INavigationMenu,
-    )
+)
 from lp.services.webapp.publisher import (
-    canonical_url,
     LaunchpadView,
     UserAttributeCache,
-    )
+    canonical_url,
+)
 from lp.services.webapp.vhosts import allvhosts
 
 
@@ -74,7 +69,7 @@ def get_current_view(request=None):
 
 def get_facet(view):
     """Return the view's facet name."""
-    return getattr(removeSecurityProxy(view), '__launchpad_facetname__', '')
+    return getattr(removeSecurityProxy(view), "__launchpad_facetname__", "")
 
 
 @implementer(ILinkData)
@@ -85,8 +80,17 @@ class LinkData:
     as 'Link' to make it nice to use when defining menus.
     """
 
-    def __init__(self, target, text, summary=None, icon=None, enabled=True,
-                 site=None, menu=None, hidden=False):
+    def __init__(
+        self,
+        target,
+        text,
+        summary=None,
+        icon=None,
+        enabled=True,
+        site=None,
+        menu=None,
+        hidden=False,
+    ):
         """Create a new link to 'target' with 'text' as the link text.
 
         'target' is a relative path, an absolute path, or an absolute url.
@@ -118,11 +122,12 @@ class LinkData:
         self.menu = menu
         self.hidden = hidden
 
+
 Link = LinkData
 
 
 @implementer(ILink)
-@delegate_to(ILinkData, context='_linkdata')
+@delegate_to(ILinkData, context="_linkdata")
 class MenuLink:
     """Adapter from ILinkData to ILink."""
 
@@ -161,12 +166,13 @@ class MenuLink:
         if not self.icon:
             return
         else:
-            return '/@@/%s' % self.icon
+            return "/@@/%s" % self.icon
 
     def render(self):
         """See `ILink`."""
         return getMultiAdapter(
-            (self, get_current_browser_request()), name="+inline")()
+            (self, get_current_browser_request()), name="+inline"
+        )()
 
     @property
     def path(self):
@@ -185,7 +191,7 @@ class FacetLink(MenuLink):
 # Marker object that means 'all links are to be enabled'.
 ALL_LINKS = object()
 
-MENU_ANNOTATION_KEY = 'lp.services.webapp.menu.links'
+MENU_ANNOTATION_KEY = "lp.services.webapp.menu.links"
 
 
 @implementer(IMenuBase)
@@ -195,11 +201,18 @@ class MenuBase(UserAttributeCache):
     links = None
     extra_attributes = None
     enable_only = ALL_LINKS
-    _baseclassname = 'MenuBase'
+    _baseclassname = "MenuBase"
     _initialized = False
     _forbiddenlinknames = {
-        'user', 'initialize', 'links', 'enable_only', 'iterlinks',
-         'initLink', 'updateLink', 'extra_attributes'}
+        "user",
+        "initialize",
+        "links",
+        "enable_only",
+        "iterlinks",
+        "initLink",
+        "updateLink",
+        "extra_attributes",
+    }
 
     def __init__(self, context):
         # The attribute self.context is defined in IMenuBase.
@@ -212,9 +225,11 @@ class MenuBase(UserAttributeCache):
 
     def _check_links(self):
         assert self.links is not None, (
-            'Subclasses of %s must provide self.links' % self._baseclassname)
-        assert isinstance(self.links, (tuple, list)), (
-            "self.links must be a tuple or list.")
+            "Subclasses of %s must provide self.links" % self._baseclassname
+        )
+        assert isinstance(
+            self.links, (tuple, list)
+        ), "self.links must be a tuple or list."
 
     def _buildLink(self, name):
         method = getattr(self, name, None)
@@ -222,7 +237,8 @@ class MenuBase(UserAttributeCache):
         # an AssertionError is raised explaining what went wrong.
         if method is None:
             raise AssertionError(
-                '%r does not define %r method.' % (self, name))
+                "%r does not define %r method." % (self, name)
+            )
         linkdata = method()
         # The link need only provide ILinkData.  We need an ILink so that
         # we can set attributes on it like 'name' and 'url' and 'linked'.
@@ -249,7 +265,7 @@ class MenuBase(UserAttributeCache):
         try:
             return URI(allvhosts.configs[site].rooturl)
         except KeyError:
-            raise AssertionError('unknown site', site)
+            raise AssertionError("unknown site", site)
 
     def _init_link_data(self):
         if self._initialized:
@@ -258,9 +274,11 @@ class MenuBase(UserAttributeCache):
         self.initialize()
         self._check_links()
         links_set = set(self.links)
-        assert not links_set.intersection(self._forbiddenlinknames), (
-            "The following names may not be links: %s" %
-            ', '.join(self._forbiddenlinknames))
+        assert not links_set.intersection(
+            self._forbiddenlinknames
+        ), "The following names may not be links: %s" % ", ".join(
+            self._forbiddenlinknames
+        )
 
         if isinstance(self.context, LaunchpadView):
             # It's a navigation menu for a view instead of a db object. Views
@@ -282,8 +300,9 @@ class MenuBase(UserAttributeCache):
             # There are links named in enable_only that do not exist in
             # self.links.
             raise AssertionError(
-                "Links in 'enable_only' not found in 'links': %s" %
-                ', '.join(sorted(unknown_links)))
+                "Links in 'enable_only' not found in 'links': %s"
+                % ", ".join(sorted(unknown_links))
+            )
 
     def initLink(self, linkname, request_url=None):
         self._init_link_data()
@@ -297,18 +316,19 @@ class MenuBase(UserAttributeCache):
 
         # Set the .url attribute of the link, using the menu's context.
         if link.site is None:
-            rootsite = self._contexturlobj.resolve('/')
+            rootsite = self._contexturlobj.resolve("/")
         else:
             rootsite = self._rootUrlForSite(link.site)
         # Is the target a full URI already?
         try:
             link.url = URI(link.target)
         except InvalidURIError:
-            if link.target.startswith('/'):
+            if link.target.startswith("/"):
                 link.url = rootsite.resolve(link.target)
             else:
                 link.url = rootsite.resolve(self._contexturlobj.path).append(
-                    link.target)
+                    link.target
+                )
 
         # Make the link unlinked if it is a link to the current page.
         if request_url is not None:
@@ -339,7 +359,7 @@ class MenuBase(UserAttributeCache):
 class FacetMenu(MenuBase):
     """Base class for facet menus."""
 
-    _baseclassname = 'FacetMenu'
+    _baseclassname = "FacetMenu"
 
     # See IFacetMenu.
     defaultlink = None
@@ -356,8 +376,7 @@ class FacetMenu(MenuBase):
         super().updateLink(link, request_url)
         if selectedfacetname is None:
             selectedfacetname = self.defaultlink
-        if (selectedfacetname is not None and
-            selectedfacetname == link.name):
+        if selectedfacetname is not None and selectedfacetname == link.name:
             link.selected = True
 
 
@@ -365,21 +384,21 @@ class FacetMenu(MenuBase):
 class ApplicationMenu(MenuBase):
     """Base class for application menus."""
 
-    _baseclassname = 'ApplicationMenu'
+    _baseclassname = "ApplicationMenu"
 
 
 @implementer(IContextMenu)
 class ContextMenu(MenuBase):
     """Base class for context menus."""
 
-    _baseclassname = 'ContextMenu'
+    _baseclassname = "ContextMenu"
 
 
 @implementer(INavigationMenu)
 class NavigationMenu(MenuBase):
     """Base class for navigation menus."""
 
-    _baseclassname = 'NavigationMenu'
+    _baseclassname = "NavigationMenu"
 
     title = None
     disabled = False
@@ -395,8 +414,10 @@ class NavigationMenu(MenuBase):
         # the menu for the current view is the link's menu.
         if view is None:
             view = get_current_view(self.request)
-        link.linked = not (self._is_current_url(request_url, link.url)
-                           or self._is_menulink_for_view(link, view))
+        link.linked = not (
+            self._is_current_url(request_url, link.url)
+            or self._is_menulink_for_view(link, view)
+        )
 
     def iterlinks(self, request_url=None):
         """See `INavigationMenu`.
@@ -424,8 +445,9 @@ class NavigationMenu(MenuBase):
         if link_url.query is not None:
             return str(request_url).startswith(str(link_url))
         else:
-            request_url_without_query = (
-                request_url.replace(query=None).ensureNoSlash())
+            request_url_without_query = request_url.replace(
+                query=None
+            ).ensureNoSlash()
             return link_url == request_url_without_query
 
     def _is_menulink_for_view(self, link, view):
@@ -438,7 +460,7 @@ class NavigationMenu(MenuBase):
         A link is considered to be selected when the view provides link's menu
         interface.
         """
-        return (link.menu is not None and link.menu.providedBy(view))
+        return link.menu is not None and link.menu.providedBy(view)
 
 
 class enabled_with_permission:
@@ -482,4 +504,5 @@ class enabled_with_permission:
             if not check_permission(permission, self.context):
                 link.enabled = False
             return link
+
         return enable_if_allowed

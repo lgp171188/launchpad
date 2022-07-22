@@ -8,23 +8,21 @@ __all__ = []
 import unittest
 
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 
 def test_suite():
     suite = unittest.TestSuite()
 
     test = LayeredDocFileSuite(
-        'decoratedresultset.rst',
-        setUp=setUp, tearDown=tearDown,
-        layer=DatabaseFunctionalLayer)
+        "decoratedresultset.rst",
+        setUp=setUp,
+        tearDown=tearDown,
+        layer=DatabaseFunctionalLayer,
+    )
     suite.addTest(test)
     return suite
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -4,14 +4,12 @@
 """Tests for running jobs via Celery."""
 
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 from time import sleep
 from unittest import mock
 
 import iso8601
+import transaction
 from lazr.delegates import delegate_to
 from lazr.jobrunner.celerytask import drain_queues
 from pytz import UTC
@@ -21,30 +19,22 @@ from testtools.matchers import (
     LessThan,
     MatchesAll,
     MatchesListwise,
-    )
-import transaction
+)
 from zope.interface import implementer
 
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
-from lp.services.job.interfaces.job import (
-    IJob,
-    IRunnableJob,
-    JobStatus,
-    )
+from lp.services.job.interfaces.job import IJob, IRunnableJob, JobStatus
 from lp.services.job.model.job import Job
 from lp.services.job.runner import BaseRunnableJob
-from lp.services.job.tests import (
-    block_on_job,
-    monitor_celery,
-    )
+from lp.services.job.tests import block_on_job, monitor_celery
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import CeleryJobLayer
 
 
 @implementer(IRunnableJob)
-@delegate_to(IJob, context='job')
+@delegate_to(IJob, context="job")
 class TestJob(BaseRunnableJob):
     """A dummy job."""
 
@@ -76,7 +66,7 @@ class RetryException(Exception):
 class TestJobWithRetryError(TestJob):
     """A dummy job."""
 
-    retry_error_types = (RetryException, )
+    retry_error_types = (RetryException,)
 
     retry_delay = timedelta(seconds=5)
 
@@ -85,8 +75,8 @@ class TestJobWithRetryError(TestJob):
 
     def storeDateStarted(self):
         existing = self.job.base_json_data or {}
-        existing.setdefault('dates_started', [])
-        existing['dates_started'].append(self.job.date_started.isoformat())
+        existing.setdefault("dates_started", [])
+        existing["dates_started"].append(self.job.date_started.isoformat())
         self.job.base_json_data = existing
 
     def run(self):
@@ -112,9 +102,9 @@ class TestJobsViaCelery(TestCaseWithFactory):
 
     def test_TestJob(self):
         # TestJob can be run via Celery.
-        self.useFixture(FeatureFixture({
-            'jobs.celery.enabled_classes': 'TestJob'
-        }))
+        self.useFixture(
+            FeatureFixture({"jobs.celery.enabled_classes": "TestJob"})
+        )
         with block_on_job(self):
             job = TestJob()
             job.celeryRunOnCommit()
@@ -129,9 +119,9 @@ class TestJobsViaCelery(TestCaseWithFactory):
         # in 10 seconds, and one at any time.  Wait up to a minute and
         # ensure that the correct three have completed, and that they
         # completed in the expected order.
-        self.useFixture(FeatureFixture({
-            'jobs.celery.enabled_classes': 'TestJob'
-        }))
+        self.useFixture(
+            FeatureFixture({"jobs.celery.enabled_classes": "TestJob"})
+        )
         now = datetime.now(UTC)
         job_past = TestJob(scheduled_start=now - timedelta(seconds=60))
         job_past.celeryRunOnCommit()
@@ -148,9 +138,11 @@ class TestJobsViaCelery(TestCaseWithFactory):
         transaction.commit()
 
         count = 0
-        while (count < 300
-                and (job_past.is_pending or job_future.is_pending
-                     or job_whenever.is_pending)):
+        while count < 300 and (
+            job_past.is_pending
+            or job_future.is_pending
+            or job_whenever.is_pending
+        ):
             sleep(0.2)
             count += 1
             transaction.abort()
@@ -160,19 +152,23 @@ class TestJobsViaCelery(TestCaseWithFactory):
         self.assertEqual(JobStatus.COMPLETED, job_whenever.status)
         self.assertEqual(JobStatus.WAITING, job_forever.status)
         self.assertThat(
-            job_future.date_started, GreaterThan(job_past.date_started))
+            job_future.date_started, GreaterThan(job_past.date_started)
+        )
 
     def test_jobs_with_retry_exceptions_are_queued_again(self):
         # A job that raises a retry error is automatically queued
         # and executed again.
-        self.useFixture(FeatureFixture({
-            'jobs.celery.enabled_classes': 'TestJobWithRetryError'
-        }))
+        self.useFixture(
+            FeatureFixture(
+                {"jobs.celery.enabled_classes": "TestJobWithRetryError"}
+            )
+        )
 
         # Set scheduled_start on the job to ensure that retry delays
         # override it.
         job = TestJobWithRetryError(
-            scheduled_start=datetime.now(UTC) + timedelta(seconds=1))
+            scheduled_start=datetime.now(UTC) + timedelta(seconds=1)
+        )
         job.celeryRunOnCommit()
         transaction.commit()
 
@@ -189,31 +185,38 @@ class TestJobsViaCelery(TestCaseWithFactory):
         # Collect the start times recorded by the job.
         dates_started = [
             iso8601.parse_date(d)
-            for d in job.job.base_json_data['dates_started']]
+            for d in job.job.base_json_data["dates_started"]
+        ]
 
         # The first attempt's lease is set to the end of the job, so the
         # second attempt should start roughly 5 seconds after the first. The
         # third attempt should start roughly 5 seconds after the second.
         self.assertThat(dates_started, HasLength(3))
-        self.assertThat(dates_started,
-            MatchesListwise([
-                MatchesAll(),
-                MatchesAll(
-                    GreaterThan(dates_started[0] + timedelta(seconds=4)),
-                    LessThan(dates_started[0] + timedelta(seconds=8))),
-                MatchesAll(
-                    GreaterThan(dates_started[1] + timedelta(seconds=4)),
-                    LessThan(dates_started[1] + timedelta(seconds=8))),
-                ]))
+        self.assertThat(
+            dates_started,
+            MatchesListwise(
+                [
+                    MatchesAll(),
+                    MatchesAll(
+                        GreaterThan(dates_started[0] + timedelta(seconds=4)),
+                        LessThan(dates_started[0] + timedelta(seconds=8)),
+                    ),
+                    MatchesAll(
+                        GreaterThan(dates_started[1] + timedelta(seconds=4)),
+                        LessThan(dates_started[1] + timedelta(seconds=8)),
+                    ),
+                ]
+            ),
+        )
         self.assertEqual(3, job.attempt_count)
         self.assertEqual(JobStatus.COMPLETED, job.status)
 
     def test_without_rabbitmq(self):
         # If no RabbitMQ host is configured, the job is not run via Celery.
-        self.pushConfig('rabbitmq', host='none')
-        self.useFixture(FeatureFixture({
-            'jobs.celery.enabled_classes': 'TestJob'
-        }))
+        self.pushConfig("rabbitmq", host="none")
+        self.useFixture(
+            FeatureFixture({"jobs.celery.enabled_classes": "TestJob"})
+        )
         with monitor_celery() as responses:
             job = TestJob()
             job.celeryRunOnCommit()
@@ -226,11 +229,10 @@ class TestJobsViaCelery(TestCaseWithFactory):
 
 
 class TestTimeoutJob(TestJob):
-
     def storeDateStarted(self):
         existing = self.job.base_json_data or {}
-        existing.setdefault('dates_started', [])
-        existing['dates_started'].append(self.job.date_started.isoformat())
+        existing.setdefault("dates_started", [])
+        existing["dates_started"].append(self.job.date_started.isoformat())
         self.job.base_json_data = existing
 
     def run(self):
@@ -238,6 +240,7 @@ class TestTimeoutJob(TestJob):
 
         if self.job.attempt_count == 1:
             from celery.exceptions import SoftTimeLimitExceeded
+
             raise SoftTimeLimitExceeded
 
 
@@ -248,8 +251,10 @@ class TestCeleryLaneFallback(TestCaseWithFactory):
     def test_fallback_to_slow_lane(self):
         # Check that we re-queue a slow task into the correct queue
         from lp.services.job.celeryjob import celery_app
-        self.useFixture(FeatureFixture({
-            'jobs.celery.enabled_classes': 'TestTimeoutJob'}))
+
+        self.useFixture(
+            FeatureFixture({"jobs.celery.enabled_classes": "TestTimeoutJob"})
+        )
 
         with block_on_job(self):
             job = TestTimeoutJob()
@@ -260,10 +265,13 @@ class TestCeleryLaneFallback(TestCaseWithFactory):
 
         drain_queues(
             celery_app,
-            ['launchpad_job', 'launchpad_job_slow'], callbacks=[message_drain])
+            ["launchpad_job", "launchpad_job_slow"],
+            callbacks=[message_drain],
+        )
 
         self.assertEqual(1, job.attempt_count)
         self.assertEqual(1, message_drain.call_count)
         self.assertEqual(
-            'launchpad_job_slow',
-            message_drain.call_args[0][1].delivery_info['routing_key'])
+            "launchpad_job_slow",
+            message_drain.call_args[0][1].delivery_info["routing_key"],
+        )

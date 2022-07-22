@@ -8,17 +8,17 @@ docstring in __init__.py for details.
 """
 
 __all__ = [
-    'BatchedCountableIterator',
-    'CountableIterator',
-    'FilteredVocabularyBase',
-    'ForgivingSimpleVocabulary',
-    'IHugeVocabulary',
-    'NamedSQLObjectVocabulary',
-    'NamedStormHugeVocabulary',
-    'NamedStormVocabulary',
-    'SQLObjectVocabularyBase',
-    'StormVocabularyBase',
-    'VocabularyFilter',
+    "BatchedCountableIterator",
+    "CountableIterator",
+    "FilteredVocabularyBase",
+    "ForgivingSimpleVocabulary",
+    "IHugeVocabulary",
+    "NamedSQLObjectVocabulary",
+    "NamedStormHugeVocabulary",
+    "NamedStormVocabulary",
+    "SQLObjectVocabularyBase",
+    "StormVocabularyBase",
+    "VocabularyFilter",
 ]
 
 from collections import namedtuple
@@ -26,27 +26,14 @@ from collections import namedtuple
 import six
 from storm.base import Storm
 from storm.store import EmptyResultSet
-from zope.interface import (
-    Attribute,
-    implementer,
-    Interface,
-    )
-from zope.schema.interfaces import (
-    IVocabulary,
-    IVocabularyTokenized,
-    )
-from zope.schema.vocabulary import (
-    SimpleTerm,
-    SimpleVocabulary,
-    )
+from zope.interface import Attribute, Interface, implementer
+from zope.schema.interfaces import IVocabulary, IVocabularyTokenized
+from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 from zope.security.proxy import isinstance as zisinstance
 
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    AND,
-    CONTAINSSTRING,
-    )
+from lp.services.database.sqlobject import AND, CONTAINSSTRING
 
 
 class ForgivingSimpleVocabulary(SimpleVocabulary):
@@ -54,7 +41,7 @@ class ForgivingSimpleVocabulary(SimpleVocabulary):
 
     def __init__(self, *args, **kws):
         missing = object()
-        self._default_term = kws.pop('default_term', missing)
+        self._default_term = kws.pop("default_term", missing)
         if self._default_term is missing:
             raise TypeError('required argument "default_term" not provided')
         return super().__init__(*args, **kws)
@@ -67,8 +54,9 @@ class ForgivingSimpleVocabulary(SimpleVocabulary):
             return self._default_term
 
 
-class VocabularyFilter(namedtuple('VocabularyFilter',
-                                ('name', 'title', 'description'))):
+class VocabularyFilter(
+    namedtuple("VocabularyFilter", ("name", "title", "description"))
+):
     """A VocabularyFilter is used to filter the results of searchForTerms()
 
     A filter has the following attributes:
@@ -91,10 +79,10 @@ class IHugeVocabulary(IVocabulary, IVocabularyTokenized):
     """
 
     displayname = Attribute(
-        'A name for this vocabulary, to be displayed in the picker window.')
+        "A name for this vocabulary, to be displayed in the picker window."
+    )
 
-    step_title = Attribute(
-        'The search step title in the picker window.')
+    step_title = Attribute("The search step title in the picker window.")
 
     def searchForTerms(query=None, vocab_filter=None):
         """Return a `CountableIterator` of `SimpleTerm`s that match the query.
@@ -113,8 +101,7 @@ class IHugeVocabulary(IVocabulary, IVocabularyTokenized):
         """
 
     def supportedFilters():
-        """Return the VocabularyFilters supported by searchForTerms.
-        """
+        """Return the VocabularyFilters supported by searchForTerms."""
 
 
 class ICountableIterator(Interface):
@@ -207,6 +194,7 @@ class CountableIterator:
 
 class BatchedCountableIterator(CountableIterator):
     """A wrapping iterator with hook to create descriptions for its terms."""
+
     # XXX kiko 2007-01-18: note that this class doesn't use the item_wrapper
     # at all. I hate compatibility shims. We can't remove it from the __init__
     # because it is always supplied by NamedStormVocabulary, and we don't
@@ -239,7 +227,7 @@ class VocabularyFilterAll(VocabularyFilter):
     # A filter returning all objects.
 
     def __new__(cls):
-        return super().__new__(cls, 'ALL', 'All', 'Display all search results')
+        return super().__new__(cls, "ALL", "All", "Display all search results")
 
 
 class FilteredVocabularyBase:
@@ -251,12 +239,11 @@ class FilteredVocabularyBase:
     # parameter to a VocabularyFilter instance.
     def __getattribute__(self, name):
         func = object.__getattribute__(self, name)
-        if (hasattr(func, '__call__')
-                and (
-                    func.__name__ == 'searchForTerms'
-                    or func.__name__ == 'search')):
-            def do_search(
-                    query=None, vocab_filter=None, *args, **kwargs):
+        if hasattr(func, "__call__") and (
+            func.__name__ == "searchForTerms" or func.__name__ == "search"
+        ):
+
+            def do_search(query=None, vocab_filter=None, *args, **kwargs):
                 if isinstance(vocab_filter, str):
                     for filter in self.supportedFilters():
                         if filter.name == vocab_filter:
@@ -264,8 +251,10 @@ class FilteredVocabularyBase:
                             break
                     else:
                         raise ValueError(
-                            "Invalid vocab filter value: %s" % vocab_filter)
+                            "Invalid vocab filter value: %s" % vocab_filter
+                        )
                 return func(query, vocab_filter, *args, **kwargs)
+
             return do_search
         else:
             return func
@@ -289,6 +278,7 @@ class SQLObjectVocabularyBase(FilteredVocabularyBase):
     Then the vocabulary for the widget that captures a value for bar
     should derive from SQLObjectVocabularyBase.
     """
+
     _orderBy = None
     _filter = None
     _clauseTables = None
@@ -324,9 +314,9 @@ class SQLObjectVocabularyBase(FilteredVocabularyBase):
         """Return an iterator which provides the terms from the vocabulary."""
         params = {}
         if self._orderBy is not None:
-            params['orderBy'] = self._orderBy
+            params["orderBy"] = self._orderBy
         if self._clauseTables is not None:
-            params['clauseTables'] = self._clauseTables
+            params["clauseTables"] = self._clauseTables
         for obj in self._table.select(self._filter, **params):
             yield self.toTerm(obj)
 
@@ -386,7 +376,7 @@ class SQLObjectVocabularyBase(FilteredVocabularyBase):
         method of subclasses, in order to be consistent and always return
         a SelectResults object.
         """
-        return self._table.select('1 = 2')
+        return self._table.select("1 = 2")
 
 
 class NamedSQLObjectVocabulary(SQLObjectVocabularyBase):
@@ -397,7 +387,8 @@ class NamedSQLObjectVocabulary(SQLObjectVocabularyBase):
     doesn't actually specify this interface since it may not actually
     be huge and require the custom widgets.
     """
-    _orderBy = 'name'
+
+    _orderBy = "name"
 
     def toTerm(self, obj):
         """See SQLObjectVocabularyBase.
@@ -446,6 +437,7 @@ class StormVocabularyBase(FilteredVocabularyBase):
     Then the vocabulary for the widget that captures a value for bar
     should derive from StormVocabularyBase.
     """
+
     _order_by = None
     _clauses = []
 
@@ -554,6 +546,7 @@ class NamedStormVocabulary(StormVocabularyBase):
     doesn't actually specify this interface since it may not actually
     be huge and require the custom widgets.
     """
+
     _order_by = "name"
     # The iterator class will be used to wrap the results; its iteration
     # methods should return SimpleTerms, as the reference implementation
@@ -565,10 +558,15 @@ class NamedStormVocabulary(StormVocabularyBase):
             return self.emptySelectResults()
 
         query = six.ensure_text(query).lower()
-        results = IStore(self._table).find(
-            self._table,
-            self._table.name.contains_string(query),
-            *self._clauses).order_by(self._order_by)
+        results = (
+            IStore(self._table)
+            .find(
+                self._table,
+                self._table.name.contains_string(query),
+                *self._clauses,
+            )
+            .order_by(self._order_by)
+        )
         return self.iterator(results.count(), results, self.toTerm)
 
     def toTerm(self, obj):
@@ -585,18 +583,28 @@ class NamedStormVocabulary(StormVocabularyBase):
 
     def __contains__(self, obj):
         if zisinstance(obj, Storm):
-            found_obj = IStore(self._table).find(
-                self._table,
-                self._table.name == obj.name, *self._clauses).one()
+            found_obj = (
+                IStore(self._table)
+                .find(
+                    self._table, self._table.name == obj.name, *self._clauses
+                )
+                .one()
+            )
             return found_obj is not None and found_obj == obj
         else:
-            found_obj = IStore(self._table).find(
-                self._table, self._table.name == obj, *self._clauses).one()
+            found_obj = (
+                IStore(self._table)
+                .find(self._table, self._table.name == obj, *self._clauses)
+                .one()
+            )
             return found_obj is not None
 
     def getTermByToken(self, token):
-        obj = IStore(self._table).find(
-            self._table, self._table.name == token, *self._clauses).one()
+        obj = (
+            IStore(self._table)
+            .find(self._table, self._table.name == token, *self._clauses)
+            .one()
+        )
         if obj is None:
             raise LookupError(token)
         return self.toTerm(obj)

@@ -6,12 +6,9 @@
 Flags are refreshed asynchronously at regular intervals.
 """
 
-__all__ = ['setup_feature_controller']
+__all__ = ["setup_feature_controller"]
 
-from twisted.internet import (
-    defer,
-    reactor,
-    )
+from twisted.internet import defer, reactor
 from twisted.internet.threads import deferToThread
 from twisted.python import log
 
@@ -20,15 +17,15 @@ from lp.services.features import (
     getFeatureFlag,
     install_feature_controller,
     make_script_feature_controller,
-    )
+)
 
 
 def setup_feature_controller(script_name):
-    '''Install the FeatureController and schedule regular updates.
+    """Install the FeatureController and schedule regular updates.
 
     Update interval is specified by the twisted.flags.refresh
     feature flag, defaulting to 30 seconds.
-    '''
+    """
     controller = _new_controller(script_name)
     _install_and_reschedule(controller, script_name)
 
@@ -51,12 +48,11 @@ _last_refresh = None
 
 def _install_and_reschedule(controller, script_name):
     install_feature_controller(controller)
-    refresh = getFeatureFlag('twisted.flags.refresh') or 60.0
+    refresh = getFeatureFlag("twisted.flags.refresh") or 60.0
     try:
         refresh = float(refresh)
     except ValueError:
-        log.msg("Invalid value {!r} for twisted.flags.refresh".format(
-            refresh))
+        log.msg("Invalid value {!r} for twisted.flags.refresh".format(refresh))
         refresh = 60.0
 
     global _last_refresh

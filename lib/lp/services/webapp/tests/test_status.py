@@ -41,7 +41,8 @@ class TestStatusCheckView(TestCase):
 
     def test_no_database(self):
         policy = DatabaseBlockedPolicy()
-        self.useFixture(ZopeAdapterFixture(
-            policy, (IHTTPRequest,), IDatabasePolicy))
+        self.useFixture(
+            ZopeAdapterFixture(policy, (IHTTPRequest,), IDatabasePolicy)
+        )
         response = http("GET /_status/check HTTP/1.0")
         self.assertEqual(500, response.getStatus())

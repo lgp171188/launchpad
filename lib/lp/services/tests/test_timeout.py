@@ -5,42 +5,32 @@
 """
 
 import socket
-from textwrap import dedent
 import threading
 import xmlrpc.client
 import xmlrpc.server
+from textwrap import dedent
 
-from fixtures import (
-    MonkeyPatch,
-    TempDir,
-    )
+from fixtures import MonkeyPatch, TempDir
 from requests import Response
-from requests.exceptions import (
-    ConnectionError,
-    InvalidSchema,
-    )
-from testtools.matchers import (
-    ContainsDict,
-    Equals,
-    MatchesStructure,
-    )
+from requests.exceptions import ConnectionError, InvalidSchema
+from testtools.matchers import ContainsDict, Equals, MatchesStructure
 
 from lp.services.osutils import write_file
 from lp.services.timeout import (
+    TimeoutError,
+    TransportWithTimeout,
     default_timeout,
     get_default_timeout_function,
     override_timeout,
     reduced_timeout,
     set_default_timeout_function,
-    TimeoutError,
-    TransportWithTimeout,
     urlfetch,
     with_timeout,
-    )
+)
 from lp.services.webapp.adapter import (
     clear_request_started,
     set_request_started,
-    )
+)
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import TestCase
 from lp.testing.fakemethod import FakeMethod
@@ -56,8 +46,9 @@ class EchoOrWaitXMLRPCReqHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
     hang indefinitely for all other requests.  This allows us to show a
     successful request followed by one that times out.
     """
+
     def _dispatch(self, method, params):
-        if method == 'echo':
+        if method == "echo":
             return params[0]
         else:
             # Will hang until the client closes its end of the socket.
@@ -67,6 +58,7 @@ class EchoOrWaitXMLRPCReqHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
 
 class MySimpleXMLRPCServer(xmlrpc.server.SimpleXMLRPCServer):
     """Create a simple XMLRPC server to listen for requests."""
+
     allow_reuse_address = True
 
     def serve_2_requests(self):
@@ -79,7 +71,6 @@ class MySimpleXMLRPCServer(xmlrpc.server.SimpleXMLRPCServer):
 
 
 class TestTimeout(TestCase):
-
     def test_timeout_succeeds(self):
         """After decorating a function 'with_timeout', as long as that function
         finishes before the supplied timeout, it should function normally.
@@ -118,9 +109,11 @@ class TestTimeout(TestCase):
 
     def test_timeout_with_failing_function(self):
         """Other exceptions are reported correctly to the caller."""
+
         @with_timeout(timeout=0.5)
         def call_with_error():
             raise RuntimeError("This exception will be raised in the caller.")
+
         self.assertRaises(RuntimeError, call_with_error)
 
     def test_timeout_with_cleanup(self):
@@ -152,6 +145,7 @@ class TestTimeout(TestCase):
         """The cleanup parameter can also be a string in which case it will be
         interpreted as the name of an instance method.
         """
+
         class expirable_socket:
             def __init__(self):
                 self.closed = False
@@ -172,8 +166,9 @@ class TestTimeout(TestCase):
     def test_invalid_string_without_method(self):
         """It's an error to use a string cleanup when the function isn't a
         method."""
+
         def do_definition():
-            @with_timeout(cleanup='not_a_method', timeout=0.5)
+            @with_timeout(cleanup="not_a_method", timeout=0.5)
             def a_function():
                 pass
 
@@ -197,8 +192,8 @@ class TestTimeout(TestCase):
         """
         e = self.assertRaises(AssertionError, no_default_timeout)
         self.assertEqual(
-            "no timeout set and there is no default timeout function.",
-            str(e))
+            "no timeout set and there is no default timeout function.", str(e)
+        )
 
     def test_set_default_timeout(self):
         """The set_default_timeout_function() takes a function that should
@@ -272,12 +267,12 @@ class TestTimeout(TestCase):
         """
         sock = socket.socket()
         sock.settimeout(2)
-        sock.bind(('127.0.0.1', 0))
+        sock.bind(("127.0.0.1", 0))
 
         # Use 1s as default timeout.
         set_default_timeout_function(lambda: 1)
         self.addCleanup(set_default_timeout_function, None)
-        http_server_url = 'http://%s:%d/' % sock.getsockname()
+        http_server_url = "http://%s:%d/" % sock.getsockname()
         return sock, http_server_url
 
     def test_urlfetch_raises_requests_exceptions(self):
@@ -285,7 +280,7 @@ class TestTimeout(TestCase):
         sock, http_server_url = self.make_test_socket()
 
         e = self.assertRaises(ConnectionError, urlfetch, http_server_url)
-        self.assertIn('Connection refused', str(e))
+        self.assertIn("Connection refused", str(e))
 
     def test_urlfetch_timeout_after_listen(self):
         """After the listen() is called, connections will hang until accept()
@@ -302,7 +297,7 @@ class TestTimeout(TestCase):
         # socket, '' is received, otherwise a socket timeout will occur.
         client_sock, client_addr = sock.accept()
         self.assertStartsWith(client_sock.recv(1024), b"GET / HTTP/1.1")
-        self.assertEqual(b'', client_sock.recv(1024))
+        self.assertEqual(b"", client_sock.recv(1024))
 
     def test_urlfetch_slow_server(self):
         """The function also times out if the server replies very slowly.
@@ -314,15 +309,20 @@ class TestTimeout(TestCase):
 
         def slow_reply():
             (client_sock, client_addr) = sock.accept()
-            content = b'You are veeeeryyy patient!'
-            client_sock.sendall(dedent("""\
+            content = b"You are veeeeryyy patient!"
+            client_sock.sendall(
+                dedent(
+                    """\
                 HTTP/1.0 200 Ok
                 Content-Type: text/plain
-                Content-Length: %d\n\n""" % len(content)).encode("UTF-8"))
+                Content-Length: %d\n\n"""
+                    % len(content)
+                ).encode("UTF-8")
+            )
 
             # Send the body of the reply very slowly, so that
             # it times out in read() and not urlopen.
-            for c in [b'%c' % b for b in content]:
+            for c in [b"%c" % b for b in content]:
                 client_sock.send(c)
                 if stop_event.wait(0.05):
                     break
@@ -335,7 +335,8 @@ class TestTimeout(TestCase):
         # Note that the cleanup also takes care of leaving no worker thread
         # behind.
         remaining_threads = set(threading.enumerate()).difference(
-            saved_threads)
+            saved_threads
+        )
         self.assertEqual(set(), remaining_threads)
         stop_event.set()
         slow_thread.join()
@@ -347,74 +348,85 @@ class TestTimeout(TestCase):
 
         def success_result():
             (client_sock, client_addr) = sock.accept()
-            client_sock.sendall(dedent("""\
+            client_sock.sendall(
+                dedent(
+                    """\
                 HTTP/1.0 200 Ok
                 Content-Type: text/plain
                 Content-Length: 8
 
-                Success.""").encode("UTF-8"))
+                Success."""
+                ).encode("UTF-8")
+            )
             client_sock.close()
 
         t = threading.Thread(target=success_result)
         t.start()
         self.assertThat(
             urlfetch(http_server_url),
-            MatchesStructure.byEquality(status_code=200, content=b'Success.'))
+            MatchesStructure.byEquality(status_code=200, content=b"Success."),
+        )
         t.join()
 
     def test_urlfetch_no_proxy_by_default(self):
         """urlfetch does not use a proxy by default."""
-        self.pushConfig('launchpad', http_proxy='http://proxy.example:3128/')
+        self.pushConfig("launchpad", http_proxy="http://proxy.example:3128/")
         response = Response()
         response.status_code = 200
         fake_send = FakeMethod(result=response)
         self.useFixture(
-            MonkeyPatch('requests.adapters.HTTPAdapter.send', fake_send))
-        urlfetch('http://example.com/')
-        self.assertEqual({}, fake_send.calls[0][1]['proxies'])
+            MonkeyPatch("requests.adapters.HTTPAdapter.send", fake_send)
+        )
+        urlfetch("http://example.com/")
+        self.assertEqual({}, fake_send.calls[0][1]["proxies"])
 
     def test_urlfetch_uses_proxies_if_requested(self):
         """urlfetch uses proxies if explicitly requested."""
-        proxy = 'http://proxy.example:3128/'
-        self.pushConfig('launchpad', http_proxy=proxy)
+        proxy = "http://proxy.example:3128/"
+        self.pushConfig("launchpad", http_proxy=proxy)
         response = Response()
         response.status_code = 200
         fake_send = FakeMethod(result=response)
         self.useFixture(
-            MonkeyPatch('requests.adapters.HTTPAdapter.send', fake_send))
-        urlfetch('http://example.com/', use_proxy=True)
+            MonkeyPatch("requests.adapters.HTTPAdapter.send", fake_send)
+        )
+        urlfetch("http://example.com/", use_proxy=True)
         self.assertEqual(
-            {scheme: proxy for scheme in ('http', 'https')},
-            fake_send.calls[0][1]['proxies'])
+            {scheme: proxy for scheme in ("http", "https")},
+            fake_send.calls[0][1]["proxies"],
+        )
 
     def test_urlfetch_no_ca_certificates(self):
         """If ca_certificates_path is None, urlfetch uses bundled certs."""
-        self.pushConfig('launchpad', ca_certificates_path='none')
+        self.pushConfig("launchpad", ca_certificates_path="none")
         response = Response()
         response.status_code = 200
         fake_send = FakeMethod(result=response)
         self.useFixture(
-            MonkeyPatch('requests.adapters.HTTPAdapter.send', fake_send))
-        urlfetch('http://example.com/')
-        self.assertIs(True, fake_send.calls[0][1]['verify'])
+            MonkeyPatch("requests.adapters.HTTPAdapter.send", fake_send)
+        )
+        urlfetch("http://example.com/")
+        self.assertIs(True, fake_send.calls[0][1]["verify"])
 
     def test_urlfetch_ca_certificates_if_configured(self):
         """urlfetch uses the configured ca_certificates_path if it is set."""
-        self.pushConfig('launchpad', ca_certificates_path='/path/to/certs')
+        self.pushConfig("launchpad", ca_certificates_path="/path/to/certs")
         response = Response()
         response.status_code = 200
         fake_send = FakeMethod(result=response)
         self.useFixture(
-            MonkeyPatch('requests.adapters.HTTPAdapter.send', fake_send))
-        urlfetch('http://example.com/')
-        self.assertEqual('/path/to/certs', fake_send.calls[0][1]['verify'])
+            MonkeyPatch("requests.adapters.HTTPAdapter.send", fake_send)
+        )
+        urlfetch("http://example.com/")
+        self.assertEqual("/path/to/certs", fake_send.calls[0][1]["verify"])
 
     def test_urlfetch_does_not_support_ftp_urls_by_default(self):
         """urlfetch() does not support ftp urls by default."""
-        url = 'ftp://localhost/'
+        url = "ftp://localhost/"
         e = self.assertRaises(InvalidSchema, urlfetch, url)
         self.assertEqual(
-            "No connection adapters were found for {!r}".format(url), str(e))
+            "No connection adapters were found for {!r}".format(url), str(e)
+        )
 
     def test_urlfetch_supports_ftp_urls_if_allow_ftp(self):
         """urlfetch() supports ftp urls via a proxy if explicitly asked."""
@@ -424,43 +436,57 @@ class TestTimeout(TestCase):
         def success_result():
             (client_sock, client_addr) = sock.accept()
             # We only provide a test HTTP proxy, not anything beyond that.
-            client_sock.sendall(dedent("""\
+            client_sock.sendall(
+                dedent(
+                    """\
                 HTTP/1.0 200 Ok
                 Content-Type: text/plain
                 Content-Length: 8
 
-                Success.""").encode("UTF-8"))
+                Success."""
+                ).encode("UTF-8")
+            )
             client_sock.close()
 
-        self.pushConfig('launchpad', http_proxy=http_server_url)
+        self.pushConfig("launchpad", http_proxy=http_server_url)
         t = threading.Thread(target=success_result)
         t.start()
         response = urlfetch(
-            'ftp://example.com/', use_proxy=True, allow_ftp=True)
-        self.assertThat(response, MatchesStructure(
-            status_code=Equals(200),
-            headers=ContainsDict({'Content-Length': Equals('8')}),
-            content=Equals(b'Success.')))
+            "ftp://example.com/", use_proxy=True, allow_ftp=True
+        )
+        self.assertThat(
+            response,
+            MatchesStructure(
+                status_code=Equals(200),
+                headers=ContainsDict({"Content-Length": Equals("8")}),
+                content=Equals(b"Success."),
+            ),
+        )
         t.join()
 
     def test_urlfetch_does_not_support_file_urls_by_default(self):
         """urlfetch() does not support file urls by default."""
-        test_path = self.useFixture(TempDir()).join('file')
-        write_file(test_path, b'')
-        url = 'file://' + test_path
+        test_path = self.useFixture(TempDir()).join("file")
+        write_file(test_path, b"")
+        url = "file://" + test_path
         e = self.assertRaises(InvalidSchema, urlfetch, url)
         self.assertEqual(
-            "No connection adapters were found for {!r}".format(url), str(e))
+            "No connection adapters were found for {!r}".format(url), str(e)
+        )
 
     def test_urlfetch_supports_file_urls_if_allow_file(self):
         """urlfetch() supports file urls if explicitly asked to do so."""
-        test_path = self.useFixture(TempDir()).join('file')
-        write_file(test_path, b'Success.')
-        url = 'file://' + test_path
-        self.assertThat(urlfetch(url, allow_file=True), MatchesStructure(
-            status_code=Equals(200),
-            headers=ContainsDict({'Content-Length': Equals(8)}),
-            content=Equals(b'Success.')))
+        test_path = self.useFixture(TempDir()).join("file")
+        write_file(test_path, b"Success.")
+        url = "file://" + test_path
+        self.assertThat(
+            urlfetch(url, allow_file=True),
+            MatchesStructure(
+                status_code=Equals(200),
+                headers=ContainsDict({"Content-Length": Equals(8)}),
+                content=Equals(b"Success."),
+            ),
+        )
 
     def test_urlfetch_writes_to_output_file(self):
         """If given an output_file, urlfetch writes to it."""
@@ -469,25 +495,29 @@ class TestTimeout(TestCase):
 
         def success_result():
             (client_sock, client_addr) = sock.accept()
-            client_sock.sendall(dedent("""\
+            client_sock.sendall(
+                dedent(
+                    """\
                 HTTP/1.0 200 Ok
                 Content-Type: text/plain
                 Content-Length: 8
 
-                Success.""").encode("UTF-8"))
+                Success."""
+                ).encode("UTF-8")
+            )
             client_sock.close()
 
         t = threading.Thread(target=success_result)
         t.start()
-        output_path = self.useFixture(TempDir()).join('out')
-        with open(output_path, 'wb+') as f:
+        output_path = self.useFixture(TempDir()).join("out")
+        with open(output_path, "wb+") as f:
             urlfetch(http_server_url, output_file=f)
             f.seek(0)
-            self.assertEqual(b'Success.', f.read())
+            self.assertEqual(b"Success.", f.read())
         t.join()
 
     def test_xmlrpc_transport(self):
-        """ Another use case for timeouts is communicating with external
+        """Another use case for timeouts is communicating with external
         systems using XMLRPC.  In order to allow timeouts using XMLRPC we
         provide a transport that is timeout-aware.  The Transport is used for
         XMLRPC over HTTP.
@@ -498,15 +528,20 @@ class TestTimeout(TestCase):
         sock, http_server_url = self.make_test_socket()
         addr, port = sock.getsockname()
         sock.close()
-        server = MySimpleXMLRPCServer(('127.0.0.1', port),
+        server = MySimpleXMLRPCServer(
+            ("127.0.0.1", port),
             requestHandler=EchoOrWaitXMLRPCReqHandler,
-            logRequests=False)
+            logRequests=False,
+        )
         server_thread = threading.Thread(target=server.serve_2_requests)
         server_thread.start()
         proxy = xmlrpc.client.ServerProxy(
-            http_server_url, transport=TransportWithTimeout())
-        self.assertEqual('Successful test message.',
-                         proxy.echo('Successful test message.'))
-        self.assertRaises(TimeoutError,
-                          proxy.no_response, 'Unsuccessful test message.')
+            http_server_url, transport=TransportWithTimeout()
+        )
+        self.assertEqual(
+            "Successful test message.", proxy.echo("Successful test message.")
+        )
+        self.assertRaises(
+            TimeoutError, proxy.no_response, "Unsuccessful test message."
+        )
         server_thread.join()

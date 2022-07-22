@@ -4,11 +4,11 @@
 """Ensure that some operations happen outside of transactions."""
 
 __all__ = [
-    'check_no_transaction',
-    'ensure_no_transaction',
-    'is_transaction_in_progress',
-    'TransactionInProgress',
-    ]
+    "check_no_transaction",
+    "ensure_no_transaction",
+    "is_transaction_in_progress",
+    "TransactionInProgress",
+]
 
 from functools import wraps
 
@@ -16,13 +16,12 @@ import psycopg2.extensions
 from storm.zope.interfaces import IZStorm
 from zope.component import getUtility
 
-
 TRANSACTION_IN_PROGRESS_STATUSES = {
-    psycopg2.extensions.TRANSACTION_STATUS_ACTIVE: 'is active',
-    psycopg2.extensions.TRANSACTION_STATUS_INTRANS: 'has started',
-    psycopg2.extensions.TRANSACTION_STATUS_INERROR: 'has errored',
-    psycopg2.extensions.TRANSACTION_STATUS_UNKNOWN: 'is in an unknown state',
-    }
+    psycopg2.extensions.TRANSACTION_STATUS_ACTIVE: "is active",
+    psycopg2.extensions.TRANSACTION_STATUS_INTRANS: "has started",
+    psycopg2.extensions.TRANSACTION_STATUS_INERROR: "has errored",
+    psycopg2.extensions.TRANSACTION_STATUS_UNKNOWN: "is in an unknown state",
+}
 
 
 class TransactionInProgress(Exception):
@@ -44,7 +43,8 @@ def is_transaction_in_progress():
     """Return True if a transaction is in progress for any store."""
     return any(
         status in TRANSACTION_IN_PROGRESS_STATUSES
-        for name, status in gen_store_statuses())
+        for name, status in gen_store_statuses()
+    )
 
 
 def check_no_transaction():
@@ -53,13 +53,16 @@ def check_no_transaction():
         if status in TRANSACTION_IN_PROGRESS_STATUSES:
             desc = TRANSACTION_IN_PROGRESS_STATUSES[status]
             raise TransactionInProgress(
-                "Transaction %s in %s store." % (desc, name))
+                "Transaction %s in %s store." % (desc, name)
+            )
 
 
 def ensure_no_transaction(func):
     """Decorator that calls check_no_transaction before function."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         check_no_transaction()
         return func(*args, **kwargs)
+
     return wrapper

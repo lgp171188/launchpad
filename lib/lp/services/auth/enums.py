@@ -5,25 +5,26 @@
 
 __all__ = [
     "AccessTokenScope",
-    ]
+]
 
-from lazr.enum import (
-    EnumeratedType,
-    Item,
-    )
+from lazr.enum import EnumeratedType, Item
 
 
 class AccessTokenScope(EnumeratedType):
     """A scope specifying the capabilities of an access token."""
 
-    REPOSITORY_BUILD_STATUS = Item("""
+    REPOSITORY_BUILD_STATUS = Item(
+        """
         repository:build_status
 
         Can see and update the build status for all commits in a repository.
-        """)
+        """
+    )
 
-    REPOSITORY_PUSH = Item("""
+    REPOSITORY_PUSH = Item(
+        """
         repository:push
 
         Can push to a repository.
-        """)
+        """
+    )

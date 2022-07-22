@@ -4,9 +4,9 @@
 """A class for the top-level link to the pillar set."""
 
 __all__ = [
-    'IPillarSetLink',
-    'PillarSetLink',
-    ]
+    "IPillarSetLink",
+    "PillarSetLink",
+]
 
 from lazr.restful.interfaces import ITopLevelEntryLink
 from zope.interface import implementer
@@ -23,9 +23,9 @@ class IPillarSetLink(ITopLevelEntryLink, ICanonicalUrlData):
 class PillarSetLink:
     """The top-level link to the pillar set."""
 
-    link_name = 'pillars'
+    link_name = "pillars"
     entry_type = IPillarNameSet
 
     inside = None
-    path = 'pillars'
-    rootsite = 'api'
+    path = "pillars"
+    rootsite = "api"

@@ -8,7 +8,7 @@ from lp.services.librarian.interfaces import ILibraryFileAliasWithParent
 
 
 class EditLibraryFileAliasWithParent(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = ILibraryFileAliasWithParent
 
     def checkAuthenticated(self, user):
@@ -21,7 +21,7 @@ class EditLibraryFileAliasWithParent(AuthorizationBase):
         If a parent is known, users which can edit the parent can also
         edit properties of the LibraryFileAlias.
         """
-        parent = getattr(self.obj, '__parent__', None)
+        parent = getattr(self.obj, "__parent__", None)
         if parent is None:
             return False
         return self.forwardCheckAuthenticated(user, parent)
@@ -30,7 +30,7 @@ class EditLibraryFileAliasWithParent(AuthorizationBase):
 class ViewLibraryFileAliasWithParent(AuthorizationBase):
     """Authorization class for viewing LibraryFileAliass having a parent."""
 
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = ILibraryFileAliasWithParent
 
     def checkAuthenticated(self, user):
@@ -41,7 +41,7 @@ class ViewLibraryFileAliasWithParent(AuthorizationBase):
         If a parent is known, users which can view the parent can also
         view the LibraryFileAlias.
         """
-        parent = getattr(self.obj, '__parent__', None)
+        parent = getattr(self.obj, "__parent__", None)
         if parent is None:
             return False
         return self.forwardCheckAuthenticated(user, parent)

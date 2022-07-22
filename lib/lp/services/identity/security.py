@@ -11,7 +11,7 @@ from lp.services.identity.interfaces.emailaddress import IEmailAddress
 
 
 class ViewEmailAddress(AuthorizationBase):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = IEmailAddress
 
     def checkUnauthenticated(self):
@@ -30,18 +30,22 @@ class ViewEmailAddress(AuthorizationBase):
         if self.obj.person == user:
             return True
 
-        if not (self.obj.person is None or
-                self.obj.person.hide_email_addresses):
+        if not (
+            self.obj.person is None or self.obj.person.hide_email_addresses
+        ):
             return True
 
-        return (self.obj.person is not None and user.inTeam(self.obj.person)
-                or user.in_commercial_admin
-                or user.in_registry_experts
-                or user.in_admin)
+        return (
+            self.obj.person is not None
+            and user.inTeam(self.obj.person)
+            or user.in_commercial_admin
+            or user.in_registry_experts
+            or user.in_admin
+        )
 
 
 class EditEmailAddress(EditByOwnersOrAdmins):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IEmailAddress
 
     def checkAuthenticated(self, user):

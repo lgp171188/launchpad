@@ -4,53 +4,38 @@
 """Launchpad database policies."""
 
 __all__ = [
-    'BaseDatabasePolicy',
-    'DatabaseBlockedPolicy',
-    'LaunchpadDatabasePolicy',
-    'PrimaryDatabasePolicy',
-    'StandbyDatabasePolicy',
-    'StandbyOnlyDatabasePolicy',
-    ]
+    "BaseDatabasePolicy",
+    "DatabaseBlockedPolicy",
+    "LaunchpadDatabasePolicy",
+    "PrimaryDatabasePolicy",
+    "StandbyDatabasePolicy",
+    "StandbyOnlyDatabasePolicy",
+]
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 import psycopg2
-from storm.cache import (
-    Cache,
-    GenerationalCache,
-    )
+from storm.cache import Cache, GenerationalCache
 from storm.exceptions import DisconnectionError
 from storm.zope.interfaces import IZStorm
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.component import getUtility
-from zope.interface import (
-    alsoProvides,
-    implementer,
-    )
+from zope.interface import alsoProvides, implementer
 
-from lp.services.config import (
-    config,
-    dbconfig,
-    )
+from lp.services.config import config, dbconfig
 from lp.services.database.interfaces import (
     DEFAULT_FLAVOR,
+    MAIN_STORE,
+    PRIMARY_FLAVOR,
+    STANDBY_FLAVOR,
     DisallowedStore,
     IDatabasePolicy,
     IMasterStore,
     IStandbyStore,
     IStoreSelector,
-    MAIN_STORE,
-    PRIMARY_FLAVOR,
-    STANDBY_FLAVOR,
-    )
+)
 from lp.services.database.sqlbase import StupidCache
-from lp.services.webapp.interfaces import (
-    IClientIdManager,
-    ISession,
-    )
+from lp.services.webapp.interfaces import IClientIdManager, ISession
 
 
 def _now():
@@ -67,11 +52,11 @@ _test_lag = None
 
 def storm_cache_factory():
     """Return a Storm Cache of the type and size specified in dbconfig."""
-    if dbconfig.storm_cache == 'generational':
+    if dbconfig.storm_cache == "generational":
         return GenerationalCache(int(dbconfig.storm_cache_size))
-    elif dbconfig.storm_cache == 'stupid':
+    elif dbconfig.storm_cache == "stupid":
         return StupidCache(int(dbconfig.storm_cache_size))
-    elif dbconfig.storm_cache == 'default':
+    elif dbconfig.storm_cache == "default":
         return Cache(int(dbconfig.storm_cache_size))
     else:
         assert False, "Unknown storm_cache %s." % dbconfig.storm_cache
@@ -82,10 +67,11 @@ def get_connected_store(name, flavor):
 
     :raises storm.exceptions.DisconnectionError: On failures.
     """
-    store_name = '%s-%s' % (name, flavor)
+    store_name = "%s-%s" % (name, flavor)
     try:
         store = getUtility(IZStorm).get(
-            store_name, 'launchpad:%s' % store_name)
+            store_name, "launchpad:%s" % store_name
+        )
         store._connection._ensure_connected()
         return store
     except DisconnectionError:
@@ -93,7 +79,7 @@ def get_connected_store(name, flavor):
         # registered with the transaction manager. Otherwise, if
         # _ensure_connected() caused the disconnected state it may not
         # be put into reconnect state at the end of the transaction.
-        store._connection._event.emit('register-transaction')
+        store._connection._event.emit("register-transaction")
         raise
     except psycopg2.OperationalError as exc:
         # Per Bug #1025264, Storm emits psycopg2 errors when we
@@ -145,7 +131,7 @@ class BaseDatabasePolicy:
             if store is None:
                 raise
 
-        if not getattr(store, '_lp_store_initialized', False):
+        if not getattr(store, "_lp_store_initialized", False):
             # No existing Store. Create a new one and tweak its defaults.
 
             # XXX stub 2009-06-25 bug=391996: The default Storm
@@ -179,9 +165,11 @@ class BaseDatabasePolicy:
     def __exit__(self, exc_type, exc_value, traceback):
         """See `IDatabasePolicy`."""
         policy = getUtility(IStoreSelector).pop()
-        assert policy is self, (
-            "Unexpected database policy %s returned by store selector"
-            % repr(policy))
+        assert (
+            policy is self
+        ), "Unexpected database policy %s returned by store selector" % repr(
+            policy
+        )
 
 
 class DatabaseBlockedPolicy(BaseDatabasePolicy):
@@ -201,6 +189,7 @@ class PrimaryDatabasePolicy(BaseDatabasePolicy):
     support session cookies. It is also used when no policy has been
     installed.
     """
+
     default_flavor = PRIMARY_FLAVOR
 
 
@@ -209,6 +198,7 @@ class StandbyDatabasePolicy(BaseDatabasePolicy):
 
     Access to the primary can still be made if requested explicitly.
     """
+
     default_flavor = STANDBY_FLAVOR
 
 
@@ -217,6 +207,7 @@ class StandbyOnlyDatabasePolicy(BaseDatabasePolicy):
 
     This policy is used for Feeds requests and other always-read only request.
     """
+
     default_flavor = STANDBY_FLAVOR
 
     def getStore(self, name, flavor):
@@ -227,15 +218,14 @@ class StandbyOnlyDatabasePolicy(BaseDatabasePolicy):
 
 
 def LaunchpadDatabasePolicyFactory(request):
-    """Return the Launchpad IDatabasePolicy for the current appserver state.
-    """
+    """Return the Launchpad IDatabasePolicy for the current appserver state."""
     # We need to select a non-load balancing DB policy for some status URLs so
     # it doesn't query the DB for lag information (this page should not
     # hit the database at all). We haven't traversed yet, so we have
     # to sniff the request this way.  Even though PATH_INFO is always
     # present in real requests, we need to tread carefully (``get``) because
     # of test requests in our automated tests.
-    if request.get('PATH_INFO') in ['/+opstats', '/+haproxy']:
+    if request.get("PATH_INFO") in ["/+opstats", "/+haproxy"]:
         return DatabaseBlockedPolicy(request)
     else:
         return LaunchpadDatabasePolicy(request)
@@ -250,21 +240,22 @@ class LaunchpadDatabasePolicy(BaseDatabasePolicy):
     def __init__(self, request):
         self.request = request
         # Detect if this is a read only request or not.
-        self.read_only = self.request.method in ['GET', 'HEAD']
+        self.read_only = self.request.method in ["GET", "HEAD"]
 
     def _hasSession(self):
         "Is there is already a session cookie hanging around?"
         cookie_name = getUtility(IClientIdManager).namespace
         return (
-            cookie_name in self.request.cookies or
-            self.request.response.getCookie(cookie_name) is not None)
+            cookie_name in self.request.cookies
+            or self.request.response.getCookie(cookie_name) is not None
+        )
 
     def install(self):
         """See `IDatabasePolicy`."""
         default_flavor = None
 
         # If this is a Retry attempt, force use of the primary database.
-        if getattr(self.request, '_retry_count', 0) > 0:
+        if getattr(self.request, "_retry_count", 0) > 0:
             default_flavor = PRIMARY_FLAVOR
 
         # Select if the DEFAULT_FLAVOR Store will be the primary or a
@@ -275,8 +266,9 @@ class LaunchpadDatabasePolicy(BaseDatabasePolicy):
         # those changes to propagate to the standby databases.
         elif self.read_only:
             lag = self.getReplicationLag()
-            if (lag is not None
-                and lag > timedelta(seconds=config.database.max_usable_lag)):
+            if lag is not None and lag > timedelta(
+                seconds=config.database.max_usable_lag
+            ):
                 # Don't use the standby at all if lag is greater than the
                 # configured threshold. This reduces replication oddities
                 # noticed by users, as well as reducing load on the
@@ -288,8 +280,8 @@ class LaunchpadDatabasePolicy(BaseDatabasePolicy):
                 # important for fast and reliable performance for pages like
                 # +opstats.
                 if self._hasSession():
-                    session_data = ISession(self.request)['lp.dbpolicy']
-                    last_write = session_data.get('last_write', None)
+                    session_data = ISession(self.request)["lp.dbpolicy"]
+                    last_write = session_data.get("last_write", None)
                 else:
                     last_write = None
                 now = _now()
@@ -306,7 +298,7 @@ class LaunchpadDatabasePolicy(BaseDatabasePolicy):
         else:
             default_flavor = PRIMARY_FLAVOR
 
-        assert default_flavor is not None, 'default_flavor not set!'
+        assert default_flavor is not None, "default_flavor not set!"
 
         self.default_flavor = default_flavor
 
@@ -323,8 +315,12 @@ class LaunchpadDatabasePolicy(BaseDatabasePolicy):
             # to the session. This will be true if the principal is
             # authenticated or if there is already a session cookie
             # hanging around.
-            if not IUnauthenticatedPrincipal.providedBy(
-                self.request.principal) or self._hasSession():
+            if (
+                not IUnauthenticatedPrincipal.providedBy(
+                    self.request.principal
+                )
+                or self._hasSession()
+            ):
                 # A non-readonly request has been made. Store this fact
                 # in the session. Precision is hard coded at 1 minute
                 # (so we don't update the timestamp if it is no more
@@ -334,13 +330,14 @@ class LaunchpadDatabasePolicy(BaseDatabasePolicy):
                 # send their session key that was set over https, so we
                 # don't want to access the session which will overwrite
                 # the cookie and log the user out.
-                session_data = ISession(self.request)['lp.dbpolicy']
-                last_write = session_data.get('last_write', None)
+                session_data = ISession(self.request)["lp.dbpolicy"]
+                last_write = session_data.get("last_write", None)
                 now = _now()
-                if (last_write is None or
-                    last_write < now - timedelta(minutes=1)):
+                if last_write is None or last_write < now - timedelta(
+                    minutes=1
+                ):
                     # set value
-                    session_data['last_write'] = now
+                    session_data["last_write"] = now
 
     def getReplicationLag(self):
         """Return the replication lag between the primary and our hot standby.
@@ -354,11 +351,13 @@ class LaunchpadDatabasePolicy(BaseDatabasePolicy):
         # Attempt to retrieve PostgreSQL streaming replication lag
         # from the standby.
         standby_store = self.getStore(MAIN_STORE, STANDBY_FLAVOR)
-        hot_standby, streaming_lag = standby_store.execute("""
+        hot_standby, streaming_lag = standby_store.execute(
+            """
             SELECT
                 pg_is_in_recovery(),
                 now() - pg_last_xact_replay_timestamp()
-            """).get_one()
+            """
+        ).get_one()
         if hot_standby and streaming_lag is not None:
             # standby is a PG 9.1 streaming replication hot standby.
             # Return the lag.
@@ -370,8 +369,7 @@ class LaunchpadDatabasePolicy(BaseDatabasePolicy):
 
 
 def WebServiceDatabasePolicyFactory(request):
-    """Return the Launchpad IDatabasePolicy for the current appserver state.
-    """
+    """Return the Launchpad IDatabasePolicy for the current appserver state."""
     # If a session cookie was sent with the request, use the
     # standard Launchpad database policy for load balancing to
     # the standby databases. The javascript web service libraries

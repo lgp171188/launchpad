@@ -4,18 +4,14 @@
 """Macaroon testing helpers."""
 
 __all__ = [
-    'find_caveats_by_name',
-    'MacaroonTestMixin',
-    'MacaroonVerifies',
-    ]
+    "find_caveats_by_name",
+    "MacaroonTestMixin",
+    "MacaroonVerifies",
+]
 
 from pymacaroons import Macaroon
 from testtools.content import text_content
-from testtools.matchers import (
-    Matcher,
-    MatchesStructure,
-    Mismatch,
-    )
+from testtools.matchers import Matcher, MatchesStructure, Mismatch
 from zope.component import getUtility
 
 from lp.services.macaroons.interfaces import IMacaroonIssuer
@@ -23,8 +19,10 @@ from lp.services.macaroons.interfaces import IMacaroonIssuer
 
 def find_caveats_by_name(macaroon, caveat_name):
     return [
-        caveat for caveat in macaroon.caveats
-        if caveat.caveat_id.startswith(caveat_name + " ")]
+        caveat
+        for caveat in macaroon.caveats
+        if caveat.caveat_id.startswith(caveat_name + " ")
+    ]
 
 
 class MacaroonVerifies(Matcher):
@@ -42,13 +40,16 @@ class MacaroonVerifies(Matcher):
         macaroon = Macaroon.deserialize(macaroon_raw)
         errors = []
         verified = issuer.verifyMacaroon(
-            macaroon, self.context, errors=errors, **self.verify_kwargs)
+            macaroon, self.context, errors=errors, **self.verify_kwargs
+        )
         if not verified:
             return Mismatch(
                 "Macaroon '%s' does not verify" % macaroon_raw,
-                {"errors": text_content("\n".join(errors))})
+                {"errors": text_content("\n".join(errors))},
+            )
         mismatch = MatchesStructure.byEquality(
-            issuer_name=self.issuer_name).match(verified)
+            issuer_name=self.issuer_name
+        ).match(verified)
         if mismatch is not None:
             return mismatch
         if self.matcher is not None:
@@ -56,14 +57,15 @@ class MacaroonVerifies(Matcher):
 
 
 class MacaroonTestMixin:
-
     def assertMacaroonVerifies(self, issuer, macaroon, context, **kwargs):
         self.assertThat(
             macaroon.serialize(),
-            MacaroonVerifies(issuer.identifier, context, **kwargs))
+            MacaroonVerifies(issuer.identifier, context, **kwargs),
+        )
 
-    def assertMacaroonDoesNotVerify(self, expected_errors, issuer, macaroon,
-                                    context, **kwargs):
+    def assertMacaroonDoesNotVerify(
+        self, expected_errors, issuer, macaroon, context, **kwargs
+    ):
         matcher = MacaroonVerifies(issuer.identifier, context, **kwargs)
         mismatch = matcher.match(macaroon.serialize())
         self.assertIsNotNone(mismatch)

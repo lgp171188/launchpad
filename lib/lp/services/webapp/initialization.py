@@ -3,17 +3,10 @@
 
 """Initializes the application after ZCML has been processed."""
 
-from zope.component import (
-    adapter,
-    getSiteManager,
-    )
-from zope.interface import (
-    alsoProvides,
-    implementer,
-    Interface,
-    )
-from zope.processlifetime import IDatabaseOpened
 import zope.publisher.browser
+from zope.component import adapter, getSiteManager
+from zope.interface import Interface, alsoProvides, implementer
+from zope.processlifetime import IDatabaseOpened
 from zope.publisher.interfaces import IRequest
 from zope.publisher.interfaces.browser import IBrowserRequest
 from zope.publisher.interfaces.http import IHTTPRequest
@@ -55,17 +48,22 @@ def fix_up_namespace_traversers():
     is a DRY violation that we can avoid.
     """
     sm = getSiteManager()
-    info = 'see %s.fix_up_namespace_traversers' % (__name__,)
+    info = "see %s.fix_up_namespace_traversers" % (__name__,)
     namespace_factories = sm.adapters.lookupAll(
-        (Interface, IBrowserRequest), ITraversable)
+        (Interface, IBrowserRequest), ITraversable
+    )
     for request_iface in (Interface, IRequest, IHTTPRequest, IBrowserRequest):
         for name, factory in namespace_factories:
             current = sm.adapters.lookup(
-                (Interface, request_iface), Interface, name)
+                (Interface, request_iface), Interface, name
+            )
             if current is factory:
                 sm.registerAdapter(
                     adapter_mask,
-                    required=(Interface, request_iface), name=name, info=info)
+                    required=(Interface, request_iface),
+                    name=name,
+                    info=info,
+                )
 
 
 def customize_get_converter(zope_publisher_browser=zope.publisher.browser):

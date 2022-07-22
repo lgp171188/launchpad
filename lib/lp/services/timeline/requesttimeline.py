@@ -4,9 +4,9 @@
 """Manage a Timeline for a request."""
 
 __all__ = [
-    'get_request_timeline',
-    'set_request_timeline',
-    ]
+    "get_request_timeline",
+    "set_request_timeline",
+]
 
 from timeline import Timeline
 
@@ -33,7 +33,7 @@ def get_request_timeline(request):
     except AttributeError:
         return set_request_timeline(request, Timeline())
     # Disabled code path: bug 623199, ideally we would use this code path.
-    return request.annotations.setdefault('timeline', Timeline())
+    return request.annotations.setdefault("timeline", Timeline())
 
 
 def set_request_timeline(request, timeline):
@@ -47,4 +47,4 @@ def set_request_timeline(request, timeline):
     webapp.adapter._local.request_timeline = timeline
     return timeline
     # Disabled code path: bug 623199, ideally we would use this code path.
-    request.annotations['timeline'] = timeline
+    request.annotations["timeline"] = timeline

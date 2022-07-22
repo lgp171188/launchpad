@@ -4,9 +4,9 @@
 """OpenID adapters and helpers."""
 
 __all__ = [
-    'CurrentOpenIDEndPoint',
-    'OpenIDPersistentIdentity',
-    ]
+    "CurrentOpenIDEndPoint",
+    "OpenIDPersistentIdentity",
+]
 
 import six
 from zope.component import adapter
@@ -26,7 +26,7 @@ class CurrentOpenIDEndPoint:
     @staticmethod
     def getServiceURL():
         """The OpenID server URL (/+openid) for the current request."""
-        return config.launchpad.openid_provider_root + '+openid'
+        return config.launchpad.openid_provider_root + "+openid"
 
     @staticmethod
     def getAllRootURLs():
@@ -34,7 +34,7 @@ class CurrentOpenIDEndPoint:
         yield config.launchpad.openid_provider_root
         alternate_roots = config.launchpad.openid_alternate_provider_roots
         if alternate_roots:
-            for root in [r.strip() for r in alternate_roots.split(',')]:
+            for root in [r.strip() for r in alternate_roots.split(",")]:
                 if root:
                     yield root
 
@@ -54,8 +54,9 @@ class OpenIDPersistentIdentity:
         if openid_identifier is None:
             return None
         return (
-            six.ensure_text(config.launchpad.openid_provider_root) +
-            openid_identifier)
+            six.ensure_text(config.launchpad.openid_provider_root)
+            + openid_identifier
+        )
 
     @property
     def openid_identifier(self):
@@ -63,13 +64,16 @@ class OpenIDPersistentIdentity:
         # We might have multiple OpenID identifiers linked to an
         # account. We just use the first one which is good enough
         # for our purposes.
-        identifier = IStore(OpenIdIdentifier).find(
-            OpenIdIdentifier, account=self.account).order_by(
-                OpenIdIdentifier.date_created).first()
+        identifier = (
+            IStore(OpenIdIdentifier)
+            .find(OpenIdIdentifier, account=self.account)
+            .order_by(OpenIdIdentifier.date_created)
+            .first()
+        )
         if identifier is None:
             return None
         else:
-            return '+id/' + identifier.identifier
+            return "+id/" + identifier.identifier
 
 
 @adapter(IPerson)

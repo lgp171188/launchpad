@@ -4,8 +4,8 @@
 """RabbitMQ server fixture."""
 
 __all__ = [
-    'RabbitServer',
-    ]
+    "RabbitServer",
+]
 
 from textwrap import dedent
 
@@ -21,10 +21,13 @@ class RabbitServer(rabbitfixture.server.RabbitServer):
 
     def setUp(self):
         super().setUp()
-        self.config.service_config = dedent("""\
+        self.config.service_config = dedent(
+            """\
             [rabbitmq]
             host: localhost:%d
             userid: guest
             password: guest
             virtual_host: /
-            """ % self.config.port)
+            """
+            % self.config.port
+        )

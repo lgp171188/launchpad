@@ -10,7 +10,7 @@ from collections import namedtuple
 
 def named_fetchall(cur):
     row_type = namedtuple(
-        'DatabaseRow',
-        (description[0] for description in cur.description))
+        "DatabaseRow", (description[0] for description in cur.description)
+    )
     for row in cur.fetchall():
         yield row_type(*row)

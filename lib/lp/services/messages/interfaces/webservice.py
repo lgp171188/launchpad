@@ -10,13 +10,12 @@ which tells `lazr.restful` that it should look for webservice exports here.
 """
 
 __all__ = [
-    'IMessage',
-    'IMessageRevision',
-    ]
+    "IMessage",
+    "IMessageRevision",
+]
 
 from lp import _schema_circular_imports
 from lp.services.messages.interfaces.message import IMessage
 from lp.services.messages.interfaces.messagerevision import IMessageRevision
-
 
 _schema_circular_imports

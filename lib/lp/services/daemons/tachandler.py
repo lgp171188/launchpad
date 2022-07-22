@@ -4,30 +4,31 @@
 """Test harness for TAC (Twisted Application Configuration) files."""
 
 __all__ = [
-    'TacTestSetup',
-    'TacException',
-    ]
+    "TacTestSetup",
+    "TacException",
+]
 
 
 import os
 import sys
 
-from txfixtures.tachandler import (
-    TacException,
-    TacTestFixture,
-    )
+from txfixtures.tachandler import TacException, TacTestFixture
 
 import lp
 from lp.services.daemons import readyservice
-from lp.services.osutils import (
-    override_environ,
-    remove_if_exists,
+from lp.services.osutils import override_environ, remove_if_exists
+
+twistd_script = os.path.abspath(
+    os.path.join(
+        os.path.dirname(__file__),
+        os.pardir,
+        os.pardir,
+        os.pardir,
+        os.pardir,
+        "bin",
+        "twistd",
     )
-
-
-twistd_script = os.path.abspath(os.path.join(
-    os.path.dirname(__file__),
-    os.pardir, os.pardir, os.pardir, os.pardir, 'bin', 'twistd'))
+)
 
 
 class TacTestSetup(TacTestFixture):
@@ -44,9 +45,9 @@ class TacTestSetup(TacTestFixture):
         # this does not happen.
         self.removeLog()
         with override_environ(LP_DEBUG_SQL=None, LP_DEBUG_SQL_EXTRA=None):
-            TacTestFixture.setUp(self,
-                python_path=sys.executable,
-                twistd_script=twistd_script)
+            TacTestFixture.setUp(
+                self, python_path=sys.executable, twistd_script=twistd_script
+            )
 
     def _hasDaemonStarted(self):
         """Has the daemon started?
@@ -55,8 +56,8 @@ class TacTestSetup(TacTestFixture):
         the log file.
         """
         if os.path.exists(self.logfile):
-            with open(self.logfile, 'rb') as logfile:
-                return readyservice.LOG_MAGIC.encode('UTF-8') in logfile.read()
+            with open(self.logfile, "rb") as logfile:
+                return readyservice.LOG_MAGIC.encode("UTF-8") in logfile.read()
         else:
             return False
 
@@ -71,7 +72,7 @@ class TacTestSetup(TacTestFixture):
         0 bytes.
         """
         if os.path.exists(self.logfile):
-            log_magic_bytes = readyservice.LOG_MAGIC.encode('UTF-8')
+            log_magic_bytes = readyservice.LOG_MAGIC.encode("UTF-8")
             with open(self.logfile, "r+b") as logfile:
                 position = 0
                 for line in logfile:
@@ -85,8 +86,10 @@ class TacTestSetup(TacTestFixture):
     @property
     def daemon_directory(self):
         return os.path.abspath(
-            os.path.join(os.path.dirname(lp.__file__), os.pardir, os.pardir,
-            'daemons'))
+            os.path.join(
+                os.path.dirname(lp.__file__), os.pardir, os.pardir, "daemons"
+            )
+        )
 
     def setUpRoot(self):
         """Override this.

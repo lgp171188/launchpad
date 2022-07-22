@@ -8,32 +8,31 @@ This script runs a simple HTTP server. The server returns JSON files
 when given certain user-configurable URLs.
 """
 
-from http.server import HTTPServer
 import logging
 import os
+from http.server import HTTPServer
 
 from lp.services.config import config
 from lp.services.osutils import ensure_directory_exists
 from lp.services.pidfile import make_pidfile
 from lp.services.sitesearch import testservice
 
-
 # Set up basic logging.
 log = logging.getLogger(__name__)
 
 # The default service name, used by the Launchpad service framework.
-service_name = 'bing-webservice'
+service_name = "bing-webservice"
 
 
 class BingRequestHandler(testservice.RequestHandler):
-    default_content_type = 'application/json; charset=UTF-8'
+    default_content_type = "application/json; charset=UTF-8"
     log = log
     mapfile = config.bing_test_service.mapfile
     content_dir = config.bing_test_service.canned_response_directory
 
 
 def start_as_process():
-    return testservice.start_as_process('bingtestservice')
+    return testservice.start_as_process("bingtestservice")
 
 
 def get_service_endpoint():

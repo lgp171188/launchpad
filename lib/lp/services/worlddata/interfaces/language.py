@@ -4,15 +4,12 @@
 """Language interfaces."""
 
 __all__ = [
-    'ILanguage',
-    'ILanguageSet',
-    'TextDirection',
-    ]
+    "ILanguage",
+    "ILanguageSet",
+    "TextDirection",
+]
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
@@ -23,37 +20,32 @@ from lazr.restful.declarations import (
     exported_as_webservice_entry,
     operation_for_version,
     operation_returns_collection_of,
-    )
-from zope.interface import (
-    Attribute,
-    Interface,
-    invariant,
-    )
+)
+from zope.interface import Attribute, Interface, invariant
 from zope.interface.exceptions import Invalid
-from zope.schema import (
-    Bool,
-    Choice,
-    Field,
-    Int,
-    Set,
-    TextLine,
-    )
+from zope.schema import Bool, Choice, Field, Int, Set, TextLine
 
 
 class TextDirection(DBEnumeratedType):
     """The base text direction for a language."""
 
-    LTR = DBItem(0, """
+    LTR = DBItem(
+        0,
+        """
         Left to Right
 
         Text is normally written from left to right in this language.
-        """)
+        """,
+    )
 
-    RTL = DBItem(1, """
+    RTL = DBItem(
+        1,
+        """
         Right to Left
 
         Text is normally written from left to right in this language.
-        """)
+        """,
+    )
 
 
 @exported_as_webservice_entry(as_of="beta")
@@ -62,58 +54,70 @@ class ILanguage(Interface):
 
     id = Attribute("This Language ID.")
 
-    code = exported(TextLine(
-        title='The ISO 639 code',
-        required=True))
+    code = exported(TextLine(title="The ISO 639 code", required=True))
 
     englishname = exported(
-        TextLine(
-            title='The English name',
-            required=True),
-        exported_as='english_name')
+        TextLine(title="The English name", required=True),
+        exported_as="english_name",
+    )
 
     nativename = TextLine(
-        title='Native name',
-        description='The name of this language in the language itself.',
-        required=False)
+        title="Native name",
+        description="The name of this language in the language itself.",
+        required=False,
+    )
 
     pluralforms = exported(
         Int(
-            title='Number of plural forms',
-            description='The number of plural forms this language has.',
-            required=False),
-        exported_as='plural_forms')
+            title="Number of plural forms",
+            description="The number of plural forms this language has.",
+            required=False,
+        ),
+        exported_as="plural_forms",
+    )
 
     guessed_pluralforms = Int(
         title="Number of plural forms, or a reasonable guess",
-        required=False, readonly=True)
+        required=False,
+        readonly=True,
+    )
 
     pluralexpression = exported(
         TextLine(
-            title='Plural form expression',
-            description=('The expression that relates a number of items'
-                         ' to the appropriate plural form.'),
-            required=False),
-        exported_as='plural_expression')
+            title="Plural form expression",
+            description=(
+                "The expression that relates a number of items"
+                " to the appropriate plural form."
+            ),
+            required=False,
+        ),
+        exported_as="plural_expression",
+    )
 
-    translators = doNotSnapshot(Field(
-        title='List of Person/Team that translate into this language.',
-        required=True))
+    translators = doNotSnapshot(
+        Field(
+            title="List of Person/Team that translate into this language.",
+            required=True,
+        )
+    )
 
     translators_count = exported(
         Int(
             title="Total number of translators for this language.",
-            readonly=True))
+            readonly=True,
+        )
+    )
 
     translation_teams = Field(
-        title='List of Teams that translate into this language.',
-        required=True)
+        title="List of Teams that translate into this language.", required=True
+    )
 
     countries = Set(
-        title='Spoken in',
-        description='List of countries this language is spoken in.',
+        title="Spoken in",
+        description="List of countries this language is spoken in.",
         required=True,
-        value_type=Choice(vocabulary="CountryName"))
+        value_type=Choice(vocabulary="CountryName"),
+    )
 
     def addCountry(country):
         """Add a country to a list of countries this language is spoken in.
@@ -129,47 +133,58 @@ class ILanguage(Interface):
 
     visible = exported(
         Bool(
-            title='Visible',
-            description=(
-                'Whether this language is visible by default.'),
-            required=True))
+            title="Visible",
+            description=("Whether this language is visible by default."),
+            required=True,
+        )
+    )
 
     direction = exported(
         Choice(
-            title='Text direction',
-            description='The direction of text in this language.',
+            title="Text direction",
+            description="The direction of text in this language.",
             required=True,
-            vocabulary=TextDirection),
-        exported_as='text_direction')
+            vocabulary=TextDirection,
+        ),
+        exported_as="text_direction",
+    )
 
     displayname = TextLine(
-        title='The displayname of the language',
-        required=True,
-        readonly=True)
+        title="The displayname of the language", required=True, readonly=True
+    )
 
-    alt_suggestion_language = Attribute("A language which can reasonably "
+    alt_suggestion_language = Attribute(
+        "A language which can reasonably "
         "be expected to have good suggestions for translations in this "
-        "language.")
+        "language."
+    )
 
     dashedcode = TextLine(
-        title=('The language code in a form suitable for use in HTML and'
-               ' XML files.'),
+        title=(
+            "The language code in a form suitable for use in HTML and"
+            " XML files."
+        ),
         required=True,
-        readonly=True)
+        readonly=True,
+    )
 
     abbreviated_text_dir = TextLine(
-        title=('The abbreviated form of the text direction, suitable'
-               ' for use in HTML files.'),
+        title=(
+            "The abbreviated form of the text direction, suitable"
+            " for use in HTML files."
+        ),
         required=True,
-        readonly=True)
+        readonly=True,
+    )
 
     @invariant
     def validatePluralData(form_language):
         pair = (form_language.pluralforms, form_language.pluralexpression)
         if None in pair and pair != (None, None):
             raise Invalid(
-                'The number of plural forms and the plural form expression '
-                'must be set together, or not at all.')
+                "The number of plural forms and the plural form expression "
+                "must be set together, or not at all."
+            )
 
 
 @exported_as_webservice_collection(ILanguage)
@@ -193,7 +208,8 @@ class ILanguageSet(Interface):
         """An API wrapper for `common_languages`"""
 
     common_languages = Attribute(
-        "An iterator over languages that are not hidden.")
+        "An iterator over languages that are not hidden."
+    )
 
     def __iter__():
         """Returns an iterator over all languages."""
@@ -217,9 +233,15 @@ class ILanguageSet(Interface):
     def canonicalise_language_code(code):
         """Convert a language code to standard xx_YY form."""
 
-    def createLanguage(code, englishname, nativename=None, pluralforms=None,
-                       pluralexpression=None, visible=True,
-                       direction=TextDirection.LTR):
+    def createLanguage(
+        code,
+        englishname,
+        nativename=None,
+        pluralforms=None,
+        pluralexpression=None,
+        visible=True,
+        direction=TextDirection.LTR,
+    ):
         """Return a new created language.
 
         :arg code: ISO 639 language code.

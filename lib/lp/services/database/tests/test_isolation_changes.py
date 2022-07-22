@@ -6,24 +6,20 @@
 __all__ = []
 
 import os.path
-from subprocess import (
-    PIPE,
-    Popen,
-    STDOUT,
-    )
 import sys
-from textwrap import dedent
 import unittest
+from subprocess import PIPE, STDOUT, Popen
+from textwrap import dedent
 
 import transaction
 
 from lp.services.config import dbconfig
 from lp.services.database.sqlbase import (
+    ISOLATION_LEVEL_SERIALIZABLE,
     connect,
     cursor,
     disconnect_stores,
-    ISOLATION_LEVEL_SERIALIZABLE,
-    )
+)
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
@@ -45,98 +41,108 @@ class TestIsolation(unittest.TestCase):
         return cur.fetchone()[0]
 
     def test_default(self):
-        self.assertEqual(self.getCurrentIsolation(), 'read committed')
+        self.assertEqual(self.getCurrentIsolation(), "read committed")
 
     def test_autocommit(self):
-        set_isolation_level('autocommit')
+        set_isolation_level("autocommit")
         # There is no actual 'autocommit' mode in PostgreSQL. psycopg
         # implements this feature by using read committed isolation and
         # issuing commit() statements after every query.
-        self.assertEqual(self.getCurrentIsolation(), 'read committed')
+        self.assertEqual(self.getCurrentIsolation(), "read committed")
 
         # So we need to confirm we are actually in autocommit mode
         # by seeing if we an roll back
         cur = cursor()
         cur.execute(
-            "SELECT COUNT(*) FROM Person WHERE homepage_content IS NULL")
+            "SELECT COUNT(*) FROM Person WHERE homepage_content IS NULL"
+        )
         self.assertNotEqual(cur.fetchone()[0], 0)
         cur.execute("UPDATE Person SET homepage_content=NULL")
         transaction.abort()
         cur = cursor()
         cur.execute(
-            "SELECT COUNT(*) FROM Person WHERE homepage_content IS NOT NULL")
+            "SELECT COUNT(*) FROM Person WHERE homepage_content IS NOT NULL"
+        )
         self.assertEqual(cur.fetchone()[0], 0)
 
     def test_readCommitted(self):
-        set_isolation_level('read_committed')
-        self.assertEqual(self.getCurrentIsolation(), 'read committed')
+        set_isolation_level("read_committed")
+        self.assertEqual(self.getCurrentIsolation(), "read committed")
 
     def test_repeatableRead(self):
-        set_isolation_level('repeatable_read')
-        self.assertEqual(self.getCurrentIsolation(), 'repeatable read')
+        set_isolation_level("repeatable_read")
+        self.assertEqual(self.getCurrentIsolation(), "repeatable read")
 
     def test_serializable(self):
-        set_isolation_level('serializable')
-        self.assertEqual(self.getCurrentIsolation(), 'serializable')
+        set_isolation_level("serializable")
+        self.assertEqual(self.getCurrentIsolation(), "serializable")
 
     def test_commit(self):
         # Change the isolation level
-        self.assertEqual(self.getCurrentIsolation(), 'read committed')
-        set_isolation_level('serializable')
-        self.assertEqual(self.getCurrentIsolation(), 'serializable')
+        self.assertEqual(self.getCurrentIsolation(), "read committed")
+        set_isolation_level("serializable")
+        self.assertEqual(self.getCurrentIsolation(), "serializable")
 
         cur = cursor()
         cur.execute("UPDATE Person SET homepage_content=NULL")
         transaction.commit()
         cur.execute("UPDATE Person SET homepage_content='foo'")
-        self.assertEqual(self.getCurrentIsolation(), 'serializable')
+        self.assertEqual(self.getCurrentIsolation(), "serializable")
 
     def test_rollback(self):
         # Change the isolation level
-        self.assertEqual(self.getCurrentIsolation(), 'read committed')
-        set_isolation_level('serializable')
-        self.assertEqual(self.getCurrentIsolation(), 'serializable')
+        self.assertEqual(self.getCurrentIsolation(), "read committed")
+        set_isolation_level("serializable")
+        self.assertEqual(self.getCurrentIsolation(), "serializable")
 
         cur = cursor()
         cur.execute("UPDATE Person SET homepage_content=NULL")
         transaction.abort()
-        self.assertEqual(self.getCurrentIsolation(), 'serializable')
+        self.assertEqual(self.getCurrentIsolation(), "serializable")
 
     def test_script(self):
         # Ensure that things work in stand alone scripts too, in case out
         # test infrustructure is faking something.
-        script = os.path.join(
-                os.path.dirname(__file__), 'script_isolation.py')
+        script = os.path.join(os.path.dirname(__file__), "script_isolation.py")
         cmd = [sys.executable, script]
         process = Popen(
-            cmd, stdout=PIPE, stderr=STDOUT, stdin=PIPE,
-            universal_newlines=True)
+            cmd,
+            stdout=PIPE,
+            stderr=STDOUT,
+            stdin=PIPE,
+            universal_newlines=True,
+        )
         (script_output, _empty) = process.communicate()
-        self.assertEqual(process.returncode, 0, 'Error: ' + script_output)
-        self.assertEqual(script_output, dedent("""\
+        self.assertEqual(process.returncode, 0, "Error: " + script_output)
+        self.assertEqual(
+            script_output,
+            dedent(
+                """\
                 read committed
                 read committed
                 repeatable read
                 repeatable read
-                """))
+                """
+            ),
+        )
 
     def test_connect(self):
         # Ensure connect() method returns a connection with the correct
         # default isolation
         con = connect()
-        self.assertEqual(self.getCurrentIsolation(con), 'read committed')
+        self.assertEqual(self.getCurrentIsolation(con), "read committed")
         con.rollback()
-        self.assertEqual(self.getCurrentIsolation(con), 'read committed')
+        self.assertEqual(self.getCurrentIsolation(con), "read committed")
 
         # Ensure that changing the isolation sticks.
         con = connect(isolation=ISOLATION_LEVEL_SERIALIZABLE)
-        self.assertEqual(self.getCurrentIsolation(con), 'serializable')
+        self.assertEqual(self.getCurrentIsolation(con), "serializable")
         con.rollback()
-        self.assertEqual(self.getCurrentIsolation(con), 'serializable')
+        self.assertEqual(self.getCurrentIsolation(con), "serializable")
 
         # But on a fresh connection, it works just fine.
         con = connect()
         con.set_isolation_level(ISOLATION_LEVEL_SERIALIZABLE)
-        self.assertEqual(self.getCurrentIsolation(con), 'serializable')
+        self.assertEqual(self.getCurrentIsolation(con), "serializable")
         con.rollback()
-        self.assertEqual(self.getCurrentIsolation(con), 'serializable')
+        self.assertEqual(self.getCurrentIsolation(con), "serializable")

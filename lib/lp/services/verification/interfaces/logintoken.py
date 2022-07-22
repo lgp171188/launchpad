@@ -4,15 +4,12 @@
 """Login token interfaces."""
 
 __all__ = [
-    'ILoginToken',
-    'ILoginTokenSet',
-    'IGPGKeyValidationForm',
-    ]
+    "ILoginToken",
+    "ILoginTokenSet",
+    "IGPGKeyValidationForm",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.schema import Text
 
 from lp import _
@@ -28,13 +25,16 @@ class ILoginToken(IAuthToken):
     """
 
     fingerprint = Text(
-        title=_('OpenPGP key fingerprint used to retrieve key information '
-                'when necessary.'),
+        title=_(
+            "OpenPGP key fingerprint used to retrieve key information "
+            "when necessary."
+        ),
         required=False,
-        )
+    )
 
     validation_phrase = Text(
-        title=_("The phrase used to validate sign-only GPG keys"))
+        title=_("The phrase used to validate sign-only GPG keys")
+    )
 
     def destroySelf():
         """Remove this LoginToken from the database.
@@ -75,7 +75,7 @@ class ILoginToken(IAuthToken):
 class ILoginTokenSet(Interface):
     """The set of LoginTokens."""
 
-    title = Attribute('Title')
+    title = Attribute("Title")
 
     def get(id, default=None):
         """Return the LoginToken object with the given id.
@@ -101,8 +101,9 @@ class ILoginTokenSet(Interface):
         """Delete all LoginToken entries with the given email, requester and
         type."""
 
-    def searchByFingerprintRequesterAndType(fingerprint, requester, type,
-                                            consumed=None):
+    def searchByFingerprintRequesterAndType(
+        fingerprint, requester, type, consumed=None
+    ):
         """Return all LoginTokens for the given fingerprint, requester and
         type.
 
@@ -127,8 +128,14 @@ class ILoginTokenSet(Interface):
         a single user.
         """
 
-    def new(requester, requesteremail, email, tokentype, fingerprint=None,
-            redirection_url=None):
+    def new(
+        requester,
+        requesteremail,
+        email,
+        tokentype,
+        fingerprint=None,
+        redirection_url=None,
+    ):
         """Create a new LoginToken object. Parameters must be:
         requester: a Person object or None (in case of a new account)
 
@@ -156,5 +163,7 @@ class IGPGKeyValidationForm(Interface):
     """The schema used by ILoginToken's +validategpg form."""
 
     text_signature = Text(
-        title=_('Signed text'), required=True,
-        description=_('The validation text, signed with your key.'))
+        title=_("Signed text"),
+        required=True,
+        description=_("The validation text, signed with your key."),
+    )

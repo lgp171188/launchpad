@@ -2,22 +2,16 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'FeatureFlag',
-    'FeatureFlagChangelogEntry',
-    'getFeatureStore',
-    ]
+    "FeatureFlag",
+    "FeatureFlagChangelogEntry",
+    "getFeatureStore",
+]
 
 from datetime import datetime
 
 import pytz
 import six
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    Storm,
-    Unicode,
-    )
+from storm.locals import DateTime, Int, Reference, Storm, Unicode
 
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.interfaces import IStore
@@ -26,7 +20,7 @@ from lp.services.database.interfaces import IStore
 class FeatureFlag(Storm):
     """Database setting of a particular flag in a scope"""
 
-    __storm_table__ = 'FeatureFlag'
+    __storm_table__ = "FeatureFlag"
     __storm_primary__ = "scope", "flag"
 
     scope = Unicode(allow_none=False)
@@ -46,19 +40,19 @@ class FeatureFlag(Storm):
 class FeatureFlagChangelogEntry(Storm):
     """A record of a change to the whole set of feature flags."""
 
-    __storm_table__ = 'FeatureFlagChangelogEntry'
+    __storm_table__ = "FeatureFlagChangelogEntry"
 
     id = Int(primary=True)
     date_changed = UtcDateTimeCol(notNull=True)
     diff = Unicode(allow_none=False)
     comment = Unicode(allow_none=False)
-    person_id = Int(name='person', allow_none=False)
-    person = Reference(person_id, 'Person.id')
+    person_id = Int(name="person", allow_none=False)
+    person = Reference(person_id, "Person.id")
 
     def __init__(self, diff, comment, person):
         super().__init__()
         self.diff = six.ensure_text(diff)
-        self.date_changed = datetime.now(pytz.timezone('UTC'))
+        self.date_changed = datetime.now(pytz.timezone("UTC"))
         self.comment = six.ensure_text(comment)
         self.person = person
 

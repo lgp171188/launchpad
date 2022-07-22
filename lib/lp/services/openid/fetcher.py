@@ -4,29 +4,26 @@
 """OpenID consumer configuration."""
 
 __all__ = [
-    'set_default_openid_fetcher',
-    ]
+    "set_default_openid_fetcher",
+]
 
-from functools import partial
 import os.path
+from functools import partial
 from urllib.request import urlopen
 
-from openid.fetchers import (
-    setDefaultFetcher,
-    Urllib2Fetcher,
-    )
+from openid.fetchers import Urllib2Fetcher, setDefaultFetcher
 
 from lp.services.config import config
 from lp.services.encoding import wsgi_native_string
 
 
 class WSGIFriendlyUrllib2Fetcher(Urllib2Fetcher):
-
     def fetch(self, url, body=None, headers=None):
         if headers is not None:
             headers = {
                 wsgi_native_string(key): wsgi_native_string(value)
-                for key, value in headers.items()}
+                for key, value in headers.items()
+            }
         return super().fetch(url, body=body, headers=headers)
 
 
@@ -38,7 +35,7 @@ def set_default_openid_fetcher():
         # Tests have an instance name that looks like 'testrunner-appserver'
         # or similar. We're in 'development' there, so just use that config.
         if config.instance_name.startswith("testrunner"):
-            instance_name = 'development'
+            instance_name = "development"
         else:
             instance_name = config.instance_name
         cert_path = "configs/{}/launchpad.crt".format(instance_name)

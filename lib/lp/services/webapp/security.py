@@ -12,7 +12,7 @@ from lp.services.webapp.interfaces import ILaunchpadRoot
 
 
 class EditByRegistryExpertsOrAdmins(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = ILaunchpadRoot
 
     def checkAuthenticated(self, user):

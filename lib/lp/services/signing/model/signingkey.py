@@ -4,48 +4,30 @@
 """Database classes to manage signing keys stored at the signing service."""
 
 __all__ = [
-    'ArchiveSigningKey',
-    'ArchiveSigningKeySet',
-    'SigningKey',
-    ]
+    "ArchiveSigningKey",
+    "ArchiveSigningKeySet",
+    "SigningKey",
+]
 
 import pytz
-from storm.locals import (
-    Bytes,
-    DateTime,
-    Int,
-    Reference,
-    Unicode,
-    )
+from storm.locals import Bytes, DateTime, Int, Reference, Unicode
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 
-from lp.services.database.constants import (
-    DEFAULT,
-    UTC_NOW,
-    )
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.signing.enums import (
-    SigningKeyType,
-    SigningMode,
-    )
+from lp.services.signing.enums import SigningKeyType, SigningMode
 from lp.services.signing.interfaces.signingkey import (
     IArchiveSigningKey,
     IArchiveSigningKeySet,
     ISigningKey,
     ISigningKeySet,
-    )
+)
 from lp.services.signing.interfaces.signingserviceclient import (
     ISigningServiceClient,
-    )
+)
 
 
 @implementer(ISigningKey)
@@ -53,7 +35,7 @@ from lp.services.signing.interfaces.signingserviceclient import (
 class SigningKey(StormBase):
     """A key stored at lp-signing, used to sign uploaded files and packages"""
 
-    __storm_table__ = 'SigningKey'
+    __storm_table__ = "SigningKey"
 
     id = Int(primary=True)
 
@@ -65,11 +47,16 @@ class SigningKey(StormBase):
 
     public_key = Bytes(allow_none=False)
 
-    date_created = DateTime(
-        allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
+    date_created = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
 
-    def __init__(self, key_type, fingerprint, public_key,
-                 description=None, date_created=DEFAULT):
+    def __init__(
+        self,
+        key_type,
+        fingerprint,
+        public_key,
+        description=None,
+        date_created=DEFAULT,
+    ):
         """Builds the signing key
 
         :param key_type: One of the SigningKeyType enum items
@@ -86,43 +73,58 @@ class SigningKey(StormBase):
     @classmethod
     def get(cls, key_type, fingerprint):
         """See `ISigningKeySet`."""
-        return IStore(SigningKey).find(
-            SigningKey, key_type=key_type, fingerprint=fingerprint).one()
+        return (
+            IStore(SigningKey)
+            .find(SigningKey, key_type=key_type, fingerprint=fingerprint)
+            .one()
+        )
 
     @classmethod
-    def generate(cls, key_type, description,
-                 openpgp_key_algorithm=None, length=None):
+    def generate(
+        cls, key_type, description, openpgp_key_algorithm=None, length=None
+    ):
         signing_service = getUtility(ISigningServiceClient)
         generated_key = signing_service.generate(
-            key_type, description,
-            openpgp_key_algorithm=openpgp_key_algorithm, length=length)
+            key_type,
+            description,
+            openpgp_key_algorithm=openpgp_key_algorithm,
+            length=length,
+        )
         signing_key = SigningKey(
-            key_type=key_type, fingerprint=generated_key['fingerprint'],
-            public_key=generated_key['public-key'],
-            description=description)
+            key_type=key_type,
+            fingerprint=generated_key["fingerprint"],
+            public_key=generated_key["public-key"],
+            description=description,
+        )
         store = IMasterStore(SigningKey)
         store.add(signing_key)
         return signing_key
 
     @classmethod
-    def inject(cls, key_type, private_key, public_key, description,
-               created_at):
+    def inject(
+        cls, key_type, private_key, public_key, description, created_at
+    ):
         signing_service = getUtility(ISigningServiceClient)
         generated_key = signing_service.inject(
-            key_type, private_key, public_key, description, created_at)
-        fingerprint = generated_key['fingerprint']
+            key_type, private_key, public_key, description, created_at
+        )
+        fingerprint = generated_key["fingerprint"]
 
         store = IMasterStore(SigningKey)
         # Check if the key is already saved in the database.
         db_key = store.find(
             SigningKey,
             SigningKey.key_type == key_type,
-            SigningKey.fingerprint == fingerprint).one()
+            SigningKey.fingerprint == fingerprint,
+        ).one()
         if db_key is None:
             db_key = SigningKey(
-                key_type=key_type, fingerprint=fingerprint,
+                key_type=key_type,
+                fingerprint=fingerprint,
                 public_key=bytes(public_key),
-                description=description, date_created=created_at)
+                description=description,
+                date_created=created_at,
+            )
             store.add(db_key)
         return db_key
 
@@ -134,40 +136,44 @@ class SigningKey(StormBase):
                 mode = SigningMode.DETACHED
         signing_service = getUtility(ISigningServiceClient)
         signed = signing_service.sign(
-            self.key_type, self.fingerprint, message_name, message, mode)
-        return signed['signed-message']
+            self.key_type, self.fingerprint, message_name, message, mode
+        )
+        return signed["signed-message"]
 
     def addAuthorization(self, client_name):
         """See `ISigningKey`."""
         signing_service = getUtility(ISigningServiceClient)
         signing_service.addAuthorization(
-            self.key_type, self.fingerprint, client_name)
+            self.key_type, self.fingerprint, client_name
+        )
 
 
 @implementer(IArchiveSigningKey)
 class ArchiveSigningKey(StormBase):
-    """Which signing key should be used by a given archive / series.
-    """
+    """Which signing key should be used by a given archive / series."""
 
-    __storm_table__ = 'ArchiveSigningKey'
+    __storm_table__ = "ArchiveSigningKey"
 
     id = Int(primary=True)
 
     archive_id = Int(name="archive", allow_none=False)
-    archive = Reference(archive_id, 'Archive.id')
+    archive = Reference(archive_id, "Archive.id")
 
     earliest_distro_series_id = Int(
-        name="earliest_distro_series", allow_none=True)
+        name="earliest_distro_series", allow_none=True
+    )
     earliest_distro_series = Reference(
-        earliest_distro_series_id, 'DistroSeries.id')
+        earliest_distro_series_id, "DistroSeries.id"
+    )
 
     key_type = DBEnum(enum=SigningKeyType, allow_none=False)
 
     signing_key_id = Int(name="signing_key", allow_none=False)
     signing_key = Reference(signing_key_id, SigningKey.id)
 
-    def __init__(self, archive=None, earliest_distro_series=None,
-                 signing_key=None):
+    def __init__(
+        self, archive=None, earliest_distro_series=None, signing_key=None
+    ):
         super().__init__()
         self.archive = archive
         self.signing_key = signing_key
@@ -180,7 +186,6 @@ class ArchiveSigningKey(StormBase):
 
 @implementer(IArchiveSigningKeySet)
 class ArchiveSigningKeySet:
-
     @classmethod
     def create(cls, archive, earliest_distro_series, signing_key):
         store = IMasterStore(SigningKey)
@@ -196,16 +201,19 @@ class ArchiveSigningKeySet:
         archive_signing_keys = store.find(
             ArchiveSigningKey,
             ArchiveSigningKey.key_type == key_type,
-            ArchiveSigningKey.archive == archive)
+            ArchiveSigningKey.archive == archive,
+        )
 
         if exact_match:
             archive_signing_keys = archive_signing_keys.find(
-                ArchiveSigningKey.earliest_distro_series == distro_series)
+                ArchiveSigningKey.earliest_distro_series == distro_series
+            )
 
         # Group keys per distro series.
         keys_per_series = {
             archive_signing_key.earliest_distro_series_id: archive_signing_key
-            for archive_signing_key in archive_signing_keys}
+            for archive_signing_key in archive_signing_keys
+        }
 
         # Find the most suitable per key type.
         found_series = False
@@ -222,27 +230,43 @@ class ArchiveSigningKeySet:
         return keys_per_series.get(None)
 
     @classmethod
-    def getSigningKey(cls, key_type, archive, distro_series,
-                      exact_match=False):
+    def getSigningKey(
+        cls, key_type, archive, distro_series, exact_match=False
+    ):
         archive_signing_key = cls.get(
-            key_type, archive, distro_series, exact_match=exact_match)
+            key_type, archive, distro_series, exact_match=exact_match
+        )
         return (
-            None if archive_signing_key is None
-            else archive_signing_key.signing_key)
+            None
+            if archive_signing_key is None
+            else archive_signing_key.signing_key
+        )
 
     @classmethod
-    def generate(cls, key_type, description, archive,
-                 earliest_distro_series=None):
+    def generate(
+        cls, key_type, description, archive, earliest_distro_series=None
+    ):
         signing_key = SigningKey.generate(key_type, description)
         archive_signing = ArchiveSigningKeySet.create(
-            archive, earliest_distro_series, signing_key)
+            archive, earliest_distro_series, signing_key
+        )
         return archive_signing
 
     @classmethod
-    def inject(cls, key_type, private_key, public_key, description, created_at,
-               archive, earliest_distro_series=None):
+    def inject(
+        cls,
+        key_type,
+        private_key,
+        public_key,
+        description,
+        created_at,
+        archive,
+        earliest_distro_series=None,
+    ):
         signing_key = SigningKey.inject(
-            key_type, private_key, public_key, description, created_at)
+            key_type, private_key, public_key, description, created_at
+        )
         archive_signing = ArchiveSigningKeySet.create(
-            archive, earliest_distro_series, signing_key)
+            archive, earliest_distro_series, signing_key
+        )
         return archive_signing

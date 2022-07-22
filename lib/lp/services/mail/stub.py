@@ -27,10 +27,11 @@ class StubMailer:
         self.rewrite = rewrite
 
     def send(self, from_addr, to_addrs, message):
-        log = getLogger('lp.services.mail')
-        log.info('Email from %s to %s being redirected to %s' % (
-            from_addr, ', '.join(to_addrs), ', '.join(self.to_addrs)
-            ))
+        log = getLogger("lp.services.mail")
+        log.info(
+            "Email from %s to %s being redirected to %s"
+            % (from_addr, ", ".join(to_addrs), ", ".join(self.to_addrs))
+        )
 
         # Optionally rewrite headers. Everything works without doing this,
         # as it is the message envelope (created by the MTA) rather than the
@@ -38,15 +39,15 @@ class StubMailer:
         # be required to bypass some spam filters.
         if self.rewrite:
             message = email.message_from_bytes(message)
-            message['X-Orig-To'] = message['To']
-            message['X-Orig-Cc'] = message['Cc']
-            message['X-Orig-From'] = message['From']
-            del message['To']
-            del message['Cc']
-            del message['From']
-            del message['Reply-To']
-            message['To'] = ', '.join(self.to_addrs)
-            message['From'] = self.from_addr
+            message["X-Orig-To"] = message["To"]
+            message["X-Orig-Cc"] = message["Cc"]
+            message["X-Orig-From"] = message["From"]
+            del message["To"]
+            del message["Cc"]
+            del message["From"]
+            del message["Reply-To"]
+            message["To"] = ", ".join(self.to_addrs)
+            message["From"] = self.from_addr
             message = message_as_bytes(message)
 
         sendmail = getUtility(IMailer, self.mailer)

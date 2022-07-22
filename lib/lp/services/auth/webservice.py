@@ -6,9 +6,6 @@
 __all__ = [
     "IAccessToken",
     "IAccessTokenTarget",
-    ]
+]
 
-from lp.services.auth.interfaces import (
-    IAccessToken,
-    IAccessTokenTarget,
-    )
+from lp.services.auth.interfaces import IAccessToken, IAccessTokenTarget

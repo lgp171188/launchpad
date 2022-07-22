@@ -12,15 +12,15 @@ The helper functions in this file make that easy.
 """
 
 __all__ = [
-    'patch_choice_parameter_type',
-    'patch_choice_property',
-    'patch_collection_property',
-    'patch_collection_return_type',
-    'patch_entry_return_type',
-    'patch_list_parameter_type',
-    'patch_plain_parameter_type',
-    'patch_reference_property',
-    ]
+    "patch_choice_parameter_type",
+    "patch_choice_property",
+    "patch_collection_property",
+    "patch_collection_return_type",
+    "patch_entry_return_type",
+    "patch_list_parameter_type",
+    "patch_plain_parameter_type",
+    "patch_reference_property",
+]
 
 
 from lazr.restful.declarations import LAZR_WEBSERVICE_EXPORTED
@@ -33,8 +33,9 @@ def patch_entry_return_type(exported_class, method_name, return_type):
     :param method_name: The method name that you need to patch.
     :param return_type: The new return type for the method.
     """
-    exported_class[method_name].queryTaggedValue(
-        LAZR_WEBSERVICE_EXPORTED)['return_type'].schema = return_type
+    exported_class[method_name].queryTaggedValue(LAZR_WEBSERVICE_EXPORTED)[
+        "return_type"
+    ].schema = return_type
 
 
 def patch_collection_return_type(exported_class, method_name, return_type):
@@ -45,12 +46,14 @@ def patch_collection_return_type(exported_class, method_name, return_type):
     :param return_type: The new return type for the method.
     """
     collection = exported_class[method_name].queryTaggedValue(
-        LAZR_WEBSERVICE_EXPORTED)
-    collection['return_type'].value_type.schema = return_type
+        LAZR_WEBSERVICE_EXPORTED
+    )
+    collection["return_type"].value_type.schema = return_type
 
 
-def patch_list_parameter_type(exported_class, method_name, param_name,
-        param_type):
+def patch_list_parameter_type(
+    exported_class, method_name, param_name, param_type
+):
     """Update a list parameter type for a webservice method.
 
     :param exported_class: The class containing the method.
@@ -59,12 +62,13 @@ def patch_list_parameter_type(exported_class, method_name, param_name,
     :param param_type: The new type for the parameter.
     """
     method = exported_class[method_name]
-    params = method.queryTaggedValue(LAZR_WEBSERVICE_EXPORTED)['params']
+    params = method.queryTaggedValue(LAZR_WEBSERVICE_EXPORTED)["params"]
     params[param_name].value_type = param_type
 
 
-def patch_plain_parameter_type(exported_class, method_name, param_name,
-                               param_type):
+def patch_plain_parameter_type(
+    exported_class, method_name, param_name, param_type
+):
     """Update a plain parameter type for a webservice method.
 
     :param exported_class: The class containing the method.
@@ -72,12 +76,14 @@ def patch_plain_parameter_type(exported_class, method_name, param_name,
     :param param_name: The name of the parameter that you need to patch.
     :param param_type: The new type for the parameter.
     """
-    exported_class[method_name].queryTaggedValue(
-        LAZR_WEBSERVICE_EXPORTED)['params'][param_name].schema = param_type
+    exported_class[method_name].queryTaggedValue(LAZR_WEBSERVICE_EXPORTED)[
+        "params"
+    ][param_name].schema = param_type
 
 
-def patch_choice_parameter_type(exported_class, method_name, param_name,
-                                choice_type):
+def patch_choice_parameter_type(
+    exported_class, method_name, param_name, choice_type
+):
     """Update a `Choice` parameter type for a webservice method.
 
     :param exported_class: The class containing the method.
@@ -86,7 +92,8 @@ def patch_choice_parameter_type(exported_class, method_name, param_name,
     :param choice_type: The new choice type for the parameter.
     """
     param = exported_class[method_name].queryTaggedValue(
-        LAZR_WEBSERVICE_EXPORTED)['params'][param_name]
+        LAZR_WEBSERVICE_EXPORTED
+    )["params"][param_name]
     param.vocabulary = choice_type
 
 
@@ -101,8 +108,7 @@ def patch_reference_property(exported_class, property_name, property_type):
     exported_class[property_name].schema = property_type
 
 
-def patch_collection_property(exported_class, property_name,
-                              collection_type):
+def patch_collection_property(exported_class, property_name, collection_type):
     """Set the collection type of the given property on the given class.
 
     :param exported_class: The class containing the property.

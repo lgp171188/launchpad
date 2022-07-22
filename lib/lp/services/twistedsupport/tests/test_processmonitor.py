@@ -4,15 +4,11 @@
 """Tests for ProcessMonitorProtocol and ProcessMonitorProtocolWithTimeout."""
 
 from testtools.twistedsupport import (
-    assert_fails_with,
     AsynchronousDeferredRunTest,
+    assert_fails_with,
     flush_logged_errors,
-    )
-from twisted.internet import (
-    defer,
-    error,
-    task,
-    )
+)
+from twisted.internet import defer, error, task
 from twisted.python import failure
 
 from lp.services.twistedsupport import suppress_stderr
@@ -22,7 +18,7 @@ from lp.services.twistedsupport.processmonitor import (
     ProcessProtocolWithTwoStageKill,
     ProcessWithTimeout,
     run_process_with_timeout,
-    )
+)
 from lp.testing import TestCase
 
 
@@ -38,8 +34,7 @@ def makeFailure(exception_factory, *args, **kwargs):
 
 
 class ProcessTestsMixin:
-    """Helpers to allow direct testing of ProcessProtocol subclasses.
-    """
+    """Helpers to allow direct testing of ProcessProtocol subclasses."""
 
     class StubTransport:
         """Stub process transport that implements the minimum we need.
@@ -60,13 +55,13 @@ class ProcessTestsMixin:
             self.exited = False
 
         def loseConnection(self):
-            self.calls.append('loseConnection')
+            self.calls.append("loseConnection")
 
         def signalProcess(self, signal_name):
-            self.calls.append(('signalProcess', signal_name))
+            self.calls.append(("signalProcess", signal_name))
             if self.exited:
                 raise error.ProcessExitedAlready
-            if not self.only_sigkill_kills or signal_name == 'KILL':
+            if not self.only_sigkill_kills or signal_name == "KILL":
                 self.exited = True
                 reason = failure.Failure(error.ProcessTerminated())
                 self.protocol.processEnded(reason)
@@ -92,8 +87,7 @@ class ProcessTestsMixin:
         self.termination_deferred = defer.Deferred()
         self.clock = task.Clock()
         self.protocol = self.makeProtocol()
-        self.protocol.transport = self.StubTransport(
-            self.protocol, self.clock)
+        self.protocol.transport = self.StubTransport(self.protocol, self.clock)
         self.protocol.connectionMade()
 
 
@@ -107,7 +101,8 @@ class TestProcessWithTimeout(ProcessTestsMixin, TestCase):
         """See `ProcessMonitorProtocolTestsMixin.makeProtocol`."""
         self._deferred = defer.Deferred()
         return ProcessWithTimeout(
-            self._deferred, self.TIMEOUT, clock=self.clock)
+            self._deferred, self.TIMEOUT, clock=self.clock
+        )
 
     def test_end_versus_timeout_race_condition(self):
         # If the timeout fires around the same time as the process ends,
@@ -146,8 +141,8 @@ class TestProcessProtocolWithTwoStageKill(ProcessTestsMixin, TestCase):
         # process.
         self.protocol.terminateProcess()
         self.assertEqual(
-            [('signalProcess', 'INT')],
-            self.protocol.transport.calls)
+            [("signalProcess", "INT")], self.protocol.transport.calls
+        )
 
     def test_interruptThenKill(self):
         # If SIGINT doesn't kill the process, we send SIGKILL after a delay.
@@ -157,14 +152,15 @@ class TestProcessProtocolWithTwoStageKill(ProcessTestsMixin, TestCase):
 
         # When the error happens, we SIGINT the process.
         self.assertEqual(
-            [('signalProcess', 'INT')],
-            self.protocol.transport.calls)
+            [("signalProcess", "INT")], self.protocol.transport.calls
+        )
 
         # After the expected time elapsed, we send SIGKILL.
         self.clock.advance(self.protocol.default_wait_before_kill + 1)
         self.assertEqual(
-            [('signalProcess', 'INT'), ('signalProcess', 'KILL')],
-            self.protocol.transport.calls)
+            [("signalProcess", "INT"), ("signalProcess", "KILL")],
+            self.protocol.transport.calls,
+        )
 
     def test_processExitClearsTimer(self):
         # If SIGINT doesn't kill the process, we schedule a SIGKILL after a
@@ -186,8 +182,7 @@ class TestProcessMonitorProtocol(ProcessTestsMixin, TestCase):
 
     def makeProtocol(self):
         """See `ProcessMonitorProtocolTestsMixin.makeProtocol`."""
-        return ProcessMonitorProtocol(
-            self.termination_deferred, self.clock)
+        return ProcessMonitorProtocol(self.termination_deferred, self.clock)
 
     def test_processTermination(self):
         # The protocol fires a Deferred when the child process terminates.
@@ -200,36 +195,37 @@ class TestProcessMonitorProtocol(ProcessTestsMixin, TestCase):
         # the error.
         self.simulateProcessExit(clean=False)
         return assert_fails_with(
-            self.termination_deferred, error.ProcessTerminated)
+            self.termination_deferred, error.ProcessTerminated
+        )
 
     def test_unexpectedError(self):
         # unexpectedError() sends SIGINT to the child process but the
         # termination deferred is fired with originally passed-in failure.
         self.protocol.unexpectedError(
-            makeFailure(RuntimeError, 'error message'))
+            makeFailure(RuntimeError, "error message")
+        )
         self.assertEqual(
-            [('signalProcess', 'INT')],
-            self.protocol.transport.calls)
-        return assert_fails_with(
-            self.termination_deferred, RuntimeError)
+            [("signalProcess", "INT")], self.protocol.transport.calls
+        )
+        return assert_fails_with(self.termination_deferred, RuntimeError)
 
     def test_runNotification(self):
         # The first call to runNotification just runs the passed function.
         calls = []
-        self.protocol.runNotification(calls.append, 'called')
-        self.assertEqual(calls, ['called'])
+        self.protocol.runNotification(calls.append, "called")
+        self.assertEqual(calls, ["called"])
 
     def test_runNotificationFailure(self):
         # If a notification function fails, the child process is killed and
         # the manner of failure reported.
         def fail():
             raise RuntimeError
+
         self.protocol.runNotification(fail)
         self.assertEqual(
-            [('signalProcess', 'INT')],
-            self.protocol.transport.calls)
-        return assert_fails_with(
-            self.termination_deferred, RuntimeError)
+            [("signalProcess", "INT")], self.protocol.transport.calls
+        )
+        return assert_fails_with(self.termination_deferred, RuntimeError)
 
     def test_runNotificationSerialization(self):
         # If two calls are made to runNotification, the second function passed
@@ -237,10 +233,10 @@ class TestProcessMonitorProtocol(ProcessTestsMixin, TestCase):
         deferred = defer.Deferred()
         calls = []
         self.protocol.runNotification(lambda: deferred)
-        self.protocol.runNotification(calls.append, 'called')
+        self.protocol.runNotification(calls.append, "called")
         self.assertEqual(calls, [])
         deferred.callback(None)
-        self.assertEqual(calls, ['called'])
+        self.assertEqual(calls, ["called"])
 
     def test_failingNotificationCancelsPendingNotifications(self):
         # A failed notification prevents any further notifications from being
@@ -250,12 +246,11 @@ class TestProcessMonitorProtocol(ProcessTestsMixin, TestCase):
         deferred = defer.Deferred()
         calls = []
         self.protocol.runNotification(lambda: deferred)
-        self.protocol.runNotification(calls.append, 'called')
+        self.protocol.runNotification(calls.append, "called")
         self.assertEqual(calls, [])
         deferred.errback(makeFailure(RuntimeError))
         self.assertEqual(calls, [])
-        return assert_fails_with(
-            self.termination_deferred, RuntimeError)
+        return assert_fails_with(self.termination_deferred, RuntimeError)
 
     def test_waitForPendingNotification(self):
         # Don't fire the termination deferred until all notifications are
@@ -265,7 +260,8 @@ class TestProcessMonitorProtocol(ProcessTestsMixin, TestCase):
         self.simulateProcessExit()
         notificaion_pending = True
         self.termination_deferred.addCallback(
-            lambda ignored: self.assertFalse(notificaion_pending))
+            lambda ignored: self.assertFalse(notificaion_pending)
+        )
         notificaion_pending = False
         deferred.callback(None)
         return self.termination_deferred
@@ -278,8 +274,7 @@ class TestProcessMonitorProtocol(ProcessTestsMixin, TestCase):
         self.protocol.runNotification(lambda: deferred)
         self.simulateProcessExit()
         deferred.errback(makeFailure(RuntimeError))
-        return assert_fails_with(
-            self.termination_deferred, RuntimeError)
+        return assert_fails_with(self.termination_deferred, RuntimeError)
 
     @suppress_stderr
     def test_uncleanExitAndPendingNotificationFails(self):
@@ -293,9 +288,11 @@ class TestProcessMonitorProtocol(ProcessTestsMixin, TestCase):
         runtime_error_failure = makeFailure(RuntimeError)
         deferred.errback(runtime_error_failure)
         self.assertEqual(
-            flush_logged_errors(RuntimeError), [runtime_error_failure])
+            flush_logged_errors(RuntimeError), [runtime_error_failure]
+        )
         return assert_fails_with(
-            self.termination_deferred, error.ProcessTerminated)
+            self.termination_deferred, error.ProcessTerminated
+        )
 
     @suppress_stderr
     def test_unexpectedErrorAndNotificationFailure(self):
@@ -308,9 +305,9 @@ class TestProcessMonitorProtocol(ProcessTestsMixin, TestCase):
         runtime_error_failure = makeFailure(RuntimeError)
         deferred.errback(runtime_error_failure)
         self.assertEqual(
-            flush_logged_errors(RuntimeError), [runtime_error_failure])
-        return assert_fails_with(
-            self.termination_deferred, TypeError)
+            flush_logged_errors(RuntimeError), [runtime_error_failure]
+        )
+        return assert_fails_with(self.termination_deferred, TypeError)
 
 
 class TestProcessMonitorProtocolWithTimeout(ProcessTestsMixin, TestCase):
@@ -323,14 +320,14 @@ class TestProcessMonitorProtocolWithTimeout(ProcessTestsMixin, TestCase):
     def makeProtocol(self):
         """See `ProcessMonitorProtocolTestsMixin.makeProtocol`."""
         return ProcessMonitorProtocolWithTimeout(
-            self.termination_deferred, self.timeout, self.clock)
+            self.termination_deferred, self.timeout, self.clock
+        )
 
     def test_timeoutWithoutProgress(self):
         # If we don't receive any messages after the configured timeout
         # period, then we kill the child process.
         self.clock.advance(self.timeout + 1)
-        return assert_fails_with(
-            self.termination_deferred, error.TimeoutError)
+        return assert_fails_with(self.termination_deferred, error.TimeoutError)
 
     def test_resetTimeout(self):
         # Calling resetTimeout resets the timeout.
@@ -359,13 +356,12 @@ class TestRunProcessWithTimeout(TestCase):
     def test_run_process_with_timeout_invalid_args(self):
         # `run_process_with_timeout` expects the process 'args' to be a
         # tuple.
-        self.assertRaises(
-            AssertionError, run_process_with_timeout, 'true')
+        self.assertRaises(AssertionError, run_process_with_timeout, "true")
 
     def test_run_proces_with_timeout_success(self):
         # On success, i.e process succeeded before the specified timeout,
         # callback is fired with 'None'.
-        d = run_process_with_timeout(('true',))
+        d = run_process_with_timeout(("true",))
 
         def check_success_result(result):
             self.assertEqual(result, None, "Success result is not None.")
@@ -376,20 +372,19 @@ class TestRunProcessWithTimeout(TestCase):
     def test_run_process_with_timeout_failure(self):
         # On failed process, the errback is fired with a `ProcessTerminated`
         # failure.
-        d = run_process_with_timeout(('false',))
+        d = run_process_with_timeout(("false",))
         return assert_fails_with(d, error.ProcessTerminated)
 
     def test_run_process_with_timeout_broken(self):
         # On broken process, the errback is fired with a `ProcessTerminated`
         # failure.
-        d = run_process_with_timeout(('does-not-exist',))
+        d = run_process_with_timeout(("does-not-exist",))
         return assert_fails_with(d, error.ProcessTerminated)
 
     def test_run_process_with_timeout_timeout(self):
         # On process timeout, the errback is fired with `TimeoutError`
         # failure.
         clock = task.Clock()
-        d = run_process_with_timeout(
-            ('sleep', '2'), timeout=1, clock=clock)
+        d = run_process_with_timeout(("sleep", "2"), timeout=1, clock=clock)
         clock.advance(2)
         return assert_fails_with(d, error.TimeoutError)

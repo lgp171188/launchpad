@@ -1,11 +1,7 @@
 # Copyright 2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from testtools.matchers import (
-    Equals,
-    Is,
-    MatchesDict,
-    )
+from testtools.matchers import Equals, Is, MatchesDict
 
 from lp.registry.interfaces.product import IProduct
 from lp.services.webhooks.payload import compose_webhook_payload
@@ -21,9 +17,13 @@ class TestComposeWebhookPayload(TestCaseWithFactory):
         project = self.factory.makeProduct()
         self.assertThat(
             compose_webhook_payload(
-                IProduct, project, ["display_name", "owner", "projectgroup"]),
-            MatchesDict({
-                "display_name": Equals(project.display_name),
-                "owner": Equals("/~%s" % project.owner.name),
-                "projectgroup": Is(None),
-                }))
+                IProduct, project, ["display_name", "owner", "projectgroup"]
+            ),
+            MatchesDict(
+                {
+                    "display_name": Equals(project.display_name),
+                    "owner": Equals("/~%s" % project.owner.name),
+                    "projectgroup": Is(None),
+                }
+            ),
+        )

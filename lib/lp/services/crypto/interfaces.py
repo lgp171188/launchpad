@@ -4,14 +4,11 @@
 """Interface to data encrypted at rest using configured keys."""
 
 __all__ = [
-    'CryptoError',
-    'IEncryptedContainer',
-    ]
+    "CryptoError",
+    "IEncryptedContainer",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 
 class CryptoError(Exception):
@@ -23,7 +20,8 @@ class IEncryptedContainer(Interface):
 
     can_encrypt = Attribute(
         "True iff this container has the configuration it needs to encrypt "
-        "data.")
+        "data."
+    )
 
     def encrypt(data):
         """Encrypt a blob of data to a JSON-serialisable form.
@@ -39,7 +37,8 @@ class IEncryptedContainer(Interface):
 
     can_decrypt = Attribute(
         "True iff this container has the configuration it needs to decrypt "
-        "data.")
+        "data."
+    )
 
     def decrypt(data):
         """Decrypt data that was encrypted by L{encrypt}.

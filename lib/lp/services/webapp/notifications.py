@@ -17,10 +17,7 @@ from datetime import datetime
 from zope.interface import implementer
 
 from lp.services.config import config
-from lp.services.webapp.escaping import (
-    html_escape,
-    structured,
-    )
+from lp.services.webapp.escaping import html_escape, structured
 from lp.services.webapp.interfaces import (
     BrowserNotificationLevel,
     INotification,
@@ -28,12 +25,11 @@ from lp.services.webapp.interfaces import (
     INotificationRequest,
     INotificationResponse,
     ISession,
-    )
+)
 from lp.services.webapp.login import allowUnauthenticatedSession
 from lp.services.webapp.publisher import LaunchpadView
 
-
-SESSION_KEY = 'launchpad'
+SESSION_KEY = "launchpad"
 
 
 @implementer(INotificationRequest)
@@ -82,19 +78,21 @@ class NotificationResponse:
         # still pass.  Doing this rather than improving the Mock classes
         # that the mixins are used with, as we'll be moving this hack to
         # the sesions machinery in due course.
-        if (not (getattr(request, 'cookies', None) and
-                 getattr(response, 'getCookie', None))
-            or
-            (request.cookies.get(cookie_name) is not None or
-             response.getCookie(cookie_name) is not None)):
+        if not (
+            getattr(request, "cookies", None)
+            and getattr(response, "getCookie", None)
+        ) or (
+            request.cookies.get(cookie_name) is not None
+            or response.getCookie(cookie_name) is not None
+        ):
             session = ISession(self)[SESSION_KEY]
             try:
                 # Use notifications stored in the session.
-                self._notifications = session['notifications']
+                self._notifications = session["notifications"]
                 # Remove them from the session so they don't propogate to
                 # subsequent pages, unless redirect() is called which will
                 # push the notifications back into the session.
-                del session['notifications']
+                del session["notifications"]
             except KeyError:
                 # No stored notifications - create a new NotificationList
                 self._notifications = NotificationList()
@@ -117,7 +115,7 @@ class NotificationResponse:
             # to set the session.
             allowUnauthenticatedSession(self._request)
             session = ISession(self)[SESSION_KEY]
-            session['notifications'] = self._notifications
+            session["notifications"] = self._notifications
         return super().redirect(location, status, trusted=trusted)
 
     def addDebugNotification(self, msg):
@@ -152,15 +150,16 @@ class NotificationList(list):
             return super().__getitem__(index_or_levelname)
 
         level = getattr(
-                BrowserNotificationLevel, index_or_levelname.upper(), None
-                )
+            BrowserNotificationLevel, index_or_levelname.upper(), None
+        )
         if level is None:
             raise KeyError(index_or_levelname)
 
         return [
-            notification for notification in self
-                if notification.level == level
-            ]
+            notification
+            for notification in self
+            if notification.level == level
+        ]
 
 
 @implementer(INotification)
@@ -182,7 +181,7 @@ class NotificationTestView1(LaunchpadView):
     of the notifications
     """
 
-    label = page_title = 'Notification test'
+    label = page_title = "Notification test"
 
     def initialize(self):
         response = self.request.response
@@ -190,13 +189,17 @@ class NotificationTestView1(LaunchpadView):
         # Add some notifications
         for count in range(1, 3):
             response.addDebugNotification(
-                structured('Debug notification <b>%d</b>' % count))
+                structured("Debug notification <b>%d</b>" % count)
+            )
             response.addInfoNotification(
-                structured('Info notification <b>%d</b>' % count))
+                structured("Info notification <b>%d</b>" % count)
+            )
             response.addWarningNotification(
-                structured('Warning notification <b>%d</b>' % count))
+                structured("Warning notification <b>%d</b>" % count)
+            )
             response.addErrorNotification(
-                structured('Error notification <b>%d</b>' % count))
+                structured("Error notification <b>%d</b>" % count)
+            )
 
 
 class NotificationTestView2(NotificationTestView1):
@@ -206,9 +209,10 @@ class NotificationTestView2(NotificationTestView1):
     in the test suite, as this page is useful for adjusting the visual style
     of the notifications
     """
+
     def initialize(self):
         NotificationTestView1.initialize(self)
-        self.request.response.redirect('/')
+        self.request.response.redirect("/")
 
 
 class NotificationTestView3(NotificationTestView1):
@@ -219,11 +223,10 @@ class NotificationTestView3(NotificationTestView1):
     in the test suite, as this page is useful for adjusting the visual style
     of the notifications
     """
+
     def initialize(self):
-        self.request.response.addErrorNotification(
-                    '+notificationtest3 error'
-                    )
-        self.request.response.redirect('/+notificationtest1')
+        self.request.response.addErrorNotification("+notificationtest3 error")
+        self.request.response.redirect("/+notificationtest1")
 
 
 class NotificationTestView4(NotificationTestView1):
@@ -234,8 +237,7 @@ class NotificationTestView4(NotificationTestView1):
     in the test suite, as this page is useful for adjusting the visual style
     of the notifications
     """
+
     def initialize(self):
-        self.request.response.addErrorNotification(
-                    '+notificationtest4 error'
-                    )
-        self.request.response.redirect('/+notificationtest3')
+        self.request.response.addErrorNotification("+notificationtest4 error")
+        self.request.response.redirect("/+notificationtest3")

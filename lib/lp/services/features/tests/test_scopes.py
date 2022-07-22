@@ -10,19 +10,15 @@ from lp.services.features.scopes import (
     ScopesForScript,
     ScriptScope,
     UserSliceScope,
-    )
+)
 from lp.services.features.testing import FeatureFixture
-from lp.testing import (
-    person_logged_in,
-    TestCase,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCase, TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class FakeScope(BaseScope):
 
-    pattern = r'fake:'
+    pattern = r"fake:"
 
     def __init__(self, name):
         self.name = name
@@ -83,19 +79,18 @@ class FakePerson:
 
 
 class TestUserSliceScope(TestCase):
-
     def test_user_slice(self):
         person = FakePerson()
         # NB: scopes take a callable that returns the person, that in
         # production comes from the request.
         scope = UserSliceScope(lambda: person)
         # Effectively selects everyone; should always be true.
-        self.assertTrue(scope.lookup('userslice:0,1'))
+        self.assertTrue(scope.lookup("userslice:0,1"))
         # Exactly one of these should be true.
         checks = 7
         matches = []
         for i in range(checks):
-            name = 'userslice:%d,%d' % (i, checks)
+            name = "userslice:%d,%d" % (i, checks)
             if scope.lookup(name):
                 matches.append(name)
         self.assertEqual(len(matches), 1, matches)
@@ -108,18 +103,23 @@ class TestUserSliceScopeIntegration(TestCaseWithFactory):
     def test_user_slice_from_rules(self):
         """Userslice matches against the real request user"""
         person = self.factory.makePerson()
-        with FeatureFixture({}, full_feature_rules=[
-            dict(
-                flag='test_feature',
-                scope='userslice:0,1',
-                priority=999,
-                value='on'),
-            dict(
-                flag='test_not',
-                scope='userslice:1,1',
-                priority=999,
-                value='not_value'),
-            ]):
+        with FeatureFixture(
+            {},
+            full_feature_rules=[
+                dict(
+                    flag="test_feature",
+                    scope="userslice:0,1",
+                    priority=999,
+                    value="on",
+                ),
+                dict(
+                    flag="test_not",
+                    scope="userslice:1,1",
+                    priority=999,
+                    value="not_value",
+                ),
+            ],
+        ):
             with person_logged_in(person):
-                self.assertEqual(getFeatureFlag('test_feature'), 'on')
-                self.assertEqual(getFeatureFlag('test_not'), None)
+                self.assertEqual(getFeatureFlag("test_feature"), "on")
+                self.assertEqual(getFeatureFlag("test_not"), None)

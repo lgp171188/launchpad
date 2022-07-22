@@ -4,37 +4,23 @@
 """Optimized bulk operations against the database."""
 
 __all__ = [
-    'create',
-    'dbify_value',
-    'load',
-    'load_referencing',
-    'load_related',
-    'reload',
-    ]
+    "create",
+    "dbify_value",
+    "load",
+    "load_referencing",
+    "load_related",
+    "reload",
+]
 
 
 from collections import defaultdict
 from functools import partial
-from itertools import (
-    chain,
-    groupby,
-    )
-from operator import (
-    attrgetter,
-    itemgetter,
-    )
+from itertools import chain, groupby
+from operator import attrgetter, itemgetter
 
 from storm.databases.postgres import Returning
-from storm.expr import (
-    And,
-    Insert,
-    Or,
-    SQL,
-    )
-from storm.info import (
-    get_cls_info,
-    get_obj_info,
-    )
+from storm.expr import SQL, And, Insert, Or
+from storm.info import get_cls_info, get_obj_info
 from storm.references import Reference
 from storm.store import Store
 from zope.security.proxy import removeSecurityProxy
@@ -69,8 +55,9 @@ def gen_reload_queries(objects):
         primary_key = get_cls_info(object_type).primary_key
         if len(primary_key) != 1:
             raise AssertionError(
-                "Compound primary keys are not supported: %s." %
-                object_type.__name__)
+                "Compound primary keys are not supported: %s."
+                % object_type.__name__
+            )
         primary_key_column = primary_key[0]
         primary_key_column_getter = primary_key_column.__get__
         for store, objects in collate(objects, Store.of):
@@ -96,8 +83,9 @@ def _primary_key(object_type, allow_compound=False):
     else:
         if not allow_compound:
             raise AssertionError(
-                "Compound primary keys are not supported: %s." %
-                object_type.__name__)
+                "Compound primary keys are not supported: %s."
+                % object_type.__name__
+            )
         return primary_key
 
 
@@ -117,12 +105,17 @@ def _make_compound_load_clause(primary_key, values_list):
         usually more efficient to sort the whole sequence in one go).
     """
     if len(primary_key) > 1:
-        return Or(*(
-            And(
-                primary_key[0] == leading_value,
-                _make_compound_load_clause(
-                    primary_key[1:], [values[1:] for values in group]))
-            for leading_value, group in groupby(values_list, itemgetter(0))))
+        return Or(
+            *(
+                And(
+                    primary_key[0] == leading_value,
+                    _make_compound_load_clause(
+                        primary_key[1:], [values[1:] for values in group]
+                    ),
+                )
+                for leading_value, group in groupby(values_list, itemgetter(0))
+            )
+        )
     else:
         return primary_key[0].is_in([values[0] for values in values_list])
 
@@ -136,7 +129,8 @@ def load(object_type, primary_keys, store=None):
         return []
     if isinstance(primary_key, tuple):
         condition = _make_compound_load_clause(
-            primary_key, sorted(primary_keys))
+            primary_key, sorted(primary_keys)
+        )
     else:
         condition = primary_key.is_in(primary_keys)
     if store is None:
@@ -144,8 +138,9 @@ def load(object_type, primary_keys, store=None):
     return list(store.find(object_type, condition))
 
 
-def load_referencing(object_type, owning_objects, reference_keys,
-                     extra_conditions=[]):
+def load_referencing(
+    object_type, owning_objects, reference_keys, extra_conditions=[]
+):
     """Load objects of object_type that reference owning_objects.
 
     Note that complex types like Person are best loaded through dedicated
@@ -210,7 +205,8 @@ def dbify_value(col, val):
             return (None,) * len(col._relation._get_local_columns(col._cls))
         else:
             return col._relation.get_remote_variables(
-                get_obj_info(val).get_obj())
+                get_obj_info(val).get_obj()
+            )
     else:
         return (col.variable_factory(value=val),)
 
@@ -226,8 +222,7 @@ def dbify_column(col):
         return (col,)
 
 
-def create(columns, values, get_objects=False,
-           get_primary_keys=False):
+def create(columns, values, get_objects=False, get_primary_keys=False):
     """Create a large number of objects efficiently.
 
     :param columns: The Storm columns to insert values into. Must be from a
@@ -243,10 +238,12 @@ def create(columns, values, get_objects=False,
     if len(clses) != 1:
         raise ValueError(
             "The Storm columns to insert values into must be from a single "
-            "class.")
+            "class."
+        )
     if get_objects and get_primary_keys:
         raise ValueError(
-            "get_objects and get_primary_keys are mutually exclusive.")
+            "get_objects and get_primary_keys are mutually exclusive."
+        )
 
     if len(values) == 0:
         return [] if (get_objects or get_primary_keys) else None
@@ -258,14 +255,20 @@ def create(columns, values, get_objects=False,
     # get passed through the variable factory, while References get
     # squashed into primary key variables.
     db_values = [
-        list(chain.from_iterable(
-            dbify_value(col, val) for col, val in zip(columns, value)))
-        for value in values]
+        list(
+            chain.from_iterable(
+                dbify_value(col, val) for col, val in zip(columns, value)
+            )
+        )
+        for value in values
+    ]
 
     if get_objects or get_primary_keys:
         result = IStore(cls).execute(
-            Returning(Insert(
-                db_cols, values=db_values, primary_columns=primary_key)))
+            Returning(
+                Insert(db_cols, values=db_values, primary_columns=primary_key)
+            )
+        )
         keys = map(itemgetter(0), result) if len(primary_key) == 1 else result
         if get_objects:
             return load(cls, keys)

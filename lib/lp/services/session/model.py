@@ -3,17 +3,10 @@
 
 """Session Storm database classes"""
 
-__all__ = ['SessionData', 'SessionPkgData']
+__all__ = ["SessionData", "SessionPkgData"]
 
-from storm.locals import (
-    Pickle,
-    Storm,
-    Unicode,
-    )
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from storm.locals import Pickle, Storm, Unicode
+from zope.interface import implementer, provider
 
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.session.interfaces import IUseSessionStore
@@ -24,7 +17,7 @@ from lp.services.session.interfaces import IUseSessionStore
 class SessionData(Storm):
     """A user's Session."""
 
-    __storm_table__ = 'SessionData'
+    __storm_table__ = "SessionData"
     client_id = Unicode(primary=True)
     created = UtcDateTimeCol()
     last_accessed = UtcDateTimeCol()
@@ -35,8 +28,8 @@ class SessionData(Storm):
 class SessionPkgData(Storm):
     """Data storage for a Session."""
 
-    __storm_table__ = 'SessionPkgData'
-    __storm_primary__ = 'client_id', 'product_id', 'key'
+    __storm_table__ = "SessionPkgData"
+    __storm_primary__ = "client_id", "product_id", "key"
 
     client_id = Unicode()
     product_id = Unicode()

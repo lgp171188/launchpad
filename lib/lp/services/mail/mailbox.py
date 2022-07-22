@@ -2,24 +2,20 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'DirectoryMailBox',
-    'IMailBox',
-    'MailBoxError',
-    'POP3MailBox',
-    'TestMailBox',
-    ]
+    "DirectoryMailBox",
+    "IMailBox",
+    "MailBoxError",
+    "POP3MailBox",
+    "TestMailBox",
+]
 
 import os
 import poplib
 import threading
 
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 
 from lp.services.mail import stub
-
 
 # XXX wgrant 2015-09-21: A Python 2.7 security update set the line
 # length limit to 2048 bytes, which real POP3 servers often exceed for
@@ -96,8 +92,9 @@ class TestMailBox:
     def close(self):
         """See IMailBox."""
         # Clean up test_emails
-        stub.test_emails = [item for item in stub.test_emails
-                            if item is not None]
+        stub.test_emails = [
+            item for item in stub.test_emails if item is not None
+        ]
         self._lock.release()
 
 
@@ -139,7 +136,7 @@ class POP3MailBox:
 
         for msg_id in range(1, count + 1):
             response, msg_lines, size = popbox.retr(msg_id)
-            yield (msg_id, b'\n'.join(msg_lines))
+            yield (msg_id, b"\n".join(msg_lines))
 
     def delete(self, id):
         """See IMailBox."""

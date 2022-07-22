@@ -6,8 +6,8 @@
 from functools import partial
 from itertools import count
 
-from testtools.testcase import ExpectedException
 import transaction
+from testtools.testcase import ExpectedException
 from transaction._transaction import Status as TransactionStatus
 from zope.component import getUtility
 from zope.event import notify
@@ -19,7 +19,7 @@ from lp.services.messaging.interfaces import (
     MessagingUnavailable,
     QueueEmpty,
     QueueNotFound,
-    )
+)
 from lp.services.messaging.rabbit import (
     RabbitMessageBase,
     RabbitQueue,
@@ -27,22 +27,17 @@ from lp.services.messaging.rabbit import (
     RabbitSession,
     RabbitSessionTransactionSync,
     RabbitUnreliableSession,
-    session as global_session,
+)
+from lp.services.messaging.rabbit import session as global_session
+from lp.services.messaging.rabbit import (
     unreliable_session as global_unreliable_session,
-    )
+)
 from lp.services.webapp.interfaces import FinishReadOnlyRequestEvent
-from lp.testing import (
-    monkey_patch,
-    TestCase,
-    )
+from lp.testing import TestCase, monkey_patch
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.faketransaction import FakeTransaction
-from lp.testing.layers import (
-    LaunchpadFunctionalLayer,
-    RabbitMQLayer,
-    )
+from lp.testing.layers import LaunchpadFunctionalLayer, RabbitMQLayer
 from lp.testing.matchers import Provides
-
 
 # RabbitMQ is not (yet) torn down or reset between tests, so here are sources
 # of distinct names.
@@ -51,7 +46,6 @@ key_names = ("key.%d" % num for num in count(1))
 
 
 class FakeRabbitSession:
-
     def __init__(self):
         self.log = []
 
@@ -63,11 +57,11 @@ class FakeRabbitSession:
 
 
 class TestRabbitSessionTransactionSync(TestCase):
-
     def test_interface(self):
         self.assertThat(
             RabbitSessionTransactionSync(None),
-            Provides(transaction.interfaces.ISynchronizer))
+            Provides(transaction.interfaces.ISynchronizer),
+        )
 
     def test_afterCompletion_COMMITTED(self):
         txn = FakeTransaction()
@@ -115,7 +109,8 @@ class TestRabbitSession(RabbitTestCase):
         self.pushConfig("rabbitmq", host="none")
         session = self.session_factory()
         with ExpectedException(
-            MessagingUnavailable, "Incomplete configuration"):
+            MessagingUnavailable, "Incomplete configuration"
+        ):
             session.connect()
 
     def test_disconnect(self):
@@ -232,7 +227,8 @@ class TestRabbitUnreliableSession(TestRabbitSession):
     def assertOops(self, text_in_oops):
         oops_report = self.getOops()
         self.assertNotEqual(
-            repr(self.prev_oops), repr(oops_report), 'No OOPS reported!')
+            repr(self.prev_oops), repr(oops_report), "No OOPS reported!"
+        )
         self.assertIn(text_in_oops, str(oops_report))
 
     def _test_finish_suppresses_exception(self, exception):
@@ -244,7 +240,8 @@ class TestRabbitUnreliableSession(TestRabbitSession):
 
     def test_finish_suppresses_MessagingUnavailable(self):
         self._test_finish_suppresses_exception(
-            MessagingUnavailable('Messaging borked.'))
+            MessagingUnavailable("Messaging borked.")
+        )
         self.assertNoOops()
 
     def test_finish_suppresses_other_errors_with_oopses(self):
@@ -254,7 +251,6 @@ class TestRabbitUnreliableSession(TestRabbitSession):
 
 
 class TestRabbitMessageBase(RabbitTestCase):
-
     def test_session(self):
         base = RabbitMessageBase(global_session)
         self.assertIs(global_session, base.session)
@@ -279,7 +275,6 @@ class TestRabbitMessageBase(RabbitTestCase):
 
 
 class TestRabbitRoutingKey(RabbitTestCase):
-
     def test_interface(self):
         routing_key = RabbitRoutingKey(global_session, next(key_names))
         self.assertThat(routing_key, Provides(IMessageProducer))
@@ -292,29 +287,29 @@ class TestRabbitRoutingKey(RabbitTestCase):
         routing_key.associateConsumer(consumer)
         # The session is still not connected.
         self.assertFalse(global_session.is_connected)
-        routing_key.sendNow('now')
-        routing_key.send('later')
+        routing_key.sendNow("now")
+        routing_key.send("later")
         # The queue is not found because the consumer has not yet been
         # associated with the routing key and the queue declared.
         self.assertRaises(QueueNotFound, consumer.receive, timeout=2)
         transaction.commit()
         # Now that the transaction has been committed, the consumer is
         # associated, and receives the deferred message.
-        self.assertEqual('later', consumer.receive(timeout=2))
+        self.assertEqual("later", consumer.receive(timeout=2))
 
     def test_associateConsumerNow(self):
         # associateConsumerNow() associates the consumer right away.
         consumer = RabbitQueue(global_session, next(queue_names))
         routing_key = RabbitRoutingKey(global_session, next(key_names))
         routing_key.associateConsumerNow(consumer)
-        routing_key.sendNow('now')
-        routing_key.send('later')
+        routing_key.sendNow("now")
+        routing_key.send("later")
         # There is already something in the queue.
-        self.assertEqual('now', consumer.receive(timeout=2))
+        self.assertEqual("now", consumer.receive(timeout=2))
         transaction.commit()
         # Now that the transaction has been committed there is another item in
         # the queue.
-        self.assertEqual('later', consumer.receive(timeout=2))
+        self.assertEqual("later", consumer.receive(timeout=2))
 
     def test_send(self):
         consumer = RabbitQueue(global_session, next(queue_names))
@@ -324,9 +319,9 @@ class TestRabbitRoutingKey(RabbitTestCase):
         for data in range(90, 100):
             routing_key.send(data)
 
-        routing_key.sendNow('sync')
+        routing_key.sendNow("sync")
         # There is nothing in the queue except the sync we just sent.
-        self.assertEqual('sync', consumer.receive(timeout=2))
+        self.assertEqual("sync", consumer.receive(timeout=2))
 
         # Messages get sent on commit
         transaction.commit()
@@ -334,8 +329,8 @@ class TestRabbitRoutingKey(RabbitTestCase):
             self.assertEqual(data, consumer.receive())
 
         # There are no more messages. They have all been consumed.
-        routing_key.sendNow('sync')
-        self.assertEqual('sync', consumer.receive(timeout=2))
+        routing_key.sendNow("sync")
+        self.assertEqual("sync", consumer.receive(timeout=2))
 
     def test_sendNow(self):
         consumer = RabbitQueue(global_session, next(queue_names))
@@ -354,7 +349,6 @@ class TestRabbitRoutingKey(RabbitTestCase):
 
 
 class TestRabbitQueue(RabbitTestCase):
-
     def test_interface(self):
         consumer = RabbitQueue(global_session, next(queue_names))
         self.assertThat(consumer, Provides(IMessageConsumer))
@@ -394,8 +388,10 @@ class TestRabbit(RabbitTestCase):
             return set()
         else:
             return {
-                sync.session for sync in syncs_set.data.values()
-                if isinstance(sync, RabbitSessionTransactionSync)}
+                sync.session
+                for sync in syncs_set.data.values()
+                if isinstance(sync, RabbitSessionTransactionSync)
+            }
 
     def test_global_session(self):
         self.assertIsInstance(global_session, RabbitSession)
@@ -403,7 +399,8 @@ class TestRabbit(RabbitTestCase):
 
     def test_global_unreliable_session(self):
         self.assertIsInstance(
-            global_unreliable_session, RabbitUnreliableSession)
+            global_unreliable_session, RabbitUnreliableSession
+        )
         self.assertIn(global_unreliable_session, self.get_synced_sessions())
 
     def test_abort(self):
@@ -427,9 +424,7 @@ class TestRabbitWithLaunchpad(RabbitTestCase):
     def test_utility(self):
         # The unreliable session is registered as the default IMessageSession
         # utility.
-        self.assertIs(
-            global_unreliable_session,
-            getUtility(IMessageSession))
+        self.assertIs(global_unreliable_session, getUtility(IMessageSession))
 
     def _test_session_finish_read_only_request(self, session):
         # When a read-only request ends the session is also finished.

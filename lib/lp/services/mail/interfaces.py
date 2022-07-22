@@ -4,28 +4,22 @@
 """Interfaces specific to mail handling."""
 
 __all__ = [
-    'BugTargetNotFound',
-    'EmailProcessingError',
-    'IBugEditEmailCommand',
-    'IBugEmailCommand',
-    'IBugTaskEditEmailCommand',
-    'IBugTaskEmailCommand',
-    'IEmailCommand',
-    'IMailHandler',
-    'INotificationRecipientSet',
-    'ISignedMessage',
-    'IWeaklyAuthenticatedPrincipal',
-    'UnknownRecipientError',
-    ]
+    "BugTargetNotFound",
+    "EmailProcessingError",
+    "IBugEditEmailCommand",
+    "IBugEmailCommand",
+    "IBugTaskEditEmailCommand",
+    "IBugTaskEmailCommand",
+    "IEmailCommand",
+    "IMailHandler",
+    "INotificationRecipientSet",
+    "ISignedMessage",
+    "IWeaklyAuthenticatedPrincipal",
+    "UnknownRecipientError",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Bytes,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Bytes
 
 from lp import _
 
@@ -47,18 +41,23 @@ class ISignedMessage(Interface):
     def __getitem__(name):
         """Returns the message header with the given name."""
 
-    signedMessage = Attribute("The part that was signed, represented "
-                              "as an email.message.Message.")
+    signedMessage = Attribute(
+        "The part that was signed, represented " "as an email.message.Message."
+    )
 
-    signedContent = Bytes(title=_("Signed Content"),
-                          description=_("The byte string that was signed."))
+    signedContent = Bytes(
+        title=_("Signed Content"),
+        description=_("The byte string that was signed."),
+    )
 
-    signature = Bytes(title=_("Signature"),
-                      description=_("The OpenPGP signature used to sign "
-                                    "the message."))
+    signature = Bytes(
+        title=_("Signature"),
+        description=_("The OpenPGP signature used to sign " "the message."),
+    )
 
     parsed_bytes = Attribute(
-        "The byte string that was parsed to create the SignedMessage.")
+        "The byte string that was parsed to create the SignedMessage."
+    )
 
 
 class IMailHandler(Interface):
@@ -74,8 +73,9 @@ class IMailHandler(Interface):
     allow_unknown_users = Bool(
         title="Allow unknown users",
         description="The handler can handle emails from persons not"
-                    " registered in Launchpad (which will result in an"
-                    " anonymous interaction being set up.")
+        " registered in Launchpad (which will result in an"
+        " anonymous interaction being set up.",
+    )
 
     def process(signed_msg, to_address, filealias, log=None):
         """Processes a ISignedMessage
@@ -105,8 +105,7 @@ class EmailProcessingError(Exception):
 
 
 class UnknownRecipientError(KeyError):
-    """Error raised when an email or person isn't part of the recipient set.
-    """
+    """Error raised when an email or person isn't part of the recipient set."""
 
 
 class INotificationRecipientSet(Interface):
@@ -226,15 +225,15 @@ class IEmailCommand(Interface):
         """
 
     def __str__():
-        """Return a textual representation of the command and its arguments.
-        """
+        """Return a textual representation of the command and its arguments."""
 
 
 class IBugEmailCommand(IEmailCommand):
     """An email command specific to getting or creating a bug."""
 
     RANK = Attribute(
-        "The int used to determine the order of execution of many commands.")
+        "The int used to determine the order of execution of many commands."
+    )
 
     def execute(parsed_msg, filealias):
         """Either create or get an exiting bug.
@@ -250,7 +249,8 @@ class IBugTaskEmailCommand(IEmailCommand):
     """An email command specific to getting or creating a bug task."""
 
     RANK = Attribute(
-        "The int used to determine the order of execution of many commands.")
+        "The int used to determine the order of execution of many commands."
+    )
 
     def execute(bug):
         """Either create or get an exiting bug task.
@@ -263,7 +263,8 @@ class IBugEditEmailCommand(IEmailCommand):
     """An email command specific to editing a bug."""
 
     RANK = Attribute(
-        "The int used to determine the order of execution of many commands.")
+        "The int used to determine the order of execution of many commands."
+    )
 
     def execute(bug, current_event):
         """Execute the command in the context of the bug.
@@ -276,7 +277,8 @@ class IBugTaskEditEmailCommand(IEmailCommand):
     """An email command specific to editing a bug task."""
 
     RANK = Attribute(
-        "The int used to determine the order of execution of many commands.")
+        "The int used to determine the order of execution of many commands."
+    )
 
     def execute(bugtask, current_event):
         """Execute the command in the context of the bug task.

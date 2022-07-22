@@ -13,19 +13,10 @@ from zope.security.proxy import removeSecurityProxy
 from lp.services.librarian.client import LibrarianClient
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.interfaces.client import ILibrarianClient
-from lp.services.librarian.model import (
-    LibraryFileAlias,
-    LibraryFileAliasSet,
-    )
+from lp.services.librarian.model import LibraryFileAlias, LibraryFileAliasSet
 from lp.services.librarianserver.testing.fake import FakeLibrarian
-from lp.testing import (
-    TestCaseWithFactory,
-    verifyObject,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+from lp.testing import TestCaseWithFactory, verifyObject
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 
 
 class LibraryAccessScenarioMixin:
@@ -41,19 +32,22 @@ class LibraryAccessScenarioMixin:
 
         :return: Tuple of filename, file contents, alias id.
         """
-        name = self.factory.getUniqueString() + '.txt'
+        name = self.factory.getUniqueString() + ".txt"
         content = self.factory.getUniqueBytes()
         alias = getUtility(ILibraryFileAliasSet).create(
-            name, len(content), io.BytesIO(content), 'text/plain')
+            name, len(content), io.BytesIO(content), "text/plain"
+        )
         return name, content, alias
 
     def test_baseline(self):
         self.assertTrue(
-            verifyObject(
-                ILibrarianClient, getUtility(ILibrarianClient)))
+            verifyObject(ILibrarianClient, getUtility(ILibrarianClient))
+        )
         self.assertTrue(
             verifyObject(
-                ILibraryFileAliasSet, getUtility(ILibraryFileAliasSet)))
+                ILibraryFileAliasSet, getUtility(ILibraryFileAliasSet)
+            )
+        )
 
     def test_insert_retrieve(self):
         name, content, alias = self._storeFile()
@@ -87,26 +81,33 @@ class LibraryAccessScenarioMixin:
         self.assertRaises(
             AssertionError,
             getUtility(ILibrarianClient).addFile,
-            name, wrong_length, io.BytesIO(content), 'text/plain')
+            name,
+            wrong_length,
+            io.BytesIO(content),
+            "text/plain",
+        )
 
     def test_create_returns_alias(self):
         alias = getUtility(ILibraryFileAliasSet).create(
-            'foo.txt', 3, io.BytesIO(b'foo'), 'text/plain')
+            "foo.txt", 3, io.BytesIO(b"foo"), "text/plain"
+        )
         self.assertIsInstance(alias, LibraryFileAlias)
 
     def test_addFile_returns_alias_id(self):
         alias_id = getUtility(ILibrarianClient).addFile(
-            'bar.txt', 3, io.BytesIO(b'bar'), 'text/plain')
+            "bar.txt", 3, io.BytesIO(b"bar"), "text/plain"
+        )
         self.assertIsInstance(alias_id, int)
         self.assertIsInstance(
-            getUtility(ILibraryFileAliasSet)[alias_id],
-            LibraryFileAlias)
+            getUtility(ILibraryFileAliasSet)[alias_id], LibraryFileAlias
+        )
 
     def test_debugID_is_harmless(self):
         # addFile takes an argument debugID that doesn't do anything
         # observable.  We get a LibraryFileAlias regardless.
         alias = getUtility(ILibraryFileAliasSet).create(
-            'txt.txt', 3, io.BytesIO(b'txt'), 'text/plain', debugID='txt')
+            "txt.txt", 3, io.BytesIO(b"txt"), "text/plain", debugID="txt"
+        )
         self.assertNotEqual(None, alias)
 
     def test_getURLForAlias(self):
@@ -114,14 +115,16 @@ class LibraryAccessScenarioMixin:
         librarian = getUtility(ILibrarianClient)
         self.assertIn(
             librarian.getURLForAlias(alias.id),
-            (alias.http_url, alias.https_url))
+            (alias.http_url, alias.https_url),
+        )
 
     def test_getURLForAliasObject(self):
         name, content, alias = self._storeFile()
         librarian = getUtility(ILibrarianClient)
         self.assertEqual(
             librarian.getURLForAlias(alias.id),
-            librarian.getURLForAliasObject(alias))
+            librarian.getURLForAliasObject(alias),
+        )
 
     def test_getURL(self):
         name, content, alias = self._storeFile()
@@ -166,4 +169,5 @@ class TestRealLibrarian(LibraryAccessScenarioMixin, TestCaseWithFactory):
     def test_real(self):
         self.assertIsInstance(getUtility(ILibrarianClient), LibrarianClient)
         self.assertIsInstance(
-            getUtility(ILibraryFileAliasSet), LibraryFileAliasSet)
+            getUtility(ILibraryFileAliasSet), LibraryFileAliasSet
+        )

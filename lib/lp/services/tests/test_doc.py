@@ -9,25 +9,19 @@ import os
 
 from lp.services.testing import build_test_suite
 from lp.testing.layers import BaseLayer
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setGlobs,
-    )
-
+from lp.testing.systemdocs import LayeredDocFileSuite, setGlobs
 
 here = os.path.dirname(os.path.realpath(__file__))
 
 
 special = {
-    'limitedlist.rst': LayeredDocFileSuite(
-        '../doc/limitedlist.rst',
-        setUp=setGlobs,
-        layer=BaseLayer),
-    'propertycache.rst': LayeredDocFileSuite(
-        '../doc/propertycache.rst',
-        setUp=setGlobs,
-        layer=BaseLayer),
-    }
+    "limitedlist.rst": LayeredDocFileSuite(
+        "../doc/limitedlist.rst", setUp=setGlobs, layer=BaseLayer
+    ),
+    "propertycache.rst": LayeredDocFileSuite(
+        "../doc/propertycache.rst", setUp=setGlobs, layer=BaseLayer
+    ),
+}
 
 
 def test_suite():

@@ -8,12 +8,12 @@ Future support may include feeds such as sparklines.
 """
 
 __all__ = [
-    'FeedBase',
-    'FeedEntry',
-    'FeedPerson',
-    'FeedTypedData',
-    'MINUTES',
-    ]
+    "FeedBase",
+    "FeedEntry",
+    "FeedPerson",
+    "FeedTypedData",
+    "MINUTES",
+]
 
 import operator
 import os
@@ -33,21 +33,20 @@ from lp.services.feeds.interfaces.feed import (
     IFeedPerson,
     IFeedTypedData,
     UnsupportedFeedFormat,
-    )
+)
 from lp.services.propertycache import cachedproperty
 from lp.services.utils import utc_now
 from lp.services.webapp import (
-    canonical_url,
     LaunchpadView,
+    canonical_url,
     urlappend,
     urlparse,
-    )
+)
 from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import ILaunchpadRoot
 from lp.services.webapp.vhosts import allvhosts
 
-
-SUPPORTED_FEEDS = ('.atom', '.html')
+SUPPORTED_FEEDS = (".atom", ".html")
 MINUTES = 60  # Seconds in a minute.
 
 
@@ -62,15 +61,18 @@ class FeedBase(LaunchpadView):
     max_age = config.launchpad.max_feed_cache_minutes * MINUTES
     quantity = 25
     items = None
-    rootsite = 'mainsite'
-    template_files = {'atom': 'templates/feed-atom.pt',
-                      'html': 'templates/feed-html.pt'}
+    rootsite = "mainsite"
+    template_files = {
+        "atom": "templates/feed-atom.pt",
+        "html": "templates/feed-html.pt",
+    }
 
     def __init__(self, context, request):
         super().__init__(context, request)
         self.format = self.feed_format
-        self.root_url = canonical_url(getUtility(ILaunchpadRoot),
-                                      rootsite=self.rootsite)
+        self.root_url = canonical_url(
+            getUtility(ILaunchpadRoot), rootsite=self.rootsite
+        )
 
     @property
     def title(self):
@@ -84,13 +86,12 @@ class FeedBase(LaunchpadView):
         # The self link is the URL for this particular feed.  For example:
         # http://feeds.launchpad.net/ubuntu/announcments.atom
         path = "%s.%s" % (self.feedname, self.format)
-        return urlappend(canonical_url(self.context, rootsite="feeds"),
-                         path)
+        return urlappend(canonical_url(self.context, rootsite="feeds"), path)
 
     @property
     def site_url(self):
         """See `IFeed`."""
-        return allvhosts.configs['mainsite'].rooturl[:-1]
+        return allvhosts.configs["mainsite"].rooturl[:-1]
 
     @property
     def link_alternate(self):
@@ -106,22 +107,21 @@ class FeedBase(LaunchpadView):
         """
         # Get the creation date, if available.  Otherwise use a fixed date, as
         # allowed by the RFC.
-        if getattr(self.context, 'datecreated', None) is not None:
+        if getattr(self.context, "datecreated", None) is not None:
             datecreated = self.context.datecreated.date().isoformat()
-        elif getattr(self.context, 'date_created', None) is not None:
+        elif getattr(self.context, "date_created", None) is not None:
             datecreated = self.context.date_created.date().isoformat()
         else:
             datecreated = "2008"
         url_path = urlparse(self.link_alternate)[2]
-        if self.rootsite != 'mainsite':
-            id_ = 'tag:launchpad.net,%s:/%s%s' % (
+        if self.rootsite != "mainsite":
+            id_ = "tag:launchpad.net,%s:/%s%s" % (
                 datecreated,
                 self.rootsite,
-                url_path)
+                url_path,
+            )
         else:
-            id_ = 'tag:launchpad.net,%s:%s' % (
-                datecreated,
-                url_path)
+            id_ = "tag:launchpad.net,%s:%s" % (datecreated, url_path)
         return id_
 
     def getItems(self):
@@ -152,7 +152,7 @@ class FeedBase(LaunchpadView):
         if extension in SUPPORTED_FEEDS:
             return extension[1:]
         else:
-            raise UnsupportedFeedFormat('%s is not supported' % path)
+            raise UnsupportedFeedFormat("%s is not supported" % path)
 
     @property
     def logo(self):
@@ -167,9 +167,11 @@ class FeedBase(LaunchpadView):
     @cachedproperty
     def date_updated(self):
         """See `IFeed`."""
-        sorted_items = sorted(self.getItems(),
-                              key=operator.attrgetter('last_modified'),
-                              reverse=True)
+        sorted_items = sorted(
+            self.getItems(),
+            key=operator.attrgetter("last_modified"),
+            reverse=True,
+        )
         if len(sorted_items) == 0:
             # datetime.isoformat() doesn't place the necessary "+00:00"
             # for the feedvalidator's check of the iso8601 date format
@@ -177,7 +179,7 @@ class FeedBase(LaunchpadView):
             return utc_now()
         last_modified = sorted_items[0].last_modified
         if last_modified is None:
-            raise AssertionError('All feed entries require a date updated.')
+            raise AssertionError("All feed entries require a date updated.")
         return last_modified
 
     def render(self):
@@ -185,37 +187,40 @@ class FeedBase(LaunchpadView):
         expires = rfc1123_date(time.time() + self.max_age)
         if self.date_updated is not None:
             last_modified = rfc1123_date(
-                time.mktime(self.date_updated.timetuple()))
+                time.mktime(self.date_updated.timetuple())
+            )
         else:
             last_modified = rfc1123_date(time.time())
         response = self.request.response
-        response.setHeader('Expires', expires)
-        response.setHeader('Cache-Control', 'max-age=%d' % self.max_age)
-        response.setHeader('X-Cache-Control', 'max-age=%d' % self.max_age)
-        response.setHeader('Last-Modified', last_modified)
+        response.setHeader("Expires", expires)
+        response.setHeader("Cache-Control", "max-age=%d" % self.max_age)
+        response.setHeader("X-Cache-Control", "max-age=%d" % self.max_age)
+        response.setHeader("Last-Modified", last_modified)
 
-        if self.format == 'atom':
+        if self.format == "atom":
             return self.renderAtom()
-        elif self.format == 'html':
+        elif self.format == "html":
             return self.renderHTML()
         else:
-            raise UnsupportedFeedFormat("Format %s is not supported" %
-                                        self.format)
+            raise UnsupportedFeedFormat(
+                "Format %s is not supported" % self.format
+            )
 
     def renderAtom(self):
         """See `IFeed`."""
-        self.request.response.setHeader('content-type',
-                                        'application/atom+xml;charset=utf-8')
-        template_file = ViewPageTemplateFile(self.template_files['atom'])
+        self.request.response.setHeader(
+            "content-type", "application/atom+xml;charset=utf-8"
+        )
+        template_file = ViewPageTemplateFile(self.template_files["atom"])
         result = template_file(self)
         # XXX EdwinGrubbs 2008-01-10 bug=181903
         # Zope3 requires the content-type to start with "text/" if
         # the result is a unicode object.
-        return result.encode('utf-8')
+        return result.encode("utf-8")
 
     def renderHTML(self):
         """See `IFeed`."""
-        return ViewPageTemplateFile(self.template_files['html'])(self)
+        return ViewPageTemplateFile(self.template_files["html"])(self)
 
 
 @implementer(IFeedEntry)
@@ -225,19 +230,21 @@ class FeedEntry:
     An individual entry for a feed.
     """
 
-    def __init__(self,
-                 title,
-                 link_alternate,
-                 date_created,
-                 date_updated,
-                 date_published=None,
-                 authors=None,
-                 contributors=None,
-                 content=None,
-                 id_=None,
-                 generator=None,
-                 logo=None,
-                 icon=None):
+    def __init__(
+        self,
+        title,
+        link_alternate,
+        date_created,
+        date_updated,
+        date_published=None,
+        authors=None,
+        contributors=None,
+        content=None,
+        id_=None,
+        generator=None,
+        logo=None,
+        icon=None,
+    ):
         self.title = title
         self.link_alternate = link_alternate
         self.content = content
@@ -245,7 +252,7 @@ class FeedEntry:
         self.date_updated = date_updated
         self.date_published = date_published
         if date_updated is None:
-            raise AssertionError('date_updated is required by RFC 4287')
+            raise AssertionError("date_updated is required by RFC 4287")
         if authors is None:
             authors = []
         self.authors = authors
@@ -263,18 +270,19 @@ class FeedEntry:
 
     def construct_id(self):
         url_path = urlparse(self.link_alternate)[2]
-        return 'tag:launchpad.net,%s:%s' % (
+        return "tag:launchpad.net,%s:%s" % (
             self.date_created.date().isoformat(),
-            url_path)
+            url_path,
+        )
 
 
 @implementer(IFeedTypedData)
 class FeedTypedData:
     """Data for a feed that includes its type."""
 
-    content_types = ['text', 'html', 'xhtml']
+    content_types = ["text", "html", "xhtml"]
 
-    def __init__(self, content, content_type='text', root_url=None):
+    def __init__(self, content, content_type="text", root_url=None):
         self._content = content
         if content_type not in self.content_types:
             raise UnsupportedFeedFormat("%s: is not valid" % content_type)
@@ -283,23 +291,25 @@ class FeedTypedData:
 
     @property
     def content(self):
-        if (self.content_type in ('html', 'xhtml') and
-            self.root_url is not None):
+        if (
+            self.content_type in ("html", "xhtml")
+            and self.root_url is not None
+        ):
             # Unqualified hrefs must be qualified using the original subdomain
             # or they will try be served from http://feeds.launchpad.net,
             # which will not work.
             soup = BeautifulSoup(self._content)
-            a_tags = soup.find_all('a')
+            a_tags = soup.find_all("a")
             for a_tag in a_tags:
-                if a_tag['href'].startswith('/'):
-                    a_tag['href'] = urljoin(self.root_url, a_tag['href'])
+                if a_tag["href"].startswith("/"):
+                    a_tag["href"] = urljoin(self.root_url, a_tag["href"])
             altered_content = str(soup)
         else:
             altered_content = self._content
 
-        if self.content_type in ('text', 'html'):
+        if self.content_type in ("text", "html"):
             altered_content = html_escape(altered_content)
-        elif self.content_type == 'xhtml':
+        elif self.content_type == "xhtml":
             soup = BeautifulSoup(altered_content)
             altered_content = str(soup)
         return altered_content

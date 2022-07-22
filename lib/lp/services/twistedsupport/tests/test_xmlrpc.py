@@ -10,7 +10,7 @@ from lp.services.twistedsupport.xmlrpc import (
     BlockingProxy,
     DeferredBlockingProxy,
     trap_fault,
-    )
+)
 from lp.services.xmlrpc import LaunchpadFault
 from lp.testing import TestCase
 
@@ -55,7 +55,7 @@ class TestTrapFault(TestCase):
 
     def test_raises_non_faults(self):
         # trap_fault re-raises any failures it gets that aren't faults.
-        failure = self.makeFailure(RuntimeError, 'example failure')
+        failure = self.makeFailure(RuntimeError, "example failure")
         self.assertRaisesFailure(failure, trap_fault, failure, TestFaultOne)
 
     def test_raises_faults_with_wrong_code(self):
@@ -87,33 +87,35 @@ class TestTrapFault(TestCase):
 
 
 class TestBlockingProxy(TestCase):
-
     def test_callRemote_calls_attribute(self):
         class ExampleProxy:
             def ok(self, a, b, c=None):
                 return (c, b, a)
+
         proxy = BlockingProxy(ExampleProxy())
-        result = proxy.callRemote('ok', 2, 3, c=8)
+        result = proxy.callRemote("ok", 2, 3, c=8)
         self.assertEqual((8, 3, 2), result)
 
     def test_callRemote_reraises_attribute(self):
         class ExampleProxy:
             def not_ok(self, a, b, c=None):
                 raise RuntimeError((c, b, a))
+
         proxy = BlockingProxy(ExampleProxy())
         error = self.assertRaises(
-            RuntimeError, proxy.callRemote, 'not_ok', 2, 3, c=8)
+            RuntimeError, proxy.callRemote, "not_ok", 2, 3, c=8
+        )
         self.assertEqual(str(error), str((8, 3, 2)))
 
 
 class TestDeferredBlockingProxy(TestCase):
-
     def test_callRemote_calls_attribute(self):
         class ExampleProxy:
             def ok(self, a, b, c=None):
                 return (c, b, a)
+
         proxy = DeferredBlockingProxy(ExampleProxy())
-        d = proxy.callRemote('ok', 2, 3, c=8)
+        d = proxy.callRemote("ok", 2, 3, c=8)
         result = extract_result(d)
         self.assertEqual((8, 3, 2), result)
 
@@ -121,7 +123,8 @@ class TestDeferredBlockingProxy(TestCase):
         class ExampleProxy:
             def not_ok(self, a, b, c=None):
                 raise RuntimeError((c, b, a))
+
         proxy = DeferredBlockingProxy(ExampleProxy())
-        d = proxy.callRemote('not_ok', 2, 3, c=8)
+        d = proxy.callRemote("not_ok", 2, 3, c=8)
         error = self.assertRaises(RuntimeError, extract_result, d)
         self.assertEqual(str(error), str((8, 3, 2)))

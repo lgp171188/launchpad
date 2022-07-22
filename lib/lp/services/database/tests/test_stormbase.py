@@ -3,16 +3,16 @@
 
 """StormBase tests."""
 
-from storm.locals import Int
 import transaction
+from storm.locals import Int
 from zope.component import getUtility
 
 from lp.services.database.interfaces import (
     DEFAULT_FLAVOR,
+    MAIN_STORE,
     IStore,
     IStoreSelector,
-    MAIN_STORE,
-    )
+)
 from lp.services.database.stormbase import StormBase
 from lp.testing import TestCase
 from lp.testing.layers import ZopelessDatabaseLayer

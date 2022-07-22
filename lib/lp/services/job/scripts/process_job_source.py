@@ -3,9 +3,9 @@
 
 """Handle jobs for a specified job source class."""
 
-from collections import defaultdict
 import logging
 import sys
+from collections import defaultdict
 
 from twisted.python import log
 from zope.component import getUtility
@@ -17,7 +17,7 @@ from lp.services.scripts.base import (
     LaunchpadCronScript,
     LaunchpadScript,
     SilentLaunchpadScriptFailure,
-    )
+)
 from lp.services.scripts.logger import OopsHandler
 from lp.services.webapp import errorlog
 
@@ -32,8 +32,9 @@ class ProcessSingleJobSource(LaunchpadCronScript):
         super().__init__(*args, **kwargs)
         # The fromlist argument is necessary so that __import__()
         # returns the bottom submodule instead of the top one.
-        module = __import__(self.config_section.module,
-                            fromlist=[self.job_source_name])
+        module = __import__(
+            self.config_section.module, fromlist=[self.job_source_name]
+        )
         self.source_interface = getattr(module, self.job_source_name)
 
     @property
@@ -46,7 +47,7 @@ class ProcessSingleJobSource(LaunchpadCronScript):
 
         # If the config section is just a link to another section,
         # use the linked one
-        if hasattr(cfg, 'link'):
+        if hasattr(cfg, "link"):
             return getattr(config, cfg.link)
         return cfg
 
@@ -56,20 +57,24 @@ class ProcessSingleJobSource(LaunchpadCronScript):
 
     @property
     def name(self):
-        return 'process-job-source-%s' % self.job_source_name
+        return "process-job-source-%s" % self.job_source_name
 
     @property
     def runner_class(self):
         runner_class_name = getattr(
-            self.config_section, 'runner_class', 'JobRunner')
+            self.config_section, "runner_class", "JobRunner"
+        )
         # Override attributes that are normally set in __init__().
         return getattr(runner, runner_class_name)
 
     # Keep this in sync with ProcessJobSource.add_my_options.
     def add_my_options(self):
         self.parser.add_option(
-            '--log-twisted', action='store_true', default=False,
-            help='Enable extra Twisted logging.')
+            "--log-twisted",
+            action="store_true",
+            default=False,
+            help="Enable extra Twisted logging.",
+        )
 
     def handle_options(self):
         if len(self.args) != 1:
@@ -105,33 +110,40 @@ class ProcessSingleJobSource(LaunchpadCronScript):
         errorlog.globalErrorUtility.configure(self.config_name)
         job_source = getUtility(self.source_interface)
         kwargs = {}
-        if getattr(self.options, 'log_twisted', False):
-            kwargs['_log_twisted'] = True
+        if getattr(self.options, "log_twisted", False):
+            kwargs["_log_twisted"] = True
         runner = self.runner_class.runFromSource(
-            job_source, self.dbuser, self.logger, **kwargs)
+            job_source, self.dbuser, self.logger, **kwargs
+        )
         for name, count in self.job_counts(runner.completed_jobs):
-            self.logger.info('Ran %d %s jobs.', count, name)
+            self.logger.info("Ran %d %s jobs.", count, name)
         for name, count in self.job_counts(runner.incomplete_jobs):
-            self.logger.info('%d %s jobs did not complete.', count, name)
+            self.logger.info("%d %s jobs did not complete.", count, name)
 
 
 class ProcessJobSource(LaunchpadScript):
     """Run jobs for specified job source classes."""
+
     usage = (
         "Usage: %prog [options] JOB_SOURCE [JOB_SOURCE ...]\n\n"
         "For more help, run:\n"
-        "    cronscripts/process-job-source.py --help")
+        "    cronscripts/process-job-source.py --help"
+    )
 
     description = (
-        "Takes pending jobs of the given type(s) off the queue and runs them.")
+        "Takes pending jobs of the given type(s) off the queue and runs them."
+    )
 
-    name = 'process-job-source'
+    name = "process-job-source"
 
     # Keep this in sync with ProcessSingleJobSource.add_my_options.
     def add_my_options(self):
         self.parser.add_option(
-            '--log-twisted', action='store_true', default=False,
-            help='Enable extra Twisted logging.')
+            "--log-twisted",
+            action="store_true",
+            default=False,
+            help="Enable extra Twisted logging.",
+        )
 
     def handle_options(self):
         if len(self.args) < 1:
@@ -146,7 +158,8 @@ class ProcessJobSource(LaunchpadScript):
         failure_count = 0
         for job_source_name in self.job_source_names:
             script = ProcessSingleJobSource(
-                test_args=[job_source_name], logger=self.logger)
+                test_args=[job_source_name], logger=self.logger
+            )
             # This is easier than unparsing all the possible options.
             script.options = self.options
             try:
@@ -167,5 +180,5 @@ class ProcessJobSource(LaunchpadScript):
                 if isinstance(handler, OopsHandler):
                     root_logger.removeHandler(handler)
         if failure_count:
-            self.logger.info('%d job sources failed.' % failure_count)
+            self.logger.info("%d job sources failed." % failure_count)
             raise SilentLaunchpadScriptFailure(failure_count)

@@ -4,24 +4,22 @@
 """The implementation of the Notification Rec."""
 
 __all__ = [
-    'NotificationRecipientSet',
-    'StubPerson',
+    "NotificationRecipientSet",
+    "StubPerson",
 ]
 
 
 from operator import attrgetter
 
 from zope.interface import implementer
-from zope.security.proxy import (
-    isinstance as zope_isinstance,
-    removeSecurityProxy,
-    )
+from zope.security.proxy import isinstance as zope_isinstance
+from zope.security.proxy import removeSecurityProxy
 
 from lp.registry.interfaces.person import IPerson
 from lp.services.mail.interfaces import (
     INotificationRecipientSet,
     UnknownRecipientError,
-    )
+)
 
 
 class StubPerson:
@@ -38,7 +36,8 @@ class StubPerson:
 
     def __init__(self, email):
         self.preferredemail = type(
-            "StubEmailAddress", (object,), {"email": email})
+            "StubEmailAddress", (object,), {"email": email}
+        )
 
 
 @implementer(INotificationRecipientSet)
@@ -63,7 +62,8 @@ class NotificationRecipientSet:
     def getRecipients(self):
         """See `INotificationRecipientSet`."""
         return sorted(
-            self._personToRationale.keys(), key=attrgetter('displayname'))
+            self._personToRationale.keys(), key=attrgetter("displayname")
+        )
 
     def getRecipientPersons(self):
         """See `INotificationRecipientSet`."""
@@ -97,7 +97,8 @@ class NotificationRecipientSet:
             person = person_or_email
         else:
             raise AssertionError(
-                'Not an IPerson or email address: %r' % person_or_email)
+                "Not an IPerson or email address: %r" % person_or_email
+            )
         try:
             return self._personToRationale[person]
         except KeyError:
@@ -107,15 +108,13 @@ class NotificationRecipientSet:
         """See `INotificationRecipientSet`."""
         from lp.registry.model.person import get_recipients
 
-        if (IPerson.providedBy(persons) or
-                zope_isinstance(persons, StubPerson)):
+        if IPerson.providedBy(persons) or zope_isinstance(persons, StubPerson):
             persons = [persons]
 
         for person in persons:
-            assert (
-                IPerson.providedBy(person) or
-                zope_isinstance(person, StubPerson)), (
-                'You can only add() an IPerson or a StubPerson: %r' % person)
+            assert IPerson.providedBy(person) or zope_isinstance(
+                person, StubPerson
+            ), ("You can only add() an IPerson or a StubPerson: %r" % person)
             # If the person already has a rationale, keep the first one.
             if person in self._personToRationale:
                 continue
@@ -128,15 +127,17 @@ class NotificationRecipientSet:
                 # Bypass zope's security because IEmailAddress.email is not
                 # public.
                 preferred_email = removeSecurityProxy(
-                    receiving_person).preferredemail
+                    receiving_person
+                ).preferredemail
                 email = str(preferred_email.email)
                 self._receiving_people.add((email, receiving_person))
                 old_person = self._emailToPerson.get(email)
                 # Only associate this email to the person, if there was
                 # no association or if the previous one was to a team and
                 # the newer one is to a person.
-                if (old_person is None
-                    or (old_person.is_team and not person.is_team)):
+                if old_person is None or (
+                    old_person.is_team and not person.is_team
+                ):
                     self._emailToPerson[email] = person
 
     def remove(self, persons):
@@ -147,14 +148,16 @@ class NotificationRecipientSet:
             persons = [persons]
         for person in persons:
             assert IPerson.providedBy(person), (
-                'You can only remove() an IPerson: %r' % person)
+                "You can only remove() an IPerson: %r" % person
+            )
             if person in self._personToRationale:
                 del self._personToRationale[person]
             for removed_person in get_recipients(person):
                 # Bypass zope's security because IEmailAddress.email is
                 # not public.
                 preferred_email = removeSecurityProxy(
-                    removed_person.preferredemail)
+                    removed_person.preferredemail
+                )
                 email = str(preferred_email.email)
                 self._receiving_people.discard((email, removed_person))
                 del self._emailToPerson[email]

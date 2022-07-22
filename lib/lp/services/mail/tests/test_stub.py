@@ -1,8 +1,8 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from doctest import DocTestSuite
 import re
+from doctest import DocTestSuite
 
 from zope.testing.renormalizing import OutputChecker
 
@@ -112,8 +112,15 @@ def test_simple_sendmail():
 
 
 def test_suite():
-    suite = DocTestSuite(checker=OutputChecker([
-        (re.compile(r"'revision', '[0-9a-f]+'"),
-         "'revision', '%s'" % ('0' * 40))]))
+    suite = DocTestSuite(
+        checker=OutputChecker(
+            [
+                (
+                    re.compile(r"'revision', '[0-9a-f]+'"),
+                    "'revision', '%s'" % ("0" * 40),
+                )
+            ]
+        )
+    )
     suite.layer = LaunchpadFunctionalLayer
     return suite

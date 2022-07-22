@@ -2,10 +2,10 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'compose_webhook_payload',
-    'WebhookAbsoluteURL',
-    'WebhookPayloadRequest',
-    ]
+    "compose_webhook_payload",
+    "WebhookAbsoluteURL",
+    "WebhookPayloadRequest",
+]
 
 from io import BytesIO
 
@@ -45,7 +45,7 @@ class WebhookAbsoluteURL:
         return canonical_url(self.context, force_local_path=True)
 
     def __repr__(self):
-        """Get a string representation """
+        """Get a string representation"""
         raise NotImplementedError()
 
     __call__ = __str__

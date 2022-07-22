@@ -55,6 +55,7 @@ repos:
             |oci
             |registry
             |scripts
+            |services
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
@@ -86,6 +87,7 @@ repos:
             |oci
             |registry
             |scripts
+            |services
           )/
     -   id: isort
         alias: isort-black
@@ -107,6 +109,7 @@ repos:
             |oci
             |registry
             |scripts
+            |services
           )/
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.9.2

@@ -13,7 +13,7 @@ from lp.services.auth.interfaces import IAccessToken
 
 
 class EditAccessToken(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IAccessToken
 
     def checkAuthenticated(self, user):
@@ -24,7 +24,8 @@ class EditAccessToken(AuthorizationBase):
         # allows target owners to exercise some control over access to their
         # object.
         adapter = queryAdapter(
-            self.obj.target, IAuthorization, 'launchpad.Edit')
+            self.obj.target, IAuthorization, "launchpad.Edit"
+        )
         if adapter is not None and adapter.checkAuthenticated(user):
             return True
         return False

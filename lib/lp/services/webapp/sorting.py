@@ -3,9 +3,7 @@
 
 """This module contains sorting utility functions."""
 
-__all__ = ['expand_numbers',
-           'sorted_version_numbers',
-           'sorted_dotted_numbers']
+__all__ = ["expand_numbers", "sorted_version_numbers", "sorted_dotted_numbers"]
 
 import re
 
@@ -23,18 +21,20 @@ def expand_numbers(unicode_text, fill_digits=4):
     branch-0002-0003.0012
 
     """
-    assert(isinstance(unicode_text, str))
+    assert isinstance(unicode_text, str)
 
     def substitute_filled_numbers(match):
         return match.group(0).zfill(fill_digits)
-    return re.sub(r'\d+', substitute_filled_numbers, unicode_text)
+
+    return re.sub(r"\d+", substitute_filled_numbers, unicode_text)
 
 
 # Create translation table for numeric ordinals to their
 # strings in reversed order.  So ord(u'0') -> u'9' and
 # so on.
 reversed_numbers_table = dict(
-  zip(map(ord, '0123456789'), reversed('0123456789')))
+    zip(map(ord, "0123456789"), reversed("0123456789"))
+)
 
 
 def _reversed_number_sort_key(text):
@@ -119,12 +119,13 @@ def sorted_version_numbers(sequence, key=_identity):
     0.9 10
 
     """
+
     def sort_key(item):
         k = key(item)
         if isinstance(k, (tuple, list)):
-            return (
-                (_reversed_number_sort_key(expand_numbers(k[0])),) +
-                tuple(k[1:]))
+            return (_reversed_number_sort_key(expand_numbers(k[0])),) + tuple(
+                k[1:]
+            )
         else:
             return _reversed_number_sort_key(expand_numbers(k))
 

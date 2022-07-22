@@ -12,15 +12,14 @@ from zope.component import getUtility
 from lp.services.daemons import readyservice
 from lp.services.database.interfaces import (
     DEFAULT_FLAVOR,
-    IStoreSelector,
     MAIN_STORE,
-    )
+    IStoreSelector,
+)
 from lp.services.scripts import execute_zcml_for_scripts
-
 
 execute_zcml_for_scripts()
 
-application = service.Application('Okay')
+application = service.Application("Okay")
 
 # Service that announces when the daemon is ready
 readyservice.ReadyService().setServiceParent(application)

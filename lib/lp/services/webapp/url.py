@@ -3,14 +3,12 @@
 
 """Functions for working with URLs."""
 
-__all__ = ['urlappend', 'urlparse', 'urlsplit']
+__all__ = ["urlappend", "urlparse", "urlsplit"]
 
 import urllib.parse as urlparse_module
-from urllib.parse import (
-    urljoin,
-    urlparse as original_urlparse,
-    urlsplit as original_urlsplit,
-    )
+from urllib.parse import urljoin
+from urllib.parse import urlparse as original_urlparse
+from urllib.parse import urlsplit as original_urlsplit
 
 
 def _enable_sftp_in_urlparse():
@@ -26,10 +24,10 @@ def _enable_sftp_in_urlparse():
     >>> urlappend('sftp://foo/bar', 'gam')
     'sftp://foo/bar/gam'
     """
-    if 'sftp' not in urlparse_module.uses_netloc:
-        urlparse_module.uses_netloc.append('sftp')
-    if 'sftp' not in urlparse_module.uses_relative:
-        urlparse_module.uses_relative.append('sftp')
+    if "sftp" not in urlparse_module.uses_netloc:
+        urlparse_module.uses_netloc.append("sftp")
+    if "sftp" not in urlparse_module.uses_relative:
+        urlparse_module.uses_relative.append("sftp")
 
 
 # Extend urlparse to support sftp at module load time.
@@ -44,10 +42,10 @@ def _enable_bzr_ssh_in_urlparse():
     >>> tuple(urlparse('bzr+ssh://example.com/code/branch'))
     ('bzr+ssh', 'example.com', '/code/branch', '', '', '')
     """
-    if 'bzr+ssh' not in urlparse_module.uses_netloc:
-        urlparse_module.uses_netloc.append('bzr+ssh')
-    if 'bzr+ssh' not in urlparse_module.uses_relative:
-        urlparse_module.uses_relative.append('bzr+ssh')
+    if "bzr+ssh" not in urlparse_module.uses_netloc:
+        urlparse_module.uses_netloc.append("bzr+ssh")
+    if "bzr+ssh" not in urlparse_module.uses_relative:
+        urlparse_module.uses_relative.append("bzr+ssh")
 
 
 # Extend this version of urlparse (used by the launchpad validators)
@@ -71,23 +69,23 @@ def urlappend(baseurl, path):
     >>> urlappend('http://localhost:11375/foo', 'bar/baz')
     'http://localhost:11375/foo/bar/baz'
     """
-    assert not path.startswith('/')
-    if not baseurl.endswith('/'):
-        baseurl += '/'
+    assert not path.startswith("/")
+    if not baseurl.endswith("/"):
+        baseurl += "/"
     return urljoin(baseurl, path)
 
 
 def _ensure_ascii_str(url):
     """Ensure that `url` only contains ASCII, and convert it to a `str`."""
     if isinstance(url, bytes):
-        url = url.decode('ascii')
+        url = url.decode("ascii")
     else:
         # Ignore the result; just check that `url` is pure ASCII.
-        url.encode('ascii')
+        url.encode("ascii")
     return url
 
 
-def urlparse(url, scheme='', allow_fragments=True):
+def urlparse(url, scheme="", allow_fragments=True):
     """Convert url to a str object and call the original urlparse function.
 
     The url parameter should contain ASCII characters only. This
@@ -113,10 +111,11 @@ def urlparse(url, scheme='', allow_fragments=True):
     func=detail&aid=1313119&group_id=5470&atid=105470)
     """
     return original_urlparse(
-        _ensure_ascii_str(url), scheme=scheme, allow_fragments=allow_fragments)
+        _ensure_ascii_str(url), scheme=scheme, allow_fragments=allow_fragments
+    )
 
 
-def urlsplit(url, scheme='', allow_fragments=True):
+def urlsplit(url, scheme="", allow_fragments=True):
     """Convert url to a str object and call the original urlsplit function.
 
     The url parameter should contain ASCII characters only. This
@@ -137,4 +136,5 @@ def urlsplit(url, scheme='', allow_fragments=True):
 
     """
     return original_urlsplit(
-        _ensure_ascii_str(url), scheme=scheme, allow_fragments=allow_fragments)
+        _ensure_ascii_str(url), scheme=scheme, allow_fragments=allow_fragments
+    )

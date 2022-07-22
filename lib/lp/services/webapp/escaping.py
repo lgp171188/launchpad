@@ -2,25 +2,25 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'html_escape',
-    'html_unescape',
-    'structured',
-    ]
+    "html_escape",
+    "html_unescape",
+    "structured",
+]
 
-from lazr.restful.utils import get_current_browser_request
 import six
-from zope.i18n import (
-    Message,
-    translate,
-    )
+from lazr.restful.utils import get_current_browser_request
+from zope.i18n import Message, translate
 from zope.interface import implementer
 
 from lp.services.webapp.interfaces import IStructuredString
 
-
 HTML_REPLACEMENTS = (
-    ('&', '&amp;'), ('<', '&lt;'), ('>', '&gt;'), ('"', '&quot;'),
-    ("'", '&#x27;'))
+    ("&", "&amp;"),
+    ("<", "&lt;"),
+    (">", "&gt;"),
+    ('"', "&quot;"),
+    ("'", "&#x27;"),
+)
 
 
 def html_escape(message):
@@ -65,11 +65,11 @@ def html_unescape(message):
     Converts the 5 entities references produced by html_escape into their
     original form. There is almost no reason to ever do this.
     """
-    s = message.replace('&lt;', '<')
-    s = s.replace('&gt;', '>')
-    s = s.replace('&quot;', '"')
-    s = s.replace('&#x27;', "'")
-    s = s.replace('&amp;', '&')
+    s = message.replace("&lt;", "<")
+    s = s.replace("&gt;", ">")
+    s = s.replace("&quot;", '"')
+    s = s.replace("&#x27;", "'")
+    s = s.replace("&amp;", "&")
     return s
 
 
@@ -87,7 +87,6 @@ def translate_if_i18n(obj_or_msgid):
 
 @implementer(IStructuredString)
 class structured:
-
     def __init__(self, text, *reps, **kwreps):
         text = translate_if_i18n(text)
         if isinstance(text, bytes):
@@ -98,12 +97,14 @@ class structured:
         if reps and kwreps:
             raise TypeError(
                 "You must provide either positional arguments or keyword "
-                "arguments to structured(), not both.")
+                "arguments to structured(), not both."
+            )
         if reps:
             self.escapedtext = text % tuple(html_escape(rep) for rep in reps)
         elif kwreps:
             self.escapedtext = text % {
-                k: html_escape(v) for k, v in kwreps.items()}
+                k: html_escape(v) for k, v in kwreps.items()
+            }
         else:
             self.escapedtext = text
 

@@ -2,18 +2,15 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'EditEmailCommand',
-    'EmailCommand',
-    'EmailCommandCollection',
-    'normalize_arguments',
-    'NoSuchCommand',
-    ]
+    "EditEmailCommand",
+    "EmailCommand",
+    "EmailCommandCollection",
+    "normalize_arguments",
+    "NoSuchCommand",
+]
 
 from lazr.lifecycle.event import ObjectModifiedEvent
-from lazr.lifecycle.interfaces import (
-    IObjectCreatedEvent,
-    IObjectModifiedEvent,
-    )
+from lazr.lifecycle.interfaces import IObjectCreatedEvent, IObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 from zope.interface import providedBy
 
@@ -45,10 +42,10 @@ def normalize_arguments(string_args):
             quoted_string = True
             result.append(item[1:])
         elif quoted_string and item.endswith('"'):
-            result[-1] += ' ' + item[:-1]
+            result[-1] += " " + item[:-1]
             quoted_string = False
         elif quoted_string:
-            result[-1] += ' ' + item
+            result[-1] += " " + item
         else:
             result.append(item)
 
@@ -60,6 +57,7 @@ class EmailCommand:
 
     Both name the values in the args list are strings.
     """
+
     _numberOfArguments = None
 
     # Should command arguments be converted to lowercase?
@@ -79,10 +77,12 @@ class EmailCommand:
             if self._numberOfArguments != num_arguments_got:
                 raise EmailProcessingError(
                     get_error_message(
-                        'num-arguments-mismatch.txt',
+                        "num-arguments-mismatch.txt",
                         command_name=self.name,
                         num_arguments_expected=self._numberOfArguments,
-                        num_arguments_got=num_arguments_got))
+                        num_arguments_got=num_arguments_got,
+                    )
+                )
 
     def convertArguments(self, context):
         """Converts the string argument to Python objects.
@@ -94,7 +94,7 @@ class EmailCommand:
 
     def __str__(self):
         """See IEmailCommand."""
-        return ' '.join([self.name] + self.string_args)
+        return " ".join([self.name] + self.string_args)
 
 
 class EditEmailCommand(EmailCommand):
@@ -113,8 +113,7 @@ class EditEmailCommand(EmailCommand):
             context_snapshot = current_event.object_before_modification
             edited_fields.update(current_event.edited_fields)
         else:
-            context_snapshot = Snapshot(
-                context, providing=providedBy(context))
+            context_snapshot = Snapshot(context, providing=providedBy(context))
 
         edited = False
         for attr_name, attr_value in args.items():
@@ -124,7 +123,8 @@ class EditEmailCommand(EmailCommand):
         if edited and not IObjectCreatedEvent.providedBy(current_event):
             edited_fields.update(args.keys())
             current_event = ObjectModifiedEvent(
-                context, context_snapshot, list(edited_fields))
+                context, context_snapshot, list(edited_fields)
+            )
 
         return context, current_event
 
@@ -145,7 +145,8 @@ class EmailCommandCollection:
         """Returns all the command names."""
         return {
             command_name: command.case_insensitive_args
-            for command_name, command in klass._commands.items()}
+            for command_name, command in klass._commands.items()
+        }
 
     @classmethod
     def get(klass, name, string_args):

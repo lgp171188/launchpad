@@ -4,34 +4,35 @@
 """Classes for simpler handling of PGP signed email messages."""
 
 __all__ = [
-    'SignedMessage',
-    'signed_message_from_bytes',
-    'strip_pgp_signature',
-    ]
+    "SignedMessage",
+    "signed_message_from_bytes",
+    "strip_pgp_signature",
+]
 
 import email
-from email.message import Message
 import re
+from email.message import Message
 
 from zope.interface import implementer
 
 from lp.services.mail.interfaces import ISignedMessage
 
-
 clearsigned_re = re.compile(
-    br'-----BEGIN PGP SIGNED MESSAGE-----'
-    br'.*?(?:\r\n|\n)(?:\r\n|\n)(.*)(?:\r\n|\n)'
-    br'(-----BEGIN PGP SIGNATURE-----'
-    br'.*'
-    br'-----END PGP SIGNATURE-----)',
-    re.DOTALL)
+    rb"-----BEGIN PGP SIGNED MESSAGE-----"
+    rb".*?(?:\r\n|\n)(?:\r\n|\n)(.*)(?:\r\n|\n)"
+    rb"(-----BEGIN PGP SIGNATURE-----"
+    rb".*"
+    rb"-----END PGP SIGNATURE-----)",
+    re.DOTALL,
+)
 
 # Regexp for matching the signed content in multipart messages.
 multipart_signed_content = (
-    r'%(boundary)s\n(?P<signed_content>.*?)\n%(boundary)s\n.*?\n%(boundary)s')
+    r"%(boundary)s\n(?P<signed_content>.*?)\n%(boundary)s\n.*?\n%(boundary)s"
+)
 
 # Lines that start with '-' are escaped with '- '.
-dash_escaped = re.compile(b'^- ', re.MULTILINE)
+dash_escaped = re.compile(b"^- ", re.MULTILINE)
 
 
 def signed_message_from_bytes(buf):
@@ -60,8 +61,9 @@ class SignedMessage(Message):
         If the message isn't signed, both signature and the content is
         None.
         """
-        assert self.parsed_bytes is not None, (
-            'Use signed_message_from_bytes() to create the message.')
+        assert (
+            self.parsed_bytes is not None
+        ), "Use signed_message_from_bytes() to create the message."
         signed_content = signature = None
         # Check for MIME/PGP signed message first.
         # See: RFC3156 - MIME Security with OpenPGP
@@ -73,16 +75,20 @@ class SignedMessage(Message):
             if len(payload) == 2:
                 content_part, signature_part = payload
                 sig_content_type = signature_part.get_content_type()
-                if sig_content_type == 'application/pgp-signature':
+                if sig_content_type == "application/pgp-signature":
                     # We need to extract the signed content from the parsed
                     # bytes, since content_part.as_bytes() isn't guaranteed
                     # to return the exact byte string it was created from.
-                    boundary = '--' + self.get_boundary()
+                    boundary = "--" + self.get_boundary()
                     match = re.search(
-                        (multipart_signed_content % {
-                            'boundary': re.escape(boundary)}).encode('ASCII'),
-                        self.parsed_bytes, re.DOTALL)
-                    signed_content = match.group('signed_content')
+                        (
+                            multipart_signed_content
+                            % {"boundary": re.escape(boundary)}
+                        ).encode("ASCII"),
+                        self.parsed_bytes,
+                        re.DOTALL,
+                    )
+                    signed_content = match.group("signed_content")
                     signature = signature_part.get_payload(decode=True)
                     return signature, signed_content
         # If we still have no signature, then we have one of several cases:
@@ -109,7 +115,8 @@ class SignedMessage(Message):
             if match is not None:
                 signed_content_unescaped = match.group(1)
                 signed_content = dash_escaped.sub(
-                    b'', signed_content_unescaped)
+                    b"", signed_content_unescaped
+                )
                 signature = match.group(2)
                 return signature, signed_content
             # Stop processing after the first non-multipart part.
@@ -126,11 +133,12 @@ class SignedMessage(Message):
         if signed_content is None:
             return None
         else:
-            if (not self.is_multipart() and
-                clearsigned_re.search(self.get_payload(decode=True))):
+            if not self.is_multipart() and clearsigned_re.search(
+                self.get_payload(decode=True)
+            ):
                 # Add a new line so that a message with no headers will
                 # be created.
-                signed_content = b'\n' + signed_content
+                signed_content = b"\n" + signed_content
             return signed_message_from_bytes(signed_content)
 
     @property

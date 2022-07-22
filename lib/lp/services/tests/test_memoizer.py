@@ -19,21 +19,29 @@ class TestMemoizeDecorator(TestCase):
 
         do_expensive_thing(heavy_obj)
         self.assertEqual(1, heavy_obj.some_method.call_count)
-        self.assertEqual(do_expensive_thing.memo, {
-            (heavy_obj, ): heavy_obj.some_method.return_value})
+        self.assertEqual(
+            do_expensive_thing.memo,
+            {(heavy_obj,): heavy_obj.some_method.return_value},
+        )
 
         do_expensive_thing(heavy_obj)
         self.assertEqual(1, heavy_obj.some_method.call_count)
-        self.assertEqual(do_expensive_thing.memo, {
-            (heavy_obj, ): heavy_obj.some_method.return_value})
+        self.assertEqual(
+            do_expensive_thing.memo,
+            {(heavy_obj,): heavy_obj.some_method.return_value},
+        )
 
         another_heavy = mock.Mock()
         do_expensive_thing(another_heavy)
         self.assertEqual(1, heavy_obj.some_method.call_count)
         self.assertEqual(1, another_heavy.some_method.call_count)
-        self.assertEqual(do_expensive_thing.memo, {
-            (heavy_obj, ): heavy_obj.some_method.return_value,
-            (another_heavy, ): another_heavy.some_method.return_value})
+        self.assertEqual(
+            do_expensive_thing.memo,
+            {
+                (heavy_obj,): heavy_obj.some_method.return_value,
+                (another_heavy,): another_heavy.some_method.return_value,
+            },
+        )
 
     def test_clean_memo(self):
         @memoize
