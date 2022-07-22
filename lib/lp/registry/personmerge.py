@@ -727,6 +727,24 @@ def _mergeOCIRecipeSubscription(cur, from_id, to_id):
         ''' % vars())
 
 
+def _mergeVulnerabilitySubscription(cur, from_id, to_id):
+    # Update only the VulnerabilitySubscription that will not conflict.
+    cur.execute('''
+        UPDATE VulnerabilitySubscription
+        SET person=%(to_id)d
+        WHERE person=%(from_id)d AND vulnerability NOT IN
+            (
+            SELECT vulnerability
+            FROM VulnerabilitySubscription
+            WHERE person = %(to_id)d
+            )
+    ''' % vars())
+    # and delete those left over.
+    cur.execute('''
+        DELETE FROM VulnerabilitySubscription WHERE person=%(from_id)d
+        ''' % vars())
+
+
 def _mergeCharmRecipe(cur, from_person, to_person):
     # This shouldn't use removeSecurityProxy.
     recipes = getUtility(ICharmRecipeSet).findByOwner(from_person)
@@ -979,6 +997,9 @@ def merge_people(from_person, to_person, reviewer, delete=False):
 
     _mergeCharmRecipe(cur, from_id, to_id)
     skip.append(('charmrecipe', 'owner'))
+
+    _mergeVulnerabilitySubscription(cur, from_id, to_id)
+    skip.append(('vulnerabilitysubscription', 'person'))
 
     # Sanity check. If we have a reference that participates in a
     # UNIQUE index, it must have already been handled by this point.
