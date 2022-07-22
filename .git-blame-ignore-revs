@@ -94,3 +94,5 @@ cf7c6a08bd010dd260bff4690d64479fadf37e67
 c7dedd4d8a3c642f77570e525be0af9714703eba
 # apply black to lp.translations
 b56a741985ca580c281f142bea589b1ef05d3e93
+# apply black to lp.xmlrpc
+0bf877facbd96ece340dd26a7429ebbf0fb9b65a

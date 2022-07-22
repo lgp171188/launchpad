@@ -10,17 +10,14 @@ from zope.component import getUtility
 
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.testing import (
+    TestCaseWithFactory,
     anonymous_logged_in,
     person_logged_in,
-    TestCaseWithFactory,
     verifyObject,
-    )
+)
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.xmlrpc import XMLRPCTestTransport
-from lp.xmlrpc.application import (
-    ISelfTest,
-    SelfTest,
-    )
+from lp.xmlrpc.application import ISelfTest, SelfTest
 
 
 class TestXMLRPCSelfTest(TestCaseWithFactory):
@@ -29,20 +26,22 @@ class TestXMLRPCSelfTest(TestCaseWithFactory):
 
     def make_proxy(self):
         return xmlrpc.client.ServerProxy(
-            'http://xmlrpc.launchpad.test/', transport=XMLRPCTestTransport())
+            "http://xmlrpc.launchpad.test/", transport=XMLRPCTestTransport()
+        )
 
     def make_logged_in_proxy(self):
         return xmlrpc.client.ServerProxy(
-            'http://test@canonical.com:test@xmlrpc.launchpad.test/',
-            transport=XMLRPCTestTransport())
+            "http://test@canonical.com:test@xmlrpc.launchpad.test/",
+            transport=XMLRPCTestTransport(),
+        )
 
     def test_launchpad_root_object(self):
         """The Launchpad root object has a simple XMLRPC API to show that
         XMLRPC works.
         """
-        selftestview = SelfTest('somecontext', 'somerequest')
+        selftestview = SelfTest("somecontext", "somerequest")
         self.assertTrue(verifyObject(ISelfTest, selftestview))
-        self.assertEqual('foo bar', selftestview.concatenate('foo', 'bar'))
+        self.assertEqual("foo bar", selftestview.concatenate("foo", "bar"))
         fault = selftestview.make_fault()
         self.assertEqual("<Fault 666: 'Yoghurt and spanners.'>", str(fault))
 
@@ -51,7 +50,7 @@ class TestXMLRPCSelfTest(TestCaseWithFactory):
         Transport which talks with the publisher directly.
         """
         selftest = self.make_proxy()
-        self.assertEqual('foo bar', selftest.concatenate('foo', 'bar'))
+        self.assertEqual("foo bar", selftest.concatenate("foo", "bar"))
         fault = self.assertRaises(xmlrpc.client.Fault, selftest.make_fault)
         self.assertEqual("<Fault 666: 'Yoghurt and spanners.'>", str(fault))
 
@@ -60,7 +59,7 @@ class TestXMLRPCSelfTest(TestCaseWithFactory):
         other than xmlrpc.client.Fault.  We have such a method on the self
         test view.
         """
-        selftestview = SelfTest('somecontext', 'somerequest')
+        selftestview = SelfTest("somecontext", "somerequest")
         self.assertRaises(RuntimeError, selftestview.raise_exception)
 
     def test_exception_converted_to_fault(self):
@@ -76,7 +75,7 @@ class TestXMLRPCSelfTest(TestCaseWithFactory):
     def test_anonymous_authentication(self):
         """hello() returns Anonymous because we haven't logged in."""
         selftest = self.make_proxy()
-        self.assertEqual('Hello Anonymous.', selftest.hello())
+        self.assertEqual("Hello Anonymous.", selftest.hello())
 
     def test_user_pass_authentication(self):
         """If we provide a username and password, hello() will
@@ -89,7 +88,7 @@ class TestXMLRPCSelfTest(TestCaseWithFactory):
         with anonymous_logged_in():
             self.assertIs(None, getUtility(ILaunchBag).user)
             selftest = self.make_logged_in_proxy()
-            self.assertEqual('Hello Sample Person.', selftest.hello())
+            self.assertEqual("Hello Sample Person.", selftest.hello())
 
     def test_login_differences(self):
         """Even if we log in as Foo Bar here, the XMLRPC method will see Sample
@@ -98,6 +97,7 @@ class TestXMLRPCSelfTest(TestCaseWithFactory):
         person = self.factory.makePerson()
         with person_logged_in(person):
             selftest = self.make_logged_in_proxy()
-            self.assertEqual('Hello Sample Person.', selftest.hello())
-            self.assertEqual(person.displayname,
-                             getUtility(ILaunchBag).user.displayname)
+            self.assertEqual("Hello Sample Person.", selftest.hello())
+            self.assertEqual(
+                person.displayname, getUtility(ILaunchBag).user.displayname
+            )

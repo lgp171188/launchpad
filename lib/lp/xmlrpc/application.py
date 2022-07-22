@@ -4,24 +4,21 @@
 """XML-RPC API to the application roots."""
 
 __all__ = [
-    'ISelfTest',
-    'PrivateApplication',
-    'SelfTest',
-    ]
+    "ISelfTest",
+    "PrivateApplication",
+    "SelfTest",
+]
 
 import xmlrpc.client
 
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 
 from lp.bugs.interfaces.malone import IPrivateMaloneApplication
 from lp.code.interfaces.codehosting import ICodehostingApplication
 from lp.code.interfaces.codeimportscheduler import (
     ICodeImportSchedulerApplication,
-    )
+)
 from lp.code.interfaces.gitapi import IGitApplication
 from lp.registry.interfaces.mailinglist import IMailingListApplication
 from lp.registry.interfaces.person import ICanonicalSSOApplication
@@ -37,7 +34,6 @@ from lp.xmlrpc.interfaces import IPrivateApplication
 # the regular expression in lp:lp-dev-utils page-performance-report.ini.
 @implementer(IPrivateApplication)
 class PrivateApplication:
-
     @property
     def mailinglists(self):
         """See `IPrivateApplication`."""
@@ -102,14 +98,13 @@ class ISelfTest(Interface):
 
 @implementer(ISelfTest)
 class SelfTest(LaunchpadXMLRPCView):
-
     def make_fault(self):
         """Returns an xmlrpc fault."""
         return xmlrpc.client.Fault(666, "Yoghurt and spanners.")
 
     def concatenate(self, string1, string2):
         """Return the concatenation of the two given strings."""
-        return '%s %s' % (string1, string2)
+        return "%s %s" % (string1, string2)
 
     def hello(self):
         """Return a greeting to the logged in user."""
