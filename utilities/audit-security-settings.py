@@ -18,11 +18,8 @@ import os
 
 from lp.scripts.utilities.settingsauditor import SettingsAuditor
 
-
-BRANCH_ROOT = os.path.split(
-    os.path.dirname(os.path.abspath(__file__)))[0]
-SECURITY_PATH = os.path.join(
-    BRANCH_ROOT, 'database', 'schema', 'security.cfg')
+BRANCH_ROOT = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
+SECURITY_PATH = os.path.join(BRANCH_ROOT, "database", "schema", "security.cfg")
 
 
 def main():
@@ -30,9 +27,10 @@ def main():
         data = f.read()
     auditor = SettingsAuditor(data)
     settings = auditor.audit()
-    with open(SECURITY_PATH, 'w') as f:
+    with open(SECURITY_PATH, "w") as f:
         f.write(settings)
     print(auditor.error_data)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

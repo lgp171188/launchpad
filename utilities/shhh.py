@@ -8,11 +8,8 @@ Run a command and suppress output unless it returns a non-zero exit status.
 """
 
 import os
-from subprocess import (
-    PIPE,
-    Popen,
-    )
 import sys
+from subprocess import PIPE, Popen
 
 
 def shhh(cmd):
@@ -90,5 +87,5 @@ def shhh(cmd):
         return process.returncode
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(shhh(sys.argv[1:]))

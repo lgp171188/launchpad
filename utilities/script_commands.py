@@ -12,9 +12,11 @@ def add_dict(name, **kwargs):
     The kwargs are the contents of the dict.
     :param name: The name of the dictionary to add.
     """
+
     def decorator(func):
         setattr(func, name, kwargs)
         return func
+
     return decorator
 
 
@@ -24,7 +26,7 @@ def types(**kwargs):
     The kwargs are the values to set, as used by OptionParser.add_option::
       @types(port="int", delay=int)
     """
-    return add_dict('_types', **kwargs)
+    return add_dict("_types", **kwargs)
 
 
 def helps(**kwargs):
@@ -33,7 +35,7 @@ def helps(**kwargs):
     The kwargs are used to assign help::
       helps(port="The port to use.", delay="The time to wait.")
     """
-    return add_dict('_helps', **kwargs)
+    return add_dict("_helps", **kwargs)
 
 
 def get_function_parser(function):
@@ -50,8 +52,8 @@ def get_function_parser(function):
     args, ignore, ignored, defaults = inspect.getargspec(function)
     if defaults is None:
         defaults = [None] * len(args)
-    arg_types = getattr(function, '_types', {})
-    arg_helps = getattr(function, '_helps', {})
+    arg_types = getattr(function, "_types", {})
+    arg_helps = getattr(function, "_helps", {})
     for arg, default in zip(args, defaults):
         arg_type = arg_types.get(arg)
         if arg_type is None:
@@ -60,9 +62,10 @@ def get_function_parser(function):
             arg_type = type(default)
         arg_help = arg_helps.get(arg)
         if arg_help is not None:
-            arg_help += ' Default: %default.'
+            arg_help += " Default: %default."
         parser.add_option(
-            '--%s' % arg, type=arg_type, help=arg_help, default=default)
+            "--%s" % arg, type=arg_type, help=arg_help, default=default
+        )
     return parser
 
 
@@ -82,7 +85,7 @@ def parse_args(command, args):
     # have defaults, but declaring them as positional would prevent them from
     # being treated as flags.
     if len(args) != 0:
-        raise UserError('Too many arguments.')
+        raise UserError("Too many arguments.")
     return {}
 
 
@@ -107,11 +110,14 @@ def run_subcommand(subcommands, argv):
         subcommand name.
     """
     if len(argv) < 1:
-        raise UserError('Must supply a command: %s.' %
-                        ', '.join(subcommands.keys()))
+        raise UserError(
+            "Must supply a command: %s." % ", ".join(subcommands.keys())
+        )
     try:
         command = subcommands[argv[0]]
     except KeyError:
-        raise UserError('%s invalid.  Valid commands: %s.' %
-                        (argv[0], ', '.join(subcommands.keys())))
+        raise UserError(
+            "%s invalid.  Valid commands: %s."
+            % (argv[0], ", ".join(subcommands.keys()))
+        )
     run_from_args(command, argv[1:])

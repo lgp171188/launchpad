@@ -39,10 +39,7 @@ Options:
 # For understanding the code, you may find it helpful to see
 # bzrlib/log.py and http://bazaar-vcs.org/Integrating_with_Bazaar.
 
-from __future__ import (
-    absolute_import,
-    print_function,
-    )
+from __future__ import absolute_import, print_function
 
 import getopt
 import re
@@ -51,7 +48,6 @@ import sys
 from bzrlib import log
 from bzrlib.branch import Branch
 from bzrlib.osutils import format_date
-
 
 try:
     from editmoin import editshortcut
