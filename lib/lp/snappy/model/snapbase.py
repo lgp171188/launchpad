@@ -5,19 +5,19 @@
 
 __all__ = [
     "SnapBase",
-    ]
+]
 
 import pytz
 from storm.locals import (
+    JSON,
     Bool,
     DateTime,
     Int,
-    JSON,
     Reference,
     Store,
     Storm,
     Unicode,
-    )
+)
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -27,20 +27,17 @@ from lp.buildmaster.model.processor import Processor
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.person import Person
 from lp.services.database.constants import DEFAULT
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.snappy.interfaces.snapbase import (
     CannotDeleteSnapBase,
     ISnapBase,
     ISnapBaseSet,
     NoSuchSnapBase,
-    )
+)
 from lp.soyuz.interfaces.archive import (
     ArchiveDependencyError,
     ComponentNotFound,
-    )
+)
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.archivedependency import ArchiveDependency
@@ -55,7 +52,8 @@ class SnapBase(Storm):
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False)
+        name="date_created", tzinfo=pytz.UTC, allow_none=False
+    )
 
     registrant_id = Int(name="registrant", allow_none=False)
     registrant = Reference(registrant_id, "Person.id")
@@ -71,8 +69,15 @@ class SnapBase(Storm):
 
     is_default = Bool(name="is_default", allow_none=False)
 
-    def __init__(self, registrant, name, display_name, distro_series,
-                 build_channels, date_created=DEFAULT):
+    def __init__(
+        self,
+        registrant,
+        name,
+        display_name,
+        distro_series,
+        build_channels,
+        date_created=DEFAULT,
+    ):
         super().__init__()
         self.registrant = registrant
         self.name = name
@@ -83,17 +88,23 @@ class SnapBase(Storm):
         self.is_default = False
 
     def _getProcessors(self):
-        return list(Store.of(self).find(
-            Processor,
-            Processor.id == SnapBaseArch.processor_id,
-            SnapBaseArch.snap_base == self))
+        return list(
+            Store.of(self).find(
+                Processor,
+                Processor.id == SnapBaseArch.processor_id,
+                SnapBaseArch.snap_base == self,
+            )
+        )
 
     def setProcessors(self, processors):
         """See `ISnapBase`."""
-        enablements = dict(Store.of(self).find(
-            (Processor, SnapBaseArch),
-            Processor.id == SnapBaseArch.processor_id,
-            SnapBaseArch.snap_base == self))
+        enablements = dict(
+            Store.of(self).find(
+                (Processor, SnapBaseArch),
+                Processor.id == SnapBaseArch.processor_id,
+                SnapBaseArch.snap_base == self,
+            )
+        )
         for proc in enablements:
             if proc not in processors:
                 Store.of(self).remove(enablements[proc])
@@ -109,38 +120,54 @@ class SnapBase(Storm):
     @property
     def dependencies(self):
         """See `ISnapBase`."""
-        return IStore(ArchiveDependency).find(
-            ArchiveDependency,
-            ArchiveDependency.dependency == Archive.id,
-            Archive.owner == Person.id,
-            ArchiveDependency.snap_base == self).order_by(Person.display_name)
+        return (
+            IStore(ArchiveDependency)
+            .find(
+                ArchiveDependency,
+                ArchiveDependency.dependency == Archive.id,
+                Archive.owner == Person.id,
+                ArchiveDependency.snap_base == self,
+            )
+            .order_by(Person.display_name)
+        )
 
     def getArchiveDependency(self, dependency):
         """See `ISnapBase`."""
-        return IStore(ArchiveDependency).find(
-            ArchiveDependency, snap_base=self, dependency=dependency).one()
+        return (
+            IStore(ArchiveDependency)
+            .find(ArchiveDependency, snap_base=self, dependency=dependency)
+            .one()
+        )
 
     def addArchiveDependency(self, dependency, pocket, component=None):
         """See `ISnapBase`."""
         archive_dependency = self.getArchiveDependency(dependency)
         if archive_dependency is not None:
             raise ArchiveDependencyError(
-                "This dependency is already registered.")
+                "This dependency is already registered."
+            )
         if not dependency.enabled:
             raise ArchiveDependencyError("Dependencies must not be disabled.")
 
         if dependency.is_ppa:
             if pocket is not PackagePublishingPocket.RELEASE:
                 raise ArchiveDependencyError(
-                    "Non-primary archives only support the RELEASE pocket.")
-            if (component is not None and
-                    component != dependency.default_component):
+                    "Non-primary archives only support the RELEASE pocket."
+                )
+            if (
+                component is not None
+                and component != dependency.default_component
+            ):
                 raise ArchiveDependencyError(
-                    "Non-primary archives only support the '%s' component." %
-                    dependency.default_component.name)
+                    "Non-primary archives only support the '%s' component."
+                    % dependency.default_component.name
+                )
         return ArchiveDependency(
-            parent=self, dependency=dependency, pocket=pocket,
-            component=component)
+            parent=self,
+            dependency=dependency,
+            pocket=pocket,
+            component=component,
+        )
 
     def _addArchiveDependency(self, dependency, pocket, component=None):
         """See `ISnapBase`."""
@@ -183,17 +210,31 @@ class SnapBaseArch(Storm):
 class SnapBaseSet:
     """See `ISnapBaseSet`."""
 
-    def new(self, registrant, name, display_name, distro_series,
-            build_channels, processors=None, date_created=DEFAULT):
+    def new(
+        self,
+        registrant,
+        name,
+        display_name,
+        distro_series,
+        build_channels,
+        processors=None,
+        date_created=DEFAULT,
+    ):
         """See `ISnapBaseSet`."""
         store = IMasterStore(SnapBase)
         snap_base = SnapBase(
-            registrant, name, display_name, distro_series, build_channels,
-            date_created=date_created)
+            registrant,
+            name,
+            display_name,
+            distro_series,
+            build_channels,
+            date_created=date_created,
+        )
         store.add(snap_base)
         if processors is None:
             processors = [
-                das.processor for das in distro_series.enabled_architectures]
+                das.processor for das in distro_series.enabled_architectures
+            ]
         snap_base.setProcessors(processors)
         return snap_base
 
@@ -207,8 +248,9 @@ class SnapBaseSet:
 
     def getByName(self, name):
         """See `ISnapBaseSet`."""
-        snap_base = IStore(SnapBase).find(
-            SnapBase, SnapBase.name == name).one()
+        snap_base = (
+            IStore(SnapBase).find(SnapBase, SnapBase.name == name).one()
+        )
         if snap_base is None:
             raise NoSuchSnapBase(name)
         return snap_base

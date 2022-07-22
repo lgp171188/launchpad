@@ -6,10 +6,7 @@
 from lp import _
 from lp.app.validators import LaunchpadValidationError
 from lp.services.channels import channel_string_to_list
-from lp.services.webapp.escaping import (
-    html_escape,
-    structured,
-    )
+from lp.services.webapp.escaping import html_escape, structured
 
 
 def channels_validator(channels):
@@ -26,7 +23,8 @@ def channels_validator(channels):
                 "Invalid channel name '${name}'. Channel names must be of the "
                 "form 'track/risk/branch', 'track/risk', 'risk/branch', or "
                 "'risk'.",
-                mapping={'name': html_escape(name)})
+                mapping={"name": html_escape(name)},
+            )
             raise LaunchpadValidationError(structured(message))
         tracks.add(track)
         branches.add(branch)

@@ -4,14 +4,15 @@
 """Snappy series interfaces."""
 
 __all__ = [
-    'ISnappyDistroSeries',
-    'ISnappyDistroSeriesSet',
-    'ISnappySeries',
-    'ISnappySeriesSet',
-    'NoSuchSnappySeries',
-    ]
+    "ISnappyDistroSeries",
+    "ISnappyDistroSeriesSet",
+    "ISnappySeries",
+    "ISnappySeriesSet",
+    "NoSuchSnappySeries",
+]
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     collection_default_content,
     export_factory_operation,
@@ -22,30 +23,18 @@ from lazr.restful.declarations import (
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
-    REQUEST_USER,
-    )
+)
 from lazr.restful.fields import Reference
 from zope.component import getUtility
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Int,
-    List,
-    TextLine,
-    )
+from zope.schema import Bool, Choice, Datetime, Int, List, TextLine
 
 from lp import _
 from lp.app.errors import NameLookupFailed
 from lp.app.validators.name import name_validator
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.series import SeriesStatus
-from lp.services.fields import (
-    ContentNameField,
-    PublicPersonChoice,
-    Title,
-    )
+from lp.services.fields import ContentNameField, PublicPersonChoice, Title
 
 
 class NoSuchSnappySeries(NameLookupFailed):
@@ -77,13 +66,19 @@ class ISnappySeriesView(Interface):
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    date_created = exported(Datetime(
-        title=_("Date created"), required=True, readonly=True))
+    date_created = exported(
+        Datetime(title=_("Date created"), required=True, readonly=True)
+    )
 
-    registrant = exported(PublicPersonChoice(
-        title=_("Registrant"), required=True, readonly=True,
-        vocabulary="ValidPersonOrTeam",
-        description=_("The person who registered this snappy series.")))
+    registrant = exported(
+        PublicPersonChoice(
+            title=_("Registrant"),
+            required=True,
+            readonly=True,
+            vocabulary="ValidPersonOrTeam",
+            description=_("The person who registered this snappy series."),
+        )
+    )
 
 
 class ISnappySeriesEditableAttributes(Interface):
@@ -92,34 +87,57 @@ class ISnappySeriesEditableAttributes(Interface):
     Anyone can view these attributes, but they need launchpad.Edit to change.
     """
 
-    name = exported(SnappySeriesNameField(
-        title=_("Name"), required=True, readonly=False,
-        constraint=name_validator))
+    name = exported(
+        SnappySeriesNameField(
+            title=_("Name"),
+            required=True,
+            readonly=False,
+            constraint=name_validator,
+        )
+    )
 
-    display_name = exported(TextLine(
-        title=_("Display name"), required=True, readonly=False))
+    display_name = exported(
+        TextLine(title=_("Display name"), required=True, readonly=False)
+    )
 
     title = Title(title=_("Title"), required=True, readonly=True)
 
-    status = exported(Choice(
-        title=_("Status"), required=True, vocabulary=SeriesStatus))
+    status = exported(
+        Choice(title=_("Status"), required=True, vocabulary=SeriesStatus)
+    )
 
-    preferred_distro_series = exported(Reference(
-        IDistroSeries, title=_("Preferred distro series"),
-        required=False, readonly=False))
+    preferred_distro_series = exported(
+        Reference(
+            IDistroSeries,
+            title=_("Preferred distro series"),
+            required=False,
+            readonly=False,
+        )
+    )
 
-    usable_distro_series = exported(List(
-        title=_("Usable distro series"),
-        description=_(
-            "The distro series that can be used for this snappy series."),
-        value_type=Reference(schema=IDistroSeries),
-        required=True, readonly=False))
+    usable_distro_series = exported(
+        List(
+            title=_("Usable distro series"),
+            description=_(
+                "The distro series that can be used for this snappy series."
+            ),
+            value_type=Reference(schema=IDistroSeries),
+            required=True,
+            readonly=False,
+        )
+    )
 
-    can_infer_distro_series = exported(Bool(
-        title=_("Can infer distro series?"), required=True, readonly=False,
-        description=_(
-            "True if inferring a distro series from snapcraft.yaml is "
-            "supported for this snappy series.")))
+    can_infer_distro_series = exported(
+        Bool(
+            title=_("Can infer distro series?"),
+            required=True,
+            readonly=False,
+            description=_(
+                "True if inferring a distro series from snapcraft.yaml is "
+                "supported for this snappy series."
+            ),
+        )
+    )
 
 
 # XXX cjwatson 2016-04-13 bug=760849: "beta" is a lie to get WADL
@@ -134,15 +152,20 @@ class ISnappyDistroSeries(Interface):
     """A snappy/distro series link."""
 
     snappy_series = Reference(
-        ISnappySeries, title=_("Snappy series"), readonly=True)
+        ISnappySeries, title=_("Snappy series"), readonly=True
+    )
     distro_series = Reference(
-        IDistroSeries, title=_("Distro series"), required=False, readonly=True)
+        IDistroSeries, title=_("Distro series"), required=False, readonly=True
+    )
     preferred = Bool(
         title=_("Preferred"),
-        required=True, readonly=False,
+        required=True,
+        readonly=False,
         description=_(
             "True if this identifies the default distro series for builds "
-            "for this snappy series."))
+            "for this snappy series."
+        ),
+    )
 
     title = Title(title=_("Title"), required=True, readonly=True)
 
@@ -152,7 +175,8 @@ class ISnappySeriesSetEdit(Interface):
 
     @call_with(registrant=REQUEST_USER)
     @export_factory_operation(
-        ISnappySeries, ["name", "display_name", "status"])
+        ISnappySeries, ["name", "display_name", "status"]
+    )
     @operation_for_version("devel")
     def new(registrant, name, display_name, status, date_created=None):
         """Create an `ISnappySeries`."""
@@ -169,7 +193,8 @@ class ISnappySeriesSet(ISnappySeriesSetEdit):
         """Return the `ISnappySeries` with this name."""
 
     @operation_parameters(
-        name=TextLine(title=_("Snappy series name"), required=True))
+        name=TextLine(title=_("Snappy series name"), required=True)
+    )
     @operation_returns_entry(ISnappySeries)
     @export_read_operation()
     @operation_for_version("devel")

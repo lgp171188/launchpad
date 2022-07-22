@@ -3,9 +3,7 @@
 
 """Snap subscription views."""
 
-__all__ = [
-    'SnapPortletSubscribersContent'
-]
+__all__ = ["SnapPortletSubscribersContent"]
 
 from zope.component import getUtility
 from zope.formlib.form import action
@@ -14,16 +12,13 @@ from zope.security.interfaces import ForbiddenAttribute
 from lp.app.browser.launchpadform import (
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+)
 from lp.registry.interfaces.person import IPersonSet
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp import LaunchpadView, canonical_url
 from lp.services.webapp.authorization import (
     check_permission,
     precache_permission_for_objects,
-    )
+)
 from lp.snappy.interfaces.snapsubscription import ISnapSubscription
 
 
@@ -38,20 +33,28 @@ class SnapPortletSubscribersContent(LaunchpadView):
         # need the expense of running several complex SQL queries.
         subscriptions = list(self.context.subscriptions)
         person_ids = [sub.person.id for sub in subscriptions]
-        list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-            person_ids, need_validity=True))
+        list(
+            getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+                person_ids, need_validity=True
+            )
+        )
         if self.user is not None:
             subscribers = [
-                subscription.person for subscription in subscriptions]
+                subscription.person for subscription in subscriptions
+            ]
             precache_permission_for_objects(
-                self.request, "launchpad.LimitedView", subscribers)
+                self.request, "launchpad.LimitedView", subscribers
+            )
 
         visible_subscriptions = [
-            subscription for subscription in subscriptions
-            if check_permission("launchpad.LimitedView", subscription.person)]
+            subscription
+            for subscription in subscriptions
+            if check_permission("launchpad.LimitedView", subscription.person)
+        ]
         return sorted(
             visible_subscriptions,
-            key=lambda subscription: subscription.person.displayname)
+            key=lambda subscription: subscription.person.displayname,
+        )
 
 
 class RedirectToSnapMixin:
@@ -75,20 +78,19 @@ class RedirectToSnapMixin:
 
 class SnapSubscriptionEditView(RedirectToSnapMixin, LaunchpadEditFormView):
     """The view for editing Snap recipe subscriptions."""
+
     schema = ISnapSubscription
     field_names = []
 
     @property
     def page_title(self):
-        return (
-            "Edit subscription to snap recipe %s" %
-            self.snap.displayname)
+        return "Edit subscription to snap recipe %s" % self.snap.displayname
 
     @property
     def label(self):
         return (
-            "Edit subscription to snap recipe for %s" %
-            self.person.displayname)
+            "Edit subscription to snap recipe for %s" % self.person.displayname
+        )
 
     def initialize(self):
         self.snap = self.context.snap
@@ -101,7 +103,8 @@ class SnapSubscriptionEditView(RedirectToSnapMixin, LaunchpadEditFormView):
         self.snap.unsubscribe(self.person, self.user)
         self.request.response.addNotification(
             "%s has been unsubscribed from this snap recipe."
-            % self.person.displayname)
+            % self.person.displayname
+        )
 
 
 class _SnapSubscriptionCreationView(RedirectToSnapMixin, LaunchpadFormView):
@@ -125,12 +128,14 @@ class SnapSubscriptionAddView(_SnapSubscriptionCreationView):
         # subscribed before continuing.
         if self.context.hasSubscription(self.user):
             self.request.response.addNotification(
-                "You are already subscribed to this snap recipe.")
+                "You are already subscribed to this snap recipe."
+            )
         else:
             self.context.subscribe(self.user, self.user)
 
             self.request.response.addNotification(
-                "You have subscribed to this snap recipe.")
+                "You have subscribed to this snap recipe."
+            )
 
 
 class SnapSubscriptionAddOtherView(_SnapSubscriptionCreationView):
@@ -149,12 +154,14 @@ class SnapSubscriptionAddOtherView(_SnapSubscriptionCreationView):
         if "person" in data:
             person = data["person"]
             subscription = self.context.getSubscription(person)
-            if (subscription is None
-                    and not self.context.userCanBeSubscribed(person)):
+            if subscription is None and not self.context.userCanBeSubscribed(
+                person
+            ):
                 self.setFieldError(
                     "person",
                     "Open and delegated teams cannot be subscribed to "
-                    "private snap recipes.")
+                    "private snap recipes.",
+                )
 
     @action("Subscribe", name="subscribe_action")
     def subscribe_action(self, action, data):
@@ -164,9 +171,11 @@ class SnapSubscriptionAddOtherView(_SnapSubscriptionCreationView):
         if subscription is None:
             self.context.subscribe(person, self.user)
             self.request.response.addNotification(
-                "%s has been subscribed to this snap recipe." %
-                person.displayname)
+                "%s has been subscribed to this snap recipe."
+                % person.displayname
+            )
         else:
             self.request.response.addNotification(
-                "%s was already subscribed to this snap recipe." %
-                person.displayname)
+                "%s was already subscribed to this snap recipe."
+                % person.displayname
+            )

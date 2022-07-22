@@ -4,45 +4,29 @@
 """Snap build jobs."""
 
 __all__ = [
-    'SnapBuildJob',
-    'SnapBuildJobType',
-    'SnapBuildStoreUploadStatusChangedEvent',
-    'SnapStoreUploadJob',
-    ]
+    "SnapBuildJob",
+    "SnapBuildJobType",
+    "SnapBuildStoreUploadStatusChangedEvent",
+    "SnapStoreUploadJob",
+]
 
 from datetime import timedelta
 
-from lazr.delegates import delegate_to
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
-from storm.locals import (
-    Int,
-    JSON,
-    Reference,
-    )
 import transaction
+from lazr.delegates import delegate_to
+from lazr.enum import DBEnumeratedType, DBItem
+from storm.locals import JSON, Int, Reference
 from zope.component import getUtility
 from zope.event import notify
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 from zope.interface.interfaces import ObjectEvent
 
 from lp.app.errors import NotFoundError
 from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.job.model.job import (
-    EnumeratedSubclass,
-    Job,
-    )
+from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.propertycache import get_property_cache
 from lp.snappy.interfaces.snapbuildjob import (
@@ -50,7 +34,7 @@ from lp.snappy.interfaces.snapbuildjob import (
     ISnapBuildStoreUploadStatusChangedEvent,
     ISnapStoreUploadJob,
     ISnapStoreUploadJobSource,
-    )
+)
 from lp.snappy.interfaces.snapstoreclient import (
     BadRefreshResponse,
     BadScanStatusResponse,
@@ -60,35 +44,38 @@ from lp.snappy.interfaces.snapstoreclient import (
     UnauthorizedUploadResponse,
     UploadFailedResponse,
     UploadNotScannedYetResponse,
-    )
+)
 from lp.snappy.mail.snapbuild import SnapBuildMailer
 
 
 class SnapBuildJobType(DBEnumeratedType):
     """Values that `ISnapBuildJob.job_type` can take."""
 
-    STORE_UPLOAD = DBItem(0, """
+    STORE_UPLOAD = DBItem(
+        0,
+        """
         Store upload
 
         This job uploads a snap build to the store.
-        """)
+        """,
+    )
 
 
 @implementer(ISnapBuildJob)
 class SnapBuildJob(StormBase):
     """See `ISnapBuildJob`."""
 
-    __storm_table__ = 'SnapBuildJob'
+    __storm_table__ = "SnapBuildJob"
 
-    job_id = Int(name='job', primary=True, allow_none=False)
-    job = Reference(job_id, 'Job.id')
+    job_id = Int(name="job", primary=True, allow_none=False)
+    job = Reference(job_id, "Job.id")
 
-    snapbuild_id = Int(name='snapbuild', allow_none=False)
-    snapbuild = Reference(snapbuild_id, 'SnapBuild.id')
+    snapbuild_id = Int(name="snapbuild", allow_none=False)
+    snapbuild = Reference(snapbuild_id, "SnapBuild.id")
 
     job_type = DBEnum(enum=SnapBuildJobType, allow_none=False)
 
-    metadata = JSON('json_data', allow_none=False)
+    metadata = JSON("json_data", allow_none=False)
 
     def __init__(self, snapbuild, job_type, metadata, **job_args):
         """Constructor.
@@ -113,7 +100,6 @@ class SnapBuildJob(StormBase):
 
 @delegate_to(ISnapBuildJob)
 class SnapBuildJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
-
     def __init__(self, snap_build_job):
         self.context = snap_build_job
 
@@ -121,8 +107,11 @@ class SnapBuildJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
         """An informative representation of the job."""
         snap = self.snapbuild.snap
         return "<%s for ~%s/+snap/%s/+build/%d>" % (
-            self.__class__.__name__, snap.owner.name, snap.name,
-            self.snapbuild.id)
+            self.__class__.__name__,
+            snap.owner.name,
+            snap.name,
+            self.snapbuild.id,
+        )
 
     @classmethod
     def get(cls, job_id):
@@ -136,8 +125,9 @@ class SnapBuildJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
         snap_build_job = IStore(SnapBuildJob).get(SnapBuildJob, job_id)
         if snap_build_job.job_type != cls.class_job_type:
             raise NotFoundError(
-                "No object found with id %d and type %s" %
-                (job_id, cls.class_job_type.title))
+                "No object found with id %d and type %s"
+                % (job_id, cls.class_job_type.title)
+            )
         return cls(snap_build_job)
 
     @classmethod
@@ -147,19 +137,22 @@ class SnapBuildJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
             SnapBuildJob,
             SnapBuildJob.job_type == cls.class_job_type,
             SnapBuildJob.job == Job.id,
-            Job.id.is_in(Job.ready_jobs))
+            Job.id.is_in(Job.ready_jobs),
+        )
         return (cls(job) for job in jobs)
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
         oops_vars = super().getOopsVars()
-        oops_vars.extend([
-            ('job_id', self.context.job.id),
-            ('job_type', self.context.job_type.title),
-            ('snapbuild_id', self.context.snapbuild.id),
-            ('snap_owner_name', self.context.snapbuild.snap.owner.name),
-            ('snap_name', self.context.snapbuild.snap.name),
-            ])
+        oops_vars.extend(
+            [
+                ("job_id", self.context.job.id),
+                ("job_type", self.context.job_type.title),
+                ("snapbuild_id", self.context.snapbuild.id),
+                ("snap_owner_name", self.context.snapbuild.snap.owner.name),
+                ("snap_name", self.context.snapbuild.snap.name),
+            ]
+        )
         return oops_vars
 
 
@@ -182,7 +175,7 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
     user_error_types = (
         UnauthorizedUploadResponse,
         ScanFailedResponse,
-        )
+    )
 
     retry_error_types = (UploadNotScannedYetResponse, RetryableSnapStoreError)
     max_retries = 30
@@ -288,11 +281,13 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
     # Ideally we'd just override Job._set_status or similar, but
     # lazr.delegates makes that difficult, so we use this to override all
     # the individual Job lifecycle methods instead.
-    def _do_lifecycle(self, method_name, manage_transaction=False,
-                      *args, **kwargs):
+    def _do_lifecycle(
+        self, method_name, manage_transaction=False, *args, **kwargs
+    ):
         old_store_upload_status = self.snapbuild.store_upload_status
         getattr(super(), method_name)(
-            *args, manage_transaction=manage_transaction, **kwargs)
+            *args, manage_transaction=manage_transaction, **kwargs
+        )
         if self.snapbuild.store_upload_status != old_store_upload_status:
             notify(SnapBuildStoreUploadStatusChangedEvent(self.snapbuild))
             if manage_transaction:
@@ -319,7 +314,7 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
     def getOopsVars(self):
         """See `IRunnableJob`."""
         oops_vars = super().getOopsVars()
-        oops_vars.append(('error_detail', self.error_detail))
+        oops_vars.append(("error_detail", self.error_detail))
         return oops_vars
 
     @property
@@ -343,9 +338,13 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
         try:
             try:
                 snap_lfa = next(
-                    (lfa for _, lfa, _ in self.snapbuild.getFiles()
-                     if lfa.filename.endswith(".snap")),
-                    None)
+                    (
+                        lfa
+                        for _, lfa, _ in self.snapbuild.getFiles()
+                        if lfa.filename.endswith(".snap")
+                    ),
+                    None,
+                )
                 if snap_lfa is None:
                     # Nothing to do.
                     self.error_message = None
@@ -356,7 +355,8 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
                     self.attempt_count = 1
                 if "status_url" not in self.store_metadata:
                     self.status_url = client.push(
-                        self.snapbuild, self.upload_id)
+                        self.snapbuild, self.upload_id
+                    )
                     # We made progress, so reset attempt_count.
                     self.attempt_count = 1
                 if self.store_url is None:
@@ -364,14 +364,18 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
                     # handling releases via the release intent, but we
                     # export various fields via the API, so once this is
                     # called, we're done with this task.
-                    self.store_url, self.store_revision = (
-                        client.checkStatus(self.status_url))
+                    self.store_url, self.store_revision = client.checkStatus(
+                        self.status_url
+                    )
                 self.error_message = None
             except self.retry_error_types:
                 raise
             except Exception as e:
-                if (isinstance(e, SnapStoreError) and e.can_retry and
-                        self.attempt_count <= self.max_retries):
+                if (
+                    isinstance(e, SnapStoreError)
+                    and e.can_retry
+                    and self.attempt_count <= self.max_retries
+                ):
                     raise RetryableSnapStoreError(e.args[0], detail=e.detail)
                 self.error_message = str(e)
                 self.error_messages = getattr(e, "messages", None)
@@ -383,8 +387,9 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
                     mailer_factory = SnapBuildMailer.forRefreshFailure
                 elif isinstance(e, UploadFailedResponse):
                     mailer_factory = SnapBuildMailer.forUploadFailure
-                elif isinstance(e,
-                                (BadScanStatusResponse, ScanFailedResponse)):
+                elif isinstance(
+                    e, (BadScanStatusResponse, ScanFailedResponse)
+                ):
                     mailer_factory = SnapBuildMailer.forUploadScanFailure
                 if mailer_factory is not None:
                     mailer_factory(self.snapbuild).sendAll()
