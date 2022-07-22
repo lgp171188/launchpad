@@ -98,3 +98,5 @@ b56a741985ca580c281f142bea589b1ef05d3e93
 0bf877facbd96ece340dd26a7429ebbf0fb9b65a
 # apply black to {cronscripts,scripts}
 86d834967ddae3eecd13deda5ac9eefea538195d
+# apply black to utilities
+35ac52c1c63d184b4660abbab4bead59408d3937
