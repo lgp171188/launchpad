@@ -12,7 +12,7 @@ suites so that they can be run on their own outside the Launchpad development
 environment.
 """
 
-__all__ = ['test_suite']
+__all__ = ["test_suite"]
 
 
 import logging
@@ -32,22 +32,25 @@ def add_testable_opensource_package(suite, package):
 
     packages = []
     for dirpath, dirnames, filenames in os.walk(topdir):
-        if 'docs' in dirnames:
-            docsdir = os.path.join(dirpath, 'docs')[len(topdir) + 1:]
+        if "docs" in dirnames:
+            docsdir = os.path.join(dirpath, "docs")[len(topdir) + 1 :]
             packages.append(docsdir)
     doctest_files = {}
     for docsdir in packages:
         for filename in os.listdir(os.path.join(topdir, docsdir)):
             # XXX cjwatson 2022-06-20: This should be '.rst', but
             # launchpadlib's doctests don't work with Python 3 yet.
-            if os.path.splitext(filename)[1] == '.txt':
+            if os.path.splitext(filename)[1] == ".txt":
                 doctest_files[filename] = os.path.join(docsdir, filename)
     # Sort the tests.
     for filename in sorted(doctest_files):
         path = doctest_files[filename]
         doctest = LayeredDocFileSuite(
-            path, package=package, layer=AppServerLayer,
-            stdout_logging_level=logging.WARNING)
+            path,
+            package=package,
+            layer=AppServerLayer,
+            stdout_logging_level=logging.WARNING,
+        )
         suite.addTest(doctest)
 
 
