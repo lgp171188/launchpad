@@ -7,8 +7,7 @@ import shutil
 from lp.services.config import config
 from lp.services.daemons.tachandler import TacTestSetup
 
-
-KEYS_DIR = os.path.join(os.path.dirname(__file__), 'tests/keys')
+KEYS_DIR = os.path.join(os.path.dirname(__file__), "tests/keys")
 
 
 class KeyServerTac(TacTestSetup):
@@ -27,18 +26,21 @@ class KeyServerTac(TacTestSetup):
     @property
     def tacfile(self):
         return os.path.abspath(
-            os.path.join(os.path.dirname(__file__), 'testkeyserver.tac'))
+            os.path.join(os.path.dirname(__file__), "testkeyserver.tac")
+        )
 
     @property
     def pidfile(self):
-        return os.path.join(self.root, 'testkeyserver.pid')
+        return os.path.join(self.root, "testkeyserver.pid")
 
     @property
     def logfile(self):
-        return os.path.join(self.root, 'testkeyserver.log')
+        return os.path.join(self.root, "testkeyserver.log")
 
     @property
     def url(self):
         """The URL that the web server will be running on."""
-        return 'http://%s:%d' % (
-            config.gpghandler.host, config.gpghandler.port)
+        return "http://%s:%d" % (
+            config.gpghandler.host,
+            config.gpghandler.port,
+        )

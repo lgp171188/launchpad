@@ -16,7 +16,7 @@ from lp.registry.interfaces.persontransferjob import (
     ISelfRenewalNotificationJobSource,
     ITeamInvitationNotificationJobSource,
     ITeamJoinNotificationJobSource,
-    )
+)
 from lp.services.config import config
 from lp.services.job.runner import JobRunner
 from lp.services.log.logger import DevNullLogger
@@ -38,13 +38,13 @@ def pop_notifications(sort_key=None, commit=True):
     if commit:
         transaction.commit()
     if sort_key is None:
-        sort_key = operator.itemgetter('To')
+        sort_key = operator.itemgetter("To")
 
     notifications = []
     for fromaddr, toaddrs, raw_message in stub.test_emails:
         notification = email.message_from_bytes(raw_message)
-        notification['X-Envelope-To'] = ', '.join(toaddrs)
-        notification['X-Envelope-From'] = fromaddr
+        notification["X-Envelope-To"] = ", ".join(toaddrs)
+        notification["X-Envelope-From"] = fromaddr
         notifications.append(notification)
     stub.test_emails = []
 
@@ -53,14 +53,19 @@ def pop_notifications(sort_key=None, commit=True):
 
 def sort_addresses(header):
     """Sort an address-list in an email header field body."""
-    addresses = {address.strip() for address in header.split(',')}
+    addresses = {address.strip() for address in header.split(",")}
     return ", ".join(sorted(addresses))
 
 
-def print_emails(include_reply_to=False, group_similar=False,
-                 include_rationale=False, include_for=False,
-                 notifications=None, include_notification_type=False,
-                 decode=False):
+def print_emails(
+    include_reply_to=False,
+    group_similar=False,
+    include_rationale=False,
+    include_for=False,
+    notifications=None,
+    include_notification_type=False,
+    decode=False,
+):
     """Pop all messages from stub.test_emails and print them with
      their recipients.
 
@@ -87,49 +92,59 @@ def print_emails(include_reply_to=False, group_similar=False,
         notifications = pop_notifications()
     for message in notifications:
         recipients = {
-            recipient.strip()
-            for recipient in message['To'].split(',')}
+            recipient.strip() for recipient in message["To"].split(",")
+        }
         body = message.get_payload(decode=decode)
         if group_similar:
             # Strip the first line as it's different for each recipient.
-            body = body[body.find(b'\n' if decode else '\n') + 1:]
+            body = body[body.find(b"\n" if decode else "\n") + 1 :]
         if body in distinct_bodies and group_similar:
             message, existing_recipients = distinct_bodies[body]
             distinct_bodies[body] = (
-                message, existing_recipients.union(recipients))
+                message,
+                existing_recipients.union(recipients),
+            )
         else:
             distinct_bodies[body] = (message, recipients)
     for body in sorted(distinct_bodies):
         message, recipients = distinct_bodies[body]
-        print('From:', message['From'])
-        print('To:', ", ".join(sorted(recipients)))
+        print("From:", message["From"])
+        print("To:", ", ".join(sorted(recipients)))
         if include_reply_to:
-            print('Reply-To:', message['Reply-To'])
-        rationale_header = 'X-Launchpad-Message-Rationale'
+            print("Reply-To:", message["Reply-To"])
+        rationale_header = "X-Launchpad-Message-Rationale"
         if include_rationale and rationale_header in message:
-            print('%s: %s' % (rationale_header, message[rationale_header]))
-        for_header = 'X-Launchpad-Message-For'
+            print("%s: %s" % (rationale_header, message[rationale_header]))
+        for_header = "X-Launchpad-Message-For"
         if include_for and for_header in message:
-            print('%s: %s' % (for_header, message[for_header]))
-        notification_type_header = 'X-Launchpad-Notification-Type'
+            print("%s: %s" % (for_header, message[for_header]))
+        notification_type_header = "X-Launchpad-Notification-Type"
         if include_notification_type and notification_type_header in message:
-            print('%s: %s' % (
-                notification_type_header, message[notification_type_header]))
-        print('Subject:', message['Subject'])
+            print(
+                "%s: %s"
+                % (notification_type_header, message[notification_type_header])
+            )
+        print("Subject:", message["Subject"])
         print(six.ensure_text(body))
         print("-" * 40)
 
 
-def print_distinct_emails(include_reply_to=False, include_rationale=True,
-                          include_for=False, include_notification_type=True,
-                          decode=False):
+def print_distinct_emails(
+    include_reply_to=False,
+    include_rationale=True,
+    include_for=False,
+    include_notification_type=True,
+    decode=False,
+):
     """A convenient shortcut for `print_emails`(group_similar=True)."""
-    return print_emails(group_similar=True,
-                        include_reply_to=include_reply_to,
-                        include_rationale=include_rationale,
-                        include_for=include_for,
-                        include_notification_type=include_notification_type,
-                        decode=decode)
+    return print_emails(
+        group_similar=True,
+        include_reply_to=include_reply_to,
+        include_rationale=include_rationale,
+        include_for=include_for,
+        include_notification_type=include_notification_type,
+        decode=decode,
+    )
 
 
 def run_mail_jobs():
@@ -146,12 +161,12 @@ def run_mail_jobs():
     # the queued jobs.
     transaction.commit()
     for interface in (
-            IExpiringMembershipNotificationJobSource,
-            IMembershipNotificationJobSource,
-            ISelfRenewalNotificationJobSource,
-            ITeamInvitationNotificationJobSource,
-            ITeamJoinNotificationJobSource,
-            ):
+        IExpiringMembershipNotificationJobSource,
+        IMembershipNotificationJobSource,
+        ISelfRenewalNotificationJobSource,
+        ITeamInvitationNotificationJobSource,
+        ITeamJoinNotificationJobSource,
+    ):
         job_source = getUtility(interface)
         logger = DevNullLogger()
         dbuser_name = getattr(config, interface.__name__).dbuser

@@ -4,22 +4,19 @@
 """Tools for testing XML-RPC services."""
 
 __all__ = [
-    'XMLRPCTestTransport',
-    ]
+    "XMLRPCTestTransport",
+]
 
 import http.client as http_client
 import io
 import xmlrpc.client
 
-from zope.security.management import (
-    endInteraction,
-    queryInteraction,
-    )
+from zope.security.management import endInteraction, queryInteraction
 
 from lp.services.webapp.interaction import (
     get_current_principal,
     setupInteraction,
-    )
+)
 from lp.testing.pages import http
 
 
@@ -28,10 +25,11 @@ class _FakeSocket:
 
     This is used because it is what http.client.HTTPResponse expects.
     """
+
     def __init__(self, output):
         self._output = output
 
-    def makefile(self, mode='rb', bufsize=0):
+    def makefile(self, mode="rb", bufsize=0):
         return io.BytesIO(self._output)
 
 
@@ -41,7 +39,7 @@ class TestHTTPConnection(http_client.HTTPConnection):
     Only the methods called by xmlrpc.client are overridden.
     """
 
-    _data_to_send = b''
+    _data_to_send = b""
     _response = None
 
     def connect(self):

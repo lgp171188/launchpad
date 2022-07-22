@@ -13,15 +13,8 @@ from zope.component import getUtility
 
 from lp.code.interfaces.branch import IBranchSet
 from lp.services.webapp import errorlog
-from lp.testing import (
-    record_statements,
-    TestCase,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    FunctionalLayer,
-    )
+from lp.testing import TestCase, TestCaseWithFactory, record_statements
+from lp.testing.layers import DatabaseFunctionalLayer, FunctionalLayer
 
 
 class TestRecordStatements(TestCaseWithFactory):
@@ -65,15 +58,15 @@ class TestCaptureOops(TestCaseWithFactory):
     def test_no_oops_gives_no_details(self):
         self.assertEqual(0, len(self.oopses))
         self.attachOopses()
-        self.assertEqual(
-            0, len([a for a in self.getDetails() if "oops" in a]))
+        self.assertEqual(0, len([a for a in self.getDetails() if "oops" in a]))
 
     def test_one_oops_gives_one_detail(self):
         self.assertEqual(0, len(self.oopses))
         self.trigger_oops()
         self.attachOopses()
         self.assertEqual(
-            ["oops-0"], [a for a in self.getDetails() if "oops" in a])
+            ["oops-0"], [a for a in self.getDetails() if "oops" in a]
+        )
 
     def xxxtest_two_oops_gives_two_details(self):
         # XXX sinzui 2011-12-26: bug=908799: This test intermittently
@@ -84,14 +77,15 @@ class TestCaptureOops(TestCaseWithFactory):
         self.attachOopses()
         self.assertEqual(
             ["oops-0", "oops-1"],
-            sorted(a for a in self.getDetails() if "oops" in a))
+            sorted(a for a in self.getDetails() if "oops" in a),
+        )
 
     def test_oops_content(self):
         self.assertEqual(0, len(self.oopses))
         self.trigger_oops()
         self.attachOopses()
         content = io.BytesIO()
-        content.writelines(self.getDetails()['oops-0'].iter_bytes())
+        content.writelines(self.getDetails()["oops-0"].iter_bytes())
         content.seek(0)
         # Safety net: ensure that no autocasts have occured even on Python 2.6
         # which is slightly better.
@@ -101,11 +95,10 @@ class TestCaptureOops(TestCaseWithFactory):
         # Compare with the in-memory model (but only a select key, because the
         # rfc822 serializer is lossy).
         oops_report = self.oopses[0]
-        self.assertEqual(from_details['id'], oops_report['id'])
+        self.assertEqual(from_details["id"], oops_report["id"])
 
 
 class TestRemoveLoggingHandlers(TestCase):
-
     def setUp(self):
         self.logger = logging.getLogger()
         # Add 2 handlers.

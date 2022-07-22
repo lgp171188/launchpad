@@ -8,7 +8,7 @@ from lp.testing.keyserver.web import locate_key
 
 
 class LocateKeyTestCase(TestCase):
-    root = os.path.join(os.path.dirname(__file__), 'keys')
+    root = os.path.join(os.path.dirname(__file__), "keys")
 
     def assertKeyFile(self, suffix, filename):
         """Verify that a suffix maps to the given filename."""
@@ -19,18 +19,19 @@ class LocateKeyTestCase(TestCase):
 
     def test_locate_key_exact_fingerprint_match(self):
         self.assertKeyFile(
-            '0xA419AE861E88BC9E04B9C26FBA2B9389DFD20543.get',
-            '0xA419AE861E88BC9E04B9C26FBA2B9389DFD20543.get')
+            "0xA419AE861E88BC9E04B9C26FBA2B9389DFD20543.get",
+            "0xA419AE861E88BC9E04B9C26FBA2B9389DFD20543.get",
+        )
 
     def test_locate_key_keyid_glob_match(self):
         self.assertKeyFile(
-            '0xDFD20543.get',
-            '0xA419AE861E88BC9E04B9C26FBA2B9389DFD20543.get')
+            "0xDFD20543.get", "0xA419AE861E88BC9E04B9C26FBA2B9389DFD20543.get"
+        )
 
     def test_locate_key_keyid_without_prefix_glob_match(self):
         self.assertKeyFile(
-            'DFD20543.get',
-            '0xA419AE861E88BC9E04B9C26FBA2B9389DFD20543.get')
+            "DFD20543.get", "0xA419AE861E88BC9E04B9C26FBA2B9389DFD20543.get"
+        )
 
     def test_locate_key_no_match(self):
-        self.assertKeyFile('0xDEADBEEF.get', None)
+        self.assertKeyFile("0xDEADBEEF.get", None)

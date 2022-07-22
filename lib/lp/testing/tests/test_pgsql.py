@@ -3,23 +3,16 @@
 
 import os
 
-from fixtures import (
-    EnvironmentVariableFixture,
-    TestWithFixtures,
-    )
 import testtools
+from fixtures import EnvironmentVariableFixture, TestWithFixtures
 
 from lp.services.config import dbconfig
 from lp.services.config.fixture import ConfigUseFixture
 from lp.testing.layers import BaseLayer
-from lp.testing.pgsql import (
-    ConnectionWrapper,
-    PgTestSetup,
-    )
+from lp.testing.pgsql import ConnectionWrapper, PgTestSetup
 
 
 class TestPgTestSetup(testtools.TestCase, TestWithFixtures):
-
     def assertDBName(self, expected_name, fixture):
         """Check that fixture uses expected_name as its dbname."""
         self.assertEqual(expected_name, fixture.dbname)
@@ -27,7 +20,7 @@ class TestPgTestSetup(testtools.TestCase, TestWithFixtures):
         self.addCleanup(fixture.dropDb)
         self.addCleanup(fixture.tearDown)
         cur = fixture.connect().cursor()
-        cur.execute('SELECT current_database()')
+        cur.execute("SELECT current_database()")
         where = cur.fetchone()[0]
         self.assertEqual(expected_name, where)
 
@@ -36,13 +29,13 @@ class TestPgTestSetup(testtools.TestCase, TestWithFixtures):
         BaseLayer.setUp()
         self.addCleanup(BaseLayer.tearDown)
         fixture = PgTestSetup(dbname=PgTestSetup.dynamic)
-        suffix = os.environ['LP_TEST_INSTANCE'].split('_', 1)[1]
+        suffix = os.environ["LP_TEST_INSTANCE"].split("_", 1)[1]
         self.assertEqual(24, len(suffix))
         expected_name = "%s_%d_%s" % (PgTestSetup.dbname, os.getpid(), suffix)
         self.assertDBName(expected_name, fixture)
 
     def test_db_naming_without_LP_TEST_INSTANCE_is_static(self):
-        self.useFixture(EnvironmentVariableFixture('LP_TEST_INSTANCE'))
+        self.useFixture(EnvironmentVariableFixture("LP_TEST_INSTANCE"))
         fixture = PgTestSetup(dbname=PgTestSetup.dynamic)
         expected_name = PgTestSetup.dbname
         self.assertDBName(expected_name, fixture)
@@ -54,7 +47,7 @@ class TestPgTestSetup(testtools.TestCase, TestWithFixtures):
         fixture.setUp()
         self.addCleanup(fixture.dropDb)
         self.addCleanup(fixture.tearDown)
-        expected_value = 'dbname=%s' % fixture.dbname
+        expected_value = "dbname=%s" % fixture.dbname
         self.assertEqual(expected_value, dbconfig.rw_main_primary)
         self.assertEqual(expected_value, dbconfig.rw_main_standby)
         with ConfigUseFixture(BaseLayer.appserver_config_name):
@@ -75,7 +68,7 @@ class TestPgTestSetupTuning(testtools.TestCase, TestWithFixtures):
         try:
             con = fixture.connect()
             cur = con.cursor()
-            cur.execute('CREATE TABLE foo (x int)')
+            cur.execute("CREATE TABLE foo (x int)")
             con.commit()
             # Fake it so the harness doesn't know a change has been made
             ConnectionWrapper.committed = False
@@ -90,7 +83,7 @@ class TestPgTestSetupTuning(testtools.TestCase, TestWithFixtures):
             cur = con.cursor()
             # This tests that the table still exists, as well as modifying the
             # db
-            cur.execute('INSERT INTO foo VALUES (1)')
+            cur.execute("INSERT INTO foo VALUES (1)")
             con.commit()
         finally:
             fixture.tearDown()
@@ -101,7 +94,7 @@ class TestPgTestSetupTuning(testtools.TestCase, TestWithFixtures):
         try:
             con = fixture.connect()
             cur = con.cursor()
-            cur.execute('CREATE TABLE foo (x int)')
+            cur.execute("CREATE TABLE foo (x int)")
             con.commit()
             # Leave the table.
             ConnectionWrapper.committed = False
@@ -110,14 +103,14 @@ class TestPgTestSetupTuning(testtools.TestCase, TestWithFixtures):
 
         # The database should *always* be recreated if a new template had been
         # chosen.
-        PgTestSetup._last_db = ('different-template', fixture.dbname)
+        PgTestSetup._last_db = ("different-template", fixture.dbname)
         fixture.setUp()
         try:
             con = fixture.connect()
             cur = con.cursor()
             # If this fails, TABLE foo still existed and the DB wasn't rebuilt
             # correctly.
-            cur.execute('CREATE TABLE foo (x int)')
+            cur.execute("CREATE TABLE foo (x int)")
             con.commit()
         finally:
             fixture.tearDown()

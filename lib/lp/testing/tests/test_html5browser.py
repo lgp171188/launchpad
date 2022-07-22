@@ -24,11 +24,7 @@
 from tempfile import NamedTemporaryFile
 
 from lp.testing import TestCase
-from lp.testing.html5browser import (
-    Browser,
-    Command,
-    )
-
+from lp.testing.html5browser import Browser, Command
 
 load_page_set_window_status_returned = """\
     <html><head>
@@ -80,7 +76,8 @@ class BrowserTestCase(TestCase):
     def setUp(self):
         super().setUp()
         self.file = NamedTemporaryFile(
-            mode='w+', prefix='html5browser_', suffix='.html')
+            mode="w+", prefix="html5browser_", suffix=".html"
+        )
         self.addCleanup(self.file.close)
 
     def test_init_default(self):
@@ -90,7 +87,7 @@ class BrowserTestCase(TestCase):
         self.assertIsNone(browser.command)
         self.assertIsNone(browser.script)
         self.assertIsNone(browser.browser_window)
-        self.assertEqual(['console-message'], list(browser.listeners))
+        self.assertEqual(["console-message"], list(browser.listeners))
 
     def test_init_show_browser(self):
         # The Browser can be set to show the window.
@@ -105,8 +102,8 @@ class BrowserTestCase(TestCase):
         command = browser.load_page(self.file.name)
         self.assertEqual(Command.STATUS_COMPLETE, command.status)
         self.assertEqual(Command.CODE_SUCCESS, command.return_code)
-        self.assertEqual('fnord', command.content)
-        self.assertEqual('::::', Browser.STATUS_PREFIX)
+        self.assertEqual("fnord", command.content)
+        self.assertEqual("::::", Browser.STATUS_PREFIX)
 
     def test_load_page_set_window_status_ignored_non_commands(self):
         # Setting window status without a leading :::: is ignored.
@@ -116,7 +113,7 @@ class BrowserTestCase(TestCase):
         command = browser.load_page(self.file.name)
         self.assertEqual(Command.STATUS_COMPLETE, command.status)
         self.assertEqual(Command.CODE_SUCCESS, command.return_code)
-        self.assertEqual('pting', command.content)
+        self.assertEqual("pting", command.content)
 
     def test_load_page_initial_timeout(self):
         # If a initial_timeout is set, it can cause a timeout.
@@ -124,7 +121,8 @@ class BrowserTestCase(TestCase):
         self.file.flush()
         browser = Browser()
         command = browser.load_page(
-            self.file.name, initial_timeout=1000, timeout=30000)
+            self.file.name, initial_timeout=1000, timeout=30000
+        )
         self.assertEqual(Command.STATUS_COMPLETE, command.status)
         self.assertEqual(Command.CODE_FAIL, command.return_code)
 
@@ -134,7 +132,8 @@ class BrowserTestCase(TestCase):
         self.file.flush()
         browser = Browser()
         command = browser.load_page(
-            self.file.name, incremental_timeout=1000, timeout=30000)
+            self.file.name, incremental_timeout=1000, timeout=30000
+        )
         self.assertEqual(Command.STATUS_COMPLETE, command.status)
         self.assertEqual(Command.CODE_FAIL, command.return_code)
 
@@ -145,11 +144,14 @@ class BrowserTestCase(TestCase):
         self.file.flush()
         browser = Browser()
         command = browser.load_page(
-            self.file.name, initial_timeout=3000,
-            incremental_timeout=500, timeout=30000)
+            self.file.name,
+            initial_timeout=3000,
+            incremental_timeout=500,
+            timeout=30000,
+        )
         self.assertEqual(Command.STATUS_COMPLETE, command.status)
         self.assertEqual(Command.CODE_SUCCESS, command.return_code)
-        self.assertEqual('ended', command.content)
+        self.assertEqual("ended", command.content)
 
     def test_load_page_incremental_timeout_has_precedence_second(self):
         # If both an initial_timeout and an incremental_timeout are set,
@@ -158,11 +160,14 @@ class BrowserTestCase(TestCase):
         self.file.flush()
         browser = Browser()
         command = browser.load_page(
-            self.file.name, initial_timeout=3000,
-            incremental_timeout=100, timeout=30000)
+            self.file.name,
+            initial_timeout=3000,
+            incremental_timeout=100,
+            timeout=30000,
+        )
         self.assertEqual(Command.STATUS_COMPLETE, command.status)
         self.assertEqual(Command.CODE_FAIL, command.return_code)
-        self.assertEqual('initial', command.content)
+        self.assertEqual("initial", command.content)
 
     def test_load_page_timeout_always_wins(self):
         # If timeout, initial_timeout, and incremental_timeout are set,
@@ -171,8 +176,11 @@ class BrowserTestCase(TestCase):
         self.file.flush()
         browser = Browser()
         command = browser.load_page(
-            self.file.name, initial_timeout=3000,
-            incremental_timeout=3000, timeout=100)
+            self.file.name,
+            initial_timeout=3000,
+            incremental_timeout=3000,
+            timeout=100,
+        )
         self.assertEqual(Command.STATUS_COMPLETE, command.status)
         self.assertEqual(Command.CODE_FAIL, command.return_code)
         self.assertIsNone(command.content)
@@ -198,11 +206,14 @@ class BrowserTestCase(TestCase):
         self.file.flush()
         browser = Browser()
         command = browser.load_page(
-            self.file.name, timeout=30000, initial_timeout=30000,
-            incremental_timeout=1000)
+            self.file.name,
+            timeout=30000,
+            initial_timeout=30000,
+            incremental_timeout=1000,
+        )
         self.assertEqual(Command.STATUS_COMPLETE, command.status)
         self.assertEqual(Command.CODE_FAIL, command.return_code)
-        self.assertEqual('shazam', command.content)
+        self.assertEqual("shazam", command.content)
 
     def test_run_script_timeout(self):
         # A script that does not set window.status in 5 seconds will timeout.
@@ -217,20 +228,20 @@ class BrowserTestCase(TestCase):
         browser = Browser()
         script = (
             "document.body.innerHTML = '<p>pting</p>';"
-            "window.status = '::::' + document.body.innerText;")
+            "window.status = '::::' + document.body.innerText;"
+        )
         command = browser.run_script(script, timeout=5000)
         self.assertEqual(Command.STATUS_COMPLETE, command.status)
         self.assertEqual(Command.CODE_SUCCESS, command.return_code)
-        self.assertEqual('pting', command.content)
+        self.assertEqual("pting", command.content)
 
     def test__on_console_message(self):
         # The method returns the value of hide_console_messages.
         # You should not see "** Message: console message:" on stderr
         # when running this test.
         browser = Browser(hide_console_messages=True)
-        script = (
-            "console.log('hello');"
-            "window.status = '::::goodbye;'")
+        script = "console.log('hello');" "window.status = '::::goodbye;'"
         browser.run_script(script, timeout=5000)
         self.assertTrue(
-            browser._on_console_message(browser, 'message', 1, None, None))
+            browser._on_console_message(browser, "message", 1, None, None)
+        )

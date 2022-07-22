@@ -17,7 +17,7 @@ class TestKarmaRecorder(TestCaseWithFactory):
         product = self.factory.makeProduct()
 
         recorder = self.installKarmaRecorder()
-        person.assignKarma('bugcreated', product=product)
+        person.assignKarma("bugcreated", product=product)
 
         self.assertEqual(1, len(recorder.karma_events))
         karma = recorder.karma_events[0]
@@ -31,8 +31,8 @@ class TestKarmaRecorder(TestCaseWithFactory):
         product = self.factory.makeProduct()
 
         recorder = self.installKarmaRecorder(person=person)
-        person.assignKarma('bugfixed', product=product)
-        unrelated_person.assignKarma('bugfixed', product=product)
+        person.assignKarma("bugfixed", product=product)
+        unrelated_person.assignKarma("bugfixed", product=product)
 
         self.assertEqual(1, len(recorder.karma_events))
         karma = recorder.karma_events[0]
@@ -43,13 +43,13 @@ class TestKarmaRecorder(TestCaseWithFactory):
         person = self.factory.makePerson()
         product = self.factory.makeProduct()
 
-        recorder = self.installKarmaRecorder(action_name='bugrejected')
-        person.assignKarma('bugrejected', product=product)
-        person.assignKarma('bugaccepted', product=product)
+        recorder = self.installKarmaRecorder(action_name="bugrejected")
+        person.assignKarma("bugrejected", product=product)
+        person.assignKarma("bugaccepted", product=product)
 
         self.assertEqual(1, len(recorder.karma_events))
         karma = recorder.karma_events[0]
-        self.assertEqual('bugrejected', karma.action.name)
+        self.assertEqual("bugrejected", karma.action.name)
 
     def test_record_product(self):
         # The KarmaRecorder can filter for a specific Product.
@@ -59,11 +59,13 @@ class TestKarmaRecorder(TestCaseWithFactory):
         package = self.factory.makeDistributionSourcePackage()
 
         recorder = self.installKarmaRecorder(product=product)
-        person.assignKarma('faqcreated', product=other_product)
-        person.assignKarma('faqcreated', product=product)
+        person.assignKarma("faqcreated", product=other_product)
+        person.assignKarma("faqcreated", product=product)
         person.assignKarma(
-            'faqcreated', sourcepackagename=package.sourcepackagename,
-            distribution=package.distribution)
+            "faqcreated",
+            sourcepackagename=package.sourcepackagename,
+            distribution=package.distribution,
+        )
 
         self.assertEqual(1, len(recorder.karma_events))
         karma = recorder.karma_events[0]
@@ -79,12 +81,16 @@ class TestKarmaRecorder(TestCaseWithFactory):
 
         recorder = self.installKarmaRecorder(distribution=distro)
         person.assignKarma(
-            'faqcreated', distribution=distro,
-            sourcepackagename=package.sourcepackagename)
+            "faqcreated",
+            distribution=distro,
+            sourcepackagename=package.sourcepackagename,
+        )
         person.assignKarma(
-            'faqcreated', distribution=other_distro,
-            sourcepackagename=package.sourcepackagename)
-        person.assignKarma('faqcreated', product=product)
+            "faqcreated",
+            distribution=other_distro,
+            sourcepackagename=package.sourcepackagename,
+        )
+        person.assignKarma("faqcreated", product=product)
 
         self.assertEqual(1, len(recorder.karma_events))
         karma = recorder.karma_events[0]
@@ -100,12 +106,16 @@ class TestKarmaRecorder(TestCaseWithFactory):
 
         recorder = self.installKarmaRecorder(sourcepackagename=packagename)
         person.assignKarma(
-            'faqcreated', distribution=package.distribution,
-            sourcepackagename=packagename)
+            "faqcreated",
+            distribution=package.distribution,
+            sourcepackagename=packagename,
+        )
         person.assignKarma(
-            'faqcreated', distribution=package.distribution,
-            sourcepackagename=other_packagename)
-        person.assignKarma('faqcreated', product=product)
+            "faqcreated",
+            distribution=package.distribution,
+            sourcepackagename=other_packagename,
+        )
+        person.assignKarma("faqcreated", product=product)
 
         self.assertEqual(1, len(recorder.karma_events))
         karma = recorder.karma_events[0]
@@ -120,9 +130,9 @@ class TestKarmaRecorder(TestCaseWithFactory):
         recorder = self.installKarmaRecorder()
         recorder.record = FakeMethod()
 
-        person.assignKarma('faqedited', product=product)
+        person.assignKarma("faqedited", product=product)
         self.assertEqual(1, recorder.record.call_count)
         call_args, call_kwargs = recorder.record.calls[0]
         self.assertEqual(1, len(call_args))
         self.assertEqual({}, call_kwargs)
-        self.assertEqual('faqedited', call_args[0].action.name)
+        self.assertEqual("faqedited", call_args[0].action.name)
