@@ -9,29 +9,20 @@ from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.enums import VulnerabilityStatus
 from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
-from lp.bugs.scripts.uctimport import (
-    CVE,
-    DistroSeriesPackageStatus,
-    Note,
-    Package,
-    PackageStatus,
-    Patch,
-    Priority,
-    UCTImporter,
-    load_cve_from_file,
-)
+from lp.bugs.scripts.uctimport import CVE, UCTImporter, UCTRecord
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.model.sourcepackage import SourcePackage
 from lp.testing import TestCase, TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
 
 
-class TestLoadCVEFromFile(TestCase):
-    def test_load_cve_from_file(self):
+class TestUCTRecord(TestCase):
+    def test_load(self):
         cve_path = Path(__file__).parent / "sampledata" / "CVE-2022-23222"
-        cve = load_cve_from_file(cve_path)
+        uct_record = UCTRecord.load(cve_path)
         self.assertEqual(
-            cve,
-            CVE(
+            uct_record,
+            UCTRecord(
                 path=cve_path,
                 assigned_to="",
                 bugs=[
@@ -64,7 +55,7 @@ class TestLoadCVEFromFile(TestCase):
                     "seth-arnold> set kernel.unprivileged_bpf_disabled to 1"
                 ),
                 notes=[
-                    Note(
+                    UCTRecord.Note(
                         author="sbeattie",
                         text=(
                             "Ubuntu 21.10 / 5.13+ kernels disable "
@@ -74,7 +65,7 @@ class TestLoadCVEFromFile(TestCase):
                         ),
                     ),
                 ],
-                priority=Priority.CRITICAL,
+                priority=UCTRecord.Priority.CRITICAL,
                 references=["https://ubuntu.com/security/notices/USN-5368-1"],
                 ubuntu_description=(
                     "It was discovered that the BPF verifier in the Linux "
@@ -84,24 +75,24 @@ class TestLoadCVEFromFile(TestCase):
                     "execute arbitrary code."
                 ),
                 packages=[
-                    Package(
+                    UCTRecord.Package(
                         name="linux",
                         statuses=[
-                            DistroSeriesPackageStatus(
+                            UCTRecord.DistroSeriesPackageStatus(
                                 distroseries="devel",
-                                status=PackageStatus.NOT_AFFECTED,
+                                status=UCTRecord.PackageStatus.NOT_AFFECTED,
                                 reason="5.15.0-25.25",
-                                priority=Priority.MEDIUM,
+                                priority=UCTRecord.Priority.MEDIUM,
                             ),
-                            DistroSeriesPackageStatus(
+                            UCTRecord.DistroSeriesPackageStatus(
                                 distroseries="impish",
-                                status=PackageStatus.RELEASED,
+                                status=UCTRecord.PackageStatus.RELEASED,
                                 reason="5.13.0-37.42",
-                                priority=Priority.MEDIUM,
+                                priority=UCTRecord.Priority.MEDIUM,
                             ),
-                            DistroSeriesPackageStatus(
+                            UCTRecord.DistroSeriesPackageStatus(
                                 distroseries="upstream",
-                                status=PackageStatus.RELEASED,
+                                status=UCTRecord.PackageStatus.RELEASED,
                                 reason="5.17~rc1",
                                 priority=None,
                             ),
@@ -109,7 +100,7 @@ class TestLoadCVEFromFile(TestCase):
                         priority=None,
                         tags={"not-ue"},
                         patches=[
-                            Patch(
+                            UCTRecord.Patch(
                                 patch_type="break-fix",
                                 entry=(
                                     "457f44363a8894135c85b7a9afd2bd8196db24ab "
@@ -119,35 +110,234 @@ class TestLoadCVEFromFile(TestCase):
                             )
                         ],
                     ),
-                    Package(
+                    UCTRecord.Package(
                         name="linux-hwe",
                         statuses=[
-                            DistroSeriesPackageStatus(
+                            UCTRecord.DistroSeriesPackageStatus(
                                 distroseries="devel",
-                                status=PackageStatus.DOES_NOT_EXIST,
+                                status=UCTRecord.PackageStatus.DOES_NOT_EXIST,
                                 reason="",
                                 priority=None,
                             ),
-                            DistroSeriesPackageStatus(
+                            UCTRecord.DistroSeriesPackageStatus(
                                 distroseries="impish",
-                                status=PackageStatus.DOES_NOT_EXIST,
+                                status=UCTRecord.PackageStatus.DOES_NOT_EXIST,
                                 reason="",
                                 priority=None,
                             ),
-                            DistroSeriesPackageStatus(
+                            UCTRecord.DistroSeriesPackageStatus(
                                 distroseries="upstream",
-                                status=PackageStatus.RELEASED,
+                                status=UCTRecord.PackageStatus.RELEASED,
                                 reason="5.17~rc1",
                                 priority=None,
                             ),
                         ],
-                        priority=Priority.HIGH,
+                        priority=UCTRecord.Priority.HIGH,
                         tags=set(),
                         patches=[],
                     ),
                 ],
             ),
         )
+
+
+class TextCVE(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
+
+    def test_make_from_uct_record(self):
+        celebrities = getUtility(ILaunchpadCelebrities)
+        ubuntu = celebrities.ubuntu
+        supported_series = self.factory.makeDistroSeries(
+            distribution=ubuntu, status=SeriesStatus.SUPPORTED
+        )
+        current_series = self.factory.makeDistroSeries(
+            distribution=ubuntu, status=SeriesStatus.CURRENT
+        )
+        devel_series = self.factory.makeDistroSeries(
+            distribution=ubuntu, status=SeriesStatus.DEVELOPMENT
+        )
+        dsp1 = self.factory.makeDistributionSourcePackage(distribution=ubuntu)
+        dsp2 = self.factory.makeDistributionSourcePackage(distribution=ubuntu)
+
+        uct_record = UCTRecord(
+            path=Path("./active/CVE-2022-23222"),
+            assigned_to="assignee",
+            bugs=["https://github.com/mm2/Little-CMS/issues/29"],
+            cvss=[],
+            candidate="CVE-2022-23222",
+            date_made_public=datetime.datetime(
+                2022, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
+            ),
+            description="description",
+            discovered_by="tr3e wang",
+            mitigation="mitigation",
+            notes=[
+                UCTRecord.Note(
+                    author="author",
+                    text="text",
+                ),
+            ],
+            priority=UCTRecord.Priority.CRITICAL,
+            references=["https://ubuntu.com/security/notices/USN-5368-1"],
+            ubuntu_description="ubuntu-description",
+            packages=[
+                UCTRecord.Package(
+                    name=dsp1.sourcepackagename.name,
+                    statuses=[
+                        UCTRecord.DistroSeriesPackageStatus(
+                            distroseries=supported_series.name,
+                            status=UCTRecord.PackageStatus.NOT_AFFECTED,
+                            reason="reason 1",
+                            priority=UCTRecord.Priority.MEDIUM,
+                        ),
+                        UCTRecord.DistroSeriesPackageStatus(
+                            distroseries=current_series.name,
+                            status=UCTRecord.PackageStatus.RELEASED,
+                            reason="reason 2",
+                            priority=UCTRecord.Priority.MEDIUM,
+                        ),
+                        UCTRecord.DistroSeriesPackageStatus(
+                            distroseries="devel",
+                            status=UCTRecord.PackageStatus.RELEASED,
+                            reason="reason 3",
+                            priority=None,
+                        ),
+                    ],
+                    priority=None,
+                    tags={"not-ue"},
+                    patches=[
+                        UCTRecord.Patch(
+                            patch_type="break-fix",
+                            entry=(
+                                "457f44363a8894135c85b7a9afd2bd8196db24ab "
+                                "c25b2ae136039ffa820c26138ed4a5e5f3ab3841|"
+                                "local-CVE-2022-23222-fix"
+                            ),
+                        )
+                    ],
+                ),
+                UCTRecord.Package(
+                    name=dsp2.sourcepackagename.name,
+                    statuses=[
+                        UCTRecord.DistroSeriesPackageStatus(
+                            distroseries=supported_series.name,
+                            status=UCTRecord.PackageStatus.DOES_NOT_EXIST,
+                            reason="",
+                            priority=None,
+                        ),
+                        UCTRecord.DistroSeriesPackageStatus(
+                            distroseries=current_series.name,
+                            status=UCTRecord.PackageStatus.DOES_NOT_EXIST,
+                            reason="",
+                            priority=None,
+                        ),
+                        UCTRecord.DistroSeriesPackageStatus(
+                            distroseries="devel",
+                            status=UCTRecord.PackageStatus.RELEASED,
+                            reason="",
+                            priority=None,
+                        ),
+                    ],
+                    priority=UCTRecord.Priority.HIGH,
+                    tags=set(),
+                    patches=[],
+                ),
+            ],
+        )
+        cve = CVE.make_from_uct_record(uct_record)
+        self.assertEqual(cve.sequence, "CVE-2022-23222")
+        self.assertEqual(
+            cve.date_made_public,
+            datetime.datetime(
+                2022, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
+            ),
+        )
+        self.assertEqual(
+            cve.distro_packages,
+            [
+                CVE.DistroPackage(
+                    package=dsp1,
+                    importance=BugTaskImportance.CRITICAL,
+                ),
+                CVE.DistroPackage(
+                    package=dsp2,
+                    importance=BugTaskImportance.HIGH,
+                ),
+            ],
+        )
+        self.assertEqual(
+            cve.series_packages,
+            [
+                CVE.SeriesPackage(
+                    package=SourcePackage(
+                        sourcepackagename=dsp1.sourcepackagename,
+                        distroseries=supported_series,
+                    ),
+                    importance=BugTaskImportance.MEDIUM,
+                    status=BugTaskStatus.INVALID,
+                    status_explanation="reason 1",
+                ),
+                CVE.SeriesPackage(
+                    package=SourcePackage(
+                        sourcepackagename=dsp1.sourcepackagename,
+                        distroseries=current_series,
+                    ),
+                    importance=BugTaskImportance.MEDIUM,
+                    status=BugTaskStatus.FIXRELEASED,
+                    status_explanation="reason 2",
+                ),
+                CVE.SeriesPackage(
+                    package=SourcePackage(
+                        sourcepackagename=dsp1.sourcepackagename,
+                        distroseries=devel_series,
+                    ),
+                    importance=BugTaskImportance.CRITICAL,
+                    status=BugTaskStatus.FIXRELEASED,
+                    status_explanation="reason 3",
+                ),
+                CVE.SeriesPackage(
+                    package=SourcePackage(
+                        sourcepackagename=dsp2.sourcepackagename,
+                        distroseries=supported_series,
+                    ),
+                    importance=BugTaskImportance.HIGH,
+                    status=BugTaskStatus.DOESNOTEXIST,
+                    status_explanation="",
+                ),
+                CVE.SeriesPackage(
+                    package=SourcePackage(
+                        sourcepackagename=dsp2.sourcepackagename,
+                        distroseries=current_series,
+                    ),
+                    importance=BugTaskImportance.HIGH,
+                    status=BugTaskStatus.DOESNOTEXIST,
+                    status_explanation="",
+                ),
+                CVE.SeriesPackage(
+                    package=SourcePackage(
+                        sourcepackagename=dsp2.sourcepackagename,
+                        distroseries=devel_series,
+                    ),
+                    importance=BugTaskImportance.HIGH,
+                    status=BugTaskStatus.FIXRELEASED,
+                    status_explanation="",
+                ),
+            ],
+        )
+        self.assertEqual(cve.importance, BugTaskImportance.CRITICAL)
+        self.assertEqual(cve.status, VulnerabilityStatus.ACTIVE)
+        self.assertEqual(cve.assigned_to, "assignee")
+        self.assertEqual(cve.description, "description")
+        self.assertEqual(cve.ubuntu_description, "ubuntu-description")
+        self.assertEqual(
+            cve.bug_urls, ["https://github.com/mm2/Little-CMS/issues/29"]
+        )
+        self.assertEqual(
+            cve.references, ["https://ubuntu.com/security/notices/USN-5368-1"]
+        )
+        self.assertEqual(cve.notes, "author> text")
+        self.assertEqual(cve.mitigation, "mitigation")
 
 
 class TestUCTImporter(TestCaseWithFactory):
@@ -177,7 +367,7 @@ class TestUCTImporter(TestCaseWithFactory):
         lp_cve = self.factory.makeCVE("2022-23222")
 
         for package in (dsp1, dsp2):
-            for series in (supported_series, current_series, devel_series):
+            for series in (supported_series, current_series):
                 self.factory.makeSourcePackagePublishingHistory(
                     distroseries=series,
                     sourcepackagerelease=self.factory.makeSourcePackageRelease(
@@ -188,72 +378,76 @@ class TestUCTImporter(TestCaseWithFactory):
 
         now = datetime.datetime.now(datetime.timezone.utc)
         cve = CVE(
-            path=Path("./ubuntu-cve-tracker/active/CVE-2022-23222"),
-            assigned_to=assignee.name,
-            bugs=[
-                "https://github.com/mm2/Little-CMS/issues/29",
-                "https://github.com/mm2/Little-CMS/issues/30",
-                "https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=745471",
-            ],
-            cvss=[],
-            candidate="CVE-2022-23222",
+            sequence="CVE-2022-23222",
             date_made_public=now,
-            description="description",
-            discovered_by="tr3e wang",
-            mitigation="mitigation",
-            notes=[Note(author="author", text="text")],
-            priority=Priority.MEDIUM,
-            references=["https://ubuntu.com/security/notices/USN-5368-1"],
-            ubuntu_description="ubuntu-description",
-            packages=[
-                Package(
-                    name=dsp1.sourcepackagename.name,
-                    statuses=[
-                        DistroSeriesPackageStatus(
-                            distroseries=supported_series.name,
-                            status=PackageStatus.RELEASED,
-                            reason="released",
-                            priority=Priority.HIGH,
-                        ),
-                        DistroSeriesPackageStatus(
-                            distroseries=current_series.name,
-                            status=PackageStatus.DOES_NOT_EXIST,
-                            reason="does not exist",
-                            priority=None,
-                        ),
-                    ],
-                    priority=Priority.LOW,
-                    patches=[],
-                    tags=set(),
+            distro_packages=[
+                CVE.DistroPackage(
+                    package=dsp1,
+                    importance=BugTaskImportance.LOW,
                 ),
-                Package(
-                    name=dsp2.sourcepackagename.name,
-                    statuses=[
-                        DistroSeriesPackageStatus(
-                            distroseries=supported_series.name,
-                            status=PackageStatus.NOT_AFFECTED,
-                            reason="not affected",
-                            priority=Priority.LOW,
-                        ),
-                        DistroSeriesPackageStatus(
-                            distroseries=current_series.name,
-                            status=PackageStatus.IGNORED,
-                            reason="ignored",
-                            priority=None,
-                        ),
-                        DistroSeriesPackageStatus(
-                            distroseries="devel",
-                            status=PackageStatus.NEEDS_TRIAGE,
-                            reason="needs triage",
-                            priority=None,
-                        ),
-                    ],
-                    priority=None,
-                    patches=[],
-                    tags=set(),
+                CVE.DistroPackage(
+                    package=dsp2,
+                    importance=BugTaskImportance.MEDIUM,
                 ),
             ],
+            series_packages=[
+                CVE.SeriesPackage(
+                    package=SourcePackage(
+                        sourcepackagename=dsp1.sourcepackagename,
+                        distroseries=supported_series,
+                    ),
+                    importance=BugTaskImportance.HIGH,
+                    status=BugTaskStatus.FIXRELEASED,
+                    status_explanation="released",
+                ),
+                CVE.SeriesPackage(
+                    package=SourcePackage(
+                        sourcepackagename=dsp1.sourcepackagename,
+                        distroseries=current_series,
+                    ),
+                    importance=BugTaskImportance.LOW,
+                    status=BugTaskStatus.DOESNOTEXIST,
+                    status_explanation="does not exist",
+                ),
+                CVE.SeriesPackage(
+                    package=SourcePackage(
+                        sourcepackagename=dsp2.sourcepackagename,
+                        distroseries=supported_series,
+                    ),
+                    importance=BugTaskImportance.LOW,
+                    status=BugTaskStatus.INVALID,
+                    status_explanation="not affected",
+                ),
+                CVE.SeriesPackage(
+                    package=SourcePackage(
+                        sourcepackagename=dsp2.sourcepackagename,
+                        distroseries=current_series,
+                    ),
+                    importance=BugTaskImportance.MEDIUM,
+                    status=BugTaskStatus.WONTFIX,
+                    status_explanation="ignored",
+                ),
+                CVE.SeriesPackage(
+                    package=SourcePackage(
+                        sourcepackagename=dsp2.sourcepackagename,
+                        distroseries=devel_series,
+                    ),
+                    importance=BugTaskImportance.MEDIUM,
+                    status=BugTaskStatus.UNKNOWN,
+                    status_explanation="needs triage",
+                ),
+            ],
+            importance=BugTaskImportance.MEDIUM,
+            status=VulnerabilityStatus.ACTIVE,
+            assigned_to=assignee.name,
+            description="description",
+            ubuntu_description="ubuntu-description",
+            bug_urls=["https://github.com/mm2/Little-CMS/issues/29"],
+            references=["https://ubuntu.com/security/notices/USN-5368-1"],
+            notes="author> text",
+            mitigation="mitigation",
         )
+
         bug, vulnerabilities = self.importer.create_bug(cve, lp_cve)
 
         self.assertEqual(bug.title, "CVE-2022-23222")
@@ -262,13 +456,13 @@ class TestUCTImporter(TestCaseWithFactory):
         self.assertEqual(bug.information_type, InformationType.PUBLICSECURITY)
 
         messages = list(bug.messages)
-        self.assertEqual(len(messages), 5)
+        self.assertEqual(len(messages), 3)
 
         message = messages.pop(0)
         self.assertEqual(message.owner, owner)
         self.assertEqual(message.text_contents, "description")
 
-        for external_bug_url in cve.bugs:
+        for external_bug_url in cve.bug_urls:
             message = messages.pop(0)
             self.assertEqual(message.text_contents, external_bug_url)
 
@@ -339,7 +533,7 @@ class TestUCTImporter(TestCaseWithFactory):
         self.assertEqual(bug.cves, [lp_cve])
 
         activities = list(bug.activity)
-        self.assertEqual(len(activities), 16)
+        self.assertEqual(len(activities), 14)
         import_bug_activity = activities[-1]
         self.assertEqual(import_bug_activity.person, owner)
         self.assertEqual(import_bug_activity.whatchanged, "bug")
