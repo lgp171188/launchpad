@@ -9,10 +9,7 @@ import xmlrpc.client
 from zope.component import getUtility
 
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
-from lp.testing import (
-    anonymous_logged_in,
-    TestCase,
-    )
+from lp.testing import TestCase, anonymous_logged_in
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.xmlrpc import XMLRPCTestTransport
 
@@ -27,36 +24,37 @@ class TestPrivateXMLRPC(TestCase):
 
     layer = LaunchpadFunctionalLayer
 
-    public_root = 'http://test@canonical.com:test@xmlrpc.launchpad.test/'
-    private_root = 'http://xmlrpc-private.launchpad.test:8087/'
+    public_root = "http://test@canonical.com:test@xmlrpc.launchpad.test/"
+    private_root = "http://xmlrpc-private.launchpad.test:8087/"
 
     def get_public_proxy(self, path):
         """Get an xmlrpc.client.ServerProxy pointing at the public URL"""
         return xmlrpc.client.ServerProxy(
-            self.public_root + path,
-            transport=XMLRPCTestTransport())
+            self.public_root + path, transport=XMLRPCTestTransport()
+        )
 
     def get_private_proxy(self, path):
         """Get an xmlrpc.client.ServerProxy pointing at the private URL"""
         return xmlrpc.client.ServerProxy(
-            self.private_root + path,
-            transport=XMLRPCTestTransport())
+            self.private_root + path, transport=XMLRPCTestTransport()
+        )
 
     def test_mailing_lists_not_public(self):
         """For example, the team mailing list feature requires a connection
         between an internal Mailman server and Launchpad.  This end point is
         not available on the external XML-RPC port.
         """
-        external_api = self.get_public_proxy('mailinglists/')
-        e = self.assertRaises(xmlrpc.client.ProtocolError,
-                              external_api.getPendingActions)
+        external_api = self.get_public_proxy("mailinglists/")
+        e = self.assertRaises(
+            xmlrpc.client.ProtocolError, external_api.getPendingActions
+        )
         self.assertEqual(404, e.errcode)
 
     def test_mailing_lists_internally_available(self):
         """However, the end point is available on the internal port and does
         not require authentication.
         """
-        internal_api = self.get_private_proxy('mailinglists/')
+        internal_api = self.get_private_proxy("mailinglists/")
         self.assertEqual({}, internal_api.getPendingActions())
 
     def test_external_bugs_api(self):
@@ -64,27 +62,29 @@ class TestPrivateXMLRPC(TestCase):
         available on the external port.
         """
         with anonymous_logged_in():
-            external_api = self.get_public_proxy('bugs/')
+            external_api = self.get_public_proxy("bugs/")
             bug_dict = dict(
-                product='firefox', summary='the summary',
-                comment='the comment')
+                product="firefox", summary="the summary", comment="the comment"
+            )
             result = external_api.filebug(bug_dict)
-            self.assertStartsWith(result, 'http://bugs.launchpad.test/bugs/')
+            self.assertStartsWith(result, "http://bugs.launchpad.test/bugs/")
 
     def test_internal_bugs_api(self):
         """There is an interal bugs api, too, but that doesn't share the same
         methods as those exposed publicly.
         """
-        internal_api = self.get_private_proxy('bugs/')
+        internal_api = self.get_private_proxy("bugs/")
         bug_dict = dict(
-            product='firefox', summary='the summary', comment='the comment')
-        e = self.assertRaises(xmlrpc.client.ProtocolError,
-                              internal_api.filebug, bug_dict)
+            product="firefox", summary="the summary", comment="the comment"
+        )
+        e = self.assertRaises(
+            xmlrpc.client.ProtocolError, internal_api.filebug, bug_dict
+        )
         self.assertEqual(404, e.errcode)
 
     def test_get_utility(self):
         with anonymous_logged_in():
-            internal_api = self.get_private_proxy('bugs/')
+            internal_api = self.get_private_proxy("bugs/")
             token_string = internal_api.newBugTrackerToken()
             token = getUtility(ILoginTokenSet)[token_string]
-            self.assertEqual('LoginToken', token.__class__.__name__)
+            self.assertEqual("LoginToken", token.__class__.__name__)

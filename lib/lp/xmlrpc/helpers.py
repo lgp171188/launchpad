@@ -4,8 +4,8 @@
 """Generic XML-RPC helpers."""
 
 __all__ = [
-    'return_fault',
-    ]
+    "return_fault",
+]
 
 from xmlrpc.client import Fault
 

@@ -62,6 +62,7 @@ repos:
             |testopenid
             |tests
             |translations
+            |xmlrpc
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
@@ -100,6 +101,7 @@ repos:
             |testopenid
             |tests
             |translations
+            |xmlrpc
           )/
     -   id: isort
         alias: isort-black
@@ -128,6 +130,7 @@ repos:
             |testopenid
             |tests
             |translations
+            |xmlrpc
           )/
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.9.2

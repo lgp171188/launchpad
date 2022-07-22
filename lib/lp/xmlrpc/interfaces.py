@@ -4,8 +4,8 @@
 """Interfaces for the Launchpad application."""
 
 __all__ = [
-    'IPrivateApplication',
-    ]
+    "IPrivateApplication",
+]
 
 from zope.interface import Attribute
 
@@ -15,7 +15,7 @@ from lp.services.webapp.interfaces import ILaunchpadApplication
 class IPrivateApplication(ILaunchpadApplication):
     """Launchpad private XML-RPC application root."""
 
-    archive = Attribute("Archive XML-RPC end point.""")
+    archive = Attribute("Archive XML-RPC end point." "")
 
     authserver = Attribute("""Old Authserver API end point.""")
 
@@ -27,8 +27,7 @@ class IPrivateApplication(ILaunchpadApplication):
 
     bugs = Attribute("""Launchpad Bugs XML-RPC end point.""")
 
-    canonicalsso = Attribute(
-        """Canonical SSO XML-RPC end point.""")
+    canonicalsso = Attribute("""Canonical SSO XML-RPC end point.""")
 
     featureflags = Attribute("""Feature flag information endpoint""")
 
