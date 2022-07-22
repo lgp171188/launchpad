@@ -26,6 +26,7 @@ __all__ = [
     "TryAdvisoryLock",
     "Unnest",
     "Values",
+    "WithMaterialized",
 ]
 
 from storm import Undef
@@ -273,12 +274,48 @@ class RegexpMatch(BinaryOper):
     oper = " ~ "
 
 
+compile.set_precedence(compile.get_precedence(Like), RegexpMatch)
+
+
 class JSONExtract(BinaryOper):
     __slots__ = ()
     oper = "->"
 
 
-compile.set_precedence(compile.get_precedence(Like), RegexpMatch)
+class WithMaterialized(Expr):
+    """Compiles to a materialized common table expression.
+
+    On PostgreSQL >= 12, a side-effect-free WITH query may be folded into
+    the primary query if it is used exactly once in the primary query.  This
+    defeats some of our attempts at query optimization.  The MATERIALIZED
+    keyword suppresses this folding, but unfortunately it isn't available in
+    earlier versions of PostgreSQL.  Use it if available.
+
+    Unlike most Storm expressions, this needs access to the store so that it
+    can determine the running PostgreSQL version.
+
+    See:
+     * https://www.postgresql.org/docs/12/sql-select.html#SQL-WITH
+     * https://www.postgresql.org/docs/12/release-12.html#id-1.11.6.16.5.3.4
+    """
+
+    def __init__(self, name, store, select):
+        self.name = name
+        self.store = store
+        self.select = select
+
+
+@compile.when(WithMaterialized)
+def compile_with_materialized(compile, with_expr, state):
+    tokens = []
+    tokens.append(compile(with_expr.name, state, token=True))
+    tokens.append(" AS ")
+    # XXX cjwatson 2022-07-22: Replace this version check with something
+    # like `With(materialized=True)` once we're on PostgreSQL 12 everywhere.
+    if with_expr.store._database._version >= 120000:
+        tokens.append("MATERIALIZED ")
+    tokens.append(compile(with_expr.select, state))
+    return "".join(tokens)
 
 
 def get_where_for_reference(reference, other):

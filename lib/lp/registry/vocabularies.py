@@ -149,7 +149,12 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase, sqlvalues
 from lp.services.database.sqlobject import AND, CONTAINSSTRING, OR
-from lp.services.database.stormexpr import RegexpMatch, fti_search, rank_by_fti
+from lp.services.database.stormexpr import (
+    RegexpMatch,
+    WithMaterialized,
+    fti_search,
+    rank_by_fti,
+)
 from lp.services.features import getFeatureFlag
 from lp.services.helpers import shortlist
 from lp.services.identity.interfaces.account import AccountStatus
@@ -698,7 +703,9 @@ class ValidPersonOrTeamVocabulary(
             # email address.
             # We just select the required ids since we will use
             # IPersonSet.getPrecachedPersonsFromIDs to load the results
-            matching_with = With("MatchingPerson", matching_person_sql)
+            matching_with = WithMaterialized(
+                "MatchingPerson", self.store, matching_person_sql
+            )
             result = (
                 self.store.with_(matching_with)
                 .using(*tables)

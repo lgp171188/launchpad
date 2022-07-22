@@ -23,7 +23,6 @@ from storm.expr import (
     Or,
     Select,
     Table,
-    With,
 )
 from storm.locals import SQL, Desc
 from zope.component import getUtility
@@ -53,6 +52,7 @@ from lp.services.database.stormexpr import (
     Array,
     ArrayAgg,
     ArrayIntersects,
+    WithMaterialized,
     fti_search,
 )
 from lp.services.propertycache import get_property_cache
@@ -105,8 +105,9 @@ def search_specifications(
     # specifications.
     if clauses:
         RelevantSpecification = Table("RelevantSpecification")
-        relevant_specification_cte = With(
+        relevant_specification_cte = WithMaterialized(
             RelevantSpecification.name,
+            store,
             Select(Specification.id, And(clauses), tables=tables),
         )
         store = store.with_(relevant_specification_cte)
