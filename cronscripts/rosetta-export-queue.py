@@ -18,6 +18,6 @@ class RosettaExportQueue(LaunchpadCronScript):
             process_queue(self.txn, self.logger)
 
 
-if __name__ == '__main__':
-    script = RosettaExportQueue('rosetta-export-queue', dbuser='poexport')
+if __name__ == "__main__":
+    script = RosettaExportQueue("rosetta-export-queue", dbuser="poexport")
     script.lock_and_run()

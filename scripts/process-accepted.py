@@ -14,8 +14,6 @@ import _pythonpath  # noqa: F401
 
 from lp.archivepublisher.scripts.processaccepted import ProcessAccepted
 
-
-if __name__ == '__main__':
-    script = ProcessAccepted(
-        "process-accepted", dbuser='process_accepted')
+if __name__ == "__main__":
+    script = ProcessAccepted("process-accepted", dbuser="process_accepted")
     script.lock_and_run()

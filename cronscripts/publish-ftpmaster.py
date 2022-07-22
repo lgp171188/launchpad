@@ -9,8 +9,6 @@ import _pythonpath  # noqa: F401
 
 from lp.archivepublisher.scripts.publish_ftpmaster import PublishFTPMaster
 
-
-if __name__ == '__main__':
-    script = PublishFTPMaster(
-        "publish-ftpmaster", 'publish_ftpmaster')
+if __name__ == "__main__":
+    script = PublishFTPMaster("publish-ftpmaster", "publish_ftpmaster")
     script.lock_and_run()

@@ -11,30 +11,30 @@ import os
 import subprocess
 import sys
 
-
 SQL = "UPDATE LibraryFileContent SET md5 = '%s' WHERE id = %d;"
 
 
 def main(path, minimumID=0):
-    if not path.endswith('/'):
-        path += '/'
+    if not path.endswith("/"):
+        path += "/"
 
     for dirpath, dirname, filenames in os.walk(path):
         dirname.sort()
-        databaseID = dirpath[len(path):]
+        databaseID = dirpath[len(path) :]
         if not len(databaseID) == 8:  # "xx/xx/xx"
             continue
         for filename in filenames:
-            databaseID = int(databaseID.replace('/', '') + filename, 16)
+            databaseID = int(databaseID.replace("/", "") + filename, 16)
             if databaseID < minimumID:
                 continue
             filename = os.path.join(dirpath, filename)
             md5sum = subprocess.check_output(
-                ['md5sum', filename], universal_newlines=True).split(' ', 1)[0]
+                ["md5sum", filename], universal_newlines=True
+            ).split(" ", 1)[0]
             yield databaseID, md5sum
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) > 2:
         minimumID = int(sys.argv[2])
     else:

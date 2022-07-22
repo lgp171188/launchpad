@@ -19,10 +19,7 @@ import transaction
 
 from lp.codehosting.rewrite import BranchRewriter
 from lp.services.config import config
-from lp.services.log.loglevels import (
-    INFO,
-    WARNING,
-    )
+from lp.services.log.loglevels import INFO, WARNING
 from lp.services.scripts.base import LaunchpadScript
 
 
@@ -45,8 +42,8 @@ class BranchRewriteScript(LaunchpadScript):
         log_file_directory = os.path.dirname(log_file_location)
         if not os.path.isdir(log_file_directory):
             os.makedirs(log_file_directory)
-        self.parser.defaults['log_file'] = log_file_location
-        self.parser.defaults['log_file_level'] = INFO
+        self.parser.defaults["log_file"] = log_file_location
+        self.parser.defaults["log_file_level"] = INFO
 
     def main(self):
         rewriter = BranchRewriter(self.logger)
@@ -65,7 +62,7 @@ class BranchRewriteScript(LaunchpadScript):
             except KeyboardInterrupt:
                 sys.exit()
             except Exception:
-                self.logger.exception('Exception occurred:')
+                self.logger.exception("Exception occurred:")
                 print("NULL")
                 sys.stdout.flush()
                 # The exception might have been a DisconnectionError or
@@ -74,9 +71,10 @@ class BranchRewriteScript(LaunchpadScript):
                 try:
                     transaction.abort()
                 except Exception:
-                    self.logger.exception('Exception occurred in abort:')
+                    self.logger.exception("Exception occurred in abort:")
 
 
-if __name__ == '__main__':
-    BranchRewriteScript("branch-rewrite", dbuser='branch-rewrite').run(
-        isolation='autocommit', use_web_security=True)
+if __name__ == "__main__":
+    BranchRewriteScript("branch-rewrite", dbuser="branch-rewrite").run(
+        isolation="autocommit", use_web_security=True
+    )

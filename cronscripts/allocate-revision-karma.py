@@ -8,8 +8,8 @@ import _pythonpath  # noqa: F401
 from lp.code.scripts.revisionkarma import RevisionKarmaAllocator
 from lp.services.config import config
 
-
-if __name__ == '__main__':
-    script = RevisionKarmaAllocator('allocate-revision-karma',
-        dbuser=config.revisionkarma.dbuser)
+if __name__ == "__main__":
+    script = RevisionKarmaAllocator(
+        "allocate-revision-karma", dbuser=config.revisionkarma.dbuser
+    )
     script.lock_and_run()

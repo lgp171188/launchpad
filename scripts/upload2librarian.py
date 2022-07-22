@@ -14,10 +14,7 @@ from zope.component import getUtility
 
 from lp.services.helpers import filenameToContentType
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
-from lp.services.scripts.base import (
-    LaunchpadScript,
-    LaunchpadScriptFailure,
-    )
+from lp.services.scripts.base import LaunchpadScript, LaunchpadScriptFailure
 
 
 class LibrarianUploader(LaunchpadScript):
@@ -26,15 +23,19 @@ class LibrarianUploader(LaunchpadScript):
     loglevel = logging.INFO
 
     def add_my_options(self):
-        self.parser.set_defaults(format='simple')
+        self.parser.set_defaults(format="simple")
         self.parser.add_option(
-        "-f", "--file", dest="filepath", metavar="FILE",
-        help="filename to upload")
+            "-f",
+            "--file",
+            dest="filepath",
+            metavar="FILE",
+            help="filename to upload",
+        )
 
     def main(self):
         """Upload file, commit the transaction and prints the file URL."""
         if self.options.filepath is None:
-            raise LaunchpadScriptFailure('File not provided.')
+            raise LaunchpadScriptFailure("File not provided.")
 
         library_file = self.upload_file(self.options.filepath)
 
@@ -54,16 +55,17 @@ class LibrarianUploader(LaunchpadScript):
         try:
             file = open(filepath, "rb")
         except OSError:
-            raise LaunchpadScriptFailure('Could not open: %s' % filepath)
+            raise LaunchpadScriptFailure("Could not open: %s" % filepath)
 
         flen = os.stat(filepath).st_size
         filename = os.path.basename(filepath)
         ftype = filenameToContentType(filename)
         library_file = getUtility(ILibraryFileAliasSet).create(
-            filename, flen, file, contentType=ftype)
+            filename, flen, file, contentType=ftype
+        )
         return library_file
 
 
-if __name__ == '__main__':
-    script = LibrarianUploader('librarian-uploader')
+if __name__ == "__main__":
+    script = LibrarianUploader("librarian-uploader")
     script.run()

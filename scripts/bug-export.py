@@ -20,32 +20,52 @@ class BugExportScript(LaunchpadScript):
 
     def add_my_options(self):
         self.parser.add_option(
-            '-o', '--output', metavar='FILE', action='store',
-            help='Export bugs to this file', type='string', dest='output')
+            "-o",
+            "--output",
+            metavar="FILE",
+            action="store",
+            help="Export bugs to this file",
+            type="string",
+            dest="output",
+        )
         self.parser.add_option(
-            '-p', '--product', metavar='PRODUCT', action='store',
-            help='Which product to export', type='string', dest='product')
+            "-p",
+            "--product",
+            metavar="PRODUCT",
+            action="store",
+            help="Which product to export",
+            type="string",
+            dest="product",
+        )
         self.parser.add_option(
-            '--include-private', action='store_true',
-            help='Include private bugs in dump', dest='include_private',
-            default=False)
+            "--include-private",
+            action="store_true",
+            help="Include private bugs in dump",
+            dest="include_private",
+            default=False,
+        )
 
     def main(self):
         if self.options.product is None:
-            self.parser.error('No product specified')
+            self.parser.error("No product specified")
         if self.options.output is not None:
-            output = open(self.options.output, 'wb')
+            output = open(self.options.output, "wb")
         else:
-            output = getattr(sys.stdout, 'buffer', sys.stdout)
+            output = getattr(sys.stdout, "buffer", sys.stdout)
 
         product = getUtility(IProductSet).getByName(self.options.product)
         if product is None:
             self.parser.error(
-                'Product %s does not exist' % self.options.product)
+                "Product %s does not exist" % self.options.product
+            )
 
         export_bugtasks(
-            transaction, product, output,
-            include_private=self.options.include_private)
+            transaction,
+            product,
+            output,
+            include_private=self.options.include_private,
+        )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     BugExportScript("bug-export").run()

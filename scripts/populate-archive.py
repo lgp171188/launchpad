@@ -14,8 +14,8 @@ import _pythonpath  # noqa: F401
 from lp.services.config import config
 from lp.soyuz.scripts.populate_archive import ArchivePopulator
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = ArchivePopulator(
-        'populate-archive', dbuser=config.archivepublisher.dbuser)
+        "populate-archive", dbuser=config.archivepublisher.dbuser
+    )
     script.lock_and_run()

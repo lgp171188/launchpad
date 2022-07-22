@@ -7,7 +7,6 @@ import _pythonpath  # noqa: F401
 
 from lp.archivepublisher.scripts.publishdistro import PublishDistro
 
-
 if __name__ == "__main__":
-    script = PublishDistro('publish-distro', dbuser='publish_distro')
+    script = PublishDistro("publish-distro", dbuser="publish_distro")
     script.lock_and_run()

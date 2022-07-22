@@ -9,9 +9,9 @@ import _pythonpath  # noqa: F401
 
 from lp.translations.scripts.import_queue_gardener import ImportQueueGardener
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = ImportQueueGardener(
-        'translations-import-queue-gardener',
-        dbuser='translations_import_queue_gardener')
+        "translations-import-queue-gardener",
+        dbuser="translations_import_queue_gardener",
+    )
     script.lock_and_run()

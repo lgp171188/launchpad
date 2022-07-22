@@ -9,7 +9,7 @@ import _pythonpath  # noqa: F401
 
 from lp.bugs.scripts.bugtasktargetnamecaches import (
     BugTaskTargetNameCacheUpdater,
-    )
+)
 from lp.services.config import config
 from lp.services.scripts.base import LaunchpadCronScript
 
@@ -20,13 +20,15 @@ class UpdateBugTaskTargetNameCaches(LaunchpadCronScript):
     This ensures that the cache values are up-to-date even after, for
     example, an IDistribution being renamed.
     """
+
     def main(self):
         updater = BugTaskTargetNameCacheUpdater(self.txn, self.logger)
         updater.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = UpdateBugTaskTargetNameCaches(
-        'launchpad-targetnamecacheupdater',
-        dbuser=config.targetnamecacheupdater.dbuser)
+        "launchpad-targetnamecacheupdater",
+        dbuser=config.targetnamecacheupdater.dbuser,
+    )
     script.lock_and_run()

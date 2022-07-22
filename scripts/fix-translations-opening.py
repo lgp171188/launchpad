@@ -11,12 +11,8 @@ from zope.interface import implementer
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.model.distroseries import DistroSeries
 from lp.services.database.interfaces import IMasterStore
-from lp.services.looptuner import (
-    DBLoopTuner,
-    ITunableLoop,
-    )
+from lp.services.looptuner import DBLoopTuner, ITunableLoop
 from lp.services.scripts.base import LaunchpadScript
-
 
 delete_pofiletranslator = """\
 DELETE FROM POFileTranslator
@@ -99,12 +95,11 @@ statements = [
     delete_packagingjob,
     null_translationimportqueueentry_potemplate,
     delete_potemplate,
-    ]
+]
 
 
 @implementer(ITunableLoop)
 class ExecuteLoop:
-
     def __init__(self, statement, series, logger):
         self.statement = statement
         self.series = series
@@ -116,14 +111,24 @@ class ExecuteLoop:
 
     def __call__(self, chunk_size):
         self.logger.info(
-            "%s (limited to %d rows)", self.statement.splitlines()[0],
-            chunk_size)
+            "%s (limited to %d rows)",
+            self.statement.splitlines()[0],
+            chunk_size,
+        )
         store = IMasterStore(DistroSeries)
-        result = store.execute(self.statement, (self.series.id, chunk_size,))
-        self.done = (result.rowcount == 0)
+        result = store.execute(
+            self.statement,
+            (
+                self.series.id,
+                chunk_size,
+            ),
+        )
+        self.done = result.rowcount == 0
         self.logger.info(
-            "%d rows deleted (%s)", result.rowcount,
-            ("done" if self.done else "not done"))
+            "%d rows deleted (%s)",
+            result.rowcount,
+            ("done" if self.done else "not done"),
+        )
         store.commit()
 
 
@@ -132,11 +137,19 @@ class WipeSeriesTranslationsScript(LaunchpadScript):
     description = "Wipe translations for a series."
 
     def add_my_options(self):
-        self.parser.add_option('-d', '--distribution', dest='distro',
-            default='ubuntu',
-            help='Name of distribution to delete translations in.')
-        self.parser.add_option('-s', '--series', dest='series',
-            help='Name of distroseries whose translations should be removed')
+        self.parser.add_option(
+            "-d",
+            "--distribution",
+            dest="distro",
+            default="ubuntu",
+            help="Name of distribution to delete translations in.",
+        )
+        self.parser.add_option(
+            "-s",
+            "--series",
+            dest="series",
+            help="Name of distroseries whose translations should be removed",
+        )
 
     def _getTargetSeries(self):
         series = self.options.series
@@ -150,5 +163,5 @@ class WipeSeriesTranslationsScript(LaunchpadScript):
             tuner.run()
 
 
-if __name__ == '__main__':
-    WipeSeriesTranslationsScript(dbuser='rosettaadmin').run()
+if __name__ == "__main__":
+    WipeSeriesTranslationsScript(dbuser="rosettaadmin").run()

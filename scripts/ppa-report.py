@@ -7,7 +7,6 @@ import _pythonpath  # noqa: F401
 
 from lp.soyuz.scripts.ppareport import PPAReportScript
 
-
-if __name__ == '__main__':
-    script = PPAReportScript('ppareport', dbuser='ro')
+if __name__ == "__main__":
+    script = PPAReportScript("ppareport", dbuser="ro")
     script.run()

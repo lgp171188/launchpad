@@ -10,19 +10,25 @@ from lp.services.scripts.base import LaunchpadScript
 
 
 class BugSummaryRebuild(LaunchpadScript):
-
     def add_my_options(self):
         self.parser.add_option(
-            "-n", "--dry-run", action="store_true",
-            dest="dry_run", default=False,
-            help="Don't commit changes to the DB.")
+            "-n",
+            "--dry-run",
+            action="store_true",
+            dest="dry_run",
+            default=False,
+            help="Don't commit changes to the DB.",
+        )
 
     def main(self):
         updater = BugSummaryRebuildTunableLoop(
-            self.logger, self.options.dry_run)
+            self.logger, self.options.dry_run
+        )
         updater.run()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     script = BugSummaryRebuild(
-        'bugsummary-rebuild', dbuser='bugsummaryrebuild')
+        "bugsummary-rebuild", dbuser="bugsummaryrebuild"
+    )
     script.lock_and_run()
